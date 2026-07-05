@@ -1,0 +1,34 @@
+{
+  "name": "@jgengine/sql",
+  "version": "0.1.0",
+  "description": "Postgres persistence for the JGengine host: implements HostPersistence over a structural pool interface (no hard pg dependency).",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/sql"
+  },
+  "files": ["dist"],
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*"
+  },
+  "devDependencies": {
+    "pg-mem": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

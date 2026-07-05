@@ -1,0 +1,39 @@
+{
+  "name": "@jgengine/node",
+  "version": "0.1.0",
+  "description": "Standalone authoritative game host for JGengine: in-memory server snapshots, tick loop, save-cadence flush, WebSocket server, memory/file persistence.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/node"
+  },
+  "files": ["dist"],
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*",
+    "@jgengine/ws": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@jgengine/sql": "workspace:*",
+    "@types/node": "^24",
+    "@types/ws": "^8",
+    "pg-mem": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

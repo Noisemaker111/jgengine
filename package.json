@@ -1,0 +1,15 @@
+{
+  "name": "jgengine",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "bun run --cwd packages/core build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build",
+    "check-types": "bun run --filter '@jgengine/*' check-types",
+    "test": "bun test packages"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "bun@1.3.8"
+}

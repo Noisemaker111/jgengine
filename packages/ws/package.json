@@ -1,0 +1,31 @@
+{
+  "name": "@jgengine/ws",
+  "version": "0.1.0",
+  "description": "Browser-safe WebSocket client backend for JGengine: protocol codec, createWsBackend, and HTTP read helpers.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/ws"
+  },
+  "files": ["dist"],
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

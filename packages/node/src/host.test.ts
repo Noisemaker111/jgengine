@@ -1,0 +1,188 @@
+import { expect, test } from "bun:test";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import type { RuntimePlayerRow } from "@jgengine/core/runtime/snapshot";
+
+import { createGameHost } from "./host";
+import { clearFilePersistence, filePersistence, memoryPersistence } from "./persistence";
+import { createTestRuntime } from "./testFixtures";
+
+test("join, command, flush, and restart round-trip through memory persistence", async () => {
+  let t = 0;
+  const persistence = memoryPersistence(() => t);
+  const host = createGameHost({
+    runtimes: [createTestRuntime()],
+    persistence,
+    now: () => t,
+    tickMs: 10,
+  });
+
+  const joined = await host.joinServer({ userId: "alice", gameId: "test-game" });
+  expect(joined.isNew).toBe(true);
+
+  const rejoined = await host.joinServer({
+    userId: "alice",
+    gameId: "test-game",
+    serverId: joined.serverId,
+  });
+  expect(rejoined).toEqual({ serverId: joined.serverId, isNew: false });
+
+  const granted = await host.runCommand({
+    userId: "alice",
+    serverId: joined.serverId,
+    command: "gold.grant",
+    input: { userId: "alice", amount: 5 },
+  });
+  expect(granted).toEqual({ ok: true });
+
+  const denied = await host.runCommand({
+    userId: "mallory",
+    serverId: joined.serverId,
+    command: "gold.grant",
+    input: { userId: "mallory", amount: 5 },
+  });
+  expect(denied).toEqual({ ok: false, reason: "Not a member of this server" });
+
+  const invalid = await host.runCommand({
+    userId: "alice",
+    serverId: joined.serverId,
+    command: "gold.grant",
+    input: { amount: "lots" },
+  });
+  expect(invalid.ok).toBe(false);
+
+  const playerView = await host.getPlayerView({ userId: "alice", serverId: joined.serverId });
+  expect((playerView?.playerState as RuntimePlayerRow).economy.gold).toBe(5);
+
+  t = 100;
+  expect(await host.flushAll()).toBe(1);
+
+  const profile = await persistence.loadProfile({ userId: "alice", gameId: "test-game" });
+  expect(profile?.playerState.economy.gold).toBe(5);
+  expect(
+    await persistence.getLeaderboardTop({ gameId: "test-game", stat: "gold", scope: "profile" }),
+  ).toEqual([{ userId: "alice", value: 5 }]);
+
+  const restarted = createGameHost({ runtimes: [createTestRuntime()], persistence, now: () => t });
+  const afterRestart = await restarted.joinServer({
+    userId: "alice",
+    gameId: "test-game",
+    serverId: joined.serverId,
+  });
+  expect(afterRestart).toEqual({ serverId: joined.serverId, isNew: false });
+  const restoredView = await restarted.getPlayerView({ userId: "alice", serverId: joined.serverId });
+  expect((restoredView?.playerState as RuntimePlayerRow).economy.gold).toBe(5);
+});
+
+test("tick advances the loop and auto-saves on the save cadence", async () => {
+  let t = 0;
+  const persistence = memoryPersistence(() => t);
+  const host = createGameHost({
+    runtimes: [createTestRuntime()],
+    persistence,
+    now: () => t,
+    tickMs: 10,
+  });
+
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "test-game" });
+
+  t = 5;
+  expect(await host.tickOnce()).toEqual({ ticked: 0, saved: 0 });
+
+  t = 20;
+  expect(await host.tickOnce()).toEqual({ ticked: 1, saved: 1 });
+
+  const stored = await persistence.loadServer(serverId);
+  expect(stored?.serverState.session.uptime).toBeCloseTo(0.02);
+  expect(stored?.lastSavedAt).toBe(20);
+});
+
+test("leave persists, frees the slot, and hides the server from the browser list", async () => {
+  const t = 0;
+  const persistence = memoryPersistence(() => t);
+  const host = createGameHost({
+    runtimes: [createTestRuntime()],
+    persistence,
+    now: () => t,
+    slotsPerServer: 1,
+  });
+
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "test-game" });
+  await expect(
+    host.joinServer({ userId: "bob", gameId: "test-game", serverId }),
+  ).rejects.toThrow("Server is full");
+
+  expect(await host.listOpenServers({ gameId: "test-game" })).toHaveLength(1);
+
+  await host.runCommand({
+    userId: "alice",
+    serverId,
+    command: "gold.grant",
+    input: { userId: "alice", amount: 3 },
+  });
+  await host.leaveServer({ userId: "alice", serverId });
+
+  const stored = await persistence.loadServer(serverId);
+  expect(stored?.memberUserIds).toEqual([]);
+  expect(stored?.status).toBe("open");
+  expect(await host.listOpenServers({ gameId: "test-game" })).toHaveLength(0);
+
+  const profile = await persistence.loadProfile({ userId: "alice", gameId: "test-game" });
+  expect(profile?.playerState.economy.gold).toBe(3);
+});
+
+test("feed buffers append, trim, and gate on membership", async () => {
+  const persistence = memoryPersistence();
+  const host = createGameHost({ runtimes: [createTestRuntime()], persistence });
+
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "test-game" });
+  for (let index = 0; index < 25; index += 1) {
+    await host.pushFeedEntry({ userId: "alice", serverId, action: "kill", entry: { index } });
+  }
+  const feed = await host.getFeed({ userId: "alice", serverId, action: "kill" });
+  expect(feed).toHaveLength(20);
+  expect(feed[19]).toEqual({ index: 24 });
+  expect(await host.getFeed({ userId: "mallory", serverId, action: "kill" })).toEqual([]);
+  await expect(
+    host.pushFeedEntry({ userId: "mallory", serverId, action: "kill", entry: {} }),
+  ).rejects.toThrow("Not a member of this server");
+});
+
+test("filePersistence round-trips every tier and survives a host restart", async () => {
+  const dir = join(tmpdir(), `jg-node-test-${process.pid}-${Math.random().toString(36).slice(2)}`);
+  try {
+    let t = 0;
+    const persistence = filePersistence(dir, () => t);
+    const host = createGameHost({ runtimes: [createTestRuntime()], persistence, now: () => t });
+
+    const { serverId } = await host.joinServer({ userId: "alice", gameId: "test-game" });
+    await host.runCommand({
+      userId: "alice",
+      serverId,
+      command: "gold.grant",
+      input: { userId: "alice", amount: 8 },
+    });
+    await host.pushFeedEntry({ userId: "alice", serverId, action: "kill", entry: { boss: "onyxia" } });
+    t = 100;
+    await host.stop();
+
+    const reopened = filePersistence(dir, () => t);
+    expect((await reopened.listServers("test-game")).map((record) => record.serverId)).toEqual([serverId]);
+    expect(await reopened.loadFeed({ serverId, action: "kill" })).toEqual([{ boss: "onyxia" }]);
+    expect(
+      await reopened.getLeaderboardTop({ gameId: "test-game", stat: "gold", scope: "profile" }),
+    ).toEqual([{ userId: "alice", value: 8 }]);
+    expect(await reopened.getLeaderboardProfile({ gameId: "test-game", userId: "alice" })).toEqual({
+      gold: 8,
+    });
+
+    const restarted = createGameHost({ runtimes: [createTestRuntime()], persistence: reopened, now: () => t });
+    const rejoined = await restarted.joinServer({ userId: "alice", gameId: "test-game", serverId });
+    expect(rejoined.isNew).toBe(false);
+    const view = await restarted.getPlayerView({ userId: "alice", serverId });
+    expect((view?.playerState as RuntimePlayerRow).economy.gold).toBe(8);
+  } finally {
+    await clearFilePersistence(dir);
+  }
+});

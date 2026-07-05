@@ -1,0 +1,97 @@
+import { describe, expect, test } from "bun:test";
+import { createStats } from "@jgengine/core/stats/statModifiers";
+
+type PlayerStat = "speed" | "jumpHeight" | "gravity";
+
+describe("stat modifiers", () => {
+  test("resolves base value with no sources", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    expect(stats.get("speed")).toBe(10);
+  });
+
+  test("applies a single add modifier", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("boots", { speed: { add: 4 } });
+    expect(stats.get("speed")).toBe(14);
+  });
+
+  test("applies a single multiply modifier", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("haste", { speed: { multiply: 1.5 } });
+    expect(stats.get("speed")).toBe(15);
+  });
+
+  test("combines adds then multiplies across multiple sources", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("armor", { speed: { add: 2 } });
+    stats.addSource("potion", { speed: { add: 3, multiply: 2 } });
+    stats.addSource("curse", { speed: { multiply: 0.5 } });
+
+    expect(stats.get("speed")).toBe((10 + 2 + 3) * 2 * 0.5);
+  });
+
+  test("re-adding an existing sourceId replaces its modifiers", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("armor", { speed: { add: 5 } });
+    expect(stats.get("speed")).toBe(15);
+
+    stats.addSource("armor", { speed: { add: 1 } });
+    expect(stats.get("speed")).toBe(11);
+    expect(stats.sources()).toEqual(["armor"]);
+  });
+
+  test("removeSource restores the prior value", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("armor", { speed: { add: 5 } });
+    stats.removeSource("armor");
+
+    expect(stats.get("speed")).toBe(10);
+    expect(stats.hasSource("armor")).toBe(false);
+  });
+
+  test("expired sources are ignored by get when nowMs is passed", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("potion", { speed: { add: 10 } }, { expiresAtMs: 1000 });
+
+    expect(stats.get("speed", 500)).toBe(20);
+    expect(stats.get("speed", 1000)).toBe(10);
+    expect(stats.get("speed", 1500)).toBe(10);
+  });
+
+  test("expiry is not evaluated when nowMs is omitted", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("potion", { speed: { add: 10 } }, { expiresAtMs: 1 });
+
+    expect(stats.get("speed")).toBe(20);
+  });
+
+  test("pruneExpired removes expired sources and returns their ids", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("potion", { speed: { add: 10 } }, { expiresAtMs: 1000 });
+    stats.addSource("armor", { speed: { add: 1 } });
+
+    const pruned = stats.pruneExpired(1000);
+
+    expect(pruned).toEqual(["potion"]);
+    expect(stats.hasSource("potion")).toBe(false);
+    expect(stats.hasSource("armor")).toBe(true);
+    expect(stats.get("speed")).toBe(11);
+  });
+
+  test("a modifier set entry for a stat the source does not target is inert", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("armor", { jumpHeight: { add: 2 } });
+
+    expect(stats.get("speed")).toBe(10);
+    expect(stats.get("jumpHeight")).toBe(7);
+    expect(stats.get("gravity")).toBe(20);
+  });
+
+  test("setBase and getBase update the underlying base value", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.setBase("speed", 25);
+
+    expect(stats.getBase("speed")).toBe(25);
+    expect(stats.get("speed")).toBe(25);
+  });
+});

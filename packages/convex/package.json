@@ -1,0 +1,39 @@
+{
+  "name": "@jgengine/convex",
+  "version": "0.1.0",
+  "description": "Convex adapters for JGengine: game transport, presence transport, and backend wiring over @jgengine/core.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/convex"
+  },
+  "files": ["dist"],
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "convex": "^1.31.2",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "convex": "^1.31.2",
+    "react": "19.2.3",
+    "@types/react": "^19"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,147 @@
+import { describe, expect, test } from "bun:test";
+import { talkable, wander } from "@jgengine/core/scene/behaviors";
+import { createEntityStore } from "@jgengine/core/scene/entityStore";
+
+describe("scene entity store", () => {
+  test("spawn generates unique monotonic ids when omitted", () => {
+    const store = createEntityStore();
+    const first = store.spawn("rack.basic", { position: [0, 0, 0] });
+    const second = store.spawn("rack.basic", { position: [1, 0, 0] });
+    expect(first).not.toEqual(second);
+    expect(store.list().map((entity) => entity.id).sort()).toEqual([first, second].sort());
+  });
+
+  test("spawn throws on explicit duplicate id", () => {
+    const store = createEntityStore();
+    store.spawn("rack.basic", { id: "hero", position: [0, 0, 0] });
+    expect(() => store.spawn("rack.gpu", { id: "hero", position: [1, 0, 0] })).toThrow();
+  });
+
+  test("spawn defaults rotationY 0, role prop, empty movement and behaviors, origin position", () => {
+    const store = createEntityStore();
+    const id = store.spawn("rack.basic");
+    const entity = store.get(id);
+    expect(entity?.name).toBe("rack.basic");
+    expect(entity?.position).toEqual([0, 0, 0]);
+    expect(entity?.rotationY).toBe(0);
+    expect(entity?.role).toBe("prop");
+    expect(entity?.movement).toEqual({});
+    expect(entity?.behaviors).toEqual([]);
+  });
+
+  test("spawn accepts both tuple and point positions and stores the tuple", () => {
+    const store = createEntityStore();
+    const fromTuple = store.spawn("bench", { position: [1, 2, 3] });
+    const fromPoint = store.spawn("bench", { position: { x: 4, y: 5, z: 6 } });
+    expect(store.get(fromTuple)?.position).toEqual([1, 2, 3]);
+    expect(store.get(fromPoint)?.position).toEqual([4, 5, 6]);
+  });
+
+  test("spawn stores role, movement, and behaviors", () => {
+    const store = createEntityStore();
+    const behaviors = [talkable("shop_dialogue"), wander({ radius: 4 })];
+    const id = store.spawn("shopkeeper", {
+      position: [2, 0, 2],
+      role: "npc",
+      movement: { walkSpeed: 1.5 },
+      behaviors,
+    });
+    const entity = store.get(id);
+    expect(entity?.role).toBe("npc");
+    expect(entity?.movement).toEqual({ walkSpeed: 1.5 });
+    expect(entity?.behaviors).toEqual(behaviors);
+  });
+
+  test("despawn removes the entity and reports whether it existed", () => {
+    const store = createEntityStore();
+    const id = store.spawn("rack.basic", { position: [0, 0, 0] });
+    expect(store.despawn(id)).toBe(true);
+    expect(store.get(id)).toBeNull();
+    expect(store.despawn(id)).toBe(false);
+  });
+
+  test("update patches position, rotationY, and meta", () => {
+    const store = createEntityStore<{ label: string }>();
+    const id = store.spawn("rack.basic", { position: [0, 0, 0], meta: { label: "a" } });
+    expect(store.update(id, { position: [1, 2, 3], rotationY: Math.PI, meta: { label: "b" } })).toBe(true);
+    const updated = store.get(id);
+    expect(updated?.position).toEqual([1, 2, 3]);
+    expect(updated?.rotationY).toBe(Math.PI);
+    expect(updated?.meta).toEqual({ label: "b" });
+  });
+
+  test("update patches role, movement, and behaviors", () => {
+    const store = createEntityStore();
+    const id = store.spawn("shopkeeper", { position: [0, 0, 0] });
+    const behaviors = [wander({ radius: 2 })];
+    expect(store.update(id, { role: "npc", movement: { walkSpeed: 3 }, behaviors })).toBe(true);
+    const updated = store.get(id);
+    expect(updated?.role).toBe("npc");
+    expect(updated?.movement).toEqual({ walkSpeed: 3 });
+    expect(updated?.behaviors).toEqual(behaviors);
+  });
+
+  test("update returns false for unknown id", () => {
+    const store = createEntityStore();
+    expect(store.update("missing", { rotationY: 1 })).toBe(false);
+  });
+
+  test("setPose sets position and only the provided rotations", () => {
+    const store = createEntityStore();
+    const id = store.spawn("shopkeeper", { position: [0, 0, 0], rotationY: 1, rotationX: 0.2, rotationZ: 0.3 });
+    expect(store.setPose(id, { position: { x: 4, y: 0, z: 2 }, rotationY: 2 })).toBe(true);
+    const posed = store.get(id);
+    expect(posed?.position).toEqual([4, 0, 2]);
+    expect(posed?.rotationY).toBe(2);
+    expect(posed?.rotationX).toBe(0.2);
+    expect(posed?.rotationZ).toBe(0.3);
+    expect(store.setPose("missing", { position: [0, 0, 0] })).toBe(false);
+  });
+
+  test("get and list reflect current contents", () => {
+    const store = createEntityStore();
+    expect(store.list()).toEqual([]);
+    const id = store.spawn("rack.basic", { position: [0, 0, 0] });
+    expect(store.get(id)?.name).toBe("rack.basic");
+    expect(store.list()).toHaveLength(1);
+  });
+
+  test("clear removes all entities", () => {
+    const store = createEntityStore();
+    store.spawn("rack.basic", { position: [0, 0, 0] });
+    store.spawn("rack.gpu", { position: [1, 0, 0] });
+    store.clear();
+    expect(store.list()).toEqual([]);
+  });
+
+  test("snapshot is referentially stable until a mutation occurs", () => {
+    const store = createEntityStore();
+    const empty = store.snapshot();
+    expect(store.snapshot()).toBe(empty);
+
+    const id = store.spawn("rack.basic", { position: [0, 0, 0] });
+    const afterSpawn = store.snapshot();
+    expect(store.snapshot()).toBe(afterSpawn);
+    expect(afterSpawn).not.toBe(empty);
+
+    store.despawn(id);
+    expect(store.snapshot()).toBe(empty);
+  });
+
+  test("subscribe fires once per mutation and unsubscribe stops notifications", () => {
+    const store = createEntityStore();
+    let notified = 0;
+    const unsubscribe = store.subscribe(() => {
+      notified += 1;
+    });
+
+    const id = store.spawn("rack.basic", { position: [0, 0, 0] });
+    store.update(id, { rotationY: 1 });
+    store.despawn(id);
+    expect(notified).toBe(3);
+
+    unsubscribe();
+    store.spawn("rack.basic", { position: [0, 0, 0] });
+    expect(notified).toBe(3);
+  });
+});
