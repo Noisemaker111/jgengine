@@ -23,8 +23,8 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "workspace:*",
-    "@jgengine/ws": "workspace:*",
+    "@jgengine/core": "^0.1.0",
+    "@jgengine/ws": "^0.1.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
