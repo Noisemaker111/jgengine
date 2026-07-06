@@ -78,7 +78,7 @@ Floors for any combat/loot game (scale **up** per fantasy, never down): **50+ it
 
 No phase ships a flat plane with squares on it. The floor, structures, and props are inside every phase's exit bar:
 
-- **Ground** — textured/material'd terrain or tiles with variation (Poly Haven / ambientCG per `jgengine-assets`), never the default grid or a flat color.
+- **Ground** — textured/material'd terrain or tiles with variation (Poly Haven / ambientCG per `jgengine-assets`), never the default grid or a flat color. Supply it via `PlayableGame.environment` (a canvas component); the shell renders it in place of the default ground plane + debug grid + rock field.
 - **Structures** — the buildings and landmarks the fantasy implies (a wasteland has ruins, a settlement, an interior or two), placed as scene objects with real models.
 - **Prop density** — target 100+ placed objects across zones (wrecks, rocks, furniture, loot containers) from real packs, not colored boxes.
 - **Zone readability** — zones differ at a glance: palette, density, one landmark each.
@@ -107,6 +107,17 @@ The most common "make an FPS / looter-shooter" setup is a handful of engine swit
 - **Known gap — spawn on the surface**: the engine does **not** yet snap spawns to terrain height (core owns no terrain geometry — the ground mesh lives in the shell). On non-flat ground the game must sample its own ground height before `spawn` for now, or spawn on a `flat()` arena. Track it honestly; don't ship enemies clipping into hillsides and call it done.
 
 One game is a probe; if a second first-person game needs this same bundle, promote the recipe to an engine preset. Until then it is a recipe, not a `defineGame` field.
+
+## Archetype recipe — furnished interior from a modular kit
+
+The interior analog of the shooter recipe: a life-sim, dollhouse, base-builder, or shop is a **grid of cells** dressed from one modular kit (Kenney furniture-kit + mini-characters is a complete Sims-style set). Assemble it from primitives — do not hand-roll pivot math or a ground hack:
+
+- **Own ground, not the debug grid**: set `PlayableGame.environment` to a canvas component that draws your floor/room shell (a plane, tiled floor GLBs, or a skybox). When present, the shell renders it **instead of** the default ground plane + grid + rock field — an interior should never show the outdoor scatter. Leave it unset only for open-world scenes that want the default terrain.
+- **Place on cell centers, let the engine center + ground-snap**: models resolved through `objectModels` carry measured `dims` from `@jgengine/assets`; with the default anchor `"center"` the shell centers each footprint on its placement point and snaps its base to the floor. Build a `cells` grid (1 unit each), then `object.place(floorId, cx, 0, cz)`, `object.place(wallId, edgeX, 0, edgeZ, { rotation })` on cell edges, `object.place(furnitureId, cx, 0, cz, { rotation })` — no `dimensions.ts`, no `placeCentered`, no `objectCenter` registry. (See `jgengine-assets` rule 5.)
+- **Walls on edges, floors + furniture on centers**: a wall's placement point is the shared edge between two cells (rotate 0/90° to face along it); floors and furniture sit on the cell center. Doorways are a skipped wall segment.
+- **Characters**: mini-characters are rigged GLBs — wire them through `entityModels`; the same center/ground-snap applies, so they stand on the floor without a per-model `y`.
+
+One interior is a probe; if a second needs this same cell→floor/wall/furniture loop, promote it to an engine `roomGrid` helper (cells → floor tiles + edge walls + doorways). Until then it is a recipe, not a `defineGame` field.
 
 ## Engine gaps
 

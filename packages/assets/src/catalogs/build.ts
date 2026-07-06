@@ -25,27 +25,24 @@ export function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog {
   const sourceFilter = options.sources === undefined ? null : new Set(options.sources);
 
   const catalog = createAssetCatalog();
-  const urlById = new Map<string, string>();
 
   for (const entry of generatedIndex) {
     if (sourceFilter !== null && !sourceFilter.has(entry.source)) continue;
     const url = entryUrl(basePath, entry);
-    urlById.set(entry.id, url);
-    catalog.register(entry.id, { url });
+    catalog.register(entry.id, entry.dims === undefined ? { url } : { url, dims: entry.dims });
   }
 
   if (includeSingles) {
     for (const single of singles) {
-      urlById.set(single.id, single.url);
       catalog.register(single.id, { url: single.url });
     }
   }
 
   if (includeAliases) {
     for (const alias of aliases) {
-      const url = urlById.get(alias.target);
-      if (url === undefined) continue;
-      catalog.register(alias.key, { url });
+      const ref = catalog.resolve(alias.target);
+      if (ref === null) continue;
+      catalog.register(alias.key, ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims });
     }
   }
 

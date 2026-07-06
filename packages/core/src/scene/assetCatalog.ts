@@ -1,5 +1,13 @@
+export interface ModelDims {
+  footprint: { w: number; d: number };
+  center: { x: number; z: number };
+  minY: number;
+}
+
 export interface ModelAssetRef {
   url: string;
+  /** Measured at asset reindex: horizontal footprint, footprint center, and lowest Y in model space (pre-scale). Lets the shell auto-center and ground-snap corner-pivot kit models. */
+  dims?: ModelDims;
 }
 
 export interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> {

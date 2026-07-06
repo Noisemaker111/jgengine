@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -130,7 +130,13 @@ function EntityModel({ model }: { model: ModelConfig }) {
   const gltf = useLoader(GLTFLoader, model.url);
   const scene = useMemo(() => gltf.scene.clone(true), [gltf]);
   const scale = model.scale ?? 1;
-  return <primitive object={scene} position-y={model.y ?? 0} scale={[scale, scale, scale]} />;
+  const baseY = model.y ?? 0;
+  const dims = model.dims;
+  const centered = (model.anchor ?? "center") === "center" && dims !== undefined;
+  const position: [number, number, number] = centered
+    ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
+    : [0, baseY, 0];
+  return <primitive object={scene} position={position} scale={[scale, scale, scale]} />;
 }
 
 function resolveModel(
@@ -139,8 +145,9 @@ function resolveModel(
 ): ModelConfig | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== "string") return value;
-  const url = assets.resolve(value)?.url;
-  return url === undefined ? undefined : { url };
+  const ref = assets.resolve(value);
+  if (ref === null) return undefined;
+  return ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims };
 }
 
 function EntityMarker({
@@ -261,11 +268,13 @@ function WorldView({
   entitySprites,
   entityModels,
   objectModels,
+  environment: Environment,
   assets,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
   objectModels: Record<string, string | ModelConfig> | undefined;
+  environment: ComponentType | undefined;
   assets: AssetCatalog;
 }) {
   const ctx = useGameContext();
@@ -279,9 +288,15 @@ function WorldView({
   };
   return (
     <>
-      <GroundPlane />
-      <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
-      <RockField />
+      {Environment !== undefined ? (
+        <Environment />
+      ) : (
+        <>
+          <GroundPlane />
+          <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
+          <RockField />
+        </>
+      )}
       {entities.map((entity) => (
         <EntityMarker
           key={entity.id}
@@ -698,6 +713,7 @@ export function GamePlayerShell({
             entitySprites={playable.entitySprites}
             entityModels={playable.entityModels}
             objectModels={playable.objectModels}
+            environment={playable.environment}
             assets={playable.game.assets}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
