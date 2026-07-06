@@ -31,7 +31,7 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 
 ## Publishing
 
-Owner-only, from a real terminal (npm web-2FA needs a TTY — agent shells cannot publish). Order: `npm publish` in core → ws → sql → react → convex → node → shell. Versions move together; intra-repo dependency ranges track the current minor.
+Automated via `.github/workflows/publish.yml`: every push to `main` that changes `packages/*/package.json`, `packages/*/src/**`, or the workflow itself triggers build → check-types → test, then publishes each `@jgengine/*` package whose version is not yet on npm, in dependency order (core → ws → sql → react → convex → node → shell), using `npm publish --access public`. Auth is via the `NPM_TOKEN` repository secret. Already-published versions are skipped so non-release pushes no-op.
 
 ## Style
 
