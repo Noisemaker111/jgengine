@@ -5,11 +5,11 @@ import {
   type LethalContext,
   type ReceiveMap,
 } from "@jgengine/core/combat/effects";
-import { seedPoolStats, type PoolStatCatalog, type PoolStatMap } from "@jgengine/core/scene/entityStats";
+import { seedStatValues, type StatCatalog, type StatValueMap } from "@jgengine/core/scene/entityStats";
 import { distanceBetween } from "@jgengine/core/scene/spatial";
 
 interface WorldEntity {
-  stats: PoolStatCatalog;
+  stats: StatCatalog;
   receive: ReceiveMap;
   position?: [number, number, number];
 }
@@ -18,9 +18,9 @@ function createWorld(
   entities: Record<string, WorldEntity>,
   overrides?: Partial<EffectSystemDeps> & { losBlocked?: string[] },
 ) {
-  const stats: Record<string, PoolStatMap> = {};
+  const stats: Record<string, StatValueMap> = {};
   for (const [instanceId, entity] of Object.entries(entities)) {
-    stats[instanceId] = seedPoolStats(entity.stats);
+    stats[instanceId] = seedStatValues(entity.stats);
   }
   const lethalCalls: { instanceId: string; ctx: LethalContext }[] = [];
   const deps: EffectSystemDeps = {

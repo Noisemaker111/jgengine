@@ -17,7 +17,7 @@ description: >
 
 # JGengine — API Reference
 
-The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game/game.config.ts` or any game content. Companion skills: **`jgengine-ui`** (how the game must look and behave) and **`jgengine-workflow`** (how to ship a finished slice in one pass) — read both before building.
+The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game/game.config.ts` or any game content. Companion skills: **`jgengine-workflow`** (master blueprint + phased build to completion), **`jgengine-ui`** (the look-and-behave quality bar), and **`jgengine-assets`** (real models/textures from day one) — read all three before building.
 
 ## Packages
 
@@ -66,7 +66,7 @@ This file documents engine primitives and conventions only — never game domain
 
 | Engine owns | Your game owns |
 |-------------|----------------|
-| Weighted loot RNG, trade validation, loadout application, quest journal state, social graph, pool-stat math, effect absorption, projectile geometry, death resolution, event bus, feeds, leaderboards, input capture, pose hitboxes | Catalog entries and ids, effect id names, XP curves, shop/item/quest/loadout definitions, use-handlers, AI logic, UI content |
+| Weighted loot RNG, trade validation, loadout application, quest journal state, social graph, stat clamp math, effect absorption, projectile geometry, death resolution, event bus, feeds, leaderboards, input capture, pose hitboxes | Catalog entries and ids, effect id names, XP curves, shop/item/quest/loadout definitions, use-handlers, AI logic, UI content |
 
 **Rules:**
 
@@ -190,7 +190,7 @@ export type PlayableGame<TUi = unknown> = {
 };
 ```
 
-The runner boots `createGameContext({ definition, content, player: { userId, isNew } })`, calls `loop.onInit(ctx)` then `loop.onNewPlayer(ctx)`, and drives `loop.onTick(ctx, dt)` per frame. **Convention: `onNewPlayer` spawns the player entity with `id === ctx.player.userId`** — pool stats, targeting, and kill attribution key off that.
+The runner boots `createGameContext({ definition, content, player: { userId, isNew } })`, calls `loop.onInit(ctx)` then `loop.onNewPlayer(ctx)`, and drives `loop.onTick(ctx, dt)` per frame. **Convention: `onNewPlayer` spawns the player entity with `id === ctx.player.userId`** — bounded stats, targeting, and kill attribution key off that.
 
 ## `GameContext` — the ctx surface
 
@@ -272,7 +272,7 @@ Break resolution: `duration = baseBreakTime / (tool?.breakSpeed ?? 1)`; drops pe
 |-------|---------|
 | `movement` | `walkSpeed` (reaches spawn automatically), `poses?: ["standing","crouch","prone","running"]`, `aim?: ["hip","ads"]` |
 | `role` | `"player"` \| `"enemy"` \| `"npc"` \| `"vehicle"` — drives input/camera binding AND hostile classification for `cycleTarget` |
-| `stats` | Pool stat declarations: `{ health: { max: 120, min: 0 }, level: { max: 60, min: 1, current: 1 }, … }` — `current` optional, defaults to `max` |
+| `stats` | Stat declarations — bounded values: `{ health: { max: 120, min: 0 }, level: { max: 60, min: 1, current: 1 }, … }` — `current` optional, defaults to `max` |
 | `receive` | Per-effect absorption: `{ damage: { order: ["shield","health"], modifiers? }, heal: { order: ["health"] } }` — keyed by **game-defined effect ids**; presence = can receive |
 | `onDeath` | `{ drops: "table_id" }` or reason-aware `{ drops: [{ table, when: { reason: "player_kill" } }], command?: { name, when? } }` |
 | `wander`, `talkable` | AI descriptor; dialogue id sugar for a talk prompt |
@@ -281,7 +281,7 @@ Break resolution: `duration = baseBreakTime / (tool?.breakSpeed ?? 1)`; drops pe
 
 `entities/npcs/dialogues.ts` — `{ id, lines: [{ speaker, text } | { choices: [{ label, invoke: { command, args } | null }] }] }`. Choices invoke `quest.accept`, `trade.open`, etc.
 
-## `scene.entity.stats` — pool stats
+## `scene.entity.stats` — bounded stats
 
 ```ts
 stats.get(instanceId, statId)        // → { current, max, min } | null
@@ -291,9 +291,9 @@ stats.delta(instanceId, statId, n)   // → null | { reason } — clamps into [m
 
 Health, mana, xp, level, energy — any stat id declared on the catalog. Spawn seeds from the catalog (`current ?? max`). Combat writes through effects; non-combat (regen ticks, XP grants) calls `delta` directly.
 
-**XP/level are pool stats with a game-owned curve** (`progression/curves.ts`) — no engine progression primitive. On xp overflow: bump `level.current`, reset `xp.max` from the curve, push a `stat.levelUp` feed entry.
+**XP/level are stats with a game-owned curve** (`progression/curves.ts`) — no engine progression primitive. On xp overflow: bump `level.current`, reset `xp.max` from the curve, push a `stat.levelUp` feed entry.
 
-`ctx.player.stats` is a different thing: **modifiers** (buffs, ADS zoom, walk-speed bonuses) via `base/add/remove/get` with expiries — never pool values.
+`ctx.player.stats` is a different thing: **modifiers** (buffs, ADS zoom, walk-speed bonuses) via `base/add/remove/get` with expiries — never bounded current/max values.
 
 ## Targeting (MMO tab-target)
 
@@ -321,7 +321,7 @@ type ItemUseHandler<GameContext> = {
 };
 ```
 
-**Handlers receive the full `GameContext` as state** and mutate through it. Handlers own ammo, cooldowns, range checks, and effect ids; the engine owns projectile geometry, pool math, and `canReceive`.
+**Handlers receive the full `GameContext` as state** and mutate through it. Handlers own ammo, cooldowns, range checks, and effect ids; the engine owns projectile geometry, stat clamp math, and `canReceive`.
 
 | Handler | Engine calls |
 |---------|--------------|
@@ -335,7 +335,7 @@ Banned in the engine: `weapon.fire`, `consumable.use`, `game.combat.*`, per-weap
 
 ## Effects and projectiles
 
-Effect ids are **game-defined strings**. Magnitudes **drain** pools: positive subtracts down `receive.<effect>.order` (spilling to the next pool), negative restores. Heals pass a negative amount (`via: { amount: -flashHeal }`, typically read from a `weapon.heal` stat).
+Effect ids are **game-defined strings**. Magnitudes **drain** stats: positive subtracts down `receive.<effect>.order` (spilling to the next stat in the order), negative restores. Heals pass a negative amount (`via: { amount: -flashHeal }`, typically read from a `weapon.heal` stat).
 
 ```ts
 ctx.scene.entity.canReceive(instanceId, effect)          // null | reason — reads catalog receive
@@ -358,7 +358,7 @@ settleProjectile(shotId)                        // authoritative → { at, hits 
 
 ## Death
 
-Resolved **once** by the engine when the last pool in the receive order hits min. No HP polling in `onTick`, ever.
+Resolved **once** by the engine when the last stat in the receive order hits min. No HP polling in `onTick`, ever.
 
 - `entity.died` is emitted (before despawn — handlers can still read the victim's stats), then reason-matching `onDeath` entries run.
 - `DeathReason = { kind: "player_kill", killerUserId, via? } | { kind: "environment", source } | { kind: "self", source }`. Kills by the local player attribute automatically.
@@ -514,7 +514,7 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 |------|---------|
 | `useGame()` / `usePlayer()` | `{ commands, events }` / `{ userId, isNew }` |
 | `useSceneEntities()` / `useSceneObjects()` | live snapshots for rendering |
-| `useEntityStat(instanceId, statId)` | `PoolStat \| null` |
+| `useEntityStat(instanceId, statId)` | `StatValue \| null` |
 | `useTarget(fromId)` | locked instanceId \| null |
 | `useInventory(id)` / `useCurrency(id)` | slots / balance |
 | `useFeed({ action, limit? })` | recent entries — kills, loot, any action |
@@ -560,7 +560,7 @@ Headless primitives mean **you** ship the visual design. Functional wiring alone
 - **Voxel/crafting**: objects for blocks/machines, `voxel()`, `object.break`/`object.placeFromInventory`.
 - **Tycoon/lab**: objects + `slotInventory`, `plots()`, configure via prompt → command.
 - **Shooter**: `fireProjectile`/`settleProjectile`; grenades settle → `effect({ at, radius })`; `movement.poses`/`aim` + zoom modifier; `servers({ … })` + game-owned `server.mode`; loadout classes from commands.
-- **MMO/RPG**: pool stats + game XP curve; `tabTarget` → `cycleTarget`; handlers read `getTarget`; quests bound to `entity.died`/`inventory.added`; social party + `partyShare`; `server: "persistent"`.
+- **MMO/RPG**: bounded stats + game XP curve; `tabTarget` → `cycleTarget`; handlers read `getTarget`; quests bound to `entity.died`/`inventory.added`; social party + `partyShare`; `server: "persistent"`.
 - **All combat games**: react to `entity.died` (feed/leaderboard/score) — never poll HP.
 
 ## Anti-patterns
@@ -616,7 +616,7 @@ GameContext        ctx.scene / ctx.game / ctx.player / ctx.item + subscribe/vers
 scene.object       place, remove, move, rotate
 scene.entity       spawn (anchor/offset), despawn, setPose; stats; targeting; effects;
                    projectiles; spatial queries
-entity.stats       get / set / delta — pools (health, mana, xp, level) on instances
+entity.stats       get / set / delta — bounded stats (health, mana, xp, level) on instances
 item.use           catalog `use` → GameContext handler; no input.to
 effects            drain-signed magnitudes; receive.<effect>.order; AoE = effect + at/radius/los
 projectiles        willHit → fire → settle; ballistic via weapon.projectile

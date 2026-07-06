@@ -1,32 +1,32 @@
-export interface PoolStat {
+export interface StatValue {
   current: number;
   max: number;
   min: number;
 }
 
-export interface PoolStatPatch {
+export interface StatValuePatch {
   current?: number;
   max?: number;
   min?: number;
 }
 
-export type PoolStatMap = Record<string, PoolStat>;
+export type StatValueMap = Record<string, StatValue>;
 
-export type PoolStatCatalog = Record<string, { max: number; min?: number; current?: number }>;
+export type StatCatalog = Record<string, { max: number; min?: number; current?: number }>;
 
 export type PoolDeltaResult =
-  | { status: "ok"; map: PoolStatMap; stat: PoolStat; hitMin: boolean; hitMax: boolean }
+  | { status: "ok"; map: StatValueMap; stat: StatValue; hitMin: boolean; hitMax: boolean }
   | { status: "rejected"; reason: string };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function getPoolStat(map: PoolStatMap, statId: string): PoolStat | null {
+export function getStatValue(map: StatValueMap, statId: string): StatValue | null {
   return map[statId] ?? null;
 }
 
-export function setPoolStat(map: PoolStatMap, statId: string, patch: PoolStatPatch): PoolStatMap {
+export function setStatValue(map: StatValueMap, statId: string, patch: StatValuePatch): StatValueMap {
   const existing = map[statId];
   const max = patch.max ?? existing?.max ?? 0;
   const min = patch.min ?? existing?.min ?? 0;
@@ -34,7 +34,7 @@ export function setPoolStat(map: PoolStatMap, statId: string, patch: PoolStatPat
   return { ...map, [statId]: { current, max, min } };
 }
 
-export function applyPoolDelta(map: PoolStatMap, statId: string, amount: number): PoolDeltaResult {
+export function applyPoolDelta(map: StatValueMap, statId: string, amount: number): PoolDeltaResult {
   const existing = map[statId];
   if (existing === undefined) {
     return { status: "rejected", reason: `unknown stat "${statId}"` };
@@ -50,8 +50,8 @@ export function applyPoolDelta(map: PoolStatMap, statId: string, amount: number)
   };
 }
 
-export function seedPoolStats(catalogStats: PoolStatCatalog): PoolStatMap {
-  const map: PoolStatMap = {};
+export function seedStatValues(catalogStats: StatCatalog): StatValueMap {
+  const map: StatValueMap = {};
   for (const [statId, declaration] of Object.entries(catalogStats)) {
     const min = declaration.min ?? 0;
     const current = clamp(declaration.current ?? declaration.max, min, declaration.max);
@@ -61,24 +61,24 @@ export function seedPoolStats(catalogStats: PoolStatCatalog): PoolStatMap {
 }
 
 export interface EntityStatsApi {
-  get(instanceId: string, statId: string): PoolStat | null;
-  set(instanceId: string, statId: string, patch: PoolStatPatch): boolean;
+  get(instanceId: string, statId: string): StatValue | null;
+  set(instanceId: string, statId: string, patch: StatValuePatch): boolean;
   delta(instanceId: string, statId: string, amount: number): null | { reason: string };
 }
 
 export function createEntityStatsApi(
-  resolve: (instanceId: string) => PoolStatMap | undefined,
+  resolve: (instanceId: string) => StatValueMap | undefined,
 ): EntityStatsApi {
   return {
     get(instanceId, statId) {
       const map = resolve(instanceId);
       if (map === undefined) return null;
-      return getPoolStat(map, statId);
+      return getStatValue(map, statId);
     },
     set(instanceId, statId, patch) {
       const map = resolve(instanceId);
       if (map === undefined) return false;
-      const next = setPoolStat(map, statId, patch);
+      const next = setStatValue(map, statId, patch);
       map[statId] = next[statId]!;
       return true;
     },

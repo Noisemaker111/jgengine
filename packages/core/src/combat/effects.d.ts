@@ -1,5 +1,5 @@
 import type { EntityPosition } from "../scene/entityStore";
-import { type PoolStatMap } from "../scene/entityStats";
+import { type StatValueMap } from "../scene/entityStats";
 export interface ReceiveRule {
     order: string[];
     modifiers?: Record<string, number>;
@@ -47,7 +47,7 @@ export interface CombatSpatialDeps {
 }
 export interface EffectSystemDeps {
     resolveReceive(instanceId: string): ReceiveMap | null | undefined;
-    resolveStats(instanceId: string): PoolStatMap | undefined;
+    resolveStats(instanceId: string): StatValueMap | undefined;
     getStat(itemId: string, stat: string): number | null;
     spatial: CombatSpatialDeps;
     drainStatByEffect?: Record<string, string>;

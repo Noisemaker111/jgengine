@@ -17,7 +17,7 @@ import { type ItemUseHandler, type ItemUseInput, type ItemUseRejection, type Ite
 import { type WeaponStats } from "../item/weapon";
 import { type PoseAllowedStates, type PoseState } from "../movement/poseState";
 import type { ModelAssetRef } from "../scene/assetCatalog";
-import { type EntityStatsApi, type PoolStatCatalog } from "../scene/entityStats";
+import { type EntityStatsApi, type StatCatalog } from "../scene/entityStats";
 import type { EntityPose, SceneEntity, SpawnOptions } from "../scene/entityStore";
 import { type ObjectStore } from "../scene/objectStore";
 import { type SpatialApi } from "../scene/spatial";
@@ -29,7 +29,7 @@ export interface GameContextItemEntry {
     trade?: TradeField;
 }
 export interface GameContextEntityEntry {
-    stats?: PoolStatCatalog;
+    stats?: StatCatalog;
     receive?: ReceiveMap;
     onDeath?: OnDeathSpec;
     movement?: PoseAllowedStates & {

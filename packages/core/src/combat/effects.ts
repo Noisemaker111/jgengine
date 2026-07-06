@@ -1,5 +1,5 @@
 import type { EntityPosition } from "../scene/entityStore";
-import { applyPoolDelta, type PoolStatMap } from "../scene/entityStats";
+import { applyPoolDelta, type StatValueMap } from "../scene/entityStats";
 import { distanceBetween } from "../scene/spatial";
 
 export interface ReceiveRule {
@@ -59,7 +59,7 @@ export interface CombatSpatialDeps {
 
 export interface EffectSystemDeps {
   resolveReceive(instanceId: string): ReceiveMap | null | undefined;
-  resolveStats(instanceId: string): PoolStatMap | undefined;
+  resolveStats(instanceId: string): StatValueMap | undefined;
   getStat(itemId: string, stat: string): number | null;
   spatial: CombatSpatialDeps;
   drainStatByEffect?: Record<string, string>;
@@ -111,7 +111,7 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     instanceId: string,
     effect: string,
     rule: ReceiveRule,
-    stats: PoolStatMap,
+    stats: StatValueMap,
     drainMagnitude: number,
   ): EffectResult {
     const applied: AppliedPoolDelta[] = [];

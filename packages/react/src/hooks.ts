@@ -6,7 +6,7 @@ import type { QuestInstance } from "@jgengine/core/game/quest";
 import type { FriendEntry, PartyMemberEntry, PresenceInfo } from "@jgengine/core/game/social";
 import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
-import type { PoolStat } from "@jgengine/core/scene/entityStats";
+import type { StatValue } from "@jgengine/core/scene/entityStats";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import {
@@ -39,7 +39,7 @@ export function useSceneObjects(): readonly SceneObject[] {
   return useGameStore((ctx) => ctx.scene.object.list());
 }
 
-export function useEntityStat(instanceId: string, statId: string): PoolStat | null {
+export function useEntityStat(instanceId: string, statId: string): StatValue | null {
   return useGameStore((ctx) => ctx.scene.entity.stats.get(instanceId, statId));
 }
 

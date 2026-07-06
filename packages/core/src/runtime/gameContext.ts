@@ -52,11 +52,11 @@ import { createPoseState, type PoseAllowedStates, type PoseState } from "../move
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import {
   createEntityStatsApi,
-  seedPoolStats,
-  setPoolStat,
+  seedStatValues,
+  setStatValue,
   type EntityStatsApi,
-  type PoolStatCatalog,
-  type PoolStatMap,
+  type StatCatalog,
+  type StatValueMap,
 } from "../scene/entityStats";
 import type { EntityPose, SceneEntity, SpawnOptions } from "../scene/entityStore";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
@@ -72,7 +72,7 @@ export interface GameContextItemEntry {
 }
 
 export interface GameContextEntityEntry {
-  stats?: PoolStatCatalog;
+  stats?: StatCatalog;
   receive?: ReceiveMap;
   onDeath?: OnDeathSpec;
   movement?: PoseAllowedStates & { walkSpeed?: number };
@@ -195,14 +195,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   entities.subscribe(signal.notify);
   objects.subscribe(signal.notify);
 
-  const statsByInstance = new Map<string, PoolStatMap>();
+  const statsByInstance = new Map<string, StatValueMap>();
   const entityStats = notifyAfter(
     createEntityStatsApi((instanceId) => statsByInstance.get(instanceId)),
     ["set", "delta"],
     signal.notify,
   );
 
-  function ensureInstanceStats(instanceId: string): PoolStatMap {
+  function ensureInstanceStats(instanceId: string): StatValueMap {
     let map = statsByInstance.get(instanceId);
     if (map === undefined) {
       map = {};
@@ -363,7 +363,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     pool: { current: number; max?: number; min?: number },
   ): void {
     const map = ensureInstanceStats(userId);
-    const next = setPoolStat(map, statId, pool);
+    const next = setStatValue(map, statId, pool);
     map[statId] = next[statId]!;
   }
 
@@ -430,7 +430,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         : { ...spawnOptions, movement: { ...spawnOptions?.movement, walkSpeed } };
     const instanceId = entities.spawn(name, options);
     death.revive(instanceId);
-    statsByInstance.set(instanceId, entry?.stats === undefined ? {} : seedPoolStats(entry.stats));
+    statsByInstance.set(instanceId, entry?.stats === undefined ? {} : seedStatValues(entry.stats));
     return instanceId;
   }
 

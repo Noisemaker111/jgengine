@@ -2,21 +2,21 @@ import { describe, expect, test } from "bun:test";
 import {
   applyPoolDelta,
   createEntityStatsApi,
-  getPoolStat,
-  seedPoolStats,
-  setPoolStat,
-  type PoolStatMap,
+  getStatValue,
+  seedStatValues,
+  setStatValue,
+  type StatValueMap,
 } from "@jgengine/core/scene/entityStats";
 
 describe("pool stats", () => {
-  test("seedPoolStats defaults current to max and min to 0", () => {
-    const map = seedPoolStats({ health: { max: 100 }, mana: { max: 50, min: 10 } });
+  test("seedStatValues defaults current to max and min to 0", () => {
+    const map = seedStatValues({ health: { max: 100 }, mana: { max: 50, min: 10 } });
     expect(map["health"]).toEqual({ current: 100, max: 100, min: 0 });
     expect(map["mana"]).toEqual({ current: 50, max: 50, min: 10 });
   });
 
-  test("seedPoolStats honors a declared current and clamps it into [min, max]", () => {
-    const map = seedPoolStats({
+  test("seedStatValues honors a declared current and clamps it into [min, max]", () => {
+    const map = seedStatValues({
       level: { max: 60, min: 1, current: 1 },
       xp: { max: 400, current: 0 },
       overflow: { max: 10, current: 25 },
@@ -28,29 +28,29 @@ describe("pool stats", () => {
     expect(map["underflow"]).toEqual({ current: 2, max: 10, min: 2 });
   });
 
-  test("getPoolStat returns the stat or null", () => {
-    const map = seedPoolStats({ health: { max: 100 } });
-    expect(getPoolStat(map, "health")?.current).toBe(100);
-    expect(getPoolStat(map, "mana")).toBeNull();
+  test("getStatValue returns the stat or null", () => {
+    const map = seedStatValues({ health: { max: 100 } });
+    expect(getStatValue(map, "health")?.current).toBe(100);
+    expect(getStatValue(map, "mana")).toBeNull();
   });
 
-  test("setPoolStat clamps current into [min, max] and leaves the input untouched", () => {
-    const map = seedPoolStats({ health: { max: 100 } });
-    const next = setPoolStat(map, "health", { current: 250 });
+  test("setStatValue clamps current into [min, max] and leaves the input untouched", () => {
+    const map = seedStatValues({ health: { max: 100 } });
+    const next = setStatValue(map, "health", { current: 250 });
     expect(next["health"]).toEqual({ current: 100, max: 100, min: 0 });
     expect(map["health"]?.current).toBe(100);
 
-    const lowered = setPoolStat(next, "health", { max: 40 });
+    const lowered = setStatValue(next, "health", { max: 40 });
     expect(lowered["health"]).toEqual({ current: 40, max: 40, min: 0 });
   });
 
-  test("setPoolStat creates a missing stat from the patch", () => {
-    const next = setPoolStat({}, "xp", { current: 30, max: 120 });
+  test("setStatValue creates a missing stat from the patch", () => {
+    const next = setStatValue({}, "xp", { current: 30, max: 120 });
     expect(next["xp"]).toEqual({ current: 30, max: 120, min: 0 });
   });
 
   test("applyPoolDelta clamps and reports hitMin and hitMax", () => {
-    const map = seedPoolStats({ health: { max: 100 } });
+    const map = seedStatValues({ health: { max: 100 } });
 
     const damaged = applyPoolDelta(map, "health", -30);
     expect(damaged.status).toBe("ok");
@@ -76,7 +76,7 @@ describe("pool stats", () => {
   });
 
   test("bound api reads, writes, and deltas through the resolver", () => {
-    const maps = new Map<string, PoolStatMap>([["mob-1", seedPoolStats({ health: { max: 20 } })]]);
+    const maps = new Map<string, StatValueMap>([["mob-1", seedStatValues({ health: { max: 20 } })]]);
     const api = createEntityStatsApi((instanceId) => maps.get(instanceId));
 
     expect(api.get("mob-1", "health")).toEqual({ current: 20, max: 20, min: 0 });

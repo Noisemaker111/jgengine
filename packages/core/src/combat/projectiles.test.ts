@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createEffectSystem, type CombatSpatialDeps, type ReceiveMap } from "@jgengine/core/combat/effects";
 import { createProjectileSystem } from "@jgengine/core/combat/projectiles";
-import { seedPoolStats, type PoolStatCatalog, type PoolStatMap } from "@jgengine/core/scene/entityStats";
+import { seedStatValues, type StatCatalog, type StatValueMap } from "@jgengine/core/scene/entityStats";
 import { distanceBetween } from "@jgengine/core/scene/spatial";
 
 interface RangeEntity {
-  stats: PoolStatCatalog;
+  stats: StatCatalog;
   receive: ReceiveMap;
   position: [number, number, number];
 }
@@ -23,9 +23,9 @@ const WEAPON_STATS: Record<string, Record<string, number>> = {
 };
 
 function createRange(entities: Record<string, RangeEntity>, losBlocked: string[] = []) {
-  const stats: Record<string, PoolStatMap> = {};
+  const stats: Record<string, StatValueMap> = {};
   for (const [instanceId, entity] of Object.entries(entities)) {
-    stats[instanceId] = seedPoolStats(entity.stats);
+    stats[instanceId] = seedStatValues(entity.stats);
   }
   const spatial: CombatSpatialDeps = {
     inRadius: (center, radius) =>
