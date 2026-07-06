@@ -4,7 +4,7 @@
   "type": "module",
   "workspaces": ["packages/*"],
   "scripts": {
-    "build": "bun run --cwd packages/core build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build",
+    "build": "bun run --cwd packages/core build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build",
     "check-types": "bun run --filter '@jgengine/*' check-types",
     "test": "bun test packages"
   },

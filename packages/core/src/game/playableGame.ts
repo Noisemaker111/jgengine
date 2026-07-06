@@ -32,6 +32,13 @@ export interface GameCameraConfig {
   distanceSmoothing?: number;
 }
 
+export interface EntitySpriteConfig {
+  url: string;
+  width: number;
+  height: number;
+  y: number;
+}
+
 export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
   game: GameDefinition;
   content: GameContextContent;
@@ -39,6 +46,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
   GameUI: TUi;
   /** Optional canvas-layer VFX component (e.g. traveling projectiles). */
   WorldOverlay?: TWorldOverlay;
+  /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
+  entitySprites?: Record<string, EntitySpriteConfig>;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
   hotbarSelection?: () => number;
   /** Third-person orbit camera tuning for the dev game player shell. */

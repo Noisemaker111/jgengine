@@ -1,0 +1,49 @@
+{
+  "name": "@jgengine/shell",
+  "version": "0.1.0",
+  "description": "Game player shell for JGengine: React Three Fiber canvas, orbit camera, input tracking, HUD mounting, GameUiPreview, and a demo game. Consumers supply a GameRegistry.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/shell"
+  },
+  "files": ["dist"],
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@jgengine/core": "^0.1.1",
+    "@jgengine/react": "^0.1.0",
+    "@jgengine/ws": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "react": "^19.0.0",
+    "three": ">=0.170.0",
+    "three-stdlib": "^2.0.0"
+  },
+  "devDependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@types/react": "^19",
+    "@types/three": "^0.182.0",
+    "react": "19.2.3",
+    "three": "^0.182.0",
+    "three-stdlib": "^2.35.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
