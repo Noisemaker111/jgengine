@@ -14,6 +14,7 @@ jobs:
         with:
           bun-version: 1.3.8
       - run: bun install --frozen-lockfile
+      - run: bun run check-artifacts
       - run: bun run build
       - run: bun run check-types
       - run: bun test packages
