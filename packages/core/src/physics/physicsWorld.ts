@@ -56,12 +56,16 @@ export interface AddBodyOptions {
   mass?: number;
   /** Immovable collider: never integrates, never sleeps-out, invMass 0. */
   static?: boolean;
+  /** Gameplay-driven collider: invMass 0 (contacts never move it), position set each frame via
+   * setBodyPose; carries its own velocity so it wakes and shoves the bodies it plows into. */
+  kinematic?: boolean;
   /** Seed the body asleep (a settled bed pays no integration cost until woken). */
   asleep?: boolean;
 }
 
 const FLAG_SLEEPING = 1;
 const FLAG_STATIC = 2;
+const FLAG_KINEMATIC = 4;
 
 /** Grid cell containing a point, clamped into the grid. Pure — exported for tests. */
 export function cellCoord(value: number, min: number, cellSize: number, cells: number): number {
@@ -227,10 +231,12 @@ export class PhysicsWorld {
     this.halfY[i] = options.halfExtents[1];
     this.halfZ[i] = options.halfExtents[2];
     const isStatic = options.static === true;
+    const isKinematic = options.kinematic === true;
     const mass = options.mass ?? 1;
-    this.invMass[i] = isStatic || mass <= 0 ? 0 : 1 / mass;
+    this.invMass[i] = isStatic || isKinematic || mass <= 0 ? 0 : 1 / mass;
     let f = 0;
     if (isStatic) f |= FLAG_STATIC | FLAG_SLEEPING;
+    else if (isKinematic) f |= FLAG_KINEMATIC;
     else if (options.asleep === true) f |= FLAG_SLEEPING;
     this.flags[i] = f;
     this.sleepTimer[i] = 0;
@@ -242,6 +248,63 @@ export class PhysicsWorld {
 
   isSleeping(i: number): boolean {
     return (this.flags[i]! & FLAG_SLEEPING) !== 0;
+  }
+
+  isKinematic(i: number): boolean {
+    return (this.flags[i]! & FLAG_KINEMATIC) !== 0;
+  }
+
+  /**
+   * Drive a body to a new position this frame. Sets an implied velocity from the move so the
+   * body wakes and shoves whatever it plows into — this is how a gameplay entity (player,
+   * platform) interacts with the simulated pile. Call once per frame for kinematic bodies.
+   */
+  setBodyPose(i: number, x: number, y: number, z: number): void {
+    const inv = this.fixedDt > 0 ? 1 / this.fixedDt : 0;
+    this.velX[i] = (x - this.posX[i]!) * inv;
+    this.velY[i] = (y - this.posY[i]!) * inv;
+    this.velZ[i] = (z - this.posZ[i]!) * inv;
+    this.posX[i] = x;
+    this.posY[i] = y;
+    this.posZ[i] = z;
+    this.bodyCell[i] = this.cellOf(i);
+    if ((this.flags[i]! & FLAG_KINEMATIC) === 0) this.wake(i);
+    else this.addAwake(i);
+  }
+
+  /**
+   * Remove a body. The last body is swapped into the freed slot to keep the SoA arrays dense,
+   * so its index changes: the relocated body's previous index is returned (or -1 if the removed
+   * body was already last), letting a caller fix up any body-index → game-object mapping.
+   */
+  removeBody(i: number): number {
+    if (i < 0 || i >= this.bodyCount) return -1;
+    this.removeAwake(i);
+    const last = this.bodyCount - 1;
+    if (i !== last) {
+      this.posX[i] = this.posX[last]!;
+      this.posY[i] = this.posY[last]!;
+      this.posZ[i] = this.posZ[last]!;
+      this.velX[i] = this.velX[last]!;
+      this.velY[i] = this.velY[last]!;
+      this.velZ[i] = this.velZ[last]!;
+      this.halfX[i] = this.halfX[last]!;
+      this.halfY[i] = this.halfY[last]!;
+      this.halfZ[i] = this.halfZ[last]!;
+      this.invMass[i] = this.invMass[last]!;
+      this.flags[i] = this.flags[last]!;
+      this.sleepTimer[i] = this.sleepTimer[last]!;
+      this.prevX[i] = this.prevX[last]!;
+      this.prevY[i] = this.prevY[last]!;
+      this.prevZ[i] = this.prevZ[last]!;
+      this.bodyCell[i] = this.bodyCell[last]!;
+      const slot = this.awakeSlot[last]!;
+      if (slot >= 0) this.awakeList[slot] = i;
+      this.awakeSlot[i] = slot;
+    }
+    this.awakeSlot[last] = -1;
+    this.bodyCount -= 1;
+    return i !== last ? last : -1;
   }
 
   wake(i: number): void {
@@ -306,6 +369,9 @@ export class PhysicsWorld {
       this.prevX[i] = this.posX[i]!;
       this.prevY[i] = this.posY[i]!;
       this.prevZ[i] = this.posZ[i]!;
+      // Kinematic bodies are driven by setBodyPose; keep their externally-set position and
+      // velocity so they plow through the sim without gravity moving them.
+      if ((this.flags[i]! & FLAG_KINEMATIC) !== 0) continue;
       this.velY[i]! += gdt;
       if (damp !== 1) {
         this.velX[i]! *= damp;
@@ -320,7 +386,10 @@ export class PhysicsWorld {
     this.buildGrid();
     const iterations = this.solverIterations;
     for (let it = 0; it < iterations; it += 1) this.solve(it === 0, it === iterations - 1);
-    for (let a = 0; a < this.awakeCount; a += 1) this.constrainBounds(this.awakeList[a]!);
+    for (let a = 0; a < this.awakeCount; a += 1) {
+      const i = this.awakeList[a]!;
+      if ((this.flags[i]! & FLAG_KINEMATIC) === 0) this.constrainBounds(i);
+    }
     this.updateSleep();
   }
 
@@ -524,6 +593,10 @@ export class PhysicsWorld {
     let a = 0;
     while (a < this.awakeCount) {
       const i = this.awakeList[a]!;
+      if ((this.flags[i]! & FLAG_KINEMATIC) !== 0) {
+        a += 1;
+        continue;
+      }
       const dx = this.posX[i]! - this.prevX[i]!;
       const dy = this.posY[i]! - this.prevY[i]!;
       const dz = this.posZ[i]! - this.prevZ[i]!;

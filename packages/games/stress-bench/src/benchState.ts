@@ -7,10 +7,13 @@ import { mulberry32, type BenchParams } from "./params";
 const SMALL_HALF = 0.5;
 const LARGE_HALF = 1.0;
 const CHAOS_HALF = 0.6;
+const PLOW_HALF = 1.6;
+const BOULDER_HALF = 0.9;
 const SPACING = 1.02;
 const BED_COLOR: readonly [number, number, number] = [0.56, 0.58, 0.62];
 const LARGE_COLOR: readonly [number, number, number] = [0.5, 0.55, 0.64];
 const CHAOS_COLOR: readonly [number, number, number] = [0.96, 0.5, 0.16];
+const PLOW_COLOR: readonly [number, number, number] = [0.2, 0.85, 0.95];
 
 export interface BenchStats {
   fps: number;
@@ -50,6 +53,15 @@ export interface BenchWorld {
   baseColors: Float32Array;
   chaosStart: number;
   chaosCount: number;
+  /** Kinematic body driven by the player each frame — the plow that shoves the pile. */
+  plow: number;
+  plowHalf: number;
+  /** Dynamic bodies mirrored onto real scene entities (rendered through the model path). */
+  boulderStart: number;
+  boulderCount: number;
+  boulderHalf: number;
+  /** Bodies handed to the instanced renderer; the trailing boulders render as entities instead. */
+  instancedCount: number;
   params: BenchParams;
 }
 
@@ -76,7 +88,7 @@ function setColor(colors: Float32Array, index: number, rgb: readonly [number, nu
 
 export function buildBenchWorld(params: BenchParams): BenchWorld {
   const { bounds, side, footprint, bedTop } = boundsFor(params);
-  const capacity = params.small + params.large + params.chaos;
+  const capacity = params.small + params.large + params.chaos + 1 + params.boulders;
   const world = new PhysicsWorld({
     capacity,
     bounds,
@@ -133,7 +145,42 @@ export function buildBenchWorld(params: BenchParams): BenchWorld {
     setColor(baseColors, index, CHAOS_COLOR);
   }
 
-  return { world, bounds, baseColors, chaosStart, chaosCount: params.chaos, params };
+  const instancedCount = world.count;
+  const plow = world.addBody({
+    position: [0, PLOW_HALF, -(bounds.max[2] as number) + PLOW_HALF + 1],
+    halfExtents: [PLOW_HALF, PLOW_HALF, PLOW_HALF],
+    kinematic: true,
+  });
+  setColor(baseColors, plow, PLOW_COLOR);
+
+  const boulderStart = world.count;
+  const boulderSpan = bounds.max[0] - 4;
+  for (let k = 0; k < params.boulders; k += 1) {
+    world.addBody({
+      position: [
+        (rng() - 0.5) * boulderSpan,
+        bedTop + BOULDER_HALF + 4 + k * 2.2,
+        (rng() - 0.5) * boulderSpan,
+      ],
+      halfExtents: [BOULDER_HALF, BOULDER_HALF, BOULDER_HALF],
+      mass: 4,
+    });
+  }
+
+  return {
+    world,
+    bounds,
+    baseColors,
+    chaosStart,
+    chaosCount: params.chaos,
+    plow,
+    plowHalf: PLOW_HALF,
+    boulderStart,
+    boulderCount: params.boulders,
+    boulderHalf: BOULDER_HALF,
+    instancedCount: instancedCount + 1,
+    params,
+  };
 }
 
 export function rekickChaos(state: BenchWorld): void {

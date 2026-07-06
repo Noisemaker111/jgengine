@@ -64,7 +64,13 @@ export function BenchWorldOverlay() {
   return (
     <>
       <BoxWireframe bounds={world.bounds} />
-      <InstancedBodies world={world.world} debugTint={tint} baseColors={world.baseColors} epoch={epoch} />
+      <InstancedBodies
+        world={world.world}
+        count={world.instancedCount}
+        debugTint={tint}
+        baseColors={world.baseColors}
+        epoch={epoch}
+      />
       <BenchProbe />
     </>
   );

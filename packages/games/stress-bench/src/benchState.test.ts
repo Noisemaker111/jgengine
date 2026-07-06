@@ -19,14 +19,25 @@ describe("resolveParams", () => {
 });
 
 describe("buildBenchWorld", () => {
-  const params = { small: 800, large: 10, chaos: 4, layers: 2, seed: 7, gravity: -20, cellSize: 1 };
+  const params = { small: 800, large: 10, chaos: 4, boulders: 6, layers: 2, seed: 7, gravity: -20, cellSize: 1 };
+  const total = params.small + params.large + params.chaos + 1 + params.boulders;
 
   test("populates every requested body with capacity to match", () => {
     const state = buildBenchWorld(params);
-    expect(state.world.count).toBe(params.small + params.large + params.chaos);
+    expect(state.world.count).toBe(total);
     expect(state.world.capacity).toBe(state.world.count);
     expect(state.chaosCount).toBe(params.chaos);
+    expect(state.boulderCount).toBe(params.boulders);
     expect(state.baseColors.length).toBe(state.world.capacity * 3);
+  });
+
+  test("the plow is a kinematic collider and the boulders are dynamic", () => {
+    const state = buildBenchWorld(params);
+    expect(state.world.isKinematic(state.plow)).toBe(true);
+    expect(state.instancedCount).toBe(params.small + params.large + params.chaos + 1);
+    for (let k = 0; k < state.boulderCount; k += 1) {
+      expect(state.world.isKinematic(state.boulderStart + k)).toBe(false);
+    }
   });
 
   test("the bed starts asleep and the chaos cubes start awake", () => {

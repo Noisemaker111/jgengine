@@ -145,6 +145,66 @@ describe("determinism", () => {
   });
 });
 
+describe("removeBody", () => {
+  test("swap-removes to keep storage dense and reports the relocated index", () => {
+    const w = world();
+    w.addBody({ position: [1, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    w.addBody({ position: [2, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    const lastId = w.addBody({ position: [3, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    expect(w.count).toBe(3);
+    const moved = w.removeBody(0);
+    expect(moved).toBe(lastId);
+    expect(w.count).toBe(2);
+    // The last body's data now lives in slot 0.
+    expect(w.posX[0]!).toBe(3);
+  });
+
+  test("removing the last body needs no relocation", () => {
+    const w = world();
+    w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    const last = w.addBody({ position: [1, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    expect(w.removeBody(last)).toBe(-1);
+    expect(w.count).toBe(1);
+  });
+
+  test("the surviving bodies keep simulating after a removal", () => {
+    const w = world();
+    w.addBody({ position: [0, 8, 0], halfExtents: [0.5, 0.5, 0.5] });
+    w.addBody({ position: [4, 8, 0], halfExtents: [0.5, 0.5, 0.5] });
+    w.removeBody(0);
+    frames(w, 300);
+    expect(w.count).toBe(1);
+    expect(w.posY[0]!).toBeCloseTo(0.5, 1);
+  });
+});
+
+describe("kinematic bodies", () => {
+  test("a kinematic body ignores gravity and holds its driven position", () => {
+    const w = world();
+    const k = w.addBody({ position: [0, 6, 0], halfExtents: [0.5, 0.5, 0.5], kinematic: true });
+    frames(w, 120);
+    expect(w.posY[k]!).toBe(6);
+    expect(w.isKinematic(k)).toBe(true);
+    expect(w.isSleeping(k)).toBe(false);
+  });
+
+  test("driving a kinematic body wakes and shoves a resting dynamic body", () => {
+    const w = world({ sleepThresholdSteps: 10 });
+    const ball = w.addBody({ position: [0, 0.5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    frames(w, 200);
+    expect(w.isSleeping(ball)).toBe(true);
+    const sled = w.addBody({ position: [-4, 0.5, 0], halfExtents: [0.5, 0.5, 0.5], kinematic: true });
+    // Drive the sled rightward into the sleeping ball.
+    for (let step = 0; step < 60; step += 1) {
+      w.setBodyPose(sled, -4 + step * 0.1, 0.5, 0);
+      w.step(1 / 60);
+    }
+    expect(w.isSleeping(ball)).toBe(false);
+    // The ball was pushed to the right of where it rested.
+    expect(w.posX[ball]!).toBeGreaterThan(0.2);
+  });
+});
+
 describe("counters", () => {
   test("stats report counts and a non-negative step time", () => {
     const w = world();

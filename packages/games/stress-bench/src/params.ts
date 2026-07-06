@@ -5,6 +5,8 @@ export interface BenchParams {
   large: number;
   /** Orange chaos cubes kicked into the bed at high speed. */
   chaos: number;
+  /** Physics-driven boulder entities rendered through the engine's per-entity model path. */
+  boulders: number;
   /** Bed layer count (stack depth of the small-cube bed). */
   layers: number;
   seed: number;
@@ -16,6 +18,7 @@ export const DEFAULT_PARAMS: BenchParams = {
   small: 100000,
   large: 40,
   chaos: 8,
+  boulders: 6,
   layers: 3,
   seed: 1337,
   gravity: -22,
@@ -42,6 +45,7 @@ export function resolveParams(search: string): BenchParams {
     small: readInt(params, "small", DEFAULT_PARAMS.small),
     large: readInt(params, "large", DEFAULT_PARAMS.large),
     chaos: readInt(params, "chaos", DEFAULT_PARAMS.chaos),
+    boulders: readInt(params, "boulders", DEFAULT_PARAMS.boulders),
     layers: Math.max(1, readInt(params, "layers", DEFAULT_PARAMS.layers)),
     seed: readInt(params, "seed", DEFAULT_PARAMS.seed),
     gravity: readFloat(params, "gravity", DEFAULT_PARAMS.gravity),
