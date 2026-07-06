@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  cameraLookPitch,
   DEFAULT_ORBIT_CAMERA,
   distanceBetween,
   orbitFollowStep,
@@ -18,6 +19,24 @@ describe("orbitYawFromCamera", () => {
 
   test("camera west of target yields forward +X", () => {
     expect(orbitYawFromCamera(-10, 0, 0, 0)).toBeCloseTo(Math.PI / 2);
+  });
+});
+
+describe("cameraLookPitch", () => {
+  test("level camera aims flat", () => {
+    expect(cameraLookPitch({ x: 0, y: 2, z: -10 }, { x: 0, y: 2, z: 0 })).toBeCloseTo(0);
+  });
+
+  test("camera above target aims down (negative)", () => {
+    expect(cameraLookPitch({ x: 0, y: 10, z: -10 }, { x: 0, y: 0, z: 0 })).toBeCloseTo(-Math.PI / 4);
+  });
+
+  test("camera below target aims up (positive)", () => {
+    expect(cameraLookPitch({ x: 0, y: 0, z: -10 }, { x: 0, y: 10, z: 0 })).toBeCloseTo(Math.PI / 4);
+  });
+
+  test("top-down camera aims straight down", () => {
+    expect(cameraLookPitch({ x: 0, y: 20, z: 0 }, { x: 0, y: 0, z: 0 })).toBeCloseTo(-Math.PI / 2);
   });
 });
 

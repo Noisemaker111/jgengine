@@ -7,6 +7,7 @@ import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
 import {
+  cameraLookPitch,
   ORBIT_CAMERA_FRAME_PRIORITY,
   orbitFollowStep,
   orbitYawFromCamera,
@@ -23,6 +24,8 @@ export type CameraFollowListener = (state: CameraFollowState) => void;
 
 export interface GameOrbitCameraProps {
   yawRef: MutableRefObject<number>;
+  /** Written each frame with the camera's look elevation (radians) for aim.pitch. */
+  pitchRef?: MutableRefObject<number>;
   config?: Partial<OrbitCameraConfig>;
   followEntityId?: string;
   /** Override orbit target derived from the followed entity. */
@@ -33,6 +36,7 @@ export interface GameOrbitCameraProps {
 
 export function GameOrbitCamera({
   yawRef,
+  pitchRef,
   config: configPatch,
   followEntityId,
   resolveFollowTarget,
@@ -99,6 +103,12 @@ export function GameOrbitCamera({
 
     const [px, , pz] = entity.position;
     yawRef.current = orbitYawFromCamera(camera.position.x, camera.position.z, px, pz);
+    if (pitchRef !== undefined) {
+      pitchRef.current = cameraLookPitch(
+        { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+        stepped.target,
+      );
+    }
     onCameraFollow?.({
       entityId: followId,
       target: stepped.target,
@@ -119,8 +129,8 @@ export function GameOrbitCamera({
       enableZoom
       minDistance={config.minDistance}
       maxDistance={config.maxDistance}
-      maxPolarAngle={Math.PI / 2.05}
-      minPolarAngle={0.12}
+      maxPolarAngle={config.maxPolarAngle}
+      minPolarAngle={config.minPolarAngle}
       screenSpacePanning={false}
       mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: undefined }}
       onStart={() => {
