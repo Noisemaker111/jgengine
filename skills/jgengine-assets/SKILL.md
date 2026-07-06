@@ -1,14 +1,9 @@
 ---
 name: jgengine-assets
 description: >
-  Where to get real, license-safe 3D models, textures, sprites, and audio for JGengine
-  games, and how to wire them in. USE THIS in every game-building pass, at blueprint
-  time — before placing a single primitive placeholder. A shipped game never renders
-  default-material cubes, capsules, or a flat grid floor. Covers CC0 sources (Kenney,
-  Quaternius, KayKit, Poly Haven, ambientCG), license rules, style consistency,
-  assets.ts / entitySprites wiring, and the placeholder policy.
-  Triggers: jgengine, assets, 3d models, textures, sprites, sound effects, CC0,
-  placeholder art, art direction.
+  Real, license-safe 3D models, textures, sprites, and audio for JGengine games — CC0 sources (Kenney, Quaternius, KayKit, Poly Haven), wiring conventions, and the zero-placeholder policy.
+  USE AT BLUEPRINT TIME before placing any primitive.
+  Triggers: jgengine, assets, 3D models, textures, sprites, sound effects, CC0, placeholder art.
 ---
 
 # JGengine — Real assets from day one

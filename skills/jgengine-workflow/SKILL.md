@@ -1,14 +1,9 @@
 ---
 name: jgengine-workflow
 description: >
-  Workflow for building a game on JGengine (@jgengine packages) to completion. USE THIS
-  when the user asks to make/build any game with jgengine ("make bloons tower defense
-  with jgengine", "build an MMO on jgengine"). First response = the master blueprint
-  (full-scale system list, content budgets, asset plan, phase plan); then execute phase
-  by phase until the whole idea is implemented. No half systems, no demo versions, no
-  cut-down slices — content at fantasy scale (hundreds of items, not four), real assets,
-  dressed worlds. Triggers: jgengine, make a game, build a game, new game,
-  jgengine-workflow.
+  End-to-end game build workflow for JGengine — master blueprint, content budgets, asset plan, phased execution to completion.
+  USE WHEN asked to make/build any game with jgengine.
+  Triggers: jgengine, make a game, build a game, new game, jgengine-workflow.
 ---
 
 # JGengine — Blueprint the whole game, build it in phases

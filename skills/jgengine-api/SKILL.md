@@ -1,18 +1,9 @@
 ---
 name: jgengine-api
 description: >
-  API reference for JGengine, the genre-agnostic TypeScript game engine
-  (npm @jgengine/core, react, shell, ws, node, sql, convex). USE THIS whenever the
-  user wants to build, extend, or debug a game with JGengine — including requests like
-  "make <any game> with jgengine". Covers install + project setup, defineGame,
-  PlayableGame, GameContext, scene.object, scene.entity, entity.stats, targeting,
-  inventory, commands, lootTable, game.loot, game.trade, item.use, item.weapon,
-  game.events, game.feed, game.quest, game.social, game.leaderboard, effects,
-  projectiles, onDeath, applyLoadout, proximityPrompt, pose/aim, world features,
-  the GameBackend seam, and game/ folder conventions.
-  Triggers: jgengine, JGengine, @jgengine, defineGame, GameContext, PlayableGame,
-  GamePlayerShell, scene.entity, game.quest, lootTable, item.use, fireProjectile,
-  entity.died, GameBackend, build a game on JGengine, make a game with jgengine.
+  JGengine API reference — install, setup, defineGame, GameContext, scene/entity/inventory/combat/quest/economy systems, and game/ folder conventions.
+  USE WHEN building, extending, or debugging any JGengine game.
+  Triggers: jgengine, defineGame, GameContext, PlayableGame, scene.entity, lootTable, item.use, fireProjectile, GameBackend.
 ---
 
 # JGengine — API Reference

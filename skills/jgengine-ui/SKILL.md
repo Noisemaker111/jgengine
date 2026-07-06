@@ -1,12 +1,9 @@
 ---
 name: jgengine-ui
 description: >
-  Game UI/UX quality bar for games built on JGengine (@jgengine packages). NOT generic
-  card wrappers. USE THIS before writing any HUD, hotbar, modal, or combat feedback for
-  a JGengine game. Covers frameless HUD, modal panels (backpack/log only), keybind-native
-  UX, ability slot states (cooldown, mana, activation), world VFX vs instant effects,
-  orbit camera tuning, and layout rules in GameUI.tsx. Triggers: jgengine, game UI, HUD,
-  hotbar, keybind, modal, character sheet, spellbook, cooldown, MMO UX, jgengine-ui.
+  JGengine UI/UX quality bar — HUD, hotbar, modals, keybind-native UX, cooldown states, orbit camera, world VFX, layout rules.
+  USE WHEN writing any game HUD or combat feedback.
+  Triggers: jgengine, game UI, HUD, hotbar, keybind, modal, cooldown, spellbook, MMO UX.
 ---
 
 # JGengine — Game UI/UX
