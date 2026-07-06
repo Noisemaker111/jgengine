@@ -5,8 +5,8 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 ## Stack
 
 - Package manager: bun (workspaces: `packages/*`, `packages/games/*`, `apps/*`, `examples/*`).
-- Each published package builds with `tsc -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist`; root `bun run build` runs them in dependency order (core → ws → sql → react → convex → node → shell).
-- TypeScript strict everywhere; `check-types` is `tsc --noEmit` per package, fanned out by root `bun run check-types`.
+- Each published package builds with `tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist`; root `bun run build` runs them in dependency order (core → ws → sql → react → convex → node → shell → assets). The compiler is `tsgo` (`@typescript/native-preview`), not `tsc`.
+- TypeScript strict everywhere; `check-types` is `tsgo --noEmit` per package, fanned out by root `bun run check-types` (which also runs `check-artifacts` — no compiled `.js`/`.d.ts` may sit in `packages/*/src`).
 
 ## Layering
 
@@ -14,7 +14,7 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 
 ## Layout
 
-- `packages/{core,ws,sql,react,convex,node,shell}` — the seven published `@jgengine/*` packages. Exports map to `dist/*`; consumers import by path (`@jgengine/core/runtime/gameRuntime`).
+- `packages/{core,ws,sql,react,convex,node,shell,assets}` — the eight published `@jgengine/*` packages. Exports map to `dist/*`; consumers import by path (`@jgengine/core/runtime/gameRuntime`). `assets` is a self-generating, license-verified index of CC0 3D models (ships the typed index + pull CLI, not the GLB bytes).
 - `packages/games/*` — example games (`@dogfood/<name>`, private, source-consumed via `./src` exports, no build). Build a new game from the skills in `skills/`, not by copying one of these.
 - `apps/dev` — the Vite game runner and screenshot target. Loads a game by `?game=<id>&mode=play|ui`; `mode=ui` mounts `GameUiPreview` over a staged GameContext. Registry in `apps/dev/src/main.tsx`. Vite aliases + tsconfig paths resolve `@jgengine/*` to sibling `src/`, so no build needed to run it.
 - `apps/desktop` — Tauri v2 wrapper around the same shell (same aliases, port 1420).
@@ -24,14 +24,14 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 
 ## Verification
 
-- `bun run build` — all seven packages compile to dist.
+- `bun run build` — all eight packages compile to dist.
 - `bun run check-types` — every workspace package with the script.
 - `bun test packages` — engine + game tests.
 - After changing any game UI/HUD: `bun run shoot <gameId> --mode ui` writes a PNG to `shots/` — open and look at it; type-green says nothing about whether the HUD renders. `--mode play` screenshots the full shell. Game HUD Tailwind classes only generate because `apps/dev/src/index.css` has `@source` entries for `packages/games`, `packages/react`, `packages/shell` — silently-unstyled UI means a missing `@source`.
 
 ## Publishing
 
-Automated via `.github/workflows/publish.yml`: every push to `main` that changes `packages/*/package.json`, `packages/*/src/**`, or the workflow itself triggers build → check-types → test, then publishes each `@jgengine/*` package whose version is not yet on npm, in dependency order (core → ws → sql → react → convex → node → shell), using `npm publish --access public`. Auth is via the `NPM_TOKEN` repository secret. Already-published versions are skipped so non-release pushes no-op.
+Automated via `.github/workflows/publish.yml`: every push to `main` that changes `packages/*/package.json`, `packages/*/src/**`, or the workflow itself triggers build → check-types → test, then publishes each `@jgengine/*` package whose version is not yet on npm, in dependency order (core → ws → sql → react → convex → node → shell → assets), using `npm publish --access public`. Auth is via the `NPM_TOKEN` repository secret. Already-published versions are skipped so non-release pushes no-op.
 
 ## Delegation
 
