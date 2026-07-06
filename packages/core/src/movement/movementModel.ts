@@ -113,7 +113,10 @@ export interface PlayerMotionState {
   horizontalVelocityX: number;
   horizontalVelocityZ: number;
   verticalVelocity: number;
+  /** Height of the avatar's feet above the ground directly beneath it. */
   jumpOffset: number;
+  /** Terrain height under the avatar last frame; drives ledge falls and ramp step-up. */
+  groundHeight: number;
   grounded: boolean;
   jumpHeld: boolean;
 }
@@ -124,6 +127,7 @@ export function createPlayerMotionState(): PlayerMotionState {
     horizontalVelocityZ: 0,
     verticalVelocity: 0,
     jumpOffset: 0,
+    groundHeight: 0,
     grounded: true,
     jumpHeld: false,
   };
@@ -152,6 +156,7 @@ export function advancePlayerMotion(
   forwardZ: number,
   baseSpeed: number,
   rawDeltaSeconds: number,
+  groundHeight = 0,
 ): MovementFrameStep {
   const deltaSeconds = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
   const targetSpeed = resolveTargetSpeed(intent, baseSpeed);
@@ -197,6 +202,15 @@ export function advancePlayerMotion(
     const friction = Math.exp(-MOVEMENT_TUNING.groundFriction * deltaSeconds);
     motion.horizontalVelocityX *= friction;
     motion.horizontalVelocityZ *= friction;
+  }
+
+  const groundDrop = motion.groundHeight - groundHeight;
+  motion.groundHeight = groundHeight;
+  if (groundDrop > 0) {
+    motion.jumpOffset += groundDrop;
+    motion.grounded = false;
+  } else if (groundDrop < 0) {
+    motion.jumpOffset = Math.max(0, motion.jumpOffset + groundDrop);
   }
 
   const jumpPressed = intent.jumping;

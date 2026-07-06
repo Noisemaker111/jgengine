@@ -28,21 +28,27 @@ describe("terrain", () => {
   test("arena is flat at spawn, rises to a plateau, and grounds a hill", () => {
     const field = arenaField();
     expect(Math.abs(field.sampleHeight(0, 0))).toBeLessThan(0.01);
-    expect(Math.abs(field.sampleHeight(6, 4))).toBeLessThan(0.01);
-    expect(field.sampleHeight(55, 0)).toBeGreaterThan(4);
-    expect(field.sampleHeight(-34, 30)).toBeGreaterThan(3);
+    expect(Math.abs(field.sampleHeight(4, 6))).toBeLessThan(0.01);
+    expect(field.sampleHeight(0, 55)).toBeGreaterThan(4);
+    expect(field.sampleHeight(34, -8)).toBeGreaterThan(3);
+  });
+
+  test("arena carves a water basin below the water level", () => {
+    const field = arenaField();
+    expect(field.waterLevel).toBeLessThan(0);
+    expect(field.sampleHeight(-40, -20)).toBeLessThan(field.waterLevel!);
   });
 
   test("arena path is walkable-gentle while the flank is a cliff", () => {
     const field = arenaField();
-    const pathRise = field.sampleHeight(30, 0) - field.sampleHeight(24, 0);
-    const cliffRise = field.sampleHeight(27, 16) - field.sampleHeight(21, 16);
+    const pathRise = field.sampleHeight(0, 30) - field.sampleHeight(0, 24);
+    const cliffRise = field.sampleHeight(16, 27) - field.sampleHeight(16, 21);
     expect(cliffRise).toBeGreaterThan(pathRise);
   });
 
   test("normals are unit length", () => {
     const field = arenaField();
-    const [nx, ny, nz] = field.sampleNormal(24, 3);
+    const [nx, ny, nz] = field.sampleNormal(3, 24);
     expect(Math.abs(Math.hypot(nx, ny, nz) - 1)).toBeLessThan(1e-6);
   });
 
@@ -51,7 +57,7 @@ describe("terrain", () => {
     expect(terrainFieldFor(undefined).sampleHeight(20, 20)).toBe(
       rollingField().sampleHeight(20, 20),
     );
-    expect(terrainFieldFor(arena()).sampleHeight(55, 0)).toBeGreaterThan(4);
+    expect(terrainFieldFor(arena()).sampleHeight(0, 55)).toBeGreaterThan(4);
     expect(
       terrainFieldFor(heightfield({ amplitude: 12, frequency: 0.02, seed: "x" })).sampleHeight(40, 40),
     ).toBe(

@@ -243,6 +243,62 @@ function GroundPlane({ field }: { field: TerrainField }) {
   );
 }
 
+interface ArenaStructure {
+  id: string;
+  x: number;
+  z: number;
+  width: number;
+  depth: number;
+  height: number;
+  color: string;
+}
+
+const ARENA_STRUCTURES: readonly ArenaStructure[] = [
+  { id: "spawn-hut", x: -9, z: -11, width: 4, depth: 4, height: 3, color: "#b9a37a" },
+  { id: "gate-post-a", x: 7, z: 15, width: 1.2, depth: 1.2, height: 4, color: "#8a8f98" },
+  { id: "gate-post-b", x: -7, z: 15, width: 1.2, depth: 1.2, height: 4, color: "#8a8f98" },
+  { id: "ramp-shed", x: 9, z: 33, width: 3.5, depth: 5, height: 2.6, color: "#a68b63" },
+  { id: "plateau-keep", x: -6, z: 52, width: 7, depth: 7, height: 6, color: "#9aa0a8" },
+  { id: "plateau-tower", x: 12, z: 60, width: 3, depth: 3, height: 9, color: "#767c85" },
+];
+
+function ArenaStructures({ field }: { field: TerrainField }) {
+  return (
+    <>
+      {ARENA_STRUCTURES.map((structure) => {
+        const groundY = field.sampleHeight(structure.x, structure.z);
+        return (
+          <group key={structure.id} position={[structure.x, groundY, structure.z]}>
+            <mesh position-y={structure.height / 2} castShadow receiveShadow>
+              <boxGeometry args={[structure.width, structure.height, structure.depth]} />
+              <meshStandardMaterial color={structure.color} roughness={0.85} />
+            </mesh>
+            <mesh position-y={structure.height + 0.18}>
+              <boxGeometry args={[structure.width + 0.5, 0.36, structure.depth + 0.5]} />
+              <meshStandardMaterial color="#5b4a3a" roughness={0.9} />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
+function WaterPlane({ level }: { level: number }) {
+  return (
+    <mesh rotation-x={-Math.PI / 2} position-y={level}>
+      <planeGeometry args={[GROUND_SIZE, GROUND_SIZE]} />
+      <meshStandardMaterial
+        color="#2f6f86"
+        transparent
+        opacity={0.72}
+        roughness={0.25}
+        metalness={0.1}
+      />
+    </mesh>
+  );
+}
+
 function RockField({ field }: { field: TerrainField }) {
   const rocks = useMemo(
     () =>
@@ -284,6 +340,7 @@ function WorldView({
   assets,
   field,
   showGrid,
+  showStructures,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
@@ -291,6 +348,7 @@ function WorldView({
   assets: AssetCatalog;
   field: TerrainField;
   showGrid: boolean;
+  showStructures: boolean;
 }) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
@@ -304,8 +362,10 @@ function WorldView({
   return (
     <>
       <GroundPlane field={field} />
+      {field.waterLevel !== undefined ? <WaterPlane level={field.waterLevel} /> : null}
       {showGrid ? <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} /> : null}
       <RockField field={field} />
+      {showStructures ? <ArenaStructures field={field} /> : null}
       {entities.map((entity) => (
         <EntityMarker
           key={entity.id}
@@ -384,6 +444,7 @@ function FrameDriver({
   onRuntimeError,
   multiplayer,
   serverIdRef,
+  field,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
@@ -394,6 +455,7 @@ function FrameDriver({
   onRuntimeError: (error: unknown, phase: string) => void;
   multiplayer: ShellMultiplayer | null;
   serverIdRef: { current: string | null };
+  field: TerrainField;
 }) {
   const motionRef = useRef(createPlayerMotionState());
   const hasReportedTickError = useRef(false);
@@ -427,6 +489,7 @@ function FrameDriver({
         forwardZ,
         player.movement.walkSpeed ?? 2,
         rawDt,
+        field.sampleHeight(player.position[0], player.position[2]),
       );
       ctx.scene.entity.setPose(playerId, {
         position: [player.position[0] + step.stepX, motion.jumpOffset, player.position[2] + step.stepZ],
@@ -575,6 +638,7 @@ export function GamePlayerShell({
   const field = useMemo(() => terrainFieldFor(playable.game.world), [playable]);
   const groundHeightAt = useMemo(() => (x: number, z: number) => field.sampleHeight(x, z), [field]);
   const showGrid = playable.game.world?.kind === "flat";
+  const showStructures = playable.game.world?.kind === "arena";
   const userId = multiplayer?.userId ?? DEV_USER_ID;
   const reportRuntimeError = (error: unknown, phase: string) => {
     const diagnostic = logRuntimeError(error, phase);
@@ -737,6 +801,7 @@ export function GamePlayerShell({
             assets={playable.game.assets}
             field={field}
             showGrid={showGrid}
+            showStructures={showStructures}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
@@ -775,6 +840,7 @@ export function GamePlayerShell({
           onRuntimeError={reportRuntimeError}
           multiplayer={multiplayer}
           serverIdRef={serverIdRef}
+          field={field}
         />
       </Canvas>
       <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>

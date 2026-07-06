@@ -170,6 +170,8 @@ export function rollingField(config: RollingWorldConfig = {}): TerrainField {
 
 const ARENA_PLATEAU_HEIGHT = 6;
 const ARENA_HILL_HEIGHT = 4.2;
+const ARENA_BASIN_DEPTH = 2.6;
+export const ARENA_WATER_LEVEL = -0.9;
 
 export function arenaField(config: ArenaWorldConfig = {}): TerrainField {
   const seed = seedFrom(config.seed ?? "arena", 7);
@@ -186,19 +188,22 @@ export function arenaField(config: ArenaWorldConfig = {}): TerrainField {
     const spawn = 1 - smoothstep(14, 24, distToSpawn);
     const undulation = 0.55 * fractalNoise(x, z, rolling);
 
-    const cliff = smoothstep(20, 27, x);
-    const ramp = smoothstep(16, 46, x);
-    const inRamp = 1 - clamp01(Math.abs(z) / 6);
-    const plateauExtent = 1 - smoothstep(30, 42, Math.abs(z));
+    const cliff = smoothstep(20, 27, z);
+    const ramp = smoothstep(16, 46, z);
+    const inRamp = 1 - clamp01(Math.abs(x) / 6);
+    const plateauExtent = 1 - smoothstep(30, 42, Math.abs(x));
     const mesa = ARENA_PLATEAU_HEIGHT * plateauExtent * lerp(cliff, ramp, inRamp);
 
-    const hillDist = Math.hypot(x + 34, z - 30) / 18;
+    const hillDist = Math.hypot(x - 34, z + 8) / 18;
     const hillFalloff = smoothstep(0, 1, 1 - hillDist);
     const hill = ARENA_HILL_HEIGHT * hillFalloff;
 
-    return (undulation + mesa + hill) * (1 - spawn);
+    const basinDist = Math.hypot(x + 40, z + 20) / 20;
+    const basin = -ARENA_BASIN_DEPTH * smoothstep(0, 1, 1 - basinDist);
+
+    return (undulation + mesa + hill + basin) * (1 - spawn);
   };
-  return fieldFromHeight(sampleHeight, { bounds: config.bounds });
+  return fieldFromHeight(sampleHeight, { bounds: config.bounds, waterLevel: ARENA_WATER_LEVEL });
 }
 
 export function heightfieldField(config: HeightfieldWorldConfig): TerrainField {
