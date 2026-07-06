@@ -15,6 +15,7 @@ export interface GameFirstPersonCameraProps {
   pitchRef: MutableRefObject<number>;
   config?: FirstPersonCameraConfig;
   followEntityId?: string;
+  groundHeightAt?: (x: number, z: number) => number;
 }
 
 export function GameFirstPersonCamera({
@@ -22,6 +23,7 @@ export function GameFirstPersonCamera({
   pitchRef,
   config,
   followEntityId,
+  groundHeightAt,
 }: GameFirstPersonCameraProps) {
   const eyeHeight = config?.eyeHeight ?? DEFAULT_EYE_HEIGHT;
   const sensitivity = config?.sensitivity ?? DEFAULT_SENSITIVITY;
@@ -56,7 +58,8 @@ export function GameFirstPersonCamera({
     const entity = ctx.scene.entity.get(followId);
     if (entity === null) return;
     const cosPitch = Math.cos(pitchRef.current);
-    camera.position.set(entity.position[0], entity.position[1] + eyeHeight, entity.position[2]);
+    const groundY = groundHeightAt?.(entity.position[0], entity.position[2]) ?? 0;
+    camera.position.set(entity.position[0], entity.position[1] + groundY + eyeHeight, entity.position[2]);
     camera.lookAt(
       camera.position.x + Math.sin(yawRef.current) * cosPitch,
       camera.position.y + Math.sin(pitchRef.current),

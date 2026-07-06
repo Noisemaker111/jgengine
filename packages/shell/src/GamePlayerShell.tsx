@@ -18,6 +18,7 @@ import {
   resolveMovementIntent,
 } from "@jgengine/core/movement/movementModel";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { terrainFieldFor, type TerrainField } from "@jgengine/core/world/terrain";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
@@ -36,8 +37,8 @@ import type { PlayableGame } from "./registry";
 const DEV_USER_ID = "dev-player";
 const TURN_SPEED = 2.4;
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
-const GROUND_SIZE = 160;
-const GROUND_SEGMENTS = 80;
+const GROUND_SIZE = 200;
+const GROUND_SEGMENTS = 200;
 
 interface RuntimeDiagnostic {
   id: number;
@@ -150,6 +151,7 @@ function EntityMarker({
   isLocal,
   targeted,
   onSelect,
+  field,
 }: {
   entity: SceneEntity;
   model: ModelConfig | undefined;
@@ -157,11 +159,16 @@ function EntityMarker({
   isLocal: boolean;
   targeted: boolean;
   onSelect: (entity: SceneEntity) => void;
+  field: TerrainField;
 }) {
   const color = isLocal ? "#4ade80" : entity.role === "npc" ? colorFromId(entity.name) : "#9ca3af";
   return (
     <group
-      position={[entity.position[0], entity.position[1], entity.position[2]]}
+      position={[
+        entity.position[0],
+        entity.position[1] + field.sampleHeight(entity.position[0], entity.position[2]),
+        entity.position[2],
+      ]}
       rotation-y={entity.rotationY}
       onPointerDown={(event) => {
         event.stopPropagation();
@@ -199,31 +206,44 @@ function EntityMarker({
   );
 }
 
-function GroundPlane() {
+const GRASS_LOW: readonly [number, number, number] = [0.26, 0.4, 0.21];
+const GRASS_HIGH: readonly [number, number, number] = [0.44, 0.5, 0.29];
+const ROCK: readonly [number, number, number] = [0.43, 0.41, 0.37];
+
+function GroundPlane({ field }: { field: TerrainField }) {
   const geometry = useMemo(() => {
     const next = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, GROUND_SEGMENTS, GROUND_SEGMENTS);
     const positions = next.attributes.position;
     for (let index = 0; index < positions.count; index += 1) {
-      const x = positions.getX(index);
-      const y = positions.getY(index);
-      const height =
-        Math.sin(x * 0.16) * 0.12 +
-        Math.cos(y * 0.11) * 0.1 +
-        Math.sin((x + y) * 0.05) * 0.16;
-      positions.setZ(index, height);
+      const worldX = positions.getX(index);
+      const worldZ = -positions.getY(index);
+      positions.setZ(index, field.sampleHeight(worldX, worldZ));
     }
     next.computeVertexNormals();
+    const normals = next.attributes.normal;
+    const colors = new Float32Array(positions.count * 3);
+    for (let index = 0; index < positions.count; index += 1) {
+      const height = positions.getZ(index);
+      const slope = 1 - normals.getZ(index);
+      const grassBlend = Math.min(1, Math.max(0, height / 5));
+      const rockBlend = Math.min(1, Math.max(0, (slope - 0.35) / 0.35));
+      for (let channel = 0; channel < 3; channel += 1) {
+        const grass = GRASS_LOW[channel]! + (GRASS_HIGH[channel]! - GRASS_LOW[channel]!) * grassBlend;
+        colors[index * 3 + channel] = grass + (ROCK[channel]! - grass) * rockBlend;
+      }
+    }
+    next.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     return next;
-  }, []);
+  }, [field]);
 
   return (
-    <mesh rotation-x={-Math.PI / 2} geometry={geometry}>
-      <meshStandardMaterial color="#283729" roughness={0.9} metalness={0} />
+    <mesh rotation-x={-Math.PI / 2} geometry={geometry} receiveShadow>
+      <meshStandardMaterial vertexColors roughness={0.95} metalness={0} />
     </mesh>
   );
 }
 
-function RockField() {
+function RockField({ field }: { field: TerrainField }) {
   const rocks = useMemo(
     () =>
       Array.from({ length: 18 }, (_, index) => {
@@ -245,7 +265,7 @@ function RockField() {
       {rocks.map((rock) => (
         <mesh
           key={rock.id}
-          position={[rock.x, 0.25 * rock.scale, rock.z]}
+          position={[rock.x, field.sampleHeight(rock.x, rock.z) + 0.25 * rock.scale, rock.z]}
           rotation={[0.1, rock.rotation, -0.08]}
           scale={[rock.scale * 1.4, rock.scale * 0.7, rock.scale]}
         >
@@ -262,11 +282,15 @@ function WorldView({
   entityModels,
   objectModels,
   assets,
+  field,
+  showGrid,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
   objectModels: Record<string, string | ModelConfig> | undefined;
   assets: AssetCatalog;
+  field: TerrainField;
+  showGrid: boolean;
 }) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
@@ -279,9 +303,9 @@ function WorldView({
   };
   return (
     <>
-      <GroundPlane />
-      <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
-      <RockField />
+      <GroundPlane field={field} />
+      {showGrid ? <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} /> : null}
+      <RockField field={field} />
       {entities.map((entity) => (
         <EntityMarker
           key={entity.id}
@@ -291,6 +315,7 @@ function WorldView({
           isLocal={entity.id === player.userId}
           targeted={entity.id === targetId}
           onSelect={handleSelect}
+          field={field}
         />
       ))}
       {objects.map((object) => {
@@ -300,7 +325,11 @@ function WorldView({
         return (
           <group
             key={object.instanceId}
-            position={[object.position[0], object.position[1], object.position[2]]}
+            position={[
+              object.position[0],
+              object.position[1] + field.sampleHeight(object.position[0], object.position[2]),
+              object.position[2],
+            ]}
             rotation-y={object.rotationY}
           >
             {model !== undefined ? (
@@ -318,13 +347,17 @@ function WorldView({
   );
 }
 
-function RemotePlayers({ rows }: { rows: WsPresenceRow[] }) {
+function RemotePlayers({ rows, field }: { rows: WsPresenceRow[]; field: TerrainField }) {
   return (
     <>
       {rows.map((row) => (
         <group
           key={row.userId}
-          position={[row.position.x, row.position.y, row.position.z]}
+          position={[
+            row.position.x,
+            row.position.y + field.sampleHeight(row.position.x, row.position.z),
+            row.position.z,
+          ]}
           rotation-y={row.rotationY}
         >
           <mesh position-y={0.95}>
@@ -539,6 +572,9 @@ export function GamePlayerShell({
     () => createActionStateTracker(toActionStateBindingMap(playable.game.input ?? {})),
     [playable],
   );
+  const field = useMemo(() => terrainFieldFor(playable.game.world), [playable]);
+  const groundHeightAt = useMemo(() => (x: number, z: number) => field.sampleHeight(x, z), [field]);
+  const showGrid = playable.game.world?.kind === "flat";
   const userId = multiplayer?.userId ?? DEV_USER_ID;
   const reportRuntimeError = (error: unknown, phase: string) => {
     const diagnostic = logRuntimeError(error, phase);
@@ -699,6 +735,8 @@ export function GamePlayerShell({
             entityModels={playable.entityModels}
             objectModels={playable.objectModels}
             assets={playable.game.assets}
+            field={field}
+            showGrid={showGrid}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
@@ -710,6 +748,7 @@ export function GamePlayerShell({
               pitchRef={pitchRef}
               config={playable.camera?.firstPerson}
               followEntityId={playable.camera?.followEntityId}
+              groundHeightAt={groundHeightAt}
             />
           ) : (
             <GameOrbitCamera
@@ -721,10 +760,11 @@ export function GamePlayerShell({
               onDragChange={(dragging) => {
                 cameraDraggingRef.current = dragging;
               }}
+              groundHeightAt={groundHeightAt}
             />
           )}
         </GameProvider>
-        <RemotePlayers rows={remotePlayers} />
+        <RemotePlayers rows={remotePlayers} field={field} />
         <FrameDriver
           ctx={ctx}
           playable={playable}

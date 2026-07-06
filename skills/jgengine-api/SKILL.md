@@ -482,11 +482,16 @@ Descriptors from `@jgengine/core/world/features` — config data the runner/worl
 
 | Feature | Use |
 |---------|-----|
+| `rolling({ seed?, amplitude?, frequency? })` | Subtle undulating ground — the default when `world` is unset |
+| `arena({ seed? })` | Flat spawn + a walkable ramp up to a cliff plateau + a hill; the shipped test environment |
+| `heightfield({ amplitude, frequency, octaves?, lacunarity?, persistence?, ridged?, baseHeight?, waterLevel?, bounds? })` | Full procedural control (deserts→mountains) |
 | `biomes({ map, zones, bounds? })` | Region atmosphere/rules layering; zones reference biome ids |
 | `voxel({ seed, generate?, streaming? })` | Block worlds |
 | `plots(config)` | Shared city + instanced interiors |
 | `tilemap({ map })` | 2D/2.5D levels |
-| `flat()` | Plain arena |
+| `flat()` | True-flat ground (+ debug grid) |
+
+Every profile resolves to a deterministic height field (`terrainFieldFor(world).sampleHeight(x, z)` from `@jgengine/core/world/terrain`); the shell renders the mesh from it and grounds all entities/objects on it, so `y:0` spawns sit on the surface.
 
 `parentSpace` positions are local to that space — convert at seams only.
 

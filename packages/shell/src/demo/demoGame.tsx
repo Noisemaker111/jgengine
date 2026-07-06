@@ -1,4 +1,5 @@
 import { defineGame } from "@jgengine/core/game/defineGame";
+import { arena } from "@jgengine/core/world/features";
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
 import type {
   GameContext,
@@ -49,6 +50,7 @@ const game = defineGame({
   name: "gameplayer-demo",
   assets: createAssetCatalog(),
   multiplayer: null,
+  world: arena(),
   inventories: { [HOTBAR]: { slots: 4, hud: "hotbar" } },
   input: {
     moveForward: ["KeyW"],

@@ -32,6 +32,7 @@ export interface GameOrbitCameraProps {
   resolveFollowTarget?: (entity: SceneEntity) => Vec3;
   onDragChange?: (dragging: boolean) => void;
   onCameraFollow?: CameraFollowListener;
+  groundHeightAt?: (x: number, z: number) => number;
 }
 
 export function GameOrbitCamera({
@@ -42,6 +43,7 @@ export function GameOrbitCamera({
   resolveFollowTarget,
   onDragChange,
   onCameraFollow,
+  groundHeightAt,
 }: GameOrbitCameraProps) {
   const config = resolveOrbitCameraConfig(configPatch);
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -51,11 +53,18 @@ export function GameOrbitCamera({
   const ctx = useGameContext();
   const camera = useThree((state) => state.camera);
   const followId = followEntityId ?? userId;
+  const groundedPosition = (
+    position: readonly [number, number, number],
+  ): readonly [number, number, number] => [
+    position[0],
+    position[1] + (groundHeightAt?.(position[0], position[2]) ?? 0),
+    position[2],
+  ];
 
   useEffect(() => {
     const entity = ctx.scene.entity.get(followId);
     if (entity === null || runtimeRef.current !== null) return;
-    const seeded = seedOrbitFollowState({ entityPosition: entity.position, config });
+    const seeded = seedOrbitFollowState({ entityPosition: groundedPosition(entity.position), config });
     runtimeRef.current = seeded;
     camera.position.set(seeded.camera.x, seeded.camera.y, seeded.camera.z);
     camera.lookAt(seeded.target.x, seeded.target.y, seeded.target.z);
@@ -67,14 +76,15 @@ export function GameOrbitCamera({
     if (controls === null || entity === null) return;
 
     if (runtimeRef.current === null) {
-      runtimeRef.current = seedOrbitFollowState({ entityPosition: entity.position, config });
+      runtimeRef.current = seedOrbitFollowState({ entityPosition: groundedPosition(entity.position), config });
       camera.position.set(runtimeRef.current.camera.x, runtimeRef.current.camera.y, runtimeRef.current.camera.z);
       controls.target.set(runtimeRef.current.target.x, runtimeRef.current.target.y, runtimeRef.current.target.z);
     }
 
     const runtime = runtimeRef.current;
     const previousTarget = runtime.target;
-    const desiredTarget = resolveFollowTarget?.(entity) ?? resolveFollowTargetFromPosition(entity.position, config);
+    const desiredTarget =
+      resolveFollowTarget?.(entity) ?? resolveFollowTargetFromPosition(groundedPosition(entity.position), config);
     const stepped = orbitFollowStep({
       state: runtime,
       desiredTarget,
