@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  actionLabel,
+  bindingLabel,
   bindingMatches,
   createActionStateTracker,
+  hotbarSlotBindings,
   normalizeKeyCode,
   resolveBoundAction,
   type ActionBindingMap,
@@ -107,5 +110,40 @@ describe("createActionStateTracker", () => {
     tracker.reset();
     expect(tracker.isDown("crouch")).toBe(false);
     expect(tracker.wasPressed("crouch")).toBe(false);
+  });
+});
+
+describe("hotbarSlotBindings", () => {
+  test("generates Digit codes with default action names", () => {
+    const map = hotbarSlotBindings(3);
+    expect(map).toEqual({ hotbarSlot1: ["Digit1"], hotbarSlot2: ["Digit2"], hotbarSlot3: ["Digit3"] });
+  });
+
+  test("tenth slot binds Digit0 and action names are customizable", () => {
+    const map = hotbarSlotBindings(10, { action: (slot) => `slot${slot}` });
+    expect(map.slot10).toEqual(["Digit0"]);
+    expect(map.slot1).toEqual(["Digit1"]);
+  });
+
+  test("rejects counts outside 1..10", () => {
+    expect(() => hotbarSlotBindings(0)).toThrow();
+    expect(() => hotbarSlotBindings(11)).toThrow();
+  });
+});
+
+describe("binding labels", () => {
+  test("bindingLabel shortens common codes", () => {
+    expect(bindingLabel("Digit4")).toBe("4");
+    expect(bindingLabel("KeyB")).toBe("B");
+    expect(bindingLabel("mouse0")).toBe("LMB");
+    expect(bindingLabel("ShiftLeft")).toBe("Shift");
+    expect(bindingLabel("Escape")).toBe("Esc");
+  });
+
+  test("actionLabel reads arrays and hold/toggle configs", () => {
+    expect(actionLabel({ jump: ["Space"] }, "jump")).toBe("Space");
+    expect(actionLabel({ crouch: { toggle: ["KeyC"] } }, "crouch")).toBe("C");
+    expect(actionLabel({ aim: { hold: ["mouse2"] } }, "aim")).toBe("RMB");
+    expect(actionLabel({}, "missing")).toBeNull();
   });
 });

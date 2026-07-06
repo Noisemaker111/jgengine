@@ -82,6 +82,81 @@ export function toActionStateBindingMap<TAction extends string, TCode extends st
   return result;
 }
 
+const HOTBAR_DIGIT_CODES = [
+  "Digit1",
+  "Digit2",
+  "Digit3",
+  "Digit4",
+  "Digit5",
+  "Digit6",
+  "Digit7",
+  "Digit8",
+  "Digit9",
+  "Digit0",
+] as const;
+
+export function hotbarSlotBindings(
+  count: number,
+  options?: { action?: (slot: number) => string },
+): ActionCodesMap {
+  if (!Number.isInteger(count) || count < 1 || count > HOTBAR_DIGIT_CODES.length) {
+    throw new Error(`hotbarSlotBindings: count must be an integer in [1, ${HOTBAR_DIGIT_CODES.length}]`);
+  }
+  const action = options?.action ?? ((slot: number) => `hotbarSlot${slot}`);
+  const map: ActionCodesMap = {};
+  for (let slot = 1; slot <= count; slot += 1) {
+    map[action(slot)] = [HOTBAR_DIGIT_CODES[slot - 1]];
+  }
+  return map;
+}
+
+const CODE_LABELS: Record<string, string> = {
+  mouse0: "LMB",
+  mouse1: "MMB",
+  mouse2: "RMB",
+  Space: "Space",
+  space: "Space",
+  Escape: "Esc",
+  Tab: "Tab",
+  Enter: "Enter",
+  Backspace: "Bksp",
+  Shift: "Shift",
+  ShiftLeft: "Shift",
+  ShiftRight: "Shift",
+  Control: "Ctrl",
+  ControlLeft: "Ctrl",
+  ControlRight: "Ctrl",
+  AltLeft: "Alt",
+  AltRight: "Alt",
+  ArrowUp: "↑",
+  ArrowDown: "↓",
+  ArrowLeft: "←",
+  ArrowRight: "→",
+};
+
+export function bindingLabel(code: string): string {
+  const direct = CODE_LABELS[code];
+  if (direct !== undefined) return direct;
+  if (code.startsWith("Key") && code.length === 4) return code.slice(3);
+  if (code.startsWith("Digit") && code.length === 6) return code.slice(5);
+  return code.length === 1 ? code.toUpperCase() : code;
+}
+
+/** Short display label for an action's first bound code, or null when unbound. */
+export function actionLabel(map: ActionCodesMap, action: string): string | null {
+  const codes = map[action];
+  if (codes === undefined) return null;
+  let list: readonly string[];
+  if (Array.isArray(codes)) {
+    list = codes as readonly string[];
+  } else {
+    const modes = codes as { hold?: readonly string[]; toggle?: readonly string[] };
+    list = modes.hold ?? modes.toggle ?? [];
+  }
+  const first = list[0];
+  return first === undefined ? null : bindingLabel(first);
+}
+
 export interface ActionStateTracker<TAction extends string> {
   handleDown(code: string): TAction | null;
   handleUp(code: string): TAction | null;

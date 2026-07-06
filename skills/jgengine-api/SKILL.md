@@ -94,7 +94,10 @@ Everything under `game/` (or your package's `src/`). Dense files — one `catalo
 
 ```
 game/
-  game.config.ts       defineGame entry
+  game.config.ts       defineGame entry — thin composition over keybinds/inventories/world
+  keybinds.ts          ActionCodesMap — named actions + hotbarSlotBindings(n)
+  inventories.ts       inventory declarations
+  world.ts             WorldFeature + PhysicsConfig
   index.ts             PlayableGame export (game, content, loop, GameUI)
   assets.ts            Render catalog
   content.ts           itemById / entityById lookups over all catalogs
@@ -112,43 +115,67 @@ game/
 
 ## `defineGame`
 
-Platform boot only. Never game tuning (walk speeds, damage, prompts — those live in catalogs).
+Platform boot only, and a **thin composition** — bindings, inventories, and world/physics live in their own modules because a big game makes each of them expansive. Never game tuning (walk speeds, damage, prompts — those live in catalogs).
 
 ```ts
+// game.config.ts — imports only, nothing inline
 import { defineGame } from "@jgengine/core/game/defineGame";
 import { offline } from "@jgengine/core/runtime/adapter";
-import { biomes } from "@jgengine/core/world/features";
+import { assets } from "./assets";
+import { inventories } from "./inventories";
+import { keybinds } from "./keybinds";
+import { physics, world } from "./world";
 
 export const game = defineGame({
   name: "My Game",
   assets,
-  world: biomes({ map: "./world/biomes.ts", zones: "./world/zones.ts" }),
-  physics: { gravity: -32 },
-  inventories: {
-    hotbar: { slots: 9, hud: "hotbar" },
-    backpack: { slots: 28, traits: itemTraits },
-    equipment: { slots: 4, accepts: ["weapon", "armor"], applyModifiers: true },
-  },
-  input: {
-    moveForward: ["w"], moveBack: ["s"], moveLeft: ["a"], moveRight: ["d"],
-    jump: ["space"], sprint: ["ShiftLeft"],
-    interact: ["KeyE"],
-    crouch: { hold: ["KeyC"], toggle: ["KeyZ"] },
-    aim: { hold: ["mouse2"], toggle: ["KeyV"] },
-    tabTarget: ["Tab"], clearTarget: ["Escape"],
-    slot1: ["Digit1"], slot2: ["Digit2"],
-  },
+  world,
+  physics,
+  inventories,
+  input: keybinds,
   server: "persistent",            // or { mode: "ffa", scoreLimit: 30 } — rules live in game code
   save: { auto: "5m", scope: "player+chunks" },   // or "none"
-  multiplayer: offline(),          // or convex({ topology }) / servers({ …, adapter })
+  multiplayer: offline(),          // or ws({ topology }) / convex({ topology }) / servers({ …, adapter })
   ui: GameUI,
   loop,                            // GameLoop<GameContext>
 });
 ```
 
+```ts
+// keybinds.ts — named actions + generated hotbar slots; one key, one action
+import { hotbarSlotBindings, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
+
+export const keybinds: ActionCodesMap = {
+  moveForward: ["KeyW"], moveBack: ["KeyS"], moveLeft: ["KeyA"], moveRight: ["KeyD"],
+  jump: ["Space"], sprint: ["ShiftLeft"],
+  interact: ["KeyE"],
+  crouch: { hold: ["KeyC"], toggle: ["KeyZ"] },
+  aim: { hold: ["mouse2"], toggle: ["KeyV"] },
+  tabTarget: ["Tab"], clearTarget: ["Escape"],
+  ...hotbarSlotBindings(9),        // hotbarSlot1..9 → Digit1..9 (a 10th slot gets Digit0)
+};
+```
+
+```ts
+// inventories.ts
+import type { InventoryDeclaration } from "@jgengine/core/game/defineGame";
+export const inventories: Record<string, InventoryDeclaration> = {
+  hotbar: { slots: 9, hud: "hotbar" },
+  backpack: { slots: 28, traits: itemTraits },
+  equipment: { slots: 4, accepts: ["weapon", "armor"], applyModifiers: true },
+};
+
+// world.ts
+import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
+import { biomes, type WorldFeature } from "@jgengine/core/world/features";
+export const world: WorldFeature = biomes({ map: "world/biomes", zones: "world/zones" });
+export const physics: PhysicsConfig = { gravity: -32 };
+```
+
 - Input bindings are string arrays (hold semantics) or `{ hold, toggle }` for the same verb.
+- UI keybind badges derive from `keybinds` via `actionLabel(keybinds, "openBackpack")` — `bindingLabel` maps codes to short labels (`Digit1`→`1`, `KeyB`→`B`, `mouse0`→`LMB`, `Escape`→`Esc`). Never hardcode label strings; they drift the moment a binding changes.
 - `server.mode` is a string your loop/commands interpret — the engine ships no gamemode presets.
-- Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts.
+- Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts, or inline binding/inventory/world blobs.
 
 ## `PlayableGame` — how a game plugs into a runner
 

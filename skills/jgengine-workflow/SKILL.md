@@ -35,7 +35,7 @@ Your first substantive response is the complete build plan — not a scope propo
 - **System list** — every signature system of the named fantasy, each shipped whole. Max scope is the default; a cut is a last resort, recorded with its reason.
 - **File tree** — every file you will create under `game/` (catalogs, handlers, loop, quests, curves, ui components), one line each.
 - **Catalog ids** — the actual entity / item / object / loot-table / quest id lists.
-- **Keybind table** — action → key, and check it: one key, one action (a crouch toggle on `C` and a character sheet on `C` is a shipped bug).
+- **Keybind table** — lives in `keybinds.ts` (named actions + `hotbarSlotBindings(n)`); action → key, checked: one key, one action (a crouch toggle on `C` and a character sheet on `C` is a shipped bug).
 - **UI zone map** — which HUD cluster lives in which `GameUI.tsx` grid zone.
 - **Multiplayer shape** — adapter + topology (`"shared" | "lobbies" | "private"`) and which systems sync.
 - **Staged screenshot scenario** for `GameUiPreview`.
