@@ -1,0 +1,40 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/*/package.json"
+      - "packages/*/src/**"
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run check-types
+      - run: bun test packages
+      - name: Publish unpublished packages in dependency order
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          for p in core ws sql react convex node shell; do
+            name=$(node -p "require('./packages/$p/package.json').name")
+            version=$(node -p "require('./packages/$p/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "skip $name@$version (already on npm)"
+            else
+              echo "publish $name@$version"
+              (cd "packages/$p" && bun publish)
+            fi
+          done
