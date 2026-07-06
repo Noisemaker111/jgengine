@@ -9,6 +9,7 @@ import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import type { StatValue } from "@jgengine/core/scene/entityStats";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import type { ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
 import {
   resolveActivePrompt,
   type PositionedPrompt,
@@ -99,6 +100,12 @@ export function localPlayerEntity(ctx: GameContext): SceneEntity | null {
     ctx.scene.entity.list().find((entity) => entity.role === "player") ??
     null
   );
+}
+
+export function useGameClock(): ClockSnapshot & { controls: SimClock } {
+  const ctx = useGameContext();
+  useSyncExternalStore(ctx.subscribe, ctx.version, ctx.version);
+  return { ...ctx.time.snapshot(), controls: ctx.time };
 }
 
 export function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null {

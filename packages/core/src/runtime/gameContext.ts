@@ -66,6 +66,7 @@ import { createSpatialApi, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
 import { createChangeSignal, notifyAfter } from "../store/changeSignal";
+import { createSimClock, type SimClock } from "../time/simClock";
 
 export interface GameContextItemEntry {
   use?: string;
@@ -202,6 +203,7 @@ export interface GameContext {
     use: GameContextItemUse;
     weapon: WeaponStats;
   };
+  time: SimClock;
   subscribe(listener: () => void): () => void;
   version(): number;
 }
@@ -213,6 +215,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const now = options.now ?? Date.now;
 
   const signal = createChangeSignal();
+  const time = createSimClock({ config: definition.time, onChange: signal.notify });
 
   const entities = definition.scene;
   const objects = createObjectStore();
@@ -670,6 +673,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       },
       weapon,
     },
+    time,
     subscribe: signal.subscribe,
     version: signal.version,
   };

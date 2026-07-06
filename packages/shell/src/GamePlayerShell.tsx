@@ -385,6 +385,7 @@ function FrameDriver({
   useFrame((_state, rawDt) => {
     try {
     const dt = Math.min(rawDt, 0.05);
+    const gameDt = ctx.time.advance(dt);
     if (tracker.isDown("turnLeft")) yawRef.current += TURN_SPEED * dt;
     if (tracker.isDown("turnRight")) yawRef.current -= TURN_SPEED * dt;
 
@@ -418,7 +419,7 @@ function FrameDriver({
       });
     }
 
-    playable.loop.onTick(ctx, dt);
+    playable.loop.onTick(ctx, gameDt);
 
     if (tracker.wasPressed("tabTarget")) {
       if (ctx.game.commands.has("target.cycle")) ctx.game.commands.run("target.cycle", {});

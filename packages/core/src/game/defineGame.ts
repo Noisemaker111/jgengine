@@ -3,6 +3,7 @@ import type { ItemTraits } from "../inventory/inventoryModel";
 import type { SaveConfig } from "../runtime/save";
 import type { AssetCatalog, ModelAssetRef } from "../scene/assetCatalog";
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
+import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
 
 export interface PhysicsConfig {
@@ -35,6 +36,8 @@ export interface GameDefinition<
   scene: EntityStore;
   world?: WorldFeature;
   physics?: PhysicsConfig;
+  /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */
+  time?: TimeConfig;
   inventories?: Record<string, InventoryDeclaration>;
   input?: ActionCodesMap;
   server?: GameServerConfig;
