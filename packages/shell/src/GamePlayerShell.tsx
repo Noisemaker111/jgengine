@@ -4,9 +4,12 @@ import * as THREE from "three";
 
 import {
   createActionStateTracker,
+  hotbarSlotActionIndex,
+  resolveActionCommand,
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
+import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import {
   advancePlayerMotion,
   createEmptyMovementKeys,
@@ -52,10 +55,25 @@ function logRuntimeError(error: unknown, phase: string): Omit<RuntimeDiagnostic,
   return diagnostic;
 }
 
+const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
+  "moveForward",
+  "moveBack",
+  "moveLeft",
+  "moveRight",
+  "turnLeft",
+  "turnRight",
+  "sprint",
+  "jump",
+  "tabTarget",
+  "clearTarget",
+  "useAbility",
+  "interact",
+]);
+
 function findHotbarSlotActions(input: PlayableGame["game"]["input"]): { action: string; slot: number }[] {
   return Object.keys(input ?? {}).flatMap((action) => {
-    const match = /^(?:hotbar)?slot(\d+)$/i.exec(action);
-    return match === null ? [] : [{ action, slot: Number(match[1]) - 1 }];
+    const slot = hotbarSlotActionIndex(action);
+    return slot === null ? [] : [{ action, slot }];
   });
 }
 
@@ -345,15 +363,25 @@ function FrameDriver({
       if (ctx.game.commands.has("target.clear")) ctx.game.commands.run("target.clear", {});
       else ctx.scene.entity.setTarget(playerId, null);
     }
-    const uiActions: Record<string, string> = {
-      openBackpack: "ui.openBackpack",
-      openCharacter: "ui.openCharacter",
-      openAbilities: "ui.openAbilities",
-    };
-    for (const [action, command] of Object.entries(uiActions)) {
-      if (tracker.wasPressed(action) && ctx.game.commands.has(command)) {
-        ctx.game.commands.run(command, {});
+    for (const action of Object.keys(playable.game.input ?? {})) {
+      if (!tracker.wasPressed(action)) continue;
+      if (action === "interact") {
+        const prompts = playable.prompts?.(ctx);
+        const focus = prompts === undefined ? null : ctx.scene.entity.get(playerId);
+        if (prompts !== undefined && focus !== null) {
+          const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
+          if (active !== null && active.prompt.invoke !== null) {
+            ctx.game.commands.run(active.prompt.invoke.name, active.prompt.invoke.input);
+          }
+        }
+        continue;
       }
+      const command = resolveActionCommand(
+        action,
+        (name) => ctx.game.commands.has(name),
+        RESERVED_INPUT_ACTIONS,
+      );
+      if (command !== null) ctx.game.commands.run(command, {});
     }
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {

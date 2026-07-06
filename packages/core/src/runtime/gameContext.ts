@@ -40,6 +40,7 @@ import {
   type InventoryState,
   type ItemTraits,
 } from "../inventory/inventoryModel";
+import type { ProximityPrompt } from "../interaction/proximityPrompt";
 import {
   createItemUse,
   type ItemUseHandler,
@@ -71,17 +72,26 @@ export interface GameContextItemEntry {
   trade?: TradeField;
 }
 
+export type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle";
+
 export interface GameContextEntityEntry {
   stats?: StatCatalog;
   receive?: ReceiveMap;
   onDeath?: OnDeathSpec;
   movement?: PoseAllowedStates & { walkSpeed?: number };
-  role?: string;
+  role?: CatalogEntityRole;
+}
+
+export interface GameContextObjectEntry {
+  proximityPrompt?: ProximityPrompt;
+  breakable?: false | { baseBreakTime: number };
+  slotInventory?: InventoryLayout;
 }
 
 export interface GameContextContent {
   itemById?(itemId: string): GameContextItemEntry | null | undefined;
   entityById?(catalogId: string): GameContextEntityEntry | null | undefined;
+  objectById?(catalogId: string): GameContextObjectEntry | null | undefined;
 }
 
 export interface GameContextOptions<
@@ -92,6 +102,10 @@ export interface GameContextOptions<
   content: GameContextContent;
   player: { userId: string; isNew: boolean };
   now?: () => number;
+}
+
+export interface SceneObjectContext extends ObjectStore {
+  catalog(instanceId: string): GameContextObjectEntry | null;
 }
 
 export interface SceneEntityContext {
@@ -150,7 +164,7 @@ export interface GameContextItemUse {
 
 export interface GameContext {
   scene: {
-    object: ObjectStore;
+    object: SceneObjectContext;
     entity: SceneEntityContext;
   };
   game: {
@@ -214,6 +228,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   function catalogEntry(instanceId: string): GameContextEntityEntry | null | undefined {
     const entity = entities.get(instanceId);
     return entity === null ? undefined : content.entityById?.(entity.name);
+  }
+
+  function catalogObject(instanceId: string): GameContextObjectEntry | null | undefined {
+    const object = objects.get(instanceId);
+    return object === null ? undefined : content.objectById?.(object.catalogId);
   }
 
   const spatial = createSpatialApi({
@@ -500,9 +519,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     signal.notify,
   );
 
+  const sceneObjects: SceneObjectContext = {
+    ...objects,
+    catalog: (instanceId) => catalogObject(instanceId) ?? null,
+  };
+
   const ctx: GameContext = {
     scene: {
-      object: objects,
+      object: sceneObjects,
       entity: {
         spawn: spawnEntity,
         despawn: despawnEntity,

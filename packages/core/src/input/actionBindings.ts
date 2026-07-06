@@ -110,6 +110,35 @@ export function hotbarSlotBindings(
   return map;
 }
 
+const HOTBAR_SLOT_ACTION = /^(?:hotbar)?slot(\d+)$/i;
+
+/** 0-based slot index for a hotbar-slot action name (`slot1`, `hotbarSlot1`), or null. */
+export function hotbarSlotActionIndex(action: string): number | null {
+  const match = HOTBAR_SLOT_ACTION.exec(action);
+  return match === null ? null : Number(match[1]) - 1;
+}
+
+export function isHotbarSlotAction(action: string): boolean {
+  return HOTBAR_SLOT_ACTION.test(action);
+}
+
+/**
+ * Convention mapping a bound input action to the command it fires: the action's
+ * own name when a command by that name exists, otherwise a `ui.<action>`
+ * fallback. Reserved actions (consumed natively by the shell) and hotbar slots
+ * yield null so the shell can handle them itself.
+ */
+export function resolveActionCommand(
+  action: string,
+  has: (command: string) => boolean,
+  reserved: ReadonlySet<string>,
+): string | null {
+  if (reserved.has(action) || isHotbarSlotAction(action)) return null;
+  if (has(action)) return action;
+  const uiCommand = `ui.${action}`;
+  return has(uiCommand) ? uiCommand : null;
+}
+
 const CODE_LABELS: Record<string, string> = {
   mouse0: "LMB",
   mouse1: "MMB",

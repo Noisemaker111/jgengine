@@ -1,3 +1,4 @@
+import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { GameContext, GameContextContent } from "../runtime/gameContext";
 import type { GameDefinition, GameLoop } from "./defineGame";
 
@@ -50,6 +51,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
   entitySprites?: Record<string, EntitySpriteConfig>;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
   hotbarSelection?: () => number;
+  /** Positioned proximity prompts for the interact key + HUD; single source shared with useActivePrompt. */
+  prompts?: (ctx: GameContext) => readonly PositionedPrompt[];
   /** Third-person orbit camera tuning for the dev game player shell. */
   camera?: GameCameraConfig;
 }
