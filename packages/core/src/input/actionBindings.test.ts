@@ -5,8 +5,11 @@ import {
   bindingLabel,
   bindingMatches,
   createActionStateTracker,
+  hotbarSlotActionIndex,
   hotbarSlotBindings,
+  isHotbarSlotAction,
   normalizeKeyCode,
+  resolveActionCommand,
   resolveBoundAction,
   type ActionBindingMap,
   type ActionStateBindingMap,
@@ -128,6 +131,47 @@ describe("hotbarSlotBindings", () => {
   test("rejects counts outside 1..10", () => {
     expect(() => hotbarSlotBindings(0)).toThrow();
     expect(() => hotbarSlotBindings(11)).toThrow();
+  });
+});
+
+describe("hotbar slot action detection", () => {
+  test("matches slotN and hotbarSlotN case-insensitively", () => {
+    expect(hotbarSlotActionIndex("slot1")).toBe(0);
+    expect(hotbarSlotActionIndex("hotbarSlot3")).toBe(2);
+    expect(hotbarSlotActionIndex("HotbarSlot10")).toBe(9);
+    expect(isHotbarSlotAction("slot4")).toBe(true);
+  });
+
+  test("rejects non-slot action names", () => {
+    expect(hotbarSlotActionIndex("openBackpack")).toBeNull();
+    expect(hotbarSlotActionIndex("interact")).toBeNull();
+    expect(isHotbarSlotAction("jump")).toBe(false);
+  });
+});
+
+describe("resolveActionCommand", () => {
+  const reserved = new Set(["jump", "moveForward"]);
+
+  test("prefers a command of the same name", () => {
+    const has = (command: string) => command === "openQuestLog";
+    expect(resolveActionCommand("openQuestLog", has, reserved)).toBe("openQuestLog");
+  });
+
+  test("falls back to ui.<action> when only that command exists", () => {
+    const has = (command: string) => command === "ui.openBackpack";
+    expect(resolveActionCommand("openBackpack", has, reserved)).toBe("ui.openBackpack");
+  });
+
+  test("returns null for reserved actions even if a command exists", () => {
+    expect(resolveActionCommand("jump", () => true, reserved)).toBeNull();
+  });
+
+  test("returns null for hotbar-slot actions", () => {
+    expect(resolveActionCommand("hotbarSlot2", () => true, reserved)).toBeNull();
+  });
+
+  test("returns null when neither the action nor ui.<action> command exists", () => {
+    expect(resolveActionCommand("openParty", () => false, reserved)).toBeNull();
   });
 });
 

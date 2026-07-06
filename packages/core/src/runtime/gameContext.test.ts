@@ -35,6 +35,15 @@ const CONTENT: GameContextContent = {
     }
     return null;
   },
+  objectById(catalogId) {
+    if (catalogId === "chest") {
+      return {
+        proximityPrompt: { radius: 2, display: { kind: "label", text: "Open" }, invoke: null },
+        slotInventory: { slots: 6 },
+      };
+    }
+    return null;
+  },
 };
 
 function makeContext() {
@@ -57,6 +66,18 @@ describe("createGameContext", () => {
     expect(ctx.scene.entity.stats.get(id, "health")).toEqual({ current: 30, max: 30, min: 0 });
     const bare = ctx.scene.entity.spawn("prop");
     expect(ctx.scene.entity.stats.get(bare, "health")).toBeNull();
+  });
+
+  test("scene.object.catalog resolves a placed object via objectById", () => {
+    const ctx = makeContext();
+    const chest = ctx.scene.object.place("chest", 0, 0, 0);
+    expect(ctx.scene.object.catalog(chest)).toEqual({
+      proximityPrompt: { radius: 2, display: { kind: "label", text: "Open" }, invoke: null },
+      slotInventory: { slots: 6 },
+    });
+    const bare = ctx.scene.object.place("crate", 1, 0, 0);
+    expect(ctx.scene.object.catalog(bare)).toBeNull();
+    expect(ctx.scene.object.catalog("missing")).toBeNull();
   });
 
   test("item use fires a lethal effect and entity.died reaches a bound feed", () => {
