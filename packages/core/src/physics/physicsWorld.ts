@@ -18,8 +18,14 @@ export interface PhysicsWorldConfig {
   maxSubsteps?: number;
   /** Bounce factor on contacts and walls, 0..1. Default 0.2. */
   restitution?: number;
+  /** Approach speed below which restitution is ignored (contacts rest instead of jittering). Default 1. */
+  restitutionThreshold?: number;
   /** Coulomb friction coefficient on contacts and the floor, 0..1. Default 0.4. */
   friction?: number;
+  /** Per-second linear velocity damping (physical energy bleed so piles settle and sleep). Default 0.2. */
+  linearDamping?: number;
+  /** Sequential-impulse velocity iterations per substep (higher = more stable stacks). Default 4. */
+  solverIterations?: number;
   /** Baumgarte positional-correction fraction per substep, 0..1. Default 0.2. */
   correctionFactor?: number;
   /** Penetration tolerated before correction kicks in. Default 0.005. */
@@ -28,6 +34,8 @@ export interface PhysicsWorldConfig {
   sleepLinearVelocity?: number;
   /** Consecutive still substeps before a body sleeps. Default 30. */
   sleepThresholdSteps?: number;
+  /** Approach speed a contact must exceed to wake a sleeping body (resting contacts don't). Default 0.5. */
+  wakeThreshold?: number;
 }
 
 export interface PhysicsStats {
@@ -74,11 +82,15 @@ export class PhysicsWorld {
   readonly fixedDt: number;
   readonly maxSubsteps: number;
   readonly restitution: number;
+  readonly restitutionThreshold: number;
   readonly friction: number;
+  readonly linearDamping: number;
+  readonly solverIterations: number;
   readonly correctionFactor: number;
   readonly slop: number;
-  readonly sleepVel2: number;
+  readonly sleepMove2: number;
   readonly sleepSteps: number;
+  readonly wakeThreshold: number;
 
   readonly posX: Float32Array;
   readonly posY: Float32Array;
@@ -95,6 +107,9 @@ export class PhysicsWorld {
   readonly contact: Uint8Array;
 
   private readonly sleepTimer: Uint16Array;
+  private readonly prevX: Float32Array;
+  private readonly prevY: Float32Array;
+  private readonly prevZ: Float32Array;
   private readonly nx: number;
   private readonly ny: number;
   private readonly nz: number;
@@ -124,12 +139,17 @@ export class PhysicsWorld {
     this.fixedDt = config.fixedDt ?? 1 / 60;
     this.maxSubsteps = config.maxSubsteps ?? 4;
     this.restitution = config.restitution ?? 0.2;
+    this.restitutionThreshold = config.restitutionThreshold ?? 1;
     this.friction = config.friction ?? 0.4;
+    this.linearDamping = config.linearDamping ?? 0.2;
+    this.solverIterations = Math.max(1, config.solverIterations ?? 4);
     this.correctionFactor = config.correctionFactor ?? 0.2;
     this.slop = config.slop ?? 0.005;
     const sleepV = config.sleepLinearVelocity ?? 0.08;
-    this.sleepVel2 = sleepV * sleepV;
+    const sleepMoveEps = sleepV * this.fixedDt;
+    this.sleepMove2 = sleepMoveEps * sleepMoveEps;
     this.sleepSteps = config.sleepThresholdSteps ?? 30;
+    this.wakeThreshold = config.wakeThreshold ?? 0.5;
 
     const cap = config.capacity;
     this.posX = new Float32Array(cap);
@@ -145,6 +165,9 @@ export class PhysicsWorld {
     this.flags = new Uint8Array(cap);
     this.contact = new Uint8Array(cap);
     this.sleepTimer = new Uint16Array(cap);
+    this.prevX = new Float32Array(cap);
+    this.prevY = new Float32Array(cap);
+    this.prevZ = new Float32Array(cap);
 
     const span = (i: number) => Math.max(config.bounds.max[i] - config.bounds.min[i], this.cellSize);
     this.nx = Math.max(1, Math.ceil(span(0) / this.cellSize));
@@ -197,6 +220,9 @@ export class PhysicsWorld {
     if ((this.flags[i]! & FLAG_STATIC) !== 0) return;
     this.flags[i]! &= ~FLAG_SLEEPING;
     this.sleepTimer[i] = 0;
+    this.prevX[i] = this.posX[i]!;
+    this.prevY[i] = this.posY[i]!;
+    this.prevZ[i] = this.posZ[i]!;
   }
 
   wakeAll(): void {
@@ -245,16 +271,29 @@ export class PhysicsWorld {
   private substep(dt: number): void {
     const n = this.bodyCount;
     const gdt = this.gravity * dt;
+    const damp = this.linearDamping > 0 ? Math.max(0, 1 - this.linearDamping * dt) : 1;
     for (let i = 0; i < n; i += 1) {
       if ((this.flags[i]! & FLAG_SLEEPING) !== 0) continue;
+      this.prevX[i] = this.posX[i]!;
+      this.prevY[i] = this.posY[i]!;
+      this.prevZ[i] = this.posZ[i]!;
       this.velY[i]! += gdt;
+      if (damp !== 1) {
+        this.velX[i]! *= damp;
+        this.velY[i]! *= damp;
+        this.velZ[i]! *= damp;
+      }
       this.posX[i]! += this.velX[i]! * dt;
       this.posY[i]! += this.velY[i]! * dt;
       this.posZ[i]! += this.velZ[i]! * dt;
       this.constrainBounds(i);
     }
     this.buildGrid();
-    this.solve();
+    const iterations = this.solverIterations;
+    for (let it = 0; it < iterations; it += 1) this.solve(it === 0, it === iterations - 1);
+    for (let i = 0; i < n; i += 1) {
+      if ((this.flags[i]! & FLAG_SLEEPING) === 0) this.constrainBounds(i);
+    }
     this.updateSleep();
   }
 
@@ -262,6 +301,7 @@ export class PhysicsWorld {
     const min = this.bounds.min;
     const max = this.bounds.max;
     const e = this.restitution;
+    const rt = this.restitutionThreshold;
     const loX = min[0] + this.halfX[i]!;
     const hiX = max[0] - this.halfX[i]!;
     const loY = min[1] + this.halfY[i]!;
@@ -270,27 +310,27 @@ export class PhysicsWorld {
     const hiZ = max[2] - this.halfZ[i]!;
     if (this.posX[i]! < loX) {
       this.posX[i] = loX;
-      if (this.velX[i]! < 0) this.velX[i]! = -this.velX[i]! * e;
+      if (this.velX[i]! < 0) this.velX[i]! = -this.velX[i]! < rt ? 0 : this.velX[i]! * -e;
     } else if (this.posX[i]! > hiX) {
       this.posX[i] = hiX;
-      if (this.velX[i]! > 0) this.velX[i]! = -this.velX[i]! * e;
+      if (this.velX[i]! > 0) this.velX[i]! = this.velX[i]! < rt ? 0 : -this.velX[i]! * e;
     }
     if (this.posZ[i]! < loZ) {
       this.posZ[i] = loZ;
-      if (this.velZ[i]! < 0) this.velZ[i]! = -this.velZ[i]! * e;
+      if (this.velZ[i]! < 0) this.velZ[i]! = -this.velZ[i]! < rt ? 0 : this.velZ[i]! * -e;
     } else if (this.posZ[i]! > hiZ) {
       this.posZ[i] = hiZ;
-      if (this.velZ[i]! > 0) this.velZ[i]! = -this.velZ[i]! * e;
+      if (this.velZ[i]! > 0) this.velZ[i]! = this.velZ[i]! < rt ? 0 : -this.velZ[i]! * e;
     }
     if (this.posY[i]! < loY) {
       this.posY[i] = loY;
-      if (this.velY[i]! < 0) this.velY[i]! = -this.velY[i]! * e;
+      if (this.velY[i]! < 0) this.velY[i]! = -this.velY[i]! < rt ? 0 : this.velY[i]! * -e;
       const tf = 1 - this.friction;
       this.velX[i]! *= tf;
       this.velZ[i]! *= tf;
     } else if (this.posY[i]! > hiY) {
       this.posY[i] = hiY;
-      if (this.velY[i]! > 0) this.velY[i]! = -this.velY[i]! * e;
+      if (this.velY[i]! > 0) this.velY[i]! = this.velY[i]! < rt ? 0 : -this.velY[i]! * e;
     }
   }
 
@@ -321,7 +361,7 @@ export class PhysicsWorld {
     }
   }
 
-  private solve(): void {
+  private solve(restitutionPass: boolean, countPass: boolean): void {
     const n = this.bodyCount;
     const nx = this.nx;
     const ny = this.ny;
@@ -350,7 +390,7 @@ export class PhysicsWorld {
               if (j === i) continue;
               const jSleeping = (this.flags[j]! & FLAG_SLEEPING) !== 0;
               if (!jSleeping && j < i) continue;
-              this.resolve(i, j);
+              this.resolve(i, j, restitutionPass, countPass);
             }
           }
         }
@@ -358,7 +398,7 @@ export class PhysicsWorld {
     }
   }
 
-  private resolve(i: number, j: number): void {
+  private resolve(i: number, j: number, restitutionPass: boolean, countPass: boolean): void {
     const dx = this.posX[j]! - this.posX[i]!;
     const px = this.halfX[i]! + this.halfX[j]! - Math.abs(dx);
     if (px <= 0) return;
@@ -369,12 +409,12 @@ export class PhysicsWorld {
     const pz = this.halfZ[i]! + this.halfZ[j]! - Math.abs(dz);
     if (pz <= 0) return;
 
-    this.stats.pairs += 1;
-    this.stats.contacts += 1;
-    this.contact[i] = 1;
-    this.contact[j] = 1;
-    if ((this.flags[j]! & FLAG_SLEEPING) !== 0) this.wake(j);
-
+    if (countPass) {
+      this.stats.pairs += 1;
+      this.stats.contacts += 1;
+      this.contact[i] = 1;
+      this.contact[j] = 1;
+    }
     let nX = 0;
     let nY = 0;
     let nZ = 0;
@@ -390,17 +430,25 @@ export class PhysicsWorld {
       pen = pz;
     }
 
-    const imI = this.invMass[i]!;
-    const imJ = this.invMass[j]!;
-    const imSum = imI + imJ;
-    if (imSum === 0) return;
-
     const rvx = this.velX[j]! - this.velX[i]!;
     const rvy = this.velY[j]! - this.velY[i]!;
     const rvz = this.velZ[j]! - this.velZ[i]!;
     const rvn = rvx * nX + rvy * nY + rvz * nZ;
+
+    const imI = this.invMass[i]!;
+    let imJ = this.invMass[j]!;
+    // A sleeping neighbor only wakes on a genuine impact; a resting contact treats it as a
+    // static collider (imJ = 0) so a settled body can rest on the bed without stirring it awake.
+    if ((this.flags[j]! & FLAG_SLEEPING) !== 0) {
+      if (-rvn > this.wakeThreshold) this.wake(j);
+      else imJ = 0;
+    }
+    const imSum = imI + imJ;
+    if (imSum === 0) return;
+
     if (rvn < 0) {
-      const jn = (-(1 + this.restitution) * rvn) / imSum;
+      const e = restitutionPass && -rvn > this.restitutionThreshold ? this.restitution : 0;
+      const jn = (-(1 + e) * rvn) / imSum;
       this.velX[i]! -= jn * imI * nX;
       this.velY[i]! -= jn * imI * nY;
       this.velZ[i]! -= jn * imI * nZ;
@@ -440,13 +488,17 @@ export class PhysicsWorld {
 
   private updateSleep(): void {
     const n = this.bodyCount;
+    // A body sleeps when it has actually stopped moving — measured by displacement over
+    // the substep, not instantaneous velocity, which can stay "stuck" nonzero on a body
+    // pinned between contacts even while its position is at rest.
+    const moveEps2 = this.sleepMove2;
     for (let i = 0; i < n; i += 1) {
       const f = this.flags[i]!;
       if ((f & FLAG_SLEEPING) !== 0) continue;
-      const vx = this.velX[i]!;
-      const vy = this.velY[i]!;
-      const vz = this.velZ[i]!;
-      if (vx * vx + vy * vy + vz * vz <= this.sleepVel2) {
+      const dx = this.posX[i]! - this.prevX[i]!;
+      const dy = this.posY[i]! - this.prevY[i]!;
+      const dz = this.posZ[i]! - this.prevZ[i]!;
+      if (dx * dx + dy * dy + dz * dz <= moveEps2) {
         const t = this.sleepTimer[i]! + 1;
         if (t >= this.sleepSteps) {
           this.flags[i] = f | FLAG_SLEEPING;

@@ -22,7 +22,8 @@
       "@jgengine/react/*": ["../../packages/react/src/*"],
       "@jgengine/ws/*": ["../../packages/ws/src/*"],
       "@dogfood/world-of-warcraft": ["../../packages/games/world-of-warcraft/src/index.ts"],
-      "@dogfood/asset-showcase": ["../../packages/games/asset-showcase/src/index.tsx"]
+      "@dogfood/asset-showcase": ["../../packages/games/asset-showcase/src/index.tsx"],
+      "@dogfood/stress-bench": ["../../packages/games/stress-bench/src/index.tsx"]
     }
   },
   "include": ["src"]

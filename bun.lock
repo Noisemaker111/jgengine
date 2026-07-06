@@ -36,6 +36,7 @@
       "dependencies": {
         "@dogfood/asset-showcase": "workspace:*",
         "@dogfood/loot-shooter": "workspace:*",
+        "@dogfood/stress-bench": "workspace:*",
         "@dogfood/world-of-warcraft": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
@@ -104,12 +105,12 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.3.0",
+      "version": "0.5.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
       "dependencies": {
-        "@jgengine/core": "^0.3.0",
+        "@jgengine/core": "^0.5.0",
         "fflate": "^0.8.2",
       },
       "devDependencies": {
@@ -118,7 +119,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.3.0",
+      "version": "0.5.0",
       "dependencies": {
         "@jgengine/core": "^0.2.0",
       },
@@ -134,7 +135,7 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.3.0",
+      "version": "0.5.0",
     },
     "packages/games/asset-showcase": {
       "name": "@dogfood/asset-showcase",
@@ -163,6 +164,23 @@
         "typescript": "^5",
       },
     },
+    "packages/games/stress-bench": {
+      "name": "@dogfood/stress-bench",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
+        "typescript": "^5",
+      },
+    },
     "packages/games/world-of-warcraft": {
       "name": "@dogfood/world-of-warcraft",
       "version": "0.1.0",
@@ -182,7 +200,7 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.3.0",
+      "version": "0.5.0",
       "dependencies": {
         "@jgengine/core": "^0.2.0",
         "@jgengine/ws": "^0.2.0",
@@ -197,9 +215,9 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.3.0",
+      "version": "0.5.0",
       "dependencies": {
-        "@jgengine/core": "^0.3.0",
+        "@jgengine/core": "^0.5.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -211,11 +229,11 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.3.0",
+      "version": "0.5.0",
       "dependencies": {
-        "@jgengine/core": "^0.3.0",
-        "@jgengine/react": "^0.3.0",
-        "@jgengine/ws": "^0.3.0",
+        "@jgengine/core": "^0.5.0",
+        "@jgengine/react": "^0.5.0",
+        "@jgengine/ws": "^0.5.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -236,7 +254,7 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.3.0",
+      "version": "0.5.0",
       "dependencies": {
         "@jgengine/core": "^0.2.0",
       },
@@ -246,9 +264,9 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.3.0",
+      "version": "0.5.0",
       "dependencies": {
-        "@jgengine/core": "^0.3.0",
+        "@jgengine/core": "^0.5.0",
       },
     },
   },
@@ -300,6 +318,8 @@
     "@dogfood/asset-showcase": ["@dogfood/asset-showcase@workspace:packages/games/asset-showcase"],
 
     "@dogfood/loot-shooter": ["@dogfood/loot-shooter@workspace:packages/games/loot-shooter"],
+
+    "@dogfood/stress-bench": ["@dogfood/stress-bench@workspace:packages/games/stress-bench"],
 
     "@dogfood/world-of-warcraft": ["@dogfood/world-of-warcraft@workspace:packages/games/world-of-warcraft"],
 
