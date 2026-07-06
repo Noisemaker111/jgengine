@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - ".github/workflows/publish.yml"
       - "packages/*/package.json"
       - "packages/*/src/**"
 
@@ -35,6 +36,6 @@ jobs:
               echo "skip $name@$version (already on npm)"
             else
               echo "publish $name@$version"
-              (cd "packages/$p" && bun publish)
+              (cd "packages/$p" && npm publish --access public)
             fi
           done
