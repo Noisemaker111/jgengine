@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "check-types": "tsc --noEmit -p tsconfig.json"
+    "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@dogfood/asset-showcase": "workspace:*",

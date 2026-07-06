@@ -89,6 +89,7 @@ function executeHotbarSlot(
   hotbarId: string,
   slot: number,
   yaw: number,
+  pitch: number,
 ): { ok: boolean; error?: string } {
   const stack = ctx.player.inventory.state(hotbarId).slots[slot];
   if (stack === undefined || stack === null) return { ok: false, error: `Hotbar slot ${slot + 1} is empty` };
@@ -96,7 +97,7 @@ function executeHotbarSlot(
     from: ctx.player.userId,
     itemId: stack.itemId,
     inventoryId: hotbarId,
-    aim: { yaw, pitch: 0 },
+    aim: { yaw, pitch },
   });
   return result.error === undefined ? { ok: true } : { ok: false, error: result.error };
 }
@@ -328,6 +329,7 @@ function FrameDriver({
   playable,
   tracker,
   yawRef,
+  pitchRef,
   primaryClickRef,
   onRuntimeError,
   multiplayer,
@@ -337,6 +339,7 @@ function FrameDriver({
   playable: PlayableGame;
   tracker: ActionStateTracker<string>;
   yawRef: { current: number };
+  pitchRef: { current: number };
   primaryClickRef: { current: boolean };
   onRuntimeError: (error: unknown, phase: string) => void;
   multiplayer: ShellMultiplayer | null;
@@ -416,7 +419,7 @@ function FrameDriver({
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {
         if (!tracker.wasPressed(action)) continue;
-        const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current);
+        const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current, pitchRef.current);
         if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
       }
       const usePrimary =
@@ -430,7 +433,7 @@ function FrameDriver({
             ? preferred
             : slots.findIndex((stack) => stack !== null);
         if (slot >= 0) {
-          const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current);
+          const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current, pitchRef.current);
           if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
         }
       }
@@ -510,6 +513,7 @@ export function GamePlayerShell({
   const [remotePlayers, setRemotePlayers] = useState<WsPresenceRow[]>([]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const yawRef = useRef(0);
+  const pitchRef = useRef(0);
   const serverIdRef = useRef<string | null>(null);
   const cameraDraggingRef = useRef(false);
   const primaryClickRef = useRef(false);
@@ -672,6 +676,7 @@ export function GamePlayerShell({
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           <GameOrbitCamera
             yawRef={yawRef}
+            pitchRef={pitchRef}
             config={playable.camera}
             followEntityId={playable.camera?.followEntityId}
             onCameraFollow={playable.camera?.onCameraFollow}
@@ -686,6 +691,7 @@ export function GamePlayerShell({
           playable={playable}
           tracker={tracker}
           yawRef={yawRef}
+          pitchRef={pitchRef}
           primaryClickRef={primaryClickRef}
           onRuntimeError={reportRuntimeError}
           multiplayer={multiplayer}

@@ -31,6 +31,9 @@ export interface GameCameraConfig {
   targetSmoothing?: number;
   dragTargetSmoothing?: number;
   distanceSmoothing?: number;
+  /** Vertical look clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below. Widen for top-down or vertical aim; unset keeps the standard chase feel. */
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
 }
 
 export interface EntitySpriteConfig {

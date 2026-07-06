@@ -5,7 +5,7 @@ description: API reference for JGengine, the TypeScript game engine.
 
 # JGengine — API Reference
 
-The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game/game.config.ts` or any game content. Companion skills: **`jgengine-workflow`** (master blueprint + phased build to completion), **`jgengine-ui`** (the look-and-behave quality bar), and **`jgengine-assets`** (real models/textures from day one) — read all three before building.
+The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game/game.config.ts` or any game content. Companion skills: **`jgengine-newgame`** (master blueprint + phased build to completion), **`jgengine-ui`** (the look-and-behave quality bar), and **`jgengine-assets`** (real models/textures from day one) — read all three before building.
 
 ## Packages
 
@@ -601,13 +601,13 @@ Headless primitives mean **you** ship the visual design. Functional wiring alone
 | Game UI classes without `@source` in host CSS | `@source` entries for your game dirs + `node_modules/@jgengine/{shell,react}` |
 | One file per catalog entry / per brand | Dense `<domain>/catalog.ts` |
 | Convex mutations called from game code | `commands.run` through the `GameBackend` transport |
-| Half a system: quest without tracker, cooldown without sweep, keybind never shown, stub "coming soon" modal | Finish the system end to end — or cut it whole (see `jgengine-workflow`) |
+| Half a system: quest without tracker, cooldown without sweep, keybind never shown, stub "coming soon" modal | Finish the system end to end — or cut it whole (see `jgengine-newgame`) |
 | Game-side workaround for a missing engine primitive | File the gap at github.com/Noisemaker111/jgengine/issues (or PR the primitive) and cut or scope the dependent system honestly |
 | Game nouns in this skill | Engine primitives + placeholder ids only |
 
 ## New-game definition of done
 
-This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengine-workflow`** skill). "Compiles and the hooks are wired" is not done; a declared system with no UI, no feedback, or no way to exercise it is not done — finish the system or cut it whole.
+This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengine-newgame`** skill). "Compiles and the hooks are wired" is not done; a declared system with no UI, no feedback, or no way to exercise it is not done — finish the system or cut it whole.
 
 - [ ] `game.config.ts` (defineGame) + `index.ts` (PlayableGame) + `loop.ts` + `content.ts`
 - [ ] Catalogs: `entities/<role>/catalog.ts`, `items/<domain>/catalog.ts`, `objects/catalog.ts`; loot tables beside their domain

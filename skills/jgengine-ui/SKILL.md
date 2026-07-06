@@ -122,6 +122,6 @@ Run against actual screenshots of the staged `GameUiPreview`, not your mental mo
 - [ ] Do bolts visibly travel before damage?
 - [ ] Is backpack the only bag UI, with no hotbar inside it?
 - [ ] Only backpack + log have panel borders?
-- [ ] Does every declared system have its UI end state — quest → tracker, cooldown → sweep + timer, error → floating text? A wired hook with no visual is half a system: finish it or cut it (see `jgengine-workflow`).
+- [ ] Does every declared system have its UI end state — quest → tracker, cooldown → sweep + timer, error → floating text? A wired hook with no visual is half a system: finish it or cut it (see `jgengine-newgame`).
 - [ ] Does the staged-scenario shot show the HUD *working* (target locked, cooldown mid-sweep, tracker populated) rather than resting-empty?
 - [ ] Would a player think this is intentional art direction? If it looks like a debug build, it ships nothing.
