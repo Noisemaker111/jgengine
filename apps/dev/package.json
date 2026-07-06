@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "check-types": "tsc --noEmit -p tsconfig.json"
+    "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@dogfood/asset-showcase": "workspace:*",
     "@dogfood/loot-shooter": "workspace:*",
     "@dogfood/world-of-warcraft": "workspace:*",
     "@jgengine/shell": "workspace:*",

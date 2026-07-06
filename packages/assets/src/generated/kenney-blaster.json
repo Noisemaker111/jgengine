@@ -1,0 +1,362 @@
+[
+  {
+    "id": "kenney-blaster/blaster-a",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-a.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-b",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-b.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-c",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-c.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-d",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-d.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-e",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-e.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-f",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-f.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-g",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-g.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-h",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-h.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-i",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-i.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-j",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-j.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-k",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-k.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-l",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-l.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-m",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-m.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-n",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-n.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-o",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-o.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-p",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-p.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-q",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-q.glb"
+  },
+  {
+    "id": "kenney-blaster/blaster-r",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "blaster-r.glb"
+  },
+  {
+    "id": "kenney-blaster/bullet-foam-thick",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "bullet-foam-thick.glb"
+  },
+  {
+    "id": "kenney-blaster/bullet-foam-tip-thick",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "bullet-foam-tip-thick.glb"
+  },
+  {
+    "id": "kenney-blaster/bullet-foam-tip",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "bullet-foam-tip.glb"
+  },
+  {
+    "id": "kenney-blaster/bullet-foam",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "bullet-foam.glb"
+  },
+  {
+    "id": "kenney-blaster/clip-large",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "clip-large.glb"
+  },
+  {
+    "id": "kenney-blaster/clip-small",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "clip-small.glb"
+  },
+  {
+    "id": "kenney-blaster/crate-medium",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "crate-medium.glb"
+  },
+  {
+    "id": "kenney-blaster/crate-small",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "crate-small.glb"
+  },
+  {
+    "id": "kenney-blaster/crate-wide",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "crate-wide.glb"
+  },
+  {
+    "id": "kenney-blaster/grenade-a",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "grenade-a.glb"
+  },
+  {
+    "id": "kenney-blaster/grenade-b",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "grenade-b.glb"
+  },
+  {
+    "id": "kenney-blaster/scope-large-a",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "scope-large-a.glb"
+  },
+  {
+    "id": "kenney-blaster/scope-large-b",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "scope-large-b.glb"
+  },
+  {
+    "id": "kenney-blaster/scope-small",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "scope-small.glb"
+  },
+  {
+    "id": "kenney-blaster/silencer-larger",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "silencer-larger.glb"
+  },
+  {
+    "id": "kenney-blaster/silencer-small",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "silencer-small.glb"
+  },
+  {
+    "id": "kenney-blaster/smoke",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "smoke.glb"
+  },
+  {
+    "id": "kenney-blaster/target-detail",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "target-detail.glb"
+  },
+  {
+    "id": "kenney-blaster/target-fragment-large",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "target-fragment-large.glb"
+  },
+  {
+    "id": "kenney-blaster/target-fragment-small",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "target-fragment-small.glb"
+  },
+  {
+    "id": "kenney-blaster/target-large",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "target-large.glb"
+  },
+  {
+    "id": "kenney-blaster/target-small",
+    "source": "kenney-blaster",
+    "categories": [
+      "weapon",
+      "prop"
+    ],
+    "file": "target-small.glb"
+  }
+]

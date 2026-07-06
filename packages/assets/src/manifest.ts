@@ -1,45 +1,47 @@
-/**
- * Asset manifest types for @jgengine/assets.
- *
- * An AssetPack describes a downloadable collection of CC0 models.
- * A PackManifest is the registry of all known packs.
- */
+export type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom";
 
-export interface AssetEntry {
-  /** File name without extension, used as the catalog key. */
-  id: string;
-  /** Human-readable label. */
-  label: string;
-  /** Category path, e.g. ["nature", "tree"] */
-  categories: readonly string[];
+export interface PinnedDownload {
+  url: string;
+  sha256?: string;
 }
 
-export interface AssetPack {
-  /** Unique pack identifier, e.g. "kenney-nature" */
+export interface ScrapeDownload {
+  scrape: string;
+}
+
+export type AssetDownload = PinnedDownload | ScrapeDownload;
+
+export function isScrapeDownload(download: AssetDownload): download is ScrapeDownload {
+  return "scrape" in download;
+}
+
+export interface AssetSource {
   id: string;
-  /** Display name. */
-  name: string;
-  /** CC0 source site. */
+  provider: AssetProvider;
+  title: string;
+  license: string;
+  author: string;
+  categories: readonly string[];
+  download: AssetDownload;
+  homepage?: string;
+}
+
+export interface IndexEntry {
+  id: string;
   source: string;
-  /** Total model count (approximate). */
-  modelCount: number;
-  /** Direct download URL for the ZIP. If absent, the CLI scrapes the source page. */
-  downloadUrl?: string;
-  /** Source page URL (used for scraping when downloadUrl is absent). */
-  sourceUrl: string;
-  /** Path inside the ZIP that contains GLB files. */
-  zipGlbPath: string;
-  /** Categories this pack covers. */
   categories: readonly string[];
+  file: string;
 }
 
-export interface PackManifest {
-  packs: readonly AssetPack[];
+export interface AssetAlias {
+  key: string;
+  target: string;
 }
 
-export interface PullResult {
-  packId: string;
-  downloaded: number;
-  skipped: number;
-  outputDir: string;
+export interface SingleAsset {
+  id: string;
+  url: string;
+  license: string;
+  author: string;
+  categories: readonly string[];
 }

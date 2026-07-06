@@ -18,8 +18,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
-    "check-types": "tsc --noEmit -p tsconfig.json",
+    "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
     "test": "bun test src"
   },
   "dependencies": {

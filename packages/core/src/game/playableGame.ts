@@ -48,6 +48,9 @@ export interface GameCameraConfig {
   targetSmoothing?: number;
   dragTargetSmoothing?: number;
   distanceSmoothing?: number;
+  /** Vertical look clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below. Widen for top-down or vertical aim; unset keeps the standard chase feel. */
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
 }
 
 export interface EntitySpriteConfig {
@@ -55,6 +58,12 @@ export interface EntitySpriteConfig {
   width: number;
   height: number;
   y: number;
+}
+
+export interface ModelConfig {
+  url: string;
+  scale?: number;
+  y?: number;
 }
 
 export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
@@ -66,8 +75,10 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
   WorldOverlay?: TWorldOverlay;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
   entitySprites?: Record<string, EntitySpriteConfig>;
-  /** GLB model asset catalog keys keyed by entity kind name; takes priority over entitySprites. */
-  entityModels?: Record<string, string>;
+  /** GLB models keyed by entity kind name; a string resolves as an asset-catalog key via game.assets, a ModelConfig renders directly. Takes priority over sprites, then primitives. */
+  entityModels?: Record<string, string | ModelConfig>;
+  /** GLB models keyed by object catalog id; a string resolves via game.assets, a ModelConfig renders directly. Replaces the colored box when present. */
+  objectModels?: Record<string, string | ModelConfig>;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
   hotbarSelection?: () => number;
   /** Positioned proximity prompts for the interact key + HUD; single source shared with useActivePrompt. */

@@ -1,101 +1,96 @@
 # @jgengine/assets
 
-Curated CC0 3D asset packs, catalogs, and download tooling for JGengine games.
+A self-generating, license-verified index of thousands of CC0 3D models — hosted at **zero cost**. No GLB bytes ship in the npm tarball; every byte comes from infrastructure you don't pay for:
 
-## Why
+| What | Where it lives | Whose bandwidth |
+|------|----------------|-----------------|
+| Pack GLBs (Kenney, Quaternius, KayKit…) | Fetched at `pull` time from the provider's CDN | Provider's |
+| The generated index (JSON) | Inside this npm package | npm (KB) |
+| Your one-off models | `packages/assets/local/`, served via jsDelivr-over-GitHub | GitHub + jsDelivr |
+| A consumer's downloaded bytes | Their `public/models/` (gitignored) | The consumer's |
 
-JGengine ships with real 3D models from day one — no colored boxes as enemies, no flat grids as ground. The `@jgengine/assets` package gives you:
+## Layers
 
-- **A starter catalog** of 80+ commonly needed models (rocks, trees, weapons, potions, crates, vehicles)
-- **A download CLI** that pulls entire CC0 packs from Kenney.nl and organizes them by category
-- **Typed manifests** so your IDE autocompletes asset keys
+1. **Sources** (`src/sources/*.ts`) — one entry per downloadable pack. Every entry carries required `license` + `author` and a `download` that is either a pinned `{ url, sha256? }` or a `{ scrape }` marker.
+2. **Generated index** (`src/generated/*.json`) — machine-produced from the real `.glb` filenames after a pack is extracted. Never hand-typed. Committed JSON; bytes are not.
+3. **Aliases** (`src/aliases.ts`) — hand-authored semantic keys (`nature/tree_pine → kenney-nature/tree_pineDefaultA`).
+4. **Singles** (`src/singles.json`) — long-tail one-offs (per-model `url` + `license`).
 
-## Quick start
+Everything collapses into the core `AssetCatalog` via `buildCatalog({ basePath })`.
 
-### 1. Download starter assets
+## CLI
+
+```
+assets list [--category <c>] [--source <s>]   # browse the generated index
+assets search <term>                          # grep the index
+assets pull <source-id> [--dir public]        # download + extract GLBs into <dir>/models/<source>/
+assets add <path|url> --category <c> --license <l> [--author <a>]
+assets reindex [public/models]                # regenerate generated/*.json from pulled packs
+assets verify                                 # license + alias-integrity gate
+```
+
+Run in-repo with `bun run --cwd packages/assets src/cli/pull.ts <verb> …`.
+
+## Adding assets
+
+**A whole new pack** — add one entry to the matching `src/sources/*.ts` (this is the layer contributors PR). No filenames are hand-typed; `reindex` reads the real `.glb` names out of the extracted pack, so entries can't silently 404.
+
+```ts
+// src/sources/kenney.ts → KENNEY_PACKS
+{ id: "kenney-food", slug: "food-kit", title: "Food Kit", categories: ["food", "prop"] },
+```
 
 ```bash
-npx @jgengine/assets init
+bun src/cli/pull.ts pull kenney-food --dir ../../apps/dev/public   # fetch + extract GLBs
+bun src/cli/pull.ts reindex ../../apps/dev/public/models           # regenerate generated/*.json + barrel
+bun src/cli/pull.ts verify                                         # license + alias gate
 ```
 
-This downloads ~5 Kenney starter packs into `./public/models/`:
-- `kenney-nature` — rocks, trees, bushes, cacti, logs, mushrooms
-- `kenney-weapon-pack` — swords, axes, bows, guns, shields, daggers
-- `kenney-survival-kit` — potions, coins, keys, backpacks, lanterns
-- `kenney-furniture-kit` — crates, barrels, beds, chairs, tables, shelves
-- `kenney-food-kit` — apples, bread, cheese, fish, meat
+A **new provider** is just a new `src/sources/<provider>.ts` added to the `sources` array in `src/sources/index.ts`. Pinned providers use `download: { url, sha256? }`; providers that rotate URLs (Kenney) use `download: { scrape: <page> }`.
 
-### 2. Wire into your game
+**A single one-off** — no code edit, zero bytes stored (URL) or copied into `local/` (path):
 
-```ts
-import { defineGame } from "@jgengine/core/game/defineGame";
-import { createStarterCatalog } from "@jgengine/assets/catalogs/starter";
-
-const assets = createStarterCatalog({ basePath: "/models" });
-
-export const game = defineGame({
-  name: "my-game",
-  assets,
-  // ... rest of config
-});
+```bash
+assets add "https://poly.pizza/…/model.glb" --category prop --license CC0-1.0 --author "Some Author"
 ```
 
-### 3. Map entities to models
+## Importing in code
+
+Build the catalog once, then address ids (or aliases) — resolve returns `{ url }`:
 
 ```ts
-export const myGame: PlayableGame = {
-  game,
-  // ...
+import { buildCatalog } from "@jgengine/assets";
+
+const catalog = buildCatalog({ basePath: "/models" });
+
+catalog.resolve("kenney-nature/tree_pineDefaultA"); // { url: "/models/kenney-nature/tree_pineDefaultA.glb" }
+catalog.resolve("nature/tree_pine");                // alias → same url
+
+// wire ids straight into a game's model seams:
+export const game: PlayableGame = {
+  // …
+  objectModels: {
+    "kenney-nature/tree_pineDefaultA": { url: catalog.resolve("kenney-nature/tree_pineDefaultA")!.url, scale: 1.4 },
+  },
   entityModels: {
-    player_default: "weapon/sword",
-    goblin_grunt: "weapon/axe",
-    forest_wolf: "nature/rock_small", // or any asset key
+    hero: { url: catalog.resolve("kenney-space/astronautA")!.url, scale: 1.1 },
   },
 };
 ```
 
-Models take priority over sprites. If an entity has no `entityModels` entry and no `entitySprites` entry, the shell falls back to primitive shapes.
+`buildCatalog({ sources: ["kenney-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets search <term>` / `assets list --category <c>` instead of memorizing them. See `packages/games/asset-showcase` for a full working example.
 
-## CLI reference
+### Serving the bytes
 
-### `init [dir]`
-Download the starter set. Default output directory is `./public/models`.
-
-```bash
-npx @jgengine/assets init
-npx @jgengine/assets init ./static/assets
-```
-
-### `pull <pack-id> ...`
-Download specific packs.
+A resolved id only yields a **URL** — the GLB must be somewhere your app serves. For a game, `pull` the packs into your app's `public/`, and line `basePath` up with it:
 
 ```bash
-npx @jgengine/assets pull kenney-space-kit kenney-car-kit
-npx @jgengine/assets pull kenney-fantasy-town-kit --dir ./assets
+bun src/cli/pull.ts pull kenney-nature --dir ../../apps/dev/public   # → apps/dev/public/models/kenney-nature/*.glb
 ```
 
-### `list`
-List all available packs.
+`buildCatalog({ basePath: "/models" })` then resolves to `/models/kenney-nature/…`, which the dev server serves from `public/models/` (gitignored — the bytes are the consumer's, fetched once from the provider's CDN).
 
-```bash
-npx @jgengine/assets list
-```
+## Notes
 
-## Starter catalog keys
-
-The starter catalog registers assets under these category prefixes:
-
-| Prefix | Examples |
-|--------|----------|
-| `nature/*` | `rock_large`, `rock_small`, `tree_pine`, `tree_oak`, `bush`, `grass`, `cactus_short`, `log`, `mushroom` |
-| `weapon/*` | `sword`, `axe`, `bow`, `shield`, `dagger`, `spear`, `pistol`, `rifle`, `shotgun` |
-| `item/*` | `potion_red`, `potion_blue`, `coin`, `chest`, `key`, `gem`, `scroll`, `book`, `apple`, `bread`, `meat` |
-| `prop/*` | `crate`, `barrel`, `campfire`, `tent`, `fence`, `sign`, `lantern`, `bed`, `chair`, `table` |
-| `building/*` | `house_small`, `house_large`, `tower`, `wall`, `door`, `well` |
-| `vehicle/*` | `car_sedan`, `car_police`, `truck`, `van`, `boat_small`, `boat_large` |
-
-## License
-
-All Kenney assets are [CC0 (public domain)](https://creativecommons.org/publicdomain/zero/1.0/). No attribution required. Commercial use allowed.
-
-This package code is AGPL-3.0-only.
+- Kenney rotates download URLs, so its sources `scrape` the asset page at pull time.
+- Quaternius / KayKit pages gate downloads behind JS; automated `pull` falls back to a clear error when no archive link is found — download those manually into the staging dir, then `reindex`.

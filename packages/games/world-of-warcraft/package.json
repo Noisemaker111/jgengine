@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check-types": "tsc --noEmit -p tsconfig.json",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
     "test": "bun test src"
   },
   "dependencies": {

@@ -4,3 +4,15 @@ dist/
 .DS_Store
 shots/
 .turbo/
+**/public/models/
+**/.jgengine-assets-tmp/
+*.tsbuildinfo
+
+# Compiled output must never sit beside TS source — Vite resolves .js over .ts,
+# so a stray src/*.js silently shadows its .ts sibling and breaks dev/shoot.
+# Source dirs are pure TypeScript; emit only ever goes to dist/.
+packages/*/src/**/*.js
+packages/*/src/**/*.jsx
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts.map

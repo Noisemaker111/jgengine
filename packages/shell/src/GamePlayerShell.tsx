@@ -1,7 +1,7 @@
-import { useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import {
   createActionStateTracker,
@@ -25,7 +25,7 @@ import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengi
 import { GameProvider } from "@jgengine/react/provider";
 import type { WsPresenceRow } from "@jgengine/ws/protocol";
 
-import type { EntitySpriteConfig } from "@jgengine/core/game/playableGame";
+import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { GAME_SIM_FRAME_PRIORITY, GameOrbitCamera } from "./camera";
 import { GameFirstPersonCamera } from "./camera/GameFirstPersonCamera";
@@ -126,23 +126,34 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   );
 }
 
-function GlbModel({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
-  const cloned = useMemo(() => scene.clone(), [scene]);
-  return <primitive object={cloned} />;
+function EntityModel({ model }: { model: ModelConfig }) {
+  const gltf = useLoader(GLTFLoader, model.url);
+  const scene = useMemo(() => gltf.scene.clone(true), [gltf]);
+  const scale = model.scale ?? 1;
+  return <primitive object={scene} position-y={model.y ?? 0} scale={[scale, scale, scale]} />;
+}
+
+function resolveModel(
+  value: string | ModelConfig | undefined,
+  assets: AssetCatalog,
+): ModelConfig | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") return value;
+  const url = assets.resolve(value)?.url;
+  return url === undefined ? undefined : { url };
 }
 
 function EntityMarker({
   entity,
+  model,
   sprite,
-  modelUrl,
   isLocal,
   targeted,
   onSelect,
 }: {
   entity: SceneEntity;
+  model: ModelConfig | undefined;
   sprite: EntitySpriteConfig | undefined;
-  modelUrl: string | undefined;
   isLocal: boolean;
   targeted: boolean;
   onSelect: (entity: SceneEntity) => void;
@@ -157,8 +168,8 @@ function EntityMarker({
         if (!isLocal) onSelect(entity);
       }}
     >
-      {modelUrl !== undefined ? (
-        <GlbModel url={modelUrl} />
+      {model !== undefined ? (
+        <EntityModel model={model} />
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
       ) : entity.role === "prop" ? (
@@ -249,10 +260,12 @@ function RockField() {
 function WorldView({
   entitySprites,
   entityModels,
+  objectModels,
   assets,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
-  entityModels: Record<string, string> | undefined;
+  entityModels: Record<string, string | ModelConfig> | undefined;
+  objectModels: Record<string, string | ModelConfig> | undefined;
   assets: AssetCatalog;
 }) {
   const ctx = useGameContext();
@@ -269,40 +282,36 @@ function WorldView({
       <GroundPlane />
       <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
       <RockField />
-      {entities.map((entity) => {
-        const modelKey = entityModels?.[entity.name];
-        const modelUrl = modelKey !== undefined ? assets.resolve(modelKey)?.url : undefined;
-        return (
-          <EntityMarker
-            key={entity.id}
-            entity={entity}
-            sprite={entitySprites?.[entity.name]}
-            modelUrl={modelUrl}
-            isLocal={entity.id === player.userId}
-            targeted={entity.id === targetId}
-            onSelect={handleSelect}
-          />
-        );
-      })}
+      {entities.map((entity) => (
+        <EntityMarker
+          key={entity.id}
+          entity={entity}
+          model={resolveModel(entityModels?.[entity.name], assets)}
+          sprite={entitySprites?.[entity.name]}
+          isLocal={entity.id === player.userId}
+          targeted={entity.id === targetId}
+          onSelect={handleSelect}
+        />
+      ))}
       {objects.map((object) => {
-        const objectModelUrl = assets.resolve(object.catalogId)?.url;
-        return objectModelUrl !== undefined ? (
+        const model =
+          resolveModel(objectModels?.[object.catalogId], assets) ??
+          resolveModel(object.catalogId, assets);
+        return (
           <group
             key={object.instanceId}
             position={[object.position[0], object.position[1], object.position[2]]}
             rotation-y={object.rotationY}
           >
-            <GlbModel url={objectModelUrl} />
+            {model !== undefined ? (
+              <EntityModel model={model} />
+            ) : (
+              <mesh position-y={0.5}>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color={colorFromId(object.catalogId)} />
+              </mesh>
+            )}
           </group>
-        ) : (
-          <mesh
-            key={object.instanceId}
-            position={[object.position[0], object.position[1] + 0.5, object.position[2]]}
-            rotation-y={object.rotationY}
-          >
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={colorFromId(object.catalogId)} />
-          </mesh>
         );
       })}
     </>
@@ -688,6 +697,7 @@ export function GamePlayerShell({
           <WorldView
             entitySprites={playable.entitySprites}
             entityModels={playable.entityModels}
+            objectModels={playable.objectModels}
             assets={playable.game.assets}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
@@ -704,6 +714,7 @@ export function GamePlayerShell({
           ) : (
             <GameOrbitCamera
               yawRef={yawRef}
+              pitchRef={pitchRef}
               config={playable.camera}
               followEntityId={playable.camera?.followEntityId}
               onCameraFollow={playable.camera?.onCameraFollow}

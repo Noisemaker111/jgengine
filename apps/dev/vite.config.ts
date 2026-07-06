@@ -17,6 +17,8 @@ export default defineConfig({
       { find: /^@jgengine\/react\/(.*)$/, replacement: `${src("react")}/$1` },
       { find: /^@jgengine\/ws\/(.*)$/, replacement: `${src("ws")}/$1` },
       { find: /^@jgengine\/shell\/(.*)$/, replacement: `${src("shell")}/$1` },
+      { find: /^@jgengine\/assets$/, replacement: `${src("assets")}/index.ts` },
+      { find: /^@jgengine\/assets\/(.*)$/, replacement: `${src("assets")}/$1` },
       {
         find: /^@dogfood\/world-of-warcraft$/,
         replacement: `${src("games/world-of-warcraft")}/index.ts`,
@@ -24,6 +26,14 @@ export default defineConfig({
       {
         find: /^@dogfood\/world-of-warcraft\/(.*)$/,
         replacement: `${src("games/world-of-warcraft")}/$1`,
+      },
+      {
+        find: /^@dogfood\/asset-showcase$/,
+        replacement: `${src("games/asset-showcase")}/index.tsx`,
+      },
+      {
+        find: /^@dogfood\/asset-showcase\/(.*)$/,
+        replacement: `${src("games/asset-showcase")}/$1`,
       },
     ],
   },
