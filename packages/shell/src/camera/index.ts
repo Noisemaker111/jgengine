@@ -1,6 +1,7 @@
 export { GameOrbitCamera, type CameraFollowListener, type GameOrbitCameraProps } from "./GameOrbitCamera";
 export {
   cameraFollowStep,
+  cameraLookPitch,
   DEFAULT_ORBIT_CAMERA,
   distanceBetween,
   GAME_SIM_FRAME_PRIORITY,

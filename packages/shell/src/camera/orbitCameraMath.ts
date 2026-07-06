@@ -10,6 +10,12 @@ export function orbitYawFromCamera(
   return Math.atan2(dx, dz);
 }
 
+/** Elevation the camera looks along (radians): negative = aiming down, positive = aiming up, 0 = level. Feeds aim.pitch so vertical aim tracks the camera. */
+export function cameraLookPitch(camera: Vec3, target: Vec3): number {
+  const horizontal = Math.hypot(target.x - camera.x, target.z - camera.z);
+  return Math.atan2(target.y - camera.y, horizontal);
+}
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -46,6 +52,9 @@ export interface OrbitCameraConfig {
   dragTargetSmoothing?: number;
   /** Exponential smoothing when re-locking orbit distance. */
   distanceSmoothing?: number;
+  /** Vertical clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below the target. Widen to allow top-down or vertical aim; leave unset for the standard chase feel. */
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
 }
 
 /** Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA. */
@@ -64,6 +73,8 @@ export interface ResolvedOrbitCameraConfig {
   targetSmoothing: number;
   dragTargetSmoothing: number;
   distanceSmoothing: number;
+  minPolarAngle: number;
+  maxPolarAngle: number;
 }
 
 export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
@@ -80,6 +91,8 @@ export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
   targetSmoothing: 8,
   dragTargetSmoothing: 11,
   distanceSmoothing: 5,
+  minPolarAngle: 0.12,
+  maxPolarAngle: Math.PI / 2.05,
 };
 
 /** Run simulation/movement before orbit follow so poses are current. */
