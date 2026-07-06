@@ -40,11 +40,13 @@ Your first substantive response is the complete plan for the **full game** — e
 - **Asset plan** — which packs (per `jgengine-assets`) cover ground, structures, props, characters/enemies, items; pack → catalog-id mapping; one style family.
 - **File tree** — every file under `game/` (catalogs, generators, handlers, loop, quests, curves, ui components), one line each.
 - **Catalog ids** — the archetype entity / item / object / loot-table / quest ids; the generators below produce the breadth.
-- **Keybind table** — lives in `keybinds.ts` (named actions + `hotbarSlotBindings(n)`); action → key, checked: one key, one action.
+- **Keybind table** — lives in `keybinds.ts` (named actions + `hotbarSlotBindings(n)`); action → key, checked: one key, one action — including mode toggles (aim-toggle on `V` plus a V.A.T.S. key on `V` is the classic collision).
 - **UI zone map** — which HUD cluster lives in which `GameUI.tsx` grid zone.
 - **Multiplayer shape** — adapter + topology (`"shared" | "lobbies" | "private"`) and which systems sync.
 - **Phase plan** — the ordered phases that take an empty project to the complete blueprint, each phase a coherent whole (see below).
 - **Staged screenshot scenario** per phase for `GameUiPreview`.
+
+The blueprint message ends by **starting phase 1** — never with "want me to begin?", "any changes?", or any other permission request. The user asked for the game; the blueprint is your statement of how, not a question.
 
 ## Phases: every increment is whole, none of them is "the game"
 
