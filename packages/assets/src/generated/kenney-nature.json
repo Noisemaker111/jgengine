@@ -1,0 +1,3292 @@
+[
+  {
+    "id": "kenney-nature/bed_floor",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bed_floor.glb"
+  },
+  {
+    "id": "kenney-nature/bed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bed.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_center_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_center_stone.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_center_stoneRound",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_center_stoneRound.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_center_wood",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_center_wood.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_center_woodRound",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_center_woodRound.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_side_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_side_stone.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_side_stoneRound",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_side_stoneRound.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_side_wood",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_side_wood.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_side_woodRound",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_side_woodRound.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_stone.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_stoneNarrow",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_stoneNarrow.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_stoneRound",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_stoneRound.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_stoneRoundNarrow",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_stoneRoundNarrow.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_wood",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_wood.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_woodNarrow",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_woodNarrow.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_woodRound",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_woodRound.glb"
+  },
+  {
+    "id": "kenney-nature/bridge_woodRoundNarrow",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "bridge_woodRoundNarrow.glb"
+  },
+  {
+    "id": "kenney-nature/cactus_short",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cactus_short.glb"
+  },
+  {
+    "id": "kenney-nature/cactus_tall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cactus_tall.glb"
+  },
+  {
+    "id": "kenney-nature/campfire_bricks",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "campfire_bricks.glb"
+  },
+  {
+    "id": "kenney-nature/campfire_logs",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "campfire_logs.glb"
+  },
+  {
+    "id": "kenney-nature/campfire_planks",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "campfire_planks.glb"
+  },
+  {
+    "id": "kenney-nature/campfire_stones",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "campfire_stones.glb"
+  },
+  {
+    "id": "kenney-nature/canoe_paddle",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "canoe_paddle.glb"
+  },
+  {
+    "id": "kenney-nature/canoe",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "canoe.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_block_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_block_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_block_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_block_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockCave_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockCave_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockCave_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockCave_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockDiagonal_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockDiagonal_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockDiagonal_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockDiagonal_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockHalf_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockHalf_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockHalf_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockHalf_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockQuarter_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockQuarter_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockQuarter_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockQuarter_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockSlope_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockSlope_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockSlope_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockSlope_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockSlopeHalfWalls_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockSlopeHalfWalls_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockSlopeHalfWalls_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockSlopeHalfWalls_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockSlopeWalls_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockSlopeWalls_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_blockSlopeWalls_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_blockSlopeWalls_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cave_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cave_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cave_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cave_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_corner_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_corner_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_corner_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_corner_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerInner_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerInner_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerInner_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerInner_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerInnerLarge_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerInnerLarge_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerInnerLarge_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerInnerLarge_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerInnerTop_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerInnerTop_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerInnerTop_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerInnerTop_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerLarge_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerLarge_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerLarge_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerLarge_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerTop_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerTop_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_cornerTop_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_cornerTop_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_diagonal_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_diagonal_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_diagonal_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_diagonal_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_half_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_half_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_half_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_half_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_halfCorner_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_halfCorner_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_halfCorner_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_halfCorner_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_halfCornerInner_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_halfCornerInner_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_halfCornerInner_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_halfCornerInner_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_large_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_large_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_large_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_large_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_steps_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_steps_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_steps_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_steps_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_stepsCorner_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_stepsCorner_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_stepsCorner_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_stepsCorner_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_stepsCornerInner_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_stepsCornerInner_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_stepsCornerInner_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_stepsCornerInner_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_top_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_top_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_top_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_top_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_topDiagonal_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_topDiagonal_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_topDiagonal_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_topDiagonal_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_waterfall_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_waterfall_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_waterfall_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_waterfall_stone.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_waterfallTop_rock",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_waterfallTop_rock.glb"
+  },
+  {
+    "id": "kenney-nature/cliff_waterfallTop_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "cliff_waterfallTop_stone.glb"
+  },
+  {
+    "id": "kenney-nature/crop_carrot",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crop_carrot.glb"
+  },
+  {
+    "id": "kenney-nature/crop_melon",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crop_melon.glb"
+  },
+  {
+    "id": "kenney-nature/crop_pumpkin",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crop_pumpkin.glb"
+  },
+  {
+    "id": "kenney-nature/crop_turnip",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crop_turnip.glb"
+  },
+  {
+    "id": "kenney-nature/crops_bambooStageA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_bambooStageA.glb"
+  },
+  {
+    "id": "kenney-nature/crops_bambooStageB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_bambooStageB.glb"
+  },
+  {
+    "id": "kenney-nature/crops_cornStageA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_cornStageA.glb"
+  },
+  {
+    "id": "kenney-nature/crops_cornStageB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_cornStageB.glb"
+  },
+  {
+    "id": "kenney-nature/crops_cornStageC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_cornStageC.glb"
+  },
+  {
+    "id": "kenney-nature/crops_cornStageD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_cornStageD.glb"
+  },
+  {
+    "id": "kenney-nature/crops_dirtDoubleRow",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_dirtDoubleRow.glb"
+  },
+  {
+    "id": "kenney-nature/crops_dirtDoubleRowCorner",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_dirtDoubleRowCorner.glb"
+  },
+  {
+    "id": "kenney-nature/crops_dirtDoubleRowEnd",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_dirtDoubleRowEnd.glb"
+  },
+  {
+    "id": "kenney-nature/crops_dirtRow",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_dirtRow.glb"
+  },
+  {
+    "id": "kenney-nature/crops_dirtRowCorner",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_dirtRowCorner.glb"
+  },
+  {
+    "id": "kenney-nature/crops_dirtRowEnd",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_dirtRowEnd.glb"
+  },
+  {
+    "id": "kenney-nature/crops_dirtSingle",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_dirtSingle.glb"
+  },
+  {
+    "id": "kenney-nature/crops_leafsStageA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_leafsStageA.glb"
+  },
+  {
+    "id": "kenney-nature/crops_leafsStageB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_leafsStageB.glb"
+  },
+  {
+    "id": "kenney-nature/crops_wheatStageA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_wheatStageA.glb"
+  },
+  {
+    "id": "kenney-nature/crops_wheatStageB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "crops_wheatStageB.glb"
+  },
+  {
+    "id": "kenney-nature/fence_bend",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_bend.glb"
+  },
+  {
+    "id": "kenney-nature/fence_bendCenter",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_bendCenter.glb"
+  },
+  {
+    "id": "kenney-nature/fence_corner",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_corner.glb"
+  },
+  {
+    "id": "kenney-nature/fence_gate",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_gate.glb"
+  },
+  {
+    "id": "kenney-nature/fence_planks",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_planks.glb"
+  },
+  {
+    "id": "kenney-nature/fence_planksDouble",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_planksDouble.glb"
+  },
+  {
+    "id": "kenney-nature/fence_simple",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_simple.glb"
+  },
+  {
+    "id": "kenney-nature/fence_simpleCenter",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_simpleCenter.glb"
+  },
+  {
+    "id": "kenney-nature/fence_simpleDiagonal",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_simpleDiagonal.glb"
+  },
+  {
+    "id": "kenney-nature/fence_simpleDiagonalCenter",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_simpleDiagonalCenter.glb"
+  },
+  {
+    "id": "kenney-nature/fence_simpleHigh",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_simpleHigh.glb"
+  },
+  {
+    "id": "kenney-nature/fence_simpleLow",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "fence_simpleLow.glb"
+  },
+  {
+    "id": "kenney-nature/flower_purpleA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_purpleA.glb"
+  },
+  {
+    "id": "kenney-nature/flower_purpleB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_purpleB.glb"
+  },
+  {
+    "id": "kenney-nature/flower_purpleC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_purpleC.glb"
+  },
+  {
+    "id": "kenney-nature/flower_redA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_redA.glb"
+  },
+  {
+    "id": "kenney-nature/flower_redB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_redB.glb"
+  },
+  {
+    "id": "kenney-nature/flower_redC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_redC.glb"
+  },
+  {
+    "id": "kenney-nature/flower_yellowA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_yellowA.glb"
+  },
+  {
+    "id": "kenney-nature/flower_yellowB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_yellowB.glb"
+  },
+  {
+    "id": "kenney-nature/flower_yellowC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "flower_yellowC.glb"
+  },
+  {
+    "id": "kenney-nature/grass_large",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "grass_large.glb"
+  },
+  {
+    "id": "kenney-nature/grass_leafs",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "grass_leafs.glb"
+  },
+  {
+    "id": "kenney-nature/grass_leafsLarge",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "grass_leafsLarge.glb"
+  },
+  {
+    "id": "kenney-nature/grass",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "grass.glb"
+  },
+  {
+    "id": "kenney-nature/ground_grass",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_grass.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathBend",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathBend.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathBendBank",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathBendBank.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathCorner",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathCorner.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathCornerSmall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathCornerSmall.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathCross",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathCross.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathEnd",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathEnd.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathEndClosed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathEndClosed.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathOpen",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathOpen.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathRocks",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathRocks.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathSide",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathSide.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathSideOpen",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathSideOpen.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathSplit",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathSplit.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathStraight",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathStraight.glb"
+  },
+  {
+    "id": "kenney-nature/ground_pathTile",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_pathTile.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverBend",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverBend.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverBendBank",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverBendBank.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverCorner",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverCorner.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverCornerSmall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverCornerSmall.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverCross",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverCross.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverEnd",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverEnd.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverEndClosed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverEndClosed.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverOpen",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverOpen.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverRocks",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverRocks.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverSide",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverSide.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverSideOpen",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverSideOpen.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverSplit",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverSplit.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverStraight",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverStraight.glb"
+  },
+  {
+    "id": "kenney-nature/ground_riverTile",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "ground_riverTile.glb"
+  },
+  {
+    "id": "kenney-nature/hanging_moss",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "hanging_moss.glb"
+  },
+  {
+    "id": "kenney-nature/lily_large",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "lily_large.glb"
+  },
+  {
+    "id": "kenney-nature/lily_small",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "lily_small.glb"
+  },
+  {
+    "id": "kenney-nature/log_large",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "log_large.glb"
+  },
+  {
+    "id": "kenney-nature/log_stack",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "log_stack.glb"
+  },
+  {
+    "id": "kenney-nature/log_stackLarge",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "log_stackLarge.glb"
+  },
+  {
+    "id": "kenney-nature/log",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "log.glb"
+  },
+  {
+    "id": "kenney-nature/mushroom_red",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "mushroom_red.glb"
+  },
+  {
+    "id": "kenney-nature/mushroom_redGroup",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "mushroom_redGroup.glb"
+  },
+  {
+    "id": "kenney-nature/mushroom_redTall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "mushroom_redTall.glb"
+  },
+  {
+    "id": "kenney-nature/mushroom_tan",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "mushroom_tan.glb"
+  },
+  {
+    "id": "kenney-nature/mushroom_tanGroup",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "mushroom_tanGroup.glb"
+  },
+  {
+    "id": "kenney-nature/mushroom_tanTall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "mushroom_tanTall.glb"
+  },
+  {
+    "id": "kenney-nature/path_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "path_stone.glb"
+  },
+  {
+    "id": "kenney-nature/path_stoneCircle",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "path_stoneCircle.glb"
+  },
+  {
+    "id": "kenney-nature/path_stoneCorner",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "path_stoneCorner.glb"
+  },
+  {
+    "id": "kenney-nature/path_stoneEnd",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "path_stoneEnd.glb"
+  },
+  {
+    "id": "kenney-nature/path_wood",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "path_wood.glb"
+  },
+  {
+    "id": "kenney-nature/path_woodCorner",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "path_woodCorner.glb"
+  },
+  {
+    "id": "kenney-nature/path_woodEnd",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "path_woodEnd.glb"
+  },
+  {
+    "id": "kenney-nature/plant_bush",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "plant_bush.glb"
+  },
+  {
+    "id": "kenney-nature/plant_bushDetailed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "plant_bushDetailed.glb"
+  },
+  {
+    "id": "kenney-nature/plant_bushLarge",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "plant_bushLarge.glb"
+  },
+  {
+    "id": "kenney-nature/plant_bushLargeTriangle",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "plant_bushLargeTriangle.glb"
+  },
+  {
+    "id": "kenney-nature/plant_bushSmall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "plant_bushSmall.glb"
+  },
+  {
+    "id": "kenney-nature/plant_bushTriangle",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "plant_bushTriangle.glb"
+  },
+  {
+    "id": "kenney-nature/plant_flatShort",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "plant_flatShort.glb"
+  },
+  {
+    "id": "kenney-nature/plant_flatTall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "plant_flatTall.glb"
+  },
+  {
+    "id": "kenney-nature/platform_beach",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "platform_beach.glb"
+  },
+  {
+    "id": "kenney-nature/platform_grass",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "platform_grass.glb"
+  },
+  {
+    "id": "kenney-nature/platform_stone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "platform_stone.glb"
+  },
+  {
+    "id": "kenney-nature/pot_large",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "pot_large.glb"
+  },
+  {
+    "id": "kenney-nature/pot_small",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "pot_small.glb"
+  },
+  {
+    "id": "kenney-nature/rock_largeA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_largeA.glb"
+  },
+  {
+    "id": "kenney-nature/rock_largeB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_largeB.glb"
+  },
+  {
+    "id": "kenney-nature/rock_largeC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_largeC.glb"
+  },
+  {
+    "id": "kenney-nature/rock_largeD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_largeD.glb"
+  },
+  {
+    "id": "kenney-nature/rock_largeE",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_largeE.glb"
+  },
+  {
+    "id": "kenney-nature/rock_largeF",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_largeF.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallA.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallB.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallC.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallD.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallE",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallE.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallF",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallF.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallFlatA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallFlatA.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallFlatB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallFlatB.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallFlatC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallFlatC.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallG",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallG.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallH",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallH.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallI",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallI.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallTopA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallTopA.glb"
+  },
+  {
+    "id": "kenney-nature/rock_smallTopB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_smallTopB.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallA.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallB.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallC.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallD.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallE",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallE.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallF",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallF.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallG",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallG.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallH",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallH.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallI",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallI.glb"
+  },
+  {
+    "id": "kenney-nature/rock_tallJ",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_tallJ.glb"
+  },
+  {
+    "id": "kenney-nature/sign",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "sign.glb"
+  },
+  {
+    "id": "kenney-nature/statue_block",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "statue_block.glb"
+  },
+  {
+    "id": "kenney-nature/statue_column",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "statue_column.glb"
+  },
+  {
+    "id": "kenney-nature/statue_columnDamaged",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "statue_columnDamaged.glb"
+  },
+  {
+    "id": "kenney-nature/statue_head",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "statue_head.glb"
+  },
+  {
+    "id": "kenney-nature/statue_obelisk",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "statue_obelisk.glb"
+  },
+  {
+    "id": "kenney-nature/statue_ring",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "statue_ring.glb"
+  },
+  {
+    "id": "kenney-nature/stone_largeA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_largeA.glb"
+  },
+  {
+    "id": "kenney-nature/stone_largeB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_largeB.glb"
+  },
+  {
+    "id": "kenney-nature/stone_largeC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_largeC.glb"
+  },
+  {
+    "id": "kenney-nature/stone_largeD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_largeD.glb"
+  },
+  {
+    "id": "kenney-nature/stone_largeE",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_largeE.glb"
+  },
+  {
+    "id": "kenney-nature/stone_largeF",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_largeF.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallA.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallB.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallC.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallD.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallE",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallE.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallF",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallF.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallFlatA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallFlatA.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallFlatB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallFlatB.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallFlatC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallFlatC.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallG",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallG.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallH",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallH.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallI",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallI.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallTopA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallTopA.glb"
+  },
+  {
+    "id": "kenney-nature/stone_smallTopB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_smallTopB.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallA.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallB.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallC.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallD.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallE",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallE.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallF",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallF.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallG",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallG.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallH",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallH.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallI",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallI.glb"
+  },
+  {
+    "id": "kenney-nature/stone_tallJ",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stone_tallJ.glb"
+  },
+  {
+    "id": "kenney-nature/stump_old",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stump_old.glb"
+  },
+  {
+    "id": "kenney-nature/stump_oldTall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stump_oldTall.glb"
+  },
+  {
+    "id": "kenney-nature/stump_round",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stump_round.glb"
+  },
+  {
+    "id": "kenney-nature/stump_roundDetailed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stump_roundDetailed.glb"
+  },
+  {
+    "id": "kenney-nature/stump_square",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stump_square.glb"
+  },
+  {
+    "id": "kenney-nature/stump_squareDetailed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stump_squareDetailed.glb"
+  },
+  {
+    "id": "kenney-nature/stump_squareDetailedWide",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "stump_squareDetailedWide.glb"
+  },
+  {
+    "id": "kenney-nature/tent_detailedClosed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tent_detailedClosed.glb"
+  },
+  {
+    "id": "kenney-nature/tent_detailedOpen",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tent_detailedOpen.glb"
+  },
+  {
+    "id": "kenney-nature/tent_smallClosed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tent_smallClosed.glb"
+  },
+  {
+    "id": "kenney-nature/tent_smallOpen",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tent_smallOpen.glb"
+  },
+  {
+    "id": "kenney-nature/tree_blocks_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_blocks_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_blocks_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_blocks_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_blocks",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_blocks.glb"
+  },
+  {
+    "id": "kenney-nature/tree_cone_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_cone_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_cone_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_cone_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_cone",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_cone.glb"
+  },
+  {
+    "id": "kenney-nature/tree_default_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_default_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_default_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_default_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_default",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_default.glb"
+  },
+  {
+    "id": "kenney-nature/tree_detailed_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_detailed_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_detailed_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_detailed_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_detailed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_detailed.glb"
+  },
+  {
+    "id": "kenney-nature/tree_fat_darkh",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_fat_darkh.glb"
+  },
+  {
+    "id": "kenney-nature/tree_fat_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_fat_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_fat",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_fat.glb"
+  },
+  {
+    "id": "kenney-nature/tree_oak_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_oak_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_oak_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_oak_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_oak",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_oak.glb"
+  },
+  {
+    "id": "kenney-nature/tree_palm",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_palm.glb"
+  },
+  {
+    "id": "kenney-nature/tree_palmBend",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_palmBend.glb"
+  },
+  {
+    "id": "kenney-nature/tree_palmDetailedShort",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_palmDetailedShort.glb"
+  },
+  {
+    "id": "kenney-nature/tree_palmDetailedTall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_palmDetailedTall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_palmShort",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_palmShort.glb"
+  },
+  {
+    "id": "kenney-nature/tree_palmTall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_palmTall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineDefaultA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineDefaultA.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineDefaultB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineDefaultB.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineGroundA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineGroundA.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineGroundB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineGroundB.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineRoundA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineRoundA.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineRoundB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineRoundB.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineRoundC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineRoundC.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineRoundD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineRoundD.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineRoundE",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineRoundE.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineRoundF",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineRoundF.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineSmallA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineSmallA.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineSmallB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineSmallB.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineSmallC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineSmallC.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineSmallD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineSmallD.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineTallA_detailed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineTallA_detailed.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineTallA",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineTallA.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineTallB_detailed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineTallB_detailed.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineTallB",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineTallB.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineTallC_detailed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineTallC_detailed.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineTallC",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineTallC.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineTallD_detailed",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineTallD_detailed.glb"
+  },
+  {
+    "id": "kenney-nature/tree_pineTallD",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_pineTallD.glb"
+  },
+  {
+    "id": "kenney-nature/tree_plateau_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_plateau_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_plateau_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_plateau_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_plateau",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_plateau.glb"
+  },
+  {
+    "id": "kenney-nature/tree_simple_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_simple_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_simple_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_simple_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_simple",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_simple.glb"
+  },
+  {
+    "id": "kenney-nature/tree_small_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_small_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_small_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_small_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_small",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_small.glb"
+  },
+  {
+    "id": "kenney-nature/tree_tall_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_tall_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_tall_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_tall_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_tall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_tall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_thin_dark",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_thin_dark.glb"
+  },
+  {
+    "id": "kenney-nature/tree_thin_fall",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_thin_fall.glb"
+  },
+  {
+    "id": "kenney-nature/tree_thin",
+    "source": "kenney-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "tree_thin.glb"
+  }
+]

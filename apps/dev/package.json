@@ -9,6 +9,7 @@
     "check-types": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@dogfood/asset-showcase": "workspace:*",
     "@dogfood/world-of-warcraft": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "react": "19.2.3",

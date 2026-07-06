@@ -4,3 +4,5 @@ dist/
 .DS_Store
 shots/
 .turbo/
+**/public/models/
+**/.jgengine-assets-tmp/

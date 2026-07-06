@@ -1,6 +1,7 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import {
   createActionStateTracker,
@@ -23,7 +24,7 @@ import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengi
 import { GameProvider } from "@jgengine/react/provider";
 import type { WsPresenceRow } from "@jgengine/ws/protocol";
 
-import type { EntitySpriteConfig } from "@jgengine/core/game/playableGame";
+import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { GAME_SIM_FRAME_PRIORITY, GameOrbitCamera } from "./camera";
 import type { ShellMultiplayer } from "./multiplayer";
@@ -121,14 +122,23 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   );
 }
 
+function EntityModel({ model }: { model: ModelConfig }) {
+  const gltf = useLoader(GLTFLoader, model.url);
+  const scene = useMemo(() => gltf.scene.clone(true), [gltf]);
+  const scale = model.scale ?? 1;
+  return <primitive object={scene} position-y={model.y ?? 0} scale={[scale, scale, scale]} />;
+}
+
 function EntityMarker({
   entity,
+  model,
   sprite,
   isLocal,
   targeted,
   onSelect,
 }: {
   entity: SceneEntity;
+  model: ModelConfig | undefined;
   sprite: EntitySpriteConfig | undefined;
   isLocal: boolean;
   targeted: boolean;
@@ -144,7 +154,9 @@ function EntityMarker({
         if (!isLocal) onSelect(entity);
       }}
     >
-      {sprite !== undefined ? (
+      {model !== undefined ? (
+        <EntityModel model={model} />
+      ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
       ) : entity.role === "prop" ? (
         <mesh position-y={0.5}>
@@ -231,7 +243,15 @@ function RockField() {
   );
 }
 
-function WorldView({ entitySprites }: { entitySprites: Record<string, EntitySpriteConfig> | undefined }) {
+function WorldView({
+  entitySprites,
+  entityModels,
+  objectModels,
+}: {
+  entitySprites: Record<string, EntitySpriteConfig> | undefined;
+  entityModels: Record<string, ModelConfig> | undefined;
+  objectModels: Record<string, ModelConfig> | undefined;
+}) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
   const objects = useSceneObjects();
@@ -250,22 +270,32 @@ function WorldView({ entitySprites }: { entitySprites: Record<string, EntitySpri
         <EntityMarker
           key={entity.id}
           entity={entity}
+          model={entityModels?.[entity.name]}
           sprite={entitySprites?.[entity.name]}
           isLocal={entity.id === player.userId}
           targeted={entity.id === targetId}
           onSelect={handleSelect}
         />
       ))}
-      {objects.map((object) => (
-        <mesh
-          key={object.instanceId}
-          position={[object.position[0], object.position[1] + 0.5, object.position[2]]}
-          rotation-y={object.rotationY}
-        >
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={colorFromId(object.catalogId)} />
-        </mesh>
-      ))}
+      {objects.map((object) => {
+        const model = objectModels?.[object.catalogId];
+        return (
+          <group
+            key={object.instanceId}
+            position={[object.position[0], object.position[1], object.position[2]]}
+            rotation-y={object.rotationY}
+          >
+            {model !== undefined ? (
+              <EntityModel model={model} />
+            ) : (
+              <mesh position-y={0.5}>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color={colorFromId(object.catalogId)} />
+              </mesh>
+            )}
+          </group>
+        );
+      })}
     </>
   );
 }
@@ -634,7 +664,11 @@ export function GamePlayerShell({
         <ambientLight intensity={0.55} />
         <directionalLight position={[10, 16, 6]} intensity={1.3} />
         <GameProvider context={ctx}>
-          <WorldView entitySprites={playable.entitySprites} />
+          <WorldView
+            entitySprites={playable.entitySprites}
+            entityModels={playable.entityModels}
+            objectModels={playable.objectModels}
+          />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           <GameOrbitCamera
             yawRef={yawRef}
