@@ -1,0 +1,23 @@
+{
+  "name": "@jgengine-examples/express-host",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "start": "bun src/server.ts"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*",
+    "@jgengine/node": "workspace:*",
+    "@jgengine/sql": "workspace:*",
+    "express": "^5.1.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5",
+    "@types/node": "^24",
+    "@types/pg": "^8",
+    "typescript": "^5"
+  }
+}

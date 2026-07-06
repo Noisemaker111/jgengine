@@ -2,13 +2,16 @@
   "name": "jgengine",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": ["packages/*", "packages/games/*", "apps/*", "examples/*"],
   "scripts": {
     "build": "bun run --cwd packages/core build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build",
-    "check-types": "bun run --filter '@jgengine/*' check-types",
-    "test": "bun test packages"
+    "check-types": "bun run --filter '*' check-types",
+    "test": "bun test packages",
+    "dev": "bun run --cwd apps/dev dev",
+    "shoot": "bun scripts/shoot-dev.ts"
   },
   "devDependencies": {
+    "playwright-core": "^1.50.0",
     "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.3.8"

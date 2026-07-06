@@ -1,0 +1,33 @@
+{
+  "name": "@jgengine-examples/next-host",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "dev": "next dev",
+    "build:next": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@dogfood/world-of-warcraft": "workspace:*",
+    "@jgengine/core": "workspace:*",
+    "@jgengine/react": "workspace:*",
+    "@jgengine/sql": "workspace:*",
+    "@jgengine/ws": "workspace:*",
+    "@jgengine/shell": "workspace:*",
+    "next": "^15.3.0",
+    "pg": "^8.13.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.15",
+    "@types/node": "^24",
+    "@types/pg": "^8",
+    "@types/react": "^19",
+    "@types/react-dom": "19.2.3",
+    "tailwindcss": "^4.0.15",
+    "typescript": "^5"
+  }
+}

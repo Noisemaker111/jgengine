@@ -104,7 +104,9 @@ The game is done when the **entire blueprint** is delivered:
 
 ## Engine gaps
 
-When the game needs a primitive the engine should own (any loop a second game would also need — loot roll, shop buy, kit seeding), don't silently hand-roll a workaround: check whether `@jgengine/core` already has it (read `jgengine-api` fully first — most "missing" primitives exist), and if it genuinely doesn't, file the gap at [github.com/Noisemaker111/jgengine/issues](https://github.com/Noisemaker111/jgengine/issues) — what you were building, the glue it forced, the primitive signature you wanted — or PR the primitive. Then schedule the dependent system into a later phase around the gap, honestly.
+When the game needs a primitive the engine should own (any loop a second game would also need — loot roll, shop buy, kit seeding), don't silently hand-roll a workaround: check whether `@jgengine/core` already has it (read `jgengine-api` fully first — most "missing" primitives exist), and if it genuinely doesn't, record the gap — what you were building, the glue it forced, the primitive signature you wanted — or PR the primitive. Then schedule the dependent system into a later phase around the gap, honestly.
+
+Inside this repo, gaps go to the root `ENGINE-GAPS.md` ledger, which has burn-down rules: read it before every session, delete the entry in the same change that ships its primitive, and any entry that survives two subsequent games gets implemented or rejected with a stated reason. External consumers file the gap at [github.com/Noisemaker111/jgengine/issues](https://github.com/Noisemaker111/jgengine/issues) instead.
 
 ## Isolation
 

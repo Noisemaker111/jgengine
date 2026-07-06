@@ -1,0 +1,11 @@
+{
+  "name": "@jgengine-examples/convex-host",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@jgengine/convex": "workspace:*",
+    "@jgengine/core": "workspace:*",
+    "convex": "^1.31.2"
+  }
+}

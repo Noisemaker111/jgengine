@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "noEmit": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "incremental": true,
+    "types": ["node"],
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./*"],
+      "@jgengine/core/*": ["../../packages/core/src/*"],
+      "@jgengine/react/*": ["../../packages/react/src/*"],
+      "@jgengine/ws/*": ["../../packages/ws/src/*"],
+      "@jgengine/sql/*": ["../../packages/sql/src/*"],
+      "@jgengine/shell/*": ["../../packages/shell/src/*"],
+      "@dogfood/world-of-warcraft": ["../../packages/games/world-of-warcraft/src/index.ts"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next"]
+}

@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "source": {
+    "name": "codex-clipboard-4bcaa42b-79f6-4c22-b397-02bc1302c98c.png",
+    "width": 1024,
+    "height": 1024
+  },
+  "grid": {
+    "columns": 4,
+    "rows": 2,
+    "marginX": 12,
+    "marginY": 204,
+    "gapX": 17,
+    "gapY": 56,
+    "cellWidth": 237,
+    "cellHeight": 268
+  },
+  "slices": [
+    {
+      "id": "0-0",
+      "name": "sword-slash-attack",
+      "row": 0,
+      "column": 0,
+      "x": 12,
+      "y": 204,
+      "width": 237,
+      "height": 268
+    },
+    {
+      "id": "0-1",
+      "name": "fireball-spell",
+      "row": 0,
+      "column": 1,
+      "x": 266,
+      "y": 204,
+      "width": 237,
+      "height": 268
+    },
+    {
+      "id": "0-2",
+      "name": "healing-potion",
+      "row": 0,
+      "column": 2,
+      "x": 520,
+      "y": 204,
+      "width": 237,
+      "height": 268
+    },
+    {
+      "id": "0-3",
+      "name": "treasure-chest-inventory",
+      "row": 0,
+      "column": 3,
+      "x": 774,
+      "y": 204,
+      "width": 237,
+      "height": 268
+    },
+    {
+      "id": "1-0",
+      "name": "shield-block",
+      "row": 1,
+      "column": 0,
+      "x": 12,
+      "y": 528,
+      "width": 237,
+      "height": 268
+    },
+    {
+      "id": "1-1",
+      "name": "lightning-bolt-spell",
+      "row": 1,
+      "column": 1,
+      "x": 266,
+      "y": 528,
+      "width": 237,
+      "height": 268
+    },
+    {
+      "id": "1-2",
+      "name": "map-scroll-menu",
+      "row": 1,
+      "column": 2,
+      "x": 520,
+      "y": 528,
+      "width": 237,
+      "height": 268
+    },
+    {
+      "id": "1-3",
+      "name": "gold-coin-pouch",
+      "row": 1,
+      "column": 3,
+      "x": 774,
+      "y": 528,
+      "width": 237,
+      "height": 268
+    }
+  ],
+  "processing": {
+    "backgroundMode": "checker",
+    "tolerance": 28,
+    "trim": false,
+    "trimPadding": 0
+  },
+  "output": {
+    "directory": "C:\\Users\\Jk101\\Projects\\ai-lab-game\\apps\\web\\public\\game-assets\\wow\\icons",
+    "files": [
+      {
+        "name": "sword-slash-attack",
+        "file": "sword-slash-attack.png",
+        "width": 237,
+        "height": 268
+      },
+      {
+        "name": "fireball-spell",
+        "file": "fireball-spell.png",
+        "width": 237,
+        "height": 268
+      },
+      {
+        "name": "healing-potion",
+        "file": "healing-potion.png",
+        "width": 237,
+        "height": 268
+      },
+      {
+        "name": "treasure-chest-inventory",
+        "file": "treasure-chest-inventory.png",
+        "width": 237,
+        "height": 268
+      },
+      {
+        "name": "shield-block",
+        "file": "shield-block.png",
+        "width": 237,
+        "height": 268
+      },
+      {
+        "name": "lightning-bolt-spell",
+        "file": "lightning-bolt-spell.png",
+        "width": 237,
+        "height": 268
+      },
+      {
+        "name": "map-scroll-menu",
+        "file": "map-scroll-menu.png",
+        "width": 237,
+        "height": 268
+      },
+      {
+        "name": "gold-coin-pouch",
+        "file": "gold-coin-pouch.png",
+        "width": 237,
+        "height": 268
+      }
+    ]
+  }
+}

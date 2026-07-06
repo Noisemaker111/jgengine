@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@source "../../../packages/games/*/src/**/*.{ts,tsx}";
+@source "../../../packages/react/src/**/*.{ts,tsx}";
+@source "../../../packages/shell/src/**/*.{ts,tsx}";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #0a0a0a;
+}
