@@ -3,6 +3,34 @@ export interface UnlockDef {
   category?: string;
 }
 
+export type UnlockState = readonly string[];
+
+export function hasUnlock(granted: UnlockState, unlockId: string): boolean {
+  return granted.includes(unlockId);
+}
+
+export function grantUnlock(granted: UnlockState, unlockId: string): string[] {
+  return granted.includes(unlockId) ? granted.slice() : [...granted, unlockId];
+}
+
+export function unlockTree(defs: readonly UnlockDef[], categoryId: string): UnlockDef[] {
+  return defs.filter((def) => def.category === categoryId);
+}
+
+export interface UnlockCatalog {
+  has(unlockId: string): boolean;
+  tree(categoryId: string): UnlockDef[];
+}
+
+export function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog {
+  const byId = new Map<string, UnlockDef>();
+  for (const def of defs) byId.set(def.id, def);
+  return {
+    has: (unlockId) => byId.has(unlockId),
+    tree: (categoryId) => unlockTree(defs, categoryId),
+  };
+}
+
 export interface Unlocks {
   has(userId: string, unlockId: string): boolean;
   grant(userId: string, unlockId: string): void;
@@ -38,7 +66,7 @@ export function createUnlocks(defs: UnlockDef[] = []): Unlocks {
       return Array.from(granted.get(userId) ?? []);
     },
     tree(categoryId) {
-      return Array.from(definitions.values()).filter((def) => def.category === categoryId);
+      return unlockTree(Array.from(definitions.values()), categoryId);
     },
     snapshot(userId) {
       return Array.from(granted.get(userId) ?? []);
