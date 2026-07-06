@@ -1,9 +1,6 @@
 ---
 name: jgengine-assets
-description: >
-  Real, license-safe 3D models, textures, sprites, and audio for JGengine games — CC0 sources (Kenney, Quaternius, KayKit, Poly Haven), wiring conventions, and the zero-placeholder policy.
-  USE AT BLUEPRINT TIME before placing any primitive.
-  Triggers: jgengine, assets, 3D models, textures, sprites, sound effects, CC0, placeholder art.
+description: License-safe 3D models, textures, sprites, and audio for JGengine games.
 ---
 
 # JGengine — Real assets from day one

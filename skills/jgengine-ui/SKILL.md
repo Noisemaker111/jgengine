@@ -1,9 +1,6 @@
 ---
 name: jgengine-ui
-description: >
-  JGengine UI/UX quality bar — HUD, hotbar, modals, keybind-native UX, cooldown states, orbit camera, world VFX, layout rules.
-  USE WHEN writing any game HUD or combat feedback.
-  Triggers: jgengine, game UI, HUD, hotbar, keybind, modal, cooldown, spellbook, MMO UX.
+description: Game UI/UX quality bar for JGengine games.
 ---
 
 # JGengine — Game UI/UX

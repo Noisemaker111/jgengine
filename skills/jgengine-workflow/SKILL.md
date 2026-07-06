@@ -1,9 +1,6 @@
 ---
 name: jgengine-workflow
-description: >
-  End-to-end game build workflow for JGengine — master blueprint, content budgets, asset plan, phased execution to completion.
-  USE WHEN asked to make/build any game with jgengine.
-  Triggers: jgengine, make a game, build a game, new game, jgengine-workflow.
+description: Master blueprint and phased build workflow for JGengine games.
 ---
 
 # JGengine — Blueprint the whole game, build it in phases

@@ -1,9 +1,6 @@
 ---
 name: jgengine-api
-description: >
-  JGengine API reference — install, setup, defineGame, GameContext, scene/entity/inventory/combat/quest/economy systems, and game/ folder conventions.
-  USE WHEN building, extending, or debugging any JGengine game.
-  Triggers: jgengine, defineGame, GameContext, PlayableGame, scene.entity, lootTable, item.use, fireProjectile, GameBackend.
+description: API reference for JGengine, the TypeScript game engine.
 ---
 
 # JGengine — API Reference
