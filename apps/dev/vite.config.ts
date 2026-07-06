@@ -11,6 +11,7 @@ export default defineConfig({
   clearScreen: false,
   build: { target: "es2022" },
   resolve: {
+    extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
       { find: /^@jgengine\/core\/(.*)$/, replacement: `${src("core")}/$1` },
       { find: /^@jgengine\/react\/(.*)$/, replacement: `${src("react")}/$1` },

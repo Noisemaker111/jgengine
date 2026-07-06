@@ -13,6 +13,7 @@ const gameRegistry: GameRegistry = {
   "world-of-warcraft": () => import("@dogfood/world-of-warcraft").then((module) => module.wowGame),
   "asset-showcase": () =>
     import("@dogfood/asset-showcase").then((module) => module.assetShowcaseGame),
+  "loot-shooter": () => import("@dogfood/loot-shooter").then((module) => module.lootShooterGame),
 };
 
 const urlParams = new URLSearchParams(window.location.search);

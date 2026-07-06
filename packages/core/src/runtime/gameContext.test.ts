@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGame } from "../game/defineGame";
+import type { EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext, type GameContextContent } from "./gameContext";
 
@@ -248,5 +249,61 @@ describe("game context change signal", () => {
     listener.unsubscribe();
     ctx.game.feed.push("chat", { text: "bye" });
     expect(listener.count()).toBeGreaterThan(2);
+  });
+});
+
+describe("float text and projectile events", () => {
+  test("a damaging effect auto-emits an entity.floatText over the target", () => {
+    const ctx = makeContext();
+    const floats: EntityFloatTextEvent[] = [];
+    ctx.game.events.on("entity.floatText", (event) => floats.push(event));
+    const attacker = ctx.scene.entity.spawn("attacker", { position: [0, 0, 0] });
+    const dummy = ctx.scene.entity.spawn("dummy", { position: [1, 2, 3] });
+    ctx.scene.entity.effect({ from: attacker, to: dummy, effect: "damage", via: { amount: 12 } });
+    expect(floats).toEqual([
+      { instanceId: dummy, position: [1, 2, 3], text: "12", kind: "damage", amount: 12 },
+    ]);
+  });
+
+  test("a restoring effect emits a heal-kind float text", () => {
+    const ctx = makeContext();
+    const attacker = ctx.scene.entity.spawn("attacker", { position: [0, 0, 0] });
+    const dummy = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
+    ctx.scene.entity.effect({ from: attacker, to: dummy, effect: "damage", via: { amount: 20 } });
+    const heals: EntityFloatTextEvent[] = [];
+    ctx.game.events.on("entity.floatText", (event) => heals.push(event));
+    ctx.scene.entity.effect({ from: attacker, to: dummy, effect: "damage", via: { amount: -5 } });
+    expect(heals).toEqual([
+      { instanceId: dummy, position: [0, 0, 0], text: "5", kind: "heal", amount: 5 },
+    ]);
+  });
+
+  test("the floatText verb resolves position from the instance id", () => {
+    const ctx = makeContext();
+    const events: EntityFloatTextEvent[] = [];
+    ctx.game.events.on("entity.floatText", (event) => events.push(event));
+    const dummy = ctx.scene.entity.spawn("dummy", { position: [4, 0, -2] });
+    ctx.scene.entity.floatText({ instanceId: dummy, text: "Crit!", kind: "info" });
+    expect(events).toEqual([{ instanceId: dummy, position: [4, 0, -2], text: "Crit!", kind: "info" }]);
+  });
+
+  test("settling a projectile emits projectile.settled with origin and hit flag", () => {
+    const ctx = makeContext();
+    const shots: ProjectileSettledEvent[] = [];
+    ctx.game.events.on("projectile.settled", (event) => shots.push(event));
+    const attacker = ctx.scene.entity.spawn("attacker", { position: [0, 0, 0] });
+    ctx.scene.entity.spawn("dummy", { position: [3, 0, 0] });
+    const shotId = ctx.scene.entity.fireProjectile({
+      from: attacker,
+      via: { item: "zap" },
+      aim: { yaw: Math.PI / 2, pitch: 0 },
+      effect: "damage",
+    });
+    const settle = ctx.scene.entity.settleProjectile(shotId);
+    expect(settle.status).toBe("settled");
+    expect(shots).toHaveLength(1);
+    expect(shots[0]!.from).toBe(attacker);
+    expect(shots[0]!.hit).toBe(true);
+    expect(shots[0]!.origin).toEqual([0, 0, 0]);
   });
 });

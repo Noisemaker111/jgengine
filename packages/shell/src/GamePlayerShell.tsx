@@ -18,6 +18,7 @@ import {
   resolveMovementIntent,
 } from "@jgengine/core/movement/movementModel";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
@@ -27,6 +28,8 @@ import type { WsPresenceRow } from "@jgengine/ws/protocol";
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { GAME_SIM_FRAME_PRIORITY, GameOrbitCamera } from "./camera";
+import { GameFirstPersonCamera } from "./camera/GameFirstPersonCamera";
+import { ProjectileTracers, Reticle, WorldEntityBars, WorldFloatText } from "./world/WorldHud";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 
@@ -128,6 +131,16 @@ function EntityModel({ model }: { model: ModelConfig }) {
   const scene = useMemo(() => gltf.scene.clone(true), [gltf]);
   const scale = model.scale ?? 1;
   return <primitive object={scene} position-y={model.y ?? 0} scale={[scale, scale, scale]} />;
+}
+
+function resolveModel(
+  value: string | ModelConfig | undefined,
+  assets: AssetCatalog,
+): ModelConfig | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") return value;
+  const url = assets.resolve(value)?.url;
+  return url === undefined ? undefined : { url };
 }
 
 function EntityMarker({
@@ -248,10 +261,12 @@ function WorldView({
   entitySprites,
   entityModels,
   objectModels,
+  assets,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
-  entityModels: Record<string, ModelConfig> | undefined;
-  objectModels: Record<string, ModelConfig> | undefined;
+  entityModels: Record<string, string | ModelConfig> | undefined;
+  objectModels: Record<string, string | ModelConfig> | undefined;
+  assets: AssetCatalog;
 }) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
@@ -271,7 +286,7 @@ function WorldView({
         <EntityMarker
           key={entity.id}
           entity={entity}
-          model={entityModels?.[entity.name]}
+          model={resolveModel(entityModels?.[entity.name], assets)}
           sprite={entitySprites?.[entity.name]}
           isLocal={entity.id === player.userId}
           targeted={entity.id === targetId}
@@ -279,7 +294,9 @@ function WorldView({
         />
       ))}
       {objects.map((object) => {
-        const model = objectModels?.[object.catalogId];
+        const model =
+          resolveModel(objectModels?.[object.catalogId], assets) ??
+          resolveModel(object.catalogId, assets);
         return (
           <group
             key={object.instanceId}
@@ -449,7 +466,7 @@ function FrameDriver({
           y: focus.position[1],
           z: focus.position[2],
           rotationY: focus.rotationY,
-          rotationPitch: 0,
+          rotationPitch: pitchRef.current,
         });
       }
     }
@@ -625,6 +642,15 @@ export function GamePlayerShell({
 
   const GameUI = playable.GameUI;
   const WorldOverlay = playable.WorldOverlay;
+  const firstPerson = playable.camera?.perspective === "first";
+  const showReticle = firstPerson && playable.camera?.firstPerson?.reticle !== false;
+  const worldBars = playable.worldHealthBars;
+  const barsStatId =
+    worldBars === undefined || worldBars === false
+      ? null
+      : worldBars === true
+        ? "health"
+        : worldBars.statId ?? "health";
   return (
     <div
       ref={wrapperRef}
@@ -672,18 +698,31 @@ export function GamePlayerShell({
             entitySprites={playable.entitySprites}
             entityModels={playable.entityModels}
             objectModels={playable.objectModels}
+            assets={playable.game.assets}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
-          <GameOrbitCamera
-            yawRef={yawRef}
-            pitchRef={pitchRef}
-            config={playable.camera}
-            followEntityId={playable.camera?.followEntityId}
-            onCameraFollow={playable.camera?.onCameraFollow}
-            onDragChange={(dragging) => {
-              cameraDraggingRef.current = dragging;
-            }}
-          />
+          {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
+          <WorldFloatText />
+          <ProjectileTracers />
+          {firstPerson ? (
+            <GameFirstPersonCamera
+              yawRef={yawRef}
+              pitchRef={pitchRef}
+              config={playable.camera?.firstPerson}
+              followEntityId={playable.camera?.followEntityId}
+            />
+          ) : (
+            <GameOrbitCamera
+              yawRef={yawRef}
+              pitchRef={pitchRef}
+              config={playable.camera}
+              followEntityId={playable.camera?.followEntityId}
+              onCameraFollow={playable.camera?.onCameraFollow}
+              onDragChange={(dragging) => {
+                cameraDraggingRef.current = dragging;
+              }}
+            />
+          )}
         </GameProvider>
         <RemotePlayers rows={remotePlayers} />
         <FrameDriver
@@ -703,6 +742,7 @@ export function GamePlayerShell({
           <GameUI />
         </GameProvider>
       </GameUiErrorBoundary>
+      {showReticle ? <Reticle /> : null}
       <DiagnosticOverlay diagnostics={diagnostics} />
     </div>
   );

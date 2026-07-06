@@ -1,7 +1,10 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import type { ProximityPrompt as ProximityPromptDef } from "@jgengine/core/interaction/proximityPrompt";
-import { useCurrency, useEntityStat, useInventory } from "./hooks";
+import type { FeedEntry } from "@jgengine/core/game/feed";
+import type { StatLevelUpEvent } from "@jgengine/core/game/events";
+import { useGameContext } from "./provider";
+import { useCurrency, useEntityStat, useFeed, useInventory, useLocalPlayerDead } from "./hooks";
 
 export function SlotGrid({
   inventoryId,
@@ -172,6 +175,96 @@ export function DialogueBox({
           </p>
         ),
       )}
+    </div>
+  );
+}
+
+function defaultToast(entry: FeedEntry): ReactNode {
+  const data = entry.data as
+    | { drops?: { item?: string; currency?: string; count: number }[] }
+    | undefined;
+  if (data?.drops !== undefined) {
+    return data.drops.map((drop) => `${drop.item ?? drop.currency ?? "item"} ×${drop.count}`).join("  ");
+  }
+  return typeof entry.data === "string" ? entry.data : JSON.stringify(entry.data);
+}
+
+export function ToastStack({
+  action,
+  limit = 4,
+  className,
+  renderToast,
+}: {
+  action: string;
+  limit?: number;
+  className?: string;
+  renderToast?: (entry: FeedEntry, index: number) => ReactNode;
+}) {
+  const entries = useFeed({ action, limit });
+  if (entries.length === 0) return null;
+  const newestFirst = [...entries].reverse();
+  return (
+    <div className={className} data-toast-stack={action}>
+      {newestFirst.map((entry, index) => (
+        <div key={`${entry.at}-${index}`} data-toast>
+          {renderToast !== undefined ? renderToast(entry, index) : defaultToast(entry)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function DeathScreen({
+  statId = "health",
+  open,
+  className,
+  children,
+}: {
+  statId?: string;
+  open?: boolean;
+  className?: string;
+  children?: ReactNode;
+}) {
+  const dead = useLocalPlayerDead(statId);
+  return (
+    <Screen id="death" open={open ?? dead} className={className}>
+      {children}
+    </Screen>
+  );
+}
+
+export function LevelUpFlash({
+  stat,
+  durationMs = 1600,
+  className,
+  children,
+  renderFlash,
+}: {
+  stat?: string;
+  durationMs?: number;
+  className?: string;
+  children?: ReactNode;
+  renderFlash?: (event: StatLevelUpEvent) => ReactNode;
+}) {
+  const ctx = useGameContext();
+  const [flash, setFlash] = useState<StatLevelUpEvent | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const unsubscribe = ctx.game.events.on("stat.levelUp", (event) => {
+      if (stat !== undefined && event.stat !== stat) return;
+      setFlash(event);
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setFlash(null), durationMs);
+    });
+    return () => {
+      unsubscribe();
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+    };
+  }, [ctx, stat, durationMs]);
+  if (flash === null) return null;
+  return (
+    <div className={className} data-levelup={flash.level}>
+      {renderFlash !== undefined ? renderFlash(flash) : children ?? `Level ${flash.level}`}
     </div>
   );
 }

@@ -35,6 +35,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@dogfood/asset-showcase": "workspace:*",
+        "@dogfood/loot-shooter": "workspace:*",
         "@dogfood/world-of-warcraft": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
@@ -140,6 +141,19 @@
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "react": "19.2.3",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "typescript": "^5",
+      },
+    },
+    "packages/games/loot-shooter": {
+      "name": "@dogfood/loot-shooter",
+      "version": "0.1.0",
+      "dependencies": {
         "@jgengine/core": "workspace:*",
         "@jgengine/react": "workspace:*",
         "react": "19.2.3",
@@ -284,6 +298,8 @@
     "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.12.0", "", {}, "sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow=="],
 
     "@dogfood/asset-showcase": ["@dogfood/asset-showcase@workspace:packages/games/asset-showcase"],
+
+    "@dogfood/loot-shooter": ["@dogfood/loot-shooter@workspace:packages/games/loot-shooter"],
 
     "@dogfood/world-of-warcraft": ["@dogfood/world-of-warcraft@workspace:packages/games/world-of-warcraft"],
 

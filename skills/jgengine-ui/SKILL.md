@@ -18,6 +18,8 @@ Read **`jgengine-api`** for hooks, primitives, and `GameUI.tsx` layout ownership
 | Same `rounded border bg-stone-900/80 p-3` on unit frame, hotbar, gold, quests, toasts | Everything looks identical and cheap |
 | Equipment + hotbar inside inventory | Breaks MMO mental model — three different systems |
 | Icon menu with no key labels | Players can't learn bindings |
+| Placeholder item/ability icons — gray box, first letter, emoji, generic shape | Reads as a debug build; every slot needs a **real, distinct silhouette or sprite** from the asset pack (see `jgengine-assets`) |
+| Persistent on-screen keybind / controls legend ("WASD to move", "E to interact") pinned to the HUD | Bindings live on their own control as a badge — a standing legend is training-wheels clutter that never ships |
 | `effect({ to })` for bolts | No travel time, no readable combat |
 | Error text in a floating card toast | Use ephemeral combat-float text instead |
 
@@ -38,7 +40,7 @@ Read **`jgengine-api`** for hooks, primitives, and `GameUI.tsx` layout ownership
 
 ## MMO-native keybinds
 
-Every toggle and hotbar slot shows its binding. Register in `defineGame.input` and wire in the shell via `game.commands` (never duplicate logic in UI click handlers only). Before shipping, read the full binding table once and check **one key, one action** — a crouch toggle on `C` and a character sheet on `C` is a shipped bug, not a style choice. Badges derive their labels from the game's `keybinds.ts` via `actionLabel(keybinds, action)` — hardcoded "B"/"1" strings drift the moment a binding changes.
+Every toggle and hotbar slot shows its binding — as a badge **on that control** (the slot corner, the toggle button), never as a persistent standalone keybind/controls legend pinned to the screen. A standing "WASD to move / E to interact" panel is tutorial clutter, not a HUD; if a control needs explaining, badge it or surface it contextually (a proximity prompt that appears in range, then fades), and let it go. Register in `defineGame.input` and wire in the shell via `game.commands` (never duplicate logic in UI click handlers only). Before shipping, read the full binding table once and check **one key, one action** — a crouch toggle on `C` and a character sheet on `C` is a shipped bug, not a style choice. Badges derive their labels from the game's `keybinds.ts` via `actionLabel(keybinds, action)` — hardcoded "B"/"1" strings drift the moment a binding changes.
 
 | Action | Typical binding |
 |--------|-----------------|
@@ -118,7 +120,8 @@ Movement uses camera yaw from `orbitYawFromCamera` so WASD is camera-relative. P
 Run against actual screenshots of the staged `GameUiPreview`, not your mental model of the code:
 
 - [ ] Could you screenshot unit frame and hotbar and mistake them for the same component? If yes, redo.
-- [ ] Does every toggle show a key label?
+- [ ] Does every toggle show a key label **on its own control** — and is there no persistent keybind/controls legend pinned to the HUD?
+- [ ] Does every item / ability / hotbar slot show a real, distinct icon — no gray boxes, first letters, or emoji standing in for art?
 - [ ] Do bolts visibly travel before damage?
 - [ ] Is backpack the only bag UI, with no hotbar inside it?
 - [ ] Only backpack + log have panel borders?

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@dogfood/asset-showcase": "workspace:*",
+    "@dogfood/loot-shooter": "workspace:*",
     "@dogfood/world-of-warcraft": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "react": "19.2.3",

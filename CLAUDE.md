@@ -33,6 +33,12 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 
 Automated via `.github/workflows/publish.yml`: every push to `main` that changes `packages/*/package.json`, `packages/*/src/**`, or the workflow itself triggers build → check-types → test, then publishes each `@jgengine/*` package whose version is not yet on npm, in dependency order (core → ws → sql → react → convex → node → shell), using `npm publish --access public`. Auth is via the `NPM_TOKEN` repository secret. Already-published versions are skipped so non-release pushes no-op.
 
+## Delegation
+
+- Do the load-bearing work on Opus — either yourself or via Opus subagents (`Agent` with `model: opus`): engine design, layering decisions, API surface changes, gnarly type work, anything where a wrong call costs a rewrite.
+- Push the boring, high-volume, or mechanical work to Sonnet subagents (`Agent` with `model: sonnet`): running lint/`check-types`/`bun test` and reporting failures, browser/screenshot playtesting (`bun run shoot`, driving the dev app), bulk renames, doc sweeps, log triage. Cheaper and faster, and it keeps the main context clean.
+- Only spawn subagents when the user asks or the task genuinely fans out; a single-file edit stays inline. Match the model to the stakes, not the size.
+
 ## Style
 
 - No code comments. Rename, extract, or encode in types instead.
