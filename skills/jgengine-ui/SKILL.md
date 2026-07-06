@@ -44,7 +44,7 @@ Read **`jgengine-api`** for hooks, primitives, and `GameUI.tsx` layout ownership
 
 ## MMO-native keybinds
 
-Every toggle and hotbar slot shows its binding. Register in `defineGame.input` and wire in the shell via `game.commands` (never duplicate logic in UI click handlers only).
+Every toggle and hotbar slot shows its binding. Register in `defineGame.input` and wire in the shell via `game.commands` (never duplicate logic in UI click handlers only). Before shipping, read the full binding table once and check **one key, one action** — a crouch toggle on `C` and a character sheet on `C` is a shipped bug, not a style choice.
 
 | Action | Typical binding |
 |--------|-----------------|

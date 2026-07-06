@@ -22,15 +22,29 @@ The deliverable is a **finished vertical slice** — something a player would ca
 
 The shell (`@jgengine/shell`) already gives you: orbit camera + follow feel, input tracker, hotbar/primary-click plumbing, `GameUiPreview`, error overlay. Never rebuild these per game.
 
-## One pass, whole game
+## Take the reading — don't ask
 
-Plan the complete slice before the first edit — catalogs, loop, commands, UI zones, keybinds, camera tuning, staged screenshot scenario — then build it end to end. Do **not**:
+A named game **is** the scope answer. "Make Fallout but multiplayer" means the canonical mainline experience — first/third-person wasteland RPG: gunplay plus targeted-shot mode, S.P.E.C.I.A.L.-style pool stats, XP/perks, loot + caps economy, quests + dialogue, party play — not a quiz about it. Never ask "isometric or FPS?", "does this scope work?", "want me to cut quests?", or offer a menu of slices. State your reading in one line, then show the plan.
 
-- stop mid-way to ask "should I continue?", "want the UI now?", or offer a menu of next steps;
+A clarifying question is justified only when two readings would change more than half the build **and** the request genuinely doesn't pick one — and even then, name the default you'll take and keep moving unless stopped.
+
+## First response = the whole blueprint
+
+Your first substantive response is the complete build plan — not a scope proposal, the blueprint you then execute in the same pass:
+
+- **System list** — every signature system of the named fantasy, each shipped whole. Max scope is the default; a cut is a last resort, recorded with its reason.
+- **File tree** — every file you will create under `game/` (catalogs, handlers, loop, quests, curves, ui components), one line each.
+- **Catalog ids** — the actual entity / item / object / loot-table / quest id lists.
+- **Keybind table** — action → key, and check it: one key, one action (a crouch toggle on `C` and a character sheet on `C` is a shipped bug).
+- **UI zone map** — which HUD cluster lives in which `GameUI.tsx` grid zone.
+- **Multiplayer shape** — adapter + topology (`"shared" | "lobbies" | "private"`) and which systems sync.
+- **Staged screenshot scenario** for `GameUiPreview`.
+
+Then build it end to end. Do **not**:
+
+- stop mid-way to ask "should I continue?", "want the UI now?", or offer next-step menus;
 - ship a "functional first pass" intending polish later — later never comes;
 - split the game across waiting-for-feedback checkpoints.
-
-The only questions worth stopping for are genre/scope forks the request genuinely doesn't answer. Ask them **all at once, before implementing** — or take the obvious reading and say so in the report.
 
 ## Definition of done — every box, every time
 
@@ -44,7 +58,7 @@ The only questions worth stopping for are genre/scope forks the request genuinel
 
 ## No half systems
 
-Every system the game declares must be fully consumed end to end. Cut scope by **dropping whole systems**, never by shipping half of one:
+Every system the game declares must be fully consumed end to end. The target is the fantasy's **full** signature set, finished; when something must give, give by **dropping a whole system** (with the reason in your report), never by shipping half of one:
 
 | Half (never ship) | Whole |
 |-------------------|-------|
@@ -55,7 +69,7 @@ Every system the game declares must be fully consumed end to end. Cut scope by *
 | Inventory system with no way to gain items | Loot/shop loop closed — or no inventory |
 | Leaderboard tracked, never displayed | HUD or panel readout — or don't track |
 
-A three-system finished game beats a seven-system skeleton every time.
+A finished game beats a skeleton every time — and "finished" is judged against the full system list from your blueprint, not a trimmed one.
 
 ## Engine gaps
 
