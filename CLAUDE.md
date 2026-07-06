@@ -15,11 +15,11 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 ## Layout
 
 - `packages/{core,ws,sql,react,convex,node,shell}` — the seven published `@jgengine/*` packages. Exports map to `dist/*`; consumers import by path (`@jgengine/core/runtime/gameRuntime`).
-- `packages/games/*` — dogfood games (`@dogfood/<name>`, private, source-consumed via `./src` exports, no build). Games are engine probes: they exist to find engine gaps.
+- `packages/games/*` — example games (`@dogfood/<name>`, private, source-consumed via `./src` exports, no build). Build a new game from the skills in `skills/`, not by copying one of these.
 - `apps/dev` — the Vite game runner and screenshot target. Loads a game by `?game=<id>&mode=play|ui`; `mode=ui` mounts `GameUiPreview` over a staged GameContext. Registry in `apps/dev/src/main.tsx`. Vite aliases + tsconfig paths resolve `@jgengine/*` to sibling `src/`, so no build needed to run it.
 - `apps/desktop` — Tauri v2 wrapper around the same shell (same aliases, port 1420).
 - `examples/express-host` — deployable Node host (`@jgengine/node` + `@jgengine/sql` + express; Dockerfile + fly.toml). `examples/next-host` — Next.js client + REST reads. `examples/convex-host` — the Convex functions `createConvexBackend` talks to (needs `bunx convex dev` for `_generated/`, so it has no check-types).
-- `skills/` — the spec. `jgengine-api` (engine surface + definition of done), `jgengine-ui` (HUD quality bar), `jgengine-assets`, `jgengine-workflow` (governs game passes). Build games from the skills, not by copying other games.
+- `skills/` — the spec. `jgengine-api` (engine surface + definition of done), `jgengine-ui` (HUD quality bar), `jgengine-assets`, `jgengine-newgame` (master blueprint + phased build workflow for a new game). Build games from the skills, not by copying other games.
 - This is the engine repo: fix engine gaps and doc errors directly here — never file issues from inside it. Issue-filing ([github.com/Noisemaker111/jgengine/issues](https://github.com/Noisemaker111/jgengine/issues)) is the path for external consumers building on the published SDK.
 
 ## Verification

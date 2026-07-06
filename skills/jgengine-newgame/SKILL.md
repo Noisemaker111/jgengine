@@ -1,6 +1,6 @@
 ---
-name: jgengine-workflow
-description: Master blueprint and phased build workflow for JGengine games.
+name: jgengine-newgame
+description: Master blueprint and phased build workflow for making a new JGengine game.
 ---
 
 # JGengine — Blueprint the whole game, build it in phases
