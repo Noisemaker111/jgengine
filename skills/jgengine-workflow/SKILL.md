@@ -7,7 +7,7 @@ description: Master blueprint and phased build workflow for JGengine games.
 
 The deliverable is the **complete idea** — the game the user named, at the scale that makes that game fun. You do not build a cut-down "slice" to show progress, and you never hand over a half version: work is phased, every phase ends whole, and the game is done only when the last phase lands. "Compiles and the hooks are wired" is the failure mode this skill exists to kill.
 
-The shell (`@jgengine/shell`) already gives you: orbit camera + follow feel, input tracker, hotbar/primary-click plumbing, `GameUiPreview`, error overlay. Never rebuild these per game.
+The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and** first-person mouse-look (pointer-lock + centered reticle + weapon viewmodel), input tracker, hotbar/primary-click plumbing, world-space enemy health bars, floating damage/heal numbers, projectile tracers, `GameUiPreview`, error overlay. Never rebuild these per game — a hand-written reticle, world-space health bar, or floating-damage-number component means you missed a switch the engine already flips (see the archetype recipe below).
 
 ## Read first (all three, before the blueprint)
 
@@ -27,6 +27,7 @@ A clarifying question is justified only when two readings would change more than
 
 Your first substantive response is the complete plan for the **full game** — every part of it, not a starter scope:
 
+- **Perspective** — first- or third-person, committed **up front** and stated in one line; it drives camera, input, HUD, and combat feel. A first-person shooter only discovered to be first-person three QA passes in is a rebuild, not a fix. Set `PlayableGame.camera.perspective` to match (`"first"` mounts mouse-look + reticle + viewmodel; default `"third"` is the orbit camera). If the fantasy is a shooter, say "first-person" and mean it.
 - **System list** — every signature system of the named fantasy, at full depth (weapon mods and damage types, not just "guns"). A cut is a last resort, recorded with its reason.
 - **Content budget** — numbers per system, sized by what the fantasy needs, not what's easy to type: items, enemy types, quests, zones, vendors, recipes (floors in "Content scale" below).
 - **Asset plan** — which packs (per `jgengine-assets`) cover ground, structures, props, characters/enemies, items; pack → catalog-id mapping; one style family.
@@ -93,6 +94,19 @@ The game is done when the **entire blueprint** is delivered:
 4. World dressed per "The world is content too"; zero default-material primitives anywhere.
 5. Staged `GameUiPreview` screenshots taken and **judged by looking at them** — if a shot would embarrass a release announcement, it isn't done.
 6. Tests for pure game math (curves, cooldowns, generators, spawn logic) co-located; type-check green.
+
+## Archetype recipe — first-person looter-shooter
+
+The most common "make an FPS / looter-shooter" setup is a handful of engine switches now, not a five-pass QA scavenger hunt. Assemble it from primitives — do not hand-roll any of these:
+
+- **Perspective**: `camera: { perspective: "first", firstPerson: { eyeHeight, sensitivity, reticle, viewmodel } }` — mouse-look, a centered crosshair, and a weapon viewmodel come from the shell. Leave `turnLeft`/`turnRight` unbound (the mouse looks); left-click fires the first non-empty hotbar slot, so keep the gun in the hotbar.
+- **Gun**: an item with `use: "fireGun"`, `weapon: { damage, range, spread?, pellets? }`; the handler calls `fireProjectile` → `settleProjectile` off `input.aim`. Firing this way is what makes the shell draw the **tracer** — never resolve a gunshot with `effect({ to })`.
+- **Enemy health bars**: `worldHealthBars: true` on the `PlayableGame` — the shell floats a bar over every non-local entity that carries the health stat. No screen-space projection math.
+- **Damage numbers**: automatic — every applied damage/heal effect emits `entity.floatText`, which the shell renders as rising numbers. No per-game floating-combat-text component (`ctx.scene.entity.floatText(...)` exists for crits/pickups if you want extras).
+- **Death / level-up / loot toast**: headless `DeathScreen`, `LevelUpFlash`, `ToastStack` from `@jgengine/react` (bind the toast to `loot.granted`). Theme them; don't rebuild them.
+- **Known gap — spawn on the surface**: the engine does **not** yet snap spawns to terrain height (core owns no terrain geometry — the ground mesh lives in the shell). On non-flat ground the game must sample its own ground height before `spawn` for now, or spawn on a `flat()` arena. Track it honestly; don't ship enemies clipping into hillsides and call it done.
+
+One game is a probe; if a second first-person game needs this same bundle, promote the recipe to an engine preset. Until then it is a recipe, not a `defineGame` field.
 
 ## Engine gaps
 

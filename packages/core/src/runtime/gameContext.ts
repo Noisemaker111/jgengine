@@ -4,6 +4,7 @@ import {
   type CombatSpatialDeps,
   type EffectInput,
   type EffectResult,
+  type EffectSystem,
   type ReceiveMap,
   type SingleTargetEffectInput,
 } from "../combat/effects";
@@ -59,7 +60,7 @@ import {
   type StatCatalog,
   type StatValueMap,
 } from "../scene/entityStats";
-import type { EntityPose, SceneEntity, SpawnOptions } from "../scene/entityStore";
+import type { EntityPose, EntityPosition, SceneEntity, SpawnOptions } from "../scene/entityStore";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
 import { createSpatialApi, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
@@ -108,6 +109,14 @@ export interface SceneObjectContext extends ObjectStore {
   catalog(instanceId: string): GameContextObjectEntry | null;
 }
 
+export interface FloatTextInput {
+  instanceId?: string;
+  position?: [number, number, number];
+  text?: string;
+  kind?: string;
+  amount?: number;
+}
+
 export interface SceneEntityContext {
   spawn(name: string, options?: SpawnOptions): string;
   despawn(instanceId: string): boolean;
@@ -115,6 +124,7 @@ export interface SceneEntityContext {
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
   stats: EntityStatsApi;
+  floatText(input: FloatTextInput): void;
   setTarget(fromId: string, toId: string | null): void;
   getTarget(fromId: string): string | null;
   cycleTarget(fromId: string, options?: CycleTargetOptions): string | null;
@@ -508,12 +518,65 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     signal.notify,
   );
 
+  function emitFloatText(input: FloatTextInput): void {
+    const position =
+      input.position ??
+      (input.instanceId === undefined ? undefined : entities.get(input.instanceId)?.position);
+    if (position === undefined) return;
+    const text = input.text ?? (input.amount === undefined ? "" : String(Math.round(input.amount)));
+    const event: GameEventMap["entity.floatText"] = {
+      position: [position[0], position[1], position[2]],
+      text,
+      kind: input.kind ?? "info",
+    };
+    if (input.instanceId !== undefined) event.instanceId = input.instanceId;
+    if (input.amount !== undefined) event.amount = input.amount;
+    events.emit("entity.floatText", event);
+  }
+
+  function applyEffectAndFloat(input: EffectInput): EffectResult[] {
+    const positionsBefore = new Map<string, EntityPosition>();
+    for (const entity of entities.list()) positionsBefore.set(entity.id, entity.position);
+    const results = effects.applyEffect(input);
+    for (const result of results) {
+      let total = 0;
+      for (const delta of result.applied) total += delta.delta;
+      if (total === 0) continue;
+      const position = entities.get(result.instanceId)?.position ?? positionsBefore.get(result.instanceId);
+      if (position === undefined) continue;
+      const magnitude = Math.abs(total);
+      emitFloatText({
+        instanceId: result.instanceId,
+        position: [position[0], position[1], position[2]],
+        text: String(Math.round(magnitude)),
+        kind: total < 0 ? "damage" : "heal",
+        amount: magnitude,
+      });
+    }
+    return results;
+  }
+
+  const floatingEffects: EffectSystem = {
+    canReceive: effects.canReceive,
+    preview: effects.preview,
+    applyEffect: applyEffectAndFloat,
+  };
+
   const projectiles = notifyAfter(
     createProjectileSystem({
-      effects,
+      effects: floatingEffects,
       spatial: combatSpatial,
       getStat: weapon.getStat,
       now,
+      onSettle(report) {
+        events.emit("projectile.settled", {
+          from: report.from,
+          origin: [report.origin[0], report.origin[1], report.origin[2]],
+          at: [report.at[0], report.at[1], report.at[2]],
+          effect: report.effect,
+          hit: report.hit,
+        });
+      },
     }),
     ["fireProjectile", "settleProjectile"],
     signal.notify,
@@ -534,12 +597,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         get: entities.get,
         list: entities.list,
         stats: entityStats,
+        floatText: emitFloatText,
         setTarget: targeting.setTarget,
         getTarget: targeting.getTarget,
         cycleTarget: targeting.cycleTarget,
         canReceive: effects.canReceive,
         preview: effects.preview,
-        effect: effects.applyEffect,
+        effect: applyEffectAndFloat,
         willHitProjectile: projectiles.willHitProjectile,
         fireProjectile: projectiles.fireProjectile,
         settleProjectile: projectiles.settleProjectile,

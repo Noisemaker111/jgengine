@@ -84,6 +84,15 @@ export function useLeaderboard(
   return useGameStore((ctx) => ctx.game.leaderboard.getTop(stat, options));
 }
 
+export function useLocalPlayerDead(healthStatId = "health"): boolean {
+  return useGameStore((ctx) => {
+    const player = localPlayerEntity(ctx);
+    if (player === null) return false;
+    const health = ctx.scene.entity.stats.get(player.id, healthStatId);
+    return health !== null && health.current <= health.min;
+  });
+}
+
 export function localPlayerEntity(ctx: GameContext): SceneEntity | null {
   return (
     ctx.scene.entity.get(ctx.player.userId) ??

@@ -1,3 +1,4 @@
+import { useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
@@ -17,6 +18,7 @@ import {
   resolveMovementIntent,
 } from "@jgengine/core/movement/movementModel";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
@@ -26,6 +28,8 @@ import type { WsPresenceRow } from "@jgengine/ws/protocol";
 import type { EntitySpriteConfig } from "@jgengine/core/game/playableGame";
 
 import { GAME_SIM_FRAME_PRIORITY, GameOrbitCamera } from "./camera";
+import { GameFirstPersonCamera } from "./camera/GameFirstPersonCamera";
+import { ProjectileTracers, Reticle, WorldEntityBars, WorldFloatText } from "./world/WorldHud";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 
@@ -88,6 +92,7 @@ function executeHotbarSlot(
   hotbarId: string,
   slot: number,
   yaw: number,
+  pitch: number,
 ): { ok: boolean; error?: string } {
   const stack = ctx.player.inventory.state(hotbarId).slots[slot];
   if (stack === undefined || stack === null) return { ok: false, error: `Hotbar slot ${slot + 1} is empty` };
@@ -95,7 +100,7 @@ function executeHotbarSlot(
     from: ctx.player.userId,
     itemId: stack.itemId,
     inventoryId: hotbarId,
-    aim: { yaw, pitch: 0 },
+    aim: { yaw, pitch },
   });
   return result.error === undefined ? { ok: true } : { ok: false, error: result.error };
 }
@@ -121,15 +126,23 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   );
 }
 
+function GlbModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  const cloned = useMemo(() => scene.clone(), [scene]);
+  return <primitive object={cloned} />;
+}
+
 function EntityMarker({
   entity,
   sprite,
+  modelUrl,
   isLocal,
   targeted,
   onSelect,
 }: {
   entity: SceneEntity;
   sprite: EntitySpriteConfig | undefined;
+  modelUrl: string | undefined;
   isLocal: boolean;
   targeted: boolean;
   onSelect: (entity: SceneEntity) => void;
@@ -144,7 +157,9 @@ function EntityMarker({
         if (!isLocal) onSelect(entity);
       }}
     >
-      {sprite !== undefined ? (
+      {modelUrl !== undefined ? (
+        <GlbModel url={modelUrl} />
+      ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
       ) : entity.role === "prop" ? (
         <mesh position-y={0.5}>
@@ -231,7 +246,15 @@ function RockField() {
   );
 }
 
-function WorldView({ entitySprites }: { entitySprites: Record<string, EntitySpriteConfig> | undefined }) {
+function WorldView({
+  entitySprites,
+  entityModels,
+  assets,
+}: {
+  entitySprites: Record<string, EntitySpriteConfig> | undefined;
+  entityModels: Record<string, string> | undefined;
+  assets: AssetCatalog;
+}) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
   const objects = useSceneObjects();
@@ -246,26 +269,42 @@ function WorldView({ entitySprites }: { entitySprites: Record<string, EntitySpri
       <GroundPlane />
       <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
       <RockField />
-      {entities.map((entity) => (
-        <EntityMarker
-          key={entity.id}
-          entity={entity}
-          sprite={entitySprites?.[entity.name]}
-          isLocal={entity.id === player.userId}
-          targeted={entity.id === targetId}
-          onSelect={handleSelect}
-        />
-      ))}
-      {objects.map((object) => (
-        <mesh
-          key={object.instanceId}
-          position={[object.position[0], object.position[1] + 0.5, object.position[2]]}
-          rotation-y={object.rotationY}
-        >
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={colorFromId(object.catalogId)} />
-        </mesh>
-      ))}
+      {entities.map((entity) => {
+        const modelKey = entityModels?.[entity.name];
+        const modelUrl = modelKey !== undefined ? assets.resolve(modelKey)?.url : undefined;
+        return (
+          <EntityMarker
+            key={entity.id}
+            entity={entity}
+            sprite={entitySprites?.[entity.name]}
+            modelUrl={modelUrl}
+            isLocal={entity.id === player.userId}
+            targeted={entity.id === targetId}
+            onSelect={handleSelect}
+          />
+        );
+      })}
+      {objects.map((object) => {
+        const objectModelUrl = assets.resolve(object.catalogId)?.url;
+        return objectModelUrl !== undefined ? (
+          <group
+            key={object.instanceId}
+            position={[object.position[0], object.position[1], object.position[2]]}
+            rotation-y={object.rotationY}
+          >
+            <GlbModel url={objectModelUrl} />
+          </group>
+        ) : (
+          <mesh
+            key={object.instanceId}
+            position={[object.position[0], object.position[1] + 0.5, object.position[2]]}
+            rotation-y={object.rotationY}
+          >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={colorFromId(object.catalogId)} />
+          </mesh>
+        );
+      })}
     </>
   );
 }
@@ -298,6 +337,7 @@ function FrameDriver({
   playable,
   tracker,
   yawRef,
+  pitchRef,
   primaryClickRef,
   onRuntimeError,
   multiplayer,
@@ -307,6 +347,7 @@ function FrameDriver({
   playable: PlayableGame;
   tracker: ActionStateTracker<string>;
   yawRef: { current: number };
+  pitchRef: { current: number };
   primaryClickRef: { current: boolean };
   onRuntimeError: (error: unknown, phase: string) => void;
   multiplayer: ShellMultiplayer | null;
@@ -386,7 +427,7 @@ function FrameDriver({
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {
         if (!tracker.wasPressed(action)) continue;
-        const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current);
+        const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current, pitchRef.current);
         if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
       }
       const usePrimary =
@@ -400,7 +441,7 @@ function FrameDriver({
             ? preferred
             : slots.findIndex((stack) => stack !== null);
         if (slot >= 0) {
-          const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current);
+          const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current, pitchRef.current);
           if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
         }
       }
@@ -416,7 +457,7 @@ function FrameDriver({
           y: focus.position[1],
           z: focus.position[2],
           rotationY: focus.rotationY,
-          rotationPitch: 0,
+          rotationPitch: pitchRef.current,
         });
       }
     }
@@ -480,6 +521,7 @@ export function GamePlayerShell({
   const [remotePlayers, setRemotePlayers] = useState<WsPresenceRow[]>([]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const yawRef = useRef(0);
+  const pitchRef = useRef(0);
   const serverIdRef = useRef<string | null>(null);
   const cameraDraggingRef = useRef(false);
   const primaryClickRef = useRef(false);
@@ -591,6 +633,15 @@ export function GamePlayerShell({
 
   const GameUI = playable.GameUI;
   const WorldOverlay = playable.WorldOverlay;
+  const firstPerson = playable.camera?.perspective === "first";
+  const showReticle = firstPerson && playable.camera?.firstPerson?.reticle !== false;
+  const worldBars = playable.worldHealthBars;
+  const barsStatId =
+    worldBars === undefined || worldBars === false
+      ? null
+      : worldBars === true
+        ? "health"
+        : worldBars.statId ?? "health";
   return (
     <div
       ref={wrapperRef}
@@ -634,17 +685,33 @@ export function GamePlayerShell({
         <ambientLight intensity={0.55} />
         <directionalLight position={[10, 16, 6]} intensity={1.3} />
         <GameProvider context={ctx}>
-          <WorldView entitySprites={playable.entitySprites} />
-          {WorldOverlay !== undefined ? <WorldOverlay /> : null}
-          <GameOrbitCamera
-            yawRef={yawRef}
-            config={playable.camera}
-            followEntityId={playable.camera?.followEntityId}
-            onCameraFollow={playable.camera?.onCameraFollow}
-            onDragChange={(dragging) => {
-              cameraDraggingRef.current = dragging;
-            }}
+          <WorldView
+            entitySprites={playable.entitySprites}
+            entityModels={playable.entityModels}
+            assets={playable.game.assets}
           />
+          {WorldOverlay !== undefined ? <WorldOverlay /> : null}
+          {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
+          <WorldFloatText />
+          <ProjectileTracers />
+          {firstPerson ? (
+            <GameFirstPersonCamera
+              yawRef={yawRef}
+              pitchRef={pitchRef}
+              config={playable.camera?.firstPerson}
+              followEntityId={playable.camera?.followEntityId}
+            />
+          ) : (
+            <GameOrbitCamera
+              yawRef={yawRef}
+              config={playable.camera}
+              followEntityId={playable.camera?.followEntityId}
+              onCameraFollow={playable.camera?.onCameraFollow}
+              onDragChange={(dragging) => {
+                cameraDraggingRef.current = dragging;
+              }}
+            />
+          )}
         </GameProvider>
         <RemotePlayers rows={remotePlayers} />
         <FrameDriver
@@ -652,6 +719,7 @@ export function GamePlayerShell({
           playable={playable}
           tracker={tracker}
           yawRef={yawRef}
+          pitchRef={pitchRef}
           primaryClickRef={primaryClickRef}
           onRuntimeError={reportRuntimeError}
           multiplayer={multiplayer}
@@ -663,6 +731,7 @@ export function GamePlayerShell({
           <GameUI />
         </GameProvider>
       </GameUiErrorBoundary>
+      {showReticle ? <Reticle /> : null}
       <DiagnosticOverlay diagnostics={diagnostics} />
     </div>
   );

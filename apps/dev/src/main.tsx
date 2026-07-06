@@ -11,6 +11,7 @@ import "./index.css";
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
   "world-of-warcraft": () => import("@dogfood/world-of-warcraft").then((module) => module.wowGame),
+  "loot-shooter": () => import("@dogfood/loot-shooter").then((module) => module.lootShooterGame),
 };
 
 const urlParams = new URLSearchParams(window.location.search);

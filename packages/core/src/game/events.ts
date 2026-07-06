@@ -64,8 +64,25 @@ export interface StatLevelUpEvent {
   level: number;
 }
 
+export interface EntityFloatTextEvent {
+  instanceId?: string;
+  position: [number, number, number];
+  text: string;
+  kind: string;
+  amount?: number;
+}
+
+export interface ProjectileSettledEvent {
+  from: string;
+  origin: [number, number, number];
+  at: [number, number, number];
+  effect: string;
+  hit: boolean;
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
+  "entity.floatText": EntityFloatTextEvent;
   "loot.granted": LootGrantedEvent;
   "inventory.added": InventoryAddedEvent;
   "quest.accepted": QuestAcceptedEvent;
@@ -75,6 +92,7 @@ export interface GameEventMap {
   "social.party.joined": SocialPartyJoinedEvent;
   "social.party.left": SocialPartyLeftEvent;
   "stat.levelUp": StatLevelUpEvent;
+  "projectile.settled": ProjectileSettledEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

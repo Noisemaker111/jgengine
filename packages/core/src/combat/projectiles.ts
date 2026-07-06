@@ -17,12 +17,21 @@ export interface RaycastHit {
 
 export type Raycast = (from: string, aim: Aim, range: number) => RaycastHit[];
 
+export interface ProjectileSettleReport {
+  from: string;
+  origin: EntityPosition;
+  at: EntityPosition;
+  effect: string;
+  hit: boolean;
+}
+
 export interface ProjectileSystemDeps {
   effects: EffectSystem;
   spatial: CombatSpatialDeps;
   getStat(itemId: string, stat: string): number | null;
   raycast?: Raycast;
   now?: () => number;
+  onSettle?(report: ProjectileSettleReport): void;
 }
 
 export interface ProjectilePrediction {
@@ -176,8 +185,11 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       if (shot.settled) return { status: "rejected", shotId, reason: "already-settled" };
       shot.settled = true;
       const { input } = shot;
+      const origin = shotOrigin(input.from, input.aim) ?? [0, 0, 0];
       if (isBallistic(input.via)) {
-        return { status: "settled", shotId, at: ballisticSettlePoint(input), hits: [] };
+        const at = ballisticSettlePoint(input);
+        deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: false });
+        return { status: "settled", shotId, at, hits: [] };
       }
       const { visible } = predictHits(input);
       const receivable = visible.filter(
@@ -198,7 +210,9 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
           );
         }
       }
-      return { status: "settled", shotId, at: settledAt(input, receivable), hits };
+      const at = settledAt(input, receivable);
+      deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: receivable.length > 0 });
+      return { status: "settled", shotId, at, hits };
     },
   };
 }

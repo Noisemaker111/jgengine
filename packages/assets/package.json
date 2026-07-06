@@ -1,0 +1,38 @@
+{
+  "name": "@jgengine/assets",
+  "version": "0.3.0",
+  "description": "Curated CC0 3D asset packs, catalogs, and download tooling for JGengine games.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/assets"
+  },
+  "files": ["dist", "assets"],
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "bin": {
+    "jgengine-assets": "./dist/cli/pull.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "pull-starter": "bun run src/cli/pull.ts init"
+  },
+  "dependencies": {
+    "@jgengine/core": "^0.3.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

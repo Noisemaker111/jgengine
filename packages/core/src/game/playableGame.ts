@@ -9,7 +9,24 @@ export interface CameraFollowState {
   distance: number;
 }
 
+export interface FirstPersonCameraConfig {
+  /** Camera height above the followed entity's origin. Default 1.6. */
+  eyeHeight?: number;
+  /** Mouse-look radians per pixel of pointer movement. Default 0.0025. */
+  sensitivity?: number;
+  /** Clamp on look pitch in radians (± from horizon). Default 1.45. */
+  maxPitch?: number;
+  /** Show the centered crosshair overlay. Default true. */
+  reticle?: boolean;
+  /** Render a simple first-person weapon in view. Default true. */
+  viewmodel?: boolean;
+}
+
 export interface GameCameraConfig {
+  /** "third" mounts the orbit camera (default); "first" mounts pointer-lock mouse-look. */
+  perspective?: "third" | "first";
+  /** First-person tuning; only read when perspective is "first". */
+  firstPerson?: FirstPersonCameraConfig;
   minDistance?: number;
   maxDistance?: number;
   targetHeight?: number;
@@ -49,10 +66,14 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
   WorldOverlay?: TWorldOverlay;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
   entitySprites?: Record<string, EntitySpriteConfig>;
+  /** GLB model asset catalog keys keyed by entity kind name; takes priority over entitySprites. */
+  entityModels?: Record<string, string>;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
   hotbarSelection?: () => number;
   /** Positioned proximity prompts for the interact key + HUD; single source shared with useActivePrompt. */
   prompts?: (ctx: GameContext) => readonly PositionedPrompt[];
-  /** Third-person orbit camera tuning for the dev game player shell. */
+  /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
+  /** Opt in to world-space health bars floating over non-local entities that carry the stat. */
+  worldHealthBars?: boolean | { statId?: string };
 }
