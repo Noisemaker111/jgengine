@@ -1,0 +1,1532 @@
+[
+  {
+    "id": "kenney-space/alien",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "alien.glb"
+  },
+  {
+    "id": "kenney-space/astronautA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "astronautA.glb"
+  },
+  {
+    "id": "kenney-space/astronautB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "astronautB.glb"
+  },
+  {
+    "id": "kenney-space/barrel",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "barrel.glb"
+  },
+  {
+    "id": "kenney-space/barrels_rail",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "barrels_rail.glb"
+  },
+  {
+    "id": "kenney-space/barrels",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "barrels.glb"
+  },
+  {
+    "id": "kenney-space/bones",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "bones.glb"
+  },
+  {
+    "id": "kenney-space/chimney_detailed",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "chimney_detailed.glb"
+  },
+  {
+    "id": "kenney-space/chimney",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "chimney.glb"
+  },
+  {
+    "id": "kenney-space/corridor_corner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_corner.glb"
+  },
+  {
+    "id": "kenney-space/corridor_cornerRound",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_cornerRound.glb"
+  },
+  {
+    "id": "kenney-space/corridor_cornerRoundWindow",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_cornerRoundWindow.glb"
+  },
+  {
+    "id": "kenney-space/corridor_cross",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_cross.glb"
+  },
+  {
+    "id": "kenney-space/corridor_detailed",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_detailed.glb"
+  },
+  {
+    "id": "kenney-space/corridor_end",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_end.glb"
+  },
+  {
+    "id": "kenney-space/corridor_open",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_open.glb"
+  },
+  {
+    "id": "kenney-space/corridor_roof",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_roof.glb"
+  },
+  {
+    "id": "kenney-space/corridor_split",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_split.glb"
+  },
+  {
+    "id": "kenney-space/corridor_wall",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_wall.glb"
+  },
+  {
+    "id": "kenney-space/corridor_wallCorner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_wallCorner.glb"
+  },
+  {
+    "id": "kenney-space/corridor_window",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_window.glb"
+  },
+  {
+    "id": "kenney-space/corridor_windowClosed",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor_windowClosed.glb"
+  },
+  {
+    "id": "kenney-space/corridor",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "corridor.glb"
+  },
+  {
+    "id": "kenney-space/craft_cargoA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craft_cargoA.glb"
+  },
+  {
+    "id": "kenney-space/craft_cargoB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craft_cargoB.glb"
+  },
+  {
+    "id": "kenney-space/craft_miner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craft_miner.glb"
+  },
+  {
+    "id": "kenney-space/craft_racer",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craft_racer.glb"
+  },
+  {
+    "id": "kenney-space/craft_speederA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craft_speederA.glb"
+  },
+  {
+    "id": "kenney-space/craft_speederB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craft_speederB.glb"
+  },
+  {
+    "id": "kenney-space/craft_speederC",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craft_speederC.glb"
+  },
+  {
+    "id": "kenney-space/craft_speederD",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craft_speederD.glb"
+  },
+  {
+    "id": "kenney-space/crater",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "crater.glb"
+  },
+  {
+    "id": "kenney-space/craterLarge",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "craterLarge.glb"
+  },
+  {
+    "id": "kenney-space/desk_chair",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "desk_chair.glb"
+  },
+  {
+    "id": "kenney-space/desk_chairArms",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "desk_chairArms.glb"
+  },
+  {
+    "id": "kenney-space/desk_chairStool",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "desk_chairStool.glb"
+  },
+  {
+    "id": "kenney-space/desk_computer",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "desk_computer.glb"
+  },
+  {
+    "id": "kenney-space/desk_computerCorner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "desk_computerCorner.glb"
+  },
+  {
+    "id": "kenney-space/desk_computerScreen",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "desk_computerScreen.glb"
+  },
+  {
+    "id": "kenney-space/gate_complex",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "gate_complex.glb"
+  },
+  {
+    "id": "kenney-space/gate_simple",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "gate_simple.glb"
+  },
+  {
+    "id": "kenney-space/hangar_largeA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "hangar_largeA.glb"
+  },
+  {
+    "id": "kenney-space/hangar_largeB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "hangar_largeB.glb"
+  },
+  {
+    "id": "kenney-space/hangar_roundA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "hangar_roundA.glb"
+  },
+  {
+    "id": "kenney-space/hangar_roundB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "hangar_roundB.glb"
+  },
+  {
+    "id": "kenney-space/hangar_roundGlass",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "hangar_roundGlass.glb"
+  },
+  {
+    "id": "kenney-space/hangar_smallA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "hangar_smallA.glb"
+  },
+  {
+    "id": "kenney-space/hangar_smallB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "hangar_smallB.glb"
+  },
+  {
+    "id": "kenney-space/machine_barrel",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "machine_barrel.glb"
+  },
+  {
+    "id": "kenney-space/machine_barrelLarge",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "machine_barrelLarge.glb"
+  },
+  {
+    "id": "kenney-space/machine_generator",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "machine_generator.glb"
+  },
+  {
+    "id": "kenney-space/machine_generatorLarge",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "machine_generatorLarge.glb"
+  },
+  {
+    "id": "kenney-space/machine_wireless",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "machine_wireless.glb"
+  },
+  {
+    "id": "kenney-space/machine_wirelessCable",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "machine_wirelessCable.glb"
+  },
+  {
+    "id": "kenney-space/meteor_detailed",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "meteor_detailed.glb"
+  },
+  {
+    "id": "kenney-space/meteor_half",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "meteor_half.glb"
+  },
+  {
+    "id": "kenney-space/meteor",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "meteor.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trackCornerLarge",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trackCornerLarge.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trackCornerSmall",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trackCornerSmall.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trackSlope",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trackSlope.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trackStraight",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trackStraight.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trackSupport",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trackSupport.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trackSupportCorner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trackSupportCorner.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trainBox",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trainBox.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trainCargo",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trainCargo.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trainEnd",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trainEnd.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trainFlat",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trainFlat.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trainFront",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trainFront.glb"
+  },
+  {
+    "id": "kenney-space/monorail_trainPassenger",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "monorail_trainPassenger.glb"
+  },
+  {
+    "id": "kenney-space/pipe_corner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_corner.glb"
+  },
+  {
+    "id": "kenney-space/pipe_cornerDiagonal",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_cornerDiagonal.glb"
+  },
+  {
+    "id": "kenney-space/pipe_cornerRound",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_cornerRound.glb"
+  },
+  {
+    "id": "kenney-space/pipe_cornerRoundLarge",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_cornerRoundLarge.glb"
+  },
+  {
+    "id": "kenney-space/pipe_cross",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_cross.glb"
+  },
+  {
+    "id": "kenney-space/pipe_end",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_end.glb"
+  },
+  {
+    "id": "kenney-space/pipe_entrance",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_entrance.glb"
+  },
+  {
+    "id": "kenney-space/pipe_open",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_open.glb"
+  },
+  {
+    "id": "kenney-space/pipe_rampLarge",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_rampLarge.glb"
+  },
+  {
+    "id": "kenney-space/pipe_rampSmall",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_rampSmall.glb"
+  },
+  {
+    "id": "kenney-space/pipe_ring",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_ring.glb"
+  },
+  {
+    "id": "kenney-space/pipe_ringHigh",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_ringHigh.glb"
+  },
+  {
+    "id": "kenney-space/pipe_ringHighEnd",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_ringHighEnd.glb"
+  },
+  {
+    "id": "kenney-space/pipe_ringSupport",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_ringSupport.glb"
+  },
+  {
+    "id": "kenney-space/pipe_split",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_split.glb"
+  },
+  {
+    "id": "kenney-space/pipe_straight",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_straight.glb"
+  },
+  {
+    "id": "kenney-space/pipe_supportHigh",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_supportHigh.glb"
+  },
+  {
+    "id": "kenney-space/pipe_supportLow",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pipe_supportLow.glb"
+  },
+  {
+    "id": "kenney-space/platform_center",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_center.glb"
+  },
+  {
+    "id": "kenney-space/platform_corner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_corner.glb"
+  },
+  {
+    "id": "kenney-space/platform_cornerOpen",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_cornerOpen.glb"
+  },
+  {
+    "id": "kenney-space/platform_cornerRound",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_cornerRound.glb"
+  },
+  {
+    "id": "kenney-space/platform_end",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_end.glb"
+  },
+  {
+    "id": "kenney-space/platform_high",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_high.glb"
+  },
+  {
+    "id": "kenney-space/platform_large",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_large.glb"
+  },
+  {
+    "id": "kenney-space/platform_long",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_long.glb"
+  },
+  {
+    "id": "kenney-space/platform_low",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_low.glb"
+  },
+  {
+    "id": "kenney-space/platform_side",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_side.glb"
+  },
+  {
+    "id": "kenney-space/platform_small",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_small.glb"
+  },
+  {
+    "id": "kenney-space/platform_smallDiagonal",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_smallDiagonal.glb"
+  },
+  {
+    "id": "kenney-space/platform_straight",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "platform_straight.glb"
+  },
+  {
+    "id": "kenney-space/rail_corner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rail_corner.glb"
+  },
+  {
+    "id": "kenney-space/rail_end",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rail_end.glb"
+  },
+  {
+    "id": "kenney-space/rail_middle",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rail_middle.glb"
+  },
+  {
+    "id": "kenney-space/rail",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rail.glb"
+  },
+  {
+    "id": "kenney-space/rock_crystals",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rock_crystals.glb"
+  },
+  {
+    "id": "kenney-space/rock_crystalsLargeA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rock_crystalsLargeA.glb"
+  },
+  {
+    "id": "kenney-space/rock_crystalsLargeB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rock_crystalsLargeB.glb"
+  },
+  {
+    "id": "kenney-space/rock_largeA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rock_largeA.glb"
+  },
+  {
+    "id": "kenney-space/rock_largeB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rock_largeB.glb"
+  },
+  {
+    "id": "kenney-space/rock",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rock.glb"
+  },
+  {
+    "id": "kenney-space/rocket_baseA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_baseA.glb"
+  },
+  {
+    "id": "kenney-space/rocket_baseB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_baseB.glb"
+  },
+  {
+    "id": "kenney-space/rocket_finsA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_finsA.glb"
+  },
+  {
+    "id": "kenney-space/rocket_finsB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_finsB.glb"
+  },
+  {
+    "id": "kenney-space/rocket_fuelA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_fuelA.glb"
+  },
+  {
+    "id": "kenney-space/rocket_fuelB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_fuelB.glb"
+  },
+  {
+    "id": "kenney-space/rocket_sidesA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_sidesA.glb"
+  },
+  {
+    "id": "kenney-space/rocket_sidesB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_sidesB.glb"
+  },
+  {
+    "id": "kenney-space/rocket_topA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_topA.glb"
+  },
+  {
+    "id": "kenney-space/rocket_topB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocket_topB.glb"
+  },
+  {
+    "id": "kenney-space/rocks_smallA",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocks_smallA.glb"
+  },
+  {
+    "id": "kenney-space/rocks_smallB",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rocks_smallB.glb"
+  },
+  {
+    "id": "kenney-space/rover",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rover.glb"
+  },
+  {
+    "id": "kenney-space/satelliteDish_detailed",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "satelliteDish_detailed.glb"
+  },
+  {
+    "id": "kenney-space/satelliteDish_large",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "satelliteDish_large.glb"
+  },
+  {
+    "id": "kenney-space/satelliteDish",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "satelliteDish.glb"
+  },
+  {
+    "id": "kenney-space/stairs_corner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "stairs_corner.glb"
+  },
+  {
+    "id": "kenney-space/stairs_short",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "stairs_short.glb"
+  },
+  {
+    "id": "kenney-space/stairs",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "stairs.glb"
+  },
+  {
+    "id": "kenney-space/structure_closed",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "structure_closed.glb"
+  },
+  {
+    "id": "kenney-space/structure_detailed",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "structure_detailed.glb"
+  },
+  {
+    "id": "kenney-space/structure_diagonal",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "structure_diagonal.glb"
+  },
+  {
+    "id": "kenney-space/structure",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "structure.glb"
+  },
+  {
+    "id": "kenney-space/supports_high",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "supports_high.glb"
+  },
+  {
+    "id": "kenney-space/supports_low",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "supports_low.glb"
+  },
+  {
+    "id": "kenney-space/terrain_ramp",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_ramp.glb"
+  },
+  {
+    "id": "kenney-space/terrain_rampLarge_detailed",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_rampLarge_detailed.glb"
+  },
+  {
+    "id": "kenney-space/terrain_rampLarge",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_rampLarge.glb"
+  },
+  {
+    "id": "kenney-space/terrain_roadCorner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_roadCorner.glb"
+  },
+  {
+    "id": "kenney-space/terrain_roadCross",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_roadCross.glb"
+  },
+  {
+    "id": "kenney-space/terrain_roadEnd",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_roadEnd.glb"
+  },
+  {
+    "id": "kenney-space/terrain_roadSplit",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_roadSplit.glb"
+  },
+  {
+    "id": "kenney-space/terrain_roadStraight",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_roadStraight.glb"
+  },
+  {
+    "id": "kenney-space/terrain_side",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_side.glb"
+  },
+  {
+    "id": "kenney-space/terrain_sideCliff",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_sideCliff.glb"
+  },
+  {
+    "id": "kenney-space/terrain_sideCorner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_sideCorner.glb"
+  },
+  {
+    "id": "kenney-space/terrain_sideCornerInner",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_sideCornerInner.glb"
+  },
+  {
+    "id": "kenney-space/terrain_sideEnd",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain_sideEnd.glb"
+  },
+  {
+    "id": "kenney-space/terrain",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "terrain.glb"
+  },
+  {
+    "id": "kenney-space/turret_double",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "turret_double.glb"
+  },
+  {
+    "id": "kenney-space/turret_single",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "turret_single.glb"
+  },
+  {
+    "id": "kenney-space/weapon_gun",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "weapon_gun.glb"
+  },
+  {
+    "id": "kenney-space/weapon_rifle",
+    "source": "kenney-space",
+    "categories": [
+      "space",
+      "vehicle",
+      "prop"
+    ],
+    "file": "weapon_rifle.glb"
+  }
+]

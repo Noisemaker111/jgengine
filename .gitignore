@@ -4,6 +4,8 @@ dist/
 .DS_Store
 shots/
 .turbo/
+**/public/models/
+**/.jgengine-assets-tmp/
 *.tsbuildinfo
 
 # Compiled output must never sit beside TS source — Vite resolves .js over .ts,

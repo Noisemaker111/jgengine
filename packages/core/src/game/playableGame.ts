@@ -43,6 +43,12 @@ export interface EntitySpriteConfig {
   y: number;
 }
 
+export interface ModelConfig {
+  url: string;
+  scale?: number;
+  y?: number;
+}
+
 export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
   game: GameDefinition;
   content: GameContextContent;
@@ -52,6 +58,10 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
   WorldOverlay?: TWorldOverlay;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
   entitySprites?: Record<string, EntitySpriteConfig>;
+  /** GLB models keyed by entity kind name; take priority over sprites, which take priority over primitives. */
+  entityModels?: Record<string, ModelConfig>;
+  /** GLB models keyed by object catalog id; replace the colored box when present. */
+  objectModels?: Record<string, ModelConfig>;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
   hotbarSelection?: () => number;
   /** Positioned proximity prompts for the interact key + HUD; single source shared with useActivePrompt. */
