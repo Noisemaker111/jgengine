@@ -1,3 +1,4 @@
+import { createBiomeField } from "./biomes";
 import type {
   ArenaWorldConfig,
   HeightfieldWorldConfig,
@@ -64,7 +65,7 @@ export interface FractalNoiseConfig {
   ridged: boolean;
 }
 
-function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number {
+export function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number {
   let amplitude = 1;
   let frequency = config.frequency;
   let sum = 0;
@@ -80,7 +81,7 @@ function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number 
   return norm === 0 ? 0 : sum / norm;
 }
 
-function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] {
+export function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] {
   const epsilon = 0.75;
   return (x, z) => {
     const hx = sampleHeight(x + epsilon, z) - sampleHeight(x - epsilon, z);
@@ -210,6 +211,30 @@ export function heightfieldField(config: HeightfieldWorldConfig): TerrainField {
   return noiseField(config);
 }
 
+export const DEFAULT_MAX_WALK_SLOPE = 0.6;
+
+export function resolveGroundStep(
+  field: TerrainField,
+  x: number,
+  z: number,
+  stepX: number,
+  stepZ: number,
+  maxSlope = DEFAULT_MAX_WALK_SLOPE,
+): { stepX: number; stepZ: number } {
+  const baseHeight = field.sampleHeight(x, z);
+  const tooSteep = (dx: number, dz: number): boolean => {
+    const distance = Math.hypot(dx, dz);
+    if (distance < 1e-6) return false;
+    const rise = field.sampleHeight(x + dx, z + dz) - baseHeight;
+    return rise / distance > maxSlope;
+  };
+  if (!tooSteep(stepX, stepZ)) return { stepX, stepZ };
+  return {
+    stepX: tooSteep(stepX, 0) ? 0 : stepX,
+    stepZ: tooSteep(0, stepZ) ? 0 : stepZ,
+  };
+}
+
 export function terrainFieldFor(world?: WorldFeature): TerrainField {
   switch (world?.kind) {
     case "flat":
@@ -220,6 +245,8 @@ export function terrainFieldFor(world?: WorldFeature): TerrainField {
       return arenaField(world);
     case "heightfield":
       return heightfieldField(world);
+    case "biomes":
+      return createBiomeField({ seed: seedFrom(world.seed, 1337), bounds: world.bounds });
     case undefined:
       return rollingField();
     default:

@@ -4,8 +4,9 @@ export interface WorldBounds {
 }
 
 export interface BiomesWorldConfig {
-  map: string;
-  zones: string;
+  map?: string;
+  zones?: string;
+  seed?: string | number;
   bounds?: WorldBounds;
 }
 
@@ -59,7 +60,7 @@ export type WorldFeature =
   | ({ kind: "heightfield" } & HeightfieldWorldConfig)
   | { kind: "flat" };
 
-export function biomes(config: BiomesWorldConfig): WorldFeature {
+export function biomes(config: BiomesWorldConfig = {}): WorldFeature {
   return { kind: "biomes", ...config };
 }
 

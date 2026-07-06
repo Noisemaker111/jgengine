@@ -3,6 +3,7 @@ import { arena, flat, heightfield, rolling } from "@jgengine/core/world/features
 import {
   arenaField,
   flatField,
+  resolveGroundStep,
   rollingField,
   terrainFieldFor,
 } from "@jgengine/core/world/terrain";
@@ -44,6 +45,13 @@ describe("terrain", () => {
     const pathRise = field.sampleHeight(0, 30) - field.sampleHeight(0, 24);
     const cliffRise = field.sampleHeight(16, 27) - field.sampleHeight(16, 21);
     expect(cliffRise).toBeGreaterThan(pathRise);
+  });
+
+  test("slope limiting blocks the cliff flank but allows the ramp and downhill", () => {
+    const field = arenaField();
+    expect(resolveGroundStep(field, 0, 30, 0, 0.5).stepZ).toBeGreaterThan(0);
+    expect(resolveGroundStep(field, 16, 23, 0, 0.5).stepZ).toBe(0);
+    expect(resolveGroundStep(field, 16, 27, 0, -0.5).stepZ).toBe(-0.5);
   });
 
   test("normals are unit length", () => {

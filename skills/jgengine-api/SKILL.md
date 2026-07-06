@@ -485,13 +485,15 @@ Descriptors from `@jgengine/core/world/features` — config data the runner/worl
 | `rolling({ seed?, amplitude?, frequency? })` | Subtle undulating ground — the default when `world` is unset |
 | `arena({ seed? })` | Flat spawn + a walkable ramp up to a cliff plateau + a hill; the shipped test environment |
 | `heightfield({ amplitude, frequency, octaves?, lacunarity?, persistence?, ridged?, baseHeight?, waterLevel?, bounds? })` | Full procedural control (deserts→mountains) |
-| `biomes({ map, zones, bounds? })` | Region atmosphere/rules layering; zones reference biome ids |
+| `biomes({ seed?, bounds? })` | Procedural multi-biome overworld (see below) |
 | `voxel({ seed, generate?, streaming? })` | Block worlds |
 | `plots(config)` | Shared city + instanced interiors |
 | `tilemap({ map })` | 2D/2.5D levels |
 | `flat()` | True-flat ground (+ debug grid) |
 
-Every profile resolves to a deterministic height field (`terrainFieldFor(world).sampleHeight(x, z)` from `@jgengine/core/world/terrain`); the shell renders the mesh from it and grounds all entities/objects on it, so `y:0` spawns sit on the surface.
+Every profile resolves to a deterministic height field (`terrainFieldFor(world).sampleHeight(x, z)` from `@jgengine/core/world/terrain`); the shell renders the mesh from it and grounds all entities/objects on it, so `y:0` spawns sit on the surface. The controller also follows terrain — walk up ramps, fall off ledges, and steep faces (slope > ~0.6) block you.
+
+**Biomes** (`@jgengine/core/world/biomes`): `biomes()` resolves to a `BiomeField` built from a 24-entry `DEFAULT_BIOMES` catalog (oceans → beaches → plains/forests/jungle/swamp/desert/badlands → windswept & snowy peaks). Each `BiomeDef` carries a climate center (`temperature × humidity × continentalness`), terrain params (`baseHeight/amplitude/frequency/ridged`), surface + steep + water + fog colors, and gameplay data: `spawns` (monster table, `night?`), `structures` (`{id, rarity}`), `effects` (`slowness | blindness | poison | regen | haste`), and `materials` (block palette). Selection is nearest-climate with softmax blending, so terrain height and surface color blend smoothly across borders. `field.sampleBiome(x, z)` returns the dominant biome, blended colors, climate, and effects. The shell colors the ground per-biome, tints water per-biome, applies `slowness`/`haste` to move speed, and closes fog in for `blindness`. Pass a custom `catalog` to `createBiomeField({ catalog })` to define your own biome set. Provide your own `content.entityById` for the entities a biome's `spawns` reference; iterate `sampleBiome` in your loop to place them.
 
 `parentSpace` positions are local to that space — convert at seams only.
 

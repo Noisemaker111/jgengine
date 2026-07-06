@@ -1,4 +1,4 @@
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -18,7 +18,8 @@ import {
   resolveMovementIntent,
 } from "@jgengine/core/movement/movementModel";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { terrainFieldFor, type TerrainField } from "@jgengine/core/world/terrain";
+import { resolveGroundStep, terrainFieldFor, type TerrainField } from "@jgengine/core/world/terrain";
+import { isBiomeField, type BiomeField } from "@jgengine/core/world/biomes";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
@@ -222,11 +223,20 @@ function GroundPlane({ field }: { field: TerrainField }) {
     next.computeVertexNormals();
     const normals = next.attributes.normal;
     const colors = new Float32Array(positions.count * 3);
+    const biomeField = isBiomeField(field) ? field : null;
     for (let index = 0; index < positions.count; index += 1) {
       const height = positions.getZ(index);
       const slope = 1 - normals.getZ(index);
-      const grassBlend = Math.min(1, Math.max(0, height / 5));
       const rockBlend = Math.min(1, Math.max(0, (slope - 0.35) / 0.35));
+      if (biomeField !== null) {
+        const sample = biomeField.sampleBiome(positions.getX(index), -positions.getY(index));
+        for (let channel = 0; channel < 3; channel += 1) {
+          colors[index * 3 + channel] =
+            sample.surface[channel]! + (sample.steep[channel]! - sample.surface[channel]!) * rockBlend;
+        }
+        continue;
+      }
+      const grassBlend = Math.min(1, Math.max(0, height / 5));
       for (let channel = 0; channel < 3; channel += 1) {
         const grass = GRASS_LOW[channel]! + (GRASS_HIGH[channel]! - GRASS_LOW[channel]!) * grassBlend;
         colors[index * 3 + channel] = grass + (ROCK[channel]! - grass) * rockBlend;
@@ -284,15 +294,67 @@ function ArenaStructures({ field }: { field: TerrainField }) {
   );
 }
 
-function WaterPlane({ level }: { level: number }) {
+const DEFAULT_WATER: readonly [number, number, number] = [0.18, 0.43, 0.53];
+
+const DEFAULT_FOG: readonly [number, number, number] = [0.078, 0.086, 0.106];
+
+function BiomeAtmosphere({ field }: { field: BiomeField }) {
+  const ctx = useGameContext();
+  const scene = useThree((state) => state.scene);
+  const fogRef = useRef<THREE.Fog | null>(null);
+  useEffect(() => {
+    const fog = new THREE.Fog("#14161b", 60, 260);
+    fogRef.current = fog;
+    scene.fog = fog;
+    return () => {
+      if (scene.fog === fog) scene.fog = null;
+      fogRef.current = null;
+    };
+  }, [scene]);
+  useFrame(() => {
+    const fog = fogRef.current;
+    const player = ctx.scene.entity.get(ctx.player.userId);
+    if (fog === null || player === null) return;
+    const sample = field.sampleBiome(player.position[0], player.position[2]);
+    const blindness = sample.effects.find((effect) => effect.kind === "blindness");
+    const targetNear = blindness !== undefined ? 3 : 60;
+    const targetFar = blindness !== undefined ? 14 + (1 - blindness.strength) * 26 : 260;
+    const color = sample.fog ?? DEFAULT_FOG;
+    fog.color.setRGB(color[0]!, color[1]!, color[2]!);
+    fog.near += (targetNear - fog.near) * 0.08;
+    fog.far += (targetFar - fog.far) * 0.08;
+  }, GAME_SIM_FRAME_PRIORITY);
+  return null;
+}
+
+function WaterPlane({ level, field }: { level: number; field: TerrainField }) {
+  const geometry = useMemo(() => {
+    const biomeField = isBiomeField(field) ? field : null;
+    const segments = biomeField !== null ? 64 : 1;
+    const next = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, segments, segments);
+    if (biomeField !== null) {
+      const positions = next.attributes.position;
+      const colors = new Float32Array(positions.count * 3);
+      for (let index = 0; index < positions.count; index += 1) {
+        const water = biomeField.sampleBiome(positions.getX(index), -positions.getY(index)).water ?? DEFAULT_WATER;
+        colors[index * 3] = water[0]!;
+        colors[index * 3 + 1] = water[1]!;
+        colors[index * 3 + 2] = water[2]!;
+      }
+      next.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    }
+    return next;
+  }, [field]);
+
+  const useVertexColors = isBiomeField(field);
   return (
-    <mesh rotation-x={-Math.PI / 2} position-y={level}>
-      <planeGeometry args={[GROUND_SIZE, GROUND_SIZE]} />
+    <mesh rotation-x={-Math.PI / 2} position-y={level} geometry={geometry}>
       <meshStandardMaterial
-        color="#2f6f86"
+        color={useVertexColors ? "#ffffff" : "#2f6f86"}
+        vertexColors={useVertexColors}
         transparent
-        opacity={0.72}
-        roughness={0.25}
+        opacity={0.78}
+        roughness={0.22}
         metalness={0.1}
       />
     </mesh>
@@ -362,7 +424,7 @@ function WorldView({
   return (
     <>
       <GroundPlane field={field} />
-      {field.waterLevel !== undefined ? <WaterPlane level={field.waterLevel} /> : null}
+      {field.waterLevel !== undefined ? <WaterPlane level={field.waterLevel} field={field} /> : null}
       {showGrid ? <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} /> : null}
       <RockField field={field} />
       {showStructures ? <ArenaStructures field={field} /> : null}
@@ -482,17 +544,27 @@ function FrameDriver({
       keys.space = tracker.isDown("jump");
       const intent = resolveMovementIntent(keys, true);
       const motion = motionRef.current;
+      let baseSpeed = player.movement.walkSpeed ?? 2;
+      if (isBiomeField(field)) {
+        for (const effect of field.sampleBiome(player.position[0], player.position[2]).effects) {
+          if (effect.kind === "slowness") baseSpeed *= Math.max(0.2, 1 - effect.strength);
+          else if (effect.kind === "haste") baseSpeed *= 1 + effect.strength;
+        }
+      }
       const step = advancePlayerMotion(
         motion,
         intent,
         forwardX,
         forwardZ,
-        player.movement.walkSpeed ?? 2,
+        baseSpeed,
         rawDt,
         field.sampleHeight(player.position[0], player.position[2]),
       );
+      const grounded = motion.grounded
+        ? resolveGroundStep(field, player.position[0], player.position[2], step.stepX, step.stepZ)
+        : step;
       ctx.scene.entity.setPose(playerId, {
-        position: [player.position[0] + step.stepX, motion.jumpOffset, player.position[2] + step.stepZ],
+        position: [player.position[0] + grounded.stepX, motion.jumpOffset, player.position[2] + grounded.stepZ],
         rotationY: intent.moving
           ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
           : player.rotationY,
@@ -794,6 +866,7 @@ export function GamePlayerShell({
         <ambientLight intensity={0.55} />
         <directionalLight position={[10, 16, 6]} intensity={1.3} />
         <GameProvider context={ctx}>
+          {isBiomeField(field) ? <BiomeAtmosphere field={field} /> : null}
           <WorldView
             entitySprites={playable.entitySprites}
             entityModels={playable.entityModels}
