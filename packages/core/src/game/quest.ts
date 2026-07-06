@@ -298,3 +298,268 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
     },
   };
 }
+
+export interface QuestAcceptOptions {
+  hasUnlock?(id: string): boolean;
+}
+
+export interface QuestTurnIn {
+  state: QuestSnapshotEntry[];
+  rewards: QuestRewards | null;
+}
+
+export interface QuestEvaluator {
+  has(questId: string): boolean;
+  get(questId: string): QuestDef | null;
+  canAccept(
+    state: readonly QuestSnapshotEntry[],
+    questId: string,
+    options?: QuestAcceptOptions,
+  ): { reason: string } | null;
+  accept(
+    state: readonly QuestSnapshotEntry[],
+    questId: string,
+    options?: QuestAcceptOptions,
+  ): QuestSnapshotEntry[] | { reason: string };
+  abandon(state: readonly QuestSnapshotEntry[], questId: string): QuestSnapshotEntry[];
+  progress(
+    state: readonly QuestSnapshotEntry[],
+    questId: string,
+    objectiveId: string,
+    delta: number,
+  ): QuestSnapshotEntry[];
+  canTurnIn(state: readonly QuestSnapshotEntry[], questId: string): { reason: string } | null;
+  turnIn(state: readonly QuestSnapshotEntry[], questId: string): QuestTurnIn | { reason: string };
+  grant(
+    state: readonly QuestSnapshotEntry[],
+    questId: string,
+    options?: { completed?: boolean },
+  ): QuestSnapshotEntry[];
+  revoke(state: readonly QuestSnapshotEntry[], questId: string): QuestSnapshotEntry[];
+  creditKill(state: readonly QuestSnapshotEntry[], targetCatalogId: string): QuestSnapshotEntry[];
+  creditCollect(
+    state: readonly QuestSnapshotEntry[],
+    itemId: string,
+    count: number,
+  ): QuestSnapshotEntry[];
+  list(state: readonly QuestSnapshotEntry[]): QuestInstance[];
+}
+
+export function applyQuestRewards(
+  rewards: QuestRewards,
+  appliers: {
+    grantXp?(amount: number): void;
+    grantEconomy?(currencyId: string, amount: number): void;
+    grantItem?(inventoryId: string, itemId: string, count: number): void;
+    grantUnlock?(unlockId: string): void;
+  },
+): void {
+  if (rewards.xp) appliers.grantXp?.(rewards.xp.amount);
+  for (const [currencyId, amount] of Object.entries(rewards.economy ?? {})) {
+    appliers.grantEconomy?.(currencyId, amount);
+  }
+  for (const entry of rewards.items ?? []) {
+    appliers.grantItem?.(entry.inventory, entry.item, entry.count);
+  }
+  for (const unlockId of rewards.unlocks ?? []) {
+    appliers.grantUnlock?.(unlockId);
+  }
+}
+
+type WorkingQuests = Map<string, { status: QuestStatus; progress: Map<string, number> }>;
+
+function toWorking(state: readonly QuestSnapshotEntry[]): WorkingQuests {
+  const working: WorkingQuests = new Map();
+  for (const entry of state) {
+    working.set(entry.questId, {
+      status: entry.status,
+      progress: new Map(Object.entries(entry.progress)),
+    });
+  }
+  return working;
+}
+
+function toSnapshot(working: WorkingQuests): QuestSnapshotEntry[] {
+  return Array.from(working, ([questId, state]) => ({
+    questId,
+    status: state.status,
+    progress: Object.fromEntries(state.progress),
+  }));
+}
+
+export function createQuestEvaluator(
+  defs: QuestDef[] | Record<string, QuestDef>,
+): QuestEvaluator {
+  const catalog = new Map<string, QuestDef>();
+  for (const def of Array.isArray(defs) ? defs : Object.values(defs)) catalog.set(def.id, def);
+
+  function canAcceptWorking(
+    working: WorkingQuests,
+    questId: string,
+    options?: QuestAcceptOptions,
+  ): { reason: string } | null {
+    const def = catalog.get(questId);
+    if (def === undefined) return { reason: `unknown quest "${questId}"` };
+    const state = working.get(questId);
+    if (state?.status === "active") return { reason: `quest "${questId}" already active` };
+    if (state?.status === "completed") return { reason: `quest "${questId}" already completed` };
+    for (const requirementId of def.requires ?? []) {
+      const met =
+        working.get(requirementId)?.status === "completed" ||
+        (options?.hasUnlock?.(requirementId) ?? false);
+      if (!met) return { reason: `quest "${questId}" requires "${requirementId}"` };
+    }
+    return null;
+  }
+
+  function progressWorking(
+    working: WorkingQuests,
+    questId: string,
+    objectiveId: string,
+    delta: number,
+  ): void {
+    const def = catalog.get(questId);
+    const state = working.get(questId);
+    if (def === undefined || state === undefined || state.status !== "active") return;
+    const objective = def.objectives.find((candidate) => candidate.id === objectiveId);
+    if (objective === undefined) return;
+    const previous = state.progress.get(objectiveId) ?? 0;
+    const next = clamp(previous + delta, 0, objective.count);
+    if (next !== previous) state.progress.set(objectiveId, next);
+  }
+
+  function creditWorking(
+    working: WorkingQuests,
+    predicate: (objective: QuestObjective) => boolean,
+    delta: number,
+  ): void {
+    for (const [questId, state] of working) {
+      if (state.status !== "active") continue;
+      const def = catalog.get(questId);
+      if (def === undefined) continue;
+      for (const objective of def.objectives) {
+        if (predicate(objective)) progressWorking(working, questId, objective.id, delta);
+      }
+    }
+  }
+
+  function canTurnInWorking(working: WorkingQuests, questId: string): { reason: string } | null {
+    const def = catalog.get(questId);
+    if (def === undefined) return { reason: `unknown quest "${questId}"` };
+    const state = working.get(questId);
+    if (state === undefined || state.status !== "active") {
+      return { reason: `quest "${questId}" is not active` };
+    }
+    for (const objective of def.objectives) {
+      if ((state.progress.get(objective.id) ?? 0) < objective.count) {
+        return { reason: `objective "${objective.id}" incomplete` };
+      }
+    }
+    return null;
+  }
+
+  return {
+    has(questId) {
+      return catalog.has(questId);
+    },
+    get(questId) {
+      return catalog.get(questId) ?? null;
+    },
+    canAccept(state, questId, options) {
+      return canAcceptWorking(toWorking(state), questId, options);
+    },
+    accept(state, questId, options) {
+      const working = toWorking(state);
+      const denied = canAcceptWorking(working, questId, options);
+      if (denied !== null) return denied;
+      working.set(questId, { status: "active", progress: new Map() });
+      return toSnapshot(working);
+    },
+    abandon(state, questId) {
+      const working = toWorking(state);
+      if (working.get(questId)?.status === "active") working.delete(questId);
+      return toSnapshot(working);
+    },
+    progress(state, questId, objectiveId, delta) {
+      const working = toWorking(state);
+      progressWorking(working, questId, objectiveId, delta);
+      return toSnapshot(working);
+    },
+    canTurnIn(state, questId) {
+      return canTurnInWorking(toWorking(state), questId);
+    },
+    turnIn(state, questId) {
+      const working = toWorking(state);
+      const denied = canTurnInWorking(working, questId);
+      if (denied !== null) return denied;
+      const def = catalog.get(questId)!;
+      working.get(questId)!.status = "completed";
+      for (const nextQuestId of def.rewards?.quests ?? []) {
+        if (canAcceptWorking(working, nextQuestId) === null) {
+          working.set(nextQuestId, { status: "active", progress: new Map() });
+        }
+      }
+      return { state: toSnapshot(working), rewards: def.rewards ?? null };
+    },
+    grant(state, questId, options) {
+      const def = catalog.get(questId);
+      if (def === undefined) return state.slice();
+      const working = toWorking(state);
+      const completed = options?.completed ?? false;
+      const progressMap = new Map<string, number>();
+      if (completed) {
+        for (const objective of def.objectives) progressMap.set(objective.id, objective.count);
+      }
+      working.set(questId, {
+        status: completed ? "completed" : "active",
+        progress: progressMap,
+      });
+      return toSnapshot(working);
+    },
+    revoke(state, questId) {
+      const working = toWorking(state);
+      working.delete(questId);
+      return toSnapshot(working);
+    },
+    creditKill(state, targetCatalogId) {
+      const working = toWorking(state);
+      creditWorking(
+        working,
+        (objective) => objective.kind === "kill" && objective.target === targetCatalogId,
+        1,
+      );
+      return toSnapshot(working);
+    },
+    creditCollect(state, itemId, count) {
+      const working = toWorking(state);
+      creditWorking(
+        working,
+        (objective) => objective.kind === "collect" && objective.item === itemId,
+        count,
+      );
+      return toSnapshot(working);
+    },
+    list(state) {
+      const instances: QuestInstance[] = [];
+      for (const entry of state) {
+        const def = catalog.get(entry.questId);
+        if (def === undefined) continue;
+        instances.push({
+          questId: entry.questId,
+          status: entry.status,
+          objectives: def.objectives.map((objective) => {
+            const current = entry.progress[objective.id] ?? 0;
+            return {
+              id: objective.id,
+              kind: objective.kind,
+              count: objective.count,
+              progress: current,
+              complete: current >= objective.count,
+            };
+          }),
+        });
+      }
+      return instances;
+    },
+  };
+}

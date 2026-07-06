@@ -9,6 +9,20 @@ export interface GameFeedOptions {
   limit?: number;
 }
 
+export function appendFeedEntry<T>(
+  buffer: readonly FeedEntry<T>[],
+  entry: FeedEntry<T>,
+  limit: number,
+): FeedEntry<T>[] {
+  const next = [...buffer, entry];
+  return next.length > limit ? next.slice(next.length - limit) : next;
+}
+
+export function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] {
+  const count = limit ?? buffer.length;
+  return buffer.slice(Math.max(0, buffer.length - count));
+}
+
 export interface GameFeed {
   bind<TName extends keyof GameEventMap>(action: TName, events: GameEvents): () => void;
   push(action: string, entry: unknown): void;
@@ -24,10 +38,7 @@ export function createGameFeed(options?: GameFeedOptions): GameFeed {
   const listeners = new Map<string, Set<(entry: FeedEntry) => void>>();
 
   function append(action: string, entry: FeedEntry): void {
-    const buffer = buffers.get(action) ?? [];
-    buffer.push(entry);
-    if (buffer.length > limit) buffer.splice(0, buffer.length - limit);
-    buffers.set(action, buffer);
+    buffers.set(action, appendFeedEntry(buffers.get(action) ?? [], entry, limit));
     for (const listener of listeners.get(action) ?? []) listener(entry);
   }
 
@@ -39,9 +50,7 @@ export function createGameFeed(options?: GameFeedOptions): GameFeed {
       append(action, { at: Date.now(), data });
     },
     recent(action, opts) {
-      const buffer = buffers.get(action) ?? [];
-      const count = opts?.limit ?? buffer.length;
-      return buffer.slice(Math.max(0, buffer.length - count));
+      return recentFeedEntries(buffers.get(action) ?? [], opts?.limit);
     },
     subscribe(action, listener) {
       let set = listeners.get(action);

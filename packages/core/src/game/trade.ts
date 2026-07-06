@@ -45,20 +45,89 @@ function scale(amounts: Record<string, number>, count: number): Record<string, n
   return scaled;
 }
 
+function negate(amounts: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [currency, amount] of Object.entries(amounts)) out[currency] = -amount;
+  return out;
+}
+
+export function canAffordCosts(balances: Record<string, number>, costs: Record<string, number>): string | null {
+  for (const [currency, amount] of Object.entries(costs)) {
+    if ((balances[currency] ?? 0) < amount) return "insufficient-funds";
+  }
+  return null;
+}
+
+function buyEligibility(trade: TradeField | null | undefined, shopId: string): string | null {
+  if (!trade?.buy) return "not-purchasable";
+  if (!trade.shops?.includes(shopId)) return "not-stocked";
+  return null;
+}
+
+function sellEligibility(trade: TradeField | null | undefined): string | null {
+  return trade?.sell ? null : "not-sellable";
+}
+
+export interface TradeOutcome {
+  itemId: string;
+  count: number;
+  currency: Record<string, number>;
+}
+
+export type TradeResolution =
+  | { status: "ok"; outcome: TradeOutcome }
+  | { status: "rejected"; reason: string };
+
+export function resolveBuy(
+  itemId: string,
+  trade: TradeField | null | undefined,
+  shopId: string,
+  count: number,
+  balances: Record<string, number>,
+): TradeResolution {
+  const ineligible = buyEligibility(trade, shopId);
+  if (ineligible) return { status: "rejected", reason: ineligible };
+  const costs = scale(trade!.buy!, count);
+  const unaffordable = canAffordCosts(balances, costs);
+  if (unaffordable) return { status: "rejected", reason: unaffordable };
+  return { status: "ok", outcome: { itemId, count, currency: negate(costs) } };
+}
+
+export function resolveSell(
+  itemId: string,
+  trade: TradeField | null | undefined,
+  count: number,
+): TradeResolution {
+  const ineligible = sellEligibility(trade);
+  if (ineligible) return { status: "rejected", reason: ineligible };
+  return { status: "ok", outcome: { itemId, count: -count, currency: scale(trade!.sell!, count) } };
+}
+
+export function applyTradeOutcome(
+  outcome: TradeOutcome,
+  appliers: {
+    adjustItem(itemId: string, count: number): { reason: string } | null;
+    adjustCurrency(delta: Record<string, number>): void;
+  },
+): { reason: string } | null {
+  const itemResult = appliers.adjustItem(outcome.itemId, outcome.count);
+  if (itemResult) return itemResult;
+  appliers.adjustCurrency(outcome.currency);
+  return null;
+}
+
 export function createTradeSystem(deps: TradeSystemDeps): TradeSystem {
   const { resolveTrade, wallet, inventory } = deps;
 
   function canBuy(itemId: string, shopId: string, count = 1): string | null {
     const trade = resolveTrade(itemId);
-    if (!trade?.buy) return "not-purchasable";
-    if (!trade.shops?.includes(shopId)) return "not-stocked";
-    return wallet.canAfford(scale(trade.buy, count));
+    const ineligible = buyEligibility(trade, shopId);
+    if (ineligible) return ineligible;
+    return wallet.canAfford(scale(trade!.buy!, count));
   }
 
   function canSell(itemId: string, _count = 1): string | null {
-    const trade = resolveTrade(itemId);
-    if (!trade?.sell) return "not-sellable";
-    return null;
+    return sellEligibility(resolveTrade(itemId));
   }
 
   return {
