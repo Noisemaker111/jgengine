@@ -19,7 +19,7 @@ export const DEFAULT_PARAMS: BenchParams = {
   layers: 3,
   seed: 1337,
   gravity: -22,
-  cellSize: 1,
+  cellSize: 2,
 };
 
 function readInt(params: URLSearchParams, key: string, fallback: number): number {

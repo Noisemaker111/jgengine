@@ -119,6 +119,12 @@ export class PhysicsWorld {
   private readonly sorted: Int32Array;
   private readonly bodyCell: Int32Array;
 
+  // Awake-body index: the hot loops (integrate, solver outer, bounds, sleep) walk only these,
+  // so per-substep work outside the grid rebuild scales with the awake count, not the total.
+  private readonly awakeList: Int32Array;
+  private readonly awakeSlot: Int32Array;
+  private awakeCount = 0;
+
   private bodyCount = 0;
   private accumulator = 0;
   private readonly stats: PhysicsStats = {
@@ -178,6 +184,25 @@ export class PhysicsWorld {
     this.cursor = new Int32Array(this.numCells);
     this.sorted = new Int32Array(cap);
     this.bodyCell = new Int32Array(cap);
+    this.awakeList = new Int32Array(cap);
+    this.awakeSlot = new Int32Array(cap).fill(-1);
+  }
+
+  private addAwake(i: number): void {
+    if (this.awakeSlot[i]! >= 0) return;
+    this.awakeSlot[i] = this.awakeCount;
+    this.awakeList[this.awakeCount] = i;
+    this.awakeCount += 1;
+  }
+
+  private removeAwake(i: number): void {
+    const slot = this.awakeSlot[i]!;
+    if (slot < 0) return;
+    this.awakeCount -= 1;
+    const last = this.awakeList[this.awakeCount]!;
+    this.awakeList[slot] = last;
+    this.awakeSlot[last] = slot;
+    this.awakeSlot[i] = -1;
   }
 
   get count(): number {
@@ -209,6 +234,9 @@ export class PhysicsWorld {
     else if (options.asleep === true) f |= FLAG_SLEEPING;
     this.flags[i] = f;
     this.sleepTimer[i] = 0;
+    this.awakeSlot[i] = -1;
+    this.bodyCell[i] = this.cellOf(i);
+    if ((f & FLAG_SLEEPING) === 0) this.addAwake(i);
     return i;
   }
 
@@ -223,6 +251,7 @@ export class PhysicsWorld {
     this.prevX[i] = this.posX[i]!;
     this.prevY[i] = this.posY[i]!;
     this.prevZ[i] = this.posZ[i]!;
+    this.addAwake(i);
   }
 
   wakeAll(): void {
@@ -230,6 +259,7 @@ export class PhysicsWorld {
       if ((this.flags[i]! & FLAG_STATIC) === 0) {
         this.flags[i]! &= ~FLAG_SLEEPING;
         this.sleepTimer[i] = 0;
+        this.addAwake(i);
       }
     }
   }
@@ -237,6 +267,7 @@ export class PhysicsWorld {
   clear(): void {
     this.bodyCount = 0;
     this.accumulator = 0;
+    this.awakeCount = 0;
   }
 
   /** Advance by a real frame delta; runs whole fixed substeps and carries the remainder. */
@@ -254,11 +285,9 @@ export class PhysicsWorld {
       this.accumulator -= this.fixedDt;
       substeps += 1;
     }
-    let awake = 0;
-    for (let i = 0; i < this.bodyCount; i += 1) if ((this.flags[i]! & FLAG_SLEEPING) === 0) awake += 1;
     this.stats.count = this.bodyCount;
-    this.stats.awake = awake;
-    this.stats.sleeping = this.bodyCount - awake;
+    this.stats.awake = this.awakeCount;
+    this.stats.sleeping = this.bodyCount - this.awakeCount;
     this.stats.substeps = substeps;
     this.stats.stepMs = performanceNow() - start;
     return this.stats;
@@ -269,11 +298,11 @@ export class PhysicsWorld {
   }
 
   private substep(dt: number): void {
-    const n = this.bodyCount;
     const gdt = this.gravity * dt;
     const damp = this.linearDamping > 0 ? Math.max(0, 1 - this.linearDamping * dt) : 1;
-    for (let i = 0; i < n; i += 1) {
-      if ((this.flags[i]! & FLAG_SLEEPING) !== 0) continue;
+    const awakeBefore = this.awakeCount;
+    for (let a = 0; a < awakeBefore; a += 1) {
+      const i = this.awakeList[a]!;
       this.prevX[i] = this.posX[i]!;
       this.prevY[i] = this.posY[i]!;
       this.prevZ[i] = this.posZ[i]!;
@@ -291,9 +320,7 @@ export class PhysicsWorld {
     this.buildGrid();
     const iterations = this.solverIterations;
     for (let it = 0; it < iterations; it += 1) this.solve(it === 0, it === iterations - 1);
-    for (let i = 0; i < n; i += 1) {
-      if ((this.flags[i]! & FLAG_SLEEPING) === 0) this.constrainBounds(i);
-    }
+    for (let a = 0; a < this.awakeCount; a += 1) this.constrainBounds(this.awakeList[a]!);
     this.updateSleep();
   }
 
@@ -338,19 +365,14 @@ export class PhysicsWorld {
     const n = this.bodyCount;
     const start = this.cellStart;
     start.fill(0);
-    const min = this.bounds.min;
-    const cs = this.cellSize;
-    const nx = this.nx;
-    const ny = this.ny;
-    const nz = this.nz;
-    for (let i = 0; i < n; i += 1) {
-      const cx = cellCoord(this.posX[i]!, min[0], cs, nx);
-      const cy = cellCoord(this.posY[i]!, min[1], cs, ny);
-      const cz = cellCoord(this.posZ[i]!, min[2], cs, nz);
-      const c = cellIndex(cx, cy, cz, nx, ny);
-      this.bodyCell[i] = c;
-      start[c + 1]! += 1;
+    // Sleeping bodies never move, so their cell index is cached from addBody / their last awake
+    // substep — only awake bodies pay the cell recomputation each substep.
+    const awakeCount = this.awakeCount;
+    for (let a = 0; a < awakeCount; a += 1) {
+      const i = this.awakeList[a]!;
+      this.bodyCell[i] = this.cellOf(i);
     }
+    for (let i = 0; i < n; i += 1) start[this.bodyCell[i]! + 1]! += 1;
     for (let c = 0; c < this.numCells; c += 1) {
       start[c + 1]! += start[c]!;
       this.cursor[c] = start[c]!;
@@ -361,14 +383,22 @@ export class PhysicsWorld {
     }
   }
 
+  private cellOf(i: number): number {
+    const cx = cellCoord(this.posX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+    const cy = cellCoord(this.posY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+    const cz = cellCoord(this.posZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+    return cellIndex(cx, cy, cz, this.nx, this.ny);
+  }
+
   private solve(restitutionPass: boolean, countPass: boolean): void {
-    const n = this.bodyCount;
     const nx = this.nx;
     const ny = this.ny;
     const nz = this.nz;
     const nxny = nx * ny;
-    for (let i = 0; i < n; i += 1) {
-      if ((this.flags[i]! & FLAG_SLEEPING) !== 0) continue;
+    // A contact may wake a sleeping body mid-pass, appending it to the awake list; re-read the
+    // count each iteration so it is solved this substep too.
+    for (let a = 0; a < this.awakeCount; a += 1) {
+      const i = this.awakeList[a]!;
       const c = this.bodyCell[i]!;
       const cz = (c / nxny) | 0;
       const cy = ((c - cz * nxny) / nx) | 0;
@@ -487,31 +517,32 @@ export class PhysicsWorld {
   }
 
   private updateSleep(): void {
-    const n = this.bodyCount;
     // A body sleeps when it has actually stopped moving — measured by displacement over
     // the substep, not instantaneous velocity, which can stay "stuck" nonzero on a body
     // pinned between contacts even while its position is at rest.
     const moveEps2 = this.sleepMove2;
-    for (let i = 0; i < n; i += 1) {
-      const f = this.flags[i]!;
-      if ((f & FLAG_SLEEPING) !== 0) continue;
+    let a = 0;
+    while (a < this.awakeCount) {
+      const i = this.awakeList[a]!;
       const dx = this.posX[i]! - this.prevX[i]!;
       const dy = this.posY[i]! - this.prevY[i]!;
       const dz = this.posZ[i]! - this.prevZ[i]!;
       if (dx * dx + dy * dy + dz * dz <= moveEps2) {
         const t = this.sleepTimer[i]! + 1;
         if (t >= this.sleepSteps) {
-          this.flags[i] = f | FLAG_SLEEPING;
+          this.flags[i]! |= FLAG_SLEEPING;
           this.velX[i] = 0;
           this.velY[i] = 0;
           this.velZ[i] = 0;
           this.sleepTimer[i] = 0;
-        } else {
-          this.sleepTimer[i] = t;
+          this.removeAwake(i);
+          continue;
         }
+        this.sleepTimer[i] = t;
       } else {
         this.sleepTimer[i] = 0;
       }
+      a += 1;
     }
   }
 }
