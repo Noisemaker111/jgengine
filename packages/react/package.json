@@ -10,7 +10,10 @@
     "url": "git+https://github.com/Noisemaker111/jgengine.git",
     "directory": "packages/react"
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
   "exports": {
     "./*": {
       "types": "./dist/*.d.ts",

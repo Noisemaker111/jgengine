@@ -10,7 +10,10 @@
     "url": "git+https://github.com/Noisemaker111/jgengine.git",
     "directory": "packages/assets"
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
   "bin": {
     "assets": "dist/cli/pull.js"
   },

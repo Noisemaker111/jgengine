@@ -8,6 +8,10 @@ shots/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
 
+# CHANGELOG.md is authored once at the repo root and copied into each package
+# at publish time (see publish.yml) — the per-package copies are build artifacts.
+packages/*/CHANGELOG.md
+
 # Compiled output must never sit beside TS source — Vite resolves .js over .ts,
 # so a stray src/*.js silently shadows its .ts sibling and breaks dev/shoot.
 # Source dirs are pure TypeScript; emit only ever goes to dist/.
