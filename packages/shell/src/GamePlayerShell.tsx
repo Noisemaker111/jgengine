@@ -274,7 +274,6 @@ function WorldView({
   objectModels,
   environment: Environment,
   assets,
-  environment: Environment,
   renderEntity,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
@@ -282,7 +281,6 @@ function WorldView({
   objectModels: Record<string, string | ModelConfig> | undefined;
   environment: ComponentType | undefined;
   assets: AssetCatalog;
-  environment: ComponentType | undefined;
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
 }) {
   const ctx = useGameContext();
@@ -726,7 +724,6 @@ export function GamePlayerShell({
             objectModels={playable.objectModels}
             environment={playable.environment}
             assets={playable.game.assets}
-            environment={playable.environment}
             renderEntity={playable.renderEntity}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
