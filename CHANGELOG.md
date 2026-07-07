@@ -89,6 +89,13 @@ Pure, renderer-free primitives for card, board, and deckbuilder games — they s
   - `@jgengine/core/world/terraform` — `createEditableTerrain({ bounds, base, cellSize })` makes a `TerrainField` you can **write back to** via `apply(edit)` (raise/lower/flatten/paint), and `createTerraformBrush` is the cursor tool. This height-offset grid is the shared terrain-edit write-back pattern.
   - `@jgengine/core/world/buildPermissions` — `createPlotPermissions` (per-plot/guild `BuildRole` edit authority) + `createContributionPool` (co-op pooled-resource contribution model).
   - `@jgengine/shell` renderers: `structures/PlacementGhost` (tinted ghost), `terrain/EditableGround` (renders an `EditableTerrain` with surface paint), `terrain/TerraformBrushCursor` (brush ring); the `builder-sandbox` demo game wires them to `pointer.worldHit()`.
+- **Map, fog of war & contextual ping.** Minimap/world-map/fog/compass + a squad ping verb, built on renderer-free core state, a shell terrain bake, and react HUD components. (Stacked on the pointer foundation above.)
+  - `@jgengine/core/world/markers` — a reactive `createMarkerSet()` of `MapMarker`s (objective/entity/loot/ping) with `add`/`remove`/`query`/`prune`/`subscribe`; `DEFAULT_MARKER_KINDS` supplies content-agnostic colors + glyphs.
+  - `@jgengine/core/world/fog` — reveal-on-event fog: `createFogField({ bounds, cellSize })` with `reveal` (dig/act) and `revealAlong` (walked trail); revealed cells stay revealed and render from a stable `cells()` snapshot.
+  - `@jgengine/core/world/minimap` — pure projection + bearings (`projectToMinimap`, `clampToMinimapEdge`, `compassBearing`, `headingToBearing`, `bearingToCardinal`, `relativeBearing`).
+  - `@jgengine/core/game/ping` — `classifyPing(hit, …)` (hostile → enemy, tagged object → its category, ground → location) + `createPingSystem` that classifies, drops a categorized marker, and broadcasts a `PingPayload` over the existing party feed under `PING_FEED_ACTION`. `PlayableGame.pointer.pingCommand` binds the `ping` action → `worldHit()` → your command.
+  - `@jgengine/react` — `useMarkers` / `useFog` hooks and `Minimap` / `Compass` / `WorldMap` headless components (bind a core `MarkerSet`/`FogField`, override the `kindStyles` palette).
+  - `@jgengine/shell/map` — `bakeTerrainMap` (top-down terrain image for the map background) and `MapMarkerBeacons` world-space beacons; the `extraction-map` demo game wires the whole loop.
 
 ## 0.6.0
 

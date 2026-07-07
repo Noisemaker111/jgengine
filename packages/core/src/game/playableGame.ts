@@ -24,6 +24,8 @@ export interface PointerConfig {
   aim?: boolean;
   /** Left-click a `worldItem` within pickup radius grants it to the local player and despawns it (#32). */
   grabWorldItems?: boolean;
+  /** Press the bound `ping` action → `worldHit()` → run this command with `{ point, entity, object, normal }` (contextual ping, #94). */
+  pingCommand?: string;
 }
 
 export interface CameraFollowState {
