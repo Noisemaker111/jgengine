@@ -55,6 +55,10 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Content scatter | `world/scatterItems` | `scatterItems`, `pickWeighted`, `ScatterLayer`, `ScatterInstance` |
 | Building generator | `world/buildings` | `generateBuilding`, `generateBuildingDistrict`, `createBuildingGrid`, `GeneratedBuilding` |
 | Building index | `world/buildingIndex` | `buildingIndex`, `BuildingIndex`, `BuildingHit` |
+| Map markers | `world/markers` | `createMarkerSet`, `MarkerSet`, `MapMarker`, `MarkerInput`, `MarkerKindStyle`, `DEFAULT_MARKER_KINDS`, `markerKindStyle` |
+| Fog of war | `world/fog` | `createFogField`, `FogField`, `FogConfig`, `FogBounds`, `FogCells` |
+| Minimap math | `world/minimap` | `projectToMinimap`, `clampToMinimapEdge`, `compassBearing`, `headingToBearing`, `bearingToCardinal`, `relativeBearing`, `MinimapView` |
+| Ping | `game/ping` | `createPingSystem`, `classifyPing`, `PingSystem`, `PingPayload`, `PingCategory`, `PingCategoryDef`, `DEFAULT_PING_CATEGORIES`, `PING_FEED_ACTION` |
 | Proximity prompt | `interaction/proximityPrompt` | `proximityPrompt`, `ProximityPrompt`, `ProximityPromptDisplay`, `keybind`, `gauge`, `label`, `command` |
 | Item use | `item/use` | `createItemUse`, `ItemUseHandler`, `ItemUseInput`, `ItemUseResult`, `ItemUseRejection` |
 | Inventory | `inventory/inventoryModel` | `InventoryLayout`, `InventorySet`, `ItemTraits` |
@@ -526,6 +530,16 @@ The **pointer is a service, not per-game glue**. Opt in with `PlayableGame.camer
 - **Navmesh + A\*** (`nav/navGrid`): `createNavGrid({ bounds, cellSize, diagonal? })` → mark obstacles with `blockAabb`/`setWalkable`; `findPath(grid, from, to, { clearance?, smooth? })` returns a string-pulled `[x, z]` polyline (blocked start/goal snap to the nearest walkable cell) feeding **both click-to-move and AI routing**. Renderer-free — AI and gameplay consume it without the shell.
 - **`pathFollow`** (`nav/pathFollow`): the lighter authored-polyline mover for tower-defense creeps that needs no navmesh — `createPathFollow({ waypoints, speed, loop? })` + pure `advancePathFollow(config, state, dt)` (crosses multiple waypoints per tick, reports `done`/`heading`/`distanceTravelled`). Feed it a navmesh route with `pathFromNav(route, y)` and the same follower drives click-to-move.
 
+## Map, fog of war & ping
+
+Minimap/world-map/fog/compass state is renderer-free core (`world/*`), the top-down terrain image bakes in the shell, and the minimap/compass/world-map are react components. Ping rides the existing party + feed — it is not a new channel.
+
+- **Markers** (`world/markers`): `createMarkerSet()` is a reactive keyed set of `MapMarker { id, kind, position, label?, owner?, expiresAt?, meta? }` — `add`/`remove`/`get`/`list`/`query({ kind, owner, near, radius })`/`prune(now)`/`subscribe`. `kind` is a game-owned catalog string; `DEFAULT_MARKER_KINDS` (objective/enemy/loot/location/danger/ping/player/ally) supplies colors + glyphs the react map reads (override with your own `MarkerKindStyle` palette). Objective/entity/loot markers all live here.
+- **Fog of war** (`world/fog`): `createFogField({ bounds, cellSize })` is reveal-on-event — `reveal(x, z, radius?)` (a dig/act), `revealAlong(from, to, radius?)` (a walked trail); once a cell is revealed it stays revealed. `isRevealed`/`fraction`/`cells()` (stable snapshot for rendering)/`reset`/`subscribe`.
+- **Minimap math** (`world/minimap`): pure projection + bearings — `projectToMinimap(worldPoint, { center, worldRadius, size, rotate? })` → pixel `{ x, y, inside, distance }` (north = −Z maps up), `clampToMinimapEdge` for off-map markers, `compassBearing(from, to)`/`headingToBearing(yaw)`/`bearingToCardinal`/`relativeBearing` for the compass strip.
+- **Ping** (`game/ping`): `classifyPing(hit, { roleOf, categoryOf }, options?)` turns a G1 `pointer.worldHit()` `PointerHit` into a category (hostile entity → `enemy`, tagged object → its catalog category, open ground/ally → `location`). `createPingSystem({ markers, feed, party?, ttlMs?, classify, classifyOptions? })` composes classify + broadcast: `ping(from, hit, category?)` classifies, drops a categorized marker, and pushes the `PingPayload` to the party feed under `PING_FEED_ACTION` (`"party.ping"`) — the shell's feed bridge fans it to the squad. `DEFAULT_PING_CATEGORIES` is the enemy/loot/location/danger wheel. Enable the verb with `PlayableGame.pointer.pingCommand`: the shell binds the `ping` input action → `worldHit()` → runs your command with `{ point, entity, object, normal }`.
+- **Shell render** (`@jgengine/shell/map`): `bakeTerrainMap(field, bounds, { resolution? })` renders a `TerrainField`/`RegionField` to a top-down PNG data-URL for the map background; `MapMarkerBeacons({ markers })` renders world-space beacons (the visible side of a ping) — wire via `PlayableGame.WorldOverlay`. See the `extraction-map` demo game.
+
 ## World features
 
 Descriptors from `@jgengine/core/world/features` — config data the runner/world layer interprets:
@@ -620,11 +634,12 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 | `useActivePrompt(prompts)` | nearest proximity prompt |
 | `useGameClock()` | clock snapshot (`now`, `paused`, `speed`, `calendar`) + `controls` (pause/play/setSpeed) |
 | `useLocalPlayerDead()` / `localPlayerEntity(entities, userId)` | death-screen gating; local player from a snapshot |
+| `useMarkers(markerSet)` / `useFog(fogField)` | live map-marker list / fog-cell snapshot (bind a core `MarkerSet`/`FogField`) |
 | `useGameStore()` | raw store handle — escape hatch under the typed hooks |
 
 Import hooks from `@jgengine/react/hooks`, components from `@jgengine/react/components`, `GameProvider` from `@jgengine/react/provider` (the package uses deep paths like core). For binding arbitrary engine state outside the typed hooks, `@jgengine/react/engineStore` exposes `useEngineState`, `useEngineStore`, `useEngineEvent`.
 
-Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox`, `ToastStack`, `DeathScreen`, `LevelUpFlash`. Not yet implemented: `useServer`, `useDialogue`.
+Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox`, `ToastStack`, `DeathScreen`, `LevelUpFlash`. Map components (bind a core `MarkerSet`/`FogField`, `kindStyles` palette overridable): `Minimap` (framed circular player-centered map — fog + markers + facing arrow, optional baked terrain `background`+`mapBounds`), `Compass` (facing strip with cardinals + marker pips), `WorldMap` (full-bounds top-down overlay). Not yet implemented: `useServer`, `useDialogue`.
 
 **Layout rule:** all **screen** positioning (`absolute`, `inset-*`, grid zones, flex regions) lives on wrappers inside `ui/GameUI.tsx` only. `ui/components/` files are content + hooks only — internal `relative`/`absolute` for bar overlays or slot badges inside a component is fine; never anchor a component to the viewport from a child file. Pass `className` to primitives for **visual** styling (colors, borders, size), not screen placement.
 

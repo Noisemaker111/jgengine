@@ -19,6 +19,8 @@ export interface PointerConfig {
   contextMenu?: boolean;
   /** Route the primary ability's aim to the cursor world point instead of camera yaw/pitch (#22). */
   aim?: boolean;
+  /** Press the bound `ping` action → `worldHit()` → run this command with `{ point, entity, object, normal }` (contextual ping, #94). */
+  pingCommand?: string;
 }
 
 export interface CameraFollowState {

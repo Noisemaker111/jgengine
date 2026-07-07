@@ -22,6 +22,13 @@ the latest and surface the migration steps.
   - `@jgengine/core/scene/selection` — pure box-select math (`createSelectionSet`, `screenRect`, `selectWithinRect`, `isMarquee`).
   - `@jgengine/core/interaction/contextMenu` — `contextVerb` / `buildContextMenu` / `contextVerbInput`; catalog entities/objects carry `verbs` for right-click menus.
   - `PlayableGame.pointer` config (`moveCommand`, `select`, `orderCommand`, `contextMenu`, `aim`) — the `@jgengine/shell` `GamePlayerShell` casts the cursor (`pointer.worldHit()`), renders a drag-marquee + right-click verb menu, routes primary-ability aim to the cursor, and remaps orbit to middle-drag so the left button drives verbs.
+- **Map, fog of war & contextual ping.** Minimap/world-map/fog/compass + a squad ping verb, built on renderer-free core state, a shell terrain bake, and react HUD components. (Stacked on the pointer foundation above.)
+  - `@jgengine/core/world/markers` — a reactive `createMarkerSet()` of `MapMarker`s (objective/entity/loot/ping) with `add`/`remove`/`query`/`prune`/`subscribe`; `DEFAULT_MARKER_KINDS` supplies content-agnostic colors + glyphs.
+  - `@jgengine/core/world/fog` — reveal-on-event fog: `createFogField({ bounds, cellSize })` with `reveal` (dig/act) and `revealAlong` (walked trail); revealed cells stay revealed and render from a stable `cells()` snapshot.
+  - `@jgengine/core/world/minimap` — pure projection + bearings (`projectToMinimap`, `clampToMinimapEdge`, `compassBearing`, `headingToBearing`, `bearingToCardinal`, `relativeBearing`).
+  - `@jgengine/core/game/ping` — `classifyPing(hit, …)` (hostile → enemy, tagged object → its category, ground → location) + `createPingSystem` that classifies, drops a categorized marker, and broadcasts a `PingPayload` over the existing party feed under `PING_FEED_ACTION`. `PlayableGame.pointer.pingCommand` binds the `ping` action → `worldHit()` → your command.
+  - `@jgengine/react` — `useMarkers` / `useFog` hooks and `Minimap` / `Compass` / `WorldMap` headless components (bind a core `MarkerSet`/`FogField`, override the `kindStyles` palette).
+  - `@jgengine/shell/map` — `bakeTerrainMap` (top-down terrain image for the map background) and `MapMarkerBeacons` world-space beacons; the `extraction-map` demo game wires the whole loop.
 
 ## 0.6.0
 

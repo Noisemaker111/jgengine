@@ -443,6 +443,7 @@ function FrameDriver({
   serverIdRef,
   pointerService,
   pointerAim,
+  pingCommand,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
@@ -455,6 +456,7 @@ function FrameDriver({
   serverIdRef: { current: string | null };
   pointerService: PointerService;
   pointerAim: boolean;
+  pingCommand: string | undefined;
 }) {
   const motionRef = useRef(createPlayerMotionState());
   const hasReportedTickError = useRef(false);
@@ -509,8 +511,20 @@ function FrameDriver({
       if (ctx.game.commands.has("target.clear")) ctx.game.commands.run("target.clear", {});
       else ctx.scene.entity.setTarget(playerId, null);
     }
+    if (pingCommand !== undefined && tracker.wasPressed("ping")) {
+      const hit = pointerService.worldHit();
+      if (hit !== null && ctx.game.commands.has(pingCommand)) {
+        ctx.game.commands.run(pingCommand, {
+          point: hit.point,
+          entity: hit.entity,
+          object: hit.object,
+          normal: hit.normal,
+        });
+      }
+    }
     for (const action of Object.keys(playable.game.input ?? {})) {
       if (!tracker.wasPressed(action)) continue;
+      if (action === "ping" && pingCommand !== undefined) continue;
       if (action === "interact") {
         const prompts = playable.prompts?.(ctx);
         const focus = prompts === undefined ? null : ctx.scene.entity.get(playerId);
@@ -939,6 +953,7 @@ export function GamePlayerShell({
           serverIdRef={serverIdRef}
           pointerService={pointerService}
           pointerAim={pointer?.aim === true}
+          pingCommand={pointer?.pingCommand}
         />
       </Canvas>
       <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
