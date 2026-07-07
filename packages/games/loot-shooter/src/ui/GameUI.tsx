@@ -1,6 +1,7 @@
 import { DeathScreen, LevelUpFlash, ToastStack } from "@jgengine/react/components";
 import { HealthFrame } from "./components/HealthFrame";
 import { Hotbar } from "./components/Hotbar";
+import { PickupPrompt } from "./components/PickupPrompt";
 
 export function GameUI() {
   return (
@@ -25,6 +26,10 @@ export function GameUI() {
 
       <div className="col-start-1 row-start-3 justify-self-start self-end">
         <HealthFrame />
+      </div>
+
+      <div className="col-start-2 row-start-2 justify-self-center self-end pb-3">
+        <PickupPrompt />
       </div>
 
       <div className="col-start-2 row-start-3 justify-self-center self-end pb-2">

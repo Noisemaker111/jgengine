@@ -3,6 +3,8 @@ import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { GameDefinition, GameLoop } from "./defineGame";
+import type { LootFilterRule } from "./lootFilter";
+import type { RarityStyle } from "./worldItem";
 
 export interface PointerConfig {
   /**
@@ -20,6 +22,8 @@ export interface PointerConfig {
   contextMenu?: boolean;
   /** Route the primary ability's aim to the cursor world point instead of camera yaw/pitch (#22). */
   aim?: boolean;
+  /** Left-click a `worldItem` within pickup radius grants it to the local player and despawns it (#32). */
+  grabWorldItems?: boolean;
 }
 
 export interface CameraFollowState {
@@ -80,6 +84,17 @@ export interface EntitySpriteConfig {
   y: number;
 }
 
+export interface WorldItemRenderConfig {
+  /** Baseline rarity→color/beam/label render binding (#32); the game's rarity palette. */
+  rarityStyle?: Record<string, RarityStyle>;
+  /** Loot-filter rules layered over the rarity baseline (#33) — data the game supplies, first match wins. */
+  filter?: readonly LootFilterRule[];
+  /** World units within which a ground item is grabbable/highlighted. Default 2. */
+  pickupRadius?: number;
+  /** Beam height above the item's ground position. Default 2.5. */
+  beamHeight?: number;
+}
+
 export interface ModelConfig {
   url: string;
   scale?: number;
@@ -123,4 +138,6 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   entitySounds?: Record<string, string>;
   /** Same as `entitySounds` but keyed by placed-object catalog id (torches, machinery). */
   objectSounds?: Record<string, string>;
+  /** Rarity render binding + loot filter for dropped-item ground presentation (#32/#33). */
+  worldItem?: WorldItemRenderConfig;
 }

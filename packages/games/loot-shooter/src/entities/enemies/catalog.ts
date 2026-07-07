@@ -20,7 +20,11 @@ export const drone_grunt: EnemyDef = {
   walkSpeed: 3.2,
   stats: { health: { max: 60 } },
   receive: { damage: { order: ["health"] } },
-  onDeath: { drops: [{ table: "enemy-loot", when: { reason: "player_kill" } }] },
+  onDeath: {
+    drops: [{ table: "enemy-loot", when: { reason: "player_kill" } }],
+    dropMode: "world",
+    scatter: { radius: 1.6, minRadius: 0.4 },
+  },
   xp: 40,
 };
 

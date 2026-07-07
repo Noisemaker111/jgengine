@@ -6,7 +6,9 @@ export const lootTables: LootTableDef[] = [
     rolls: 1,
     entries: [
       { currency: "scrap", count: [3, 8], weight: 60 },
-      { item: "ammo_cell", count: [1, 2], weight: 40 },
+      { item: "ammo_cell", count: [1, 2], weight: 30 },
+      { item: "shock_carbine", count: 1, weight: 8 },
+      { item: "stormcaller", count: 1, weight: 2 },
     ],
   },
 ];

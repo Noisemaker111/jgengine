@@ -10,6 +10,7 @@ import type { StatValue } from "@jgengine/core/scene/entityStats";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { RosterEntry } from "@jgengine/core/scene/roster";
+import type { WorldItemRecord } from "@jgengine/core/game/worldItem";
 import type { ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
 import {
   resolveActivePrompt,
@@ -39,6 +40,20 @@ export function useSceneEntities(): readonly SceneEntity[] {
 
 export function useSceneObjects(): readonly SceneObject[] {
   return useGameStore((ctx) => ctx.scene.object.list());
+}
+
+export function useWorldItems(): readonly WorldItemRecord[] {
+  return useGameStore((ctx) => ctx.scene.worldItem.list());
+}
+
+/** Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight. */
+export function useNearestWorldItem(radius: number): WorldItemRecord | null {
+  return useGameStore((ctx) => {
+    const player = localPlayerEntity(ctx);
+    if (player === null) return null;
+    const instanceId = ctx.scene.worldItem.nearestInRadius(player.position, radius);
+    return instanceId === null ? null : ctx.scene.worldItem.get(instanceId);
+  });
 }
 
 export function useEntityStat(instanceId: string, statId: string): StatValue | null {
