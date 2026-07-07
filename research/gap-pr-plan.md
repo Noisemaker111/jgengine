@@ -20,8 +20,10 @@
 | G12 Map/HUD/ping | sonnet | claude/gaps-map-ping (stack→gaps-nav-pointer) | in-flight | — |
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | ✅ DONE (green) | #135 |
 | G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | in-flight | — |
-| G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | in-flight | — |
-| G13,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+| G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | ✅ DONE (green) | #136 |
+| G17 Objective/mode/session | opus | claude/gaps-session (stack→gaps-item-gear) | in-flight | — |
+| G13,G18,G19,G20,G21,G22 | — | — | todo | — |
+G5 terrain write-back (G14 may reconcile at merge): `world/terraform` `createEditableTerrain`→`EditableTerrain.apply(TerraformEdit)`. G5 added `world/{placementController,connectors,support,walls,placedStructureStore,terraform,buildPermissions}`.
 G4 added `game/worldItem` (3rd scene bucket: `ctx.scene.worldItem`), `game/lootFilter`; `onDeath.dropMode:"world"`.
 G8 added domain `ai/` (spawnDirector/threat/jobBoard/crowd); `scene/behaviors.patrol`.
 G7 shared meter for G6: `@jgengine/core/stats/accumulatorMeter` (`createAccumulatorMeter`, mode hold/reset, tiers). G7 added `combat/animationState`,`combat/attackTags`,`combat/defensiveWindow`,`combat/comboString`,`combat/breakMeters`,`combat/hitReaction`,`combat/telegraph`,`movement/dash`.
