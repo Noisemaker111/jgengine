@@ -10,8 +10,11 @@
 | G2 Camera rig library | opus | claude/gaps-camera-rigs | in-flight (batch1) | — |
 | G3 Physics constraints | opus | claude/gaps-physics-actors | in-flight (batch1) | — |
 | G7 Character combat feel | opus | claude/gaps-combat-feel | in-flight (batch1) | — |
-| G10 Item & gear | opus | claude/gaps-item-gear | in-flight (batch1) | — |
-| G4,G5,G6,G8,G9,G11,G12,G13,G14,G15,G16,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+| G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
+| G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | in-flight (batch1) | — |
+| G4,G5,G6,G8,G9,G11,G12,G13,G14,G16,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+
+G10 storageTier API (for G17 #99): `@jgengine/core/inventory/storageTier` — `partitionOnDeath`, `createDeliveryQueue`, `insureLost`, `resolveConsolation`; `InventoryDeclaration.tier?: StorageTier`.
 
 Batch 1 launched. Next to launch as slots free (Wave-1 independents, no foundation dep): G6 (abilities, reuses G7 accumulator-meter — land after/with G7), G15 (turn-based), G16 (card/board), G9 (crafting), G11 (survival), G18 (audio), G20 (interaction verbs). Then Wave-2 once foundations open.
 
