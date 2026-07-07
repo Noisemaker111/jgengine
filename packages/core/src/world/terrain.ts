@@ -145,6 +145,24 @@ export function noiseField(config: NoiseFieldConfig = {}): TerrainField {
   });
 }
 
+export interface RollingFieldConfig {
+  seed?: string | number;
+  amplitude?: number;
+  frequency?: number;
+  bounds?: WorldBounds;
+}
+
+export function rollingField(config: RollingFieldConfig = {}): TerrainField {
+  return noiseField({
+    seed: config.seed ?? "rolling",
+    amplitude: config.amplitude ?? 0.55,
+    frequency: config.frequency ?? 0.03,
+    octaves: 3,
+    persistence: 0.55,
+    bounds: config.bounds,
+  });
+}
+
 export interface ArenaFieldConfig {
   seed?: string | number;
   bounds?: WorldBounds;
