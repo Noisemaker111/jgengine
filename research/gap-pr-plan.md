@@ -289,3 +289,10 @@ coverage check: 104 issues assigned across 22 groups (must equal 104)
 
 Plan: Opus integrator builds `claude/gaps-release-v0.7` off origin/main = all 22 PR commits merged + conflicts resolved + CHANGELOG consolidated to `## 0.7.0` + all 8 package.json bumped to 0.7.0. Must be GREEN (build+check-types+test). Then I (main): re-verify green, push release branch → main (triggers publish.yml → npm publish all 8 @jgengine/* at 0.7.0), then reconcile PR/issue closure (retarget stacked PR bases to main so GitHub marks all 22 merged + closes issues via "Closes #n" in bodies). Merge 16 covering branches (heads include all 22): standalones turn-tactics,card-board,crafting,survival,audio,interaction + leaves ai-director,world-items,building,map-ping,traversal,netcode,sensors,embodiment,abilities,session.
 Unrelated PRs #19 (scene-snapshot), #21 (research) left out unless user asks.
+
+## ✅ RELEASE v0.7.0 SHIPPED to main
+- main = 634f682 (release: v0.7.0 — engine-gaps sweep). Fast-forwarded from origin/main 9f5c9a8.
+- Integration branch claude/gaps-release-v0.7 @ 8b09e41: all 22 PRs merged, conflicts resolved, changelog consolidated, 8 packages bumped to 0.7.0. Verified GREEN twice (build + check-types + 1368 tests pass/0 fail).
+- All 104 gaps issues (#22–#125) CLOSED via release-commit `Closes` keywords.
+- 11 base-main PRs auto-marked MERGED (#126,127,128,129,130,131,132,134,137,141,144). 11 stacked PRs (#133,135,136,138,139,140,142,143,145,146,147) closed with a "merged via release" note (their code is in main).
+- Publish workflow (run 28895980257) triggered on the main push → builds/tests/publishes all 8 @jgengine/* at 0.7.0 to npm. MONITOR to confirm.
