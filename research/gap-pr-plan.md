@@ -22,10 +22,12 @@
 | G12 Map/HUD/ping | sonnet | claude/gaps-map-ping (stack→gaps-nav-pointer) | ✅ DONE (green) | #138 |
 | G13 Vehicles/mounts/racing | opus | claude/gaps-vehicles (stack→gaps-physics-actors) | in-flight | — |
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | ✅ DONE (green) | #135 |
-| G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | in-flight | — |
+| G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | ✅ DONE (green) | #140 |
+| G21 Sensors/vision/observer | sonnet | claude/gaps-sensors (stack→gaps-camera-rigs) | in-flight | — |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | ✅ DONE (green) | #136 |
 | G17 Objective/mode/session | opus | claude/gaps-session (stack→gaps-item-gear) | in-flight | — |
-| G19,G21,G22 | — | — | todo | — |
+| G19,G22 | — | — | todo | — |
+G14 added `physics/traversal` (Grapple/Glide), `world/carve` (VoxelVolume/CarvableField), `physics/structure` (StructureGraph→debris).
 G6 added `combat/abilityKit`, `stats/eventMeter` (on accumulatorMeter), `scene/autoTarget`, `combat/resistance`, `game/runDraft`; react `useAbilitySlots`.
 G12 extended `world/{markers,fog,minimap}`, `game/ping` (rides party+feed).
 G11 added domain `survival/` (decayMeter/moodle/regionHealth); `world/{envField,weather,realm}`.
