@@ -5,7 +5,13 @@ const ROCKET = "\u{1F680}";
 
 const read = (cmd, args) =>
   execFileSync(cmd, args, { stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
-
+const tryRead = (cmd, args) => {
+  try {
+    return read(cmd, args);
+  } catch {
+    return null;
+  }
+};
 const mutate = (cmd, args) => {
   if (dry) {
     console.log(`[dry-run] ${cmd} ${args.join(" ")}`);
@@ -24,28 +30,50 @@ mutate("git", ["push", "-u", "origin", branch]);
 
 let pr;
 try {
-  pr = JSON.parse(read("gh", ["pr", "view", "--json", "number,title,isDraft,url"]));
+  pr = JSON.parse(read("gh", ["pr", "view", "--json", "number,url,title"]));
 } catch {
   mutate("gh", ["pr", "create", "--fill", "--head", branch]);
-  pr = JSON.parse(read("gh", ["pr", "view", "--json", "number,title,isDraft,url"]));
+  pr = JSON.parse(read("gh", ["pr", "view", "--json", "number,url,title"]));
 }
 
-let title = pr.title;
-if (!title.startsWith(ROCKET)) {
-  title = `${ROCKET} ${title}`;
-  mutate("gh", ["pr", "edit", String(pr.number), "--title", title]);
-}
-if (pr.isDraft) mutate("gh", ["pr", "ready", String(pr.number)]);
+mutate("gh", ["pr", "merge", String(pr.number), "--squash"]);
+if (!dry) tryRead("git", ["push", "origin", "--delete", branch]);
 
-try {
-  mutate("gh", ["pr", "merge", String(pr.number), "--squash", "--delete-branch"]);
-} catch (e) {
-  const msg = String(e?.stderr ?? e?.message ?? e);
-  if (!/checked out|worktree/i.test(msg)) {
-    console.error(`ship-pr: merge failed for #${pr.number}\n${msg}`);
-    process.exit(1);
+const primary = read("git", ["worktree", "list", "--porcelain"])
+  .split("\n")
+  .find((l) => l.startsWith("worktree "))
+  ?.slice("worktree ".length)
+  .trim();
+
+let primaryNote = "could not locate the primary checkout";
+if (primary) {
+  const cur = tryRead("git", ["-C", primary, "rev-parse", "--abbrev-ref", "HEAD"]);
+  const dirty = tryRead("git", ["-C", primary, "status", "--porcelain"]);
+  if (cur === "main") {
+    primaryNote = "primary checkout already on main";
+  } else if (dirty) {
+    primaryNote = `primary checkout on "${cur}" has uncommitted changes — left as-is (a session may be using it): ${primary}`;
+  } else if (dry) {
+    primaryNote = `[dry-run] would return primary checkout to main if "${cur}" is fully merged: ${primary}`;
+  } else {
+    tryRead("git", ["-C", primary, "fetch", "origin", "main", "-q"]);
+    const head = tryRead("git", ["-C", primary, "rev-parse", "HEAD"]);
+    const merged =
+      head !== null &&
+      tryRead("git", ["-C", primary, "merge-base", "--is-ancestor", head, "origin/main"]) !== null;
+    if (merged) {
+      tryRead("git", ["-C", primary, "switch", "main"]);
+      tryRead("git", ["-C", primary, "pull", "--ff-only"]);
+      primaryNote = `primary checkout returned to main (was on "${cur}", already merged)`;
+    } else {
+      primaryNote = `primary checkout on "${cur}" has commits not yet on main — left as-is so nothing is lost: ${primary}`;
+    }
   }
-  console.log(`(local branch left in place — it is checked out in this worktree; ExitWorktree to remove)`);
 }
 
-console.log(`${dry ? "[dry-run] would ship" : `${ROCKET} shipped`} #${pr.number}  ${title}\n${pr.url}`);
+const rockets = `${ROCKET}${ROCKET}${ROCKET}`;
+console.log(
+  `\n${rockets}  ${dry ? "would merge" : "merged"} #${pr.number} — ${pr.title}\n` +
+    `${pr.url}\n${primaryNote}\n` +
+    `Next: ExitWorktree (remove) to drop this worktree, then echo ${ROCKET} in your reply so the chat shows it merged.`,
+);

@@ -29,8 +29,8 @@ if (inWorktree) {
   emit(
     `Worktree flow OK: this session is in an isolated worktree on branch "${branch}". ` +
       `Keep committing here. When the task is complete, ship it yourself — don't ask the user to merge: ` +
-      `run \`bun .claude/scripts/ship-pr.mjs\` (rockets the PR title, squash-merges, deletes the branch). ` +
-      `The primary checkout stays on main.`,
+      `run \`bun .claude/scripts/ship-pr.mjs\` (squash-merges, deletes the branch, returns the primary checkout ` +
+      `to main, prints 🚀), then ExitWorktree (remove). Echo 🚀 in your reply so the chat shows it merged.`,
   );
 }
 
