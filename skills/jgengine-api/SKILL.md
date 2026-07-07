@@ -46,10 +46,26 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Loot | `game/lootTable` | `lootTable`, `LootTableDef`, `LootEntry`, `Drop` |
 | Loadout | `game/loadout` | `LoadoutDef`, `LoadoutItemEntry`, `Loadouts` |
 | Quest | `game/quest` | `QuestDef`, `QuestRewards`, `QuestObjective`, `QuestJournal` |
-| World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat` |
+| World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat`, `environment`, `terrain`, `rain`, `snow`, `grass`, `ocean`, `building` |
+| Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep` |
+| Wind field | `world/wind` | `windField`, `WindField`, `WindFieldConfig`, `WindVector` |
+| Water surface | `world/water` | `waterSurface`, `waterSurfaceFromDescriptor`, `synthesizeWaves`, `WaterSurface`, `GerstnerWave` |
+| Scatter | `world/scatter` | `scatter`, `scatterAabb`, `ScatterConfig`, `ScatterPoint` |
+| Building generator | `world/buildings` | `generateBuilding`, `generateBuildingDistrict`, `createBuildingGrid`, `GeneratedBuilding` |
+| Building index | `world/buildingIndex` | `buildingIndex`, `BuildingIndex`, `BuildingHit` |
 | Proximity prompt | `interaction/proximityPrompt` | `proximityPrompt`, `ProximityPrompt`, `ProximityPromptDisplay`, `keybind`, `gauge`, `label`, `command` |
 | Item use | `item/use` | `createItemUse`, `ItemUseHandler`, `ItemUseInput`, `ItemUseResult`, `ItemUseRejection` |
 | Inventory | `inventory/inventoryModel` | `InventoryLayout`, `InventorySet`, `ItemTraits` |
+| Progression | `game/progression` | `curve`, `evalCurve`, `leveling`, `Curve`, `LevelingTrack`, `LevelProgress` |
+| Inventory slots | `inventory/slotModel` | `createSlots`, `placeAt`, `removeAt`, `moveSlot`, `firstEmpty`, `compactSlots`, `Slot`, `SlotGrid` |
+| World geometry | `world/geometry` | `footprintAabb`, `aabbOverlap`, `snapToGrid`, `resolveMove`, `Aabb`, `Footprint` |
+| Placement | `world/placement` | `validatePlacement`, `footprintObstacle`, `PlacementRules`, `PlacementResult` |
+| Interiors | `world/interiors` | `createInteriors`, `Interior`, `Exterior`, `SpaceRef` |
+| Game clock | `time/gameClock` | `getScaledElapsedMs`, `computeGameDay`, `SECONDS_PER_GAME_DAY` |
+| Scene behaviors | `scene/behaviors` | `wander`, `promptable`, `talkable`, `player` |
+| Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
+| Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
+| Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` |
 
 ## Getting started (new project)
 
@@ -125,7 +141,7 @@ game/
   objects/             catalog.ts (+ loot tables beside their domain)
   entities/            players/ enemies/ npcs/ — catalog.ts per role (never actors/)
   quests/catalog.ts    when using game.quest
-  progression/         curves.ts — game-owned XP math
+  progression/         curves.ts — game-owned XP curve numbers fed to game/progression
   ui/GameUI.tsx        ALL layout/positioning
   ui/components/       content-only pieces GameUI places
 ```
@@ -239,6 +255,10 @@ ctx.subscribe / ctx.version    change signal — UI layers bind via useSyncExter
 
 `content.itemById(id)` supplies `{ use?, weapon?, trade? }`; `content.entityById(id)` supplies `{ stats?, receive?, onDeath?, movement?, role? }`; `content.objectById(id)` supplies `GameContextObjectEntry` `{ proximityPrompt?, breakable?, slotInventory? }`. Build all three from your catalogs in `content.ts`. A placed object resolves its catalog entry via `ctx.scene.object.catalog(instanceId)`.
 
+### Two tiers: `ctx` runtime vs pure factories
+
+The `ctx` surface above is the **stateful runtime** — it's what game code uses. Every subsystem it wires is *also* exported as a **pure factory** that `createGameContext` composes internally: `createTradeSystem`, `createDeathSystem`, `createEffectSystem`, `createProjectileSystem`, `createSpatialApi`, `createEntityStatsApi`, `createEntityStore`, `createObjectStore`, `createStats`, `createLoadouts`, `createLootRegistry`, `createQuestJournal`, `createSocial`, `createSlots`, `createInteriors` (plus stateless helpers beside each — `canAffordCosts`/`resolveBuy` in `game/trade`, `getStatValue`/`applyPoolDelta` in `scene/entityStats`, and so on). **Build a game through `ctx`, not these** — reach for the factories only for unit tests of pure game math, headless servers, or a custom runtime. Import the domain deep path (`@jgengine/core/combat/death`, `@jgengine/core/game/trade`, `@jgengine/core/stats/statModifiers`, …) and read the `.d.ts`; each is a real export in the published package.
+
 ## `loop` — lifecycle
 
 ```ts
@@ -324,7 +344,7 @@ stats.delta(instanceId, statId, n)   // → null | { reason } — clamps into [m
 
 Health, mana, xp, level, energy — any stat id declared on the catalog. Spawn seeds from the catalog (`current ?? max`). Combat writes through effects; non-combat (regen ticks, XP grants) calls `delta` directly.
 
-**XP/level are stats with a game-owned curve** (`progression/curves.ts`) — no engine progression primitive. On xp overflow: bump `level.current`, reset `xp.max` from the curve, push a `stat.levelUp` feed entry.
+**XP/level use the engine progression primitive.** `@jgengine/core/game/progression` ships `curve()`/`evalCurve()` (evaluate a game-owned XP-per-level curve *definition*) and `leveling()` (a level track over the bounded `xp`/`level` stats that reports overflow). You own the curve *numbers* in a catalog; the engine owns the overflow math — on level-up bump `level.current`, reset `xp.max` from the curve, push a `stat.levelUp` feed entry. Hand-rolling `xpForLevel`/`levelFromXp`/`xpToNextLevel` is the anti-pattern — those already exist.
 
 `ctx.player.stats` is a different thing: **modifiers** (buffs, ADS zoom, walk-speed bonuses) via `base/add/remove/get` with expiries — never bounded current/max values.
 
@@ -499,8 +519,27 @@ Descriptors from `@jgengine/core/world/features` — config data the runner/worl
 | `plots(config)` | Shared city + instanced interiors |
 | `tilemap({ map })` | 2D/2.5D levels |
 | `flat()` | Plain arena |
+| `environment({ terrain, weather, vegetation, water, structures })` | Composable outdoor scene — terrain + rain/snow + grass + ocean + buildings. Each field takes the matching descriptor: `terrain()`, `rain()`/`snow()`, `grass()`, `ocean()`, `building()` |
 
 `parentSpace` positions are local to that space — convert at seams only.
+
+### Query primitives (renderer-free, for gameplay)
+
+Pure `@jgengine/core` functions so gameplay reads the same world the shell renders — no three.js needed:
+
+| Primitive | Answers |
+|-----------|---------|
+| `resolveTerrainField(terrain(...))` / `noiseField(cfg)` → `TerrainField` | `sampleHeight(x,z)`, `sampleNormal(x,z)`, `waterLevel` — ground-snap, collision, camera. `resolveGroundStep` slope-limits movement |
+| `windField(cfg)` → `WindField` | `at(t)`, `atPoint(x,z,t)`, `strengthAt` — one wind source for weather sway, grass, sailing, fire spread |
+| `waterSurface(cfg)` / `waterSurfaceFromDescriptor(ocean(...))` → `WaterSurface` | `height(x,z,t)`, `normal`, `displace` — buoyancy, floating, shoreline (CPU Gerstner matching the ocean shader) |
+| `scatter(cfg)` → `ScatterPoint[]` | Seeded, overlap-aware point distribution — vegetation, props, lots, spawn points (`minDistance`, `avoid` rects) |
+| `buildingIndex(district)` → `BuildingIndex` | `at`/`within`/`nearest`/`isInside`/`blockers` over a generated district — placement avoidance, pathfinding |
+
+Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
+
+### Physics world (optional, headless)
+
+`physics/physicsWorld` `PhysicsWorld` is a standalone fixed-capacity rigid-body sim (SoA buffers, spatial-hash broadphase, sleeping) — **not** the `defineGame` `physics: { gravity }` field, which only configures the shell's character controller. Reach for it when a game needs many colliding dynamic bodies (piles, debris, stress scenes): `new PhysicsWorld({ capacity, bounds, … })`, `addBody({ position, halfExtents, mass? })`, then `step(dt)` per tick → `PhysicsStats`. Core owns the sim; `@jgengine/shell/world/InstancedBodies` renders its bodies. Most games never need it — the character controller covers ordinary movement.
 
 ### Spawn placement
 
@@ -560,8 +599,12 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 | `useLeaderboard(stat, { scope, limit? })` | `{ userId, value }[]` |
 | `useActivePrompt(prompts)` | nearest proximity prompt |
 | `useGameClock()` | clock snapshot (`now`, `paused`, `speed`, `calendar`) + `controls` (pause/play/setSpeed) |
+| `useLocalPlayerDead()` / `localPlayerEntity(entities, userId)` | death-screen gating; local player from a snapshot |
+| `useGameStore()` | raw store handle — escape hatch under the typed hooks |
 
-Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox`. Not yet implemented: `useServer`, `useDialogue`.
+Import hooks from `@jgengine/react/hooks`, components from `@jgengine/react/components`, `GameProvider` from `@jgengine/react/provider` (the package uses deep paths like core). For binding arbitrary engine state outside the typed hooks, `@jgengine/react/engineStore` exposes `useEngineState`, `useEngineStore`, `useEngineEvent`.
+
+Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox`, `ToastStack`, `DeathScreen`, `LevelUpFlash`. Not yet implemented: `useServer`, `useDialogue`.
 
 **Layout rule:** all **screen** positioning (`absolute`, `inset-*`, grid zones, flex regions) lives on wrappers inside `ui/GameUI.tsx` only. `ui/components/` files are content + hooks only — internal `relative`/`absolute` for bar overlays or slot badges inside a component is fine; never anchor a component to the viewport from a child file. Pass `className` to primitives for **visual** styling (colors, borders, size), not screen placement.
 
@@ -598,7 +641,7 @@ Headless primitives mean **you** ship the visual design. Functional wiring alone
 - **Voxel/crafting**: objects for blocks/machines, `voxel()`, `object.break`/`object.placeFromInventory`.
 - **Tycoon/lab**: objects + `slotInventory`, `plots()`, configure via prompt → command.
 - **Shooter**: `fireProjectile`/`settleProjectile`; grenades settle → `effect({ at, radius })`; `movement.poses`/`aim` + zoom modifier; `servers({ … })` + game-owned `server.mode`; loadout classes from commands.
-- **MMO/RPG**: bounded stats + game XP curve; `tabTarget` → `cycleTarget`; handlers read `getTarget`; quests bound to `entity.died`/`inventory.added`; social party + `partyShare`; `server: "persistent"`.
+- **MMO/RPG**: bounded stats + `leveling()` over a game XP curve; `tabTarget` → `cycleTarget`; handlers read `getTarget`; quests bound to `entity.died`/`inventory.added`; social party + `partyShare`; `server: "persistent"`.
 - **All combat games**: react to `entity.died` (feed/leaderboard/score) — never poll HP.
 
 ## Anti-patterns
@@ -613,6 +656,7 @@ Headless primitives mean **you** ship the visual design. Functional wiring alone
 | Polling HP in `onTick` for kills | `entity.died` event |
 | `combat.lootTable` / `loot.enemy` | `onDeath` on the entity that died |
 | Hand-rolled `Math.random()` loot in commands | `lootTable()` + `ctx.game.loot.roll` |
+| Hand-rolled `xpForLevel`/`levelFromXp` | `game/progression` `curve()` + `leveling()` |
 | Hardcoded shop arrays | `item.trade.shops` + `tradableAt` |
 | Kit seeding via scattered `put`/`grant` | `applyLoadout` |
 | Per-user quest state hand-rolled | `game.quest.register` + binds |
@@ -635,7 +679,7 @@ This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengi
 - [ ] Entity `stats` + `receive` orders aligned on the same stat ids; `role` set (drives targeting + camera)
 - [ ] `items/use-handlers.ts` registered in `onInit`; handlers read `getTarget`/`aim`, never a target input
 - [ ] `loadouts.ts` + `applyLoadout` in `onNewPlayer` (gated on `isNew`)
-- [ ] `quests/catalog.ts` + binds; `progression/curves.ts` if using xp/level — **with their HUD/tracker, or cut**
+- [ ] `quests/catalog.ts` + binds; if using xp/level, a game-owned curve fed to `game/progression` (`curve`/`leveling`) — **with their HUD/tracker, or cut**
 - [ ] `onInit`: register handlers/loadouts/loot/quests, event listeners, feed binds, leaderboard tracks; `setupWorld`
 - [ ] Player spawns with `id === ctx.player.userId`
 - [ ] `ui/GameUI.tsx` owns layout; components use `@jgengine/react` hooks
@@ -655,6 +699,7 @@ scene.object       place, remove, move, rotate
 scene.entity       spawn (anchor/offset), despawn, setPose; stats; targeting; effects;
                    projectiles; spatial queries
 entity.stats       get / set / delta — bounded stats (health, mana, xp, level) on instances
+progression        game/progression — curve() / leveling() over bounded xp/level stats
 item.use           catalog `use` → GameContext handler; no input.to
 effects            drain-signed magnitudes; receive.<effect>.order; AoE = effect + at/radius/los
 projectiles        willHit → fire → settle; ballistic via weapon.projectile
@@ -668,6 +713,7 @@ applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
 proximityPrompt    { radius, display: {kind}, invoke } — one float-UI primitive
 world features     biomes / voxel / plots / tilemap / flat descriptors
+physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not the defineGame physics field
 GameBackend        { transport, feeds?, presence? } — Convex is one adapter (createConvexBackend)
 @jgengine/react    GameProvider + hooks + headless primitives; layout only in GameUI.tsx
 ```

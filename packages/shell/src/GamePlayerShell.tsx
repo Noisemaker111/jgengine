@@ -152,6 +152,7 @@ function resolveModel(
 
 function EntityMarker({
   entity,
+  custom,
   model,
   sprite,
   isLocal,
@@ -159,6 +160,7 @@ function EntityMarker({
   onSelect,
 }: {
   entity: SceneEntity;
+  custom: ReactNode | undefined;
   model: ModelConfig | undefined;
   sprite: EntitySpriteConfig | undefined;
   isLocal: boolean;
@@ -175,7 +177,9 @@ function EntityMarker({
         if (!isLocal) onSelect(entity);
       }}
     >
-      {model !== undefined ? (
+      {custom !== undefined && custom !== null ? (
+        custom
+      ) : model !== undefined ? (
         <EntityModel model={model} />
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
@@ -270,12 +274,16 @@ function WorldView({
   objectModels,
   environment: Environment,
   assets,
+  environment: Environment,
+  renderEntity,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
   objectModels: Record<string, string | ModelConfig> | undefined;
   environment: ComponentType | undefined;
   assets: AssetCatalog;
+  environment: ComponentType | undefined;
+  renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
 }) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
@@ -301,6 +309,7 @@ function WorldView({
         <EntityMarker
           key={entity.id}
           entity={entity}
+          custom={renderEntity?.(entity)}
           model={resolveModel(entityModels?.[entity.name], assets)}
           sprite={entitySprites?.[entity.name]}
           isLocal={entity.id === player.userId}
@@ -416,6 +425,7 @@ function FrameDriver({
         rotationY: intent.moving
           ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
           : player.rotationY,
+        dt: rawDt,
       });
     }
 
@@ -716,6 +726,8 @@ export function GamePlayerShell({
             objectModels={playable.objectModels}
             environment={playable.environment}
             assets={playable.game.assets}
+            environment={playable.environment}
+            renderEntity={playable.renderEntity}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}

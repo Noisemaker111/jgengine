@@ -10,10 +10,13 @@ import "./index.css";
 
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
+  "environment-showcase": () =>
+    import("@jgengine/shell/demo/environmentShowcase").then((module) => module.environmentShowcaseGame),
   "world-of-warcraft": () => import("@dogfood/world-of-warcraft").then((module) => module.wowGame),
   "asset-showcase": () =>
     import("@dogfood/asset-showcase").then((module) => module.assetShowcaseGame),
   "loot-shooter": () => import("@dogfood/loot-shooter").then((module) => module.lootShooterGame),
+  "stress-bench": () => import("@dogfood/stress-bench").then((module) => module.stressBenchGame),
 };
 
 const urlParams = new URLSearchParams(window.location.search);

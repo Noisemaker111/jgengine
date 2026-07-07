@@ -18,10 +18,17 @@ export interface SceneEntity<TMeta = undefined> {
   rotationY: number;
   rotationX: number;
   rotationZ: number;
+  /** World units per second, derived from consecutive setPose calls that carry `dt`. Zero until the entity moves under a dt. */
+  velocity: EntityPosition;
   role: EntityRole;
   movement: EntityMovement;
   behaviors: readonly BehaviorDescriptor[];
   meta: TMeta;
+}
+
+/** Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code. */
+export function groundSpeed(entity: SceneEntity<unknown>): number {
+  return Math.hypot(entity.velocity[0], entity.velocity[2]);
 }
 
 export interface SpawnOptions<TMeta = undefined> {
@@ -47,6 +54,8 @@ export interface EntityPose {
   rotationY?: number;
   rotationX?: number;
   rotationZ?: number;
+  /** Seconds since the previous pose; when > 0 the store derives `velocity` from the position delta. Omit for teleports (velocity unchanged). */
+  dt?: number;
 }
 
 export interface EntityStore<TMeta = undefined> {
@@ -96,6 +105,7 @@ export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
         rotationY: options.rotationY ?? 0,
         rotationX: options.rotationX ?? 0,
         rotationZ: options.rotationZ ?? 0,
+        velocity: [0, 0, 0],
         role: options.role ?? "prop",
         movement: options.movement ?? {},
         behaviors: options.behaviors ?? [],
@@ -117,9 +127,19 @@ export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
     setPose(id, pose) {
       const current = store.get(id);
       if (!current) return false;
+      const position = toEntityPosition(pose.position);
+      const velocity =
+        pose.dt !== undefined && pose.dt > 0
+          ? ([
+              (position[0] - current.position[0]) / pose.dt,
+              (position[1] - current.position[1]) / pose.dt,
+              (position[2] - current.position[2]) / pose.dt,
+            ] as EntityPosition)
+          : current.velocity;
       store.set(id, {
         ...current,
-        position: toEntityPosition(pose.position),
+        position,
+        velocity,
         rotationY: pose.rotationY ?? current.rotationY,
         rotationX: pose.rotationX ?? current.rotationX,
         rotationZ: pose.rotationZ ?? current.rotationZ,

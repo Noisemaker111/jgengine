@@ -41,6 +41,12 @@ npx skills add Noisemaker111/jgengine
 
 Then prompts like "make a tower defense game with jgengine" pick up the full engine surface and definition of done automatically. The skills live in [`skills/`](skills).
 
+## Website — [jgengine.com](https://jgengine.com)
+
+[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and a front door for agents. It points agents at `npx skills add Noisemaker111/jgengine` and explains which skill to grab for what — the skill pages are **rendered from `skills/`**, with no separate content to maintain.
+
+It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
+
 ## Layering
 
 `core` imports nothing. `ws` and `sql` import only `core`. `react` adds React, `convex` adds Convex + React, `node` adds Node builtins + `ws`, `shell` adds React + three.js (the only package that renders).

@@ -71,15 +71,17 @@ export interface ModelConfig {
   dims?: ModelDims;
 }
 
-export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
+export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never> {
   game: GameDefinition;
   content: GameContextContent;
   loop: Required<GameLoop<GameContext>>;
   GameUI: TUi;
   /** Optional canvas-layer VFX component (e.g. traveling projectiles). */
   WorldOverlay?: TWorldOverlay;
-  /** Canvas-layer world scenery (ground, sky, static structures). When provided, the shell renders it in place of the default ground plane + debug grid + rock field. */
+  /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. */
   environment?: TWorldOverlay;
+  /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
+  renderEntity?: TRenderEntity;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
   entitySprites?: Record<string, EntitySpriteConfig>;
   /** GLB models keyed by entity kind name; a string resolves as an asset-catalog key via game.assets, a ModelConfig renders directly. Takes priority over sprites, then primitives. */

@@ -35,6 +35,8 @@ export default defineConfig({
         find: /^@dogfood\/asset-showcase\/(.*)$/,
         replacement: `${src("games/asset-showcase")}/$1`,
       },
+      { find: /^@dogfood\/stress-bench$/, replacement: `${src("games/stress-bench")}/index.tsx` },
+      { find: /^@dogfood\/stress-bench\/(.*)$/, replacement: `${src("games/stress-bench")}/$1` },
     ],
   },
 });
