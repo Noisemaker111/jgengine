@@ -23,6 +23,7 @@ import {
   grant as walletGrant,
   type WalletState,
 } from "../economy/wallet";
+import { createCosmetics, type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
 import { createGameFeed, type GameFeed } from "../game/feed";
@@ -61,7 +62,9 @@ import {
   type StatValueMap,
 } from "../scene/entityStats";
 import type { EntityPose, EntityPosition, SceneEntity, SpawnOptions } from "../scene/entityStore";
+import { createForms, type Forms } from "../scene/form";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
+import { createPossession, type Possession } from "../scene/possession";
 import { createSpatialApi, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
@@ -140,6 +143,7 @@ export interface SceneEntityContext {
   hasLineOfSight: SpatialApi["hasLineOfSight"];
   queryArc: SpatialApi["queryArc"];
   moveToward: SpatialApi["moveToward"];
+  form: Forms;
 }
 
 export interface GameContextCommands {
@@ -198,6 +202,8 @@ export interface GameContext {
     loadout: Loadouts;
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
+    possession: Possession;
+    cosmetics: Cosmetics;
   };
   item: {
     use: GameContextItemUse;
@@ -284,7 +290,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const feed = createGameFeed();
   const lootRegistry = createLootRegistry();
   const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify);
-  const rawSocial = createSocial({ events, now });
+  const rawSocial = createSocial({
+    events,
+    now,
+    emotes: {
+      entities: { get: (id) => entities.get(id) },
+      spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
+    },
+  });
   const social: Social = {
     friends: notifyAfter(
       rawSocial.friends,
@@ -297,12 +310,16 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       signal.notify,
     ),
     presence: rawSocial.presence,
+    emotes: rawSocial.emotes,
   };
   const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify);
   const playerStats = createStats<string>({});
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
   const commandRegistry = createCommandRegistry<GameContext>();
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
+  const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
+  const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
+  const cosmetics = notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify);
 
   const inventoryDeclarations = definition.inventories ?? {};
   const inventoryIds = Object.keys(inventoryDeclarations);
@@ -615,6 +632,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         hasLineOfSight: spatial.hasLineOfSight,
         queryArc: spatial.queryArc,
         moveToward: spatial.moveToward,
+        form: forms,
       },
     },
     game: {
@@ -659,6 +677,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       loadout: loadouts,
       applyLoadout: loadouts.applyLoadout,
       movement: pose,
+      possession,
+      cosmetics,
     },
     item: {
       use: {

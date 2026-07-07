@@ -66,7 +66,7 @@ export interface EntityStore<TMeta = undefined> {
     patch: Partial<
       Pick<
         SceneEntity<TMeta>,
-        "position" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "meta"
+        "name" | "position" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "meta"
       >
     >,
   ): boolean;

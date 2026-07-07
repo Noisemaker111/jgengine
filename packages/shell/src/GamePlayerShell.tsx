@@ -1,5 +1,14 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { Component, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import {
+  Component,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -88,6 +97,7 @@ function hotbarIdFor(playable: PlayableGame): string | null {
 
 function executeHotbarSlot(
   ctx: GameContext,
+  fromId: string,
   hotbarId: string,
   slot: number,
   yaw: number,
@@ -96,7 +106,7 @@ function executeHotbarSlot(
   const stack = ctx.player.inventory.state(hotbarId).slots[slot];
   if (stack === undefined || stack === null) return { ok: false, error: `Hotbar slot ${slot + 1} is empty` };
   const result = ctx.item.use.use({
-    from: ctx.player.userId,
+    from: fromId,
     itemId: stack.itemId,
     inventoryId: hotbarId,
     aim: { yaw, pitch },
@@ -287,9 +297,10 @@ function WorldView({
   const objects = useSceneObjects();
   const player = usePlayer();
   const targetId = useTarget(player.userId);
+  const controlledId = ctx.player.possession.active(player.userId);
   const handleSelect = (entity: SceneEntity) => {
     const relation = ctx.scene.entity.canReceive(entity.id, "damage") === null ? "hostile" : "friendly";
-    ctx.scene.entity.setTarget(player.userId, relation === "hostile" || entity.role === "npc" ? entity.id : null);
+    ctx.scene.entity.setTarget(controlledId, relation === "hostile" || entity.role === "npc" ? entity.id : null);
   };
   return (
     <>
@@ -309,7 +320,7 @@ function WorldView({
           custom={renderEntity?.(entity)}
           model={resolveModel(entityModels?.[entity.name], assets)}
           sprite={entitySprites?.[entity.name]}
-          isLocal={entity.id === player.userId}
+          isLocal={entity.id === controlledId}
           targeted={entity.id === targetId}
           onSelect={handleSelect}
         />
@@ -395,7 +406,7 @@ function FrameDriver({
     if (tracker.isDown("turnLeft")) yawRef.current += TURN_SPEED * dt;
     if (tracker.isDown("turnRight")) yawRef.current -= TURN_SPEED * dt;
 
-    const playerId = ctx.player.userId;
+    const playerId = ctx.player.possession.active(ctx.player.userId);
     const player = ctx.scene.entity.get(playerId);
     const forwardX = Math.sin(yawRef.current);
     const forwardZ = Math.cos(yawRef.current);
@@ -459,7 +470,7 @@ function FrameDriver({
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {
         if (!tracker.wasPressed(action)) continue;
-        const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current, pitchRef.current);
+        const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current);
         if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
       }
       const usePrimary =
@@ -473,7 +484,7 @@ function FrameDriver({
             ? preferred
             : slots.findIndex((stack) => stack !== null);
         if (slot >= 0) {
-          const result = executeHotbarSlot(ctx, hotbarId, slot, yawRef.current, pitchRef.current);
+          const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current);
           if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
         }
       }
@@ -661,11 +672,22 @@ export function GamePlayerShell({
     wrapperRef.current?.focus();
   }, [ctx]);
 
+  useSyncExternalStore(
+    ctx?.subscribe ?? (() => () => undefined),
+    ctx?.version ?? (() => 0),
+    ctx?.version ?? (() => 0),
+  );
+
   if (ctx === null) return <div className="h-full w-full bg-neutral-950" />;
 
   const GameUI = playable.GameUI;
   const WorldOverlay = playable.WorldOverlay;
-  const rigKind = resolveRigKind(playable.camera);
+  const controlledEntityId = ctx.player.possession.active(userId);
+  const cameraConfig =
+    playable.camera?.followEntityId !== undefined
+      ? playable.camera
+      : { ...playable.camera, followEntityId: controlledEntityId };
+  const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
   const showReticle =
     (firstPerson && playable.camera?.firstPerson?.reticle !== false) || rigKind === "shoulder";
@@ -734,7 +756,7 @@ export function GamePlayerShell({
           <GameCameraRig
             yawRef={yawRef}
             pitchRef={pitchRef}
-            config={playable.camera}
+            config={cameraConfig}
             onDragChange={(dragging) => {
               cameraDraggingRef.current = dragging;
             }}

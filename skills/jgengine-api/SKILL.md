@@ -42,9 +42,12 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |
 | Scene instance role | `scene/entityStore` | `EntityRole`, `SceneEntity`, `SpawnOptions`, `EntityPose` |
+| Possession | `scene/possession` | `createPossession`, `Possession`, `PossessionDeps`, `PossessionSwappedEvent` |
+| Form / shapeshift | `scene/form` | `createForms`, `Forms`, `FormDef`, `FormsDeps`, `FormChangedEvent` |
 | Multiplayer adapters | `runtime/adapter` | `offline`, `ws`, `convex`, `servers`, `MultiplayerTopology`, `ServersPoolConfig` |
 | Loot | `game/lootTable` | `lootTable`, `LootTableDef`, `LootEntry`, `Drop` |
 | Loadout | `game/loadout` | `LoadoutDef`, `LoadoutItemEntry`, `Loadouts` |
+| Cosmetic loadout | `game/cosmetics` | `createCosmetics`, `Cosmetics`, `CosmeticLoadoutDef` |
 | Quest | `game/quest` | `QuestDef`, `QuestRewards`, `QuestObjective`, `QuestJournal` |
 | World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat`, `environment`, `terrain`, `rain`, `snow`, `grass`, `ocean`, `building` |
 | Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `rollingField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep` |
@@ -248,7 +251,7 @@ The shell ships a **rig library**; a game picks and tunes one through `camera` c
 | `lockOn` | Souls-like strafe (Elden Ring) | `lockOn: { targetEntityId?, distance, framingBias, yawSmoothing }` — yaw binds to player→target; WASD becomes strafe |
 | `chase` | Vehicle chase (Forza, Rocket League) | `chase: { distance, springDamping, fov: { base, max, speedForMax }, shakePerSpeed, view: "chase"|"cockpit"|"hood"|"rear" }` |
 
-**Every rig accepts `followEntityId: null`** so avatar-less games (city-builders, card games, auto-battlers) still mount a camera. **Shake / trauma (#28):** every rig reads a shake channel; feed it from anywhere with `import { cameraShake } from "@jgengine/shell/camera"` — `cameraShake(amplitude, decayPerSecond?)` (amplitude 0..1) — or from React via `useCameraShake()`. Tune with `camera.shake: { maxOffset, maxRoll, decayPerSecond, exponent, frequency }`. **Cinematic (#29):** set `camera.cinematic: { keyframes: [{ position, lookAt, fov?, duration?, ease? }], loop? }` to play a scripted path over the active rig, and `camera.transitionSeconds` cross-fades the camera when the rig changes so mode swaps don't hard-cut. The pure rig math (shake decay, spring-arm, speed→FOV, offset/strafe, keyframe lerp) is exported from `@jgengine/shell/camera` for testing.
+**Every rig accepts `followEntityId: null`** so avatar-less games (city-builders, card games, auto-battlers) still mount a camera. Leave `followEntityId` unset and the shell defaults it to `ctx.player.possession.active(userId)` every frame, so a possession swap (party control-swap, BG3-style) or a form's mesh/camera-relevant change re-targets the camera automatically — set it explicitly only to override that default. **Shake / trauma (#28):** every rig reads a shake channel; feed it from anywhere with `import { cameraShake } from "@jgengine/shell/camera"` — `cameraShake(amplitude, decayPerSecond?)` (amplitude 0..1) — or from React via `useCameraShake()`. Tune with `camera.shake: { maxOffset, maxRoll, decayPerSecond, exponent, frequency }`. **Cinematic (#29):** set `camera.cinematic: { keyframes: [{ position, lookAt, fov?, duration?, ease? }], loop? }` to play a scripted path over the active rig, and `camera.transitionSeconds` cross-fades the camera when the rig changes so mode swaps don't hard-cut. The pure rig math (shake decay, spring-arm, speed→FOV, offset/strafe, keyframe lerp) is exported from `@jgengine/shell/camera` for testing.
 
 ## `GameContext` — the ctx surface
 
@@ -260,11 +263,13 @@ ctx.scene.entity    spawn, despawn, setPose, get, list,
                     stats.{get,set,delta}, setTarget, getTarget, cycleTarget,
                     canReceive, preview, effect,
                     willHitProjectile, fireProjectile, settleProjectile,
-                    distance, inRadius, hasLineOfSight, queryArc, moveToward
+                    distance, inRadius, hasLineOfSight, queryArc, moveToward,
+                    form.{register,get,active,abilities,shapeshift,revert}
 ctx.game            commands, events, feed, loot, trade, quest, social,
                     unlocks, economy, leaderboard
+ctx.game.social     friends, party, presence, emotes.play
 ctx.player          userId, isNew, inventory, stats (modifiers), loadout,
-                    applyLoadout, movement (pose/aim)
+                    applyLoadout, movement (pose/aim), possession, cosmetics
 ctx.item            use, weapon
 ctx.time            advance, now, calendar, snapshot; pause, play, toggle,
                     setSpeed, cycleSpeed; after, every, at (game-time timers)
@@ -342,7 +347,7 @@ Break resolution: `duration = baseBreakTime / (tool?.breakSpeed ?? 1)`; drops pe
 | Field | Purpose |
 |-------|---------|
 | `movement` | `walkSpeed` (reaches spawn automatically), `poses?: ["standing","crouch","prone","running"]`, `aim?: ["hip","ads"]` |
-| `role` | `CatalogEntityRole` = `"player"` \| `"enemy"` \| `"hostile"` \| `"npc"` \| `"vehicle"` — catalog hostility class for targeting (`"enemy"`/`"hostile"` classify hostile in `cycleTarget`). Distinct from the scene *instance* `EntityRole` (`"player"` \| `"npc"` \| `"prop"`, in `scene/entityStore`) which drives input/camera binding |
+| `role` | `CatalogEntityRole` = `"player"` \| `"enemy"` \| `"hostile"` \| `"npc"` \| `"vehicle"` — catalog hostility class for targeting (`"enemy"`/`"hostile"` classify hostile in `cycleTarget`). Distinct from the scene *instance* `EntityRole` (`"player"` \| `"npc"` \| `"prop"`, in `scene/entityStore`) which drives input/camera binding — **possession** (`ctx.player.possession`) flips this instance role between `"player"`/`"npc"` on every control swap, so exactly one owned entity is ever the input/camera target |
 | `stats` | Stat declarations — bounded values: `{ health: { max: 120, min: 0 }, level: { max: 60, min: 1, current: 1 }, … }` — `current` optional, defaults to `max` |
 | `receive` | Per-effect absorption: `{ damage: { order: ["shield","health"], modifiers? }, heal: { order: ["health"] } }` — keyed by **game-defined effect ids**; presence = can receive |
 | `onDeath` | `{ drops: "table_id" }` or reason-aware `{ drops: [{ table, when: { reason: "player_kill" } }], command?: { name, when? } }` |
@@ -496,9 +501,45 @@ Catalog: `{ id, title, giver?, turnIn?, requires?, objectives: [{ id, kind, targ
 ctx.game.social.friends.canRequest / request / accept / remove / block / list   // persisted
 ctx.game.social.party.register({ maxMembers })   // then canInvite / invite / accept / kick / leave / promote / list / membersOf
 ctx.game.social.presence.get(userId)             // { online, serverId?, zoneId?, instanceId? }
+ctx.game.social.emotes.play(fromUserId, emoteId, radius?)   // → { from, emoteId, at, recipients } | { reason }
 ```
 
 Party is ephemeral session state (invites expire; leader leaving promotes the next member). Events: `social.friend.added`, `social.party.joined`, `social.party.left`.
+
+`emotes.play` reuses `scene.entity.inRadius` to find nearby **player**-role entities (default radius 20) and emits `emote.played` — never build a parallel proximity broadcast. Emote ids are game-defined strings (no registration, same convention as effect ids). Bind it into the existing feed primitive for a HUD feed: `ctx.game.feed.bind("emote.played")` + `useFeed({ action: "emote.played" })` — no dedicated emote hook exists or is needed.
+
+## Cosmetic loadout
+
+```ts
+ctx.player.cosmetics.register(defs)                       // onInit — Record<loadoutId, { slots: Record<slot, cosmeticId> }>
+ctx.player.cosmetics.apply(userId, loadoutId)              // merges the preset's slots
+ctx.player.cosmetics.equip(userId, slot, cosmeticId | null)  // set/clear one slot directly
+ctx.player.cosmetics.get(userId)                          // Record<slot, cosmeticId>
+```
+
+A per-player appearance layer distinct from `applyLoadout` (which grants inventory/stats/economy/unlocks) — cosmetics never touch gameplay state, only equipped slot ids for your renderer to read. Emits `cosmetics.changed`.
+
+## Possession
+
+```ts
+ctx.player.possession.own(userId, entityId) / disown / owns / listOwned(userId)
+ctx.player.possession.active(userId)                      // → entityId, defaults to userId itself
+ctx.player.possession.possess(userId, entityId)            // → null | { reason } — must be owned + spawned
+```
+
+A player can own N scene entities (party members, vehicles, a possessed creature) and control exactly one at a time — distinct from `game.social.party`, which is a social grouping, not a control model. `possess` flips the previous/next entity's scene `EntityRole` between `"player"`/`"npc"` and emits `possession.swapped`; `@jgengine/shell`'s `GamePlayerShell` reads `active(userId)` every frame to rebind WASD movement, tab-targeting, hotbar `from`, and the camera rig's `followEntityId` to whichever entity is currently controlled — a game never wires this rebind itself.
+
+## Form / shapeshift
+
+```ts
+ctx.scene.entity.form.register(defs)                              // onInit — FormDef[] = { id, movement?, abilities?, model? }
+ctx.scene.entity.form.shapeshift(instanceId, formId, durationSeconds?)   // → null | { reason }
+ctx.scene.entity.form.active(instanceId)                          // → formId | null
+ctx.scene.entity.form.abilities(instanceId)                       // → readonly string[] | null
+ctx.scene.entity.form.revert(instanceId)                          // early revert
+```
+
+A `form` bundles movement params + an ability-id list + a mesh into one swappable unit (shapeshift/transformation — V Rising bear/wolf/bat, Wukong's boss transformation). `model` reuses the entity's catalog `name` (the same key `entityModels`/`entitySprites` resolve against), so the mesh swap rides the existing render lookup — no parallel mesh field. `durationSeconds` is **game time**: it schedules the automatic revert through `ctx.time.after`, so it obeys pause and fast-forward like everything else on the clock. Emits `form.changed`.
 
 ## Events, feed, leaderboard
 
@@ -727,10 +768,13 @@ death              onDeath (reason-aware drops/command), entity.died, auto kill 
 game.loot          register / has / roll / grantToPlayer   (lootTable() = pure factory)
 game.trade         canBuy / canSell / buy / sell / tradableAt
 game.quest         register, accept…turnIn, bind(entity.died | inventory.added), declarative rewards
-game.social        friends (persisted), party (ephemeral), presence
+game.social        friends (persisted), party (ephemeral), presence, emotes (nearby broadcast)
 game.events/feed/leaderboard   on / bind+push+recent / track+increment+getTop
 applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
+player.possession  own/disown/owns/listOwned + active + possess — control-swap, rebinds shell camera
+player.cosmetics   register + apply/equip + get — per-player appearance slots, no gameplay effect
+scene.entity.form  register + shapeshift/revert + active/abilities — movement+ability+mesh bundle, game-time duration
 proximityPrompt    { radius, display: {kind}, invoke } — one float-UI primitive
 world features     biomes / voxel / plots / tilemap / flat descriptors
 physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not the defineGame physics field

@@ -7,11 +7,14 @@ import { AbilitiesModal } from "./components/AbilitiesModal";
 import { BackpackModal } from "./components/BackpackModal";
 import { CharacterSheetModal } from "./components/CharacterSheetModal";
 import { CombatLogPanel } from "./components/CombatLogPanel";
+import { EmoteWheel } from "./components/EmoteWheel";
 import { FloatingCombatText } from "./components/FloatingCombatText";
+import { FormBadge } from "./components/FormBadge";
 import { GoldDisplay } from "./components/GoldDisplay";
 import { Hotbar } from "./components/Hotbar";
 import { KeybindBadge } from "./components/KeybindBadge";
 import { PlayerFrame } from "./components/PlayerFrame";
+import { PossessionBadge } from "./components/PossessionBadge";
 import { QuestTracker } from "./components/QuestTracker";
 import { TargetFrame } from "./components/TargetFrame";
 
@@ -27,6 +30,10 @@ export function GameUI() {
       <div className="col-start-1 row-start-2 justify-self-start">
         <TargetFrame />
       </div>
+      <div className="col-start-2 row-start-1 flex items-start justify-center gap-2 justify-self-center">
+        <PossessionBadge />
+        <FormBadge />
+      </div>
       <div className="col-start-3 row-start-1 flex flex-col items-end gap-1 justify-self-end">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-stone-400">
           <span>Backpack</span>
@@ -37,6 +44,9 @@ export function GameUI() {
           <span className="mx-1 text-stone-600">·</span>
           <span>Abilities</span>
           <KeybindBadge label={actionLabel(keybinds, "openAbilities") ?? "—"} />
+          <span className="mx-1 text-stone-600">·</span>
+          <span>Emotes</span>
+          <KeybindBadge label={actionLabel(keybinds, "openEmotes") ?? "—"} />
         </div>
         <QuestTracker />
       </div>
@@ -53,6 +63,7 @@ export function GameUI() {
       {openPanel === "backpack" ? <BackpackModal onClose={closePanels} /> : null}
       {openPanel === "character" ? <CharacterSheetModal onClose={closePanels} /> : null}
       {openPanel === "abilities" ? <AbilitiesModal onClose={closePanels} /> : null}
+      {openPanel === "emotes" ? <EmoteWheel /> : null}
     </div>
   );
 }
