@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { generateBuildingDistrict } from "@jgengine/core/world/buildings";
+import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
 import type {
   BuildingEnvironmentDescriptor,
   EnvironmentWorldFeature,
@@ -115,25 +115,7 @@ function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
 }
 
 function Structures({ structures }: { structures: BuildingEnvironmentDescriptor }) {
-  const buildings = useMemo(() => {
-    const columns = Math.max(1, Math.ceil(Math.sqrt(structures.count)));
-    const rows = Math.max(1, Math.ceil(structures.count / columns));
-    const spacing = structures.spacing;
-    const origin: readonly [number, number] = [
-      -((columns - 1) * (structures.footprint.w + spacing)) / 2,
-      -((rows - 1) * (structures.footprint.d + spacing)) / 2,
-    ];
-    return generateBuildingDistrict({
-      rows,
-      columns,
-      origin,
-      lotSize: structures.footprint,
-      streetWidth: spacing,
-      floorRange: structures.stories,
-      base: { floorHeight: structures.storyHeight },
-      ...(structures.seed === undefined ? {} : { seed: structures.seed }),
-    }).slice(0, structures.count);
-  }, [structures]);
+  const buildings = useMemo(() => resolveStructureBuildings(structures), [structures]);
 
   return (
     <>
