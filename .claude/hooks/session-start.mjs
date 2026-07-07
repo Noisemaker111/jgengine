@@ -28,7 +28,9 @@ const inWorktree = /[\\/]\.git[\\/]worktrees[\\/]/.test(gitDir);
 if (inWorktree) {
   emit(
     `Worktree flow OK: this session is in an isolated worktree on branch "${branch}". ` +
-      `Keep committing here and ship via its draft PR. The primary checkout stays on main.`,
+      `Keep committing here. When the task is complete, ship it yourself — don't ask the user to merge: ` +
+      `run \`bun .claude/scripts/ship-pr.mjs\` (rockets the PR title, squash-merges, deletes the branch). ` +
+      `The primary checkout stays on main.`,
   );
 }
 
