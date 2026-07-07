@@ -1,6 +1,5 @@
 import apiMd from "../../../../skills/jgengine-api/SKILL.md?raw";
 import assetsMd from "../../../../skills/jgengine-assets/SKILL.md?raw";
-import harvestMd from "../../../../skills/jgengine-harvest/SKILL.md?raw";
 import newgameMd from "../../../../skills/jgengine-newgame/SKILL.md?raw";
 import uiMd from "../../../../skills/jgengine-ui/SKILL.md?raw";
 import verifyMd from "../../../../skills/jgengine-verify/SKILL.md?raw";
@@ -34,7 +33,6 @@ export const SKILLS: Skill[] = [
   parse("jgengine-api", apiMd),
   parse("jgengine-ui", uiMd),
   parse("jgengine-assets", assetsMd),
-  parse("jgengine-harvest", harvestMd),
   parse("jgengine-verify", verifyMd),
 ];
 
