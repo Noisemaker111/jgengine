@@ -161,7 +161,7 @@ function createSurvivalSim(): SurvivalSim {
   });
 
   let version = 0;
-  let snapshot = computeSnapshot();
+  let currentTime = 0;
   const listeners = new Set<(state: SurvivalSnapshot) => void>();
 
   function computeSnapshot(): SurvivalSnapshot {
@@ -182,13 +182,13 @@ function createSurvivalSim(): SurvivalSim {
     };
   }
 
+  let snapshot = computeSnapshot();
+
   function notify(): void {
     version += 1;
     snapshot = computeSnapshot();
     for (const listener of listeners) listener(snapshot);
   }
-
-  let currentTime = 0;
 
   return {
     store: {
@@ -212,8 +212,10 @@ function createSurvivalSim(): SurvivalSim {
       meters.refill("thirst", -66);
       meters.refill("warmth", -34);
       meters.refill("stamina", -70);
-      fire.ignite(-16, -16);
-      fire.ignite(-14, -14);
+      fire.ignite(-4, 4);
+      fire.ignite(-2, 4);
+      fire.ignite(-4, 6);
+      fire.ignite(0, 6);
       notify();
     },
     tick(_ctx, dt, gameTime) {
