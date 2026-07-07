@@ -35,8 +35,9 @@ export interface FirstPersonCameraConfig {
  * - `shoulder` — over-the-shoulder with ADS transition + shoulder swap.
  * - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe.
  * - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views.
+ * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
  */
-export type CameraRigKind = "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase";
+export type CameraRigKind = "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer";
 
 /** Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow. */
 export interface TopDownCameraConfig {
@@ -133,6 +134,23 @@ export interface ChaseCameraConfig {
   };
 }
 
+/** Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input. */
+export interface ObserverCameraConfig {
+  /** What the observer looks at. Omit to stay on a fixed point at the origin (or `point`, if given). */
+  bind?: { kind: "entity"; entityId: string } | { kind: "point"; position: { x: number; y: number; z: number } };
+  /** Orbit distance from the bound subject. Default 8. */
+  distance?: number;
+  /** Camera height above the bound subject. Default 3. */
+  height?: number;
+  /** Height of the look point above the subject. Default 1.2. */
+  lookHeight?: number;
+  /** Radians/second of automatic orbit around the subject (CCTV-style sweep); 0 holds a fixed angle. Default 0.2. */
+  orbitSpeed?: number;
+  /** Starting orbit angle in radians. Default 0. */
+  startAngle?: number;
+  fov?: number;
+}
+
 /** One stop on a scripted camera path (#29). */
 export interface CameraKeyframe {
   position: { x: number; y: number; z: number };
@@ -182,6 +200,8 @@ export interface GameCameraConfig {
   lockOn?: LockOnCameraConfig;
   /** Vehicle chase tuning (#27); read when `rig: "chase"`. */
   chase?: ChaseCameraConfig;
+  /** Detached spectator/photo cam tuning (#120); read when `rig: "observer"`. */
+  observer?: ObserverCameraConfig;
   /** Camera-shake / trauma channel defaults (#28); read by every rig. */
   shake?: CameraShakeConfig;
   /** Scripted keyframe path (#29); when set, plays over the active rig. */

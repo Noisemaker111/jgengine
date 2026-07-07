@@ -10,7 +10,9 @@ import {
   createTrauma,
   crossfadePose,
   lockOnPose,
+  observerPose,
   resolveChase,
+  resolveObserver,
   resolveShoulder,
   seatPose,
   shakeOffset,
@@ -213,6 +215,31 @@ describe("cinematicSample", () => {
   test("loop wraps back to the start", () => {
     const wrapped = cinematicSample(keyframes, 2, true, 55);
     expect(near(wrapped.pose.position.x, 0, 1e-4)).toBe(true);
+  });
+});
+
+describe("observerPose", () => {
+  test("orbits the subject at the configured distance and height", () => {
+    const resolved = resolveObserver({ distance: 10, height: 4, lookHeight: 1 });
+    const pose = observerPose({ x: 0, y: 0, z: 0 }, 0, resolved, 55);
+    expect(near(pose.position.x, 0, 1e-4)).toBe(true);
+    expect(near(pose.position.z, 10, 1e-4)).toBe(true);
+    expect(near(pose.position.y, 4)).toBe(true);
+    expect(pose.lookAt).toEqual({ x: 0, y: 1, z: 0 });
+  });
+
+  test("follows the subject as it moves and always looks at it", () => {
+    const resolved = resolveObserver(undefined);
+    const pose = observerPose({ x: 5, y: 0, z: 5 }, Math.PI / 2, resolved, 55);
+    expect(near(pose.position.z, 5, 1e-4)).toBe(true);
+    expect(near(pose.position.x, 5 + resolved.distance, 1e-4)).toBe(true);
+    expect(pose.lookAt.x).toBe(5);
+    expect(pose.lookAt.z).toBe(5);
+  });
+
+  test("resolveObserver applies defaults", () => {
+    const resolved = resolveObserver(undefined);
+    expect(resolved).toEqual({ distance: 8, height: 3, lookHeight: 1.2, orbitSpeed: 0.2 });
   });
 });
 

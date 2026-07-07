@@ -20,12 +20,18 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   chase: { rig: "chase", chase: { distance: 6.5, height: 2.8, fov: { base: 55, max: 82, speedForMax: 12 } } },
   cockpit: { rig: "chase", chase: { view: "cockpit" } },
   rear: { rig: "chase", chase: { view: "rear" } },
+  observer: {
+    rig: "observer",
+    observer: { bind: { kind: "entity", entityId: "sensor-showcase-culprit" }, distance: 7, height: 3.5, orbitSpeed: 0.3 },
+  },
 };
 
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
   "environment-showcase": () =>
     import("@jgengine/shell/demo/environmentShowcase").then((module) => module.environmentShowcaseGame),
+  "sensor-showcase": () =>
+    import("@jgengine/shell/demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
   "world-of-warcraft": () => import("@dogfood/world-of-warcraft").then((module) => module.wowGame),
   "asset-showcase": () =>
     import("@dogfood/asset-showcase").then((module) => module.assetShowcaseGame),

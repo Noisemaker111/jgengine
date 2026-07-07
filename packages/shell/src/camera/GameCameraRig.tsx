@@ -6,6 +6,7 @@ import {
   ChaseRig,
   CinematicRig,
   LockOnRig,
+  ObserverRig,
   RtsRig,
   ShoulderRig,
   TopDownRig,
@@ -59,6 +60,8 @@ export function GameCameraRig({ yawRef, pitchRef, config, onDragChange }: GameCa
         return <LockOnRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "chase":
         return <ChaseRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+      case "observer":
+        return <ObserverRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       default:
         return (
           <GameOrbitCamera

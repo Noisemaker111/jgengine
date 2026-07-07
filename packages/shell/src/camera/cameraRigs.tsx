@@ -6,6 +6,7 @@ import type {
   ChaseCameraConfig,
   GameCameraConfig,
   LockOnCameraConfig,
+  ObserverCameraConfig,
   RtsCameraConfig,
   ShoulderCameraConfig,
 } from "@jgengine/core/game/playableGame";
@@ -20,7 +21,9 @@ import {
   cinematicSample,
   clamp,
   lockOnPose,
+  observerPose,
   resolveChase,
+  resolveObserver,
   resolveShoulder,
   resolveTopDown,
   seatPose,
@@ -513,6 +516,43 @@ export function ChaseRig(props: RigProps) {
     }
 
     const pose: CameraPose = { position: smoothed, lookAt: chaseLookAt(follow, yaw, resolved), fov };
+    commit(pose, dt);
+  }, CAMERA_RIG_FRAME_PRIORITY);
+
+  return null;
+}
+
+function observerSubject(ctx: GameContext, config: ObserverCameraConfig | undefined): { subject: Vec3; boundEntityId: string | null } {
+  const bind = config?.bind;
+  if (bind?.kind === "entity") {
+    const entity = ctx.scene.entity.get(bind.entityId);
+    if (entity !== null) {
+      return { subject: { x: entity.position[0], y: entity.position[1], z: entity.position[2] }, boundEntityId: bind.entityId };
+    }
+    return { subject: { x: 0, y: 0, z: 0 }, boundEntityId: bind.entityId };
+  }
+  if (bind?.kind === "point") return { subject: { ...bind.position }, boundEntityId: null };
+  return { subject: { x: 0, y: 0, z: 0 }, boundEntityId: null };
+}
+
+/**
+ * Detached spectator/photo cam (#120): binds to any entity or fixed point and
+ * auto-orbits it, reading no player input at all — the van CCTV / photo-mode /
+ * kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
+ */
+export function ObserverRig(props: RigProps) {
+  const ctx = useGameContext();
+  const config: ObserverCameraConfig | undefined = props.config?.observer;
+  const resolved = useMemo(() => resolveObserver(config), [config]);
+  const angleRef = useRef(config?.startAngle ?? 0);
+  const { camera, commit, beginTransition } = useCameraCommit(props, observerSubject(ctx, config).boundEntityId);
+
+  useEffect(beginTransition, []);
+
+  useFrame((_, dt) => {
+    angleRef.current += resolved.orbitSpeed * dt;
+    const { subject } = observerSubject(ctx, config);
+    const pose = observerPose(subject, angleRef.current, resolved, config?.fov ?? currentFov(camera));
     commit(pose, dt);
   }, CAMERA_RIG_FRAME_PRIORITY);
 

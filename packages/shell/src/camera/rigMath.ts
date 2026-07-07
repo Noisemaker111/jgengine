@@ -2,6 +2,7 @@ import type {
   CameraKeyframe,
   ChaseCameraConfig,
   LockOnCameraConfig,
+  ObserverCameraConfig,
   ShoulderCameraConfig,
   TopDownCameraConfig,
 } from "@jgengine/core/game/playableGame";
@@ -232,6 +233,36 @@ export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedCha
     lookHeight: config?.lookHeight ?? 1.2,
     springDamping: config?.springDamping ?? 6,
     shakePerSpeed: config?.shakePerSpeed ?? 0,
+  };
+}
+
+export interface ResolvedObserver {
+  distance: number;
+  height: number;
+  lookHeight: number;
+  orbitSpeed: number;
+}
+
+export function resolveObserver(config: ObserverCameraConfig | undefined): ResolvedObserver {
+  return {
+    distance: config?.distance ?? 8,
+    height: config?.height ?? 3,
+    lookHeight: config?.lookHeight ?? 1.2,
+    orbitSpeed: config?.orbitSpeed ?? 0.2,
+  };
+}
+
+/** Detached spectator pose: orbits `subject` at a fixed distance/height, never reading player input. */
+export function observerPose(subject: Vec3, angle: number, resolved: ResolvedObserver, fov: number): CameraPose {
+  const position: Vec3 = {
+    x: subject.x + Math.sin(angle) * resolved.distance,
+    y: subject.y + resolved.height,
+    z: subject.z + Math.cos(angle) * resolved.distance,
+  };
+  return {
+    position,
+    lookAt: { x: subject.x, y: subject.y + resolved.lookHeight, z: subject.z },
+    fov,
   };
 }
 
