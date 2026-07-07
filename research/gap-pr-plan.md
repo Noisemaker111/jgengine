@@ -18,12 +18,14 @@
 | G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | ✅ DONE (green) | #130 |
 | G16 Card & board stack | opus | claude/gaps-card-board | ✅ DONE (green) | #131 |
 | G8 AI director/behavior/crowds | opus | claude/gaps-ai-director (stack→gaps-nav-pointer) | ✅ DONE (green) | #133 |
-| G12 Map/HUD/ping | sonnet | claude/gaps-map-ping (stack→gaps-nav-pointer) | in-flight | — |
+| G12 Map/HUD/ping | sonnet | claude/gaps-map-ping (stack→gaps-nav-pointer) | ✅ DONE (green) | #138 |
+| G13 Vehicles/mounts/racing | opus | claude/gaps-vehicles (stack→gaps-physics-actors) | in-flight | — |
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | ✅ DONE (green) | #135 |
 | G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | in-flight | — |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | ✅ DONE (green) | #136 |
 | G17 Objective/mode/session | opus | claude/gaps-session (stack→gaps-item-gear) | in-flight | — |
-| G13,G19,G20,G21,G22 | — | — | todo | — |
+| G19,G20,G21,G22 | — | — | todo | — |
+G12 extended `world/{markers,fog,minimap}`, `game/ping` (rides party+feed).
 G11 added domain `survival/` (decayMeter/moodle/regionHealth); `world/{envField,weather,realm}`.
 G5 terrain write-back (G14 may reconcile at merge): `world/terraform` `createEditableTerrain`→`EditableTerrain.apply(TerraformEdit)`. G5 added `world/{placementController,connectors,support,walls,placedStructureStore,terraform,buildPermissions}`.
 G4 added `game/worldItem` (3rd scene bucket: `ctx.scene.worldItem`), `game/lootFilter`; `onDeath.dropMode:"world"`.
