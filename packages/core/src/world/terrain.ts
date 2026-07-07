@@ -1,4 +1,3 @@
-import { createBiomeField } from "./biomes";
 import type {
   ArenaWorldConfig,
   HeightfieldWorldConfig,
@@ -245,8 +244,6 @@ export function terrainFieldFor(world?: WorldFeature): TerrainField {
       return arenaField(world);
     case "heightfield":
       return heightfieldField(world);
-    case "biomes":
-      return createBiomeField({ seed: seedFrom(world.seed, 1337), bounds: world.bounds });
     case undefined:
       return rollingField();
     default:

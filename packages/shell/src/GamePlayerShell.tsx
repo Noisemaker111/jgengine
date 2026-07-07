@@ -19,7 +19,7 @@ import {
 } from "@jgengine/core/movement/movementModel";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { resolveGroundStep, terrainFieldFor, type TerrainField } from "@jgengine/core/world/terrain";
-import { isBiomeField, type BiomeField } from "@jgengine/core/world/biomes";
+import { isRegionField, type RegionField } from "@jgengine/core/world/regions";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
@@ -223,16 +223,16 @@ function GroundPlane({ field }: { field: TerrainField }) {
     next.computeVertexNormals();
     const normals = next.attributes.normal;
     const colors = new Float32Array(positions.count * 3);
-    const biomeField = isBiomeField(field) ? field : null;
+    const regionField = isRegionField(field) ? field : null;
     for (let index = 0; index < positions.count; index += 1) {
       const height = positions.getZ(index);
       const slope = 1 - normals.getZ(index);
       const rockBlend = Math.min(1, Math.max(0, (slope - 0.35) / 0.35));
-      if (biomeField !== null) {
-        const sample = biomeField.sampleBiome(positions.getX(index), -positions.getY(index));
+      if (regionField !== null) {
+        const sample = regionField.sampleRegion(positions.getX(index), -positions.getY(index));
         for (let channel = 0; channel < 3; channel += 1) {
           colors[index * 3 + channel] =
-            sample.surface[channel]! + (sample.steep[channel]! - sample.surface[channel]!) * rockBlend;
+            sample.tint[channel]! + (sample.steepTint[channel]! - sample.tint[channel]!) * rockBlend;
         }
         continue;
       }
@@ -298,7 +298,7 @@ const DEFAULT_WATER: readonly [number, number, number] = [0.18, 0.43, 0.53];
 
 const DEFAULT_FOG: readonly [number, number, number] = [0.078, 0.086, 0.106];
 
-function BiomeAtmosphere({ field }: { field: BiomeField }) {
+function RegionAtmosphere({ field }: { field: RegionField }) {
   const ctx = useGameContext();
   const scene = useThree((state) => state.scene);
   const fogRef = useRef<THREE.Fog | null>(null);
@@ -315,10 +315,10 @@ function BiomeAtmosphere({ field }: { field: BiomeField }) {
     const fog = fogRef.current;
     const player = ctx.scene.entity.get(ctx.player.userId);
     if (fog === null || player === null) return;
-    const sample = field.sampleBiome(player.position[0], player.position[2]);
-    const blindness = sample.effects.find((effect) => effect.kind === "blindness");
-    const targetNear = blindness !== undefined ? 3 : 60;
-    const targetFar = blindness !== undefined ? 14 + (1 - blindness.strength) * 26 : 260;
+    const sample = field.sampleRegion(player.position[0], player.position[2]);
+    const density = sample.fog !== null ? sample.fogDensity : 0;
+    const targetNear = 60 - density * 57;
+    const targetFar = 260 - density * 224;
     const color = sample.fog ?? DEFAULT_FOG;
     fog.color.setRGB(color[0]!, color[1]!, color[2]!);
     fog.near += (targetNear - fog.near) * 0.08;
@@ -329,14 +329,14 @@ function BiomeAtmosphere({ field }: { field: BiomeField }) {
 
 function WaterPlane({ level, field }: { level: number; field: TerrainField }) {
   const geometry = useMemo(() => {
-    const biomeField = isBiomeField(field) ? field : null;
-    const segments = biomeField !== null ? 64 : 1;
+    const regionField = isRegionField(field) ? field : null;
+    const segments = regionField !== null ? 64 : 1;
     const next = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, segments, segments);
-    if (biomeField !== null) {
+    if (regionField !== null) {
       const positions = next.attributes.position;
       const colors = new Float32Array(positions.count * 3);
       for (let index = 0; index < positions.count; index += 1) {
-        const water = biomeField.sampleBiome(positions.getX(index), -positions.getY(index)).water ?? DEFAULT_WATER;
+        const water = regionField.sampleRegion(positions.getX(index), -positions.getY(index)).water ?? DEFAULT_WATER;
         colors[index * 3] = water[0]!;
         colors[index * 3 + 1] = water[1]!;
         colors[index * 3 + 2] = water[2]!;
@@ -346,7 +346,7 @@ function WaterPlane({ level, field }: { level: number; field: TerrainField }) {
     return next;
   }, [field]);
 
-  const useVertexColors = isBiomeField(field);
+  const useVertexColors = isRegionField(field);
   return (
     <mesh rotation-x={-Math.PI / 2} position-y={level} geometry={geometry}>
       <meshStandardMaterial
@@ -545,11 +545,8 @@ function FrameDriver({
       const intent = resolveMovementIntent(keys, true);
       const motion = motionRef.current;
       let baseSpeed = player.movement.walkSpeed ?? 2;
-      if (isBiomeField(field)) {
-        for (const effect of field.sampleBiome(player.position[0], player.position[2]).effects) {
-          if (effect.kind === "slowness") baseSpeed *= Math.max(0.2, 1 - effect.strength);
-          else if (effect.kind === "haste") baseSpeed *= 1 + effect.strength;
-        }
+      if (isRegionField(field)) {
+        baseSpeed *= field.sampleRegion(player.position[0], player.position[2]).speedMultiplier;
       }
       const step = advancePlayerMotion(
         motion,
@@ -707,7 +704,10 @@ export function GamePlayerShell({
     () => createActionStateTracker(toActionStateBindingMap(playable.game.input ?? {})),
     [playable],
   );
-  const field = useMemo(() => terrainFieldFor(playable.game.world), [playable]);
+  const field = useMemo(
+    () => playable.terrain ?? terrainFieldFor(playable.game.world),
+    [playable],
+  );
   const groundHeightAt = useMemo(() => (x: number, z: number) => field.sampleHeight(x, z), [field]);
   const showGrid = playable.game.world?.kind === "flat";
   const showStructures = playable.game.world?.kind === "arena";
@@ -866,7 +866,7 @@ export function GamePlayerShell({
         <ambientLight intensity={0.55} />
         <directionalLight position={[10, 16, 6]} intensity={1.3} />
         <GameProvider context={ctx}>
-          {isBiomeField(field) ? <BiomeAtmosphere field={field} /> : null}
+          {isRegionField(field) ? <RegionAtmosphere field={field} /> : null}
           <WorldView
             entitySprites={playable.entitySprites}
             entityModels={playable.entityModels}

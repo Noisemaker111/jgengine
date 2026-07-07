@@ -6,7 +6,6 @@ export interface WorldBounds {
 export interface BiomesWorldConfig {
   map?: string;
   zones?: string;
-  seed?: string | number;
   bounds?: WorldBounds;
 }
 

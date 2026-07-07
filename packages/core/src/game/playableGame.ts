@@ -1,5 +1,6 @@
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { GameContext, GameContextContent } from "../runtime/gameContext";
+import type { TerrainField } from "../world/terrain";
 import type { GameDefinition, GameLoop } from "./defineGame";
 
 export interface CameraFollowState {
@@ -85,6 +86,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown> {
   prompts?: (ctx: GameContext) => readonly PositionedPrompt[];
   /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
+  /** Custom terrain/region field. When set, the shell renders and grounds against this instead of deriving one from `game.world`. Build it with `createRegionField`/`terrainFieldFor` from `@jgengine/core/world`. */
+  terrain?: TerrainField;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. */
   worldHealthBars?: boolean | { statId?: string };
 }
