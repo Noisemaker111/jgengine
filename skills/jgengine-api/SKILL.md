@@ -67,7 +67,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Scene behaviors | `scene/behaviors` | `wander`, `promptable`, `talkable`, `player` |
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
-| Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` |
+| Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions`, `JointOptions`, `JointKind`, `CollisionEvent` |
+| Physics actors | `physics/ragdoll`, `physics/carryable`, `physics/forceVolume`, `physics/spatialGrid` | `createRagdoll`, `Ragdoll`, `Carryable`, `carrySpeedMultiplier`, `ForceVolume`, `PlatformCarry`, `SpatialGrid` |
 
 ## Getting started (new project)
 
@@ -544,6 +545,12 @@ Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `she
 ### Physics world (optional, headless)
 
 `physics/physicsWorld` `PhysicsWorld` is a standalone fixed-capacity rigid-body sim (SoA buffers, spatial-hash broadphase, sleeping) — **not** the `defineGame` `physics: { gravity }` field, which only configures the shell's character controller. Reach for it when a game needs many colliding dynamic bodies (piles, debris, stress scenes): `new PhysicsWorld({ capacity, bounds, … })`, `addBody({ position, halfExtents, mass? })`, then `step(dt)` per tick → `PhysicsStats`. Core owns the sim; `@jgengine/shell/world/InstancedBodies` renders its bodies. Most games never need it — the character controller covers ordinary movement.
+
+**Joints & constraints.** `hingeJoint`/`fixedJoint`/`distanceJoint`/`springJoint(opts)` connect two bodies, or a body to a fixed world point (omit `bodyB`). The sim is translational (no angular DOF), so `hinge`/`fixed` pin the shared anchor (the `axis` is retained metadata), `distance` holds a fixed separation, and `spring` drives toward `restLength` with `stiffness`/`damping` (suspension, follow-point carry). `removeJoint(id)`, `setJointAnchor(id, x, y, z)` (move a world anchor — the follow point), `setJointRest`, and `readJointSegments(out)` for `@jgengine/shell/world/InstancedJoints` (debug line render). This is the foundation under vehicles, ragdolls, grapples, and carry.
+
+**Collision → gameplay events.** `world.onCollision(listener, minApproachSpeed?)` delivers every impacting contact — `CollisionEvent { a, b, nx, ny, nz, approachSpeed, impulse }` — to game code during `step` (the object is reused; read/copy it, never retain). This is the seam crash-damage and destruction read; pass `null` to detach.
+
+**Actors on top of the sim:** `physics/ragdoll` (`createRagdoll(world, { bones, links, balance? })` — jointed bones, floppy or active-ragdoll via a balance motor), `physics/carryable` (`Carryable` — grab a body to a follow point, shared multi-owner carry, `carrySpeedMultiplier` encumbrance, drop/throw; the raycast pick is the caller's job, core owns the constraint), `physics/forceVolume` (`ForceVolume` — impulse/velocity/accelerate trigger region, `once` for boost pads; `PlatformCarry` — carry bodies standing on a moving platform by its per-`step` delta). Separately, `physics/spatialGrid` `SpatialGrid` is a broad-phase grid over the x/z plane, **distinct** from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers — `rebuild(count, xs, zs)` then `queryCircle` (swarm enemies hitting a player/AoE) or `forEachPair` (mutual separation).
 
 ### Spawn placement
 

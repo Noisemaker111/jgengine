@@ -13,7 +13,15 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- **Physics joints & constraints** — `PhysicsWorld` gains `hingeJoint`/`fixedJoint`/`distanceJoint`/`springJoint(JointOptions)` between two bodies or a body and a fixed world point, plus `removeJoint`, `setJointAnchor` (move a follow point), `setJointRest`, and `readJointSegments`. The sim is translational: `hinge`/`fixed` pin the shared anchor, `distance` holds a separation, `spring` drives toward `restLength` with stiffness/damping. Foundation under vehicle suspension, ragdolls, grapples, and carry. Tune the buffers with `jointCapacity` / `jointCorrection` in `PhysicsWorldConfig`.
+- **Physics collision → gameplay-event hook** — `PhysicsWorld.onCollision(listener, minApproachSpeed?)` delivers each impacting contact as a reused `CollisionEvent { a, b, nx, ny, nz, approachSpeed, impulse }` during `step`. The seam crash-damage and destruction read; contacts otherwise stay inside the sim.
+- **`@jgengine/core/physics/ragdoll`** — `createRagdoll(world, { bones, links, balance? })` builds a jointed multi-body character on the joint API: floppy by default, or active-ragdoll when a balance motor drives the root toward a target height (`Ragdoll.balance(dt, moveX?, moveZ?)`), with `centerOfMass`, `applyImpulse`, `remove`.
+- **`@jgengine/core/physics/carryable`** — `Carryable` grabs a physics body to a moving follow point via a spring constraint (the raycast pick is the caller's), supports shared multi-owner carry (follow point = owner average), drop/throw, and `carrySpeedMultiplier(mass, capacity, owners)` encumbrance.
+- **`@jgengine/core/physics/forceVolume`** — `ForceVolume` (impulse/velocity/accelerate trigger region, `once` for boost pads vs continuous fans) and `PlatformCarry` (carry bodies standing on a moving platform by its per-`step` delta).
+- **`@jgengine/core/physics/spatialGrid`** — `SpatialGrid`, a broad-phase uniform grid over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers: `rebuild(count, xs, zs)` then `queryCircle` (swarm enemies hitting a player/AoE) or `forEachPair` (mutual separation).
+- **`@jgengine/shell/world/InstancedJoints`** — debug LineSegments overlay drawing a `PhysicsWorld`'s active joints from `readJointSegments`.
 
 ## 0.6.0
 
