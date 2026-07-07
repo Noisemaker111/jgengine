@@ -1,6 +1,6 @@
 ---
 name: jgengine-newgame
-description: Master blueprint and phased build workflow for making a new JGengine game.
+description: Use when the user asks to build or make a new game with JGengine — the master blueprint (full-scope plan for the whole game) and the phased build workflow that carries an empty project to the complete game, each phase whole, no half systems.
 ---
 
 # JGengine — Blueprint the whole game, build it in phases

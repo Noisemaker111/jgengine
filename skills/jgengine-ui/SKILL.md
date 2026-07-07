@@ -1,6 +1,6 @@
 ---
 name: jgengine-ui
-description: Game UI/UX quality bar for JGengine games.
+description: Use when building, reviewing, or screenshotting a JGengine game's HUD/UI — the quality bar for how it must look and behave: frameless HUD vs paneled modals, keybind badges, action-bar slot states, combat feedback, orbit camera. Not optional polish.
 ---
 
 # JGengine — Game UI/UX
