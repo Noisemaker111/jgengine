@@ -15,10 +15,12 @@
 | G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
 | G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | ✅ DONE (green) | #130 |
 | G16 Card & board stack | opus | claude/gaps-card-board | ✅ DONE (green) | #131 |
-| G8 AI director/behavior/crowds | opus | claude/gaps-ai-director (stack→gaps-nav-pointer) | in-flight | — |
+| G8 AI director/behavior/crowds | opus | claude/gaps-ai-director (stack→gaps-nav-pointer) | ✅ DONE (green) | #133 |
+| G12 Map/HUD/ping | sonnet | claude/gaps-map-ping (stack→gaps-nav-pointer) | in-flight | — |
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | in-flight | — |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | in-flight | — |
-| G6,G12,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+| G6,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+G8 added domain `ai/` (spawnDirector/threat/jobBoard/crowd); `scene/behaviors.patrol`.
 
 G16 added domains `cards/`, `board/`; `inventory/shapedGrid`; react `dragLayer`.
 G9 added domain `crafting/` (recipe/production/crop); `economy/techTree` extends unlocks.
