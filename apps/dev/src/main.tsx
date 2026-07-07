@@ -10,6 +10,8 @@ import "./index.css";
 
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
+  "pointer-commander": () =>
+    import("@jgengine/shell/demo/pointerDemo").then((module) => module.pointerDemoGame),
   "environment-showcase": () =>
     import("@jgengine/shell/demo/environmentShowcase").then((module) => module.environmentShowcaseGame),
   "survival-demo": () =>
