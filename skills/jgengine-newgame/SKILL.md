@@ -92,8 +92,9 @@ The game is done when the **entire blueprint** is delivered:
 2. Loads through `GamePlayerShell` via your `GameRegistry`; core fantasy playable end to end within 60 seconds of spawning.
 3. Full HUD per `jgengine-ui`; every binding visible; camera tuned via `PlayableGame.camera` (defaults untouched means the feel was never checked).
 4. World dressed per "The world is content too"; zero default-material primitives anywhere.
-5. Staged `GameUiPreview` screenshots taken and **judged by looking at them** — if a shot would embarrass a release announcement, it isn't done.
-6. Tests for pure game math (curves, cooldowns, generators, spawn logic) co-located; type-check green.
+5. World content verified deterministically: for any game with an `environment()` world, a co-located `<game>.world.test.ts` asserts `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) is non-empty with the expected terrain/building/water/vegetation/weather counts. This is the scene-correctness gate — it runs in `bun test`, catches empty, miscounted, or flat-terrain scenes, and never launches a browser.
+6. Staged `GameUiPreview` and `--mode play` screenshots taken and **judged by looking at them** — the screenshot is the *final human glance*, never the verification loop (once `bun run shoot` hangs on Chromium, don't re-run it in the foreground; the world test above is what proves the scene resolved). If a shot would embarrass a release announcement, it isn't done.
+7. Tests for pure game math (curves, cooldowns, generators, spawn logic) co-located; type-check green.
 
 ## Archetype recipe — first-person looter-shooter
 

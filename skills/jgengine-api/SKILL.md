@@ -55,6 +55,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Content scatter | `world/scatterItems` | `scatterItems`, `pickWeighted`, `ScatterLayer`, `ScatterInstance` |
 | Building generator | `world/buildings` | `generateBuilding`, `generateBuildingDistrict`, `createBuildingGrid`, `GeneratedBuilding` |
 | Building index | `world/buildingIndex` | `buildingIndex`, `BuildingIndex`, `BuildingHit` |
+| Scene summary | `world/environmentSummary` | `summarizeEnvironment`, `resolveStructureBuildings`, `EnvironmentSummary` |
 | Proximity prompt | `interaction/proximityPrompt` | `proximityPrompt`, `ProximityPrompt`, `ProximityPromptDisplay`, `keybind`, `gauge`, `label`, `command` |
 | Item use | `item/use` | `createItemUse`, `ItemUseHandler`, `ItemUseInput`, `ItemUseResult`, `ItemUseRejection` |
 | Inventory | `inventory/inventoryModel` | `InventoryLayout`, `InventorySet`, `ItemTraits` |
@@ -689,7 +690,8 @@ This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengi
 - [ ] `ui/GameUI.tsx` owns layout; components use `@jgengine/react` hooks
 - [ ] UI passes the **quality bar** above (contrast, scale, framing, genre fit) — not just hook wiring
 - [ ] Camera tuned via `PlayableGame.camera` — defaults untouched means the feel was never checked
-- [ ] HUD screenshotted over a staged `GameUiPreview` scenario and **judged by looking at the image** (see `jgengine-ui`)
+- [ ] For an `environment()` world: a `<game>.world.test.ts` asserts `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) is non-empty with the expected counts — the browserless scene-correctness gate
+- [ ] HUD screenshotted over a staged `GameUiPreview` scenario and **judged by looking at the image** (see `jgengine-ui`) — the final human glance, not the verification loop
 - [ ] Co-located bun tests for pure game math (curves, cooldowns, spawn logic)
 - [ ] Multiplayer via adapter config only; no direct backend calls
 

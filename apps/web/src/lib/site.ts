@@ -13,6 +13,8 @@ export const SKILL_GUIDE: Record<string, string> = {
     "Grab this so nothing looks like a placeholder — license-safe CC0 models and textures wired in from day one.",
   "jgengine-harvest":
     "Grab this after a build — turn every hand-fix into an engine improvement so the next game of that shape needs none of them.",
+  "jgengine-verify":
+    "Grab this to check a build works without fighting the browser — assert the scene's content in a test, keep the flaky screenshot as a final glance instead of the loop.",
 };
 
 export const PACKAGES: { name: string; blurb: string }[] = [
