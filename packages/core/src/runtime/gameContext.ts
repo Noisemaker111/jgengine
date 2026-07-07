@@ -41,6 +41,7 @@ import {
   type InventoryState,
   type ItemTraits,
 } from "../inventory/inventoryModel";
+import type { ContextVerb } from "../interaction/contextMenu";
 import type { ProximityPrompt } from "../interaction/proximityPrompt";
 import {
   createItemUse,
@@ -82,12 +83,16 @@ export interface GameContextEntityEntry {
   onDeath?: OnDeathSpec;
   movement?: PoseAllowedStates & { walkSpeed?: number };
   role?: CatalogEntityRole;
+  /** Right-click context-menu verbs for this entity (#31). */
+  verbs?: readonly ContextVerb[];
 }
 
 export interface GameContextObjectEntry {
   proximityPrompt?: ProximityPrompt;
   breakable?: false | { baseBreakTime: number };
   slotInventory?: InventoryLayout;
+  /** Right-click context-menu verbs for this object (#31). */
+  verbs?: readonly ContextVerb[];
 }
 
 export interface GameContextContent {

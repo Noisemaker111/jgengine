@@ -3,6 +3,24 @@ import type { GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { GameDefinition, GameLoop } from "./defineGame";
 
+export interface PointerConfig {
+  /**
+   * Left-click on open ground runs this command with `{ point, entity, object }`
+   * (click-to-move / ground-target). Suppresses the default left-click hotbar fire.
+   */
+  moveCommand?: string;
+  /** Enable left-drag marquee + single-click box-select of entities (RTS unit command). */
+  select?: boolean;
+  /** Only entities matching this pass are selectable/orderable; default all non-local entities. */
+  selectFilter?: (entityId: string) => boolean;
+  /** Right-click on ground runs this command with `{ selection, point }` — order the selection. */
+  orderCommand?: string;
+  /** Right-click on an entity/object opens the target's catalog verb menu (#31). */
+  contextMenu?: boolean;
+  /** Route the primary ability's aim to the cursor world point instead of camera yaw/pitch (#22). */
+  aim?: boolean;
+}
+
 export interface CameraFollowState {
   entityId: string;
   target: { x: number; y: number; z: number };
@@ -94,6 +112,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   prompts?: (ctx: GameContext) => readonly PositionedPrompt[];
   /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
+  /** Pointer-driven input: click-to-move, box-select, right-click verbs, cursor aim (#22/#30/#31). */
+  pointer?: PointerConfig;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. */
   worldHealthBars?: boolean | { statId?: string };
 }
