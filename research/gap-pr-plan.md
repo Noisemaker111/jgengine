@@ -282,3 +282,10 @@ No issues found to be true duplicates or already-solved. Notable kinships kept a
 All other issues follow the starting hypothesis. #99/#100 kept in separate groups (G17 session / G10 inventory tier) with an explicit G17→G10 dependency rather than merged.
 
 coverage check: 104 issues assigned across 22 groups (must equal 104)
+
+---
+
+## RELEASE v0.7 (in progress) — user authorized merging all 22 to main
+
+Plan: Opus integrator builds `claude/gaps-release-v0.7` off origin/main = all 22 PR commits merged + conflicts resolved + CHANGELOG consolidated to `## 0.7.0` + all 8 package.json bumped to 0.7.0. Must be GREEN (build+check-types+test). Then I (main): re-verify green, push release branch → main (triggers publish.yml → npm publish all 8 @jgengine/* at 0.7.0), then reconcile PR/issue closure (retarget stacked PR bases to main so GitHub marks all 22 merged + closes issues via "Closes #n" in bodies). Merge 16 covering branches (heads include all 22): standalones turn-tactics,card-board,crafting,survival,audio,interaction + leaves ai-director,world-items,building,map-ping,traversal,netcode,sensors,embodiment,abilities,session.
+Unrelated PRs #19 (scene-snapshot), #21 (research) left out unless user asks.
