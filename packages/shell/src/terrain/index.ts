@@ -21,10 +21,9 @@ export { createSeededRandom, hashNoise2, seedToUint32, type TerrainSeed } from "
 export {
   createProceduralGroundGeometry,
   createProceduralTerrainSampler,
-  fbmValueNoise2,
   resolveTerrainSegments,
   resolveTerrainSize,
-  smoothValueNoise2,
+  toNoiseFieldConfig,
   type ProceduralTerrainConfig,
   type ResolvedTerrainSegments,
   type ResolvedTerrainSize,
@@ -32,3 +31,17 @@ export {
   type TerrainHeightSampler,
   type TerrainVertexColorOptions,
 } from "./terrainMath";
+export {
+  arenaField,
+  flatField,
+  fractalNoise,
+  noiseField,
+  resolveGroundStep,
+  resolveTerrainField,
+  valueNoise,
+  withNormal,
+  type FractalNoiseConfig,
+  type NoiseFieldConfig,
+  type TerrainField,
+  type TerrainNormal,
+} from "@jgengine/core/world/terrain";

@@ -1,6 +1,7 @@
+import { noiseField, type NoiseFieldConfig } from "@jgengine/core/world/terrain";
 import * as THREE from "three";
 
-import { hashNoise2, type TerrainSeed } from "./random";
+import { type TerrainSeed } from "./random";
 
 export type TerrainArea = number | readonly [width: number, depth: number];
 export type TerrainHeightSampler = (x: number, z: number) => number;
@@ -11,8 +12,8 @@ export interface ProceduralTerrainConfig {
   seed?: TerrainSeed;
   height?: number;
   moundScale?: number;
-  detailScale?: number;
-  detail?: number;
+  octaves?: number;
+  ridged?: boolean;
   baseOffset?: number;
 }
 
@@ -43,48 +44,19 @@ export function resolveTerrainSegments(segments: ProceduralTerrainConfig["segmen
   return { x: resolved, z: resolved };
 }
 
-export function smoothValueNoise2(x: number, z: number, seed: TerrainSeed = 1): number {
-  const x0 = Math.floor(x);
-  const z0 = Math.floor(z);
-  const xf = x - x0;
-  const zf = z - z0;
-  const sx = xf * xf * (3 - 2 * xf);
-  const sz = zf * zf * (3 - 2 * zf);
-  const a = hashNoise2(x0, z0, seed);
-  const b = hashNoise2(x0 + 1, z0, seed);
-  const c = hashNoise2(x0, z0 + 1, seed);
-  const d = hashNoise2(x0 + 1, z0 + 1, seed);
-  const top = THREE.MathUtils.lerp(a, b, sx);
-  const bottom = THREE.MathUtils.lerp(c, d, sx);
-  return THREE.MathUtils.lerp(top, bottom, sz);
-}
-
-export function fbmValueNoise2(x: number, z: number, seed: TerrainSeed = 1, octaves = 4): number {
-  let amplitude = 0.5;
-  let frequency = 1;
-  let total = 0;
-  let normalizer = 0;
-  for (let octave = 0; octave < octaves; octave += 1) {
-    total += smoothValueNoise2(x * frequency, z * frequency, `${seed}:${octave}`) * amplitude;
-    normalizer += amplitude;
-    amplitude *= 0.5;
-    frequency *= 2;
-  }
-  return normalizer === 0 ? 0 : total / normalizer;
+export function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig {
+  return {
+    seed: config.seed,
+    amplitude: config.height ?? 1.4,
+    frequency: config.moundScale ?? 0.075,
+    octaves: config.octaves ?? 4,
+    ridged: config.ridged ?? false,
+    baseHeight: config.baseOffset ?? 0,
+  };
 }
 
 export function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler {
-  const seed = config.seed ?? 1;
-  const height = config.height ?? 1.4;
-  const moundScale = config.moundScale ?? 0.075;
-  const detailScale = config.detailScale ?? 0.42;
-  const detail = config.detail ?? 0.18;
-  const baseOffset = config.baseOffset ?? 0;
-  return (x, z) => {
-    const mounds = fbmValueNoise2(x * moundScale, z * moundScale, seed, 4) * 2 - 1;
-    const relief = fbmValueNoise2(x * detailScale + 19.7, z * detailScale - 11.3, `${seed}:detail`, 3) * 2 - 1;
-    return baseOffset + mounds * height + relief * height * detail;
-  };
+  return noiseField(toNoiseFieldConfig(config)).sampleHeight;
 }
 
 export function createProceduralGroundGeometry(

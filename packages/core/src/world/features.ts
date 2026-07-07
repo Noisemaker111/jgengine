@@ -15,6 +15,11 @@ export interface TerrainEnvironmentConfig {
   heightMap?: string;
   material?: string;
   seed?: string;
+  frequency?: number;
+  octaves?: number;
+  ridged?: boolean;
+  baseHeight?: number;
+  waterLevel?: number;
 }
 
 export interface RainEnvironmentConfig {
@@ -186,6 +191,11 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
       ...(config.heightMap === undefined ? {} : { heightMap: config.heightMap }),
       ...(config.material === undefined ? {} : { material: config.material }),
       ...(config.seed === undefined ? {} : { seed: config.seed }),
+      ...(config.frequency === undefined ? {} : { frequency: config.frequency }),
+      ...(config.octaves === undefined ? {} : { octaves: config.octaves }),
+      ...(config.ridged === undefined ? {} : { ridged: config.ridged }),
+      ...(config.baseHeight === undefined ? {} : { baseHeight: config.baseHeight }),
+      ...(config.waterLevel === undefined ? {} : { waterLevel: config.waterLevel }),
     },
   );
 }
