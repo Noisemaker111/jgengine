@@ -261,7 +261,51 @@ function tickTargetRange(ctx: GameContext): void {
   }
 }
 
+const FEEL_ELEMENTS = ["fire", "frost", "lightning", "arcane"];
+let telegraphTimer = 0;
+let critTimer = 0;
+
+function tickCombatFeel(ctx: GameContext, dt: number): void {
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  if (player === null) return;
+
+  telegraphTimer += dt;
+  if (telegraphTimer >= 0.35) {
+    telegraphTimer = 0;
+    ctx.scene.entity.telegraph({
+      from: ctx.player.userId,
+      shape: { kind: "circle", radius: 3.5 },
+      at: [player.position[0] - 3.5, player.position[1], player.position[2] + 7],
+      windupMs: 2600,
+      kind: "danger",
+    });
+    ctx.scene.entity.telegraph({
+      from: ctx.player.userId,
+      shape: { kind: "cone", radius: 8, angle: Math.PI / 2.6 },
+      at: [player.position[0] + 3, player.position[1], player.position[2] + 1],
+      dir: 0,
+      windupMs: 2600,
+      kind: "warn",
+    });
+  }
+
+  critTimer += dt;
+  if (critTimer >= 0.16) {
+    critTimer = 0;
+    const roll = Math.random();
+    ctx.scene.entity.floatText({
+      instanceId: ctx.player.userId,
+      text: String(140 + Math.floor(Math.random() * 520)),
+      kind: "damage",
+      crit: roll > 0.55,
+      scale: 1.4,
+      ...(roll > 0.35 ? { element: FEEL_ELEMENTS[Math.floor(Math.random() * FEEL_ELEMENTS.length)] } : {}),
+    });
+  }
+}
+
 function onTick(ctx: GameContext, dt: number): void {
+  tickCombatFeel(ctx, dt);
   tickAbilityCooldowns(dt, performance.now() / 1000);
   tickPendingProjectiles(dt, (shotId) => {
     ctx.scene.entity.settleProjectile(shotId);

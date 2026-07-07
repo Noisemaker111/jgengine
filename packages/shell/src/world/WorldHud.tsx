@@ -116,39 +116,38 @@ interface ActiveTelegraph {
   bornMs: number;
 }
 
-function telegraphGeometry(shape: TelegraphShape): THREE.BufferGeometry {
-  if (shape.kind === "circle") return new THREE.CircleGeometry(shape.radius, 48);
-  if (shape.kind === "ring") return new THREE.RingGeometry(shape.innerRadius, shape.radius, 48);
-  if (shape.kind === "cone") {
-    return new THREE.CircleGeometry(shape.radius, 40, -shape.angle / 2, shape.angle);
-  }
-  return new THREE.PlaneGeometry(shape.width, shape.length);
+function TelegraphGeometry({ shape }: { shape: TelegraphShape }) {
+  if (shape.kind === "circle") return <circleGeometry args={[shape.radius, 48]} />;
+  if (shape.kind === "ring") return <ringGeometry args={[shape.innerRadius, shape.radius, 48]} />;
+  if (shape.kind === "cone") return <circleGeometry args={[shape.radius, 40, -shape.angle / 2, shape.angle]} />;
+  return <planeGeometry args={[shape.width, shape.length]} />;
 }
 
 function TelegraphDecal({ active, nowMs }: { active: ActiveTelegraph; nowMs: number }) {
-  const geometry = useMemo(() => telegraphGeometry(active.event.shape), [active.event.shape]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
   const progress = Math.max(0, Math.min(1, (nowMs - active.bornMs) / active.event.windupMs));
   const [x, y, z] = active.event.position;
   const dir = active.event.dir ?? 0;
   const shape = active.event.shape;
   const forwardOffset = shape.kind === "line" ? shape.length / 2 : 0;
   const color = active.event.kind === "danger" ? "#ef4444" : "#f59e0b";
+  const pulse = 0.45 + 0.5 * progress;
   return (
-    <group
-      position={[x + Math.sin(dir) * forwardOffset, y + 0.05, z + Math.cos(dir) * forwardOffset]}
+    <mesh
+      position={[x + Math.sin(dir) * forwardOffset, y + 0.06, z + Math.cos(dir) * forwardOffset]}
       rotation={[-Math.PI / 2, 0, shape.kind === "line" || shape.kind === "cone" ? -dir : 0]}
+      renderOrder={999}
     >
-      <mesh geometry={geometry}>
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.18 + 0.5 * progress}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-        />
-      </mesh>
-    </group>
+      <TelegraphGeometry shape={shape} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={pulse}
+        side={THREE.DoubleSide}
+        depthWrite={false}
+        depthTest={false}
+        toneMapped={false}
+      />
+    </mesh>
   );
 }
 
