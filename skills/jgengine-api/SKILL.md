@@ -62,6 +62,13 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Inventory slots | `inventory/slotModel` | `createSlots`, `placeAt`, `removeAt`, `moveSlot`, `firstEmpty`, `compactSlots`, `Slot`, `SlotGrid` |
 | World geometry | `world/geometry` | `footprintAabb`, `aabbOverlap`, `snapToGrid`, `resolveMove`, `Aabb`, `Footprint` |
 | Placement | `world/placement` | `validatePlacement`, `footprintObstacle`, `PlacementRules`, `PlacementResult` |
+| Placement ghost | `world/placementController` | `createPlacementController`, `PlacementController`, `PlacementPreview`, `PlacementCommit`, `SnapMode`, `quarterTurnsToRotationY` |
+| Connector sockets | `world/connectors` | `snapToNearest`, `socketsCompatible`, `worldSockets`, `socketWorldPosition`, `ConnectorSocket`, `ConnectorPieceDef`, `PlacedPiece`, `SnapResult` |
+| Structural support | `world/support` | `solveSupport`, `toDebrisBodies`, `SupportPiece`, `SupportLink`, `SupportResult` |
+| Wall/roof authoring | `world/walls` | `createWallDrawTool`, `footprintFromWalls`, `autoRoof`, `wallSegments`, `createSurfacePaint`, `WallDrawTool`, `RoofPlan`, `EnclosedFootprint` |
+| Placed structures | `world/placedStructureStore` | `createPlacedStructureStore`, `PlacedStructure`, `PlacedStructureStore`, `PlacedStructureSnapshot` |
+| Terraform | `world/terraform` | `createEditableTerrain`, `createTerraformBrush`, `brushWeight`, `EditableTerrain`, `TerraformBrush`, `TerraformEdit`, `TerraformMode` |
+| Build permissions | `world/buildPermissions` | `createPlotPermissions`, `createContributionPool`, `PlotPermissions`, `ContributionPool`, `BuildRole`, `ContributionGoal` |
 | Interiors | `world/interiors` | `createInteriors`, `Interior`, `Exterior`, `SpaceRef` |
 | Game clock | `time/gameClock` | `getScaledElapsedMs`, `computeGameDay`, `SECONDS_PER_GAME_DAY` |
 | Scene behaviors | `scene/behaviors` | `wander`, `promptable`, `talkable`, `player` |
@@ -556,6 +563,20 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
 | `buildingIndex(district)` → `BuildingIndex` | `at`/`within`/`nearest`/`isInside`/`blockers` over a generated district — placement avoidance, pathfinding |
 
 Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
+
+### Interactive building & terraform (renderer-free tools)
+
+Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/Fortnite/Dinkum. All pure `@jgengine/core/world`; the shell renders the ghost/tint/brush (`shell/structures/PlacementGhost`, `shell/terrain/EditableGround`, `shell/terrain/TerraformBrushCursor`) driven by `pointer.worldHit()`.
+
+| Primitive | Answers |
+|-----------|---------|
+| `createPlacementController({ footprint, rules, snapMode, grid })` | Owns the ghost: `hover(hit)` → `PlacementPreview` (`valid` tint wraps `validatePlacement`), `rotate()`, `setSnapMode`/`cycleSnapMode` (`"grid"`/`"free"`/`"surface"`), `commit()` → `PlacementCommit` (`rotationY` via `quarterTurnsToRotationY`). Feed it `pointer.worldHit()`. |
+| `snapToNearest(registry, placed, movingDef, cursor, { snapDistance })` | Typed connector sockets — snaps a piece's socket onto the nearest **compatible** placed socket (`socketsCompatible` = both sides `accept` the other type). `worldSockets`/`socketWorldPosition` expand a piece's sockets to world space. |
+| `solveSupport(pieces, links, { maxDistance })` → `SupportResult` | Walks the connector graph to any `grounded` piece: `supported` stays, `unsupported` collapses, `distance` (hops-to-ground) drives the white→red decay tint. `toDebrisBodies(pieces, unsupported)` → `AddBodyOptions[]` for the `PhysicsWorld` debris sink. |
+| `createWallDrawTool({ snap, closeTolerance })` | Drag wall points → auto-encloses when the path returns to the start (`isEnclosed`), `footprint()` derives the room `EnclosedFootprint`, `roof()` auto-fits a hip/gable/flat `RoofPlan`. `createSurfacePaint()` stores per-tile floor/wall surfaces. |
+| `createPlacedStructureStore()` | Save/load a built layout: `add`/`move`/`rotate`/`remove`/`select`, `snapshot()`↔`load()` round-trip (survives reload), `subscribe` for the renderer. |
+| `createEditableTerrain({ bounds, base, cellSize })` → `EditableTerrain` | A `TerrainField` you can **write back to**: `apply(edit: TerraformEdit)` raises/lowers/flattens/paints under a cursor and re-samples `sampleHeight`; `surfaceAt`, `snapshot`/`restore`, `reset`. `createTerraformBrush(field)` is the cursor tool (`raise`/`lower`/`flatten`/`paint`, radius/strength). This write-back grid is the shared terrain-edit pattern. |
+| `createPlotPermissions({ plotId, ownerId, guildId? })` + `createContributionPool(goal)` | Per-plot/guild edit authority (`canEdit`/`canView`, `grant`/`revoke` `BuildRole`, guild inheritance) for co-op building, plus a pooled-resource contribution model (`contribute` caps at the goal, reports overflow, `isComplete`, per-contributor totals). |
 
 ### Physics world (optional, headless)
 

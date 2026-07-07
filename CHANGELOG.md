@@ -23,6 +23,16 @@ the latest and surface the migration steps.
   - `@jgengine/core/interaction/contextMenu` — `contextVerb` / `buildContextMenu` / `contextVerbInput`; catalog entities/objects carry `verbs` for right-click menus.
   - `PlayableGame.pointer` config (`moveCommand`, `select`, `orderCommand`, `contextMenu`, `aim`) — the `@jgengine/shell` `GamePlayerShell` casts the cursor (`pointer.worldHit()`), renders a drag-marquee + right-click verb menu, routes primary-ability aim to the cursor, and remaps orbit to middle-drag so the left button drives verbs.
 
+- **Interactive placement, building & terraform.** Data-only placement becomes the build tooling of Valheim/Enshrouded/The Sims/Fortnite/Dinkum/Palia, all pure `@jgengine/core/world` driven by `pointer.worldHit()`, with shell renderers for the ghost/tint/brush.
+  - `@jgengine/core/world/placementController` — `createPlacementController(footprint)` owns the placement ghost: `hover(hit)` → `PlacementPreview` (valid/invalid tint wrapping `validatePlacement`), `rotate`, grid/free/surface `snapMode`, `commit` → `PlacementCommit`.
+  - `@jgengine/core/world/connectors` — typed connector sockets with `snapToNearest` snap-to-nearest-compatible (`socketsCompatible`, `worldSockets`).
+  - `@jgengine/core/world/support` — `solveSupport` walks the connector graph to ground (`supported`/`unsupported`/hop-`distance` for white→red decay); `toDebrisBodies` sinks collapsed pieces into the `PhysicsWorld`.
+  - `@jgengine/core/world/walls` — `createWallDrawTool` (drag walls → auto-enclose → `footprintFromWalls` → `autoRoof` hip/gable/flat) plus `createSurfacePaint` for per-tile floor/wall surfaces.
+  - `@jgengine/core/world/placedStructureStore` — `createPlacedStructureStore` save/load/select/move/delete with a `snapshot`↔`load` round-trip that survives reload.
+  - `@jgengine/core/world/terraform` — `createEditableTerrain({ bounds, base, cellSize })` makes a `TerrainField` you can **write back to** via `apply(edit)` (raise/lower/flatten/paint), and `createTerraformBrush` is the cursor tool. This height-offset grid is the shared terrain-edit write-back pattern.
+  - `@jgengine/core/world/buildPermissions` — `createPlotPermissions` (per-plot/guild `BuildRole` edit authority) + `createContributionPool` (co-op pooled-resource contribution model).
+  - `@jgengine/shell` renderers: `structures/PlacementGhost` (tinted ghost), `terrain/EditableGround` (renders an `EditableTerrain` with surface paint), `terrain/TerraformBrushCursor` (brush ring); the `builder-sandbox` demo game wires them to `pointer.worldHit()`.
+
 ## 0.6.0
 
 An additive release: **every 0.5.0 API is unchanged**, so upgrading is only a

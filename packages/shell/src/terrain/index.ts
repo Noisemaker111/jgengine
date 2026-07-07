@@ -1,5 +1,7 @@
 export { GrassField, type GrassFieldProps } from "./GrassField";
 export { ProceduralGround, type ProceduralGroundProps } from "./ProceduralGround";
+export { EditableGround, type EditableGroundProps } from "./EditableGround";
+export { TerraformBrushCursor, type TerraformBrushCursorProps } from "./TerraformBrushCursor";
 export {
   createGrassBladeGeometry,
   resolveGrassBladeGeometryOptions,
