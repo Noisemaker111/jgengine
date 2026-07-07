@@ -1,6 +1,6 @@
 ---
 name: jgengine-assets
-description: License-safe 3D models, textures, sprites, and audio for JGengine games.
+description: Use when sourcing or wiring art for a JGengine game — license-safe (CC0) 3D models, textures, HUD icons, and audio, which packs to pull, and how to wire them through the engine seams so no placeholder primitives or graybox ground ship.
 ---
 
 # JGengine — Real assets from day one

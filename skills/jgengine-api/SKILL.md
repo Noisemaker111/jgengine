@@ -1,6 +1,6 @@
 ---
 name: jgengine-api
-description: API reference for JGengine, the TypeScript game engine.
+description: Use when building, extending, or debugging a game on JGengine, or when another skill needs the engine surface — defineGame, GameContext, the three buckets, catalogs, and the world/combat/loot/quest/trade primitives. Read before writing any game.config.ts or catalog.
 ---
 
 # JGengine — API Reference
