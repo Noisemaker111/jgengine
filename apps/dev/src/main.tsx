@@ -26,6 +26,7 @@ const gameRegistry: GameRegistry = {
   "stress-bench": () => import("@dogfood/stress-bench").then((module) => module.stressBenchGame),
   "destruction-demo": () =>
     import("@dogfood/destruction-demo").then((module) => module.destructionDemoGame),
+  "kart-circuit": () => import("@dogfood/kart-circuit").then((module) => module.kartCircuitGame),
 };
 
 const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {

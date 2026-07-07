@@ -16,12 +16,26 @@ import { createEmptyPlayerRow, splitProfilePlayer } from "./snapshot";
 
 export type GameServerStatus = "open" | "running" | "closed";
 
+export type SessionVisibility = "public" | "private";
+
+export type SessionAttributes = {
+  label?: string;
+  mode?: string;
+  visibility?: SessionVisibility;
+  joinCode?: string;
+  tags?: string[];
+};
+
 export type GameServerRecord = {
   serverId: string;
   gameId: string;
   status: GameServerStatus;
   mode?: string;
   modeConfig?: unknown;
+  label?: string;
+  visibility?: SessionVisibility;
+  joinCode?: string;
+  tags?: string[];
   memberUserIds: string[];
   slotsPerServer: number;
   save: SaveConfig;
@@ -116,6 +130,10 @@ export type ServerListing = {
   memberCount: number;
   slotsPerServer: number;
   mode?: string;
+  label?: string;
+  visibility?: SessionVisibility;
+  joinCode?: string;
+  tags?: string[];
   updatedAt: number;
 };
 
@@ -126,6 +144,10 @@ export function toServerListing(record: GameServerRecord): ServerListing {
     memberCount: record.memberUserIds.length,
     slotsPerServer: record.slotsPerServer,
     mode: record.mode,
+    label: record.label,
+    visibility: record.visibility,
+    joinCode: record.joinCode,
+    tags: record.tags,
     updatedAt: record.updatedAt,
   };
 }

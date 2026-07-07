@@ -6,6 +6,8 @@ import type {
   JoinServerResult,
   TransportRunCommandResult,
 } from "@jgengine/core/runtime/transport";
+import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
+import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 import {
   decodeWsServerMessage,
   encodeWsMessage,
@@ -33,6 +35,9 @@ export type WsPresenceSync = {
 
 export type WsBackend = GameBackend & {
   pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>;
+  browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>;
+  joinByCode: (args: { gameId: string; code: string }) => Promise<JoinServerResult | null>;
+  createSession: (args: { gameId: string; attributes?: SessionAttributes }) => Promise<JoinServerResult>;
   presenceSync: WsPresenceSync;
   close: () => void;
 };
@@ -286,6 +291,37 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         action: args.action,
         entry: args.entry,
       }));
+    },
+    async browse(args) {
+      const result = await request((id) => ({
+        v: 1,
+        t: "browse",
+        id,
+        gameId: args.gameId,
+        filter: args.filter,
+        limit: args.limit,
+      }));
+      return result as SessionListing[];
+    },
+    async joinByCode(args) {
+      const result = await request((id) => ({
+        v: 1,
+        t: "joinByCode",
+        id,
+        gameId: args.gameId,
+        code: args.code,
+      }));
+      return result as JoinServerResult | null;
+    },
+    async createSession(args) {
+      const result = await request((id) => ({
+        v: 1,
+        t: "join",
+        id,
+        gameId: args.gameId,
+        attributes: args.attributes,
+      }));
+      return result as JoinServerResult;
     },
     close: () => {
       closed = true;
