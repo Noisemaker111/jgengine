@@ -25,7 +25,7 @@
 | G19 Multiplayer depth | opus | claude/gaps-netcode (stack→gaps-vehicles) | in-flight | — |
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | ✅ DONE (green) | #135 |
 | G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | ✅ DONE (green) | #140 |
-| G21 Sensors/vision/observer | sonnet | claude/gaps-sensors (stack→gaps-camera-rigs) | in-flight | — |
+| G21 Sensors/vision/observer | sonnet | claude/gaps-sensors (stack→gaps-camera-rigs) | ✅ DONE (green) | #146 |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | ✅ DONE (green) | #136 |
 | G17 Objective/mode/session | opus | claude/gaps-session (stack→gaps-item-gear) | ✅ DONE (green) | #142 |
 — all 22 groups launched —
