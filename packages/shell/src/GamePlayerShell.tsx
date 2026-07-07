@@ -55,8 +55,7 @@ import type { EntitySpriteConfig, ModelConfig, PointerConfig } from "@jgengine/c
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
-import { GAME_SIM_FRAME_PRIORITY, GameOrbitCamera } from "./camera";
-import { GameFirstPersonCamera } from "./camera/GameFirstPersonCamera";
+import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind } from "./camera";
 import { PointerProbe } from "./pointer/PointerProbe";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import {
@@ -770,8 +769,10 @@ export function GamePlayerShell({
 
   const GameUI = playable.GameUI;
   const WorldOverlay = playable.WorldOverlay;
-  const firstPerson = playable.camera?.perspective === "first";
-  const showReticle = firstPerson && playable.camera?.firstPerson?.reticle !== false;
+  const rigKind = resolveRigKind(playable.camera);
+  const firstPerson = rigKind === "first";
+  const showReticle =
+    (firstPerson && playable.camera?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const worldBars = playable.worldHealthBars;
   const barsStatId =
     worldBars === undefined || worldBars === false
@@ -956,26 +957,15 @@ export function GamePlayerShell({
           <AudioListener engine={audioEngine} />
           <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
           <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />
-          {firstPerson ? (
-            <GameFirstPersonCamera
-              yawRef={yawRef}
-              pitchRef={pitchRef}
-              config={playable.camera?.firstPerson}
-              followEntityId={playable.camera?.followEntityId}
-            />
-          ) : (
-            <GameOrbitCamera
-              yawRef={yawRef}
-              pitchRef={pitchRef}
-              config={playable.camera}
-              followEntityId={playable.camera?.followEntityId}
-              onCameraFollow={playable.camera?.onCameraFollow}
-              pointerControls={pointerUsesLeft}
-              onDragChange={(dragging) => {
-                cameraDraggingRef.current = dragging;
-              }}
-            />
-          )}
+          <GameCameraRig
+            yawRef={yawRef}
+            pitchRef={pitchRef}
+            config={playable.camera}
+            pointerControls={pointerUsesLeft}
+            onDragChange={(dragging) => {
+              cameraDraggingRef.current = dragging;
+            }}
+          />
           <PointerProbe service={pointerService} />
         </GameProvider>
         <RemotePlayers rows={remotePlayers} />

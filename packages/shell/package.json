@@ -19,6 +19,10 @@
       "types": "./dist/weather/index.d.ts",
       "default": "./dist/weather/index.js"
     },
+    "./camera": {
+      "types": "./dist/camera/index.d.ts",
+      "default": "./dist/camera/index.js"
+    },
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
