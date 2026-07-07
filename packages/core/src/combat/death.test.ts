@@ -41,8 +41,20 @@ describe("death system", () => {
     expect(normalizeOnDeath({ drops: "mob_tier_1", command: "player.respawn" })).toEqual({
       drops: [{ table: "mob_tier_1" }],
       command: { name: "player.respawn" },
+      dropMode: "grant",
     });
-    expect(normalizeOnDeath(null)).toEqual({ drops: [], command: null });
+    expect(normalizeOnDeath(null)).toEqual({ drops: [], command: null, dropMode: "grant" });
+  });
+
+  test("normalizeOnDeath threads dropMode and scatter through unchanged", () => {
+    expect(
+      normalizeOnDeath({ drops: "mob_tier_1", dropMode: "world", scatter: { radius: 2, minRadius: 0.2 } }),
+    ).toEqual({
+      drops: [{ table: "mob_tier_1" }],
+      command: null,
+      dropMode: "world",
+      scatter: { radius: 2, minRadius: 0.2 },
+    });
   });
 
   test("player kill rolls matching tables, runs the command, and despawns", () => {

@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import type { ProximityPrompt as ProximityPromptDef } from "@jgengine/core/interaction/proximityPrompt";
+import {
+  evaluateSkillCheck,
+  type SkillCheckConfig,
+  type SkillCheckResult,
+} from "@jgengine/core/interaction/skillCheck";
+import { pendingQteStep, type QteStep } from "@jgengine/core/interaction/qte";
 import type { FeedEntry } from "@jgengine/core/game/feed";
 import type { StatLevelUpEvent } from "@jgengine/core/game/events";
+import { rollCheck, type CheckAdvantage, type CheckResult } from "@jgengine/core/stats/rollCheck";
 import { useGameContext } from "./provider";
 import { useCurrency, useEntityStat, useFeed, useInventory, useLocalPlayerDead } from "./hooks";
 
@@ -136,9 +143,19 @@ export function KeybindRow({
   );
 }
 
+export interface DialogueCheck {
+  label?: string;
+  modifier: number;
+  dc: number;
+  advantage?: CheckAdvantage;
+}
+
 export interface DialogueChoice {
   label: string;
   invoke: { command: string; args?: unknown } | null;
+  check?: DialogueCheck;
+  onSuccess?: { command: string; args?: unknown } | null;
+  onFailure?: { command: string; args?: unknown } | null;
 }
 
 export type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] };
@@ -148,33 +165,200 @@ export interface DialogueDef {
   lines: readonly DialogueLine[];
 }
 
+export function resolveDialogueInvoke(
+  choice: DialogueChoice,
+  result: CheckResult | null,
+): { command: string; args?: unknown } | null {
+  if (result === null) return choice.invoke;
+  return result.success ? (choice.onSuccess ?? choice.invoke) : (choice.onFailure ?? choice.invoke);
+}
+
 export function DialogueBox({
   dialogue,
   onChoice,
+  rng,
   className,
+  lineClassName,
+  speakerClassName,
+  choicesClassName,
+  choiceClassName,
+  checkClassName,
 }: {
   dialogue: DialogueDef;
-  onChoice?: (choice: DialogueChoice) => void;
+  onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void;
+  rng?: () => number;
   className?: string;
+  lineClassName?: string;
+  speakerClassName?: string;
+  choicesClassName?: string;
+  choiceClassName?: string;
+  checkClassName?: string;
 }) {
   return (
     <div className={className} data-dialogue={dialogue.id}>
       {dialogue.lines.map((line, index) =>
         "choices" in line ? (
-          <div key={index} data-choices>
+          <div key={index} className={choicesClassName} data-choices>
             {line.choices.map((choice) => (
-              <button key={choice.label} type="button" onClick={() => onChoice?.(choice)}>
-                {choice.label}
+              <button
+                key={choice.label}
+                type="button"
+                className={choiceClassName}
+                data-dc={choice.check?.dc}
+                onClick={() => onChoice?.(choice, choice.check === undefined ? null : rollCheck(choice.check, rng))}
+              >
+                <span>{choice.label}</span>
+                {choice.check !== undefined && (
+                  <span className={checkClassName} data-check>
+                    {choice.check.label ?? "Check"} DC {choice.check.dc}
+                    {choice.check.advantage !== undefined && choice.check.advantage !== "normal"
+                      ? ` (${choice.check.advantage})`
+                      : ""}
+                  </span>
+                )}
               </button>
             ))}
           </div>
         ) : (
-          <p key={index}>
-            <span data-speaker>{line.speaker}</span>
+          <p key={index} className={lineClassName}>
+            <span className={speakerClassName} data-speaker>
+              {line.speaker}
+            </span>
             <span>{line.text}</span>
           </p>
         ),
       )}
+    </div>
+  );
+}
+
+export function SkillCheckBar({
+  config,
+  startedAt,
+  className,
+  trackClassName,
+  zoneClassName,
+  markerClassName,
+  renderStatus,
+}: {
+  config: SkillCheckConfig;
+  startedAt: number;
+  className?: string;
+  trackClassName?: string;
+  zoneClassName?: string;
+  markerClassName?: string;
+  renderStatus?: (result: SkillCheckResult) => ReactNode;
+}) {
+  const ctx = useGameContext();
+  const [, tick] = useState(0);
+  useEffect(() => {
+    let frame: number;
+    const step = () => {
+      tick((n) => n + 1);
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const elapsed = Math.max(0, ctx.time.now() - startedAt);
+  const result = evaluateSkillCheck(config, elapsed);
+  const zoneLeft = (result.zone.start / config.trackWidth) * 100;
+  const zoneWidth = ((result.zone.end - result.zone.start) / config.trackWidth) * 100;
+  const markerLeft = (result.markerPosition / config.trackWidth) * 100;
+  return (
+    <div className={className} data-skill-check data-in-zone={result.success} data-timed-out={result.timedOut}>
+      <div className={trackClassName} data-track style={{ position: "relative" }}>
+        <div
+          className={zoneClassName}
+          data-zone
+          style={{ position: "absolute", left: `${zoneLeft}%`, width: `${zoneWidth}%`, height: "100%" }}
+        />
+        <div
+          className={markerClassName}
+          data-marker
+          style={{ position: "absolute", left: `${markerLeft}%`, height: "100%" }}
+        />
+      </div>
+      {renderStatus?.(result)}
+    </div>
+  );
+}
+
+export function QteTrack({
+  steps,
+  startedAt,
+  className,
+  stepClassName,
+  activeClassName,
+  doneClassName,
+}: {
+  steps: readonly QteStep[];
+  startedAt: number;
+  className?: string;
+  stepClassName?: string;
+  activeClassName?: string;
+  doneClassName?: string;
+}) {
+  const ctx = useGameContext();
+  const [, tick] = useState(0);
+  useEffect(() => {
+    let frame: number;
+    const step = () => {
+      tick((n) => n + 1);
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const elapsed = Math.max(0, ctx.time.now() - startedAt);
+  const active = pendingQteStep(steps, elapsed);
+  return (
+    <div className={className} data-qte>
+      {steps.map((step) => {
+        const isActive = active?.id === step.id;
+        const isDone = elapsed > step.windowEnd;
+        const classes = [stepClassName, isActive ? activeClassName : isDone ? doneClassName : undefined]
+          .filter(Boolean)
+          .join(" ");
+        return (
+          <div
+            key={step.id}
+            className={classes.length > 0 ? classes : undefined}
+            data-qte-step={step.id}
+            data-active={isActive}
+            data-done={isDone}
+          >
+            {step.action}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function CaptureOdds({
+  chance,
+  className,
+  fillClassName,
+}: {
+  chance: number;
+  className?: string;
+  fillClassName?: string;
+}) {
+  const percent = Math.round(Math.min(1, Math.max(0, chance)) * 100);
+  return (
+    <div
+      className={className}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={percent}
+      data-capture-odds={percent}
+    >
+      <div className={fillClassName} style={{ width: `${percent}%`, height: "100%" }} />
+      <span data-capture-odds-label style={{ position: "relative", zIndex: 1 }}>
+        {percent}%
+      </span>
     </div>
   );
 }

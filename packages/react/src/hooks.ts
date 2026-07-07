@@ -1,5 +1,7 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
+import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import type { GameEvents } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/game/feed";
 import type { QuestInstance } from "@jgengine/core/game/quest";
@@ -9,6 +11,8 @@ import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import type { StatValue } from "@jgengine/core/scene/entityStats";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import type { RosterEntry } from "@jgengine/core/scene/roster";
+import type { WorldItemRecord } from "@jgengine/core/game/worldItem";
 import type { ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
 import {
   resolveActivePrompt,
@@ -38,6 +42,20 @@ export function useSceneEntities(): readonly SceneEntity[] {
 
 export function useSceneObjects(): readonly SceneObject[] {
   return useGameStore((ctx) => ctx.scene.object.list());
+}
+
+export function useWorldItems(): readonly WorldItemRecord[] {
+  return useGameStore((ctx) => ctx.scene.worldItem.list());
+}
+
+/** Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight. */
+export function useNearestWorldItem(radius: number): WorldItemRecord | null {
+  return useGameStore((ctx) => {
+    const player = localPlayerEntity(ctx);
+    if (player === null) return null;
+    const instanceId = ctx.scene.worldItem.nearestInRadius(player.position, radius);
+    return instanceId === null ? null : ctx.scene.worldItem.get(instanceId);
+  });
 }
 
 export function useEntityStat(instanceId: string, statId: string): StatValue | null {
@@ -78,6 +96,10 @@ export function usePresence(userId: string): PresenceInfo {
   return useGameStore((ctx) => ctx.game.social.presence.get(userId));
 }
 
+export function useRoster(userId?: string): readonly RosterEntry[] {
+  return useGameStore((ctx) => ctx.game.roster.list(userId ?? ctx.player.userId));
+}
+
 export function useLeaderboard(
   stat: string,
   options: { scope: LeaderboardScope; limit?: number },
@@ -115,4 +137,50 @@ export function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T
     if (player === null) return null;
     return resolveActivePrompt({ x: player.position[0], z: player.position[2] }, prompts);
   });
+}
+
+function useEngineHeartbeat(intervalMs: number): void {
+  const ctx = useGameContext();
+  useSyncExternalStore(ctx.subscribe, ctx.version, ctx.version);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (intervalMs <= 0 || typeof window === "undefined") return undefined;
+    const id = window.setInterval(() => setTick((current) => current + 1), intervalMs);
+    return () => window.clearInterval(id);
+  }, [intervalMs]);
+}
+
+export interface AbilitySlotBindingOptions {
+  intervalMs?: number;
+}
+
+export function useAbilitySlots(
+  kit: AbilityKit,
+  resourceAvailable?: number,
+  options?: AbilitySlotBindingOptions,
+): AbilitySlotSnapshot[] {
+  useEngineHeartbeat(options?.intervalMs ?? 80);
+  return kit.snapshot(resourceAvailable);
+}
+
+export function useAbilitySlot(
+  kit: AbilityKit,
+  slotId: string,
+  resourceAvailable?: number,
+  options?: AbilitySlotBindingOptions,
+): AbilitySlotSnapshot | null {
+  useEngineHeartbeat(options?.intervalMs ?? 80);
+  return kit.state(slotId, resourceAvailable);
+}
+
+export interface EventMeterView {
+  value: number;
+  fraction: number;
+  tier: string | null;
+  ready: boolean;
+}
+
+export function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView {
+  useEngineHeartbeat(options?.intervalMs ?? 80);
+  return { value: meter.value(), fraction: meter.fraction(), tier: meter.tier(), ready: meter.ready() };
 }

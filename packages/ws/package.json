@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/ws",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "description": "Browser-safe WebSocket client backend for JGengine: protocol codec, createWsBackend, and HTTP read helpers.",
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -26,7 +26,7 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.5.0"
+    "@jgengine/core": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

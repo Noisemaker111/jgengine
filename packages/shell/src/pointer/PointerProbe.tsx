@@ -1,0 +1,33 @@
+import { useThree } from "@react-three/fiber";
+import { useEffect } from "react";
+
+import type { PointerService } from "./pointerService";
+
+export function PointerProbe({ service }: { service: PointerService }) {
+  const camera = useThree((state) => state.camera);
+  const scene = useThree((state) => state.scene);
+  const gl = useThree((state) => state.gl);
+  const size = useThree((state) => state.size);
+
+  service.bind({ camera, scene, width: size.width, height: size.height });
+
+  useEffect(() => {
+    const el = gl.domElement;
+    const onMove = (event: PointerEvent) => {
+      const rect = el.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+      service.setCursor(x, y, true);
+    };
+    const onLeave = () => service.setCursor(0, 0, false);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", onLeave);
+      service.bind(null);
+    };
+  }, [gl, service]);
+
+  return null;
+}

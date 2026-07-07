@@ -9,10 +9,12 @@
     "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@dogfood/asset-showcase": "workspace:*",
-    "@dogfood/loot-shooter": "workspace:*",
-    "@dogfood/stress-bench": "workspace:*",
-    "@dogfood/world-of-warcraft": "workspace:*",
+    "@games/asset-showcase": "workspace:*",
+    "@games/destruction-demo": "workspace:*",
+    "@games/kart-circuit": "workspace:*",
+    "@games/loot-shooter": "workspace:*",
+    "@games/stress-bench": "workspace:*",
+    "@games/world-of-warcraft": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3"

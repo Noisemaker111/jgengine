@@ -1,5 +1,5 @@
-import { buildBenchWorld } from "../packages/games/stress-bench/src/benchState";
-import { DEFAULT_PARAMS, type BenchParams } from "../packages/games/stress-bench/src/params";
+import { buildBenchWorld } from "../Games/stress-bench/src/benchState";
+import { DEFAULT_PARAMS, type BenchParams } from "../Games/stress-bench/src/params";
 
 type Args = BenchParams & { frames: number; warmup: number };
 

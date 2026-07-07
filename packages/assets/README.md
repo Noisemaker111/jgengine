@@ -78,7 +78,7 @@ export const game: PlayableGame = {
 };
 ```
 
-`buildCatalog({ sources: ["kenney-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets search <term>` / `assets list --category <c>` instead of memorizing them. See `packages/games/asset-showcase` for a full working example.
+`buildCatalog({ sources: ["kenney-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets search <term>` / `assets list --category <c>` instead of memorizing them. See `Games/asset-showcase` for a full working example.
 
 ### Serving the bytes
 

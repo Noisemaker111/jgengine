@@ -7,6 +7,7 @@ import type {
   HostPersistence,
   PlayerProfileRecord,
   ServerListing,
+  SessionAttributes,
 } from "@jgengine/core/runtime/hostPersistence";
 import {
   buildHydratePlayers,
@@ -14,6 +15,8 @@ import {
   shouldAutoSave,
   toServerListing,
 } from "@jgengine/core/runtime/hostPersistence";
+import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
+import { browseSessions, findByJoinCode } from "@jgengine/core/multiplayer/matchmaking";
 import type { GameRuntimeSnapshot, RuntimeChunkRow } from "@jgengine/core/runtime/snapshot";
 import { clearDirtyFlags, createEmptyServerRow, splitProfilePlayer } from "@jgengine/core/runtime/snapshot";
 import type {
@@ -38,7 +41,22 @@ export type GameHostOptions = {
 };
 
 export type GameHost = {
-  joinServer: (args: { userId: string; gameId: string; serverId?: string }) => Promise<JoinServerResult>;
+  joinServer: (args: {
+    userId: string;
+    gameId: string;
+    serverId?: string;
+    attributes?: SessionAttributes;
+  }) => Promise<JoinServerResult>;
+  browseServers: (args: {
+    gameId: string;
+    filter?: MatchFilter;
+    limit?: number;
+  }) => Promise<SessionListing[]>;
+  joinByCode: (args: {
+    userId: string;
+    gameId: string;
+    code: string;
+  }) => Promise<JoinServerResult | null>;
   leaveServer: (args: { userId: string; serverId: string }) => Promise<void>;
   runCommand: (args: {
     userId: string;
@@ -203,7 +221,31 @@ export function createGameHost(options: GameHostOptions): GameHost {
       return { ticked, saved };
     });
 
-  return {
+  const collectListings = async (gameId: string): Promise<SessionListing[]> => {
+    const byId = new Map<string, GameServerRecord>();
+    for (const record of await persistence.listServers(gameId)) {
+      byId.set(record.serverId, record);
+    }
+    for (const entry of live.values()) {
+      if (entry.record.gameId !== gameId) continue;
+      byId.set(entry.record.serverId, entry.record);
+    }
+    return [...byId.values()].map((record) => ({
+      serverId: record.serverId,
+      gameId: record.gameId,
+      status: record.status,
+      visibility: record.visibility ?? "public",
+      memberCount: record.memberUserIds.length,
+      slotsPerServer: record.slotsPerServer,
+      label: record.label,
+      mode: record.mode,
+      joinCode: record.joinCode,
+      tags: record.tags,
+      updatedAt: record.updatedAt,
+    }));
+  };
+
+  const host: GameHost = {
     joinServer: (args) =>
       enqueue(async () => {
         const timestamp = now();
@@ -215,6 +257,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
         }
 
         if (entry === null) {
+          const attributes = args.attributes;
           const record: GameServerRecord = {
             serverId: createServerId(),
             gameId: args.gameId,
@@ -228,6 +271,11 @@ export function createGameHost(options: GameHostOptions): GameHost {
             tickAnchorMs: timestamp,
             createdAt: timestamp,
             updatedAt: timestamp,
+            ...(attributes?.label !== undefined ? { label: attributes.label } : {}),
+            ...(attributes?.mode !== undefined ? { mode: attributes.mode } : {}),
+            ...(attributes?.visibility !== undefined ? { visibility: attributes.visibility } : {}),
+            ...(attributes?.joinCode !== undefined ? { joinCode: attributes.joinCode } : {}),
+            ...(attributes?.tags !== undefined ? { tags: attributes.tags } : {}),
           };
           entry = await hydrate(record);
         }
@@ -259,6 +307,15 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
         return { serverId: entry.record.serverId, isNew };
       }),
+
+    browseServers: async (args) =>
+      browseSessions(await collectListings(args.gameId), args.filter ?? {}, { limit: args.limit }),
+
+    joinByCode: async (args) => {
+      const match = findByJoinCode(await collectListings(args.gameId), args.code);
+      if (match === null) return null;
+      return host.joinServer({ userId: args.userId, gameId: args.gameId, serverId: match.serverId });
+    },
 
     leaveServer: (args) =>
       enqueue(async () => {
@@ -421,4 +478,6 @@ export function createGameHost(options: GameHostOptions): GameHost {
       return () => listeners.delete(listener);
     },
   };
+
+  return host;
 }

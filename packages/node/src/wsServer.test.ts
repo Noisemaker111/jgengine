@@ -213,3 +213,78 @@ test("presence poses broadcast to subscribers and clamp teleports", async () => 
     await stack.shutdown();
   }
 });
+
+test("matchmaking: create private coded lobby, browse public, join by code over ws", async () => {
+  const stack = await startStack();
+  try {
+    const host = stack.connect("host");
+    const publicJoin = await host.createSession({
+      gameId: "test-game",
+      attributes: { visibility: "public", mode: "ranked", label: "Open Ranked" },
+    });
+    const privateJoin = await host.createSession({
+      gameId: "test-game",
+      attributes: { visibility: "private", joinCode: "COVE-77" },
+    });
+
+    const listings = await host.browse({ gameId: "test-game" });
+    expect(listings.map((l) => l.serverId)).toEqual([publicJoin.serverId]);
+
+    const friend = stack.connect("friend");
+    const missed = await friend.joinByCode({ gameId: "test-game", code: "WRONG" });
+    expect(missed).toBeNull();
+    const landed = await friend.joinByCode({ gameId: "test-game", code: "cove 77" });
+    expect(landed!.serverId).toBe(privateJoin.serverId);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("lag comp: the ws host retains presence history and rewinds to an interpolated position", async () => {
+  let clock = 0;
+  const host = createGameHost({ runtimes: [createTestRuntime()], persistence: memoryPersistence() });
+  const server = createGameWsServer({
+    host,
+    port: 0,
+    now: () => clock,
+    poseRules: {
+      maxSpeed: 1_000_000,
+      maxVerticalOffset: 1_000,
+      minElapsedSec: 0.001,
+      maxElapsedSec: 1,
+      keepAliveRefreshMs: 10_000,
+    },
+  });
+  await new Promise<void>((resolve) => server.wss.once("listening", resolve));
+  const url = `ws://127.0.0.1:${server.port()}`;
+  const alice = createWsBackend({
+    url,
+    userId: "alice",
+    poseTuning: { minIntervalMs: 0, heartbeatMs: 60_000, positionEpsilon: 0.001, verticalEpsilon: 0.001, rotationEpsilon: 0.001 },
+  });
+  try {
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const rosters = channel<WsPresenceRow[]>();
+    alice.presenceSync.subscribe(serverId, (rows) => rosters.push(rows));
+    await rosters.next();
+
+    clock = 1_000;
+    alice.presenceSync.syncPose(serverId, { x: 0, y: 0, z: 0, rotationY: 0, rotationPitch: 0 });
+    await rosters.next();
+
+    clock = 1_100;
+    alice.presenceSync.syncPose(serverId, { x: 4, y: 0, z: 0, rotationY: 0, rotationPitch: 0 });
+    await rosters.next();
+
+    const rewound = server.rewind({ serverId, atMs: 1_050 });
+    expect(rewound).toHaveLength(1);
+    expect(rewound[0]!.userId).toBe("alice");
+    expect(rewound[0]!.x).toBeCloseTo(2);
+
+    expect(server.rewind({ serverId: "missing", atMs: 1_050 })).toEqual([]);
+  } finally {
+    alice.close();
+    await server.close();
+    await host.stop();
+  }
+});

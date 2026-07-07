@@ -36,6 +36,10 @@ export interface PhysicsWorldConfig {
   sleepThresholdSteps?: number;
   /** Approach speed a contact must exceed to wake a sleeping body (resting contacts don't). Default 0.5. */
   wakeThreshold?: number;
+  /** Maximum simultaneous joints the constraint buffers can hold. Default 256. */
+  jointCapacity?: number;
+  /** Baumgarte fraction applied to hard-joint positional error per iteration, 0..1. Default 0.5. */
+  jointCorrection?: number;
 }
 
 export interface PhysicsStats {
@@ -58,6 +62,45 @@ export interface AddBodyOptions {
   static?: boolean;
   /** Seed the body asleep (a settled bed pays no integration cost until woken). */
   asleep?: boolean;
+}
+
+/**
+ * `hinge`/`fixed`/`distance` are hard bilateral constraints; `spring` is a soft PD constraint.
+ * No angular state → `hinge`/`fixed` both pin the shared anchor (`axis` is metadata), `distance`
+ * holds a fixed separation, `spring` drives toward `restLength` (suspension, follow-point carry).
+ */
+export type JointKind = "hinge" | "distance" | "spring" | "fixed";
+
+export interface JointOptions {
+  /** First body index. */
+  bodyA: number;
+  /** Second body index, or omit / < 0 to anchor A to a fixed world point (`anchorB`). */
+  bodyB?: number;
+  /** Local offset of the anchor on A, in world axes (no rotation). Default [0,0,0]. */
+  anchorA?: readonly [number, number, number];
+  /** Local offset on B, or — when B is a world anchor — the world point itself. Default [0,0,0]. */
+  anchorB?: readonly [number, number, number];
+  /** Target separation for `distance`/`spring`. Defaults to the anchors' current distance. */
+  restLength?: number;
+  /** Spring restoring rate. Default 40. */
+  stiffness?: number;
+  /** Spring damping (relative-velocity bleed). Default 6. */
+  damping?: number;
+  /** Clamp on the per-substep spring impulse (a follow-point that never yanks). Default unbounded. */
+  maxImpulse?: number;
+  /** Hinge axis, retained as metadata (this sim has no angular DOF). */
+  axis?: readonly [number, number, number];
+}
+
+/** A contact reported to `onCollision`. The object is reused each call — read/copy, never retain. */
+export interface CollisionEvent {
+  a: number;
+  b: number;
+  nx: number;
+  ny: number;
+  nz: number;
+  approachSpeed: number;
+  impulse: number;
 }
 
 const FLAG_SLEEPING = 1;
@@ -91,6 +134,8 @@ export class PhysicsWorld {
   readonly sleepMove2: number;
   readonly sleepSteps: number;
   readonly wakeThreshold: number;
+  readonly jointCapacity: number;
+  readonly jointCorrection: number;
 
   readonly posX: Float32Array;
   readonly posY: Float32Array;
@@ -125,6 +170,37 @@ export class PhysicsWorld {
   private readonly awakeSlot: Int32Array;
   private awakeCount = 0;
 
+  private readonly jSpring: Uint8Array;
+  private readonly jActive: Uint8Array;
+  private readonly jBodyA: Int32Array;
+  private readonly jBodyB: Int32Array;
+  private readonly jAnchorAX: Float32Array;
+  private readonly jAnchorAY: Float32Array;
+  private readonly jAnchorAZ: Float32Array;
+  private readonly jAnchorBX: Float32Array;
+  private readonly jAnchorBY: Float32Array;
+  private readonly jAnchorBZ: Float32Array;
+  private readonly jRest: Float32Array;
+  private readonly jStiffness: Float32Array;
+  private readonly jDamping: Float32Array;
+  private readonly jMaxImpulse: Float32Array;
+  private readonly jFree: Int32Array;
+  private jFreeCount = 0;
+  private jointHigh = 0;
+  private jointActiveCount = 0;
+
+  private collisionListener: ((e: CollisionEvent) => void) | null = null;
+  private collisionMinSpeed = 0;
+  private readonly collisionEvent: CollisionEvent = {
+    a: 0,
+    b: 0,
+    nx: 0,
+    ny: 0,
+    nz: 0,
+    approachSpeed: 0,
+    impulse: 0,
+  };
+
   private bodyCount = 0;
   private accumulator = 0;
   private readonly stats: PhysicsStats = {
@@ -156,6 +232,8 @@ export class PhysicsWorld {
     this.sleepMove2 = sleepMoveEps * sleepMoveEps;
     this.sleepSteps = config.sleepThresholdSteps ?? 30;
     this.wakeThreshold = config.wakeThreshold ?? 0.5;
+    this.jointCapacity = Math.max(0, config.jointCapacity ?? 256);
+    this.jointCorrection = config.jointCorrection ?? 0.5;
 
     const cap = config.capacity;
     this.posX = new Float32Array(cap);
@@ -186,6 +264,23 @@ export class PhysicsWorld {
     this.bodyCell = new Int32Array(cap);
     this.awakeList = new Int32Array(cap);
     this.awakeSlot = new Int32Array(cap).fill(-1);
+
+    const jc = this.jointCapacity;
+    this.jSpring = new Uint8Array(jc);
+    this.jActive = new Uint8Array(jc);
+    this.jBodyA = new Int32Array(jc);
+    this.jBodyB = new Int32Array(jc);
+    this.jAnchorAX = new Float32Array(jc);
+    this.jAnchorAY = new Float32Array(jc);
+    this.jAnchorAZ = new Float32Array(jc);
+    this.jAnchorBX = new Float32Array(jc);
+    this.jAnchorBY = new Float32Array(jc);
+    this.jAnchorBZ = new Float32Array(jc);
+    this.jRest = new Float32Array(jc);
+    this.jStiffness = new Float32Array(jc);
+    this.jDamping = new Float32Array(jc);
+    this.jMaxImpulse = new Float32Array(jc);
+    this.jFree = new Int32Array(jc);
   }
 
   private addAwake(i: number): void {
@@ -211,6 +306,117 @@ export class PhysicsWorld {
 
   get cells(): { nx: number; ny: number; nz: number; total: number } {
     return { nx: this.nx, ny: this.ny, nz: this.nz, total: this.numCells };
+  }
+
+  get jointCount(): number {
+    return this.jointActiveCount;
+  }
+
+  /**
+   * Deliver every impacting contact (approach speed ≥ `minApproachSpeed`) to `listener` during
+   * `step`. The event object is reused — read/copy it, never retain. Pass `null` to detach. This is
+   * the seam crash-damage and destruction read; contacts otherwise stay inside the sim.
+   */
+  onCollision(listener: ((e: CollisionEvent) => void) | null, minApproachSpeed = 0): void {
+    this.collisionListener = listener;
+    this.collisionMinSpeed = minApproachSpeed;
+  }
+
+  hingeJoint(options: JointOptions): number {
+    return this.addJoint(options, false, 0);
+  }
+
+  fixedJoint(options: JointOptions): number {
+    return this.addJoint(options, false, 0);
+  }
+
+  distanceJoint(options: JointOptions): number {
+    return this.addJoint(options, false, null);
+  }
+
+  springJoint(options: JointOptions): number {
+    return this.addJoint(options, true, null);
+  }
+
+  private addJoint(options: JointOptions, spring: boolean, restOverride: number | null): number {
+    let id: number;
+    if (this.jFreeCount > 0) {
+      id = this.jFree[--this.jFreeCount]!;
+    } else {
+      if (this.jointHigh >= this.jointCapacity) throw new Error("PhysicsWorld: joint capacity exceeded");
+      id = this.jointHigh++;
+    }
+    const bodyB = options.bodyB ?? -1;
+    const aA = options.anchorA;
+    const aB = options.anchorB;
+    this.jBodyA[id] = options.bodyA;
+    this.jBodyB[id] = bodyB;
+    this.jAnchorAX[id] = aA?.[0] ?? 0;
+    this.jAnchorAY[id] = aA?.[1] ?? 0;
+    this.jAnchorAZ[id] = aA?.[2] ?? 0;
+    this.jAnchorBX[id] = aB?.[0] ?? 0;
+    this.jAnchorBY[id] = aB?.[1] ?? 0;
+    this.jAnchorBZ[id] = aB?.[2] ?? 0;
+    this.jSpring[id] = spring ? 1 : 0;
+    this.jStiffness[id] = options.stiffness ?? 40;
+    this.jDamping[id] = options.damping ?? 6;
+    this.jMaxImpulse[id] = options.maxImpulse ?? Number.POSITIVE_INFINITY;
+    this.jRest[id] = restOverride ?? options.restLength ?? this.jointDistance(id);
+    this.jActive[id] = 1;
+    this.jointActiveCount += 1;
+    return id;
+  }
+
+  removeJoint(id: number): void {
+    if (this.jActive[id] !== 1) return;
+    this.jActive[id] = 0;
+    this.jFree[this.jFreeCount++] = id;
+    this.jointActiveCount -= 1;
+  }
+
+  /** Move a joint's world anchor point (only meaningful when `bodyB` is a world anchor). */
+  setJointAnchor(id: number, x: number, y: number, z: number): void {
+    this.jAnchorBX[id] = x;
+    this.jAnchorBY[id] = y;
+    this.jAnchorBZ[id] = z;
+  }
+
+  setJointRest(id: number, restLength: number): void {
+    this.jRest[id] = restLength;
+  }
+
+  private jointDistance(id: number): number {
+    const bA = this.jBodyA[id]!;
+    const bB = this.jBodyB[id]!;
+    const ax = (bA >= 0 ? this.posX[bA]! : 0) + this.jAnchorAX[id]!;
+    const ay = (bA >= 0 ? this.posY[bA]! : 0) + this.jAnchorAY[id]!;
+    const az = (bA >= 0 ? this.posZ[bA]! : 0) + this.jAnchorAZ[id]!;
+    const bx = bB >= 0 ? this.posX[bB]! + this.jAnchorBX[id]! : this.jAnchorBX[id]!;
+    const by = bB >= 0 ? this.posY[bB]! + this.jAnchorBY[id]! : this.jAnchorBY[id]!;
+    const bz = bB >= 0 ? this.posZ[bB]! + this.jAnchorBZ[id]! : this.jAnchorBZ[id]!;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const dz = bz - az;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }
+
+  /** Write [ax,ay,az,bx,by,bz] world endpoints per active joint into `out`; returns the joint count. */
+  readJointSegments(out: Float32Array): number {
+    let n = 0;
+    for (let id = 0; id < this.jointHigh; id += 1) {
+      if (this.jActive[id] !== 1) continue;
+      const bA = this.jBodyA[id]!;
+      const bB = this.jBodyB[id]!;
+      const o = n * 6;
+      out[o] = (bA >= 0 ? this.posX[bA]! : 0) + this.jAnchorAX[id]!;
+      out[o + 1] = (bA >= 0 ? this.posY[bA]! : 0) + this.jAnchorAY[id]!;
+      out[o + 2] = (bA >= 0 ? this.posZ[bA]! : 0) + this.jAnchorAZ[id]!;
+      out[o + 3] = bB >= 0 ? this.posX[bB]! + this.jAnchorBX[id]! : this.jAnchorBX[id]!;
+      out[o + 4] = bB >= 0 ? this.posY[bB]! + this.jAnchorBY[id]! : this.jAnchorBY[id]!;
+      out[o + 5] = bB >= 0 ? this.posZ[bB]! + this.jAnchorBZ[id]! : this.jAnchorBZ[id]!;
+      n += 1;
+    }
+    return n;
   }
 
   addBody(options: AddBodyOptions): number {
@@ -268,6 +474,9 @@ export class PhysicsWorld {
     this.bodyCount = 0;
     this.accumulator = 0;
     this.awakeCount = 0;
+    this.jointHigh = 0;
+    this.jFreeCount = 0;
+    this.jointActiveCount = 0;
   }
 
   /** Advance by a real frame delta; runs whole fixed substeps and carries the remainder. */
@@ -319,7 +528,10 @@ export class PhysicsWorld {
     }
     this.buildGrid();
     const iterations = this.solverIterations;
-    for (let it = 0; it < iterations; it += 1) this.solve(it === 0, it === iterations - 1);
+    for (let it = 0; it < iterations; it += 1) {
+      this.solve(it === 0, it === iterations - 1);
+      if (this.jointActiveCount > 0) this.solveJoints(dt);
+    }
     for (let a = 0; a < this.awakeCount; a += 1) this.constrainBounds(this.awakeList[a]!);
     this.updateSleep();
   }
@@ -479,6 +691,17 @@ export class PhysicsWorld {
     if (rvn < 0) {
       const e = restitutionPass && -rvn > this.restitutionThreshold ? this.restitution : 0;
       const jn = (-(1 + e) * rvn) / imSum;
+      if (restitutionPass && this.collisionListener !== null && -rvn >= this.collisionMinSpeed) {
+        const ev = this.collisionEvent;
+        ev.a = i;
+        ev.b = j;
+        ev.nx = nX;
+        ev.ny = nY;
+        ev.nz = nZ;
+        ev.approachSpeed = -rvn;
+        ev.impulse = jn;
+        this.collisionListener(ev);
+      }
       this.velX[i]! -= jn * imI * nX;
       this.velY[i]! -= jn * imI * nY;
       this.velZ[i]! -= jn * imI * nZ;
@@ -514,6 +737,91 @@ export class PhysicsWorld {
     this.posX[j]! += corr * imJ * nX;
     this.posY[j]! += corr * imJ * nY;
     this.posZ[j]! += corr * imJ * nZ;
+  }
+
+  private solveJoints(dt: number): void {
+    const beta = this.jointCorrection;
+    const slop = this.slop;
+    for (let id = 0; id < this.jointHigh; id += 1) {
+      if (this.jActive[id] !== 1) continue;
+      const bA = this.jBodyA[id]!;
+      const bB = this.jBodyB[id]!;
+      const ax = (bA >= 0 ? this.posX[bA]! : 0) + this.jAnchorAX[id]!;
+      const ay = (bA >= 0 ? this.posY[bA]! : 0) + this.jAnchorAY[id]!;
+      const az = (bA >= 0 ? this.posZ[bA]! : 0) + this.jAnchorAZ[id]!;
+      const bx = bB >= 0 ? this.posX[bB]! + this.jAnchorBX[id]! : this.jAnchorBX[id]!;
+      const by = bB >= 0 ? this.posY[bB]! + this.jAnchorBY[id]! : this.jAnchorBY[id]!;
+      const bz = bB >= 0 ? this.posZ[bB]! + this.jAnchorBZ[id]! : this.jAnchorBZ[id]!;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const dz = bz - az;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (dist < 1e-9) continue;
+      const nX = dx / dist;
+      const nY = dy / dist;
+      const nZ = dz / dist;
+      const c = dist - this.jRest[id]!;
+      const imA = bA >= 0 ? this.invMass[bA]! : 0;
+      const imB = bB >= 0 ? this.invMass[bB]! : 0;
+      const imSum = imA + imB;
+      if (imSum === 0) continue;
+      const vax = bA >= 0 ? this.velX[bA]! : 0;
+      const vay = bA >= 0 ? this.velY[bA]! : 0;
+      const vaz = bA >= 0 ? this.velZ[bA]! : 0;
+      const vbx = bB >= 0 ? this.velX[bB]! : 0;
+      const vby = bB >= 0 ? this.velY[bB]! : 0;
+      const vbz = bB >= 0 ? this.velZ[bB]! : 0;
+      const rvn = (vbx - vax) * nX + (vby - vay) * nY + (vbz - vaz) * nZ;
+
+      if (this.jSpring[id] === 1) {
+        if (Math.abs(c) > slop) {
+          if (bA >= 0) this.wake(bA);
+          if (bB >= 0) this.wake(bB);
+        }
+        let jn = (-(this.jStiffness[id]! * c + this.jDamping[id]! * rvn) * dt) / imSum;
+        const maxJ = this.jMaxImpulse[id]!;
+        if (jn > maxJ) jn = maxJ;
+        else if (jn < -maxJ) jn = -maxJ;
+        if (bA >= 0) {
+          this.velX[bA]! -= jn * imA * nX;
+          this.velY[bA]! -= jn * imA * nY;
+          this.velZ[bA]! -= jn * imA * nZ;
+        }
+        if (bB >= 0) {
+          this.velX[bB]! += jn * imB * nX;
+          this.velY[bB]! += jn * imB * nY;
+          this.velZ[bB]! += jn * imB * nZ;
+        }
+        continue;
+      }
+
+      if (Math.abs(c) > slop) {
+        if (bA >= 0) this.wake(bA);
+        if (bB >= 0) this.wake(bB);
+      }
+      const jn = -rvn / imSum;
+      if (bA >= 0) {
+        this.velX[bA]! -= jn * imA * nX;
+        this.velY[bA]! -= jn * imA * nY;
+        this.velZ[bA]! -= jn * imA * nZ;
+      }
+      if (bB >= 0) {
+        this.velX[bB]! += jn * imB * nX;
+        this.velY[bB]! += jn * imB * nY;
+        this.velZ[bB]! += jn * imB * nZ;
+      }
+      const corr = (c * beta) / imSum;
+      if (bA >= 0) {
+        this.posX[bA]! += corr * imA * nX;
+        this.posY[bA]! += corr * imA * nY;
+        this.posZ[bA]! += corr * imA * nZ;
+      }
+      if (bB >= 0) {
+        this.posX[bB]! -= corr * imB * nX;
+        this.posY[bB]! -= corr * imB * nY;
+        this.posZ[bB]! -= corr * imB * nZ;
+      }
+    }
   }
 
   private updateSleep(): void {

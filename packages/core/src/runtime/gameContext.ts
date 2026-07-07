@@ -1,14 +1,25 @@
-import { createDeathSystem, deathReasonFromEffect, type OnDeathSpec } from "../combat/death";
+import { createDeathSystem, deathReasonFromEffect, normalizeOnDeath, type OnDeathSpec } from "../combat/death";
 import {
   createEffectSystem,
   type CombatSpatialDeps,
   type EffectInput,
   type EffectResult,
   type EffectSystem,
+  type EffectVia,
   type ReceiveMap,
   type SingleTargetEffectInput,
 } from "../combat/effects";
 import { createProjectileSystem, type ProjectileSystem } from "../combat/projectiles";
+import {
+  resolveHitReaction,
+  type HitReaction,
+  type HitReactionConfig,
+} from "../combat/hitReaction";
+import {
+  pointInTelegraph,
+  type TelegraphConfig,
+  type TelegraphShape,
+} from "../combat/telegraph";
 import {
   createCommandRegistry,
   type CommandDefinition,
@@ -23,6 +34,7 @@ import {
   grant as walletGrant,
   type WalletState,
 } from "../economy/wallet";
+import { createCosmetics, type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
 import { createGameFeed, type GameFeed } from "../game/feed";
@@ -30,6 +42,14 @@ import { createLeaderboard, type Leaderboard } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
 import { createQuestJournal, type QuestJournal } from "../game/quest";
+import {
+  createWorldItemStore,
+  resolveDeathDrops,
+  DEFAULT_RARITY,
+  WORLD_ITEM_ENTITY_NAME,
+  type WorldItemRecord,
+  type WorldItemSpawnInput,
+} from "../game/worldItem";
 import { createSocial, type Social } from "../game/social";
 import { createTradeSystem, type TradeField, type TradeSystem } from "../game/trade";
 import { createUnlocks, type Unlocks } from "../game/unlocks";
@@ -41,6 +61,7 @@ import {
   type InventoryState,
   type ItemTraits,
 } from "../inventory/inventoryModel";
+import type { ContextVerb } from "../interaction/contextMenu";
 import type { ProximityPrompt } from "../interaction/proximityPrompt";
 import {
   createItemUse,
@@ -61,7 +82,10 @@ import {
   type StatValueMap,
 } from "../scene/entityStats";
 import type { EntityPose, EntityPosition, SceneEntity, SpawnOptions } from "../scene/entityStore";
+import { createForms, type Forms } from "../scene/form";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
+import { createRoster, type Roster } from "../scene/roster";
+import { createPossession, type Possession } from "../scene/possession";
 import { createSpatialApi, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
@@ -72,6 +96,10 @@ export interface GameContextItemEntry {
   use?: string;
   weapon?: Record<string, unknown>;
   trade?: TradeField;
+  /** Rarity id read by the `worldItem` loot-filter/render binding when this item drops to the ground (#32/#33). */
+  rarity?: string;
+  /** Base item type read by the loot-filter rule evaluator (#33); defaults to the item id when absent. */
+  baseType?: string;
 }
 
 export type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle";
@@ -82,12 +110,16 @@ export interface GameContextEntityEntry {
   onDeath?: OnDeathSpec;
   movement?: PoseAllowedStates & { walkSpeed?: number };
   role?: CatalogEntityRole;
+  /** Right-click context-menu verbs for this entity (#31). */
+  verbs?: readonly ContextVerb[];
 }
 
 export interface GameContextObjectEntry {
   proximityPrompt?: ProximityPrompt;
   breakable?: false | { baseBreakTime: number };
   slotInventory?: InventoryLayout;
+  /** Right-click context-menu verbs for this object (#31). */
+  verbs?: readonly ContextVerb[];
 }
 
 export interface GameContextContent {
@@ -116,6 +148,33 @@ export interface FloatTextInput {
   text?: string;
   kind?: string;
   amount?: number;
+  hitType?: string;
+  element?: string;
+  crit?: boolean;
+  scale?: number;
+}
+
+export interface TelegraphInput {
+  from: string;
+  shape: TelegraphShape;
+  at: [number, number, number];
+  dir?: number;
+  windupMs: number;
+  kind?: string;
+  effect?: {
+    effect: string;
+    via?: EffectVia;
+    radius?: number;
+    falloff?: "linear" | "none";
+    los?: boolean;
+  };
+}
+
+export interface HitReactionInput {
+  from: string;
+  to: string;
+  config: HitReactionConfig;
+  power?: number;
 }
 
 export interface SceneEntityContext {
@@ -126,6 +185,8 @@ export interface SceneEntityContext {
   list(): readonly SceneEntity[];
   stats: EntityStatsApi;
   floatText(input: FloatTextInput): void;
+  telegraph(input: TelegraphInput): () => void;
+  hitReaction(input: HitReactionInput): HitReaction | null;
   setTarget(fromId: string, toId: string | null): void;
   getTarget(fromId: string): string | null;
   cycleTarget(fromId: string, options?: CycleTargetOptions): string | null;
@@ -140,6 +201,23 @@ export interface SceneEntityContext {
   hasLineOfSight: SpatialApi["hasLineOfSight"];
   queryArc: SpatialApi["queryArc"];
   moveToward: SpatialApi["moveToward"];
+  form: Forms;
+}
+
+export type WorldItemPickupResult =
+  | { status: "ok"; record: WorldItemRecord }
+  | { status: "rejected"; reason: string };
+
+export interface SceneWorldItemContext {
+  spawn(input: WorldItemSpawnInput): WorldItemRecord;
+  get(instanceId: string): WorldItemRecord | null;
+  list(): readonly WorldItemRecord[];
+  nearestInRadius(
+    from: EntityPosition,
+    radius: number,
+    filter?: (record: WorldItemRecord) => boolean,
+  ): string | null;
+  pickup(instanceId: string, userId: string): WorldItemPickupResult;
 }
 
 export interface GameContextCommands {
@@ -177,6 +255,7 @@ export interface GameContext {
   scene: {
     object: SceneObjectContext;
     entity: SceneEntityContext;
+    worldItem: SceneWorldItemContext;
   };
   game: {
     commands: GameContextCommands;
@@ -189,6 +268,7 @@ export interface GameContext {
     unlocks: Unlocks;
     economy: GameContextEconomy;
     leaderboard: Leaderboard;
+    roster: Roster;
   };
   player: {
     userId: string;
@@ -198,6 +278,8 @@ export interface GameContext {
     loadout: Loadouts;
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
+    possession: Possession;
+    cosmetics: Cosmetics;
   };
   item: {
     use: GameContextItemUse;
@@ -284,7 +366,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const feed = createGameFeed();
   const lootRegistry = createLootRegistry();
   const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify);
-  const rawSocial = createSocial({ events, now });
+  const rawSocial = createSocial({
+    events,
+    now,
+    emotes: {
+      entities: { get: (id) => entities.get(id) },
+      spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
+    },
+  });
   const social: Social = {
     friends: notifyAfter(
       rawSocial.friends,
@@ -297,12 +386,21 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       signal.notify,
     ),
     presence: rawSocial.presence,
+    emotes: rawSocial.emotes,
   };
   const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify);
+  const roster = notifyAfter(
+    createRoster({ now }),
+    ["capture", "release", "setEquipped", "hydrate"],
+    signal.notify,
+  );
   const playerStats = createStats<string>({});
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
   const commandRegistry = createCommandRegistry<GameContext>();
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
+  const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
+  const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
+  const cosmetics = notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify);
 
   const inventoryDeclarations = definition.inventories ?? {};
   const inventoryIds = Object.keys(inventoryDeclarations);
@@ -474,6 +572,43 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return existed;
   }
 
+  const worldItems = notifyAfter(
+    createWorldItemStore({
+      spawnEntity: (position) => entities.spawn(WORLD_ITEM_ENTITY_NAME, { position, role: "prop" }),
+      despawnEntity,
+      resolvePosition: (instanceId) => entities.get(instanceId)?.position,
+    }),
+    ["spawn", "take"],
+    signal.notify,
+  );
+
+  function spawnWorldItem(input: WorldItemSpawnInput): WorldItemRecord {
+    const record = worldItems.spawn(input);
+    events.emit("worldItem.dropped", {
+      instanceId: record.instanceId,
+      itemId: record.itemId,
+      rarity: record.rarity,
+      count: record.count,
+      position: [input.position[0], input.position[1], input.position[2]],
+      ...(record.source !== undefined ? { source: record.source } : {}),
+    });
+    return record;
+  }
+
+  function pickupWorldItem(instanceId: string, userId: string): WorldItemPickupResult {
+    const record = worldItems.take(instanceId);
+    if (record === null) return { status: "rejected", reason: "not-found" };
+    loot.grantToPlayer(userId, [{ item: record.itemId, count: record.count }], "worldItem.pickup");
+    events.emit("worldItem.picked_up", {
+      instanceId,
+      userId,
+      itemId: record.itemId,
+      rarity: record.rarity,
+      count: record.count,
+    });
+    return { status: "ok", record };
+  }
+
   const death = createDeathSystem({
     resolveOnDeath: (instanceId) => catalogEntry(instanceId)?.onDeath,
     resolveIdentity(instanceId) {
@@ -501,7 +636,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     getStat: weapon.getStat,
     spatial: combatSpatial,
       onLethal(instanceId, lethalCtx) {
-        const catalogId = entities.get(instanceId)?.name;
+        const dyingEntity = entities.get(instanceId);
+        const catalogId = dyingEntity?.name;
+        const position = dyingEntity?.position;
+        const normalizedOnDeath = normalizeOnDeath(catalogEntry(instanceId)?.onDeath);
         const reason = deathReasonFromEffect({
           ...lethalCtx,
           userIdOf: (id) => (id === player.userId ? player.userId : undefined),
@@ -513,7 +651,20 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           reason.kind === "player_kill" &&
           reason.killerUserId === player.userId
         ) {
-          loot.grantToPlayer(player.userId, resolution.drops, catalogId);
+          if (normalizedOnDeath.dropMode === "world" && position !== undefined) {
+            const resolved = resolveDeathDrops(resolution.drops, {
+              mode: "world",
+              origin: position,
+              resolveRarity: (itemId) => content.itemById?.(itemId)?.rarity ?? DEFAULT_RARITY,
+              resolveBaseType: (itemId) => content.itemById?.(itemId)?.baseType ?? itemId,
+              scatter: normalizedOnDeath.scatter,
+              ...(catalogId !== undefined ? { source: catalogId } : {}),
+            });
+            for (const spawn of resolved.worldSpawns) spawnWorldItem(spawn);
+            if (resolved.grants.length > 0) loot.grantToPlayer(player.userId, resolved.grants, catalogId);
+          } else {
+            loot.grantToPlayer(player.userId, resolution.drops, catalogId);
+          }
         }
       },
     }),
@@ -534,7 +685,69 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     };
     if (input.instanceId !== undefined) event.instanceId = input.instanceId;
     if (input.amount !== undefined) event.amount = input.amount;
+    if (input.hitType !== undefined) event.hitType = input.hitType;
+    if (input.element !== undefined) event.element = input.element;
+    if (input.crit !== undefined) event.crit = input.crit;
+    if (input.scale !== undefined) event.scale = input.scale;
     events.emit("entity.floatText", event);
+  }
+
+  let telegraphSeq = 0;
+
+  function fireTelegraph(input: TelegraphInput): () => void {
+    const id = telegraphSeq++;
+    const telegraphEvent: GameEventMap["combat.telegraph"] = {
+      id,
+      shape: input.shape,
+      position: [input.at[0], input.at[1], input.at[2]],
+      windupMs: input.windupMs,
+      kind: input.kind ?? "danger",
+    };
+    if (input.dir !== undefined) telegraphEvent.dir = input.dir;
+    events.emit("combat.telegraph", telegraphEvent);
+    const bound = input.effect;
+    if (bound === undefined) return () => {};
+    const config: TelegraphConfig = { shape: input.shape, at: input.at, windupMs: input.windupMs };
+    if (input.dir !== undefined) config.dir = input.dir;
+    return time.after(input.windupMs / 1000, () => {
+      const targets = entities.list().filter((entity) => pointInTelegraph(config, entity.position));
+      for (const target of targets) {
+        applyEffectAndFloat({
+          from: input.from,
+          to: target.id,
+          effect: bound.effect,
+          ...(bound.via === undefined ? {} : { via: bound.via }),
+        });
+      }
+    });
+  }
+
+  function applyHitReaction(input: HitReactionInput): HitReaction | null {
+    const attacker = entities.get(input.from);
+    const target = entities.get(input.to);
+    if (target === null) return null;
+    const attackerPos = attacker?.position ?? target.position;
+    const reaction = resolveHitReaction(input.config, {
+      attackerPos,
+      targetPos: target.position,
+      ...(input.power === undefined ? {} : { power: input.power }),
+    });
+    entities.setPose(input.to, {
+      position: [
+        target.position[0] + reaction.impulse[0],
+        target.position[1] + reaction.impulse[1],
+        target.position[2] + reaction.impulse[2],
+      ],
+      rotationY: target.rotationY,
+    });
+    const reactionEvent: GameEventMap["combat.hitReaction"] = {
+      instanceId: input.to,
+      position: [target.position[0], target.position[1], target.position[2]],
+      hitstopMs: reaction.hitstopMs,
+    };
+    if (reaction.shake !== null) reactionEvent.shake = reaction.shake;
+    events.emit("combat.hitReaction", reactionEvent);
+    return reaction;
   }
 
   function applyEffectAndFloat(input: EffectInput): EffectResult[] {
@@ -601,6 +814,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         list: entities.list,
         stats: entityStats,
         floatText: emitFloatText,
+        telegraph: fireTelegraph,
+        hitReaction: applyHitReaction,
         setTarget: targeting.setTarget,
         getTarget: targeting.getTarget,
         cycleTarget: targeting.cycleTarget,
@@ -615,6 +830,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         hasLineOfSight: spatial.hasLineOfSight,
         queryArc: spatial.queryArc,
         moveToward: spatial.moveToward,
+        form: forms,
+      },
+      worldItem: {
+        spawn: spawnWorldItem,
+        get: worldItems.get,
+        list: worldItems.list,
+        nearestInRadius: worldItems.nearestInRadius,
+        pickup: pickupWorldItem,
       },
     },
     game: {
@@ -650,6 +873,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       unlocks,
       economy,
       leaderboard,
+      roster,
     },
     player: {
       userId: player.userId,
@@ -659,6 +883,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       loadout: loadouts,
       applyLoadout: loadouts.applyLoadout,
       movement: pose,
+      possession,
+      cosmetics,
     },
     item: {
       use: {

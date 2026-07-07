@@ -1,3 +1,4 @@
+export { FireSpreadLayer, type FireSpreadLayerProps } from "./FireSpreadLayer";
 export { LightningStrike, type LightningStrikeProps } from "./LightningStrike";
 export { RainField, type RainFieldProps } from "./RainField";
 export { SnowField, type SnowFieldProps } from "./SnowField";
