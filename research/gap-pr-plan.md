@@ -15,7 +15,7 @@
 | G22 Player embodiment & expression | sonnet | claude/gaps-embodiment (stack→gaps-camera-rigs) | in-flight | — |
 | G7 Character combat feel | opus | claude/gaps-combat-feel | ✅ DONE (green) | #134 |
 | G6 Abilities/resources/cooldowns | opus | claude/gaps-abilities (stack→gaps-combat-feel) | ✅ DONE (green) | #139 |
-| G20 Interaction verbs & minigames | sonnet | claude/gaps-interaction | in-flight | — |
+| G20 Interaction verbs & minigames | sonnet | claude/gaps-interaction | ✅ DONE (green) | #144 |
 | G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
 | G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | ✅ DONE (green) | #130 |
 | G16 Card & board stack | opus | claude/gaps-card-board | ✅ DONE (green) | #131 |
