@@ -16,6 +16,8 @@ const gameRegistry: GameRegistry = {
     import("@jgengine/shell/demo/environmentShowcase").then((module) => module.environmentShowcaseGame),
   "survival-demo": () =>
     import("@jgengine/shell/demo/survivalDemo").then((module) => module.survivalDemoGame),
+  "builder-sandbox": () =>
+    import("@jgengine/shell/demo/builderDemo").then((module) => module.builderDemoGame),
   "world-of-warcraft": () => import("@dogfood/world-of-warcraft").then((module) => module.wowGame),
   "asset-showcase": () =>
     import("@dogfood/asset-showcase").then((module) => module.assetShowcaseGame),

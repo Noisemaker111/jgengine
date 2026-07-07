@@ -71,6 +71,13 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Timeline board | `board/timelineBoard` | `createTimelineBoard`, `tickTimeline`, `TimelineBoard`, `TimelineSlot`, `TimelineFire` |
 | World geometry | `world/geometry` | `footprintAabb`, `aabbOverlap`, `snapToGrid`, `resolveMove`, `Aabb`, `Footprint` |
 | Placement | `world/placement` | `validatePlacement`, `footprintObstacle`, `PlacementRules`, `PlacementResult` |
+| Placement ghost | `world/placementController` | `createPlacementController`, `PlacementController`, `PlacementPreview`, `PlacementCommit`, `SnapMode`, `quarterTurnsToRotationY` |
+| Connector sockets | `world/connectors` | `snapToNearest`, `socketsCompatible`, `worldSockets`, `socketWorldPosition`, `ConnectorSocket`, `ConnectorPieceDef`, `PlacedPiece`, `SnapResult` |
+| Structural support | `world/support` | `solveSupport`, `toDebrisBodies`, `SupportPiece`, `SupportLink`, `SupportResult` |
+| Wall/roof authoring | `world/walls` | `createWallDrawTool`, `footprintFromWalls`, `autoRoof`, `wallSegments`, `createSurfacePaint`, `WallDrawTool`, `RoofPlan`, `EnclosedFootprint` |
+| Placed structures | `world/placedStructureStore` | `createPlacedStructureStore`, `PlacedStructure`, `PlacedStructureStore`, `PlacedStructureSnapshot` |
+| Terraform | `world/terraform` | `createEditableTerrain`, `createTerraformBrush`, `brushWeight`, `EditableTerrain`, `TerraformBrush`, `TerraformEdit`, `TerraformMode` |
+| Build permissions | `world/buildPermissions` | `createPlotPermissions`, `createContributionPool`, `PlotPermissions`, `ContributionPool`, `BuildRole`, `ContributionGoal` |
 | Interiors | `world/interiors` | `createInteriors`, `Interior`, `Exterior`, `SpaceRef` |
 | Game clock | `time/gameClock` | `getScaledElapsedMs`, `computeGameDay`, `SECONDS_PER_GAME_DAY` |
 | Scene behaviors | `scene/behaviors` | `wander`, `patrol`, `promptable`, `talkable`, `player` |
@@ -670,21 +677,27 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
 Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
 
 ### Environment fields, weather hooks & realm composition
-
 Renderer-free survival/environment primitives that extend the world query layer — meters, spawn gating, and damage-in-sunlight read the same world the shell renders, all ticking on game-time `dt`.
-
 - **Environment field** (`world/envField`): `createEnvironmentField({ dayLength, baseTemperature, nightDrop, altitudeLapse, terrain, rain, occluders, heatSources, ambientFloor, temperatureAt })` → `EnvironmentField`. Sample **temperature**, **wetness**, **lightExposure** (direct sun/sky), and **ambientLight** (spawn gating) at any `(x, z, time)` — `sample(x, z, time, y?)` returns all four plus `sheltered`. Occluders (roofs/canopy) shade sun and shelter from rain; heat sources (campfires) warm nearby positions; `sunElevation(time)` drives the day cycle. Sun damages a vampire, cold forces campfires, low ambient light spawns mobs — the field answers "am I in sun vs. shade / cold vs. warm / dark vs. lit". Pure and instantaneous; stateful build-up belongs to a decay meter reading the field.
 - **Weather → gameplay** (`world/weather`): `resolveWeather(state, table)` turns a `WeatherState { kind, intensity }` into concrete `ResolvedWeather` (`grip`, `visibility`, `structureDamage`, `chill`, `ignition`, `spread`) via a game-owned `WeatherModifierTable` — multipliers interpolate from neutral by intensity, rate effects scale linearly. Read `grip`/`visibility` in movement and AI, `structureDamage` on a building tick.
 - **Fire spread** (`world/weather`): `createFireGrid({ cols, rows, cellSize, origin, fuelAt, spreadRate, burnRate, wind, windBias })` → `FireGrid` is a **coarse cellular** propagation (not a fluid solver): `ignite(x, z)` / `igniteCell(col, row)`, then `step(dt, { spread, wetnessAt })` transfers heat to neighbours biased by wind, consumes fuel (`unburnt → burning → burnt`), and honours firebreaks (zero-fuel cells) and rain/wetness suppression. `resolveWeather(...).spread` feeds the step; `@jgengine/shell/weather` `FireSpreadLayer` renders the burning/scorched cells.
 - **Realm composition** (`world/realm`): `composeRealm(base, cards)` assembles a played instance at runtime from a deck of modifier **cards** (Nightingale realm cards) — a `major` card is the biome base, `minor` cards layer environment param overrides, a `WeatherState`, and spawn-table edits (`set`/`add`/`scale`/`remove`). The result recomposes both the environment (into a sampleable field via `composed.environmentField(extra?)`) and the `spawnTable`, and depends on the weather hooks above to turn its `weather` into gameplay modifiers.
-
 ### Survival meters, moodles & multi-region health
-
 The `survival/` domain — decay-over-time meters and per-part health, both feeding one stacking **moodle** status display distinct from numeric bars.
-
 - **Decay meters** (`survival/decayMeter`): `createDecayMeterSet([{ id, max, min?, start?, rate, thresholds }])` → `DecayMeterSet`. Each named meter (hunger, thirst, oxygen, sanity, warmth, stamina) drains/recovers on `tick(dt)` at `rate`, refills from consumables/actions via `refill(id, amount)`, and raises threshold moodles (`below`/`above`). `setRateModifier(id, mult)` lets the environment drive them — read an env field, then speed warmth loss when cold or oxygen loss in a toxic biome.
 - **Moodles** (`survival/moodle`): the shared status stack, distinct from raw bars. `stackMoodles(...groups)` folds meter, ailment, and buff `Moodle[]` into one worst-first display (same-id stacks add, worst severity wins). `createMoodleStack()` holds timed buffs (`add({ id, label, duration })` — Valheim's concurrent food buffs) and expires them on `tick(dt)`.
 - **Multi-region health** (`survival/regionHealth`): `createMultiRegionHealth({ regions, ailments })` → `MultiRegionHealth` gives per-part pools (head/thorax/arms/legs, Tarkov/DayZ style) — `damage(regionId, amount)` scales by `vulnerability` and kills when a `vital` part empties; a stacking **ailment queue** (`applyAilment`, `tick(dt)` drains like bleed) carries per-injury treatment (`treat(itemId)` clears wounds via bandage/tourniquet/splint). `ailmentMoodles()` shares the moodle display with the meters (#78 + #90).
+### Interactive building & terraform (renderer-free tools)
+Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/Fortnite/Dinkum. All pure `@jgengine/core/world`; the shell renders the ghost/tint/brush (`shell/structures/PlacementGhost`, `shell/terrain/EditableGround`, `shell/terrain/TerraformBrushCursor`) driven by `pointer.worldHit()`.
+| Primitive | Answers |
+|-----------|---------|
+| `createPlacementController({ footprint, rules, snapMode, grid })` | Owns the ghost: `hover(hit)` → `PlacementPreview` (`valid` tint wraps `validatePlacement`), `rotate()`, `setSnapMode`/`cycleSnapMode` (`"grid"`/`"free"`/`"surface"`), `commit()` → `PlacementCommit` (`rotationY` via `quarterTurnsToRotationY`). Feed it `pointer.worldHit()`. |
+| `snapToNearest(registry, placed, movingDef, cursor, { snapDistance })` | Typed connector sockets — snaps a piece's socket onto the nearest **compatible** placed socket (`socketsCompatible` = both sides `accept` the other type). `worldSockets`/`socketWorldPosition` expand a piece's sockets to world space. |
+| `solveSupport(pieces, links, { maxDistance })` → `SupportResult` | Walks the connector graph to any `grounded` piece: `supported` stays, `unsupported` collapses, `distance` (hops-to-ground) drives the white→red decay tint. `toDebrisBodies(pieces, unsupported)` → `AddBodyOptions[]` for the `PhysicsWorld` debris sink. |
+| `createWallDrawTool({ snap, closeTolerance })` | Drag wall points → auto-encloses when the path returns to the start (`isEnclosed`), `footprint()` derives the room `EnclosedFootprint`, `roof()` auto-fits a hip/gable/flat `RoofPlan`. `createSurfacePaint()` stores per-tile floor/wall surfaces. |
+| `createPlacedStructureStore()` | Save/load a built layout: `add`/`move`/`rotate`/`remove`/`select`, `snapshot()`↔`load()` round-trip (survives reload), `subscribe` for the renderer. |
+| `createEditableTerrain({ bounds, base, cellSize })` → `EditableTerrain` | A `TerrainField` you can **write back to**: `apply(edit: TerraformEdit)` raises/lowers/flattens/paints under a cursor and re-samples `sampleHeight`; `surfaceAt`, `snapshot`/`restore`, `reset`. `createTerraformBrush(field)` is the cursor tool (`raise`/`lower`/`flatten`/`paint`, radius/strength). This write-back grid is the shared terrain-edit pattern. |
+| `createPlotPermissions({ plotId, ownerId, guildId? })` + `createContributionPool(goal)` | Per-plot/guild edit authority (`canEdit`/`canView`, `grant`/`revoke` `BuildRole`, guild inheritance) for co-op building, plus a pooled-resource contribution model (`contribute` caps at the goal, reports overflow, `isComplete`, per-contributor totals). |
 
 ### Physics world (optional, headless)
 
