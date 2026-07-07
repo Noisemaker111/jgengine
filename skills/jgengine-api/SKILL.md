@@ -47,10 +47,12 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Loadout | `game/loadout` | `LoadoutDef`, `LoadoutItemEntry`, `Loadouts` |
 | Quest | `game/quest` | `QuestDef`, `QuestRewards`, `QuestObjective`, `QuestJournal` |
 | World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat`, `environment`, `terrain`, `rain`, `snow`, `grass`, `ocean`, `building` |
-| Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep` |
+| Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `rollingField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep` |
+| Regions | `world/regions` | `createRegionField`, `isRegionField`, `RegionDef`, `RegionField`, `RegionSample` |
 | Wind field | `world/wind` | `windField`, `WindField`, `WindFieldConfig`, `WindVector` |
 | Water surface | `world/water` | `waterSurface`, `waterSurfaceFromDescriptor`, `synthesizeWaves`, `WaterSurface`, `GerstnerWave` |
 | Scatter | `world/scatter` | `scatter`, `scatterAabb`, `ScatterConfig`, `ScatterPoint` |
+| Content scatter | `world/scatterItems` | `scatterItems`, `pickWeighted`, `ScatterLayer`, `ScatterInstance` |
 | Building generator | `world/buildings` | `generateBuilding`, `generateBuildingDistrict`, `createBuildingGrid`, `GeneratedBuilding` |
 | Building index | `world/buildingIndex` | `buildingIndex`, `BuildingIndex`, `BuildingHit` |
 | Proximity prompt | `interaction/proximityPrompt` | `proximityPrompt`, `ProximityPrompt`, `ProximityPromptDisplay`, `keybind`, `gauge`, `label`, `command` |
@@ -533,6 +535,8 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
 | `windField(cfg)` → `WindField` | `at(t)`, `atPoint(x,z,t)`, `strengthAt` — one wind source for weather sway, grass, sailing, fire spread |
 | `waterSurface(cfg)` / `waterSurfaceFromDescriptor(ocean(...))` → `WaterSurface` | `height(x,z,t)`, `normal`, `displace` — buoyancy, floating, shoreline (CPU Gerstner matching the ocean shader) |
 | `scatter(cfg)` → `ScatterPoint[]` | Seeded, overlap-aware point distribution — vegetation, props, lots, spawn points (`minDistance`, `avoid` rects) |
+| `createRegionField({ regions })` → `RegionField` | `sampleRegion(x,z)` blends content-agnostic biomes by nearest selector — height + `tint`/`water`/`fog`/`speedMultiplier` + opaque `data`. Extends `TerrainField`, so it ground-snaps too |
+| `scatterItems(field, area, layersFor)` → `ScatterInstance[]` | Region-driven content scatter — density per region, grounded, above-water/slope-aware. `pickWeighted` for weighted rolls. (vs `scatter`'s pure geometric points) |
 | `buildingIndex(district)` → `BuildingIndex` | `at`/`within`/`nearest`/`isInside`/`blockers` over a generated district — placement avoidance, pathfinding |
 
 Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
