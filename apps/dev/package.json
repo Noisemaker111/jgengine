@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@dogfood/asset-showcase": "workspace:*",
+    "@dogfood/kart-circuit": "workspace:*",
     "@dogfood/loot-shooter": "workspace:*",
     "@dogfood/stress-bench": "workspace:*",
     "@dogfood/world-of-warcraft": "workspace:*",

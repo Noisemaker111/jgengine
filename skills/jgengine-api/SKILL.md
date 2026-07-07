@@ -67,8 +67,14 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Scene behaviors | `scene/behaviors` | `wander`, `promptable`, `talkable`, `player` |
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
+| Analog axis input | `input/axisInput` | `AxisInput`, `AxisChannel`, `AxisBindingMap`, `DRIVE_AXIS_BINDINGS`, `clampAxis`, `rampToward`, `NEUTRAL_AXIS` |
 | Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions`, `JointOptions`, `JointKind`, `CollisionEvent` |
 | Physics actors | `physics/ragdoll`, `physics/carryable`, `physics/forceVolume`, `physics/spatialGrid` | `createRagdoll`, `Ragdoll`, `Carryable`, `carrySpeedMultiplier`, `ForceVolume`, `PlatformCarry`, `SpatialGrid` |
+| Vehicle body | `physics/vehicleBody` | `createVehicleBody`, `VehicleBody`, `VehicleBodyConfig`, `WheelSpec`, `GripCurve`, `sampleGripCurve`, `DEFAULT_GRIP_CURVE` |
+| Buoyant boat | `physics/buoyancy` | `createBuoyantBody`, `BuoyantBody`, `BuoyantBodyConfig` |
+| Crash damage | `physics/damageZones` | `createDamageModel`, `DamageModel`, `DamageZoneDef`, `DamageTransition` |
+| Mounts / rideables | `scene/mount` | `createMountController`, `MountController`, `MountKit`, `MountSeat`, `RideableConfig` |
+| Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes` |
 
 ## Getting started (new project)
 
@@ -551,6 +557,17 @@ Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `she
 **Collision → gameplay events.** `world.onCollision(listener, minApproachSpeed?)` delivers every impacting contact — `CollisionEvent { a, b, nx, ny, nz, approachSpeed, impulse }` — to game code during `step` (the object is reused; read/copy it, never retain). This is the seam crash-damage and destruction read; pass `null` to detach.
 
 **Actors on top of the sim:** `physics/ragdoll` (`createRagdoll(world, { bones, links, balance? })` — jointed bones, floppy or active-ragdoll via a balance motor), `physics/carryable` (`Carryable` — grab a body to a follow point, shared multi-owner carry, `carrySpeedMultiplier` encumbrance, drop/throw; the raycast pick is the caller's job, core owns the constraint), `physics/forceVolume` (`ForceVolume` — impulse/velocity/accelerate trigger region, `once` for boost pads; `PlatformCarry` — carry bodies standing on a moving platform by its per-`step` delta). Separately, `physics/spatialGrid` `SpatialGrid` is a broad-phase grid over the x/z plane, **distinct** from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers — `rebuild(count, xs, zs)` then `queryCircle` (swarm enemies hitting a player/AoE) or `forEachPair` (mutual separation).
+
+### Vehicles, mounts, crash damage & racing
+
+Five primitives layer a driving/racing game over the physics sim and `world/water`. All are **data-first** (spec the chassis/wheels/grip curve, damage thresholds, and checkpoint layout as catalog data) and pure `@jgengine/core`; renderers live in the game/shell. Each `update(dt, …)` runs **before** the shared `world.step(dt)`.
+
+- **Analog input — `input/axisInput`.** `AxisInput { throttle, brake, steer, handbrake }` is a continuous channel, **distinct from the digital action bindings**. `new AxisChannel({ bindings, smoothing })` ramps held keys into pedal-like analog values (`sample(dt, isDown)`), or `setAnalog(axis, value)` drives it straight from a gamepad axis. `DRIVE_AXIS_BINDINGS` is a ready WASD/arrow map.
+- **`physics/vehicleBody`.** `createVehicleBody(world, config)` is an arcade car: a chassis box body with per-wheel suspension held by G3's `springJoint` against the sampled `groundHeight`, drive/brake along the heading, and a `GripCurve` (`sampleGripCurve`) that bleeds lateral velocity for cornering — and, under `handbrake`, drift. `update(dt, axisInput)` then `world.step`. Because the chassis is a real body it still collides, which feeds crash damage. Rocket League, Trackmania, Wreckfest.
+- **`physics/buoyancy`.** `createBuoyantBody(world, { body, water, … })` floats a body on a CPU `WaterSurface` (Archimedes per hull point + water drag) so it settles at the waterline and rides the Gerstner waves; pass an `AxisInput` to `update(dt, time, input?)` and it drives as a boat (thrust + yaw + keel). Sea of Thieves, BOTW rafts.
+- **`scene/mount`.** `createMountController()` transfers control to a driven entity: `register({ id, kit, seats })`, `mount(riderId, mountId, seatId?)`, `dismount`. Read `cameraTarget(riderId)` to point the follow camera and `driveTarget(riderId)` to route that rider's `AxisInput` at the mount — the control seat drives, passenger seats ride (multi-seat shared vehicles), and an un-mounted rider drives themselves. `driver(mountId)`/`occupants(mountId)`/`kitOf`. Palworld mounts, V Rising horse, a crewed ship.
+- **`physics/damageZones`.** `createDamageModel({ zones, disableAt })` maps accumulated contact impulse (from `onCollision`) to **coarse discrete stages** (not soft-body): `absorb(zoneId, impulse)` / `routeCollision(event, resolveZone)` bump a zone's stage (caller swaps the visual/collider), an optional `detachStage` ejects a part as debris once, and crossing `disableAt` flips a whole-vehicle `disabled` state. Wreckfest crumple/derby.
+- **`game/race`.** `raceTrack({ checkpoints, laps })` is an ordered ring of AABB checkpoint volumes (the final one is the finish line); `createRaceState({ track, win })` — driven each tick by `update(now, positions)` on game time — emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps split times, resolves a pluggable `RaceWinCondition` (`firstPastPost`, `topK` round-cut, `everyoneFinishes`, `lastStanding` derby), and `resetToCheckpoint(id)` hands back a respawn pose. Trackmania, Mario Kart, Fall Guys.
 
 ### Spawn placement
 

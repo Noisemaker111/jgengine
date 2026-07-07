@@ -35,6 +35,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@dogfood/asset-showcase": "workspace:*",
+        "@dogfood/kart-circuit": "workspace:*",
         "@dogfood/loot-shooter": "workspace:*",
         "@dogfood/stress-bench": "workspace:*",
         "@dogfood/world-of-warcraft": "workspace:*",
@@ -126,12 +127,12 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
       "dependencies": {
-        "@jgengine/core": "^0.5.0",
+        "@jgengine/core": "^0.6.0",
         "fflate": "^0.8.2",
       },
       "devDependencies": {
@@ -140,7 +141,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "dependencies": {
         "@jgengine/core": "^0.2.0",
       },
@@ -156,7 +157,7 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.5.0",
+      "version": "0.6.0",
     },
     "packages/games/asset-showcase": {
       "name": "@dogfood/asset-showcase",
@@ -169,6 +170,23 @@
       },
       "devDependencies": {
         "@types/react": "^19",
+        "typescript": "^5",
+      },
+    },
+    "packages/games/kart-circuit": {
+      "name": "@dogfood/kart-circuit",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
         "typescript": "^5",
       },
     },
@@ -221,7 +239,7 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "dependencies": {
         "@jgengine/core": "^0.2.0",
         "@jgengine/ws": "^0.2.0",
@@ -236,9 +254,9 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "dependencies": {
-        "@jgengine/core": "^0.5.0",
+        "@jgengine/core": "^0.6.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -250,11 +268,11 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "dependencies": {
-        "@jgengine/core": "^0.5.0",
-        "@jgengine/react": "^0.5.0",
-        "@jgengine/ws": "^0.5.0",
+        "@jgengine/core": "^0.6.0",
+        "@jgengine/react": "^0.6.0",
+        "@jgengine/ws": "^0.6.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -275,7 +293,7 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "dependencies": {
         "@jgengine/core": "^0.2.0",
       },
@@ -285,9 +303,9 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "dependencies": {
-        "@jgengine/core": "^0.5.0",
+        "@jgengine/core": "^0.6.0",
       },
     },
   },
@@ -337,6 +355,8 @@
     "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.12.0", "", {}, "sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow=="],
 
     "@dogfood/asset-showcase": ["@dogfood/asset-showcase@workspace:packages/games/asset-showcase"],
+
+    "@dogfood/kart-circuit": ["@dogfood/kart-circuit@workspace:packages/games/kart-circuit"],
 
     "@dogfood/loot-shooter": ["@dogfood/loot-shooter@workspace:packages/games/loot-shooter"],
 
