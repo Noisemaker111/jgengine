@@ -13,7 +13,12 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- `@jgengine/core/audio/audioFalloff` — the audio contract + pure distance→gain math. `SoundDef`/`AudioBusDef` catalog types, `computeFalloffGain(distance, config)` (`"linear" | "inverse" | "none"` curves), and `resolveEmitterGain`/`distance3` helpers. No Web Audio in core — this is the tested math the shell plays from.
+- `@jgengine/core/time/beatClock` — a BPM tick signal, separate from `simClock`. `createBeatClock({ bpm, beatsPerBar? }, onBeat?)` advances on **game-time** `dt` and fires `onBeat` per crossed beat; `createBeatInputBuffer` auto-corrects an off-beat press to fire on the next beat tick (`nextBeatTime` is the underlying pure quantization). For rhythm-quantized combat (Hi-Fi Rush–style).
+- `@jgengine/shell` positional audio — `PlayableGame.audio = { sounds, buses? }` + `entitySounds`/`objectSounds` (kind/catalog-id → sound id, same convention as `entityModels`) declare looping positional emitters; the shell (`shell/audio/audioEngine`, `shell/audio/AudioComponents`) owns the `AudioContext`, attaches the listener to the camera every frame, and drives emitter gain from the core falloff curve. Music/SFX buses are plain per-bus gain nodes. No per-game Web Audio glue.
+- `@jgengine/ws/voiceChannel` — a thin, coarse voice-channel router riding the same transport/presence model (channel/falloff model only, no WebRTC media). `createVoiceChannelRouter(channels?)`: `join`/`leave` any number of channels at once, `updatePosition` for proximity falloff (reusing the core audio falloff curve), `setMuted`, and `resolveRoutes(listenerUserId)` — one `{ fromUserId, channelId, gain }` per shared channel, so a positional proximity channel and a flat-gain walkie/crew channel resolve simultaneously and independently.
 
 ## 0.6.0
 

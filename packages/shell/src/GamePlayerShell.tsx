@@ -27,6 +27,8 @@ import type { WsPresenceRow } from "@jgengine/ws/protocol";
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 
+import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
+import { createAudioEngine } from "./audio/audioEngine";
 import { GAME_SIM_FRAME_PRIORITY, GameOrbitCamera } from "./camera";
 import { GameFirstPersonCamera } from "./camera/GameFirstPersonCamera";
 import { ProjectileTracers, Reticle, WorldEntityBars, WorldFloatText } from "./world/WorldHud";
@@ -563,6 +565,11 @@ export function GamePlayerShell({
     () => createActionStateTracker(toActionStateBindingMap(playable.game.input ?? {})),
     [playable],
   );
+  const audioEngine = useMemo(
+    () => createAudioEngine({ sounds: playable.audio?.sounds, buses: playable.audio?.buses }),
+    [playable],
+  );
+  useEffect(() => () => audioEngine.dispose(), [audioEngine]);
   const userId = multiplayer?.userId ?? DEV_USER_ID;
   const reportRuntimeError = (error: unknown, phase: string) => {
     const diagnostic = logRuntimeError(error, phase);
@@ -688,6 +695,7 @@ export function GamePlayerShell({
       onBlur={() => tracker.reset()}
       onPointerDown={(event) => {
         wrapperRef.current?.focus();
+        audioEngine.resume();
         if (event.button === 0) {
           pointerDownRef.current = { x: event.clientX, y: event.clientY };
         }
@@ -730,6 +738,9 @@ export function GamePlayerShell({
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
           <WorldFloatText />
           <ProjectileTracers />
+          <AudioListener engine={audioEngine} />
+          <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
+          <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />
           {firstPerson ? (
             <GameFirstPersonCamera
               yawRef={yawRef}

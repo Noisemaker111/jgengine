@@ -1,3 +1,4 @@
+import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
@@ -96,4 +97,10 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   camera?: GameCameraConfig;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. */
   worldHealthBars?: boolean | { statId?: string };
+  /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. */
+  audio?: { sounds: Record<string, SoundDef>; buses?: Record<string, AudioBusDef> };
+  /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */
+  entitySounds?: Record<string, string>;
+  /** Same as `entitySounds` but keyed by placed-object catalog id (torches, machinery). */
+  objectSounds?: Record<string, string>;
 }
