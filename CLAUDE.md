@@ -2,11 +2,18 @@
 
 This is the primary engine-development repo: a genre-agnostic, pure-TypeScript game engine SDK plus its agent skills. Published packages live under `packages/*` (npm, AGPL-3.0-only); everything else is private.
 
+## Workflow
+
+- Every unit of work ships as a PR. At the **start** of a task, branch off `main` and open a **draft** PR titled for what we're about to do (`gh pr create --draft`), then push commits into it as you go — even when the work is done entirely locally. Don't wait until the end to think about a PR.
+- Keep it a **draft** while the task is in progress. Only when the **whole task is complete** — not after an intermediate phase or milestone within it — mark it ready (`gh pr ready`) and watch CI to green (`gh run watch`). Then the user merges (they do the merge unless they explicitly hand it off).
+- Don't mark ready or babysit CI mid-task: a half-finished task stays a draft, and CI is checked once at the end when the work is actually done — not after every phase.
+- The point: work should always already be in a mergeable, reviewable place, so shipping is one step ("looks good, ship it") rather than a scramble to package finished changes after the fact.
+
 ## Stack
 
 - Package manager: bun (workspaces: `packages/*`, `packages/games/*`, `apps/*`, `examples/*`).
 - Each published package builds with `tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist`; root `bun run build` runs them in dependency order (core → ws → sql → react → convex → node → shell → assets). The compiler is `tsgo` (`@typescript/native-preview`), not `tsc`.
-- TypeScript strict everywhere; `check-types` is `tsgo --noEmit` per package, fanned out by root `bun run check-types` (which also runs `check-artifacts` — no compiled `.js`/`.d.ts` may sit in `packages/*/src`).
+- TypeScript strict everywhere; `check-types` is `tsgo --noEmit` per package, fanned out by root `bun run check-types` (which also runs `check-artifacts` — no compiled `.js`/`.d.ts` may sit in `packages/*/src` — and `check-skills` — every `@jgengine/*` import path named in the `jgengine-api` skill must resolve, and every public `core` domain must be documented; keeps the skill from drifting off the API surface).
 
 ## Layering
 
