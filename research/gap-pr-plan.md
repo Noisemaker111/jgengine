@@ -12,10 +12,13 @@
 | G9 Crafting/tech/production | opus | claude/gaps-crafting | in-flight | — |
 | G7 Character combat feel | opus | claude/gaps-combat-feel | in-flight (batch1) | — |
 | G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
-| G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | in-flight (batch1) | — |
+| G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | ✅ DONE (green) | #130 |
 | G16 Card & board stack | opus | claude/gaps-card-board | in-flight | — |
 | G8 AI director/behavior/crowds | opus | claude/gaps-ai-director (stack→gaps-nav-pointer) | in-flight | — |
-| G4,G5,G6,G11,G12,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+| G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | in-flight | — |
+| G5,G6,G11,G12,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+
+G15 added domains `turn/`, `tactics/` (skill coverage now 19). Extracted `combat/effects.resolveAreaTargets` (shared by predictive query).
 
 G1 nav API (for G8/G4/G5/G12): `@jgengine/core/nav/navGrid` (`findPath`,`smoothPath`), `nav/pathFollow`; `pointer.worldHit()→PointerHit`; `core/scene/selection`, `core/interaction/contextMenu` (catalog `verbs`). New `nav/` domain (skill coverage now 18).
 
