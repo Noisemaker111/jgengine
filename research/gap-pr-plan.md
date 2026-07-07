@@ -10,8 +10,8 @@
 | G2 Camera rig library | opus | claude/gaps-camera-rigs | ✅ DONE (green) | #128 |
 | G3 Physics constraints | opus | claude/gaps-physics-actors | ✅ DONE (green) | #127 |
 | G9 Crafting/tech/production | opus | claude/gaps-crafting | ✅ DONE (green) | #132 |
-| G11 Survival & environment | opus | claude/gaps-survival | in-flight | — |
-| G7 Character combat feel | opus | claude/gaps-combat-feel | in-flight (batch1) | — |
+| G11 Survival & environment | opus | claude/gaps-survival | in-flight (resumed) | — |
+| G7 Character combat feel | opus | claude/gaps-combat-feel | in-flight (resumed, ~done) | — |
 | G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
 | G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | ✅ DONE (green) | #130 |
 | G16 Card & board stack | opus | claude/gaps-card-board | ✅ DONE (green) | #131 |
