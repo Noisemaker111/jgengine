@@ -23,6 +23,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*",
-    "./combat/pendingProjectiles": "./src/combat/pendingProjectiles.ts"
+    "./combat/pendingProjectiles": "./src/combat/pendingProjectiles.ts",
+    "./ui/uiPreviewScenario": "./src/ui/uiPreviewScenario.ts"
   }
 }

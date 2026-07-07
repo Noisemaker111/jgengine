@@ -56,6 +56,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Building generator | `world/buildings` | `generateBuilding`, `generateBuildingDistrict`, `createBuildingGrid`, `GeneratedBuilding` |
 | Building index | `world/buildingIndex` | `buildingIndex`, `BuildingIndex`, `BuildingHit` |
 | Proximity prompt | `interaction/proximityPrompt` | `proximityPrompt`, `ProximityPrompt`, `ProximityPromptDisplay`, `keybind`, `gauge`, `label`, `command` |
+| Skill-check minigame | `interaction/skillCheck` | `evaluateSkillCheck`, `skillCheckMarkerPosition`, `skillCheckZoneAt`, `SkillCheckConfig`, `SkillCheckZone`, `SkillCheckResult` |
+| QTE sequencer | `interaction/qte` | `evaluateQteSequence`, `pendingQteStep`, `qteProgress`, `QteStep`, `QteInputEvent`, `QteOutcome` |
 | Item use | `item/use` | `createItemUse`, `ItemUseHandler`, `ItemUseInput`, `ItemUseResult`, `ItemUseRejection` |
 | Inventory | `inventory/inventoryModel` | `InventoryLayout`, `InventorySet`, `ItemTraits` |
 | Progression | `game/progression` | `curve`, `evalCurve`, `leveling`, `Curve`, `LevelingTrack`, `LevelProgress` |
@@ -65,7 +67,10 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Interiors | `world/interiors` | `createInteriors`, `Interior`, `Exterior`, `SpaceRef` |
 | Game clock | `time/gameClock` | `getScaledElapsedMs`, `computeGameDay`, `SECONDS_PER_GAME_DAY` |
 | Scene behaviors | `scene/behaviors` | `wander`, `promptable`, `talkable`, `player` |
+| Capture check | `scene/captureCheck` | `captureChance`, `rollCapture`, `CaptureCheckInput` |
+| Owned roster | `scene/roster` | `createRoster`, `Roster`, `RosterEntry`, `RosterCaptureOptions` |
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
+| Skill-check roll | `stats/rollCheck` | `rollCheck`, `CheckInput`, `CheckResult`, `CheckAdvantage` |
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
 | Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` |
 
@@ -246,7 +251,7 @@ ctx.scene.entity    spawn, despawn, setPose, get, list,
                     willHitProjectile, fireProjectile, settleProjectile,
                     distance, inRadius, hasLineOfSight, queryArc, moveToward
 ctx.game            commands, events, feed, loot, trade, quest, social,
-                    unlocks, economy, leaderboard
+                    unlocks, economy, leaderboard, roster
 ctx.player          userId, isNew, inventory, stats (modifiers), loadout,
                     applyLoadout, movement (pose/aim)
 ctx.item            use, weapon
@@ -334,7 +339,9 @@ Break resolution: `duration = baseBreakTime / (tool?.breakSpeed ?? 1)`; drops pe
 
 ### Dialogue catalog
 
-`entities/npcs/dialogues.ts` — `{ id, lines: [{ speaker, text } | { choices: [{ label, invoke: { command, args } | null }] }] }`. Choices invoke `quest.accept`, `trade.open`, etc.
+`entities/npcs/dialogues.ts` — `{ id, lines: [{ speaker, text } | { choices: [{ label, invoke: { command, args } | null }] }] }`. Choices invoke `quest.accept`, `trade.open`, etc. Types ship from `@jgengine/react/components` (`DialogueDef`, `DialogueChoice`, `DialogueLine`) so a game imports them rather than redeclaring — the `DialogueBox` component renders the same shape it types.
+
+A choice may gate its branch behind a roll: `{ check: { modifier, dc, advantage? }, onSuccess?, onFailure? }` (`onSuccess`/`onFailure` default to `invoke` when omitted). `DialogueBox` rolls via `@jgengine/core/stats/rollCheck`'s `rollCheck({ modifier, dc, advantage }, rng?)` (d20 by default; `advantage`/`disadvantage` roll twice and take the high/low; a natural 1 or max-die result reports `critical`) when the player clicks a checked choice, then calls `onChoice(choice, result)`; game code resolves which command to run with `resolveDialogueInvoke(choice, result)` (also exported from `@jgengine/react/components`).
 
 ## `scene.entity.stats` — bounded stats
 
@@ -387,6 +394,20 @@ type ItemUseHandler<GameContext> = {
 | consumable | `effect({ to: from, effect: "heal", via: { amount: -n } })` |
 
 Banned in the engine: `weapon.fire`, `consumable.use`, `game.combat.*`, per-weapon commands.
+
+### Skill-checks and QTE (timed/rolled minigames)
+
+`@jgengine/core/interaction/skillCheck` models a moving-target-zone minigame (casting/reeling, active-reload): `evaluateSkillCheck({ trackWidth, zone, markerPeriod, window, zoneDriftPerSecond? }, elapsedSeconds)` bounces a marker back and forth over `markerPeriod` seconds and returns `{ success, timedOut, markerPosition, zone }` — `zone` itself can drift when `zoneDriftPerSecond` is set. It is pure: an `item.use` handler starts a session by recording `ctx.time.now()` (game-time, so pause/fast-forward apply for free) the first time it's pressed, and evaluates `evaluateSkillCheck` against the elapsed time on the next press to lock in success/fail — the session bookkeeping (a `Map<instanceId, startedAt>`) is game-owned, same pattern as an ability-cooldown map.
+
+`@jgengine/core/interaction/qte` sequences discrete timed prompts: `evaluateQteSequence(steps: QteStep[], inputs: QteInputEvent[])` walks `{ id, action, windowStart, windowEnd }` steps against `{ action, at }` presses and returns `{ status: "success" }` or `{ status: "fail", atStep, reason }`; `pendingQteStep`/`qteProgress` read the currently-active step and fraction complete for UI.
+
+`@jgengine/react` ships matching headless UI: `SkillCheckBar({ config, startedAt })` and `QteTrack({ steps, startedAt })` self-tick via `requestAnimationFrame` and read `ctx.time.now()` each frame — pass `className`/`trackClassName`/`zoneClassName`/`markerClassName` (or `stepClassName`/`activeClassName`/`doneClassName` for `QteTrack`) for the moving-zone/timing visuals the UI quality bar requires.
+
+### Capture and owned roster
+
+`@jgengine/core/scene/captureCheck` — `captureChance({ hpFraction, catchPower, difficulty? })` returns a 0..1 probability (lower `hpFraction` and higher `catchPower` raise it, higher `difficulty` lowers it); `rollCapture(input, rng?)` rolls it. `@jgengine/core/scene/roster` — `createRoster()` is a persisted, per-owner store (`capture`, `release`, `list`, `get`, `setEquipped`, `equippedList`, `snapshot`/`hydrate`) wired onto the runtime as `ctx.game.roster`, distinct from `game.social.party` (session-ephemeral) — roster entries persist and are optionally equipped (deployed) independent of party membership.
+
+A capture item's `item.use` handler composes the primitives instead of forking them: read the wild target's hp via `ctx.scene.entity.stats.get(target, "health")`, roll `rollCapture({ hpFraction, catchPower })`, and on success call `ctx.scene.entity.despawn(target)` + `ctx.game.roster.capture(ownerId, catalogId)` — the wild scene entity is removed and re-parented into the owner's persisted roster; the react `CaptureOdds({ chance })` component shows the live odds meter the UI quality bar requires.
 
 ## Effects and projectiles
 
@@ -600,6 +621,7 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 | `useFeed({ action, limit? })` | recent entries — kills, loot, any action |
 | `useQuestJournal()` | active quests + objective progress |
 | `useFriends()` / `useParty()` / `usePresence(userId)` | social panels |
+| `useRoster(userId?)` | owned/captured roster entries for a user (defaults to the local player) |
 | `useLeaderboard(stat, { scope, limit? })` | `{ userId, value }[]` |
 | `useActivePrompt(prompts)` | nearest proximity prompt |
 | `useGameClock()` | clock snapshot (`now`, `paused`, `speed`, `calendar`) + `controls` (pause/play/setSpeed) |
@@ -608,7 +630,7 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 
 Import hooks from `@jgengine/react/hooks`, components from `@jgengine/react/components`, `GameProvider` from `@jgengine/react/provider` (the package uses deep paths like core). For binding arbitrary engine state outside the typed hooks, `@jgengine/react/engineStore` exposes `useEngineState`, `useEngineStore`, `useEngineEvent`.
 
-Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox`, `ToastStack`, `DeathScreen`, `LevelUpFlash`. Not yet implemented: `useServer`, `useDialogue`.
+Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox` (+ `lineClassName`/`speakerClassName`/`choicesClassName`/`choiceClassName`/`checkClassName`, `rollCheck`-gated choices), `SkillCheckBar` (+ `trackClassName`/`zoneClassName`/`markerClassName`), `QteTrack` (+ `stepClassName`/`activeClassName`/`doneClassName`), `CaptureOdds` (+ `fillClassName`), `ToastStack`, `DeathScreen`, `LevelUpFlash`. Not yet implemented: `useServer`.
 
 **Layout rule:** all **screen** positioning (`absolute`, `inset-*`, grid zones, flex regions) lives on wrappers inside `ui/GameUI.tsx` only. `ui/components/` files are content + hooks only — internal `relative`/`absolute` for bar overlays or slot badges inside a component is fine; never anchor a component to the viewport from a child file. Pass `className` to primitives for **visual** styling (colors, borders, size), not screen placement.
 
@@ -712,10 +734,14 @@ game.loot          register / has / roll / grantToPlayer   (lootTable() = pure f
 game.trade         canBuy / canSell / buy / sell / tradableAt
 game.quest         register, accept…turnIn, bind(entity.died | inventory.added), declarative rewards
 game.social        friends (persisted), party (ephemeral), presence
+game.roster        capture / release / list / setEquipped — persisted owned-creature roster
 game.events/feed/leaderboard   on / bind+push+recent / track+increment+getTop
 applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
 proximityPrompt    { radius, display: {kind}, invoke } — one float-UI primitive
+skillCheck/qte     evaluateSkillCheck (moving zone + window) / evaluateQteSequence (timed steps)
+captureCheck       captureChance / rollCapture — hp% + catchPower → probability
+dialogue check     DialogueChoice.check (roll vs DC + advantage/disadvantage) → onSuccess/onFailure
 world features     biomes / voxel / plots / tilemap / flat descriptors
 physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not the defineGame physics field
 GameBackend        { transport, feeds?, presence? } — Convex is one adapter (createConvexBackend)

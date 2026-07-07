@@ -1,8 +1,9 @@
-export type GamePanel = "backpack" | "character" | "abilities" | null;
+export type GamePanel = "backpack" | "character" | "abilities" | "dialogue" | null;
 
 type Listener = () => void;
 
 let openPanel: GamePanel = null;
+let openDialogueId: string | null = null;
 let selectedHotbarSlot = 0;
 const listeners = new Set<Listener>();
 
@@ -19,6 +20,10 @@ export function getOpenPanel(): GamePanel {
   return openPanel;
 }
 
+export function getOpenDialogueId(): string | null {
+  return openDialogueId;
+}
+
 export function getSelectedHotbarSlot(): number {
   return selectedHotbarSlot;
 }
@@ -28,7 +33,14 @@ export function togglePanel(panel: Exclude<GamePanel, null>): void {
   notify();
 }
 
+export function openDialogue(dialogueId: string): void {
+  openPanel = "dialogue";
+  openDialogueId = dialogueId;
+  notify();
+}
+
 export function closePanels(): void {
+  openDialogueId = null;
   if (openPanel === null) return;
   openPanel = null;
   notify();

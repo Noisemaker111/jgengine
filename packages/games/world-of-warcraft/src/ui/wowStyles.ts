@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Flame, FlaskConical, Heart, Snowflake, Sword } from "lucide-react";
+import { Fish, Flame, FlaskConical, Heart, Orbit, Snowflake, Sword } from "lucide-react";
 
 export const wowPanel =
   "rounded-md border-2 border-amber-700/70 bg-gradient-to-b from-stone-950/98 via-stone-900/95 to-stone-950/98 shadow-[0_8px_32px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(251,191,36,0.2)] backdrop-blur-sm";
@@ -60,6 +60,16 @@ const abilityVisuals: Record<string, AbilityVisual> = {
     gradient: "from-rose-400 via-red-600 to-rose-900",
     accent: "text-rose-50",
     imageUrl: "/game-assets/wow/icons/healing-potion.png",
+  },
+  fishing_rod: {
+    icon: Fish,
+    gradient: "from-cyan-300 via-teal-500 to-teal-800",
+    accent: "text-cyan-50",
+  },
+  capture_orb: {
+    icon: Orbit,
+    gradient: "from-violet-400 via-purple-600 to-purple-900",
+    accent: "text-violet-50",
   },
 };
 

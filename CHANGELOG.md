@@ -13,7 +13,15 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- `@jgengine/core/interaction/skillCheck` — a moving-target-zone, timed minigame (`evaluateSkillCheck`, `skillCheckMarkerPosition`, `skillCheckZoneAt`) for casting/reeling, active-reload, and production minigames from an `item.use` handler.
+- `@jgengine/core/interaction/qte` — a timed-prompt QTE sequencer (`evaluateQteSequence`, `pendingQteStep`, `qteProgress`).
+- `@jgengine/core/scene/captureCheck` — `captureChance`/`rollCapture`, an hp%+catchPower→probability formula for capture/tame mechanics.
+- `@jgengine/core/scene/roster` — `createRoster()`, a persisted per-owner roster (capture/release/list/setEquipped) wired onto the runtime as `ctx.game.roster`, distinct from the ephemeral `game.social.party`.
+- `@jgengine/core/stats/rollCheck` — `rollCheck`, a d20-style roll vs. DC with advantage/disadvantage and critical detection.
+- Dialogue choices can now gate a branch behind a roll: `DialogueChoice.check` (+ `onSuccess`/`onFailure`) on the `@jgengine/react/components` `DialogueDef`/`DialogueChoice` types, resolved via `resolveDialogueInvoke`.
+- `@jgengine/react` gained `SkillCheckBar`, `QteTrack`, and `CaptureOdds` headless minigame UI components, plus a `useRoster(userId?)` hook and extra `DialogueBox` slot classNames (`lineClassName`, `speakerClassName`, `choicesClassName`, `choiceClassName`, `checkClassName`).
 
 ## 0.6.0
 

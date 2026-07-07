@@ -5,8 +5,11 @@ import { closePanels } from "./uiController";
 import { useOpenPanel } from "./hooks/useUiState";
 import { AbilitiesModal } from "./components/AbilitiesModal";
 import { BackpackModal } from "./components/BackpackModal";
+import { CaptureMeter } from "./components/CaptureMeter";
 import { CharacterSheetModal } from "./components/CharacterSheetModal";
 import { CombatLogPanel } from "./components/CombatLogPanel";
+import { DialogueModal } from "./components/DialogueModal";
+import { FishingBar } from "./components/FishingBar";
 import { FloatingCombatText } from "./components/FloatingCombatText";
 import { GoldDisplay } from "./components/GoldDisplay";
 import { Hotbar } from "./components/Hotbar";
@@ -24,8 +27,9 @@ export function GameUI() {
       <div className="col-start-1 row-start-1 justify-self-start">
         <PlayerFrame />
       </div>
-      <div className="col-start-1 row-start-2 justify-self-start">
+      <div className="col-start-1 row-start-2 flex flex-col items-start gap-2 justify-self-start">
         <TargetFrame />
+        <CaptureMeter />
       </div>
       <div className="col-start-3 row-start-1 flex flex-col items-end gap-1 justify-self-end">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-stone-400">
@@ -40,7 +44,8 @@ export function GameUI() {
         </div>
         <QuestTracker />
       </div>
-      <div className="col-start-2 row-start-3 flex items-end justify-center self-end pb-8">
+      <div className="col-start-2 row-start-3 flex flex-col items-center justify-end gap-3 self-end pb-8">
+        <FishingBar />
         <FloatingCombatText message={combatText} />
       </div>
       <div className="col-start-2 row-start-4 flex flex-col items-center gap-1 justify-self-center self-end">
@@ -53,6 +58,7 @@ export function GameUI() {
       {openPanel === "backpack" ? <BackpackModal onClose={closePanels} /> : null}
       {openPanel === "character" ? <CharacterSheetModal onClose={closePanels} /> : null}
       {openPanel === "abilities" ? <AbilitiesModal onClose={closePanels} /> : null}
+      {openPanel === "dialogue" ? <DialogueModal /> : null}
     </div>
   );
 }
