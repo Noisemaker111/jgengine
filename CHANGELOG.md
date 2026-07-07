@@ -13,7 +13,16 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- **Turn-based & tactics stack** — six pure, renderer-free `@jgengine/core` primitives for turn-based, grid-tactics, and card games (XCOM, BG3, Into the Breach, Slay the Spire, Marvel Snap, Tactical Breach Wizards, Divinity surfaces).
+  - `@jgengine/core/turn/turnLoop` (`createTurnLoop`) — initiative machine with configurable `phases` and per-turn action-economy `pools` (`{ id, max, start? }`) that reset when a participant enters their turn; `advanceTurn`/`advancePhase`/`advanceRound`, `spend`/`canSpend`/`gain`/`refill`, and `setOrder`/`addParticipant`/`removeParticipant`. Covers both Slay-the-Spire single-energy resets and BG3's Action/Bonus/Movement/Reaction set.
+  - `@jgengine/core/turn/commit` (`createCommitController`, also `turnLoop.commit`) — three commit modes: `immediate`, `simultaneous` (sealed hidden submissions → `reveal()` on `allReady()`), and `rewind` (visible `pending()` → `rewind()`/`commit()`).
+  - `@jgengine/core/tactics/tacticalGrid` (`createTacticalGrid`) — tile occupancy, `reachable(from, budget)` flood-fill, `path`, and `push(id, dir, { distance, chain })` discrete knockback-to-tile with chained collisions (Into the Breach).
+  - `@jgengine/core/tactics/predictiveQuery` (`predictAreaEffect`/`predictArcEffect`/`predictTiles`) — a would-this-effect-hit query for pre-commit overlays and enemy-intent telegraphs, reusing the exact AoE/LoS targeting behind `ctx.scene.entity.effect` (new shared `resolveAreaTargets` in `combat/effects`) so predictions match what the effect actually drains.
+  - `@jgengine/core/tactics/snapshot` (`createSnapshotStore`, `deepClone`) — cheap, repeatable turn-undo over registered `capture()/restore()` slices (the grid, surfaces, and turn loop all qualify), with a `push()/pop()` undo stack.
+  - `@jgengine/core/tactics/surface` (`createSurfaceLayer`) — a stateful tile surface layer with its own `tick(dt)` and a data-driven combination matrix (`reactions: [{ when: [a, b], result }]`) — grease+fire, water+lightning — distinct from terrain/water.
+- `@jgengine/core/combat/effects` now exports `resolveAreaTargets` (+ `AreaTarget`, `AreaTargetInput`), the shared in-radius→LoS→falloff→accept targeting that both `applyEffect` and the predictive query run, guaranteeing parity by construction. No behavior change to `effect`.
 
 ## 0.6.0
 

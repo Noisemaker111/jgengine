@@ -57,6 +57,40 @@ export interface CombatSpatialDeps {
   positionOf(instanceId: string): EntityPosition | undefined;
 }
 
+export interface AreaTargetInput {
+  at: EntityPosition;
+  radius: number;
+  falloff?: "linear" | "none";
+  los?: boolean;
+}
+
+export interface AreaTarget {
+  instanceId: string;
+  scale: number;
+}
+
+export function resolveAreaTargets(
+  spatial: CombatSpatialDeps,
+  input: AreaTargetInput,
+  accept?: (instanceId: string) => boolean,
+): AreaTarget[] {
+  const falloff = input.falloff ?? "none";
+  const los = input.los ?? true;
+  const targets: AreaTarget[] = [];
+  for (const instanceId of spatial.inRadius(input.at, input.radius)) {
+    if (los && !spatial.hasLineOfSight(input.at, instanceId)) continue;
+    let scale = 1;
+    if (falloff === "linear") {
+      const position = spatial.positionOf(instanceId);
+      if (position === undefined) continue;
+      scale = Math.max(0, 1 - distanceBetween(input.at, position) / input.radius);
+    }
+    if (accept !== undefined && !accept(instanceId)) continue;
+    targets.push({ instanceId, scale });
+  }
+  return targets;
+}
+
 export interface EffectSystemDeps {
   resolveReceive(instanceId: string): ReceiveMap | null | undefined;
   resolveStats(instanceId: string): StatValueMap | undefined;
@@ -162,18 +196,9 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
         const result = applyTo(input.to, input.effect, input.via, input.from, 1);
         return result === null ? [] : [result];
       }
-      const falloff = input.falloff ?? "none";
-      const los = input.los ?? true;
       const results: EffectResult[] = [];
-      for (const instanceId of deps.spatial.inRadius(input.at, input.radius)) {
-        if (los && !deps.spatial.hasLineOfSight(input.at, instanceId)) continue;
-        let scale = 1;
-        if (falloff === "linear") {
-          const position = deps.spatial.positionOf(instanceId);
-          if (position === undefined) continue;
-          scale = Math.max(0, 1 - distanceBetween(input.at, position) / input.radius);
-        }
-        const result = applyTo(instanceId, input.effect, input.via, input.from, scale);
+      for (const target of resolveAreaTargets(deps.spatial, input)) {
+        const result = applyTo(target.instanceId, input.effect, input.via, input.from, target.scale);
         if (result !== null) results.push(result);
       }
       return results;
