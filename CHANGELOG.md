@@ -11,6 +11,12 @@ Agents building on the published SDK can also read this programmatically:
 same data as typed values, so an updater can diff its installed version against
 the latest and surface the migration steps.
 
+## Unreleased
+
+### Docs
+
+- Added [CREDITS.md](CREDITS.md) crediting [achrefelouafi](https://github.com/achrefelouafi) for the MIT Three.js reference projects behind the procedural building, water, rain, and snow renderers, with links from the root, `@jgengine/core`, and `@jgengine/shell` READMEs.
+
 ## 0.7.0
 
 The engine-gaps release — 22 system-level additions across turn/tactics, cards & boards,

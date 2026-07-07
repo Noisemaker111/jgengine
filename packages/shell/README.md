@@ -24,7 +24,32 @@ import { WeatherLayer, LightningStrike } from "@jgengine/shell/weather";
 <LightningStrike origin={[0, 22, 0]} target={[4, 0, -6]} strikeKey={stormTick} />;
 ```
 
-`RainField` and `SnowField` can also be mounted directly. The primitives use camera-following instanced volumes, prop-driven density controls, shared time/wind uniforms under `WeatherLayer`, and explicit Three resource disposal. They were shaped from ideas in achrefelouafi's MIT RainSystemThreeJS and SnowSystemThreeJS references without bringing over GUI, audio, postprocessing, or app-specific scene setup.
+`RainField` and `SnowField` can also be mounted directly. The primitives use camera-following instanced volumes, prop-driven density controls, shared time/wind uniforms under `WeatherLayer`, and explicit Three resource disposal. They were shaped from ideas in achrefelouafi's MIT [RainSystemThreeJS](https://github.com/achrefelouafi/RainSystemThreeJS) and [SnowSystemThreeJS](https://github.com/achrefelouafi/SnowSystemThreeJS) references (see [CREDITS.md](../../CREDITS.md)) without bringing over GUI, audio, postprocessing, or app-specific scene setup.
+
+## Water
+
+`@jgengine/shell/water` renders the Gerstner ocean surface from `@jgengine/core`:
+
+```tsx
+import { Ocean } from "@jgengine/shell/water";
+
+<Ocean />;
+```
+
+Summed Gerstner waves, crest-driven foam, and Fresnel water color were shaped from achrefelouafi's MIT [OceanThreejs](https://github.com/achrefelouafi/OceanThreejs) reference (see [CREDITS.md](../../CREDITS.md)).
+
+## Structures
+
+`GeneratedBuilding` renders the seeded facade/roof kit produced by `generateBuilding` in `@jgengine/core`:
+
+```tsx
+import { GeneratedBuilding } from "@jgengine/shell/structures/GeneratedBuilding";
+import { generateBuilding } from "@jgengine/core/world/buildings";
+
+<GeneratedBuilding building={generateBuilding({ seed: "block-a", floors: 6 })} />;
+```
+
+The component vocabulary (windows, awnings, AC units, clotheslines, storefronts, shutters, store signs, roof props, guardrails) and placement logic follow achrefelouafi's MIT [BuildingGeneratorThreeJS](https://github.com/achrefelouafi/BuildingGeneratorThreeJS) (see [CREDITS.md](../../CREDITS.md)).
 
 ## Terrain primitives
 
