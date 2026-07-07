@@ -13,7 +13,13 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- `@jgengine/core/item/durability` — per-instance item durability + repair. A catalog `DurabilitySpec` (`max`, `wearPerUse`/`wearPerHit`, `disableAtZero`, `repair`); `createDurability`/`wear`/`isDisabled`/`durabilityFraction` for the wear loop, `repairQuote(spec, state, { station?, to? })` for a quote-then-apply repair (material cost scaled by points restored, optional `qualityLossPerRepair` shrinking `max`), and `createDurabilityTracker()` to hold state per instance id. For weapon/tool/armor degradation repaired at stations.
+- `@jgengine/core/item/affix` — rarity-weighted procgen roller. `createAffixRoller({ pools, rarities })` turns `base × rarity` into `{ rolled affixes, computed stats, name }`: draws `affixCount` distinct affixes without replacement (weighted via the engine `pickWeighted`), computes stats (base × rarity scale, then `add` then `mul` affixes), and composes a name from rarity + prefix/suffix parts. `seededRng(seed)` gives deterministic drops. For looter-shooter / ARPG generated weapons.
+- `@jgengine/core/item/modularItem` — parts-in-typed-slots assembly. `ModularItemDef` with category-constrained `MountSlotDef`s; `install`/`uninstall` validate slot + category + occupancy, `computeEffectiveStats` rolls part `stats` (additive) then `multipliers` over the frame's `baseStats`, `missingRequiredSlots`/`isComplete` gate a buildable whole; `createModularItem(def)` is the stateful wrapper. For piece-by-piece guns and mech loadouts.
+- `@jgengine/core/inventory/storageTier` — tiered extraction-economy inventory. A `tier: "carried" | "banked"` on inventory containers (`InventoryDeclaration.tier`); `partitionOnDeath` splits a death snapshot into kept (banked) vs lost (carried) with merged stacks, `createDeliveryQueue()` is the delayed-delivery (insurance) hook (`schedule`/`due`/`claimDue` on the game clock), `insureLost` filters the lost set to insured items with a delayed `deliverAt`, and `resolveConsolation` yields a baseline loadout id (apply via `applyLoadout`) for the post-death consolation grant. The inventory foundation the extraction session/round machines build on.
+- `InventoryDeclaration` (`@jgengine/core/game/defineGame`) gained an optional `tier?: StorageTier` flag so containers declare carried-vs-banked storage directly.
 
 ## 0.6.0
 
