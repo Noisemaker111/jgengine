@@ -10,7 +10,16 @@ const fireGun: ItemUseHandler<GameContext> = {
       aim,
       effect: "damage",
     });
-    ctx.scene.entity.settleProjectile(shotId);
+    const settle = ctx.scene.entity.settleProjectile(shotId);
+    if (settle.status === "settled") {
+      for (const hit of settle.hits) {
+        ctx.scene.entity.hitReaction({
+          from: input.from,
+          to: hit.instanceId,
+          config: { hitstopMs: 90, knockback: 0.6, shake: { amplitude: 0.35, decay: 5 } },
+        });
+      }
+    }
     return { state: ctx };
   },
 };

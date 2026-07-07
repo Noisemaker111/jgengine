@@ -39,6 +39,46 @@ function onNewPlayer(ctx: GameContext): void {
   if (ctx.player.isNew) ctx.player.applyLoadout(ctx.player.userId, "starterKit");
 }
 
-function onTick(_ctx: GameContext, _dt: number): void {}
+const ELEMENTS = ["fire", "frost", "lightning", "poison"];
+
+let telegraphTimer = 0;
+let numberTimer = 0;
+
+function otherEntities(ctx: GameContext) {
+  return ctx.scene.entity.list().filter((entity) => entity.id !== ctx.player.userId);
+}
+
+function onTick(ctx: GameContext, dt: number): void {
+  telegraphTimer += dt;
+  numberTimer += dt;
+  const enemies = otherEntities(ctx);
+  if (enemies.length === 0) return;
+
+  if (telegraphTimer >= 1.2) {
+    telegraphTimer = 0;
+    for (const enemy of enemies) {
+      ctx.scene.entity.telegraph({
+        from: enemy.id,
+        shape: { kind: "circle", radius: 2.4 },
+        at: [enemy.position[0], enemy.position[1], enemy.position[2]],
+        windupMs: 1600,
+        kind: "danger",
+      });
+    }
+  }
+
+  if (numberTimer >= 0.5) {
+    numberTimer = 0;
+    const enemy = enemies[Math.floor(Math.random() * enemies.length)];
+    const roll = Math.random();
+    ctx.scene.entity.floatText({
+      instanceId: enemy.id,
+      text: String(120 + Math.floor(Math.random() * 480)),
+      kind: "damage",
+      crit: roll > 0.65,
+      ...(roll > 0.4 ? { element: ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)] } : {}),
+    });
+  }
+}
 
 export const loop = { onInit, onNewPlayer, onTick };

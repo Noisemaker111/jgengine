@@ -68,6 +68,15 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
 | Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` |
+| Animation SM | `combat/animationState` | `createAnimationState`, `AnimationState`, `AnimationClip`, `FramePhase`, `FrameRange`, `phasesAtFrame`, `activeRangeAtFrame`, `frameAtMs` |
+| Accumulator meter | `stats/accumulatorMeter` | `createAccumulatorMeter`, `AccumulatorMeter`, `AccumulatorMeterConfig`, `MeterTier`, `MeterAddResult`, `tierAt` |
+| Stagger / buildup | `combat/breakMeters` | `createStaggerMeter`, `createBuildupMeter`, `StaggerMeter`, `BuildupMeter`, `BuildupProc` |
+| Attack tags | `combat/attackTags` | `attackMeta`, `AttackTag`, `AttackMeta`, `hasTag`, `isBlockable`, `isParryable`, `isDodgeable`, `counters` |
+| Defensive window | `combat/defensiveWindow` | `createDefensiveWindow`, `resolveDefense`, `DefensiveWindowConfig`, `DefenseKind`, `DefenseOutcome`, `windowActiveAt`, `iframeActiveAt` |
+| Combo string | `combat/comboString` | `createComboRunner`, `advanceCombo`, `ComboString`, `ComboStep`, `AdvanceComboResult` |
+| Hit reaction | `combat/hitReaction` | `resolveHitReaction`, `HitReaction`, `HitReactionConfig`, `CameraShake`, `applyImpulse` |
+| Telegraph | `combat/telegraph` | `pointInTelegraph`, `telegraphProgress`, `telegraphFired`, `TelegraphShape`, `TelegraphConfig` |
+| Dash / dodge | `movement/dash` | `createDashState`, `DashState`, `DashConfig`, `DashBurst`, `iframeActive`, `dashOffset` |
 
 ## Getting started (new project)
 
@@ -420,6 +429,20 @@ Resolved **once** by the engine when the last stat in the receive order hits min
 - `onDeath.drops` tables are rolled and **granted to the killer** on player kills (emits `loot.granted`); `onDeath.command` runs through `ctx.game.commands`.
 - Respawning under the same instance id revives it (it can die again). Same-id respawn must not happen synchronously inside the `entity.died` handler — defer a tick.
 - `quest.bind("entity.died")` credits kill objectives from the same event; leaderboards and kill feeds hang off it too.
+
+## Combat feel (melee, defense, telegraphs)
+
+Layered on top of effects/projectiles/death — none of it replaces them, it adds **feel**. All models are renderer-free pure `@jgengine/core` factories a game composes per entity (like the `ctx`-vs-factory split above); the shell renders the telegraphs, styled damage numbers, hitstop shake.
+
+- **Animation state machine** (`combat/animationState`) is the root the rest hangs on. A `AnimationClip` is catalog data — `{ frames, fps, ranges }` where each `FrameRange` tags a window `windup | active | recovery | cancel` (cancel may overlap recovery). `createAnimationState({ clips })` gives a per-entity SM: `play(clipId)`, `tick(dt)` → `{ entered, exited, completed }`, and queries combat/defense subscribe to — `inPhase("active")`, `isActive()`, `canCancel()`, `activeWindowMs()`. Frame ranges are the "commit frame" contract for delayed/feinted attacks.
+- **Attack tags** (`combat/attackTags`) — `attackMeta(["unblockable" | "thrust" | "sweep" | "grab" | …], { effect, power })`. Defense logic reads them: `isBlockable`, `isParryable`, `isDodgeable`, `counters(meta, "mikiri")`. A grab beats all defenses; an unblockable is parry/dodge-only.
+- **Defensive window** (`combat/defensiveWindow`) — a parry/block/dodge with `{ startupMs, activeMs, recoveryMs, iframes }`. `resolveDefense({ config, elapsedMs, attack })` is the pure overlap of the defender's window against the moment the attacker's `active` frames land → `parry | block | iframe | hit`. `createDefensiveWindow(config)` tracks the open time (`open(now)` / `evaluate(now, attack)` / `isInvulnerable(now)`).
+- **Combo strings** (`combat/comboString`) — `ComboStep`s with `cancelInto` + `cancelPhases` + optional `stance`, over the anim SM. `advanceCombo(...)` (pure) accepts the next attack only inside the current step's cancel window and matching stance; `createComboRunner(combo, anim)` drives the SM.
+- **Meters share one accumulator** (`stats/accumulatorMeter`) — `createAccumulatorMeter({ max, mode: "hold" | "reset", decayPerSecond, decayDelayMs, tiers })`: fill via `add(n)` → `MeterAddResult { fired, overflow, tier, tierChanged }`, `tick(dt)` decays after an idle grace. `combat/breakMeters` builds two on it: `createStaggerMeter` (mode `hold` — fills from hits, `broke()` stays true until `recover()` after a riposte/deathblow) and `createBuildupMeter` (mode `reset` — `add(n)` returns a `BuildupProc { status, durationMs }` at threshold for bleed/frost/rot, then decays). The same base backs G6's ult/streak meters.
+- **Dash / dodge** (`movement/dash`) — `createDashState({ distance, durationMs, iframes, staminaCost, staminaMax, staminaRegenPerSecond, cooldownMs })`: `tryDash(dir, now)` → burst or `{ reason: "no-stamina" | "cooldown" | "dashing" }`, `isInvulnerable(now)` for the i-frame window, `offset(now)` for the burst displacement, `tick(dt, now)` regens stamina.
+- **Hit reaction** (`combat/hitReaction`) — `resolveHitReaction(config, { attackerPos, targetPos, power })` (pure) → `{ hitstopMs, impulse, shake }`. Wired on `ctx`: `ctx.scene.entity.hitReaction({ from, to, config, power? })` knocks the target back and emits `combat.hitReaction` (the shell reads `shake` for a trauma channel — feeds a G2 camera-shake rig when present, else the shell's own kick).
+- **Telegraph** (`combat/telegraph`) — a `TelegraphShape` (`circle | ring | cone | line`) + `windupMs`. `ctx.scene.entity.telegraph({ from, shape, at, dir?, windupMs, kind?, effect? })` emits `combat.telegraph` for the shell to draw a ground decal that fills over the windup, and — if `effect` is bound — applies that effect to everyone inside the shape (`pointInTelegraph`) at activation. Returns a cancel handle.
+- **Damage-number typing** — `ctx.scene.entity.floatText({ …, crit?, element?, hitType?, scale? })` (and the `entity.floatText` event) carry hit metadata; the shell's `resolveFloatTextStyle` (`@jgengine/shell/world/floatTextStyle`) maps crit/element to color + scale + glow.
 
 ## Loot
 

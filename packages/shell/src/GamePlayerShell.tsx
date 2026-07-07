@@ -29,7 +29,14 @@ import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playab
 
 import { GAME_SIM_FRAME_PRIORITY, GameOrbitCamera } from "./camera";
 import { GameFirstPersonCamera } from "./camera/GameFirstPersonCamera";
-import { ProjectileTracers, Reticle, WorldEntityBars, WorldFloatText } from "./world/WorldHud";
+import {
+  CombatCameraShake,
+  ProjectileTracers,
+  Reticle,
+  WorldEntityBars,
+  WorldFloatText,
+  WorldTelegraphs,
+} from "./world/WorldHud";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 
@@ -728,8 +735,10 @@ export function GamePlayerShell({
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
+          <WorldTelegraphs />
           <WorldFloatText />
           <ProjectileTracers />
+          <CombatCameraShake />
           {firstPerson ? (
             <GameFirstPersonCamera
               yawRef={yawRef}

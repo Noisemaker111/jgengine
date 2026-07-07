@@ -1,3 +1,6 @@
+import type { TelegraphShape } from "../combat/telegraph";
+import type { CameraShake } from "../combat/hitReaction";
+
 export type DeathReason =
   | { kind: "player_kill"; killerUserId: string; via?: { item?: string } }
   | { kind: "environment"; source: string }
@@ -70,6 +73,26 @@ export interface EntityFloatTextEvent {
   text: string;
   kind: string;
   amount?: number;
+  hitType?: string;
+  element?: string;
+  crit?: boolean;
+  scale?: number;
+}
+
+export interface CombatTelegraphEvent {
+  id: number;
+  shape: TelegraphShape;
+  position: [number, number, number];
+  dir?: number;
+  windupMs: number;
+  kind: string;
+}
+
+export interface CombatHitReactionEvent {
+  instanceId?: string;
+  position: [number, number, number];
+  hitstopMs: number;
+  shake?: CameraShake;
 }
 
 export interface ProjectileSettledEvent {
@@ -83,6 +106,8 @@ export interface ProjectileSettledEvent {
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
+  "combat.telegraph": CombatTelegraphEvent;
+  "combat.hitReaction": CombatHitReactionEvent;
   "loot.granted": LootGrantedEvent;
   "inventory.added": InventoryAddedEvent;
   "quest.accepted": QuestAcceptedEvent;

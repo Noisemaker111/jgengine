@@ -1,9 +1,13 @@
 import { Html, Line } from "@react-three/drei";
-import { useEffect, useRef, useState } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";
+import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
 import { useGameContext } from "@jgengine/react/provider";
 import { useEntityStat, useSceneEntities } from "@jgengine/react/hooks";
+import { resolveFloatTextStyle } from "./floatTextStyle";
 
 const MUZZLE_HEIGHT = 1.4;
 
@@ -47,30 +51,30 @@ export function WorldEntityBars({ statId, height = 2.2 }: { statId: string; heig
 interface Floater {
   id: number;
   position: [number, number, number];
-  text: string;
-  kind: string;
+  event: EntityFloatTextEvent;
 }
 
-function FloatTextItem({ text, kind, lifeMs }: { text: string; kind: string; lifeMs: number }) {
+function FloatTextItem({ event, lifeMs }: { event: EntityFloatTextEvent; lifeMs: number }) {
   const [shown, setShown] = useState(false);
+  const style = useMemo(() => resolveFloatTextStyle(event), [event]);
   useEffect(() => {
     const raf = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(raf);
   }, []);
   return (
     <span
-      className={kind === "heal" ? "text-emerald-300" : "text-amber-200"}
       style={{
         display: "inline-block",
-        fontWeight: 800,
-        fontSize: "18px",
-        textShadow: "0 1px 3px rgba(0,0,0,0.95)",
+        color: style.color,
+        fontWeight: style.fontWeight,
+        fontSize: `${style.fontSizePx}px`,
+        textShadow: style.glow,
         transition: `transform ${lifeMs}ms ease-out, opacity ${lifeMs}ms ease-out`,
         transform: shown ? "translateY(-30px)" : "translateY(0)",
         opacity: shown ? 0 : 1,
       }}
     >
-      {text}
+      {event.text}
     </span>
   );
 }
@@ -82,10 +86,7 @@ export function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number
   useEffect(() => {
     return ctx.game.events.on("entity.floatText", (event) => {
       const id = nextId.current++;
-      setFloaters((current) => [
-        ...current,
-        { id, position: event.position, text: event.text, kind: event.kind },
-      ]);
+      setFloaters((current) => [...current, { id, position: event.position, event }]);
       window.setTimeout(
         () => setFloaters((current) => current.filter((floater) => floater.id !== id)),
         lifeMs,
@@ -102,11 +103,100 @@ export function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number
           distanceFactor={12}
           zIndexRange={[30, 0]}
         >
-          <FloatTextItem text={floater.text} kind={floater.kind} lifeMs={lifeMs} />
+          <FloatTextItem event={floater.event} lifeMs={lifeMs} />
         </Html>
       ))}
     </>
   );
+}
+
+interface ActiveTelegraph {
+  key: number;
+  event: CombatTelegraphEvent;
+  bornMs: number;
+}
+
+function telegraphGeometry(shape: TelegraphShape): THREE.BufferGeometry {
+  if (shape.kind === "circle") return new THREE.CircleGeometry(shape.radius, 48);
+  if (shape.kind === "ring") return new THREE.RingGeometry(shape.innerRadius, shape.radius, 48);
+  if (shape.kind === "cone") {
+    return new THREE.CircleGeometry(shape.radius, 40, -shape.angle / 2, shape.angle);
+  }
+  return new THREE.PlaneGeometry(shape.width, shape.length);
+}
+
+function TelegraphDecal({ active, nowMs }: { active: ActiveTelegraph; nowMs: number }) {
+  const geometry = useMemo(() => telegraphGeometry(active.event.shape), [active.event.shape]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  const progress = Math.max(0, Math.min(1, (nowMs - active.bornMs) / active.event.windupMs));
+  const [x, y, z] = active.event.position;
+  const dir = active.event.dir ?? 0;
+  const shape = active.event.shape;
+  const forwardOffset = shape.kind === "line" ? shape.length / 2 : 0;
+  const color = active.event.kind === "danger" ? "#ef4444" : "#f59e0b";
+  return (
+    <group
+      position={[x + Math.sin(dir) * forwardOffset, y + 0.05, z + Math.cos(dir) * forwardOffset]}
+      rotation={[-Math.PI / 2, 0, shape.kind === "line" || shape.kind === "cone" ? -dir : 0]}
+    >
+      <mesh geometry={geometry}>
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.18 + 0.5 * progress}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+export function WorldTelegraphs() {
+  const ctx = useGameContext();
+  const [telegraphs, setTelegraphs] = useState<ActiveTelegraph[]>([]);
+  const key = useRef(0);
+  const [nowMs, setNowMs] = useState(() => performance.now());
+  useFrame(() => setNowMs(performance.now()));
+  useEffect(() => {
+    return ctx.game.events.on("combat.telegraph", (event) => {
+      const entry: ActiveTelegraph = { key: key.current++, event, bornMs: performance.now() };
+      setTelegraphs((current) => [...current, entry]);
+      window.setTimeout(
+        () => setTelegraphs((current) => current.filter((t) => t.key !== entry.key)),
+        event.windupMs + 120,
+      );
+    });
+  }, [ctx]);
+  return (
+    <>
+      {telegraphs.map((active) => (
+        <TelegraphDecal key={active.key} active={active} nowMs={nowMs} />
+      ))}
+    </>
+  );
+}
+
+export function CombatCameraShake() {
+  const ctx = useGameContext();
+  const camera = useThree((state) => state.camera);
+  const trauma = useRef(0);
+  const decay = useRef(4);
+  useEffect(() => {
+    return ctx.game.events.on("combat.hitReaction", (event) => {
+      if (event.shake === undefined) return;
+      trauma.current = Math.min(1, trauma.current + event.shake.amplitude);
+      decay.current = event.shake.decay;
+    });
+  }, [ctx]);
+  useFrame((_state, dt) => {
+    if (trauma.current <= 0.0001) return;
+    const magnitude = trauma.current * trauma.current;
+    camera.position.x += (Math.random() * 2 - 1) * magnitude * 0.4;
+    camera.position.y += (Math.random() * 2 - 1) * magnitude * 0.4;
+    trauma.current = Math.max(0, trauma.current - decay.current * dt);
+  });
+  return null;
 }
 
 interface Tracer {

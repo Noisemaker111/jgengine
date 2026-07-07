@@ -13,7 +13,21 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added — character combat feel
+
+An additive layer over effects/projectiles/death that adds melee/action feel. Every model is a renderer-free `@jgengine/core` factory a game composes per entity; `@jgengine/shell` renders the world/HUD side. No existing API moved.
+
+- **Animation state machine** — `@jgengine/core/combat/animationState`: `createAnimationState({ clips })` over `AnimationClip`s whose `FrameRange`s tag `windup | active | recovery | cancel` windows. The root contract combat/defense subscribe to (`inPhase`, `isActive`, `canCancel`, `activeWindowMs`).
+- **Shared accumulator meter** — `@jgengine/core/stats/accumulatorMeter`: `createAccumulatorMeter({ max, mode, decayPerSecond, decayDelayMs, tiers })`, the fill/decay/threshold-fire/tier primitive. `@jgengine/core/combat/breakMeters` builds `createStaggerMeter` (poise/posture break → riposte) and `createBuildupMeter` (bleed/frost/rot proc) on it.
+- **Defensive window + attack tags** — `@jgengine/core/combat/defensiveWindow` (`resolveDefense` / `createDefensiveWindow`, parry/block/dodge evaluated against the attacker's active frames) reading `@jgengine/core/combat/attackTags` (`attackMeta`, unblockable/thrust/sweep/grab; `counters` for Mikiri-style reads).
+- **Combo strings** — `@jgengine/core/combat/comboString`: `advanceCombo` / `createComboRunner` — ordered attacks with stance-conditioned cancel points over the animation SM.
+- **Dash / dodge** — `@jgengine/core/movement/dash`: `createDashState` — directional burst + i-frame window + stamina/cooldown.
+- **Hit reaction, telegraphs, typed damage numbers** — `@jgengine/core/combat/hitReaction` + `ctx.scene.entity.hitReaction(...)` (knockback impulse + hitstop + `combat.hitReaction` shake channel); `@jgengine/core/combat/telegraph` + `ctx.scene.entity.telegraph(...)` (windup→activation ground decal bound to an effect, drawn by the shell); `ctx.scene.entity.floatText({ crit, element, hitType, scale })` styled by `@jgengine/shell/world/floatTextStyle`.
+
+### Migrate
+
+- No code change required — this release only adds surface.
+- Optional: give attacking entities a `createAnimationState(...)` and drive it in `onTick`; hang parry windows, combo cancels, and telegraph timing off its tagged frame ranges. Add `crit`/`element` to `floatText` emits for typed damage numbers, and call `ctx.scene.entity.telegraph(...)` / `hitReaction(...)` for boss AoE warnings and impact feel.
 
 ## 0.6.0
 
