@@ -39,23 +39,23 @@ const gameRegistry: GameRegistry = {
   "extraction-map": () => import("@jgengine/shell/demo/mapDemo").then((module) => module.mapDemoGame),
   "sensor-showcase": () =>
     import("@jgengine/shell/demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
-  "world-of-warcraft": () => import("@dogfood/world-of-warcraft").then((module) => module.wowGame),
+  "world-of-warcraft": () => import("@games/world-of-warcraft").then((module) => module.wowGame),
   "asset-showcase": () =>
-    import("@dogfood/asset-showcase").then((module) => module.assetShowcaseGame),
-  "loot-shooter": () => import("@dogfood/loot-shooter").then((module) => module.lootShooterGame),
-  "stress-bench": () => import("@dogfood/stress-bench").then((module) => module.stressBenchGame),
+    import("@games/asset-showcase").then((module) => module.assetShowcaseGame),
+  "loot-shooter": () => import("@games/loot-shooter").then((module) => module.lootShooterGame),
+  "stress-bench": () => import("@games/stress-bench").then((module) => module.stressBenchGame),
   "destruction-demo": () =>
-    import("@dogfood/destruction-demo").then((module) => module.destructionDemoGame),
-  "kart-circuit": () => import("@dogfood/kart-circuit").then((module) => module.kartCircuitGame),
+    import("@games/destruction-demo").then((module) => module.destructionDemoGame),
+  "kart-circuit": () => import("@games/kart-circuit").then((module) => module.kartCircuitGame),
 };
 
 const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {
   "world-of-warcraft": () =>
-    import("@dogfood/world-of-warcraft/ui/uiPreviewScenario").then(
+    import("@games/world-of-warcraft/ui/uiPreviewScenario").then(
       (module) => module.interactionShowcaseScenario,
     ),
   "loot-shooter": () =>
-    import("@dogfood/loot-shooter").then((module) => module.lootShooterUiScenario),
+    import("@games/loot-shooter").then((module) => module.lootShooterUiScenario),
 };
 
 const urlParams = new URLSearchParams(window.location.search);

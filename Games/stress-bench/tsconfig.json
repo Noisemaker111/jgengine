@@ -10,9 +10,9 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "paths": {
-      "@jgengine/core/*": ["../../core/src/*"],
-      "@jgengine/react/*": ["../../react/src/*"],
-      "@jgengine/shell/*": ["../../shell/src/*"]
+      "@jgengine/core/*": ["../../packages/core/src/*"],
+      "@jgengine/react/*": ["../../packages/react/src/*"],
+      "@jgengine/shell/*": ["../../packages/shell/src/*"]
     }
   },
   "include": ["src"],

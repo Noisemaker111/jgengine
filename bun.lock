@@ -10,11 +10,106 @@
         "typescript": "^5.9.3",
       },
     },
+    "Games/asset-showcase": {
+      "name": "@games/asset-showcase",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "react": "19.2.3",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "typescript": "^5",
+      },
+    },
+    "Games/destruction-demo": {
+      "name": "@games/destruction-demo",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
+        "typescript": "^5",
+      },
+    },
+    "Games/kart-circuit": {
+      "name": "@games/kart-circuit",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
+        "typescript": "^5",
+      },
+    },
+    "Games/loot-shooter": {
+      "name": "@games/loot-shooter",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "react": "19.2.3",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "typescript": "^5",
+      },
+    },
+    "Games/stress-bench": {
+      "name": "@games/stress-bench",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
+        "typescript": "^5",
+      },
+    },
+    "Games/world-of-warcraft": {
+      "name": "@games/world-of-warcraft",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "lucide-react": "^0.473.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
+        "typescript": "^5",
+      },
+    },
     "apps/desktop": {
       "name": "@jgengine-apps/desktop",
       "version": "0.1.0",
       "dependencies": {
-        "@dogfood/world-of-warcraft": "workspace:*",
+        "@games/world-of-warcraft": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -34,12 +129,12 @@
       "name": "@jgengine-apps/dev",
       "version": "0.1.0",
       "dependencies": {
-        "@dogfood/asset-showcase": "workspace:*",
-        "@dogfood/destruction-demo": "workspace:*",
-        "@dogfood/kart-circuit": "workspace:*",
-        "@dogfood/loot-shooter": "workspace:*",
-        "@dogfood/stress-bench": "workspace:*",
-        "@dogfood/world-of-warcraft": "workspace:*",
+        "@games/asset-showcase": "workspace:*",
+        "@games/destruction-demo": "workspace:*",
+        "@games/kart-circuit": "workspace:*",
+        "@games/loot-shooter": "workspace:*",
+        "@games/stress-bench": "workspace:*",
+        "@games/world-of-warcraft": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -105,7 +200,7 @@
       "name": "@jgengine-examples/next-host",
       "version": "0.1.0",
       "dependencies": {
-        "@dogfood/world-of-warcraft": "workspace:*",
+        "@games/world-of-warcraft": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
@@ -128,12 +223,12 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
       "dependencies": {
-        "@jgengine/core": "^0.6.0",
+        "@jgengine/core": "^0.7.0",
         "fflate": "^0.8.2",
       },
       "devDependencies": {
@@ -142,7 +237,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@jgengine/core": "^0.2.0",
       },
@@ -158,106 +253,11 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.6.0",
-    },
-    "packages/games/asset-showcase": {
-      "name": "@dogfood/asset-showcase",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "react": "19.2.3",
-      },
-      "devDependencies": {
-        "@types/react": "^19",
-        "typescript": "^5",
-      },
-    },
-    "packages/games/destruction-demo": {
-      "name": "@dogfood/destruction-demo",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@types/react": "^19",
-        "@types/three": "^0.182.0",
-        "typescript": "^5",
-      },
-    },
-    "packages/games/kart-circuit": {
-      "name": "@dogfood/kart-circuit",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@types/react": "^19",
-        "@types/three": "^0.182.0",
-        "typescript": "^5",
-      },
-    },
-    "packages/games/loot-shooter": {
-      "name": "@dogfood/loot-shooter",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "react": "19.2.3",
-      },
-      "devDependencies": {
-        "@types/react": "^19",
-        "typescript": "^5",
-      },
-    },
-    "packages/games/stress-bench": {
-      "name": "@dogfood/stress-bench",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@types/react": "^19",
-        "@types/three": "^0.182.0",
-        "typescript": "^5",
-      },
-    },
-    "packages/games/world-of-warcraft": {
-      "name": "@dogfood/world-of-warcraft",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "lucide-react": "^0.473.0",
-        "react": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@types/react": "^19",
-        "@types/three": "^0.182.0",
-        "typescript": "^5",
-      },
+      "version": "0.7.0",
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@jgengine/core": "^0.2.0",
         "@jgengine/ws": "^0.2.0",
@@ -272,9 +272,9 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
-        "@jgengine/core": "^0.6.0",
+        "@jgengine/core": "^0.7.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -286,11 +286,11 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
-        "@jgengine/core": "^0.6.0",
-        "@jgengine/react": "^0.6.0",
-        "@jgengine/ws": "^0.6.0",
+        "@jgengine/core": "^0.7.0",
+        "@jgengine/react": "^0.7.0",
+        "@jgengine/ws": "^0.7.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -311,9 +311,9 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
-        "@jgengine/core": "^0.2.0",
+        "@jgengine/core": "^0.7.0",
       },
       "devDependencies": {
         "pg-mem": "^3.0.5",
@@ -321,9 +321,9 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
-        "@jgengine/core": "^0.6.0",
+        "@jgengine/core": "^0.7.0",
       },
     },
   },
@@ -371,18 +371,6 @@
     "@babel/types": ["@babel/types@7.29.7", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA=="],
 
     "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.12.0", "", {}, "sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow=="],
-
-    "@dogfood/asset-showcase": ["@dogfood/asset-showcase@workspace:packages/games/asset-showcase"],
-
-    "@dogfood/destruction-demo": ["@dogfood/destruction-demo@workspace:packages/games/destruction-demo"],
-
-    "@dogfood/kart-circuit": ["@dogfood/kart-circuit@workspace:packages/games/kart-circuit"],
-
-    "@dogfood/loot-shooter": ["@dogfood/loot-shooter@workspace:packages/games/loot-shooter"],
-
-    "@dogfood/stress-bench": ["@dogfood/stress-bench@workspace:packages/games/stress-bench"],
-
-    "@dogfood/world-of-warcraft": ["@dogfood/world-of-warcraft@workspace:packages/games/world-of-warcraft"],
 
     "@emnapi/core": ["@emnapi/core@1.11.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" } }, "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ=="],
 
@@ -441,6 +429,18 @@
     "@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.25.12", "", { "os": "win32", "cpu": "ia32" }, "sha512-HkqnmmBoCbCwxUKKNPBixiWDGCpQGVsrQfJoVGYLPT41XWF8lHuE5N6WhVia2n4o5QK5M4tYr21827fNhi4byQ=="],
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.25.12", "", { "os": "win32", "cpu": "x64" }, "sha512-alJC0uCZpTFrSL0CCDjcgleBXPnCrEAhTBILpeAp7M/OFgoqtAetfBzX0xM00MUsVVPpVjlPuMbREqnZCXaTnA=="],
+
+    "@games/asset-showcase": ["@games/asset-showcase@workspace:Games/asset-showcase"],
+
+    "@games/destruction-demo": ["@games/destruction-demo@workspace:Games/destruction-demo"],
+
+    "@games/kart-circuit": ["@games/kart-circuit@workspace:Games/kart-circuit"],
+
+    "@games/loot-shooter": ["@games/loot-shooter@workspace:Games/loot-shooter"],
+
+    "@games/stress-bench": ["@games/stress-bench@workspace:Games/stress-bench"],
+
+    "@games/world-of-warcraft": ["@games/world-of-warcraft@workspace:Games/world-of-warcraft"],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 

@@ -22,4 +22,4 @@ When the game work is done, before ending the session:
 
 ## Wiring a new game
 
-Same shape as the existing example games: a private workspace package (`Games/*` is in root workspaces) named `@games/<name>` with `./src` exports and no build, registered in `apps/dev/src/main.tsx` with a matching alias in `apps/dev/vite.config.ts`. HUD Tailwind classes are covered by the `Games` `@source` entry in `apps/dev/src/index.css`. Build from the skills in `skills/`, not by copying another game.
+Same shape as the games already in here: a private workspace package (`Games/*` is in root workspaces) named `@games/<name>` with `./src` exports and no build, registered in `apps/dev/src/main.tsx` with a matching alias in `apps/dev/vite.config.ts`. HUD Tailwind classes are covered by the `Games` `@source` entry in `apps/dev/src/index.css`. Build from the skills in `skills/`, not by copying another game.

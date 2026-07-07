@@ -1,17 +1,17 @@
 {
-  "name": "@dogfood/kart-circuit",
+  "name": "@games/world-of-warcraft",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check-types": "tsc --noEmit -p tsconfig.json",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
     "test": "bun test src"
   },
   "dependencies": {
     "@jgengine/core": "workspace:*",
     "@jgengine/react": "workspace:*",
-    "@jgengine/shell": "workspace:*",
     "@react-three/fiber": "^9.5.0",
+    "lucide-react": "^0.473.0",
     "react": "19.2.3",
     "three": "^0.182.0"
   },
@@ -21,7 +21,9 @@
     "typescript": "^5"
   },
   "exports": {
-    ".": "./src/index.tsx",
-    "./*": "./src/*"
+    ".": "./src/index.ts",
+    "./*": "./src/*",
+    "./combat/pendingProjectiles": "./src/combat/pendingProjectiles.ts",
+    "./ui/uiPreviewScenario": "./src/ui/uiPreviewScenario.ts"
   }
 }

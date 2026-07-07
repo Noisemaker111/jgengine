@@ -26,7 +26,7 @@ jobs:
       - run: bun run check-artifacts
       - run: bun run build
       - run: bun run check-types
-      - run: bun test packages
+      - run: bun test packages Games
       - name: Publish unpublished packages in dependency order
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

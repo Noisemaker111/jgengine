@@ -10,7 +10,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@dogfood/world-of-warcraft": "workspace:*",
+    "@games/world-of-warcraft": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3"
