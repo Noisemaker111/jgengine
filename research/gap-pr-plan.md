@@ -9,7 +9,8 @@
 | G1 Navigation & pointer | opus | claude/gaps-nav-pointer | ✅ DONE (green) | #129 |
 | G2 Camera rig library | opus | claude/gaps-camera-rigs | ✅ DONE (green) | #128 |
 | G3 Physics constraints | opus | claude/gaps-physics-actors | ✅ DONE (green) | #127 |
-| G9 Crafting/tech/production | opus | claude/gaps-crafting | in-flight | — |
+| G9 Crafting/tech/production | opus | claude/gaps-crafting | ✅ DONE (green) | #132 |
+| G11 Survival & environment | opus | claude/gaps-survival | in-flight | — |
 | G7 Character combat feel | opus | claude/gaps-combat-feel | in-flight (batch1) | — |
 | G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
 | G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | ✅ DONE (green) | #130 |
@@ -17,9 +18,10 @@
 | G8 AI director/behavior/crowds | opus | claude/gaps-ai-director (stack→gaps-nav-pointer) | in-flight | — |
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | in-flight | — |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | in-flight | — |
-| G6,G11,G12,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+| G6,G12,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
 
 G16 added domains `cards/`, `board/`; `inventory/shapedGrid`; react `dragLayer`.
+G9 added domain `crafting/` (recipe/production/crop); `economy/techTree` extends unlocks.
 
 G15 added domains `turn/`, `tactics/` (skill coverage now 19). Extracted `combat/effects.resolveAreaTargets` (shared by predictive query).
 
