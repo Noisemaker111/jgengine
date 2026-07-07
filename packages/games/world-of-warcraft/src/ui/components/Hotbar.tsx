@@ -1,12 +1,9 @@
+import type { AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 import { SlotGrid } from "@jgengine/react/components";
-import { useEntityStat, usePlayer } from "@jgengine/react/hooks";
+import { useAbilitySlots, useEntityStat, usePlayer } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import {
-  abilityCooldownRemaining,
-  isAbilityFlashing,
-} from "../../combat/abilityCooldowns";
-import { itemCooldownById, itemNameById } from "../../content";
-import { useCooldownTicker } from "../hooks/useCooldownTicker";
+import { abilityKitFor } from "../../combat/playerKits";
+import { itemNameById } from "../../content";
 import { useSelectedHotbarSlot } from "../hooks/useUiState";
 import { wowActionSlot, wowKeybind } from "../wowStyles";
 import { AbilitySlotVisual } from "./AbilitySlotVisual";
@@ -17,12 +14,9 @@ export function Hotbar({ onStatus }: { onStatus?: (message: string) => void }) {
   const { userId } = usePlayer();
   const mana = useEntityStat(userId, "mana");
   const selectedSlot = useSelectedHotbarSlot();
-  useCooldownTicker();
-  const now = performance.now() / 1000;
-
-  function manaCostFor(itemId: string): number {
-    return ctx.item.weapon.getStat(itemId, "manaCost") ?? 0;
-  }
+  const slotStates = useAbilitySlots(abilityKitFor(userId), mana?.current ?? 0);
+  const byId = new Map<string, AbilitySlotSnapshot>();
+  for (const snapshot of slotStates) byId.set(snapshot.id, snapshot);
 
   function useSlot(slotIndex: number): void {
     const slot = ctx.player.inventory.state("hotbar").slots[slotIndex];
@@ -65,13 +59,12 @@ export function Hotbar({ onStatus }: { onStatus?: (message: string) => void }) {
             );
           }
 
-          const cost = manaCostFor(slot.itemId);
-          const outOfMana = cost > 0 && (mana?.current ?? 0) < cost;
-          const totalCooldown = itemCooldownById(slot.itemId);
-          const remaining = abilityCooldownRemaining(userId, slot.itemId);
-          const onCooldown = remaining > 0 && totalCooldown > 0;
-          const cooldownPercent = onCooldown ? (remaining / totalCooldown) * 100 : 0;
-          const flashing = isAbilityFlashing(userId, slot.itemId, now);
+          const state = byId.get(slot.itemId);
+          const outOfMana = state?.state === "no-resource";
+          const onCooldown = state?.state === "cooldown";
+          const flashing = state?.state === "just-cast";
+          const cooldownPercent = onCooldown && state ? state.cooldownFraction * 100 : 0;
+          const remainingSeconds = state ? state.cooldownRemainingMs / 1000 : 0;
           const selected = index === selectedSlot;
 
           return (
@@ -102,9 +95,14 @@ export function Hotbar({ onStatus }: { onStatus?: (message: string) => void }) {
                     }}
                   />
                   <span className="absolute inset-0 z-[4] flex items-center justify-center text-sm font-bold text-amber-50 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
-                    {remaining >= 10 ? Math.ceil(remaining) : remaining.toFixed(1)}
+                    {remainingSeconds >= 10 ? Math.ceil(remainingSeconds) : remainingSeconds.toFixed(1)}
                   </span>
                 </>
+              ) : null}
+              {outOfMana ? (
+                <span className="absolute bottom-0.5 left-1 z-[4] text-[9px] font-bold uppercase tracking-wide text-red-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
+                  No mana
+                </span>
               ) : null}
             </button>
           );

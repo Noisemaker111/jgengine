@@ -14,6 +14,7 @@ import { KeybindBadge } from "./components/KeybindBadge";
 import { PlayerFrame } from "./components/PlayerFrame";
 import { QuestTracker } from "./components/QuestTracker";
 import { TargetFrame } from "./components/TargetFrame";
+import { UltStreakBars } from "./components/UltStreakBars";
 
 export function GameUI() {
   const openPanel = useOpenPanel();
@@ -43,7 +44,8 @@ export function GameUI() {
       <div className="col-start-2 row-start-3 flex items-end justify-center self-end pb-8">
         <FloatingCombatText message={combatText} />
       </div>
-      <div className="col-start-2 row-start-4 flex flex-col items-center gap-1 justify-self-center self-end">
+      <div className="col-start-2 row-start-4 flex flex-col items-center gap-1.5 justify-self-center self-end">
+        <UltStreakBars />
         <Hotbar onStatus={setCombatText} />
         <GoldDisplay />
       </div>

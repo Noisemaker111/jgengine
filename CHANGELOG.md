@@ -24,10 +24,22 @@ An additive layer over effects/projectiles/death that adds melee/action feel. Ev
 - **Dash / dodge** — `@jgengine/core/movement/dash`: `createDashState` — directional burst + i-frame window + stamina/cooldown.
 - **Hit reaction, telegraphs, typed damage numbers** — `@jgengine/core/combat/hitReaction` + `ctx.scene.entity.hitReaction(...)` (knockback impulse + hitstop + `combat.hitReaction` shake channel); `@jgengine/core/combat/telegraph` + `ctx.scene.entity.telegraph(...)` (windup→activation ground decal bound to an effect, drawn by the shell); `ctx.scene.entity.floatText({ crit, element, hitType, scale })` styled by `@jgengine/shell/world/floatTextStyle`.
 
+### Added — abilities, resources, cooldowns, drafts
+
+Genre systems over the existing effects/projectiles/targeting/loot primitives. Every model is a renderer-free `@jgengine/core` factory the game ticks on game-time `dt`; `@jgengine/react` adds four-state slot binding hooks. No existing API moved. The ult/streak meters build on the `stats/accumulatorMeter` from the combat-feel layer above.
+
+- **Ability kit** — `@jgengine/core/combat/abilityKit`: `createAbilityKit([{ id, cooldownMs, chargesMax?, resourceCost?, castType? }])` models an ability slot **separate from an inventory item**, exposing the four HUD states `ready | cooldown | no-resource | just-cast` plus charges + cooldown fraction. Resource-agnostic — reports `no-resource` against a supplied `resourceAvailable`, the game spends. (MOBA/ARPG action bars, hero-shooter kits.)
+- **Event-fed meters** — `@jgengine/core/stats/eventMeter`: `createEventMeter({ max, mode, gains, resets?, tiers? })` on the shared accumulator. Mode `"hold"` = ult/adrenaline charge (`feed` combat tags, `ready()`, `consume()`); mode `"reset"` = kill-streak/combo with tiered thresholds that resets on a break tag. (Overwatch/Marvel Rivals ult, Returnal/DMC streak.)
+- **Auto-target policy** — `@jgengine/core/scene/autoTarget`: `selectAutoTarget` / `createAutoTargeter` — zero-input per-tick target selection `nearest | farthest | random | strongest | weakest | first | last` (path-progress aware). (Vampire Survivors auto-fire, Bloons tower priority.)
+- **Resistance matrix** — `@jgengine/core/combat/resistance`: `resolveResistance` / `resistanceScale` — damage-category × target-property → `immune | resist | normal | vulnerable` multiplier over the `receive` gate. (Bloons pop-types, elemental RPG weaknesses.)
+- **Run draft** — `@jgengine/core/game/runDraft`: `createRunDraft` / `createRunModifierStack` — pause, present N weighted picks (`pickWeighted`), choose, stack the modifiers for the run (aggregated onto `stats/statModifiers`). (Vampire Survivors level-ups, Hades boons.)
+- **React** — `@jgengine/react` `useAbilitySlots` / `useAbilitySlot` (four-state snapshots) and `useEventMeter` (ult/streak bar view).
+
 ### Migrate
 
 - No code change required — this release only adds surface.
 - Optional: give attacking entities a `createAnimationState(...)` and drive it in `onTick`; hang parry windows, combo cancels, and telegraph timing off its tagged frame ranges. Add `crit`/`element` to `floatText` emits for typed damage numbers, and call `ctx.scene.entity.telegraph(...)` / `hitReaction(...)` for boss AoE warnings and impact feel.
+- Optional: replace hand-rolled cooldown maps with `createAbilityKit(...)` (ticked in `onTick`), bind the hotbar to `useAbilitySlots(kit, mana)`, and drive an ult bar off `createEventMeter({ mode: "hold" })` / a streak meter off `createEventMeter({ mode: "reset" })`.
 
 ## 0.6.0
 

@@ -10,7 +10,13 @@ import { player_default } from "./entities/players/catalog";
 import { quests } from "./quests/catalog";
 import { applyLevelUps, grantXp } from "./progression/curves";
 import { TAB_TARGET_MAX_DISTANCE } from "./combat/constants";
-import { tickAbilityCooldowns } from "./combat/abilityCooldowns";
+import {
+  recordDamageTaken,
+  recordKill,
+  resetPlayerKits,
+  seedPreviewKits,
+  tickPlayerKits,
+} from "./combat/playerKits";
 import { tickPendingProjectiles } from "./combat/pendingProjectiles";
 import { closePanels, scrollHotbar, togglePanel } from "./ui/uiController";
 import { MOB_SPAWNS, TOWN_SPAWN, setupWorld, type MobSpawnPoint } from "./world/setup";
@@ -71,14 +77,18 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
 
   if (event.reason.kind === "player_kill" && event.reason.killerUserId === ctx.player.userId) {
     grantXp(ctx, event.reason.killerUserId, enemy.xp);
+    recordKill(ctx.player.userId);
   }
 }
+
+const PREVIEW_USER_ID = "ui-preview";
 
 function onInit(ctx: GameContext): void {
   activeMobs.clear();
   attackCooldowns.clear();
   mobRespawns = [];
   playerRespawn = null;
+  resetPlayerKits();
 
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
@@ -223,6 +233,7 @@ function tickMobs(ctx: GameContext, dt: number): boolean {
       } else if (cooldown === 0 && ctx.scene.entity.canReceive(userId, "damage") === null) {
         ctx.scene.entity.effect({ from: mobId, to: userId, effect: "damage", via: { amount: def.melee.damage } });
         attackCooldowns.set(mobId, def.melee.cooldownSeconds);
+        recordDamageTaken(userId);
       }
     } else if (distanceBetween(mob.position, spawn.position) > def.wanderRadius) {
       const next = ctx.scene.entity.moveToward(mobId, spawn.position, {
@@ -305,8 +316,14 @@ function tickCombatFeel(ctx: GameContext, dt: number): void {
 }
 
 function onTick(ctx: GameContext, dt: number): void {
+  if (ctx.player.userId === PREVIEW_USER_ID) {
+    seedPreviewKits(ctx.player.userId, (value) => {
+      ctx.scene.entity.stats.set(ctx.player.userId, "mana", { current: value });
+    });
+    return;
+  }
   tickCombatFeel(ctx, dt);
-  tickAbilityCooldowns(dt, performance.now() / 1000);
+  tickPlayerKits(ctx.player.userId, dt);
   tickPendingProjectiles(dt, (shotId) => {
     ctx.scene.entity.settleProjectile(shotId);
   });
