@@ -45,6 +45,7 @@ import {
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
@@ -63,6 +64,7 @@ import {
   type PointerService,
 } from "./pointer/pointerService";
 import { ProjectileTracers, Reticle, WorldEntityBars, WorldFloatText } from "./world/WorldHud";
+import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 
@@ -369,7 +371,9 @@ function WorldView({
           <RockField />
         </>
       )}
-      {entities.map((entity) => (
+      {entities
+        .filter((entity) => entity.name !== WORLD_ITEM_ENTITY_NAME)
+        .map((entity) => (
         <EntityMarker
           key={entity.id}
           entity={entity}
@@ -813,6 +817,28 @@ export function GamePlayerShell({
       return;
     }
     if (cameraDraggingRef.current) return;
+    if (pointer?.grabWorldItems === true) {
+      const hit = pointerService.worldHit();
+      const itemInstanceId = hit?.entity ?? null;
+      const record = itemInstanceId === null ? null : ctx.scene.worldItem.get(itemInstanceId);
+      if (record !== null && itemInstanceId !== null) {
+        const itemEntity = ctx.scene.entity.get(itemInstanceId);
+        const localPlayer = ctx.scene.entity.get(ctx.player.userId);
+        const pickupRadius = playable.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
+        const withinRadius =
+          itemEntity !== null &&
+          localPlayer !== null &&
+          Math.hypot(
+            localPlayer.position[0] - itemEntity.position[0],
+            localPlayer.position[1] - itemEntity.position[1],
+            localPlayer.position[2] - itemEntity.position[2],
+          ) <= pickupRadius;
+        if (withinRadius) {
+          ctx.scene.worldItem.pickup(itemInstanceId, ctx.player.userId);
+          return;
+        }
+      }
+    }
     if (pointer?.select === true) {
       const hit = pointerService.worldHit();
       if (hit !== null && hit.entity !== null && (selectFilter === undefined || selectFilter(hit.entity))) {
@@ -902,6 +928,7 @@ export function GamePlayerShell({
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
+          <WorldItems config={playable.worldItem} />
           <WorldFloatText />
           <ProjectileTracers />
           {firstPerson ? (

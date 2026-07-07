@@ -1,4 +1,4 @@
-import { createDeathSystem, deathReasonFromEffect, type OnDeathSpec } from "../combat/death";
+import { createDeathSystem, deathReasonFromEffect, normalizeOnDeath, type OnDeathSpec } from "../combat/death";
 import {
   createEffectSystem,
   type CombatSpatialDeps,
@@ -30,6 +30,14 @@ import { createLeaderboard, type Leaderboard } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
 import { createQuestJournal, type QuestJournal } from "../game/quest";
+import {
+  createWorldItemStore,
+  resolveDeathDrops,
+  DEFAULT_RARITY,
+  WORLD_ITEM_ENTITY_NAME,
+  type WorldItemRecord,
+  type WorldItemSpawnInput,
+} from "../game/worldItem";
 import { createSocial, type Social } from "../game/social";
 import { createTradeSystem, type TradeField, type TradeSystem } from "../game/trade";
 import { createUnlocks, type Unlocks } from "../game/unlocks";
@@ -73,6 +81,10 @@ export interface GameContextItemEntry {
   use?: string;
   weapon?: Record<string, unknown>;
   trade?: TradeField;
+  /** Rarity id read by the `worldItem` loot-filter/render binding when this item drops to the ground (#32/#33). */
+  rarity?: string;
+  /** Base item type read by the loot-filter rule evaluator (#33); defaults to the item id when absent. */
+  baseType?: string;
 }
 
 export type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle";
@@ -147,6 +159,22 @@ export interface SceneEntityContext {
   moveToward: SpatialApi["moveToward"];
 }
 
+export type WorldItemPickupResult =
+  | { status: "ok"; record: WorldItemRecord }
+  | { status: "rejected"; reason: string };
+
+export interface SceneWorldItemContext {
+  spawn(input: WorldItemSpawnInput): WorldItemRecord;
+  get(instanceId: string): WorldItemRecord | null;
+  list(): readonly WorldItemRecord[];
+  nearestInRadius(
+    from: EntityPosition,
+    radius: number,
+    filter?: (record: WorldItemRecord) => boolean,
+  ): string | null;
+  pickup(instanceId: string, userId: string): WorldItemPickupResult;
+}
+
 export interface GameContextCommands {
   define<TInput>(name: string, definition: CommandDefinition<GameContext, TInput>): void;
   has(name: string): boolean;
@@ -182,6 +210,7 @@ export interface GameContext {
   scene: {
     object: SceneObjectContext;
     entity: SceneEntityContext;
+    worldItem: SceneWorldItemContext;
   };
   game: {
     commands: GameContextCommands;
@@ -479,6 +508,43 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return existed;
   }
 
+  const worldItems = notifyAfter(
+    createWorldItemStore({
+      spawnEntity: (position) => entities.spawn(WORLD_ITEM_ENTITY_NAME, { position, role: "prop" }),
+      despawnEntity,
+      resolvePosition: (instanceId) => entities.get(instanceId)?.position,
+    }),
+    ["spawn", "take"],
+    signal.notify,
+  );
+
+  function spawnWorldItem(input: WorldItemSpawnInput): WorldItemRecord {
+    const record = worldItems.spawn(input);
+    events.emit("worldItem.dropped", {
+      instanceId: record.instanceId,
+      itemId: record.itemId,
+      rarity: record.rarity,
+      count: record.count,
+      position: [input.position[0], input.position[1], input.position[2]],
+      ...(record.source !== undefined ? { source: record.source } : {}),
+    });
+    return record;
+  }
+
+  function pickupWorldItem(instanceId: string, userId: string): WorldItemPickupResult {
+    const record = worldItems.take(instanceId);
+    if (record === null) return { status: "rejected", reason: "not-found" };
+    loot.grantToPlayer(userId, [{ item: record.itemId, count: record.count }], "worldItem.pickup");
+    events.emit("worldItem.picked_up", {
+      instanceId,
+      userId,
+      itemId: record.itemId,
+      rarity: record.rarity,
+      count: record.count,
+    });
+    return { status: "ok", record };
+  }
+
   const death = createDeathSystem({
     resolveOnDeath: (instanceId) => catalogEntry(instanceId)?.onDeath,
     resolveIdentity(instanceId) {
@@ -506,7 +572,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     getStat: weapon.getStat,
     spatial: combatSpatial,
       onLethal(instanceId, lethalCtx) {
-        const catalogId = entities.get(instanceId)?.name;
+        const dyingEntity = entities.get(instanceId);
+        const catalogId = dyingEntity?.name;
+        const position = dyingEntity?.position;
+        const normalizedOnDeath = normalizeOnDeath(catalogEntry(instanceId)?.onDeath);
         const reason = deathReasonFromEffect({
           ...lethalCtx,
           userIdOf: (id) => (id === player.userId ? player.userId : undefined),
@@ -518,7 +587,20 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           reason.kind === "player_kill" &&
           reason.killerUserId === player.userId
         ) {
-          loot.grantToPlayer(player.userId, resolution.drops, catalogId);
+          if (normalizedOnDeath.dropMode === "world" && position !== undefined) {
+            const resolved = resolveDeathDrops(resolution.drops, {
+              mode: "world",
+              origin: position,
+              resolveRarity: (itemId) => content.itemById?.(itemId)?.rarity ?? DEFAULT_RARITY,
+              resolveBaseType: (itemId) => content.itemById?.(itemId)?.baseType ?? itemId,
+              scatter: normalizedOnDeath.scatter,
+              ...(catalogId !== undefined ? { source: catalogId } : {}),
+            });
+            for (const spawn of resolved.worldSpawns) spawnWorldItem(spawn);
+            if (resolved.grants.length > 0) loot.grantToPlayer(player.userId, resolved.grants, catalogId);
+          } else {
+            loot.grantToPlayer(player.userId, resolution.drops, catalogId);
+          }
         }
       },
     }),
@@ -620,6 +702,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         hasLineOfSight: spatial.hasLineOfSight,
         queryArc: spatial.queryArc,
         moveToward: spatial.moveToward,
+      },
+      worldItem: {
+        spawn: spawnWorldItem,
+        get: worldItems.get,
+        list: worldItems.list,
+        nearestInRadius: worldItems.nearestInRadius,
+        pickup: pickupWorldItem,
       },
     },
     game: {

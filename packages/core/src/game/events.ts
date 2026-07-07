@@ -80,6 +80,23 @@ export interface ProjectileSettledEvent {
   hit: boolean;
 }
 
+export interface WorldItemDroppedEvent {
+  instanceId: string;
+  itemId: string;
+  rarity: string;
+  count: number;
+  position: [number, number, number];
+  source?: string;
+}
+
+export interface WorldItemPickedUpEvent {
+  instanceId: string;
+  userId: string;
+  itemId: string;
+  rarity: string;
+  count: number;
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
@@ -93,6 +110,8 @@ export interface GameEventMap {
   "social.party.left": SocialPartyLeftEvent;
   "stat.levelUp": StatLevelUpEvent;
   "projectile.settled": ProjectileSettledEvent;
+  "worldItem.dropped": WorldItemDroppedEvent;
+  "worldItem.picked_up": WorldItemPickedUpEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

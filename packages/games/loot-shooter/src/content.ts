@@ -10,7 +10,7 @@ import { enemies } from "./entities/enemies/catalog";
 const itemEntries = new Map<string, GameContextItemEntry>();
 const itemNames = new Map<string, string>();
 for (const item of weaponItems) {
-  itemEntries.set(item.id, { use: item.use, weapon: item.weapon });
+  itemEntries.set(item.id, { use: item.use, weapon: item.weapon, rarity: item.rarity, baseType: item.kind });
   itemNames.set(item.id, item.name);
 }
 
