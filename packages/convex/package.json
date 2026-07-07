@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/convex",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Convex adapters for JGengine: game transport, presence transport, and backend wiring over @jgengine/core.",
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -25,7 +25,7 @@
     "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@jgengine/core": "^0.6.0"
+    "@jgengine/core": "^0.7.0"
   },
   "peerDependencies": {
     "convex": "^1.31.2",

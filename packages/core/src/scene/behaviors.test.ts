@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { player, promptable, talkable, wander } from "@jgengine/core/scene/behaviors";
+import { patrol, player, promptable, talkable, wander } from "@jgengine/core/scene/behaviors";
 import { keybind, label, proximityPrompt } from "@jgengine/core/interaction/proximityPrompt";
 
 describe("behavior constructors", () => {
@@ -22,5 +22,19 @@ describe("behavior constructors", () => {
 
   test("player is a bare marker", () => {
     expect(player()).toEqual({ kind: "player" });
+  });
+
+  test("patrol carries a looping waypoint route", () => {
+    const waypoints = [
+      [0, 0, 0],
+      [4, 0, 0],
+    ] as const;
+    expect(patrol({ waypoints: [...waypoints], speed: 2 })).toEqual({
+      kind: "patrol",
+      waypoints: [...waypoints],
+      speed: 2,
+      loop: true,
+    });
+    expect(patrol({ waypoints: [...waypoints], speed: 2, loop: false }).loop).toBe(false);
   });
 });

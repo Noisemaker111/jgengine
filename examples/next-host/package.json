@@ -10,7 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@dogfood/world-of-warcraft": "workspace:*",
+    "@games/world-of-warcraft": "workspace:*",
     "@jgengine/core": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/sql": "workspace:*",

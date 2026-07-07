@@ -1,5 +1,6 @@
 import type { DeathReason, EntityDiedEvent, GameEvents } from "../game/events";
 import type { Drop } from "../game/lootTable";
+import type { ScatterOptions } from "../game/worldItem";
 import type { EffectVia } from "./effects";
 
 export type DeathReasonKind = DeathReason["kind"];
@@ -15,23 +16,33 @@ export interface OnDeathCommandRule {
   when?: { reason: DeathReasonKind };
 }
 
+export type DropMode = "grant" | "world";
+
 export interface OnDeathSpec {
   drops?: string | OnDeathDropRule[];
   command?: string | OnDeathCommandRule;
+  /** "grant" (default) puts drops straight into the killer's inventory; "world" scatters them as ground `worldItem`s instead (#32). */
+  dropMode?: DropMode;
+  /** Scatter-offset tuning when `dropMode` is `"world"`; defaults to `DEFAULT_SCATTER` from `game/worldItem`. */
+  scatter?: ScatterOptions;
 }
 
 export interface NormalizedOnDeath {
   drops: OnDeathDropRule[];
   command: OnDeathCommandRule | null;
+  dropMode: DropMode;
+  scatter?: ScatterOptions;
 }
 
 export function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath {
-  if (!spec) return { drops: [], command: null };
+  if (!spec) return { drops: [], command: null, dropMode: "grant" };
   const drops =
     spec.drops === undefined ? [] : typeof spec.drops === "string" ? [{ table: spec.drops }] : spec.drops;
   const command =
     spec.command === undefined ? null : typeof spec.command === "string" ? { name: spec.command } : spec.command;
-  return { drops, command };
+  const normalized: NormalizedOnDeath = { drops, command, dropMode: spec.dropMode ?? "grant" };
+  if (spec.scatter !== undefined) normalized.scatter = spec.scatter;
+  return normalized;
 }
 
 export interface DeathIdentity {

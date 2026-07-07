@@ -1,3 +1,6 @@
+import type { TelegraphShape } from "../combat/telegraph";
+import type { CameraShake } from "../combat/hitReaction";
+
 export type DeathReason =
   | { kind: "player_kill"; killerUserId: string; via?: { item?: string } }
   | { kind: "environment"; source: string }
@@ -70,6 +73,26 @@ export interface EntityFloatTextEvent {
   text: string;
   kind: string;
   amount?: number;
+  hitType?: string;
+  element?: string;
+  crit?: boolean;
+  scale?: number;
+}
+
+export interface CombatTelegraphEvent {
+  id: number;
+  shape: TelegraphShape;
+  position: [number, number, number];
+  dir?: number;
+  windupMs: number;
+  kind: string;
+}
+
+export interface CombatHitReactionEvent {
+  instanceId?: string;
+  position: [number, number, number];
+  hitstopMs: number;
+  shake?: CameraShake;
 }
 
 export interface ProjectileSettledEvent {
@@ -80,9 +103,51 @@ export interface ProjectileSettledEvent {
   hit: boolean;
 }
 
+export interface WorldItemDroppedEvent {
+  instanceId: string;
+  itemId: string;
+  rarity: string;
+  count: number;
+  position: [number, number, number];
+  source?: string;
+}
+
+export interface WorldItemPickedUpEvent {
+  instanceId: string;
+  userId: string;
+  itemId: string;
+  rarity: string;
+  count: number;
+}
+
+export interface CosmeticsChangedEvent {
+  userId: string;
+  slots: Record<string, string>;
+}
+
+export interface EmotePlayedEvent {
+  from: string;
+  emoteId: string;
+  at: readonly [number, number, number];
+  recipients: readonly string[];
+}
+
+export interface PossessionSwappedEvent {
+  userId: string;
+  entityId: string;
+  previousEntityId: string;
+}
+
+export interface FormChangedEvent {
+  instanceId: string;
+  formId: string | null;
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
+  "combat.telegraph": CombatTelegraphEvent;
+  "combat.hitReaction": CombatHitReactionEvent;
   "loot.granted": LootGrantedEvent;
   "inventory.added": InventoryAddedEvent;
   "quest.accepted": QuestAcceptedEvent;
@@ -93,6 +158,12 @@ export interface GameEventMap {
   "social.party.left": SocialPartyLeftEvent;
   "stat.levelUp": StatLevelUpEvent;
   "projectile.settled": ProjectileSettledEvent;
+  "worldItem.dropped": WorldItemDroppedEvent;
+  "worldItem.picked_up": WorldItemPickedUpEvent;
+  "cosmetics.changed": CosmeticsChangedEvent;
+  "emote.played": EmotePlayedEvent;
+  "possession.swapped": PossessionSwappedEvent;
+  "form.changed": FormChangedEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

@@ -7,10 +7,28 @@ export interface PresenceInfo {
   instanceId?: string;
 }
 
+export interface EmoteEntityLookup {
+  get(id: string): { position: readonly [number, number, number]; role: string } | null;
+}
+
+export interface EmoteSpatialLookup {
+  inRadius(
+    center: readonly [number, number, number],
+    radius: number,
+    filter?: (id: string) => boolean,
+  ): readonly string[];
+}
+
+export interface EmotesDeps {
+  entities: EmoteEntityLookup;
+  spatial: EmoteSpatialLookup;
+}
+
 export interface SocialDeps {
   events: GameEvents;
   presence?: (userId: string) => PresenceInfo;
   now?: () => number;
+  emotes?: EmotesDeps;
 }
 
 export interface FriendEntry {
@@ -58,10 +76,24 @@ export interface Party {
   membersOf(userId: string): string[];
 }
 
+export const DEFAULT_EMOTE_RADIUS = 20;
+
+export interface EmoteBroadcastResult {
+  from: string;
+  emoteId: string;
+  at: readonly [number, number, number];
+  recipients: readonly string[];
+}
+
+export interface Emotes {
+  play(fromUserId: string, emoteId: string, radius?: number): EmoteBroadcastResult | { reason: string };
+}
+
 export interface Social {
   friends: Friends;
   party: Party;
   presence: { get(userId: string): PresenceInfo };
+  emotes: Emotes;
 }
 
 interface FriendRequest {
@@ -292,6 +324,23 @@ export function createSocial(deps: SocialDeps): Social {
     },
   };
 
+  const emotes: Emotes = {
+    play(fromUserId, emoteId, radius) {
+      const emoteDeps = deps.emotes;
+      if (emoteDeps === undefined) return { reason: "emotes not configured" };
+      const origin = emoteDeps.entities.get(fromUserId);
+      if (origin === null) return { reason: `entity "${fromUserId}" is not spawned` };
+      const recipients = emoteDeps.spatial.inRadius(
+        origin.position,
+        radius ?? DEFAULT_EMOTE_RADIUS,
+        (id) => id !== fromUserId && emoteDeps.entities.get(id)?.role === "player",
+      );
+      const result: EmoteBroadcastResult = { from: fromUserId, emoteId, at: origin.position, recipients };
+      events.emit("emote.played", result);
+      return result;
+    },
+  };
+
   return {
     friends,
     party,
@@ -300,5 +349,6 @@ export function createSocial(deps: SocialDeps): Social {
         return deps.presence?.(userId) ?? { online: false };
       },
     },
+    emotes,
   };
 }

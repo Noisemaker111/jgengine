@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
+const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -20,23 +21,25 @@ export default defineConfig({
       { find: /^@jgengine\/assets$/, replacement: `${src("assets")}/index.ts` },
       { find: /^@jgengine\/assets\/(.*)$/, replacement: `${src("assets")}/$1` },
       {
-        find: /^@dogfood\/world-of-warcraft$/,
-        replacement: `${src("games/world-of-warcraft")}/index.ts`,
+        find: /^@games\/world-of-warcraft$/,
+        replacement: `${game("world-of-warcraft")}/index.ts`,
       },
       {
-        find: /^@dogfood\/world-of-warcraft\/(.*)$/,
-        replacement: `${src("games/world-of-warcraft")}/$1`,
+        find: /^@games\/world-of-warcraft\/(.*)$/,
+        replacement: `${game("world-of-warcraft")}/$1`,
       },
       {
-        find: /^@dogfood\/asset-showcase$/,
-        replacement: `${src("games/asset-showcase")}/index.tsx`,
+        find: /^@games\/asset-showcase$/,
+        replacement: `${game("asset-showcase")}/index.tsx`,
       },
       {
-        find: /^@dogfood\/asset-showcase\/(.*)$/,
-        replacement: `${src("games/asset-showcase")}/$1`,
+        find: /^@games\/asset-showcase\/(.*)$/,
+        replacement: `${game("asset-showcase")}/$1`,
       },
-      { find: /^@dogfood\/stress-bench$/, replacement: `${src("games/stress-bench")}/index.tsx` },
-      { find: /^@dogfood\/stress-bench\/(.*)$/, replacement: `${src("games/stress-bench")}/$1` },
+      { find: /^@games\/stress-bench$/, replacement: `${game("stress-bench")}/index.tsx` },
+      { find: /^@games\/stress-bench\/(.*)$/, replacement: `${game("stress-bench")}/$1` },
+      { find: /^@games\/destruction-demo$/, replacement: `${game("destruction-demo")}/index.tsx` },
+      { find: /^@games\/destruction-demo\/(.*)$/, replacement: `${game("destruction-demo")}/$1` },
     ],
   },
 });

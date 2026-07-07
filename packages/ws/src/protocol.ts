@@ -4,6 +4,8 @@ import type {
   JoinServerResult,
   TransportRunCommandResult,
 } from "@jgengine/core/runtime/transport";
+import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
+import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 
 export const WS_PROTOCOL_VERSION = 1;
 
@@ -27,7 +29,9 @@ export type WsPresenceRow = {
 
 export type WsClientMessage =
   | { v: 1; t: "hello"; id: number; userId: string; token?: string }
-  | { v: 1; t: "join"; id: number; gameId: string; serverId?: string }
+  | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes }
+  | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string }
+  | { v: 1; t: "browse"; id: number; gameId: string; filter?: MatchFilter; limit?: number }
   | { v: 1; t: "leave"; id: number; serverId: string }
   | { v: 1; t: "runCommand"; id: number; serverId: string; command: string; input: unknown }
   | { v: 1; t: "pushFeed"; id: number; serverId: string; action: string; entry: unknown }
@@ -48,6 +52,8 @@ export type WsServerMessage =
 
 export type WsJoinResult = JoinServerResult;
 export type WsRunCommandResult = TransportRunCommandResult;
+export type WsBrowseResult = SessionListing[];
+export type WsJoinByCodeResult = JoinServerResult | null;
 
 export function encodeWsMessage(message: WsClientMessage | WsServerMessage): string {
   return JSON.stringify(message);
@@ -101,6 +107,16 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
       return typeof message.id === "number" &&
         typeof message.gameId === "string" &&
         (message.serverId === undefined || typeof message.serverId === "string")
+        ? (message as WsClientMessage)
+        : null;
+    case "joinByCode":
+      return typeof message.id === "number" &&
+        typeof message.gameId === "string" &&
+        typeof message.code === "string"
+        ? (message as WsClientMessage)
+        : null;
+    case "browse":
+      return typeof message.id === "number" && typeof message.gameId === "string"
         ? (message as WsClientMessage)
         : null;
     case "leave":

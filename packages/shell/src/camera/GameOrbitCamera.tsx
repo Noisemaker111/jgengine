@@ -32,6 +32,8 @@ export interface GameOrbitCameraProps {
   resolveFollowTarget?: (entity: SceneEntity) => Vec3;
   onDragChange?: (dragging: boolean) => void;
   onCameraFollow?: CameraFollowListener;
+  /** Free the left mouse button for pointer verbs (marquee / click-to-move); orbit moves to the middle button. */
+  pointerControls?: boolean;
 }
 
 export function GameOrbitCamera({
@@ -42,6 +44,7 @@ export function GameOrbitCamera({
   resolveFollowTarget,
   onDragChange,
   onCameraFollow,
+  pointerControls = false,
 }: GameOrbitCameraProps) {
   const config = resolveOrbitCameraConfig(configPatch);
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -132,7 +135,11 @@ export function GameOrbitCamera({
       maxPolarAngle={config.maxPolarAngle}
       minPolarAngle={config.minPolarAngle}
       screenSpacePanning={false}
-      mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: undefined }}
+      mouseButtons={
+        pointerControls
+          ? { LEFT: undefined, MIDDLE: MOUSE.ROTATE, RIGHT: undefined }
+          : { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: undefined }
+      }
       onStart={() => {
         draggingRef.current = true;
         onDragChange?.(true);

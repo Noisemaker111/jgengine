@@ -1,5 +1,6 @@
 import type { ActionCodesMap } from "../input/actionBindings";
 import type { ItemTraits } from "../inventory/inventoryModel";
+import type { StorageTier } from "../inventory/storageTier";
 import type { SaveConfig } from "../runtime/save";
 import type { AssetCatalog, ModelAssetRef } from "../scene/assetCatalog";
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
@@ -16,6 +17,7 @@ export interface InventoryDeclaration {
   accepts?: string | readonly string[];
   traits?: ItemTraits;
   applyModifiers?: boolean;
+  tier?: StorageTier;
 }
 
 export type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown };
