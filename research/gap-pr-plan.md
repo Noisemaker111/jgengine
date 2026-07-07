@@ -13,7 +13,8 @@
 | G11 Survival & environment | opus | claude/gaps-survival | ✅ DONE (green) | #137 |
 | G18 Audio & voice | sonnet | claude/gaps-audio | in-flight | — |
 | G7 Character combat feel | opus | claude/gaps-combat-feel | ✅ DONE (green) | #134 |
-| G6 Abilities/resources/cooldowns | opus | claude/gaps-abilities (stack→gaps-combat-feel) | in-flight | — |
+| G6 Abilities/resources/cooldowns | opus | claude/gaps-abilities (stack→gaps-combat-feel) | ✅ DONE (green) | #139 |
+| G20 Interaction verbs & minigames | sonnet | claude/gaps-interaction | in-flight | — |
 | G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
 | G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | ✅ DONE (green) | #130 |
 | G16 Card & board stack | opus | claude/gaps-card-board | ✅ DONE (green) | #131 |
@@ -24,7 +25,8 @@
 | G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | in-flight | — |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | ✅ DONE (green) | #136 |
 | G17 Objective/mode/session | opus | claude/gaps-session (stack→gaps-item-gear) | in-flight | — |
-| G19,G20,G21,G22 | — | — | todo | — |
+| G19,G21,G22 | — | — | todo | — |
+G6 added `combat/abilityKit`, `stats/eventMeter` (on accumulatorMeter), `scene/autoTarget`, `combat/resistance`, `game/runDraft`; react `useAbilitySlots`.
 G12 extended `world/{markers,fog,minimap}`, `game/ping` (rides party+feed).
 G11 added domain `survival/` (decayMeter/moodle/regionHealth); `world/{envField,weather,realm}`.
 G5 terrain write-back (G14 may reconcile at merge): `world/terraform` `createEditableTerrain`→`EditableTerrain.apply(TerraformEdit)`. G5 added `world/{placementController,connectors,support,walls,placedStructureStore,terraform,buildPermissions}`.
