@@ -23,6 +23,21 @@ the latest and surface the migration steps.
   - `@jgengine/core/tactics/snapshot` (`createSnapshotStore`, `deepClone`) — cheap, repeatable turn-undo over registered `capture()/restore()` slices (the grid, surfaces, and turn loop all qualify), with a `push()/pop()` undo stack.
   - `@jgengine/core/tactics/surface` (`createSurfaceLayer`) — a stateful tile surface layer with its own `tick(dt)` and a data-driven combination matrix (`reactions: [{ when: [a, b], result }]`) — grease+fire, water+lightning — distinct from terrain/water.
 - `@jgengine/core/combat/effects` now exports `resolveAreaTargets` (+ `AreaTarget`, `AreaTargetInput`), the shared in-radius→LoS→falloff→accept targeting that both `applyEffect` and the predictive query run, guaranteeing parity by construction. No behavior change to `effect`.
+### Added — card & board stack (`@jgengine/core`, `@jgengine/react`)
+
+Pure, renderer-free primitives for card, board, and deckbuilder games — they sit **beside** the slot inventory, never replace it.
+
+- **`@jgengine/core/cards/cardPile`** — a `cardPile` of named ordered zones (deck/hand/discard/exhaust) with seeded `shuffle`, `draw(n)` (hand limits + reshuffle-on-empty), `discard`/`exhaust`/`move`. Reuses the engine's seeded RNG (`pileRng`), so shuffles are deterministic under a seed. Slay the Spire, Balatro.
+- **`@jgengine/core/cards/modifierPipeline`** — an ordered `{ source, apply(value) → value }` pipeline (`runPipeline` / `createModifierPipeline`) with an inspectable per-step `trace` (before/after/changed) for Balatro-style scoring readouts. Generic over the scored value.
+- **`@jgengine/core/board/laneBoard`** — N lanes, per-side power aggregate + optional per-lane `LaneRule` modifier, with `laneOutcome`/`boardTotals`/`lanesWon`. Marvel Snap, Inscryption.
+- **`@jgengine/core/board/timelineBoard`** — N slots each on an independent cooldown, `tick(dtMs)` resolving fires in expiry order (then slot index), multiple fires per slot per tick. The Bazaar auto-battlers.
+- **`@jgengine/core/inventory/shapedGrid`** — a polyomino inventory variant: `Footprint` placement, `rotateFootprint`, `canPlace` overlap/bounds check, plus `gridAdjacencyQuery` (orthogonal/diagonal neighbors) feeding synergy effects, and `cellFromPoint` for pointer→cell snap. Backpack Hero, Tetris inventory.
+- **`@jgengine/react/dragLayer`** — a 2-D UI-space drag/rotate/drop/snap gesture layer over the above: `useDragLayer`, headless `DraggableCard` (right-click rotate), `DropZone` (cell snap + active state), `DragGhost`.
+
+### Migrate
+
+- Bump every `@jgengine/*` dependency in lockstep. Additive only — no existing 0.6.0 API moved or changed.
+- Optional: reach for the new `cards/*`, `board/*`, and `inventory/shapedGrid` primitives for card/deckbuilder/auto-battler games; they compose with the existing slot inventory rather than replacing it.
 
 ## 0.6.0
 
