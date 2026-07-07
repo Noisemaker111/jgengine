@@ -13,7 +13,16 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- **Survival & environment layer.** Renderer-free `@jgengine/core` primitives for survival games (Project Zomboid moodles, The Long Dark / Green Hell survival, DayZ / Tarkov per-limb health, weather-driven games, Nightingale realm cards), plus the `@jgengine/shell` fire visuals.
+  - `@jgengine/core/survival/decayMeter` — named `decayMeter`s (`createDecayMeterSet`) that drain/recover on game-time `dt`, refill from consumables/actions, raise threshold moodles, and take environment-driven rate modifiers (cold speeds warmth loss, toxic biomes drop oxygen).
+  - `@jgengine/core/survival/moodle` — a stacking status-effect display distinct from numeric bars: `stackMoodles(...)` folds meter/ailment/buff moodles worst-first, and `createMoodleStack()` holds timed buffs (Valheim-style concurrent food buffs) that expire on `tick(dt)`.
+  - `@jgengine/core/survival/regionHealth` — a multi-region health component (`createMultiRegionHealth`): per-part pools with vulnerability + vital death, a stacking ailment queue (bleed/fracture) that drains over time, and per-injury treatment items (`treat("bandage")`). Shares the moodle display via `ailmentMoodles()`.
+  - `@jgengine/core/world/envField` — sampleable environment fields (`createEnvironmentField`): temperature, wetness, light-exposure, and ambient-light at any world position and time, with sky occluders, heat sources, and a day/night sun cycle. Meters and spawn gating read it renderer-free.
+  - `@jgengine/core/world/weather` — weather → gameplay modifiers (`resolveWeather` → grip/visibility/structure-damage/chill/ignition/spread) over a game-owned table, plus a **coarse cellular** fire-spread grid (`createFireGrid`, not a fluid solver): wind-biased propagation, fuel burn-through, firebreaks, and rain/wetness suppression.
+  - `@jgengine/core/world/realm` — runtime realm composition (`composeRealm`): assemble a played instance from a deck of modifier cards (major biome + minor weather/day-length/spawn cards) that override environment params and spawn tables, recomposing a sampleable environment field on top of the weather hooks.
+  - `@jgengine/shell/weather` `FireSpreadLayer` — renders a `FireGrid`'s burning flames + scorched cells; a `survival-demo` game wires the whole stack (moodle stack, per-part body panel, condition meters, weather readout, spreading fire).
 
 ## 0.6.0
 

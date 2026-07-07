@@ -68,6 +68,12 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
 | Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` |
+| Environment field | `world/envField` | `createEnvironmentField`, `EnvironmentField`, `EnvironmentSample`, `EnvironmentFieldConfig`, `OccluderRect`, `HeatSource` |
+| Weather + fire | `world/weather` | `resolveWeather`, `WeatherState`, `WeatherModifier`, `WeatherModifierTable`, `ResolvedWeather`, `createFireGrid`, `FireGrid`, `FireCell`, `FireGridConfig` |
+| Realm composition | `world/realm` | `composeRealm`, `RealmCard`, `RealmBase`, `ComposedRealm`, `RealmEnvironmentParams`, `SpawnTableOverride` |
+| Decay meters | `survival/decayMeter` | `createDecayMeterSet`, `DecayMeterSet`, `DecayMeterConfig`, `MeterThreshold`, `DecayMeterState` |
+| Status moodles | `survival/moodle` | `createMoodleStack`, `stackMoodles`, `MoodleStack`, `Moodle`, `MoodleSeverity`, `TimedMoodleInput` |
+| Multi-region health | `survival/regionHealth` | `createMultiRegionHealth`, `MultiRegionHealth`, `HealthRegionConfig`, `AilmentConfig`, `RegionHealthState`, `AilmentInstance` |
 
 ## Getting started (new project)
 
@@ -540,6 +546,23 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
 | `buildingIndex(district)` → `BuildingIndex` | `at`/`within`/`nearest`/`isInside`/`blockers` over a generated district — placement avoidance, pathfinding |
 
 Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
+
+### Environment fields, weather hooks & realm composition
+
+Renderer-free survival/environment primitives that extend the world query layer — meters, spawn gating, and damage-in-sunlight read the same world the shell renders, all ticking on game-time `dt`.
+
+- **Environment field** (`world/envField`): `createEnvironmentField({ dayLength, baseTemperature, nightDrop, altitudeLapse, terrain, rain, occluders, heatSources, ambientFloor, temperatureAt })` → `EnvironmentField`. Sample **temperature**, **wetness**, **lightExposure** (direct sun/sky), and **ambientLight** (spawn gating) at any `(x, z, time)` — `sample(x, z, time, y?)` returns all four plus `sheltered`. Occluders (roofs/canopy) shade sun and shelter from rain; heat sources (campfires) warm nearby positions; `sunElevation(time)` drives the day cycle. Sun damages a vampire, cold forces campfires, low ambient light spawns mobs — the field answers "am I in sun vs. shade / cold vs. warm / dark vs. lit". Pure and instantaneous; stateful build-up belongs to a decay meter reading the field.
+- **Weather → gameplay** (`world/weather`): `resolveWeather(state, table)` turns a `WeatherState { kind, intensity }` into concrete `ResolvedWeather` (`grip`, `visibility`, `structureDamage`, `chill`, `ignition`, `spread`) via a game-owned `WeatherModifierTable` — multipliers interpolate from neutral by intensity, rate effects scale linearly. Read `grip`/`visibility` in movement and AI, `structureDamage` on a building tick.
+- **Fire spread** (`world/weather`): `createFireGrid({ cols, rows, cellSize, origin, fuelAt, spreadRate, burnRate, wind, windBias })` → `FireGrid` is a **coarse cellular** propagation (not a fluid solver): `ignite(x, z)` / `igniteCell(col, row)`, then `step(dt, { spread, wetnessAt })` transfers heat to neighbours biased by wind, consumes fuel (`unburnt → burning → burnt`), and honours firebreaks (zero-fuel cells) and rain/wetness suppression. `resolveWeather(...).spread` feeds the step; `@jgengine/shell/weather` `FireSpreadLayer` renders the burning/scorched cells.
+- **Realm composition** (`world/realm`): `composeRealm(base, cards)` assembles a played instance at runtime from a deck of modifier **cards** (Nightingale realm cards) — a `major` card is the biome base, `minor` cards layer environment param overrides, a `WeatherState`, and spawn-table edits (`set`/`add`/`scale`/`remove`). The result recomposes both the environment (into a sampleable field via `composed.environmentField(extra?)`) and the `spawnTable`, and depends on the weather hooks above to turn its `weather` into gameplay modifiers.
+
+### Survival meters, moodles & multi-region health
+
+The `survival/` domain — decay-over-time meters and per-part health, both feeding one stacking **moodle** status display distinct from numeric bars.
+
+- **Decay meters** (`survival/decayMeter`): `createDecayMeterSet([{ id, max, min?, start?, rate, thresholds }])` → `DecayMeterSet`. Each named meter (hunger, thirst, oxygen, sanity, warmth, stamina) drains/recovers on `tick(dt)` at `rate`, refills from consumables/actions via `refill(id, amount)`, and raises threshold moodles (`below`/`above`). `setRateModifier(id, mult)` lets the environment drive them — read an env field, then speed warmth loss when cold or oxygen loss in a toxic biome.
+- **Moodles** (`survival/moodle`): the shared status stack, distinct from raw bars. `stackMoodles(...groups)` folds meter, ailment, and buff `Moodle[]` into one worst-first display (same-id stacks add, worst severity wins). `createMoodleStack()` holds timed buffs (`add({ id, label, duration })` — Valheim's concurrent food buffs) and expires them on `tick(dt)`.
+- **Multi-region health** (`survival/regionHealth`): `createMultiRegionHealth({ regions, ailments })` → `MultiRegionHealth` gives per-part pools (head/thorax/arms/legs, Tarkov/DayZ style) — `damage(regionId, amount)` scales by `vulnerability` and kills when a `vital` part empties; a stacking **ailment queue** (`applyAilment`, `tick(dt)` drains like bleed) carries per-injury treatment (`treat(itemId)` clears wounds via bandage/tourniquet/splint). `ailmentMoodles()` shares the moodle display with the meters (#78 + #90).
 
 ### Physics world (optional, headless)
 
