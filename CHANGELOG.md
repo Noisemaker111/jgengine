@@ -11,7 +11,20 @@ Agents building on the published SDK can also read this programmatically:
 same data as typed values, so an updater can diff its installed version against
 the latest and surface the migration steps.
 
-## Unreleased
+## 0.7.0
+
+The engine-gaps release — 22 system-level additions across turn/tactics, cards & boards,
+crafting, survival, navigation & AI, camera rigs, physics & vehicles, traversal &
+destruction, world items & building, map/HUD/ping, combat feel & abilities, audio,
+interaction, sensors, embodiment, multiplayer depth, and objective/session machines.
+**Every 0.6.0 API is unchanged** — the whole release is additive, so upgrading is a version bump.
+
+### Migrate
+
+- Bump every `@jgengine/*` dependency to `^0.7.0` (the eight packages version in lockstep).
+- No code change is required — 0.7.0 only adds surface; no 0.6.0 API moved or was removed. Existing games keep the orbit/first-person camera, single-player-entity control, and every existing primitive exactly as before.
+- Opt into any new system by importing it directly: a camera rig via `camera.rig` + its config block; a `sensor/*` probe with `@jgengine/shell/vision` renderers; an `ai/*` director over the `nav/` navmesh; `turn/*` + `tactics/*` for turn-based/grid games; `cards/*` + `board/*` for deckbuilders; `crafting/*` for recipes/production/farming; `survival/*` + `world/{envField,weather,realm}` for survival; `combat/{abilityKit,animationState,defensiveWindow,…}` for action feel; `physics/{vehicleBody,traversal,structure,ragdoll,…}` for vehicles/destruction; `session/*` for contested/round/downed/ring/extraction machines; and `multiplayer/*` for lag-comp/hidden-commit/matchmaking.
+- `entityStore.update()` now also accepts `name`, so possession/form can retarget an instance's catalog id without despawn/respawn — no action needed unless you relied on `name` being immutable.
 
 ### Added
 
@@ -23,7 +36,6 @@ the latest and surface the migration steps.
   - `@jgengine/core/tactics/snapshot` (`createSnapshotStore`, `deepClone`) — cheap, repeatable turn-undo over registered `capture()/restore()` slices (the grid, surfaces, and turn loop all qualify), with a `push()/pop()` undo stack.
   - `@jgengine/core/tactics/surface` (`createSurfaceLayer`) — a stateful tile surface layer with its own `tick(dt)` and a data-driven combination matrix (`reactions: [{ when: [a, b], result }]`) — grease+fire, water+lightning — distinct from terrain/water.
 - `@jgengine/core/combat/effects` now exports `resolveAreaTargets` (+ `AreaTarget`, `AreaTargetInput`), the shared in-radius→LoS→falloff→accept targeting that both `applyEffect` and the predictive query run, guaranteeing parity by construction. No behavior change to `effect`.
-### Added — card & board stack (`@jgengine/core`, `@jgengine/react`)
 
 Pure, renderer-free primitives for card, board, and deckbuilder games — they sit **beside** the slot inventory, never replace it.
 
@@ -34,10 +46,6 @@ Pure, renderer-free primitives for card, board, and deckbuilder games — they s
 - **`@jgengine/core/inventory/shapedGrid`** — a polyomino inventory variant: `Footprint` placement, `rotateFootprint`, `canPlace` overlap/bounds check, plus `gridAdjacencyQuery` (orthogonal/diagonal neighbors) feeding synergy effects, and `cellFromPoint` for pointer→cell snap. Backpack Hero, Tetris inventory.
 - **`@jgengine/react/dragLayer`** — a 2-D UI-space drag/rotate/drop/snap gesture layer over the above: `useDragLayer`, headless `DraggableCard` (right-click rotate), `DropZone` (cell snap + active state), `DragGhost`.
 
-### Migrate
-
-- Bump every `@jgengine/*` dependency in lockstep. Additive only — no existing 0.6.0 API moved or changed.
-- Optional: reach for the new `cards/*`, `board/*`, and `inventory/shapedGrid` primitives for card/deckbuilder/auto-battler games; they compose with the existing slot inventory rather than replacing it.
 - `@jgengine/core/crafting/recipe` — a recipe graph primitive: `RecipeDef { inputs, outputs, seconds?, station?, stationRange?, requires? }` turns inputs + an optional required-workstation-in-range + time into outputs. `craft` / `canCraft` consume and produce on an `InventoryState` atomically (rejecting `missing-inputs` / `no-station` / `locked` / `no-output-space`); `stationSatisfied` does the range check against placed `{ catalogId, position }` stations; `createRecipeGraph` indexes recipes by `producing` / `using` / `category`. For Valheim/Enshrouded-style workbench tiers, Tarkov hideout stations, Palworld base craft. (#71)
 - `@jgengine/core/economy/techTree` — a prerequisite-gated tech tree that **generalizes flat `unlocks`** rather than duplicating it: `TechNodeDef extends UnlockDef` adds `requires` (prereq ids), a `recipe` payload, and `grants`. `createTechTree(defs)` wraps `createUnlocks` and gates `unlock(userId, id)` on prerequisites, exposing `available` (frontier) and `recipes` (payloads unlocked). Flat unlocks are just nodes with no `requires`. For Once Human Memetics / Abiotic Factor branching trees. (#72)
 - `@jgengine/core/crafting/production` — `productionBuilding({ inputs, outputs, rate, power? })` plus `tickProduction`, which consumes buffered inputs and emits outputs continuously through game-time `dt` (so pause/fast-forward apply for free). `feedProduction` / `drainOutput` are the buffer I/O, `advanceTransport` slides items along a conveyor path, `resolvePowerGrid` powers demands greedily against a supply. For Palworld/Satisfactory/Factorio automation. (#74)
@@ -136,19 +144,10 @@ Pure, renderer-free primitives for card, board, and deckbuilder games — they s
   - **Session-recording buffer** (`sensor/recordingBuffer`) — `createRecordingBuffer` appends timestamped snapshots on game-time and seeks/scrubs them for replay, photo mode, or kill-cam; `shell/replay/useSessionRecorder` records an entity's pose every frame.
   - **`observer` camera rig** (config in `@jgengine/core/game/playableGame`: `ObserverCameraConfig`) — a detached spectator/photo cam bound to any entity or fixed point that reads no player input at all (van CCTV spectate, Forza-style photo mode free cam, Trackmania ghost/kill-cam).
 
-### Migrate
-
-- No change required — additive. Existing games keep the orbit camera (`perspective: "third"`) and first-person (`perspective: "first"`) exactly as before. Opt into a new rig with `camera.rig` and its config block, or a sensor/vision primitive with a direct `@jgengine/core/sensor/*` / `@jgengine/shell/vision/*` import.
 - **Possession** (`@jgengine/core/scene/possession`, `createPossession`) — a player can own N scene entities and switch which one is under active control, distinct from the social party. `ctx.player.possession.own/disown/owns/listOwned(userId, entityId)` tracks ownership; `possess(userId, entityId)` swaps active control (rejecting entities the user doesn't own), flips the previous/next entity's `EntityRole` between `"player"`/`"npc"` (reusing entity control, not forking it), and emits `possession.swapped`. `active(userId)` defaults to `userId` itself until a swap happens. `@jgengine/shell`'s `GamePlayerShell` rebinds WASD movement, targeting, hotbar `from`, and the camera rig's `followEntityId` to the active possessed entity on every swap — no per-game camera glue required.
 - **Form / shapeshift** (`@jgengine/core/scene/form`, `createForms`) — a `form` bundles movement params + an ability-id list + a mesh (reusing the entity's catalog name, so mesh, movement defaults, and receive/role all follow the swap through the existing name-keyed resolution — no parallel mesh system). `ctx.scene.entity.form.register(defs)` in `onInit`; `shapeshift(instanceId, formId, durationSeconds?)` applies the bundle and optionally reverts automatically after `durationSeconds` of **game time** (`ctx.time.after`, so it obeys pause/fast-forward); `revert(instanceId)` reverts early. Emits `form.changed`.
 - **Cosmetic loadouts + emote broadcast** (`@jgengine/core/game/cosmetics` `createCosmetics`; `@jgengine/core/game/social` `Social.emotes`) — `ctx.player.cosmetics.register(defs)` + `apply(userId, loadoutId)` / `equip(userId, slot, cosmeticId)` manage a per-player cosmetic slot map (skin/back/aura/…), emitting `cosmetics.changed`. `ctx.game.social.emotes.play(fromUserId, emoteId, radius?)` broadcasts to nearby **player**-role entities (reusing `scene.entity.inRadius`, not a parallel proximity system) and emits `emote.played` — bind it through the existing `ctx.game.feed` primitive (`feed.bind("emote.played")`) for a HUD feed, no new hook needed.
 - `entityStore`'s `update()` patch now also accepts `name`, so possession/form (and any future system) can retarget an instance's catalog id without despawn/respawn.
-
-### Migrate
-
-- No change required — additive. Existing games keep the orbit camera (`perspective: "third"`) and first-person (`perspective: "first"`) exactly as before. Opt into a new rig with `camera.rig` and its config block.
-- No change required — possession, forms, cosmetics, and emotes are new opt-in primitives; `ctx.player.possession.active(userId)` defaults to `userId` and every existing game continues to control its single spawned player entity exactly as before.
-### Added — character combat feel
 
 An additive layer over effects/projectiles/death that adds melee/action feel. Every model is a renderer-free `@jgengine/core` factory a game composes per entity; `@jgengine/shell` renders the world/HUD side. No existing API moved.
 
@@ -159,8 +158,6 @@ An additive layer over effects/projectiles/death that adds melee/action feel. Ev
 - **Dash / dodge** — `@jgengine/core/movement/dash`: `createDashState` — directional burst + i-frame window + stamina/cooldown.
 - **Hit reaction, telegraphs, typed damage numbers** — `@jgengine/core/combat/hitReaction` + `ctx.scene.entity.hitReaction(...)` (knockback impulse + hitstop + `combat.hitReaction` shake channel); `@jgengine/core/combat/telegraph` + `ctx.scene.entity.telegraph(...)` (windup→activation ground decal bound to an effect, drawn by the shell); `ctx.scene.entity.floatText({ crit, element, hitType, scale })` styled by `@jgengine/shell/world/floatTextStyle`.
 
-### Added — abilities, resources, cooldowns, drafts
-
 Genre systems over the existing effects/projectiles/targeting/loot primitives. Every model is a renderer-free `@jgengine/core` factory the game ticks on game-time `dt`; `@jgengine/react` adds four-state slot binding hooks. No existing API moved. The ult/streak meters build on the `stats/accumulatorMeter` from the combat-feel layer above.
 
 - **Ability kit** — `@jgengine/core/combat/abilityKit`: `createAbilityKit([{ id, cooldownMs, chargesMax?, resourceCost?, castType? }])` models an ability slot **separate from an inventory item**, exposing the four HUD states `ready | cooldown | no-resource | just-cast` plus charges + cooldown fraction. Resource-agnostic — reports `no-resource` against a supplied `resourceAvailable`, the game spends. (MOBA/ARPG action bars, hero-shooter kits.)
@@ -170,11 +167,6 @@ Genre systems over the existing effects/projectiles/targeting/loot primitives. E
 - **Run draft** — `@jgengine/core/game/runDraft`: `createRunDraft` / `createRunModifierStack` — pause, present N weighted picks (`pickWeighted`), choose, stack the modifiers for the run (aggregated onto `stats/statModifiers`). (Vampire Survivors level-ups, Hades boons.)
 - **React** — `@jgengine/react` `useAbilitySlots` / `useAbilitySlot` (four-state snapshots) and `useEventMeter` (ult/streak bar view).
 
-### Migrate
-
-- No code change required — this release only adds surface.
-- Optional: give attacking entities a `createAnimationState(...)` and drive it in `onTick`; hang parry windows, combo cancels, and telegraph timing off its tagged frame ranges. Add `crit`/`element` to `floatText` emits for typed damage numbers, and call `ctx.scene.entity.telegraph(...)` / `hitReaction(...)` for boss AoE warnings and impact feel.
-- Optional: replace hand-rolled cooldown maps with `createAbilityKit(...)` (ticked in `onTick`), bind the hotbar to `useAbilitySlots(kit, mana)`, and drive an ult bar off `createEventMeter({ mode: "hold" })` / a streak meter off `createEventMeter({ mode: "reset" })`.
 - `@jgengine/core/item/durability` — per-instance item durability + repair. A catalog `DurabilitySpec` (`max`, `wearPerUse`/`wearPerHit`, `disableAtZero`, `repair`); `createDurability`/`wear`/`isDisabled`/`durabilityFraction` for the wear loop, `repairQuote(spec, state, { station?, to? })` for a quote-then-apply repair (material cost scaled by points restored, optional `qualityLossPerRepair` shrinking `max`), and `createDurabilityTracker()` to hold state per instance id. For weapon/tool/armor degradation repaired at stations.
 - `@jgengine/core/item/affix` — rarity-weighted procgen roller. `createAffixRoller({ pools, rarities })` turns `base × rarity` into `{ rolled affixes, computed stats, name }`: draws `affixCount` distinct affixes without replacement (weighted via the engine `pickWeighted`), computes stats (base × rarity scale, then `add` then `mul` affixes), and composes a name from rarity + prefix/suffix parts. `seededRng(seed)` gives deterministic drops. For looter-shooter / ARPG generated weapons.
 - `@jgengine/core/item/modularItem` — parts-in-typed-slots assembly. `ModularItemDef` with category-constrained `MountSlotDef`s; `install`/`uninstall` validate slot + category + occupancy, `computeEffectiveStats` rolls part `stats` (additive) then `multipliers` over the frame's `baseStats`, `missingRequiredSlots`/`isComplete` gate a buildable whole; `createModularItem(def)` is the stateful wrapper. For piece-by-piece guns and mech loadouts.
@@ -186,6 +178,7 @@ Genre systems over the existing effects/projectiles/targeting/loot primitives. E
 - `@jgengine/core/session/ring` — the shrinking battle-royale safe zone. `RingConfig` = `{ center, phases }`; `ringSampleAt(config, t)`/`createRing` give the live `{ center, radius, damagePerSecond }` (interpolated on the game clock), `isOutside`/`distanceOutside`/`damageOutside(t, dt, positions)` for out-of-bounds DoT.
 - `@jgengine/core/session/extraction` — the raid-scoped extract-to-bank session, composed from the contested channel + `inventory/storageTier`. `createRaidSession({ extracts, insurance?, consolation? })`: `beginExtract`/`tickExtract`/`damage` drive hold-to-leave, `resolveExtraction` banks everything carried, `resolveDeath` partitions/insures/consoles via storage tiers, `claimDeliveries(now)` drains insured returns.
 - `@jgengine/core/runtime/persistenceScope` — run-vs-meta persistence split with reset boundaries. `partitionScopes`/`resetRun`/`mergeScopes` over flat records, `clearRunFields`/`applyRunReset` over player rows/profiles, `planScenarioReset(...)` normalizes a season/scenario wipe applied through the new optional `HostPersistence.resetScenario` — implemented by `@jgengine/sql` (deletes a server's chunks + session and run-resets each profile in one transaction, keeping account meta).
+
 
 ## 0.6.0
 
