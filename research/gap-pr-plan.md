@@ -12,7 +12,7 @@
 | G9 Crafting/tech/production | opus | claude/gaps-crafting | ✅ DONE (green) | #132 |
 | G11 Survival & environment | opus | claude/gaps-survival | ✅ DONE (green) | #137 |
 | G18 Audio & voice | sonnet | claude/gaps-audio | ✅ DONE (green) | #141 |
-| G22 Player embodiment & expression | sonnet | claude/gaps-embodiment (stack→gaps-camera-rigs) | in-flight | — |
+| G22 Player embodiment & expression | sonnet | claude/gaps-embodiment (stack→gaps-camera-rigs) | ✅ DONE (green) | #145 |
 | G7 Character combat feel | opus | claude/gaps-combat-feel | ✅ DONE (green) | #134 |
 | G6 Abilities/resources/cooldowns | opus | claude/gaps-abilities (stack→gaps-combat-feel) | ✅ DONE (green) | #139 |
 | G20 Interaction verbs & minigames | sonnet | claude/gaps-interaction | ✅ DONE (green) | #144 |
