@@ -7,6 +7,7 @@ import type {
   WorldChunkRecord,
 } from "@jgengine/core/runtime/hostPersistence";
 import { trimFeedEntries } from "@jgengine/core/runtime/hostPersistence";
+import { applyRunReset } from "@jgengine/core/runtime/persistenceScope";
 
 export type SqlQueryResult = { rows: Record<string, unknown>[] };
 
@@ -158,6 +159,45 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
           await upsertChunk(client, chunk);
         }
         await upsertServer(client, plan.server);
+      });
+    },
+
+    async resetScenario(reset) {
+      await transact(async (client) => {
+        if (reset.serverId !== null) {
+          if (reset.wipeChunks) {
+            await client.query(`DELETE FROM jg_world_chunks WHERE server_id = $1`, [reset.serverId]);
+          }
+          if (reset.wipeServerSession) {
+            await client.query(`DELETE FROM jg_game_servers WHERE server_id = $1`, [reset.serverId]);
+          }
+        } else {
+          const servers = await client.query(
+            `SELECT server_id FROM jg_game_servers WHERE game_id = $1`,
+            [reset.gameId],
+          );
+          for (const row of servers.rows) {
+            const serverId = String(row.server_id);
+            if (reset.wipeChunks) {
+              await client.query(`DELETE FROM jg_world_chunks WHERE server_id = $1`, [serverId]);
+            }
+          }
+          if (reset.wipeServerSession) {
+            await client.query(`DELETE FROM jg_game_servers WHERE game_id = $1`, [reset.gameId]);
+          }
+        }
+
+        if (reset.resetPlayers === "run" && reset.runFields.length > 0) {
+          const profiles = await client.query(
+            `SELECT record FROM jg_player_profiles WHERE game_id = $1`,
+            [reset.gameId],
+          );
+          const at = now();
+          for (const row of profiles.rows) {
+            const profile = asJson<PlayerProfileRecord>(row.record);
+            await upsertProfile(client, applyRunReset(profile, reset.runFields, at));
+          }
+        }
       });
     },
 
