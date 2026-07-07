@@ -97,6 +97,29 @@ export interface WorldItemPickedUpEvent {
   count: number;
 }
 
+export interface CosmeticsChangedEvent {
+  userId: string;
+  slots: Record<string, string>;
+}
+
+export interface EmotePlayedEvent {
+  from: string;
+  emoteId: string;
+  at: readonly [number, number, number];
+  recipients: readonly string[];
+}
+
+export interface PossessionSwappedEvent {
+  userId: string;
+  entityId: string;
+  previousEntityId: string;
+}
+
+export interface FormChangedEvent {
+  instanceId: string;
+  formId: string | null;
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
@@ -112,6 +135,10 @@ export interface GameEventMap {
   "projectile.settled": ProjectileSettledEvent;
   "worldItem.dropped": WorldItemDroppedEvent;
   "worldItem.picked_up": WorldItemPickedUpEvent;
+  "cosmetics.changed": CosmeticsChangedEvent;
+  "emote.played": EmotePlayedEvent;
+  "possession.swapped": PossessionSwappedEvent;
+  "form.changed": FormChangedEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

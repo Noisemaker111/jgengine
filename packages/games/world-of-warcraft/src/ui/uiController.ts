@@ -1,4 +1,4 @@
-export type GamePanel = "backpack" | "character" | "abilities" | "dialogue" | null;
+export type GamePanel = "backpack" | "character" | "abilities" | "dialogue" | "emotes" | null;
 
 type Listener = () => void;
 

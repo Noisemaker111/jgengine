@@ -139,6 +139,15 @@ Pure, renderer-free primitives for card, board, and deckbuilder games — they s
 ### Migrate
 
 - No change required — additive. Existing games keep the orbit camera (`perspective: "third"`) and first-person (`perspective: "first"`) exactly as before. Opt into a new rig with `camera.rig` and its config block, or a sensor/vision primitive with a direct `@jgengine/core/sensor/*` / `@jgengine/shell/vision/*` import.
+- **Possession** (`@jgengine/core/scene/possession`, `createPossession`) — a player can own N scene entities and switch which one is under active control, distinct from the social party. `ctx.player.possession.own/disown/owns/listOwned(userId, entityId)` tracks ownership; `possess(userId, entityId)` swaps active control (rejecting entities the user doesn't own), flips the previous/next entity's `EntityRole` between `"player"`/`"npc"` (reusing entity control, not forking it), and emits `possession.swapped`. `active(userId)` defaults to `userId` itself until a swap happens. `@jgengine/shell`'s `GamePlayerShell` rebinds WASD movement, targeting, hotbar `from`, and the camera rig's `followEntityId` to the active possessed entity on every swap — no per-game camera glue required.
+- **Form / shapeshift** (`@jgengine/core/scene/form`, `createForms`) — a `form` bundles movement params + an ability-id list + a mesh (reusing the entity's catalog name, so mesh, movement defaults, and receive/role all follow the swap through the existing name-keyed resolution — no parallel mesh system). `ctx.scene.entity.form.register(defs)` in `onInit`; `shapeshift(instanceId, formId, durationSeconds?)` applies the bundle and optionally reverts automatically after `durationSeconds` of **game time** (`ctx.time.after`, so it obeys pause/fast-forward); `revert(instanceId)` reverts early. Emits `form.changed`.
+- **Cosmetic loadouts + emote broadcast** (`@jgengine/core/game/cosmetics` `createCosmetics`; `@jgengine/core/game/social` `Social.emotes`) — `ctx.player.cosmetics.register(defs)` + `apply(userId, loadoutId)` / `equip(userId, slot, cosmeticId)` manage a per-player cosmetic slot map (skin/back/aura/…), emitting `cosmetics.changed`. `ctx.game.social.emotes.play(fromUserId, emoteId, radius?)` broadcasts to nearby **player**-role entities (reusing `scene.entity.inRadius`, not a parallel proximity system) and emits `emote.played` — bind it through the existing `ctx.game.feed` primitive (`feed.bind("emote.played")`) for a HUD feed, no new hook needed.
+- `entityStore`'s `update()` patch now also accepts `name`, so possession/form (and any future system) can retarget an instance's catalog id without despawn/respawn.
+
+### Migrate
+
+- No change required — additive. Existing games keep the orbit camera (`perspective: "third"`) and first-person (`perspective: "first"`) exactly as before. Opt into a new rig with `camera.rig` and its config block.
+- No change required — possession, forms, cosmetics, and emotes are new opt-in primitives; `ctx.player.possession.active(userId)` defaults to `userId` and every existing game continues to control its single spawned player entity exactly as before.
 
 ## 0.6.0
 

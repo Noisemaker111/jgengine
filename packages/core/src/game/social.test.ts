@@ -140,3 +140,56 @@ describe("social presence", () => {
     expect(online.presence.get("alice")).toEqual({ online: true, zoneId: "downtown" });
   });
 });
+
+describe("social emotes", () => {
+  interface FakeEntity {
+    position: readonly [number, number, number];
+    role: string;
+  }
+
+  function createEmoteHarness(entries: Record<string, FakeEntity>) {
+    return {
+      entities: { get: (id: string) => entries[id] ?? null },
+      spatial: {
+        inRadius: (center: readonly [number, number, number], radius: number, filter?: (id: string) => boolean) =>
+          Object.entries(entries)
+            .filter(([id, entity]) => {
+              if (filter !== undefined && !filter(id)) return false;
+              const dx = entity.position[0] - center[0];
+              const dz = entity.position[2] - center[2];
+              return Math.sqrt(dx * dx + dz * dz) <= radius;
+            })
+            .map(([id]) => id),
+      },
+    };
+  }
+
+  test("play without emotes configured is rejected", () => {
+    const social = createSocial({ events: createGameEvents() });
+    expect(social.emotes.play("alice", "wave")).toEqual({ reason: "emotes not configured" });
+  });
+
+  test("play broadcasts to nearby player entities only, excluding self and non-players", () => {
+    const events = createGameEvents();
+    const played: { from: string; emoteId: string; recipients: readonly string[] }[] = [];
+    events.on("emote.played", (event) => void played.push(event));
+
+    const emotes = createEmoteHarness({
+      alice: { position: [0, 0, 0], role: "player" },
+      bob: { position: [5, 0, 0], role: "player" },
+      carol: { position: [100, 0, 0], role: "player" },
+      wolf: { position: [2, 0, 0], role: "npc" },
+    });
+    const social = createSocial({ events, emotes });
+
+    const result = social.emotes.play("alice", "wave", 10);
+    expect(result).toEqual({ from: "alice", emoteId: "wave", at: [0, 0, 0], recipients: ["bob"] });
+    expect(played).toEqual([{ from: "alice", emoteId: "wave", at: [0, 0, 0], recipients: ["bob"] }]);
+  });
+
+  test("play rejects when the source entity is not spawned", () => {
+    const emotes = createEmoteHarness({});
+    const social = createSocial({ events: createGameEvents(), emotes });
+    expect(social.emotes.play("ghost", "wave")).toEqual({ reason: 'entity "ghost" is not spawned' });
+  });
+});

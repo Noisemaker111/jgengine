@@ -4,9 +4,11 @@ import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { distanceBetween } from "@jgengine/core/scene/spatial";
 import { itemUseHandlers } from "./items/use-handlers";
 import { loadouts } from "./loadouts";
+import { cosmeticLoadouts } from "./cosmetics";
 import { lootTables } from "./entities/enemies/loot-tables";
 import { enemyById } from "./entities/enemies/catalog";
 import { player_default } from "./entities/players/catalog";
+import { forms, WOLF_FORM_ID, WOLF_FORM_DURATION_SECONDS } from "./forms";
 import { quests } from "./quests/catalog";
 import { applyLevelUps, grantXp } from "./progression/curves";
 import { TAB_TARGET_MAX_DISTANCE } from "./combat/constants";
@@ -19,6 +21,8 @@ const MOB_RESPAWN_SECONDS = 20;
 const PLAYER_RESPAWN_SECONDS = 3;
 const HEALTH_REGEN_PER_SECOND = 3;
 const MANA_REGEN_PER_SECOND = 5;
+export const SQUIRE_COMPANION_ID = "squire";
+const SQUIRE_SPAWN_OFFSET: EntityPosition = [1.6, 0, 1.6];
 
 const activeMobs = new Map<string, MobSpawnPoint>();
 const attackCooldowns = new Map<string, number>();
@@ -44,6 +48,15 @@ function spawnPlayer(ctx: GameContext): void {
     position: TOWN_SPAWN,
     role: "player",
   });
+}
+
+function spawnCompanion(ctx: GameContext): void {
+  ctx.scene.entity.spawn(player_default.id, {
+    id: SQUIRE_COMPANION_ID,
+    position: [TOWN_SPAWN[0] + SQUIRE_SPAWN_OFFSET[0], TOWN_SPAWN[1], TOWN_SPAWN[2] + SQUIRE_SPAWN_OFFSET[2]],
+    role: "npc",
+  });
+  ctx.player.possession.own(ctx.player.userId, SQUIRE_COMPANION_ID);
 }
 
 function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
@@ -82,6 +95,8 @@ function onInit(ctx: GameContext): void {
 
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
+  ctx.player.cosmetics.register(cosmeticLoadouts);
+  ctx.scene.entity.form.register(forms);
   for (const table of lootTables) ctx.game.loot.register(table);
 
   ctx.game.quest.register(quests);
@@ -91,10 +106,12 @@ function onInit(ctx: GameContext): void {
   ctx.game.feed.bind("quest.updated");
   ctx.game.feed.bind("loot.granted");
   ctx.game.feed.bind("stat.levelUp");
+  ctx.game.feed.bind("emote.played");
 
   ctx.game.commands.define("target.cycle", {
     apply(state: GameContext) {
-      state.scene.entity.cycleTarget(state.player.userId, {
+      const controlledId = state.player.possession.active(state.player.userId);
+      state.scene.entity.cycleTarget(controlledId, {
         filter: "hostile",
         maxDistance: TAB_TARGET_MAX_DISTANCE,
       });
@@ -103,7 +120,39 @@ function onInit(ctx: GameContext): void {
   });
   ctx.game.commands.define("target.clear", {
     apply(state: GameContext) {
-      state.scene.entity.setTarget(state.player.userId, null);
+      state.scene.entity.setTarget(state.player.possession.active(state.player.userId), null);
+      return state;
+    },
+  });
+  ctx.game.commands.define("swapControl", {
+    apply(state: GameContext) {
+      const owned = state.player.possession.listOwned(state.player.userId);
+      const active = state.player.possession.active(state.player.userId);
+      const next = owned[(owned.indexOf(active) + 1) % owned.length];
+      if (next !== undefined) state.player.possession.possess(state.player.userId, next);
+      return state;
+    },
+  });
+  ctx.game.commands.define("shapeshift", {
+    apply(state: GameContext) {
+      const controlledId = state.player.possession.active(state.player.userId);
+      if (state.scene.entity.form.active(controlledId) !== null) {
+        state.scene.entity.form.revert(controlledId);
+      } else {
+        state.scene.entity.form.shapeshift(controlledId, WOLF_FORM_ID, WOLF_FORM_DURATION_SECONDS);
+      }
+      return state;
+    },
+  });
+  ctx.game.commands.define<{ emoteId: string }>("emote", {
+    apply(state: GameContext, input) {
+      state.game.social.emotes.play(state.player.possession.active(state.player.userId), input.emoteId);
+      return state;
+    },
+  });
+  ctx.game.commands.define("ui.openEmotes", {
+    apply(state: GameContext) {
+      togglePanel("emotes");
       return state;
     },
   });
@@ -193,7 +242,9 @@ function onInit(ctx: GameContext): void {
 
 function onNewPlayer(ctx: GameContext): void {
   spawnPlayer(ctx);
+  spawnCompanion(ctx);
   ctx.player.applyLoadout(ctx.player.userId, "starterKit");
+  ctx.player.cosmetics.apply(ctx.player.userId, "heroDefault");
 }
 
 function tickRespawns(ctx: GameContext, dt: number): void {
@@ -277,12 +328,12 @@ function tickRegen(ctx: GameContext, dt: number, inCombat: boolean): void {
 }
 
 function tickTargetRange(ctx: GameContext): void {
-  const userId = ctx.player.userId;
-  const targetId = ctx.scene.entity.getTarget(userId);
+  const controlledId = ctx.player.possession.active(ctx.player.userId);
+  const targetId = ctx.scene.entity.getTarget(controlledId);
   if (targetId === null) return;
-  const distance = ctx.scene.entity.distance(userId, targetId);
+  const distance = ctx.scene.entity.distance(controlledId, targetId);
   if (distance === null || distance > TAB_TARGET_MAX_DISTANCE) {
-    ctx.scene.entity.setTarget(userId, null);
+    ctx.scene.entity.setTarget(controlledId, null);
   }
 }
 

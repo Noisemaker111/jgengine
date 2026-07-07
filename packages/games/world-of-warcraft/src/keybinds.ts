@@ -13,5 +13,8 @@ export const keybinds: ActionCodesMap = {
   openBackpack: ["KeyB"],
   openCharacter: ["KeyC"],
   openAbilities: ["KeyK"],
+  openEmotes: ["KeyN"],
+  swapControl: ["KeyX"],
+  shapeshift: ["KeyF"],
   ...hotbarSlotBindings(9),
 };
