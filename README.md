@@ -60,6 +60,13 @@ bun run check-types
 bun test packages
 ```
 
+## Credits
+
+JGengine's procedural buildings, water, rain, and snow renderers were shaped
+from **[achrefelouafi](https://github.com/achrefelouafi)**'s MIT-licensed
+Three.js reference projects. See [CREDITS.md](CREDITS.md) for the full mapping —
+and go star his work.
+
 ## License
 
 [AGPL-3.0-only](LICENSE)

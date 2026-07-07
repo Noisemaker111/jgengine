@@ -13,7 +13,9 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Docs
+
+- Added [CREDITS.md](CREDITS.md) crediting [achrefelouafi](https://github.com/achrefelouafi) for the MIT Three.js reference projects behind the procedural building, water, rain, and snow renderers, with links from the root, `@jgengine/core`, and `@jgengine/shell` READMEs.
 
 ## 0.6.0
 
