@@ -2,6 +2,8 @@
 
 Raw problems only — no game names, no genres, no solutions. Boxes stay `- [ ]` until the gap is fixed and verified.
 
+Issue [#151](https://github.com/Noisemaker111/jgengine/issues/151)
+
 - [ ] No way to paint a dynamic texture onto an entity's mesh at runtime; the paint-shaped APIs only record surface-name strings per wall or terrain cell, and entity GLBs render as static scenes.
 - [ ] Pointer picking returns geometry and identity only; there is no way to sample the colour or PBR material of the surface under a hit point.
 - [ ] No per-entity PBR material override at runtime; entity render config carries no colour, metallic, or roughness channel.

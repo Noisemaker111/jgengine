@@ -19,6 +19,7 @@ When the game work is done, before ending the session:
 2. File one issue on this repo:
    - Title: `[FEATURE] <brief summary of the missing features>`
    - Body: a numbered list, one line per new `TODO.md` entry. Nothing else — no game context, no solutions.
+3. Add an `Issue #<n>` line directly above the batch in `TODO.md` and commit that too, so every batch traces to its issue.
 
 ## Wiring a new game
 
