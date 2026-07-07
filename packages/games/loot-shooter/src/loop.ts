@@ -7,6 +7,7 @@ import { enemyById } from "./entities/enemies/catalog";
 import { player } from "./entities/players/catalog";
 import { grantXp } from "./progression/curves";
 import { PLAYER_SPAWN, setupWorld } from "./world/setup";
+import { downed, publishHud, ring, ringHudAt } from "./session/raid";
 
 function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
   if (event.instanceId === ctx.player.userId) return;
@@ -39,6 +40,17 @@ function onNewPlayer(ctx: GameContext): void {
   if (ctx.player.isNew) ctx.player.applyLoadout(ctx.player.userId, "starterKit");
 }
 
-function onTick(_ctx: GameContext, _dt: number): void {}
+function onTick(ctx: GameContext, dt: number): void {
+  const now = ctx.time.now();
+  const self = ctx.scene.entity.get(ctx.player.userId);
+  const groundPos: [number, number] = self === null ? [0, 0] : [self.position[0], self.position[2]];
+  publishHud({ ring: ringHudAt(now, groundPos) });
+
+  for (const hit of ring.damageOutside(now, dt, [{ id: ctx.player.userId, position: groundPos }])) {
+    ctx.scene.entity.stats.delta(hit.id, "health", -hit.damage);
+  }
+
+  downed.tick(dt);
+}
 
 export const loop = { onInit, onNewPlayer, onTick };

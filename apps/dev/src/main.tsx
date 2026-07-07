@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
-import { GameUiPreview } from "@jgengine/shell/GameUiPreview";
+import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import { resolveShellMultiplayer, type ShellMultiplayer } from "@jgengine/shell/multiplayer";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import "./index.css";
+
+const uiScenarioRegistry: Record<string, () => Promise<UiPreviewScenario>> = {
+  "loot-shooter": () =>
+    import("@dogfood/loot-shooter").then((module) => module.lootShooterUiScenario),
+};
 
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
@@ -30,6 +35,7 @@ const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 function DevApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
+  const [scenario, setScenario] = useState<UiPreviewScenario | null>(null);
   useEffect(() => {
     const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
     if (load === undefined) return;
@@ -44,6 +50,10 @@ function DevApp() {
       );
       setPlayable(loaded);
     });
+    const loadScenario = uiScenarioRegistry[GAME_ID];
+    if (MODE === "ui" && loadScenario !== undefined) {
+      void loadScenario().then((resolved) => setScenario(() => resolved));
+    }
   }, []);
   if (playable === null) {
     return (
@@ -52,7 +62,13 @@ function DevApp() {
       </div>
     );
   }
-  if (MODE === "ui") return <GameUiPreview playable={playable} />;
+  if (MODE === "ui") {
+    return scenario === null ? (
+      <GameUiPreview playable={playable} />
+    ) : (
+      <GameUiPreview playable={playable} scenario={scenario} />
+    );
+  }
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} />;
 }
 
