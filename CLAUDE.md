@@ -2,6 +2,13 @@
 
 This is the primary engine-development repo: a genre-agnostic, pure-TypeScript game engine SDK plus its agent skills. Published packages live under `packages/*` (npm, AGPL-3.0-only); everything else is private.
 
+## Workflow
+
+- Every unit of work ships as a PR. At the **start** of a task, branch off `main` and open a **draft** PR titled for what we're about to do (`gh pr create --draft`), then push commits into it as you go — even when the work is done entirely locally. Don't wait until the end to think about a PR.
+- Keep it a **draft** while the task is in progress. Only when the **whole task is complete** — not after an intermediate phase or milestone within it — mark it ready (`gh pr ready`) and watch CI to green (`gh run watch`). Then the user merges (they do the merge unless they explicitly hand it off).
+- Don't mark ready or babysit CI mid-task: a half-finished task stays a draft, and CI is checked once at the end when the work is actually done — not after every phase.
+- The point: work should always already be in a mergeable, reviewable place, so shipping is one step ("looks good, ship it") rather than a scramble to package finished changes after the fact.
+
 ## Stack
 
 - Package manager: bun (workspaces: `packages/*`, `packages/games/*`, `apps/*`, `examples/*`).
