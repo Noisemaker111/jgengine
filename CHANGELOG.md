@@ -13,7 +13,22 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- **Camera rig library** (`@jgengine/shell`, config types in `@jgengine/core/game/playableGame`) — the single orbit camera is now one of eight rigs, selected and tuned through `PlayableGame.camera` (never by writing camera positions from `onTick`). Set `camera.rig`:
+  - `topDown` — fixed height/pitch/yaw with decoupled follow for ARPG-iso and top-down (Diablo IV/PoE 2/Last Epoch, Hades II); `camera.topDown: { height, pitch, yaw, followSmoothing, zoom }`.
+  - `rts` — free-pan / edge-scroll / rotate / zoom independent of any avatar (The Sims 4, Manor Lords, Two Point Museum); `camera.rts: { panSpeed, edgeScroll, rotateSpeed, bounds, start }`.
+  - `shoulder` — over-the-shoulder with ADS transition and shoulder-swap, reticle decoupled from camera center (Remnant II, Helldivers 2, The First Descendant); `camera.shoulder: { shoulderOffset, distance, ads, side }`.
+  - `lockOn` — yaw bound to the player→target vector with the move axis reinterpreted as strafe (Elden Ring, Sekiro); `camera.lockOn: { targetEntityId?, distance, framingBias, yawSmoothing }`.
+  - `chase` — speed-reactive vehicle chase (speed→FOV curve, spring-arm damping, procedural shake) plus fixed `cockpit`/`hood`/`rear` views (Forza Horizon 5, Rocket League, Trackmania); `camera.chase: { distance, springDamping, fov, shakePerSpeed, view }`.
+- **Every rig accepts `followEntityId: null`** — avatar-less games (city-builders, card games, auto-battlers) can now mount a camera; the orbit rig no longer bails when there is no follow target.
+- **Camera-shake / trauma channel** — every rig reads a shared trauma channel; feed it from any system with `import { cameraShake } from "@jgengine/shell/camera"` (`cameraShake(amplitude, decayPerSecond?)`, amplitude 0..1) or from React via `useCameraShake()`. Tune with `camera.shake: { maxOffset, maxRoll, decayPerSecond, exponent, frequency }`. (Combat hitstop and other systems feed the same channel.)
+- **Cinematic camera + mode-swap cross-fade** — `camera.cinematic: { keyframes: [{ position, lookAt, fov?, duration?, ease? }], loop? }` plays a scripted keyframe path over the active rig, and `camera.transitionSeconds` cross-fades the camera when the rig changes so mode swaps no longer hard-cut.
+- Pure rig math (shake decay/trauma, spring-arm damping, speed→FOV, lerp/cross-fade, offset/strafe vectors, keyframe sampling) is exported from `@jgengine/shell/camera` as testable functions.
+
+### Migrate
+
+- No change required — additive. Existing games keep the orbit camera (`perspective: "third"`) and first-person (`perspective: "first"`) exactly as before. Opt into a new rig with `camera.rig` and its config block.
 
 ## 0.6.0
 

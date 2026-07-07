@@ -27,8 +27,7 @@ import type { WsPresenceRow } from "@jgengine/ws/protocol";
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 
-import { GAME_SIM_FRAME_PRIORITY, GameOrbitCamera } from "./camera";
-import { GameFirstPersonCamera } from "./camera/GameFirstPersonCamera";
+import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind } from "./camera";
 import { ProjectileTracers, Reticle, WorldEntityBars, WorldFloatText } from "./world/WorldHud";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -666,8 +665,10 @@ export function GamePlayerShell({
 
   const GameUI = playable.GameUI;
   const WorldOverlay = playable.WorldOverlay;
-  const firstPerson = playable.camera?.perspective === "first";
-  const showReticle = firstPerson && playable.camera?.firstPerson?.reticle !== false;
+  const rigKind = resolveRigKind(playable.camera);
+  const firstPerson = rigKind === "first";
+  const showReticle =
+    (firstPerson && playable.camera?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const worldBars = playable.worldHealthBars;
   const barsStatId =
     worldBars === undefined || worldBars === false
@@ -730,25 +731,14 @@ export function GamePlayerShell({
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
           <WorldFloatText />
           <ProjectileTracers />
-          {firstPerson ? (
-            <GameFirstPersonCamera
-              yawRef={yawRef}
-              pitchRef={pitchRef}
-              config={playable.camera?.firstPerson}
-              followEntityId={playable.camera?.followEntityId}
-            />
-          ) : (
-            <GameOrbitCamera
-              yawRef={yawRef}
-              pitchRef={pitchRef}
-              config={playable.camera}
-              followEntityId={playable.camera?.followEntityId}
-              onCameraFollow={playable.camera?.onCameraFollow}
-              onDragChange={(dragging) => {
-                cameraDraggingRef.current = dragging;
-              }}
-            />
-          )}
+          <GameCameraRig
+            yawRef={yawRef}
+            pitchRef={pitchRef}
+            config={playable.camera}
+            onDragChange={(dragging) => {
+              cameraDraggingRef.current = dragging;
+            }}
+          />
         </GameProvider>
         <RemotePlayers rows={remotePlayers} />
         <FrameDriver
