@@ -21,13 +21,15 @@
 | G16 Card & board stack | opus | claude/gaps-card-board | ✅ DONE (green) | #131 |
 | G8 AI director/behavior/crowds | opus | claude/gaps-ai-director (stack→gaps-nav-pointer) | ✅ DONE (green) | #133 |
 | G12 Map/HUD/ping | sonnet | claude/gaps-map-ping (stack→gaps-nav-pointer) | ✅ DONE (green) | #138 |
-| G13 Vehicles/mounts/racing | opus | claude/gaps-vehicles (stack→gaps-physics-actors) | in-flight | — |
+| G13 Vehicles/mounts/racing | opus | claude/gaps-vehicles (stack→gaps-physics-actors) | ✅ DONE (green) | #143 |
+| G19 Multiplayer depth | opus | claude/gaps-netcode (stack→gaps-vehicles) | in-flight | — |
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | ✅ DONE (green) | #135 |
 | G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | ✅ DONE (green) | #140 |
 | G21 Sensors/vision/observer | sonnet | claude/gaps-sensors (stack→gaps-camera-rigs) | in-flight | — |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | ✅ DONE (green) | #136 |
 | G17 Objective/mode/session | opus | claude/gaps-session (stack→gaps-item-gear) | ✅ DONE (green) | #142 |
-| G19 | — | — | todo (stack→gaps-vehicles, launch when G13 opens) | — |
+— all 22 groups launched —
+G13 added `physics/vehicleBody`, `scene/mount` (multi-seat: `createMountController`, seats, `cameraTarget`/`driveTarget` for G19 #107).
 G18 added domain `audio/` (audioFalloff); `time/beatClock`; `ws/voiceChannel`; `playableGame.audio/entitySounds`.
 G14 added `physics/traversal` (Grapple/Glide), `world/carve` (VoxelVolume/CarvableField), `physics/structure` (StructureGraph→debris).
 G6 added `combat/abilityKit`, `stats/eventMeter` (on accumulatorMeter), `scene/autoTarget`, `combat/resistance`, `game/runDraft`; react `useAbilitySlots`.
