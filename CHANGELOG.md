@@ -22,6 +22,12 @@ the latest and surface the migration steps.
   - `@jgengine/core/scene/selection` — pure box-select math (`createSelectionSet`, `screenRect`, `selectWithinRect`, `isMarquee`).
   - `@jgengine/core/interaction/contextMenu` — `contextVerb` / `buildContextMenu` / `contextVerbInput`; catalog entities/objects carry `verbs` for right-click menus.
   - `PlayableGame.pointer` config (`moveCommand`, `select`, `orderCommand`, `contextMenu`, `aim`) — the `@jgengine/shell` `GamePlayerShell` casts the cursor (`pointer.worldHit()`), renders a drag-marquee + right-click verb menu, routes primary-ability aim to the cursor, and remaps orbit to middle-drag so the left button drives verbs.
+- **AI over the navmesh.** A renderer-free `ai/` domain for directors, aggro, jobs, and crowds — all ticking on game-time `dt` (the `ctx.time` simClock delta, so pause/fast-forward come free) and routing over the `nav/` navmesh.
+  - `@jgengine/core/ai/spawnDirector` — a budget/escalation spawn director for wave shooters and difficulty directors (`createSpawnDirectorState` + pure `advanceSpawnDirector`). Per-`WaveManifest` budgets spent on weighted `SpawnEntry`s (`cost`/`weight`/`minWave`) under a `maxAlive` cap; `duration` auto-advances waves (or `advanceWave` on clear); budget trickles, ramps with sim-time (`escalationPerSecond`), scales per player, and surges on `raiseAlert`. Seeded/deterministic; `pickSpawnPoint` biases placement toward players.
+  - `@jgengine/core/ai/threat` — an aggro/threat table (`createThreatTable`): accumulate/`decay` per source, `highest({ current, stickiness })` for sticky MMO target selection feeding `scene/targeting`, `ranked` for a threat meter.
+  - `@jgengine/core/scene/behaviors` gained `patrol({ waypoints, speed, loop? })` — a waypoint route as a `BehaviorDescriptor` on top of `wander`, driven by `pathFollow` over `findPath`.
+  - `@jgengine/core/ai/jobBoard` — a task/job queue NPCs pull from (`createJobBoard`): `post`/`claim`/`assign`/`release` plus a per-tick `advance(worker, dt, { distanceToStation })` state machine (`travelling → working → done`, `repeat` for production loops) that reports on completion. For colony/companion assignment (Palworld, Schedule I, Sons of the Forest).
+  - `@jgengine/core/ai/crowd` — a flow field with congestion + POI routing for management sims (`computeFlowField` Dijkstra steering without per-agent A*, `createCrowdField` per-cell occupancy whose `penalty()` reroutes flow around crowds, `selectPoi` weighting appeal/proximity/capacity with a `findPath`-length distance override).
 
 ## 0.6.0
 
