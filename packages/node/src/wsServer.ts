@@ -4,6 +4,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 
 import type { PoseSyncRules, PresencePoseState } from "@jgengine/core/multiplayer/presenceModel";
 import { decidePoseSync } from "@jgengine/core/multiplayer/presenceModel";
+import { createPositionHistory, type PositionHistory } from "@jgengine/core/multiplayer/lagCompensation";
 import {
   decodeWsClientMessage,
   encodeWsMessage,
@@ -23,12 +24,21 @@ export type GameWsServerOptions = {
   path?: string;
   authenticate?: (args: { userId: string; token?: string }) => Promise<string | null> | string | null;
   poseRules?: PoseSyncRules;
+  positionHistoryMs?: number;
   now?: () => number;
+};
+
+export type RewoundPosition = {
+  userId: string;
+  x: number;
+  y: number;
+  z: number;
 };
 
 export type GameWsServer = {
   wss: WebSocketServer;
   port: () => number;
+  rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[];
   close: () => Promise<void>;
 };
 
@@ -59,6 +69,17 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
 
   const connections = new Set<Connection>();
   const presence = new Map<string, Map<string, PresencePoseState>>();
+  const positionHistoryMs = options.positionHistoryMs ?? 1_000;
+  const histories = new Map<string, PositionHistory>();
+
+  const historyFor = (serverId: string): PositionHistory => {
+    let history = histories.get(serverId);
+    if (history === undefined) {
+      history = createPositionHistory({ historyMs: positionHistoryMs });
+      histories.set(serverId, history);
+    }
+    return history;
+  };
 
   const send = (connection: Connection, message: WsServerMessage) => {
     if (connection.socket.readyState !== connection.socket.OPEN) return;
@@ -151,6 +172,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
         rotationPitch: pose.rotationPitch,
         lastSeenAtMs: timestamp,
       });
+      historyFor(serverId).record(connection.userId, timestamp, { x: pose.x, y: pose.y, z: pose.z });
       broadcastPresence(serverId);
       return;
     }
@@ -167,6 +189,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
         rotationPitch: decision.rotationPitch,
         lastSeenAtMs: timestamp,
       });
+      historyFor(serverId).record(connection.userId, timestamp, decision.position);
     }
     if (decision.changed) broadcastPresence(serverId);
   };
@@ -212,6 +235,25 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
             userId,
             gameId: message.gameId,
             serverId: message.serverId,
+            attributes: message.attributes,
+          });
+          reply(connection, message.id, result);
+          return;
+        }
+        case "joinByCode": {
+          const result = await host.joinByCode({
+            userId,
+            gameId: message.gameId,
+            code: message.code,
+          });
+          reply(connection, message.id, result);
+          return;
+        }
+        case "browse": {
+          const result = await host.browseServers({
+            gameId: message.gameId,
+            filter: message.filter,
+            limit: message.limit,
           });
           reply(connection, message.id, result);
           return;
@@ -284,6 +326,18 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
         throw new Error("WebSocket server has no bound port");
       }
       return address.port;
+    },
+    rewind: ({ serverId, atMs }) => {
+      const history = histories.get(serverId);
+      if (history === undefined) return [];
+      const positions: RewoundPosition[] = [];
+      for (const userId of history.entities()) {
+        const sample = history.sampleAt(userId, atMs);
+        if (sample !== null) {
+          positions.push({ userId, x: sample.x, y: sample.y, z: sample.z });
+        }
+      }
+      return positions;
     },
     close: () =>
       new Promise((resolve) => {
