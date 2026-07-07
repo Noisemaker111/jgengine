@@ -8,6 +8,8 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 - Keep it a **draft** while the task is in progress. Only when the **whole task is complete** — not after an intermediate phase or milestone within it — mark it ready (`gh pr ready`) and watch CI to green (`gh run watch`). Then the user merges (they do the merge unless they explicitly hand it off).
 - Don't mark ready or babysit CI mid-task: a half-finished task stays a draft, and CI is checked once at the end when the work is actually done — not after every phase.
 - The point: work should always already be in a mergeable, reviewable place, so shipping is one step ("looks good, ship it") rather than a scramble to package finished changes after the fact.
+- Never pipe `git push` through `grep` (or any filter): a non-zero grep silently short-circuits the `&&` chain and drops the push while looking like success. Push on its own line, then confirm the remote SHA moved before deploying or handing off.
+- When extracting primitives into the SDK, preserve the playable loop: don't delete a user-facing feature (training, city rendering, a menu path, a combat lane) to make a primitive clean. Extract the reusable core *behind* the feature and leave the game playing the same — confirm before cutting anything a player sees.
 
 ## Stack
 
@@ -36,6 +38,7 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 - `bun run check-types` — every workspace package with the script.
 - `bun test packages Games` — engine + game tests.
 - After changing any game UI/HUD: `bun run shoot <gameId> --mode ui` writes a PNG to `shots/` — open and look at it; type-green says nothing about whether the HUD renders. `--mode play` screenshots the full shell. Game HUD Tailwind classes only generate because `apps/dev/src/index.css` has `@source` entries for `Games`, `packages/react`, `packages/shell` — silently-unstyled UI means a missing `@source`.
+- Verify *scene content* browserlessly: `summarizeEnvironment` (`@jgengine/core/world/environmentSummary`) resolves an `environment()` world through the same core world-gen the renderer runs, so a `bun test` assertion catches empty/miscounted/flat-terrain scenes with no GPU. `bun run shoot` proves *look* only — it's a final human glance, never the inner verification loop. Once a shoot/Chromium screenshot hangs, do **not** re-run it in the foreground; fall back to the world test and only retry the shot if asked. Full playbook: the `jgengine-verify` skill.
 
 ## Publishing
 
