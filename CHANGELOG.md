@@ -13,7 +13,12 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
-_Nothing yet._
+### Added
+
+- `@jgengine/core/crafting/recipe` — a recipe graph primitive: `RecipeDef { inputs, outputs, seconds?, station?, stationRange?, requires? }` turns inputs + an optional required-workstation-in-range + time into outputs. `craft` / `canCraft` consume and produce on an `InventoryState` atomically (rejecting `missing-inputs` / `no-station` / `locked` / `no-output-space`); `stationSatisfied` does the range check against placed `{ catalogId, position }` stations; `createRecipeGraph` indexes recipes by `producing` / `using` / `category`. For Valheim/Enshrouded-style workbench tiers, Tarkov hideout stations, Palworld base craft. (#71)
+- `@jgengine/core/economy/techTree` — a prerequisite-gated tech tree that **generalizes flat `unlocks`** rather than duplicating it: `TechNodeDef extends UnlockDef` adds `requires` (prereq ids), a `recipe` payload, and `grants`. `createTechTree(defs)` wraps `createUnlocks` and gates `unlock(userId, id)` on prerequisites, exposing `available` (frontier) and `recipes` (payloads unlocked). Flat unlocks are just nodes with no `requires`. For Once Human Memetics / Abiotic Factor branching trees. (#72)
+- `@jgengine/core/crafting/production` — `productionBuilding({ inputs, outputs, rate, power? })` plus `tickProduction`, which consumes buffered inputs and emits outputs continuously through game-time `dt` (so pause/fast-forward apply for free). `feedProduction` / `drainOutput` are the buffer I/O, `advanceTransport` slides items along a conveyor path, `resolvePowerGrid` powers demands greedily against a supply. For Palworld/Satisfactory/Factorio automation. (#74)
+- `@jgengine/core/crafting/crop` — a `cropTile` soil-and-growth state machine (`tillTile` / `plantCrop` / `waterTile` / `advanceCropDay` / `harvestCrop`, with regrow and daily-water rules) that advances stages on the simClock day tick, plus `applyToolToTiles(tiles, center, pattern, apply)` with `squarePattern` / `diamondPattern` / `rectPattern` for watering-can/hoe AoE under the cursor. `createCropField` wraps a tile grid; `createDayTicker` reads day rollovers off `ctx.time.calendar()`. For Stardew/Coral Island/Palia farming. (#75)
 
 ## 0.6.0
 
