@@ -45,7 +45,13 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Loot | `game/lootTable` | `lootTable`, `LootTableDef`, `LootEntry`, `Drop` |
 | Loadout | `game/loadout` | `LoadoutDef`, `LoadoutItemEntry`, `Loadouts` |
 | Quest | `game/quest` | `QuestDef`, `QuestRewards`, `QuestObjective`, `QuestJournal` |
-| World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat` |
+| World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat`, `environment`, `terrain`, `rain`, `snow`, `grass`, `ocean`, `building` |
+| Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep` |
+| Wind field | `world/wind` | `windField`, `WindField`, `WindFieldConfig`, `WindVector` |
+| Water surface | `world/water` | `waterSurface`, `waterSurfaceFromDescriptor`, `synthesizeWaves`, `WaterSurface`, `GerstnerWave` |
+| Scatter | `world/scatter` | `scatter`, `scatterAabb`, `ScatterConfig`, `ScatterPoint` |
+| Building generator | `world/buildings` | `generateBuilding`, `generateBuildingDistrict`, `createBuildingGrid`, `GeneratedBuilding` |
+| Building index | `world/buildingIndex` | `buildingIndex`, `BuildingIndex`, `BuildingHit` |
 | Proximity prompt | `interaction/proximityPrompt` | `proximityPrompt`, `ProximityPrompt`, `ProximityPromptDisplay`, `keybind`, `gauge`, `label`, `command` |
 | Item use | `item/use` | `createItemUse`, `ItemUseHandler`, `ItemUseInput`, `ItemUseResult`, `ItemUseRejection` |
 | Inventory | `inventory/inventoryModel` | `InventoryLayout`, `InventorySet`, `ItemTraits` |
@@ -501,8 +507,23 @@ Descriptors from `@jgengine/core/world/features` — config data the runner/worl
 | `plots(config)` | Shared city + instanced interiors |
 | `tilemap({ map })` | 2D/2.5D levels |
 | `flat()` | Plain arena |
+| `environment({ terrain, weather, vegetation, water, structures })` | Composable outdoor scene — terrain + rain/snow + grass + ocean + buildings. Each field takes the matching descriptor: `terrain()`, `rain()`/`snow()`, `grass()`, `ocean()`, `building()` |
 
 `parentSpace` positions are local to that space — convert at seams only.
+
+### Query primitives (renderer-free, for gameplay)
+
+Pure `@jgengine/core` functions so gameplay reads the same world the shell renders — no three.js needed:
+
+| Primitive | Answers |
+|-----------|---------|
+| `resolveTerrainField(terrain(...))` / `noiseField(cfg)` → `TerrainField` | `sampleHeight(x,z)`, `sampleNormal(x,z)`, `waterLevel` — ground-snap, collision, camera. `resolveGroundStep` slope-limits movement |
+| `windField(cfg)` → `WindField` | `at(t)`, `atPoint(x,z,t)`, `strengthAt` — one wind source for weather sway, grass, sailing, fire spread |
+| `waterSurface(cfg)` / `waterSurfaceFromDescriptor(ocean(...))` → `WaterSurface` | `height(x,z,t)`, `normal`, `displace` — buoyancy, floating, shoreline (CPU Gerstner matching the ocean shader) |
+| `scatter(cfg)` → `ScatterPoint[]` | Seeded, overlap-aware point distribution — vegetation, props, lots, spawn points (`minDistance`, `avoid` rects) |
+| `buildingIndex(district)` → `BuildingIndex` | `at`/`within`/`nearest`/`isInside`/`blockers` over a generated district — placement avoidance, pathfinding |
+
+Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
 
 ### Physics world (optional, headless)
 

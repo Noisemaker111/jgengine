@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -145,6 +145,7 @@ function resolveModel(
 
 function EntityMarker({
   entity,
+  custom,
   model,
   sprite,
   isLocal,
@@ -152,6 +153,7 @@ function EntityMarker({
   onSelect,
 }: {
   entity: SceneEntity;
+  custom: ReactNode | undefined;
   model: ModelConfig | undefined;
   sprite: EntitySpriteConfig | undefined;
   isLocal: boolean;
@@ -168,7 +170,9 @@ function EntityMarker({
         if (!isLocal) onSelect(entity);
       }}
     >
-      {model !== undefined ? (
+      {custom !== undefined && custom !== null ? (
+        custom
+      ) : model !== undefined ? (
         <EntityModel model={model} />
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
@@ -262,11 +266,15 @@ function WorldView({
   entityModels,
   objectModels,
   assets,
+  environment: Environment,
+  renderEntity,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
   objectModels: Record<string, string | ModelConfig> | undefined;
   assets: AssetCatalog;
+  environment: ComponentType | undefined;
+  renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
 }) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
@@ -279,13 +287,20 @@ function WorldView({
   };
   return (
     <>
-      <GroundPlane />
-      <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
-      <RockField />
+      {Environment !== undefined ? (
+        <Environment />
+      ) : (
+        <>
+          <GroundPlane />
+          <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
+          <RockField />
+        </>
+      )}
       {entities.map((entity) => (
         <EntityMarker
           key={entity.id}
           entity={entity}
+          custom={renderEntity?.(entity)}
           model={resolveModel(entityModels?.[entity.name], assets)}
           sprite={entitySprites?.[entity.name]}
           isLocal={entity.id === player.userId}
@@ -400,6 +415,7 @@ function FrameDriver({
         rotationY: intent.moving
           ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
           : player.rotationY,
+        dt: rawDt,
       });
     }
 
@@ -699,6 +715,8 @@ export function GamePlayerShell({
             entityModels={playable.entityModels}
             objectModels={playable.objectModels}
             assets={playable.game.assets}
+            environment={playable.environment}
+            renderEntity={playable.renderEntity}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}

@@ -15,6 +15,10 @@
     "CHANGELOG.md"
   ],
   "exports": {
+    "./weather": {
+      "types": "./dist/weather/index.d.ts",
+      "default": "./dist/weather/index.js"
+    },
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
