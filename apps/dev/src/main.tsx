@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
-import { GameUiPreview } from "@jgengine/shell/GameUiPreview";
+import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import { resolveShellMultiplayer, type ShellMultiplayer } from "@jgengine/shell/multiplayer";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
@@ -21,6 +21,13 @@ const gameRegistry: GameRegistry = {
   "stress-bench": () => import("@dogfood/stress-bench").then((module) => module.stressBenchGame),
 };
 
+const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {
+  "world-of-warcraft": () =>
+    import("@dogfood/world-of-warcraft/ui/uiPreviewScenario").then(
+      (module) => module.interactionShowcaseScenario,
+    ),
+};
+
 const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID =
   urlParams.get("game") ??
@@ -32,6 +39,7 @@ const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 function DevApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
+  const [scenario, setScenario] = useState<UiPreviewScenario | undefined>(undefined);
   useEffect(() => {
     const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
     if (load === undefined) return;
@@ -46,6 +54,8 @@ function DevApp() {
       );
       setPlayable(loaded);
     });
+    const loadScenario = uiScenarioRegistry[GAME_ID];
+    if (loadScenario !== undefined) void loadScenario().then((loaded) => setScenario(() => loaded));
   }, []);
   if (playable === null) {
     return (
@@ -54,7 +64,7 @@ function DevApp() {
       </div>
     );
   }
-  if (MODE === "ui") return <GameUiPreview playable={playable} />;
+  if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} />;
 }
 

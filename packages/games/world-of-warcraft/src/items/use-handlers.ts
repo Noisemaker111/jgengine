@@ -1,4 +1,6 @@
 import type { Aim } from "@jgengine/core/scene/spatial";
+import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
+import { captureChance, rollCapture } from "@jgengine/core/scene/captureCheck";
 import type { ItemUseHandler, ItemUseRejection } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import {
@@ -7,6 +9,12 @@ import {
   startAbilityCooldown,
 } from "../combat/abilityCooldowns";
 import { queueProjectileShot } from "../combat/pendingProjectiles";
+import {
+  endFishingSession,
+  fishingCheckConfig,
+  fishingSessionStartedAt,
+  startFishingSession,
+} from "../combat/skillCheckSessions";
 
 function hostileTarget(ctx: GameContext, from: string): string | null {
   const target = ctx.scene.entity.getTarget(from);
@@ -179,9 +187,70 @@ const drinkHealthPotion: ItemUseHandler<GameContext> = {
   },
 };
 
+const castFishingLine: ItemUseHandler<GameContext> = {
+  apply(ctx, input) {
+    const startedAt = fishingSessionStartedAt(input.from);
+    if (startedAt === undefined) {
+      startFishingSession(input.from, ctx.time.now());
+      return { state: ctx };
+    }
+    const elapsed = ctx.time.now() - startedAt;
+    const result = evaluateSkillCheck(fishingCheckConfig, elapsed);
+    endFishingSession(input.from);
+    if (result.success) {
+      ctx.game.feed.push("fishing.result", { data: "Reeled in a catch!" });
+    } else {
+      ctx.game.feed.push("fishing.result", {
+        data: result.timedOut ? "The line went slack." : "The fish got away.",
+      });
+    }
+    return { state: ctx };
+  },
+};
+
+const attemptCapture: ItemUseHandler<GameContext> = {
+  can(ctx, input) {
+    if (ctx.scene.entity.getTarget(input.from) === null) {
+      return { reason: "No target — press Tab to select a creature" };
+    }
+    return null;
+  },
+  apply(ctx, input) {
+    const target = ctx.scene.entity.getTarget(input.from);
+    if (target === null) return { state: ctx, error: "No target" };
+    const health = ctx.scene.entity.stats.get(target, "health");
+    if (health === null) return { state: ctx, error: "Target has no health" };
+    const catalogId = ctx.scene.entity.get(target)?.name ?? "unknown";
+    const catchPower = ctx.item.weapon.getStat(input.itemId, "catchPower") ?? 1;
+    const hpFraction = health.max <= 0 ? 0 : health.current / health.max;
+    const captured = rollCapture({ hpFraction, catchPower });
+    const inventoryId =
+      input.inventoryId ?? (ctx.player.inventory.count("hotbar", input.itemId) > 0 ? "hotbar" : "backpack");
+    ctx.player.inventory.take(inventoryId, input.itemId, 1);
+    if (captured) {
+      ctx.game.roster.capture(input.from, catalogId);
+      ctx.scene.entity.despawn(target);
+      ctx.scene.entity.setTarget(input.from, null);
+      ctx.game.feed.push("capture.result", { data: `Captured! ${catalogId} joined your roster.` });
+    } else {
+      ctx.game.feed.push("capture.result", { data: `${catalogId} broke free.` });
+    }
+    return { state: ctx };
+  },
+};
+
+export function captureOddsFor(ctx: GameContext, targetInstanceId: string, itemId = "capture_orb"): number {
+  const health = ctx.scene.entity.stats.get(targetInstanceId, "health");
+  if (health === null || health.max <= 0) return 0;
+  const catchPower = ctx.item.weapon.getStat(itemId, "catchPower") ?? 1;
+  return captureChance({ hpFraction: health.current / health.max, catchPower });
+}
+
 export const itemUseHandlers: Record<string, ItemUseHandler<GameContext>> = {
   castBolt,
   castHeal,
   swingSword,
   drinkHealthPotion,
+  castFishingLine,
+  attemptCapture,
 };

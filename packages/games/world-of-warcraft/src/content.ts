@@ -5,13 +5,14 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { abilities } from "./items/abilities/catalog";
 import { consumables } from "./items/consumables/catalog";
+import { tools } from "./items/tools/catalog";
 import { players } from "./entities/players/catalog";
 import { enemies } from "./entities/enemies/catalog";
 import { npcs } from "./entities/npcs/catalog";
 
 const itemEntries = new Map<string, GameContextItemEntry>();
 const itemNames = new Map<string, string>();
-for (const item of [...abilities, ...consumables]) {
+for (const item of [...abilities, ...consumables, ...tools]) {
   itemEntries.set(item.id, { use: item.use, weapon: item.weapon });
   itemNames.set(item.id, item.name);
 }

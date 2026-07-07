@@ -9,6 +9,8 @@ export const loadouts: Record<string, LoadoutDef> = {
         { item: "frostbolt", count: 1, slot: 2 },
         { item: "flash_heal", count: 1, slot: 3 },
         { item: "health_potion", count: 3, slot: 4 },
+        { item: "fishing_rod", count: 1, slot: 5 },
+        { item: "capture_orb", count: 5, slot: 6 },
       ],
     },
     economy: { gold: 10 },

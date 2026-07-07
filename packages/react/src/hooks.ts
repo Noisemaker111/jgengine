@@ -9,6 +9,7 @@ import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import type { StatValue } from "@jgengine/core/scene/entityStats";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import type { RosterEntry } from "@jgengine/core/scene/roster";
 import type { ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
 import {
   resolveActivePrompt,
@@ -76,6 +77,10 @@ export function useParty(): PartyMemberEntry[] {
 
 export function usePresence(userId: string): PresenceInfo {
   return useGameStore((ctx) => ctx.game.social.presence.get(userId));
+}
+
+export function useRoster(userId?: string): readonly RosterEntry[] {
+  return useGameStore((ctx) => ctx.game.roster.list(userId ?? ctx.player.userId));
 }
 
 export function useLeaderboard(

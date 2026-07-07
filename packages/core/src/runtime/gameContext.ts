@@ -62,6 +62,7 @@ import {
 } from "../scene/entityStats";
 import type { EntityPose, EntityPosition, SceneEntity, SpawnOptions } from "../scene/entityStore";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
+import { createRoster, type Roster } from "../scene/roster";
 import { createSpatialApi, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
@@ -189,6 +190,7 @@ export interface GameContext {
     unlocks: Unlocks;
     economy: GameContextEconomy;
     leaderboard: Leaderboard;
+    roster: Roster;
   };
   player: {
     userId: string;
@@ -299,6 +301,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     presence: rawSocial.presence,
   };
   const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify);
+  const roster = notifyAfter(
+    createRoster({ now }),
+    ["capture", "release", "setEquipped", "hydrate"],
+    signal.notify,
+  );
   const playerStats = createStats<string>({});
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
   const commandRegistry = createCommandRegistry<GameContext>();
@@ -650,6 +657,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       unlocks,
       economy,
       leaderboard,
+      roster,
     },
     player: {
       userId: player.userId,

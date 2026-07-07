@@ -12,7 +12,7 @@ import { applyLevelUps, grantXp } from "./progression/curves";
 import { TAB_TARGET_MAX_DISTANCE } from "./combat/constants";
 import { tickAbilityCooldowns } from "./combat/abilityCooldowns";
 import { tickPendingProjectiles } from "./combat/pendingProjectiles";
-import { closePanels, scrollHotbar, togglePanel } from "./ui/uiController";
+import { closePanels, openDialogue, scrollHotbar, togglePanel } from "./ui/uiController";
 import { MOB_SPAWNS, TOWN_SPAWN, setupWorld, type MobSpawnPoint } from "./world/setup";
 
 const MOB_RESPAWN_SECONDS = 20;
@@ -155,6 +155,31 @@ function onInit(ctx: GameContext): void {
     apply(state, input) {
       state.game.quest.turnIn(state.player.userId, input.questId);
       applyLevelUps(state, state.player.userId);
+      return state;
+    },
+  });
+  ctx.game.commands.define<{ id: string }>("dialogue.open", {
+    apply(state: GameContext, input) {
+      openDialogue(input.id);
+      return state;
+    },
+  });
+  ctx.game.commands.define("dialogue.close", {
+    apply(state: GameContext) {
+      closePanels();
+      return state;
+    },
+  });
+  ctx.game.commands.define("npc.marshal.persuadeSuccess", {
+    apply(state: GameContext) {
+      state.game.economy.grant(state.player.userId, "gold", 15);
+      state.game.feed.push("npc.persuade", { data: "The marshal relents — bounty raised. +15 gold." });
+      return state;
+    },
+  });
+  ctx.game.commands.define("npc.marshal.persuadeFailure", {
+    apply(state: GameContext) {
+      state.game.feed.push("npc.persuade", { data: "The marshal is unmoved." });
       return state;
     },
   });
