@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { cellCoord, cellIndex, PhysicsWorld, type PhysicsWorldConfig } from "./physicsWorld";
+import {
+  cellCoord,
+  cellIndex,
+  PhysicsWorld,
+  type CollisionEvent,
+  type PhysicsWorldConfig,
+} from "./physicsWorld";
 
 const BOUNDS = { min: [-10, 0, -10] as const, max: [10, 20, 10] as const };
 
@@ -156,5 +162,104 @@ describe("counters", () => {
     expect(stats.awake + stats.sleeping).toBe(50);
     expect(stats.substeps).toBeGreaterThanOrEqual(1);
     expect(stats.stepMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+function distance(w: PhysicsWorld, a: number, b: number): number {
+  const dx = w.posX[a]! - w.posX[b]!;
+  const dy = w.posY[a]! - w.posY[b]!;
+  const dz = w.posZ[a]! - w.posZ[b]!;
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+describe("joints", () => {
+  test("a distance joint pulls two bodies to its rest length", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [-3, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    const b = w.addBody({ position: [3, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    w.distanceJoint({ bodyA: a, bodyB: b, restLength: 2 });
+    frames(w, 300);
+    expect(distance(w, a, b)).toBeCloseTo(2, 1);
+    expect(w.jointCount).toBe(1);
+  });
+
+  test("a hinge pin holds a body at a world anchor under gravity", () => {
+    const w = world({ sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    w.hingeJoint({ bodyA: a, anchorB: [0, 8, 0] });
+    frames(w, 400);
+    expect(w.posX[a]!).toBeCloseTo(0, 1);
+    expect(w.posY[a]!).toBeCloseTo(8, 1);
+  });
+
+  test("a distance joint hangs a pendulum at rest length below its anchor", () => {
+    const w = world({ sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    w.distanceJoint({ bodyA: a, anchorB: [0, 8, 0], restLength: 3 });
+    frames(w, 500);
+    expect(w.posY[a]!).toBeCloseTo(5, 0);
+  });
+
+  test("a spring joint converges toward its rest length", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [0, 2, 0], halfExtents: [0.3, 0.3, 0.3] });
+    w.springJoint({ bodyA: a, anchorB: [0, 8, 0], restLength: 3, stiffness: 40, damping: 12 });
+    frames(w, 400);
+    expect(w.posY[a]!).toBeCloseTo(5, 0);
+  });
+
+  test("removeJoint drops the constraint and frees the slot", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [-3, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    const b = w.addBody({ position: [3, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    const j = w.distanceJoint({ bodyA: a, bodyB: b, restLength: 2 });
+    w.removeJoint(j);
+    expect(w.jointCount).toBe(0);
+    w.velX[a] = -2;
+    frames(w, 120);
+    expect(distance(w, a, b)).toBeGreaterThan(3);
+  });
+
+  test("readJointSegments reports live world endpoints", () => {
+    const w = world({ gravity: 0 });
+    const a = w.addBody({ position: [-1, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    w.hingeJoint({ bodyA: a, anchorB: [2, 5, 0] });
+    const out = new Float32Array(6);
+    const n = w.readJointSegments(out);
+    expect(n).toBe(1);
+    expect(out[0]!).toBeCloseTo(-1, 5);
+    expect(out[3]!).toBeCloseTo(2, 5);
+  });
+});
+
+describe("collision events", () => {
+  test("onCollision delivers impacting pairs with an approach speed", () => {
+    const w = world({ gravity: 0, restitution: 1, friction: 0, sleepThresholdSteps: 100000 });
+    const events: CollisionEvent[] = [];
+    w.onCollision((e) => {
+      events.push({ ...e });
+    }, 1);
+    w.addBody({ position: [-3, 5, 0], halfExtents: [0.5, 0.5, 0.5], velocity: [6, 0, 0] });
+    w.addBody({ position: [3, 5, 0], halfExtents: [0.5, 0.5, 0.5], velocity: [-6, 0, 0] });
+    frames(w, 120);
+    expect(events.length).toBeGreaterThan(0);
+    const hit = events[0]!;
+    expect(hit.a === 0 || hit.a === 1).toBe(true);
+    expect(hit.approachSpeed).toBeGreaterThanOrEqual(1);
+    expect(hit.impulse).toBeGreaterThan(0);
+  });
+
+  test("resting contacts below the threshold do not fire", () => {
+    const w = world({ sleepThresholdSteps: 100000 });
+    let fired = 0;
+    w.onCollision(() => {
+      fired += 1;
+    }, 3);
+    w.addBody({ position: [0, 0.5, 0], halfExtents: [0.5, 0.5, 0.5], static: true });
+    w.addBody({ position: [0, 1.6, 0], halfExtents: [0.5, 0.5, 0.5] });
+    frames(w, 400);
+    const settled = fired;
+    frames(w, 200);
+    expect(fired).toBe(settled);
   });
 });
