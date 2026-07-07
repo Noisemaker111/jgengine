@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { talkable, wander } from "@jgengine/core/scene/behaviors";
-import { createEntityStore } from "@jgengine/core/scene/entityStore";
+import { createEntityStore, groundSpeed } from "@jgengine/core/scene/entityStore";
 
 describe("scene entity store", () => {
   test("spawn generates unique monotonic ids when omitted", () => {
@@ -143,5 +143,33 @@ describe("scene entity store", () => {
     unsubscribe();
     store.spawn("rack.basic", { position: [0, 0, 0] });
     expect(notified).toBe(3);
+  });
+
+  test("fresh entity has zero velocity", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car");
+    expect(store.get(id)?.velocity).toEqual([0, 0, 0]);
+  });
+
+  test("setPose with dt derives velocity from the position delta", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    store.setPose(id, { position: [2, 0, 6], dt: 2 });
+    expect(store.get(id)?.velocity).toEqual([1, 0, 3]);
+  });
+
+  test("setPose without dt leaves velocity unchanged (teleport)", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    store.setPose(id, { position: [1, 0, 1], dt: 1 });
+    store.setPose(id, { position: [50, 0, 50] });
+    expect(store.get(id)?.velocity).toEqual([1, 0, 1]);
+  });
+
+  test("groundSpeed is the horizontal magnitude, ignoring vertical", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    store.setPose(id, { position: [3, 10, 4], dt: 1 });
+    expect(groundSpeed(store.get(id)!)).toBeCloseTo(5);
   });
 });

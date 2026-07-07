@@ -1,19 +1,19 @@
 ---
 name: jgengine-harvest
-description: End-of-build engine-harvest for JGengine. Invoke this the moment a game built with jgengine is "done" — right after a "make ___ with jgengine" run that took several QA passes of fixing camera feel, icons, health bars, damage numbers, death screens, loot toasts, first-person feel, or terrain clipping. Also invoke on "harden the engine", "turn these fixes into primitives/defaults", "why did I have to fix this by hand", "make this setup easier next time", "how could I have built this 90% faster", "what better primitives or premade components would have helped", or any postmortem/retro of a finished build. Every hand-fix during that build is a bug report the engine never received; this skill classifies them and emits ONE paste-ready report — a prompt you carry back to the jgengine repo — so the next build of the same shape gets it right on turn one.
+description: End-of-build engine-harvest for JGengine. Invoke this the moment a game built with jgengine is "done" — right after a "make ___ with jgengine" run that took several QA passes of fixing camera feel, icons, health bars, damage numbers, death screens, loot toasts, first-person feel, or terrain clipping. Also invoke on "harden the engine", "turn these fixes into primitives/defaults", "why did I have to fix this by hand", "make this setup easier next time", "how could I have built this 90% faster", "what better primitives or premade components would have helped", or any postmortem/retro of a finished build. Every hand-fix during that build is a problem the engine never got told about; this skill turns each one into its OWN GitHub issue on the jgengine repo — one problem per issue, stated in plain words, no proposed fix, no code — so a human can fact-check and triage before anything gets built.
 ---
 
-# JGengine — Harvest the build, harden the engine
+# JGengine — Harvest the build, file the problems
 
-A build that took five QA passes to feel right is five bug reports the engine never received. Every hand-fix that made the game feel right is a gap the engine should have covered — this skill collects them at the end of a build so the engine can be fixed and the same friction becomes **impossible or automatic** next time. "The game feels good now" is not the finish line; "the next game of this shape needs zero of these fixes" is.
+A build that took five QA passes to feel right is five problems the engine never got told about. Every hand-fix that made the game feel right is a gap the engine should have covered — this skill collects them at the end of a build and files each one as its own issue on [github.com/Noisemaker111/jgengine/issues](https://github.com/Noisemaker111/jgengine/issues), so a human can later fact-check and knock them out per PR. "The game feels good now" is not the finish line; "the next game of this shape needs zero of these fixes" is.
 
-**The deliverable is one report, not a code change.** This skill usually runs in the *build* conversation — which may not be the place to touch engine internals (you might be in a game package, deep in build context, or a consumer project entirely). So the output is a single **paste-ready prompt** you carry back to a fresh conversation in the jgengine repo, where the fixes actually land. Think of it as writing the bug reports the engine should have gotten — except structured so the receiving conversation can implement straight from them. The classification below is what makes the report worth pasting; a flat "here's what I fixed" list is not.
+**The deliverable is issues, not a report and not a fix.** This skill runs in the *build* conversation, which is rarely the right place to touch engine internals (you might be in a game package, a consumer project, or deep in build context). The output is one `gh issue create` per problem — not a single paste-ready wall of text, and not a code change. This is deliberate: an agent that also proposes and half-implements the fix is an agent whose diagnosis gets trusted blindly later. **State the root problem, in words, and stop.** No proposed fix, no layer/target guess, no code, no "here's how I'd solve it." A human reviews the raw list of problems in the tracker and decides what's real and what to build — that's the whole point of routing through issues instead of a conversational handoff.
 
-One thing the report must carry, because its recipient is inside the engine repo: **fix the gaps directly, don't file issues.** A consumer on the published SDK files at [github.com/Noisemaker111/jgengine/issues](https://github.com/Noisemaker111/jgengine/issues); in-repo, closing the gap *is* the job. The report says so at the top so the next conversation doesn't just re-log everything.
+Every issue is a **problem**, not a solution and not a symptom-only bug report. State what's actually wrong at the root — not just what the player saw, and not a fix. "Health bars render in screen space" is the symptom; "the engine has no world-space UI-anchor primitive, so every game re-derives screen position from world position by hand" is the problem. Say the problem in one paragraph of plain words. That's enough for a human to act on — don't reach for a diagram, a snippet, or a proposed API to prove it.
 
 ## Read first
 
-Read `jgengine-api` (the engine surface — most "missing" primitives already exist, and every fix must land in the layer that owns it) and skim `jgengine-ui` + `jgengine-assets` (the quality bars a skill-doc gap failed to enforce). You cannot classify a friction point as an engine gap until you know what the engine already ships.
+Read `jgengine-api` (the engine surface — most "missing" primitives already exist) and skim `jgengine-ui` + `jgengine-assets` (the quality bars a skill-doc gap failed to enforce). You cannot tell whether something is really a gap until you know what the engine already ships — but knowing the surface is only for filtering out non-problems (Step 2), never for drafting the fix. The issue states the problem; it does not cite the API you'd use to solve it.
 
 ## Step 1 — Reconstruct the friction log
 
@@ -31,118 +31,73 @@ For each, record the **symptom** (what the user saw) and the **fix that was appl
 
 The fix column is the important one: **hand-written glue is the shape of the missing primitive.** If the game had to compute it, the engine probably should have.
 
-## Step 2 — Classify each entry (the whole game is here)
+## Step 2 — Classify, to filter out non-problems (not to pick a fix)
 
-Sort every friction point into exactly one bucket. This judgment is the skill:
+Sort every friction point into exactly one bucket. This is the only judgment call the skill makes — it decides *whether an issue gets filed*, never what the fix is:
 
-| Bucket | Test | What the report says to do |
-|--------|------|-----------------------------|
-| **Engine gap** | Would a *second* game of any genre need this same glue? (world-space bars, damage floats, death screen, loot toast, level-up flash, camera-follow feel, hotbar-selection highlight, spawn-on-surface, first-person viewmodel) | Fix the engine — default, primitive, headless component, or shell feature (Step 3) |
-| **Skill-doc gap** | Could the builder have gotten it right on turn one if a skill had set the bar or made the decision explicit? (perspective never asked; "generic icons" not forbidden hard enough; a persistent keybind legend the UI skill should ban; contract/quest UI below the quality bar) | Sharpen the skill doc so the next build can't regress — `jgengine-ui`/`jgengine-assets`/`jgengine-newgame`/`jgengine-api` |
-| **Genuinely game-specific** | Is this content or a number unique to *this* fantasy? (Borderlands' contract copy, one gun's exact recoil curve) | Leave it in the game. Not every fix is an engine's job — resist gold-plating |
+| Bucket | Test | Gets filed? |
+|--------|------|-------------|
+| **Engine gap** | Would a *second* game of any genre hit this same wall? (world-space bars, damage floats, death screen, loot toast, level-up flash, camera-follow feel, spawn-on-surface, first-person feel) | Yes — one issue |
+| **Skill-doc gap** | Could the builder have gotten it right on turn one if a skill had set the bar or made the decision explicit? (perspective never asked, placeholder icons not forbidden hard enough, a UI quality bar not enforced) | Yes — one issue |
+| **Genuinely game-specific** | Is this content or a number unique to *this* fantasy? (one game's contract copy, one gun's exact recoil curve) | No — leave it in the game, don't file noise |
 
-Most friction is one of the first two. A builder shipping screen-space health bars is rarely lazy — the engine never gave them a world-space one, and no skill told them the bar belongs over the enemy. Frame it that way: the report removes the *possibility* of the mistake, not the blame for the last build.
+Most friction is one of the first two. A builder shipping screen-space health bars is rarely lazy — the engine never gave them a world-space one. Frame each issue that way: it's a wall the engine put up, not a mistake to blame.
 
-## Step 3 — Pick the intervention, in the layer that owns it
+## Step 3 — One problem, one issue, root-cause words only
 
-For each engine gap, name the lightest fix that makes the friction stop recurring — and where the layering puts it. `core` imports nothing (no React/three/browser); `react` adds hooks + headless components; `shell` is the **only** renderer (three.js, viewmodels, world-space overlays). A world-space health bar in `core` is not a shortcut, it's a layering break — and the report must land it right or the receiver will bounce it.
+This is the part that has to be disciplined, because it's the whole reason this routes through issues instead of a conversational handoff: **a dumb or overconfident agent filing a diagnosis is dangerous if the human trusts it blindly. A dumb agent filing a one-paragraph problem statement is cheap to fact-check.** So each issue:
 
-| Intervention | When it fits | Lands in |
-|--------------|-------------|----------|
-| **Default** — behavior just happens, zero game code | The right thing should never have needed opting in (spawn on the surface so nothing clips; a tuned camera-follow feel) | `core` (scene/runtime) or `PlayableGame.camera` defaults |
-| **Primitive / helper** — one reusable verb | Several games call the same computed action (a `floatText`/damage-number verb, a loot-toast feed channel over the existing `ctx.game.feed`) | `core` |
-| **Headless component** — engine ships behavior, game passes content | Screen-space HUD the game only themes (death screen via `Screen`, level-up flash, a labeled world/unit health bar) | `react` |
-| **Shell feature** — anything that renders in the 3D scene | First-person viewmodel, reticle, projectile tracer, world-space bar projection | `shell` |
-| **Skill-doc rule** — make the mistake un-shippable | The fix is a decision or a bar, not code (ask perspective in the blueprint; ban persistent keybind legends; forbid placeholder icons harder) | the relevant `skills/*` |
+- Is exactly **one** problem. Never bundle two symptoms into one issue because they felt related — file two issues. The reader triages one problem at a time; a bundled issue makes half of it un-closeable without touching the other half.
+- States the **root problem in plain words** — what's actually missing or wrong, not just what the player saw, and not how to fix it. "Enemies clip into terrain on spawn" is the symptom; "the engine picks a spawn point without checking it against ground height, so any spawn near sloped or uneven terrain can land inside geometry" is the root problem in words.
+- **Never proposes a fix.** No API name, no layer (`core`/`react`/`shell`), no function signature, no code snippet, no "this should probably be a default." If you know the fix, name the problem it solves instead of the fix itself — that's a harder discipline than it sounds, and it's the point: this skill filing a fix that turns out wrong is worse than filing nothing, because the human is the one who has to catch it.
+- **Never speculates beyond what was observed.** If you don't know why something happened, say what was observed and that the cause is unconfirmed — don't guess an internal mechanism to sound complete.
+- Is a paragraph of words, not a table, not a diagram, not a pasted component. If a reusable component came up during the build worth mentioning, name it and what it does in a sentence — don't paste its source into the issue.
 
-Honor the engine's own rules while proposing: no code comments (encode intent in types/names), dense catalogs over micro-modules, strict TS with no `any`, and **no speculative config** — a `defineGame` field or preset earns its place only with a live consumer. If a fix is pure content with no reusable verb underneath, it was game-specific; recheck Step 2.
+## Step 4 — File one issue per problem
 
-## Step 4 — The speed lever: could this build have been 90% faster?
-
-Per-friction fixes each remove one paper cut; the real prize is the lever that collapses the **whole** build. After classifying, step back and ask the blunt question the user actually cares about — *"is there any way I could have made this process 90% faster?"* — and answer it concretely, not with a shrug. The answer lands in the report as its own section, because it's the highest-value thing the harvest produces. Probe three axes:
-
-- **Better primitives** — where did the game hand-roll math or wiring the engine should own as one verb? A calculation you patched in five places is a primitive whose absence taxed the entire build (a `floatText`/damage-number verb, a `spawnOnSurface` default, a camera-follow feel, a cooldown clock). Name the verb, its signature, and the layer (`core` default/helper, `react` hook). The test: with the verb, the game's version is *deleted*, not wrapped.
-- **More premade components** — where did the game assemble a whole UI cluster out of headless parts that the next game of this shape would assemble identically? A garage screen, inventory grid, minimap, scoreboard, lap/timer HUD, unit frame — if it's ~90% the same every time, it's a **kit** the engine should ship *assembled and themeable*, not a pile of `SlotGrid`/`HealthBar` primitives to re-wire by hand. Name the component, what the game passes in (content, theme) versus what it should get for free (layout, states, behavior). This is the biggest time sink in most builds — weight it accordingly.
-- **Scaffolds & generators** — where did hand-typing eat hours that a generator or `create-jgengine-game` scaffold would erase? Catalog breadth from `base × material × tier` arrays, a starter file tree, a keybind/UI skeleton. If the build spent its first hour on boilerplate every game repeats, that's a scaffold gap.
-
-Then look for **clusters** — several friction points serving one archetype (viewmodel + reticle + tracer + hip/ADS + spawn-on-ground all say "FPS feel"; garage + tune-sheet + stat-bars + car-select all say "racer feel"). A cluster is the signal for the largest lever: a documented recipe in `jgengine-newgame`, or — only if a second concrete game would use it — an engine-owned preset/bundle/kit so the common case is one call, not a scavenger hunt. One game is a probe; two games is a primitive: don't ship a preset for a setup only one game has ever needed — propose the recipe, and let the second game promote it to code. **Where the build spent the most wall-clock is the loudest signal — the 90% lever almost always lives there**, so say where the time actually went.
-
-## Step 5 — Emit the report (the deliverable)
-
-Your final output is one self-contained report, and it is the whole point of the skill — write it to be pasted verbatim into a fresh jgengine-repo conversation, carrying enough context that the receiver never needs the build history. Use this structure exactly:
+File with `gh issue create --repo Noisemaker111/jgengine`, once per problem from Step 3. Title is the short symptom; body is the root-cause paragraph plus one line of build context. Use this shape:
 
 ```
-# This is the report to fix or implement — <game name> harvest
+gh issue create --repo Noisemaker111/jgengine \
+  --title "<short symptom, e.g. 'Enemies spawn clipping into terrain'>" \
+  --label "harvest" \
+  --body "$(cat <<'EOF'
+Root problem: <one paragraph, plain words, no proposed fix, no code, no layer guess>
 
-Built <game> with jgengine; it took <N> QA passes to feel right. Each item below is
-a fix that was hand-written in the game because the engine or a skill didn't cover it.
-You are in the engine repo: implement these directly — fix the primitive, default,
-component, or skill doc. Do NOT file issues (that's the external-consumer path).
-Read jgengine-api before starting; land each fix in the layer that owns it.
-
-## Engine gaps — implement in code
-| # | Symptom the player saw | Glue the game hand-wrote | Proposed fix | Layer / target |
-|---|------------------------|--------------------------|--------------|----------------|
-| 1 | …                      | …                        | …            | core / shell / react |
-
-## Skill-doc gaps — sharpen the spec so it can't regress
-| # | What shipped wrong | Which skill failed to prevent it | Rule to add |
-|---|--------------------|----------------------------------|-------------|
-
-## Speed lever — how the next build of this shape goes 90% faster
-Where the build's wall-clock actually went: <the 1–2 things that ate the most time>
-- **Better primitives**: <verbs the engine should own so this math/wiring is never hand-rolled again — signature + layer>
-- **Premade components / kits**: <whole UI clusters the engine should ship assembled + themeable, content-only — name + what's passed in vs free>
-- **Scaffolds / generators**: <catalog generators or a project scaffold that erases the repeated boilerplate>
-- **Archetype recipe / preset**: <the cluster, and whether it's a jgengine-newgame recipe or an earned engine preset/bundle>
-
-## Left in the game — no action
-<game-specific content/numbers, listed so the receiver knows they were considered and skipped>
-
-## Definition of done for this report
-- [ ] each engine gap consumed by the game, its hand-written workaround DELETED
-      (if deleting the glue breaks the behavior, the primitive is wrong-shaped — fix the primitive)
-- [ ] `bun run build` + `bun run check-types` green; `bun test packages` for any math added
-- [ ] every visual fix: `bun run shoot <gameId> --mode ui` and LOOK at the PNG — type-green
-      says nothing about whether a world-space bar renders over the enemy; new HUD needs its
-      Tailwind `@source` wired or it renders unstyled
-- [ ] each skill-doc rule written into its `skills/*` file — a fix that lives in code but not
-      the doc reappears the next time someone reads the doc instead of the code
+Observed while building: <game name>, <one line of what surfaced it>
+EOF
+)"
 ```
 
-Before emitting, show the user the classified table and let them react — this is the one checkpoint. Everything the build already fixed is settled; only *where each fix should live* and *whether it's worth harvesting* is open. Then print the full report so they can copy it.
+Run it once per entry from the friction log — do not merge entries to save calls. If `label:harvest` doesn't exist on the repo yet, create it first (`gh label create harvest --description "surfaced by jgengine-harvest" --color FBCA04`) rather than dropping the label.
 
-If this harvest is already running inside the engine repo and the user wants to keep going rather than hand off, the same report is your worklist — walk its Definition of done top to bottom. The report is still the artifact; implementing it is just the next conversation happening now instead of later.
+Before filing, list the problems you're about to file (title + one-line root cause each) and let the user react — this is the one checkpoint, since after this each item becomes a real issue in the tracker. Skip anything they say is a duplicate or not worth filing. Then file the rest.
+
+## Step 5 — Say what you didn't file
+
+Close by telling the user, in words, what stayed in the game (Step 2's third bucket) and why — so they know it was considered, not missed. If several problems shared one root cause (e.g. viewmodel + reticle + tracer all missing FPS feel), say so explicitly even though you filed them separately — that pattern is exactly the kind of thing a human triaging the tracker needs flagged, and it's not your call to fold it into one issue or decide it's a preset.
 
 ## Anti-patterns
 
 | Wrong | Right |
 |-------|-------|
-| Report tells the receiver to file issues | The report lands in the engine repo — fix directly; issues are the external-consumer path only |
-| A flat "here's everything I fixed" dump | Classify first — the buckets are what make the report worth pasting (Step 2) |
-| Reports only per-fix gaps, never the build-collapsing lever | Step 4: name the primitive, premade kit, or scaffold that makes the next build of this shape 90% faster — that's the highest-value row, and it lives where the wall-clock went |
-| "The game feels good now, done" | Done = the report exists and the next game of this shape needs none of these fixes |
-| Promote every hand-fix to a primitive | Classify first; game-specific content stays in the game (Step 2) |
-| World-space bar / viewmodel proposed for `core` | Renders in the scene → `shell`; core imports no three.js (Step 3) |
-| A preset for a setup exactly one game has used | Recipe in `jgengine-newgame`; let the second game promote it to code |
-| Report lists code fixes but forgets the skill-doc gaps | Skill-doc gaps are half the value — a code-only fix ships again the next time someone reads the doc |
-| Report proposes a primitive, never says to delete the game's workaround | The Definition of done requires consuming it in the game and deleting the glue — that's the proof and the regression guard |
-| "Trust check-types" for visual fixes | The report's done-check says screenshot and look at it |
+| One giant paste-ready report | One `gh issue create` per problem — that's the whole point of routing through the tracker |
+| Issue proposes a fix, API, or layer | State the root problem in words only; the fix is a human decision made later, in a PR |
+| Issue includes a code snippet or pasted component source | Name the component/behavior in a sentence; never paste code into an issue |
+| Two symptoms bundled into one issue because they felt related | File two issues — one problem each, even if they turn out to share a cause |
+| Guessing *why* something broke without having confirmed it | Say what was observed; flag the cause as unconfirmed if it isn't |
+| Filing game-specific content as an issue | Classify first (Step 2) — content/numbers unique to this game stay in the game, no issue |
+| Filing without showing the user the list first | Step 4's checkpoint — list title + root cause, let them veto, then file |
+| "The game feels good now, done" | Done = every real friction point from this build has its own filed issue |
 
 ## Worked example — the Borderlands run
 
-The build's QA passes, harvested into report rows:
+Filed as five issues (one call each), not one report:
 
-| Symptom | Bucket | Proposed fix → layer |
-|---------|--------|----------------------|
-| Health bars in screen space, not over enemies | Engine gap | World-space bar projection → `shell`; labeled `HealthBar` stays headless in `react` |
-| No damage numbers over enemies / player | Engine gap | A float-text verb over scene entities → `core` primitive, rendered by `shell` |
-| Death screen, level-up animation, loot toast | Engine gap | Headless `Screen`-based components + a toast feed channel over `ctx.game.feed` → `react` + `core` |
-| Enemies clip into terrain on spawn | Engine gap | Spawn resolves to the surface by default → `core` scene, no game code |
-| MMO-feeling shooting; no reticle/viewmodel/tracer | Engine gap (cluster) | First-person viewmodel + reticle + projectile tracer → `shell`; documented as the FPS recipe in `jgengine-newgame` |
-| Never asked first- vs third-person | Skill-doc gap | Blueprint must state perspective up front → `jgengine-newgame` |
-| Generic / placeholder icons | Skill-doc gap | Ban placeholder item icons at the quality bar → `jgengine-ui` + `jgengine-assets` |
-| Persistent on-screen keybind legend | Skill-doc gap | Bindings live on their control, never a constant legend → `jgengine-ui` |
-| Contract-specific UI copy and numbers | Game-specific | Stays in the game |
+1. **"Health bars render in screen space, not anchored to enemies"** — root problem: the engine has no world-to-screen anchor primitive for UI elements, so every game re-derives a screen position from an entity's world position by hand.
+2. **"No feedback when an enemy takes damage"** — root problem: nothing in the engine represents a transient, positioned combat event (a hit, a number, a moment in time) that a game can render — it isn't wired into the scene at all right now.
+3. **"Enemies can spawn inside terrain geometry"** — root problem: spawn placement doesn't check spawn points against ground height before placing an entity.
+4. **"Shooting feels like point-and-click targeting, not aiming"** — root problem: there's no first-person aim/view path in the engine at all; a game wanting shooter feel has to build the whole perspective, reticle, and feedback loop itself with no starting point.
+5. **"Perspective (first vs third person) is never decided until something already feels wrong"** — root problem: nothing in the build workflow forces this decision up front, so it surfaces mid-build as a rewrite instead of a planning question.
 
-The lesson the table encodes: five rounds of "it's still not right" were mostly one FPS-feel cluster plus a handful of quality bars the skills never enforced. Harvest them into one report, fix them once, and the next "make an FPS with jgengine" starts where this one *ended*.
+Left unfiled, and said out loud to the user: contract-specific UI copy and the exact recoil numbers — those are this game's content, not the engine's problem. Also flagged: issues 2, 4, and 5 all point at the same "no first-person / combat-feel path exists yet" gap — filed separately since each is independently true, but worth knowing they cluster before triaging.

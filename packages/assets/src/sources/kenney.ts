@@ -8,6 +8,8 @@ interface KenneyPack {
 }
 
 const KENNEY_PACKS: readonly KenneyPack[] = [
+  { id: "kenney-furniture", slug: "furniture-kit", title: "Furniture Kit", categories: ["furniture", "interior", "prop"] },
+  { id: "kenney-mini-characters", slug: "mini-characters", title: "Mini Characters", categories: ["character", "rigged"] },
   { id: "kenney-nature", slug: "nature-kit", title: "Nature Kit", categories: ["nature", "environment", "prop"] },
   { id: "kenney-castle", slug: "castle-kit", title: "Castle Kit", categories: ["building", "medieval", "environment"] },
   { id: "kenney-city-commercial", slug: "city-kit-commercial", title: "City Kit (Commercial)", categories: ["building", "city", "environment"] },
