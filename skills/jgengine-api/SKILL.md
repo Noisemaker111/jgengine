@@ -58,6 +58,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Scene behaviors | `scene/behaviors` | `wander`, `promptable`, `talkable`, `player` |
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
+| Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` |
 
 ## Getting started (new project)
 
@@ -503,6 +504,10 @@ Descriptors from `@jgengine/core/world/features` — config data the runner/worl
 
 `parentSpace` positions are local to that space — convert at seams only.
 
+### Physics world (optional, headless)
+
+`physics/physicsWorld` `PhysicsWorld` is a standalone fixed-capacity rigid-body sim (SoA buffers, spatial-hash broadphase, sleeping) — **not** the `defineGame` `physics: { gravity }` field, which only configures the shell's character controller. Reach for it when a game needs many colliding dynamic bodies (piles, debris, stress scenes): `new PhysicsWorld({ capacity, bounds, … })`, `addBody({ position, halfExtents, mass? })`, then `step(dt)` per tick → `PhysicsStats`. Core owns the sim; `@jgengine/shell/world/InstancedBodies` renders its bodies. Most games never need it — the character controller covers ordinary movement.
+
 ### Spawn placement
 
 `spawn(catalogId, { id?, position | anchor, offset?, parentSpace?, group? })` — anchor `{ kind: "entity" | "zone", id }` with offset `{ radius, pattern }` or `{ xyz }`. Catalog supplies movement/model; no behaviors on spawn.
@@ -670,6 +675,7 @@ applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
 proximityPrompt    { radius, display: {kind}, invoke } — one float-UI primitive
 world features     biomes / voxel / plots / tilemap / flat descriptors
+physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not the defineGame physics field
 GameBackend        { transport, feeds?, presence? } — Convex is one adapter (createConvexBackend)
 @jgengine/react    GameProvider + hooks + headless primitives; layout only in GameUI.tsx
 ```
