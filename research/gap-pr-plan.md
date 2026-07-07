@@ -11,7 +11,8 @@
 | G3 Physics constraints | opus | claude/gaps-physics-actors | ✅ DONE (green) | #127 |
 | G9 Crafting/tech/production | opus | claude/gaps-crafting | ✅ DONE (green) | #132 |
 | G11 Survival & environment | opus | claude/gaps-survival | in-flight (resumed) | — |
-| G7 Character combat feel | opus | claude/gaps-combat-feel | in-flight (resumed, ~done) | — |
+| G7 Character combat feel | opus | claude/gaps-combat-feel | ✅ DONE (green) | #134 |
+| G6 Abilities/resources/cooldowns | opus | claude/gaps-abilities (stack→gaps-combat-feel) | in-flight | — |
 | G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
 | G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | ✅ DONE (green) | #130 |
 | G16 Card & board stack | opus | claude/gaps-card-board | ✅ DONE (green) | #131 |
@@ -19,8 +20,9 @@
 | G12 Map/HUD/ping | sonnet | claude/gaps-map-ping (stack→gaps-nav-pointer) | in-flight | — |
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | in-flight | — |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | in-flight | — |
-| G6,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+| G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
 G8 added domain `ai/` (spawnDirector/threat/jobBoard/crowd); `scene/behaviors.patrol`.
+G7 shared meter for G6: `@jgengine/core/stats/accumulatorMeter` (`createAccumulatorMeter`, mode hold/reset, tiers). G7 added `combat/animationState`,`combat/attackTags`,`combat/defensiveWindow`,`combat/comboString`,`combat/breakMeters`,`combat/hitReaction`,`combat/telegraph`,`movement/dash`.
 
 G16 added domains `cards/`, `board/`; `inventory/shapedGrid`; react `dragLayer`.
 G9 added domain `crafting/` (recipe/production/crop); `economy/techTree` extends unlocks.
