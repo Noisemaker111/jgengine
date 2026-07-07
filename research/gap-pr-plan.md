@@ -22,7 +22,20 @@
 | G8 AI director/behavior/crowds | opus | claude/gaps-ai-director (stack→gaps-nav-pointer) | ✅ DONE (green) | #133 |
 | G12 Map/HUD/ping | sonnet | claude/gaps-map-ping (stack→gaps-nav-pointer) | ✅ DONE (green) | #138 |
 | G13 Vehicles/mounts/racing | opus | claude/gaps-vehicles (stack→gaps-physics-actors) | ✅ DONE (green) | #143 |
-| G19 Multiplayer depth | opus | claude/gaps-netcode (stack→gaps-vehicles) | in-flight | — |
+| G19 Multiplayer depth | opus | claude/gaps-netcode (stack→gaps-vehicles) | ✅ DONE (green) | #147 |
+
+## ✅ COMPLETE — all 22 groups shipped, all 104 gaps issues (#22–#125) covered by open, green, ready PRs
+
+**Merge order** (foundations first; a stacked PR's base auto-retargets to main when its parent merges):
+- **Base PRs on `main` (merge any time):** #129 G1, #128 G2, #127 G3, #126 G10, #134 G7 (the 5 foundations) · #130 G15 · #131 G16 · #132 G9 · #137 G11 · #141 G18 · #144 G20
+- **Stacked on #129 (G1):** #133 G8, #135 G4, #136 G5, #138 G12 — merge after #129
+- **Stacked on #127 (G3):** #140 G14, #143 G13 — merge after #127
+- **Stacked on #128 (G2):** #146 G21, #145 G22 — merge after #128
+- **Stacked on #134 (G7):** #139 G6 — merge after #134
+- **Stacked on #126 (G10):** #142 G17 — merge after #126
+- **Stacked on #143 (G13 → #127):** #147 G19 — merge after #127 then #143 (2-deep)
+
+Reconcile-at-merge notes: #38 (G5 terraform) & #88 (G14 voxel carve) both write terrain height — trivially compatible, no conflict expected. G13/G19 vehicle chase camera can wire to G2's `chase` rig once #128 + #143 both land. WON'T-DO (coarse-only) honored throughout: no soft-body, no per-fragment replication, no fluid sim, no WebRTC media stack, no full-rollback netcode.
 | G4 World items & loot | sonnet | claude/gaps-world-items (stack→gaps-nav-pointer) | ✅ DONE (green) | #135 |
 | G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | ✅ DONE (green) | #140 |
 | G21 Sensors/vision/observer | sonnet | claude/gaps-sensors (stack→gaps-camera-rigs) | ✅ DONE (green) | #146 |
