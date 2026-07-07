@@ -64,7 +64,7 @@ deny(
     ``,
     `Do this first, then retry the edit:`,
     `  1. Call EnterWorktree to branch off main into .claude/worktrees/.`,
-    `  2. Open a draft PR:  gh pr create --draft --fill`,
+    `  2. Open a PR:  gh pr create --fill`,
     ``,
     `(Files under .claude/ stay editable so config is never locked out.)`,
   ].join("\n"),

@@ -41,7 +41,7 @@ const lines = [
   ``,
   `Before editing any file, do this now:`,
   `  1. Call EnterWorktree to create an isolated worktree off ${defaultBranch}.`,
-  `  2. Open a draft PR for the task:  gh pr create --draft --fill`,
+  `  2. Open a PR for the task:  gh pr create --fill`,
   `Edits in the primary checkout are hard-blocked by the guard-worktree hook until you do.`,
 ];
 
