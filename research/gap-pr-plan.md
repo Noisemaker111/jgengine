@@ -6,7 +6,7 @@
 
 | Group | Model | Branch | State | PR |
 |-------|-------|--------|-------|----|
-| G1 Navigation & pointer | opus | claude/gaps-nav-pointer | in-flight (batch1) | — |
+| G1 Navigation & pointer | opus | claude/gaps-nav-pointer | ✅ DONE (green) | #129 |
 | G2 Camera rig library | opus | claude/gaps-camera-rigs | ✅ DONE (green) | #128 |
 | G3 Physics constraints | opus | claude/gaps-physics-actors | ✅ DONE (green) | #127 |
 | G9 Crafting/tech/production | opus | claude/gaps-crafting | in-flight | — |
@@ -14,7 +14,10 @@
 | G10 Item & gear | opus | claude/gaps-item-gear | ✅ DONE (green) | #126 |
 | G15 Turn-based & tactics | opus | claude/gaps-turn-tactics | in-flight (batch1) | — |
 | G16 Card & board stack | opus | claude/gaps-card-board | in-flight | — |
-| G4,G5,G6,G8,G11,G12,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+| G8 AI director/behavior/crowds | opus | claude/gaps-ai-director (stack→gaps-nav-pointer) | in-flight | — |
+| G4,G5,G6,G11,G12,G13,G14,G17,G18,G19,G20,G21,G22 | — | — | todo | — |
+
+G1 nav API (for G8/G4/G5/G12): `@jgengine/core/nav/navGrid` (`findPath`,`smoothPath`), `nav/pathFollow`; `pointer.worldHit()→PointerHit`; `core/scene/selection`, `core/interaction/contextMenu` (catalog `verbs`). New `nav/` domain (skill coverage now 18).
 
 G2 camera shake channel (for G7 #47): `import { cameraShake } from "@jgengine/shell/camera"` / `useCameraShake()`. Camera config types on `@jgengine/core/game/playableGame`.
 STACK-READY single-parent dependents (launch next as slots free): G14←G3 (off gaps-physics-actors), G21←G2 & G22←G2 (off gaps-camera-rigs), G17←G10 (off gaps-item-gear), G6←G7 (off gaps-combat-feel, reuse accumulatorMeter). Two-parent G13 (G2+G3) waits for #127+#128 to merge to main.
