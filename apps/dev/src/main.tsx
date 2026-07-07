@@ -17,6 +17,8 @@ const gameRegistry: GameRegistry = {
     import("@dogfood/asset-showcase").then((module) => module.assetShowcaseGame),
   "loot-shooter": () => import("@dogfood/loot-shooter").then((module) => module.lootShooterGame),
   "stress-bench": () => import("@dogfood/stress-bench").then((module) => module.stressBenchGame),
+  "destruction-demo": () =>
+    import("@dogfood/destruction-demo").then((module) => module.destructionDemoGame),
 };
 
 const urlParams = new URLSearchParams(window.location.search);

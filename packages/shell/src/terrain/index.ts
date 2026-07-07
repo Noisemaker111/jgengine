@@ -1,3 +1,4 @@
+export { CarvedTerrain, type CarvedTerrainProps } from "./CarvedTerrain";
 export { GrassField, type GrassFieldProps } from "./GrassField";
 export { ProceduralGround, type ProceduralGroundProps } from "./ProceduralGround";
 export {
@@ -19,11 +20,13 @@ export {
 } from "./grassMaterial";
 export { createSeededRandom, hashNoise2, seedToUint32, type TerrainSeed } from "./random";
 export {
+  createFieldGroundGeometry,
   createProceduralGroundGeometry,
   createProceduralTerrainSampler,
   resolveTerrainSegments,
   resolveTerrainSize,
   toNoiseFieldConfig,
+  type FieldGroundOptions,
   type ProceduralTerrainConfig,
   type ResolvedTerrainSegments,
   type ResolvedTerrainSize,

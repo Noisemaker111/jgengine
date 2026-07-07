@@ -69,6 +69,9 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
 | Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions`, `JointOptions`, `JointKind`, `CollisionEvent` |
 | Physics actors | `physics/ragdoll`, `physics/carryable`, `physics/forceVolume`, `physics/spatialGrid` | `createRagdoll`, `Ragdoll`, `Carryable`, `carrySpeedMultiplier`, `ForceVolume`, `PlatformCarry`, `SpatialGrid` |
+| Traversal (grapple/glide) | `physics/traversal` | `Grapple`, `GrappleConfig`, `Glide`, `GlideConfig` |
+| Structural destruction | `physics/structure` | `StructureGraph`, `StructureNodeSpec`, `StructureEdgeSpec`, `StructureMaterial`, `StructureMaterialTable`, `CollapseEvent`, `DebrisConfig` |
+| Destructible terrain | `world/carve` | `VoxelVolume`, `VoxelMaterial`, `VoxelMaterialTable`, `CarvableField`, `carvableTerrain`, `CarveOp`, `DepositOp`, `CraterOp`, `MoundOp`, `EMPTY_VOXEL` |
 
 ## Getting started (new project)
 
@@ -540,6 +543,8 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
 | `scatterItems(field, area, layersFor)` → `ScatterInstance[]` | Region-driven content scatter — density per region, grounded, above-water/slope-aware. `pickWeighted` for weighted rolls. (vs `scatter`'s pure geometric points) |
 | `buildingIndex(district)` → `BuildingIndex` | `at`/`within`/`nearest`/`isInside`/`blockers` over a generated district — placement avoidance, pathfinding |
 
+**Destructible terrain (`world/carve`).** Two runtime-editable primitives for dig/carve worlds. `VoxelVolume` is a dense grid of material ids (0 = empty) — `carve({ center, radius, toolStrength })` clears a sphere of solid cells the tool is strong enough to break and returns the count removed (feed a loot roll), `deposit({ center, radius, material })` fills one (Deep Rock tunnels, Astroneer terrain add); `solidAtWorld` reads it back for collision. `CarvableField` (via `carvableTerrain(base)`) wraps any `TerrainField` and writes craters/mounds into its height — `carve({ x, z, radius, depth })`/`deposit({ x, z, radius, height })` — so ground-snap, collision, and the shell mesh all read the deformed surface (Helldivers 2 explosion craters). Cell strengths come from a `VoxelMaterial` table (DATA). Renders through `@jgengine/shell/terrain/CarvedTerrain`.
+
 Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
 
 ### Physics world (optional, headless)
@@ -551,6 +556,10 @@ Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `she
 **Collision → gameplay events.** `world.onCollision(listener, minApproachSpeed?)` delivers every impacting contact — `CollisionEvent { a, b, nx, ny, nz, approachSpeed, impulse }` — to game code during `step` (the object is reused; read/copy it, never retain). This is the seam crash-damage and destruction read; pass `null` to detach.
 
 **Actors on top of the sim:** `physics/ragdoll` (`createRagdoll(world, { bones, links, balance? })` — jointed bones, floppy or active-ragdoll via a balance motor), `physics/carryable` (`Carryable` — grab a body to a follow point, shared multi-owner carry, `carrySpeedMultiplier` encumbrance, drop/throw; the raycast pick is the caller's job, core owns the constraint), `physics/forceVolume` (`ForceVolume` — impulse/velocity/accelerate trigger region, `once` for boost pads; `PlatformCarry` — carry bodies standing on a moving platform by its per-`step` delta). Separately, `physics/spatialGrid` `SpatialGrid` is a broad-phase grid over the x/z plane, **distinct** from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers — `rebuild(count, xs, zs)` then `queryCircle` (swarm enemies hitting a player/AoE) or `forEachPair` (mutual separation).
+
+**Traversal (`physics/traversal`).** `Grapple` fires a rope from a body to a fixed world point on the joint API — `fire(x,y,z)` attaches a `distance` (rigid) or `elastic` (spring) joint, `reel(dt)`/`payOut(dt)` shorten/lengthen the rope to pull the traveller in, `moveAnchor` re-points it (ziplines, grapple-to-moving-target). Grapple/zipline/swing (Sekiro, Deep Rock, Just Cause) are all the same primitive; the raycast that finds the anchor is the caller's. `Glide` is a reduced-gravity, forward-thrust wingsuit/glider over a body — call `apply(dt, steerX, steerZ)` each frame before `step` to feed back most of gravity (`gravityScale`), thrust along the steer vector, and clamp descent; stop calling it to fall normally, no attach/detach state.
+
+**Structural destruction (`physics/structure`).** `StructureGraph` models a building as nodes (pieces) + load-bearing edges with some nodes `anchor`ed (foundations). `damage(id, n)`/`damageEdge(a,b,n)`/`severEdge(a,b)` wear pieces and connections; when one breaks, the graph recomputes reachability to an anchor and returns a single `CollapseEvent { fell }` — every piece the loss disconnected. `toDebris(world, event)` sinks the fallen pieces into a `PhysicsWorld` as rigid bodies (The Finals, Rainbow Six). It is coarse by design: **replicate the collapse event (the `fell` id list), not each fragment's physics** — game clients re-derive the debris locally. Piece integrity and edge strength default from a `StructureMaterial` table (DATA).
 
 ### Spawn placement
 
