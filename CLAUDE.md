@@ -11,7 +11,7 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 
 ## Stack
 
-- Package manager: bun (workspaces: `packages/*`, `packages/games/*`, `apps/*`, `examples/*`).
+- Package manager: bun (workspaces: `packages/*`, `packages/games/*`, `Games/*`, `apps/*`, `examples/*`).
 - Each published package builds with `tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist`; root `bun run build` runs them in dependency order (core → ws → sql → react → convex → node → shell → assets). The compiler is `tsgo` (`@typescript/native-preview`), not `tsc`.
 - TypeScript strict everywhere; `check-types` is `tsgo --noEmit` per package, fanned out by root `bun run check-types` (which also runs `check-artifacts` — no compiled `.js`/`.d.ts` may sit in `packages/*/src` — and `check-skills` — every `@jgengine/*` import path named in the `jgengine-api` skill must resolve, and every public `core` domain must be documented; keeps the skill from drifting off the API surface).
 
@@ -22,20 +22,21 @@ This is the primary engine-development repo: a genre-agnostic, pure-TypeScript g
 ## Layout
 
 - `packages/{core,ws,sql,react,convex,node,shell,assets}` — the eight published `@jgengine/*` packages. Exports map to `dist/*`; consumers import by path (`@jgengine/core/runtime/gameRuntime`). `assets` is a self-generating, license-verified index of CC0 3D models (ships the typed index + pull CLI, not the GLB bytes).
-- `packages/games/*` — example games (`@dogfood/<name>`, private, source-consumed via `./src` exports, no build). Build a new game from the skills in `skills/`, not by copying one of these.
+- `packages/games/*` — legacy example games (`@dogfood/<name>`, private, source-consumed via `./src` exports, no build). New games go in `Games/`, not here.
+- `Games/` — the only place games get built, one directory per game. Any game work anywhere in the repo follows `Games/CLAUDE.md`: engine gaps go straight into `Games/TODO.md` as raw problems, committed and filed as one `[FEATURE]` issue at session end.
 - `apps/dev` — the Vite game runner and screenshot target. Loads a game by `?game=<id>&mode=play|ui`; `mode=ui` mounts `GameUiPreview` over a staged GameContext. Registry in `apps/dev/src/main.tsx`. Vite aliases + tsconfig paths resolve `@jgengine/*` to sibling `src/`, so no build needed to run it.
 - `apps/desktop` — Tauri v2 wrapper around the same shell (same aliases, port 1420).
 - `apps/web` — [jgengine.com](https://jgengine.com): TanStack Start (SSR) marketing site, deployed to Vercel via Nitro (`nitro/vite`) on every push to `main`. Skill pages render `skills/*/SKILL.md` (bundled via Vite `?raw` in `src/content/skills.ts`), so a skills/engine change on `main` redeploys the site. It hands agents one line — `npx skills add Noisemaker111/jgengine` — plus per-skill "grab this when…" guidance (`src/lib/site.ts`); it does not serve `llms.txt` or raw skill dumps. Standalone workspace — no `@jgengine/*` deps, its own Vite 8; not part of root `build`/`check-types`/`test` or the publish pipeline.
 - `examples/express-host` — deployable Node host (`@jgengine/node` + `@jgengine/sql` + express; Dockerfile + fly.toml). `examples/next-host` — Next.js client + REST reads. `examples/convex-host` — the Convex functions `createConvexBackend` talks to (needs `bunx convex dev` for `_generated/`, so it has no check-types).
 - `skills/` — the spec. `jgengine-api` (engine surface + definition of done), `jgengine-ui` (HUD quality bar), `jgengine-assets`, `jgengine-newgame` (master blueprint + phased build workflow for a new game). Build games from the skills, not by copying other games.
-- This is the engine repo: fix engine gaps and doc errors directly here — never file issues from inside it. Issue-filing ([github.com/Noisemaker111/jgengine/issues](https://github.com/Noisemaker111/jgengine/issues)) is the path for external consumers building on the published SDK.
+- This is the engine repo: fix engine gaps and doc errors directly here — the only issues filed from inside it are the `[FEATURE]` gap issues mandated by `Games/CLAUDE.md`. Otherwise issue-filing ([github.com/Noisemaker111/jgengine/issues](https://github.com/Noisemaker111/jgengine/issues)) is the path for external consumers building on the published SDK.
 
 ## Verification
 
 - `bun run build` — all eight packages compile to dist.
 - `bun run check-types` — every workspace package with the script.
 - `bun test packages` — engine + game tests.
-- After changing any game UI/HUD: `bun run shoot <gameId> --mode ui` writes a PNG to `shots/` — open and look at it; type-green says nothing about whether the HUD renders. `--mode play` screenshots the full shell. Game HUD Tailwind classes only generate because `apps/dev/src/index.css` has `@source` entries for `packages/games`, `packages/react`, `packages/shell` — silently-unstyled UI means a missing `@source`.
+- After changing any game UI/HUD: `bun run shoot <gameId> --mode ui` writes a PNG to `shots/` — open and look at it; type-green says nothing about whether the HUD renders. `--mode play` screenshots the full shell. Game HUD Tailwind classes only generate because `apps/dev/src/index.css` has `@source` entries for `packages/games`, `Games`, `packages/react`, `packages/shell` — silently-unstyled UI means a missing `@source`.
 
 ## Publishing
 

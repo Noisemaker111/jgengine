@@ -2,7 +2,7 @@
   "name": "jgengine",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "packages/games/*", "apps/*", "examples/*"],
+  "workspaces": ["packages/*", "packages/games/*", "Games/*", "apps/*", "examples/*"],
   "scripts": {
     "build": "bun run --cwd packages/core build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build && bun run --cwd packages/assets build",
     "check-artifacts": "bun scripts/check-no-src-artifacts.ts",
