@@ -90,6 +90,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Decay meters | `survival/decayMeter` | `createDecayMeterSet`, `DecayMeterSet`, `DecayMeterConfig`, `MeterThreshold`, `DecayMeterState` |
 | Status moodles | `survival/moodle` | `createMoodleStack`, `stackMoodles`, `MoodleStack`, `Moodle`, `MoodleSeverity`, `TimedMoodleInput` |
 | Multi-region health | `survival/regionHealth` | `createMultiRegionHealth`, `MultiRegionHealth`, `HealthRegionConfig`, `AilmentConfig`, `RegionHealthState`, `AilmentInstance` |
+| Audio contract | `audio/audioFalloff` | `computeFalloffGain`, `resolveEmitterGain`, `distance3`, `AudioFalloffConfig`, `FalloffCurve`, `SoundDef`, `AudioBusDef`, `AudioBusId` |
+| Beat clock | `time/beatClock` | `createBeatClock`, `createBeatInputBuffer`, `nextBeatTime`, `BeatClock`, `BeatClockConfig`, `BeatSnapshot`, `BeatInputBuffer`, `BufferedAction` |
 
 ## Getting started (new project)
 
@@ -256,6 +258,10 @@ Optional render/world fields the shell also reads: `entitySprites` / `entityMode
 
 The runner boots `createGameContext({ definition, content, player: { userId, isNew } })`, calls `loop.onInit(ctx)` then `loop.onNewPlayer(ctx)`, and drives `loop.onTick(ctx, dt)` per frame. **Convention: `onNewPlayer` spawns the player entity with `id === ctx.player.userId`** — bounded stats, targeting, and kill attribution key off that.
 
+### Audio — positional emitters, listener falloff, buses
+
+Catalog-first, no per-game audio glue. `PlayableGame.audio = { sounds: Record<string, SoundDef>, buses?: Record<string, AudioBusDef> }` declares the sound catalog (`SoundDef = { id, url, bus, gain?, loop?, positional?, falloff? }`) and mix buses (`music`/`sfx`/`ambient`/…, `AudioBusDef = { id, gain? }`) — both types from `@jgengine/core/audio/audioFalloff`. `entitySounds?: Record<string, string>` maps an entity **kind name** (same convention as `entitySprites`/`entityModels`) to a sound id: while a matching entity exists, the shell keeps a looping positional emitter on it, repositioned every frame. `objectSounds?: Record<string, string>` does the same keyed by placed-object catalog id. The pure distance→gain math (`computeFalloffGain(distance, config)`, curves `"linear" | "inverse" | "none"`) lives in core so it is unit-tested without a browser; `@jgengine/shell` (`shell/audio/audioEngine`, `shell/audio/AudioComponents`) is the only package that touches Web Audio — it owns an `AudioContext`, mounts `AudioListener` on the camera every frame, and `EntityAudioEmitters`/`ObjectAudioEmitters` drive per-instance emitter gain from the core falloff function. `GamePlayerShell` wires all of this automatically from `playable.audio`/`entitySounds`/`objectSounds` — a game never touches `AudioContext` directly.
+
 ## `GameContext` — the ctx surface
 
 `createGameContext` (in `@jgengine/core/runtime/gameContext`) wires every system:
@@ -315,6 +321,10 @@ export function onTick(ctx: GameContext, dt: number) {
 
 - **Continuous** work scales through `dt`. **Scheduled** work uses game-time timers: `ctx.time.after(sec, cb)`, `ctx.time.every(sec, cb)`, `ctx.time.at(gameSec, cb)` — measured in game-seconds, so 4× fires them 4× sooner and pause freezes them. Each returns a cancel handle.
 - **Controls** (drive from a HUD or a command): `pause()`, `play()`, `toggle()`, `setSpeed(mult)` (0 pauses), `cycleSpeed()`. Read state with `ctx.time.snapshot()` / `ctx.time.calendar()` (`{ day, hour, minute, second, dayFraction }`), or in React with `useGameClock()` → snapshot + `controls`. Speeding to 4× or pausing affects **everything** on the tick — no per-system wiring.
+
+### Beat clock — BPM signal + input quantization
+
+`@jgengine/core/time/beatClock` is a separate, purpose-built signal from `simClock` — a BPM tick generator for rhythm games (Hi-Fi Rush–style quantized combat), not a day/pause clock. `createBeatClock({ bpm, beatsPerBar? }, onBeat?)` returns a `BeatClock`: call `advance(gameDt)` from `onTick` with the same **game-time** `dt` (never wall-clock) — it fires `onBeat(beatIndex)` once per newly crossed integer beat and returns a `BeatSnapshot` (`beat`, `beatIndex`, `bar`, `beatInBar`, `phase`). `createBeatInputBuffer<T>(beatDurationSec)` is the auto-correct input buffer: `buffer(action, nowSec)` quantizes an off-beat press to fire on the next beat tick (or immediately if pressed exactly on one); `advance(nowSec)` drains and returns every action whose beat has arrived. `nextBeatTime(nowSec, beatDurationSec)` is the underlying pure quantization function. Feed a music track's actual BPM in; the buffer is what makes an early/late input still land on-beat.
 
 ## Content catalogs
 
@@ -664,6 +674,7 @@ Backends:
 - **Postgres** — `@jgengine/sql` `ensureSchema(pool)` + `sqlPersistence(pool)` implement `HostPersistence` over any pg-compatible pool (structural interface, no hard `pg` dep; tables `jg_game_servers`, `jg_player_profiles`, `jg_world_chunks`, `jg_leaderboard_rows`, `jg_feed_buffers`). `HostPersistence.savePlan` applies a whole `ServerPersistPlan` in one transaction (leaderboard drain included); hosts fall back to per-tier calls when absent.
 - **Clients** — `@jgengine/shell` (`GamePlayerShell`; each client supplies its own `GameRegistry`) is the shared player: it works in Vite, Next.js, or a Tauri webview; the authoritative ws host stays a standalone process.
 - **Shell multiplayer** — `resolveShellMultiplayer({ game, gameId, url?, force?, feedActions? })` connects the shell to a ws host when the game's `multiplayer` adapter is `ws(...)` (or `force` — the web dev route forces via `?ws`, desktop via `VITE_JG_WS_URL`). The shell then joins a server, pose-syncs the local player, renders remote players from the presence roster, and bridges feed actions (default `entity.died`) both ways with echo suppression — game code unchanged.
+- **Voice channels** — `@jgengine/ws/voiceChannel` (`createVoiceChannelRouter(channels?)`) is a thin, coarse layer on top of the same transport/presence model: it ships the channel/falloff **routing model**, not a WebRTC media stack (no mic capture, no audio transport — pair it with a real signaling/media layer for actual voice bytes). `VoiceChannelDef = { id, positional, falloff?, gain? }` — `positional: true` channels (proximity voice) attenuate by distance using the same `@jgengine/core/audio/audioFalloff` curve as positional SFX; `positional: false` channels (walkie/crew) play at flat gain regardless of distance. A member `join`s any number of channels at once (a Sea of Thieves–style crew channel *and* nearby-ship proximity, simultaneously); `updatePosition(userId, xyz)` feeds positions (typically mirrored from `WsPresenceRow`); `setMuted(userId, bool)` silences every channel from that speaker at once. `resolveRoutes(listenerUserId)` returns one `{ fromUserId, channelId, gain }` per shared channel — the mixer plays each route independently, so the same speaker can be loud on `walkie` and near-silent on `proximity` at the same time.
 
 ## UI — `@jgengine/react`
 
@@ -809,6 +820,9 @@ player.movement    pose (hitboxes) + aim (zoom modifier)
 proximityPrompt    { radius, display: {kind}, invoke } — one float-UI primitive
 world features     biomes / voxel / plots / tilemap / flat descriptors
 physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not the defineGame physics field
+audio/audioFalloff computeFalloffGain / resolveEmitterGain — pure distance→gain curve; shell plays it
+time/beatClock     createBeatClock (BPM ticks) + createBeatInputBuffer (buffered action → next beat)
+ws/voiceChannel    createVoiceChannelRouter — positional falloff + simultaneous non-positional channels
 GameBackend        { transport, feeds?, presence? } — Convex is one adapter (createConvexBackend)
 @jgengine/react    GameProvider + hooks + headless primitives; layout only in GameUI.tsx
 ```
