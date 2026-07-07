@@ -6,13 +6,13 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
-    "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "paths": {
-      "@jgengine/core/*": ["../../core/src/*"],
-      "@jgengine/react/*": ["../../react/src/*"]
+      "@jgengine/core/*": ["../../packages/core/src/*"],
+      "@jgengine/react/*": ["../../packages/react/src/*"],
+      "@jgengine/shell/*": ["../../packages/shell/src/*"]
     }
   },
   "include": ["src"],

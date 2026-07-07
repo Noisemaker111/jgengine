@@ -19,7 +19,7 @@
       "@jgengine/core/*": ["../../packages/core/src/*"],
       "@jgengine/react/*": ["../../packages/react/src/*"],
       "@jgengine/ws/*": ["../../packages/ws/src/*"],
-      "@dogfood/world-of-warcraft": ["../../packages/games/world-of-warcraft/src/index.ts"]
+      "@games/world-of-warcraft": ["../../Games/world-of-warcraft/src/index.ts"]
     }
   },
   "include": ["src"]
