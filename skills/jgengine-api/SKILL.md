@@ -37,7 +37,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 
 | Concept | Import path (`@jgengine/core/…`) | Export(s) |
 |---------|----------------------------------|-----------|
-| Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig` |
+| Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig`, `TimeConfig` |
+| Simulation clock | `time/simClock` | `createSimClock`, `SimClock`, `TimeConfig`, `ClockSnapshot`, `CalendarTime` |
 | Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `EntitySpriteConfig` |
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |
 | Scene instance role | `scene/entityStore` | `EntityRole`, `SceneEntity`, `SpawnOptions`, `EntityPose` |
@@ -227,6 +228,8 @@ export type PlayableGame<TUi = unknown> = {
 
 `prompts` is the **single source** of positioned proximity prompts: the shell reads it to fire the `interact` key, and the HUD should read the same list through `useActivePrompt(playable.prompts?.(ctx))` rather than building its own — one list, no drift. A prompt is only actionable if its `invoke` is non-null.
 
+Optional render/world fields the shell also reads: `entitySprites` / `entityModels` (billboards / GLBs keyed by entity kind), `objectModels` (GLBs keyed by object catalog id), `WorldOverlay` (canvas-layer VFX), `environment` (canvas-layer scenery — ground/sky/structures; when set, replaces the default ground plane + debug grid + rock field), `camera`, and `worldHealthBars`. A model value is a catalog id (`string`, resolved via `game.assets`) or an inline `ModelConfig { url, scale?, y?, anchor?, dims? }`. Catalog-resolved models carry measured `dims` (`catalog.resolve(id).dims = { footprint:{w,d}, center:{x,z}, minY }`); with the default `anchor: "center"` the shell centers the footprint on the placement point and ground-snaps `minY` to it, so corner-pivot kit models place correctly with no per-game pivot math.
+
 The runner boots `createGameContext({ definition, content, player: { userId, isNew } })`, calls `loop.onInit(ctx)` then `loop.onNewPlayer(ctx)`, and drives `loop.onTick(ctx, dt)` per frame. **Convention: `onNewPlayer` spawns the player entity with `id === ctx.player.userId`** — bounded stats, targeting, and kill attribution key off that.
 
 ## `GameContext` — the ctx surface
@@ -245,6 +248,8 @@ ctx.game            commands, events, feed, loot, trade, quest, social,
 ctx.player          userId, isNew, inventory, stats (modifiers), loadout,
                     applyLoadout, movement (pose/aim)
 ctx.item            use, weapon
+ctx.time            advance, now, calendar, snapshot; pause, play, toggle,
+                    setSpeed, cycleSpeed; after, every, at (game-time timers)
 ctx.subscribe / ctx.version    change signal — UI layers bind via useSyncExternalStore
 ```
 
@@ -274,11 +279,18 @@ export function onNewPlayer(ctx: GameContext) {
 }
 
 export function onTick(ctx: GameContext, dt: number) {
-  // AI, regen, respawn timers — never death detection (see entity.died)
+  // AI, regen, respawn timers — dt is GAME time (see ctx.time). Never death detection (see entity.died)
 }
 ```
 
 `onInit` runs once per boot; register everything there. Loot tables register through `ctx.game.loot.register` — `lootTable()` is a pure validating factory, there is no global side-effect registry.
+
+## `ctx.time` — the simulation clock
+
+`onTick`'s `dt` is **game time, not real time**: the shell scales each frame's real delta by `definition.time.scale` (real→game seconds at 1×) and the live speed multiplier, so writing decay/regen/AI as `rate * dt` makes it obey pause and fast-forward for free — never read wall-clock in a tick. Configure via `defineGame({ time: { scale?, speeds?, dayLength?, start?, startPaused? } })` (all optional; default is real-time 1:1 with speeds `[1,2,3,4]`).
+
+- **Continuous** work scales through `dt`. **Scheduled** work uses game-time timers: `ctx.time.after(sec, cb)`, `ctx.time.every(sec, cb)`, `ctx.time.at(gameSec, cb)` — measured in game-seconds, so 4× fires them 4× sooner and pause freezes them. Each returns a cancel handle.
+- **Controls** (drive from a HUD or a command): `pause()`, `play()`, `toggle()`, `setSpeed(mult)` (0 pauses), `cycleSpeed()`. Read state with `ctx.time.snapshot()` / `ctx.time.calendar()` (`{ day, hour, minute, second, dayFraction }`), or in React with `useGameClock()` → snapshot + `controls`. Speeding to 4× or pausing affects **everything** on the tick — no per-system wiring.
 
 ## Content catalogs
 
@@ -565,8 +577,12 @@ Backends:
 **Game UI/UX patterns** (frameless HUD, modals, keybinds, cooldowns, world VFX): read **`jgengine-ui`** skill — not optional.
 
 ```tsx
+import { GameProvider, useSceneEntities, HealthBar } from "@jgengine/react";
+
 <GameProvider context={ctx}>…</GameProvider>
 ```
+
+Import provider, hooks, and headless components from the package root `@jgengine/react` (a barrel re-export). The per-file subpaths (`@jgengine/react/provider`, `/hooks`, `/components`) resolve the same symbols if you prefer them.
 
 All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 
@@ -582,6 +598,7 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 | `useFriends()` / `useParty()` / `usePresence(userId)` | social panels |
 | `useLeaderboard(stat, { scope, limit? })` | `{ userId, value }[]` |
 | `useActivePrompt(prompts)` | nearest proximity prompt |
+| `useGameClock()` | clock snapshot (`now`, `paused`, `speed`, `calendar`) + `controls` (pause/play/setSpeed) |
 | `useLocalPlayerDead()` / `localPlayerEntity(entities, userId)` | death-screen gating; local player from a snapshot |
 | `useGameStore()` | raw store handle — escape hatch under the typed hooks |
 

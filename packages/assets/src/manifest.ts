@@ -1,3 +1,7 @@
+import type { ModelDims } from "@jgengine/core/scene/assetCatalog";
+
+export type { ModelDims };
+
 export type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom";
 
 export interface PinnedDownload {
@@ -31,6 +35,8 @@ export interface IndexEntry {
   source: string;
   categories: readonly string[];
   file: string;
+  /** Footprint/center/minY measured from the GLB at reindex; absent when the model could not be read. */
+  dims?: ModelDims;
 }
 
 export interface AssetAlias {

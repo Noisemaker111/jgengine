@@ -7,7 +7,7 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { CurrencyPill, HealthBar, SlotGrid } from "@jgengine/react/components";
-import { useFeed, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
 import type { PlayableGame } from "../registry";
 
@@ -50,6 +50,7 @@ const game = defineGame({
   assets: createAssetCatalog(),
   multiplayer: null,
   inventories: { [HOTBAR]: { slots: 4, hud: "hotbar" } },
+  time: { start: 8 * 3600, speeds: [1, 2, 3, 4] },
   input: {
     moveForward: ["KeyW"],
     moveBack: ["KeyS"],
@@ -242,10 +243,46 @@ function HotbarPanel() {
   );
 }
 
+function ClockPanel() {
+  const { paused, playSpeed, speeds, calendar, controls } = useGameClock();
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  return (
+    <div className="pointer-events-auto flex items-center gap-2 rounded bg-black/60 px-2 py-1 text-xs">
+      <span className="tabular-nums text-white">
+        Day {calendar.day + 1} · {pad(calendar.hour)}:{pad(calendar.minute)}
+      </span>
+      <button
+        onClick={() => controls.toggle()}
+        className="rounded border border-white/25 px-1.5 py-0.5 text-white/80 hover:bg-white/10"
+      >
+        {paused ? "▶" : "⏸"}
+      </button>
+      <div className="flex gap-0.5">
+        {speeds.map((speed) => (
+          <button
+            key={speed}
+            onClick={() => controls.setSpeed(speed)}
+            className={`rounded border px-1.5 py-0.5 ${
+              !paused && speed === playSpeed
+                ? "border-amber-300 bg-amber-300/20 text-amber-200"
+                : "border-white/25 text-white/70 hover:bg-white/10"
+            }`}
+          >
+            {speed}×
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DemoGameUI() {
   const player = usePlayer();
   return (
     <div className="pointer-events-none absolute inset-0 font-mono text-white">
+      <div className="absolute left-4 top-4">
+        <ClockPanel />
+      </div>
       <div className="absolute left-1/2 top-4 w-56 -translate-x-1/2">
         <TargetPanel userId={player.userId} />
       </div>

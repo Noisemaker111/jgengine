@@ -130,7 +130,13 @@ function EntityModel({ model }: { model: ModelConfig }) {
   const gltf = useLoader(GLTFLoader, model.url);
   const scene = useMemo(() => gltf.scene.clone(true), [gltf]);
   const scale = model.scale ?? 1;
-  return <primitive object={scene} position-y={model.y ?? 0} scale={[scale, scale, scale]} />;
+  const baseY = model.y ?? 0;
+  const dims = model.dims;
+  const centered = (model.anchor ?? "center") === "center" && dims !== undefined;
+  const position: [number, number, number] = centered
+    ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
+    : [0, baseY, 0];
+  return <primitive object={scene} position={position} scale={[scale, scale, scale]} />;
 }
 
 function resolveModel(
@@ -139,8 +145,9 @@ function resolveModel(
 ): ModelConfig | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== "string") return value;
-  const url = assets.resolve(value)?.url;
-  return url === undefined ? undefined : { url };
+  const ref = assets.resolve(value);
+  if (ref === null) return undefined;
+  return ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims };
 }
 
 function EntityMarker({
@@ -265,15 +272,15 @@ function WorldView({
   entitySprites,
   entityModels,
   objectModels,
-  assets,
   environment: Environment,
+  assets,
   renderEntity,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
   objectModels: Record<string, string | ModelConfig> | undefined;
-  assets: AssetCatalog;
   environment: ComponentType | undefined;
+  assets: AssetCatalog;
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
 }) {
   const ctx = useGameContext();
@@ -385,6 +392,7 @@ function FrameDriver({
   useFrame((_state, rawDt) => {
     try {
     const dt = Math.min(rawDt, 0.05);
+    const gameDt = ctx.time.advance(dt);
     if (tracker.isDown("turnLeft")) yawRef.current += TURN_SPEED * dt;
     if (tracker.isDown("turnRight")) yawRef.current -= TURN_SPEED * dt;
 
@@ -419,7 +427,7 @@ function FrameDriver({
       });
     }
 
-    playable.loop.onTick(ctx, dt);
+    playable.loop.onTick(ctx, gameDt);
 
     if (tracker.wasPressed("tabTarget")) {
       if (ctx.game.commands.has("target.cycle")) ctx.game.commands.run("target.cycle", {});
@@ -714,8 +722,8 @@ export function GamePlayerShell({
             entitySprites={playable.entitySprites}
             entityModels={playable.entityModels}
             objectModels={playable.objectModels}
-            assets={playable.game.assets}
             environment={playable.environment}
+            assets={playable.game.assets}
             renderEntity={playable.renderEntity}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}

@@ -1,42 +1,52 @@
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { AssetSource, IndexEntry } from "./manifest";
+import { readGlbDims } from "./dims";
+import type { AssetSource, IndexEntry, ModelDims } from "./manifest";
 import { sourceById } from "./sources";
 
 export function keyFromFile(file: string): string {
   return file.replace(/\.glb$/i, "");
 }
 
-export function entryForFile(source: AssetSource, file: string): IndexEntry {
+export function entryForFile(source: AssetSource, file: string, dims?: ModelDims): IndexEntry {
   return {
     id: `${source.id}/${keyFromFile(file)}`,
     source: source.id,
     categories: source.categories,
     file,
+    ...(dims === undefined ? {} : { dims }),
   };
 }
 
-function collectGlbFiles(dir: string): string[] {
-  const found: string[] = [];
+function collectGlbFiles(dir: string): { file: string; full: string }[] {
+  const found: { file: string; full: string }[] = [];
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) {
       found.push(...collectGlbFiles(full));
     } else if (/\.glb$/i.test(name)) {
-      found.push(name);
+      found.push({ file: name, full });
     }
   }
   return found;
 }
 
+function measureDims(full: string): ModelDims | undefined {
+  try {
+    return readGlbDims(readFileSync(full)) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] {
   const seen = new Set<string>();
   const entries: IndexEntry[] = [];
-  for (const file of collectGlbFiles(dir).sort((a, b) => a.localeCompare(b))) {
+  for (const { file, full } of collectGlbFiles(dir).sort((a, b) => a.file.localeCompare(b.file))) {
     if (seen.has(file)) continue;
     seen.add(file);
-    entries.push(entryForFile(source, file));
+    entries.push(entryForFile(source, file, measureDims(full)));
   }
   return entries;
 }

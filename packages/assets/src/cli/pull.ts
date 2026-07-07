@@ -3,7 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { downloadArchive, extractGlbs, resolveArchiveUrl, sha256Hex } from "../download";
+import { downloadArchive, extractGlbs, extractTextures, resolveArchiveUrl, sha256Hex } from "../download";
 import { generatedIndex } from "../generated";
 import { reindex } from "../indexGen";
 import { isScrapeDownload, type SingleAsset } from "../manifest";
@@ -83,7 +83,16 @@ async function cmdPull(argv: string[]): Promise<void> {
   if (glbs.length === 0) fail(`no .glb files found in ${sourceId} archive`);
   mkdirSync(outDir, { recursive: true });
   for (const glb of glbs) writeFileSync(join(outDir, glb.file), glb.bytes);
-  console.log(`pulled ${glbs.length} models -> ${outDir}`);
+
+  const textures = extractTextures(archive);
+  for (const texture of textures) {
+    const dest = join(outDir, texture.file);
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, texture.bytes);
+  }
+
+  const textureNote = textures.length > 0 ? ` + ${textures.length} texture(s)` : "";
+  console.log(`pulled ${glbs.length} models${textureNote} -> ${outDir}`);
 }
 
 function readSingles(): SingleAsset[] {

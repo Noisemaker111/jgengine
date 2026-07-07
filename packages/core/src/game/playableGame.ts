@@ -1,5 +1,6 @@
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { GameContext, GameContextContent } from "../runtime/gameContext";
+import type { ModelDims } from "../scene/assetCatalog";
 import type { GameDefinition, GameLoop } from "./defineGame";
 
 export interface CameraFollowState {
@@ -64,6 +65,10 @@ export interface ModelConfig {
   url: string;
   scale?: number;
   y?: number;
+  /** How the model registers on its placement point. `"center"` (default) horizontally centers the measured footprint on the point and ground-snaps its lowest vertex to the point's Y — the correct behavior for corner-pivot modular kits. `"origin"` renders at the raw GLB origin (legacy). */
+  anchor?: "center" | "origin";
+  /** Measured footprint/center/minY; supplied automatically when the model resolves through an `@jgengine/assets` catalog. Required for `anchor: "center"` to take effect. */
+  dims?: ModelDims;
 }
 
 export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never> {

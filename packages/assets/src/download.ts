@@ -7,6 +7,12 @@ export interface ExtractedGlb {
   bytes: Uint8Array;
 }
 
+export interface ExtractedTexture {
+  /** Path relative to the pack output dir, e.g. "Textures/colormap.png". */
+  file: string;
+  bytes: Uint8Array;
+}
+
 function resolveRelative(path: string, pageUrl: string): string {
   try {
     return new URL(path, pageUrl).toString();
@@ -63,6 +69,24 @@ export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
     if (!byName.has(base)) byName.set(base, bytes);
   }
   return Array.from(byName, ([file, bytes]) => ({ file, bytes })).sort((a, b) =>
+    a.file.localeCompare(b.file),
+  );
+}
+
+const TEXTURE_ENTRY = /(?:^|\/)(Textures\/[^/]+)$/i;
+
+export function extractTextures(archive: Uint8Array): ExtractedTexture[] {
+  const entries = unzipSync(archive, {
+    filter: (file) => TEXTURE_ENTRY.test(file.name),
+  });
+  const byRel = new Map<string, Uint8Array>();
+  for (const [path, bytes] of Object.entries(entries)) {
+    const match = path.match(TEXTURE_ENTRY);
+    if (match === null) continue;
+    const rel = match[1]!;
+    if (!byRel.has(rel)) byRel.set(rel, bytes);
+  }
+  return Array.from(byRel, ([file, bytes]) => ({ file, bytes })).sort((a, b) =>
     a.file.localeCompare(b.file),
   );
 }
