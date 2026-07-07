@@ -11,7 +11,8 @@
 | G3 Physics constraints | opus | claude/gaps-physics-actors | ✅ DONE (green) | #127 |
 | G9 Crafting/tech/production | opus | claude/gaps-crafting | ✅ DONE (green) | #132 |
 | G11 Survival & environment | opus | claude/gaps-survival | ✅ DONE (green) | #137 |
-| G18 Audio & voice | sonnet | claude/gaps-audio | in-flight | — |
+| G18 Audio & voice | sonnet | claude/gaps-audio | ✅ DONE (green) | #141 |
+| G22 Player embodiment & expression | sonnet | claude/gaps-embodiment (stack→gaps-camera-rigs) | in-flight | — |
 | G7 Character combat feel | opus | claude/gaps-combat-feel | ✅ DONE (green) | #134 |
 | G6 Abilities/resources/cooldowns | opus | claude/gaps-abilities (stack→gaps-combat-feel) | ✅ DONE (green) | #139 |
 | G20 Interaction verbs & minigames | sonnet | claude/gaps-interaction | in-flight | — |
@@ -25,8 +26,9 @@
 | G14 Traversal & destruction | opus | claude/gaps-traversal (stack→gaps-physics-actors) | ✅ DONE (green) | #140 |
 | G21 Sensors/vision/observer | sonnet | claude/gaps-sensors (stack→gaps-camera-rigs) | in-flight | — |
 | G5 Placement & building | opus | claude/gaps-building (stack→gaps-nav-pointer) | ✅ DONE (green) | #136 |
-| G17 Objective/mode/session | opus | claude/gaps-session (stack→gaps-item-gear) | in-flight | — |
-| G19,G22 | — | — | todo | — |
+| G17 Objective/mode/session | opus | claude/gaps-session (stack→gaps-item-gear) | ✅ DONE (green) | #142 |
+| G19 | — | — | todo (stack→gaps-vehicles, launch when G13 opens) | — |
+G18 added domain `audio/` (audioFalloff); `time/beatClock`; `ws/voiceChannel`; `playableGame.audio/entitySounds`.
 G14 added `physics/traversal` (Grapple/Glide), `world/carve` (VoxelVolume/CarvableField), `physics/structure` (StructureGraph→debris).
 G6 added `combat/abilityKit`, `stats/eventMeter` (on accumulatorMeter), `scene/autoTarget`, `combat/resistance`, `game/runDraft`; react `useAbilitySlots`.
 G12 extended `world/{markers,fog,minimap}`, `game/ping` (rides party+feed).
