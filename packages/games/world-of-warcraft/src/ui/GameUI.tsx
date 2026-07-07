@@ -20,6 +20,7 @@ import { PlayerFrame } from "./components/PlayerFrame";
 import { PossessionBadge } from "./components/PossessionBadge";
 import { QuestTracker } from "./components/QuestTracker";
 import { TargetFrame } from "./components/TargetFrame";
+import { UltStreakBars } from "./components/UltStreakBars";
 
 export function GameUI() {
   const openPanel = useOpenPanel();
@@ -58,7 +59,8 @@ export function GameUI() {
         <FishingBar />
         <FloatingCombatText message={combatText} />
       </div>
-      <div className="col-start-2 row-start-4 flex flex-col items-center gap-1 justify-self-center self-end">
+      <div className="col-start-2 row-start-4 flex flex-col items-center gap-1.5 justify-self-center self-end">
+        <UltStreakBars />
         <Hotbar onStatus={setCombatText} />
         <GoldDisplay />
       </div>

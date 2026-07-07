@@ -3,11 +3,7 @@ import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
 import { captureChance, rollCapture } from "@jgengine/core/scene/captureCheck";
 import type { ItemUseHandler, ItemUseRejection } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import {
-  flashAbility,
-  isAbilityReady,
-  startAbilityCooldown,
-} from "../combat/abilityCooldowns";
+import { canCastAbility, commitAbilityCast } from "../combat/playerKits";
 import { queueProjectileShot } from "../combat/pendingProjectiles";
 import {
   endFishingSession,
@@ -35,12 +31,8 @@ function manaCost(ctx: GameContext, itemId: string): number {
   return ctx.item.weapon.getStat(itemId, "manaCost") ?? 0;
 }
 
-function cooldownSeconds(ctx: GameContext, itemId: string): number {
-  return ctx.item.weapon.getStat(itemId, "cooldownSeconds") ?? 0;
-}
-
 function rejectOnCooldown(_ctx: GameContext, from: string, itemId: string): ItemUseRejection | null {
-  if (!isAbilityReady(from, itemId)) return { reason: "Ability on cooldown" };
+  if (!canCastAbility(from, itemId)) return { reason: "Ability on cooldown" };
   return null;
 }
 
@@ -57,10 +49,8 @@ function spendMana(ctx: GameContext, from: string, itemId: string): void {
   if (cost > 0) ctx.scene.entity.stats.delta(from, "mana", -cost);
 }
 
-function completeUse(ctx: GameContext, from: string, itemId: string): void {
-  const now = performance.now() / 1000;
-  startAbilityCooldown(from, itemId, cooldownSeconds(ctx, itemId));
-  flashAbility(from, itemId, now);
+function completeUse(_ctx: GameContext, from: string, itemId: string): void {
+  commitAbilityCast(from, itemId);
 }
 
 function fallbackAim(ctx: GameContext, from: string): Aim {

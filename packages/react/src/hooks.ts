@@ -1,5 +1,7 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
+import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import type { GameEvents } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/game/feed";
 import type { QuestInstance } from "@jgengine/core/game/quest";
@@ -135,4 +137,50 @@ export function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T
     if (player === null) return null;
     return resolveActivePrompt({ x: player.position[0], z: player.position[2] }, prompts);
   });
+}
+
+function useEngineHeartbeat(intervalMs: number): void {
+  const ctx = useGameContext();
+  useSyncExternalStore(ctx.subscribe, ctx.version, ctx.version);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (intervalMs <= 0 || typeof window === "undefined") return undefined;
+    const id = window.setInterval(() => setTick((current) => current + 1), intervalMs);
+    return () => window.clearInterval(id);
+  }, [intervalMs]);
+}
+
+export interface AbilitySlotBindingOptions {
+  intervalMs?: number;
+}
+
+export function useAbilitySlots(
+  kit: AbilityKit,
+  resourceAvailable?: number,
+  options?: AbilitySlotBindingOptions,
+): AbilitySlotSnapshot[] {
+  useEngineHeartbeat(options?.intervalMs ?? 80);
+  return kit.snapshot(resourceAvailable);
+}
+
+export function useAbilitySlot(
+  kit: AbilityKit,
+  slotId: string,
+  resourceAvailable?: number,
+  options?: AbilitySlotBindingOptions,
+): AbilitySlotSnapshot | null {
+  useEngineHeartbeat(options?.intervalMs ?? 80);
+  return kit.state(slotId, resourceAvailable);
+}
+
+export interface EventMeterView {
+  value: number;
+  fraction: number;
+  tier: string | null;
+  ready: boolean;
+}
+
+export function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView {
+  useEngineHeartbeat(options?.intervalMs ?? 80);
+  return { value: meter.value(), fraction: meter.fraction(), tier: meter.tier(), ready: meter.ready() };
 }

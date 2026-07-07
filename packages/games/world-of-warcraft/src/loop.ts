@@ -12,7 +12,13 @@ import { forms, WOLF_FORM_ID, WOLF_FORM_DURATION_SECONDS } from "./forms";
 import { quests } from "./quests/catalog";
 import { applyLevelUps, grantXp } from "./progression/curves";
 import { TAB_TARGET_MAX_DISTANCE } from "./combat/constants";
-import { tickAbilityCooldowns } from "./combat/abilityCooldowns";
+import {
+  recordDamageTaken,
+  recordKill,
+  resetPlayerKits,
+  seedPreviewKits,
+  tickPlayerKits,
+} from "./combat/playerKits";
 import { tickPendingProjectiles } from "./combat/pendingProjectiles";
 import { closePanels, openDialogue, scrollHotbar, togglePanel } from "./ui/uiController";
 import { MOB_SPAWNS, TOWN_SPAWN, setupWorld, type MobSpawnPoint } from "./world/setup";
@@ -84,14 +90,18 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
 
   if (event.reason.kind === "player_kill" && event.reason.killerUserId === ctx.player.userId) {
     grantXp(ctx, event.reason.killerUserId, enemy.xp);
+    recordKill(ctx.player.userId);
   }
 }
+
+const PREVIEW_USER_ID = "ui-preview";
 
 function onInit(ctx: GameContext): void {
   activeMobs.clear();
   attackCooldowns.clear();
   mobRespawns = [];
   playerRespawn = null;
+  resetPlayerKits();
 
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
@@ -299,6 +309,7 @@ function tickMobs(ctx: GameContext, dt: number): boolean {
       } else if (cooldown === 0 && ctx.scene.entity.canReceive(userId, "damage") === null) {
         ctx.scene.entity.effect({ from: mobId, to: userId, effect: "damage", via: { amount: def.melee.damage } });
         attackCooldowns.set(mobId, def.melee.cooldownSeconds);
+        recordDamageTaken(userId);
       }
     } else if (distanceBetween(mob.position, spawn.position) > def.wanderRadius) {
       const next = ctx.scene.entity.moveToward(mobId, spawn.position, {
@@ -337,8 +348,58 @@ function tickTargetRange(ctx: GameContext): void {
   }
 }
 
+const FEEL_ELEMENTS = ["fire", "frost", "lightning", "arcane"];
+let telegraphTimer = 0;
+let critTimer = 0;
+
+function tickCombatFeel(ctx: GameContext, dt: number): void {
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  if (player === null) return;
+
+  telegraphTimer += dt;
+  if (telegraphTimer >= 0.35) {
+    telegraphTimer = 0;
+    ctx.scene.entity.telegraph({
+      from: ctx.player.userId,
+      shape: { kind: "circle", radius: 3.5 },
+      at: [player.position[0] - 3.5, player.position[1], player.position[2] + 7],
+      windupMs: 2600,
+      kind: "danger",
+    });
+    ctx.scene.entity.telegraph({
+      from: ctx.player.userId,
+      shape: { kind: "cone", radius: 8, angle: Math.PI / 2.6 },
+      at: [player.position[0] + 3, player.position[1], player.position[2] + 1],
+      dir: 0,
+      windupMs: 2600,
+      kind: "warn",
+    });
+  }
+
+  critTimer += dt;
+  if (critTimer >= 0.16) {
+    critTimer = 0;
+    const roll = Math.random();
+    ctx.scene.entity.floatText({
+      instanceId: ctx.player.userId,
+      text: String(140 + Math.floor(Math.random() * 520)),
+      kind: "damage",
+      crit: roll > 0.55,
+      scale: 1.4,
+      ...(roll > 0.35 ? { element: FEEL_ELEMENTS[Math.floor(Math.random() * FEEL_ELEMENTS.length)] } : {}),
+    });
+  }
+}
+
 function onTick(ctx: GameContext, dt: number): void {
-  tickAbilityCooldowns(dt, performance.now() / 1000);
+  if (ctx.player.userId === PREVIEW_USER_ID) {
+    seedPreviewKits(ctx.player.userId, (value) => {
+      ctx.scene.entity.stats.set(ctx.player.userId, "mana", { current: value });
+    });
+    return;
+  }
+  tickCombatFeel(ctx, dt);
+  tickPlayerKits(ctx.player.userId, dt);
   tickPendingProjectiles(dt, (shotId) => {
     ctx.scene.entity.settleProjectile(shotId);
   });

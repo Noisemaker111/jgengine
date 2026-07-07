@@ -65,7 +65,14 @@ import {
   POINTER_OBJECT_KEY,
   type PointerService,
 } from "./pointer/pointerService";
-import { ProjectileTracers, Reticle, WorldEntityBars, WorldFloatText } from "./world/WorldHud";
+import {
+  CombatCameraShake,
+  ProjectileTracers,
+  Reticle,
+  WorldEntityBars,
+  WorldFloatText,
+  WorldTelegraphs,
+} from "./world/WorldHud";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -966,8 +973,10 @@ export function GamePlayerShell({
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
           <WorldItems config={playable.worldItem} />
+          <WorldTelegraphs />
           <WorldFloatText />
           <ProjectileTracers />
+          <CombatCameraShake />
           <AudioListener engine={audioEngine} />
           <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
           <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />

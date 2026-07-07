@@ -5,10 +5,21 @@ import {
   type EffectInput,
   type EffectResult,
   type EffectSystem,
+  type EffectVia,
   type ReceiveMap,
   type SingleTargetEffectInput,
 } from "../combat/effects";
 import { createProjectileSystem, type ProjectileSystem } from "../combat/projectiles";
+import {
+  resolveHitReaction,
+  type HitReaction,
+  type HitReactionConfig,
+} from "../combat/hitReaction";
+import {
+  pointInTelegraph,
+  type TelegraphConfig,
+  type TelegraphShape,
+} from "../combat/telegraph";
 import {
   createCommandRegistry,
   type CommandDefinition,
@@ -137,6 +148,33 @@ export interface FloatTextInput {
   text?: string;
   kind?: string;
   amount?: number;
+  hitType?: string;
+  element?: string;
+  crit?: boolean;
+  scale?: number;
+}
+
+export interface TelegraphInput {
+  from: string;
+  shape: TelegraphShape;
+  at: [number, number, number];
+  dir?: number;
+  windupMs: number;
+  kind?: string;
+  effect?: {
+    effect: string;
+    via?: EffectVia;
+    radius?: number;
+    falloff?: "linear" | "none";
+    los?: boolean;
+  };
+}
+
+export interface HitReactionInput {
+  from: string;
+  to: string;
+  config: HitReactionConfig;
+  power?: number;
 }
 
 export interface SceneEntityContext {
@@ -147,6 +185,8 @@ export interface SceneEntityContext {
   list(): readonly SceneEntity[];
   stats: EntityStatsApi;
   floatText(input: FloatTextInput): void;
+  telegraph(input: TelegraphInput): () => void;
+  hitReaction(input: HitReactionInput): HitReaction | null;
   setTarget(fromId: string, toId: string | null): void;
   getTarget(fromId: string): string | null;
   cycleTarget(fromId: string, options?: CycleTargetOptions): string | null;
@@ -645,7 +685,69 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     };
     if (input.instanceId !== undefined) event.instanceId = input.instanceId;
     if (input.amount !== undefined) event.amount = input.amount;
+    if (input.hitType !== undefined) event.hitType = input.hitType;
+    if (input.element !== undefined) event.element = input.element;
+    if (input.crit !== undefined) event.crit = input.crit;
+    if (input.scale !== undefined) event.scale = input.scale;
     events.emit("entity.floatText", event);
+  }
+
+  let telegraphSeq = 0;
+
+  function fireTelegraph(input: TelegraphInput): () => void {
+    const id = telegraphSeq++;
+    const telegraphEvent: GameEventMap["combat.telegraph"] = {
+      id,
+      shape: input.shape,
+      position: [input.at[0], input.at[1], input.at[2]],
+      windupMs: input.windupMs,
+      kind: input.kind ?? "danger",
+    };
+    if (input.dir !== undefined) telegraphEvent.dir = input.dir;
+    events.emit("combat.telegraph", telegraphEvent);
+    const bound = input.effect;
+    if (bound === undefined) return () => {};
+    const config: TelegraphConfig = { shape: input.shape, at: input.at, windupMs: input.windupMs };
+    if (input.dir !== undefined) config.dir = input.dir;
+    return time.after(input.windupMs / 1000, () => {
+      const targets = entities.list().filter((entity) => pointInTelegraph(config, entity.position));
+      for (const target of targets) {
+        applyEffectAndFloat({
+          from: input.from,
+          to: target.id,
+          effect: bound.effect,
+          ...(bound.via === undefined ? {} : { via: bound.via }),
+        });
+      }
+    });
+  }
+
+  function applyHitReaction(input: HitReactionInput): HitReaction | null {
+    const attacker = entities.get(input.from);
+    const target = entities.get(input.to);
+    if (target === null) return null;
+    const attackerPos = attacker?.position ?? target.position;
+    const reaction = resolveHitReaction(input.config, {
+      attackerPos,
+      targetPos: target.position,
+      ...(input.power === undefined ? {} : { power: input.power }),
+    });
+    entities.setPose(input.to, {
+      position: [
+        target.position[0] + reaction.impulse[0],
+        target.position[1] + reaction.impulse[1],
+        target.position[2] + reaction.impulse[2],
+      ],
+      rotationY: target.rotationY,
+    });
+    const reactionEvent: GameEventMap["combat.hitReaction"] = {
+      instanceId: input.to,
+      position: [target.position[0], target.position[1], target.position[2]],
+      hitstopMs: reaction.hitstopMs,
+    };
+    if (reaction.shake !== null) reactionEvent.shake = reaction.shake;
+    events.emit("combat.hitReaction", reactionEvent);
+    return reaction;
   }
 
   function applyEffectAndFloat(input: EffectInput): EffectResult[] {
@@ -712,6 +814,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         list: entities.list,
         stats: entityStats,
         floatText: emitFloatText,
+        telegraph: fireTelegraph,
+        hitReaction: applyHitReaction,
         setTarget: targeting.setTarget,
         getTarget: targeting.getTarget,
         cycleTarget: targeting.cycleTarget,
