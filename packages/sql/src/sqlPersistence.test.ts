@@ -104,6 +104,44 @@ test("leaderboard increments accumulate, order, and filter by server", async () 
   expect(await persistence.getLeaderboardProfile({ gameId: "demo", userId: "alice" })).toEqual({ gold: 9 });
 });
 
+test("resetScenario wipes run scope while account meta persists", async () => {
+  const persistence = await makePersistence();
+  await persistence.saveServer(makeServer());
+  await persistence.saveChunks("srv-1", [
+    { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 30 },
+  ]);
+  await persistence.saveProfile({
+    userId: "alice",
+    gameId: "demo",
+    playerState: {
+      userId: "alice",
+      inventories: { bag: [{ item: "run_loot", count: 3 }] },
+      economy: { meta_shards: 40 },
+      unlocks: ["talent_forge"],
+      session: {},
+    },
+    revision: 2,
+    updatedAt: 20,
+  });
+
+  await persistence.resetScenario?.({
+    gameId: "demo",
+    serverId: "srv-1",
+    wipeChunks: true,
+    wipeServerSession: true,
+    resetPlayers: "run",
+    runFields: ["inventories"],
+  });
+
+  expect(await persistence.loadServer("srv-1")).toBeNull();
+  expect(await persistence.loadChunks("srv-1")).toEqual([]);
+  const profile = await persistence.loadProfile({ userId: "alice", gameId: "demo" });
+  expect(profile?.playerState.inventories).toEqual({});
+  expect(profile?.playerState.economy).toEqual({ meta_shards: 40 });
+  expect(profile?.playerState.unlocks).toEqual(["talent_forge"]);
+  expect(profile?.revision).toBe(3);
+});
+
 test("savePlan applies leaderboard, profiles, chunks, and server atomically", async () => {
   const persistence = await makePersistence();
   const server = makeServer();

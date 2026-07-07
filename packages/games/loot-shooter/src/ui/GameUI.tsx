@@ -2,10 +2,19 @@ import { DeathScreen, LevelUpFlash, ToastStack } from "@jgengine/react/component
 import { HealthFrame } from "./components/HealthFrame";
 import { Hotbar } from "./components/Hotbar";
 import { PickupPrompt } from "./components/PickupPrompt";
+import { DownedBanner, ExtractionTimer, RingWarning } from "./components/SessionHud";
 
 export function GameUI() {
   return (
     <div className="pointer-events-none absolute inset-0 z-20 grid h-full w-full grid-cols-[minmax(0,18rem)_1fr_minmax(0,18rem)] grid-rows-[auto_1fr_auto] gap-3 p-4 font-sans text-slate-100">
+      <div className="col-start-2 row-start-1 justify-self-center self-start">
+        <RingWarning />
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 top-[28%] z-30 flex justify-center">
+        <DownedBanner />
+      </div>
+
       <div className="col-start-3 row-start-1 flex flex-col items-end gap-1.5 justify-self-end">
         <ToastStack
           action="loot.granted"
@@ -32,7 +41,8 @@ export function GameUI() {
         <PickupPrompt />
       </div>
 
-      <div className="col-start-2 row-start-3 justify-self-center self-end pb-2">
+      <div className="col-start-2 row-start-3 flex flex-col items-center gap-3 justify-self-center self-end pb-2">
+        <ExtractionTimer />
         <Hotbar />
       </div>
 

@@ -1,4 +1,5 @@
 import type { LeaderboardScope } from "../game/leaderboard";
+import type { NormalizedScenarioReset } from "./persistenceScope";
 import type { SaveConfig } from "./save";
 import {
   isSaveEnabled,
@@ -154,6 +155,7 @@ export function toServerListing(record: GameServerRecord): ServerListing {
 
 export type HostPersistence = {
   savePlan?: (plan: ServerPersistPlan) => Promise<void>;
+  resetScenario?: (reset: NormalizedScenarioReset) => Promise<void>;
   loadServer: (serverId: string) => Promise<GameServerRecord | null>;
   saveServer: (record: GameServerRecord) => Promise<void>;
   listServers: (gameId: string) => Promise<GameServerRecord[]>;

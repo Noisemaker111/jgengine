@@ -54,6 +54,8 @@ const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario
     import("@dogfood/world-of-warcraft/ui/uiPreviewScenario").then(
       (module) => module.interactionShowcaseScenario,
     ),
+  "loot-shooter": () =>
+    import("@dogfood/loot-shooter").then((module) => module.lootShooterUiScenario),
 };
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -91,7 +93,9 @@ function DevApp() {
       setPlayable(withCameraPreset(loaded));
     });
     const loadScenario = uiScenarioRegistry[GAME_ID];
-    if (loadScenario !== undefined) void loadScenario().then((loaded) => setScenario(() => loaded));
+    if (MODE === "ui" && loadScenario !== undefined) {
+      void loadScenario().then((resolved) => setScenario(() => resolved));
+    }
   }, []);
   if (playable === null) {
     return (
