@@ -178,10 +178,66 @@ bun add @jgengine/core @jgengine/react @jgengine/shell react react-dom three thr
 bun add -d @tailwindcss/vite tailwindcss   # HUD styling (Vite + Tailwind v4)
 ```
 
-A single game's standalone entry mounts `GameHost` (`@jgengine/shell/GameHost`) over the `game` your `game.config.ts` exports:
+A single game's standalone entry mounts `GameHost` (`@jgengine/shell/GameHost`) over the `game` your `game.config.ts` exports. The full standalone harness is four small files plus a script — this is exactly the shape every `Games/*` game ships, so `bun dev` plays it on its own with no host app:
+
+```html
+<!-- index.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Game</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+```
+
+```ts
+// vite.config.ts — monorepo-aware: the alias branch only fires when this folder
+// sits inside the engine repo checkout; copied anywhere else, @jgengine/* resolves
+// from npm dist and the alias list is empty
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+const engineSrc = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: existsSync(engineSrc("core"))
+      ? [
+          { find: /^@jgengine\/core\/(.*)$/, replacement: `${engineSrc("core")}/$1` },
+          { find: /^@jgengine\/react\/(.*)$/, replacement: `${engineSrc("react")}/$1` },
+          { find: /^@jgengine\/ws\/(.*)$/, replacement: `${engineSrc("ws")}/$1` },
+          { find: /^@jgengine\/shell\/(.*)$/, replacement: `${engineSrc("shell")}/$1` },
+          { find: /^@jgengine\/assets$/, replacement: `${engineSrc("assets")}/index.ts` },
+          { find: /^@jgengine\/assets\/(.*)$/, replacement: `${engineSrc("assets")}/$1` },
+        ]
+      : [],
+  },
+});
+```
+
+```css
+/* src/index.css */
+@import "tailwindcss";
+@source "../node_modules/@jgengine/react/dist";
+@source "../node_modules/@jgengine/shell/dist";
+```
+
+Inside the engine repo the two `@source` lines point at `../../../packages/react/src` and `../../../packages/shell/src` instead (see any `Games/*/src/index.css`) — same file, different `@source` targets depending on where dist lives.
 
 ```tsx
 // main.tsx
+import "./index.css";
+
 import { createRoot } from "react-dom/client";
 import { GameHost } from "@jgengine/shell/GameHost";
 import { game } from "./game.config";
@@ -190,6 +246,8 @@ const root = document.getElementById("root");
 if (root === null) throw new Error("main: missing #root mount element");
 createRoot(root).render(<GameHost playable={game} />);
 ```
+
+Add `"dev": "vite"` to `package.json`'s `scripts` — `bun dev` then launches the game standalone.
 
 A multi-game host (a launcher, a dev registry) wires `GamePlayerShell` directly over a `GameRegistry`:
 
@@ -208,7 +266,7 @@ function App() {
 }
 ```
 
-HUD styling is Tailwind v4: register the `@tailwindcss/vite` plugin in `vite.config.ts` (`plugins: [react(), tailwindcss()]`) and add `@source "../node_modules/@jgengine/shell";` (and your game source dirs) to your CSS entry, or the HUD renders unstyled. Then build the game itself under `src/` per the layout below — `src/game.config.ts` is the single entry, defined with `defineGame` from `@jgengine/shell/defineGame`.
+HUD styling is Tailwind v4 via the `index.css` above — without its `@source` lines the HUD renders unstyled. Then build the game itself under `src/` per the layout below — `src/game.config.ts` is the single entry, defined with `defineGame` from `@jgengine/shell/defineGame`.
 
 ## Scope
 

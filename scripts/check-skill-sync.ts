@@ -16,7 +16,7 @@ const PKG_DIRS: Record<string, string> = {
   assets: "packages/assets/src",
 };
 
-const ALLOW_DOC_REFS = new Set(["@jgengine/core/CHANGELOG"]);
+const ALLOW_DOC_REFS = new Set(["@jgengine/core/CHANGELOG", "@jgengine/react/dist", "@jgengine/shell/dist"]);
 
 const INTERNAL_DOMAINS = new Set(["store", "assets"]);
 

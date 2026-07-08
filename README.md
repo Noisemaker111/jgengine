@@ -48,6 +48,8 @@ Then prompts like "make a tower defense game with jgengine" pick up the full eng
 
 It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
+Every game under `Games/*` is also playable on jgengine.com itself, through the Games header dropdown at `/play/?game=<id>` — a static build of the `apps/dev` runner the site bundles at build time. Outside the browser, `bun dev` inside any `Games/<id>` directory (or an external game scaffolded per `jgengine-api`'s standalone dev harness) launches that same game on its own, no host app required.
+
 ## Layering
 
 `core` imports nothing. `ws` and `sql` import only `core`. `react` adds React, `convex` adds Convex + React, `node` adds Node builtins + `ws`, `shell` adds React + three.js (the only package that renders).

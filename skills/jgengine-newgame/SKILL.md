@@ -31,7 +31,7 @@ Your first substantive response is the complete plan for the **full game** — e
 - **System list** — every signature system of the named fantasy, at full depth (weapon mods and damage types, not just "guns"). A cut is a last resort, recorded with its reason.
 - **Content budget** — numbers per system, sized by what the fantasy needs, not what's easy to type: items, enemy types, quests, zones, vendors, recipes (floors in "Content scale" below).
 - **Asset plan** — which packs (per `jgengine-assets`) cover ground, structures, props, characters/enemies, items; pack → catalog-id mapping; one style family.
-- **File tree** — one line per file: the skeleton at the top of `src/` (`game.config.ts`, `index.tsx`, `main.tsx`, `loop.ts`, `world.ts`) plus every catalog, generator, handler, quest, curve, and UI component under `src/game/`.
+- **File tree** — one line per file: the skeleton at the top of `src/` (`game.config.ts`, `index.tsx`, `main.tsx`, `loop.ts`, `world.ts`, `index.css`) plus the root `index.html` + `vite.config.ts` that make the game a standalone Vite app, plus every catalog, generator, handler, quest, curve, and UI component under `src/game/`.
 - **Catalog ids** — the archetype entity / item / object / loot-table / quest ids; the generators below produce the breadth.
 - **Keybind table** — lives in `keybinds.ts` (named actions + `hotbarSlotBindings(n)`); action → key, checked: one key, one action — including mode toggles (aim-toggle on `V` plus a V.A.T.S. key on `V` is the classic collision).
 - **UI zone map** — which HUD cluster lives in which `GameUI.tsx` grid zone.
@@ -89,7 +89,7 @@ No phase ships a flat plane with squares on it. The floor, structures, and props
 The game is done when the **entire blueprint** is delivered:
 
 1. Every blueprinted system finished whole; every content budget met — verified by counting catalog entries, not vibes.
-2. Loads through `GamePlayerShell` via your `GameRegistry`; core fantasy playable end to end within 60 seconds of spawning.
+2. Loads through `GamePlayerShell` via your `GameRegistry`; core fantasy playable end to end within 60 seconds of spawning. `bun dev` inside the game directory also launches it standalone, and a game under `Games/*` auto-registers in the dev runner and the jgengine.com Games dropdown — no registry entry, alias, or dependency to wire by hand.
 3. Full HUD per `jgengine-ui`; every binding visible; camera tuned via `camera` in `defineGame({...})` (defaults untouched means the feel was never checked).
 4. World dressed per "The world is content too"; zero default-material primitives anywhere.
 5. World content verified deterministically: for any game with an `environment()` world, a co-located `<game>.world.test.ts` asserts `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) is non-empty with the expected terrain/building/water/vegetation/weather counts. This is the scene-correctness gate — it runs in `bun test`, catches empty, miscounted, or flat-terrain scenes, and never launches a browser.

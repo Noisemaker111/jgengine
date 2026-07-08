@@ -12,7 +12,7 @@ The primary engine-development repo: a genre-agnostic, pure-TypeScript game engi
 
 ## Stack
 
-- bun workspaces: `packages/*` (the eight `@jgengine/*` packages, consumers import by path), `Games/*` (private, source-consumed, one directory per game, built via the `harvest-game` skill), `apps/*` (`dev` = Vite game runner + screenshot target with registry in `apps/dev/src/main.tsx`; `desktop` = Tauri wrapper; `web` = jgengine.com, standalone workspace outside the root scripts), `examples/*` (deployable host examples).
+- bun workspaces: `packages/*` (the eight `@jgengine/*` packages, consumers import by path), `Games/*` (private, source-consumed, one directory per game, built via the `harvest-game` skill), `apps/*` (`dev` = Vite game runner + screenshot target, games auto-register from `Games/*` via a glob in `apps/dev/src/main.tsx` — no manual registry entry; per-game `bun dev` plays a game standalone and jgengine.com serves the same runner at `/play`; `desktop` = Tauri wrapper; `web` = jgengine.com, standalone workspace outside the root scripts), `examples/*` (deployable host examples).
 - The compiler is `tsgo` (`@typescript/native-preview`), not `tsc`. Strict TS everywhere; no `any` escapes in engine code.
 - `skills/` is the spec — build games from `jgengine-api`, `jgengine-ui`, `jgengine-assets`, `jgengine-newgame`, not by copying other games. `check-types` also validates that the skills match the real API surface.
 - This is the engine repo: fix engine gaps and doc errors directly here. The only issues filed from inside it are the `[FEATURE]` gap issues from the `harvest-game` skill.
