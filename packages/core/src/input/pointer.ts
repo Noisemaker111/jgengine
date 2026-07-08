@@ -20,6 +20,8 @@ export interface PointerHit {
   uv?: { u: number; v: number };
   /** Sampled `#rrggbb` color + PBR params from the hit mesh's `MeshStandardMaterial` (#151.2); `null`/unset when the hit surface has no standard material (e.g. the ground plane). */
   material?: { color: string; metalness?: number; roughness?: number } | null;
+  /** Index of the hit instance when the intersected mesh is a `THREE.InstancedMesh`; absent otherwise. */
+  instanceId?: number;
 }
 
 export type PointerButton = "primary" | "secondary" | "middle";

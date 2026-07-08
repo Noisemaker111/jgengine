@@ -52,9 +52,8 @@ export interface PhysicsStats {
   stepMs: number;
 }
 
-export interface AddBodyOptions {
+export interface BodyCommonOptions {
   position: readonly [number, number, number];
-  halfExtents: readonly [number, number, number];
   velocity?: readonly [number, number, number];
   /** ≤ 0 or omitted with `static` → infinite mass (immovable collider). Default 1. */
   mass?: number;
@@ -63,6 +62,22 @@ export interface AddBodyOptions {
   /** Seed the body asleep (a settled bed pays no integration cost until woken). */
   asleep?: boolean;
 }
+
+export interface BoxBodyOptions extends BodyCommonOptions {
+  shape?: "box";
+  halfExtents: readonly [number, number, number];
+}
+
+/** The radius fills all three half-extent columns, so broadphase and bounds see the sphere's enclosing AABB. */
+export interface SphereBodyOptions extends BodyCommonOptions {
+  shape: "sphere";
+  radius: number;
+}
+
+export type AddBodyOptions = BoxBodyOptions | SphereBodyOptions;
+
+export const SHAPE_BOX = 0;
+export const SHAPE_SPHERE = 1;
 
 /**
  * `hinge`/`fixed`/`distance` are hard bilateral constraints; `spring` is a soft PD constraint.
@@ -152,6 +167,8 @@ export class PhysicsWorld {
   readonly halfZ: Float32Array;
   readonly invMass: Float32Array;
   readonly flags: Uint8Array;
+  /** `SHAPE_BOX` (0) or `SHAPE_SPHERE` (1) per body; spheres keep their radius in halfX/halfY/halfZ. */
+  readonly shape: Uint8Array;
   /** 1 for a body that took part in a contact this frame; reset each `step()`. Render tint reads this. */
   readonly contact: Uint8Array;
 
@@ -258,6 +275,7 @@ export class PhysicsWorld {
     this.halfZ = new Float32Array(cap);
     this.invMass = new Float32Array(cap);
     this.flags = new Uint8Array(cap);
+    this.shape = new Uint8Array(cap);
     this.contact = new Uint8Array(cap);
     this.sleepTimer = new Uint16Array(cap);
     this.prevX = new Float32Array(cap);
@@ -466,9 +484,17 @@ export class PhysicsWorld {
     this.velX[i] = v?.[0] ?? 0;
     this.velY[i] = v?.[1] ?? 0;
     this.velZ[i] = v?.[2] ?? 0;
-    this.halfX[i] = options.halfExtents[0];
-    this.halfY[i] = options.halfExtents[1];
-    this.halfZ[i] = options.halfExtents[2];
+    if (options.shape === "sphere") {
+      this.halfX[i] = options.radius;
+      this.halfY[i] = options.radius;
+      this.halfZ[i] = options.radius;
+      this.shape[i] = SHAPE_SPHERE;
+    } else {
+      this.halfX[i] = options.halfExtents[0];
+      this.halfY[i] = options.halfExtents[1];
+      this.halfZ[i] = options.halfExtents[2];
+      this.shape[i] = SHAPE_BOX;
+    }
     const isStatic = options.static === true;
     const mass = options.mass ?? 1;
     this.invMass[i] = isStatic || mass <= 0 ? 0 : 1 / mass;
@@ -764,35 +790,86 @@ export class PhysicsWorld {
   }
 
   private resolve(i: number, j: number, restitutionPass: boolean, countPass: boolean): void {
-    const dx = this.posX[j]! - this.posX[i]!;
-    const px = this.halfX[i]! + this.halfX[j]! - Math.abs(dx);
-    if (px <= 0) return;
-    const dy = this.posY[j]! - this.posY[i]!;
-    const py = this.halfY[i]! + this.halfY[j]! - Math.abs(dy);
-    if (py <= 0) return;
-    const dz = this.posZ[j]! - this.posZ[i]!;
-    const pz = this.halfZ[i]! + this.halfZ[j]! - Math.abs(dz);
-    if (pz <= 0) return;
+    let nX = 0;
+    let nY = 0;
+    let nZ = 0;
+    let pen = 0;
+    const sphereI = this.shape[i] === SHAPE_SPHERE;
+    const sphereJ = this.shape[j] === SHAPE_SPHERE;
+    let needsAxisNormal = true;
+    if (sphereI && sphereJ) {
+      const dx = this.posX[j]! - this.posX[i]!;
+      const dy = this.posY[j]! - this.posY[i]!;
+      const dz = this.posZ[j]! - this.posZ[i]!;
+      const radiusSum = this.halfX[i]! + this.halfX[j]!;
+      const dist2 = dx * dx + dy * dy + dz * dz;
+      if (dist2 >= radiusSum * radiusSum) return;
+      const dist = Math.sqrt(dist2);
+      if (dist > 1e-9) {
+        nX = dx / dist;
+        nY = dy / dist;
+        nZ = dz / dist;
+        pen = radiusSum - dist;
+      } else {
+        nY = 1;
+        pen = radiusSum;
+      }
+      needsAxisNormal = false;
+    } else if (sphereI !== sphereJ) {
+      const box = sphereI ? j : i;
+      const sph = sphereI ? i : j;
+      const loX = this.posX[box]! - this.halfX[box]!;
+      const hiX = this.posX[box]! + this.halfX[box]!;
+      const loY = this.posY[box]! - this.halfY[box]!;
+      const hiY = this.posY[box]! + this.halfY[box]!;
+      const loZ = this.posZ[box]! - this.halfZ[box]!;
+      const hiZ = this.posZ[box]! + this.halfZ[box]!;
+      const sx = this.posX[sph]!;
+      const sy = this.posY[sph]!;
+      const sz = this.posZ[sph]!;
+      const dx = sx - (sx < loX ? loX : sx > hiX ? hiX : sx);
+      const dy = sy - (sy < loY ? loY : sy > hiY ? hiY : sy);
+      const dz = sz - (sz < loZ ? loZ : sz > hiZ ? hiZ : sz);
+      const dist2 = dx * dx + dy * dy + dz * dz;
+      if (dist2 > 1e-12) {
+        const radius = this.halfX[sph]!;
+        if (dist2 >= radius * radius) return;
+        const dist = Math.sqrt(dist2);
+        const towardSphere = sph === j ? 1 / dist : -1 / dist;
+        nX = dx * towardSphere;
+        nY = dy * towardSphere;
+        nZ = dz * towardSphere;
+        pen = radius - dist;
+        needsAxisNormal = false;
+      }
+    }
+    if (needsAxisNormal) {
+      const dx = this.posX[j]! - this.posX[i]!;
+      const px = this.halfX[i]! + this.halfX[j]! - Math.abs(dx);
+      if (px <= 0) return;
+      const dy = this.posY[j]! - this.posY[i]!;
+      const py = this.halfY[i]! + this.halfY[j]! - Math.abs(dy);
+      if (py <= 0) return;
+      const dz = this.posZ[j]! - this.posZ[i]!;
+      const pz = this.halfZ[i]! + this.halfZ[j]! - Math.abs(dz);
+      if (pz <= 0) return;
+      if (px <= py && px <= pz) {
+        nX = dx < 0 ? -1 : 1;
+        pen = px;
+      } else if (py <= pz) {
+        nY = dy < 0 ? -1 : 1;
+        pen = py;
+      } else {
+        nZ = dz < 0 ? -1 : 1;
+        pen = pz;
+      }
+    }
 
     if (countPass) {
       this.stats.pairs += 1;
       this.stats.contacts += 1;
       this.contact[i] = 1;
       this.contact[j] = 1;
-    }
-    let nX = 0;
-    let nY = 0;
-    let nZ = 0;
-    let pen: number;
-    if (px <= py && px <= pz) {
-      nX = dx < 0 ? -1 : 1;
-      pen = px;
-    } else if (py <= pz) {
-      nY = dy < 0 ? -1 : 1;
-      pen = py;
-    } else {
-      nZ = dz < 0 ? -1 : 1;
-      pen = pz;
     }
 
     const rvx = this.velX[j]! - this.velX[i]!;

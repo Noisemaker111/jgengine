@@ -184,24 +184,44 @@ export interface EnvironmentWorldFeature {
   pads?: readonly PadEnvironmentDescriptor[];
 }
 
-export interface BiomesWorldConfig {
+export interface WorldGridCell {
+  x: number;
+  z: number;
+  /** Extruded box height for this cell; falls back to the config's `baseHeight`, then `1`. */
+  height?: number;
+  /** Per-cell tint; falls back to the config's `defaultColor`. */
+  color?: string;
+}
+
+/** Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer. */
+export interface WorldGridConfig {
+  cells?: readonly WorldGridCell[];
+  /** World-unit size of one grid cell. Default 1. */
+  cellSize?: number;
+  /** Height used for cells that omit their own `height`. Default 1. */
+  baseHeight?: number;
+  /** Color used for cells that omit their own `color`. */
+  defaultColor?: string;
+}
+
+export interface BiomesWorldConfig extends WorldGridConfig {
   map: string;
   zones: string;
   bounds?: WorldBounds;
 }
 
-export interface VoxelWorldConfig {
+export interface VoxelWorldConfig extends WorldGridConfig {
   seed: string;
   generate?: string;
   streaming?: { radius: number };
 }
 
-export interface PlotsWorldConfig {
+export interface PlotsWorldConfig extends WorldGridConfig {
   city?: string;
   interiors?: string;
 }
 
-export interface TilemapWorldConfig {
+export interface TilemapWorldConfig extends WorldGridConfig {
   map: string;
 }
 

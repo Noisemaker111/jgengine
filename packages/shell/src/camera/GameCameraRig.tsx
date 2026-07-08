@@ -14,6 +14,7 @@ import {
   TopDownRig,
 } from "./cameraRigs";
 import { GameFirstPersonCamera } from "./GameFirstPersonCamera";
+import { GameInspectionCamera } from "./GameInspectionCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
 import { resolveDirectedCamera } from "./rigMath";
 import { CameraShakeContext, createCameraShakeChannel } from "./shakeChannel";
@@ -30,9 +31,27 @@ export interface GameCameraRigProps {
   director?: CameraDirector;
 }
 
+/**
+ * Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to
+ * least specific: an explicit `rig` field always wins; then `perspective:
+ * "first"` (the historical shorthand for `rig: "orbit" | "first"`); then the
+ * mere presence of a rig's own config block selects that rig, checked in the
+ * fixed order below (#207.8) so a config carrying more than one block resolves
+ * deterministically instead of depending on object key order. Set `rig`
+ * explicitly to break a tie when a config legitimately needs more than one
+ * block present (e.g. tuning a fallback rig's block ahead of time).
+ */
 export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind {
   if (config?.rig !== undefined) return config.rig;
   if (config?.perspective === "first") return "first";
+  if (config?.topDown !== undefined) return "topDown";
+  if (config?.rts !== undefined) return "rts";
+  if (config?.shoulder !== undefined) return "shoulder";
+  if (config?.lockOn !== undefined) return "lockOn";
+  if (config?.chase !== undefined) return "chase";
+  if (config?.observer !== undefined) return "observer";
+  if (config?.sideScroll !== undefined) return "sideScroll";
+  if (config?.inspection !== undefined) return "inspection";
   return "orbit";
 }
 
@@ -108,6 +127,8 @@ export function GameCameraRig({
         return <ObserverRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "sideScroll":
         return <SideScrollRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+      case "inspection":
+        return <GameInspectionCamera config={config?.inspection} />;
       case "none":
         return null;
       default:
