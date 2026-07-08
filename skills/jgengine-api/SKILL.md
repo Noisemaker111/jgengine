@@ -1001,7 +1001,7 @@ touch: {
 ```
 
 - **`gestures`** — bind `tap` / `swipeUp` / `swipeDown` / `swipeLeft` / `swipeRight` / `drag` (`{ left?, right?, up?, down?, stepPx? }`, repeats its action every `stepPx` of travel) on the play surface. An action consumed by a gesture is removed from the derived button set.
-- **`buttons`** — curate the on-screen cluster (order preserved; bare string or `{ action, label?, icon? }`); omit to auto-derive one button per remaining bound action. Buttons render a glyph, not text: `iconForAction` (`@jgengine/react/gameui/icons`) resolves the action name to a `GameIconName` (`jump`, `sprint`, `rotateCw`, `hardDrop`, `swap`, `hand`, `restart`, arrows, …), the `label` becomes the `aria-label`; set `icon: "<GameIconName>"` to pick one explicitly or `icon: false` to force the text label.
+- **`buttons`** — curate the on-screen cluster (order preserved; bare string or `{ action, label?, icon? }`); omit to auto-derive one button per remaining bound action. Buttons render a glyph, not text: `iconForAction` (`@jgengine/react/gameIcons`) resolves the action name to a `GameIconName` (`jump`, `sprint`, `rotateCw`, `hardDrop`, `swap`, `hand`, `restart`, arrows, …), the `label` becomes the `aria-label`; set `icon: "<GameIconName>"` to pick one explicitly or `icon: false` to force the text label.
 - **`hidden`** — actions to drop from the derived buttons without gesture-binding them.
 - **`movement: false`** — suppress the virtual joystick even when movement actions are bound.
 - **`look` / `lookSensitivity`** — drag-to-look on the play surface; defaults to `true` for `first`-person camera rigs, `0.005` radians/px.
@@ -1082,7 +1082,7 @@ The transport/host/persistence seam — `createWsBackend`, protocol codec, brows
 
 ## UI — `@jgengine/react`
 
-The React layer — `GameProvider`, the hooks table, headless className-passthrough primitives (incl. map components), the identity/chat/voice/social/drag-layer kits, the styled `gameui` kit + theming, the shadcn registry install path for visual HUD components (`npx shadcn@latest add https://jgengine.com/r/<name>.json`), the screen-layout rule, and the **UI quality bar** (required, not optional polish). Full surface: **[reference/ui-react.md](reference/ui-react.md)**.
+The React layer — `GameProvider`, the hooks table, headless className-passthrough primitives (incl. map components), the identity/chat/voice/social/drag-layer kits, the shadcn registry install path for visual HUD components (`npx shadcn@latest add https://jgengine.com/r/<name>.json`), the screen-layout rule, and the **UI quality bar** (required, not optional polish). Full surface: **[reference/ui-react.md](reference/ui-react.md)**.
 
 ## Assets — real art from day one
 
