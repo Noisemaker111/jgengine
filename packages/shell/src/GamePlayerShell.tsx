@@ -21,6 +21,7 @@ import {
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
+import { deriveTouchScheme, withTouchCodes } from "@jgengine/core/input/touchScheme";
 import {
   buildContextMenu,
   contextVerbInput,
@@ -48,6 +49,7 @@ import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
+import { useDisplayProfile } from "@jgengine/react/display";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
 import type { WsPresenceRow } from "@jgengine/ws/protocol";
@@ -76,6 +78,7 @@ import {
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
+import { TouchControlsDock, TouchPlaySurface } from "./touch/TouchControlsOverlay";
 
 const DEV_USER_ID = "dev-player";
 const TURN_SPEED = 2.4;
@@ -668,8 +671,22 @@ export function GamePlayerShell({
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [contextMenu, setContextMenu] = useState<{ menu: ContextMenu; x: number; y: number } | null>(null);
   const tracker = useMemo(
-    () => createActionStateTracker(toActionStateBindingMap(playable.game.input ?? {})),
+    () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(playable.game.input))),
     [playable],
+  );
+  const touchScheme = useMemo(
+    () =>
+      deriveTouchScheme(playable.game.input, {
+        reserved: RESERVED_INPUT_ACTIONS,
+        firstPerson: resolveRigKind(playable.camera) === "first",
+        config: playable.touch,
+      }),
+    [playable],
+  );
+  const { coarsePointer } = useDisplayProfile();
+  const touchSink = useMemo(
+    () => ({ onCodeDown: (code: string) => tracker.handleDown(code), onCodeUp: (code: string) => tracker.handleUp(code) }),
+    [tracker],
   );
   const audioEngine = useMemo(
     () => createAudioEngine({ sounds: playable.audio?.sounds, buses: playable.audio?.buses }),
@@ -956,7 +973,7 @@ export function GamePlayerShell({
         }
       }}
     >
-      <Canvas camera={{ fov: 55, near: 0.1, far: 300 }}>
+      <Canvas camera={{ fov: 55, near: 0.1, far: 300 }} style={{ touchAction: "none" }}>
         <color attach="background" args={["#14161b"]} />
         <ambientLight intensity={0.55} />
         <directionalLight position={[10, 16, 6]} intensity={1.3} />
@@ -1007,12 +1024,27 @@ export function GamePlayerShell({
           pingCommand={pointer?.pingCommand}
         />
       </Canvas>
+      {coarsePointer && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
+        <TouchPlaySurface
+          scheme={touchScheme}
+          sink={touchSink}
+          yawRef={yawRef}
+          pitchRef={pitchRef}
+          maxPitch={playable.camera?.firstPerson?.maxPitch ?? 1.45}
+          onPrimaryTap={() => {
+            primaryClickRef.current = true;
+          }}
+        />
+      ) : null}
       <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
         <GameProvider context={ctx}>
           <GameUI />
         </GameProvider>
       </GameUiErrorBoundary>
       {showReticle ? <Reticle /> : null}
+      {coarsePointer && touchScheme !== null && (touchScheme.joystick !== null || touchScheme.buttons.length > 0) ? (
+        <TouchControlsDock scheme={touchScheme} sink={touchSink} />
+      ) : null}
       {marquee !== null ? <MarqueeBox rect={marquee} /> : null}
       {contextMenu !== null ? (
         <ContextMenuView

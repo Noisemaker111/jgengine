@@ -16,4 +16,5 @@ export const game = defineGame({
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
   camera: { followEntityId: null },
+  touch: false,
 });
