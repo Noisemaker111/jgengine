@@ -2,6 +2,7 @@ import { defineGame } from "@jgengine/shell/defineGame";
 import { assets } from "./game/assets";
 import { SlingshotOverlay } from "./game/combat/SlingshotOverlay";
 import { GameUI } from "./game/ui/GameUI";
+import { Backdrop } from "./game/world/Backdrop";
 import { loop } from "./loop";
 import { physics, world } from "./world";
 
@@ -13,6 +14,7 @@ export const game = defineGame({
   loop,
   GameUI,
   WorldOverlay: SlingshotOverlay,
+  environment: Backdrop,
   camera: {
     rig: "observer",
     observer: {
