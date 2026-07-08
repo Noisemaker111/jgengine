@@ -1,8 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ItemUseHandler, ItemUseInput } from "@jgengine/core/item/use";
 import { BEDROCK_BLOCK, oreForBlock } from "./blocks";
-import type { Vec3, VoxelHit } from "./raycast";
-import type { VoxelGrid } from "./voxelGrid";
+import type { Vec3, VoxelGrid, VoxelHit } from "./voxelGrid";
 
 function aimedHit(
   ctx: GameContext,

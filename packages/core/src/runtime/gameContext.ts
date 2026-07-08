@@ -76,6 +76,7 @@ import {
 import { createWeaponStats, type WeaponStats } from "../item/weapon";
 import { createPoseState, type PoseAllowedStates, type PoseState } from "../movement/poseState";
 import type { ModelAssetRef } from "../scene/assetCatalog";
+import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
 import {
   createEntityStatsApi,
   seedStatValues,
@@ -84,8 +85,9 @@ import {
   type StatCatalog,
   type StatValueMap,
 } from "../scene/entityStats";
-import type { EntityPose, EntityPosition, EntityStore, SceneEntity, SpawnOptions } from "../scene/entityStore";
+import type { EntityPose, EntityPosition, EntityStore, SceneEntity, SpawnOptions, SpawnPose } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
+import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
 import { createRoster, type Roster } from "../scene/roster";
 import { createPossession, type Possession } from "../scene/possession";
@@ -148,6 +150,8 @@ export interface GameContextOptions<
 
 export interface SceneObjectContext extends ObjectStore {
   catalog(instanceId: string): GameContextObjectEntry | null;
+  raycast(input: ObjectRaycastInput): ObjectRaycastHit | null;
+  raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[];
 }
 
 export interface FloatTextInput {
@@ -188,10 +192,13 @@ export interface HitReactionInput {
 export interface SceneEntityContext {
   spawn(name: string, options?: SpawnOptions): string;
   despawn(instanceId: string): boolean;
-  setPose(instanceId: string, pose: EntityPose): boolean;
   update: EntityStore["update"];
+  setPose(instanceId: string, pose: EntityPose): boolean;
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
+  spawnPoseOf(instanceId: string): SpawnPose | null;
+  resetToSpawn(instanceId: string): boolean;
+  resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number;
   stats: EntityStatsApi;
   floatText(input: FloatTextInput): void;
   telegraph(input: TelegraphInput): () => void;
@@ -211,6 +218,7 @@ export interface SceneEntityContext {
   queryArc: SpatialApi["queryArc"];
   moveToward: SpatialApi["moveToward"];
   form: Forms;
+  paint: PaintLayer;
 }
 
 export type WorldItemPickupResult =
@@ -458,6 +466,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
   const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
   const cosmetics = notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify);
+  const paintLayer = notifyAfter(createPaintLayer(), ["paint", "clear"], signal.notify);
 
   const inventoryDeclarations = definition.inventories ?? {};
   const inventoryIds = Object.keys(inventoryDeclarations);
@@ -627,6 +636,15 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     targeting.clearAll(instanceId);
     pose.clear(instanceId);
     return existed;
+  }
+
+  function resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number {
+    let count = 0;
+    for (const entity of entities.list()) {
+      if (filter !== undefined && !filter(entity)) continue;
+      if (entities.resetToSpawn(entity.id)) count += 1;
+    }
+    return count;
   }
 
   const worldItems = notifyAfter(
@@ -858,6 +876,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const sceneObjects: SceneObjectContext = {
     ...objects,
     catalog: (instanceId) => catalogObject(instanceId) ?? null,
+    raycast: (input) => raycastObjects(objects.list(), input),
+    raycastAll: (input) => raycastObjectsAll(objects.list(), input),
   };
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete"], signal.notify);
@@ -924,10 +944,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       entity: {
         spawn: spawnEntity,
         despawn: despawnEntity,
-        setPose: entities.setPose,
         update: entities.update,
+        setPose: entities.setPose,
         get: entities.get,
         list: entities.list,
+        spawnPoseOf: entities.spawnPoseOf,
+        resetToSpawn: entities.resetToSpawn,
+        resetAllToSpawn,
         stats: entityStats,
         floatText: emitFloatText,
         telegraph: fireTelegraph,
@@ -947,6 +970,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         queryArc: spatial.queryArc,
         moveToward: spatial.moveToward,
         form: forms,
+        paint: paintLayer,
       },
       worldItem: {
         spawn: spawnWorldItem,

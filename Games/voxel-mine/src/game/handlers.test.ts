@@ -6,38 +6,39 @@ import { game } from "../game.config";
 import { createEditorHandlers } from "./handlers";
 import { creditPickupsToQuests, EYE_HEIGHT, REACH } from "../loop";
 import { QUEST_PROSPECTING, quests } from "./quests";
-import { raycastVoxel, type Vec3, type VoxelHit } from "./raycast";
-import type { VoxelGrid } from "./voxelGrid";
+import { createVoxelField, VOXEL_FACE_NORMALS } from "@jgengine/core/world/voxelField";
+import type { Vec3, VoxelGrid, VoxelHit } from "./voxelGrid";
 
 function createFakeGrid(initial: Record<string, string>): VoxelGrid {
-  const cells = new Map(Object.entries(initial));
-  const key = (x: number, y: number, z: number) => `${x},${y},${z}`;
+  const field = createVoxelField();
+  for (const [k, catalogId] of Object.entries(initial)) {
+    const [x, y, z] = k.split(",").map(Number) as [number, number, number];
+    field.set(x, y, z, catalogId);
+  }
 
   return {
     set(catalogId, x, y, z) {
-      const k = key(x, y, z);
-      if (cells.has(k)) return false;
-      cells.set(k, catalogId);
+      if (field.has(x, y, z)) return false;
+      field.set(x, y, z, catalogId);
       return true;
     },
     remove(x, y, z) {
-      const k = key(x, y, z);
-      if (!cells.has(k)) return false;
-      cells.delete(k);
-      return true;
+      return field.remove(x, y, z);
     },
     has(x, y, z) {
-      return cells.has(key(x, y, z));
+      return field.has(x, y, z);
     },
     catalogAt(x, y, z) {
-      return cells.get(key(x, y, z)) ?? null;
+      return field.get(x, y, z);
     },
     count() {
-      return cells.size;
+      return field.count();
     },
     raycast(origin: Vec3, direction: Vec3, maxDistance: number): VoxelHit | null {
-      const latticeOrigin: Vec3 = [origin[0] + 0.5, origin[1], origin[2] + 0.5];
-      return raycastVoxel((x, y, z) => cells.has(key(x, y, z)), latticeOrigin, direction, maxDistance);
+      const hit = field.raycast([origin[0] + 0.5, origin[1], origin[2] + 0.5], direction, maxDistance);
+      if (hit === null) return null;
+      const normal = hit.distance === 0 ? ([0, 0, 0] as Vec3) : ([...VOXEL_FACE_NORMALS[hit.face]] as Vec3);
+      return { cell: [hit.x, hit.y, hit.z], normal };
     },
   };
 }

@@ -3,4 +3,4 @@ import { flat, type WorldFeature } from "@jgengine/core/world/features";
 
 export const world: WorldFeature = flat();
 
-export const physics: PhysicsConfig = { gravity: -20 };
+export const physics: PhysicsConfig = { gravity: -24 };

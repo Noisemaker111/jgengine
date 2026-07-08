@@ -97,6 +97,26 @@ describe("scene object store", () => {
     expect(store.list()).toEqual([]);
   });
 
+  test("at returns every match when cells collide", () => {
+    const store = createObjectStore();
+    const first = store.place("crate", 0, 0, 0);
+    const second = store.place("barrel", 0, 0, 0);
+    expect(store.at(0, 0, 0).map((o) => o.instanceId).sort()).toEqual([first, second].sort());
+    store.remove(second);
+    expect(store.at(0, 0, 0).map((o) => o.instanceId)).toEqual([first]);
+  });
+
+  test("inBox filters by inclusive AABB bounds", () => {
+    const store = createObjectStore();
+    const inside = store.place("crate", 1, 0, 1);
+    const onMinEdge = store.place("crate", 0, 0, 0);
+    const onMaxEdge = store.place("crate", 2, 0, 2);
+    const outside = store.place("crate", 3, 0, 3);
+    const ids = store.inBox([0, 0, 0], [2, 0, 2]).map((object) => object.instanceId);
+    expect(ids.sort()).toEqual([inside, onMaxEdge, onMinEdge].sort());
+    expect(ids).not.toContain(outside);
+  });
+
   test("subscribe fires once per mutation and snapshot is referentially stable", () => {
     const store = createObjectStore();
     let notified = 0;

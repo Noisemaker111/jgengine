@@ -4,6 +4,7 @@ export interface PlayerPose {
   z: number;
   rotationY: number;
   rotationPitch: number;
+  appearance?: Record<string, string>;
 }
 
 export interface PoseSyncTuning {
@@ -18,6 +19,18 @@ export interface PoseSyncGate {
   evaluate(pose: PlayerPose, nowMs: number): boolean;
 }
 
+function appearanceChanged(
+  a: Record<string, string> | undefined,
+  b: Record<string, string> | undefined,
+): boolean {
+  if (a === b) return false;
+  if (a === undefined || b === undefined) return true;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return true;
+  return aKeys.some((key) => a[key] !== b[key]);
+}
+
 function poseChanged(a: PlayerPose, b: PlayerPose, tuning: PoseSyncTuning): boolean {
   return (
     Math.abs(a.x - b.x) > tuning.positionEpsilon
@@ -25,6 +38,7 @@ function poseChanged(a: PlayerPose, b: PlayerPose, tuning: PoseSyncTuning): bool
     || Math.abs(a.z - b.z) > tuning.positionEpsilon
     || Math.abs(a.rotationY - b.rotationY) > tuning.rotationEpsilon
     || Math.abs(a.rotationPitch - b.rotationPitch) > tuning.rotationEpsilon
+    || appearanceChanged(a.appearance, b.appearance)
   );
 }
 

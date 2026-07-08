@@ -73,6 +73,7 @@ import type {
   EntitySpriteConfig,
   ModelConfig,
   MovementCommitFrame,
+  ObjectStyle,
   PointerConfig,
 } from "@jgengine/core/game/playableGame";
 
@@ -80,8 +81,17 @@ import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio
 import { createAudioEngine } from "./audio/audioEngine";
 import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
 import { TimeOfDayDaylight } from "./environment";
+import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { applyMaterialOverride } from "./materialOverride";
 import { PointerProbe } from "./pointer/PointerProbe";
+import {
+  applyPaintTexture,
+  cloneModelScene,
+  createPaintCanvas,
+  standardMaterialsOf,
+  syncPaintCanvas,
+  type PaintCanvas,
+} from "./render/modelRender";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import {
   createPointerService,
@@ -289,14 +299,10 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   );
 }
 
-function EntityModel({ model }: { model: ModelConfig }) {
+function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
   const gltf = useLoader(GLTFLoader, model.url);
+  const ctx = useGameContext();
   const material = model.material;
-  const scene = useMemo(() => {
-    const cloned = gltf.scene.clone(true);
-    if (material !== undefined) applyMaterialOverride(cloned, material);
-    return cloned;
-  }, [gltf, material]);
   const scale = model.scale ?? 1;
   const baseY = model.y ?? 0;
   const dims = model.dims;
@@ -304,6 +310,74 @@ function EntityModel({ model }: { model: ModelConfig }) {
   const position: [number, number, number] = centered
     ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
     : [0, baseY, 0];
+
+  const scene = useMemo(() => {
+    const cloned = cloneModelScene(gltf.scene);
+    if (material !== undefined) applyMaterialOverride(cloned, material);
+    return cloned;
+  }, [gltf, material]);
+
+  const animation = model.animation;
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const animationPausedRef = useRef(false);
+
+  useEffect(() => {
+    if (animation === undefined || gltf.animations.length === 0) {
+      mixerRef.current = null;
+      return;
+    }
+    const mixer = new THREE.AnimationMixer(scene);
+    const clip =
+      (animation.clip !== undefined ? THREE.AnimationClip.findByName(gltf.animations, animation.clip) : undefined) ??
+      gltf.animations[0]!;
+    const action = mixer.clipAction(clip);
+    action.setLoop(animation.loop === false ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    action.clampWhenFinished = animation.loop === false;
+    action.timeScale = animation.timeScale ?? 1;
+    action.enabled = true;
+    action.paused = animation.paused === true;
+    action.play();
+    if (animation.time !== undefined) action.time = animation.time;
+    mixer.update(0);
+    mixerRef.current = mixer;
+    animationPausedRef.current = animation.paused === true;
+    return () => {
+      mixer.stopAllAction();
+      mixerRef.current = null;
+    };
+  }, [scene, gltf, animation?.clip, animation?.loop, animation?.timeScale, animation?.paused, animation?.time]);
+
+  const paintCanvasRef = useRef<PaintCanvas | null>(null);
+  const paintDrawnCountRef = useRef(0);
+  const paintVersionRef = useRef(-1);
+
+  useEffect(() => {
+    paintCanvasRef.current = null;
+    paintDrawnCountRef.current = 0;
+    paintVersionRef.current = -1;
+  }, [scene]);
+
+  useFrame((_state, delta) => {
+    if (mixerRef.current !== null && !animationPausedRef.current) mixerRef.current.update(delta);
+    if (instanceId === undefined) return;
+    const paint = ctx.scene.entity.paint;
+    const version = paint.version(instanceId);
+    if (version === paintVersionRef.current) return;
+    paintVersionRef.current = version;
+    const strokes = paint.strokes(instanceId);
+    if (paintCanvasRef.current === null) {
+      if (strokes.length === 0) return;
+      const materials = standardMaterialsOf(scene);
+      const seed = materials[0];
+      if (seed === undefined) return;
+      const paintCanvas = createPaintCanvas(seed);
+      paintCanvasRef.current = paintCanvas;
+      applyPaintTexture(scene, paintCanvas);
+    }
+    const seedColor = standardMaterialsOf(scene)[0]?.color ?? new THREE.Color("#ffffff");
+    paintDrawnCountRef.current = syncPaintCanvas(paintCanvasRef.current, seedColor, strokes, paintDrawnCountRef.current);
+  });
+
   return <primitive object={scene} position={position} scale={[scale, scale, scale]} />;
 }
 
@@ -357,7 +431,7 @@ function EntityMarker({
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} />
+        <EntityModel model={model} instanceId={entity.id} />
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
       ) : entity.role === "prop" ? (
@@ -383,6 +457,41 @@ function EntityMarker({
           <meshBasicMaterial color="#f87171" />
         </mesh>
       ) : null}
+    </group>
+  );
+}
+
+function ObjectMarker({
+  object,
+  custom,
+  model,
+  style,
+}: {
+  object: SceneObject;
+  custom: ReactNode | undefined;
+  model: ModelConfig | undefined;
+  style: ObjectStyle | undefined;
+}) {
+  return (
+    <group
+      position={[object.position[0], object.position[1], object.position[2]]}
+      rotation-y={object.rotationY}
+      userData={{ [POINTER_OBJECT_KEY]: object.instanceId }}
+    >
+      {custom !== undefined && custom !== null ? (
+        custom
+      ) : model !== undefined ? (
+        <EntityModel model={model} instanceId={object.instanceId} />
+      ) : style?.hidden === true ? null : (
+        <mesh position-y={0.5}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial
+            color={style?.color ?? colorFromId(object.catalogId)}
+            transparent={style?.opacity !== undefined && style.opacity < 1}
+            opacity={style?.opacity ?? 1}
+          />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -449,6 +558,7 @@ function WorldView({
   entitySprites,
   entityModels,
   objectModels,
+  objectStyles,
   environment: Environment,
   assets,
   renderEntity,
@@ -458,6 +568,7 @@ function WorldView({
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
   objectModels: Record<string, string | ModelConfig> | undefined;
+  objectStyles: Record<string, ObjectStyle> | undefined;
   environment: ComponentType | undefined;
   assets: AssetCatalog;
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
@@ -504,25 +615,14 @@ function WorldView({
         const model =
           resolveModel(objectModels?.[object.catalogId], assets) ??
           resolveModel(object.catalogId, assets);
-        const custom = renderObject?.(object);
         return (
-          <group
+          <ObjectMarker
             key={object.instanceId}
-            position={[object.position[0], object.position[1], object.position[2]]}
-            rotation-y={object.rotationY}
-            userData={{ [POINTER_OBJECT_KEY]: object.instanceId }}
-          >
-            {custom !== undefined && custom !== null ? (
-              custom
-            ) : model !== undefined ? (
-              <EntityModel model={model} />
-            ) : (
-              <mesh position-y={0.5}>
-                <boxGeometry args={[1, 1, 1]} />
-                <meshStandardMaterial color={colorFromId(object.catalogId)} />
-              </mesh>
-            )}
-          </group>
+            object={object}
+            custom={renderObject?.(object)}
+            model={model}
+            style={objectStyles?.[object.catalogId]}
+          />
         );
       })}
     </>
@@ -1108,7 +1208,7 @@ export function GamePlayerShell({
       : { ...playable.camera, followEntityId: controlledEntityId };
   const rigKind = resolveRigKind(cameraConfig);
 
-  if (rigKind === "none") {
+  if (rigKind === "none" || playable.presentation === "hud") {
     const GameUI = playable.GameUI;
     return (
       <div
@@ -1152,6 +1252,9 @@ export function GamePlayerShell({
   const pointerUsesLeft = pointer !== undefined && (pointer.select === true || pointer.moveCommand !== undefined);
   const selectFilter = pointer?.selectFilter;
   const worldSky = resolveWorldSky(playable.game.world);
+  const world = playable.game.world;
+  const AutoEnvironment =
+    playable.environment ?? (world?.kind === "environment" ? () => <EnvironmentScene feature={world} /> : undefined);
 
   const localXY = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -1334,7 +1437,8 @@ export function GamePlayerShell({
             entitySprites={playable.entitySprites}
             entityModels={playable.entityModels}
             objectModels={playable.objectModels}
-            environment={playable.environment}
+            objectStyles={playable.objectStyles}
+            environment={AutoEnvironment}
             assets={playable.game.assets}
             renderEntity={playable.renderEntity}
             renderObject={playable.renderObject}

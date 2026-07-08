@@ -27,6 +27,7 @@ export interface ObjectStore {
   get(instanceId: string): SceneObject | null;
   list(filter?: ObjectListFilter): readonly SceneObject[];
   at(x: number, y: number, z: number, tolerance?: number): SceneObject[];
+  inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
   clear(): void;
   subscribe(listener: () => void): () => void;
   snapshot(): readonly SceneObject[];
@@ -151,6 +152,24 @@ export function createObjectStore(): ObjectStore {
         }
       }
       return results;
+    },
+    inBox(min, max) {
+      const hits: SceneObject[] = [];
+      for (const bucket of cellIndex.values()) {
+        for (const instanceId of bucket) {
+          const object = store.get(instanceId);
+          if (object === undefined) continue;
+          const [x, y, z] = object.position;
+          if (
+            x >= min[0] && x <= max[0] &&
+            y >= min[1] && y <= max[1] &&
+            z >= min[2] && z <= max[2]
+          ) {
+            hits.push(object);
+          }
+        }
+      }
+      return hits;
     },
     clear() {
       for (const object of store.arraySnapshot()) {

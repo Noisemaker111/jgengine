@@ -64,6 +64,8 @@ export interface FirstPersonCameraConfig {
  * - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe.
  * - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views.
  * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
+ * - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input.
+ * - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
  */
 export type CameraRigKind =
   | "orbit"
@@ -120,6 +122,8 @@ export interface RtsCameraConfig extends TopDownCameraConfig {
   bounds?: { minX?: number; maxX?: number; minZ?: number; maxZ?: number };
   /** Start centered on this world point when there is no follow target. */
   start?: { x?: number; z?: number };
+  /** Read WASD/arrow pan, edge-scroll, Q/E rotate, and wheel zoom. `false` sits static at the start/bounds position — a backdrop camera, no input at all. Default true. */
+  pan?: boolean;
 }
 
 /** Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle. */
@@ -328,6 +332,20 @@ export interface VoxelCollisionConfig {
   stepHeight?: number;
 }
 
+/** Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses. */
+export interface ModelAnimationConfig {
+  /** Clip name to play; defaults to the GLB's first clip. */
+  clip?: string;
+  /** Loop the clip. Default true. */
+  loop?: boolean;
+  /** Playback rate multiplier. Default 1. */
+  timeScale?: number;
+  /** Hold the rig on a fixed frame instead of advancing it each tick. */
+  paused?: boolean;
+  /** Seek the clip to this time in seconds; combine with `paused: true` to hold a specific pose ("pose library" usage). */
+  time?: number;
+}
+
 /** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */
 export interface ModelMaterialOverride {
   color?: string;
@@ -347,6 +365,14 @@ export interface ModelConfig {
   dims?: ModelDims;
   /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
   material?: ModelMaterialOverride;
+  /** Plays a GLTF animation clip on the model when the source has any (skinned or not); omit to render the rig's bind pose. */
+  animation?: ModelAnimationConfig;
+}
+
+export interface ObjectStyle {
+  color?: string;
+  opacity?: number;
+  hidden?: boolean;
 }
 
 /** Movement-control levers for the shell-driven local player walk controller. */
@@ -376,13 +402,15 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   content: GameContextContent;
   loop: Required<GameLoop<GameContext>>;
   GameUI: TUi;
+  /** Which shell mount to use. Default `"3d"` (canvas, camera rig, pointer, world rendering). `"hud"` mounts no 3D canvas, camera rig, or pointer — the game is `GameUI` plus the command/input loop, for board/card/menu games. */
+  presentation?: "3d" | "hud";
   /** Optional canvas-layer VFX component (e.g. traveling projectiles). */
   WorldOverlay?: TWorldOverlay;
-  /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. */
+  /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. When unset and `game.world` is an `environment()` descriptor, the shell auto-renders that world here — no manual wiring needed. */
   environment?: TWorldOverlay;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
   renderEntity?: TRenderEntity;
-  /** Per-object visual override: return your own mesh for a placed scene object and the shell still positions it. Return null/undefined to fall back to objectModels → colored box. */
+  /** Per-object visual override: return your own mesh for a placed scene object and the shell still positions it and drives picking. Return null/undefined to fall back to objectModels → styled box. */
   renderObject?: TRenderObject;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
   entitySprites?: Record<string, EntitySpriteConfig>;
@@ -390,6 +418,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   entityModels?: Record<string, string | ModelConfig>;
   /** GLB models keyed by object catalog id; a string resolves via game.assets, a ModelConfig renders directly. Replaces the colored box when present. */
   objectModels?: Record<string, string | ModelConfig>;
+  /** Styling for the default colored-box object render, keyed by catalog id: color override, opacity (< 1 sets transparent), hidden (skips the mesh but keeps the positioning group + picking). */
+  objectStyles?: Record<string, ObjectStyle>;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
   hotbarSelection?: () => number;
   /** Positioned proximity prompts for the interact key + HUD; single source shared with useActivePrompt. */

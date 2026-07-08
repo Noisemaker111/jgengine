@@ -4,7 +4,6 @@ import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 
 export type RenderEntity = (entity: SceneEntity) => ReactNode;
-
 export type RenderObject = (object: SceneObject) => ReactNode;
 
 export type PlayableGame = EnginePlayableGame<ComponentType, ComponentType, RenderEntity, RenderObject>;

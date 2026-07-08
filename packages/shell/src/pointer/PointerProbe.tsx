@@ -13,18 +13,28 @@ export function PointerProbe({ service }: { service: PointerService }) {
 
   useEffect(() => {
     const el = gl.domElement;
+    let locked = false;
     const onMove = (event: PointerEvent) => {
+      if (locked) return;
       const rect = el.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
       service.setCursor(x, y, true);
     };
-    const onLeave = () => service.setCursor(0, 0, false);
+    const onLeave = () => {
+      if (!locked) service.setCursor(0, 0, false);
+    };
+    const onLockChange = () => {
+      locked = document.pointerLockElement === el;
+      if (locked) service.setCursor(0, 0, true);
+    };
     el.addEventListener("pointermove", onMove);
     el.addEventListener("pointerleave", onLeave);
+    document.addEventListener("pointerlockchange", onLockChange);
     return () => {
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerleave", onLeave);
+      document.removeEventListener("pointerlockchange", onLockChange);
       service.bind(null);
     };
   }, [gl, service]);
