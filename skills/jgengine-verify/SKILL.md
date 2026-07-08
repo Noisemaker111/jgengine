@@ -43,6 +43,23 @@ describe("<game> world", () => {
 
 If the game's world is `biomes()` / `voxel()` / `flat()` rather than `environment()`, `summarizeEnvironment` does not apply — assert on that world's own generator output (region field, voxel seed) with the same "resolve the data, assert the counts" pattern, still browserless.
 
+For a voxel game built on `@jgengine/core/world/voxelField`'s `createVoxelField`, assert on `field.summary()` (`{ blocks, types, bounds }`) the same way an `environment()` world asserts on `summarizeEnvironment`:
+
+```ts
+// <game>/src/world.world.test.ts
+import { describe, expect, test } from "bun:test";
+import { world } from "./world"; // the populated VoxelField
+
+describe("<game> voxel world", () => {
+  const summary = world.summary();
+  test("renders a populated scene", () => expect(summary.blocks).toBeGreaterThan(0));
+  test("has the expected block types", () => {
+    expect(summary.types).toContain("stone");
+    expect(summary.bounds).not.toBeNull();
+  });
+});
+```
+
 ## Definition of done references this
 
 The `jgengine-newgame` full-game checklist and the `jgengine-api` definition of done both gate on the world test before the screenshot. This skill is the *how*; those are the *when*.

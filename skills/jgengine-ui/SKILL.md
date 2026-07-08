@@ -53,7 +53,7 @@ Every toggle and hotbar slot shows its binding — as a badge **on that control*
 | Hotbar scroll | mouse wheel over action bar |
 | Primary ability | `mouse0` |
 
-Pattern: `ui.openBackpack` command toggles panel state; shell calls `commands.run` on `wasPressed("openBackpack")`. UI subscribes to the same state store the command mutates.
+Pattern: `ui.openBackpack` command toggles panel state; shell calls `commands.run` on `wasPressed("openBackpack")`. UI subscribes to the same state the command mutates — reach for `ctx.game.state.define`/`useGameState` (see `jgengine-api`) for this instead of a hand-rolled module-level store; it's already reactive and survives hot reload.
 
 ## Action bar slot states
 
