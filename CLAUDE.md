@@ -23,7 +23,7 @@ The primary engine-development repo: a genre-agnostic, pure-TypeScript game engi
 
 ## Delegation
 
-Load-bearing work (engine design, layering, API surface, gnarly types) runs on Opus — yourself or `Agent` with `model: opus`. Mechanical high-volume work (test runs, screenshots, bulk renames, doc sweeps) goes to Sonnet subagents. Only spawn subagents when the user asks or the task genuinely fans out.
+Plan big, execute small — always. Load-bearing work (engine design, layering, API surface, gnarly types) stays on the frontier tier: yourself when the session runs Fable 5, or `Agent` with `model: fable` for a one-shot plan/course-correction (advisor pattern) when the session runs smaller. Mechanical high-volume work (test runs, screenshots, bulk renames, doc sweeps, research legs) fans out to Sonnet workers — standing authorization, no need to ask. Trivial single-file work stays solo; verification and synthesis stay in the main loop. Converting other agent setups to this shape: `convert-to-fanout` skill.
 
 ## Style
 
