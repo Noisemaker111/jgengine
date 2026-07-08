@@ -28,9 +28,10 @@ const inWorktree = /[\\/]\.git[\\/]worktrees[\\/]/.test(gitDir);
 if (inWorktree) {
   emit(
     `Worktree flow OK: this session is in an isolated worktree on branch "${branch}". ` +
-      `Keep committing here. When the task is complete, ship it yourself — don't ask the user to merge: ` +
-      `run \`bun .claude/scripts/ship-pr.mjs\` (squash-merges, deletes the branch, returns the primary checkout ` +
-      `to main, prints 🚀), then ExitWorktree (remove). Echo 🚀 in your reply so the chat shows it merged.`,
+      `Keep committing here. When the work is real, push and open a PR (gh pr create --fill); ` +
+      `when it's genuinely done and clean, merge it yourself (gh pr merge --squash --delete-branch), ` +
+      `then ExitWorktree (remove) — don't ask the user to merge, and don't merge over doubt. ` +
+      `Echo 🚀 in your reply after a merge so the chat shows it.`,
   );
 }
 
@@ -39,12 +40,11 @@ const defaultBranch =
 
 const lines = [
   `WORKTREE FLOW NOT ESTABLISHED — this session is in the PRIMARY checkout (branch "${branch}").`,
-  `Repo policy (CLAUDE.md): main -> worktree branch -> draft PR for EVERY unit of work.`,
+  `Repo policy (CLAUDE.md): every session works in its own worktree; the primary checkout stays on ${defaultBranch}.`,
   ``,
-  `Before editing any file, do this now:`,
-  `  1. Call EnterWorktree to create an isolated worktree off ${defaultBranch}.`,
-  `  2. Open a PR for the task:  gh pr create --fill`,
+  `Before editing any file, call EnterWorktree to create an isolated worktree off ${defaultBranch}.`,
   `Edits in the primary checkout are hard-blocked by the guard-worktree hook until you do.`,
+  `(PRs come later, when the work is real — no need to open one up front.)`,
 ];
 
 if (branch !== defaultBranch) {
