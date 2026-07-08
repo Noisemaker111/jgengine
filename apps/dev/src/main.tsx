@@ -84,39 +84,68 @@ function withCameraPreset(game: PlayableGame): PlayableGame {
   return { ...game, camera: { ...game.camera, ...preset } };
 }
 
+function formatLoadError(error: unknown): string {
+  if (error instanceof Error) return error.stack ?? error.message;
+  return String(error);
+}
+
 function DevApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
   const [scenario, setScenario] = useState<UiPreviewScenario | undefined>(undefined);
+  const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
     const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
-    if (load === undefined) return;
-    void load().then((loaded) => {
-      if (P2P_ROLE === "host" || P2P_ROLE === "join") {
-        void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
-      } else {
-        setMultiplayer(
-          resolveConvexMultiplayer({
-            game: loaded.game,
-            gameId: GAME_ID,
-            url: CONVEX_URL,
-            force: CONVEX_URL !== undefined,
-          }) ??
-            resolveShellMultiplayer({
+    if (load === undefined) {
+      setLoadError(`Unknown game "${GAME_ID}"`);
+      return;
+    }
+    void load()
+      .then((loaded) => {
+        if (P2P_ROLE === "host" || P2P_ROLE === "join") {
+          void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
+        } else {
+          setMultiplayer(
+            resolveConvexMultiplayer({
               game: loaded.game,
               gameId: GAME_ID,
-              url: WS_URL,
-              force: WS_URL !== undefined,
-            }),
-        );
-      }
-      setPlayable(withCameraPreset(loaded));
-    });
+              url: CONVEX_URL,
+              force: CONVEX_URL !== undefined,
+            }) ??
+              resolveShellMultiplayer({
+                game: loaded.game,
+                gameId: GAME_ID,
+                url: WS_URL,
+                force: WS_URL !== undefined,
+              }),
+          );
+        }
+        setPlayable(withCameraPreset(loaded));
+      })
+      .catch((error: unknown) => {
+        const message = formatLoadError(error);
+        console.error(`[jgengine/play] failed to load ${GAME_ID}`, error);
+        setLoadError(message);
+      });
     const loadScenario = uiScenarioRegistry[GAME_ID];
     if (MODE === "ui" && loadScenario !== undefined) {
-      void loadScenario().then((resolved) => setScenario(() => resolved));
+      void loadScenario()
+        .then((resolved) => setScenario(() => resolved))
+        .catch((error: unknown) => {
+          console.error(`[jgengine/play] failed to load ui scenario ${GAME_ID}`, error);
+        });
     }
   }, []);
+  if (loadError !== null) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 bg-neutral-950 px-6 text-center">
+        <div className="text-sm font-semibold text-red-400">Failed to load {GAME_ID}</div>
+        <pre className="max-h-[50vh] max-w-3xl overflow-auto whitespace-pre-wrap break-words rounded border border-red-900/60 bg-black/60 p-3 text-left font-mono text-xs text-red-200">
+          {loadError}
+        </pre>
+      </div>
+    );
+  }
   if (playable === null) {
     return (
       <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
