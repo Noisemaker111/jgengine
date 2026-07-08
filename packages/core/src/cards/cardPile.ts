@@ -7,6 +7,7 @@ export interface CardPileConfig {
   handZone?: ZoneName;
   handLimit?: number;
   reshuffleFrom?: ZoneName;
+  onChange?: () => void;
 }
 
 export interface CardPileState {
@@ -215,6 +216,7 @@ export function createCardPile(
     zoneOf: (cardId) => zoneOf(state, cardId),
     shuffle(zone, seed) {
       state = shuffleZone(state, zone ?? drawFrom, seed);
+      config.onChange?.();
     },
     draw(n, options) {
       const result = draw(state, n, {
@@ -224,25 +226,36 @@ export function createCardPile(
         reshuffleFrom: config.reshuffleFrom,
       });
       state = result.state;
+      config.onChange?.();
       return result.drawn;
     },
     discard(ids, options) {
       const result = moveCards(state, ids, options?.from ?? handZone, options?.to ?? discardTo, "top");
-      if (result.status === "ok") state = result.state;
+      if (result.status === "ok") {
+        state = result.state;
+        config.onChange?.();
+      }
       return result;
     },
     exhaust(ids, exhaustZone, from) {
       const result = moveCards(state, ids, from ?? handZone, exhaustZone, "top");
-      if (result.status === "ok") state = result.state;
+      if (result.status === "ok") {
+        state = result.state;
+        config.onChange?.();
+      }
       return result;
     },
     move(ids, from, to, position) {
       const result = moveCards(state, ids, from, to, position);
-      if (result.status === "ok") state = result.state;
+      if (result.status === "ok") {
+        state = result.state;
+        config.onChange?.();
+      }
       return result;
     },
     reset(next) {
       state = next;
+      config.onChange?.();
     },
   };
 }

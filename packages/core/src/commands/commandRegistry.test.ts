@@ -76,6 +76,23 @@ describe("command registry", () => {
     expect(result).toEqual({ status: "applied", state: { count: 5 } });
   });
 
+  test("a side-effect-only command reports applied with the original state reference", () => {
+    const registry = createCommandRegistry<CounterState>();
+    let sideEffectCalls = 0;
+    registry.define<{ amount: number }>("logOnly", {
+      apply(_state, input) {
+        sideEffectCalls += input.amount;
+      },
+    });
+
+    const state = { count: 1 };
+    const result = registry.run(state, "logOnly", { amount: 5 });
+
+    expect(sideEffectCalls).toBe(5);
+    expect(result).toEqual({ status: "applied", state });
+    if (result.status === "applied") expect(result.state).toBe(state);
+  });
+
   test("reports registered command names", () => {
     const registry = createCommandRegistry<CounterState>();
     registry.define<{ amount: number }>("increment", {

@@ -4,7 +4,7 @@ export interface CommandRejection {
 
 export interface CommandDefinition<TState, TInput> {
   validate?(state: TState, input: TInput): CommandRejection | null;
-  apply(state: TState, input: TInput): TState;
+  apply(state: TState, input: TInput): TState | void;
 }
 
 export type CommandResult<TState> =
@@ -42,7 +42,8 @@ export function createCommandRegistry<TState>(): CommandRegistry<TState> {
       const rejection = definition.validate?.(state, input as never) ?? null;
       if (rejection) return { status: "rejected", reason: rejection.reason };
 
-      return { status: "applied", state: definition.apply(state, input as never) };
+      const result = definition.apply(state, input as never);
+      return { status: "applied", state: result === undefined ? state : result };
     },
   };
 }

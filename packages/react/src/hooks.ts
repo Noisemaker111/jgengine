@@ -75,6 +75,10 @@ export function useCurrency(currencyId: string): number {
   return useGameStore((ctx) => ctx.game.economy.balance(ctx.player.userId, currencyId));
 }
 
+export function useGameState<T>(id: string): T | undefined {
+  return useGameStore((ctx) => ctx.game.state.get<T>(id));
+}
+
 export function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] {
   return useGameStore((ctx) =>
     ctx.game.feed.recent(action, limit === undefined ? undefined : { limit }),
