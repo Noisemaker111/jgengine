@@ -58,6 +58,11 @@ export interface EntityPose {
   dt?: number;
 }
 
+export interface SpawnPose {
+  position: EntityPosition;
+  rotationY: number;
+}
+
 export interface EntityStore<TMeta = undefined> {
   spawn(name: string, options?: SpawnOptions<TMeta>): string;
   despawn(id: string): boolean;
@@ -76,10 +81,13 @@ export interface EntityStore<TMeta = undefined> {
   clear(): void;
   subscribe(listener: () => void): () => void;
   snapshot(): readonly SceneEntity<TMeta>[];
+  spawnPoseOf(id: string): SpawnPose | null;
+  resetToSpawn(id: string): boolean;
 }
 
 export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
   const store = createObservableKeyedStore<SceneEntity<TMeta>>();
+  const spawnPoses = new Map<string, SpawnPose>();
   let nextCounter = 1;
 
   function generateId(): string {
@@ -98,11 +106,13 @@ export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
         throw new Error(`Scene entity id "${options.id}" is already spawned.`);
       }
       const id = options.id ?? generateId();
+      const position = toEntityPosition(options.position);
+      const rotationY = options.rotationY ?? 0;
       store.set(id, {
         id,
         name,
-        position: toEntityPosition(options.position),
-        rotationY: options.rotationY ?? 0,
+        position,
+        rotationY,
         rotationX: options.rotationX ?? 0,
         rotationZ: options.rotationZ ?? 0,
         velocity: [0, 0, 0],
@@ -111,11 +121,13 @@ export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
         behaviors: options.behaviors ?? [],
         meta: options.meta as TMeta,
       });
+      spawnPoses.set(id, { position, rotationY });
       return id;
     },
     despawn(id) {
       const existed = store.has(id);
       store.delete(id);
+      spawnPoses.delete(id);
       return existed;
     },
     update(id, patch) {
@@ -162,6 +174,16 @@ export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
     },
     snapshot() {
       return store.arraySnapshot();
+    },
+    spawnPoseOf(id) {
+      return spawnPoses.get(id) ?? null;
+    },
+    resetToSpawn(id) {
+      const pose = spawnPoses.get(id);
+      const current = store.get(id);
+      if (pose === undefined || current === undefined) return false;
+      store.set(id, { ...current, position: pose.position, rotationY: pose.rotationY, velocity: [0, 0, 0] });
+      return true;
     },
   };
 }

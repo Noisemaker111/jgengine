@@ -373,4 +373,34 @@ describe("float text and projectile events", () => {
     expect(shots[0]!.hit).toBe(true);
     expect(shots[0]!.origin).toEqual([0, 0, 0]);
   });
+
+  test("player.motion queues commands FIFO and drain empties the queue", () => {
+    const ctx = makeContext();
+    ctx.player.motion.impulse(2);
+    ctx.player.motion.setVerticalVelocity(5);
+    ctx.player.motion.launch(9);
+    expect(ctx.player.motion.drain()).toEqual([
+      { kind: "impulse", vy: 2 },
+      { kind: "set", vy: 5 },
+      { kind: "launch", vy: 9 },
+    ]);
+    expect(ctx.player.motion.drain()).toEqual([]);
+  });
+
+  test("scene.entity.resetToSpawn restores the recorded spawn pose and resetAllToSpawn counts matches", () => {
+    const ctx = makeContext();
+    const hero = ctx.scene.entity.spawn("hero", { position: [1, 0, 1], rotationY: 0.4 });
+    const villager = ctx.scene.entity.spawn("villager", { position: [2, 0, 2], rotationY: 0 });
+    ctx.scene.entity.setPose(hero, { position: [9, 0, 9], rotationY: 2 });
+    ctx.scene.entity.setPose(villager, { position: [8, 0, 8], rotationY: 1 });
+
+    expect(ctx.scene.entity.spawnPoseOf(hero)).toEqual({ position: [1, 0, 1], rotationY: 0.4 });
+    expect(ctx.scene.entity.resetToSpawn(hero)).toBe(true);
+    expect(ctx.scene.entity.get(hero)?.position).toEqual([1, 0, 1]);
+    expect(ctx.scene.entity.get(villager)?.position).toEqual([8, 0, 8]);
+
+    const resetCount = ctx.scene.entity.resetAllToSpawn((entity) => entity.name === "villager");
+    expect(resetCount).toBe(1);
+    expect(ctx.scene.entity.get(villager)?.position).toEqual([2, 0, 2]);
+  });
 });

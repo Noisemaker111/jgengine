@@ -8,7 +8,10 @@ import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
 
 export interface PhysicsConfig {
+  /** Downward acceleration in world units/s^2. Signed — negative is downward, e.g. -24. Default the movement model's built-in gravity. */
   gravity?: number;
+  /** Initial upward vertical velocity applied on jump, in world units/s. Default the movement model's built-in jump velocity. */
+  jumpVelocity?: number;
 }
 
 export interface InventoryDeclaration {

@@ -113,6 +113,7 @@ export interface PlayerMotionState {
   horizontalVelocityX: number;
   horizontalVelocityZ: number;
   verticalVelocity: number;
+  y: number;
   jumpOffset: number;
   grounded: boolean;
   jumpHeld: boolean;
@@ -123,6 +124,7 @@ export function createPlayerMotionState(): PlayerMotionState {
     horizontalVelocityX: 0,
     horizontalVelocityZ: 0,
     verticalVelocity: 0,
+    y: 0,
     jumpOffset: 0,
     grounded: true,
     jumpHeld: false,
@@ -133,6 +135,13 @@ export function createPlayerMotionState(): PlayerMotionState {
 export interface MovementFrameStep {
   stepX: number;
   stepZ: number;
+  y: number;
+}
+
+export interface MovementStepOptions {
+  groundY?: number;
+  gravity?: number;
+  jumpVelocity?: number;
 }
 
 /**
@@ -152,9 +161,13 @@ export function advancePlayerMotion(
   forwardZ: number,
   baseSpeed: number,
   rawDeltaSeconds: number,
+  options: MovementStepOptions = {},
 ): MovementFrameStep {
   const deltaSeconds = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
   const targetSpeed = resolveTargetSpeed(intent, baseSpeed);
+  const groundY = options.groundY ?? 0;
+  const gravity = options.gravity ?? MOVEMENT_TUNING.gravityAcceleration;
+  const jumpVelocity = options.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity;
 
   let targetVelocityX = 0;
   let targetVelocityZ = 0;
@@ -201,24 +214,31 @@ export function advancePlayerMotion(
 
   const jumpPressed = intent.jumping;
   if (jumpPressed && !motion.jumpHeld && motion.grounded && !intent.crouching) {
-    motion.verticalVelocity = MOVEMENT_TUNING.jumpVelocity;
+    motion.verticalVelocity = jumpVelocity;
     motion.grounded = false;
   }
   motion.jumpHeld = jumpPressed;
 
+  if (motion.grounded) {
+    if (groundY > motion.y) motion.y = groundY;
+    else if (groundY < motion.y) motion.grounded = false;
+  }
+
   if (!motion.grounded || motion.verticalVelocity > 0) {
-    motion.verticalVelocity -= MOVEMENT_TUNING.gravityAcceleration * deltaSeconds;
-    motion.jumpOffset += motion.verticalVelocity * deltaSeconds;
-    if (motion.jumpOffset <= 0) {
-      motion.jumpOffset = 0;
+    motion.verticalVelocity -= gravity * deltaSeconds;
+    motion.y += motion.verticalVelocity * deltaSeconds;
+    if (motion.y <= groundY) {
+      motion.y = groundY;
       motion.verticalVelocity = 0;
       motion.grounded = true;
     }
   }
+  motion.jumpOffset = motion.y - groundY;
 
   return {
     stepX: motion.horizontalVelocityX * deltaSeconds,
     stepZ: motion.horizontalVelocityZ * deltaSeconds,
+    y: motion.y,
   };
 }
 
@@ -228,4 +248,51 @@ export const MAX_JUMP_OFFSET = 1.15;
 /** Camera yaw looks along -Z; character mesh faces +Z at body rotation.y = 0. */
 export function cameraYawToAvatarBodyYaw(cameraYaw: number): number {
   return cameraYaw + Math.PI;
+}
+
+export type MotionCommand =
+  | { kind: "impulse"; vy: number }
+  | { kind: "set"; vy: number }
+  | { kind: "launch"; vy: number };
+
+export interface MotionCommandQueue {
+  impulse(vy: number): void;
+  setVerticalVelocity(vy: number): void;
+  launch(vy: number): void;
+  drain(): readonly MotionCommand[];
+}
+
+export function createMotionCommandQueue(): MotionCommandQueue {
+  let commands: MotionCommand[] = [];
+  return {
+    impulse(vy) {
+      commands.push({ kind: "impulse", vy });
+    },
+    setVerticalVelocity(vy) {
+      commands.push({ kind: "set", vy });
+    },
+    launch(vy) {
+      commands.push({ kind: "launch", vy });
+    },
+    drain() {
+      const drained = commands;
+      commands = [];
+      return drained;
+    },
+  };
+}
+
+export function applyMotionCommand(motion: PlayerMotionState, command: MotionCommand): void {
+  switch (command.kind) {
+    case "impulse":
+      motion.verticalVelocity += command.vy;
+      break;
+    case "set":
+      motion.verticalVelocity = command.vy;
+      break;
+    case "launch":
+      motion.verticalVelocity = command.vy;
+      motion.grounded = false;
+      break;
+  }
 }

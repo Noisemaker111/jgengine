@@ -2,9 +2,25 @@ import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
+import type { EntityPosition, SceneEntity } from "../scene/entityStore";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
+
+export interface ProposedMovement {
+  position: EntityPosition;
+  rotationY: number;
+  grounded: boolean;
+}
+
+export interface PlayableGameMovement {
+  /** Ground surface height sampled every frame for the controlled entity, at its current x/z; the returned value feeds `groundY` into the kinematics step. Default flat 0. */
+  groundHeight?: (x: number, z: number, currentY: number) => number;
+  /** Pre-commit hook run after kinematics + lockAxis, before the frame's pose is written. Return a replacement pose to steer the commit, or null to cancel the commit entirely for this frame. */
+  constrain?: (proposed: ProposedMovement, entity: SceneEntity) => ProposedMovement | null;
+  /** Locks the given axis to the entity's current value before `constrain` runs — a planar/single-axis movement mode. */
+  lockAxis?: "x" | "z";
+}
 
 export interface PointerConfig {
   /**
@@ -358,6 +374,8 @@ export interface PlayableGame<
   prompts?: (ctx: GameContext) => readonly PositionedPrompt[];
   /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
+  /** Ground-height sampling, pre-commit pose constraint, and axis-locking for the built-in kinematics controller. */
+  movement?: PlayableGameMovement;
   /** Pointer-driven input: click-to-move, box-select, right-click verbs, cursor aim (#22/#30/#31). */
   pointer?: PointerConfig;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. */

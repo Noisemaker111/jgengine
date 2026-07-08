@@ -65,6 +65,7 @@ import {
 import type { ContextVerb } from "../interaction/contextMenu";
 import type { ProximityPrompt } from "../interaction/proximityPrompt";
 import { createInputChannel, type InputChannel } from "../input/inputChannel";
+import { createMotionCommandQueue, type MotionCommandQueue } from "../movement/movementModel";
 import {
   createItemUse,
   type ItemUseHandler,
@@ -83,7 +84,7 @@ import {
   type StatCatalog,
   type StatValueMap,
 } from "../scene/entityStats";
-import type { EntityPose, EntityPosition, EntityStore, SceneEntity, SpawnOptions } from "../scene/entityStore";
+import type { EntityPose, EntityPosition, EntityStore, SceneEntity, SpawnOptions, SpawnPose } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
@@ -190,6 +191,9 @@ export interface SceneEntityContext {
   setPose(instanceId: string, pose: EntityPose): boolean;
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
+  spawnPoseOf(instanceId: string): SpawnPose | null;
+  resetToSpawn(instanceId: string): boolean;
+  resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number;
   stats: EntityStatsApi;
   floatText(input: FloatTextInput): void;
   telegraph(input: TelegraphInput): () => void;
@@ -287,6 +291,7 @@ export interface GameContext {
     loadout: Loadouts;
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
+    motion: MotionCommandQueue;
     possession: Possession;
     cosmetics: Cosmetics;
   };
@@ -427,6 +432,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   );
   const playerStats = createStats<string>({});
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
+  const motion = createMotionCommandQueue();
   const commandRegistry = createCommandRegistry<GameContext>();
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
@@ -601,6 +607,15 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     targeting.clearAll(instanceId);
     pose.clear(instanceId);
     return existed;
+  }
+
+  function resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number {
+    let count = 0;
+    for (const entity of entities.list()) {
+      if (filter !== undefined && !filter(entity)) continue;
+      if (entities.resetToSpawn(entity.id)) count += 1;
+    }
+    return count;
   }
 
   const worldItems = notifyAfter(
@@ -846,6 +861,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         setPose: entities.setPose,
         get: entities.get,
         list: entities.list,
+        spawnPoseOf: entities.spawnPoseOf,
+        resetToSpawn: entities.resetToSpawn,
+        resetAllToSpawn,
         stats: entityStats,
         floatText: emitFloatText,
         telegraph: fireTelegraph,
@@ -919,6 +937,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       loadout: loadouts,
       applyLoadout: loadouts.applyLoadout,
       movement: pose,
+      motion,
       possession,
       cosmetics,
     },

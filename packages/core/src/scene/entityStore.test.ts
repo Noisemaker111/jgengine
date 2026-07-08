@@ -172,4 +172,49 @@ describe("scene entity store", () => {
     store.setPose(id, { position: [3, 10, 4], dt: 1 });
     expect(groundSpeed(store.get(id)!)).toBeCloseTo(5);
   });
+
+  test("spawnPoseOf reports the pose recorded at spawn, unaffected by later moves", () => {
+    const store = createEntityStore();
+    const id = store.spawn("hero", { position: [1, 0, 2], rotationY: 0.5 });
+    store.setPose(id, { position: [9, 0, 9], rotationY: 3 });
+    expect(store.spawnPoseOf(id)).toEqual({ position: [1, 0, 2], rotationY: 0.5 });
+  });
+
+  test("spawnPoseOf returns null for an unknown id", () => {
+    const store = createEntityStore();
+    expect(store.spawnPoseOf("missing")).toBeNull();
+  });
+
+  test("resetToSpawn restores position, rotationY, and zeroes velocity", () => {
+    const store = createEntityStore();
+    const id = store.spawn("hero", { position: [1, 0, 2], rotationY: 0.5 });
+    store.setPose(id, { position: [9, 0, 9], rotationY: 3, dt: 1 });
+    expect(store.get(id)?.velocity).not.toEqual([0, 0, 0]);
+    expect(store.resetToSpawn(id)).toBe(true);
+    const reset = store.get(id);
+    expect(reset?.position).toEqual([1, 0, 2]);
+    expect(reset?.rotationY).toBe(0.5);
+    expect(reset?.velocity).toEqual([0, 0, 0]);
+  });
+
+  test("resetToSpawn returns false for an unknown id and forgets the pose after despawn", () => {
+    const store = createEntityStore();
+    expect(store.resetToSpawn("missing")).toBe(false);
+    const id = store.spawn("hero", { position: [1, 0, 2] });
+    store.despawn(id);
+    expect(store.spawnPoseOf(id)).toBeNull();
+    expect(store.resetToSpawn(id)).toBe(false);
+  });
+
+  test("resetToSpawn notifies subscribers", () => {
+    const store = createEntityStore();
+    const id = store.spawn("hero", { position: [1, 0, 2] });
+    store.setPose(id, { position: [9, 0, 9] });
+    let notified = 0;
+    store.subscribe(() => {
+      notified += 1;
+    });
+    store.resetToSpawn(id);
+    expect(notified).toBe(1);
+  });
 });

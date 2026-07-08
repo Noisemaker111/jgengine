@@ -41,6 +41,7 @@ import {
 } from "@jgengine/core/scene/selection";
 import {
   advancePlayerMotion,
+  applyMotionCommand,
   createEmptyMovementKeys,
   createPlayerMotionState,
   resolveMovementIntent,
@@ -55,7 +56,13 @@ import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengi
 import { GameProvider } from "@jgengine/react/provider";
 import type { WsPresenceRow } from "@jgengine/ws/protocol";
 
-import type { EntitySpriteConfig, ModelConfig, ObjectStyle, PointerConfig } from "@jgengine/core/game/playableGame";
+import type {
+  EntitySpriteConfig,
+  ModelConfig,
+  ObjectStyle,
+  PointerConfig,
+  ProposedMovement,
+} from "@jgengine/core/game/playableGame";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
@@ -540,6 +547,10 @@ function FrameDriver({
     const forwardX = Math.sin(yawRef.current);
     const forwardZ = Math.cos(yawRef.current);
     if (player !== null) {
+      const motion = motionRef.current;
+      if (motion.y !== player.position[1]) motion.y = player.position[1];
+      for (const command of ctx.player.motion.drain()) applyMotionCommand(motion, command);
+
       const keys = createEmptyMovementKeys();
       keys.w = tracker.isDown("moveForward");
       keys.s = tracker.isDown("moveBack");
@@ -548,7 +559,9 @@ function FrameDriver({
       keys.shift = tracker.isDown("sprint");
       keys.space = tracker.isDown("jump");
       const intent = resolveMovementIntent(keys, true);
-      const motion = motionRef.current;
+      const physics = playable.game.physics;
+      const groundY =
+        playable.movement?.groundHeight?.(player.position[0], player.position[2], player.position[1]) ?? 0;
       const step = advancePlayerMotion(
         motion,
         intent,
@@ -556,14 +569,38 @@ function FrameDriver({
         forwardZ,
         player.movement.walkSpeed ?? 2,
         rawDt,
+        {
+          groundY,
+          ...(physics?.gravity !== undefined ? { gravity: Math.abs(physics.gravity) } : {}),
+          ...(physics?.jumpVelocity !== undefined ? { jumpVelocity: physics.jumpVelocity } : {}),
+        },
       );
-      ctx.scene.entity.setPose(playerId, {
-        position: [player.position[0] + step.stepX, motion.jumpOffset, player.position[2] + step.stepZ],
+
+      let proposed: ProposedMovement = {
+        position: [player.position[0] + step.stepX, step.y, player.position[2] + step.stepZ],
         rotationY: intent.moving
           ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
           : player.rotationY,
-        dt: rawDt,
-      });
+        grounded: motion.grounded,
+      };
+
+      const lockAxis = playable.movement?.lockAxis;
+      if (lockAxis === "x") {
+        proposed = { ...proposed, position: [player.position[0], proposed.position[1], proposed.position[2]] };
+      } else if (lockAxis === "z") {
+        proposed = { ...proposed, position: [proposed.position[0], proposed.position[1], player.position[2]] };
+      }
+
+      const constrain = playable.movement?.constrain;
+      const finalPose = constrain === undefined ? proposed : constrain(proposed, player);
+      if (finalPose !== null) {
+        if (finalPose !== proposed) motion.y = finalPose.position[1];
+        ctx.scene.entity.setPose(playerId, {
+          position: finalPose.position,
+          rotationY: finalPose.rotationY,
+          dt: rawDt,
+        });
+      }
     }
 
     playable.loop.onTick(ctx, gameDt);
