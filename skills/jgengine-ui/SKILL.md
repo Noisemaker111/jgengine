@@ -32,13 +32,16 @@ Read **`jgengine-api`** for hooks, primitives, and `GameUI.tsx` layout ownership
 **Gets a modal/panel chrome** (backdrop + bordered window):
 - Backpack / bags
 - Combat log / chat feed
+- Social window (friends list, requests, world browser) — opened on demand, never pinned
 
 **Stays frameless** (typography, bars, icons, shadows only — no enclosing card):
 - Player unit frame
 - Target frame
+- Party frame (member rows like unit frames — never a bordered "party card")
 - Action bar / hotbar
 - Quest tracker (text column)
 - Currency (coin + number inline)
+- Voice cluster (speaking dots + push-to-talk state on its own control)
 - Floating combat/error text (fade up, no box)
 - World projectiles and hit VFX (Three.js / canvas layer)
 
@@ -58,6 +61,17 @@ Every toggle and hotbar slot shows its binding — as a badge **on that control*
 | Primary ability | `mouse0` |
 
 Pattern: `ui.openBackpack` command toggles panel state; shell calls `commands.run` on `wasPressed("openBackpack")`. UI subscribes to the same state store the command mutates.
+
+## Social HUD
+
+Build from the headless kit (`@jgengine/react/social`, `/chat`, `/voice`, `/identity` — see `jgengine-api`), never hand-rolled lists. The bar:
+
+- **Chat** is a panel (see above) anchored to a bottom corner: channel tabs, scrolling log, input row. Sender names get a distinct color from bodies; whispers/system lines get their own tint. Never a floating unstyled text column.
+- **Invite toasts** (party, world) are ephemeral top-center toasts with accept/decline actions — they expire with the invite; a dead toast that errors on click is a shipped bug.
+- **Presence** is a dot, not a word: `data-online` drives a green/gray dot on friend and party rows.
+- **Push-to-talk** shows its keybind badge on the button and visibly changes while transmitting (`data-transmitting`); a speaking player gets a glow on their party row (`data-speaking`), not a separate "who's talking" panel.
+- **Emote wheel** appears on hold-key, radial or row, and fades after selection — never a persistent emote toolbar.
+- Wire every action through the engine verbs (`social.friends.request`, `party.accept`, `worldInvites.accept` → hand the join target to your backend's join) — a social button that only mutates local UI state is half a system.
 
 ## Action bar slot states
 
@@ -82,7 +96,7 @@ Cooldown data lives in game code (`combat/abilityCooldowns.ts` or similar); UI r
 ## Modal structure
 
 ```
-ui/
+src/game/ui/
   GameUI.tsx              grid zones + modal backdrop host
   uiController.ts         panel open state (subscribe store)
   components/
@@ -95,7 +109,7 @@ ui/
     KeybindBadge.tsx
     FloatingCombatText.tsx
   combat/pendingProjectiles.ts  shot queue + bolt visual state
-  combat/<Game>ProjectileOverlay.tsx  R3F meshes; wire via PlayableGame.WorldOverlay
+  combat/<Game>ProjectileOverlay.tsx  R3F meshes; wire via `WorldOverlay` in `defineGame({...})`
 ```
 
 Inventory modal: **backpack slots only**. Character sheet: **equipment + stats**. Abilities page: **catalog abilities with costs/cooldowns/keybinds** — not the hotbar duplicate.
@@ -115,9 +129,9 @@ All screen positioning in `GameUI.tsx` only. Use CSS grid zones. Modals: full-vi
 | Left tap (no drag) | Primary ability (`useAbility` / mouse0) |
 | Shift + scroll | Hotbar slot scroll (when game registers `ui.hotbarScroll*`) |
 
-Movement uses camera yaw from `orbitYawFromCamera` so WASD is camera-relative. Per-game tuning via `PlayableGame.camera` (`minDistance`, `maxDistance`, `targetHeight`, …). Do not hardcode camera position in `onTick` when orbit mode is active.
+Movement uses camera yaw from `orbitYawFromCamera` so WASD is camera-relative. Per-game tuning via `camera` in `defineGame({...})` (`minDistance`, `maxDistance`, `targetHeight`, …). Do not hardcode camera position in `onTick` when orbit mode is active.
 
-**cameraFollow lock** — camera + target translate with entity delta; orbit radius re-locks via exponential lerp (`distanceSmoothing`), not hard snaps. `followLock: true` (default). Tune feel with `rotateSpeed` (~0.38), `zoomSpeed` (~0.62), `dampingFactor` (~0.07), `targetSmoothing`, `distanceSmoothing` on `PlayableGame.camera`. Optional `onCameraFollow` callback fires each frame with `{ entityId, target, camera, distance }`.
+**cameraFollow lock** — camera + target translate with entity delta; orbit radius re-locks via exponential lerp (`distanceSmoothing`), not hard snaps. `followLock: true` (default). Tune feel with `rotateSpeed` (~0.38), `zoomSpeed` (~0.62), `dampingFactor` (~0.07), `targetSmoothing`, `distanceSmoothing` on the `camera` field of `defineGame({...})`. Optional `onCameraFollow` callback fires each frame with `{ entityId, target, camera, distance }`.
 
 ## Self-check
 

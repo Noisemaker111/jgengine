@@ -8,7 +8,7 @@ import { useSceneEntities } from "@jgengine/react/hooks";
 
 import { MUNCHER } from "../catalog";
 import { cellToWorld, COLS, GHOSTS, ROWS, wallCells, XMIN, ZMIN } from "../maze";
-import { getFrightenedRemaining, ghostModeOf, remainingPelletCells, remainingPowerCells } from "../loop";
+import { getFrightenedRemaining, ghostModeOf, remainingPelletCells, remainingPowerCells } from "../../loop";
 
 const WALL_COLOR = "#2222d6";
 const FLOOR_COLOR = "#05010f";

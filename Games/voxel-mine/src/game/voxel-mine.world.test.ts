@@ -2,13 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { BEDROCK_BLOCK, ORES } from "./blocks";
 import { content } from "./content";
-import { game } from "./game";
-import { loop } from "./loop";
+import { game } from "../game.config";
+import { loop } from "../loop";
 import { WORLD_RADIUS } from "./worldgen";
 
 describe("voxel-mine world", () => {
   const ctx = createGameContext({
-    definition: game,
+    definition: game.game,
     content,
     player: { userId: "tester", isNew: true },
   });
