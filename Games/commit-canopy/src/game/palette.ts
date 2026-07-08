@@ -1,5 +1,5 @@
 export const CANOPY_PALETTE = {
-  background: "#0d1117",
+  background: "#010409",
   base: "#0b1220",
   empty: "#161b22",
   levels: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
