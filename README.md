@@ -13,6 +13,7 @@ A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no ren
 | [`@jgengine/sql`](packages/sql) | `HostPersistence` on Postgres through a structural pool interface (no hard `pg` dependency). |
 | [`@jgengine/convex`](packages/convex) | Convex adapters: game transport, presence transport. |
 | [`@jgengine/shell`](packages/shell) | Game player shell: R3F canvas, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
+| [`@jgengine/assets`](packages/assets) | Self-generating, license-verified index of CC0 3D models: ships the typed index + pull CLI, not the GLB bytes. |
 
 ## Install
 
