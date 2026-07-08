@@ -76,6 +76,7 @@ import {
 import { createWeaponStats, type WeaponStats } from "../item/weapon";
 import { createPoseState, type PoseAllowedStates, type PoseState } from "../movement/poseState";
 import type { ModelAssetRef } from "../scene/assetCatalog";
+import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
 import {
   createEntityStatsApi,
   seedStatValues,
@@ -213,6 +214,7 @@ export interface SceneEntityContext {
   queryArc: SpatialApi["queryArc"];
   moveToward: SpatialApi["moveToward"];
   form: Forms;
+  paint: PaintLayer;
 }
 
 export type WorldItemPickupResult =
@@ -438,6 +440,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
   const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
   const cosmetics = notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify);
+  const paintLayer = notifyAfter(createPaintLayer(), ["paint", "clear"], signal.notify);
 
   const inventoryDeclarations = definition.inventories ?? {};
   const inventoryIds = Object.keys(inventoryDeclarations);
@@ -883,6 +886,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         queryArc: spatial.queryArc,
         moveToward: spatial.moveToward,
         form: forms,
+        paint: paintLayer,
       },
       worldItem: {
         spawn: spawnWorldItem,

@@ -74,6 +74,15 @@ import {
 } from "./gameFrameDispatch";
 import { HudFrameDriver } from "./HudFrameDriver";
 import { PointerProbe } from "./pointer/PointerProbe";
+import {
+  applyMaterialTuning,
+  applyPaintTexture,
+  cloneModelScene,
+  createPaintCanvas,
+  standardMaterialsOf,
+  syncPaintCanvas,
+  type PaintCanvas,
+} from "./render/modelRender";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import {
   createPointerService,
@@ -153,9 +162,9 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   );
 }
 
-function EntityModel({ model }: { model: ModelConfig }) {
+function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
   const gltf = useLoader(GLTFLoader, model.url);
-  const scene = useMemo(() => gltf.scene.clone(true), [gltf]);
+  const ctx = useGameContext();
   const scale = model.scale ?? 1;
   const baseY = model.y ?? 0;
   const dims = model.dims;
@@ -163,6 +172,77 @@ function EntityModel({ model }: { model: ModelConfig }) {
   const position: [number, number, number] = centered
     ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
     : [0, baseY, 0];
+
+  const tint = model.tint;
+  const metalness = model.metalness;
+  const roughness = model.roughness;
+  const scene = useMemo(() => {
+    const cloned = cloneModelScene(gltf.scene);
+    applyMaterialTuning(cloned, { tint, metalness, roughness });
+    return cloned;
+  }, [gltf, tint, metalness, roughness]);
+
+  const animation = model.animation;
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const animationPausedRef = useRef(false);
+
+  useEffect(() => {
+    if (animation === undefined || gltf.animations.length === 0) {
+      mixerRef.current = null;
+      return;
+    }
+    const mixer = new THREE.AnimationMixer(scene);
+    const clip =
+      (animation.clip !== undefined ? THREE.AnimationClip.findByName(gltf.animations, animation.clip) : undefined) ??
+      gltf.animations[0]!;
+    const action = mixer.clipAction(clip);
+    action.setLoop(animation.loop === false ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    action.clampWhenFinished = animation.loop === false;
+    action.timeScale = animation.timeScale ?? 1;
+    action.enabled = true;
+    action.paused = animation.paused === true;
+    action.play();
+    if (animation.time !== undefined) action.time = animation.time;
+    mixer.update(0);
+    mixerRef.current = mixer;
+    animationPausedRef.current = animation.paused === true;
+    return () => {
+      mixer.stopAllAction();
+      mixerRef.current = null;
+    };
+  }, [scene, gltf, animation?.clip, animation?.loop, animation?.timeScale, animation?.paused, animation?.time]);
+
+  const paintCanvasRef = useRef<PaintCanvas | null>(null);
+  const paintDrawnCountRef = useRef(0);
+  const paintVersionRef = useRef(-1);
+
+  useEffect(() => {
+    paintCanvasRef.current = null;
+    paintDrawnCountRef.current = 0;
+    paintVersionRef.current = -1;
+  }, [scene]);
+
+  useFrame((_state, delta) => {
+    if (mixerRef.current !== null && !animationPausedRef.current) mixerRef.current.update(delta);
+    if (instanceId === undefined) return;
+    const paint = ctx.scene.entity.paint;
+    const version = paint.version(instanceId);
+    if (version === paintVersionRef.current) return;
+    paintVersionRef.current = version;
+    const strokes = paint.strokes(instanceId);
+    if (paintCanvasRef.current === null) {
+      if (strokes.length === 0) return;
+      const materials = standardMaterialsOf(scene);
+      const seed = materials[0];
+      if (seed === undefined) return;
+      const paintCanvas = createPaintCanvas(seed);
+      paintCanvasRef.current = paintCanvas;
+      applyPaintTexture(scene, paintCanvas);
+    }
+    const seedColor = standardMaterialsOf(scene)[0]?.color ?? new THREE.Color("#ffffff");
+    paintDrawnCountRef.current = syncPaintCanvas(paintCanvasRef.current, seedColor, strokes, paintDrawnCountRef.current);
+  });
+
   return <primitive object={scene} position={position} scale={[scale, scale, scale]} />;
 }
 
@@ -216,7 +296,7 @@ function EntityMarker({
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} />
+        <EntityModel model={model} instanceId={entity.id} />
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
       ) : entity.role === "prop" ? (
@@ -266,7 +346,7 @@ function ObjectMarker({
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} />
+        <EntityModel model={model} instanceId={object.instanceId} />
       ) : style?.hidden === true ? null : (
         <mesh position-y={0.5}>
           <boxGeometry args={[1, 1, 1]} />
@@ -429,7 +509,7 @@ function RemotePlayers({ rows }: { rows: WsPresenceRow[] }) {
         >
           <mesh position-y={0.95}>
             <capsuleGeometry args={[0.35, 1.1, 6, 14]} />
-            <meshStandardMaterial color={colorFromId(row.userId)} />
+            <meshStandardMaterial color={row.appearance?.tint ?? colorFromId(row.userId)} />
           </mesh>
           <mesh position={[0, 1.35, 0.32]}>
             <boxGeometry args={[0.16, 0.16, 0.16]} />

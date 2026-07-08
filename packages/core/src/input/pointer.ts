@@ -16,6 +16,8 @@ export interface PointerHit {
   entity: string | null;
   /** Topmost scene-object instance id under the cursor, or null. */
   object: string | null;
+  /** Texture-space UV at the hit, when the intersected mesh carries UVs; absent for the ground-plane fallback. */
+  uv?: { u: number; v: number };
 }
 
 export type PointerButton = "primary" | "secondary" | "middle";

@@ -326,6 +326,20 @@ export interface WorldItemRenderConfig {
   beamHeight?: number;
 }
 
+/** Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses. */
+export interface ModelAnimationConfig {
+  /** Clip name to play; defaults to the GLB's first clip. */
+  clip?: string;
+  /** Loop the clip. Default true. */
+  loop?: boolean;
+  /** Playback rate multiplier. Default 1. */
+  timeScale?: number;
+  /** Hold the rig on a fixed frame instead of advancing it each tick. */
+  paused?: boolean;
+  /** Seek the clip to this time in seconds; combine with `paused: true` to hold a specific pose ("pose library" usage). */
+  time?: number;
+}
+
 export interface ModelConfig {
   url: string;
   scale?: number;
@@ -334,6 +348,14 @@ export interface ModelConfig {
   anchor?: "center" | "origin";
   /** Measured footprint/center/minY; supplied automatically when the model resolves through an `@jgengine/assets` catalog. Required for `anchor: "center"` to take effect. */
   dims?: ModelDims;
+  /** Overrides the base color on every `MeshStandardMaterial`-family material in the model (a hex string, e.g. `"#3366ff"`). Applied to a per-instance material clone — never mutates the shared GLTF cache. */
+  tint?: string;
+  /** Overrides `metalness` on every standard material in the model. */
+  metalness?: number;
+  /** Overrides `roughness` on every standard material in the model. */
+  roughness?: number;
+  /** Plays a GLTF animation clip on the model when the source has any (skinned or not); omit to render the rig's bind pose. */
+  animation?: ModelAnimationConfig;
 }
 
 export interface ObjectStyle {

@@ -11,6 +11,12 @@ interface PointerDeps {
   height: number;
 }
 
+export interface SurfaceSample {
+  color: string;
+  metalness?: number;
+  roughness?: number;
+}
+
 export interface PointerService {
   /** Cast the current cursor into the world; null when the cursor is off-canvas. */
   worldHit(): PointerHit | null;
@@ -21,6 +27,8 @@ export interface PointerService {
   hasCursor(): boolean;
   bind(deps: PointerDeps | null): void;
   setCursor(ndcX: number, ndcY: number, present: boolean): void;
+  /** Reads the last `worldHit`/`centerHit` intersection's material; null when there was no hit or it isn't a standard material. */
+  sampleSurface(): SurfaceSample | null;
 }
 
 function tagOf(object: THREE.Object3D, key: string): string | null {
@@ -43,6 +51,7 @@ export function createPointerService(): PointerService {
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   let deps: PointerDeps | null = null;
   let cursorPresent = false;
+  let lastIntersection: THREE.Intersection | null = null;
 
   function castFrom(cursorNdc: THREE.Vector2): PointerHit | null {
     if (deps === null) return null;
@@ -50,6 +59,7 @@ export function createPointerService(): PointerService {
     const intersects = raycaster.intersectObjects(deps.scene.children, true);
     for (const hit of intersects) {
       if (!(hit.object as THREE.Mesh).isMesh) continue;
+      lastIntersection = hit;
       const point: PointerVec3 = [hit.point.x, hit.point.y, hit.point.z];
       let normal: PointerVec3 = [0, 1, 0];
       if (hit.face !== null && hit.face !== undefined) {
@@ -57,13 +67,16 @@ export function createPointerService(): PointerService {
         scratch.copy(hit.face.normal).applyMatrix3(normalMatrix).normalize();
         normal = [scratch.x, scratch.y, scratch.z];
       }
+      const uv = hit.uv !== undefined ? { u: hit.uv.x, v: hit.uv.y } : undefined;
       return {
         point,
         normal,
         entity: tagOf(hit.object, POINTER_ENTITY_KEY),
         object: tagOf(hit.object, POINTER_OBJECT_KEY),
+        ...(uv !== undefined ? { uv } : {}),
       };
     }
+    lastIntersection = null;
     const grounded = raycaster.ray.intersectPlane(groundPlane, scratch);
     if (grounded === null) return null;
     return { point: [grounded.x, grounded.y, grounded.z], normal: [0, 1, 0], entity: null, object: null };
@@ -91,6 +104,19 @@ export function createPointerService(): PointerService {
       return {
         x: (scratch.x * 0.5 + 0.5) * deps.width,
         y: (-scratch.y * 0.5 + 0.5) * deps.height,
+      };
+    },
+    sampleSurface() {
+      if (lastIntersection === null) return null;
+      const mesh = lastIntersection.object as THREE.Mesh;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const material = materials[lastIntersection.face?.materialIndex ?? 0];
+      if (material === undefined || !(material as THREE.MeshStandardMaterial).isMeshStandardMaterial) return null;
+      const standard = material as THREE.MeshStandardMaterial;
+      return {
+        color: `#${standard.color.getHexString()}`,
+        metalness: standard.metalness,
+        roughness: standard.roughness,
       };
     },
   };

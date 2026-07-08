@@ -403,4 +403,16 @@ describe("float text and projectile events", () => {
     expect(resetCount).toBe(1);
     expect(ctx.scene.entity.get(villager)?.position).toEqual([2, 0, 2]);
   });
+
+  test("scene.entity.paint bumps ctx.version on paint and clear", () => {
+    const ctx = makeContext();
+    const before = ctx.version();
+    ctx.scene.entity.paint.paint("car-1", { u: 0.5, v: 0.5, radius: 0.1, color: "#ff0000" });
+    expect(ctx.scene.entity.paint.strokes("car-1")).toEqual([{ u: 0.5, v: 0.5, radius: 0.1, color: "#ff0000" }]);
+    expect(ctx.version()).toBeGreaterThan(before);
+    const afterPaint = ctx.version();
+    ctx.scene.entity.paint.clear("car-1");
+    expect(ctx.scene.entity.paint.strokes("car-1")).toEqual([]);
+    expect(ctx.version()).toBeGreaterThan(afterPaint);
+  });
 });
