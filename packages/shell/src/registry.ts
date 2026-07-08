@@ -9,3 +9,11 @@ export type RenderObject = (object: SceneObject) => ReactNode;
 export type PlayableGame = EnginePlayableGame<ComponentType, ComponentType, RenderEntity, RenderObject>;
 
 export type GameRegistry = Record<string, () => Promise<PlayableGame>>;
+
+export function resolveGameLoader(
+  registry: GameRegistry,
+  gameId: string,
+  fallbackGameId?: string,
+): (() => Promise<PlayableGame>) | undefined {
+  return registry[gameId] ?? (fallbackGameId === undefined ? undefined : registry[fallbackGameId]);
+}
