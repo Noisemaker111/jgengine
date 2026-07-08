@@ -30,10 +30,12 @@ if (inWorktree) {
   emit(
     `Worktree flow OK: this session is in an isolated worktree on branch "${branch}". ` +
       `Keep committing here. When the work is real, push and open a PR (gh pr create --fill); ` +
-      `when it's genuinely done and clean, merge it yourself (gh pr merge --squash --delete-branch), ` +
-      `fast-forward the primary checkout (git -C "${primaryRoot}" pull --ff-only — merging only moves ` +
-      `origin/main, not the local clone), then ExitWorktree (remove) — don't ask the user to merge, ` +
-      `and don't merge over doubt. Echo 🚀 in your reply after a merge so the chat shows it.`,
+      `when it's genuinely done and clean, queue the merge (gh pr merge --squash --auto) — GitHub ` +
+      `merges on green CI (~30s) and deletes the branch itself; never poll or wait on CI. ` +
+      `Fast-forward the primary checkout once the merge lands (git -C "${primaryRoot}" pull --ff-only — ` +
+      `merging only moves origin/main, not the local clone), or leave it for the next session's pull, ` +
+      `then ExitWorktree (remove) — don't ask the user to merge, and don't merge over doubt. ` +
+      `Echo 🚀 in your reply after queuing a merge so the chat shows it.`,
   );
 }
 
