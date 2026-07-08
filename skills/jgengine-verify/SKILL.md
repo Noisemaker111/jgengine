@@ -46,9 +46,9 @@ If the game's world is `biomes()` / `voxel()` / `flat()` rather than `environmen
 For a voxel game built on `@jgengine/core/world/voxelField`'s `createVoxelField`, assert on `field.summary()` (`{ blocks, types, bounds }`) the same way an `environment()` world asserts on `summarizeEnvironment`:
 
 ```ts
-// <game>/src/world.world.test.ts
+// <game>/src/game/world.world.test.ts — under src/game/, never at the top of src/ (check-game-shape rejects extra files there)
 import { describe, expect, test } from "bun:test";
-import { world } from "./world"; // the populated VoxelField
+import { world } from "../world"; // the populated VoxelField
 
 describe("<game> voxel world", () => {
   const summary = world.summary();

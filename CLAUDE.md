@@ -10,7 +10,7 @@ The primary engine-development repo: a genre-agnostic, pure-TypeScript game engi
 - **Remote sessions arrive off-`main`.** In a cloud session the container checks the primary checkout out onto the assigned task branch, not `main`, and a worktree branched fresh off `origin/main` won't carry that branch's commits (expected — it's why a worktree's CLAUDE.md can differ from the one in session context). After entering your worktree, once the primary's branch is pushed, return it to `main` (`git -C <repo root> switch main`); never let the primary checkout accumulate unpushed local-only commits — a reclaimed container takes them with it (the `warn-unpushed` Stop hook catches this). If a session forgets, the next session's start hook self-heals: a parked primary that is fully pushed and clean is switched back to `main` automatically; a dirty or unpushed one is reported instead of touched, as are stray de-registered worktree folders.
 - **A fixed issue must be closed.** When your work resolves a tracked `[FEATURE]` gap issue, close it — never leave a fixed issue open. Put `Closes #N` in the PR body so the merge auto-closes it; if the issue doesn't close on merge (cross-repo, no linking keyword, etc.), close it yourself with `gh issue close #N` and a one-line reason pointing at the merged PR.
 - **The user owns release timing.** Merging to `main` can trigger npm publish (`.github/workflows/publish.yml` publishes any `@jgengine/*` version not yet on npm, in dependency order). Never bump a package version to force a release unless asked.
-- **Layering is one-directional.** `core` imports nothing. `ws` and `sql` import only core. `react` adds React; `convex` adds Convex + React; `node` adds Node builtins + `ws`; `shell` adds React + three.js and is the only package that renders. Never let a lower layer import a higher one, and never let core import React, Convex, three.js, the browser, or any game.
+- **Layering is one-directional.** `core` imports nothing. `ws` and `sql` import only core. `react` adds React; `convex` adds Convex + React; `node` adds Node builtins + `ws`; `shell` adds React + three.js and is the only package that renders. `assets` sits outside this chain: it's a data/index package plus a pull CLI, usable by games and `shell` but never imported by `core`. Never let a lower layer import a higher one, and never let core import React, Convex, three.js, the browser, or any game.
 - **Extracting SDK primitives must not change how a game plays.** Extract the reusable core *behind* a user-facing feature; confirm before cutting anything a player sees.
 - Run `git push` on its own line, never piped through a filter — a non-zero grep silently drops the push while looking like success.
 
@@ -18,7 +18,16 @@ The primary engine-development repo: a genre-agnostic, pure-TypeScript game engi
 
 - bun workspaces: `packages/*` (the eight `@jgengine/*` packages, consumers import by path), `Games/*` (private, source-consumed, one directory per game, built via the `harvest-game` skill), `apps/*` (`dev` = Vite game runner + screenshot target, games auto-register from `Games/*` via a glob in `apps/dev/src/main.tsx` — no manual registry entry; root `bun dev` runs the website where every game is playable at `/games/<id>` (the page embeds the runner from its internal `/play` mount, proxied in dev, static in prod), `bun run dev:runner` runs the runner alone, `bun run games:<id>` plays one game standalone; `desktop` = Tauri wrapper; `web` = jgengine.com), `examples/*` (deployable host examples).
 - The compiler is `tsgo` (`@typescript/native-preview`), not `tsc`. Strict TS everywhere; no `any` escapes in engine code.
-- `skills/` is the spec — build games from `jgengine-api`, `jgengine-ui`, `jgengine-assets`, `jgengine-newgame`, not by copying other games. `check-types` also validates that the skills match the real API surface.
+- `skills/` is the spec — build games from these five, not by copying other games (`check-types` also validates that the skills match the real API surface):
+
+  | Skill | Role |
+  | --- | --- |
+  | `jgengine-newgame` | Blueprint + phased full build |
+  | `jgengine-api` | Engine surface |
+  | `jgengine-ui` | HUD quality bar |
+  | `jgengine-assets` | Real art from day one |
+  | `jgengine-verify` | Browserless scene gate; shoot last |
+- Harvest scope differs by skill: `harvest-game` builds a **minimal probe** to surface gaps fast; `harvest-full-game` / `jgengine-newgame` build the **full blueprint, no half systems**. Don't apply "no slices" to a harvest probe, and don't ship a slice when a full build was asked for.
 - This is the engine repo: fix engine gaps and doc errors directly here. The only issues filed from inside it are the `[FEATURE]` gap issues from the `harvest-game` skill.
 
 ## Verification
