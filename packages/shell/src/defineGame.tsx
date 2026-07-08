@@ -64,6 +64,11 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     worldItem,
     collision,
     movement,
+    lighting,
+    backdrop,
+    shadows,
+    presentation,
+    objectStyles,
     ...engineFields
   } = config;
 
@@ -99,5 +104,10 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     worldItem,
     collision,
     movement,
+    lighting,
+    backdrop,
+    shadows,
+    presentation,
+    objectStyles,
   };
 }

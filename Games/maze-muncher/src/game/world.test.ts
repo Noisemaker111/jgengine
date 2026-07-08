@@ -5,9 +5,13 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { entityCatalog, LIVES, MUNCHER, SCORE, START_LIVES } from "./catalog";
 import { game } from "../game.config";
 import {
+  getFogFar,
+  getForcefieldRemaining,
   getFrightenedRemaining,
+  getLanternRemaining,
   getLevel,
   getPhase,
+  getShells,
   ghostModeOf,
   MAX_LEVEL,
   onInit,
@@ -15,7 +19,7 @@ import {
   onTick,
   pelletsLeft,
 } from "../loop";
-import { cellToWorld, GHOSTS, PLAYER_START, pelletCells, powerCells } from "./maze";
+import { cellToWorld, GHOSTS, PLAYER_START, POWERUP_SPAWNS, pelletCells, powerCells } from "./maze";
 
 const content = { entityById: (id: string) => entityCatalog[id] ?? null };
 const STEP = 1 / 60;
@@ -141,5 +145,62 @@ describe("maze-muncher world", () => {
     expect(ctx.scene.entity.stats.get("p1", SCORE)?.current).toBe(0);
     expect(ctx.scene.entity.stats.get("p1", LIVES)?.current).toBe(START_LIVES);
     expect(pelletsLeft()).toBe(pelletCells.length + powerCells.length);
+  });
+});
+
+describe("maze-muncher powerups", () => {
+  test("a force field repels a ghost instead of costing a life", () => {
+    const ctx = boot();
+    const field = POWERUP_SPAWNS.find((spawn) => spawn.kind === "forcefield")!;
+    ctx.scene.entity.setPose("p1", { position: cellToWorld(field.c, field.r) });
+    onTick(ctx, STEP);
+    expect(getForcefieldRemaining()).toBeGreaterThan(0);
+
+    const hunter = GHOSTS.find((g) => g.id === "hunter")!;
+    ctx.scene.entity.setPose(hunter.id, { position: cellToWorld(field.c, field.r) });
+    ctx.scene.entity.setPose("p1", { position: cellToWorld(field.c, field.r) });
+    onTick(ctx, STEP);
+
+    expect(getPhase()).toBe("playing");
+    expect(ctx.scene.entity.stats.get("p1", LIVES)?.current).toBe(START_LIVES);
+    expect(ghostModeOf(hunter.id)).toBe("eaten");
+  });
+
+  test("the double barrel arms shells and blasts a ghost in the aim cone", () => {
+    const ctx = boot();
+    const barrel = POWERUP_SPAWNS.find((spawn) => spawn.kind === "doublebarrel")!;
+    ctx.scene.entity.setPose("p1", { position: cellToWorld(barrel.c, barrel.r) });
+    onTick(ctx, STEP);
+    const shells = getShells();
+    expect(shells).toBeGreaterThan(0);
+
+    const victim = GHOSTS[0]!;
+    ctx.scene.entity.setPose(victim.id, { position: cellToWorld(barrel.c, barrel.r - 2) });
+    const scoreBefore = ctx.scene.entity.stats.get("p1", SCORE)?.current ?? 0;
+    ctx.game.commands.run("fire", { yaw: Math.PI });
+
+    expect(getShells()).toBe(shells - 1);
+    expect(ghostModeOf(victim.id)).toBe("eaten");
+    expect(ctx.scene.entity.stats.get("p1", SCORE)?.current ?? 0).toBeGreaterThan(scoreBefore);
+  });
+
+  test("firing with no shells is a no-op", () => {
+    const ctx = boot();
+    expect(getShells()).toBe(0);
+    const victim = GHOSTS[0]!;
+    ctx.scene.entity.setPose("p1", { position: cellToWorld(PLAYER_START.c, PLAYER_START.r) });
+    ctx.scene.entity.setPose(victim.id, { position: cellToWorld(PLAYER_START.c, PLAYER_START.r - 1) });
+    ctx.game.commands.run("fire", { yaw: Math.PI });
+    expect(ghostModeOf(victim.id)).not.toBe("eaten");
+  });
+
+  test("a lantern extends the fog view distance while it burns", () => {
+    const ctx = boot();
+    const baseFar = getFogFar();
+    const lantern = POWERUP_SPAWNS.find((spawn) => spawn.kind === "lantern")!;
+    ctx.scene.entity.setPose("p1", { position: cellToWorld(lantern.c, lantern.r) });
+    onTick(ctx, STEP);
+    expect(getLanternRemaining()).toBeGreaterThan(0);
+    expect(getFogFar()).toBeGreaterThan(baseFar);
   });
 });

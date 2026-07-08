@@ -22,11 +22,14 @@ import {
   NAV_BOUNDS,
   PEN_CENTER,
   PLAYER_START,
+  POWERUP_SPAWNS,
   pelletCells,
   powerCells,
   worldToCell,
   type Cell,
   type GhostDef,
+  type PowerupKind,
+  type PowerupSpawn,
 } from "./game/maze";
 
 export type Phase = "playing" | "levelup" | "won" | "lost";
@@ -39,6 +42,18 @@ const SPEED_FRIGHT = 2.4;
 const SPEED_EATEN = 8;
 const LEVEL_UP_PAUSE = 2;
 export const MAX_LEVEL = 5;
+
+const FORCEFIELD_SECONDS = 9;
+const LANTERN_SECONDS = 10;
+const SHELLS_PER_PICKUP = 2;
+const SHOTGUN_RANGE = 7;
+const SHOTGUN_CONE_COS = 0.82;
+const SHOTGUN_SCORE = 150;
+const MUZZLE_FLASH_SECONDS = 0.12;
+
+export const FOG_NEAR = 2.5;
+const FOG_FAR_BASE = 8.5;
+const FOG_FAR_LANTERN = 20;
 
 interface GhostState {
   def: GhostDef;
@@ -56,11 +71,31 @@ let levelStartElapsed = 0;
 let levelUpUntil = 0;
 let frightenedUntil = 0;
 let ghostChain = 0;
+let forcefieldUntil = 0;
+let lanternUntil = 0;
+let shells = 0;
+let lastFireAt = -1;
 let lastMuncher: [number, number] = [0, 0];
 let muncherDir: Dir = { dc: 0, dr: -1 };
 const pelletSet = new Set<string>();
 const powerSet = new Set<string>();
+const powerupSet = new Set<string>();
+const powerupKindByCell = new Map<string, PowerupKind>();
 const ghosts = new Map<string, GhostState>();
+
+function seedPickups(): void {
+  pelletSet.clear();
+  powerSet.clear();
+  powerupSet.clear();
+  powerupKindByCell.clear();
+  for (const cell of pelletCells) pelletSet.add(cellKey(cell.c, cell.r));
+  for (const cell of powerCells) powerSet.add(cellKey(cell.c, cell.r));
+  for (const spawn of POWERUP_SPAWNS) {
+    const key = cellKey(spawn.c, spawn.r);
+    powerupSet.add(key);
+    powerupKindByCell.set(key, spawn.kind);
+  }
+}
 
 function levelElapsed(): number {
   return elapsed - levelStartElapsed;
@@ -81,6 +116,22 @@ export function pelletsLeft(): number {
 export function getFrightenedRemaining(): number {
   return Math.max(0, frightenedUntil - elapsed);
 }
+export function getForcefieldRemaining(): number {
+  return Math.max(0, forcefieldUntil - elapsed);
+}
+export function getLanternRemaining(): number {
+  return Math.max(0, lanternUntil - elapsed);
+}
+export function getShells(): number {
+  return shells;
+}
+export function getMuzzleFlash(): number {
+  const since = elapsed - lastFireAt;
+  return lastFireAt < 0 || since > MUZZLE_FLASH_SECONDS ? 0 : 1 - since / MUZZLE_FLASH_SECONDS;
+}
+export function getFogFar(): number {
+  return lanternUntil > elapsed ? FOG_FAR_LANTERN : FOG_FAR_BASE;
+}
 export function ghostModeOf(id: string): Mode | null {
   return ghosts.get(id)?.mode ?? null;
 }
@@ -89,6 +140,50 @@ export function remainingPelletCells(): Cell[] {
 }
 export function remainingPowerCells(): Cell[] {
   return powerCells.filter((cell) => powerSet.has(cellKey(cell.c, cell.r)));
+}
+export function remainingPowerups(): PowerupSpawn[] {
+  return POWERUP_SPAWNS.filter((spawn) => powerupSet.has(cellKey(spawn.c, spawn.r)));
+}
+
+function applyPowerup(ctx: GameContext, userId: string, kind: PowerupKind): void {
+  if (kind === "forcefield") {
+    forcefieldUntil = elapsed + FORCEFIELD_SECONDS;
+    ctx.scene.entity.floatText({ instanceId: userId, text: "FORCE FIELD", kind: "info" });
+  } else if (kind === "lantern") {
+    lanternUntil = elapsed + LANTERN_SECONDS;
+    ctx.scene.entity.floatText({ instanceId: userId, text: "LANTERN", kind: "info" });
+  } else {
+    shells += SHELLS_PER_PICKUP;
+    ctx.scene.entity.floatText({ instanceId: userId, text: "DOUBLE BARREL", kind: "info" });
+  }
+}
+
+function fireShotgun(ctx: GameContext, yaw: number): void {
+  if (phase !== "playing" || shells <= 0) return;
+  const userId = ctx.player.userId;
+  const self = ctx.scene.entity.get(userId);
+  if (self === null) return;
+  shells -= 1;
+  lastFireAt = elapsed;
+  const dirX = Math.sin(yaw);
+  const dirZ = Math.cos(yaw);
+  const px = self.position[0];
+  const pz = self.position[2];
+  for (const gs of ghosts.values()) {
+    if (gs.mode === "eaten") continue;
+    const entity = ctx.scene.entity.get(gs.def.id);
+    if (entity === null) continue;
+    const toX = entity.position[0] - px;
+    const toZ = entity.position[2] - pz;
+    const dist = Math.hypot(toX, toZ);
+    if (dist < 0.1 || dist > SHOTGUN_RANGE) continue;
+    if ((toX * dirX + toZ * dirZ) / dist < SHOTGUN_CONE_COS) continue;
+    gs.mode = "eaten";
+    gs.route = null;
+    gs.retargetAt = 0;
+    ctx.scene.entity.stats.delta(userId, SCORE, SHOTGUN_SCORE);
+    ctx.scene.entity.floatText({ instanceId: gs.def.id, text: `${SHOTGUN_SCORE}`, kind: "info" });
+  }
 }
 
 export function onInit(ctx: GameContext): void {
@@ -108,16 +203,23 @@ export function onInit(ctx: GameContext): void {
   levelUpUntil = 0;
   frightenedUntil = 0;
   ghostChain = 0;
+  forcefieldUntil = 0;
+  lanternUntil = 0;
+  shells = 0;
+  lastFireAt = -1;
   muncherDir = { dc: 0, dr: -1 };
-  pelletSet.clear();
-  powerSet.clear();
-  for (const cell of pelletCells) pelletSet.add(cellKey(cell.c, cell.r));
-  for (const cell of powerCells) powerSet.add(cellKey(cell.c, cell.r));
+  seedPickups();
   ghosts.clear();
 
   ctx.game.commands.define("restart", {
     apply(state: GameContext) {
       fullRestart(state);
+      return state;
+    },
+  });
+  ctx.game.commands.define("fire", {
+    apply(state: GameContext, input: { yaw?: number }) {
+      fireShotgun(state, input?.yaw ?? 0);
       return state;
     },
   });
@@ -143,11 +245,12 @@ function fullRestart(ctx: GameContext): void {
 }
 
 function startLevel(ctx: GameContext): void {
-  pelletSet.clear();
-  powerSet.clear();
-  for (const cell of pelletCells) pelletSet.add(cellKey(cell.c, cell.r));
-  for (const cell of powerCells) powerSet.add(cellKey(cell.c, cell.r));
+  seedPickups();
   ghostChain = 0;
+  shells = 0;
+  forcefieldUntil = 0;
+  lanternUntil = 0;
+  lastFireAt = -1;
   levelStartElapsed = elapsed;
   resetActors(ctx);
   phase = "playing";
@@ -195,10 +298,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   if (Math.abs(dx) > 0.001 || Math.abs(dz) > 0.001) {
     muncherDir = Math.abs(dx) >= Math.abs(dz) ? { dc: Math.sign(dx), dr: 0 } : { dc: 0, dr: Math.sign(dz) };
   }
-  ctx.scene.entity.setPose(userId, {
-    position: [sx, 0, sz],
-    rotationY: Math.atan2(muncherDir.dc, muncherDir.dr),
-  });
+  ctx.scene.entity.setPose(userId, { position: [sx, 0, sz], rotationY: muncher.rotationY });
   lastMuncher = [sx, sz];
   const muncherCell = worldToCell(sx, sz);
 
@@ -217,6 +317,13 @@ export function onTick(ctx: GameContext, dt: number): void {
         gs.route = null;
         gs.retargetAt = 0;
       }
+    }
+  }
+  if (powerupSet.has(mk)) {
+    const kind = powerupKindByCell.get(mk);
+    if (kind !== undefined) {
+      powerupSet.delete(mk);
+      applyPowerup(ctx, userId, kind);
     }
   }
   if (pelletSet.size === 0 && powerSet.size === 0) {
@@ -293,14 +400,21 @@ export function onTick(ctx: GameContext, dt: number): void {
         ctx.scene.entity.stats.delta(userId, SCORE, chainScore);
         ctx.scene.entity.floatText({ instanceId: userId, text: String(chainScore), kind: "info" });
       } else if (gs.mode !== "eaten") {
-        ctx.scene.entity.stats.delta(userId, LIVES, -1);
-        const lives = ctx.scene.entity.stats.get(userId, LIVES);
-        if (lives === null || lives.current <= 0) {
-          phase = "lost";
+        if (forcefieldUntil > elapsed) {
+          gs.mode = "eaten";
+          gs.route = null;
+          gs.retargetAt = 0;
+          ctx.scene.entity.floatText({ instanceId: userId, text: "REPELLED", kind: "info" });
         } else {
-          resetActors(ctx);
+          ctx.scene.entity.stats.delta(userId, LIVES, -1);
+          const lives = ctx.scene.entity.stats.get(userId, LIVES);
+          if (lives === null || lives.current <= 0) {
+            phase = "lost";
+          } else {
+            resetActors(ctx);
+          }
+          return;
         }
-        return;
       }
     }
   }
