@@ -78,7 +78,7 @@ export default defineConfig({
   },
   plugins: [
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({ prerender: { enabled: true, crawlLinks: true } }),
     nitro({ devServer: { runner: "self" } }),
     viteReact(),
     gamesPlayerPlugin(),

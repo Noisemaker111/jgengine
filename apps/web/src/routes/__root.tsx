@@ -2,6 +2,8 @@ import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-r
 
 import { SITE_URL } from "../lib/site";
 import appCss from "../styles.css?url";
+import interWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+import monoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
 
 const TITLE = "JGengine — build a game by telling your agent";
 const DESCRIPTION =
@@ -22,6 +24,8 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#05070d" },
     ],
     links: [
+      { rel: "preload", href: interWoff2, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", href: monoWoff2, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
