@@ -29,4 +29,7 @@ export const game = defineGame({
     firstPerson: { eyeHeight: EYE_HEIGHT, reticle: true, viewmodel: false },
   },
   hotbarSelection: getSelectedSlot,
+  touch: {
+    hidden: Object.keys(keybinds).filter((action) => action.startsWith("selectSlot")),
+  },
 });
