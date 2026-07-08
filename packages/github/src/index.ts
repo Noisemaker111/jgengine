@@ -15,7 +15,6 @@ export { summarize, type ContributionStats } from "./analytics";
 export {
   DEFAULT_ENDPOINT,
   contributions,
-  syntheticYear,
   wireToCells,
   type ContributionData,
   type ContributionsWire,

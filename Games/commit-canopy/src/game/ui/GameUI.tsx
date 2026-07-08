@@ -201,7 +201,7 @@ function StatRow({ label, value, first }: { label: string; value: string; first:
 
 function ProfileRow({ profile }: { profile: GitHubProfile | null }) {
   if (profile === null) {
-    return <div style={{ fontSize: 12, color: EM.labelDim }}>Synthetic sample — look up a GitHub user above.</div>;
+    return <div style={{ fontSize: 12, color: EM.labelDim }}>Look up a GitHub user above.</div>;
   }
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>

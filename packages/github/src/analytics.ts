@@ -24,6 +24,22 @@ export function summarize(cells: readonly DayCell[]): ContributionStats {
   const weekdayTotals = new Array<number>(DAYS).fill(0);
   const monthTotals = new Map<string, number>();
 
+  if (cells.length === 0) {
+    return {
+      total: 0,
+      activeDays: 0,
+      activeDaysPct: 0,
+      avgPerActiveDay: 0,
+      avgPerWeek: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      peakDay: { count: 0, label: "" },
+      busiestWeekday: { name: WEEKDAY_NAMES[0]!, total: 0 },
+      mostActiveMonth: { label: "", total: 0 },
+      last30Days: 0,
+    };
+  }
+
   let total = 0;
   let activeDays = 0;
   let longestStreak = 0;
