@@ -11,6 +11,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
   build: { target: "es2022" },
+  server: { host: true },
   resolve: {
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
