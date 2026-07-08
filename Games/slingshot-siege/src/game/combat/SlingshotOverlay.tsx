@@ -32,8 +32,8 @@ const SIEGE_ZONE_HALF: readonly [number, number] = [5, 3.5];
 const AIM_CATCHER_MARGIN = 20;
 const AIM_CATCHER_HALF_WIDTH = GROUND_HALF[0] + AIM_CATCHER_MARGIN;
 const AIM_CATCHER_HALF_HEIGHT = GRAB_RADIUS_COARSE + MAX_PULL + AIM_CATCHER_MARGIN;
-const COACH_DOT_COLOR = "#ffe9b8";
-const COACH_ARC_COLOR = "#f3e6cf";
+const COACH_DOT_COLOR = "#ffab26";
+const COACH_ARC_COLOR = "#ff8f1f";
 
 function bodyColor(meta: BodyMeta): readonly [number, number, number] {
   if (meta.kind === "ground") return GROUND_COLOR;
@@ -205,13 +205,13 @@ function DragCoach() {
       group.position.set(frame.position[0], frame.position[1], frame.position[2]);
       group.quaternion.copy(camera.quaternion);
     }
-    if (ringMaterialRef.current) ringMaterialRef.current.opacity = frame.opacity * 0.85;
+    if (ringMaterialRef.current) ringMaterialRef.current.opacity = frame.opacity;
     if (circleMaterialRef.current) circleMaterialRef.current.opacity = frame.opacity * 0.5;
     if (fingerMaterialRef.current) fingerMaterialRef.current.opacity = frame.opacity * 0.8;
     const arcGroup = arcGroupRef.current;
     if (arcGroup !== null) {
       arcGroup.visible = frame.showArc;
-      for (const material of arcMaterialsRef.current) material.opacity = frame.opacity * 0.55;
+      for (const material of arcMaterialsRef.current) material.opacity = frame.opacity * 0.9;
     }
   });
 
@@ -222,15 +222,15 @@ function DragCoach() {
       </group>
       <group ref={groupRef}>
         <mesh raycast={() => null}>
-          <ringGeometry args={[0.16, 0.22, 20]} />
+          <ringGeometry args={[0.34, 0.46, 24]} />
           <meshBasicMaterial ref={ringMaterialRef} color={COACH_DOT_COLOR} transparent opacity={0} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
         <mesh raycast={() => null}>
-          <circleGeometry args={[0.1, 20]} />
+          <circleGeometry args={[0.22, 24]} />
           <meshBasicMaterial ref={circleMaterialRef} color={COACH_DOT_COLOR} transparent opacity={0} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
         <mesh position={[0.02, 0.24, 0.001]} rotation={[0, 0, -0.3]} raycast={() => null}>
-          <capsuleGeometry args={[0.045, 0.2, 4, 8]} />
+          <capsuleGeometry args={[0.09, 0.42, 4, 8]} />
           <meshBasicMaterial ref={fingerMaterialRef} color={COACH_DOT_COLOR} transparent opacity={0} depthWrite={false} />
         </mesh>
       </group>
@@ -250,7 +250,7 @@ function CoachArcMaterials({
     <>
       {dots.map((point, index) => (
         <mesh key={index} position={[point[0], point[1], point[2]]} raycast={() => null}>
-          <sphereGeometry args={[0.035, 6, 6]} />
+          <sphereGeometry args={[0.09, 8, 8]} />
           <meshBasicMaterial
             ref={(material) => {
               if (material !== null) materialsRef.current[index] = material;
