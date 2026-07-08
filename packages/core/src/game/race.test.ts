@@ -76,6 +76,81 @@ describe("reset-to-last-checkpoint", () => {
   });
 });
 
+describe("removeRacer", () => {
+  test("drops a racer's progress and standing", () => {
+    const race = createRaceState({ track: TRACK, win: everyoneFinishes() });
+    race.addRacer("p1");
+    race.addRacer("p2");
+    race.update(0, { p1: [20, 0, 0], p2: [0, 0, 0] });
+
+    race.removeRacer("p1");
+
+    expect(race.progressOf("p1")).toBeNull();
+    expect(race.standings().map((s) => s.racerId)).toEqual(["p2"]);
+  });
+
+  test("recomputes standings positions without the removed racer", () => {
+    const race = createRaceState({ track: TRACK, win: everyoneFinishes() });
+    race.addRacer("p1");
+    race.addRacer("p2");
+    race.addRacer("p3");
+    race.update(0, { p1: [20, 0, 0], p2: [0, 0, 0], p3: [0, 0, 0] });
+
+    race.removeRacer("p1");
+
+    const standings = race.standings();
+    expect(standings.map((s) => s.racerId)).toEqual(["p2", "p3"]);
+    expect(standings.map((s) => s.position)).toEqual([1, 2]);
+  });
+
+  test("is a no-op for an unknown racer id", () => {
+    const race = createRaceState({ track: TRACK });
+    race.addRacer("p1");
+    expect(() => race.removeRacer("ghost")).not.toThrow();
+    expect(race.standings().map((s) => s.racerId)).toEqual(["p1"]);
+  });
+});
+
+describe("reset", () => {
+  test("returns the race to its initial state", () => {
+    const race = createRaceState({ track: TRACK, win: everyoneFinishes() });
+    race.addRacer("p1");
+    race.update(0, { p1: [0, 0, 0] });
+    race.update(1, { p1: [20, 0, 0] });
+    race.update(2, { p1: [20, 0, 20] });
+    race.update(3, { p1: [0, 0, 0] });
+    race.update(4, { p1: [20, 0, 0] });
+    race.update(5, { p1: [20, 0, 20] });
+    expect(race.finished).toBe(true);
+
+    race.reset();
+
+    expect(race.finished).toBe(false);
+    expect(race.ranking).toEqual([]);
+    expect(race.standings()).toEqual([]);
+    expect(race.progressOf("p1")).toBeNull();
+  });
+
+  test("the instance is reusable for a fresh race after reset", () => {
+    const race = createRaceState({ track: TRACK, win: everyoneFinishes() });
+    race.addRacer("p1");
+    race.update(0, { p1: [0, 0, 0] });
+    race.reset();
+
+    race.addRacer("p1");
+    expect(race.progressOf("p1")).toMatchObject({ lap: 1, nextCheckpoint: 0, progress: 0, finished: false });
+
+    const finish1 = race.update(0, { p1: [0, 0, 0] });
+    const finish2 = race.update(1, { p1: [20, 0, 0] });
+    const finish3 = race.update(2, { p1: [20, 0, 20] });
+    race.update(3, { p1: [0, 0, 0] });
+    race.update(4, { p1: [20, 0, 0] });
+    const finish = race.update(5, { p1: [20, 0, 20] });
+    expect([...finish1, ...finish2, ...finish3, ...finish].some((e) => e.type === "race.finished")).toBe(true);
+    expect(race.finished).toBe(true);
+  });
+});
+
 describe("pluggable win conditions", () => {
   test("topK round-cut resolves the moment k racers finish", () => {
     const shortTrack = raceTrack({ checkpoints: [line("a", 0, 0), line("b", 10, 0)], laps: 1 });

@@ -1,4 +1,4 @@
-import type { PhysicsBounds } from "./physicsWorld";
+import { MAX_BROADPHASE_CELLS, type PhysicsBounds } from "./physicsWorld";
 
 export interface SpatialGridConfig {
   /** Horizontal extent to index; only x/z of the bounds are used (a top-down plane). */
@@ -43,6 +43,12 @@ export class SpatialGrid {
     this.nx = Math.max(1, Math.ceil(spanX / config.cellSize));
     this.nz = Math.max(1, Math.ceil(spanZ / config.cellSize));
     this.numCells = this.nx * this.nz;
+    if (this.numCells > MAX_BROADPHASE_CELLS) {
+      throw new Error(
+        `SpatialGrid: grid too large (${this.nx}x${this.nz} = ${this.numCells} cells, cap ${MAX_BROADPHASE_CELLS}). ` +
+          `bounds=[${config.bounds.min}]..[${config.bounds.max}] cellSize=${config.cellSize}; raise cellSize or shrink bounds.`,
+      );
+    }
     this.cellStart = new Int32Array(this.numCells + 1);
     this.cursor = new Int32Array(this.numCells);
     this.sorted = new Int32Array(config.capacity);

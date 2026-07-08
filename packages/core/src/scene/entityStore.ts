@@ -5,6 +5,7 @@ export type EntityRole = "player" | "npc" | "prop";
 
 export interface EntityMovement {
   walkSpeed?: number;
+  frozen?: boolean;
 }
 
 export type EntityPosition = readonly [number, number, number];
@@ -29,6 +30,14 @@ export interface SceneEntity<TMeta = undefined> {
 /** Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code. */
 export function groundSpeed(entity: SceneEntity<unknown>): number {
   return Math.hypot(entity.velocity[0], entity.velocity[2]);
+}
+
+const DEFAULT_FROZEN_MOVE_THRESHOLD = 1e-6;
+
+export function movedWhileFrozen(entity: SceneEntity<unknown>, threshold = DEFAULT_FROZEN_MOVE_THRESHOLD): boolean {
+  if (entity.movement.frozen !== true) return false;
+  const speed = Math.hypot(entity.velocity[0], entity.velocity[1], entity.velocity[2]);
+  return speed > threshold;
 }
 
 export interface SpawnOptions<TMeta = undefined> {

@@ -11,6 +11,10 @@ export interface TimeConfig {
   start?: number;
   /** Boot with the clock paused. Default false. */
   startPaused?: boolean;
+  /** In-world days per year, driving `calendar().year`/`dayOfYear`/`yearFraction`. Default 365. */
+  daysPerYear?: number;
+  /** Named season segments spanning the year in equal shares; when set, `calendar().season` names the current one. */
+  seasons?: readonly string[];
 }
 
 export interface CalendarTime {
@@ -23,6 +27,14 @@ export interface CalendarTime {
   second: number;
   /** Progress through the current day, 0..1. */
   dayFraction: number;
+  /** 0-based year index, using `daysPerYear` (default 365). */
+  year: number;
+  /** 0-based day index within the current year. */
+  dayOfYear: number;
+  /** Progress through the current year, 0..1. */
+  yearFraction: number;
+  /** Current season name, present only when `TimeConfig.seasons` is configured. */
+  season?: string;
 }
 
 export interface ClockSnapshot {
@@ -83,6 +95,8 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
   const speeds = configuredSpeeds.length > 0 ? configuredSpeeds : [1];
   const dayLength =
     config.dayLength !== undefined && config.dayLength > 0 ? config.dayLength : SECONDS_PER_GAME_DAY;
+  const daysPerYear = config.daysPerYear !== undefined && config.daysPerYear > 0 ? config.daysPerYear : 365;
+  const seasons = config.seasons;
 
   let now = config.start !== undefined && config.start > 0 ? config.start : 0;
   let paused = config.startPaused ?? false;
@@ -95,14 +109,26 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
     const day = Math.floor(now / dayLength);
     const dayFraction = (now - day * dayLength) / dayLength;
     const secondOfDay = dayFraction * 24 * 3600;
-    return {
+    const year = Math.floor(day / daysPerYear);
+    const dayOfYear = day - year * daysPerYear;
+    const yearFraction = (dayOfYear + dayFraction) / daysPerYear;
+    const result: CalendarTime = {
       totalSeconds: now,
       day,
       hour: Math.floor(secondOfDay / 3600) % 24,
       minute: Math.floor(secondOfDay / 60) % 60,
       second: Math.floor(secondOfDay) % 60,
       dayFraction,
+      year,
+      dayOfYear,
+      yearFraction,
     };
+    if (seasons !== undefined && seasons.length > 0) {
+      const segmentLength = daysPerYear / seasons.length;
+      const index = Math.min(seasons.length - 1, Math.floor(dayOfYear / segmentLength));
+      result.season = seasons[index];
+    }
+    return result;
   }
 
   function fireDueTimers(): void {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { talkable, wander } from "@jgengine/core/scene/behaviors";
-import { createEntityStore, groundSpeed } from "@jgengine/core/scene/entityStore";
+import { createEntityStore, groundSpeed, movedWhileFrozen } from "@jgengine/core/scene/entityStore";
 
 describe("scene entity store", () => {
   test("spawn generates unique monotonic ids when omitted", () => {
@@ -216,5 +216,34 @@ describe("scene entity store", () => {
     });
     store.resetToSpawn(id);
     expect(notified).toBe(1);
+  });
+
+  test("movement.frozen can be set on spawn and patched via update", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0], movement: { frozen: true } });
+    expect(store.get(id)?.movement.frozen).toBe(true);
+    store.update(id, { movement: { frozen: false } });
+    expect(store.get(id)?.movement.frozen).toBe(false);
+  });
+
+  test("movedWhileFrozen is false when the entity is not frozen, regardless of speed", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    store.setPose(id, { position: [5, 0, 0], dt: 1 });
+    expect(movedWhileFrozen(store.get(id)!)).toBe(false);
+  });
+
+  test("movedWhileFrozen is false for a frozen entity below the motion threshold", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0], movement: { frozen: true } });
+    expect(movedWhileFrozen(store.get(id)!)).toBe(false);
+  });
+
+  test("movedWhileFrozen detects a frozen entity whose velocity exceeds the threshold", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0], movement: { frozen: true } });
+    store.setPose(id, { position: [5, 0, 0], dt: 1 });
+    expect(movedWhileFrozen(store.get(id)!)).toBe(true);
+    expect(movedWhileFrozen(store.get(id)!, 10)).toBe(false);
   });
 });

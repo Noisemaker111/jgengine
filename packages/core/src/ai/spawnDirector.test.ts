@@ -143,6 +143,67 @@ describe("spawnDirector waves", () => {
   });
 });
 
+describe("spawnDirector spawn points", () => {
+  test("stamps a resolved point and laneId onto each spawn when spawnPoints are configured", () => {
+    const config: SpawnDirectorConfig = {
+      waves: [{ budget: 5, entries: [grunt] }],
+      spawnPoints: [
+        [0, 0],
+        [50, 0],
+      ],
+    };
+    const { spawns } = advanceSpawnDirector(config, createSpawnDirectorState(config), 0.1, { alive: 0 });
+    expect(spawns).toHaveLength(5);
+    for (const spawn of spawns) {
+      expect(spawn.point).toBeDefined();
+      expect(spawn.laneId).toBeGreaterThanOrEqual(0);
+      expect(config.spawnPoints).toContainEqual(spawn.point);
+    }
+  });
+
+  test("leaves point and laneId unset when no spawnPoints are configured", () => {
+    const config: SpawnDirectorConfig = { waves: [{ budget: 5, entries: [grunt] }] };
+    const { spawns } = advanceSpawnDirector(config, createSpawnDirectorState(config), 0.1, { alive: 0 });
+    expect(spawns).toHaveLength(5);
+    for (const spawn of spawns) {
+      expect(spawn.point).toBeUndefined();
+      expect(spawn.laneId).toBeUndefined();
+    }
+  });
+
+  test("spawnPointBias combined with playerPositions favours far lanes from players", () => {
+    const config: SpawnDirectorConfig = {
+      waves: [{ budget: 20, entries: [grunt] }],
+      spawnPoints: [
+        [0, 0],
+        [50, 0],
+      ],
+      spawnPointBias: -4,
+      seed: 7,
+    };
+    const { spawns } = advanceSpawnDirector(config, createSpawnDirectorState(config), 0.1, {
+      alive: 0,
+      playerPositions: [[0, 0]],
+    });
+    const far = spawns.filter((s) => s.point?.[0] === 50).length;
+    expect(far).toBeGreaterThan(spawns.length / 2);
+  });
+
+  test("spawn point assignment stays deterministic under a fixed seed", () => {
+    const config: SpawnDirectorConfig = {
+      waves: [{ budget: 5, entries: [grunt] }],
+      spawnPoints: [
+        [0, 0],
+        [50, 0],
+      ],
+      seed: 42,
+    };
+    const a = advanceSpawnDirector(config, createSpawnDirectorState(config), 0.1, { alive: 0 }).spawns;
+    const b = advanceSpawnDirector(config, createSpawnDirectorState(config), 0.1, { alive: 0 }).spawns;
+    expect(a).toEqual(b);
+  });
+});
+
 describe("pickSpawnPoint", () => {
   const points = [
     [0, 0],

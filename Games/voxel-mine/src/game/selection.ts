@@ -23,6 +23,10 @@ function setSelected(next: number): void {
   for (const listener of listeners) listener();
 }
 
+export function selectSlot(index: number): void {
+  setSelected(index);
+}
+
 export function registerSelectionCommands(ctx: GameContext): void {
   for (let index = 0; index < SLOT_COUNT; index += 1) {
     ctx.game.commands.define(`selectSlot${index + 1}`, {

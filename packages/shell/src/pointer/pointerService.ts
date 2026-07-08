@@ -20,14 +20,14 @@ export interface SurfaceSample {
 export interface PointerService {
   /** Cast the current cursor into the world; null when the cursor is off-canvas. */
   worldHit(): PointerHit | null;
-  /** Cast from the fixed screen center regardless of cursor state — the crosshair ray under pointer-lock. */
-  centerHit(): PointerHit | null;
+  /** Cast from the viewport center regardless of cursor presence (pointer-lock aim); null before the probe binds. */
+  worldHitCenter(): PointerHit | null;
   /** Project a world point to CSS pixels for the marquee / HUD; null before the probe binds. */
   screenOf(world: PointerVec3): { x: number; y: number } | null;
   hasCursor(): boolean;
   bind(deps: PointerDeps | null): void;
   setCursor(ndcX: number, ndcY: number, present: boolean): void;
-  /** Reads the last `worldHit`/`centerHit` intersection's material; null when there was no hit or it isn't a standard material. */
+  /** Reads the last `worldHit`/`worldHitCenter` intersection's material; null when there was no hit or it isn't a standard material. */
   sampleSurface(): SurfaceSample | null;
 }
 
@@ -41,11 +41,10 @@ function tagOf(object: THREE.Object3D, key: string): string | null {
   return null;
 }
 
-const CENTER_NDC = new THREE.Vector2(0, 0);
-
 export function createPointerService(): PointerService {
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
+  const centerNdc = new THREE.Vector2(0, 0);
   const scratch = new THREE.Vector3();
   const normalMatrix = new THREE.Matrix3();
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -53,9 +52,9 @@ export function createPointerService(): PointerService {
   let cursorPresent = false;
   let lastIntersection: THREE.Intersection | null = null;
 
-  function castFrom(cursorNdc: THREE.Vector2): PointerHit | null {
+  function hitAtNdc(target: THREE.Vector2): PointerHit | null {
     if (deps === null) return null;
-    raycaster.setFromCamera(cursorNdc, deps.camera);
+    raycaster.setFromCamera(target, deps.camera);
     const intersects = raycaster.intersectObjects(deps.scene.children, true);
     for (const hit of intersects) {
       if (!(hit.object as THREE.Mesh).isMesh) continue;
@@ -93,10 +92,10 @@ export function createPointerService(): PointerService {
     },
     worldHit() {
       if (!cursorPresent) return null;
-      return castFrom(ndc);
+      return hitAtNdc(ndc);
     },
-    centerHit() {
-      return castFrom(CENTER_NDC);
+    worldHitCenter() {
+      return hitAtNdc(centerNdc);
     },
     screenOf(world) {
       if (deps === null) return null;

@@ -10,7 +10,8 @@ export interface TelegraphConfig {
   shape: TelegraphShape;
   at: EntityPosition;
   dir?: number;
-  windupMs: number;
+  windupMs?: number;
+  turns?: number;
   kind?: string;
 }
 
@@ -21,6 +22,22 @@ export function telegraphProgress(windupMs: number, startedAtMs: number, nowMs: 
 
 export function telegraphFired(windupMs: number, startedAtMs: number, nowMs: number): boolean {
   return nowMs - startedAtMs >= windupMs;
+}
+
+export function telegraphTurnProgress(config: TelegraphConfig, startedTurn: number, currentTurn: number): number {
+  const turns = config.turns ?? 0;
+  if (turns <= 0) return 1;
+  return Math.max(0, Math.min(1, (currentTurn - startedTurn) / turns));
+}
+
+export function telegraphFiredAtTurn(config: TelegraphConfig, startedTurn: number, currentTurn: number): boolean {
+  const turns = config.turns ?? 0;
+  return currentTurn - startedTurn >= turns;
+}
+
+export function telegraphTurnsRemaining(config: TelegraphConfig, startedTurn: number, currentTurn: number): number {
+  const turns = config.turns ?? 0;
+  return Math.max(0, turns - (currentTurn - startedTurn));
 }
 
 function planarDelta(config: TelegraphConfig, point: EntityPosition): { dx: number; dz: number } {

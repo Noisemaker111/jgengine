@@ -9,7 +9,7 @@ import type {
   ObserverCameraConfig,
   RtsCameraConfig,
   ShoulderCameraConfig,
-  SideOnCameraConfig,
+  SideScrollCameraConfig,
 } from "@jgengine/core/game/playableGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { usePlayer } from "@jgengine/react/hooks";
@@ -26,11 +26,12 @@ import {
   resolveChase,
   resolveObserver,
   resolveShoulder,
-  resolveSideOn,
+  resolveSideScroll,
+  resolveSideScrollPose,
   resolveTopDown,
   seatPose,
   shoulderPose,
-  sideOnPose,
+  sideScrollFollowBlend,
   smoothstep,
   smoothYaw,
   speedToFov,
@@ -161,27 +162,20 @@ function useCameraCommit(props: RigProps, followId: string | null) {
   return { camera, commit, beginTransition };
 }
 
-function useWheelZoom(
-  initial: number,
-  min: number,
-  max: number,
-  speed: number,
-  enabled = true,
-): MutableRefObject<number> {
+function useWheelZoom(initial: number, min: number, max: number, speed: number): MutableRefObject<number> {
   const domElement = useThree((state) => state.gl.domElement);
   const zoomRef = useRef(initial);
   useEffect(() => {
     zoomRef.current = initial;
   }, [initial]);
   useEffect(() => {
-    if (!enabled) return;
     const onWheel = (event: WheelEvent) => {
       if (event.shiftKey) return;
       zoomRef.current = clamp(zoomRef.current + Math.sign(event.deltaY) * speed, min, max);
     };
     domElement.addEventListener("wheel", onWheel, { passive: true });
     return () => domElement.removeEventListener("wheel", onWheel);
-  }, [domElement, min, max, speed, enabled]);
+  }, [domElement, min, max, speed]);
   return zoomRef;
 }
 
@@ -221,10 +215,39 @@ export function TopDownRig(props: RigProps) {
   return null;
 }
 
-function useHeldKeys(codes: readonly string[], enabled = true): MutableRefObject<Set<string>> {
+/** Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look. */
+export function SideScrollRig(props: RigProps) {
+  const { userId } = usePlayer();
+  const ctx = useGameContext();
+  const followId = resolveFollowId(props.followEntityId, userId);
+  const config: SideScrollCameraConfig | undefined = props.config?.sideScroll;
+  const resolved = useMemo(() => resolveSideScroll(config), [config]);
+  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
+  const followRef = useRef<Vec3 | null>(null);
+
+  useEffect(beginTransition, []);
+
+  useFrame((_, dt) => {
+    const sample = readFollow(ctx, followId);
+    const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
+    const prev = followRef.current ?? desired;
+    const blend = sideScrollFollowBlend(resolved.followSmoothing, dt);
+    const follow: Vec3 = {
+      x: prev.x + (desired.x - prev.x) * blend,
+      y: prev.y + (desired.y - prev.y) * blend,
+      z: prev.z + (desired.z - prev.z) * blend,
+    };
+    followRef.current = follow;
+    const pose = resolveSideScrollPose(follow, resolved, config?.fov ?? currentFov(camera));
+    commit(pose, dt);
+  }, CAMERA_RIG_FRAME_PRIORITY);
+
+  return null;
+}
+
+function useHeldKeys(codes: readonly string[]): MutableRefObject<Set<string>> {
   const held = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!enabled) return;
     const set = new Set(codes);
     const down = (event: KeyboardEvent) => {
       if (set.has(event.code)) held.current.add(event.code);
@@ -239,21 +262,26 @@ function useHeldKeys(codes: readonly string[], enabled = true): MutableRefObject
       window.removeEventListener("keyup", up);
       held.current.clear();
     };
-  }, [codes.join(","), enabled]);
+  }, [codes.join(",")]);
   return held;
 }
 
 const RTS_PAN_KEYS = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyQ", "KeyE"];
+const RTS_WASD_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 
-export function RtsRig(props: RigProps) {
+export function RtsRig(props: RigProps & { panKeysEnabled?: boolean }) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
   const config: RtsCameraConfig | undefined = props.config?.rts;
   const resolved = useMemo(() => resolveTopDown(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const panEnabled = config?.pan ?? true;
-  const held = useHeldKeys(RTS_PAN_KEYS, panEnabled);
+  const wasdPanEnabled = followId === null && props.panKeysEnabled !== false;
+  const heldCodes = useMemo(
+    () => (wasdPanEnabled ? RTS_PAN_KEYS : RTS_PAN_KEYS.filter((code) => !RTS_WASD_KEYS.has(code))),
+    [wasdPanEnabled],
+  );
+  const held = useHeldKeys(heldCodes);
   const centerRef = useRef<Vec3>({
     x: config?.start?.x ?? 0,
     y: 0,
@@ -267,7 +295,6 @@ export function RtsRig(props: RigProps) {
     (config?.zoom?.min ?? 0.5) * resolved.height,
     (config?.zoom?.max ?? 2.2) * resolved.height,
     config?.zoom?.speed ?? resolved.height * 0.09,
-    panEnabled,
   );
 
   const edgeScroll = config?.edgeScroll ?? true;
@@ -278,7 +305,7 @@ export function RtsRig(props: RigProps) {
   useEffect(beginTransition, []);
 
   useEffect(() => {
-    if (!panEnabled || edgeScroll === false) return;
+    if (edgeScroll === false) return;
     const onMove = (event: PointerEvent) => {
       const rect = domElement.getBoundingClientRect();
       pointerRef.current = {
@@ -295,7 +322,7 @@ export function RtsRig(props: RigProps) {
       domElement.removeEventListener("pointermove", onMove);
       domElement.removeEventListener("pointerleave", onLeave);
     };
-  }, [domElement, edgeScroll, panEnabled]);
+  }, [domElement, edgeScroll]);
 
   useFrame((_, dt) => {
     const keys = held.current;
@@ -537,10 +564,10 @@ export function ChaseRig(props: RigProps) {
 
 function observerSubject(
   ctx: GameContext,
-  userId: string,
   config: ObserverCameraConfig | undefined,
+  followId: string | null,
 ): { subject: Vec3; boundEntityId: string | null } {
-  const bind = config?.bind;
+  const bind = config?.bind ?? (followId !== null ? { kind: "entity" as const, entityId: followId } : undefined);
   if (bind?.kind === "entity") {
     const entity = ctx.scene.entity.get(bind.entityId);
     if (entity !== null) {
@@ -549,67 +576,32 @@ function observerSubject(
     return { subject: { x: 0, y: 0, z: 0 }, boundEntityId: bind.entityId };
   }
   if (bind?.kind === "point") return { subject: { ...bind.position }, boundEntityId: null };
-  const followId = resolveFollowId(undefined, userId);
-  const sample = readFollow(ctx, followId);
-  if (sample !== null) return { subject: sample.pos, boundEntityId: followId };
-  return { subject: { x: 0, y: 0, z: 0 }, boundEntityId: followId };
+  return { subject: { x: 0, y: 0, z: 0 }, boundEntityId: null };
 }
 
 /**
  * Detached spectator/photo cam (#120): binds to any entity or fixed point and
  * auto-orbits it, reading no player input at all — the van CCTV / photo-mode /
  * kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
- * With no `bind`, defaults to the local player (falling back to the origin if
- * that entity doesn't exist yet); pass `bind: { kind: "point", position }` to
- * keep the old fixed-origin orbit.
  */
 export function ObserverRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const config: ObserverCameraConfig | undefined = props.config?.observer;
+  const followId = resolveFollowId(props.followEntityId, userId);
   const resolved = useMemo(() => resolveObserver(config), [config]);
   const angleRef = useRef(config?.startAngle ?? 0);
   const { camera, commit, beginTransition } = useCameraCommit(
     props,
-    observerSubject(ctx, userId, config).boundEntityId,
+    observerSubject(ctx, config, followId).boundEntityId,
   );
 
   useEffect(beginTransition, []);
 
   useFrame((_, dt) => {
     angleRef.current += resolved.orbitSpeed * dt;
-    const { subject } = observerSubject(ctx, userId, config);
+    const { subject } = observerSubject(ctx, config, followId);
     const pose = observerPose(subject, angleRef.current, resolved, config?.fov ?? currentFov(camera));
-    commit(pose, dt);
-  }, CAMERA_RIG_FRAME_PRIORITY);
-
-  return null;
-}
-
-/** Fixed lateral follow rig (2.5D platformer/beat-'em-up side view) — reads no player input, follows resolveFollowId like the other follow rigs. */
-export function SideOnRig(props: RigProps) {
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const config: SideOnCameraConfig | undefined = props.config?.sideOn;
-  const resolved = useMemo(() => resolveSideOn(config), [config]);
-  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const followRef = useRef<Vec3 | null>(null);
-
-  useEffect(beginTransition, []);
-
-  useFrame((_, dt) => {
-    const sample = readFollow(ctx, followId);
-    const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const prev = followRef.current ?? desired;
-    const blend = 1 - Math.exp(-resolved.followSmoothing * dt);
-    const follow: Vec3 = {
-      x: prev.x + (desired.x - prev.x) * blend,
-      y: prev.y + (desired.y - prev.y) * blend,
-      z: prev.z + (desired.z - prev.z) * blend,
-    };
-    followRef.current = follow;
-    const pose = sideOnPose(follow, resolved, config?.fov ?? currentFov(camera));
     commit(pose, dt);
   }, CAMERA_RIG_FRAME_PRIORITY);
 

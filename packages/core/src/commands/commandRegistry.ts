@@ -42,8 +42,8 @@ export function createCommandRegistry<TState>(): CommandRegistry<TState> {
       const rejection = definition.validate?.(state, input as never) ?? null;
       if (rejection) return { status: "rejected", reason: rejection.reason };
 
-      const result = definition.apply(state, input as never);
-      return { status: "applied", state: result === undefined ? state : result };
+      const next = definition.apply(state, input as never);
+      return { status: "applied", state: next === undefined ? state : next };
     },
   };
 }

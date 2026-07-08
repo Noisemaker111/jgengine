@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createNavGrid, findPath, smoothPath, type NavPoint } from "@jgengine/core/nav/navGrid";
+import { createNavGrid, findPath, slopeStepCost, smoothPath, type NavPoint } from "@jgengine/core/nav/navGrid";
 
 const BOUNDS = { minX: 0, minZ: 0, maxX: 10, maxZ: 10 };
 
@@ -77,5 +77,39 @@ describe("navGrid", () => {
     expect(grid.lineOfSight([0.5, 0.5], [4.5, 0.5])).toBe(true);
     grid.setWalkable(2, 0, false);
     expect(grid.lineOfSight([0.5, 0.5], [4.5, 0.5])).toBe(false);
+  });
+
+  test("stepCost penalizes a steep ridge, routing a detour around it", () => {
+    const grid = createNavGrid({ bounds: { minX: 0, minZ: 0, maxX: 9, maxZ: 5 }, cellSize: 1, diagonal: false });
+    const field = {
+      sampleHeight: (x: number, z: number): number => {
+        const col = Math.floor(x);
+        const row = Math.floor(z);
+        return col === 4 && row !== 4 ? 20 : 0;
+      },
+    };
+    const crossesRidge = (path: NavPoint[]) =>
+      path.some((point) => {
+        const cell = grid.cellAt(point);
+        return cell.col === 4 && cell.row !== 4;
+      });
+
+    const direct = findPath(grid, [0.5, 2.5], [8.5, 2.5], { smooth: false });
+    expect(direct).not.toBeNull();
+    expect(crossesRidge(direct!)).toBe(true);
+
+    const detoured = findPath(grid, [0.5, 2.5], [8.5, 2.5], { smooth: false, stepCost: slopeStepCost(field) });
+    expect(detoured).not.toBeNull();
+    expect(crossesRidge(detoured!)).toBe(false);
+  });
+
+  test("slopeStepCost is 1 on flat ground and grows with rise over run", () => {
+    const flat = { sampleHeight: () => 0 };
+    const cost = slopeStepCost(flat);
+    expect(cost([0, 0], [1, 0])).toBe(1);
+
+    const ramp = { sampleHeight: (x: number) => x };
+    const steep = slopeStepCost(ramp)([0, 0], [1, 0]);
+    expect(steep).toBeCloseTo(2, 6);
   });
 });

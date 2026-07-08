@@ -18,8 +18,7 @@
       "@jgengine/shell/*": ["../../packages/shell/src/*"],
       "@jgengine/core/*": ["../../packages/core/src/*"],
       "@jgengine/react/*": ["../../packages/react/src/*"],
-      "@jgengine/ws/*": ["../../packages/ws/src/*"],
-      "@games/world-of-warcraft": ["../../Games/world-of-warcraft/src/index.ts"]
+      "@jgengine/ws/*": ["../../packages/ws/src/*"]
     }
   },
   "include": ["src"]

@@ -1,6 +1,6 @@
 # JGengine
 
-A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres.
+A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres, with socket.io, WebRTC peer-to-peer, and LAN as drop-in transports over the same protocol.
 
 ## Packages
 
@@ -8,8 +8,8 @@ A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no ren
 | --- | --- |
 | [`@jgengine/core`](packages/core) | The engine SDK: game runtime, transport/save, state store, entity scene + object store, pool stats/targeting/spatial, combat effects/projectiles/death, loot/trade/quest/social/loadout/unlocks/events/feed/leaderboard, item use, movement/camera/pose, input, interaction, inventory/stats/economy, world features, clocks. Zero dependencies. |
 | [`@jgengine/react`](packages/react) | React UI layer: `GameProvider`, hooks, headless primitives. |
-| [`@jgengine/ws`](packages/ws) | Browser-safe WebSocket client backend: protocol codec, `createWsBackend`, `createHttpReads`. |
-| [`@jgengine/node`](packages/node) | Standalone authoritative game host: in-memory server snapshots, tick loop, save-cadence flush, WebSocket server, memory/file persistence. |
+| [`@jgengine/ws`](packages/ws) | Browser-safe game backend over a pluggable transport pipe (WebSocket/socket.io/WebRTC/loopback): protocol codec, `createWsBackend`, `createHttpReads`, a browser-safe authoritative host + router, and WebRTC P2P sessions. |
+| [`@jgengine/node`](packages/node) | Node bindings over `@jgengine/ws`'s host: WebSocket server, socket.io server attach, memory/file persistence, save-cadence flush. |
 | [`@jgengine/sql`](packages/sql) | `HostPersistence` on Postgres through a structural pool interface (no hard `pg` dependency). |
 | [`@jgengine/convex`](packages/convex) | Convex adapters: game transport, presence transport. |
 | [`@jgengine/shell`](packages/shell) | Game player shell: R3F canvas, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
@@ -47,6 +47,8 @@ Then prompts like "make a tower defense game with jgengine" pick up the full eng
 [`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and a front door for agents. It points agents at `npx skills add Noisemaker111/jgengine` and explains which skill to grab for what — the skill pages are **rendered from `skills/`**, with no separate content to maintain.
 
 It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
+
+Every game under `Games/*` is also playable on jgengine.com itself, through the Games header dropdown at `/play/?game=<id>` — a static build of the `apps/dev` runner the site bundles at build time. Outside the browser, `bun dev` inside any `Games/<id>` directory (or an external game scaffolded per `jgengine-api`'s standalone dev harness) launches that same game on its own, no host app required.
 
 ## Layering
 

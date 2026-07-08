@@ -76,21 +76,21 @@ describe("command registry", () => {
     expect(result).toEqual({ status: "applied", state: { count: 5 } });
   });
 
-  test("a side-effect-only command reports applied with the original state reference", () => {
+  test("apply may return void for side-effect-only commands, leaving state identical", () => {
     const registry = createCommandRegistry<CounterState>();
     let sideEffectCalls = 0;
-    registry.define<{ amount: number }>("logOnly", {
+    registry.define<{ amount: number }>("log", {
       apply(_state, input) {
         sideEffectCalls += input.amount;
       },
     });
 
-    const state = { count: 1 };
-    const result = registry.run(state, "logOnly", { amount: 5 });
+    const state: CounterState = { count: 1 };
+    const result = registry.run(state, "log", { amount: 5 });
 
+    expect(result).toEqual({ status: "applied", state: { count: 1 } });
+    expect(result.status === "applied" && result.state).toBe(state);
     expect(sideEffectCalls).toBe(5);
-    expect(result).toEqual({ status: "applied", state });
-    if (result.status === "applied") expect(result.state).toBe(state);
   });
 
   test("reports registered command names", () => {

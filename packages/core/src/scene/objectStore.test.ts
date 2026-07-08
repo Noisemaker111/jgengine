@@ -48,6 +48,47 @@ describe("scene object store", () => {
     expect(store.list({ parentSpace: "plot:empty" })).toEqual([]);
   });
 
+  test("at finds objects at an exact position and none elsewhere", () => {
+    const store = createObjectStore();
+    const id = store.place("rack", 4, 0, 2);
+    expect(store.at(4, 0, 2).map((o) => o.instanceId)).toEqual([id]);
+    expect(store.at(4, 0, 3)).toEqual([]);
+  });
+
+  test("at respects tolerance, including across a cell boundary", () => {
+    const store = createObjectStore();
+    const id = store.place("rack", 4.9, 0, 2);
+    expect(store.at(5.05, 0, 2, 0.05)).toEqual([]);
+    expect(store.at(5.05, 0, 2, 0.2)).toEqual([store.get(id)]);
+    expect(store.at(4, 0, 2, 0.1)).toEqual([]);
+  });
+
+  test("at reflects move and stops finding removed objects", () => {
+    const store = createObjectStore();
+    const id = store.place("rack", 0, 0, 0);
+    expect(store.at(0, 0, 0)).toHaveLength(1);
+    store.move(id, 10, 0, 10);
+    expect(store.at(0, 0, 0)).toEqual([]);
+    expect(store.at(10, 0, 10).map((o) => o.instanceId)).toEqual([id]);
+    store.remove(id);
+    expect(store.at(10, 0, 10)).toEqual([]);
+  });
+
+  test("at returns every match at a shared position", () => {
+    const store = createObjectStore();
+    const first = store.place("rack", 1, 0, 1);
+    const second = store.place("rack", 1, 0, 1);
+    const found = store.at(1, 0, 1).map((o) => o.instanceId).sort();
+    expect(found).toEqual([first, second].sort());
+  });
+
+  test("at returns nothing after clear", () => {
+    const store = createObjectStore();
+    store.place("rack", 2, 0, 2);
+    store.clear();
+    expect(store.at(2, 0, 2)).toEqual([]);
+  });
+
   test("clear removes all objects", () => {
     const store = createObjectStore();
     store.place("rack", 0, 0, 0);
@@ -56,33 +97,13 @@ describe("scene object store", () => {
     expect(store.list()).toEqual([]);
   });
 
-  test("at finds the object occupying a cell and misses empty cells", () => {
-    const store = createObjectStore();
-    const id = store.place("crate", 2, 0, 5);
-    expect(store.at(2, 0, 5)).not.toBeNull();
-    expect(store.at(2, 0, 5)?.instanceId).toBe(id);
-    expect(store.at(2.4, 0.1, 4.6)?.instanceId).toBe(id);
-    expect(store.at(9, 0, 9)).toBeNull();
-  });
-
-  test("at returns the most recently placed object when cells collide", () => {
+  test("at returns every match when cells collide", () => {
     const store = createObjectStore();
     const first = store.place("crate", 0, 0, 0);
     const second = store.place("barrel", 0, 0, 0);
-    expect(store.at(0, 0, 0)?.instanceId).toBe(second);
+    expect(store.at(0, 0, 0).map((o) => o.instanceId).sort()).toEqual([first, second].sort());
     store.remove(second);
-    expect(store.at(0, 0, 0)?.instanceId).toBe(first);
-  });
-
-  test("at reflects move and clears on remove", () => {
-    const store = createObjectStore();
-    const id = store.place("crate", 0, 0, 0);
-    expect(store.at(0, 0, 0)?.instanceId).toBe(id);
-    store.move(id, 3, 0, 3);
-    expect(store.at(0, 0, 0)).toBeNull();
-    expect(store.at(3, 0, 3)?.instanceId).toBe(id);
-    store.remove(id);
-    expect(store.at(3, 0, 3)).toBeNull();
+    expect(store.at(0, 0, 0).map((o) => o.instanceId)).toEqual([first]);
   });
 
   test("inBox filters by inclusive AABB bounds", () => {

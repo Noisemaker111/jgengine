@@ -3,6 +3,8 @@ import { describe, expect, test } from "bun:test";
 import { defineGame } from "../game/defineGame";
 import type { EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { environment, terrain } from "../world/features";
+import { resolveTerrainField } from "../world/terrain";
 import { createGameContext, type GameContextContent } from "./gameContext";
 
 const CONTENT: GameContextContent = {
@@ -61,12 +63,42 @@ function makeContext() {
 }
 
 describe("createGameContext", () => {
+  test("world.groundHeightAt samples the declared environment terrain and is flat without one", () => {
+    const descriptor = terrain({ height: 2.4, seed: "ctx-ground" });
+    const ctx = createGameContext({
+      definition: defineGame({
+        name: "GroundGame",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+        world: environment({ terrain: descriptor }),
+      }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+    });
+    const reference = resolveTerrainField(descriptor);
+    expect(ctx.world.groundHeightAt(7.5, -19)).toBe(reference.sampleHeight(7.5, -19));
+    expect(ctx.world.ground.sampleNormal(7.5, -19)).toEqual(reference.sampleNormal(7.5, -19));
+    expect(makeContext().world.groundHeightAt(7.5, -19)).toBe(0);
+  });
+
   test("spawn seeds pool stats from the entity catalog", () => {
     const ctx = makeContext();
     const id = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
     expect(ctx.scene.entity.stats.get(id, "health")).toEqual({ current: 30, max: 30, min: 0 });
     const bare = ctx.scene.entity.spawn("prop");
     expect(ctx.scene.entity.stats.get(bare, "health")).toBeNull();
+  });
+
+  test("scene.entity.update patches movement and rotation, bumps version, and is readable via get", () => {
+    const ctx = makeContext();
+    const id = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
+    const before = ctx.version();
+    expect(ctx.scene.entity.update(id, { movement: { walkSpeed: 4 }, rotationY: 1.5 })).toBe(true);
+    expect(ctx.version()).toBeGreaterThan(before);
+    const entity = ctx.scene.entity.get(id);
+    expect(entity?.movement).toEqual({ walkSpeed: 4 });
+    expect(entity?.rotationY).toBe(1.5);
+    expect(ctx.scene.entity.update("missing", { rotationY: 2 })).toBe(false);
   });
 
   test("scene.object.catalog resolves a placed object via objectById", () => {
@@ -142,6 +174,25 @@ describe("createGameContext", () => {
     expect(entries).toHaveLength(1);
     expect((entries[0]!.data as { instanceId: string }).instanceId).toBe(dummy);
     unbind();
+  });
+
+  test("feed.limit config caps entries retained per action", () => {
+    const ctx = createGameContext({
+      definition: defineGame({
+        name: "FeedLimitGame",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+        feed: { limit: 3 },
+      }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+    });
+
+    for (let i = 0; i < 5; i++) ctx.game.feed.push("chat", i);
+
+    const recent = ctx.game.feed.recent("chat");
+    expect(recent).toHaveLength(3);
+    expect(recent.map((entry) => entry.data)).toEqual([2, 3, 4]);
   });
 
   test("lethal hit from the local player attributes a player_kill reason", () => {
@@ -280,43 +331,6 @@ describe("game context change signal", () => {
     expect(listener.count()).toBeGreaterThan(2);
   });
 
-  test("ctx.game.state set/update/invalidate bump ctx.version and notify subscribers", () => {
-    const ctx = makeContext();
-    const listener = counting(ctx);
-    const before = ctx.version();
-    const handle = ctx.game.state.define("combo", 0);
-    ctx.game.state.set("combo", 1);
-    expect(ctx.version()).toBeGreaterThan(before);
-    const afterSet = ctx.version();
-    ctx.game.state.update("combo", (current: number) => current + 1);
-    expect(handle.get()).toBe(2);
-    expect(ctx.version()).toBeGreaterThan(afterSet);
-    const afterUpdate = ctx.version();
-    ctx.game.state.invalidate();
-    expect(ctx.version()).toBeGreaterThan(afterUpdate);
-    expect(listener.count()).toBeGreaterThan(0);
-  });
-
-  test("ctx.input starts neutral and publish never bumps ctx.version", () => {
-    const ctx = makeContext();
-    expect(ctx.input.isHeld("moveForward")).toBe(false);
-    expect(ctx.input.axis()).toEqual({ forward: 0, right: 0 });
-    const before = ctx.version();
-    ctx.input.publish({
-      held: new Set(["moveForward"]),
-      forward: 1,
-      right: 0,
-      jump: false,
-      sprint: false,
-      yaw: 0.4,
-      pitch: -0.1,
-      pointerLocked: true,
-    });
-    expect(ctx.input.isHeld("moveForward")).toBe(true);
-    expect(ctx.input.aim()).toEqual({ yaw: 0.4, pitch: -0.1 });
-    expect(ctx.input.pointerLocked()).toBe(true);
-    expect(ctx.version()).toBe(before);
-  });
 });
 
 describe("float text and projectile events", () => {
@@ -374,19 +388,6 @@ describe("float text and projectile events", () => {
     expect(shots[0]!.origin).toEqual([0, 0, 0]);
   });
 
-  test("player.motion queues commands FIFO and drain empties the queue", () => {
-    const ctx = makeContext();
-    ctx.player.motion.impulse(2);
-    ctx.player.motion.setVerticalVelocity(5);
-    ctx.player.motion.launch(9);
-    expect(ctx.player.motion.drain()).toEqual([
-      { kind: "impulse", vy: 2 },
-      { kind: "set", vy: 5 },
-      { kind: "launch", vy: 9 },
-    ]);
-    expect(ctx.player.motion.drain()).toEqual([]);
-  });
-
   test("scene.entity.resetToSpawn restores the recorded spawn pose and resetAllToSpawn counts matches", () => {
     const ctx = makeContext();
     const hero = ctx.scene.entity.spawn("hero", { position: [1, 0, 1], rotationY: 0.4 });
@@ -414,5 +415,156 @@ describe("float text and projectile events", () => {
     ctx.scene.entity.paint.clear("car-1");
     expect(ctx.scene.entity.paint.strokes("car-1")).toEqual([]);
     expect(ctx.version()).toBeGreaterThan(afterPaint);
+  });
+});
+
+describe("game.store", () => {
+  test("set bumps ctx.version and notifies ctx.subscribe listeners; get reads it back", () => {
+    const ctx = makeContext();
+    let calls = 0;
+    ctx.subscribe(() => calls++);
+    const before = ctx.version();
+    ctx.game.store.set("score", 42);
+    expect(ctx.game.store.get("score")).toBe(42);
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(calls).toBe(1);
+  });
+
+  test("delete also bumps version and notifies", () => {
+    const ctx = makeContext();
+    ctx.game.store.set("flag", true);
+    let calls = 0;
+    ctx.subscribe(() => calls++);
+    ctx.game.store.delete("flag");
+    expect(ctx.game.store.has("flag")).toBe(false);
+    expect(calls).toBe(1);
+  });
+});
+
+describe("game.cards.pile", () => {
+  test("returns the same instance for the same id, requires config only on first access", () => {
+    const ctx = makeContext();
+    const a = ctx.game.cards.pile("deck", { zones: ["draw", "hand", "discard"] });
+    const b = ctx.game.cards.pile("deck");
+    expect(b).toBe(a);
+  });
+
+  test("throws when a pile has not been created yet and no config is given", () => {
+    const ctx = makeContext();
+    expect(() => ctx.game.cards.pile("missing")).toThrow();
+  });
+
+  test("mutating a pile bumps ctx.version", () => {
+    const ctx = makeContext();
+    const deck = ctx.game.cards.pile("deck", {
+      zones: ["draw", "hand", "discard"],
+      drawFrom: "draw",
+      handZone: "hand",
+      discardTo: "discard",
+    });
+    deck.reset({ zones: { draw: ["a", "b", "c"], hand: [], discard: [] } });
+    const before = ctx.version();
+    const drawn = deck.draw(2);
+    expect(drawn).toEqual(["a", "b"]);
+    expect(ctx.version()).toBeGreaterThan(before);
+  });
+});
+
+describe("game.turn.loop", () => {
+  test("returns the same instance for the same id, requires config only on first access", () => {
+    const ctx = makeContext();
+    const a = ctx.game.turn.loop("combat", { order: ["hero", "slime"] });
+    const b = ctx.game.turn.loop("combat");
+    expect(b).toBe(a);
+  });
+
+  test("throws when a loop has not been created yet and no config is given", () => {
+    const ctx = makeContext();
+    expect(() => ctx.game.turn.loop("missing")).toThrow();
+  });
+
+  test("advanceTurn bumps ctx.version", () => {
+    const ctx = makeContext();
+    const loop = ctx.game.turn.loop("combat", { order: ["hero", "slime"] });
+    const before = ctx.version();
+    loop.advanceTurn();
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(loop.active()).toBe("slime");
+  });
+
+  test("commit.submit on the sub-controller also bumps ctx.version", () => {
+    const ctx = makeContext();
+    const loop = ctx.game.turn.loop("simul", {
+      order: ["hero", "slime"],
+      commit: { mode: "simultaneous" },
+    });
+    const before = ctx.version();
+    loop.commit.submit("hero", { move: "attack" });
+    expect(ctx.version()).toBeGreaterThan(before);
+  });
+});
+
+describe("ctx.camera", () => {
+  test("follow/clear round-trips and distinguishes undefined from null", () => {
+    const ctx = makeContext();
+    expect(ctx.camera.followedEntityId()).toBeUndefined();
+    ctx.camera.follow("hero-1");
+    expect(ctx.camera.followedEntityId()).toBe("hero-1");
+    ctx.camera.follow(null);
+    expect(ctx.camera.followedEntityId()).toBeNull();
+  });
+
+  test("follow and setCinematic notify ctx.subscribe and bump ctx.version", () => {
+    const ctx = makeContext();
+    let calls = 0;
+    ctx.subscribe(() => calls++);
+    const before = ctx.version();
+    ctx.camera.follow("hero-1");
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(calls).toBe(1);
+    ctx.camera.setCinematic({ keyframes: [{ position: { x: 0, y: 0, z: 0 }, lookAt: { x: 0, y: 0, z: 1 } }] });
+    expect(ctx.camera.cinematic()).not.toBeNull();
+    expect(calls).toBe(2);
+  });
+});
+
+describe("ctx.input", () => {
+  test("publish replaces the held set and is readable via isDown/held", () => {
+    const ctx = makeContext();
+    ctx.input.publish(["jump", "fire"]);
+    expect(ctx.input.isDown("jump")).toBe(true);
+    expect(ctx.input.isDown("crouch")).toBe(false);
+    expect(ctx.input.held()).toEqual(["jump", "fire"]);
+    ctx.input.publish(["crouch"]);
+    expect(ctx.input.isDown("jump")).toBe(false);
+    expect(ctx.input.isDown("crouch")).toBe(true);
+  });
+
+  test("publish does not bump ctx.version", () => {
+    const ctx = makeContext();
+    const before = ctx.version();
+    ctx.input.publish(["jump"]);
+    expect(ctx.version()).toBe(before);
+  });
+});
+
+describe("ctx.player.motion", () => {
+  test("is reachable and round-trips an impulse via takePending", () => {
+    const ctx = makeContext();
+    ctx.player.motion.impulse(7);
+    expect(ctx.player.motion.takePending()).toEqual({
+      impulses: [7],
+      verticalVelocity: null,
+      y: null,
+    });
+  });
+
+  test("impulse does not bump ctx.version", () => {
+    const ctx = makeContext();
+    const before = ctx.version();
+    ctx.player.motion.impulse(7);
+    ctx.player.motion.setVerticalVelocity(3);
+    ctx.player.motion.setY(1);
+    expect(ctx.version()).toBe(before);
   });
 });

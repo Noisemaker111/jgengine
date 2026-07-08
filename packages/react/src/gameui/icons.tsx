@@ -60,9 +60,32 @@ export const GAME_ICON_NAMES = [
   "crosshairIcon",
   "pickaxe",
   "fist",
+  "arrowUp",
+  "arrowDown",
+  "arrowLeft",
+  "arrowRight",
+  "jump",
+  "sprint",
+  "crouch",
+  "hardDrop",
+  "swap",
+  "rotateCw",
+  "rotateCcw",
+  "restart",
+  "hand",
+  "pin",
+  "pause",
+  "menu",
+  "skip",
+  "check",
+  "cross",
 ] as const;
 
 export type GameIconName = (typeof GAME_ICON_NAMES)[number];
+
+export function isGameIconName(value: string): value is GameIconName {
+  return (GAME_ICON_NAMES as readonly string[]).includes(value);
+}
 
 const ROTATE_45 = "rotate(45 12 12)";
 
@@ -492,6 +515,100 @@ const ICONS: Record<GameIconName, ReactNode> = {
       <path d="M3,13 C1.5,13 1,15 2,16.5 C3,18 5,17.5 6,16 L7,13.5 C6,12.5 4,12.5 3,13 Z" />
     </>
   ),
+  arrowUp: <polygon points="12,3 19.5,11 14.4,11 14.4,21 9.6,21 9.6,11 4.5,11" />,
+  arrowDown: <polygon points="12,21 4.5,13 9.6,13 9.6,3 14.4,3 14.4,13 19.5,13" />,
+  arrowLeft: <polygon points="3,12 11,4.5 11,9.6 21,9.6 21,14.4 11,14.4 11,19.5" />,
+  arrowRight: <polygon points="21,12 13,4.5 13,9.6 3,9.6 3,14.4 13,14.4 13,19.5" />,
+  jump: (
+    <>
+      <polygon points="12,2 19,9.5 14.3,9.5 14.3,16.5 9.7,16.5 9.7,9.5 5,9.5" />
+      <rect x="5" y="19" width="14" height="2.4" rx="1.2" />
+    </>
+  ),
+  sprint: (
+    <>
+      <polygon points="3.5,4.5 10.5,12 3.5,19.5 7.3,19.5 14.3,12 7.3,4.5" />
+      <polygon points="11.5,4.5 18.5,12 11.5,19.5 15.3,19.5 22.3,12 15.3,4.5" />
+    </>
+  ),
+  crouch: (
+    <>
+      <polygon points="4.5,3.5 12,10.5 19.5,3.5 19.5,7.3 12,14.3 4.5,7.3" />
+      <polygon points="4.5,11.5 12,18.5 19.5,11.5 19.5,15.3 12,22.3 4.5,15.3" />
+    </>
+  ),
+  hardDrop: (
+    <>
+      <polygon points="12,16.5 5,9 9.7,9 9.7,2 14.3,2 14.3,9 19,9" />
+      <rect x="5" y="19" width="14" height="2.4" rx="1.2" />
+    </>
+  ),
+  swap: (
+    <>
+      <polygon points="21,7.5 14.5,2 14.5,5.4 4,5.4 4,9.6 14.5,9.6 14.5,13" />
+      <polygon points="3,16.5 9.5,11 9.5,14.4 20,14.4 20,18.6 9.5,18.6 9.5,22" />
+    </>
+  ),
+  rotateCw: (
+    <>
+      <path d="M12,4.4 A8.1,8.1 0 1,1 3.9,12.5 L6.7,12.5 A5.3,5.3 0 1,0 12,7.2 Z" />
+      <polygon points="11.2,2 16.9,5.8 11.2,9.6" />
+    </>
+  ),
+  rotateCcw: (
+    <>
+      <path d="M12,4.4 A8.1,8.1 0 1,0 20.1,12.5 L17.3,12.5 A5.3,5.3 0 1,1 12,7.2 Z" />
+      <polygon points="12.8,2 7.1,5.8 12.8,9.6" />
+    </>
+  ),
+  restart: (
+    <>
+      <path d="M12,4.4 A8.1,8.1 0 1,0 20.1,12.5 L17.3,12.5 A5.3,5.3 0 1,1 12,7.2 Z" />
+      <polygon points="12.8,2 7.1,5.8 12.8,9.6" />
+      <circle cx="12" cy="12.5" r="2" />
+    </>
+  ),
+  hand: (
+    <>
+      <rect x="6.9" y="9.6" width="10.2" height="11.4" rx="4" />
+      <rect x="7.5" y="4" width="2.5" height="8" rx="1.25" />
+      <rect x="10.75" y="2.8" width="2.5" height="9.2" rx="1.25" />
+      <rect x="14" y="4" width="2.5" height="8" rx="1.25" />
+      <rect x="3.8" y="11.6" width="4.6" height="3.2" rx="1.6" transform="rotate(-28 6.1 13.2)" />
+    </>
+  ),
+  pin: (
+    <path
+      fillRule="evenodd"
+      d="M12,2 C16,2 19,5 19,9 C19,14 12,22 12,22 C12,22 5,14 5,9 C5,5 8,2 12,2 Z M12,6.4 C10.56,6.4 9.4,7.56 9.4,9 C9.4,10.44 10.56,11.6 12,11.6 C13.44,11.6 14.6,10.44 14.6,9 C14.6,7.56 13.44,6.4 12,6.4 Z"
+    />
+  ),
+  pause: (
+    <>
+      <rect x="6" y="4" width="4.2" height="16" rx="1.3" />
+      <rect x="13.8" y="4" width="4.2" height="16" rx="1.3" />
+    </>
+  ),
+  menu: (
+    <>
+      <rect x="4" y="5" width="16" height="2.8" rx="1.4" />
+      <rect x="4" y="10.6" width="16" height="2.8" rx="1.4" />
+      <rect x="4" y="16.2" width="16" height="2.8" rx="1.4" />
+    </>
+  ),
+  skip: (
+    <>
+      <polygon points="5,4.5 15,12 5,19.5" />
+      <rect x="16" y="4.5" width="3.2" height="15" rx="1.2" />
+    </>
+  ),
+  check: <polygon points="3.5,13.5 6.3,10.7 9.5,13.9 17.7,4.5 20.5,7 9.5,19.5" />,
+  cross: (
+    <>
+      <rect x="10.6" y="2.5" width="2.8" height="19" rx="1.4" transform="rotate(45 12 12)" />
+      <rect x="10.6" y="2.5" width="2.8" height="19" rx="1.4" transform="rotate(-45 12 12)" />
+    </>
+  ),
 };
 
 export function GameIcon({
@@ -588,6 +705,48 @@ const ITEM_ID_RULES: readonly [readonly string[], GameIconName][] = [
 export function iconForItemId(itemId: string): GameIconName | null {
   const id = itemId.toLowerCase();
   for (const [keywords, icon] of ITEM_ID_RULES) {
+    for (const keyword of keywords) {
+      if (id.includes(keyword)) return icon;
+    }
+  }
+  return null;
+}
+
+const ACTION_RULES: readonly [readonly string[], GameIconName][] = [
+  [["rotatecw", "rotateright", "spincw"], "rotateCw"],
+  [["rotateccw", "rotateleft", "spinccw"], "rotateCcw"],
+  [["rotate", "spin"], "rotateCw"],
+  [["harddrop", "slam"], "hardDrop"],
+  [["softdrop"], "arrowDown"],
+  [["jump", "hop", "leap"], "jump"],
+  [["sprint", "dash", "boost"], "sprint"],
+  [["crouch", "sneak", "duck", "slide"], "crouch"],
+  [["hold", "swap", "stash", "switch"], "swap"],
+  [["restart", "reset", "retry", "again", "newrun", "newgame"], "restart"],
+  [["pause"], "pause"],
+  [["menu", "options", "settings"], "menu"],
+  [["endturn", "skip", "pass"], "skip"],
+  [["ping", "waypoint", "marker"], "pin"],
+  [["ability", "cast", "spell", "power", "special"], "lightning"],
+  [["interact", "use", "activate", "talk", "grab", "pickup"], "hand"],
+  [["attack", "strike", "melee", "punch", "hit"], "sword"],
+  [["shoot", "fire", "aim"], "crosshairIcon"],
+  [["mine", "dig"], "pickaxe"],
+  [["build", "place"], "hammer"],
+  [["inventory", "backpack", "bag"], "backpack"],
+  [["map"], "map"],
+  [["confirm", "accept", "submit"], "check"],
+  [["cancel", "close", "dismiss"], "cross"],
+  [["up", "forward"], "arrowUp"],
+  [["down", "back"], "arrowDown"],
+  [["left"], "arrowLeft"],
+  [["right"], "arrowRight"],
+];
+
+/** Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches. */
+export function iconForAction(action: string): GameIconName | null {
+  const id = action.toLowerCase();
+  for (const [keywords, icon] of ACTION_RULES) {
     for (const keyword of keywords) {
       if (id.includes(keyword)) return icon;
     }

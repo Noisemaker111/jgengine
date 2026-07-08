@@ -3,8 +3,6 @@ import type { ItemUseHandler, ItemUseInput } from "@jgengine/core/item/use";
 import { BEDROCK_BLOCK, oreForBlock } from "./blocks";
 import type { Vec3, VoxelGrid, VoxelHit } from "./voxelGrid";
 
-const RESOURCE_INVENTORY = "resources";
-
 function aimedHit(
   ctx: GameContext,
   input: ItemUseInput,
@@ -40,14 +38,12 @@ export function createEditorHandlers(
         const catalogId = grid.catalogAt(x, y, z);
         if (catalogId === BEDROCK_BLOCK) return { state: ctx };
         if (!grid.remove(x, y, z)) return { state: ctx };
-        const ore = catalogId === null ? undefined : oreForBlock(catalogId);
-        if (ore !== undefined) {
-          ctx.player.inventory.put(RESOURCE_INVENTORY, ore.resourceId, 1);
-          ctx.game.events.emit("inventory.added", {
-            userId: ctx.player.userId,
-            item: ore.resourceId,
-            count: 1,
-          });
+        // The broken block drops as a physical item at the cell it vacated; the
+        // shell's walk-over pickup collects it. Ores drop their refined resource;
+        // everything else drops itself so the pack accepts whatever you break.
+        const dropId = catalogId === null ? null : oreForBlock(catalogId)?.resourceId ?? catalogId;
+        if (dropId !== null) {
+          ctx.scene.worldItem.spawn({ itemId: dropId, count: 1, position: [x, y, z] });
         }
         return { state: ctx };
       },

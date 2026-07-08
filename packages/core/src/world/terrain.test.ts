@@ -1,14 +1,21 @@
 import { describe, expect, test } from "bun:test";
 
-import { terrain } from "./features";
+import { environment, terrain } from "./features";
 import {
   arenaField,
   fractalNoise,
   flatField,
+  groundFieldFor,
   noiseField,
   resolveGroundStep,
   resolveTerrainField,
+  resolveTerrainPalette,
+  snapEntityToGround,
+  snapToGround,
+  TERRAIN_MATERIAL_PALETTES,
   valueNoise,
+  type GroundSnapEntityStore,
+  type GroundSnapTarget,
 } from "./terrain";
 
 describe("terrain field", () => {
@@ -25,6 +32,18 @@ describe("terrain field", () => {
     const field = flatField();
     expect(field.sampleHeight(3, -9)).toBe(0);
     expect(field.sampleNormal(3, -9)).toEqual([0, 1, 0]);
+  });
+
+  test("groundFieldFor matches the environment terrain field and is flat elsewhere", () => {
+    const descriptor = terrain({ height: 3.2, seed: "ground-seam", frequency: 0.05 });
+    const ground = groundFieldFor(environment({ terrain: descriptor }));
+    const reference = resolveTerrainField(descriptor);
+    for (const [x, z] of [[0, 0], [12.5, -30.25], [-81, 44]] as const) {
+      expect(ground.sampleHeight(x, z)).toBe(reference.sampleHeight(x, z));
+    }
+    expect(groundFieldFor({ kind: "flat" }).sampleHeight(5, 5)).toBe(0);
+    expect(groundFieldFor(undefined).sampleHeight(5, 5)).toBe(0);
+    expect(groundFieldFor(environment()).sampleHeight(5, 5)).toBe(0);
   });
 
   test("noiseField scales with amplitude and is reproducible per seed", () => {
@@ -71,6 +90,88 @@ describe("terrain field", () => {
     const field = arenaField({ seed: "duel" });
     expect(Math.abs(field.sampleHeight(0, 0))).toBeLessThan(0.05);
     expect(field.waterLevel).toBeLessThan(0);
+  });
+
+  test("resolveTerrainPalette resolves material presets and explicit color overrides", () => {
+    expect(resolveTerrainPalette()).toEqual(TERRAIN_MATERIAL_PALETTES.grass);
+    expect(resolveTerrainPalette({ material: "ash" })).toEqual(TERRAIN_MATERIAL_PALETTES.ash);
+    expect(resolveTerrainPalette({ material: "ash", colors: { low: "#000000" } })).toEqual({
+      low: "#000000",
+      high: TERRAIN_MATERIAL_PALETTES.ash.high,
+      waterline: TERRAIN_MATERIAL_PALETTES.ash.waterline,
+    });
+  });
+
+  test("snapToGround replaces y with the field height at x/z, plus offset", () => {
+    const field = noiseField({ seed: "snap", amplitude: 3, frequency: 0.05 });
+    const [x, y, z] = snapToGround(field, [12, 99, -7]);
+    expect(x).toBe(12);
+    expect(z).toBe(-7);
+    expect(y).toBe(field.sampleHeight(12, -7));
+
+    const [, offsetY] = snapToGround(field, [12, 99, -7], 1.5);
+    expect(offsetY).toBeCloseTo(field.sampleHeight(12, -7) + 1.5, 6);
+  });
+
+  test("snapEntityToGround round-trips through a stub entity store", () => {
+    const field = noiseField({ seed: "snap-entity", amplitude: 2, frequency: 0.05 });
+    const positions = new Map<string, readonly [number, number, number]>([["hero", [5, 0, -3]]]);
+    const store: GroundSnapEntityStore = {
+      get(id): GroundSnapTarget | null {
+        const position = positions.get(id);
+        return position === undefined ? null : { position };
+      },
+      setPose(id, pose) {
+        if (!positions.has(id) || pose.position === undefined) return false;
+        positions.set(id, pose.position);
+        return true;
+      },
+    };
+
+    expect(snapEntityToGround(store, "missing", field)).toBe(false);
+
+    const result = snapEntityToGround(store, "hero", field);
+    expect(result).toBe(true);
+    expect(positions.get("hero")).toEqual([5, field.sampleHeight(5, -3), -3]);
+  });
+
+  test("resolveTerrainField flatten masks carve a flat pad with a blended ring", () => {
+    const flat = terrain({
+      height: 6,
+      seed: "flatten",
+      frequency: 0.05,
+      flatten: [{ center: [20, -10], radius: 8, height: 3, falloff: 6 }],
+    });
+    const field = resolveTerrainField(flat);
+    const unflattened = resolveTerrainField(terrain({ height: 6, seed: "flatten", frequency: 0.05 }));
+
+    expect(field.sampleHeight(20, -10)).toBe(3);
+    expect(field.sampleHeight(24, -10)).toBe(3);
+    expect(field.sampleHeight(20, -17)).toBe(3);
+
+    expect(field.sampleHeight(60, 60)).toBe(unflattened.sampleHeight(60, 60));
+
+    const ringSamples = [9, 11, 13, 14].map((distance) => field.sampleHeight(20 + distance, -10));
+    for (let index = 1; index < ringSamples.length; index += 1) {
+      const previous = ringSamples[index - 1]!;
+      const current = ringSamples[index]!;
+      const previousDelta = Math.abs(previous - 3);
+      const currentDelta = Math.abs(current - 3);
+      expect(currentDelta).toBeGreaterThanOrEqual(previousDelta - 1e-9);
+    }
+    expect(field.sampleHeight(20 + 14, -10)).toBeCloseTo(unflattened.sampleHeight(20 + 14, -10), 6);
+  });
+
+  test("resolveTerrainField flatten mask defaults its target to the noise height at center", () => {
+    const seeded = terrain({ height: 5, seed: "flatten-default", frequency: 0.04 });
+    const withoutMask = resolveTerrainField(seeded);
+    const targetHeight = withoutMask.sampleHeight(0, 0);
+
+    const masked = resolveTerrainField(
+      terrain({ height: 5, seed: "flatten-default", frequency: 0.04, flatten: [{ center: [0, 0], radius: 5 }] }),
+    );
+    expect(masked.sampleHeight(0, 0)).toBeCloseTo(targetHeight, 6);
+    expect(masked.sampleHeight(1, 1)).toBeCloseTo(targetHeight, 6);
   });
 
   test("fractalNoise averages toward zero over a wide sample", () => {

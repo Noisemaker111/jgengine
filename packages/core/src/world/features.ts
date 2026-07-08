@@ -9,17 +9,38 @@ export interface EnvironmentArea extends WorldBounds {
   h?: number;
 }
 
+export interface TerrainColors {
+  low?: string;
+  high?: string;
+  waterline?: string;
+}
+
+export interface TerrainFlattenMask {
+  center: EnvironmentVec2;
+  radius: number;
+  /** Target flat height; defaults to the noise field's height at `center`. */
+  height?: number;
+  /** Extra blend-ring width outside `radius` where the flat height smoothsteps back to the noise value; default `radius * 0.5`. */
+  falloff?: number;
+}
+
 export interface TerrainEnvironmentConfig {
   bounds?: WorldBounds;
   height?: number;
   heightMap?: string;
+  /** Named palette preset (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); default "grass". Overridden field-by-field by `colors`. */
   material?: string;
+  /** Explicit low/high/waterline hex colors; any field left unset falls back to the resolved `material` preset. */
+  colors?: TerrainColors;
+  segments?: number;
   seed?: string;
   frequency?: number;
   octaves?: number;
   ridged?: boolean;
   baseHeight?: number;
   waterLevel?: number;
+  /** Flat pads carved into the noise field, e.g. for building pads or spawn circles. */
+  flatten?: readonly TerrainFlattenMask[];
 }
 
 export interface RainEnvironmentConfig {
@@ -53,6 +74,7 @@ export interface GrassEnvironmentConfig {
 
 export interface OceanEnvironmentConfig {
   bounds?: WorldBounds;
+  position?: EnvironmentVec2;
   level?: number;
   waveHeight?: number;
   waveScale?: number;
@@ -60,8 +82,21 @@ export interface OceanEnvironmentConfig {
   color?: string;
 }
 
+export interface SkyEnvironmentConfig {
+  /** Fixed look used when `timeOfDay` is off (or no clock is available); default "day". */
+  preset?: "day" | "dusk" | "night";
+  /** Drive sun/sky from the world clock's `calendar().dayFraction` instead of the fixed `preset`. */
+  timeOfDay?: boolean;
+  horizonColor?: string;
+  zenithColor?: string;
+  sunIntensity?: number;
+  ambientIntensity?: number;
+  fog?: { color?: string; near?: number; far?: number };
+}
+
 export interface BuildingEnvironmentConfig {
   count?: number;
+  position?: EnvironmentVec2;
   footprint?: WorldBounds;
   stories?: readonly [number, number];
   storyHeight?: number;
@@ -90,12 +125,18 @@ export type GrassEnvironmentDescriptor = { kind: "grass" } & Required<
 
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
->;
+> &
+  Pick<OceanEnvironmentConfig, "position">;
 
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
 > &
-  Pick<BuildingEnvironmentConfig, "seed">;
+  Pick<BuildingEnvironmentConfig, "seed" | "position">;
+
+export type SkyEnvironmentDescriptor = { kind: "sky" } & Required<
+  Pick<SkyEnvironmentConfig, "preset" | "timeOfDay">
+> &
+  Omit<SkyEnvironmentConfig, "preset" | "timeOfDay">;
 
 export type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor;
 export type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor;
@@ -106,6 +147,7 @@ export type EnvironmentDescriptorList<T> = T | readonly T[];
 
 export interface EnvironmentWorldConfig {
   terrain?: TerrainEnvironmentDescriptor;
+  sky?: SkyEnvironmentDescriptor;
   weather?: EnvironmentDescriptorList<WeatherEnvironmentDescriptor>;
   vegetation?: EnvironmentDescriptorList<VegetationEnvironmentDescriptor>;
   water?: EnvironmentDescriptorList<WaterEnvironmentDescriptor>;
@@ -115,6 +157,7 @@ export interface EnvironmentWorldConfig {
 export interface EnvironmentWorldFeature {
   kind: "environment";
   terrain?: TerrainEnvironmentDescriptor;
+  sky?: SkyEnvironmentDescriptor;
   weather?: readonly WeatherEnvironmentDescriptor[];
   vegetation?: readonly VegetationEnvironmentDescriptor[];
   water?: readonly WaterEnvironmentDescriptor[];
@@ -173,6 +216,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
   return {
     kind: "environment",
     ...(config.terrain === undefined ? {} : { terrain: config.terrain }),
+    ...(config.sky === undefined ? {} : { sky: config.sky }),
     ...(weather === undefined ? {} : { weather }),
     ...(vegetation === undefined ? {} : { vegetation }),
     ...(water === undefined ? {} : { water }),
@@ -190,12 +234,32 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
     {
       ...(config.heightMap === undefined ? {} : { heightMap: config.heightMap }),
       ...(config.material === undefined ? {} : { material: config.material }),
+      ...(config.colors === undefined ? {} : { colors: config.colors }),
+      ...(config.segments === undefined ? {} : { segments: config.segments }),
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.frequency === undefined ? {} : { frequency: config.frequency }),
       ...(config.octaves === undefined ? {} : { octaves: config.octaves }),
       ...(config.ridged === undefined ? {} : { ridged: config.ridged }),
       ...(config.baseHeight === undefined ? {} : { baseHeight: config.baseHeight }),
       ...(config.waterLevel === undefined ? {} : { waterLevel: config.waterLevel }),
+      ...(config.flatten === undefined ? {} : { flatten: config.flatten }),
+    },
+  );
+}
+
+export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor {
+  return withOptional(
+    {
+      kind: "sky" as const,
+      preset: config.preset ?? "day",
+      timeOfDay: config.timeOfDay ?? false,
+    },
+    {
+      ...(config.horizonColor === undefined ? {} : { horizonColor: config.horizonColor }),
+      ...(config.zenithColor === undefined ? {} : { zenithColor: config.zenithColor }),
+      ...(config.sunIntensity === undefined ? {} : { sunIntensity: config.sunIntensity }),
+      ...(config.ambientIntensity === undefined ? {} : { ambientIntensity: config.ambientIntensity }),
+      ...(config.fog === undefined ? {} : { fog: config.fog }),
     },
   );
 }
@@ -249,6 +313,7 @@ export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDesc
     waveScale: config.waveScale ?? 18,
     waveSpeed: config.waveSpeed ?? 0.55,
     color: config.color ?? "#1d7fa3",
+    ...(config.position === undefined ? {} : { position: config.position }),
   };
 }
 
@@ -263,7 +328,10 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
       spacing: config.spacing ?? 2,
       style: config.style ?? "generic",
     },
-    config.seed === undefined ? undefined : { seed: config.seed },
+    {
+      ...(config.seed === undefined ? {} : { seed: config.seed }),
+      ...(config.position === undefined ? {} : { position: config.position }),
+    },
   );
 }
 

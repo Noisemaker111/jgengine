@@ -116,6 +116,7 @@ function distanceToNext(point: readonly [number, number, number], cp: Checkpoint
  * volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps
  * cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut,
  * derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint.
+ * `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
  */
 export class RaceState {
   private readonly track: RaceTrack;
@@ -146,6 +147,25 @@ export class RaceState {
       splits: [],
     });
     this.order.push(racerId);
+  }
+
+  /** Removes a racer's progress/standing and renumbers the remaining field's positions; a no-op for an unknown id. */
+  removeRacer(racerId: string): void {
+    if (!this.racers.delete(racerId)) return;
+    const idx = this.order.indexOf(racerId);
+    if (idx >= 0) this.order.splice(idx, 1);
+    const remaining = this.order.map((id) => this.racers.get(id)!).sort((a, b) => this.compare(a, b, null));
+    remaining.forEach((r, i) => {
+      r.position = i + 1;
+    });
+  }
+
+  /** Clears all racer progress and finish state back to construction time; `track` and `win` are untouched, so the same instance can run another race. */
+  reset(): void {
+    this.racers.clear();
+    this.order.length = 0;
+    this.raceFinished = false;
+    this.finalRanking = [];
   }
 
   eliminate(racerId: string): void {

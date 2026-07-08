@@ -2,8 +2,10 @@ import type {
   GameRuntimePlayerView,
   GameRuntimeServerView,
   JoinServerResult,
+  PresencePoseRow,
   TransportRunCommandResult,
 } from "@jgengine/core/runtime/transport";
+import type { PlayerPose } from "@jgengine/core/multiplayer/poseSyncGate";
 import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 
@@ -11,25 +13,12 @@ export const WS_PROTOCOL_VERSION = 1;
 
 export type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice";
 
-export type WsAppearance = Record<string, string>;
+/** Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only. */
+export type WsAppearance = Record<string, string | number | boolean>;
 
-export type WsPose = {
-  x: number;
-  y: number;
-  z: number;
-  rotationY: number;
-  rotationPitch: number;
-  appearance?: WsAppearance;
-};
+export type WsPose = PlayerPose & { appearance?: WsAppearance };
 
-export type WsPresenceRow = {
-  userId: string;
-  position: { x: number; y: number; z: number };
-  rotationY: number;
-  rotationPitch: number;
-  lastSeenAt: number;
-  appearance?: WsAppearance;
-};
+export type WsPresenceRow = PresencePoseRow & { appearance?: WsAppearance };
 
 export type WsChatMessage = {
   id: string;
@@ -111,8 +100,11 @@ function isWsChannel(value: unknown): value is WsChannel {
   );
 }
 
-function isWsAppearance(value: unknown): value is WsAppearance {
-  return isRecord(value) && Object.values(value).every((slot) => typeof slot === "string");
+function isAppearance(value: unknown): value is WsAppearance {
+  return (
+    isRecord(value) &&
+    Object.values(value).every((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+  );
 }
 
 function isPose(value: unknown): value is WsPose {
@@ -123,7 +115,7 @@ function isPose(value: unknown): value is WsPose {
     typeof value.z === "number" &&
     typeof value.rotationY === "number" &&
     typeof value.rotationPitch === "number" &&
-    (value.appearance === undefined || isWsAppearance(value.appearance))
+    (value.appearance === undefined || isAppearance(value.appearance))
   );
 }
 

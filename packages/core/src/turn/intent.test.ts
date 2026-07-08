@@ -1,51 +1,59 @@
 import { describe, expect, test } from "bun:test";
 import { createIntentBoard } from "@jgengine/core/turn/intent";
-import { createSnapshotStore } from "@jgengine/core/tactics/snapshot";
+
+type MoveIntent = "attack" | "defend" | "flee";
 
 describe("intent board", () => {
-  test("declare then peek returns the intent, and a later declare replaces it", () => {
-    const board = createIntentBoard<"attack" | "guard">();
-    board.declare({ participant: "goblin", kind: "attack", magnitude: 8, target: "hero" });
-    expect(board.peek("goblin")).toEqual({ participant: "goblin", kind: "attack", magnitude: 8, target: "hero" });
-
-    board.declare({ participant: "goblin", kind: "guard" });
-    expect(board.peek("goblin")).toEqual({ participant: "goblin", kind: "guard" });
-    expect(board.all()).toEqual([{ participant: "goblin", kind: "guard" }]);
+  test("declare/peek/consume lifecycle", () => {
+    const board = createIntentBoard<MoveIntent>();
+    expect(board.peek("hero")).toBeNull();
+    board.declare("hero", { kind: "attack", targetId: "goblin", magnitude: 3 });
+    expect(board.peek("hero")).toEqual({ kind: "attack", targetId: "goblin", magnitude: 3 });
+    expect(board.peek("hero")).toEqual({ kind: "attack", targetId: "goblin", magnitude: 3 });
+    expect(board.consume("hero")).toEqual({ kind: "attack", targetId: "goblin", magnitude: 3 });
+    expect(board.peek("hero")).toBeNull();
+    expect(board.consume("hero")).toBeNull();
   });
 
-  test("resolve returns and removes the intent", () => {
-    const board = createIntentBoard();
-    board.declare({ participant: "boss", kind: "slam", magnitude: 20 });
-    expect(board.resolve("boss")).toEqual({ participant: "boss", kind: "slam", magnitude: 20 });
-    expect(board.peek("boss")).toBeNull();
-    expect(board.resolve("boss")).toBeNull();
+  test("redeclaring overwrites the pending intent", () => {
+    const board = createIntentBoard<MoveIntent>();
+    board.declare("hero", { kind: "attack", targetId: "goblin" });
+    board.declare("hero", { kind: "defend" });
+    expect(board.peek("hero")).toEqual({ kind: "defend" });
   });
 
-  test("clear removes one participant or every intent", () => {
-    const board = createIntentBoard();
-    board.declare({ participant: "a", kind: "attack" });
-    board.declare({ participant: "b", kind: "attack" });
-    board.clear("a");
-    expect(board.peek("a")).toBeNull();
-    expect(board.peek("b")).not.toBeNull();
+  test("all() lists every declared intent as [participantId, intent] pairs", () => {
+    const board = createIntentBoard<MoveIntent>();
+    board.declare("hero", { kind: "attack", targetId: "goblin" });
+    board.declare("mage", { kind: "flee" });
+    expect(board.all()).toEqual([
+      ["hero", { kind: "attack", targetId: "goblin" }],
+      ["mage", { kind: "flee" }],
+    ]);
+  });
 
+  test("clear(participantId) removes only that participant", () => {
+    const board = createIntentBoard<MoveIntent>();
+    board.declare("hero", { kind: "attack" });
+    board.declare("mage", { kind: "flee" });
+    board.clear("hero");
+    expect(board.peek("hero")).toBeNull();
+    expect(board.peek("mage")).toEqual({ kind: "flee" });
+  });
+
+  test("clear() with no argument wipes every declared intent", () => {
+    const board = createIntentBoard<MoveIntent>();
+    board.declare("hero", { kind: "attack" });
+    board.declare("mage", { kind: "flee" });
     board.clear();
     expect(board.all()).toEqual([]);
   });
 
-  test("snapshot store round-trips the board alongside other engine slices", () => {
-    const board = createIntentBoard();
-    board.declare({ participant: "goblin", kind: "attack", magnitude: 8 });
-
-    const store = createSnapshotStore();
-    store.register("intents", board);
-    const snap = store.capture();
-
-    board.declare({ participant: "goblin", kind: "guard" });
-    board.declare({ participant: "boss", kind: "slam" });
-
-    store.restore(snap);
-    expect(board.peek("goblin")).toEqual({ participant: "goblin", kind: "attack", magnitude: 8 });
-    expect(board.peek("boss")).toBeNull();
+  test("mutating a returned intent does not affect board state", () => {
+    const board = createIntentBoard<MoveIntent>();
+    board.declare("hero", { kind: "attack", note: "opening" });
+    const peeked = board.peek("hero")!;
+    peeked.note = "tampered";
+    expect(board.peek("hero")).toEqual({ kind: "attack", note: "opening" });
   });
 });

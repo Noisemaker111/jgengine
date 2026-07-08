@@ -12,9 +12,10 @@ export function resolveStructureBuildings(descriptor: BuildingEnvironmentDescrip
   const columns = Math.max(1, Math.ceil(Math.sqrt(descriptor.count)));
   const rows = Math.max(1, Math.ceil(descriptor.count / columns));
   const spacing = descriptor.spacing;
+  const [centerX, centerZ] = descriptor.position ?? [0, 0];
   const origin: readonly [number, number] = [
-    -((columns - 1) * (descriptor.footprint.w + spacing)) / 2,
-    -((rows - 1) * (descriptor.footprint.d + spacing)) / 2,
+    centerX - ((columns - 1) * (descriptor.footprint.w + spacing)) / 2,
+    centerZ - ((rows - 1) * (descriptor.footprint.d + spacing)) / 2,
   ];
   return generateBuildingDistrict({
     rows,

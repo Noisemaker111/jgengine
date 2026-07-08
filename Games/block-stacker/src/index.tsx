@@ -1,2 +1,2 @@
 export { game } from "./game.config";
-export { blockStackerUiScenario } from "./game/scenario";
+export { blockStackerUiScenario as uiScenario } from "./game/scenario";

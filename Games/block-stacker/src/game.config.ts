@@ -18,6 +18,18 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  touch: {
+    gestures: {
+      tap: "rotateCw",
+      swipeUp: "hold",
+      swipeDown: "hardDrop",
+      drag: { left: "shiftLeft", right: "shiftRight" },
+    },
+    buttons: [
+      { action: "rotateCcw", label: "CCW" },
+      { action: "softDrop", label: "Soft" },
+    ],
+  },
   camera: {
     rig: "rts",
     followEntityId: null,

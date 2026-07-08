@@ -2,10 +2,9 @@ import { describe, expect, test } from "bun:test";
 
 import {
   actionLabel,
-  actionRepeatIntervals,
+  actionRepeatMs,
   bindingLabel,
   bindingMatches,
-  createActionRepeater,
   createActionStateTracker,
   hotbarSlotActionIndex,
   hotbarSlotBindings,
@@ -13,6 +12,7 @@ import {
   normalizeKeyCode,
   resolveActionCommand,
   resolveBoundAction,
+  shouldDispatchAction,
   type ActionBindingMap,
   type ActionStateBindingMap,
 } from "./actionBindings";
@@ -177,58 +177,50 @@ describe("resolveActionCommand", () => {
   });
 });
 
-describe("createActionRepeater", () => {
-  test("the down edge always fires and restarts the timer", () => {
-    const repeater = createActionRepeater({ fire: 100 });
-    expect(repeater.due("fire", true, true, 0)).toBe(true);
-    expect(repeater.due("fire", true, false, 50)).toBe(false);
+describe("actionRepeatMs", () => {
+  test("reads repeatMs from the hold/toggle object form", () => {
+    expect(actionRepeatMs({ hold: ["KeyF"], repeatMs: 150 })).toBe(150);
   });
 
-  test("fires again every intervalMs while held", () => {
-    const repeater = createActionRepeater({ fire: 100 });
-    expect(repeater.due("fire", true, true, 0)).toBe(true);
-    expect(repeater.due("fire", true, false, 99)).toBe(false);
-    expect(repeater.due("fire", true, false, 100)).toBe(true);
-    expect(repeater.due("fire", true, false, 150)).toBe(false);
-    expect(repeater.due("fire", true, false, 200)).toBe(true);
-  });
-
-  test("releasing resets so the next press fires immediately", () => {
-    const repeater = createActionRepeater({ fire: 100 });
-    repeater.due("fire", true, true, 0);
-    repeater.due("fire", true, false, 100);
-    expect(repeater.due("fire", false, false, 120)).toBe(false);
-    expect(repeater.due("fire", true, true, 130)).toBe(true);
-    expect(repeater.due("fire", true, false, 140)).toBe(false);
-  });
-
-  test("actions without a configured interval never repeat past the edge", () => {
-    const repeater = createActionRepeater({});
-    expect(repeater.due("jump", true, true, 0)).toBe(true);
-    expect(repeater.due("jump", true, false, 1000)).toBe(false);
-  });
-
-  test("reset clears all timers", () => {
-    const repeater = createActionRepeater({ fire: 100 });
-    repeater.due("fire", true, true, 0);
-    repeater.reset();
-    expect(repeater.due("fire", true, false, 50)).toBe(false);
+  test("is undefined for a flat code list or when unset", () => {
+    expect(actionRepeatMs(["KeyF"])).toBeUndefined();
+    expect(actionRepeatMs({ hold: ["KeyF"] })).toBeUndefined();
+    expect(actionRepeatMs(undefined)).toBeUndefined();
   });
 });
 
-describe("actionRepeatIntervals", () => {
-  test("collects repeatMs from object-form entries only", () => {
+describe("shouldDispatchAction", () => {
+  test("always fires on the press edge", () => {
     expect(
-      actionRepeatIntervals({
-        fire: { hold: ["Mouse0"], repeatMs: 120 },
-        jump: ["Space"],
-        toggle: { toggle: ["KeyC"] },
-      }),
-    ).toEqual({ fire: 120 });
+      shouldDispatchAction({ pressed: true, down: true, repeatMs: undefined, lastFiredAt: null, now: 1000 }),
+    ).toBe(true);
   });
 
-  test("returns an empty map when nothing declares repeatMs", () => {
-    expect(actionRepeatIntervals({ jump: ["Space"] })).toEqual({});
+  test("does not refire without repeatMs", () => {
+    expect(
+      shouldDispatchAction({ pressed: false, down: true, repeatMs: undefined, lastFiredAt: 900, now: 1000 }),
+    ).toBe(false);
+  });
+
+  test("refires once repeatMs has elapsed since the last fire", () => {
+    expect(
+      shouldDispatchAction({ pressed: false, down: true, repeatMs: 100, lastFiredAt: 900, now: 1000 }),
+    ).toBe(true);
+    expect(
+      shouldDispatchAction({ pressed: false, down: true, repeatMs: 100, lastFiredAt: 950, now: 1000 }),
+    ).toBe(false);
+  });
+
+  test("never fires while the action is not down", () => {
+    expect(
+      shouldDispatchAction({ pressed: false, down: false, repeatMs: 100, lastFiredAt: 800, now: 1000 }),
+    ).toBe(false);
+  });
+
+  test("does not fire on repeat without a recorded lastFiredAt", () => {
+    expect(
+      shouldDispatchAction({ pressed: false, down: true, repeatMs: 100, lastFiredAt: null, now: 1000 }),
+    ).toBe(false);
   });
 });
 

@@ -1,51 +1,46 @@
 export interface DeclaredIntent<TKind extends string = string> {
-  participant: string;
   kind: TKind;
   magnitude?: number;
-  target?: string;
-  data?: unknown;
-}
-
-export interface IntentBoardSnapshot {
-  intents: DeclaredIntent[];
+  targetId?: string;
+  note?: string;
 }
 
 export interface IntentBoard<TKind extends string = string> {
-  declare(intent: DeclaredIntent<TKind>): void;
-  peek(participant: string): DeclaredIntent<TKind> | null;
-  all(): readonly DeclaredIntent<TKind>[];
-  resolve(participant: string): DeclaredIntent<TKind> | null;
-  clear(participant?: string): void;
-  capture(): IntentBoardSnapshot;
-  restore(snapshot: IntentBoardSnapshot): void;
+  declare(participantId: string, intent: DeclaredIntent<TKind>): void;
+  peek(participantId: string): DeclaredIntent<TKind> | null;
+  all(): readonly [string, DeclaredIntent<TKind>][];
+  consume(participantId: string): DeclaredIntent<TKind> | null;
+  clear(participantId?: string): void;
 }
 
 export function createIntentBoard<TKind extends string = string>(): IntentBoard<TKind> {
   const intents = new Map<string, DeclaredIntent<TKind>>();
 
   return {
-    declare(intent) {
-      intents.set(intent.participant, intent);
+    declare(participantId, intent) {
+      intents.set(participantId, { ...intent });
     },
-    peek: (participant) => intents.get(participant) ?? null,
-    all: () => [...intents.values()],
-    resolve(participant) {
-      const intent = intents.get(participant);
+    peek(participantId) {
+      const intent = intents.get(participantId);
+      return intent === undefined ? null : { ...intent };
+    },
+    all() {
+      return [...intents.entries()].map(
+        ([participantId, intent]) => [participantId, { ...intent }] as [string, DeclaredIntent<TKind>],
+      );
+    },
+    consume(participantId) {
+      const intent = intents.get(participantId);
       if (intent === undefined) return null;
-      intents.delete(participant);
+      intents.delete(participantId);
       return intent;
     },
-    clear(participant) {
-      if (participant === undefined) {
+    clear(participantId) {
+      if (participantId === undefined) {
         intents.clear();
         return;
       }
-      intents.delete(participant);
-    },
-    capture: () => ({ intents: [...intents.values()] as DeclaredIntent[] }),
-    restore(snapshot) {
-      intents.clear();
-      for (const intent of snapshot.intents) intents.set(intent.participant, intent as DeclaredIntent<TKind>);
+      intents.delete(participantId);
     },
   };
 }

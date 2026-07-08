@@ -88,3 +88,60 @@ describe("placementController", () => {
     expect(quarterTurnsToRotationY(4)).toBe(0);
   });
 });
+
+describe("placementController slot mode", () => {
+  const SLOTS = [
+    { id: "a", center: [0, 0, 0] as const, radius: 1 },
+    { id: "b", center: [5, 0, 0] as const, radius: 1 },
+  ];
+
+  test("hover resolves to the nearest enabled slot within its radius", () => {
+    const controller = createPlacementController({ footprint: { w: 1, d: 1 }, slots: SLOTS });
+    const preview = controller.hover(hit(0.2, 0, 0.1));
+    expect(preview.valid).toBe(true);
+    expect(preview.slotId).toBe("a");
+    expect(controller.hoveredSlotId()).toBe("a");
+  });
+
+  test("outside every slot's radius, hover reports no-slot and is invalid", () => {
+    const controller = createPlacementController({ footprint: { w: 1, d: 1 }, slots: SLOTS });
+    const preview = controller.hover(hit(2.5, 0, 2.5));
+    expect(preview.valid).toBe(false);
+    expect(preview.reason).toBe("no-slot");
+    expect(controller.hoveredSlotId()).toBeNull();
+  });
+
+  test("commit occupies the slot; occupied slots stop matching until released", () => {
+    const controller = createPlacementController({ footprint: { w: 1, d: 1 }, slots: SLOTS });
+    controller.hover(hit(0, 0, 0));
+    const commit = controller.commit();
+    expect(commit?.slotId).toBe("a");
+
+    const secondHover = controller.hover(hit(0, 0, 0));
+    expect(secondHover.valid).toBe(false);
+    expect(secondHover.reason).toBe("no-slot");
+
+    controller.releaseSlot("a");
+    const thirdHover = controller.hover(hit(0, 0, 0));
+    expect(thirdHover.valid).toBe(true);
+    expect(thirdHover.slotId).toBe("a");
+  });
+
+  test("a disabled slot never matches", () => {
+    const controller = createPlacementController({
+      footprint: { w: 1, d: 1 },
+      slots: [{ id: "a", center: [0, 0, 0], enabled: false }],
+    });
+    const preview = controller.hover(hit(0, 0, 0));
+    expect(preview.valid).toBe(false);
+    expect(preview.reason).toBe("no-slot");
+  });
+
+  test("setSlots swaps the active slots and re-evaluates the current hover", () => {
+    const controller = createPlacementController({ footprint: { w: 1, d: 1 }, slots: SLOTS });
+    controller.hover(hit(5, 0, 0));
+    expect(controller.hoveredSlotId()).toBe("b");
+    controller.setSlots([{ id: "c", center: [5, 0, 0], radius: 1 }]);
+    expect(controller.hoveredSlotId()).toBe("c");
+  });
+});

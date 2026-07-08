@@ -128,27 +128,19 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     return result;
   }
 
-  function depletionReason(rule: ReceiveRule, stats: StatValueMap, magnitude: number): string | null {
-    if (magnitude < 0) {
-      const anyPoolBelowMax = rule.order.some((statId) => {
-        const stat = stats[statId];
-        return stat !== undefined && stat.current < stat.max;
-      });
-      return anyPoolBelowMax ? null : "pools-full";
-    }
-    const anyPoolAboveMin = rule.order.some((statId) => {
-      const stat = stats[statId];
-      return stat !== undefined && stat.current > stat.min;
-    });
-    return anyPoolAboveMin ? null : "pools-depleted";
-  }
-
-  function canReceive(instanceId: string, effect: string, magnitude = 0): string | null {
+  function canReceive(instanceId: string, effect: string, magnitude?: number): string | null {
     const rule = resolveRule(instanceId, effect);
     if (rule === null) return "not-receivable";
     const stats = deps.resolveStats(instanceId);
     if (stats === undefined) return "unknown-instance";
-    return depletionReason(rule, stats, magnitude);
+    const restorative = magnitude !== undefined && magnitude < 0;
+    const anyPoolHasHeadroom = rule.order.some((statId) => {
+      const stat = stats[statId];
+      if (stat === undefined) return false;
+      return restorative ? stat.current < stat.max : stat.current > stat.min;
+    });
+    if (!anyPoolHasHeadroom) return "pools-depleted";
+    return null;
   }
 
   function drainPools(
@@ -188,7 +180,7 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     const stats = deps.resolveStats(instanceId);
     if (rule === null || stats === undefined) return null;
     const drainMagnitude = modifiedDrainMagnitude(baseDrainMagnitude(effect, via) * scale, rule);
-    if (depletionReason(rule, stats, drainMagnitude) !== null) return null;
+    if (canReceive(instanceId, effect, drainMagnitude) !== null) return null;
     const result = drainPools(instanceId, effect, rule, stats, drainMagnitude);
     if (result.lethal) deps.onLethal?.(instanceId, { from, via, effect });
     return result;

@@ -26,6 +26,11 @@ export interface AbilitySlotSnapshot {
 
 export type AbilityCastReason = "unknown-slot" | "cooldown" | "no-resource";
 
+export interface AbilitySlotRetune {
+  cooldownMs?: number;
+  resourceCost?: number;
+}
+
 export type AbilityCastResult =
   | { ok: true; slot: AbilitySlotSnapshot }
   | { ok: false; reason: AbilityCastReason; slot: AbilitySlotSnapshot | null };
@@ -39,6 +44,7 @@ export interface AbilityKit {
   cast(slotId: string, resourceAvailable?: number): AbilityCastResult;
   tick(dtSeconds: number): void;
   reset(slotId?: string): void;
+  retuneSlot(slotId: string, patch: AbilitySlotRetune): boolean;
 }
 
 const DEFAULT_FLASH_MS = 220;
@@ -171,6 +177,13 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[]): Ability
         runtime.rechargeRemainingMs = 0;
         runtime.flashRemainingMs = 0;
       }
+    },
+    retuneSlot(slotId, patch) {
+      const runtime = runtimes.get(slotId);
+      if (runtime === undefined) return false;
+      if (patch.cooldownMs !== undefined) runtime.config.cooldownMs = Math.max(0, patch.cooldownMs);
+      if (patch.resourceCost !== undefined) runtime.config.resourceCost = Math.max(0, patch.resourceCost);
+      return true;
     },
   };
 }

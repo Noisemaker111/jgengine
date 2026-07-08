@@ -21,10 +21,7 @@
       "@jgengine/core/*": ["../../packages/core/src/*"],
       "@jgengine/react/*": ["../../packages/react/src/*"],
       "@jgengine/ws/*": ["../../packages/ws/src/*"],
-      "@games/world-of-warcraft": ["../../Games/world-of-warcraft/src/index.ts"],
-      "@games/asset-showcase": ["../../Games/asset-showcase/src/index.tsx"],
-      "@games/stress-bench": ["../../Games/stress-bench/src/index.tsx"],
-      "@games/destruction-demo": ["../../Games/destruction-demo/src/index.tsx"]
+      "@jgengine/convex/*": ["../../packages/convex/src/*"]
     }
   },
   "include": ["src"]

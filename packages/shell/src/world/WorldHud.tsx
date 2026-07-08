@@ -5,6 +5,8 @@ import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";
 import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
+import { worldHealthBarAllowsRole } from "@jgengine/core/game/playableGame";
+import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
 import { useEntityStat, useSceneEntities } from "@jgengine/react/hooks";
 import { resolveFloatTextStyle } from "./floatTextStyle";
@@ -33,17 +35,28 @@ function EntityBar({ entity, statId, height }: { entity: SceneEntity; statId: st
   );
 }
 
-export function WorldEntityBars({ statId, height = 2.2 }: { statId: string; height?: number }) {
+export function WorldEntityBars({
+  statId,
+  height = 2.2,
+  roles,
+  resolveRole,
+}: {
+  statId: string;
+  height?: number;
+  roles?: readonly CatalogEntityRole[];
+  resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
+}) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
   const playerId = ctx.player.userId;
   return (
     <>
-      {entities.map((entity) =>
-        entity.id === playerId ? null : (
+      {entities
+        .filter((entity) => entity.id !== playerId)
+        .filter((entity) => worldHealthBarAllowsRole(roles, resolveRole?.(entity)))
+        .map((entity) => (
           <EntityBar key={entity.id} entity={entity} statId={statId} height={height} />
-        ),
-      )}
+        ))}
     </>
   );
 }

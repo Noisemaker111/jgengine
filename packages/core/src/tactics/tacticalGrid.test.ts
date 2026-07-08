@@ -103,6 +103,55 @@ describe("push / knockback-to-tile", () => {
   });
 });
 
+describe("world mapping", () => {
+  const GRID_SIZE = 8;
+  const TILE_SIZE = 2.2;
+  const HALF_SPAN = (GRID_SIZE - 1) / 2;
+  const ORIGIN: readonly [number, number] = [-(HALF_SPAN + 0.5) * TILE_SIZE, -(HALF_SPAN + 0.5) * TILE_SIZE];
+
+  function boardTileToWorld(tile: Tile): readonly [number, number] {
+    return [(tile[0] - HALF_SPAN) * TILE_SIZE, (tile[1] - HALF_SPAN) * TILE_SIZE];
+  }
+
+  function boardWorldToTile(x: number, z: number): Tile | null {
+    const c = Math.round(x / TILE_SIZE + HALF_SPAN);
+    const r = Math.round(z / TILE_SIZE + HALF_SPAN);
+    if (c < 0 || c >= GRID_SIZE || r < 0 || r >= GRID_SIZE) return null;
+    return [c, r];
+  }
+
+  test("worldToTile and tileToWorld round-trip through a tile's center", () => {
+    const grid = createTacticalGrid({ width: GRID_SIZE, height: GRID_SIZE, world: { origin: ORIGIN, tileSize: TILE_SIZE } });
+    for (const tile of [[0, 0], [3, 5], [7, 7]] as Tile[]) {
+      const [x, z] = grid.tileToWorld(tile);
+      expect(grid.worldToTile(x, z)).toEqual(tile);
+    }
+  });
+
+  test("worldToTile returns null outside the grid", () => {
+    const grid = createTacticalGrid({ width: GRID_SIZE, height: GRID_SIZE, world: { origin: ORIGIN, tileSize: TILE_SIZE } });
+    expect(grid.worldToTile(-1000, 0)).toBeNull();
+    expect(grid.worldToTile(0, 1000)).toBeNull();
+  });
+
+  test("worldToTile/tileToWorld throw without config.world", () => {
+    const grid = createTacticalGrid({ width: 4, height: 4 });
+    expect(() => grid.worldToTile(0, 0)).toThrow();
+    expect(() => grid.tileToWorld([0, 0])).toThrow();
+  });
+
+  test("matches grid-tactics board.ts math for an equivalent config", () => {
+    const grid = createTacticalGrid({ width: GRID_SIZE, height: GRID_SIZE, world: { origin: ORIGIN, tileSize: TILE_SIZE } });
+    for (const tile of [[0, 0], [1, 2], [4, 4], [7, 0], [0, 7]] as Tile[]) {
+      const expected = boardTileToWorld(tile);
+      const actual = grid.tileToWorld(tile);
+      expect(actual[0]).toBeCloseTo(expected[0]);
+      expect(actual[1]).toBeCloseTo(expected[1]);
+      expect(grid.worldToTile(expected[0], expected[1])).toEqual(boardWorldToTile(expected[0], expected[1]));
+    }
+  });
+});
+
 describe("snapshot", () => {
   test("capture and restore round-trips occupancy and walls", () => {
     const grid = createTacticalGrid({ width: 4, height: 4 });

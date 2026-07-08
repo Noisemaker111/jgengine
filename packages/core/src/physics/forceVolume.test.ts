@@ -46,6 +46,21 @@ describe("ForceVolume", () => {
     vol.apply(w, 1 / 60);
     expect(w.velY[body]!).toBe(0);
   });
+
+  test("a body allocated past a hole left by removeBody is still affected", () => {
+    const w = world();
+    const doomed = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    w.addBody({ position: [10, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    const survivor = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    w.removeBody(doomed);
+    const vol = new ForceVolume({
+      bounds: { min: [-2, 0, -2], max: [2, 10, 2] },
+      force: [0, 12, 0],
+      mode: "impulse",
+    });
+    vol.apply(w, 1 / 60);
+    expect(w.velY[survivor]!).toBeCloseTo(12, 5);
+  });
 });
 
 describe("PlatformCarry", () => {

@@ -4,7 +4,12 @@ import { createRoot } from "react-dom/client";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
-import { resolveShellMultiplayer, type ShellMultiplayer } from "@jgengine/shell/multiplayer";
+import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
+import {
+  resolvePeerShellMultiplayer,
+  resolveShellMultiplayer,
+  type ShellMultiplayer,
+} from "@jgengine/shell/multiplayer";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import "./index.css";
@@ -26,6 +31,18 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   },
 };
 
+const gameModules = import.meta.glob<{ game: PlayableGame; uiScenario?: UiPreviewScenario }>(
+  "../../../Games/*/src/index.tsx",
+);
+
+const gameLoaders = Object.entries(gameModules).map(
+  ([path, loader]) => [path.split("/").at(-3)!, loader] as const,
+);
+
+const gameEntries = Object.fromEntries(
+  gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.game)]),
+);
+
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
   "pointer-commander": () =>
@@ -42,20 +59,13 @@ const gameRegistry: GameRegistry = {
   "social-hub": () =>
     import("@jgengine/shell/demo/socialHubDemo").then((module) => module.socialHubGame),
   "ui-kit": () => import("@jgengine/shell/demo/uiKitDemo").then((module) => module.uiKitGame),
-  "block-stacker": () => import("@games/block-stacker").then((module) => module.game),
-  "maze-muncher": () => import("@games/maze-muncher").then((module) => module.game),
-  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.game),
-  "platform-hopper": () => import("@games/platform-hopper").then((module) => module.game),
-  "spire-cards": () => import("@games/spire-cards").then((module) => module.game),
+  ...gameEntries,
 };
 
-const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {
-  "block-stacker": () =>
-    import("@games/block-stacker").then((module) => module.blockStackerUiScenario),
-  "maze-muncher": () =>
-    import("@games/maze-muncher").then((module) => module.mazeMuncherScenario),
-  "spire-cards": () => import("@games/spire-cards").then((module) => module.uiScenario),
-};
+const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario | undefined>>> =
+  Object.fromEntries(
+    gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.uiScenario)]),
+  );
 
 const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID =
@@ -65,6 +75,8 @@ const GAME_ID =
 const MODE = urlParams.get("mode") ?? "play";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
+const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
+const P2P_ROLE = urlParams.get("p2p");
 
 function withCameraPreset(game: PlayableGame): PlayableGame {
   if (CAM === null) return game;
@@ -81,14 +93,24 @@ function DevApp() {
     const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
     if (load === undefined) return;
     void load().then((loaded) => {
-      setMultiplayer(
-        resolveShellMultiplayer({
-          game: loaded.game,
-          gameId: GAME_ID,
-          url: WS_URL,
-          force: WS_URL !== undefined,
-        }),
-      );
+      if (P2P_ROLE === "host" || P2P_ROLE === "join") {
+        void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
+      } else {
+        setMultiplayer(
+          resolveConvexMultiplayer({
+            game: loaded.game,
+            gameId: GAME_ID,
+            url: CONVEX_URL,
+            force: CONVEX_URL !== undefined,
+          }) ??
+            resolveShellMultiplayer({
+              game: loaded.game,
+              gameId: GAME_ID,
+              url: WS_URL,
+              force: WS_URL !== undefined,
+            }),
+        );
+      }
       setPlayable(withCameraPreset(loaded));
     });
     const loadScenario = uiScenarioRegistry[GAME_ID];

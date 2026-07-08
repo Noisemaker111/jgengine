@@ -1,6 +1,7 @@
-import { useMemo, type MutableRefObject } from "react";
+import { useEffect, useMemo, useReducer, type MutableRefObject } from "react";
 
 import type { CameraRigKind, GameCameraConfig } from "@jgengine/core/game/playableGame";
+import type { CameraDirector } from "@jgengine/core/runtime/cameraDirector";
 
 import {
   ChaseRig,
@@ -9,11 +10,12 @@ import {
   ObserverRig,
   RtsRig,
   ShoulderRig,
-  SideOnRig,
+  SideScrollRig,
   TopDownRig,
 } from "./cameraRigs";
 import { GameFirstPersonCamera } from "./GameFirstPersonCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
+import { resolveDirectedCamera } from "./rigMath";
 import { CameraShakeContext, createCameraShakeChannel } from "./shakeChannel";
 
 export interface GameCameraRigProps {
@@ -22,6 +24,10 @@ export interface GameCameraRigProps {
   config?: GameCameraConfig;
   onDragChange?: (dragging: boolean) => void;
   pointerControls?: boolean;
+  /** False when the game's own input map already claims WASD, so the RTS rig should stop panning on those keys. */
+  panKeysEnabled?: boolean;
+  /** Runtime follow/cinematic override (#196.2). While present it wins over the static `config` for any field it reports non-`undefined`/non-`null`; absent (or an all-`undefined` snapshot) is a no-op. */
+  director?: CameraDirector;
 }
 
 export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind {
@@ -30,16 +36,44 @@ export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigK
   return "orbit";
 }
 
-export function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls }: GameCameraRigProps) {
+export function GameCameraRig({
+  yawRef,
+  pitchRef,
+  config,
+  onDragChange,
+  pointerControls,
+  panKeysEnabled,
+  director,
+}: GameCameraRigProps) {
   const channel = useMemo(
     () => createCameraShakeChannel(config?.shake?.decayPerSecond),
     [config?.shake?.decayPerSecond],
   );
-  const followEntityId = config?.followEntityId;
+
+  const [, notifyDirectorChange] = useReducer((count: number) => count + 1, 0);
+  useEffect(() => {
+    if (director === undefined) return undefined;
+    return director.subscribe(notifyDirectorChange);
+  }, [director]);
+
+  const directed = resolveDirectedCamera(
+    director === undefined
+      ? undefined
+      : { followEntityId: director.followedEntityId(), cinematic: director.cinematic() },
+    { followEntityId: config?.followEntityId, cinematic: config?.cinematic },
+  );
+  const followEntityId = directed.followEntityId;
 
   const rig = (() => {
-    if (config?.cinematic !== undefined) {
-      return <CinematicRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+    if (directed.cinematic !== undefined) {
+      return (
+        <CinematicRig
+          yawRef={yawRef}
+          pitchRef={pitchRef}
+          config={{ ...config, cinematic: directed.cinematic }}
+          followEntityId={followEntityId}
+        />
+      );
     }
     const kind = resolveRigKind(config);
     switch (kind) {
@@ -55,7 +89,15 @@ export function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerC
       case "topDown":
         return <TopDownRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "rts":
-        return <RtsRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+        return (
+          <RtsRig
+            yawRef={yawRef}
+            pitchRef={pitchRef}
+            config={config}
+            followEntityId={followEntityId}
+            panKeysEnabled={panKeysEnabled}
+          />
+        );
       case "shoulder":
         return <ShoulderRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "lockOn":
@@ -64,8 +106,10 @@ export function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerC
         return <ChaseRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "observer":
         return <ObserverRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
-      case "sideOn":
-        return <SideOnRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+      case "sideScroll":
+        return <SideScrollRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+      case "none":
+        return null;
       default:
         return (
           <GameOrbitCamera

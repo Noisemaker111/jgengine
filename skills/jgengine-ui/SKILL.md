@@ -60,7 +60,18 @@ Every toggle and hotbar slot shows its binding — as a badge **on that control*
 | Hotbar scroll | mouse wheel over action bar |
 | Primary ability | `mouse0` |
 
-Pattern: `ui.openBackpack` command toggles panel state; shell calls `commands.run` on `wasPressed("openBackpack")`. UI subscribes to the same state the command mutates — reach for `ctx.game.state.define`/`useGameState` (see `jgengine-api`) for this instead of a hand-rolled module-level store; it's already reactive and survives hot reload.
+Pattern: `ui.openBackpack` command toggles panel state; shell calls `commands.run` on `wasPressed("openBackpack")`. UI subscribes to the same state the command mutates — reach for `ctx.game.store.set`/`useGameStore` (see `jgengine-api`) for this instead of a hand-rolled module-level store; it's already reactive and survives hot reload.
+
+## Mobile / touch quality bar
+
+| Rule | Detail |
+|------|--------|
+| **Fits phone width** | HUD renders with no horizontal overflow at a 390px-wide portrait viewport; fixed-pixel boards/panels scale with `min()`/viewport units (e.g. `min(92vw, 360px)`) once `compact` |
+| **Compact layout** | `useDisplayProfile().compact` (`@jgengine/react/display`) collapses side panels into a slim top bar — quest tracker, currency, and party frame stack into one row instead of three floating anchors |
+| **Clear the touch dock** | Keep the bottom ~180px of the viewport free of HUD content — the engine's joystick/button dock renders there on `coarsePointer` |
+| **No key legends on touch** | Never render keyboard-key badges or legends when `useDisplayProfile().coarsePointer` is true — key labels are meaningless without a keyboard |
+| **Pointer-events discipline** | Non-interactive HUD wrappers (frames, trackers, floating text) stay `pointer-events-none` so the engine's gesture surface receives touches underneath; only real controls (buttons, sliders, panel chrome) opt in with `pointer-events-auto` |
+| **Touch targets** | ≥48px hit area on every interactive control — same rule as `jgengine-api`'s UI quality bar, do not shrink it for compact |
 
 ## Social HUD
 

@@ -105,6 +105,85 @@ export function drainPendingLeaderboardIncrements(session: Record<string, unknow
   return { increments: raw.filter(isLeaderboardIncrement), session: rest };
 }
 
+export const LEADERBOARD_TOP_LIMIT = 100;
+
+export type LeaderboardRow = {
+  gameId: string;
+  stat: string;
+  scope: LeaderboardScope;
+  serverId?: string;
+  userId: string;
+  value: number;
+  updatedAt: number;
+};
+
+export function leaderboardRowKey(row: Omit<LeaderboardRow, "value" | "updatedAt">): string {
+  return [row.gameId, row.scope, row.stat, row.serverId ?? "", row.userId].join("|");
+}
+
+export function applyLeaderboardRows(
+  rows: Map<string, LeaderboardRow>,
+  gameId: string,
+  entries: LeaderboardIncrement[],
+  now: number,
+): void {
+  for (const entry of entries) {
+    const key = leaderboardRowKey({ ...entry, gameId });
+    const existing = rows.get(key);
+    if (existing) {
+      rows.set(key, { ...existing, value: existing.value + entry.by, updatedAt: now });
+    } else {
+      rows.set(key, {
+        gameId,
+        stat: entry.stat,
+        scope: entry.scope,
+        serverId: entry.serverId,
+        userId: entry.userId,
+        value: entry.by,
+        updatedAt: now,
+      });
+    }
+  }
+}
+
+export function topLeaderboardRows(
+  rows: Iterable<LeaderboardRow>,
+  args: {
+    gameId: string;
+    stat: string;
+    scope: LeaderboardScope;
+    serverId?: string;
+    limit?: number;
+  },
+): LeaderboardEntry[] {
+  const limit = Math.min(Math.max(args.limit ?? LEADERBOARD_TOP_LIMIT, 1), LEADERBOARD_TOP_LIMIT);
+  return [...rows]
+    .filter(
+      (row) =>
+        row.gameId === args.gameId &&
+        row.stat === args.stat &&
+        row.scope === args.scope &&
+        (args.serverId === undefined || row.serverId === args.serverId),
+    )
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit)
+    .map((row) => ({ userId: row.userId, value: row.value }));
+}
+
+export function profileLeaderboardStats(
+  rows: Iterable<LeaderboardRow>,
+  gameId: string,
+  userId: string,
+): Record<string, number> {
+  const profile: Record<string, number> = {};
+  for (const row of rows) {
+    if (row.gameId === gameId && row.userId === userId && row.scope === "profile") {
+      profile[row.stat] = row.value;
+    }
+  }
+  return profile;
+}
+
 export const FEED_RING_LIMIT = 20;
 
 export function trimFeedEntries<T>(entries: T[], limit = FEED_RING_LIMIT): T[] {

@@ -23,7 +23,7 @@ interface RawPresenceActor {
 }
 
 interface RawResidentActor extends RawPresenceActor {
-  ownerBotActorId: string;
+  ownerActorId?: string;
 }
 
 /**
@@ -62,7 +62,7 @@ export function createConvexPresenceTransport<
         .filter(
           (resident) =>
             !onlineActorIds.has(resident.actorExternalId)
-            && !onlineActorIds.has(resident.ownerBotActorId),
+            && (resident.ownerActorId === undefined || !onlineActorIds.has(resident.ownerActorId)),
         )
         .map(mapRow);
     }, [residentsRaw, onlineRaw]);

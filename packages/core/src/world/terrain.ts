@@ -1,4 +1,11 @@
-import type { TerrainEnvironmentDescriptor, WorldBounds } from "./features";
+import type {
+  TerrainColors,
+  TerrainEnvironmentConfig,
+  TerrainEnvironmentDescriptor,
+  TerrainFlattenMask,
+  WorldBounds,
+  WorldFeature,
+} from "./features";
 
 export type TerrainNormal = readonly [number, number, number];
 
@@ -212,9 +219,67 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
   return fieldFromHeight(sampleHeight, { bounds: config.bounds, waterLevel: ARENA_WATER_LEVEL });
 }
 
+export function groundFieldFor(world?: WorldFeature): TerrainField {
+  if (world !== undefined && world.kind === "environment") return resolveTerrainField(world.terrain);
+  return flatField();
+}
+
+export interface TerrainPalette {
+  low: string;
+  high: string;
+  waterline: string;
+}
+
+export const DEFAULT_TERRAIN_MATERIAL = "grass";
+
+export const TERRAIN_MATERIAL_PALETTES: Record<string, TerrainPalette> = {
+  grass: { low: "#30402c", high: "#7f8b50", waterline: "#1d4c6e" },
+  sand: { low: "#9c8354", high: "#e0c98a", waterline: "#2f6f8f" },
+  snow: { low: "#c7d3dc", high: "#ffffff", waterline: "#3a6ea5" },
+  rock: { low: "#3a3a3d", high: "#8a8a8d", waterline: "#1d4c6e" },
+  ash: { low: "#2b2622", high: "#5c534a", waterline: "#3a3630" },
+};
+
+export function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors"> = {}): TerrainPalette {
+  const preset =
+    TERRAIN_MATERIAL_PALETTES[descriptor.material ?? DEFAULT_TERRAIN_MATERIAL] ?? TERRAIN_MATERIAL_PALETTES[DEFAULT_TERRAIN_MATERIAL];
+  const colors: TerrainColors = descriptor.colors ?? {};
+  return {
+    low: colors.low ?? preset.low,
+    high: colors.high ?? preset.high,
+    waterline: colors.waterline ?? preset.waterline,
+  };
+}
+
+function withFlattenMasks(
+  sampleHeight: (x: number, z: number) => number,
+  masks: readonly TerrainFlattenMask[],
+): (x: number, z: number) => number {
+  const resolved = masks.map((mask) => ({
+    center: mask.center,
+    radius: mask.radius,
+    target: mask.height ?? sampleHeight(mask.center[0], mask.center[1]),
+    falloff: mask.falloff ?? mask.radius * 0.5,
+  }));
+  return (x, z) => {
+    const base = sampleHeight(x, z);
+    let height = base;
+    for (const mask of resolved) {
+      const distance = Math.hypot(x - mask.center[0], z - mask.center[1]);
+      if (distance <= mask.radius) {
+        height = mask.target;
+      } else if (distance <= mask.radius + mask.falloff) {
+        const t = smoothstep(mask.radius, mask.radius + mask.falloff, distance);
+        height = lerp(mask.target, base, t);
+      }
+    }
+    return height;
+  };
+}
+
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
   if (descriptor === undefined) return flatField();
-  return noiseField({
+  const noise = noiseField({
     seed: descriptor.seed,
     amplitude: descriptor.height,
     frequency: descriptor.frequency,
@@ -224,6 +289,42 @@ export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): 
     waterLevel: descriptor.waterLevel,
     bounds: descriptor.bounds,
   });
+  if (descriptor.flatten === undefined || descriptor.flatten.length === 0) return noise;
+  return fieldFromHeight(withFlattenMasks(noise.sampleHeight, descriptor.flatten), {
+    bounds: noise.bounds,
+    waterLevel: noise.waterLevel,
+  });
+}
+
+/** Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`. */
+export function snapToGround(
+  field: TerrainField,
+  position: readonly [number, number, number],
+  offset = 0,
+): [number, number, number] {
+  const [x, , z] = position;
+  return [x, field.sampleHeight(x, z) + offset, z];
+}
+
+export interface GroundSnapTarget {
+  position: readonly [number, number, number];
+}
+
+export interface GroundSnapEntityStore {
+  get(id: string): GroundSnapTarget | null;
+  setPose(id: string, pose: { position?: readonly [number, number, number] }): boolean;
+}
+
+/** Ground-snaps an already-spawned entity in place; returns false when `id` is unknown. */
+export function snapEntityToGround(
+  entities: GroundSnapEntityStore,
+  id: string,
+  field: TerrainField,
+  offset = 0,
+): boolean {
+  const entity = entities.get(id);
+  if (entity === null) return false;
+  return entities.setPose(id, { position: snapToGround(field, entity.position, offset) });
 }
 
 export const DEFAULT_MAX_WALK_SLOPE = 0.6;

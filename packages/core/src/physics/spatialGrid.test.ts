@@ -19,6 +19,19 @@ function brute(xs: Float32Array, zs: Float32Array, n: number, x: number, z: numb
   return hits;
 }
 
+describe("SpatialGrid capacity guard", () => {
+  test("a tiny cellSize over huge bounds throws instead of hanging on allocation", () => {
+    expect(
+      () =>
+        new SpatialGrid({
+          bounds: { min: [-100000, 0, -100000], max: [100000, 0, 100000] },
+          cellSize: 0.01,
+          capacity: 16,
+        }),
+    ).toThrow(/grid too large/);
+  });
+});
+
 describe("SpatialGrid.queryCircle", () => {
   test("returns exactly the entities within the radius (no false negatives)", () => {
     const g = grid(2);

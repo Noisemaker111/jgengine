@@ -46,7 +46,7 @@ export function createVoxelGrid(ctx: GameContext): VoxelGrid {
       return field.has(x, y, z);
     },
     catalogAt(x, y, z) {
-      const instanceId = cells.get(cellKey(x, y, z));
+      const instanceId = instances.get(cellKey(x, y, z));
       if (instanceId === undefined) return null;
       return ctx.scene.object.get(instanceId)?.catalogId ?? null;
     },

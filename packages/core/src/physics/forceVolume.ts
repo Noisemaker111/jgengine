@@ -51,8 +51,8 @@ export class ForceVolume {
   apply(world: PhysicsWorld, dt: number): void {
     const next = this.nextMembers;
     next.clear();
-    const count = world.count;
-    for (let i = 0; i < count; i += 1) {
+    const high = world.highWater;
+    for (let i = 0; i < high; i += 1) {
       if (world.invMass[i] === 0) continue;
       if (!inside(this.bounds, world.posX[i]!, world.posY[i]!, world.posZ[i]!)) continue;
       const wasInside = this.members.has(i);
@@ -123,9 +123,9 @@ export class PlatformCarry {
     if (dx === 0 && dy === 0 && dz === 0) return;
     const hx = w.halfX[p]!;
     const hz = w.halfZ[p]!;
-    const count = w.count;
-    for (let i = 0; i < count; i += 1) {
-      if (i === p) continue;
+    const high = w.highWater;
+    for (let i = 0; i < high; i += 1) {
+      if (i === p || !w.isAlive(i)) continue;
       const base = w.posY[i]! - w.halfY[i]!;
       if (base < topY - this.tolerance || base > topY + this.tolerance) continue;
       if (Math.abs(w.posX[i]! - px) > hx + w.halfX[i]!) continue;

@@ -21,9 +21,11 @@ import {
   type WsPresenceRow,
   type WsVoiceParticipant,
 } from "./protocol";
+import { webSocketPipe, type TransportPipe, type TransportPipeFactory } from "./pipe";
 
 export type WsBackendOptions = {
-  url: string;
+  url?: string;
+  pipe?: TransportPipeFactory;
   userId: string;
   token?: string;
   webSocketFactory?: (url: string) => WebSocket;
@@ -34,6 +36,7 @@ export type WsBackendOptions = {
 
 export type WsPresenceSync = {
   subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void;
+  /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */
   syncPose: (serverId: string, pose: WsPose) => void;
 };
 
@@ -70,8 +73,6 @@ export type WsBackend = GameBackend & {
   close: () => void;
 };
 
-const WS_READY_STATE_OPEN = 1;
-
 const DEFAULT_POSE_TUNING: PoseSyncTuning = {
   minIntervalMs: 100,
   heartbeatMs: 5_000,
@@ -97,9 +98,16 @@ type Subscription = {
 export function createWsBackend(options: WsBackendOptions): WsBackend {
   const now = options.now ?? Date.now;
   const reconnectDelayMs = options.reconnectDelayMs ?? 1_000;
-  const webSocketFactory = options.webSocketFactory ?? ((url: string) => new WebSocket(url));
+  const pipeFactory: TransportPipeFactory =
+    options.pipe ??
+    (() => {
+      const url = options.url;
+      if (url === undefined) throw new Error("WsBackendOptions requires url or pipe");
+      return webSocketPipe(url, options.webSocketFactory);
+    })();
 
-  let socket: WebSocket | null = null;
+  let pipe: TransportPipe | null = null;
+  let open = false;
   let ready: Promise<void> | null = null;
   let closed = false;
   let nextId = 1;
@@ -114,12 +122,12 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   };
 
   const rawSend = (message: WsClientMessage) => {
-    if (socket === null || socket.readyState !== WS_READY_STATE_OPEN) return;
-    socket.send(encodeWsMessage(message));
+    if (pipe === null || !open) return;
+    pipe.send(encodeWsMessage(message));
   };
 
-  const handleMessage = (raw: unknown) => {
-    const message = decodeWsServerMessage(typeof raw === "string" ? raw : String(raw));
+  const handleMessage = (raw: string) => {
+    const message = decodeWsServerMessage(raw);
     if (message === null) return;
 
     if (message.t === "reply") {
@@ -154,45 +162,42 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     if (ready !== null) return ready;
 
     ready = new Promise<void>((resolve, reject) => {
-      const nextSocket = webSocketFactory(options.url);
-      socket = nextSocket;
-
-      nextSocket.onopen = () => {
-        const id = nextId++;
-        pending.set(id, {
-          resolve: () => {
-            for (const subscription of subscriptions.values()) {
-              rawSend({
-                v: 1,
-                t: "subscribe",
-                id: nextId++,
-                channel: subscription.channel,
-                serverId: subscription.serverId,
-                action: subscription.action,
-              });
-            }
-            resolve();
-          },
-          reject,
-        });
-        nextSocket.send(
-          encodeWsMessage({ v: 1, t: "hello", id, userId: options.userId, token: options.token }),
-        );
-      };
-
-      nextSocket.onmessage = (event) => handleMessage(event.data);
-
-      nextSocket.onclose = () => {
-        failPending("Connection closed");
-        socket = null;
-        ready = null;
-        reject(new Error("Connection closed"));
-        if (!closed && subscriptions.size > 0) {
-          setTimeout(() => {
-            if (!closed) void connect().catch(() => undefined);
-          }, reconnectDelayMs);
-        }
-      };
+      pipe = pipeFactory({
+        onOpen: () => {
+          open = true;
+          const id = nextId++;
+          pending.set(id, {
+            resolve: () => {
+              for (const subscription of subscriptions.values()) {
+                rawSend({
+                  v: 1,
+                  t: "subscribe",
+                  id: nextId++,
+                  channel: subscription.channel,
+                  serverId: subscription.serverId,
+                  action: subscription.action,
+                });
+              }
+              resolve();
+            },
+            reject,
+          });
+          rawSend({ v: 1, t: "hello", id, userId: options.userId, token: options.token });
+        },
+        onMessage: handleMessage,
+        onClose: () => {
+          open = false;
+          failPending("Connection closed");
+          pipe = null;
+          ready = null;
+          reject(new Error("Connection closed"));
+          if (!closed && subscriptions.size > 0) {
+            setTimeout(() => {
+              if (!closed) void connect().catch(() => undefined);
+            }, reconnectDelayMs);
+          }
+        },
+      });
     });
     return ready;
   };
@@ -401,8 +406,9 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     close: () => {
       closed = true;
       failPending("Backend closed");
-      socket?.close();
-      socket = null;
+      pipe?.close();
+      pipe = null;
+      open = false;
       ready = null;
     },
   };

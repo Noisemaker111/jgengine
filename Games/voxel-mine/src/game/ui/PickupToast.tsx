@@ -1,5 +1,5 @@
 import { useFeed } from "@jgengine/react/hooks";
-import { labelForResource } from "../blocks";
+import { labelForItem } from "../blocks";
 
 interface InventoryAddedPayload {
   userId: string;
@@ -24,7 +24,7 @@ export function PickupToast() {
               className="text-sm font-semibold text-amber-200 drop-shadow"
               style={{ opacity: 1 - index * 0.35 }}
             >
-              +{data.count} {labelForResource(data.item)}
+              +{data.count} {labelForItem(data.item)}
             </div>
           );
         })}

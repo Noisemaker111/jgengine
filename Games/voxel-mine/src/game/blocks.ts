@@ -77,3 +77,12 @@ export function oreForDepth(y: number): OreDef | undefined {
 export function labelForResource(resourceId: string): string {
   return ORES.find((ore) => ore.resourceId === resourceId)?.label ?? resourceId;
 }
+
+/** Human label for anything that can land in the pack: ore resources and raw blocks alike. */
+export function labelForItem(itemId: string): string {
+  const ore = ORES.find((entry) => entry.resourceId === itemId);
+  if (ore !== undefined) return ore.label;
+  const block = HOTBAR_ITEMS.find((entry) => entry.id === itemId);
+  if (block !== undefined) return block.label;
+  return itemId;
+}

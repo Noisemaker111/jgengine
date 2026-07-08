@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 import {
   pointInTelegraph,
   telegraphFired,
+  telegraphFiredAtTurn,
   telegraphProgress,
+  telegraphTurnProgress,
+  telegraphTurnsRemaining,
   type TelegraphConfig,
 } from "@jgengine/core/combat/telegraph";
 
@@ -53,5 +56,41 @@ describe("telegraph", () => {
     expect(pointInTelegraph(cfg, [0.5, 0, 5])).toBe(true);
     expect(pointInTelegraph(cfg, [2, 0, 5])).toBe(false);
     expect(pointInTelegraph(cfg, [0, 0, 12])).toBe(false);
+  });
+});
+
+describe("turn-scoped telegraph", () => {
+  const cfg: TelegraphConfig = { shape: { kind: "circle", radius: 5 }, at: [0, 0, 0], turns: 2 };
+
+  test("turn progress ramps 0..1 then fires", () => {
+    expect(telegraphTurnProgress(cfg, 10, 10)).toBe(0);
+    expect(telegraphTurnProgress(cfg, 10, 11)).toBeCloseTo(0.5);
+    expect(telegraphTurnProgress(cfg, 10, 12)).toBe(1);
+    expect(telegraphTurnProgress(cfg, 10, 20)).toBe(1);
+  });
+
+  test("telegraphFiredAtTurn fires once the turn count elapses", () => {
+    expect(telegraphFiredAtTurn(cfg, 10, 11)).toBe(false);
+    expect(telegraphFiredAtTurn(cfg, 10, 12)).toBe(true);
+    expect(telegraphFiredAtTurn(cfg, 10, 13)).toBe(true);
+  });
+
+  test("telegraphTurnsRemaining counts down to zero and clamps there", () => {
+    expect(telegraphTurnsRemaining(cfg, 10, 10)).toBe(2);
+    expect(telegraphTurnsRemaining(cfg, 10, 11)).toBe(1);
+    expect(telegraphTurnsRemaining(cfg, 10, 12)).toBe(0);
+    expect(telegraphTurnsRemaining(cfg, 10, 15)).toBe(0);
+  });
+
+  test("a zero-or-unset turns config fires immediately", () => {
+    const instant: TelegraphConfig = { shape: { kind: "circle", radius: 1 }, at: [0, 0, 0] };
+    expect(telegraphTurnProgress(instant, 5, 5)).toBe(1);
+    expect(telegraphFiredAtTurn(instant, 5, 5)).toBe(true);
+    expect(telegraphTurnsRemaining(instant, 5, 5)).toBe(0);
+  });
+
+  test("real-time windupMs API is untouched by the turn-scoped variant", () => {
+    expect(telegraphProgress(1000, 0, 500)).toBeCloseTo(0.5);
+    expect(telegraphFired(1000, 0, 1000)).toBe(true);
   });
 });

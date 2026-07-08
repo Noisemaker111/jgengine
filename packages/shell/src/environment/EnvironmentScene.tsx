@@ -11,8 +11,9 @@ import type {
   TerrainEnvironmentDescriptor,
   WeatherEnvironmentDescriptor,
 } from "@jgengine/core/world/features";
-import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
+import { resolveTerrainField, resolveTerrainPalette, type TerrainField } from "@jgengine/core/world/terrain";
 
+import { SkyDaylight } from "./Daylight";
 import { GeneratedBuilding } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
 import { ProceduralGround } from "../terrain/ProceduralGround";
@@ -28,10 +29,12 @@ export interface EnvironmentSceneProps {
 const DEFAULT_TERRAIN_FREQUENCY = 0.03;
 
 function TerrainGround({ terrain }: { terrain: TerrainEnvironmentDescriptor }) {
+  const palette = resolveTerrainPalette(terrain);
   return (
     <ProceduralGround
       terrain={{
         size: [terrain.bounds.w, terrain.bounds.d],
+        segments: terrain.segments,
         height: terrain.height,
         seed: terrain.seed,
         moundScale: terrain.frequency ?? DEFAULT_TERRAIN_FREQUENCY,
@@ -39,7 +42,11 @@ function TerrainGround({ terrain }: { terrain: TerrainEnvironmentDescriptor }) {
         ridged: terrain.ridged,
         baseOffset: terrain.baseHeight,
       }}
-      colors={terrain.waterLevel === undefined ? undefined : { waterlineHeight: terrain.waterLevel }}
+      colors={{
+        low: palette.low,
+        high: palette.high,
+        ...(terrain.waterLevel === undefined ? {} : { waterline: palette.waterline, waterlineHeight: terrain.waterLevel }),
+      }}
     />
   );
 }
@@ -101,9 +108,10 @@ function Weather({ weather }: { weather: readonly WeatherEnvironmentDescriptor[]
 }
 
 function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
+  const [x, z] = ocean.position ?? [0, 0];
   return (
     <Ocean
-      position-y={ocean.level}
+      position={[x, ocean.level, z]}
       config={{
         size: Math.max(ocean.bounds.w, ocean.bounds.d),
         amplitude: ocean.waveHeight,
@@ -114,13 +122,15 @@ function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
   );
 }
 
-function Structures({ structures }: { structures: BuildingEnvironmentDescriptor }) {
+function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {
   const buildings = useMemo(() => resolveStructureBuildings(structures), [structures]);
 
   return (
     <>
       {buildings.map((building) => (
-        <GeneratedBuilding key={building.id} building={building} />
+        <group key={building.id} position-y={field.sampleHeight(building.center[0], building.center[1])}>
+          <GeneratedBuilding building={building} />
+        </group>
       ))}
     </>
   );
@@ -133,12 +143,13 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const structures = feature.structures ?? [];
   return (
     <>
+      {feature.sky !== undefined && !feature.sky.timeOfDay ? <SkyDaylight sky={feature.sky} /> : null}
       {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} /> : null}
       {water.map((ocean, index) => (
         <Water key={`ocean-${index}`} ocean={ocean} />
       ))}
       {structures.map((entry, index) => (
-        <Structures key={`structures-${index}`} structures={entry} />
+        <Structures key={`structures-${index}`} structures={entry} field={field} />
       ))}
       {vegetation.map((grass, index) => (
         <Vegetation key={`grass-${index}`} grass={grass} field={field} />

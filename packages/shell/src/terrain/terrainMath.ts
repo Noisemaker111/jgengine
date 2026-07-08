@@ -34,6 +34,12 @@ export interface TerrainVertexColorOptions {
   waterlineHeight?: number;
 }
 
+export function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number {
+  const range = maxHeight - minHeight;
+  if (range <= 1e-6) return 0.5;
+  return THREE.MathUtils.clamp((height - minHeight) / range, 0, 1);
+}
+
 export function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize {
   return typeof size === "number" ? { width: size, depth: size } : { width: size[0], depth: size[1] };
 }
@@ -116,7 +122,7 @@ function buildGroundGeometry(
       positions[index + 2] = z;
       uvs[uvIndex] = u;
       uvs[uvIndex + 1] = v;
-      const blend = THREE.MathUtils.clamp((y - minHeight) / (maxHeight - minHeight), 0, 1);
+      const blend = normalizeHeightBlend(y, minHeight, maxHeight);
       const color = low.clone().lerp(high, blend);
       if (waterline !== null && y <= (colors.waterlineHeight ?? 0)) color.lerp(waterline, 0.65);
       colorValues[colorIndex] = color.r;
@@ -187,7 +193,7 @@ export function createProceduralGroundGeometry(
       positions[index + 2] = z;
       uvs[uvIndex] = u;
       uvs[uvIndex + 1] = v;
-      const blend = THREE.MathUtils.clamp((y - minHeight) / (maxHeight - minHeight), 0, 1);
+      const blend = normalizeHeightBlend(y, minHeight, maxHeight);
       const color = low.clone().lerp(high, blend);
       if (waterline !== null && y <= (colors.waterlineHeight ?? 0)) color.lerp(waterline, 0.65);
       colorValues[colorIndex] = color.r;

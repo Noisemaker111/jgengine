@@ -1,3 +1,4 @@
+import { createCardPile, type CardPile, type CardPileConfig } from "../cards/cardPile";
 import { createDeathSystem, deathReasonFromEffect, normalizeOnDeath, type OnDeathSpec } from "../combat/death";
 import {
   createEffectSystem,
@@ -36,6 +37,7 @@ import {
 } from "../economy/wallet";
 import { createCosmetics, type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
+import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
 import { createGameFeed, type GameFeed } from "../game/feed";
 import { createLeaderboard, type Leaderboard } from "../game/leaderboard";
@@ -64,8 +66,6 @@ import {
 } from "../inventory/inventoryModel";
 import type { ContextVerb } from "../interaction/contextMenu";
 import type { ProximityPrompt } from "../interaction/proximityPrompt";
-import { createInputChannel, type InputChannel } from "../input/inputChannel";
-import { createMotionCommandQueue, type MotionCommandQueue } from "../movement/movementModel";
 import {
   createItemUse,
   type ItemUseHandler,
@@ -95,8 +95,12 @@ import { createSpatialApi, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
 import { createChangeSignal, notifyAfter } from "../store/changeSignal";
-import { createGameStateStore, type GameStateStore } from "../store/gameState";
+import { createObservableKeyedStore, type ObservableKeyedStore } from "../store/observableKeyedStore";
 import { createSimClock, type SimClock } from "../time/simClock";
+import { createTurnLoop, type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
+import { createCameraDirector, type CameraDirector } from "./cameraDirector";
+import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
+import { createMotionIntents, type MotionIntents } from "./motionIntents";
 
 export interface GameContextItemEntry {
   use?: string;
@@ -202,7 +206,7 @@ export interface SceneEntityContext {
   setTarget(fromId: string, toId: string | null): void;
   getTarget(fromId: string): string | null;
   cycleTarget(fromId: string, options?: CycleTargetOptions): string | null;
-  canReceive(instanceId: string, effect: string): string | null;
+  canReceive(instanceId: string, effect: string, magnitude?: number): string | null;
   preview(input: SingleTargetEffectInput): number;
   effect(input: EffectInput): EffectResult[];
   willHitProjectile: ProjectileSystem["willHitProjectile"];
@@ -231,6 +235,7 @@ export interface SceneWorldItemContext {
     filter?: (record: WorldItemRecord) => boolean,
   ): string | null;
   pickup(instanceId: string, userId: string): WorldItemPickupResult;
+  consume(instanceId: string): WorldItemRecord | null;
 }
 
 export interface GameContextCommands {
@@ -264,12 +269,28 @@ export interface GameContextItemUse {
   use(input: ItemUseInput): ItemUseResult<GameContext>;
 }
 
+export interface GameContextWorld {
+  ground: TerrainField;
+  groundHeightAt(x: number, z: number): number;
+}
+
+export interface GameContextCards {
+  /** Lazily creates (on first call, `config` required) or returns the existing notify-wrapped pile for `id`. */
+  pile(id: string, config?: CardPileConfig): CardPile;
+}
+
+export interface GameContextTurn {
+  /** Lazily creates (on first call, `config` required) or returns the existing notify-wrapped turn loop for `id`. */
+  loop(id: string, config?: TurnLoopConfig): TurnLoop;
+}
+
 export interface GameContext {
   scene: {
     object: SceneObjectContext;
     entity: SceneEntityContext;
     worldItem: SceneWorldItemContext;
   };
+  world: GameContextWorld;
   game: {
     commands: GameContextCommands;
     events: GameEvents;
@@ -283,7 +304,10 @@ export interface GameContext {
     economy: GameContextEconomy;
     leaderboard: Leaderboard;
     roster: Roster;
-    state: GameStateStore;
+    /** Game-defined keyed reactive store slot (#163.1); mutations bump `ctx.version()`/notify `ctx.subscribe`. */
+    store: ObservableKeyedStore<unknown>;
+    cards: GameContextCards;
+    turn: GameContextTurn;
   };
   player: {
     userId: string;
@@ -293,16 +317,20 @@ export interface GameContext {
     loadout: Loadouts;
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
-    motion: MotionCommandQueue;
     possession: Possession;
     cosmetics: Cosmetics;
+    /** Vertical-motion seam into the shell-owned FrameDriver (#162.4); see `MotionIntents`. */
+    motion: MotionIntents;
   };
   item: {
     use: GameContextItemUse;
     weapon: WeaponStats;
   };
-  input: InputChannel;
   time: SimClock;
+  /** Runtime camera-follow/cinematic override (#196.2); the shell reads `followedEntityId()` each frame. */
+  camera: CameraDirector;
+  /** Held-input snapshot published by the shell each frame before `onTick` (#164.1). */
+  input: InputSnapshot;
   subscribe(listener: () => void): () => void;
   version(): number;
 }
@@ -314,9 +342,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const now = options.now ?? Date.now;
 
   const signal = createChangeSignal();
-  const state = createGameStateStore(signal.notify);
-  const input = createInputChannel();
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
+  const ground = groundFieldFor(definition.world);
 
   const entities = definition.scene;
   const objects = createObjectStore();
@@ -382,7 +409,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       signal.notify();
     },
   };
-  const feed = createGameFeed();
+  const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry();
   const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify);
   const rawSocial = createSocial({
@@ -434,7 +461,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   );
   const playerStats = createStats<string>({});
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
-  const motion = createMotionCommandQueue();
   const commandRegistry = createCommandRegistry<GameContext>();
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
@@ -627,7 +653,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       despawnEntity,
       resolvePosition: (instanceId) => entities.get(instanceId)?.position,
     }),
-    ["spawn", "take"],
+    ["spawn", "take", "remove"],
     signal.notify,
   );
 
@@ -854,6 +880,64 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     raycastAll: (input) => raycastObjectsAll(objects.list(), input),
   };
 
+  const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete"], signal.notify);
+
+  const cardPiles = new Map<string, CardPile>();
+  function pile(id: string, config?: CardPileConfig): CardPile {
+    const existing = cardPiles.get(id);
+    if (existing !== undefined) return existing;
+    if (config === undefined) {
+      throw new Error(`cardPile "${id}" has not been created yet; pass a config on first access`);
+    }
+    const created = notifyAfter(
+      createCardPile(config),
+      ["shuffle", "draw", "discard", "exhaust", "move", "reset"],
+      signal.notify,
+    );
+    cardPiles.set(id, created);
+    return created;
+  }
+
+  const turnLoops = new Map<string, TurnLoop>();
+  function loop(id: string, config?: TurnLoopConfig): TurnLoop {
+    const existing = turnLoops.get(id);
+    if (existing !== undefined) return existing;
+    if (config === undefined) {
+      throw new Error(`turn loop "${id}" has not been created yet; pass a config on first access`);
+    }
+    const raw = createTurnLoop(config);
+    const wrappedCommit = notifyAfter(
+      raw.commit,
+      ["submit", "expected", "commit", "rewind", "clear"],
+      signal.notify,
+    );
+    const wrapped: TurnLoop = {
+      ...notifyAfter(
+        raw,
+        [
+          "setOrder",
+          "addParticipant",
+          "removeParticipant",
+          "advancePhase",
+          "advanceTurn",
+          "advanceRound",
+          "spend",
+          "gain",
+          "refill",
+          "restore",
+        ],
+        signal.notify,
+      ),
+      commit: wrappedCommit,
+    };
+    turnLoops.set(id, wrapped);
+    return wrapped;
+  }
+
+  const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic"], signal.notify);
+  const input = createInputSnapshot();
+  const motion = createMotionIntents();
+
   const ctx: GameContext = {
     scene: {
       object: sceneObjects,
@@ -894,7 +978,12 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         list: worldItems.list,
         nearestInRadius: worldItems.nearestInRadius,
         pickup: pickupWorldItem,
+        consume: worldItems.remove,
       },
+    },
+    world: {
+      ground,
+      groundHeightAt: ground.sampleHeight,
     },
     game: {
       commands: {
@@ -931,7 +1020,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       economy,
       leaderboard,
       roster,
-      state,
+      store,
+      cards: { pile },
+      turn: { loop },
     },
     player: {
       userId: player.userId,
@@ -941,9 +1032,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       loadout: loadouts,
       applyLoadout: loadouts.applyLoadout,
       movement: pose,
-      motion,
       possession,
       cosmetics,
+      motion,
     },
     item: {
       use: {
@@ -958,8 +1049,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       },
       weapon,
     },
-    input,
     time,
+    camera,
+    input,
     subscribe: signal.subscribe,
     version: signal.version,
   };

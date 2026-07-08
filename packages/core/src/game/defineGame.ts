@@ -1,4 +1,5 @@
 import type { ActionCodesMap } from "../input/actionBindings";
+import type { GameFeedOptions } from "./feed";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { SaveConfig } from "../runtime/save";
@@ -8,9 +9,7 @@ import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
 
 export interface PhysicsConfig {
-  /** Downward acceleration in world units/s^2. Signed — negative is downward, e.g. -24. Default the movement model's built-in gravity. */
   gravity?: number;
-  /** Initial upward vertical velocity applied on jump, in world units/s. Default the movement model's built-in jump velocity. */
   jumpVelocity?: number;
 }
 
@@ -43,6 +42,8 @@ export interface GameDefinition<
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */
   time?: TimeConfig;
+  /** Per-action ring-buffer capacity for `ctx.game.feed`. Default 20. */
+  feed?: GameFeedOptions;
   inventories?: Record<string, InventoryDeclaration>;
   input?: ActionCodesMap;
   server?: GameServerConfig;
@@ -64,5 +65,5 @@ export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
   if (config.name.trim().length === 0) {
     throw new Error("defineGame: name must be non-empty");
   }
-  return { ...config, assets: config.assets ?? createAssetCatalog<TAssetRef>(), scene: createEntityStore() };
+  return { ...config, scene: createEntityStore(), assets: config.assets ?? createAssetCatalog() };
 }

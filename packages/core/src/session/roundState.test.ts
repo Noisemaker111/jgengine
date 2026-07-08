@@ -90,13 +90,72 @@ describe("round state machine", () => {
     expect(lossBonusFor(rule, 4)).toBe(3400);
     expect(lossBonusFor(undefined, 3)).toBe(0);
   });
+
+  test("team roles are retrievable and default string teams have no role", () => {
+    const round = config({ teams: [{ id: "t1", role: "attack" }, { id: "t2", role: "defend" }] });
+    expect(round.roleOf("t1")).toBe("attack");
+    expect(round.roleOf("t2")).toBe("defend");
+    expect(round.roleOf("nope")).toBeUndefined();
+
+    const plain = config();
+    expect(plain.roleOf("t1")).toBeUndefined();
+  });
+
+  test("custom phaseOrder cycles through extra phases and only settles on the last one", () => {
+    const round = createRoundState({
+      phases: { prep: 1, live: 2, overtime: 1, end: 1 },
+      teams: ["t1", "t2"],
+      phaseOrder: ["prep", "live", "overtime", "end"],
+    });
+    expect(round.phase()).toBe("prep");
+    expect(round.concludeRound("t1")).toEqual([]);
+
+    round.tick(1);
+    expect(round.phase()).toBe("live");
+
+    const liveConclude = round.concludeRound("t1");
+    expect(liveConclude.map((e) => e.kind)).toEqual(["round.win", "round.economy", "phase.end", "phase.start"]);
+    expect(round.phase()).toBe("overtime");
+    expect(round.round()).toBe(1);
+    expect(round.score("t1")).toBe(1);
+
+    const overtimeConclude = round.concludeRound("t1");
+    expect(overtimeConclude.map((e) => e.kind)).toEqual(["round.win", "round.economy", "phase.end", "phase.start"]);
+    expect(round.phase()).toBe("end");
+    expect(round.round()).toBe(1);
+    expect(round.score("t1")).toBe(2);
+
+    expect(round.concludeRound("t1")).toEqual([]);
+    round.tick(1);
+    expect(round.phase()).toBe("prep");
+    expect(round.round()).toBe(2);
+  });
+
+  test("winCondition auto-concludes the round via evaluate", () => {
+    const round = config({
+      winCondition: (state) => (state.scores["t1"]! >= 0 && state.phase === "live" ? "t1" : null),
+    });
+    round.tick(2);
+    expect(round.phase()).toBe("live");
+    const events = round.evaluate();
+    expect(events.map((e) => e.kind)).toEqual(["round.win", "round.economy", "phase.end", "phase.start"]);
+    expect(round.phase()).toBe("end");
+    expect(round.score("t1")).toBe(1);
+  });
+
+  test("evaluate is a no-op without a configured winCondition", () => {
+    const round = config();
+    round.tick(2);
+    expect(round.evaluate()).toEqual([]);
+    expect(round.phase()).toBe("live");
+  });
 });
 
 describe("custom phase cycles", () => {
   function hideAndSeek() {
     return createRoundState({
-      phases: { hide: 3, seek: 5 },
-      phaseOrder: ["hide", "seek"] as const,
+      phases: { hide: 3, seek: 5, reveal: 2 },
+      phaseOrder: ["hide", "seek", "reveal"] as const,
       teams: ["hiders", "seekers"],
       winReward: 2000,
     });
@@ -116,6 +175,9 @@ describe("custom phase cycles", () => {
     round.tick(3);
     expect(round.round()).toBe(1);
     round.tick(5);
+    expect(round.round()).toBe(1);
+    expect(round.phase()).toBe("reveal");
+    round.tick(2);
     expect(round.round()).toBe(2);
     expect(round.phase()).toBe("hide");
   });
@@ -126,8 +188,8 @@ describe("custom phase cycles", () => {
     const events = round.concludeRound("seekers");
     expect(events.map((e) => e.kind)).toEqual(["round.win", "round.economy", "phase.end", "phase.start"]);
     expect(round.score("seekers")).toBe(1);
-    expect(round.round()).toBe(2);
-    expect(round.phase()).toBe("hide");
+    expect(round.round()).toBe(1);
+    expect(round.phase()).toBe("reveal");
     const economy = events.find((e) => e.kind === "round.economy")!.economy!;
     expect(economy.find((r) => r.team === "seekers")).toEqual({
       team: "seekers",

@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { HOTBAR_ITEMS } from "../blocks";
 import { colorFromId } from "../colors";
-import { getSelectedSlot, subscribeSelection } from "../selection";
+import { getSelectedSlot, selectSlot, subscribeSelection } from "../selection";
 import { CubeIcon, PickaxeIcon } from "./icons";
 
 export function Hotbar() {
@@ -20,7 +20,8 @@ export function Hotbar() {
           return (
             <div
               key={item.id}
-              className={`relative h-12 w-12 rounded-md p-1.5 ring-2 transition ${
+              onPointerDown={() => selectSlot(index)}
+              className={`relative h-12 w-12 rounded-md p-1.5 ring-2 transition pointer-events-auto ${
                 isSelected ? "bg-black/60 ring-amber-300" : "bg-black/35 ring-white/10"
               }`}
             >

@@ -26,10 +26,10 @@ A JGengine scene is derived deterministically from an `environment()` descriptor
 A game with a declared world exports its `environment()` feature and asserts on it:
 
 ```ts
-// <game>/src/world.world.test.ts
+// <game>/src/game/world.world.test.ts — under src/game/, never at the top of src/ (check-game-shape rejects extra files there)
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
-import { world } from "./world"; // the environment() feature
+import { world } from "../world"; // the environment() feature
 
 describe("<game> world", () => {
   const summary = summarizeEnvironment(world);
