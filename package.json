@@ -20,6 +20,7 @@
     "games:grid-tactics": "bun run --cwd Games/grid-tactics dev",
     "games:loot-shooter": "bun run --cwd Games/loot-shooter dev",
     "games:maze-muncher": "bun run --cwd Games/maze-muncher dev",
+    "games:mine-drop": "bun run --cwd Games/mine-drop dev",
     "games:platform-hopper": "bun run --cwd Games/platform-hopper dev",
     "games:slingshot-siege": "bun run --cwd Games/slingshot-siege dev",
     "games:speed-circuit": "bun run --cwd Games/speed-circuit dev",
