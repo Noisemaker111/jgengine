@@ -126,6 +126,42 @@ describe("social party", () => {
     expect(social.party.accept("bob", id)).toEqual({ reason: "invite expired" });
     expect(social.party.list("bob")).toEqual([]);
   });
+
+  test("invitesFor lists pending invites, prunes expired, and decline is addressee-only", () => {
+    const nowRef = { value: 0 };
+    const { social } = createParty(nowRef, 1000);
+    const first = inviteId(social.party.invite("alice", "bob"));
+    expect(social.party.invitesFor("bob")).toEqual([
+      { inviteId: first, fromUserId: "alice", createdAt: 0 },
+    ]);
+    expect(social.party.invitesFor("carol")).toEqual([]);
+
+    social.party.decline("carol", first);
+    expect(social.party.invitesFor("bob")).toHaveLength(1);
+    social.party.decline("bob", first);
+    expect(social.party.invitesFor("bob")).toEqual([]);
+
+    inviteId(social.party.invite("alice", "bob"));
+    nowRef.value = 2000;
+    expect(social.party.invitesFor("bob")).toEqual([]);
+  });
+});
+
+describe("friend requests listing", () => {
+  test("requestsFor lists incoming requests and decline is addressee-only", () => {
+    const social = createSocial({ events: createGameEvents() });
+    const id = requestId(social.friends.request("alice", "bob"));
+    social.friends.request("bob", "carol");
+
+    expect(social.friends.requestsFor("bob")).toEqual([{ requestId: id, fromUserId: "alice" }]);
+    expect(social.friends.requestsFor("alice")).toEqual([]);
+
+    social.friends.decline("carol", id);
+    expect(social.friends.requestsFor("bob")).toHaveLength(1);
+    social.friends.decline("bob", id);
+    expect(social.friends.requestsFor("bob")).toEqual([]);
+    expect(social.friends.canRequest("alice", "bob")).toBeNull();
+  });
 });
 
 describe("social presence", () => {

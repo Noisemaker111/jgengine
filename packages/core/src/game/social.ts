@@ -42,13 +42,20 @@ export interface FriendsSnapshot {
   blocked: string[];
 }
 
+export interface FriendRequestEntry {
+  requestId: string;
+  fromUserId: string;
+}
+
 export interface Friends {
   canRequest(fromUserId: string, toUserId: string): { reason: string } | null;
   request(fromUserId: string, toUserId: string): { requestId: string } | { reason: string };
   accept(userId: string, requestId: string): { reason: string } | null;
+  decline(userId: string, requestId: string): void;
   remove(userId: string, friendUserId: string): void;
   block(userId: string, targetUserId: string): void;
   list(userId: string): FriendEntry[];
+  requestsFor(userId: string): FriendRequestEntry[];
   snapshot(userId: string): FriendsSnapshot;
   hydrate(userId: string, data: FriendsSnapshot): void;
 }
@@ -65,16 +72,24 @@ export interface PartyConfig {
   inviteTtlMs?: number;
 }
 
+export interface PartyInviteEntry {
+  inviteId: string;
+  fromUserId: string;
+  createdAt: number;
+}
+
 export interface Party {
   register(config: PartyConfig): void;
   canInvite(fromUserId: string, toUserId: string): { reason: string } | null;
   invite(fromUserId: string, toUserId: string): { inviteId: string } | { reason: string };
   accept(userId: string, inviteId: string): { reason: string } | null;
+  decline(userId: string, inviteId: string): void;
   kick(leaderUserId: string, memberUserId: string): { reason: string } | null;
   leave(userId: string): void;
   promote(leaderUserId: string, memberUserId: string): { reason: string } | null;
   list(userId: string): PartyMemberEntry[];
   membersOf(userId: string): string[];
+  invitesFor(userId: string): PartyInviteEntry[];
 }
 
 export const DEFAULT_EMOTE_RADIUS = 20;
@@ -211,11 +226,22 @@ export function createSocial(deps: SocialDeps): Social {
         if (between) friendRequests.delete(requestId);
       }
     },
+    decline(userId, requestId) {
+      const request = friendRequests.get(requestId);
+      if (request !== undefined && request.to === userId) friendRequests.delete(requestId);
+    },
     list(userId) {
       return Array.from(friendships.get(userId) ?? [], (friendUserId) => ({
         userId: friendUserId,
         online: deps.presence?.(friendUserId).online ?? false,
       }));
+    },
+    requestsFor(userId) {
+      const entries: FriendRequestEntry[] = [];
+      for (const [requestId, request] of friendRequests) {
+        if (request.to === userId) entries.push({ requestId, fromUserId: request.from });
+      }
+      return entries;
     },
     snapshot(userId) {
       return {
@@ -345,8 +371,27 @@ export function createSocial(deps: SocialDeps): Social {
         role: member === current.leader ? "leader" : "member",
       }));
     },
+    decline(userId, inviteId) {
+      const invite = partyInvites.get(inviteId);
+      if (invite !== undefined && invite.to === userId) partyInvites.delete(inviteId);
+    },
     membersOf(userId) {
       return partyOf(userId)?.members.slice() ?? [];
+    },
+    invitesFor(userId) {
+      const ttlMs = partyConfig?.inviteTtlMs ?? DEFAULT_INVITE_TTL_MS;
+      const cutoff = now() - ttlMs;
+      const entries: PartyInviteEntry[] = [];
+      for (const [inviteId, invite] of partyInvites) {
+        if (invite.createdAt < cutoff) {
+          partyInvites.delete(inviteId);
+          continue;
+        }
+        if (invite.to === userId) {
+          entries.push({ inviteId, fromUserId: invite.from, createdAt: invite.createdAt });
+        }
+      }
+      return entries;
     },
   };
 
