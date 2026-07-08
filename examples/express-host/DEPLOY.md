@@ -16,6 +16,19 @@ Reads: `GET /api/servers?gameId=...`, `GET /api/leaderboard/:stat?gameId=...&sco
 `GET /api/leaderboard-profile/:userId?gameId=...`, `GET /api/profile/:userId?gameId=...`
 (`createHttpReads({ baseUrl, gameId })` in `@jgengine/ws/httpReads`). Health: `GET /healthz`.
 
+## LAN play
+
+Play across machines on the same network with no cloud host at all:
+
+```sh
+bun examples/express-host/src/server.ts   # host process, ws://<your-ip>:8080/ws
+bun run dev                               # apps/dev now listens on the network (server: { host: true })
+```
+
+Other machines on the LAN open `http://<your-ip>:5173/?game=<id>`. A game declaring `multiplayer: lan()`
+(from `@jgengine/core/runtime/adapter`) derives its ws URL from the page it was served from — no config
+needed, every LAN browser connects to `ws://<same-hostname>:8080/ws` automatically.
+
 ## Fly
 
 ```sh
@@ -26,6 +39,10 @@ fly deploy --config examples/express-host/fly.toml
 ```
 
 Schema is created on boot (`ensureSchema`), so no migration step is needed.
+
+Once deployed, a game's client-side one-liner is `multiplayer: fly({ app: "your-app" })` (from
+`@jgengine/core/runtime/adapter`) — it resolves to a `ws` adapter pointed at `wss://your-app.fly.dev/ws`,
+no manual URL wiring.
 
 ## Scaling notes
 
