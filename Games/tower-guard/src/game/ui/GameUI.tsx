@@ -1,4 +1,4 @@
-import { GameUiThemeProvider, fieldkitTheme } from "@jgengine/react/gameui";
+import { fieldkitVars } from "@/components/ui/jg-theme";
 
 import { BuildBar } from "./components/BuildBar";
 import { EndScreens } from "./components/EndScreens";
@@ -6,7 +6,7 @@ import { Hud } from "./components/Hud";
 
 export function GameUI() {
   return (
-    <GameUiThemeProvider theme={fieldkitTheme}>
+    <div style={{ ...fieldkitVars, display: "contents" }}>
       <div
         style={{
           position: "fixed",
@@ -34,6 +34,6 @@ export function GameUI() {
         </div>
       </div>
       <EndScreens />
-    </GameUiThemeProvider>
+    </div>
   );
 }

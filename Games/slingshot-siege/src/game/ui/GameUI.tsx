@@ -1,8 +1,11 @@
-import { AmmoCounter, GameUiThemeProvider, ResultsScreen, ScoreReadout, WaveIndicator, type ResultLine } from "@jgengine/react/gameui";
+import { AmmoCounter } from "@/components/ui/ammo-counter";
+import { ResultsScreen, type ResultLine } from "@/components/ui/results-screen";
+import { ScoreReadout } from "@/components/ui/score-readout";
+import { WaveIndicator } from "@/components/ui/wave-indicator";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { LEVELS } from "../levels/catalog";
 import { useSlingshotState, useSlingshotStore } from "../state/slingshotStore";
-import { siegeTheme } from "./theme";
+import { siegeVars } from "./theme";
 
 function starGlyphs(stars: 0 | 1 | 2 | 3): string {
   return "★".repeat(stars) + "☆".repeat(3 - stars);
@@ -70,8 +73,8 @@ function Hud() {
 
 export function GameUI() {
   return (
-    <GameUiThemeProvider theme={siegeTheme}>
+    <div style={{ ...siegeVars, display: "contents" }}>
       <Hud />
-    </GameUiThemeProvider>
+    </div>
   );
 }

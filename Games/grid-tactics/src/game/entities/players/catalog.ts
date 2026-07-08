@@ -1,4 +1,4 @@
-import type { GameIconName } from "@jgengine/react/gameui/icons";
+import type { GameIconName } from "@jgengine/react/gameIcons";
 
 export interface PlayerUnitDef {
   id: string;

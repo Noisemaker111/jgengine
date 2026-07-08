@@ -1,5 +1,10 @@
 import { useSyncExternalStore } from "react";
-import { ArcGauge, CountdownPips, GameUiThemeProvider, HudLabel, KeybindBadge, ResultsScreen, synthwaveTheme, useGameUiTheme } from "@jgengine/react/gameui";
+import { ArcGauge } from "@/components/ui/arc-gauge";
+import { CountdownPips } from "@/components/ui/match-timer";
+import { HudLabel } from "@/components/ui/hud-label";
+import { KeybindBadge } from "@/components/ui/keybind-badge";
+import { ResultsScreen } from "@/components/ui/results-screen";
+import { synthwaveVars } from "@/components/ui/jg-theme";
 
 import { runStore } from "../../loop";
 import { formatRaceTime } from "../race/runState";
@@ -7,16 +12,15 @@ import { formatRaceTime } from "../race/runState";
 const TOP_SPEED_KMH = 34 * 3.6;
 
 function TimeReadout({ label, seconds }: { label: string; seconds: number | null }) {
-  const theme = useGameUiTheme();
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
       <HudLabel>{label}</HudLabel>
       <span
         style={{
-          fontFamily: theme.fontNumeric,
+          fontFamily: "var(--jg-font-numeric)",
           fontSize: 22,
           fontWeight: 800,
-          color: theme.textPrimary,
+          color: "var(--jg-text)",
           textShadow: "0 1px 2px rgba(0,0,0,0.9)",
         }}
       >
@@ -27,7 +31,6 @@ function TimeReadout({ label, seconds }: { label: string; seconds: number | null
 }
 
 function HudLayer() {
-  const theme = useGameUiTheme();
   const state = useSyncExternalStore(runStore.subscribe, runStore.getState);
 
   return (
@@ -66,12 +69,12 @@ function HudLayer() {
           {state.offTrack && (
             <span
               style={{
-                fontFamily: theme.fontDisplay,
+                fontFamily: "var(--jg-font-display)",
                 fontSize: 11,
                 fontWeight: 800,
                 letterSpacing: "0.2em",
                 textTransform: "uppercase",
-                color: theme.warning,
+                color: "var(--jg-warning)",
                 animation: "jgui-pulse 0.8s infinite",
               }}
             >
@@ -103,7 +106,7 @@ function HudLayer() {
             ].map(([key, label]) => (
               <span key={key} style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <KeybindBadge label={key!} />
-                <span style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.textDim }}>{label}</span>
+                <span style={{ fontFamily: "var(--jg-font-body)", fontSize: 12, color: "var(--jg-text-dim)" }}>{label}</span>
               </span>
             ))}
           </div>
@@ -132,7 +135,7 @@ function HudLayer() {
             }}
           >
             <KeybindBadge label="R" />
-            <span style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.textDim }}>Race again</span>
+            <span style={{ fontFamily: "var(--jg-font-body)", fontSize: 12, color: "var(--jg-text-dim)" }}>Race again</span>
           </div>
         </div>
       )}
@@ -142,8 +145,8 @@ function HudLayer() {
 
 export function GameUI() {
   return (
-    <GameUiThemeProvider theme={synthwaveTheme}>
+    <div style={{ ...synthwaveVars, display: "contents" }}>
       <HudLayer />
-    </GameUiThemeProvider>
+    </div>
   );
 }

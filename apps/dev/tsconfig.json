@@ -15,6 +15,7 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["vite/client"],
     "paths": {
+      "@/components/ui/*": ["../../registry/jgengine/*"],
       "@jgengine/shell/*": ["../../packages/shell/src/*"],
       "@jgengine/assets": ["../../packages/assets/src/index.ts"],
       "@jgengine/assets/*": ["../../packages/assets/src/*"],

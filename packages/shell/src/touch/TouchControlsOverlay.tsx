@@ -3,7 +3,7 @@ import { useMemo, useRef, type MutableRefObject, type PointerEvent as ReactPoint
 import { createGestureSurfaceTracker } from "@jgengine/core/input/gestureSurface";
 import { createTouchGestureTracker } from "@jgengine/core/input/touchGestures";
 import { touchCode, type TouchButton, type TouchJoystick, type TouchScheme } from "@jgengine/core/input/touchScheme";
-import { GameIcon, iconForAction, isGameIconName, type GameIconName } from "@jgengine/react/gameui/icons";
+import { GameIcon, iconForAction, isGameIconName, type GameIconName } from "@jgengine/react/gameIcons";
 
 export interface TouchCodeSink {
   onCodeDown(code: string): void;

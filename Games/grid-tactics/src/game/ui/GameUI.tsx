@@ -1,11 +1,14 @@
 import { useGameContext } from "@jgengine/react/provider";
 import { useEntityStat } from "@jgengine/react/hooks";
 import { useEngineState } from "@jgengine/react/engineStore";
-import { AccentRule, HudLabel, HudPanel, KeybindBadge } from "@jgengine/react/gameui/chrome";
-import { AnnouncementBanner } from "@jgengine/react/gameui/feedback";
-import { GameIcon } from "@jgengine/react/gameui/icons";
-import { UnitFrame } from "@jgengine/react/gameui/bars";
-import { GameUiThemeProvider, fieldkitTheme, useGameUiTheme } from "@jgengine/react/gameui/theme";
+import { AccentRule } from "@/components/ui/accent-rule";
+import { HudLabel } from "@/components/ui/hud-label";
+import { HudPanel } from "@/components/ui/hud-panel";
+import { KeybindBadge } from "@/components/ui/keybind-badge";
+import { AnnouncementBanner } from "@/components/ui/announcement-banner";
+import { GameIcon } from "@jgengine/react/gameIcons";
+import { UnitFrame } from "@/components/ui/unit-frame";
+import { fieldkitVars } from "@/components/ui/jg-theme";
 
 import { ENEMY_UNITS, type EnemyUnitDef } from "../entities/enemies/catalog";
 import { PLAYER_UNITS, PLAYER_ROSTER_ORDER, type PlayerUnitDef } from "../entities/players/catalog";
@@ -17,7 +20,6 @@ function unitDef(catalogId: string): PlayerUnitDef | EnemyUnitDef {
 }
 
 function SelectedUnitPanel({ state }: { state: BattleState }) {
-  const theme = useGameUiTheme();
   const unitId = state.selectedUnitId;
   const health = useEntityStat(unitId ?? "", "health");
   if (unitId === null || health === null) return null;
@@ -28,9 +30,9 @@ function SelectedUnitPanel({ state }: { state: BattleState }) {
       <UnitFrame
         name={def.label}
         vitals={[{ tone: "health", value: { current: health.current, max: health.max, min: health.min } }]}
-        portrait={<GameIcon name={def.icon} size={32} color={theme.accent} />}
+        portrait={<GameIcon name={def.icon} size={32} color="var(--jg-accent)" />}
       >
-        <div style={{ display: "flex", gap: 10, marginTop: 6, fontFamily: theme.fontNumeric, fontSize: 11, color: theme.textDim }}>
+        <div style={{ display: "flex", gap: 10, marginTop: 6, fontFamily: "var(--jg-font-numeric)", fontSize: 11, color: "var(--jg-text-dim)" }}>
           <span>MOVE {def.move}</span>
           <span>RNG {def.range}</span>
           <span>DMG {def.damage}</span>
@@ -41,7 +43,6 @@ function SelectedUnitPanel({ state }: { state: BattleState }) {
 }
 
 function RosterChip({ catalogId }: { catalogId: string }) {
-  const theme = useGameUiTheme();
   const state = useEngineState(store);
   const id = `p:${catalogId}`;
   const health = useEntityStat(id, "health");
@@ -62,14 +63,14 @@ function RosterChip({ catalogId }: { catalogId: string }) {
         alignItems: "center",
         gap: 6,
         padding: "5px 9px",
-        background: selected ? theme.accentDeep : theme.surface,
-        border: `1px solid ${selected ? theme.accent : theme.edge}`,
+        background: selected ? "var(--jg-accent-deep)" : "var(--jg-surface)",
+        border: `1px solid ${selected ? "var(--jg-accent)" : "var(--jg-edge)"}`,
         opacity: acted ? 0.45 : 1,
         cursor: canAct ? "pointer" : "default",
       }}
     >
-      <GameIcon name={def.icon} size={16} color={theme.textPrimary} />
-      <span style={{ fontFamily: theme.fontNumeric, fontSize: 11, color: theme.textPrimary }}>
+      <GameIcon name={def.icon} size={16} color="var(--jg-text)" />
+      <span style={{ fontFamily: "var(--jg-font-numeric)", fontSize: 11, color: "var(--jg-text)" }}>
         {health.current}/{health.max}
       </span>
     </button>
@@ -77,15 +78,14 @@ function RosterChip({ catalogId }: { catalogId: string }) {
 }
 
 function TurnBar({ state }: { state: BattleState }) {
-  const theme = useGameUiTheme();
   return (
     <HudPanel width={320}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <HudLabel>{state.waveLabel || "Grid Tactics"}</HudLabel>
-        <span style={{ fontFamily: theme.fontNumeric, fontSize: 12, color: theme.accent }}>ROUND {state.round}</span>
+        <span style={{ fontFamily: "var(--jg-font-numeric)", fontSize: 12, color: "var(--jg-accent)" }}>ROUND {state.round}</span>
       </div>
       <AccentRule width="100%" />
-      <span style={{ fontFamily: theme.fontDisplay, fontSize: 12, letterSpacing: "0.12em", color: theme.textDim, textTransform: "uppercase" }}>
+      <span style={{ fontFamily: "var(--jg-font-display)", fontSize: 12, letterSpacing: "0.12em", color: "var(--jg-text-dim)", textTransform: "uppercase" }}>
         {state.phase === "player" ? "Your Turn" : state.phase === "enemy" ? "Breach Turn" : ""}
       </span>
     </HudPanel>
@@ -94,7 +94,6 @@ function TurnBar({ state }: { state: BattleState }) {
 
 function EndTurnControls({ state }: { state: BattleState }) {
   const ctx = useGameContext();
-  const theme = useGameUiTheme();
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
       {state.selectedUnitId !== null ? (
@@ -103,10 +102,10 @@ function EndTurnControls({ state }: { state: BattleState }) {
           onClick={() => ctx.game.commands.run("battle.wait", {})}
           style={{
             padding: "8px 14px",
-            background: theme.surface,
-            border: `1px solid ${theme.edge}`,
-            color: theme.textPrimary,
-            fontFamily: theme.fontDisplay,
+            background: "var(--jg-surface)",
+            border: `1px solid var(--jg-edge)`,
+            color: "var(--jg-text)",
+            fontFamily: "var(--jg-font-display)",
             fontSize: 12,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
@@ -124,10 +123,10 @@ function EndTurnControls({ state }: { state: BattleState }) {
           alignItems: "center",
           gap: 8,
           padding: "8px 16px",
-          background: theme.accentDeep,
-          border: `1px solid ${theme.accent}`,
-          color: theme.textPrimary,
-          fontFamily: theme.fontDisplay,
+          background: "var(--jg-accent-deep)",
+          border: `1px solid var(--jg-accent)`,
+          color: "var(--jg-text)",
+          fontFamily: "var(--jg-font-display)",
           fontWeight: 700,
           fontSize: 13,
           letterSpacing: "0.14em",
@@ -173,8 +172,8 @@ function GameUIInner() {
 
 export function GameUI() {
   return (
-    <GameUiThemeProvider theme={fieldkitTheme}>
+    <div style={{ ...fieldkitVars, display: "contents" }}>
       <GameUIInner />
-    </GameUiThemeProvider>
+    </div>
   );
 }
