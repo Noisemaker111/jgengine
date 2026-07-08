@@ -1,0 +1,27 @@
+import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+
+export const Route = createRootRoute({
+  head: () => ({
+    meta: [
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "JGengine tanstack-host" },
+      { name: "description", content: "TanStack Start client + REST reads for a JGengine game host" },
+    ],
+  }),
+  component: RootComponent,
+});
+
+function RootComponent() {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <Outlet />
+        <Scripts />
+      </body>
+    </html>
+  );
+}

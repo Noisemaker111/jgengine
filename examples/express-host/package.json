@@ -11,6 +11,7 @@
     "@jgengine/core": "workspace:*",
     "@jgengine/node": "workspace:*",
     "@jgengine/sql": "workspace:*",
+    "@jgengine/ws": "workspace:*",
     "express": "^5.1.0",
     "pg": "^8.13.0"
   },

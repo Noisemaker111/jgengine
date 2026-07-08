@@ -2,13 +2,14 @@ import { createServer } from "node:http";
 
 import express from "express";
 
-import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { HostPersistence } from "@jgengine/core/runtime/hostPersistence";
 import { createGameHost } from "@jgengine/node/host";
 import { filePersistence, memoryPersistence } from "@jgengine/node/persistence";
+import { toNodeHandler } from "@jgengine/node/webHandler";
 import { createGameWsServer } from "@jgengine/node/wsServer";
 import { ensureSchema, sqlPersistence, type SqlPool } from "@jgengine/sql/sqlPersistence";
+import { createReadsHandler } from "@jgengine/ws/readsHandler";
 
 const GAME_RUNTIMES: GameRuntime[] = [];
 
@@ -28,10 +29,6 @@ async function persistenceFromEnv(): Promise<HostPersistence> {
   return memoryPersistence();
 }
 
-function isScope(value: string): value is LeaderboardScope {
-  return value === "global" || value === "server" || value === "profile";
-}
-
 const persistence = await persistenceFromEnv();
 const host = createGameHost({ runtimes: GAME_RUNTIMES, persistence });
 host.start();
@@ -42,54 +39,8 @@ app.get("/healthz", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/api/servers", async (req, res) => {
-  const gameId = String(req.query.gameId ?? "");
-  const limit = req.query.limit === undefined ? undefined : Number(req.query.limit);
-  res.json(await host.listOpenServers({ gameId, limit }));
-});
-
-app.get("/api/leaderboard/:stat", async (req, res) => {
-  const scope = String(req.query.scope ?? "global");
-  if (!isScope(scope)) {
-    res.status(400).json({ error: "scope must be global | server | profile" });
-    return;
-  }
-  res.json(
-    await persistence.getLeaderboardTop({
-      gameId: String(req.query.gameId ?? ""),
-      stat: req.params.stat,
-      scope,
-      serverId: req.query.serverId === undefined ? undefined : String(req.query.serverId),
-      limit: req.query.limit === undefined ? undefined : Number(req.query.limit),
-    }),
-  );
-});
-
-app.get("/api/leaderboard-profile/:userId", async (req, res) => {
-  res.json(
-    await persistence.getLeaderboardProfile({
-      gameId: String(req.query.gameId ?? ""),
-      userId: req.params.userId,
-    }),
-  );
-});
-
-app.get("/api/profile/:userId", async (req, res) => {
-  const profile = await persistence.loadProfile({
-    userId: req.params.userId,
-    gameId: String(req.query.gameId ?? ""),
-  });
-  res.json(
-    profile === null
-      ? null
-      : {
-          userId: profile.userId,
-          gameId: profile.gameId,
-          playerState: profile.playerState,
-          updatedAt: profile.updatedAt,
-        },
-  );
-});
+const reads = createReadsHandler({ persistence, listOpenServers: host.listOpenServers });
+app.get("/api/*splat", toNodeHandler(reads));
 
 const server = createServer(app);
 const wsServer = createGameWsServer({ host, server, path: "/ws" });
