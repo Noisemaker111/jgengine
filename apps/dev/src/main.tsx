@@ -4,7 +4,11 @@ import { createRoot } from "react-dom/client";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
-import { resolveShellMultiplayer, type ShellMultiplayer } from "@jgengine/shell/multiplayer";
+import {
+  resolvePeerShellMultiplayer,
+  resolveShellMultiplayer,
+  type ShellMultiplayer,
+} from "@jgengine/shell/multiplayer";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import "./index.css";
@@ -65,6 +69,7 @@ const GAME_ID =
 const MODE = urlParams.get("mode") ?? "play";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
+const P2P_ROLE = urlParams.get("p2p");
 
 function withCameraPreset(game: PlayableGame): PlayableGame {
   if (CAM === null) return game;
@@ -81,14 +86,18 @@ function DevApp() {
     const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
     if (load === undefined) return;
     void load().then((loaded) => {
-      setMultiplayer(
-        resolveShellMultiplayer({
-          game: loaded.game,
-          gameId: GAME_ID,
-          url: WS_URL,
-          force: WS_URL !== undefined,
-        }),
-      );
+      if (P2P_ROLE === "host" || P2P_ROLE === "join") {
+        void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
+      } else {
+        setMultiplayer(
+          resolveShellMultiplayer({
+            game: loaded.game,
+            gameId: GAME_ID,
+            url: WS_URL,
+            force: WS_URL !== undefined,
+          }),
+        );
+      }
       setPlayable(withCameraPreset(loaded));
     });
     const loadScenario = uiScenarioRegistry[GAME_ID];

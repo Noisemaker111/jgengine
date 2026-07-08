@@ -1,6 +1,13 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
 import type { MultiplayerAdapterConfig } from "@jgengine/core/runtime/adapter";
 import { createWsBackend, type WsBackend } from "@jgengine/ws/createWsBackend";
+import {
+  announcePeerHost,
+  broadcastChannelSignaling,
+  createPeerGuest,
+  createPeerHost,
+  joinPeerSession,
+} from "@jgengine/ws/peer";
 
 export type ShellMultiplayer = {
   gameId: string;
@@ -72,4 +79,45 @@ export function resolveShellMultiplayer(args: {
   if (adapter.kind === "lan") return build(args.url ?? lanUrl(adapter));
 
   return null;
+}
+
+export async function resolvePeerShellMultiplayer(args: {
+  gameId: string;
+  role: "host" | "join";
+  room?: string;
+  userId?: string;
+  feedActions?: string[];
+}): Promise<ShellMultiplayer & { close: () => void }> {
+  const userId = args.userId ?? `player-${Math.random().toString(36).slice(2, 10)}`;
+  const feedActions = args.feedActions ?? ["entity.died"];
+  const signaling = broadcastChannelSignaling(args.room ?? `jg-p2p-${args.gameId}`);
+
+  if (args.role === "host") {
+    const peerHost = createPeerHost({ userId });
+    const stopAnnouncing = announcePeerHost(peerHost, signaling);
+    return {
+      gameId: args.gameId,
+      userId,
+      backend: peerHost.backend,
+      feedActions,
+      close: () => {
+        stopAnnouncing();
+        signaling.close();
+        peerHost.close();
+      },
+    };
+  }
+
+  const guest = createPeerGuest({ userId });
+  const backend = await joinPeerSession(guest, signaling);
+  return {
+    gameId: args.gameId,
+    userId,
+    backend,
+    feedActions,
+    close: () => {
+      signaling.close();
+      guest.close();
+    },
+  };
 }
