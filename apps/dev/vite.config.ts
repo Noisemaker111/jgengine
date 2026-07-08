@@ -1,3 +1,5 @@
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -6,6 +8,14 @@ import { defineConfig } from "vite";
 
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
 const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
+const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
+
+const gameAliases = readdirSync(gamesDir, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
+  .flatMap((entry) => [
+    { find: new RegExp(`^@games/${entry.name}$`), replacement: `${game(entry.name)}/index.tsx` },
+    { find: new RegExp(`^@games/${entry.name}/(.*)$`), replacement: `${game(entry.name)}/$1` },
+  ]);
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -20,16 +30,7 @@ export default defineConfig({
       { find: /^@jgengine\/shell\/(.*)$/, replacement: `${src("shell")}/$1` },
       { find: /^@jgengine\/assets$/, replacement: `${src("assets")}/index.ts` },
       { find: /^@jgengine\/assets\/(.*)$/, replacement: `${src("assets")}/$1` },
-      { find: /^@games\/block-stacker$/, replacement: `${game("block-stacker")}/index.tsx` },
-      { find: /^@games\/block-stacker\/(.*)$/, replacement: `${game("block-stacker")}/$1` },
-      { find: /^@games\/maze-muncher$/, replacement: `${game("maze-muncher")}/index.tsx` },
-      { find: /^@games\/maze-muncher\/(.*)$/, replacement: `${game("maze-muncher")}/$1` },
-      { find: /^@games\/voxel-mine$/, replacement: `${game("voxel-mine")}/index.tsx` },
-      { find: /^@games\/voxel-mine\/(.*)$/, replacement: `${game("voxel-mine")}/$1` },
-      { find: /^@games\/platform-hopper$/, replacement: `${game("platform-hopper")}/index.tsx` },
-      { find: /^@games\/platform-hopper\/(.*)$/, replacement: `${game("platform-hopper")}/$1` },
-      { find: /^@games\/spire-cards$/, replacement: `${game("spire-cards")}/index.tsx` },
-      { find: /^@games\/spire-cards\/(.*)$/, replacement: `${game("spire-cards")}/$1` },
+      ...gameAliases,
     ],
   },
 });

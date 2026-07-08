@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { GAMES } from "../content/games";
 import { REPO_URL } from "../lib/site";
 
 export function Header() {
@@ -17,6 +18,25 @@ export function Header() {
           <Link to="/skills" className="transition hover:text-slate-100" activeProps={{ className: "text-emerald-300" }}>
             Skills
           </Link>
+          <div className="group relative">
+            <button className="flex items-center gap-1 transition hover:text-slate-100" type="button">
+              Games
+              <span className="text-[0.6rem] transition group-hover:text-emerald-300">▾</span>
+            </button>
+            <div className="absolute right-0 top-full hidden pt-2 group-hover:block group-focus-within:block">
+              <div className="w-44 rounded-xl border border-white/8 bg-slate-950/95 p-1.5 shadow-lg backdrop-blur">
+                {GAMES.map((game) => (
+                  <a
+                    key={game.id}
+                    href={game.href}
+                    className="block rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-white/[0.04] hover:text-slate-100"
+                  >
+                    {game.title}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
           <a href={REPO_URL} className="transition hover:text-slate-100">
             GitHub
           </a>
