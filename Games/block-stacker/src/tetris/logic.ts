@@ -1,12 +1,26 @@
+import {
+  cellAt as gridCellAt,
+  clearRows,
+  createCellGrid,
+  fullRows,
+  type CellGrid,
+} from "@jgengine/core/puzzle/cellGrid";
+import {
+  dropDistance as pieceDropDistance,
+  gravityInterval as pieceGravityInterval,
+  levelForLines as pieceLevelForLines,
+  lineScore as pieceLineScore,
+  mergePiece,
+  pieceCells as fallingPieceCells,
+  pieceCollides,
+  type ShapeTable,
+} from "@jgengine/core/puzzle/fallingPiece";
+
 import { PIECE_ROTATIONS, type CellOffset, type PieceType } from "./pieces";
 
 export type Cell = PieceType | null;
 
-export interface Board {
-  readonly width: number;
-  readonly height: number;
-  readonly cells: readonly Cell[];
-}
+export type Board = CellGrid<PieceType>;
 
 export interface ActivePiece {
   readonly type: PieceType;
@@ -18,67 +32,49 @@ export interface ActivePiece {
 export const BOARD_WIDTH = 10;
 export const BOARD_HEIGHT = 20;
 
-const LINE_BASE: readonly number[] = [0, 40, 100, 300, 1200];
+const SHAPE_TABLE: ShapeTable<PieceType> = PIECE_ROTATIONS;
+
+function asFallingPiece(piece: ActivePiece) {
+  return { shape: piece.type, rotation: piece.rotation, x: piece.x, y: piece.y };
+}
 
 export function createBoard(width = BOARD_WIDTH, height = BOARD_HEIGHT): Board {
-  return { width, height, cells: new Array<Cell>(width * height).fill(null) };
+  return createCellGrid<PieceType>(width, height);
 }
 
 export function cellAt(board: Board, x: number, y: number): Cell {
-  if (x < 0 || x >= board.width || y < 0 || y >= board.height) return null;
-  return board.cells[y * board.width + x] ?? null;
+  return gridCellAt(board, x, y);
 }
 
 export function pieceCells(piece: ActivePiece): readonly CellOffset[] {
-  const state = PIECE_ROTATIONS[piece.type][((piece.rotation % 4) + 4) % 4];
-  return state.map(([ox, oy]) => [piece.x + ox, piece.y + oy] as CellOffset);
+  return fallingPieceCells(SHAPE_TABLE, asFallingPiece(piece));
 }
 
 export function collides(board: Board, piece: ActivePiece): boolean {
-  for (const [x, y] of pieceCells(piece)) {
-    if (x < 0 || x >= board.width || y >= board.height) return true;
-    if (y >= 0 && board.cells[y * board.width + x] !== null) return true;
-  }
-  return false;
+  return pieceCollides(board, SHAPE_TABLE, asFallingPiece(piece));
 }
 
 export function merge(board: Board, piece: ActivePiece): Board {
-  const cells = board.cells.slice();
-  for (const [x, y] of pieceCells(piece)) {
-    if (y >= 0 && y < board.height && x >= 0 && x < board.width) {
-      cells[y * board.width + x] = piece.type;
-    }
-  }
-  return { width: board.width, height: board.height, cells };
+  return mergePiece(board, SHAPE_TABLE, asFallingPiece(piece), piece.type);
 }
 
 export function clearLines(board: Board): { board: Board; cleared: number } {
-  const kept: Cell[][] = [];
-  for (let y = 0; y < board.height; y += 1) {
-    const row = board.cells.slice(y * board.width, y * board.width + board.width);
-    if (row.some((cell) => cell === null)) kept.push(row);
-  }
-  const cleared = board.height - kept.length;
-  const cells: Cell[] = [];
-  for (let i = 0; i < cleared; i += 1) cells.push(...new Array<Cell>(board.width).fill(null));
-  for (const row of kept) cells.push(...row);
-  return { board: { width: board.width, height: board.height, cells }, cleared };
+  const rows = fullRows(board);
+  return { board: clearRows(board, rows), cleared: rows.length };
 }
 
 export function dropDistance(board: Board, piece: ActivePiece): number {
-  let distance = 0;
-  while (!collides(board, { ...piece, y: piece.y + distance + 1 })) distance += 1;
-  return distance;
+  return pieceDropDistance(board, SHAPE_TABLE, asFallingPiece(piece));
 }
 
 export function levelForLines(lines: number): number {
-  return Math.floor(lines / 10);
+  return pieceLevelForLines(lines);
 }
 
 export function lineScore(cleared: number, level: number): number {
-  return (LINE_BASE[cleared] ?? 0) * (level + 1);
+  return pieceLineScore(cleared, level);
 }
 
 export function gravityInterval(level: number): number {
-  return Math.max(0.05, 0.8 - level * 0.07);
+  return pieceGravityInterval(level);
 }
