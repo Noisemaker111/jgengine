@@ -1,5 +1,6 @@
 export { GameOrbitCamera, type CameraFollowListener, type GameOrbitCameraProps } from "./GameOrbitCamera";
 export { GameFirstPersonCamera, type GameFirstPersonCameraProps } from "./GameFirstPersonCamera";
+export { GameInspectionCamera, type GameInspectionCameraProps } from "./GameInspectionCamera";
 export { GameCameraRig, resolveRigKind, type GameCameraRigProps } from "./GameCameraRig";
 export {
   CAMERA_POST_FRAME_PRIORITY,
@@ -89,3 +90,11 @@ export {
   type ResolvedOrbitCameraConfig,
   type Vec3,
 } from "./orbitCameraMath";
+export {
+  resolveInspectionCameraConfig,
+  resolveInspectionZoomToCursor,
+  seedInspectionCamera,
+  type InspectionCameraConfig,
+  type InspectionZoomAnchor,
+  type ResolvedInspectionCameraConfig,
+} from "./inspectionCameraMath";

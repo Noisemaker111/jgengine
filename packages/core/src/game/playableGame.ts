@@ -66,6 +66,7 @@ export interface FirstPersonCameraConfig {
  * - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views.
  * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
  * - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input.
+ * - `inspection` — model-viewer rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input.
  * - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
  */
 export type CameraRigKind =
@@ -78,6 +79,7 @@ export type CameraRigKind =
   | "chase"
   | "observer"
   | "sideScroll"
+  | "inspection"
   | "none";
 
 /** Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input. */
@@ -209,6 +211,38 @@ export interface ObserverCameraConfig {
   fov?: number;
 }
 
+/**
+ * How scroll-zoom re-anchors the view for the inspection rig (#207.7):
+ * - `target` — dolly toward the orbit target (classic OrbitControls behavior).
+ * - `cursor` — dolly toward the point under the pointer.
+ * - `center` — dolly toward the viewport center; equivalent to `target` for an
+ *   OrbitControls-driven rig, since the camera always faces `target` and that
+ *   point already projects to the exact center of the viewport.
+ */
+export type InspectionZoomAnchor = "target" | "cursor" | "center";
+
+/** Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input. */
+export interface InspectionCameraConfig {
+  /** Where scroll-zoom re-anchors the view. Default "target". */
+  anchor?: InspectionZoomAnchor;
+  /** Orbit target (the point orbited/panned around). Default origin. */
+  target?: { x?: number; y?: number; z?: number };
+  /** Camera distance from `target` used to seed the initial camera position when `initialPosition` is unset. Default 6. */
+  initialDistance?: number;
+  /** Explicit starting camera world position; overrides `initialDistance` when set. */
+  initialPosition?: { x?: number; y?: number; z?: number };
+  minDistance?: number;
+  maxDistance?: number;
+  /** Vertical orbit clamp (radians). Unset allows a full pole-to-pole orbit, unlike the tighter default on the classic orbit rig. */
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
+  /** Middle-mouse/right-drag pan. Default true for this rig. */
+  pan?: boolean;
+  rotateSpeed?: number;
+  zoomSpeed?: number;
+  dampingFactor?: number;
+}
+
 /** One stop on a scripted camera path (#29). */
 export interface CameraKeyframe {
   position: { x: number; y: number; z: number };
@@ -264,6 +298,8 @@ export interface GameCameraConfig {
   observer?: ObserverCameraConfig;
   /** Fixed side-on follow tuning; read when `rig: "sideScroll"`. */
   sideScroll?: SideScrollCameraConfig;
+  /** Model-viewer / inspection tuning (#207.7); read when `rig: "inspection"`. */
+  inspection?: InspectionCameraConfig;
   /** Camera-shake / trauma channel defaults (#28); read by every rig. */
   shake?: CameraShakeConfig;
   /** Scripted keyframe path (#29); when set, plays over the active rig. */
