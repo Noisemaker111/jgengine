@@ -36,6 +36,7 @@ import {
 } from "../economy/wallet";
 import { createCosmetics, type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
+import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
 import { createGameFeed, type GameFeed } from "../game/feed";
 import { createLeaderboard, type Leaderboard } from "../game/leaderboard";
@@ -252,12 +253,18 @@ export interface GameContextItemUse {
   use(input: ItemUseInput): ItemUseResult<GameContext>;
 }
 
+export interface GameContextWorld {
+  ground: TerrainField;
+  groundHeightAt(x: number, z: number): number;
+}
+
 export interface GameContext {
   scene: {
     object: SceneObjectContext;
     entity: SceneEntityContext;
     worldItem: SceneWorldItemContext;
   };
+  world: GameContextWorld;
   game: {
     commands: GameContextCommands;
     events: GameEvents;
@@ -300,6 +307,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const signal = createChangeSignal();
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
+  const ground = groundFieldFor(definition.world);
 
   const entities = definition.scene;
   const objects = createObjectStore();
@@ -860,6 +868,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         nearestInRadius: worldItems.nearestInRadius,
         pickup: pickupWorldItem,
       },
+    },
+    world: {
+      ground,
+      groundHeightAt: ground.sampleHeight,
     },
     game: {
       commands: {

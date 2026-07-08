@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { terrain } from "./features";
+import { environment, terrain } from "./features";
 import {
   arenaField,
   fractalNoise,
   flatField,
+  groundFieldFor,
   noiseField,
   resolveGroundStep,
   resolveTerrainField,
@@ -25,6 +26,18 @@ describe("terrain field", () => {
     const field = flatField();
     expect(field.sampleHeight(3, -9)).toBe(0);
     expect(field.sampleNormal(3, -9)).toEqual([0, 1, 0]);
+  });
+
+  test("groundFieldFor matches the environment terrain field and is flat elsewhere", () => {
+    const descriptor = terrain({ height: 3.2, seed: "ground-seam", frequency: 0.05 });
+    const ground = groundFieldFor(environment({ terrain: descriptor }));
+    const reference = resolveTerrainField(descriptor);
+    for (const [x, z] of [[0, 0], [12.5, -30.25], [-81, 44]] as const) {
+      expect(ground.sampleHeight(x, z)).toBe(reference.sampleHeight(x, z));
+    }
+    expect(groundFieldFor({ kind: "flat" }).sampleHeight(5, 5)).toBe(0);
+    expect(groundFieldFor(undefined).sampleHeight(5, 5)).toBe(0);
+    expect(groundFieldFor(environment()).sampleHeight(5, 5)).toBe(0);
   });
 
   test("noiseField scales with amplitude and is reproducible per seed", () => {

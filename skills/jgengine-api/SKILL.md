@@ -473,6 +473,11 @@ ctx.game.social     friends, party, presence, emotes.play
 ctx.player          userId, isNew, inventory, stats (modifiers), loadout,
                     applyLoadout, movement (pose/aim), possession, cosmetics
 ctx.item            use, weapon
+ctx.world           ground (TerrainField), groundHeightAt(x, z) — the canonical
+                    sampler for the game's declared world; environment worlds
+                    resolve their terrain field, every other world kind is 0.
+                    Use it for every spawn/placement/waypoint y — never
+                    hand-roll a noise sampler or hardcode y = 0 on relief
 ctx.time            advance, now, calendar, snapshot; pause, play, toggle,
                     setSpeed, cycleSpeed; after, every, at (game-time timers)
 ctx.subscribe / ctx.version    change signal — UI layers bind via useSyncExternalStore
