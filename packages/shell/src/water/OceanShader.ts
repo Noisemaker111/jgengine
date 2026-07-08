@@ -32,9 +32,9 @@ void main() {
     displaced.x += horizontal * direction.x * cosine;
     displaced.z += horizontal * direction.y * cosine;
     displaced.y += amplitude * sine;
-    float common = horizontal * k * sine;
-    tangent += vec3(-common * direction.x * direction.x, amplitude * k * direction.x * cosine, -common * direction.x * direction.y);
-    bitangent += vec3(-common * direction.x * direction.y, amplitude * k * direction.y * cosine, -common * direction.y * direction.y);
+    float slopeTerm = horizontal * k * sine;
+    tangent += vec3(-slopeTerm * direction.x * direction.x, amplitude * k * direction.x * cosine, -slopeTerm * direction.x * direction.y);
+    bitangent += vec3(-slopeTerm * direction.x * direction.y, amplitude * k * direction.y * cosine, -slopeTerm * direction.y * direction.y);
     crest = max(crest, smoothstep(uFoamThreshold, uFoamThreshold + uFoamSoftness, sine * steepness + uFoamCoverage * 0.35));
   }
 
