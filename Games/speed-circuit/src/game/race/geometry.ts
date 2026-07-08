@@ -102,27 +102,46 @@ export function lateralOffset(point: readonly [number, number], points: readonly
 export interface RibbonMesh {
   positions: Float32Array;
   indices: Uint32Array;
+  colors?: Float32Array;
 }
 
-export function buildRibbonGeometry(points: readonly Vec2[], width: number, y: number): RibbonMesh {
+export type RibbonColorAt = (index: number) => readonly [number, number, number];
+
+function normalAt(points: readonly Vec2[], i: number): Vec2 {
+  const n = points.length;
+  const prev = points[(i - 1 + n) % n]!;
+  const next = points[(i + 1) % n]!;
+  const dx = next.x - prev.x;
+  const dz = next.z - prev.z;
+  const mag = Math.hypot(dx, dz) || 1;
+  return { x: -dz / mag, z: dx / mag };
+}
+
+export function offsetPolyline(points: readonly Vec2[], offset: number): readonly Vec2[] {
+  return points.map((p, i) => {
+    const normal = normalAt(points, i);
+    return { x: p.x + normal.x * offset, z: p.z + normal.z * offset };
+  });
+}
+
+export function buildRibbonGeometry(
+  points: readonly Vec2[],
+  width: number,
+  y: number,
+  colorAt?: RibbonColorAt,
+): RibbonMesh {
   const n = points.length;
   const positions = new Float32Array(n * 2 * 3);
   for (let i = 0; i < n; i += 1) {
-    const prev = points[(i - 1 + n) % n]!;
-    const next = points[(i + 1) % n]!;
-    const dx = next.x - prev.x;
-    const dz = next.z - prev.z;
-    const mag = Math.hypot(dx, dz) || 1;
-    const nx = -dz / mag;
-    const nz = dx / mag;
+    const normal = normalAt(points, i);
     const p = points[i]!;
     const o = i * 6;
-    positions[o] = p.x + (nx * width) / 2;
+    positions[o] = p.x + (normal.x * width) / 2;
     positions[o + 1] = y;
-    positions[o + 2] = p.z + (nz * width) / 2;
-    positions[o + 3] = p.x - (nx * width) / 2;
+    positions[o + 2] = p.z + (normal.z * width) / 2;
+    positions[o + 3] = p.x - (normal.x * width) / 2;
     positions[o + 4] = y;
-    positions[o + 5] = p.z - (nz * width) / 2;
+    positions[o + 5] = p.z - (normal.z * width) / 2;
   }
   const indices = new Uint32Array(n * 6);
   for (let i = 0; i < n; i += 1) {
@@ -138,5 +157,34 @@ export function buildRibbonGeometry(points: readonly Vec2[], width: number, y: n
     indices[o + 4] = i2;
     indices[o + 5] = i3;
   }
-  return { positions, indices };
+  if (colorAt === undefined) return { positions, indices };
+  const colors = new Float32Array(n * 2 * 3);
+  for (let i = 0; i < n; i += 1) {
+    const [r, g, b] = colorAt(i);
+    const o = i * 6;
+    colors[o] = r;
+    colors[o + 1] = g;
+    colors[o + 2] = b;
+    colors[o + 3] = r;
+    colors[o + 4] = g;
+    colors[o + 5] = b;
+  }
+  return { positions, indices, colors };
+}
+
+export function cornerMask(points: readonly Vec2[], threshold = 0.01): readonly boolean[] {
+  const n = points.length;
+  return points.map((_, i) => {
+    const prev = points[(i - 1 + n) % n]!;
+    const curr = points[i]!;
+    const next = points[(i + 1) % n]!;
+    const inX = curr.x - prev.x;
+    const inZ = curr.z - prev.z;
+    const outX = next.x - curr.x;
+    const outZ = next.z - curr.z;
+    const inLen = Math.hypot(inX, inZ) || 1;
+    const outLen = Math.hypot(outX, outZ) || 1;
+    const cross = (inX / inLen) * (outZ / outLen) - (inZ / inLen) * (outX / outLen);
+    return Math.abs(cross) > threshold;
+  });
 }

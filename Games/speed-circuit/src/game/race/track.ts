@@ -1,9 +1,10 @@
 import { raceTrack, type RaceTrack } from "@jgengine/core/game/race";
 
-import { cumulativeLengths, sampleCheckpoints, stadiumCenterline, tangentAt, type Vec2 } from "./geometry";
+import { cornerMask, cumulativeLengths, sampleCheckpoints, stadiumCenterline, tangentAt, type Vec2 } from "./geometry";
 
 export const TRACK_WIDTH = 12;
 export const LAPS = 3;
+export const TRACK_SURFACE_HEIGHT = 0.4;
 
 const STRAIGHT_LENGTH = 70;
 const TURN_RADIUS = 24;
@@ -20,6 +21,8 @@ export const TRACK_LENGTHS = cumulativeLengths(TRACK_CENTERLINE);
 
 export const TRACK_CHECKPOINTS = sampleCheckpoints(TRACK_CENTERLINE, TRACK_LENGTHS, CHECKPOINT_COUNT, TRACK_WIDTH);
 
+export const TRACK_CORNER_MASK: readonly boolean[] = cornerMask(TRACK_CENTERLINE);
+
 export const TRACK: RaceTrack = raceTrack({ checkpoints: TRACK_CHECKPOINTS, laps: LAPS });
 
 const spawnTangent = tangentAt(TRACK_CENTERLINE, TRACK_LENGTHS, 0);
@@ -28,6 +31,6 @@ export const SPAWN_HEADING = Math.atan2(spawnTangent.x, spawnTangent.z);
 
 export const SPAWN_POSITION: readonly [number, number, number] = [
   TRACK_CHECKPOINTS[0]!.center[0],
-  0.5,
+  TRACK_SURFACE_HEIGHT + 0.5,
   TRACK_CHECKPOINTS[0]!.center[2],
 ];
