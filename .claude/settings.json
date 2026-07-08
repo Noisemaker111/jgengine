@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "cat .claude/fanout-reminder.md 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
