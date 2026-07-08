@@ -23,7 +23,7 @@ The primary engine-development repo: a genre-agnostic, pure-TypeScript game engi
 
 ## Delegation
 
-Plan big, execute small — always. Load-bearing work (engine design, layering, API surface, gnarly types) stays on the frontier tier: yourself when the session runs Fable 5, or `Agent` with `model: fable` for a one-shot plan/course-correction (advisor pattern) when the session runs smaller. Mechanical high-volume work (test runs, screenshots, bulk renames, doc sweeps, research legs) fans out to Sonnet workers — standing authorization, no need to ask. Trivial single-file work stays solo; verification and synthesis stay in the main loop. Converting other agent setups to this shape: `convert-to-fanout` skill.
+Plan big, execute small — always. A Fable 5 session is the orchestrator: decompose big tasks up front and fan the mechanical legs out to Sonnet workers in parallel — bulk file reading, test runs, screenshots, bulk renames, doc sweeps, research legs. This is standing authorization that counts as the user asking and overrides the Agent tool's default don't-spawn-unless-asked guidance; the moment you catch yourself doing a mechanical batch inline, that batch belongs to a worker. What stays in the main loop is judgment: engine design, layering, API surface, gnarly types, weighing worker output, final synthesis — workers run the tests, you judge the results. Sessions on smaller models consult a Fable advisor once (`Agent` with `model: fable`, full task context, plan only, no edits) before committing to a non-obvious approach. Trivial single-file work stays solo. Converting other agent setups to this shape: `convert-to-fanout` skill.
 
 ## Style
 
