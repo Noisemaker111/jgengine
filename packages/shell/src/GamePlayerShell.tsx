@@ -80,6 +80,7 @@ import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio
 import { createAudioEngine } from "./audio/audioEngine";
 import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
 import { TimeOfDayDaylight } from "./environment";
+import { applyMaterialOverride } from "./materialOverride";
 import { PointerProbe } from "./pointer/PointerProbe";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import {
@@ -290,7 +291,12 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
 
 function EntityModel({ model }: { model: ModelConfig }) {
   const gltf = useLoader(GLTFLoader, model.url);
-  const scene = useMemo(() => gltf.scene.clone(true), [gltf]);
+  const material = model.material;
+  const scene = useMemo(() => {
+    const cloned = gltf.scene.clone(true);
+    if (material !== undefined) applyMaterialOverride(cloned, material);
+    return cloned;
+  }, [gltf, material]);
   const scale = model.scale ?? 1;
   const baseY = model.y ?? 0;
   const dims = model.dims;

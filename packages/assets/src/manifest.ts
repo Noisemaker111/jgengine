@@ -28,6 +28,8 @@ export interface AssetSource {
   categories: readonly string[];
   download: AssetDownload;
   homepage?: string;
+  /** Direct archive URL tried as a last resort when the primary provider path fails; see `downloadPackArchive`. */
+  mirror?: string;
 }
 
 export interface IndexEntry {

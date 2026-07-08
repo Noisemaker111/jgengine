@@ -328,6 +328,15 @@ export interface VoxelCollisionConfig {
   stepHeight?: number;
 }
 
+/** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */
+export interface ModelMaterialOverride {
+  color?: string;
+  metalness?: number;
+  roughness?: number;
+  emissive?: string;
+  emissiveIntensity?: number;
+}
+
 export interface ModelConfig {
   url: string;
   scale?: number;
@@ -336,6 +345,8 @@ export interface ModelConfig {
   anchor?: "center" | "origin";
   /** Measured footprint/center/minY; supplied automatically when the model resolves through an `@jgengine/assets` catalog. Required for `anchor: "center"` to take effect. */
   dims?: ModelDims;
+  /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
+  material?: ModelMaterialOverride;
 }
 
 /** Movement-control levers for the shell-driven local player walk controller. */

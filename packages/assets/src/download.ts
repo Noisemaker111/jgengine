@@ -2,6 +2,8 @@ import { unzipSync } from "fflate";
 
 import { isScrapeDownload, type AssetSource } from "./manifest";
 
+export type FetchLike = typeof fetch;
+
 export interface ExtractedGlb {
   file: string;
   bytes: Uint8Array;
@@ -37,10 +39,10 @@ function score(candidate: string): number {
   return value;
 }
 
-export async function resolveArchiveUrl(source: AssetSource): Promise<string> {
+export async function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<string> {
   const download = source.download;
   if (!isScrapeDownload(download)) return download.url;
-  const response = await fetch(download.scrape, { redirect: "follow" });
+  const response = await fetchImpl(download.scrape, { redirect: "follow" });
   if (!response.ok) throw new Error(`scrape ${download.scrape} -> HTTP ${response.status}`);
   const html = await response.text();
   const url = findArchiveUrl(html, download.scrape);
@@ -52,10 +54,97 @@ export async function resolveArchiveUrl(source: AssetSource): Promise<string> {
   return url;
 }
 
-export async function downloadArchive(url: string): Promise<Uint8Array> {
-  const response = await fetch(url, { redirect: "follow" });
+export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> {
+  const response = await fetchImpl(url, { redirect: "follow" });
   if (!response.ok) throw new Error(`download ${url} -> HTTP ${response.status}`);
   return new Uint8Array(await response.arrayBuffer());
+}
+
+/**
+ * Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the
+ * archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g.
+ * `https://my-mirror.example.com/kenney/kenney-nature.zip`.
+ */
+export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string {
+  const base = baseUrl.replace(/\/+$/, "");
+  return `${base}/${source.provider}/${source.id}.zip`;
+}
+
+async function verifyPinnedSha(source: AssetSource, archive: Uint8Array): Promise<void> {
+  const download = source.download;
+  if (isScrapeDownload(download) || download.sha256 === undefined) return;
+  const actual = await sha256Hex(archive);
+  if (actual !== download.sha256) {
+    throw new Error(`sha256 mismatch: expected ${download.sha256}, got ${actual}`);
+  }
+}
+
+export interface DownloadPackOptions {
+  /** Explicit mirror base override (CLI `--mirror` / `JGENGINE_ASSETS_MIRROR`), tried before the primary provider path. */
+  mirrorBase?: string;
+  fetchImpl?: FetchLike;
+}
+
+export interface DownloadPackResult {
+  archive: Uint8Array;
+  url: string;
+  /** Every URL attempted, in order, ending with the one that succeeded. */
+  attempted: readonly string[];
+}
+
+/**
+ * Resolves and downloads a pack's archive, trying sources in order until one
+ * succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the
+ * primary provider path (`resolveArchiveUrl`: scrape or pinned URL), (3) the
+ * pack's own `mirror` URL. A pinned `sha256` is verified against whichever
+ * source supplied the bytes; a mismatch is treated as a failed attempt so the
+ * next source in the chain is tried. Throws with every attempted URL and its
+ * failure reason when all sources fail.
+ */
+export async function downloadPackArchive(
+  source: AssetSource,
+  options: DownloadPackOptions = {},
+): Promise<DownloadPackResult> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const attempted: string[] = [];
+  const errors: string[] = [];
+
+  const tryUrl = async (url: string): Promise<DownloadPackResult | undefined> => {
+    attempted.push(url);
+    try {
+      const archive = await downloadArchive(url, fetchImpl);
+      await verifyPinnedSha(source, archive);
+      return { archive, url, attempted };
+    } catch (error) {
+      errors.push(`${url}: ${error instanceof Error ? error.message : String(error)}`);
+      return undefined;
+    }
+  };
+
+  if (options.mirrorBase !== undefined) {
+    const result = await tryUrl(mirrorOverrideUrl(options.mirrorBase, source));
+    if (result !== undefined) return result;
+  }
+
+  try {
+    const primaryUrl = await resolveArchiveUrl(source, fetchImpl);
+    const result = await tryUrl(primaryUrl);
+    if (result !== undefined) return result;
+  } catch (error) {
+    const label = isScrapeDownload(source.download) ? source.download.scrape : source.download.url;
+    errors.push(`${label}: ${error instanceof Error ? error.message : String(error)}`);
+    attempted.push(label);
+  }
+
+  if (source.mirror !== undefined) {
+    const result = await tryUrl(source.mirror);
+    if (result !== undefined) return result;
+  }
+
+  throw new Error(
+    `failed to download ${source.id} from all ${attempted.length} source(s):\n` +
+      errors.map((line) => `  - ${line}`).join("\n"),
+  );
 }
 
 export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
