@@ -26,12 +26,14 @@ const branch = git("rev-parse", "--abbrev-ref", "HEAD") ?? "?";
 const inWorktree = /[\\/]\.git[\\/]worktrees[\\/]/.test(gitDir);
 
 if (inWorktree) {
+  const primaryRoot = gitDir.replace(/[\\/]\.git[\\/]worktrees[\\/].*$/, "");
   emit(
     `Worktree flow OK: this session is in an isolated worktree on branch "${branch}". ` +
       `Keep committing here. When the work is real, push and open a PR (gh pr create --fill); ` +
       `when it's genuinely done and clean, merge it yourself (gh pr merge --squash --delete-branch), ` +
-      `then ExitWorktree (remove) — don't ask the user to merge, and don't merge over doubt. ` +
-      `Echo 🚀 in your reply after a merge so the chat shows it.`,
+      `fast-forward the primary checkout (git -C "${primaryRoot}" pull --ff-only — merging only moves ` +
+      `origin/main, not the local clone), then ExitWorktree (remove) — don't ask the user to merge, ` +
+      `and don't merge over doubt. Echo 🚀 in your reply after a merge so the chat shows it.`,
   );
 }
 
