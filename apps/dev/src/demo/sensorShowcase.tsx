@@ -8,11 +8,11 @@ import type { HiddenStateSource } from "@jgengine/core/sensor/hiddenStateProbe";
 import { localPlayerEntity, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { useSessionRecorder } from "../replay/useSessionRecorder";
-import type { PlayableGame } from "../registry";
-import { FrustumSensorReadout } from "../vision/FrustumSensorHud";
-import { SensorReadoutMeter, useHiddenStateProbe } from "../vision/HiddenStateProbeHud";
-import { RevealHighlights, RevealScreenTint } from "../vision/RevealVision";
+import { useSessionRecorder } from "@jgengine/shell/replay/useSessionRecorder";
+import type { PlayableGame } from "@jgengine/shell/registry";
+import { FrustumSensorReadout } from "@jgengine/shell/vision/FrustumSensorHud";
+import { SensorReadoutMeter, useHiddenStateProbe } from "@jgengine/shell/vision/HiddenStateProbeHud";
+import { RevealHighlights, RevealScreenTint } from "@jgengine/shell/vision/RevealVision";
 
 const HERO = "hero";
 const CULPRIT = "culprit";

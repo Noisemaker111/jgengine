@@ -15,6 +15,10 @@ const REQUIRED_TSCONFIG_PATHS: Record<string, string> = {
 
 const gamesDir = join(process.cwd(), "Games");
 
+const rootScripts =
+  (JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { scripts?: Record<string, string> })
+    .scripts ?? {};
+
 function rel(path: string): string {
   return path.replace(process.cwd() + "\\", "").replace(process.cwd() + "/", "").replaceAll("\\", "/");
 }
@@ -36,6 +40,11 @@ for (const name of readdirSync(gamesDir)) {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { scripts?: Record<string, string> };
   if (packageJson.scripts?.dev === undefined) {
     problems.push(`${rel(packageJsonPath)}: missing a "dev" script to launch the standalone harness`);
+  }
+
+  const rootGameScript = `bun run --cwd Games/${name} dev`;
+  if (rootScripts[`games:${name}`] !== rootGameScript) {
+    problems.push(`package.json: missing root script "games:${name}": "${rootGameScript}"`);
   }
 
   const tsconfigPath = join(gameDir, "tsconfig.json");
@@ -96,7 +105,8 @@ if (problems.length > 0) {
       `and all game-specific modules, ui, and tests live under src/game/.\n` +
       `game.config.ts is the single entry — defineGame({...}) from "@jgengine/shell/defineGame".\n` +
       `Every game is also a standalone dev harness: index.html and vite.config.ts at the game root,\n` +
-      `src/index.css for Tailwind, and a "dev" script in package.json to launch it.\n`,
+      `src/index.css for Tailwind, and a "dev" script in package.json to launch it.\n` +
+      `The root package.json exposes each harness as "games:<id>": "bun run --cwd Games/<id> dev".\n`,
   );
   process.exit(1);
 }

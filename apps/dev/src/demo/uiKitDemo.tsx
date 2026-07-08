@@ -63,7 +63,7 @@ import {
   type GameUiTheme,
 } from "@jgengine/react/gameui";
 
-import type { PlayableGame } from "../registry";
+import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 
 const THEMES: readonly GameUiTheme[] = [emberTheme, synthwaveTheme, fieldkitTheme];

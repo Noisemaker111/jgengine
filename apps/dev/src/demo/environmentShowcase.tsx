@@ -7,8 +7,8 @@ import {
   terrain,
 } from "@jgengine/core/world/features";
 
-import { EnvironmentScene } from "../environment/EnvironmentScene";
-import type { PlayableGame } from "../registry";
+import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 
 export const showcaseEnvironment = environment({

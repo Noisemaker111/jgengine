@@ -19,11 +19,11 @@ import {
 } from "@jgengine/core/world/placedStructureStore";
 import type { TerraformMode } from "@jgengine/core/world/terraform";
 
-import { createPointerService } from "../pointer/pointerService";
-import { EditableGround } from "../terrain/EditableGround";
-import { TerraformBrushCursor } from "../terrain/TerraformBrushCursor";
-import { PlacementGhost } from "../structures/PlacementGhost";
-import type { PlayableGame } from "../registry";
+import { createPointerService } from "@jgengine/shell/pointer/pointerService";
+import { EditableGround } from "@jgengine/shell/terrain/EditableGround";
+import { TerraformBrushCursor } from "@jgengine/shell/terrain/TerraformBrushCursor";
+import { PlacementGhost } from "@jgengine/shell/structures/PlacementGhost";
+import type { PlayableGame } from "@jgengine/shell/registry";
 
 const BOUNDS: Aabb = { minX: -20, minZ: -20, maxX: 20, maxZ: 20 };
 const FOOTPRINT = { w: 3, d: 3 };

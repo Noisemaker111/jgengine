@@ -24,5 +24,6 @@
       "@jgengine/convex/*": ["../../packages/convex/src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }

@@ -5,7 +5,7 @@ import { Page } from "../components/Layout";
 import { GAMES } from "../content/games";
 import { REPO_URL } from "../lib/site";
 
-export const Route = createFileRoute("/games")({
+export const Route = createFileRoute("/games/")({
   head: () => ({
     meta: [
       { title: "Games — JGengine" },
@@ -48,7 +48,7 @@ function GamesPage() {
               </a>
               . On the next deploy it appears here and becomes playable at{" "}
               <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-xs text-cyan-300">
-                /play/?game=&lt;id&gt;
+                /games/&lt;id&gt;
               </code>{" "}
               — no registry, no wiring.
             </p>

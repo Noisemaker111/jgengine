@@ -79,7 +79,7 @@ export const GAMES: Game[] = Object.keys(gamePackages)
     const details = GAME_DETAILS[id] ?? FALLBACK_DETAILS;
     return {
       id,
-      href: `/play/?game=${id}`,
+      href: `/games/${id}`,
       ...details,
       title: details.title ?? titleCase(id),
     };

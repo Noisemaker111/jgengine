@@ -18,7 +18,6 @@ const gameEntries = Object.fromEntries(
 );
 
 const gameRegistry: GameRegistry = {
-  demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
   ...gameEntries,
 };
 
@@ -34,7 +33,7 @@ function DesktopApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
   useEffect(() => {
-    const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
+    const load = gameRegistry[GAME_ID] ?? gameRegistry["voxel-mine"];
     if (load === undefined) return;
     void load().then((loaded) => {
       setMultiplayer(

@@ -21,7 +21,13 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
   build: { target: "es2022" },
-  server: { host: true },
+  server: {
+    host: true,
+    hmr:
+      process.env.JG_PLAY_HMR_PORT === undefined
+        ? undefined
+        : { host: "localhost", clientPort: Number(process.env.JG_PLAY_HMR_PORT) },
+  },
   resolve: {
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
