@@ -9,6 +9,7 @@ import { defineConfig, type Plugin } from "vite";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
+const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta.url));
 
 let gamePlayerBuilt = false;
 
@@ -29,5 +30,11 @@ const gamesPlayerPlugin = (): Plugin => ({
 
 export default defineConfig({
   server: { port: 3000, fs: { allow: [repoRoot] } },
+  resolve: {
+    alias: [
+      { find: /^@jgengine\/github$/, replacement: `${githubSrc}/index.ts` },
+      { find: /^@jgengine\/github\/(.*)$/, replacement: `${githubSrc}/$1` },
+    ],
+  },
   plugins: [tailwindcss(), tanstackStart(), nitro(), viteReact(), gamesPlayerPlugin()],
 });
