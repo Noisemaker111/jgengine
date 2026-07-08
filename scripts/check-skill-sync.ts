@@ -2,8 +2,17 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
-const skill = join(root, "skills", "jgengine-api", "SKILL.md");
-const text = readFileSync(skill, "utf8");
+const skillDir = join(root, "skills", "jgengine-api");
+const refDir = join(skillDir, "reference");
+const refFiles = existsSync(refDir)
+  ? readdirSync(refDir)
+      .filter((n) => n.endsWith(".md"))
+      .sort()
+  : [];
+const text = [
+  readFileSync(join(skillDir, "SKILL.md"), "utf8"),
+  ...refFiles.map((n) => readFileSync(join(refDir, n), "utf8")),
+].join("\n");
 
 const PKG_DIRS: Record<string, string> = {
   core: "packages/core/src",
@@ -75,5 +84,6 @@ if (problems.length > 0) {
 
 console.log(
   `check-skill-sync: clean — ${seen.size} import paths resolve, ` +
-    `${coreDomains.length - INTERNAL_DOMAINS.size} public core domains covered`,
+    `${coreDomains.length - INTERNAL_DOMAINS.size} public core domains covered ` +
+    `(SKILL.md + ${refFiles.length} reference module${refFiles.length === 1 ? "" : "s"})`,
 );

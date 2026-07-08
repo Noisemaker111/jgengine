@@ -14,6 +14,15 @@ Operational facts discovered the hard way. Update this when you learn something 
 - **Skills are installed via `npx skills add Noisemaker111/jgengine`.**
 - **Pushing to `main` does NOT auto-update existing skill installs.** Users must run `npx skills update` to pull descriptor/content changes.
 
+## Verification & screenshots
+
+- **A hung `bun run shoot` is never re-run in the foreground.** Chromium/Playwright on heavy WebGL scenes hangs, crashes the GPU, or emits corrupt output. Report it once, fall back to the `summarizeEnvironment` world test to prove the scene resolved, and retry the shot only if the user asks. Full ladder: the `jgengine-verify` skill.
+- **Silently-unstyled game UI means a missing `@source` entry** in `apps/dev/src/index.css` (or the game's own `index.css`) — Tailwind never scanned the HUD's classes, so they compile to nothing.
+
+## Worktree / remote sessions
+
+- **Return the primary checkout to `main` after entering a worktree.** Remote sessions arrive checked out onto the task branch, not `main`; once that branch is pushed, `git -C <repo root> switch main`. Never leave the primary parked on a branch with unpushed local-only commits — a reclaimed container takes them with it. (Full rule: root `CLAUDE.md`.)
+
 ## Environment
 
 - **Lefthook is missing in this shell** but git commits still succeed; the warning is harmless.

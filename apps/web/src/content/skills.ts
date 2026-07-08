@@ -4,6 +4,18 @@ import newgameMd from "../../../../skills/jgengine-newgame/SKILL.md?raw";
 import uiMd from "../../../../skills/jgengine-ui/SKILL.md?raw";
 import verifyMd from "../../../../skills/jgengine-verify/SKILL.md?raw";
 
+const apiReferenceModules = import.meta.glob(
+  "../../../../skills/jgengine-api/reference/*.md",
+  { query: "?raw", import: "default", eager: true },
+) as Record<string, string>;
+
+const apiFullMd = [
+  apiMd,
+  ...Object.keys(apiReferenceModules)
+    .sort()
+    .map((path) => apiReferenceModules[path]),
+].join("\n\n");
+
 export type Skill = {
   slug: string;
   name: string;
@@ -30,7 +42,7 @@ function parse(slug: string, raw: string): Skill {
 
 export const SKILLS: Skill[] = [
   parse("jgengine-newgame", newgameMd),
-  parse("jgengine-api", apiMd),
+  parse("jgengine-api", apiFullMd),
   parse("jgengine-ui", uiMd),
   parse("jgengine-assets", assetsMd),
   parse("jgengine-verify", verifyMd),
