@@ -149,6 +149,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/mine-drop": {
+      "name": "@games/mine-drop",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/platform-hopper": {
       "name": "@games/platform-hopper",
       "version": "0.1.0",
@@ -695,6 +718,8 @@
     "@games/loot-shooter": ["@games/loot-shooter@workspace:Games/loot-shooter"],
 
     "@games/maze-muncher": ["@games/maze-muncher@workspace:Games/maze-muncher"],
+
+    "@games/mine-drop": ["@games/mine-drop@workspace:Games/mine-drop"],
 
     "@games/platform-hopper": ["@games/platform-hopper@workspace:Games/platform-hopper"],
 
