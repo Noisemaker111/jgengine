@@ -126,6 +126,75 @@ describe("impulse response", () => {
   });
 });
 
+describe("sphere shape", () => {
+  test("addBody defaults to a box; a sphere fills all half-extent columns with its radius", () => {
+    const w = world();
+    const box = w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.7, 0.9] });
+    const ball = w.addBody({ position: [3, 5, 0], shape: "sphere", radius: 0.4 });
+    expect(w.shape[box]!).toBe(0);
+    expect(w.shape[ball]!).toBe(1);
+    expect(w.halfX[ball]!).toBeCloseTo(0.4, 5);
+    expect(w.halfY[ball]!).toBeCloseTo(0.4, 5);
+    expect(w.halfZ[ball]!).toBeCloseTo(0.4, 5);
+  });
+
+  test("a dropped sphere falls and rests on a static floor box", () => {
+    const w = world();
+    w.addBody({ position: [0, 1, 0], halfExtents: [4, 1, 4], static: true });
+    const ball = w.addBody({ position: [0.2, 8, 0.1], shape: "sphere", radius: 0.5 });
+    frames(w, 500);
+    expect(w.posY[ball]!).toBeCloseTo(2.5, 1);
+    expect(Math.abs(w.velY[ball]!)).toBeLessThan(0.05);
+  });
+
+  test("overlapping spheres separate along their center line", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [0, 5, 0], shape: "sphere", radius: 0.5 });
+    const b = w.addBody({ position: [0.4, 5.3, 0], shape: "sphere", radius: 0.5 });
+    frames(w, 300);
+    const dx = w.posX[b]! - w.posX[a]!;
+    const dy = w.posY[b]! - w.posY[a]!;
+    const dz = w.posZ[b]! - w.posZ[a]!;
+    expect(Math.sqrt(dx * dx + dy * dy + dz * dz)).toBeGreaterThan(0.9);
+    expect(dy / dx).toBeCloseTo(0.3 / 0.4, 1);
+    expect(Math.abs(dz)).toBeLessThan(1e-3);
+  });
+
+  test("fully coincident spheres still separate instead of dividing by zero", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [0, 5, 0], shape: "sphere", radius: 0.5 });
+    const b = w.addBody({ position: [0, 5, 0], shape: "sphere", radius: 0.5 });
+    frames(w, 300);
+    expect(Math.abs(w.posY[b]! - w.posY[a]!)).toBeGreaterThan(0.5);
+  });
+
+  test("a sphere overlapping a static box is pushed out through the nearest face", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5], static: true });
+    const ball = w.addBody({ position: [0.8, 5, 0], shape: "sphere", radius: 0.5 });
+    frames(w, 300);
+    expect(w.posX[ball]!).toBeGreaterThan(0.95);
+    expect(w.posY[ball]!).toBeCloseTo(5, 1);
+    expect(Math.abs(w.posZ[ball]!)).toBeLessThan(1e-3);
+  });
+
+  test("a sphere centered inside a box resolves along the minimum-penetration axis", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    w.addBody({ position: [0, 5, 0], halfExtents: [2, 0.5, 2], static: true });
+    const ball = w.addBody({ position: [0.1, 5.2, 0], shape: "sphere", radius: 0.4 });
+    frames(w, 400);
+    expect(w.posY[ball]!).toBeGreaterThan(5.7);
+  });
+
+  test("a box resting on boxes is unaffected by the sphere path (default shape stays box)", () => {
+    const w = world();
+    const box = w.addBody({ position: [0, 10, 0], halfExtents: [0.5, 0.5, 0.5] });
+    frames(w, 400);
+    expect(w.shape[box]!).toBe(0);
+    expect(w.posY[box]!).toBeCloseTo(0.5, 1);
+  });
+});
+
 describe("determinism", () => {
   test("two identical seeded worlds evolve bit-for-bit the same", () => {
     const build = () => {
@@ -136,6 +205,28 @@ describe("determinism", () => {
           halfExtents: [0.5, 0.5, 0.5],
           velocity: [((i % 4) - 2) * 2, 0, ((i % 3) - 1) * 2],
         });
+      }
+      return w;
+    };
+    const a = build();
+    const b = build();
+    frames(a, 250);
+    frames(b, 250);
+    for (let i = 0; i < a.count; i += 1) {
+      expect(a.posX[i]!).toBe(b.posX[i]!);
+      expect(a.posY[i]!).toBe(b.posY[i]!);
+      expect(a.posZ[i]!).toBe(b.posZ[i]!);
+    }
+  });
+
+  test("worlds mixing boxes and spheres evolve bit-for-bit the same", () => {
+    const build = () => {
+      const w = world({ gravity: -25 });
+      for (let i = 0; i < 300; i += 1) {
+        const position: [number, number, number] = [((i * 5) % 16) - 8, 1 + (i % 7), ((i * 11) % 16) - 8];
+        const velocity: [number, number, number] = [((i % 4) - 2) * 2, 0, ((i % 3) - 1) * 2];
+        if (i % 3 === 0) w.addBody({ position, shape: "sphere", radius: 0.5, velocity });
+        else w.addBody({ position, halfExtents: [0.5, 0.5, 0.5], velocity });
       }
       return w;
     };

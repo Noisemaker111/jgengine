@@ -3,6 +3,7 @@ import type { TouchControlsConfig } from "../input/touchScheme";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
+import type { SkyEnvironmentConfig } from "../world/features";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
@@ -375,6 +376,46 @@ export interface ObjectStyle {
   hidden?: boolean;
 }
 
+export interface AmbientLightingConfig {
+  color?: string;
+  intensity?: number;
+}
+
+export interface DirectionalLightingConfig {
+  color?: string;
+  intensity?: number;
+  position: readonly [number, number, number];
+  castShadow?: boolean;
+}
+
+export interface HemisphereLightingConfig {
+  skyColor?: string;
+  groundColor?: string;
+  intensity?: number;
+}
+
+/** Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied. */
+export interface LightingConfig {
+  ambient?: AmbientLightingConfig;
+  directional?: readonly DirectionalLightingConfig[];
+  hemisphere?: HemisphereLightingConfig;
+}
+
+export interface BackdropFogConfig {
+  color?: string;
+  near?: number;
+  far?: number;
+  /** Exponential (`FogExp2`) falloff instead of linear near/far; when set, `near`/`far` are ignored. */
+  density?: number;
+}
+
+/** Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6). */
+export interface BackdropConfig {
+  background?: string;
+  sky?: SkyEnvironmentConfig;
+  fog?: BackdropFogConfig;
+}
+
 /** Movement-control levers for the shell-driven local player walk controller. */
 export interface PlayerMovementConfig {
   /** "free" (default) moves camera-relative across the plane; "axis" locks travel to one world axis; "grid" snaps each committed position to cell centers. */
@@ -446,6 +487,10 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   collision?: VoxelCollisionConfig;
   /** Movement-control levers (axis/grid constraints, object collision, pre-commit hook) for the shell-driven walk controller. */
   movement?: PlayerMovementConfig;
+  /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
+  lighting?: LightingConfig;
+  /** Generic background/sky/fog (#207.6), applied for any world kind including a custom `environment` component. */
+  backdrop?: BackdropConfig;
 }
 
 export function worldHealthBarAllowsRole(

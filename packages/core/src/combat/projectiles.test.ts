@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { createEffectSystem, type CombatSpatialDeps, type ReceiveMap } from "@jgengine/core/combat/effects";
 import { createProjectileSystem } from "@jgengine/core/combat/projectiles";
+import { createBallisticSweep, type BallisticSweep } from "@jgengine/core/physics/ballisticSweep";
+import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import { seedStatValues, type StatCatalog, type StatValueMap } from "@jgengine/core/scene/entityStats";
 import { distanceBetween } from "@jgengine/core/scene/spatial";
 
@@ -33,6 +35,7 @@ function createRange(
   losBlocked: string[] = [],
   objects?: RangeObject[],
   halfExtents?: (catalogId: string) => [number, number, number] | null,
+  sweepBallistic?: BallisticSweep,
 ) {
   const stats: Record<string, StatValueMap> = {};
   for (const [instanceId, entity] of Object.entries(entities)) {
@@ -62,6 +65,7 @@ function createRange(
     ...(objects !== undefined
       ? { objects: { list: () => objects, ...(halfExtents !== undefined ? { halfExtents } : {}) } }
       : {}),
+    ...(sweepBallistic !== undefined ? { sweepBallistic } : {}),
   });
   return { projectiles, stats };
 }
@@ -175,6 +179,64 @@ describe("projectile system", () => {
     expect(settle.at[1]).toBeCloseTo(0);
     expect(settle.at[2]).toBeGreaterThan(5);
     expect(stats["enemy"]!["health"]!.current).toBe(100);
+  });
+});
+
+describe("physics-integrated ballistic settle", () => {
+  const grenadeShot = {
+    from: "shooter",
+    via: { item: "grenade" },
+    aim: { origin: [0, 1, 0] as [number, number, number], direction: [0, 1, 1] as [number, number, number] },
+    effect: "damage",
+  };
+
+  function settleGrenade(sweepBallistic?: BallisticSweep): [number, number, number] {
+    const { projectiles } = createRange({}, [], undefined, undefined, sweepBallistic);
+    const shotId = projectiles.fireProjectile(grenadeShot);
+    const settle = projectiles.settleProjectile(shotId);
+    if (settle.status !== "settled") throw new Error(settle.reason);
+    return settle.at;
+  }
+
+  test("a sweep hit settles the shot at the impact point", () => {
+    const at = settleGrenade(() => ({ point: [1, 2, 3], time: 0.5 }));
+    expect(at).toEqual([1, 2, 3]);
+  });
+
+  test("a sweep returning null falls back to the closed-form landing", () => {
+    const closedForm = settleGrenade();
+    const withNullSweep = settleGrenade(() => null);
+    expect(withNullSweep).toEqual(closedForm);
+  });
+
+  test("the sweep receives the arc parameters and flight cap", () => {
+    const calls: { origin: readonly number[]; velocity: readonly number[]; gravity: number; maxTime: number }[] = [];
+    settleGrenade((origin, velocity, gravity, maxTime) => {
+      calls.push({ origin, velocity, gravity, maxTime });
+      return null;
+    });
+    expect(calls).toHaveLength(1);
+    const captured = calls[0]!;
+    expect(captured.origin).toEqual([0, 1, 0]);
+    expect(captured.velocity[1]!).toBeCloseTo(10 / Math.sqrt(2), 4);
+    expect(captured.velocity[2]!).toBeCloseTo(10 / Math.sqrt(2), 4);
+    expect(captured.gravity).toBeCloseTo(9.8, 5);
+    expect(captured.maxTime).toBeGreaterThan(1.5);
+    expect(captured.maxTime).toBeLessThan(1.7);
+  });
+
+  test("a PhysicsWorld wall in the arc settles the shot at the wall, not the closed-form landing", () => {
+    const world = new PhysicsWorld({
+      capacity: 16,
+      bounds: { min: [-20, 0, -20], max: [20, 40, 20] },
+      cellSize: 1,
+    });
+    world.addBody({ position: [0, 2, 5], halfExtents: [4, 3, 0.25], static: true });
+    const closedForm = settleGrenade();
+    expect(closedForm[2]).toBeGreaterThan(10);
+    const at = settleGrenade(createBallisticSweep(world));
+    expect(at[2]).toBeGreaterThan(4);
+    expect(at[2]).toBeLessThan(5.5);
   });
 });
 

@@ -74,6 +74,7 @@ export function createPointerService(): PointerService {
         object: tagOf(hit.object, POINTER_OBJECT_KEY),
         ...(uv !== undefined ? { uv } : {}),
         material: standardMaterialSample(mesh.material),
+        ...(hit.instanceId !== undefined ? { instanceId: hit.instanceId } : {}),
       };
     }
     const grounded = raycaster.ray.intersectPlane(groundPlane, scratch);
