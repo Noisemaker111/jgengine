@@ -2,7 +2,7 @@ import type { ActionCodesMap } from "../input/actionBindings";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { SaveConfig } from "../runtime/save";
-import type { AssetCatalog, ModelAssetRef } from "../scene/assetCatalog";
+import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../scene/assetCatalog";
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
 import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
@@ -51,7 +51,9 @@ export interface GameDefinition<
 export type GameDefinitionConfig<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
-> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene">;
+> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & {
+  assets?: AssetCatalog<TAssetRef>;
+};
 
 export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
   config: GameDefinitionConfig<TAssetRef, TMultiplayer>,
@@ -59,5 +61,5 @@ export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
   if (config.name.trim().length === 0) {
     throw new Error("defineGame: name must be non-empty");
   }
-  return { ...config, scene: createEntityStore() };
+  return { ...config, assets: config.assets ?? createAssetCatalog<TAssetRef>(), scene: createEntityStore() };
 }
