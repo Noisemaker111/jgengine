@@ -57,4 +57,19 @@ describe("createPoseSyncGate", () => {
     const rotated: PlayerPose = { ...jumped, rotationPitch: TUNING.rotationEpsilon + 0.001 };
     expect(gate.evaluate(rotated, 200)).toBe(true);
   });
+
+  test("appearance change forces a send despite unmoved position, subject to the interval", () => {
+    const gate = createPoseSyncGate(TUNING);
+    expect(gate.evaluate(BASE_POSE, 0)).toBe(true);
+    const appeared: PlayerPose = { ...BASE_POSE, appearance: { skin: "red" } };
+    expect(gate.evaluate(appeared, 10)).toBe(false);
+    expect(gate.evaluate(appeared, TUNING.minIntervalMs)).toBe(true);
+  });
+
+  test("unchanged appearance does not force a send", () => {
+    const gate = createPoseSyncGate(TUNING);
+    const withAppearance: PlayerPose = { ...BASE_POSE, appearance: { skin: "red" } };
+    expect(gate.evaluate(withAppearance, 0)).toBe(true);
+    expect(gate.evaluate({ ...withAppearance }, TUNING.minIntervalMs)).toBe(false);
+  });
 });

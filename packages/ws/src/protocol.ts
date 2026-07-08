@@ -11,12 +11,15 @@ export const WS_PROTOCOL_VERSION = 1;
 
 export type WsChannel = "server" | "player" | "feed" | "presence" | "chat";
 
+export type WsAppearance = Record<string, string>;
+
 export type WsPose = {
   x: number;
   y: number;
   z: number;
   rotationY: number;
   rotationPitch: number;
+  appearance?: WsAppearance;
 };
 
 export type WsPresenceRow = {
@@ -25,6 +28,7 @@ export type WsPresenceRow = {
   rotationY: number;
   rotationPitch: number;
   lastSeenAt: number;
+  appearance?: WsAppearance;
 };
 
 export type WsChatMessage = {
@@ -97,6 +101,10 @@ function isWsChannel(value: unknown): value is WsChannel {
   );
 }
 
+function isWsAppearance(value: unknown): value is WsAppearance {
+  return isRecord(value) && Object.values(value).every((slot) => typeof slot === "string");
+}
+
 function isPose(value: unknown): value is WsPose {
   return (
     isRecord(value) &&
@@ -104,7 +112,8 @@ function isPose(value: unknown): value is WsPose {
     typeof value.y === "number" &&
     typeof value.z === "number" &&
     typeof value.rotationY === "number" &&
-    typeof value.rotationPitch === "number"
+    typeof value.rotationPitch === "number" &&
+    (value.appearance === undefined || isWsAppearance(value.appearance))
   );
 }
 

@@ -68,6 +68,43 @@ describe("decidePoseSync", () => {
     expect(d.changed).toBe(true);
     expect(d.rotationY).toBe(1.2);
   });
+
+  test("appearance passes through on accepted updates", () => {
+    const d = decidePoseSync(CURRENT, { position: { x: 1, z: 1 }, appearance: { skin: "red" } }, RULES, 2_000);
+    expect(d.changed).toBe(true);
+    expect(d.appearance).toEqual({ skin: "red" });
+  });
+
+  test("appearance-only change is accepted despite unmoved position", () => {
+    const withAppearance = { ...CURRENT, appearance: { skin: "blue" } };
+    const d = decidePoseSync(
+      withAppearance,
+      { position: { x: 0, z: 0 }, appearance: { skin: "red" } },
+      RULES,
+      2_000,
+    );
+    expect(d.changed).toBe(true);
+    expect(d.position.x).toBe(0);
+    expect(d.appearance).toEqual({ skin: "red" });
+  });
+
+  test("unchanged appearance does not force a write", () => {
+    const withAppearance = { ...CURRENT, appearance: { skin: "blue" } };
+    const d = decidePoseSync(
+      withAppearance,
+      { position: { x: 0, z: 0 }, appearance: { skin: "blue" } },
+      RULES,
+      2_000,
+    );
+    expect(d.changed).toBe(false);
+  });
+
+  test("omitted appearance keeps the stored value", () => {
+    const withAppearance = { ...CURRENT, appearance: { skin: "blue" } };
+    const d = decidePoseSync(withAppearance, { position: { x: 0, z: 0 } }, RULES, 2_000);
+    expect(d.changed).toBe(false);
+    expect(d.appearance).toEqual({ skin: "blue" });
+  });
 });
 
 describe("shouldPersistWorldSnapshot", () => {

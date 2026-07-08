@@ -19,6 +19,12 @@ test("client messages round-trip through the codec", () => {
     { v: 1, t: "subscribe", id: 6, channel: "feed", serverId: "srv-1", action: "kill" },
     { v: 1, t: "unsubscribe", id: 7, channel: "server", serverId: "srv-1" },
     { v: 1, t: "pose", serverId: "srv-1", pose: { x: 1, y: 0, z: 2, rotationY: 0.5, rotationPitch: 0 } },
+    {
+      v: 1,
+      t: "pose",
+      serverId: "srv-1",
+      pose: { x: 1, y: 0, z: 2, rotationY: 0.5, rotationPitch: 0, appearance: { skin: "blue", hat: "top" } },
+    },
     { v: 1, t: "join", id: 8, gameId: "wow", attributes: { visibility: "private", joinCode: "ABC123" } },
     { v: 1, t: "joinByCode", id: 9, gameId: "wow", code: "ABC123" },
     { v: 1, t: "browse", id: 10, gameId: "wow", filter: { mode: "ranked", notFull: true }, limit: 5 },
@@ -46,6 +52,22 @@ test("server messages round-trip through the codec", () => {
     {
       v: 1,
       t: "update",
+      channel: "presence",
+      serverId: "srv-1",
+      data: [
+        {
+          userId: "alice",
+          position: { x: 0, y: 0, z: 0 },
+          rotationY: 0,
+          rotationPitch: 0,
+          lastSeenAt: 1,
+          appearance: { skin: "blue" },
+        },
+      ],
+    },
+    {
+      v: 1,
+      t: "update",
       channel: "chat",
       serverId: "srv-1",
       action: "global",
@@ -63,6 +85,16 @@ test("decoder rejects garbage, wrong versions, and malformed fields", () => {
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "unknown", id: 1 }))).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "hello", id: "1", userId: "a" }))).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { x: 1 } }))).toBeNull();
+  expect(
+    decodeWsClientMessage(
+      JSON.stringify({
+        v: 1,
+        t: "pose",
+        serverId: "s",
+        pose: { x: 1, y: 0, z: 0, rotationY: 0, rotationPitch: 0, appearance: { skin: 5 } },
+      }),
+    ),
+  ).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "joinByCode", id: 1, gameId: "g" }))).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "browse", id: 1 }))).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "chatSend", id: 1, serverId: "s", channelId: "g" }))).toBeNull();

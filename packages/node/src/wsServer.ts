@@ -114,6 +114,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
       rotationY: pose.rotationY,
       rotationPitch: pose.rotationPitch ?? 0,
       lastSeenAt: pose.lastSeenAtMs ?? 0,
+      ...(pose.appearance !== undefined ? { appearance: pose.appearance } : {}),
     }));
   };
 
@@ -254,6 +255,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
         position: { x: pose.x, y: pose.y, z: pose.z },
         rotationY: pose.rotationY,
         rotationPitch: pose.rotationPitch,
+        appearance: pose.appearance,
         lastSeenAtMs: timestamp,
       });
       historyFor(serverId).record(connection.userId, timestamp, { x: pose.x, y: pose.y, z: pose.z });
@@ -262,7 +264,12 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
     }
     const decision = decidePoseSync(
       current,
-      { position: { x: pose.x, y: pose.y, z: pose.z }, rotationY: pose.rotationY, rotationPitch: pose.rotationPitch },
+      {
+        position: { x: pose.x, y: pose.y, z: pose.z },
+        rotationY: pose.rotationY,
+        rotationPitch: pose.rotationPitch,
+        appearance: pose.appearance,
+      },
       poseRules,
       timestamp,
     );
@@ -271,6 +278,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
         position: decision.position,
         rotationY: decision.rotationY,
         rotationPitch: decision.rotationPitch,
+        appearance: decision.appearance,
         lastSeenAtMs: timestamp,
       });
       historyFor(serverId).record(connection.userId, timestamp, decision.position);
