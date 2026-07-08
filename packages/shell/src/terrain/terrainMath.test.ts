@@ -37,7 +37,7 @@ describe("terrain primitives", () => {
     expect(normalizeHeightBlend(1, 0, 2)).toBeCloseTo(0.5);
     expect(normalizeHeightBlend(-5, 0, 2)).toBe(0);
     expect(normalizeHeightBlend(5, 0, 2)).toBe(1);
-    expect(normalizeHeightBlend(0, 0, 0)).toBe(0);
+    expect(normalizeHeightBlend(0, 0, 0)).toBe(0.5);
     expect(Number.isNaN(normalizeHeightBlend(0, 0, 0))).toBe(false);
   });
 

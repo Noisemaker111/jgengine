@@ -36,7 +36,7 @@ export interface TerrainVertexColorOptions {
 
 export function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number {
   const range = maxHeight - minHeight;
-  if (range === 0) return 0;
+  if (range <= 1e-6) return 0.5;
   return THREE.MathUtils.clamp((height - minHeight) / range, 0, 1);
 }
 

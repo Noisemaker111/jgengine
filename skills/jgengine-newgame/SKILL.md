@@ -105,7 +105,7 @@ The most common "make an FPS / looter-shooter" setup is a handful of engine swit
 - **Enemy health bars**: `worldHealthBars: true` passed to `defineGame({...})` — the shell floats a bar over every non-local entity that carries the health stat. No screen-space projection math.
 - **Damage numbers**: automatic — every applied damage/heal effect emits `entity.floatText`, which the shell renders as rising numbers. No per-game floating-combat-text component (`ctx.scene.entity.floatText(...)` exists for crits/pickups if you want extras).
 - **Death / level-up / loot toast**: headless `DeathScreen`, `LevelUpFlash`, `ToastStack` from `@jgengine/react` (bind the toast to `loot.granted`). Theme them; don't rebuild them.
-- **Known gap — spawn on the surface**: the engine does **not** yet snap spawns to terrain height (core owns no terrain geometry — the ground mesh lives in the shell). On non-flat ground the game must sample its own ground height before `spawn` for now, or spawn on a `flat()` arena. Track it honestly; don't ship enemies clipping into hillsides and call it done.
+- **Spawn on the surface**: `ctx.world.groundHeightAt(x, z)` is the canonical terrain sampler for the game's declared world (`groundFieldFor` in `@jgengine/core/world/terrain`); the shell grounds the local player's pose and `environment()` structures with the same field automatically. Every other spawn, placement, and waypoint y is still the game's call — pass it through `groundHeightAt`, never hardcode y = 0 on a world with relief.
 
 One game is a probe; if a second first-person game needs this same bundle, promote the recipe to an engine preset. Until then it is a recipe, not a `defineGame` field.
 

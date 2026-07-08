@@ -61,6 +61,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     entitySounds,
     objectSounds,
     worldItem,
+    collision,
     ...engineFields
   } = config;
 
@@ -93,5 +94,6 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     entitySounds,
     objectSounds,
     worldItem,
+    collision,
   };
 }

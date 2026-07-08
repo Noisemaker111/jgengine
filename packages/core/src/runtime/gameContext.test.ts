@@ -3,6 +3,8 @@ import { describe, expect, test } from "bun:test";
 import { defineGame } from "../game/defineGame";
 import type { EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { environment, terrain } from "../world/features";
+import { resolveTerrainField } from "../world/terrain";
 import { createGameContext, type GameContextContent } from "./gameContext";
 
 const CONTENT: GameContextContent = {
@@ -61,6 +63,24 @@ function makeContext() {
 }
 
 describe("createGameContext", () => {
+  test("world.groundHeightAt samples the declared environment terrain and is flat without one", () => {
+    const descriptor = terrain({ height: 2.4, seed: "ctx-ground" });
+    const ctx = createGameContext({
+      definition: defineGame({
+        name: "GroundGame",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+        world: environment({ terrain: descriptor }),
+      }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+    });
+    const reference = resolveTerrainField(descriptor);
+    expect(ctx.world.groundHeightAt(7.5, -19)).toBe(reference.sampleHeight(7.5, -19));
+    expect(ctx.world.ground.sampleNormal(7.5, -19)).toEqual(reference.sampleNormal(7.5, -19));
+    expect(makeContext().world.groundHeightAt(7.5, -19)).toBe(0);
+  });
+
   test("spawn seeds pool stats from the entity catalog", () => {
     const ctx = makeContext();
     const id = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });

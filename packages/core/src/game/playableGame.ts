@@ -276,6 +276,25 @@ export interface WorldItemRenderConfig {
   pickupRadius?: number;
   /** Beam height above the item's ground position. Default 2.5. */
   beamHeight?: number;
+  /** Walk-over collection: the shell grants the nearest dropped item within this radius of the local player each frame (Minecraft-style pickup). `true` uses `pickupRadius`. Omitted/false leaves pickup to `pointer.grabWorldItems` clicks. */
+  autoPickup?: boolean | { radius?: number };
+}
+
+/**
+ * Player-vs-world collision for the first-person controller. Without this the
+ * shell keeps the player on flat ground at y=0. With `voxel: true` the shell
+ * resolves the player as a box against placed scene objects (each treated as a
+ * solid unit cell), so they stand on blocks, fall into holes, and are stopped by
+ * walls — the controller a block-building/mining game needs.
+ */
+export interface VoxelCollisionConfig {
+  voxel: true;
+  /** Half the player box width on each horizontal axis. Default 0.3. */
+  halfWidth?: number;
+  /** Player box height from the feet. Default 1.8. */
+  height?: number;
+  /** Tallest ledge walked up without jumping. Default 0.6. */
+  stepHeight?: number;
 }
 
 export interface ModelConfig {
@@ -325,4 +344,6 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   objectSounds?: Record<string, string>;
   /** Rarity render binding + loot filter for dropped-item ground presentation (#32/#33). */
   worldItem?: WorldItemRenderConfig;
+  /** Player-vs-world collision for the first-person controller (block/voxel worlds). Off by default (flat ground). */
+  collision?: VoxelCollisionConfig;
 }
