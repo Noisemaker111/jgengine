@@ -1,0 +1,17 @@
+{
+  "name": "jgengine-registry",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun ../scripts/build-registry.ts",
+    "check-types": "tsgo --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*",
+    "@jgengine/react": "workspace:*",
+    "react": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19"
+  }
+}

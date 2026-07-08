@@ -12,6 +12,24 @@ const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
 const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta.url));
 
+const registryScript = fileURLToPath(
+  new URL("../../scripts/build-registry.ts", import.meta.url),
+);
+
+let registryBuilt = false;
+
+const registryPlugin = (): Plugin => ({
+  name: "jgengine-registry",
+  buildStart() {
+    if (registryBuilt) return;
+    registryBuilt = true;
+    const result = spawnSync("bun", [registryScript], { stdio: "inherit" });
+    if (result.status !== 0) {
+      throw new Error("jgengine-registry: scripts/build-registry.ts failed");
+    }
+  },
+});
+
 let gamePlayerBuilt = false;
 
 const gamesPlayerPlugin = (): Plugin => ({
@@ -81,6 +99,7 @@ export default defineConfig({
     tanstackStart({ prerender: { enabled: true, crawlLinks: true } }),
     nitro({ devServer: { runner: "self" } }),
     viteReact(),
+    registryPlugin(),
     gamesPlayerPlugin(),
     gamesPlayerDevPlugin(),
   ],

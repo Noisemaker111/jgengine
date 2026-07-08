@@ -18,14 +18,12 @@ The primary engine-development repo: a genre-agnostic, pure-TypeScript game engi
 
 - bun workspaces: `packages/*` (the eight `@jgengine/*` packages, consumers import by path), `Games/*` (private, source-consumed, one directory per game, built via the `harvest-game` skill), `apps/*` (`dev` = Vite game runner + screenshot target, games auto-register from `Games/*` via a glob in `apps/dev/src/main.tsx` — no manual registry entry; root `bun dev` runs the website where every game is playable at `/games/<id>` (the page embeds the runner from its internal `/play` mount, proxied in dev, static in prod), `bun run dev:runner` runs the runner alone, `bun run games:<id>` plays one game standalone; `desktop` = Tauri wrapper; `web` = jgengine.com), `examples/*` (deployable host examples).
 - The compiler is `tsgo` (`@typescript/native-preview`), not `tsc`. Strict TS everywhere; no `any` escapes in engine code.
-- `skills/` is the spec — build games from these five, not by copying other games (`check-types` also validates that the skills match the real API surface):
+- `skills/` is the spec — build games from these three, not by copying other games (`check-types` also validates that the skills match the real API surface):
 
   | Skill | Role |
   | --- | --- |
   | `jgengine-newgame` | Blueprint + phased full build |
-  | `jgengine-api` | Engine surface |
-  | `jgengine-ui` | HUD quality bar |
-  | `jgengine-assets` | Real art from day one |
+  | `jgengine-api` | Engine surface, UI quality bar, asset sourcing |
   | `jgengine-verify` | Browserless scene gate; shoot last |
 - Harvest scope differs by skill: `harvest-game` builds a **minimal probe** to surface gaps fast; `harvest-full-game` / `jgengine-newgame` build the **full blueprint, no half systems**. Don't apply "no slices" to a harvest probe, and don't ship a slice when a full build was asked for.
 - This is the engine repo: fix engine gaps and doc errors directly here. The only issues filed from inside it are the `[FEATURE]` gap issues from the `harvest-game` skill.

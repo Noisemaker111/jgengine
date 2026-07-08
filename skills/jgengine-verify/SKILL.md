@@ -13,7 +13,7 @@ A JGengine scene is derived deterministically from an `environment()` descriptor
 2. **`bun test packages`** — pure game math (curves, cooldowns, spawn logic) and world content. This is where scene correctness is proven:
    - For any game with an `environment()` world, a co-located `<game>.world.test.ts` calls `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) and asserts the counts. `summarizeEnvironment` resolves the descriptor through the same core world-gen the renderer runs — building counts + part geometry + union bounds, terrain height stats (`min`/`max`/`mean`/`finite`), and water/vegetation/weather presence — plus an `isEmpty` flag.
    - This catches the entire "the game looks broken" class deterministically: empty scene (`isEmpty`), wrong building count, dropped feature, flat or `NaN` terrain (`height.finite === false`, or `max === min` when relief was expected).
-3. **`bun run shoot <game> --mode ui`** (HUD) / **`--mode play`** (full scene) — **only** for what the tests above cannot assert: the *look*. This is a final human glance you take once and open the PNG to judge (per `jgengine-ui`). It is not the loop you iterate against.
+3. **`bun run shoot <game> --mode ui`** (HUD) / **`--mode play`** (full scene) — **only** for what the tests above cannot assert: the *look*. This is a final human glance you take once and open the PNG to judge (per `jgengine-api`'s UI quality bar). It is not the loop you iterate against.
 
 ## The screenshot rules — this is the friction this skill exists to kill
 

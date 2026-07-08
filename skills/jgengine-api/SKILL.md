@@ -1,13 +1,13 @@
 ---
 name: jgengine-api
-description: Use when building, extending, or debugging a game on JGengine, or when another skill needs the engine surface — defineGame, GameContext, the three buckets, catalogs, and the world/combat/loot/quest/trade primitives. Read before writing any game.config.ts or catalog.
+description: Use when building, extending, or debugging a game on JGengine, or when another skill needs the engine surface — defineGame, GameContext, the three buckets, catalogs, the world/combat/loot/quest/trade primitives, the UI quality bar, and asset sourcing. Read before writing any game.config.ts or catalog.
 ---
 
 # JGengine — API Reference
 
-The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game.config.ts` or any game content. Companion skills: **`jgengine-newgame`** (master blueprint + phased build to completion), **`jgengine-ui`** (the look-and-behave quality bar), **`jgengine-assets`** (real models/textures from day one), and **`jgengine-verify`** (browserless scene gate) — read them before building.
+The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game.config.ts` or any game content. Companion skills: **`jgengine-newgame`** (master blueprint + phased build to completion) and **`jgengine-verify`** (browserless scene gate) — read them before building. The UI quality bar lives in [`reference/ui-react.md`](reference/ui-react.md); asset sourcing lives in the **Assets** section below.
 
-The heaviest domains live in on-demand reference modules under [`reference/`](reference/) — load one only when you're building in that domain: [`reference/combat.md`](reference/combat.md) (effects, projectiles, death, feel, abilities), [`reference/world.md`](reference/world.md) (terrain, environment, physics, vehicles, spawn), [`reference/multiplayer.md`](reference/multiplayer.md) (transport, host, persistence, presence), [`reference/ui-react.md`](reference/ui-react.md) (`@jgengine/react` hooks, headless + styled UI kits). Each domain's section below is a one-line pointer to its module.
+The heaviest domains live in on-demand reference modules under [`reference/`](reference/) — load one only when you're building in that domain: [`reference/combat.md`](reference/combat.md) (effects, projectiles, death, feel, abilities), [`reference/world.md`](reference/world.md) (terrain, environment, physics, vehicles, spawn), [`reference/multiplayer.md`](reference/multiplayer.md) (transport, host, persistence, presence), [`reference/ui-react.md`](reference/ui-react.md) (`@jgengine/react` hooks, headless + styled UI kits, the registry install path, and the UI quality bar). Each domain's section below is a one-line pointer to its module.
 
 ## Packages
 
@@ -781,7 +781,7 @@ Four pure primitives that hang off item **instances** (not the stackable catalog
 **Modular item** (`item/modularItem`) — a whole assembled from parts in typed mount slots (guns, mechs). `ModularItemDef` has `slots: MountSlotDef[]` (`{ id, accepts, required? }`); `install(def, installed, slotId, part)` validates the slot exists, accepts the part's `category`, and is empty; `computeEffectiveStats(def, installed)` rolls part `stats` (additive) then `multipliers` over `baseStats`; `missingRequiredSlots`/`isComplete` gate a buildable whole. `createModularItem(def)` is the stateful wrapper (`install`/`uninstall`/`effectiveStats`/`partInSlot`).
 **Storage tiers + insurance** (`inventory/storageTier`) — the extraction-economy inventory half. Inventory containers carry a `tier: "carried" | "banked"` (`InventoryDeclaration.tier`; a Tarkov secure container is just a `banked` container on the body). `partitionOnDeath(containers)` splits a death snapshot into `{ kept, lost }` (banked survives, carried is dropped, stacks merged). `createDeliveryQueue()` is the delayed-delivery (insurance) hook: `schedule` a `ScheduledDelivery` with a game-time `deliverAt`, then `due(now)` / `claimDue(now)` drain it on the tick clock. `insureLost(lost, policy, userId, now, rng?)` filters the lost set to insured items and stamps a delayed `deliverAt` → feed straight into the queue. `resolveConsolation(policy, partition)` returns a baseline loadout id (apply via `applyLoadout`) — the death consolation grant, optionally gated on `if-carried-empty`. *(Session/round machines — extraction hold-to-leave, raid banking — consume this tier; see the objective-machine group.)*
 ## Objective, round & session machines
-Content-agnostic state machines for competitive/session shapes — plant/defuse, buy/live/end rounds, downed/revive, the battle-royale ring, extraction raids, run-vs-meta persistence. All pure `core`; every timer takes a **game-time** `dt`/`now` (`ctx.time`), so pause and fast-forward apply for free. Drive them from `loop.onTick` and pipe their events into `ctx.game.feed`/`events`; render their snapshots as HUD (see **`jgengine-ui`** — the downed banner, ring warning, and extraction timer are required HUD).
+Content-agnostic state machines for competitive/session shapes — plant/defuse, buy/live/end rounds, downed/revive, the battle-royale ring, extraction raids, run-vs-meta persistence. All pure `core`; every timer takes a **game-time** `dt`/`now` (`ctx.time`), so pause and fast-forward apply for free. Drive them from `loop.onTick` and pipe their events into `ctx.game.feed`/`events`; render their snapshots as HUD (per the UI quality bar in [`reference/ui-react.md`](reference/ui-react.md) — the downed banner, ring warning, and extraction timer are required HUD).
 **Contested channel** (`session/contestedChannel`) — the interrupt-on-damage progress objective behind plant/defuse, cash-out, urn deposit, banishing, and hold-to-extract. `createContestedChannel({ duration, interruptOnDamage?, resetOnInterrupt?, favorability?, ratePerOccupant?, contested?, decayRate? })`: `start(team)` begins the channel, `tick(dt, occupants)` advances it against per-team occupancy (`Record<teamId, count>`) and emits `start`/`tick`/`contested`/`paused`/`complete` events, `damage(reason?)` interrupts (keeps or zeroes progress per `resetOnInterrupt`). `favorability[team]` scales fill rate (Deadlock deposit); `ratePerOccupant` fills faster with more owners present; `contested: "pause" | "decay"` chooses whether an opposing occupant freezes or reverses progress (The Finals contest). The owner leaving pauses it. Extraction hold-to-leave reuses this primitive verbatim.
 **Round state** (`session/roundState`) — the buy→live→end match machine (Valorant/CS). `createRoundState({ phases, teams, phaseOrder?, winCondition?, maxRounds?, winReward?, lossBonus? })`: `tick(dt)` runs the phase timer and auto-advances (emitting `phase.start`/`phase.end`, rolling the last phase back into the next round's first), `concludeRound(winner)` records the win on any "conclude-eligible" phase (any phase but the first/last in the cycle), settles `round.economy` (winner gets `winReward`, losers get an escalating `lossBonus` via `lossBonusFor(rule, streak)` clamped to `max`), and moves to the next phase. `onPhaseEnd(hook)` fires commerce/spawn gates on each transition; `match.end` fires at `maxRounds`. `server.mode` stays a game string — this is the timer/economy engine under it.
 
@@ -1007,7 +1007,7 @@ touch: {
 - **`look` / `lookSensitivity`** — drag-to-look on the play surface; defaults to `true` for `first`-person camera rigs, `0.005` radians/px.
 - **`touch: false`** — opt out entirely when the game's own DOM UI is already touch-native.
 
-`useDisplayProfile()` (`@jgengine/react/display`) reports `{ coarsePointer, compact, portrait }` — live media-query state, SSR-safe — for adaptive HUD layout; see `jgengine-ui`'s mobile quality bar.
+`useDisplayProfile()` (`@jgengine/react/display`) reports `{ coarsePointer, compact, portrait }` — live media-query state, SSR-safe — for adaptive HUD layout; see the mobile/touch rules in [`reference/ui-react.md`](reference/ui-react.md).
 
 ## Interaction — `proximityPrompt`
 
@@ -1082,7 +1082,33 @@ The transport/host/persistence seam — `createWsBackend`, protocol codec, brows
 
 ## UI — `@jgengine/react`
 
-The React layer — `GameProvider`, the hooks table, headless className-passthrough primitives (incl. map components), the identity/chat/voice/social/drag-layer kits, the ~50-component styled `gameui` kit + theming, and the screen-layout rule. The UI quality bar is required, not optional polish. Full surface: **[reference/ui-react.md](reference/ui-react.md)** and the `jgengine-ui` skill.
+The React layer — `GameProvider`, the hooks table, headless className-passthrough primitives (incl. map components), the identity/chat/voice/social/drag-layer kits, the styled `gameui` kit + theming, the shadcn registry install path for visual HUD components (`npx shadcn@latest add https://jgengine.com/r/<name>.json`), the screen-layout rule, and the **UI quality bar** (required, not optional polish). Full surface: **[reference/ui-react.md](reference/ui-react.md)**.
+
+## Assets — real art from day one
+
+Squares as enemies, colored boxes as buildings, and a flat grid floor read as *broken*, not unfinished. The blueprint's **Asset plan** names the packs before the first edit; a pass does not end while any default-material primitive, unstyled ground plane, or debug grid is visible in the staged screenshot — and that includes 2D HUD art: a first-letter tile, emoji, or one generic shape reused per slot is a placeholder exactly like a graybox enemy. Primitive stand-ins are allowed only *mid-pass* as scaffolding.
+
+**Sources** (CC0 — public domain, commercial use, no attribution — unless noted):
+
+| Source | What you get |
+|--------|--------------|
+| [Kenney.nl](https://kenney.nl) | 40,000+ CC0 assets: characters, buildings, nature, vehicles, weapons, UI, audio — the broadest single library |
+| [Quaternius](https://quaternius.com) / [KayKit](https://kaylousberg.itch.io) | CC0 low-poly packs incl. **rigged + animated characters**: medieval, sci-fi, dungeons, animals, adventurers |
+| [Poly Haven](https://polyhaven.com) / [ambientCG](https://ambientcg.com) | CC0 PBR textures, HDRIs, materials — the floor comes from here, never a flat color |
+| [Poly Pizza](https://poly.pizza) | Search engine over thousands of CC0 low-poly models for one specific thing |
+| [Game-Icons.net](https://game-icons.net) (CC BY 3.0 — credit it) / Kenney UI packs (CC0) | 4,000+ item/ability **icon silhouettes** — the registry `game-icon` item covers common HUD glyphs first |
+| [itch.io CC0 3D tag](https://itch.io/game-assets/assets-cc0/tag-3d) / [OpenGameArt](https://opengameart.org) | Long tail — **check the license per asset**, CC0 filter first |
+| [Mixamo](https://www.mixamo.com) | Free humanoid animations (Adobe license — fine for shipped games, not CC0) |
+| Kenney audio / [freesound CC0 filter](https://freesound.org) | Hit sounds, UI clicks, ambience |
+
+**Rules:**
+
+1. **One style family per game.** Kenney + Quaternius + KayKit low-poly mix fine; low-poly models on photoreal PBR ground reads broken. Name the family in the blueprint.
+2. **License discipline.** CC0 needs nothing; anything else gets a line in `src/game/assets-credits.md` (source, author, license). Never ship an asset you can't name the license of.
+3. **Wire through the engine seams.** GLB models live in the game's `src/game/assets.ts` render catalog keyed by catalog id; billboards via `entitySprites`, real meshes via `entityModels`/`objectModels` in `defineGame({...})`; ground/skies belong to the world layer. Catalog `model` fields reference asset keys — never file paths in game logic. Source models through **`@jgengine/assets`** (`buildCatalog({ basePath })` → resolve ids/aliases → urls); `pull` packs into your app's `public/models/` (extracts Kenney's shared `Textures/` alongside the GLBs so models render textured). Network-restricted: `pull` falls back through `--mirror <baseUrl>` / `JGENGINE_ASSETS_MIRROR`, and `--offline` fails fast — see the package README for the fallback order and add/import flow.
+4. **Coverage follows the content budget.** Every entity family, placed object, and held item maps to a real asset *before* the catalog entry ships. If the pack lacks a model, restyle the noun to one it has — rename the fantasy, don't ship a cube.
+5. **Scale/pivot sanity.** `@jgengine/assets` measures each model's footprint/center/`minY` at reindex and ships them on the catalog entry (`catalog.resolve(id).dims`); with `objectModels` anchor `"center"` (the default) the shell centers the footprint on the placement point and ground-snaps the lowest vertex — so `object.place(id, cellX, y, cellZ, { rotation })` renders centered + grounded with no pivot math and no `dimensions.ts`. Anchor `"origin"` opts back into the raw GLB origin. Check the first placement of each model against its catalog `footprint`; one wrong pivot repeated 100 times is a rebuild.
+6. **Item and ability icons are assets too.** Every hotbar/inventory/ability slot renders a real, distinct icon — the registry `game-icon` catalog (`iconForItemId`/`iconForAction`) or a Game-Icons/Kenney silhouette — per the UI quality bar's real-icons rule.
 
 ## Genre cheat sheet
 
@@ -1134,7 +1160,7 @@ This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengi
 - [ ] UI passes the **quality bar** above (contrast, scale, framing, genre fit) — not just hook wiring
 - [ ] Camera tuned via `camera` in `defineGame({...})` — defaults untouched means the feel was never checked
 - [ ] For an `environment()` world: a `<game>.world.test.ts` asserts `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) is non-empty with the expected counts — the browserless scene-correctness gate
-- [ ] HUD screenshotted over a staged `GameUiPreview` scenario and **judged by looking at the image** (see `jgengine-ui`) — the final human glance, not the verification loop
+- [ ] HUD screenshotted over a staged `GameUiPreview` scenario and **judged by looking at the image** against the UI quality bar in [`reference/ui-react.md`](reference/ui-react.md) — the final human glance, not the verification loop
 - [ ] Co-located bun tests for pure game math (curves, cooldowns, spawn logic)
 - [ ] Multiplayer via adapter config only; no direct backend calls
 
