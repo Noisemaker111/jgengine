@@ -23,13 +23,31 @@ Everything collapses into the core `AssetCatalog` via `buildCatalog({ basePath }
 ```
 assets list [--category <c>] [--source <s>]   # browse the generated index
 assets search <term>                          # grep the index
-assets pull <source-id> [--dir public]        # download + extract GLBs into <dir>/models/<source>/
+assets pull <source-id> [--dir public] [--mirror <baseUrl>] [--offline]
+                                               # download + extract GLBs into <dir>/models/<source>/
 assets add <path|url> --category <c> --license <l> [--author <a>]
 assets reindex [public/models]                # regenerate generated/*.json from pulled packs
 assets verify                                 # license + alias-integrity gate
 ```
 
 Run in-repo with `bun run --cwd packages/assets src/cli/pull.ts <verb> …`.
+
+### Mirror fallback and offline pulls
+
+`pull` never has just one path to the bytes. For a given `source-id` it tries, in order, until one succeeds:
+
+1. **Mirror base override** — `--mirror <baseUrl>` (or the `JGENGINE_ASSETS_MIRROR` env var if `--mirror` is not passed) — the archive is expected at `<baseUrl>/<provider>/<source-id>.zip`, e.g. `https://my-mirror.example.com/kenney/kenney-nature.zip`.
+2. **The primary provider path** — the source's pinned `{ url, sha256? }` or, for providers that rotate URLs (Kenney), a scrape of the asset page.
+3. **The pack's own `mirror`** — an optional direct archive URL set on the `AssetSource` entry itself (`src/sources/*.ts`), tried as a last resort.
+
+If every attempt fails, `pull` throws one aggregated error naming every URL it tried and why each one failed. Whenever the source's `download` is pinned with a `sha256`, the downloaded bytes are hashed and checked against it **no matter which of the three paths supplied them** — a mirror serving stale or tampered bytes is rejected and the next source in the chain is tried instead.
+
+`--offline` skips the network entirely: it succeeds immediately if `<dir>/models/<source-id>/` already has files in it, and otherwise fails fast with a message telling you to pull once on a connected machine or point `--mirror`/`JGENGINE_ASSETS_MIRROR` at a reachable archive — useful for CI scripts that should error in seconds instead of hanging on a blocked fetch.
+
+**Network-restricted environments** — pull once on a machine that can reach the providers, then either:
+
+- commit (or otherwise host) the resulting `public/models/<source-id>/` directory so restricted environments read it straight off disk and use `assets pull --offline` as a fast, honest no-op check, or
+- host your own mirror of the zip archives at `<baseUrl>/<provider>/<source-id>.zip` and set `JGENGINE_ASSETS_MIRROR=<baseUrl>` (or pass `--mirror <baseUrl>`) so `pull` fetches from it instead of the original provider.
 
 ## Adding assets
 
@@ -46,7 +64,7 @@ bun src/cli/pull.ts reindex ../../apps/dev/public/models           # regenerate 
 bun src/cli/pull.ts verify                                         # license + alias gate
 ```
 
-A **new provider** is just a new `src/sources/<provider>.ts` added to the `sources` array in `src/sources/index.ts`. Pinned providers use `download: { url, sha256? }`; providers that rotate URLs (Kenney) use `download: { scrape: <page> }`.
+A **new provider** is just a new `src/sources/<provider>.ts` added to the `sources` array in `src/sources/index.ts`. Pinned providers use `download: { url, sha256? }`; providers that rotate URLs (Kenney) use `download: { scrape: <page> }`. Any entry can also carry an optional top-level `mirror: <archiveUrl>` — a direct URL `pull` falls back to if both a `--mirror`/`JGENGINE_ASSETS_MIRROR` override and the primary path fail (see "Mirror fallback and offline pulls" above).
 
 **A single one-off** — no code edit, zero bytes stored (URL) or copied into `local/` (path):
 
@@ -94,3 +112,4 @@ bun src/cli/pull.ts pull kenney-nature --dir ../../apps/dev/public   # → apps/
 
 - Kenney rotates download URLs, so its sources `scrape` the asset page at pull time.
 - Quaternius / KayKit pages gate downloads behind JS; automated `pull` falls back to a clear error when no archive link is found — download those manually into the staging dir, then `reindex`.
+- `pull`'s mirror fallback and `--offline` guard exist for network-restricted environments (CI, sandboxes without provider access); see "Mirror fallback and offline pulls" above.

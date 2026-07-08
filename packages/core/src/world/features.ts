@@ -105,6 +105,18 @@ export interface BuildingEnvironmentConfig {
   seed?: string;
 }
 
+export type PadSize = readonly [number, number] | { radius: number };
+
+export interface PadEnvironmentConfig {
+  center: EnvironmentVec2;
+  size: PadSize;
+  /** Surface offset above the terrain height at `center`; default `0.05` — just proud of the ground. */
+  height?: number;
+  color?: string;
+  /** Rotation applied to rectangular pads; ignored for circular pads. */
+  rotationY?: number;
+}
+
 export type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required<
   Pick<TerrainEnvironmentConfig, "bounds" | "height">
 > &
@@ -133,6 +145,11 @@ export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
 > &
   Pick<BuildingEnvironmentConfig, "seed" | "position">;
 
+export type PadEnvironmentDescriptor = { kind: "pad" } & Required<
+  Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color">
+> &
+  Pick<PadEnvironmentConfig, "rotationY">;
+
 export type SkyEnvironmentDescriptor = { kind: "sky" } & Required<
   Pick<SkyEnvironmentConfig, "preset" | "timeOfDay">
 > &
@@ -152,6 +169,8 @@ export interface EnvironmentWorldConfig {
   vegetation?: EnvironmentDescriptorList<VegetationEnvironmentDescriptor>;
   water?: EnvironmentDescriptorList<WaterEnvironmentDescriptor>;
   structures?: EnvironmentDescriptorList<StructureEnvironmentDescriptor>;
+  /** Ground pads, e.g. platforms or paved patches; each implicitly flattens the terrain beneath it. */
+  pads?: readonly PadEnvironmentDescriptor[];
 }
 
 export interface EnvironmentWorldFeature {
@@ -162,6 +181,7 @@ export interface EnvironmentWorldFeature {
   vegetation?: readonly VegetationEnvironmentDescriptor[];
   water?: readonly WaterEnvironmentDescriptor[];
   structures?: readonly StructureEnvironmentDescriptor[];
+  pads?: readonly PadEnvironmentDescriptor[];
 }
 
 export interface BiomesWorldConfig {
@@ -207,20 +227,45 @@ function withOptional<TBase extends object, TOptional extends object>(
   return optional === undefined ? base : { ...base, ...optional };
 }
 
+/** Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it. */
+export function padFlattenMasks(pads: readonly PadEnvironmentDescriptor[]): readonly TerrainFlattenMask[] {
+  return pads.map((padDescriptor) => ({
+    center: padDescriptor.center,
+    radius: padHalfExtent(padDescriptor.size) * 1.2,
+  }));
+}
+
+function padHalfExtent(size: PadSize): number {
+  return "radius" in size ? size.radius : Math.max(size[0], size[1]) / 2;
+}
+
+function withPadFlatten(
+  terrainDescriptor: TerrainEnvironmentDescriptor | undefined,
+  pads: readonly PadEnvironmentDescriptor[] | undefined,
+): TerrainEnvironmentDescriptor | undefined {
+  if (terrainDescriptor === undefined || pads === undefined || pads.length === 0) return terrainDescriptor;
+  return {
+    ...terrainDescriptor,
+    flatten: [...(terrainDescriptor.flatten ?? []), ...padFlattenMasks(pads)],
+  };
+}
+
 export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature {
   const weather = list(config.weather);
   const vegetation = list(config.vegetation);
   const water = list(config.water);
   const structures = list(config.structures);
+  const terrainDescriptor = withPadFlatten(config.terrain, config.pads);
 
   return {
     kind: "environment",
-    ...(config.terrain === undefined ? {} : { terrain: config.terrain }),
+    ...(terrainDescriptor === undefined ? {} : { terrain: terrainDescriptor }),
     ...(config.sky === undefined ? {} : { sky: config.sky }),
     ...(weather === undefined ? {} : { weather }),
     ...(vegetation === undefined ? {} : { vegetation }),
     ...(water === undefined ? {} : { water }),
     ...(structures === undefined ? {} : { structures }),
+    ...(config.pads === undefined ? {} : { pads: config.pads }),
   };
 }
 
@@ -332,6 +377,19 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.position === undefined ? {} : { position: config.position }),
     },
+  );
+}
+
+export function pad(config: PadEnvironmentConfig): PadEnvironmentDescriptor {
+  return withOptional(
+    {
+      kind: "pad" as const,
+      center: config.center,
+      size: config.size,
+      height: config.height ?? 0.05,
+      color: config.color ?? "#8b8680",
+    },
+    config.rotationY === undefined ? undefined : { rotationY: config.rotationY },
   );
 }
 

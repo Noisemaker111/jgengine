@@ -33,6 +33,15 @@ function tagOf(object: THREE.Object3D, key: string): string | null {
   return null;
 }
 
+function standardMaterialSample(
+  material: THREE.Material | readonly THREE.Material[],
+): { color: string; metalness?: number; roughness?: number } | null {
+  const candidates = Array.isArray(material) ? material : [material];
+  const standard = candidates.find((entry): entry is THREE.MeshStandardMaterial => entry instanceof THREE.MeshStandardMaterial);
+  if (standard === undefined) return null;
+  return { color: `#${standard.color.getHexString()}`, metalness: standard.metalness, roughness: standard.roughness };
+}
+
 export function createPointerService(): PointerService {
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
@@ -48,7 +57,8 @@ export function createPointerService(): PointerService {
     raycaster.setFromCamera(target, deps.camera);
     const intersects = raycaster.intersectObjects(deps.scene.children, true);
     for (const hit of intersects) {
-      if (!(hit.object as THREE.Mesh).isMesh) continue;
+      const mesh = hit.object as THREE.Mesh;
+      if (!mesh.isMesh) continue;
       const point: PointerVec3 = [hit.point.x, hit.point.y, hit.point.z];
       let normal: PointerVec3 = [0, 1, 0];
       if (hit.face !== null && hit.face !== undefined) {
@@ -61,6 +71,7 @@ export function createPointerService(): PointerService {
         normal,
         entity: tagOf(hit.object, POINTER_ENTITY_KEY),
         object: tagOf(hit.object, POINTER_OBJECT_KEY),
+        material: standardMaterialSample(mesh.material),
       };
     }
     const grounded = raycaster.ray.intersectPlane(groundPlane, scratch);

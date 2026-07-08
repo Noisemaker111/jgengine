@@ -1,6 +1,22 @@
 import { describe, expect, test } from "bun:test";
 
-import { biomes, building, environment, flat, grass, ocean, plots, rain, sky, snow, terrain, tilemap, voxel } from "./features";
+import {
+  biomes,
+  building,
+  environment,
+  flat,
+  grass,
+  ocean,
+  pad,
+  padFlattenMasks,
+  plots,
+  rain,
+  sky,
+  snow,
+  terrain,
+  tilemap,
+  voxel,
+} from "./features";
 
 describe("world features", () => {
   test("biomes carries its config", () => {
@@ -156,5 +172,57 @@ describe("world features", () => {
       flatten: [{ center: [10, -5], radius: 6, height: 2, falloff: 3 }],
     });
     expect(descriptor.flatten).toEqual([{ center: [10, -5], radius: 6, height: 2, falloff: 3 }]);
+  });
+
+  test("pad applies conservative defaults and carries its config", () => {
+    expect(pad({ center: [4, 6], size: [3, 2] })).toEqual({
+      kind: "pad",
+      center: [4, 6],
+      size: [3, 2],
+      height: 0.05,
+      color: "#8b8680",
+    });
+
+    const circular = pad({ center: [0, 0], size: { radius: 5 }, height: 0.2, color: "#445566", rotationY: 0.4 });
+    expect(circular).toEqual({
+      kind: "pad",
+      center: [0, 0],
+      size: { radius: 5 },
+      height: 0.2,
+      color: "#445566",
+      rotationY: 0.4,
+    });
+  });
+
+  test("environment carries pads", () => {
+    const world = environment({ pads: [pad({ center: [1, 2], size: [4, 4] })] });
+    expect(world.pads).toEqual([
+      { kind: "pad", center: [1, 2], size: [4, 4], height: 0.05, color: "#8b8680" },
+    ]);
+  });
+
+  test("padFlattenMasks derives a radius from each pad's footprint, no explicit height", () => {
+    const rect = pad({ center: [10, -5], size: [6, 4] });
+    const circle = pad({ center: [-2, 3], size: { radius: 5 } });
+    const masks = padFlattenMasks([rect, circle]);
+    expect(masks[0]?.center).toEqual([10, -5]);
+    expect(masks[0]?.radius).toBeCloseTo(3.6);
+    expect(masks[1]).toEqual({ center: [-2, 3], radius: 6 });
+  });
+
+  test("environment merges implicit pad flatten masks with explicit terrain.flatten", () => {
+    const world = environment({
+      terrain: terrain({ flatten: [{ center: [0, 0], radius: 2, height: 1 }] }),
+      pads: [pad({ center: [20, 20], size: [4, 4] })],
+    });
+    expect(world.terrain?.flatten).toEqual([
+      { center: [0, 0], radius: 2, height: 1 },
+      { center: [20, 20], radius: 2.4 },
+    ]);
+  });
+
+  test("environment leaves terrain untouched when there are no pads", () => {
+    const world = environment({ terrain: terrain({ height: 2 }) });
+    expect(world.terrain?.flatten).toBeUndefined();
   });
 });
