@@ -27,6 +27,6 @@ export const game = defineGame({
   camera: {
     rig: "topDown",
     followEntityId: null,
-    topDown: { height: 26, pitch: 0, yaw: 0 },
+    topDown: { height: 26, pitch: 1.45, yaw: 0 },
   },
 });

@@ -504,7 +504,7 @@ The shell ships a **rig library**; a game picks and tunes one through `camera` c
 |-------|-----|------------------------------|
 | `orbit` (default) | Third-person chase | `initialDistance`, `targetHeight`, `min/maxPolarAngle`, drag/zoom |
 | `first` | FPS mouse-look | `firstPerson: { eyeHeight, sensitivity, maxPitch, reticle, viewmodel }` |
-| `topDown` | ARPG iso / top-down (Diablo IV, Hades II) | `topDown: { height, pitch, yaw, followSmoothing, zoom }` — decoupled follow |
+| `topDown` | ARPG iso / top-down (Diablo IV, Hades II) | `topDown: { height, pitch, yaw, followSmoothing, zoom }` — decoupled follow; `pitch` is camera elevation (PI/2 = straight down, near 0 = grazing and boom-distance blows up past `frustum.far`) |
 | `rts` | Free-pan / edge-scroll (The Sims, Manor Lords) | `rts: { panSpeed, edgeScroll, rotateSpeed, bounds, start, pan }` — `pan: false` turns it into a static backdrop camera: no WASD/arrow pan, no edge-scroll, no Q/E rotate, no wheel zoom, still re-centers on `followEntityId` if one resolves |
 | `shoulder` | Over-the-shoulder (Helldivers 2, Remnant II) | `shoulder: { shoulderOffset, distance, ads, side }` — ADS + shoulder-swap (V) |
 | `lockOn` | Souls-like strafe (Elden Ring) | `lockOn: { targetEntityId?, distance, framingBias, yawSmoothing }` — yaw binds to player→target; WASD becomes strafe |

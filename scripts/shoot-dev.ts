@@ -99,6 +99,9 @@ const server = args.url !== undefined ? null : await ensureServer();
 const browser = await launchBrowser();
 try {
   const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+  page.on("console", (message) => {
+    if (message.text().includes("[jgengine:")) console.error(message.text());
+  });
   await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
   if (args.mode === "ui" && args.url === undefined) {
     await page.waitForSelector("[data-ui-preview-ready]", { timeout: 20_000 });

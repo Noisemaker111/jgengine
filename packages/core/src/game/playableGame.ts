@@ -103,7 +103,7 @@ export interface SideScrollCameraConfig {
 export interface TopDownCameraConfig {
   /** Camera height above the follow point. Default 18. */
   height?: number;
-  /** Look-down angle in radians (0 = straight down, PI/2 = level). Default ~1.02 (~58°, ARPG iso). */
+  /** Elevation of the camera above the ground plane in radians (PI/2 = straight down, near 0 = grazing; values below 0.05 clamp to 0.05). Default ~1.02 (~58°, ARPG iso). */
   pitch?: number;
   /** Fixed azimuth in radians; ~PI/4 reads as isometric, 0 as straight top-down. Default PI/4. */
   yaw?: number;
@@ -299,6 +299,8 @@ export interface CameraShakeConfig {
   /** Noise frequency (Hz) of the shake oscillation. Default 24. */
   frequency?: number;
 }
+
+export const CAMERA_FRUSTUM_DEFAULTS = { fov: 55, near: 0.1, far: 300 } as const;
 
 export interface GameCameraConfig {
   /** Selects the rig. Overrides `perspective`; leave unset to fall back to `perspective`. */

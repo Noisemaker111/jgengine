@@ -107,6 +107,7 @@ function useCameraCommit(props: RigProps, followId: string | null) {
     duration: number;
   } | null>(null);
   const lastPoseRef = useRef<CameraPose | null>(null);
+  const farWarnedRef = useRef(false);
 
   const beginTransition = () => {
     if (transitionSeconds <= 0) return;
@@ -122,6 +123,18 @@ function useCameraCommit(props: RigProps, followId: string | null) {
   const commit = (pose: CameraPose, dt: number) => {
     lastPoseRef.current = pose;
     applyPose(camera, pose);
+
+    const lookDistance = Math.hypot(
+      pose.position.x - pose.lookAt.x,
+      pose.position.y - pose.lookAt.y,
+      pose.position.z - pose.lookAt.z,
+    );
+    if (!farWarnedRef.current && isPerspective(camera) && lookDistance > camera.far) {
+      farWarnedRef.current = true;
+      console.warn(
+        `[jgengine:camera] the "${props.config?.rig ?? "orbit"}" rig placed the camera ${Math.round(lookDistance)} world units from its look target, beyond the far plane (${camera.far}) — everything near the target is frustum-culled and the world renders empty. Check the rig config (topDown pitch is elevation: PI/2 = straight down, near 0 = grazing) or raise camera.frustum.far.`,
+      );
+    }
 
     const blend = blendRef.current;
     if (blend !== null) {

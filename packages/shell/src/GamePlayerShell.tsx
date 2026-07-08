@@ -78,6 +78,7 @@ import type {
   ObjectStyle,
   PointerConfig,
 } from "@jgengine/core/game/playableGame";
+import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
@@ -1468,9 +1469,9 @@ export function GamePlayerShell({
     >
       <Canvas
         camera={{
-          fov: playable.camera?.frustum?.fov ?? 55,
-          near: playable.camera?.frustum?.near ?? 0.1,
-          far: playable.camera?.frustum?.far ?? 300,
+          fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
+          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
         }}
         shadows={playable.shadows ?? true}
         gl={{ preserveDrawingBuffer: true }}
