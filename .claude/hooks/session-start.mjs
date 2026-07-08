@@ -52,6 +52,32 @@ const healPrimary = (primaryRoot) => {
           `primary must always be clean — some process is editing it directly, bypassing the ` +
           `worktree flow. Do NOT discard, overwrite, or commit those files; report this to the user.`,
       );
+      return notes;
+    }
+    const remoteRef = `origin/${defaultBranch}`;
+    const counts = git("-C", primaryRoot, "rev-list", "--left-right", "--count", `${defaultBranch}...${remoteRef}`);
+    const [ahead, behind] = (counts ?? "0\t0").split(/\s+/).map(Number);
+    if (behind > 0 && ahead === 0) {
+      if (git("-C", primaryRoot, "merge", "--ff-only", remoteRef) !== null) {
+        notes.push(`Self-healed: primary ${defaultBranch} was ${behind} commit(s) behind ${remoteRef} — fast-forwarded. Nothing for you to do.`);
+      }
+    } else if (behind > 0 && ahead > 0) {
+      const unpushed = Number(git("-C", primaryRoot, "rev-list", "--count", defaultBranch, "--not", "--remotes"));
+      if (unpushed === 0) {
+        if (git("-C", primaryRoot, "reset", "--hard", remoteRef) !== null) {
+          notes.push(
+            `Self-healed: primary ${defaultBranch} had diverged from ${remoteRef} (${ahead} local / ${behind} ` +
+              `remote), but every local commit is already on a remote branch — realigned to ${remoteRef}. ` +
+              `Nothing stranded (the old tip is recoverable via reflog and the remote branches that carry it).`,
+          );
+        }
+      } else {
+        notes.push(
+          `⚠️ The primary checkout's ${defaultBranch} has diverged from ${remoteRef} (${ahead} local / ${behind} ` +
+            `remote) with ${unpushed} commit(s) not on any remote — NOT auto-aligning, that work would be ` +
+            `stranded. Push or reconcile those commits from the primary before continuing; tell the user if unsure.`,
+        );
+      }
     }
     return notes;
   }
