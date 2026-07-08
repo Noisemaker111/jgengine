@@ -9,7 +9,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { CurrencyPill, HealthBar, SlotGrid } from "@jgengine/react/components";
 import { useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
-import type { PlayableGame } from "../registry";
+import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";
 const MOB = "gloomSlime";

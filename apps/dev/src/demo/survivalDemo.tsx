@@ -31,9 +31,9 @@ import {
 } from "@jgengine/core/world/weather";
 import { useEngineState, type ReadableEngineStore } from "@jgengine/react/engineStore";
 
-import { EnvironmentScene } from "../environment/EnvironmentScene";
-import { FireSpreadLayer } from "../weather/FireSpreadLayer";
-import type { PlayableGame } from "../registry";
+import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { FireSpreadLayer } from "@jgengine/shell/weather/FireSpreadLayer";
+import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "survivor";
 const HOTBAR = "hotbar";

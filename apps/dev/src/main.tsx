@@ -44,21 +44,21 @@ const gameEntries = Object.fromEntries(
 );
 
 const gameRegistry: GameRegistry = {
-  demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
+  demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "pointer-commander": () =>
-    import("@jgengine/shell/demo/pointerDemo").then((module) => module.pointerDemoGame),
+    import("./demo/pointerDemo").then((module) => module.pointerDemoGame),
   "environment-showcase": () =>
-    import("@jgengine/shell/demo/environmentShowcase").then((module) => module.environmentShowcaseGame),
+    import("./demo/environmentShowcase").then((module) => module.environmentShowcaseGame),
   "survival-demo": () =>
-    import("@jgengine/shell/demo/survivalDemo").then((module) => module.survivalDemoGame),
+    import("./demo/survivalDemo").then((module) => module.survivalDemoGame),
   "builder-sandbox": () =>
-    import("@jgengine/shell/demo/builderDemo").then((module) => module.builderDemoGame),
-  "extraction-map": () => import("@jgengine/shell/demo/mapDemo").then((module) => module.mapDemoGame),
+    import("./demo/builderDemo").then((module) => module.builderDemoGame),
+  "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
   "sensor-showcase": () =>
-    import("@jgengine/shell/demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
+    import("./demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
   "social-hub": () =>
-    import("@jgengine/shell/demo/socialHubDemo").then((module) => module.socialHubGame),
-  "ui-kit": () => import("@jgengine/shell/demo/uiKitDemo").then((module) => module.uiKitGame),
+    import("./demo/socialHubDemo").then((module) => module.socialHubGame),
+  "ui-kit": () => import("./demo/uiKitDemo").then((module) => module.uiKitGame),
   ...gameEntries,
 };
 

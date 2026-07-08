@@ -20,7 +20,7 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-import type { PlayableGame } from "../registry";
+import type { PlayableGame } from "@jgengine/shell/registry";
 
 const VILLAGER = "villager";
 const CREEP = "creep";

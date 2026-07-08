@@ -23,7 +23,7 @@ import {
 } from "@jgengine/react/social";
 import { MicToggle, PushToTalkButton, useVoice, VoiceRoster } from "@jgengine/react/voice";
 
-import type { PlayableGame } from "../registry";
+import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 
 const FRIEND_RIN = "rin";

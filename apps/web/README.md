@@ -13,13 +13,14 @@ Because of that, **any push to `main` that touches `skills/` or `packages/` rebu
 
 ### Games are built from `apps/dev`, not authored here
 
-`vite build` also builds the game player: the `games-player` plugin in [`vite.config.ts`](vite.config.ts) shells out to `apps/dev`'s `build:site` script, which runs the same Vite app used for local game dev with `--base /play/` into `public/play`. Games are served at `/play/?game=<id>` (the dev runner already reads `?game` from the URL). The header's Games dropdown ([`src/components/Layout.tsx`](src/components/Layout.tsx)) is generated at build time from [`src/content/games.ts`](src/content/games.ts), which globs `Games/*/package.json` — add a game under `Games/` and it appears in the dropdown and at `/play/` with no other wiring.
+`vite build` also builds the game player: the `games-player` plugin in [`vite.config.ts`](vite.config.ts) shells out to `apps/dev`'s `build:site` script, which runs the same Vite app used for local game dev with `--base /play/` into `public/play`. Players visit `/games/<id>` ([`src/routes/games.$gameId.tsx`](src/routes/games.$gameId.tsx)), which embeds the runner from its internal `/play` mount. In dev, the `games-player-dev` plugin spawns `apps/dev`'s `dev:site` server and nitro's `devProxy` forwards `/play` to it, so `/games/<id>` is playable from the local site too. The header's Games dropdown ([`src/components/Layout.tsx`](src/components/Layout.tsx)) is generated at build time from [`src/content/games.ts`](src/content/games.ts), which globs `Games/*/package.json` — add a game under `Games/` and it appears in the dropdown and at `/games/<id>` with no other wiring.
 
 ## Develop
 
 ```sh
 bun install                        # from repo root
-bun run --cwd apps/web dev         # http://localhost:3000
+bun dev                            # from repo root — http://localhost:3000, games at /play
+bun run --cwd apps/web dev         # same thing, explicit
 ```
 
 ## Deploy — Vercel (push-to-deploy on every `main`)

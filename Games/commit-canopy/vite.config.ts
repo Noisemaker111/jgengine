@@ -18,6 +18,8 @@ export default defineConfig({
           { find: /^@jgengine\/react\/(.*)$/, replacement: `${engineSrc("react")}/$1` },
           { find: /^@jgengine\/ws\/(.*)$/, replacement: `${engineSrc("ws")}/$1` },
           { find: /^@jgengine\/shell\/(.*)$/, replacement: `${engineSrc("shell")}/$1` },
+          { find: /^@jgengine\/github$/, replacement: `${engineSrc("github")}/index.ts` },
+          { find: /^@jgengine\/github\/(.*)$/, replacement: `${engineSrc("github")}/$1` },
           { find: /^@jgengine\/assets$/, replacement: `${engineSrc("assets")}/index.ts` },
           { find: /^@jgengine\/assets\/(.*)$/, replacement: `${engineSrc("assets")}/$1` },
         ]

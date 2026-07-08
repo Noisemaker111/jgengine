@@ -35,7 +35,14 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
   build: { target: "es2022" },
-  server: { host: true, proxy: devProxy },
+  server: {
+    host: true,
+    proxy: devProxy,
+    hmr:
+      process.env.JG_PLAY_HMR_PORT === undefined
+        ? undefined
+        : { host: "localhost", clientPort: Number(process.env.JG_PLAY_HMR_PORT) },
+  },
   resolve: {
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
@@ -44,6 +51,8 @@ export default defineConfig({
       { find: /^@jgengine\/ws\/(.*)$/, replacement: `${src("ws")}/$1` },
       { find: /^@jgengine\/convex\/(.*)$/, replacement: `${src("convex")}/$1` },
       { find: /^@jgengine\/shell\/(.*)$/, replacement: `${src("shell")}/$1` },
+      { find: /^@jgengine\/github$/, replacement: `${src("github")}/index.ts` },
+      { find: /^@jgengine\/github\/(.*)$/, replacement: `${src("github")}/$1` },
       { find: /^@jgengine\/assets$/, replacement: `${src("assets")}/index.ts` },
       { find: /^@jgengine\/assets\/(.*)$/, replacement: `${src("assets")}/$1` },
       ...gameAliases,

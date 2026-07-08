@@ -23,10 +23,10 @@ import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/ter
 import { Compass, Minimap, WorldMap } from "@jgengine/react/map";
 import { usePlayer, useSceneEntities, useFeed } from "@jgengine/react/hooks";
 
-import { EnvironmentScene } from "../environment/EnvironmentScene";
-import { bakeTerrainMap, type BakedMap } from "../map/terrainMap";
-import { MapMarkerBeacons } from "../map/MapMarkerBeacons";
-import type { PlayableGame } from "../registry";
+import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { bakeTerrainMap, type BakedMap } from "@jgengine/shell/map/terrainMap";
+import { MapMarkerBeacons } from "@jgengine/shell/map/MapMarkerBeacons";
+import type { PlayableGame } from "@jgengine/shell/registry";
 
 const SCOUT = "scout";
 const RAIDER = "raider";
