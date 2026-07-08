@@ -27,6 +27,46 @@ or set `VITE_CONVEX_URL` in `apps/dev/.env.local`. Any game whose `game.config.t
 `multiplayer: convex({ topology: "shared" })` (voxel-mine does today) joins a shared server as
 soon as it loads — no extra wiring on the client or server side.
 
+## Self-hosted Convex (no cloud account)
+
+The Convex backend is open source (FSL-1.1-Apache-2.0) and this directory ships a
+`docker-compose.yml` for it, so nothing here requires a Convex Cloud account. Running your own
+game's backend this way is ordinary internal use under the FSL — the restriction only forbids
+reselling Convex itself as a competing hosted service.
+
+```sh
+docker compose up -d
+docker compose exec backend ./generate_admin_key.sh
+```
+
+Put the resulting key in this directory's `.env.local` and deploy the functions against your own
+backend instead of the cloud:
+
+```sh
+CONVEX_SELF_HOSTED_URL='http://127.0.0.1:3210'
+CONVEX_SELF_HOSTED_ADMIN_KEY='<key from generate_admin_key.sh>'
+```
+
+```sh
+bunx convex dev
+```
+
+The CLI behaves identically against a self-hosted backend (codegen, deploys, crons — including the
+1s tick — file storage, scheduled functions); it refuses to run if both cloud and self-hosted env
+vars are set, so there's no wrong-target risk. The dashboard is at `http://localhost:6791`, and the
+game client points at the backend the same way as ever: `VITE_CONVEX_URL=http://127.0.0.1:3210`.
+
+Where to run the container: any VPS or Docker host, with official templates for
+[Fly.io](https://github.com/get-convex/convex-backend/blob/main/self-hosted/advanced/fly/README.md)
+and [Railway](https://railway.com/deploy/convex). It cannot run on Vercel — the backend is a
+long-running stateful WebSocket process, the opposite of serverless functions. The split that works
+is: game client (this repo's `apps/*` or your own site) on Vercel, backend container on Fly/Railway/
+a VPS, connected by `VITE_CONVEX_URL`. Production notes from upstream: single-node only, pin the
+image tag instead of `latest`, point `POSTGRES_URL`/`MYSQL_URL` at a managed database and own your
+backups, set a real `INSTANCE_SECRET`, and set `CONVEX_CLOUD_ORIGIN`/`CONVEX_SITE_ORIGIN` to your
+public URL when the backend isn't on localhost. Full upstream docs:
+[self-hosting guide](https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md).
+
 ## What syncs out of the box vs. what needs a runtime
 
 Joining a shared server automatically gets you:
