@@ -1,0 +1,121 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "jgengine",
+  "homepage": "https://jgengine.com",
+  "items": [
+    {
+      "name": "game-icon",
+      "type": "registry:ui",
+      "title": "Game Icon",
+      "description": "79-glyph silhouette icon catalog with iconForItemId / iconForAction keyword resolvers — real, distinct icons for hotbar, inventory, and ability slots.",
+      "files": [
+        {
+          "path": "jgengine/game-icon.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/game-icon.tsx"
+        }
+      ]
+    },
+    {
+      "name": "keybind-badge",
+      "type": "registry:ui",
+      "title": "Keybind Badge",
+      "description": "Chamfered key-cap badge for showing a binding on its own control — hotbar slot corners, panel toggles.",
+      "files": [
+        {
+          "path": "jgengine/keybind-badge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/keybind-badge.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-surface": "#17120d",
+          "jg-edge": "#57452c",
+          "jg-edge-bright": "#93794c",
+          "jg-text": "#f2e7d0"
+        }
+      }
+    },
+    {
+      "name": "vital-bar",
+      "type": "registry:ui",
+      "title": "Vital Bar",
+      "description": "Slant-clipped stat bar with damage ghost-trail, segment ticks, and health/mana/stamina/xp/shield tones — presentational, value-driven.",
+      "files": [
+        {
+          "path": "jgengine/vital-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/vital-bar.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-danger": "#e0483e",
+          "jg-health": "#5cc35f",
+          "jg-health-deep": "#26662c",
+          "jg-mana": "#4a86d8",
+          "jg-mana-deep": "#20406f",
+          "jg-stamina": "#d9c33f",
+          "jg-stamina-deep": "#6e621c",
+          "jg-xp": "#a566d9",
+          "jg-xp-deep": "#4e2c6e",
+          "jg-shield": "#9fb9c9",
+          "jg-shield-deep": "#48606e"
+        }
+      }
+    },
+    {
+      "name": "entity-vital-bar",
+      "type": "registry:ui",
+      "title": "Entity Vital Bar",
+      "description": "VitalBar bound to a live entity stat via useEntityStat — the one-line health bar for any entity instance.",
+      "dependencies": ["@jgengine/react"],
+      "registryDependencies": ["vital-bar"],
+      "files": [
+        {
+          "path": "jgengine/entity-vital-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/entity-vital-bar.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: const { userId } = usePlayer(); <EntityVitalBar instanceId={userId} statId=\"health\" />"
+    },
+    {
+      "name": "ability-slot",
+      "type": "registry:ui",
+      "title": "Ability Slot",
+      "description": "Four-state ability slot button — ready, cooldown (conic sweep + timer), no-resource, locked — with charge pips, just-cast flash, and a corner keybind badge.",
+      "registryDependencies": ["keybind-badge"],
+      "files": [
+        {
+          "path": "jgengine/ability-slot.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ability-slot.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-edge": "#57452c",
+          "jg-edge-bright": "#93794c",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-danger": "#e0483e"
+        }
+      },
+      "css": {
+        "@keyframes jg-flash": {
+          "from": { "opacity": "1" },
+          "to": { "opacity": "0" }
+        }
+      }
+    }
+  ]
+}

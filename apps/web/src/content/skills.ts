@@ -1,7 +1,5 @@
 import apiMd from "../../../../skills/jgengine-api/SKILL.md?raw";
-import assetsMd from "../../../../skills/jgengine-assets/SKILL.md?raw";
 import newgameMd from "../../../../skills/jgengine-newgame/SKILL.md?raw";
-import uiMd from "../../../../skills/jgengine-ui/SKILL.md?raw";
 import verifyMd from "../../../../skills/jgengine-verify/SKILL.md?raw";
 
 const apiReferenceModules = import.meta.glob(
@@ -43,8 +41,6 @@ function parse(slug: string, raw: string): Skill {
 export const SKILLS: Skill[] = [
   parse("jgengine-newgame", newgameMd),
   parse("jgengine-api", apiFullMd),
-  parse("jgengine-ui", uiMd),
-  parse("jgengine-assets", assetsMd),
   parse("jgengine-verify", verifyMd),
 ];
 

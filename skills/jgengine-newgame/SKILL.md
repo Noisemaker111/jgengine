@@ -9,13 +9,12 @@ The deliverable is the **complete idea** — the game the user named, at the sca
 
 The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and** first-person mouse-look (pointer-lock + centered reticle + weapon viewmodel), input tracker, hotbar/primary-click plumbing, world-space enemy health bars, floating damage/heal numbers, projectile tracers, `GameUiPreview`, error overlay. Never rebuild these per game — a hand-written reticle, world-space health bar, or floating-damage-number component means you missed a switch the engine already flips (see the archetype recipe below).
 
-## Read first (all three, before the blueprint)
+## Read first (both, before the blueprint)
 
 | What | Why |
 |------|-----|
-| `jgengine-api` | Install + setup, the engine surface, conventions |
-| `jgengine-ui` | How it must look and behave — the quality bar |
-| `jgengine-assets` | Where real models/textures/audio come from — no primitive placeholders ship |
+| `jgengine-api` | Install + setup, the engine surface, the UI quality bar, asset sourcing |
+| `jgengine-verify` | How to prove it works — browserless scene gate, shoot last |
 
 ## Take the reading — don't ask
 
@@ -32,7 +31,7 @@ Your first substantive response is the complete plan for the **full game** — e
 - **System list** — every signature system of the named fantasy, at full depth (weapon mods and damage types, not just "guns"). A cut is a last resort, recorded with its reason.
 - **Coupling map** — for sim-shaped games: each system names the existing systems it feeds and reads, as cause→effect chains a player can reconstruct by watching ("drought → failed harvest → hunger → unrest"). A threat or event system is a *coupling into existing systems*, never a standalone effect — plague travels the trade routes, fire spreads with the wind system's wind. Prefer one legible failure pipeline that many systems feed over five private ones.
 - **Content budget** — numbers per system, sized by what the fantasy needs, not what's easy to type: items, enemy types, quests, zones, vendors, recipes (floors in "Content scale" below).
-- **Asset plan** — which packs (per `jgengine-assets`) cover ground, structures, props, characters/enemies, items; pack → catalog-id mapping; one style family.
+- **Asset plan** — which packs (per `jgengine-api`'s Assets section) cover ground, structures, props, characters/enemies, items; pack → catalog-id mapping; one style family.
 - **Art direction** — a *decision*, not an adjective. One named aesthetic phrase ("illuminated-manuscript storybook", "neon brutalist"), a committed palette (4–6 hex values covering ground/sky plus UI panel, ink, and accent), a type voice, and a UI copy register (buttons in the fantasy's own language — "Unleash plague", not "Spawn disease event"). Written in the blueprint so every phase colors inside the same lines; "make it look nice" produces the murk this bullet exists to kill.
 - **File tree** — one line per file: the skeleton at the top of `src/` (`game.config.ts`, `index.tsx`, `main.tsx`, `loop.ts`, `world.ts`, `index.css`) plus the root `index.html` + `vite.config.ts` that make the game a standalone Vite app, plus every catalog, generator, handler, quest, curve, and UI component under `src/game/`.
 - **Catalog ids** — the archetype entity / item / object / loot-table / quest ids; the generators below produce the breadth.
@@ -50,7 +49,7 @@ The blueprint message ends with one question — "anything you want changed befo
 Split the blueprint into ordered phases. Each phase:
 
 - lands a coherent set of systems **finished end to end** — logic + that phase's share of the content budget + UI + real assets + feedback. Nothing in a phase is stubbed "for a later phase";
-- ends verified: type-check green, staged screenshot taken and judged against `jgengine-ui`;
+- ends verified: type-check green, staged screenshot taken and judged against `jgengine-api`'s UI quality bar;
 - flows into the next without stopping to ask "should I continue?" or demoing a half version — the confirmed blueprint is the approval. If a session ends mid-build, the phase plan is the roadmap the next session resumes from, exactly where it left off;
 - is reported in one line — "phase N of M complete", never as a finished game; the next phase starts on its own line, not buried in the status. Fan the phase's mechanical legs (catalog generation, the type-check, the staged screenshot) out to job-named subagents on a 🤖 line and judge their output — don't run them inline. Done means the last phase landed and the full-game checklist below passes.
 
@@ -63,7 +62,7 @@ Every system a phase declares must be fully consumed end to end by that phase's 
 | Half (never ship) | Whole |
 |-------------------|-------|
 | Quest registered, no tracker UI | Quest + tracker + turn-in feedback — or the quest system moves to its phase intact |
-| Ability without cooldown visual + cost gating | All four slot states per `jgengine-ui` |
+| Ability without cooldown visual + cost gating | All four slot states per `jgengine-api`'s UI quality bar |
 | Keybind wired but not shown anywhere | Every binding visible on its control |
 | Modal stub / "coming soon" panel | Finished panel — or no panel and no keybind yet |
 | Inventory system with no way to gain items | Loot/shop loop closed in the same phase |
@@ -82,7 +81,7 @@ Floors for any combat/loot game (scale **up** per fantasy, never down): **50+ it
 
 No phase ships a flat plane with squares on it. The floor, structures, and props are inside every phase's exit bar:
 
-- **Ground** — textured/material'd terrain or tiles with variation (Poly Haven / ambientCG per `jgengine-assets`), never the default grid or a flat color. Supply it via `environment` in `defineGame({...})` (a canvas component); the shell renders it in place of the default ground plane + debug grid + rock field. A world of kind `environment()` skips this — the shell auto-renders it as the backdrop.
+- **Ground** — textured/material'd terrain or tiles with variation (Poly Haven / ambientCG per `jgengine-api`'s Assets section), never the default grid or a flat color. Supply it via `environment` in `defineGame({...})` (a canvas component); the shell renders it in place of the default ground plane + debug grid + rock field. A world of kind `environment()` skips this — the shell auto-renders it as the backdrop.
 - **Structures** — the buildings and landmarks the fantasy implies (a wasteland has ruins, a settlement, an interior or two), placed as scene objects with real models.
 - **Prop density** — target 100+ placed objects across zones (wrecks, rocks, furniture, loot containers) from real packs, not colored boxes.
 - **Zone readability** — zones differ at a glance: palette, density, one landmark each.
@@ -94,7 +93,7 @@ The game is done when the **entire blueprint** is delivered:
 
 1. Every blueprinted system finished whole; every content budget met — verified by counting catalog entries, not vibes.
 2. Loads through `GamePlayerShell` via your `GameRegistry`; core fantasy playable end to end within 60 seconds of spawning. `bun dev` inside the game directory also launches it standalone, and a game under `Games/*` auto-registers in the dev runner and the jgengine.com Games dropdown — no registry entry, alias, or dependency to wire by hand.
-3. Full HUD per `jgengine-ui`; every binding visible; camera tuned via `camera` in `defineGame({...})` (defaults untouched means the feel was never checked).
+3. Full HUD per `jgengine-api`'s UI quality bar; every binding visible; camera tuned via `camera` in `defineGame({...})` (defaults untouched means the feel was never checked).
 4. World dressed per "The world is content too"; zero default-material primitives anywhere.
 5. World content verified deterministically: for any game with an `environment()` world, a co-located `<game>.world.test.ts` asserts `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) is non-empty with the expected terrain/building/water/vegetation/weather counts. This is the scene-correctness gate — it runs in `bun test`, catches empty, miscounted, or flat-terrain scenes, and never launches a browser.
 6. Staged `GameUiPreview` and `--mode play` screenshots taken and **judged by looking at them** — the screenshot is the *final human glance*, never the verification loop (once `bun run shoot` hangs on Chromium, don't re-run it in the foreground; the world test above is what proves the scene resolved). If a shot would embarrass a release announcement, it isn't done.
@@ -118,7 +117,7 @@ One game is a probe; if a second first-person game needs this same bundle, promo
 The interior analog of the shooter recipe: a life-sim, dollhouse, base-builder, or shop is a **grid of cells** dressed from one modular kit (Kenney furniture-kit + mini-characters is a complete Sims-style set). Assemble it from primitives — do not hand-roll pivot math or a ground hack:
 
 - **Own ground, not the debug grid**: set `environment` in `defineGame({...})` to a canvas component that draws your floor/room shell (a plane, tiled floor GLBs, or a skybox). When present, the shell renders it **instead of** the default ground plane + grid + rock field — an interior should never show the outdoor scatter. Leave it unset only for open-world scenes that want the default terrain (or use an `environment()` world, which auto-renders without one).
-- **Place on cell centers, let the engine center + ground-snap**: models resolved through `objectModels` carry measured `dims` from `@jgengine/assets`; with the default anchor `"center"` the shell centers each footprint on its placement point and snaps its base to the floor. Build a `cells` grid (1 unit each), then `object.place(floorId, cx, 0, cz)`, `object.place(wallId, edgeX, 0, edgeZ, { rotation })` on cell edges, `object.place(furnitureId, cx, 0, cz, { rotation })` — no `dimensions.ts`, no `placeCentered`, no `objectCenter` registry. (See `jgengine-assets` rule 5.)
+- **Place on cell centers, let the engine center + ground-snap**: models resolved through `objectModels` carry measured `dims` from `@jgengine/assets`; with the default anchor `"center"` the shell centers each footprint on its placement point and snaps its base to the floor. Build a `cells` grid (1 unit each), then `object.place(floorId, cx, 0, cz)`, `object.place(wallId, edgeX, 0, edgeZ, { rotation })` on cell edges, `object.place(furnitureId, cx, 0, cz, { rotation })` — no `dimensions.ts`, no `placeCentered`, no `objectCenter` registry. (See `jgengine-api` Assets rule 5.)
 - **Walls on edges, floors + furniture on centers**: a wall's placement point is the shared edge between two cells (rotate 0/90° to face along it); floors and furniture sit on the cell center. Doorways are a skipped wall segment.
 - **Characters**: mini-characters are rigged GLBs — wire them through `entityModels`; the same center/ground-snap applies, so they stand on the floor without a per-model `y`.
 - **Time is a system, not a hack**: a life-sim runs on a clock. Set `defineGame({ time: { scale, dayLength, start } })` and write every need decay, growth, and schedule against `onTick`'s `dt` (game-time) or `ctx.time.after/every/at` — then pause and 1×/2×/3×/4× fast-forward affect the *whole* world (needs, jobs, pregnancies, cooking) for free. Never scale time by hand-multiplying in one system; that desyncs the rest. Render the clock + speed controls from `useGameClock()` (see `jgengine-api` → `ctx.time`).

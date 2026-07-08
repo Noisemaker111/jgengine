@@ -6,11 +6,7 @@ export const SKILL_GUIDE: Record<string, string> = {
   "jgengine-newgame":
     "Grab this first for a real build — the master blueprint and phased workflow that takes a named game all the way to done, not a demo slice. This is your plan template.",
   "jgengine-api":
-    "Grab this before writing any game config or content — the engine's verbs, primitives, and hooks, plus the definition of done.",
-  "jgengine-ui":
-    "Grab this for the HUD — the look-and-behave quality bar, so the UI reads as shipped instead of a bordered div.",
-  "jgengine-assets":
-    "Grab this so nothing looks like a placeholder — license-safe CC0 models and textures wired in from day one.",
+    "Grab this before writing any game config or content — the engine's verbs, primitives, and hooks, plus the UI quality bar, asset sourcing, and the definition of done.",
   "jgengine-verify":
     "Grab this to check a build works without fighting the browser — assert the scene's content in a test, keep the flaky screenshot as a final glance instead of the loop.",
 };
