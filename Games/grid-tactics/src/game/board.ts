@@ -1,4 +1,6 @@
 import { createTacticalGrid, type Tile, type TacticalGrid } from "@jgengine/core/tactics/tacticalGrid";
+import { terrain, type TerrainEnvironmentDescriptor } from "@jgengine/core/world/features";
+import { resolveTerrainField } from "@jgengine/core/world/terrain";
 
 export const GRID_SIZE = 8;
 export const TILE_SIZE = 2.2;
@@ -7,8 +9,23 @@ export const BOARD_EXTENT = GRID_SIZE * TILE_SIZE + BOARD_MARGIN;
 
 const HALF_SPAN = (GRID_SIZE - 1) / 2;
 
+export const TERRAIN: TerrainEnvironmentDescriptor = terrain({
+  bounds: { w: BOARD_EXTENT, d: BOARD_EXTENT },
+  height: 0.16,
+  frequency: 0.05,
+  seed: "grid-tactics-outpost",
+});
+
+const groundField = resolveTerrainField(TERRAIN);
+
+export function groundHeightAt(x: number, z: number): number {
+  return groundField.sampleHeight(x, z);
+}
+
 export function tileToWorld(tile: Tile): readonly [number, number, number] {
-  return [(tile[0] - HALF_SPAN) * TILE_SIZE, 0, (tile[1] - HALF_SPAN) * TILE_SIZE];
+  const x = (tile[0] - HALF_SPAN) * TILE_SIZE;
+  const z = (tile[1] - HALF_SPAN) * TILE_SIZE;
+  return [x, groundHeightAt(x, z), z];
 }
 
 export function worldToTile(x: number, z: number): Tile | null {

@@ -31,6 +31,8 @@ const RUIN_PALETTE: BuildingMaterialPalette = {
   corner: "#463f36",
 };
 
+const DECAL_LIFT = 0.03;
+
 function buildGridLineGeometry(): THREE.BufferGeometry {
   const half = (GRID_SIZE * TILE_SIZE) / 2;
   const points: number[] = [];
@@ -57,26 +59,31 @@ function Obstacles({ waveIndex }: { waveIndex: number }) {
   const buildings = useMemo(
     () =>
       wave.obstacles.map((tile) => {
-        const [x, , z] = tileToWorld(tile);
-        return generateBuilding({
-          id: `ruin-${waveIndex}-${tile[0]}-${tile[1]}`,
-          seed: `grid-tactics-${waveIndex}-${tile[0]}-${tile[1]}`,
-          center: [x, z],
-          floors: 1,
-          baysWide: 1,
-          baysDeep: 1,
-          bayWidth: TILE_SIZE * 0.72,
-          floorHeight: 1.5,
-          facadeDepth: 0.12,
-          roofOverhang: 0.08,
-        });
+        const [x, y, z] = tileToWorld(tile);
+        return {
+          y,
+          building: generateBuilding({
+            id: `ruin-${waveIndex}-${tile[0]}-${tile[1]}`,
+            seed: `grid-tactics-${waveIndex}-${tile[0]}-${tile[1]}`,
+            center: [x, z],
+            floors: 1,
+            baysWide: 1,
+            baysDeep: 1,
+            bayWidth: TILE_SIZE * 0.72,
+            floorHeight: 1.5,
+            facadeDepth: 0.12,
+            roofOverhang: 0.08,
+          }),
+        };
       }),
     [wave, waveIndex],
   );
   return (
     <>
-      {buildings.map((building) => (
-        <GeneratedBuilding key={building.id} building={building} palette={RUIN_PALETTE} />
+      {buildings.map(({ building, y }) => (
+        <group key={building.id} position={[0, y, 0]}>
+          <GeneratedBuilding building={building} palette={RUIN_PALETTE} />
+        </group>
       ))}
     </>
   );
@@ -94,9 +101,9 @@ export function GridEnvironment() {
 }
 
 function TileMarker({ tile, color, opacity }: { tile: Tile; color: string; opacity: number }) {
-  const [x, , z] = tileToWorld(tile);
+  const [x, y, z] = tileToWorld(tile);
   return (
-    <mesh position={[x, 0.03, z]} rotation-x={-Math.PI / 2}>
+    <mesh position={[x, y + DECAL_LIFT, z]} rotation-x={-Math.PI / 2}>
       <planeGeometry args={[TILE_SIZE * 0.86, TILE_SIZE * 0.86]} />
       <meshBasicMaterial color={color} transparent opacity={opacity} side={THREE.DoubleSide} depthWrite={false} />
     </mesh>
@@ -110,10 +117,10 @@ function IntentMarker({ tile, targetTile }: { tile: Tile; targetTile: Tile | nul
     const pulse = 0.22 + Math.sin(clock.elapsedTime * 3) * 0.08;
     (ref.current.material as THREE.MeshBasicMaterial).opacity = pulse;
   });
-  const [x, , z] = tileToWorld(tile);
+  const [x, y, z] = tileToWorld(tile);
   return (
     <>
-      <mesh ref={ref} position={[x, 0.04, z]} rotation-x={-Math.PI / 2}>
+      <mesh ref={ref} position={[x, y + DECAL_LIFT * 1.5, z]} rotation-x={-Math.PI / 2}>
         <planeGeometry args={[TILE_SIZE * 0.9, TILE_SIZE * 0.9]} />
         <meshBasicMaterial color="#f7b955" transparent opacity={0.3} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>

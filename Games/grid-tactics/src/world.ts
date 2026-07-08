@@ -1,15 +1,10 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import { environment, grass, terrain } from "@jgengine/core/world/features";
+import { environment, grass } from "@jgengine/core/world/features";
 
-import { BOARD_EXTENT } from "./game/board";
+import { BOARD_EXTENT, TERRAIN } from "./game/board";
 
 export const world = environment({
-  terrain: terrain({
-    bounds: { w: BOARD_EXTENT, d: BOARD_EXTENT },
-    height: 0.16,
-    frequency: 0.05,
-    seed: "grid-tactics-outpost",
-  }),
+  terrain: TERRAIN,
   vegetation: grass({
     area: { w: BOARD_EXTENT, d: BOARD_EXTENT },
     density: 1.4,

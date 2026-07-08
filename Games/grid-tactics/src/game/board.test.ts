@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { GRID_SIZE, createBattleGrid, manhattan, tileToWorld, tilesWithinRange, worldToTile } from "./board";
+import { GRID_SIZE, createBattleGrid, groundHeightAt, manhattan, tileToWorld, tilesWithinRange, worldToTile } from "./board";
 
 describe("board coordinate math", () => {
   test("tileToWorld centers the grid on the world origin", () => {
@@ -20,6 +20,25 @@ describe("board coordinate math", () => {
 
   test("worldToTile rejects points far outside the board", () => {
     expect(worldToTile(500, 500)).toBeNull();
+  });
+
+  test("tileToWorld lands every tile exactly on the sampled terrain surface", () => {
+    for (let c = 0; c < GRID_SIZE; c += 1) {
+      for (let r = 0; r < GRID_SIZE; r += 1) {
+        const [x, y, z] = tileToWorld([c, r]);
+        expect(y).toBe(groundHeightAt(x, z));
+      }
+    }
+  });
+
+  test("tileToWorld tracks terrain undulation, not a flat plane", () => {
+    const heights = new Set<number>();
+    for (let c = 0; c < GRID_SIZE; c += 1) {
+      for (let r = 0; r < GRID_SIZE; r += 1) {
+        heights.add(tileToWorld([c, r])[1]);
+      }
+    }
+    expect(heights.size).toBeGreaterThan(1);
   });
 });
 
