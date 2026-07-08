@@ -27,17 +27,21 @@ A clarifying question is justified only when two readings would change more than
 
 Your first substantive response is the complete plan for the **full game** — every part of it, not a starter scope:
 
+- **Pillars, in priority order** — 3–5 one-line pillars, **ranked**, naming what the game is for ("legible emergence > zoom is the reward > the chronicle is the product > watchable by default"). Every later trade-off is settled by pillar rank instead of relitigated; a feature that serves no pillar doesn't ship.
 - **Perspective** — first- or third-person, committed **up front** and stated in one line; it drives camera, input, HUD, and combat feel. A first-person shooter only discovered to be first-person three QA passes in is a rebuild, not a fix. Set `camera: { perspective: "first" }` in the `defineGame({...})` call to match (`"first"` mounts mouse-look + reticle + viewmodel; default `"third"` is the orbit camera). If the fantasy is a shooter, say "first-person" and mean it.
 - **System list** — every signature system of the named fantasy, at full depth (weapon mods and damage types, not just "guns"). A cut is a last resort, recorded with its reason.
+- **Coupling map** — for sim-shaped games: each system names the existing systems it feeds and reads, as cause→effect chains a player can reconstruct by watching ("drought → failed harvest → hunger → unrest"). A threat or event system is a *coupling into existing systems*, never a standalone effect — plague travels the trade routes, fire spreads with the wind system's wind. Prefer one legible failure pipeline that many systems feed over five private ones.
 - **Content budget** — numbers per system, sized by what the fantasy needs, not what's easy to type: items, enemy types, quests, zones, vendors, recipes (floors in "Content scale" below).
 - **Asset plan** — which packs (per `jgengine-assets`) cover ground, structures, props, characters/enemies, items; pack → catalog-id mapping; one style family.
+- **Art direction** — a *decision*, not an adjective. One named aesthetic phrase ("illuminated-manuscript storybook", "neon brutalist"), a committed palette (4–6 hex values covering ground/sky plus UI panel, ink, and accent), a type voice, and a UI copy register (buttons in the fantasy's own language — "Unleash plague", not "Spawn disease event"). Written in the blueprint so every phase colors inside the same lines; "make it look nice" produces the murk this bullet exists to kill.
 - **File tree** — one line per file: the skeleton at the top of `src/` (`game.config.ts`, `index.tsx`, `main.tsx`, `loop.ts`, `world.ts`, `index.css`) plus the root `index.html` + `vite.config.ts` that make the game a standalone Vite app, plus every catalog, generator, handler, quest, curve, and UI component under `src/game/`.
 - **Catalog ids** — the archetype entity / item / object / loot-table / quest ids; the generators below produce the breadth.
 - **Keybind table** — lives in `keybinds.ts` (named actions + `hotbarSlotBindings(n)`); action → key, checked: one key, one action — including mode toggles (aim-toggle on `V` plus a V.A.T.S. key on `V` is the classic collision).
 - **UI zone map** — which HUD cluster lives in which `GameUI.tsx` grid zone.
 - **Multiplayer shape** — adapter + topology (`"shared" | "lobbies" | "private"`) and which systems sync.
+- **Non-goals** — the explicit cut list: what this game deliberately does not do, each with its one-line reason ("battles resolve abstractly — this is a chronicle, not a wargame"). Scope bleeds toward whatever was never ruled out.
 - **Phase plan** — the ordered phases that take an empty project to the complete blueprint, each phase a coherent whole (see below).
-- **Staged screenshot scenario** per phase for `GameUiPreview`.
+- **Staged screenshot scenario** per phase for `GameUiPreview`, plus each phase's **observable acceptance**: what a player *experiences* in a stated time window, not a feature list — "left at max speed for 10 minutes: visible growth, 15+ log entries, no runaway values", "fly from the far overview to a market stall at 60 fps". A phase whose acceptance can't be phrased as something seen or felt isn't a phase, it's plumbing.
 
 The blueprint message ends with one question — "anything you want changed before I build?" — the only checkpoint in the entire build. Fold in whatever the user answers, then execute the phases straight through with no further approval stops. This is not a scope quiz: the blueprint already commits to the full canonical reading of the request; the question invites corrections, it doesn't outsource decisions.
 
@@ -120,6 +124,20 @@ The interior analog of the shooter recipe: a life-sim, dollhouse, base-builder, 
 - **Time is a system, not a hack**: a life-sim runs on a clock. Set `defineGame({ time: { scale, dayLength, start } })` and write every need decay, growth, and schedule against `onTick`'s `dt` (game-time) or `ctx.time.after/every/at` — then pause and 1×/2×/3×/4× fast-forward affect the *whole* world (needs, jobs, pregnancies, cooking) for free. Never scale time by hand-multiplying in one system; that desyncs the rest. Render the clock + speed controls from `useGameClock()` (see `jgengine-api` → `ctx.time`).
 
 One interior is a probe; if a second needs this same cell→floor/wall/furniture loop, promote it to an engine `roomGrid` helper (cells → floor tiles + edge walls + doorways). Until then it is a recipe, not a `defineGame` field.
+
+## Archetype recipe — living-world sim (kingdom / colony / ambient god-game)
+
+A world that runs itself while the player watches or nudges. The engine covers more of this than it looks; the design rules below are what make it *watchable* rather than a spreadsheet:
+
+- **Split the RNG by purpose, once, at the top**: `seededStreams(seed)` (`@jgengine/core/random/rng`) — one stream for worldgen, a separate one for everything that happens after year 0. Then intervening in a run can never change the map, and the same seed is a shareable world.
+- **Site the world with `position`**: several `building({ position, count, seed })` clusters in one `environment()` are distinct settlements; buildings ground-snap to the terrain field. Sample the same `resolveTerrainField` for anything the game moves across the terrain — the field the shell renders is the field you query.
+- **Time is the spine**: `time: { scale, dayLength, speeds }` + `ctx.time.every/after/at` for every system tick — never a hand-multiplied timer (see the interior recipe). Seasons/years aren't a primitive yet: derive them from day count in one game-owned calendar module so every system reads the same one.
+- **Two-layer population** (the grand-strategy trick): settlements carry population as plain numbers with drift rates; only ~a dozen *notables* are real named records with age, traits, and relationships. Pools make the world feel big; notables make the chronicle feel personal. Neither needs an entity until it must be visible.
+- **Agents interpolate, systems tick**: a caravan/army stores its path and departure/arrival sim-times; the render side interpolates position from current sim-time each frame. Motion stays smooth at any speed step and nothing teleports when the player scrubs to 30×.
+- **The event log is the product**: every system emits dated, named entries ("Year 2, day 113 — Osterholt brings in a lean harvest"). Keep the full history in a game-owned array (the engine `feed` is a bounded ring — push to it for reactivity, not as the archive).
+- **Spectate-by-click is possession**: leave `camera.followEntityId` unset and the rigs follow `ctx.player.possession.active(userId)` every frame — so `pointer` click → `possession.own/possess` an NPC's entity puts the camera on it live, and `disown` releases back to the free rig. This is the supported runtime camera retarget; there is no imperative fly-to yet.
+- **Every positive feedback loop ships with a damper**: growth raises food pressure, wealth attracts trouble, strength costs upkeep. State the pairs in the blueprint; a sim without dampers runs away long before anyone watches it for ten minutes.
+- **Acceptance is timed observation, not a feature list**: blueprint it as "left running at max speed with zero input for N minutes, a viewer sees X events, Y visible movers, and no runaway values", and verify exactly that with the sim's pure functions in `bun test`.
 
 ## Engine gaps
 
