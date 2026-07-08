@@ -22,6 +22,10 @@ the latest and surface the migration steps.
 - **LAN adapter + Fly sugar** — `lan({ topology?, port?, path? })` in `@jgengine/core/runtime/adapter` resolves through `@jgengine/shell/multiplayer`'s `resolveShellMultiplayer` to `ws(s)://<page hostname>:<port ?? 8080><path ?? /ws>` derived from `window.location`, so any browser on the LAN auto-connects to whichever machine served the page — no URL configuration. `fly({ app, topology?, path? })` is `ws` sugar for a Fly.io deploy: resolves to `wss://<app>.fly.dev<path ?? "/ws">`. `apps/dev`'s Vite server now listens on the network (`server: { host: true }`) and exposes `?p2p=host` / `?p2p=join` query params wired through the new `resolvePeerShellMultiplayer({ gameId, role, room?, userId?, feedActions? })`.
 - `ws()` (`@jgengine/core/runtime/adapter`) gained an optional `url` field, carried through by `resolveShellMultiplayer` (`args.url ?? adapter.url ?? default`).
 
+### Removed
+
+- **The `gameui` component kit** (`@jgengine/react/gameui`) — the themed HUD kit (bars, slots, feedback, meters, panels, screens, reticles, icons) and its `GameUiThemeProvider`/`useGameUiTheme` theming have been removed. **Breaking** for anyone importing `@jgengine/react/gameui` (or its subpaths/barrel). The components now ship as installable shadcn registry items at `https://jgengine.com/r/<name>.json` (`npx shadcn@latest add https://jgengine.com/r/<name>.json`), styled with Tailwind + `--jg-*` CSS variables instead of a theme object. The icon catalog (`GameIcon`, `iconForAction`, `iconForItemId`, `isGameIconName`, `GameIconName`) moved to `@jgengine/react/gameIcons`. To theme, set the `--jg-*` variables on a wrapper element (the registry's `jg-theme` presets mirror the old `ember`/`synthwave`/`fieldkit` palettes) instead of wrapping in `GameUiThemeProvider`.
+
 ### Docs
 
 - Added [CREDITS.md](CREDITS.md) crediting [achrefelouafi](https://github.com/achrefelouafi) for the MIT Three.js reference projects behind the procedural building, water, rain, and snow renderers, with links from the root, `@jgengine/core`, and `@jgengine/shell` READMEs.
