@@ -1,5 +1,6 @@
 import { useGameStore } from "@jgengine/react/hooks";
-import { DeathScreenView, ResultsScreen } from "@jgengine/react/gameui";
+import { DeathScreenView } from "@/components/ui/death-screen-view";
+import { ResultsScreen } from "@/components/ui/results-screen";
 
 import { GOLD_CURRENCY } from "../../entities/base/catalog";
 import { TOTAL_WAVES } from "../../waves/manifest";

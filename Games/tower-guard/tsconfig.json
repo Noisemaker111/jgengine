@@ -11,6 +11,7 @@
     "verbatimModuleSyntax": true,
     "types": ["vite/client"],
     "paths": {
+      "@/components/ui/*": ["../../registry/jgengine/*"],
       "@jgengine/core/*": ["../../packages/core/src/*"],
       "@jgengine/react/*": ["../../packages/react/src/*"],
       "@jgengine/ws/*": ["../../packages/ws/src/*"],

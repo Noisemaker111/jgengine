@@ -1,64 +1,57 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useAbilitySlots, useEntityStat } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import {
-  AbilitySlotButton,
-  DeathScreenView,
-  GameIcon,
-  GameUiThemeProvider,
-  HudPanel,
-  MatchTimer,
-  MenuButton,
-  ResultsScreen,
-  ScoreReadout,
-  VitalBar,
-  XpBar,
-  type AbilitySlotButtonState,
-  type GameUiTheme,
-} from "@jgengine/react/gameui";
+import { GameIcon } from "@jgengine/react/gameIcons";
+import { AbilitySlotButton, type AbilitySlotState as AbilitySlotButtonState } from "@/components/ui/ability-slot";
+import { DeathScreenView } from "@/components/ui/death-screen-view";
+import { HudPanel } from "@/components/ui/hud-panel";
+import { MatchTimer } from "@/components/ui/match-timer";
+import { MenuButton } from "@/components/ui/menu-button";
+import { ResultsScreen } from "@/components/ui/results-screen";
+import { ScoreReadout } from "@/components/ui/score-readout";
+import { VitalBar } from "@/components/ui/vital-bar";
+import { XpBar } from "@/components/ui/xp-bar";
+import type { JgThemeVars } from "@/components/ui/jg-theme";
 import type { AbilitySlotState } from "@jgengine/core/combat/abilityKit";
 
 import type { WeaponId } from "../items/weapons/catalog";
 import { chooseUpgrade } from "../run/simulation";
 import { WIN_DURATION_SECONDS, getRunState } from "../run/state";
 
-const swarmTheme: GameUiTheme = {
-  name: "swarm",
-  accent: "#7fe36b",
-  accentGlow: "rgba(127, 227, 107, 0.5)",
-  accentDeep: "#2f7d38",
-  surface: "#0f1810",
-  surfaceDeep: "#070c08",
-  edge: "#2a3f27",
-  edgeBright: "#4c6a45",
-  textPrimary: "#e8f5e2",
-  textDim: "#8fa688",
-  health: "#e0483e",
-  healthDeep: "#6e211c",
-  mana: "#4a86d8",
-  manaDeep: "#20406f",
-  stamina: "#d9c33f",
-  staminaDeep: "#6e621c",
-  xp: "#a566d9",
-  xpDeep: "#4e2c6e",
-  shield: "#9fb9c9",
-  shieldDeep: "#48606e",
-  danger: "#e0483e",
-  warning: "#e8a33d",
-  success: "#7fe36b",
-  hostile: "#e0483e",
-  friendly: "#2fb7c4",
-  neutral: "#d9c33f",
-  rarity: {
-    common: "#b4b2a8",
-    uncommon: "#7fb84a",
-    rare: "#4a86d8",
-    epic: "#a04fd0",
-    legendary: "#e0862e",
-  },
-  fontDisplay: '"Segoe UI", system-ui, sans-serif',
-  fontNumeric: 'Consolas, "Cascadia Mono", "SF Mono", "Roboto Mono", monospace',
-  fontBody: '"Segoe UI", system-ui, sans-serif',
+const swarmVars: JgThemeVars = {
+  "--jg-accent": "#7fe36b",
+  "--jg-accent-glow": "rgba(127, 227, 107, 0.5)",
+  "--jg-accent-deep": "#2f7d38",
+  "--jg-surface": "#0f1810",
+  "--jg-surface-deep": "#070c08",
+  "--jg-edge": "#2a3f27",
+  "--jg-edge-bright": "#4c6a45",
+  "--jg-text": "#e8f5e2",
+  "--jg-text-dim": "#8fa688",
+  "--jg-health": "#e0483e",
+  "--jg-health-deep": "#6e211c",
+  "--jg-mana": "#4a86d8",
+  "--jg-mana-deep": "#20406f",
+  "--jg-stamina": "#d9c33f",
+  "--jg-stamina-deep": "#6e621c",
+  "--jg-xp": "#a566d9",
+  "--jg-xp-deep": "#4e2c6e",
+  "--jg-shield": "#9fb9c9",
+  "--jg-shield-deep": "#48606e",
+  "--jg-danger": "#e0483e",
+  "--jg-warning": "#e8a33d",
+  "--jg-success": "#7fe36b",
+  "--jg-hostile": "#e0483e",
+  "--jg-friendly": "#2fb7c4",
+  "--jg-neutral": "#d9c33f",
+  "--jg-rarity-common": "#b4b2a8",
+  "--jg-rarity-uncommon": "#7fb84a",
+  "--jg-rarity-rare": "#4a86d8",
+  "--jg-rarity-epic": "#a04fd0",
+  "--jg-rarity-legendary": "#e0862e",
+  "--jg-font-display": '"Segoe UI", system-ui, sans-serif',
+  "--jg-font-numeric": 'Consolas, "Cascadia Mono", "SF Mono", "Roboto Mono", monospace',
+  "--jg-font-body": '"Segoe UI", system-ui, sans-serif',
 };
 
 const WEAPON_ICON: Record<WeaponId, "spear" | "sword" | "lightning"> = {
@@ -151,12 +144,12 @@ function UpgradeModal() {
             >
               <span
                 style={{
-                  fontFamily: swarmTheme.fontDisplay,
+                  fontFamily: "var(--jg-font-display)",
                   fontSize: 13,
                   fontWeight: 700,
                   letterSpacing: "0.14em",
                   textTransform: "uppercase",
-                  color: swarmTheme.accent,
+                  color: "var(--jg-accent)",
                   textAlign: "center",
                 }}
               >
@@ -182,7 +175,7 @@ export function GameUI() {
   const remaining = Math.max(0, WIN_DURATION_SECONDS - ctx.time.now());
 
   return (
-    <GameUiThemeProvider theme={swarmTheme}>
+    <div style={{ ...swarmVars, display: "contents" }}>
       {run.outcome === "lost" && <DeathScreenView title="Overrun" subtitle="The swarm closed in." />}
       {run.outcome === "won" && (
         <ResultsScreen
@@ -224,6 +217,6 @@ export function GameUI() {
           </div>
         </>
       )}
-    </GameUiThemeProvider>
+    </div>
   );
 }

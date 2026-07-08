@@ -1,5 +1,8 @@
 import { useGameStore } from "@jgengine/react/hooks";
-import { HeartRow, WaveIndicator, WalletCurrencyDisplay, HudLabel } from "@jgengine/react/gameui";
+import { HeartRow } from "@/components/ui/heart-row";
+import { WaveIndicator } from "@/components/ui/wave-indicator";
+import { WalletCurrencyDisplay } from "@/components/ui/wallet-currency-display";
+import { HudLabel } from "@/components/ui/hud-label";
 
 import { BASE_ENTITY_ID, GOLD_CURRENCY, STARTING_LIVES } from "../../entities/base/catalog";
 import { TOTAL_WAVES } from "../../waves/manifest";

@@ -58,7 +58,6 @@ const gameRegistry: GameRegistry = {
     import("./demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
   "social-hub": () =>
     import("./demo/socialHubDemo").then((module) => module.socialHubGame),
-  "ui-kit": () => import("./demo/uiKitDemo").then((module) => module.uiKitGame),
   ...gameEntries,
 };
 

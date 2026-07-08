@@ -1,5 +1,7 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { AbilitySlotButton, GameIcon, HudLabel, useGameUiTheme } from "@jgengine/react/gameui";
+import { AbilitySlotButton } from "@/components/ui/ability-slot";
+import { HudLabel } from "@/components/ui/hud-label";
+import { GameIcon } from "@jgengine/react/gameIcons";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 
 import { GOLD_CURRENCY } from "../../entities/base/catalog";
@@ -8,7 +10,6 @@ import { keybinds } from "../../keybinds";
 import { session } from "../../session";
 
 export function BuildBar() {
-  const theme = useGameUiTheme();
   const { commands } = useGame();
   const gold = useGameStore((ctx) => ctx.game.economy.balance(ctx.player.userId, GOLD_CURRENCY));
   const selected = useGameStore(() => session.selectedTowerId);
@@ -31,7 +32,7 @@ export function BuildBar() {
                 gap: 4,
                 padding: 3,
                 borderRadius: 4,
-                boxShadow: isSelected ? `0 0 0 2px ${theme.accent}` : "none",
+                boxShadow: isSelected ? `0 0 0 2px var(--jg-accent)` : "none",
               }}
             >
               <AbilitySlotButton
@@ -43,21 +44,21 @@ export function BuildBar() {
               />
               <span
                 style={{
-                  fontFamily: theme.fontNumeric,
+                  fontFamily: "var(--jg-font-numeric)",
                   fontSize: 12,
                   fontWeight: 700,
-                  color: affordable ? theme.textPrimary : theme.danger,
+                  color: affordable ? "var(--jg-text)" : "var(--jg-danger)",
                 }}
               >
                 {def.cost}g
               </span>
               <span
                 style={{
-                  fontFamily: theme.fontDisplay,
+                  fontFamily: "var(--jg-font-display)",
                   fontSize: 9,
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  color: theme.textDim,
+                  color: "var(--jg-text-dim)",
                 }}
               >
                 {def.label}

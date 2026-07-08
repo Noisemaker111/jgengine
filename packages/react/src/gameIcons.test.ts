@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { iconForAction, isGameIconName, GAME_ICON_NAMES } from "./icons";
+import { iconForAction, isGameIconName, GAME_ICON_NAMES } from "./gameIcons";
 
 describe("iconForAction", () => {
   test("maps the shipped games' action vocabulary to glyphs", () => {

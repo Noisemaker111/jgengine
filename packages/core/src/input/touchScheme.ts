@@ -59,7 +59,7 @@ export interface TouchGestureBindings {
 export interface TouchButtonSpec {
   action: string;
   label?: string;
-  /** Glyph name from the capture layer's icon catalog (`@jgengine/react/gameui` `GameIconName`); unset derives one from the action name, `false` forces the text label. */
+  /** Glyph name from the capture layer's icon catalog (`@jgengine/react/gameIcons` `GameIconName`); unset derives one from the action name, `false` forces the text label. */
   icon?: string | false;
 }
 
