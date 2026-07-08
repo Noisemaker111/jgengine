@@ -21,6 +21,7 @@ import {
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
+import { deriveTouchScheme, withTouchCodes } from "@jgengine/core/input/touchScheme";
 import {
   buildContextMenu,
   contextVerbInput,
@@ -43,14 +44,21 @@ import {
   createPlayerMotionState,
   resolveMovementIntent,
 } from "@jgengine/core/movement/movementModel";
+import {
+  advanceVoxelPlayer,
+  createVoxelPlayerBody,
+  type VoxelPlayerBody,
+} from "@jgengine/core/movement/voxelController";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
+import { useDisplayProfile } from "@jgengine/react/display";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
-import type { WsPresenceRow } from "@jgengine/ws/protocol";
+import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
 import type { EntitySpriteConfig, ModelConfig, PointerConfig } from "@jgengine/core/game/playableGame";
 
@@ -76,6 +84,7 @@ import {
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
+import { TouchControlsDock, TouchPlaySurface } from "./touch/TouchControlsOverlay";
 
 const DEV_USER_ID = "dev-player";
 const TURN_SPEED = 2.4;
@@ -117,6 +126,13 @@ const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
   "useAbility",
   "interact",
 ]);
+
+const SHELL_MOVEMENT_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] as const;
+
+function shellDrivesPlayerPose(input: PlayableGame["game"]["input"]): boolean {
+  const bound = input ?? {};
+  return SHELL_MOVEMENT_ACTIONS.some((action) => action in bound);
+}
 
 function findHotbarSlotActions(input: PlayableGame["game"]["input"]): { action: string; slot: number }[] {
   return Object.keys(input ?? {}).flatMap((action) => {
@@ -423,7 +439,7 @@ function WorldView({
   );
 }
 
-function RemotePlayers({ rows }: { rows: WsPresenceRow[] }) {
+function RemotePlayers({ rows }: { rows: PresencePoseRow[] }) {
   return (
     <>
       {rows.map((row) => (
@@ -474,9 +490,28 @@ function FrameDriver({
   pingCommand: string | undefined;
 }) {
   const motionRef = useRef(createPlayerMotionState());
+  const voxelBodyRef = useRef<VoxelPlayerBody | null>(null);
+  const solidCacheRef = useRef<{ count: number; set: Set<string> }>({ count: -1, set: new Set() });
   const hasReportedTickError = useRef(false);
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
+  const collision = playable.collision;
+  const voxelDims = useMemo(
+    () => ({
+      halfWidth: collision?.halfWidth ?? 0.3,
+      height: collision?.height ?? 1.8,
+      stepHeight: collision?.stepHeight ?? 0.6,
+    }),
+    [collision],
+  );
+  const autoPickupRadius = useMemo(() => {
+    const cfg = playable.worldItem?.autoPickup;
+    if (cfg === undefined || cfg === false) return null;
+    const fallback = playable.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
+    return cfg === true ? fallback : cfg.radius ?? fallback;
+  }, [playable]);
+  const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
+  const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
 
   useFrame((_state, rawDt) => {
     try {
@@ -489,7 +524,7 @@ function FrameDriver({
     const player = ctx.scene.entity.get(playerId);
     const forwardX = Math.sin(yawRef.current);
     const forwardZ = Math.cos(yawRef.current);
-    if (player !== null) {
+    if (player !== null && drivesPose) {
       const keys = createEmptyMovementKeys();
       keys.w = tracker.isDown("moveForward");
       keys.s = tracker.isDown("moveBack");
@@ -498,22 +533,65 @@ function FrameDriver({
       keys.shift = tracker.isDown("sprint");
       keys.space = tracker.isDown("jump");
       const intent = resolveMovementIntent(keys, true);
-      const motion = motionRef.current;
-      const step = advancePlayerMotion(
-        motion,
-        intent,
-        forwardX,
-        forwardZ,
-        player.movement.walkSpeed ?? 2,
-        rawDt,
-      );
-      ctx.scene.entity.setPose(playerId, {
-        position: [player.position[0] + step.stepX, motion.jumpOffset, player.position[2] + step.stepZ],
-        rotationY: intent.moving
-          ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
-          : player.rotationY,
-        dt: rawDt,
-      });
+      if (collision?.voxel) {
+        let body = voxelBodyRef.current;
+        if (body === null) {
+          body = createVoxelPlayerBody(player.position[0], player.position[1], player.position[2]);
+          voxelBodyRef.current = body;
+        }
+        const objects = ctx.scene.object.list();
+        const cache = solidCacheRef.current;
+        if (cache.count !== objects.length) {
+          cache.set = new Set(objects.map((o) => `${o.position[0]},${o.position[1]},${o.position[2]}`));
+          cache.count = objects.length;
+        }
+        const solids = cache.set;
+        const isSolid = (x: number, y: number, z: number) => solids.has(`${x},${y},${z}`);
+        advanceVoxelPlayer(
+          body,
+          intent,
+          forwardX,
+          forwardZ,
+          player.movement.walkSpeed ?? 2,
+          rawDt,
+          isSolid,
+          voxelDims,
+        );
+        ctx.scene.entity.setPose(playerId, {
+          position: [body.x, body.y, body.z],
+          rotationY: intent.moving
+            ? Math.atan2(body.velocityX, body.velocityZ)
+            : player.rotationY,
+          dt: rawDt,
+        });
+      } else {
+        const motion = motionRef.current;
+        const step = advancePlayerMotion(
+          motion,
+          intent,
+          forwardX,
+          forwardZ,
+          player.movement.walkSpeed ?? 2,
+          rawDt,
+        );
+        const nextX = player.position[0] + step.stepX;
+        const nextZ = player.position[2] + step.stepZ;
+        ctx.scene.entity.setPose(playerId, {
+          position: [nextX, ground.sampleHeight(nextX, nextZ) + motion.jumpOffset, nextZ],
+          rotationY: intent.moving
+            ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
+            : player.rotationY,
+          dt: rawDt,
+        });
+      }
+    }
+
+    if (autoPickupRadius !== null) {
+      const self = ctx.scene.entity.get(playerId);
+      if (self !== null) {
+        const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
+        if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
+      }
     }
 
     playable.loop.onTick(ctx, gameDt);
@@ -653,7 +731,7 @@ export function GamePlayerShell({
 }) {
   const [ctx, setCtx] = useState<GameContext | null>(null);
   const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostic[]>([]);
-  const [remotePlayers, setRemotePlayers] = useState<WsPresenceRow[]>([]);
+  const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
@@ -668,8 +746,22 @@ export function GamePlayerShell({
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [contextMenu, setContextMenu] = useState<{ menu: ContextMenu; x: number; y: number } | null>(null);
   const tracker = useMemo(
-    () => createActionStateTracker(toActionStateBindingMap(playable.game.input ?? {})),
+    () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(playable.game.input))),
     [playable],
+  );
+  const touchScheme = useMemo(
+    () =>
+      deriveTouchScheme(playable.game.input, {
+        reserved: RESERVED_INPUT_ACTIONS,
+        firstPerson: resolveRigKind(playable.camera) === "first",
+        config: playable.touch,
+      }),
+    [playable],
+  );
+  const { coarsePointer } = useDisplayProfile();
+  const touchSink = useMemo(
+    () => ({ onCodeDown: (code: string) => tracker.handleDown(code), onCodeUp: (code: string) => tracker.handleUp(code) }),
+    [tracker],
   );
   const audioEngine = useMemo(
     () => createAudioEngine({ sounds: playable.audio?.sounds, buses: playable.audio?.buses }),
@@ -755,6 +847,36 @@ export function GamePlayerShell({
             },
           );
           if (remoteUnsub !== undefined) cleanups.push(remoteUnsub);
+        }
+
+        const chatSync = multiplayer.backend.chatSyncFor?.(joined.serverId);
+        if (chatSync !== undefined) {
+          const globalChannelIds = new Set(
+            ctx.game.chat
+              .channels()
+              .filter((channel) => channel.kind === "global")
+              .map((channel) => channel.id),
+          );
+          const seenRemoteChat = new Set<string>();
+          cleanups.push(
+            ctx.game.events.subscribe("chat.message", (event) => {
+              if (event.fromUserId !== multiplayer.userId) return;
+              if (!globalChannelIds.has(event.channelId)) return;
+              void chatSync.send(event.channelId, event.body).catch(() => undefined);
+            }),
+          );
+          for (const channelId of globalChannelIds) {
+            cleanups.push(
+              chatSync.subscribe(channelId, (messages) => {
+                for (const message of messages) {
+                  if (message.fromUserId === multiplayer.userId) continue;
+                  if (seenRemoteChat.has(message.id)) continue;
+                  seenRemoteChat.add(message.id);
+                  ctx.game.chat.send(message.fromUserId, message.channelId, message.body);
+                }
+              }),
+            );
+          }
         }
       })
       .catch(() => undefined);
@@ -962,6 +1084,7 @@ export function GamePlayerShell({
           near: playable.camera?.frustum?.near ?? 0.1,
           far: playable.camera?.frustum?.far ?? 300,
         }}
+        style={{ touchAction: "none" }}
       >
         <color attach="background" args={["#14161b"]} />
         <ambientLight intensity={0.55} />
@@ -1013,12 +1136,27 @@ export function GamePlayerShell({
           pingCommand={pointer?.pingCommand}
         />
       </Canvas>
+      {coarsePointer && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
+        <TouchPlaySurface
+          scheme={touchScheme}
+          sink={touchSink}
+          yawRef={yawRef}
+          pitchRef={pitchRef}
+          maxPitch={playable.camera?.firstPerson?.maxPitch ?? 1.45}
+          onPrimaryTap={() => {
+            primaryClickRef.current = true;
+          }}
+        />
+      ) : null}
       <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
         <GameProvider context={ctx}>
           <GameUI />
         </GameProvider>
       </GameUiErrorBoundary>
       {showReticle ? <Reticle /> : null}
+      {coarsePointer && touchScheme !== null && (touchScheme.joystick !== null || touchScheme.buttons.length > 0) ? (
+        <TouchControlsDock scheme={touchScheme} sink={touchSink} />
+      ) : null}
       {marquee !== null ? <MarqueeBox rect={marquee} /> : null}
       {contextMenu !== null ? (
         <ContextMenuView

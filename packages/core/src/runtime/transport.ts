@@ -1,3 +1,5 @@
+import type { ChatSync } from "../multiplayer/chatContract";
+import type { PlayerPose } from "../multiplayer/poseSyncGate";
 import type { PresenceTransport } from "../multiplayer/presenceContract";
 
 export type JoinServerResult = {
@@ -67,4 +69,34 @@ export type GameBackend<
   transport: GameRuntimeTransport;
   feeds?: GameRuntimeFeeds;
   presence?: PresenceTransport<TPresenceRow, TPresenceLocation, TGameId>;
+};
+
+export type PresencePoseRow = {
+  userId: string;
+  position: { x: number; y: number; z: number };
+  rotationY: number;
+  rotationPitch: number;
+  lastSeenAt: number;
+};
+
+export type PresenceSync = {
+  subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe;
+  syncPose: (serverId: string, pose: PlayerPose) => void;
+};
+
+export type LiveGameBackend<
+  TPresenceRow = unknown,
+  TPresenceLocation = unknown,
+  TGameId extends string = string,
+> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & {
+  presenceSync: PresenceSync;
+  pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>;
+  chatSyncFor?: (serverId: string) => ChatSync;
+};
+
+export type MultiplayerSession = {
+  gameId: string;
+  userId: string;
+  backend: LiveGameBackend;
+  feedActions: string[];
 };

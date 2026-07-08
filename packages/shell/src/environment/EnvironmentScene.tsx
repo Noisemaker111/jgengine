@@ -120,17 +120,11 @@ function Structures({ structures, field }: { structures: BuildingEnvironmentDesc
 
   return (
     <>
-      {buildings.map((building) => {
-        const groundY = field.sampleHeight(
-          (building.bounds.minX + building.bounds.maxX) / 2,
-          (building.bounds.minZ + building.bounds.maxZ) / 2,
-        );
-        return (
-          <group key={building.id} position-y={Number.isFinite(groundY) ? groundY : 0}>
-            <GeneratedBuilding building={building} />
-          </group>
-        );
-      })}
+      {buildings.map((building) => (
+        <group key={building.id} position-y={field.sampleHeight(building.center[0], building.center[1])}>
+          <GeneratedBuilding building={building} />
+        </group>
+      ))}
     </>
   );
 }

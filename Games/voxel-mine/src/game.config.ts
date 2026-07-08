@@ -1,4 +1,5 @@
 import { defineGame } from "@jgengine/shell/defineGame";
+import { convex } from "@jgengine/core/runtime/adapter";
 
 import { EYE_HEIGHT, loop } from "./loop";
 import { physics, world } from "./world";
@@ -18,6 +19,7 @@ export const game = defineGame({
   inventories,
   input: keybinds,
   server: { mode: "creative" },
+  multiplayer: convex({ topology: "shared" }),
   content,
   loop,
   GameUI,
@@ -27,4 +29,9 @@ export const game = defineGame({
     firstPerson: { eyeHeight: EYE_HEIGHT, reticle: true, viewmodel: false },
   },
   hotbarSelection: getSelectedSlot,
+  collision: { voxel: true },
+  worldItem: { autoPickup: true, pickupRadius: 1.8 },
+  touch: {
+    hidden: Object.keys(keybinds).filter((action) => action.startsWith("selectSlot")),
+  },
 });

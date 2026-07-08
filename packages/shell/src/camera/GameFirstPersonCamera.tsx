@@ -34,6 +34,7 @@ export function GameFirstPersonCamera({
 
   useEffect(() => {
     const requestLock = () => {
+      if (window.matchMedia?.("(pointer: coarse)").matches) return;
       if (document.pointerLockElement !== domElement) void domElement.requestPointerLock?.();
     };
     const onMove = (event: MouseEvent) => {

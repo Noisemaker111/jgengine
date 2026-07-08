@@ -1,9 +1,14 @@
 import type { ConvexReactClient } from "convex/react";
-import type { GameBackend } from "@jgengine/core/runtime/transport";
+import type { LiveGameBackend } from "@jgengine/core/runtime/transport";
+import type { PoseSyncTuning } from "@jgengine/core/multiplayer/poseSyncGate";
 import {
+  createConvexChatSync,
+  createConvexFeedWrites,
   createConvexGameFeeds,
   createConvexGameTransport,
   createConvexLeaderboardReads,
+  createConvexPresenceSync,
+  defaultConvexGameApi,
   type ConvexGameApi,
 } from "./createConvexGameTransport";
 import {
@@ -17,7 +22,7 @@ export type ConvexBackend<
   TPresenceRow = unknown,
   TPresenceLocation = unknown,
   TGameId extends string = string,
-> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & {
+> = LiveGameBackend<TPresenceRow, TPresenceLocation, TGameId> & {
   leaderboard: ConvexLeaderboardReads;
 };
 
@@ -26,8 +31,10 @@ export type ConvexBackendOptions<
   TPresenceRow,
 > = {
   client: ConvexReactClient;
-  api: ConvexGameApi;
   gameId: string;
+  userId: string;
+  api?: ConvexGameApi;
+  poseTuning?: PoseSyncTuning;
   presence?: {
     functions: ConvexPresenceFunctions;
     mapRow: (row: TRawPresenceRow) => TPresenceRow;
@@ -42,11 +49,15 @@ export function createConvexBackend<
 >(
   options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>,
 ): ConvexBackend<TPresenceRow, TPresenceLocation, TGameId> {
-  const config = { gameId: options.gameId };
+  const api = options.api ?? defaultConvexGameApi();
+  const config = { gameId: options.gameId, userId: options.userId };
   return {
-    transport: createConvexGameTransport(options.client, options.api, config),
-    feeds: createConvexGameFeeds(options.client, options.api, config),
-    leaderboard: createConvexLeaderboardReads(options.api, config),
+    transport: createConvexGameTransport(options.client, api, config),
+    feeds: createConvexGameFeeds(options.client, api, config),
+    leaderboard: createConvexLeaderboardReads(api, config),
+    presenceSync: createConvexPresenceSync(options.client, api, config, options.poseTuning),
+    ...createConvexFeedWrites(options.client, api, config),
+    chatSyncFor: (serverId) => createConvexChatSync(options.client, api, config, serverId),
     ...(options.presence === undefined
       ? {}
       : {

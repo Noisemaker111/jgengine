@@ -6,8 +6,9 @@
  * integration. Keeping it framework-free means the kinematics controller,
  * the keyboard handler and the on-screen touch D-pad all speak the same
  * vocabulary, and the translation is unit testable without a renderer.
- * DOM capture, pointer lock, and the per-frame look channel live in
- * movementInput.ts.
+ * DOM capture lives in `@jgengine/shell`'s GamePlayerShell (keyboard and
+ * touch controls) and its camera rigs (pointer lock, the per-frame look
+ * channel).
  */
 
 export type MovementKey = "w" | "a" | "s" | "d" | "shift" | "control" | "c" | "space";

@@ -43,7 +43,19 @@ function Control({ action, desc }: { action: string; desc: string }) {
   );
 }
 
-export function HoldPanel({ snapshot }: { snapshot: TetrisSnapshot }) {
+function CompactLabel({ children }: { children: React.ReactNode }) {
+  return <span className="text-[9px] font-semibold uppercase tracking-widest text-cyan-300/80">{children}</span>;
+}
+
+export function HoldPanel({ snapshot, compact = false }: { snapshot: TetrisSnapshot; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className={`flex flex-col items-center gap-1 ${snapshot.canHold ? "opacity-100" : "opacity-40"}`}>
+        <CompactLabel>{label("hold")}</CompactLabel>
+        <PiecePreview type={snapshot.hold} />
+      </div>
+    );
+  }
   return (
     <Panel title={`Hold · ${label("hold")}`}>
       <div className={snapshot.canHold ? "opacity-100" : "opacity-40"}>
@@ -53,11 +65,32 @@ export function HoldPanel({ snapshot }: { snapshot: TetrisSnapshot }) {
   );
 }
 
-export function NextPanel({ snapshot }: { snapshot: TetrisSnapshot }) {
+export function NextPanel({
+  snapshot,
+  compact = false,
+  limit,
+}: {
+  snapshot: TetrisSnapshot;
+  compact?: boolean;
+  limit?: number;
+}) {
+  const pieces = limit === undefined ? snapshot.next : snapshot.next.slice(0, limit);
+  if (compact) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <CompactLabel>Next</CompactLabel>
+        <div className="flex flex-row gap-2">
+          {pieces.map((type, i) => (
+            <PiecePreview key={`${type}-${i}`} type={type} />
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <Panel title="Next">
       <div className="flex flex-col gap-2">
-        {snapshot.next.map((type, i) => (
+        {pieces.map((type, i) => (
           <PiecePreview key={`${type}-${i}`} type={type} />
         ))}
       </div>
@@ -65,7 +98,21 @@ export function NextPanel({ snapshot }: { snapshot: TetrisSnapshot }) {
   );
 }
 
-export function StatsPanel({ snapshot }: { snapshot: TetrisSnapshot }) {
+export function StatsPanel({ snapshot, compact = false }: { snapshot: TetrisSnapshot; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[9px] uppercase tracking-wide text-slate-400">Score</span>
+          <span className="font-mono text-sm font-bold tabular-nums text-white">{snapshot.score}</span>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[9px] uppercase tracking-wide text-slate-400">Lines</span>
+          <span className="font-mono text-xs font-bold tabular-nums text-white">{snapshot.lines}</span>
+        </div>
+      </div>
+    );
+  }
   return (
     <Panel title="Stats">
       <div className="flex flex-col gap-2">

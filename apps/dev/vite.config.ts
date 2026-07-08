@@ -28,6 +28,7 @@ export default defineConfig({
       { find: /^@jgengine\/core\/(.*)$/, replacement: `${src("core")}/$1` },
       { find: /^@jgengine\/react\/(.*)$/, replacement: `${src("react")}/$1` },
       { find: /^@jgengine\/ws\/(.*)$/, replacement: `${src("ws")}/$1` },
+      { find: /^@jgengine\/convex\/(.*)$/, replacement: `${src("convex")}/$1` },
       { find: /^@jgengine\/shell\/(.*)$/, replacement: `${src("shell")}/$1` },
       { find: /^@jgengine\/assets$/, replacement: `${src("assets")}/index.ts` },
       { find: /^@jgengine\/assets\/(.*)$/, replacement: `${src("assets")}/$1` },

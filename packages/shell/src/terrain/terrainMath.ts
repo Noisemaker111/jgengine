@@ -101,6 +101,7 @@ function buildGroundGeometry(
   const waterline = colors.waterline === undefined ? null : new THREE.Color(colors.waterline);
   const minHeight = opts.heightRange?.[0] ?? -3;
   const maxHeight = opts.heightRange?.[1] ?? 3;
+  const heightRange = maxHeight - minHeight;
   let index = 0;
   let uvIndex = 0;
   let colorIndex = 0;
@@ -116,7 +117,7 @@ function buildGroundGeometry(
       positions[index + 2] = z;
       uvs[uvIndex] = u;
       uvs[uvIndex + 1] = v;
-      const blend = THREE.MathUtils.clamp((y - minHeight) / (maxHeight - minHeight), 0, 1);
+      const blend = heightRange > 1e-6 ? THREE.MathUtils.clamp((y - minHeight) / heightRange, 0, 1) : 0.5;
       const color = low.clone().lerp(high, blend);
       if (waterline !== null && y <= (colors.waterlineHeight ?? 0)) color.lerp(waterline, 0.65);
       colorValues[colorIndex] = color.r;
@@ -171,6 +172,7 @@ export function createProceduralGroundGeometry(
   const waterline = colors.waterline === undefined ? null : new THREE.Color(colors.waterline);
   const minHeight = (config.baseOffset ?? 0) - (config.height ?? 1.4) * 1.2;
   const maxHeight = (config.baseOffset ?? 0) + (config.height ?? 1.4) * 1.2;
+  const heightRange = maxHeight - minHeight;
   let index = 0;
   let uvIndex = 0;
   let colorIndex = 0;
@@ -187,7 +189,7 @@ export function createProceduralGroundGeometry(
       positions[index + 2] = z;
       uvs[uvIndex] = u;
       uvs[uvIndex + 1] = v;
-      const blend = THREE.MathUtils.clamp((y - minHeight) / (maxHeight - minHeight), 0, 1);
+      const blend = heightRange > 1e-6 ? THREE.MathUtils.clamp((y - minHeight) / heightRange, 0, 1) : 0.5;
       const color = low.clone().lerp(high, blend);
       if (waterline !== null && y <= (colors.waterlineHeight ?? 0)) color.lerp(waterline, 0.65);
       colorValues[colorIndex] = color.r;

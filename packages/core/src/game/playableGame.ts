@@ -1,4 +1,5 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
+import type { TouchControlsConfig } from "../input/touchScheme";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
@@ -277,6 +278,25 @@ export interface WorldItemRenderConfig {
   pickupRadius?: number;
   /** Beam height above the item's ground position. Default 2.5. */
   beamHeight?: number;
+  /** Walk-over collection: the shell grants the nearest dropped item within this radius of the local player each frame (Minecraft-style pickup). `true` uses `pickupRadius`. Omitted/false leaves pickup to `pointer.grabWorldItems` clicks. */
+  autoPickup?: boolean | { radius?: number };
+}
+
+/**
+ * Player-vs-world collision for the first-person controller. Without this the
+ * shell keeps the player on flat ground at y=0. With `voxel: true` the shell
+ * resolves the player as a box against placed scene objects (each treated as a
+ * solid unit cell), so they stand on blocks, fall into holes, and are stopped by
+ * walls — the controller a block-building/mining game needs.
+ */
+export interface VoxelCollisionConfig {
+  voxel: true;
+  /** Half the player box width on each horizontal axis. Default 0.3. */
+  halfWidth?: number;
+  /** Player box height from the feet. Default 1.8. */
+  height?: number;
+  /** Tallest ledge walked up without jumping. Default 0.6. */
+  stepHeight?: number;
 }
 
 export interface ModelConfig {
@@ -314,6 +334,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   camera?: GameCameraConfig;
   /** Pointer-driven input: click-to-move, box-select, right-click verbs, cursor aim (#22/#30/#31). */
   pointer?: PointerConfig;
+  /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */
+  touch?: TouchControlsConfig | false;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. */
   worldHealthBars?: boolean | { statId?: string };
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. */
@@ -324,4 +346,6 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   objectSounds?: Record<string, string>;
   /** Rarity render binding + loot filter for dropped-item ground presentation (#32/#33). */
   worldItem?: WorldItemRenderConfig;
+  /** Player-vs-world collision for the first-person controller (block/voxel worlds). Off by default (flat ground). */
+  collision?: VoxelCollisionConfig;
 }

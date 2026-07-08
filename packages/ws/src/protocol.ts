@@ -2,8 +2,10 @@ import type {
   GameRuntimePlayerView,
   GameRuntimeServerView,
   JoinServerResult,
+  PresencePoseRow,
   TransportRunCommandResult,
 } from "@jgengine/core/runtime/transport";
+import type { PlayerPose } from "@jgengine/core/multiplayer/poseSyncGate";
 import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 
@@ -11,21 +13,9 @@ export const WS_PROTOCOL_VERSION = 1;
 
 export type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice";
 
-export type WsPose = {
-  x: number;
-  y: number;
-  z: number;
-  rotationY: number;
-  rotationPitch: number;
-};
+export type WsPose = PlayerPose;
 
-export type WsPresenceRow = {
-  userId: string;
-  position: { x: number; y: number; z: number };
-  rotationY: number;
-  rotationPitch: number;
-  lastSeenAt: number;
-};
+export type WsPresenceRow = PresencePoseRow;
 
 export type WsChatMessage = {
   id: string;
