@@ -59,4 +59,20 @@ describe("contribution analytics", () => {
     expect(stats.mostActiveMonth.label.length).toBeGreaterThan(0);
     expect(stats.mostActiveMonth.total).toBeGreaterThan(0);
   });
+
+  test("empty cell list summarizes to zeroed stats instead of throwing", () => {
+    expect(summarize([])).toEqual({
+      total: 0,
+      activeDays: 0,
+      activeDaysPct: 0,
+      avgPerActiveDay: 0,
+      avgPerWeek: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      peakDay: { count: 0, label: "" },
+      busiestWeekday: { name: "Sun", total: 0 },
+      mostActiveMonth: { label: "", total: 0 },
+      last30Days: 0,
+    });
+  });
 });

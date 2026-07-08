@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { summarize } from "./analytics";
-import { syntheticYear, wireToCells } from "./source";
+import { wireToCells } from "./source";
 import type { ContributionsWire } from "./wire";
 
 const WIRE: ContributionsWire = {
@@ -30,14 +30,5 @@ describe("wireToCells", () => {
 
   test("summed counts flow through analytics", () => {
     expect(summarize(wireToCells(WIRE)).total).toBe(6);
-  });
-});
-
-describe("syntheticYear", () => {
-  test("produces a full deterministic year tagged as synthetic", () => {
-    const data = syntheticYear(1);
-    expect(data.source).toBe("synthetic");
-    expect(data.profile).toBeNull();
-    expect(data.cells.length).toBe(371);
   });
 });

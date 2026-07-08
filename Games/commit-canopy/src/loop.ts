@@ -1,14 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { store } from "./game/store";
-
 export function onInit(ctx: GameContext): void {
-  ctx.game.commands.define("regrow", {
-    apply(state) {
-      store.regrow();
-      return state;
-    },
-  });
+  void ctx;
 }
 
 export function onNewPlayer(ctx: GameContext): void {

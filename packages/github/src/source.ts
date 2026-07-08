@@ -1,4 +1,4 @@
-import { generateYear, labelFromISO, levelForCount, type DayCell } from "./calendar";
+import { labelFromISO, levelForCount, type DayCell } from "./calendar";
 import type { ContributionsWire, GitHubProfile } from "./wire";
 
 export type { ContributionsWire, GitHubProfile } from "./wire";
@@ -6,7 +6,7 @@ export type { ContributionsWire, GitHubProfile } from "./wire";
 export interface ContributionData {
   cells: DayCell[];
   profile: GitHubProfile | null;
-  source: "graphql" | "scrape" | "synthetic";
+  source: "graphql" | "scrape";
 }
 
 export const DEFAULT_ENDPOINT = "/api/github-contributions";
@@ -27,11 +27,6 @@ export function wireToCells(wire: ContributionsWire): DayCell[] {
     }
   });
   return cells;
-}
-
-/** Deterministic offline year, tagged synthetic. */
-export function syntheticYear(seed: number): ContributionData {
-  return { cells: generateYear(seed), profile: null, source: "synthetic" };
 }
 
 /** Browser client: fetch a user's contributions through the proxy endpoint. */
