@@ -24,6 +24,10 @@ test("client messages round-trip through the codec", () => {
     { v: 1, t: "browse", id: 10, gameId: "wow", filter: { mode: "ranked", notFull: true }, limit: 5 },
     { v: 1, t: "chatSend", id: 11, serverId: "srv-1", channelId: "global", body: "hello" },
     { v: 1, t: "subscribe", id: 12, channel: "chat", serverId: "srv-1", action: "global" },
+    { v: 1, t: "voiceJoin", id: 13, serverId: "srv-1", channelId: "crew", streamId: "stream-9" },
+    { v: 1, t: "voiceJoin", id: 14, serverId: "srv-1", channelId: "crew" },
+    { v: 1, t: "voiceLeave", id: 15, serverId: "srv-1", channelId: "crew" },
+    { v: 1, t: "voicePublish", id: 16, serverId: "srv-1", channelId: "crew", streamId: "stream-9" },
   ];
   for (const message of messages) {
     expect(decodeWsClientMessage(encodeWsMessage(message))).toEqual(message);
@@ -51,6 +55,14 @@ test("server messages round-trip through the codec", () => {
       action: "global",
       data: [{ id: "msg_1", channelId: "global", fromUserId: "alice", body: "hello", at: 1 }],
     },
+    {
+      v: 1,
+      t: "update",
+      channel: "voice",
+      serverId: "srv-1",
+      action: "crew",
+      data: [{ userId: "alice", streamId: "stream-9" }, { userId: "bob" }],
+    },
   ];
   for (const message of messages) {
     expect(decodeWsServerMessage(encodeWsMessage(message))).toEqual(message);
@@ -66,6 +78,8 @@ test("decoder rejects garbage, wrong versions, and malformed fields", () => {
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "joinByCode", id: 1, gameId: "g" }))).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "browse", id: 1 }))).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "chatSend", id: 1, serverId: "s", channelId: "g" }))).toBeNull();
+  expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "voicePublish", id: 1, serverId: "s", channelId: "c" }))).toBeNull();
+  expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "voiceJoin", id: 1, serverId: "s", channelId: "c", streamId: 5 }))).toBeNull();
   expect(decodeWsServerMessage(JSON.stringify({ v: 1, t: "reply", id: 1, ok: false }))).toBeNull();
   expect(decodeWsServerMessage(JSON.stringify({ v: 1, t: "update", channel: "nope", serverId: "s" }))).toBeNull();
 });
