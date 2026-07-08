@@ -1,9 +1,11 @@
-import { defineGame } from "@jgengine/core/game/defineGame";
-import { offline } from "@jgengine/core/runtime/adapter";
+import { defineGame } from "@jgengine/shell/defineGame";
 
-import { assets } from "./assets";
-import { keybinds } from "./keybinds";
+import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
+import { assets } from "./game/assets";
+import { content } from "./game/content";
+import { keybinds } from "./game/keybinds";
+import { GameUI } from "./game/ui/GameUI";
 
 export const game = defineGame({
   name: "Block Stacker",
@@ -13,5 +15,12 @@ export const game = defineGame({
   input: keybinds,
   server: { mode: "solo" },
   save: "none",
-  multiplayer: offline(),
+  content,
+  loop: { onInit, onNewPlayer, onTick },
+  GameUI,
+  camera: {
+    rig: "rts",
+    followEntityId: null,
+    rts: { start: { x: 0, z: 0 }, height: 60, pitch: 1.0, panSpeed: 0, edgeScroll: false },
+  },
 });

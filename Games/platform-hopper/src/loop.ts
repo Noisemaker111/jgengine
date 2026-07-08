@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { entityById } from "./content";
+import { entityById } from "./game/content";
 import {
   isCoinCollected,
   isHazardHit,
@@ -9,7 +9,7 @@ import {
   patrolStep,
   reachedGoal,
   type PatrolState,
-} from "./physics";
+} from "./game/physics";
 import {
   BACKDROP_PLATFORMS,
   COIN_OBJECT,
@@ -29,7 +29,7 @@ import {
   SPAWN,
   STATUS_FEED,
   STOMP_SCORE,
-} from "./tuning";
+} from "./game/tuning";
 
 interface LevelState {
   won: boolean;

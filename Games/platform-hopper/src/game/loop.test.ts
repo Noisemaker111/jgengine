@@ -3,8 +3,8 @@ import { describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { entityById } from "./content";
-import { game } from "./game.config";
-import { onInit, onNewPlayer, onTick } from "./loop";
+import { game } from "../game.config";
+import { onInit, onNewPlayer, onTick } from "../loop";
 import {
   COIN_OBJECT,
   COINS,
@@ -21,9 +21,9 @@ const content = { entityById };
 const STEP = 1 / 60;
 
 function boot(): GameContext {
-  game.scene.clear();
+  game.game.scene.clear();
   const ctx = createGameContext({
-    definition: game,
+    definition: game.game,
     content,
     player: { userId: "p1", isNew: true },
   });

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { entityCatalog, LIVES, MUNCHER, SCORE, START_LIVES } from "./catalog";
-import { game } from "./game.config";
+import { game } from "../game.config";
 import {
   getFrightenedRemaining,
   getLevel,
@@ -14,16 +14,16 @@ import {
   onNewPlayer,
   onTick,
   pelletsLeft,
-} from "./loop";
+} from "../loop";
 import { cellToWorld, GHOSTS, PLAYER_START, pelletCells, powerCells } from "./maze";
 
 const content = { entityById: (id: string) => entityCatalog[id] ?? null };
 const STEP = 1 / 60;
 
 function boot(): GameContext {
-  game.scene.clear();
+  game.game.scene.clear();
   const ctx = createGameContext({
-    definition: game,
+    definition: game.game,
     content,
     player: { userId: "p1", isNew: true },
   });
