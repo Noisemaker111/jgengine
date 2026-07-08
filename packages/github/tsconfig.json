@@ -1,20 +1,21 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "resolveJsonModule": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "types": ["vite/client", "node"]
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@jgengine/github/*": ["./src/*"]
+    }
   },
-  "include": ["src", "vite.config.ts", "scripts"],
-  "exclude": ["dist", ".output", ".nitro", ".vercel", ".tanstack"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }

@@ -65,6 +65,7 @@ export interface FirstPersonCameraConfig {
  * - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe.
  * - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views.
  * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
+ * - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`.
  * - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input.
  * - `inspection` — model-viewer rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input.
  * - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
@@ -78,6 +79,7 @@ export type CameraRigKind =
   | "lockOn"
   | "chase"
   | "observer"
+  | "turntable"
   | "sideScroll"
   | "inspection"
   | "none";
@@ -212,6 +214,29 @@ export interface ObserverCameraConfig {
 }
 
 /**
+ * Turntable / showcase rig — slowly auto-orbits a fixed world point (no player
+ * input), the way a museum turntable rotates an object on display. A flat,
+ * self-describing spelling of `observer`'s point-orbit mode: `target` names the
+ * point directly instead of `bind: { kind: "point", position }`. Set
+ * `camera.turntable` and the rig is inferred — you don't also write `rig`.
+ */
+export interface TurntableCameraConfig {
+  /** World point the camera circles. Default the world origin. */
+  target?: { x: number; y: number; z: number };
+  /** Orbit radius from the target. Default 8. */
+  distance?: number;
+  /** Camera height above the target. Default 3. */
+  height?: number;
+  /** Height of the look point above the target. Default 1.2. */
+  lookHeight?: number;
+  /** Radians/second of rotation; 0 holds a fixed angle. Default 0.2. */
+  orbitSpeed?: number;
+  /** Starting angle in radians. Default 0. */
+  startAngle?: number;
+  fov?: number;
+}
+
+/**
  * How scroll-zoom re-anchors the view for the inspection rig (#207.7):
  * - `target` — dolly toward the orbit target (classic OrbitControls behavior).
  * - `cursor` — dolly toward the point under the pointer.
@@ -296,6 +321,8 @@ export interface GameCameraConfig {
   chase?: ChaseCameraConfig;
   /** Detached spectator/photo cam tuning (#120); read when `rig: "observer"`. */
   observer?: ObserverCameraConfig;
+  /** Turntable / showcase tuning; setting this selects the `turntable` rig on its own. */
+  turntable?: TurntableCameraConfig;
   /** Fixed side-on follow tuning; read when `rig: "sideScroll"`. */
   sideScroll?: SideScrollCameraConfig;
   /** Model-viewer / inspection tuning (#207.7); read when `rig: "inspection"`. */
