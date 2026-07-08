@@ -81,6 +81,35 @@ describe("createGameContext", () => {
     expect(ctx.scene.object.catalog("missing")).toBeNull();
   });
 
+  test("scene.object.raycast hits a placed object along the ray", () => {
+    const ctx = makeContext();
+    const chest = ctx.scene.object.place("chest", 5, 0, 0);
+    ctx.scene.object.place("crate", 0, 0, 5);
+    const hit = ctx.scene.object.raycast({ origin: [0, 0, 0], direction: [1, 0, 0], maxDistance: 20 });
+    expect(hit?.instanceId).toBe(chest);
+    expect(hit?.catalogId).toBe("chest");
+    expect(ctx.scene.object.raycastAll({ origin: [0, 0, 0], direction: [1, 0, 0], maxDistance: 20 })).toHaveLength(1);
+    expect(ctx.scene.object.raycast({ origin: [0, 0, 0], direction: [0, 1, 0], maxDistance: 20 })).toBeNull();
+  });
+
+  test("scene.entity.update patches fields, notifies subscribers, and bumps version", () => {
+    const ctx = makeContext();
+    const id = ctx.scene.entity.spawn("villager", { position: [0, 0, 0] });
+    const versionBefore = ctx.version();
+    let notified = 0;
+    const unsubscribe = ctx.subscribe(() => {
+      notified += 1;
+    });
+
+    expect(ctx.scene.entity.update(id, { meta: { greeting: "hi" } })).toBe(true);
+
+    expect(ctx.scene.entity.get(id)?.meta).toEqual({ greeting: "hi" });
+    expect(ctx.version()).toBeGreaterThan(versionBefore);
+    expect(notified).toBe(1);
+    expect(ctx.scene.entity.update("missing", { meta: { greeting: "nope" } })).toBe(false);
+    unsubscribe();
+  });
+
   test("item use fires a lethal effect and entity.died reaches a bound feed", () => {
     const ctx = makeContext();
     const unbind = ctx.game.feed.bind("entity.died");
@@ -249,6 +278,23 @@ describe("game context change signal", () => {
     listener.unsubscribe();
     ctx.game.feed.push("chat", { text: "bye" });
     expect(listener.count()).toBeGreaterThan(2);
+  });
+
+  test("ctx.game.state set/update/invalidate bump ctx.version and notify subscribers", () => {
+    const ctx = makeContext();
+    const listener = counting(ctx);
+    const before = ctx.version();
+    const handle = ctx.game.state.define("combo", 0);
+    ctx.game.state.set("combo", 1);
+    expect(ctx.version()).toBeGreaterThan(before);
+    const afterSet = ctx.version();
+    ctx.game.state.update("combo", (current: number) => current + 1);
+    expect(handle.get()).toBe(2);
+    expect(ctx.version()).toBeGreaterThan(afterSet);
+    const afterUpdate = ctx.version();
+    ctx.game.state.invalidate();
+    expect(ctx.version()).toBeGreaterThan(afterUpdate);
+    expect(listener.count()).toBeGreaterThan(0);
   });
 });
 

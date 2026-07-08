@@ -26,13 +26,20 @@ export interface ObjectStore {
   rotate(instanceId: string, rotationY: number): boolean;
   get(instanceId: string): SceneObject | null;
   list(filter?: ObjectListFilter): readonly SceneObject[];
+  at(x: number, y: number, z: number): SceneObject | null;
+  inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
   clear(): void;
   subscribe(listener: () => void): () => void;
   snapshot(): readonly SceneObject[];
 }
 
+function cellKey(x: number, y: number, z: number): string {
+  return `${Math.round(x)},${Math.round(y)},${Math.round(z)}`;
+}
+
 export function createObjectStore(): ObjectStore {
   const store = createObservableKeyedStore<SceneObject>();
+  const cellIndex = new Map<string, string[]>();
   let nextCounter = 1;
 
   function generateId(): string {
@@ -43,6 +50,26 @@ export function createObjectStore(): ObjectStore {
     }
     nextCounter += 1;
     return id;
+  }
+
+  function indexInsert(instanceId: string, x: number, y: number, z: number): void {
+    const key = cellKey(x, y, z);
+    const bucket = cellIndex.get(key);
+    if (bucket === undefined) {
+      cellIndex.set(key, [instanceId]);
+    } else {
+      bucket.push(instanceId);
+    }
+  }
+
+  function indexRemove(instanceId: string, x: number, y: number, z: number): void {
+    const key = cellKey(x, y, z);
+    const bucket = cellIndex.get(key);
+    if (bucket === undefined) return;
+    const at = bucket.indexOf(instanceId);
+    if (at === -1) return;
+    bucket.splice(at, 1);
+    if (bucket.length === 0) cellIndex.delete(key);
   }
 
   return {
@@ -58,17 +85,22 @@ export function createObjectStore(): ObjectStore {
         rotationY: options.rotation ?? 0,
         ...(options.parentSpace !== undefined ? { parentSpace: options.parentSpace } : {}),
       });
+      indexInsert(instanceId, x, y, z);
       return instanceId;
     },
     remove(instanceId) {
-      const existed = store.has(instanceId);
+      const current = store.get(instanceId);
+      if (current === undefined) return false;
+      indexRemove(instanceId, current.position[0], current.position[1], current.position[2]);
       store.delete(instanceId);
-      return existed;
+      return true;
     },
     move(instanceId, x, y, z) {
       const current = store.get(instanceId);
       if (!current) return false;
+      indexRemove(instanceId, current.position[0], current.position[1], current.position[2]);
       store.set(instanceId, { ...current, position: [x, y, z] });
+      indexInsert(instanceId, x, y, z);
       return true;
     },
     rotate(instanceId, rotationY) {
@@ -85,10 +117,35 @@ export function createObjectStore(): ObjectStore {
       if (filter?.parentSpace === undefined) return all;
       return all.filter((object) => object.parentSpace === filter.parentSpace);
     },
+    at(x, y, z) {
+      const bucket = cellIndex.get(cellKey(x, y, z));
+      if (bucket === undefined || bucket.length === 0) return null;
+      const instanceId = bucket[bucket.length - 1]!;
+      return store.get(instanceId) ?? null;
+    },
+    inBox(min, max) {
+      const hits: SceneObject[] = [];
+      for (const bucket of cellIndex.values()) {
+        for (const instanceId of bucket) {
+          const object = store.get(instanceId);
+          if (object === undefined) continue;
+          const [x, y, z] = object.position;
+          if (
+            x >= min[0] && x <= max[0] &&
+            y >= min[1] && y <= max[1] &&
+            z >= min[2] && z <= max[2]
+          ) {
+            hits.push(object);
+          }
+        }
+      }
+      return hits;
+    },
     clear() {
       for (const object of store.arraySnapshot()) {
         store.delete(object.instanceId);
       }
+      cellIndex.clear();
     },
     subscribe(listener) {
       return store.subscribe(listener);

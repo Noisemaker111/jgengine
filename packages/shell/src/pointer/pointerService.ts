@@ -14,6 +14,8 @@ interface PointerDeps {
 export interface PointerService {
   /** Cast the current cursor into the world; null when the cursor is off-canvas. */
   worldHit(): PointerHit | null;
+  /** Cast from the fixed screen center regardless of cursor state — the crosshair ray under pointer-lock. */
+  centerHit(): PointerHit | null;
   /** Project a world point to CSS pixels for the marquee / HUD; null before the probe binds. */
   screenOf(world: PointerVec3): { x: number; y: number } | null;
   hasCursor(): boolean;
@@ -31,6 +33,8 @@ function tagOf(object: THREE.Object3D, key: string): string | null {
   return null;
 }
 
+const CENTER_NDC = new THREE.Vector2(0, 0);
+
 export function createPointerService(): PointerService {
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
@@ -39,6 +43,31 @@ export function createPointerService(): PointerService {
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   let deps: PointerDeps | null = null;
   let cursorPresent = false;
+
+  function castFrom(cursorNdc: THREE.Vector2): PointerHit | null {
+    if (deps === null) return null;
+    raycaster.setFromCamera(cursorNdc, deps.camera);
+    const intersects = raycaster.intersectObjects(deps.scene.children, true);
+    for (const hit of intersects) {
+      if (!(hit.object as THREE.Mesh).isMesh) continue;
+      const point: PointerVec3 = [hit.point.x, hit.point.y, hit.point.z];
+      let normal: PointerVec3 = [0, 1, 0];
+      if (hit.face !== null && hit.face !== undefined) {
+        normalMatrix.getNormalMatrix(hit.object.matrixWorld);
+        scratch.copy(hit.face.normal).applyMatrix3(normalMatrix).normalize();
+        normal = [scratch.x, scratch.y, scratch.z];
+      }
+      return {
+        point,
+        normal,
+        entity: tagOf(hit.object, POINTER_ENTITY_KEY),
+        object: tagOf(hit.object, POINTER_OBJECT_KEY),
+      };
+    }
+    const grounded = raycaster.ray.intersectPlane(groundPlane, scratch);
+    if (grounded === null) return null;
+    return { point: [grounded.x, grounded.y, grounded.z], normal: [0, 1, 0], entity: null, object: null };
+  }
 
   return {
     hasCursor: () => cursorPresent,
@@ -50,28 +79,11 @@ export function createPointerService(): PointerService {
       cursorPresent = present;
     },
     worldHit() {
-      if (deps === null || !cursorPresent) return null;
-      raycaster.setFromCamera(ndc, deps.camera);
-      const intersects = raycaster.intersectObjects(deps.scene.children, true);
-      for (const hit of intersects) {
-        if (!(hit.object as THREE.Mesh).isMesh) continue;
-        const point: PointerVec3 = [hit.point.x, hit.point.y, hit.point.z];
-        let normal: PointerVec3 = [0, 1, 0];
-        if (hit.face !== null && hit.face !== undefined) {
-          normalMatrix.getNormalMatrix(hit.object.matrixWorld);
-          scratch.copy(hit.face.normal).applyMatrix3(normalMatrix).normalize();
-          normal = [scratch.x, scratch.y, scratch.z];
-        }
-        return {
-          point,
-          normal,
-          entity: tagOf(hit.object, POINTER_ENTITY_KEY),
-          object: tagOf(hit.object, POINTER_OBJECT_KEY),
-        };
-      }
-      const grounded = raycaster.ray.intersectPlane(groundPlane, scratch);
-      if (grounded === null) return null;
-      return { point: [grounded.x, grounded.y, grounded.z], normal: [0, 1, 0], entity: null, object: null };
+      if (!cursorPresent) return null;
+      return castFrom(ndc);
+    },
+    centerHit() {
+      return castFrom(CENTER_NDC);
     },
     screenOf(world) {
       if (deps === null) return null;

@@ -61,8 +61,18 @@ export interface FirstPersonCameraConfig {
  * - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe.
  * - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views.
  * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
+ * - `sideOn` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input.
  */
-export type CameraRigKind = "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer";
+export type CameraRigKind =
+  | "orbit"
+  | "first"
+  | "topDown"
+  | "rts"
+  | "shoulder"
+  | "lockOn"
+  | "chase"
+  | "observer"
+  | "sideOn";
 
 /** Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow. */
 export interface TopDownCameraConfig {
@@ -92,6 +102,8 @@ export interface RtsCameraConfig extends TopDownCameraConfig {
   bounds?: { minX?: number; maxX?: number; minZ?: number; maxZ?: number };
   /** Start centered on this world point when there is no follow target. */
   start?: { x?: number; z?: number };
+  /** Read WASD/arrow pan, edge-scroll, Q/E rotate, and wheel zoom. `false` sits static at the start/bounds position — a backdrop camera, no input at all. Default true. */
+  pan?: boolean;
 }
 
 /** Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle. */
@@ -176,6 +188,23 @@ export interface ObserverCameraConfig {
   fov?: number;
 }
 
+/** Fixed lateral follow rig — 2.5D platformer/beat-'em-up side view; reads no player input. */
+export interface SideOnCameraConfig {
+  /** Lateral offset from the subject along `axis`. Default 10. */
+  distance?: number;
+  /** Camera height above the subject. Default 2. */
+  height?: number;
+  /** Height of the look point above the subject. Default 1. */
+  lookHeight?: number;
+  /** Which world axis the camera is displaced along. Default "x". */
+  axis?: "x" | "z";
+  /** Which side of the subject the camera sits on. Default 1. */
+  facing?: 1 | -1;
+  /** Exponential follow smoothing (higher = snappier); 0 = rigid. Default 8. */
+  followSmoothing?: number;
+  fov?: number;
+}
+
 /** One stop on a scripted camera path (#29). */
 export interface CameraKeyframe {
   position: { x: number; y: number; z: number };
@@ -227,6 +256,8 @@ export interface GameCameraConfig {
   chase?: ChaseCameraConfig;
   /** Detached spectator/photo cam tuning (#120); read when `rig: "observer"`. */
   observer?: ObserverCameraConfig;
+  /** Fixed lateral follow tuning; read when `rig: "sideOn"`. */
+  sideOn?: SideOnCameraConfig;
   /** Camera-shake / trauma channel defaults (#28); read by every rig. */
   shake?: CameraShakeConfig;
   /** Scripted keyframe path (#29); when set, plays over the active rig. */
@@ -287,7 +318,18 @@ export interface ModelConfig {
   dims?: ModelDims;
 }
 
-export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never> {
+export interface ObjectStyle {
+  color?: string;
+  opacity?: number;
+  hidden?: boolean;
+}
+
+export interface PlayableGame<
+  TUi = unknown,
+  TWorldOverlay = unknown,
+  TRenderEntity = never,
+  TRenderObject = never,
+> {
   game: GameDefinition;
   content: GameContextContent;
   loop: Required<GameLoop<GameContext>>;
@@ -298,12 +340,16 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   environment?: TWorldOverlay;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
   renderEntity?: TRenderEntity;
+  /** Per-object visual override: return your own mesh for a placed object and the shell still positions it and drives picking. Return null/undefined to fall back to model → styled box. */
+  renderObject?: TRenderObject;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
   entitySprites?: Record<string, EntitySpriteConfig>;
   /** GLB models keyed by entity kind name; a string resolves as an asset-catalog key via game.assets, a ModelConfig renders directly. Takes priority over sprites, then primitives. */
   entityModels?: Record<string, string | ModelConfig>;
   /** GLB models keyed by object catalog id; a string resolves via game.assets, a ModelConfig renders directly. Replaces the colored box when present. */
   objectModels?: Record<string, string | ModelConfig>;
+  /** Styling for the default colored-box object render, keyed by catalog id: color override, opacity (< 1 sets transparent), hidden (skips the mesh but keeps the positioning group + picking). */
+  objectStyles?: Record<string, ObjectStyle>;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
   hotbarSelection?: () => number;
   /** Positioned proximity prompts for the interact key + HUD; single source shared with useActivePrompt. */

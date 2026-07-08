@@ -56,6 +56,46 @@ describe("scene object store", () => {
     expect(store.list()).toEqual([]);
   });
 
+  test("at finds the object occupying a cell and misses empty cells", () => {
+    const store = createObjectStore();
+    const id = store.place("crate", 2, 0, 5);
+    expect(store.at(2, 0, 5)).not.toBeNull();
+    expect(store.at(2, 0, 5)?.instanceId).toBe(id);
+    expect(store.at(2.4, 0.1, 4.6)?.instanceId).toBe(id);
+    expect(store.at(9, 0, 9)).toBeNull();
+  });
+
+  test("at returns the most recently placed object when cells collide", () => {
+    const store = createObjectStore();
+    const first = store.place("crate", 0, 0, 0);
+    const second = store.place("barrel", 0, 0, 0);
+    expect(store.at(0, 0, 0)?.instanceId).toBe(second);
+    store.remove(second);
+    expect(store.at(0, 0, 0)?.instanceId).toBe(first);
+  });
+
+  test("at reflects move and clears on remove", () => {
+    const store = createObjectStore();
+    const id = store.place("crate", 0, 0, 0);
+    expect(store.at(0, 0, 0)?.instanceId).toBe(id);
+    store.move(id, 3, 0, 3);
+    expect(store.at(0, 0, 0)).toBeNull();
+    expect(store.at(3, 0, 3)?.instanceId).toBe(id);
+    store.remove(id);
+    expect(store.at(3, 0, 3)).toBeNull();
+  });
+
+  test("inBox filters by inclusive AABB bounds", () => {
+    const store = createObjectStore();
+    const inside = store.place("crate", 1, 0, 1);
+    const onMinEdge = store.place("crate", 0, 0, 0);
+    const onMaxEdge = store.place("crate", 2, 0, 2);
+    const outside = store.place("crate", 3, 0, 3);
+    const ids = store.inBox([0, 0, 0], [2, 0, 2]).map((object) => object.instanceId);
+    expect(ids.sort()).toEqual([inside, onMaxEdge, onMinEdge].sort());
+    expect(ids).not.toContain(outside);
+  });
+
   test("subscribe fires once per mutation and snapshot is referentially stable", () => {
     const store = createObjectStore();
     let notified = 0;

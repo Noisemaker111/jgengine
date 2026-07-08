@@ -46,13 +46,14 @@ import {
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
 import type { WsPresenceRow } from "@jgengine/ws/protocol";
 
-import type { EntitySpriteConfig, ModelConfig, PointerConfig } from "@jgengine/core/game/playableGame";
+import type { EntitySpriteConfig, ModelConfig, ObjectStyle, PointerConfig } from "@jgengine/core/game/playableGame";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
@@ -286,6 +287,41 @@ function EntityMarker({
   );
 }
 
+function ObjectMarker({
+  object,
+  custom,
+  model,
+  style,
+}: {
+  object: SceneObject;
+  custom: ReactNode | undefined;
+  model: ModelConfig | undefined;
+  style: ObjectStyle | undefined;
+}) {
+  return (
+    <group
+      position={[object.position[0], object.position[1], object.position[2]]}
+      rotation-y={object.rotationY}
+      userData={{ [POINTER_OBJECT_KEY]: object.instanceId }}
+    >
+      {custom !== undefined && custom !== null ? (
+        custom
+      ) : model !== undefined ? (
+        <EntityModel model={model} />
+      ) : style?.hidden === true ? null : (
+        <mesh position-y={0.5}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial
+            color={style?.color ?? colorFromId(object.catalogId)}
+            transparent={style?.opacity !== undefined && style.opacity < 1}
+            opacity={style?.opacity ?? 1}
+          />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
 function GroundPlane() {
   const geometry = useMemo(() => {
     const next = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, GROUND_SEGMENTS, GROUND_SEGMENTS);
@@ -348,17 +384,21 @@ function WorldView({
   entitySprites,
   entityModels,
   objectModels,
+  objectStyles,
   environment: Environment,
   assets,
   renderEntity,
+  renderObject,
   selectedIds,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
   objectModels: Record<string, string | ModelConfig> | undefined;
+  objectStyles: Record<string, ObjectStyle> | undefined;
   environment: ComponentType | undefined;
   assets: AssetCatalog;
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
+  renderObject: ((object: SceneObject) => ReactNode) | undefined;
   selectedIds: ReadonlySet<string>;
 }) {
   const ctx = useGameContext();
@@ -402,21 +442,13 @@ function WorldView({
           resolveModel(objectModels?.[object.catalogId], assets) ??
           resolveModel(object.catalogId, assets);
         return (
-          <group
+          <ObjectMarker
             key={object.instanceId}
-            position={[object.position[0], object.position[1], object.position[2]]}
-            rotation-y={object.rotationY}
-            userData={{ [POINTER_OBJECT_KEY]: object.instanceId }}
-          >
-            {model !== undefined ? (
-              <EntityModel model={model} />
-            ) : (
-              <mesh position-y={0.5}>
-                <boxGeometry args={[1, 1, 1]} />
-                <meshStandardMaterial color={colorFromId(object.catalogId)} />
-              </mesh>
-            )}
-          </group>
+            object={object}
+            custom={renderObject?.(object)}
+            model={model}
+            style={objectStyles?.[object.catalogId]}
+          />
         );
       })}
     </>
@@ -965,9 +997,11 @@ export function GamePlayerShell({
             entitySprites={playable.entitySprites}
             entityModels={playable.entityModels}
             objectModels={playable.objectModels}
+            objectStyles={playable.objectStyles}
             environment={playable.environment}
             assets={playable.game.assets}
             renderEntity={playable.renderEntity}
+            renderObject={playable.renderObject}
             selectedIds={selectedIds}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}

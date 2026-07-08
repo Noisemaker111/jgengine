@@ -82,8 +82,9 @@ import {
   type StatCatalog,
   type StatValueMap,
 } from "../scene/entityStats";
-import type { EntityPose, EntityPosition, SceneEntity, SpawnOptions } from "../scene/entityStore";
+import type { EntityPose, EntityPosition, EntityStore, SceneEntity, SpawnOptions } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
+import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
 import { createRoster, type Roster } from "../scene/roster";
 import { createPossession, type Possession } from "../scene/possession";
@@ -91,6 +92,7 @@ import { createSpatialApi, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
 import { createChangeSignal, notifyAfter } from "../store/changeSignal";
+import { createGameStateStore, type GameStateStore } from "../store/gameState";
 import { createSimClock, type SimClock } from "../time/simClock";
 
 export interface GameContextItemEntry {
@@ -141,6 +143,8 @@ export interface GameContextOptions<
 
 export interface SceneObjectContext extends ObjectStore {
   catalog(instanceId: string): GameContextObjectEntry | null;
+  raycast(input: ObjectRaycastInput): ObjectRaycastHit | null;
+  raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[];
 }
 
 export interface FloatTextInput {
@@ -181,6 +185,7 @@ export interface HitReactionInput {
 export interface SceneEntityContext {
   spawn(name: string, options?: SpawnOptions): string;
   despawn(instanceId: string): boolean;
+  update: EntityStore["update"];
   setPose(instanceId: string, pose: EntityPose): boolean;
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
@@ -271,6 +276,7 @@ export interface GameContext {
     economy: GameContextEconomy;
     leaderboard: Leaderboard;
     roster: Roster;
+    state: GameStateStore;
   };
   player: {
     userId: string;
@@ -299,6 +305,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const now = options.now ?? Date.now;
 
   const signal = createChangeSignal();
+  const state = createGameStateStore(signal.notify);
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
 
   const entities = definition.scene;
@@ -822,6 +829,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const sceneObjects: SceneObjectContext = {
     ...objects,
     catalog: (instanceId) => catalogObject(instanceId) ?? null,
+    raycast: (input) => raycastObjects(objects.list(), input),
+    raycastAll: (input) => raycastObjectsAll(objects.list(), input),
   };
 
   const ctx: GameContext = {
@@ -830,6 +839,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       entity: {
         spawn: spawnEntity,
         despawn: despawnEntity,
+        update: entities.update,
         setPose: entities.setPose,
         get: entities.get,
         list: entities.list,
@@ -896,6 +906,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       economy,
       leaderboard,
       roster,
+      state,
     },
     player: {
       userId: player.userId,
