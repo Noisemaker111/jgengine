@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 
-import { world } from "./world";
+import { world } from "../world";
 
 describe("platform-hopper world", () => {
   const summary = summarizeEnvironment(world);

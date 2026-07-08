@@ -8,7 +8,7 @@ import {
   getPhase,
   MAX_LEVEL,
   pelletsLeft,
-} from "../loop";
+} from "../../loop";
 
 function ScorePanel({ userId }: { userId: string }) {
   const score = useEntityStat(userId, SCORE);

@@ -1,11 +1,11 @@
 import type { GameLoop } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { createEditorHandlers } from "./handlers";
-import { loadouts, STARTER } from "./loadouts";
-import { quests, QUEST_PROSPECTING } from "./quests";
-import { registerSelectionCommands } from "./selection";
-import { createVoxelGrid } from "./voxelGrid";
-import { generateWorld } from "./worldgen";
+import { createEditorHandlers } from "./game/handlers";
+import { loadouts, STARTER } from "./game/loadouts";
+import { quests, QUEST_PROSPECTING } from "./game/quests";
+import { registerSelectionCommands } from "./game/selection";
+import { createVoxelGrid } from "./game/voxelGrid";
+import { generateWorld } from "./game/worldgen";
 
 export const EYE_HEIGHT = 1.6;
 export const REACH = 6;

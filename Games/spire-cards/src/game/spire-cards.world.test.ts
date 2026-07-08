@@ -6,16 +6,16 @@ import { buildStartingDeck, cardTypeOf } from "./cards";
 import { combat, scaleDamage } from "./combat";
 import { content } from "./content";
 import { ENCOUNTERS, ENEMY_ID, intentForEncounter } from "./enemy";
-import { game } from "./game.config";
-import { onInit, onNewPlayer } from "./loop";
+import { game } from "../game.config";
+import { onInit, onNewPlayer } from "../loop";
 import { run } from "./run";
 
 const HERO = "hero-test";
 
 function boot(): GameContext {
-  game.scene.clear();
+  game.game.scene.clear();
   const ctx = createGameContext({
-    definition: game,
+    definition: game.game,
     content,
     player: { userId: HERO, isNew: true },
   });

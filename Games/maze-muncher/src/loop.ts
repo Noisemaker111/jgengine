@@ -11,8 +11,8 @@ import {
   slideMove,
   type Dir,
   type Mode,
-} from "./ai";
-import { LIVES, MUNCHER, SCORE, START_LIVES } from "./catalog";
+} from "./game/ai";
+import { LIVES, MUNCHER, SCORE, START_LIVES } from "./game/catalog";
 import {
   CORNERS,
   cellKey,
@@ -27,7 +27,7 @@ import {
   worldToCell,
   type Cell,
   type GhostDef,
-} from "./maze";
+} from "./game/maze";
 
 export type Phase = "playing" | "levelup" | "won" | "lost";
 

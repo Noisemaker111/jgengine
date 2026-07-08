@@ -10,7 +10,7 @@ import "./index.css";
 
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
-  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.voxelMineGame),
+  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.game),
 };
 
 const urlParams = new URLSearchParams(window.location.search);

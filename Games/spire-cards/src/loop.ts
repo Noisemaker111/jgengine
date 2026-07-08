@@ -1,7 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { combat } from "./combat";
-import { run } from "./run";
+import { combat } from "./game/combat";
+import { run } from "./game/run";
 
 export function onInit(ctx: GameContext): void {
   ctx.game.commands.define<{ cardId: string }>("playCard", {
