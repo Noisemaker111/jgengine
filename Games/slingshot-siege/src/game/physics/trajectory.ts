@@ -45,7 +45,7 @@ export function sampleTrajectory(
   gravity: number,
   steps: number,
   dt: number,
-  floorY = -5,
+  floorY = 0,
 ): Vec3[] {
   const points: Vec3[] = [origin];
   let px = origin[0];

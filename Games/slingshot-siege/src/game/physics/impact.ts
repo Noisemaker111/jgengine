@@ -15,7 +15,7 @@ export const MATERIALS: Readonly<Record<BlockMaterial, MaterialProfile>> = {
 export const DUMMY_BREAK_IMPULSE = 6;
 export const DUMMY_COLOR: readonly [number, number, number] = [0.78, 0.2, 0.14];
 export const PROJECTILE_COLOR: readonly [number, number, number] = [0.16, 0.16, 0.18];
-export const GROUND_COLOR: readonly [number, number, number] = [0.28, 0.24, 0.16];
+export const GROUND_COLOR: readonly [number, number, number] = [0.22, 0.24, 0.15];
 
 export function resolveBlockImpact(material: BlockMaterial, impulse: number): boolean {
   return impulse >= MATERIALS[material].breakImpulse;

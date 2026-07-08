@@ -80,4 +80,11 @@ describe("sampleTrajectory", () => {
       expect(point[2]).toBeCloseTo(0, 5);
     }
   });
+
+  test("defaults to a ground-level floor so it stops near y=0, not deep underground", () => {
+    const points = sampleTrajectory([0, 1, 0], [10, 8, 0], -18, 200, 1 / 60);
+    const last = points[points.length - 1]!;
+    expect(last[1]).toBeLessThan(1);
+    expect(last[1]).toBeGreaterThan(-1);
+  });
 });

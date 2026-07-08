@@ -17,6 +17,11 @@ import {
 const FORK_COLOR = "#6b4a26";
 const BAND_COLOR = "#3a2a18";
 const POUCH_COLOR = "#241a10";
+const PACKED_EARTH_COLOR = "#4a3a26";
+const PLATFORM_THICKNESS = 0.06;
+const SLING_PLATFORM_SIZE: readonly [number, number] = [2.6, 2.2];
+const SIEGE_ZONE_CENTER_X = 12.5;
+const SIEGE_ZONE_HALF: readonly [number, number] = [5, 3.5];
 
 function bodyColor(meta: BodyMeta): readonly [number, number, number] {
   if (meta.kind === "ground") return GROUND_COLOR;
@@ -64,6 +69,22 @@ function SlingshotFork() {
         <meshStandardMaterial color={FORK_COLOR} roughness={0.85} />
       </mesh>
     </group>
+  );
+}
+
+function GroundDressing() {
+  const [anchorX, , anchorZ] = SLING_ANCHOR;
+  return (
+    <>
+      <mesh position={[anchorX, PLATFORM_THICKNESS / 2, anchorZ]} receiveShadow>
+        <boxGeometry args={[SLING_PLATFORM_SIZE[0], PLATFORM_THICKNESS, SLING_PLATFORM_SIZE[1]]} />
+        <meshStandardMaterial color={FORK_COLOR} roughness={0.85} />
+      </mesh>
+      <mesh position={[SIEGE_ZONE_CENTER_X, PLATFORM_THICKNESS / 2, 0]} receiveShadow>
+        <boxGeometry args={[SIEGE_ZONE_HALF[0] * 2, PLATFORM_THICKNESS, SIEGE_ZONE_HALF[1] * 2]} />
+        <meshStandardMaterial color={PACKED_EARTH_COLOR} roughness={0.95} />
+      </mesh>
+    </>
   );
 }
 
@@ -132,6 +153,7 @@ export function SlingshotOverlay() {
     <>
       <ambientLight intensity={0.55} />
       <directionalLight position={[12, 20, 10]} intensity={1.1} />
+      <GroundDressing />
       <InstancedBodies world={store.world} baseColors={baseColors} epoch={state.epoch} />
       <SlingshotFork />
       {state.phase === "dragging" && (

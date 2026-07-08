@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { PhysicsWorld, type CollisionEvent } from "@jgengine/core/physics/physicsWorld";
+import { groundFieldFor } from "@jgengine/core/world/terrain";
 import { useEngineState, type ReadableEngineStore } from "@jgengine/react/engineStore";
 import { useGameContext } from "@jgengine/react/provider";
 
@@ -7,6 +8,7 @@ import { LEVELS, type BlockPiece, type DummyPiece, type LevelDef } from "../leve
 import { MATERIALS, resolveBlockImpact, resolveDummyImpact, type BlockMaterial } from "../physics/impact";
 import { clampPull, launchVelocity, sampleTrajectory, type Vec3 } from "../physics/trajectory";
 import { computeLevelScore, levelCleared, starsForScore } from "../scoring";
+import { world } from "../../world";
 
 export type ShotPhase = "aiming" | "dragging" | "flying";
 export type LevelOutcome = "playing" | "cleared" | "failed" | "won";
@@ -43,8 +45,9 @@ interface LiveDummy extends DummyPiece {
 }
 
 export const GRAVITY = -18;
+export const GROUND_SURFACE_Y = 0;
 export const GROUND_HALF: Vec3 = [30, 0.5, 8];
-export const GROUND_CENTER: Vec3 = [14, -0.5, 0];
+export const GROUND_CENTER: Vec3 = [14, GROUND_SURFACE_Y - GROUND_HALF[1] - 0.05, 0];
 export const SLING_ANCHOR: Vec3 = [0, 1.2, 0];
 export const MAX_PULL = 2.6;
 export const GRAB_RADIUS = 3.5;
@@ -58,6 +61,7 @@ export const MAX_STEP_DT = 0.05;
 export const TRAJECTORY_STEPS = 90;
 export const TRAJECTORY_DT = 1 / 60;
 const CAPACITY = 96;
+const GROUND_FIELD = groundFieldFor(world);
 
 function toLiveBlock(block: BlockPiece): LiveBlock {
   return { ...block, position: block.position };
@@ -226,7 +230,8 @@ export class SlingshotStore implements ReadableEngineStore<SlingshotState> {
       powerScale: POWER_SCALE,
       maxSpeed: MAX_LAUNCH_SPEED,
     });
-    return sampleTrajectory(clamped, velocity, GRAVITY, TRAJECTORY_STEPS, TRAJECTORY_DT);
+    const floorY = GROUND_FIELD.sampleHeight(clamped[0], clamped[2]);
+    return sampleTrajectory(clamped, velocity, GRAVITY, TRAJECTORY_STEPS, TRAJECTORY_DT, floorY);
   }
 
   cancelAim(): void {
