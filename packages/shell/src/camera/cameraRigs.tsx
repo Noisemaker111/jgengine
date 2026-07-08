@@ -9,6 +9,7 @@ import type {
   ObserverCameraConfig,
   RtsCameraConfig,
   ShoulderCameraConfig,
+  SideScrollCameraConfig,
 } from "@jgengine/core/game/playableGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { usePlayer } from "@jgengine/react/hooks";
@@ -25,9 +26,12 @@ import {
   resolveChase,
   resolveObserver,
   resolveShoulder,
+  resolveSideScroll,
+  resolveSideScrollPose,
   resolveTopDown,
   seatPose,
   shoulderPose,
+  sideScrollFollowBlend,
   smoothstep,
   smoothYaw,
   speedToFov,
@@ -205,6 +209,36 @@ export function TopDownRig(props: RigProps) {
     followRef.current = follow;
     props.yawRef.current = resolved.yaw;
     const pose = topDownPose(follow, { ...resolved, height: zoomRef.current }, currentFov(camera));
+    commit(pose, dt);
+  }, CAMERA_RIG_FRAME_PRIORITY);
+
+  return null;
+}
+
+/** Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look. */
+export function SideScrollRig(props: RigProps) {
+  const { userId } = usePlayer();
+  const ctx = useGameContext();
+  const followId = resolveFollowId(props.followEntityId, userId);
+  const config: SideScrollCameraConfig | undefined = props.config?.sideScroll;
+  const resolved = useMemo(() => resolveSideScroll(config), [config]);
+  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
+  const followRef = useRef<Vec3 | null>(null);
+
+  useEffect(beginTransition, []);
+
+  useFrame((_, dt) => {
+    const sample = readFollow(ctx, followId);
+    const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
+    const prev = followRef.current ?? desired;
+    const blend = sideScrollFollowBlend(resolved.followSmoothing, dt);
+    const follow: Vec3 = {
+      x: prev.x + (desired.x - prev.x) * blend,
+      y: prev.y + (desired.y - prev.y) * blend,
+      z: prev.z + (desired.z - prev.z) * blend,
+    };
+    followRef.current = follow;
+    const pose = resolveSideScrollPose(follow, resolved, config?.fov ?? currentFov(camera));
     commit(pose, dt);
   }, CAMERA_RIG_FRAME_PRIORITY);
 
@@ -528,8 +562,12 @@ export function ChaseRig(props: RigProps) {
   return null;
 }
 
-function observerSubject(ctx: GameContext, config: ObserverCameraConfig | undefined): { subject: Vec3; boundEntityId: string | null } {
-  const bind = config?.bind;
+function observerSubject(
+  ctx: GameContext,
+  config: ObserverCameraConfig | undefined,
+  followId: string | null,
+): { subject: Vec3; boundEntityId: string | null } {
+  const bind = config?.bind ?? (followId !== null ? { kind: "entity" as const, entityId: followId } : undefined);
   if (bind?.kind === "entity") {
     const entity = ctx.scene.entity.get(bind.entityId);
     if (entity !== null) {
@@ -547,17 +585,22 @@ function observerSubject(ctx: GameContext, config: ObserverCameraConfig | undefi
  * kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
  */
 export function ObserverRig(props: RigProps) {
+  const { userId } = usePlayer();
   const ctx = useGameContext();
   const config: ObserverCameraConfig | undefined = props.config?.observer;
+  const followId = resolveFollowId(props.followEntityId, userId);
   const resolved = useMemo(() => resolveObserver(config), [config]);
   const angleRef = useRef(config?.startAngle ?? 0);
-  const { camera, commit, beginTransition } = useCameraCommit(props, observerSubject(ctx, config).boundEntityId);
+  const { camera, commit, beginTransition } = useCameraCommit(
+    props,
+    observerSubject(ctx, config, followId).boundEntityId,
+  );
 
   useEffect(beginTransition, []);
 
   useFrame((_, dt) => {
     angleRef.current += resolved.orbitSpeed * dt;
-    const { subject } = observerSubject(ctx, config);
+    const { subject } = observerSubject(ctx, config, followId);
     const pose = observerPose(subject, angleRef.current, resolved, config?.fov ?? currentFov(camera));
     commit(pose, dt);
   }, CAMERA_RIG_FRAME_PRIORITY);

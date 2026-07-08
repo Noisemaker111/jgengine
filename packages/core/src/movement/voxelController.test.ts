@@ -166,3 +166,58 @@ describe("advanceVoxelPlayer", () => {
     expect(body.grounded).toBe(true);
   });
 });
+
+describe("advanceVoxelPlayer groundHeight terrain", () => {
+  const noSolids: SolidQuery = () => false;
+
+  test("falls onto terrain and rests at its height", () => {
+    const groundHeight = () => 1.25;
+    const body = createVoxelPlayerBody(0, 5, 0);
+    for (let frame = 0; frame < 180; frame += 1) {
+      advanceVoxelPlayer(body, idle, 0, -1, 2.5, DT, noSolids, DEFAULT_VOXEL_DIMS, undefined, groundHeight);
+    }
+    expect(body.y).toBeCloseTo(1.25, 3);
+    expect(body.grounded).toBe(true);
+  });
+
+  test("terrain higher than a solid floor wins", () => {
+    const { isSolid } = solidFrom(floorLayer(-1));
+    const groundHeight = () => 0.6;
+    const body = createVoxelPlayerBody(0, 5, 0);
+    for (let frame = 0; frame < 180; frame += 1) {
+      advanceVoxelPlayer(body, idle, 0, -1, 2.5, DT, isSolid, DEFAULT_VOXEL_DIMS, undefined, groundHeight);
+    }
+    expect(body.y).toBeCloseTo(0.6, 3);
+    expect(body.grounded).toBe(true);
+  });
+
+  test("a solid floor higher than the terrain still wins", () => {
+    const { isSolid } = solidFrom(floorLayer(-1));
+    const groundHeight = () => -5;
+    const body = createVoxelPlayerBody(0, 5, 0);
+    for (let frame = 0; frame < 180; frame += 1) {
+      advanceVoxelPlayer(body, idle, 0, -1, 2.5, DT, isSolid, DEFAULT_VOXEL_DIMS, undefined, groundHeight);
+    }
+    expect(body.y).toBeCloseTo(0, 3);
+    expect(body.grounded).toBe(true);
+  });
+
+  test("unset groundHeight keeps the old flat-ground-only behavior", () => {
+    const { isSolid } = solidFrom(floorLayer(-1));
+    const body = createVoxelPlayerBody(0, 0, 0);
+    for (let frame = 0; frame < 120; frame += 1) {
+      advanceVoxelPlayer(body, idle, 0, -1, 2.5, DT, isSolid);
+    }
+    expect(body.y).toBeCloseTo(0, 5);
+    expect(body.grounded).toBe(true);
+  });
+
+  test("standing on terrain with no solids counts as supported for jumping", () => {
+    const groundHeight = () => 2;
+    const body = createVoxelPlayerBody(0, 2, 0);
+    advanceVoxelPlayer(body, idle, 0, -1, 2.5, DT, noSolids, DEFAULT_VOXEL_DIMS, undefined, groundHeight);
+    expect(body.grounded).toBe(true);
+    advanceVoxelPlayer(body, jumpIntent(), 0, -1, 2.5, DT, noSolids, DEFAULT_VOXEL_DIMS, undefined, groundHeight);
+    expect(body.grounded).toBe(false);
+  });
+});

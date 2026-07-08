@@ -1,4 +1,11 @@
-import type { TerrainColors, TerrainEnvironmentConfig, TerrainEnvironmentDescriptor, WorldBounds, WorldFeature } from "./features";
+import type {
+  TerrainColors,
+  TerrainEnvironmentConfig,
+  TerrainEnvironmentDescriptor,
+  TerrainFlattenMask,
+  WorldBounds,
+  WorldFeature,
+} from "./features";
 
 export type TerrainNormal = readonly [number, number, number];
 
@@ -244,9 +251,35 @@ export function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig,
   };
 }
 
+function withFlattenMasks(
+  sampleHeight: (x: number, z: number) => number,
+  masks: readonly TerrainFlattenMask[],
+): (x: number, z: number) => number {
+  const resolved = masks.map((mask) => ({
+    center: mask.center,
+    radius: mask.radius,
+    target: mask.height ?? sampleHeight(mask.center[0], mask.center[1]),
+    falloff: mask.falloff ?? mask.radius * 0.5,
+  }));
+  return (x, z) => {
+    const base = sampleHeight(x, z);
+    let height = base;
+    for (const mask of resolved) {
+      const distance = Math.hypot(x - mask.center[0], z - mask.center[1]);
+      if (distance <= mask.radius) {
+        height = mask.target;
+      } else if (distance <= mask.radius + mask.falloff) {
+        const t = smoothstep(mask.radius, mask.radius + mask.falloff, distance);
+        height = lerp(mask.target, base, t);
+      }
+    }
+    return height;
+  };
+}
+
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
   if (descriptor === undefined) return flatField();
-  return noiseField({
+  const noise = noiseField({
     seed: descriptor.seed,
     amplitude: descriptor.height,
     frequency: descriptor.frequency,
@@ -256,6 +289,42 @@ export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): 
     waterLevel: descriptor.waterLevel,
     bounds: descriptor.bounds,
   });
+  if (descriptor.flatten === undefined || descriptor.flatten.length === 0) return noise;
+  return fieldFromHeight(withFlattenMasks(noise.sampleHeight, descriptor.flatten), {
+    bounds: noise.bounds,
+    waterLevel: noise.waterLevel,
+  });
+}
+
+/** Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`. */
+export function snapToGround(
+  field: TerrainField,
+  position: readonly [number, number, number],
+  offset = 0,
+): [number, number, number] {
+  const [x, , z] = position;
+  return [x, field.sampleHeight(x, z) + offset, z];
+}
+
+export interface GroundSnapTarget {
+  position: readonly [number, number, number];
+}
+
+export interface GroundSnapEntityStore {
+  get(id: string): GroundSnapTarget | null;
+  setPose(id: string, pose: { position?: readonly [number, number, number] }): boolean;
+}
+
+/** Ground-snaps an already-spawned entity in place; returns false when `id` is unknown. */
+export function snapEntityToGround(
+  entities: GroundSnapEntityStore,
+  id: string,
+  field: TerrainField,
+  offset = 0,
+): boolean {
+  const entity = entities.get(id);
+  if (entity === null) return false;
+  return entities.setPose(id, { position: snapToGround(field, entity.position, offset) });
 }
 
 export const DEFAULT_MAX_WALK_SLOPE = 0.6;

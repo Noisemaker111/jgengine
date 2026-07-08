@@ -84,6 +84,45 @@ describe("initiative roster edits", () => {
   });
 });
 
+describe("turnLoop lifecycle hooks", () => {
+  test("onTurnStart fires for the very first turn", () => {
+    const started: string[] = [];
+    createTurnLoop({ order: ["a", "b"], onTurnStart: (id) => started.push(id) });
+    expect(started).toEqual(["a"]);
+  });
+
+  test("advanceTurn fires onTurnEnd for the finishing participant before onTurnStart for the next", () => {
+    const events: string[] = [];
+    const loop = createTurnLoop({
+      order: ["a", "b"],
+      onTurnStart: (id) => events.push(`start:${id}`),
+      onTurnEnd: (id) => events.push(`end:${id}`),
+    });
+    events.length = 0;
+    loop.advanceTurn();
+    expect(events).toEqual(["end:a", "start:b"]);
+  });
+
+  test("hooks receive the correct ids across a full round", () => {
+    const events: string[] = [];
+    const loop = createTurnLoop({
+      order: ["a", "b", "c"],
+      onTurnStart: (id) => events.push(`start:${id}`),
+      onTurnEnd: (id) => events.push(`end:${id}`),
+    });
+    events.length = 0;
+    loop.advanceTurn();
+    loop.advanceTurn();
+    loop.advanceTurn();
+    expect(events).toEqual(["end:a", "start:b", "end:b", "start:c", "end:c", "start:a"]);
+  });
+
+  test("hooks are optional and can be omitted", () => {
+    const loop = createTurnLoop({ order: ["a", "b"] });
+    expect(() => loop.advanceTurn()).not.toThrow();
+  });
+});
+
 describe("turnLoop snapshot", () => {
   test("capture and restore round-trips state and pools", () => {
     const loop = createTurnLoop({ order: ["a", "b"], phases: ["main", "end"], pools: [{ id: "ap", max: 2 }] });

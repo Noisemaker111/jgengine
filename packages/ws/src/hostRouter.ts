@@ -15,6 +15,7 @@ import {
   decodeWsClientMessage,
   encodeWsMessage,
   subscriptionKey,
+  type WsAppearance,
   type WsChannel,
   type WsChatMessage,
   type WsClientMessage,
@@ -72,6 +73,17 @@ type Connection = {
   subscriptions: Set<string>;
 };
 
+type PresenceEntry = PresencePoseState & { appearance?: WsAppearance };
+
+function appearanceEqual(a: WsAppearance | undefined, b: WsAppearance | undefined): boolean {
+  if (a === b) return true;
+  if (a === undefined || b === undefined) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((key) => a[key] === b[key]);
+}
+
 export function createHostRouter(options: HostRouterOptions): HostRouter {
   const host = options.host;
   const now = options.now ?? Date.now;
@@ -79,7 +91,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const authenticate = options.authenticate ?? (({ userId }: { userId: string }) => userId);
 
   const connections = new Set<Connection>();
-  const presence = new Map<string, Map<string, PresencePoseState>>();
+  const presence = new Map<string, Map<string, PresenceEntry>>();
   const positionHistoryMs = options.positionHistoryMs ?? 1_000;
   const histories = new Map<string, PositionHistory>();
 
@@ -113,6 +125,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       rotationY: pose.rotationY,
       rotationPitch: pose.rotationPitch ?? 0,
       lastSeenAt: pose.lastSeenAtMs ?? 0,
+      appearance: pose.appearance,
     }));
   };
 
@@ -288,7 +301,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const handlePose = (connection: Connection, serverId: string, pose: WsPose) => {
     if (connection.userId === null) return;
-    const rows = presence.get(serverId) ?? new Map<string, PresencePoseState>();
+    const rows = presence.get(serverId) ?? new Map<string, PresenceEntry>();
     presence.set(serverId, rows);
     const timestamp = now();
     const current = rows.get(connection.userId);
@@ -298,6 +311,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         rotationY: pose.rotationY,
         rotationPitch: pose.rotationPitch,
         lastSeenAtMs: timestamp,
+        appearance: pose.appearance,
       });
       historyFor(serverId).record(connection.userId, timestamp, { x: pose.x, y: pose.y, z: pose.z });
       broadcastPresence(serverId);
@@ -309,16 +323,18 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       poseRules,
       timestamp,
     );
-    if (decision.changed || decision.refreshKeepAlive) {
+    const appearanceChanged = pose.appearance !== undefined && !appearanceEqual(pose.appearance, current.appearance);
+    if (decision.changed || decision.refreshKeepAlive || appearanceChanged) {
       rows.set(connection.userId, {
         position: decision.position,
         rotationY: decision.rotationY,
         rotationPitch: decision.rotationPitch,
         lastSeenAtMs: timestamp,
+        appearance: pose.appearance ?? current.appearance,
       });
       historyFor(serverId).record(connection.userId, timestamp, decision.position);
     }
-    if (decision.changed) broadcastPresence(serverId);
+    if (decision.changed || appearanceChanged) broadcastPresence(serverId);
   };
 
   const dropPresence = (connection: Connection) => {

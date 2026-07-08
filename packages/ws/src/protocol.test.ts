@@ -88,3 +88,46 @@ test("subscriptionKey namespaces channel, server, and action", () => {
   expect(subscriptionKey("feed", "srv-1", "kill")).toBe("feed|srv-1|kill");
   expect(subscriptionKey("server", "srv-1")).toBe("server|srv-1|");
 });
+
+test("pose messages with an appearance payload round-trip through the codec", () => {
+  const message: WsClientMessage = {
+    v: 1,
+    t: "pose",
+    serverId: "srv-1",
+    pose: { x: 1, y: 0, z: 2, rotationY: 0.5, rotationPitch: 0, appearance: { skin: "gold", level: 3, muted: true } },
+  };
+  expect(decodeWsClientMessage(encodeWsMessage(message))).toEqual(message);
+});
+
+test("pose messages without appearance still validate (old-peer back-compat)", () => {
+  const message: WsClientMessage = {
+    v: 1,
+    t: "pose",
+    serverId: "srv-1",
+    pose: { x: 1, y: 0, z: 2, rotationY: 0.5, rotationPitch: 0 },
+  };
+  expect(decodeWsClientMessage(encodeWsMessage(message))).toEqual(message);
+});
+
+test("pose validation rejects malformed appearance payloads", () => {
+  const base = { x: 1, y: 0, z: 2, rotationY: 0, rotationPitch: 0 };
+  expect(
+    decodeWsClientMessage(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: "gold" } })),
+  ).toBeNull();
+  expect(
+    decodeWsClientMessage(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: null } })),
+  ).toBeNull();
+  expect(
+    decodeWsClientMessage(
+      JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: { skin: { nested: true } } } }),
+    ),
+  ).toBeNull();
+  expect(
+    decodeWsClientMessage(
+      JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: { tags: ["a", "b"] } } }),
+    ),
+  ).toBeNull();
+  expect(
+    decodeWsClientMessage(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: {} } })),
+  ).not.toBeNull();
+});

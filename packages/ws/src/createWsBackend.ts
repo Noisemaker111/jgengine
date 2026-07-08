@@ -36,6 +36,7 @@ export type WsBackendOptions = {
 
 export type WsPresenceSync = {
   subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void;
+  /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */
   syncPose: (serverId: string, pose: WsPose) => void;
 };
 

@@ -15,6 +15,15 @@ export interface TerrainColors {
   waterline?: string;
 }
 
+export interface TerrainFlattenMask {
+  center: EnvironmentVec2;
+  radius: number;
+  /** Target flat height; defaults to the noise field's height at `center`. */
+  height?: number;
+  /** Extra blend-ring width outside `radius` where the flat height smoothsteps back to the noise value; default `radius * 0.5`. */
+  falloff?: number;
+}
+
 export interface TerrainEnvironmentConfig {
   bounds?: WorldBounds;
   height?: number;
@@ -30,6 +39,8 @@ export interface TerrainEnvironmentConfig {
   ridged?: boolean;
   baseHeight?: number;
   waterLevel?: number;
+  /** Flat pads carved into the noise field, e.g. for building pads or spawn circles. */
+  flatten?: readonly TerrainFlattenMask[];
 }
 
 export interface RainEnvironmentConfig {
@@ -71,6 +82,18 @@ export interface OceanEnvironmentConfig {
   color?: string;
 }
 
+export interface SkyEnvironmentConfig {
+  /** Fixed look used when `timeOfDay` is off (or no clock is available); default "day". */
+  preset?: "day" | "dusk" | "night";
+  /** Drive sun/sky from the world clock's `calendar().dayFraction` instead of the fixed `preset`. */
+  timeOfDay?: boolean;
+  horizonColor?: string;
+  zenithColor?: string;
+  sunIntensity?: number;
+  ambientIntensity?: number;
+  fog?: { color?: string; near?: number; far?: number };
+}
+
 export interface BuildingEnvironmentConfig {
   count?: number;
   position?: EnvironmentVec2;
@@ -110,6 +133,11 @@ export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
 > &
   Pick<BuildingEnvironmentConfig, "seed" | "position">;
 
+export type SkyEnvironmentDescriptor = { kind: "sky" } & Required<
+  Pick<SkyEnvironmentConfig, "preset" | "timeOfDay">
+> &
+  Omit<SkyEnvironmentConfig, "preset" | "timeOfDay">;
+
 export type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor;
 export type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor;
 export type WaterEnvironmentDescriptor = OceanEnvironmentDescriptor;
@@ -119,6 +147,7 @@ export type EnvironmentDescriptorList<T> = T | readonly T[];
 
 export interface EnvironmentWorldConfig {
   terrain?: TerrainEnvironmentDescriptor;
+  sky?: SkyEnvironmentDescriptor;
   weather?: EnvironmentDescriptorList<WeatherEnvironmentDescriptor>;
   vegetation?: EnvironmentDescriptorList<VegetationEnvironmentDescriptor>;
   water?: EnvironmentDescriptorList<WaterEnvironmentDescriptor>;
@@ -128,6 +157,7 @@ export interface EnvironmentWorldConfig {
 export interface EnvironmentWorldFeature {
   kind: "environment";
   terrain?: TerrainEnvironmentDescriptor;
+  sky?: SkyEnvironmentDescriptor;
   weather?: readonly WeatherEnvironmentDescriptor[];
   vegetation?: readonly VegetationEnvironmentDescriptor[];
   water?: readonly WaterEnvironmentDescriptor[];
@@ -186,6 +216,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
   return {
     kind: "environment",
     ...(config.terrain === undefined ? {} : { terrain: config.terrain }),
+    ...(config.sky === undefined ? {} : { sky: config.sky }),
     ...(weather === undefined ? {} : { weather }),
     ...(vegetation === undefined ? {} : { vegetation }),
     ...(water === undefined ? {} : { water }),
@@ -211,6 +242,24 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
       ...(config.ridged === undefined ? {} : { ridged: config.ridged }),
       ...(config.baseHeight === undefined ? {} : { baseHeight: config.baseHeight }),
       ...(config.waterLevel === undefined ? {} : { waterLevel: config.waterLevel }),
+      ...(config.flatten === undefined ? {} : { flatten: config.flatten }),
+    },
+  );
+}
+
+export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor {
+  return withOptional(
+    {
+      kind: "sky" as const,
+      preset: config.preset ?? "day",
+      timeOfDay: config.timeOfDay ?? false,
+    },
+    {
+      ...(config.horizonColor === undefined ? {} : { horizonColor: config.horizonColor }),
+      ...(config.zenithColor === undefined ? {} : { zenithColor: config.zenithColor }),
+      ...(config.sunIntensity === undefined ? {} : { sunIntensity: config.sunIntensity }),
+      ...(config.ambientIntensity === undefined ? {} : { ambientIntensity: config.ambientIntensity }),
+      ...(config.fog === undefined ? {} : { fog: config.fog }),
     },
   );
 }

@@ -19,6 +19,8 @@ export interface FindPathOptions {
   smooth?: boolean;
   /** Diameter of the mover in world units — blocks cells within this margin of an obstacle. Default 0. */
   clearance?: number;
+  /** Multiplier (>=1) applied to the base cost of stepping from one cell center to a neighbour's. Use to penalize slopes, terrain, etc. */
+  stepCost?: (from: NavPoint, to: NavPoint) => number;
 }
 
 export interface NavGrid {
@@ -199,6 +201,7 @@ export function findPath(
   options: FindPathOptions = {},
 ): NavPoint[] | null {
   const passable = withClearance(grid, options.clearance ?? 0);
+  const stepCost = options.stepCost;
   const startCell = grid.cellAt(from);
   const goalCell = grid.cellAt(to);
   const start = passable(startCell.col, startCell.row) ? startCell : grid.nearestWalkable(from);
@@ -259,7 +262,8 @@ export function findPath(
       if (dx !== 0 && dy !== 0 && (!passable(col + dx, row) || !passable(col, row + dy))) continue;
       const nKey = keyOf(nc, nr);
       if (closed.has(nKey)) continue;
-      const tentative = g + step;
+      const multiplier = stepCost === undefined ? 1 : Math.max(1, stepCost(grid.center(col, row), grid.center(nc, nr)));
+      const tentative = g + step * multiplier;
       if (tentative < (gScore.get(nKey) ?? Number.POSITIVE_INFINITY)) {
         gScore.set(nKey, tentative);
         cameFrom.set(nKey, current.key);
@@ -281,6 +285,25 @@ export function findPath(
   const raw: NavPoint[] = cells.map((cell) => grid.center(cell.col, cell.row));
   if (passable(goalCell.col, goalCell.row)) raw[raw.length - 1] = [to[0], to[1]];
   return options.smooth === false ? raw : smoothPath(grid, raw);
+}
+
+const DEFAULT_SLOPE_STEP_WEIGHT = 1;
+
+/**
+ * `FindPathOptions.stepCost` factory that penalizes steep terrain: cost is
+ * `1 + weight * |Δheight| / horizontalDistance`, so with the default weight a
+ * 45° slope roughly doubles the step cost.
+ */
+export function slopeStepCost(
+  field: { sampleHeight(x: number, z: number): number },
+  weight = DEFAULT_SLOPE_STEP_WEIGHT,
+): (from: NavPoint, to: NavPoint) => number {
+  return (from, to) => {
+    const horizontal = Math.hypot(to[0] - from[0], to[1] - from[1]);
+    if (horizontal < 1e-6) return 1;
+    const rise = field.sampleHeight(to[0], to[1]) - field.sampleHeight(from[0], from[1]);
+    return 1 + (weight * Math.abs(rise)) / horizontal;
+  };
 }
 
 /** Remove waypoints the mover can skip because it has clear line-of-sight past them. */

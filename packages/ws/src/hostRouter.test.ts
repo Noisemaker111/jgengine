@@ -128,6 +128,55 @@ test("loopback: presence pose from one client shows up for another", async () =>
   }
 });
 
+test("loopback: presence appearance from one client reaches another", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game", serverId });
+
+    const rosters = channel<WsPresenceRow[]>();
+    bob.presenceSync.subscribe(serverId, (rows) => rosters.push(rows));
+    expect(await rosters.next()).toEqual([]);
+
+    alice.presenceSync.syncPose(serverId, {
+      x: 1,
+      y: 0,
+      z: 2,
+      rotationY: 0.4,
+      rotationPitch: 0,
+      appearance: { skin: "gold", mounted: true },
+    });
+    const rows = await rosters.next();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.appearance).toEqual({ skin: "gold", mounted: true });
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("loopback: presence row has no appearance when the client never sent one", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game", serverId });
+
+    const rosters = channel<WsPresenceRow[]>();
+    bob.presenceSync.subscribe(serverId, (rows) => rosters.push(rows));
+    expect(await rosters.next()).toEqual([]);
+
+    alice.presenceSync.syncPose(serverId, { x: 1, y: 0, z: 2, rotationY: 0.4, rotationPitch: 0 });
+    const rows = await rosters.next();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.appearance).toBeUndefined();
+  } finally {
+    await stack.shutdown();
+  }
+});
+
 test("loopback: feed subscription fires when membership changes", async () => {
   const stack = startStack();
   try {

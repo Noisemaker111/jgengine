@@ -42,9 +42,13 @@ import {
 } from "@jgengine/core/scene/selection";
 import {
   advancePlayerMotion,
+  constrainStepToAxis,
   createEmptyMovementKeys,
   createPlayerMotionState,
   resolveMovementIntent,
+  resolveObstacleStep,
+  snapPositionToGrid,
+  type CollisionObstacle,
 } from "@jgengine/core/movement/movementModel";
 import {
   advanceVoxelPlayer,
@@ -52,9 +56,12 @@ import {
   type VoxelPlayerBody,
 } from "@jgengine/core/movement/voxelController";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import type { MotionIntentBatch } from "@jgengine/core/runtime/motionIntents";
 import { groundFieldFor } from "@jgengine/core/world/terrain";
+import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
 import { useDisplayProfile } from "@jgengine/react/display";
@@ -62,11 +69,17 @@ import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengi
 import { GameProvider } from "@jgengine/react/provider";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
-import type { EntitySpriteConfig, ModelConfig, PointerConfig } from "@jgengine/core/game/playableGame";
+import type {
+  EntitySpriteConfig,
+  ModelConfig,
+  MovementCommitFrame,
+  PointerConfig,
+} from "@jgengine/core/game/playableGame";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
 import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
+import { TimeOfDayDaylight } from "./environment";
 import { PointerProbe } from "./pointer/PointerProbe";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import {
@@ -188,6 +201,70 @@ function pointerContextMenu(ctx: GameContext, playable: PlayableGame, hit: { poi
     return buildContextMenu({ kind: "object", targetId: hit.object, verbs, point: hit.point });
   }
   return null;
+}
+
+/** Actions from `input` currently held down, for `ctx.input.publish` (#164.1); includes reserved movement/jump actions. */
+export function heldActionsFor(tracker: Pick<ActionStateTracker<string>, "isDown">, actions: readonly string[]): string[] {
+  return actions.filter((action) => tracker.isDown(action));
+}
+
+/** Whether a bound action should fire this frame: on press, or on repeat interval while held (shared by `FrameDriver` and `HudOnlyDriver`). */
+export function shouldFireBoundAction(
+  tracker: Pick<ActionStateTracker<string>, "isDown" | "wasPressed">,
+  action: string,
+  input: PlayableGame["game"]["input"],
+  repeatFiredAt: ReadonlyMap<string, number>,
+  now: number,
+): boolean {
+  return shouldDispatchAction({
+    pressed: tracker.wasPressed(action),
+    down: tracker.isDown(action),
+    repeatMs: actionRepeatMs(input?.[action]),
+    lastFiredAt: repeatFiredAt.get(action) ?? null,
+    now,
+  });
+}
+
+/** Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`). */
+export function dispatchBoundAction(ctx: GameContext, action: string, yaw: number, pitch: number, aim: Aim): void {
+  const command = resolveActionCommand(action, (name) => ctx.game.commands.has(name), RESERVED_INPUT_ACTIONS);
+  if (command !== null) ctx.game.commands.run(command, { yaw, pitch, aim });
+}
+
+const OBSTACLE_GATHER_RADIUS = 3;
+
+/** Placed scene objects within `radius` of `center`, as `CollisionObstacle`s for `resolveObstacleStep` (#162.1). */
+export function nearbyObstacles(
+  objects: readonly SceneObject[],
+  center: readonly [number, number, number],
+  radius: number = OBSTACLE_GATHER_RADIUS,
+): CollisionObstacle[] {
+  const radiusSq = radius * radius;
+  const result: CollisionObstacle[] = [];
+  for (const object of objects) {
+    const dx = object.position[0] - center[0];
+    const dz = object.position[2] - center[2];
+    if (dx * dx + dz * dz <= radiusSq) result.push({ position: object.position });
+  }
+  return result;
+}
+
+/** Applies a pending `MotionIntentBatch` to a vertical velocity: impulses add, then `verticalVelocity` replaces the result outright (#162.4). */
+export function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number {
+  if (batch === null) return currentVelocity;
+  let velocity = currentVelocity;
+  for (const impulse of batch.impulses) velocity += impulse;
+  return batch.verticalVelocity ?? velocity;
+}
+
+/** The world's declared sky, when its world feature is an environment with one (#196.1). */
+export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironmentDescriptor | undefined {
+  return world?.kind === "environment" ? world.sky : undefined;
+}
+
+/** True when the world is an environment feature with terrain, so the voxel controller should sample its height. */
+export function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean {
+  return world?.kind === "environment" && world.terrain !== undefined;
 }
 
 function colorFromId(id: string): string {
@@ -369,6 +446,7 @@ function WorldView({
   environment: Environment,
   assets,
   renderEntity,
+  renderObject,
   selectedIds,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
@@ -377,6 +455,7 @@ function WorldView({
   environment: ComponentType | undefined;
   assets: AssetCatalog;
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
+  renderObject: ((object: SceneObject) => ReactNode) | undefined;
   selectedIds: ReadonlySet<string>;
 }) {
   const ctx = useGameContext();
@@ -419,6 +498,7 @@ function WorldView({
         const model =
           resolveModel(objectModels?.[object.catalogId], assets) ??
           resolveModel(object.catalogId, assets);
+        const custom = renderObject?.(object);
         return (
           <group
             key={object.instanceId}
@@ -426,7 +506,9 @@ function WorldView({
             rotation-y={object.rotationY}
             userData={{ [POINTER_OBJECT_KEY]: object.instanceId }}
           >
-            {model !== undefined ? (
+            {custom !== undefined && custom !== null ? (
+              custom
+            ) : model !== undefined ? (
               <EntityModel model={model} />
             ) : (
               <mesh position-y={0.5}>
@@ -499,6 +581,7 @@ function FrameDriver({
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
   const collision = playable.collision;
+  const movement = playable.movement;
   const voxelDims = useMemo(
     () => ({
       halfWidth: collision?.halfWidth ?? 0.3,
@@ -520,11 +603,14 @@ function FrameDriver({
   }, [playable]);
   const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
   const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
+  const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
+  const hasTerrain = useMemo(() => hasEnvironmentTerrain(playable.game.world), [playable]);
 
   useFrame((_state, rawDt) => {
     try {
     const dt = Math.min(rawDt, 0.05);
     const gameDt = ctx.time.advance(dt);
+    ctx.input.publish(heldActionsFor(tracker, inputActions));
     if (tracker.isDown("turnLeft")) yawRef.current += TURN_SPEED * dt;
     if (tracker.isDown("turnRight")) yawRef.current -= TURN_SPEED * dt;
 
@@ -541,6 +627,7 @@ function FrameDriver({
       keys.shift = tracker.isDown("sprint");
       keys.space = tracker.isDown("jump");
       const intent = resolveMovementIntent(keys, true);
+      const motionBatch = ctx.player.motion.takePending();
       if (collision?.voxel) {
         let body = voxelBodyRef.current;
         if (body === null) {
@@ -555,6 +642,7 @@ function FrameDriver({
         }
         const solids = cache.set;
         const isSolid = (x: number, y: number, z: number) => solids.has(`${x},${y},${z}`);
+        body.velocityY = applyMotionImpulses(body.velocityY, motionBatch);
         advanceVoxelPlayer(
           body,
           intent,
@@ -565,7 +653,9 @@ function FrameDriver({
           isSolid,
           voxelDims,
           movementTuning,
+          hasTerrain ? (x, z) => ground.sampleHeight(x, z) : undefined,
         );
+        if (motionBatch !== null && motionBatch.y !== null) body.y = motionBatch.y;
         ctx.scene.entity.setPose(playerId, {
           position: [body.x, body.y, body.z],
           rotationY: intent.moving
@@ -575,6 +665,7 @@ function FrameDriver({
         });
       } else {
         const motion = motionRef.current;
+        motion.verticalVelocity = applyMotionImpulses(motion.verticalVelocity, motionBatch);
         const step = advancePlayerMotion(
           motion,
           intent,
@@ -584,10 +675,47 @@ function FrameDriver({
           rawDt,
           movementTuning,
         );
-        const nextX = player.position[0] + step.stepX;
-        const nextZ = player.position[2] + step.stepZ;
+        let stepX = step.stepX;
+        let stepZ = step.stepZ;
+        if (movement?.mode === "axis") {
+          const constrained = constrainStepToAxis(stepX, stepZ, movement.axis ?? "x");
+          stepX = constrained.stepX;
+          stepZ = constrained.stepZ;
+        }
+        if (movement?.collideObjects === true) {
+          const obstacles = nearbyObstacles(ctx.scene.object.list(), player.position);
+          const resolved = resolveObstacleStep(player.position, stepX, stepZ, obstacles);
+          stepX = resolved.stepX;
+          stepZ = resolved.stepZ;
+        }
+        let nextX = player.position[0] + stepX;
+        let nextZ = player.position[2] + stepZ;
+        if (movement?.mode === "grid") {
+          const snapped = snapPositionToGrid(nextX, nextZ, movement.cellSize ?? 1);
+          nextX = snapped[0];
+          nextZ = snapped[1];
+        }
+        let nextY = ground.sampleHeight(nextX, nextZ) + motion.jumpOffset;
+        if (motionBatch !== null && motionBatch.y !== null) {
+          nextY = motionBatch.y;
+          motion.jumpOffset = motionBatch.y - ground.sampleHeight(nextX, nextZ);
+        }
+        if (movement?.beforeCommit !== undefined) {
+          const frame: MovementCommitFrame = {
+            entityId: playerId,
+            current: player.position,
+            next: [nextX, nextY, nextZ],
+            dt: rawDt,
+          };
+          const replacement = movement.beforeCommit(frame);
+          if (replacement !== undefined) {
+            nextX = replacement[0];
+            nextY = replacement[1];
+            nextZ = replacement[2];
+          }
+        }
         ctx.scene.entity.setPose(playerId, {
-          position: [nextX, ground.sampleHeight(nextX, nextZ) + motion.jumpOffset, nextZ],
+          position: [nextX, nextY, nextZ],
           rotationY: intent.moving
             ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
             : player.rotationY,
@@ -643,23 +771,9 @@ function FrameDriver({
         }
         continue;
       }
-      const fire = shouldDispatchAction({
-        pressed,
-        down: tracker.isDown(action),
-        repeatMs: actionRepeatMs(playable.game.input?.[action]),
-        lastFiredAt: repeatFiredAtRef.current.get(action) ?? null,
-        now: nowMs,
-      });
-      if (!fire) continue;
+      if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
       repeatFiredAtRef.current.set(action, nowMs);
-      const command = resolveActionCommand(
-        action,
-        (name) => ctx.game.commands.has(name),
-        RESERVED_INPUT_ACTIONS,
-      );
-      if (command !== null) {
-        ctx.game.commands.run(command, { yaw: yawRef.current, pitch: pitchRef.current, aim: commandAim });
-      }
+      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAim);
     }
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {
@@ -705,6 +819,56 @@ function FrameDriver({
       }
     }
   }, GAME_SIM_FRAME_PRIORITY);
+  return null;
+}
+
+function HudOnlyDriver({
+  ctx,
+  playable,
+  tracker,
+  onRuntimeError,
+}: {
+  ctx: GameContext;
+  playable: PlayableGame;
+  tracker: ActionStateTracker<string>;
+  onRuntimeError: (error: unknown, phase: string) => void;
+}) {
+  const hasReportedTickError = useRef(false);
+  const repeatFiredAtRef = useRef<Map<string, number>>(new Map());
+  const lastFrameRef = useRef<number | null>(null);
+  const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
+
+  useEffect(() => {
+    let frameId: number;
+    const tick = (now: number) => {
+      frameId = requestAnimationFrame(tick);
+      const last = lastFrameRef.current;
+      lastFrameRef.current = now;
+      if (last === null) return;
+      try {
+        const rawDt = (now - last) / 1000;
+        const dt = Math.min(rawDt, 0.05);
+        const gameDt = ctx.time.advance(dt);
+        ctx.input.publish(heldActionsFor(tracker, inputActions));
+        playable.loop.onTick(ctx, gameDt);
+        const nowMs = performance.now();
+        for (const action of inputActions) {
+          if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
+          repeatFiredAtRef.current.set(action, nowMs);
+          dispatchBoundAction(ctx, action, 0, 0, { yaw: 0, pitch: 0 });
+        }
+        tracker.endFrame();
+      } catch (error) {
+        if (!hasReportedTickError.current) {
+          hasReportedTickError.current = true;
+          onRuntimeError(error, "tick");
+        }
+      }
+    };
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [ctx, playable, tracker, onRuntimeError, inputActions]);
+
   return null;
 }
 
@@ -937,6 +1101,32 @@ export function GamePlayerShell({
       ? playable.camera
       : { ...playable.camera, followEntityId: controlledEntityId };
   const rigKind = resolveRigKind(cameraConfig);
+
+  if (rigKind === "none") {
+    const GameUI = playable.GameUI;
+    return (
+      <div
+        ref={wrapperRef}
+        tabIndex={0}
+        className="relative h-full w-full bg-neutral-950 outline-none"
+        onKeyDown={(event) => {
+          if (event.code === "Tab" || event.code === "Space") event.preventDefault();
+          tracker.handleDown(event.code);
+        }}
+        onKeyUp={(event) => tracker.handleUp(event.code)}
+        onBlur={() => tracker.reset()}
+      >
+        <HudOnlyDriver ctx={ctx} playable={playable} tracker={tracker} onRuntimeError={reportRuntimeError} />
+        <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
+          <GameProvider context={ctx}>
+            <GameUI />
+          </GameProvider>
+        </GameUiErrorBoundary>
+        <DiagnosticOverlay diagnostics={diagnostics} />
+      </div>
+    );
+  }
+
   const firstPerson = rigKind === "first";
   const showReticle =
     (firstPerson && playable.camera?.firstPerson?.reticle !== false) || rigKind === "shoulder";
@@ -955,6 +1145,7 @@ export function GamePlayerShell({
   const pointer: PointerConfig | undefined = playable.pointer;
   const pointerUsesLeft = pointer !== undefined && (pointer.select === true || pointer.moveCommand !== undefined);
   const selectFilter = pointer?.selectFilter;
+  const worldSky = resolveWorldSky(playable.game.world);
 
   const localXY = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -1070,6 +1261,14 @@ export function GamePlayerShell({
       if (ctx.game.commands.has(pointer.orderCommand)) {
         ctx.game.commands.run(pointer.orderCommand, { selection: selection.list(), point: hit.point });
       }
+      return;
+    }
+    if (pointer.secondaryCommand !== undefined && ctx.game.commands.has(pointer.secondaryCommand)) {
+      const aim: Aim = (pointer.aim === true ? pointerAimFor(ctx, pointerService) : undefined) ?? {
+        yaw: yawRef.current,
+        pitch: pitchRef.current,
+      };
+      ctx.game.commands.run(pointer.secondaryCommand, { point: hit.point, entity: hit.entity, object: hit.object, aim });
     }
   };
 
@@ -1115,9 +1314,15 @@ export function GamePlayerShell({
         shadows={playable.shadows ?? true}
         style={{ touchAction: "none" }}
       >
-        <color attach="background" args={["#14161b"]} />
-        <ambientLight intensity={0.55} />
-        <directionalLight position={[10, 16, 6]} intensity={1.3} />
+        {worldSky === undefined ? (
+          <>
+            <color attach="background" args={["#14161b"]} />
+            <ambientLight intensity={0.55} />
+            <directionalLight position={[10, 16, 6]} intensity={1.3} />
+          </>
+        ) : worldSky.timeOfDay ? (
+          <TimeOfDayDaylight sky={worldSky} clock={ctx.time} />
+        ) : null}
         <GameProvider context={ctx}>
           <WorldView
             entitySprites={playable.entitySprites}
@@ -1126,6 +1331,7 @@ export function GamePlayerShell({
             environment={playable.environment}
             assets={playable.game.assets}
             renderEntity={playable.renderEntity}
+            renderObject={playable.renderObject}
             selectedIds={selectedIds}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
@@ -1146,6 +1352,7 @@ export function GamePlayerShell({
             config={cameraConfig}
             pointerControls={pointerUsesLeft}
             panKeysEnabled={rtsPanKeysEnabled}
+            director={ctx.camera}
             onDragChange={(dragging) => {
               cameraDraggingRef.current = dragging;
             }}

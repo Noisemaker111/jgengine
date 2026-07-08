@@ -13,6 +13,8 @@ export interface TurnLoopConfig {
   phases?: readonly string[];
   pools?: readonly PoolConfig[];
   commit?: { mode: CommitMode };
+  onTurnStart?(participantId: string): void;
+  onTurnEnd?(participantId: string): void;
 }
 
 export interface PoolState {
@@ -91,6 +93,7 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
   }
 
   for (const id of order) resetPools(id);
+  if (activeIndex >= 0) config.onTurnStart?.(order[activeIndex]!);
 
   function active(): string | null {
     return activeIndex >= 0 && activeIndex < order.length ? order[activeIndex]! : null;
@@ -116,6 +119,7 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
       activeIndex = -1;
       return state();
     }
+    const previous = active();
     phaseIndex = 0;
     if (activeIndex < 0) {
       activeIndex = 0;
@@ -125,8 +129,12 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
     } else {
       activeIndex += 1;
     }
+    if (previous !== null) config.onTurnEnd?.(previous);
     const current = active();
-    if (current !== null) resetPools(current);
+    if (current !== null) {
+      resetPools(current);
+      config.onTurnStart?.(current);
+    }
     return state();
   }
 

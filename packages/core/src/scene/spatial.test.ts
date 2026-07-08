@@ -67,4 +67,86 @@ describe("spatial", () => {
     expect(api.moveToward("chaser", [0, 0, 1], { speed: 5, dt: 1, stopDistance: 2 })).toEqual([0, 0, 0]);
     expect(api.moveToward("missing", "prey", { speed: 1, dt: 1 })).toBeNull();
   });
+
+  function seededRandom(seed: number): () => number {
+    let state = seed;
+    return () => {
+      state = (state * 1103515245 + 12345) & 0x7fffffff;
+      return state / 0x7fffffff;
+    };
+  }
+
+  function randomPositions(count: number, rng: () => number, spread: number): Record<string, EntityPosition> {
+    const positions: Record<string, EntityPosition> = {};
+    for (let i = 0; i < count; i += 1) {
+      positions[`entity-${i}`] = [
+        (rng() - 0.5) * spread,
+        (rng() - 0.5) * spread,
+        (rng() - 0.5) * spread,
+      ];
+    }
+    return positions;
+  }
+
+  describe("grid acceleration", () => {
+    test("inRadius matches the linear scan for random point sets", () => {
+      const rng = seededRandom(42);
+      const positions = randomPositions(200, rng, 100);
+      const linear = createSpatialApi({ resolvePosition: (id) => positions[id], candidates: () => Object.keys(positions) });
+      const gridded = createSpatialApi({
+        resolvePosition: (id) => positions[id],
+        candidates: () => Object.keys(positions),
+        grid: { cellSize: 5 },
+      });
+      for (let trial = 0; trial < 25; trial += 1) {
+        const center: EntityPosition = [(rng() - 0.5) * 100, (rng() - 0.5) * 100, (rng() - 0.5) * 100];
+        const radius = rng() * 30;
+        expect(gridded.inRadius(center, radius)).toEqual(linear.inRadius(center, radius));
+      }
+    });
+
+    test("queryArc matches the linear scan for random point sets", () => {
+      const rng = seededRandom(7);
+      const positions = randomPositions(150, rng, 80);
+      positions["attacker"] = [0, 0, 0];
+      const linear = createSpatialApi({ resolvePosition: (id) => positions[id], candidates: () => Object.keys(positions) });
+      const gridded = createSpatialApi({
+        resolvePosition: (id) => positions[id],
+        candidates: () => Object.keys(positions),
+        grid: { cellSize: 4 },
+      });
+      for (let trial = 0; trial < 15; trial += 1) {
+        const aim = { yaw: rng() * Math.PI * 2, pitch: 0 };
+        const radius = rng() * 40;
+        const options = { from: "attacker", aim, radius, halfAngleDeg: 45 };
+        expect(gridded.queryArc(options)).toEqual(linear.queryArc(options));
+      }
+    });
+
+    test("invalidate() picks up a moved entity that would otherwise be stale", () => {
+      const positions: Record<string, EntityPosition> = { a: [0, 0, 0], b: [100, 0, 100] };
+      const api = createSpatialApi({
+        resolvePosition: (id) => positions[id],
+        candidates: () => Object.keys(positions),
+        grid: { cellSize: 5 },
+      });
+      expect(api.inRadius([50, 50, 50], 10)).toEqual([]);
+      positions["b"] = [51, 50, 51];
+      expect(api.inRadius([50, 50, 50], 10)).toEqual([]);
+      api.invalidate();
+      expect(api.inRadius([50, 50, 50], 10)).toEqual(["b"]);
+    });
+
+    test("a newly added candidate is never missed even without invalidate()", () => {
+      const positions: Record<string, EntityPosition> = { a: [0, 0, 0] };
+      const api = createSpatialApi({
+        resolvePosition: (id) => positions[id],
+        candidates: () => Object.keys(positions),
+        grid: { cellSize: 5 },
+      });
+      expect(api.inRadius([50, 50, 50], 10)).toEqual([]);
+      positions["b"] = [51, 50, 51];
+      expect(api.inRadius([50, 50, 50], 10)).toEqual(["b"]);
+    });
+  });
 });
