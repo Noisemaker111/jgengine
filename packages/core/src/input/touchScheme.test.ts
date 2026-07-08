@@ -48,8 +48,8 @@ describe("deriveTouchScheme", () => {
     );
     expect(scheme?.joystick).toEqual({ up: null, down: null, left: "moveLeft", right: "moveRight" });
     expect(scheme?.buttons).toEqual([
-      { action: "jump", label: "Jump" },
-      { action: "restart", label: "Restart" },
+      { action: "jump", label: "Jump", icon: null },
+      { action: "restart", label: "Restart", icon: null },
     ]);
     expect(scheme?.look).toBe(false);
   });
@@ -90,17 +90,22 @@ describe("deriveTouchScheme", () => {
       { moveForward: ["KeyW"], tabTarget: ["Tab"], slot1: ["Digit1"], interact: ["KeyE"] },
       { reserved: RESERVED, firstPerson: false },
     );
-    expect(scheme?.buttons).toEqual([{ action: "interact", label: "Interact" }]);
+    expect(scheme?.buttons).toEqual([{ action: "interact", label: "Interact", icon: null }]);
   });
 
-  test("explicit button list wins over derivation and honors custom labels", () => {
+  test("explicit button list wins over derivation and honors custom labels and icons", () => {
     const scheme = deriveTouchScheme(
-      { hardDrop: ["Space"], hold: ["KeyC"] },
-      { reserved: RESERVED, firstPerson: false, config: { buttons: [{ action: "hardDrop", label: "Drop" }, "hold"] } },
+      { hardDrop: ["Space"], hold: ["KeyC"], taunt: ["KeyT"] },
+      {
+        reserved: RESERVED,
+        firstPerson: false,
+        config: { buttons: [{ action: "hardDrop", label: "Drop" }, { action: "hold", icon: "star" }, { action: "taunt", icon: false }] },
+      },
     );
     expect(scheme?.buttons).toEqual([
-      { action: "hardDrop", label: "Drop" },
-      { action: "hold", label: "Hold" },
+      { action: "hardDrop", label: "Drop", icon: null },
+      { action: "hold", label: "Hold", icon: "star" },
+      { action: "taunt", label: "Taunt", icon: false },
     ]);
   });
 

@@ -59,6 +59,8 @@ export interface TouchGestureBindings {
 export interface TouchButtonSpec {
   action: string;
   label?: string;
+  /** Glyph name from the capture layer's icon catalog (`@jgengine/react/gameui` `GameIconName`); unset derives one from the action name, `false` forces the text label. */
+  icon?: string | false;
 }
 
 export interface TouchControlsConfig {
@@ -86,6 +88,8 @@ export interface TouchJoystick {
 export interface TouchButton {
   action: string;
   label: string;
+  /** Glyph hint for the capture layer: a name to render, `false` to force text, null to derive from the action name. */
+  icon: string | false | null;
 }
 
 export interface TouchScheme {
@@ -168,8 +172,8 @@ export function deriveTouchScheme(
   if (config?.buttons !== undefined) {
     buttons = config.buttons.map((spec) =>
       typeof spec === "string"
-        ? { action: spec, label: touchActionLabel(spec) }
-        : { action: spec.action, label: spec.label ?? touchActionLabel(spec.action) },
+        ? { action: spec, label: touchActionLabel(spec), icon: null }
+        : { action: spec.action, label: spec.label ?? touchActionLabel(spec.action), icon: spec.icon ?? null },
     );
   } else {
     buttons = actions
@@ -178,7 +182,7 @@ export function deriveTouchScheme(
       .filter((action) => !consumedByGestures.has(action))
       .filter((action) => !hidden.has(action))
       .filter((action) => !reserved.has(action) || BUTTONABLE_RESERVED.has(action))
-      .map((action) => ({ action, label: touchActionLabel(action) }));
+      .map((action) => ({ action, label: touchActionLabel(action), icon: null }));
   }
 
   const look = config?.look ?? firstPerson;

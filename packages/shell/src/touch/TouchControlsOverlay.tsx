@@ -3,6 +3,7 @@ import { useMemo, useRef, type MutableRefObject, type PointerEvent as ReactPoint
 import { createGestureSurfaceTracker } from "@jgengine/core/input/gestureSurface";
 import { createTouchGestureTracker } from "@jgengine/core/input/touchGestures";
 import { touchCode, type TouchButton, type TouchJoystick, type TouchScheme } from "@jgengine/core/input/touchScheme";
+import { GameIcon, iconForAction, isGameIconName, type GameIconName } from "@jgengine/react/gameui/icons";
 
 export interface TouchCodeSink {
   onCodeDown(code: string): void;
@@ -181,8 +182,15 @@ function VirtualJoystick({ joystick, sink }: { joystick: TouchJoystick; sink: To
   );
 }
 
+function touchButtonIcon(button: TouchButton): GameIconName | null {
+  if (button.icon === false) return null;
+  if (button.icon !== null && isGameIconName(button.icon)) return button.icon;
+  return iconForAction(button.action);
+}
+
 function TouchActionButton({ button, sink }: { button: TouchButton; sink: TouchCodeSink }) {
   const pointerIdRef = useRef<number | null>(null);
+  const icon = touchButtonIcon(button);
 
   const releaseIfHeld = () => {
     if (pointerIdRef.current === null) return;
@@ -193,6 +201,7 @@ function TouchActionButton({ button, sink }: { button: TouchButton; sink: TouchC
   return (
     <button
       type="button"
+      aria-label={button.label}
       className="pointer-events-auto flex h-14 w-14 touch-none select-none items-center justify-center rounded-full border border-white/25 bg-white/10 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-white/90 backdrop-blur-sm active:border-white/50 active:bg-white/30"
       onPointerDown={(event) => {
         if (pointerIdRef.current !== null) return;
@@ -207,7 +216,7 @@ function TouchActionButton({ button, sink }: { button: TouchButton; sink: TouchC
       onPointerCancel={() => releaseIfHeld()}
       onContextMenu={(event) => event.preventDefault()}
     >
-      <span className="px-1">{button.label}</span>
+      {icon !== null ? <GameIcon name={icon} size={26} /> : <span className="px-1">{button.label}</span>}
     </button>
   );
 }
