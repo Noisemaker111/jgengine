@@ -13,7 +13,10 @@
     "paths": {
       "@jgengine/core/*": ["../../packages/core/src/*"],
       "@jgengine/react/*": ["../../packages/react/src/*"],
-      "@jgengine/shell/*": ["../../packages/shell/src/*"]
+      "@jgengine/ws/*": ["../../packages/ws/src/*"],
+      "@jgengine/shell/*": ["../../packages/shell/src/*"],
+      "@jgengine/assets": ["../../packages/assets/src/index.ts"],
+      "@jgengine/assets/*": ["../../packages/assets/src/*"]
     }
   },
   "include": ["src"],

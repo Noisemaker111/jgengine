@@ -137,6 +137,15 @@ export interface MovementFrameStep {
 }
 
 /**
+ * Per-game overrides for the gravity/jump feel, sourced from
+ * `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
+ */
+export interface MovementTuningOverrides {
+  gravityAcceleration?: number;
+  jumpVelocity?: number;
+}
+
+/**
  * Advance one frame of avatar kinematics. Mutates `motion` (velocity, jump,
  * gravity, grounded) and returns the horizontal step to commit through the
  * collision-resolving stepper.
@@ -153,9 +162,12 @@ export function advancePlayerMotion(
   forwardZ: number,
   baseSpeed: number,
   rawDeltaSeconds: number,
+  tuning?: MovementTuningOverrides,
 ): MovementFrameStep {
   const deltaSeconds = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
   const targetSpeed = resolveTargetSpeed(intent, baseSpeed);
+  const gravityAcceleration = tuning?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration;
+  const jumpVelocity = tuning?.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity;
 
   let targetVelocityX = 0;
   let targetVelocityZ = 0;
@@ -202,13 +214,13 @@ export function advancePlayerMotion(
 
   const jumpPressed = intent.jumping;
   if (jumpPressed && !motion.jumpHeld && motion.grounded && !intent.crouching) {
-    motion.verticalVelocity = MOVEMENT_TUNING.jumpVelocity;
+    motion.verticalVelocity = jumpVelocity;
     motion.grounded = false;
   }
   motion.jumpHeld = jumpPressed;
 
   if (!motion.grounded || motion.verticalVelocity > 0) {
-    motion.verticalVelocity -= MOVEMENT_TUNING.gravityAcceleration * deltaSeconds;
+    motion.verticalVelocity -= gravityAcceleration * deltaSeconds;
     motion.jumpOffset += motion.verticalVelocity * deltaSeconds;
     if (motion.jumpOffset <= 0) {
       motion.jumpOffset = 0;

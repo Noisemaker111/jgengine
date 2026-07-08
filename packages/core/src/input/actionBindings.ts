@@ -55,12 +55,32 @@ export type ActionStateBindingMap<TAction extends string, TCode extends string =
 
 export type ActionCodes<TCode extends string = string> =
   | readonly TCode[]
-  | { hold?: readonly TCode[]; toggle?: readonly TCode[] };
+  | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number };
 
 export type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record<
   TAction,
   ActionCodes<TCode>
 >;
+
+export function actionRepeatMs(codes: ActionCodes | undefined): number | undefined {
+  if (codes === undefined || Array.isArray(codes)) return undefined;
+  return (codes as { repeatMs?: number }).repeatMs;
+}
+
+export interface ShouldDispatchActionInput {
+  pressed: boolean;
+  down: boolean;
+  repeatMs: number | undefined;
+  lastFiredAt: number | null;
+  now: number;
+}
+
+export function shouldDispatchAction({ pressed, down, repeatMs, lastFiredAt, now }: ShouldDispatchActionInput): boolean {
+  if (pressed) return true;
+  if (repeatMs === undefined || repeatMs <= 0) return false;
+  if (!down || lastFiredAt === null) return false;
+  return now - lastFiredAt >= repeatMs;
+}
 
 function toBindings<TCode extends string>(codes: readonly TCode[]): ActionBinding<TCode>[] {
   return codes.map((code) => ({ primary: code, secondary: null }));

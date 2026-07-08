@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { resolveTerrainPalette, TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/world/terrain";
+
 import { createGrassBladeGeometry } from "./grassGeometry";
 import { createSeededRandom } from "./random";
 import {
@@ -30,6 +32,35 @@ describe("terrain primitives", () => {
     expect(geometry.index?.count).toBe(48);
     expect(geometry.attributes.normal.count).toBe(15);
     expect(geometry.attributes.color.count).toBe(15);
+    geometry.dispose();
+  });
+
+  test("resolveTerrainPalette defaults to the grass preset", () => {
+    expect(resolveTerrainPalette()).toEqual(TERRAIN_MATERIAL_PALETTES.grass);
+    expect(resolveTerrainPalette({})).toEqual(TERRAIN_MATERIAL_PALETTES.grass);
+  });
+
+  test("resolveTerrainPalette resolves a named material preset", () => {
+    expect(resolveTerrainPalette({ material: "sand" })).toEqual(TERRAIN_MATERIAL_PALETTES.sand);
+    expect(resolveTerrainPalette({ material: "snow" })).toEqual(TERRAIN_MATERIAL_PALETTES.snow);
+  });
+
+  test("resolveTerrainPalette lets explicit colors override the preset field-by-field", () => {
+    expect(resolveTerrainPalette({ material: "rock", colors: { high: "#ffcc00" } })).toEqual({
+      low: TERRAIN_MATERIAL_PALETTES.rock.low,
+      high: "#ffcc00",
+      waterline: TERRAIN_MATERIAL_PALETTES.rock.waterline,
+    });
+    expect(resolveTerrainPalette({ colors: { low: "#111111", high: "#222222", waterline: "#333333" } })).toEqual({
+      low: "#111111",
+      high: "#222222",
+      waterline: "#333333",
+    });
+  });
+
+  test("segments passed through to the procedural ground geometry", () => {
+    const geometry = createProceduralGroundGeometry({ size: [8, 4], segments: [2, 1], seed: 9 });
+    expect(geometry.attributes.position.count).toBe(6);
     geometry.dispose();
   });
 

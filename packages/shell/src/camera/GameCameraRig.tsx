@@ -21,6 +21,8 @@ export interface GameCameraRigProps {
   config?: GameCameraConfig;
   onDragChange?: (dragging: boolean) => void;
   pointerControls?: boolean;
+  /** False when the game's own input map already claims WASD, so the RTS rig should stop panning on those keys. */
+  panKeysEnabled?: boolean;
 }
 
 export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind {
@@ -29,7 +31,14 @@ export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigK
   return "orbit";
 }
 
-export function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls }: GameCameraRigProps) {
+export function GameCameraRig({
+  yawRef,
+  pitchRef,
+  config,
+  onDragChange,
+  pointerControls,
+  panKeysEnabled,
+}: GameCameraRigProps) {
   const channel = useMemo(
     () => createCameraShakeChannel(config?.shake?.decayPerSecond),
     [config?.shake?.decayPerSecond],
@@ -54,7 +63,15 @@ export function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerC
       case "topDown":
         return <TopDownRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "rts":
-        return <RtsRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+        return (
+          <RtsRig
+            yawRef={yawRef}
+            pitchRef={pitchRef}
+            config={config}
+            followEntityId={followEntityId}
+            panKeysEnabled={panKeysEnabled}
+          />
+        );
       case "shoulder":
         return <ShoulderRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "lockOn":

@@ -14,6 +14,7 @@ import {
   resolveChase,
   resolveObserver,
   resolveShoulder,
+  rtsPanKeysConflict,
   seatPose,
   shakeOffset,
   shoulderPose,
@@ -240,6 +241,30 @@ describe("observerPose", () => {
   test("resolveObserver applies defaults", () => {
     const resolved = resolveObserver(undefined);
     expect(resolved).toEqual({ distance: 8, height: 3, lookHeight: 1.2, orbitSpeed: 0.2 });
+  });
+});
+
+describe("rtsPanKeysConflict", () => {
+  test("no conflict when the game declares no input map", () => {
+    expect(rtsPanKeysConflict(undefined)).toBe(false);
+    expect(rtsPanKeysConflict({})).toBe(false);
+  });
+
+  test("no conflict when bound codes never touch WASD", () => {
+    expect(rtsPanKeysConflict({ jump: ["Space"], interact: ["KeyE"] })).toBe(false);
+  });
+
+  test("flags a conflict for a flat code list binding a WASD key", () => {
+    expect(rtsPanKeysConflict({ moveForward: ["KeyW"] })).toBe(true);
+  });
+
+  test("flags a conflict for a WASD key inside the hold/toggle object form", () => {
+    expect(rtsPanKeysConflict({ crouch: { hold: ["KeyD"] } })).toBe(true);
+    expect(rtsPanKeysConflict({ sprint: { toggle: ["KeyA"] } })).toBe(true);
+  });
+
+  test("arrow keys and Q/E never count as a conflict", () => {
+    expect(rtsPanKeysConflict({ turn: ["ArrowLeft", "ArrowRight"], lean: ["KeyQ", "KeyE"] })).toBe(false);
   });
 });
 

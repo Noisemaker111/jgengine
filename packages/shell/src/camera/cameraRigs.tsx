@@ -233,15 +233,21 @@ function useHeldKeys(codes: readonly string[]): MutableRefObject<Set<string>> {
 }
 
 const RTS_PAN_KEYS = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyQ", "KeyE"];
+const RTS_WASD_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 
-export function RtsRig(props: RigProps) {
+export function RtsRig(props: RigProps & { panKeysEnabled?: boolean }) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
   const config: RtsCameraConfig | undefined = props.config?.rts;
   const resolved = useMemo(() => resolveTopDown(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const held = useHeldKeys(RTS_PAN_KEYS);
+  const wasdPanEnabled = followId === null && props.panKeysEnabled !== false;
+  const heldCodes = useMemo(
+    () => (wasdPanEnabled ? RTS_PAN_KEYS : RTS_PAN_KEYS.filter((code) => !RTS_WASD_KEYS.has(code))),
+    [wasdPanEnabled],
+  );
+  const held = useHeldKeys(heldCodes);
   const centerRef = useRef<Vec3>({
     x: config?.start?.x ?? 0,
     y: 0,

@@ -1,14 +1,16 @@
 import type { ActionCodesMap } from "../input/actionBindings";
+import type { GameFeedOptions } from "./feed";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { SaveConfig } from "../runtime/save";
-import type { AssetCatalog, ModelAssetRef } from "../scene/assetCatalog";
+import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../scene/assetCatalog";
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
 import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
 
 export interface PhysicsConfig {
   gravity?: number;
+  jumpVelocity?: number;
 }
 
 export interface InventoryDeclaration {
@@ -40,6 +42,8 @@ export interface GameDefinition<
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */
   time?: TimeConfig;
+  /** Per-action ring-buffer capacity for `ctx.game.feed`. Default 20. */
+  feed?: GameFeedOptions;
   inventories?: Record<string, InventoryDeclaration>;
   input?: ActionCodesMap;
   server?: GameServerConfig;
@@ -51,7 +55,9 @@ export interface GameDefinition<
 export type GameDefinitionConfig<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
-> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene">;
+> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & {
+  assets?: AssetCatalog<TAssetRef>;
+};
 
 export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
   config: GameDefinitionConfig<TAssetRef, TMultiplayer>,
@@ -59,5 +65,5 @@ export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
   if (config.name.trim().length === 0) {
     throw new Error("defineGame: name must be non-empty");
   }
-  return { ...config, scene: createEntityStore() };
+  return { ...config, scene: createEntityStore(), assets: config.assets ?? createAssetCatalog() };
 }

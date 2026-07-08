@@ -24,6 +24,8 @@ export interface SpawnDirectorConfig {
   maxSpawnsPerTick?: number;
   loop?: boolean;
   seed?: number;
+  spawnPoints?: readonly NavPoint[];
+  spawnPointBias?: number;
 }
 
 export interface SpawnDirectorState {
@@ -41,12 +43,15 @@ export interface SpawnDirectorState {
 export interface DirectorContext {
   alive: number;
   players?: number;
+  playerPositions?: readonly NavPoint[];
 }
 
 export interface SpawnRequest {
   entryId: string;
   cost: number;
   wave: number;
+  point?: NavPoint;
+  laneId?: number;
 }
 
 export interface DirectorStep {
@@ -177,12 +182,24 @@ export function advanceSpawnDirector(
   let spawnedTotal = state.spawnedTotal;
   let alive = ctx.alive;
   const entries = config.waves[wave]?.entries ?? [];
+  const spawnPoints = config.spawnPoints;
+  const playerPositions = ctx.playerPositions ?? [];
   while (spawns.length < maxSpawns && alive < maxAlive) {
     const picked = pickEntry(entries, wave, budget, rng);
     if (picked === null) break;
     rng = picked.rng;
     budget -= picked.entry.cost;
-    spawns.push({ entryId: picked.entry.id, cost: picked.entry.cost, wave });
+    const spawn: SpawnRequest = { entryId: picked.entry.id, cost: picked.entry.cost, wave };
+    if (spawnPoints !== undefined && spawnPoints.length > 0) {
+      const [roll, nextRng] = nextRandom(rng);
+      rng = nextRng;
+      const point = pickSpawnPoint(spawnPoints, playerPositions, { roll, bias: config.spawnPointBias });
+      if (point !== null) {
+        spawn.point = point;
+        spawn.laneId = spawnPoints.indexOf(point);
+      }
+    }
+    spawns.push(spawn);
     spawnedThisWave += 1;
     spawnedTotal += 1;
     alive += 1;

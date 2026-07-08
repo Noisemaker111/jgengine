@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   actionLabel,
+  actionRepeatMs,
   bindingLabel,
   bindingMatches,
   createActionStateTracker,
@@ -11,6 +12,7 @@ import {
   normalizeKeyCode,
   resolveActionCommand,
   resolveBoundAction,
+  shouldDispatchAction,
   type ActionBindingMap,
   type ActionStateBindingMap,
 } from "./actionBindings";
@@ -172,6 +174,53 @@ describe("resolveActionCommand", () => {
 
   test("returns null when neither the action nor ui.<action> command exists", () => {
     expect(resolveActionCommand("openParty", () => false, reserved)).toBeNull();
+  });
+});
+
+describe("actionRepeatMs", () => {
+  test("reads repeatMs from the hold/toggle object form", () => {
+    expect(actionRepeatMs({ hold: ["KeyF"], repeatMs: 150 })).toBe(150);
+  });
+
+  test("is undefined for a flat code list or when unset", () => {
+    expect(actionRepeatMs(["KeyF"])).toBeUndefined();
+    expect(actionRepeatMs({ hold: ["KeyF"] })).toBeUndefined();
+    expect(actionRepeatMs(undefined)).toBeUndefined();
+  });
+});
+
+describe("shouldDispatchAction", () => {
+  test("always fires on the press edge", () => {
+    expect(
+      shouldDispatchAction({ pressed: true, down: true, repeatMs: undefined, lastFiredAt: null, now: 1000 }),
+    ).toBe(true);
+  });
+
+  test("does not refire without repeatMs", () => {
+    expect(
+      shouldDispatchAction({ pressed: false, down: true, repeatMs: undefined, lastFiredAt: 900, now: 1000 }),
+    ).toBe(false);
+  });
+
+  test("refires once repeatMs has elapsed since the last fire", () => {
+    expect(
+      shouldDispatchAction({ pressed: false, down: true, repeatMs: 100, lastFiredAt: 900, now: 1000 }),
+    ).toBe(true);
+    expect(
+      shouldDispatchAction({ pressed: false, down: true, repeatMs: 100, lastFiredAt: 950, now: 1000 }),
+    ).toBe(false);
+  });
+
+  test("never fires while the action is not down", () => {
+    expect(
+      shouldDispatchAction({ pressed: false, down: false, repeatMs: 100, lastFiredAt: 800, now: 1000 }),
+    ).toBe(false);
+  });
+
+  test("does not fire on repeat without a recorded lastFiredAt", () => {
+    expect(
+      shouldDispatchAction({ pressed: false, down: true, repeatMs: 100, lastFiredAt: null, now: 1000 }),
+    ).toBe(false);
   });
 });
 

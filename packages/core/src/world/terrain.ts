@@ -1,4 +1,4 @@
-import type { TerrainEnvironmentDescriptor, WorldBounds, WorldFeature } from "./features";
+import type { TerrainColors, TerrainEnvironmentConfig, TerrainEnvironmentDescriptor, WorldBounds, WorldFeature } from "./features";
 
 export type TerrainNormal = readonly [number, number, number];
 
@@ -215,6 +215,33 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
 export function groundFieldFor(world?: WorldFeature): TerrainField {
   if (world !== undefined && world.kind === "environment") return resolveTerrainField(world.terrain);
   return flatField();
+}
+
+export interface TerrainPalette {
+  low: string;
+  high: string;
+  waterline: string;
+}
+
+export const DEFAULT_TERRAIN_MATERIAL = "grass";
+
+export const TERRAIN_MATERIAL_PALETTES: Record<string, TerrainPalette> = {
+  grass: { low: "#30402c", high: "#7f8b50", waterline: "#1d4c6e" },
+  sand: { low: "#9c8354", high: "#e0c98a", waterline: "#2f6f8f" },
+  snow: { low: "#c7d3dc", high: "#ffffff", waterline: "#3a6ea5" },
+  rock: { low: "#3a3a3d", high: "#8a8a8d", waterline: "#1d4c6e" },
+  ash: { low: "#2b2622", high: "#5c534a", waterline: "#3a3630" },
+};
+
+export function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors"> = {}): TerrainPalette {
+  const preset =
+    TERRAIN_MATERIAL_PALETTES[descriptor.material ?? DEFAULT_TERRAIN_MATERIAL] ?? TERRAIN_MATERIAL_PALETTES[DEFAULT_TERRAIN_MATERIAL];
+  const colors: TerrainColors = descriptor.colors ?? {};
+  return {
+    low: colors.low ?? preset.low,
+    high: colors.high ?? preset.high,
+    waterline: colors.waterline ?? preset.waterline,
+  };
 }
 
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {

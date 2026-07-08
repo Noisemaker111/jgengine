@@ -31,6 +31,15 @@ describe("defineGame", () => {
     expect(() => defineGame({ ...VALID, name: "  " })).toThrow("name");
   });
 
+  test("defaults to an empty asset catalog when assets is omitted", () => {
+    const { assets: _assets, ...withoutAssets } = VALID;
+    const game = defineGame(withoutAssets);
+    expect(game.assets.ids()).toEqual([]);
+    expect(game.assets.has("anything")).toBe(false);
+    game.assets.register("sword", { url: "sword.glb" });
+    expect(game.assets.resolve("sword")).toEqual({ url: "sword.glb" });
+  });
+
   test("carries platform config through untouched", () => {
     const loop = { onInit: () => {} };
     const game = defineGame({

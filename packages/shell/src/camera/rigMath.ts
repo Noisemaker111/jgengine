@@ -6,6 +6,7 @@ import type {
   ShoulderCameraConfig,
   TopDownCameraConfig,
 } from "@jgengine/core/game/playableGame";
+import type { ActionCodes, ActionCodesMap } from "@jgengine/core/input/actionBindings";
 
 import { lerpVec3, smoothBlend, type Vec3 } from "./orbitCameraMath";
 
@@ -13,6 +14,21 @@ export interface CameraPose {
   position: Vec3;
   lookAt: Vec3;
   fov: number;
+}
+
+const RTS_WASD_CODES: readonly string[] = ["KeyW", "KeyA", "KeyS", "KeyD"];
+
+function actionCodeList(codes: ActionCodes): readonly string[] {
+  if (Array.isArray(codes)) return codes as readonly string[];
+  const modes = codes as { hold?: readonly string[]; toggle?: readonly string[] };
+  return [...(modes.hold ?? []), ...(modes.toggle ?? [])];
+}
+
+export function rtsPanKeysConflict(input: ActionCodesMap | undefined): boolean {
+  if (input === undefined) return false;
+  return Object.values(input).some((codes) =>
+    actionCodeList(codes).some((code) => RTS_WASD_CODES.includes(code)),
+  );
 }
 
 export function clamp(value: number, min: number, max: number): number {

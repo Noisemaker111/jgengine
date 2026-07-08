@@ -4,6 +4,15 @@ import { join } from "node:path";
 const SKELETON_FILES = new Set(["game.config.ts", "index.tsx", "main.tsx", "loop.ts", "world.ts", "index.css"]);
 const SKELETON_DIRS = new Set(["game"]);
 
+const REQUIRED_TSCONFIG_PATHS: Record<string, string> = {
+  "@jgengine/core/*": "../../packages/core/src/*",
+  "@jgengine/react/*": "../../packages/react/src/*",
+  "@jgengine/ws/*": "../../packages/ws/src/*",
+  "@jgengine/shell/*": "../../packages/shell/src/*",
+  "@jgengine/assets": "../../packages/assets/src/index.ts",
+  "@jgengine/assets/*": "../../packages/assets/src/*",
+};
+
 const gamesDir = join(process.cwd(), "Games");
 
 function rel(path: string): string {
@@ -27,6 +36,22 @@ for (const name of readdirSync(gamesDir)) {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { scripts?: Record<string, string> };
   if (packageJson.scripts?.dev === undefined) {
     problems.push(`${rel(packageJsonPath)}: missing a "dev" script to launch the standalone harness`);
+  }
+
+  const tsconfigPath = join(gameDir, "tsconfig.json");
+  if (!existsSync(tsconfigPath)) {
+    problems.push(`${rel(tsconfigPath)}: missing tsconfig.json`);
+  } else {
+    const tsconfig = JSON.parse(readFileSync(tsconfigPath, "utf8")) as {
+      compilerOptions?: { paths?: Record<string, string[]> };
+    };
+    const paths = tsconfig.compilerOptions?.paths ?? {};
+    for (const [alias, target] of Object.entries(REQUIRED_TSCONFIG_PATHS)) {
+      const mapped = paths[alias];
+      if (mapped === undefined || mapped[0] !== target) {
+        problems.push(`${rel(tsconfigPath)}: compilerOptions.paths["${alias}"] must map to ["${target}"]`);
+      }
+    }
   }
 
   const srcDir = join(gameDir, "src");

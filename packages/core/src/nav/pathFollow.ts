@@ -21,9 +21,21 @@ export interface PathFollowState {
   distanceTravelled: number;
 }
 
-/** Lift an A* / navmesh `[x, z]` polyline onto a `y` plane for a path-follower. */
-export function pathFromNav(points: readonly NavPoint[], y = 0): Waypoint[] {
-  return points.map((point) => [point[0], y, point[1]] as Waypoint);
+export interface HeightSampler {
+  sampleHeight(x: number, z: number): number;
+}
+
+export function pathFromNav(
+  points: readonly NavPoint[],
+  elevation: number | HeightSampler = 0,
+  offset = 0,
+): Waypoint[] {
+  if (typeof elevation === "number") {
+    return points.map((point) => [point[0], elevation + offset, point[1]] as Waypoint);
+  }
+  return points.map(
+    (point) => [point[0], elevation.sampleHeight(point[0], point[1]) + offset, point[1]] as Waypoint,
+  );
 }
 
 export function createPathFollow(config: PathFollowConfig): PathFollowState {

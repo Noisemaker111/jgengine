@@ -9,6 +9,8 @@ import {
   noiseField,
   resolveGroundStep,
   resolveTerrainField,
+  resolveTerrainPalette,
+  TERRAIN_MATERIAL_PALETTES,
   valueNoise,
 } from "./terrain";
 
@@ -84,6 +86,16 @@ describe("terrain field", () => {
     const field = arenaField({ seed: "duel" });
     expect(Math.abs(field.sampleHeight(0, 0))).toBeLessThan(0.05);
     expect(field.waterLevel).toBeLessThan(0);
+  });
+
+  test("resolveTerrainPalette resolves material presets and explicit color overrides", () => {
+    expect(resolveTerrainPalette()).toEqual(TERRAIN_MATERIAL_PALETTES.grass);
+    expect(resolveTerrainPalette({ material: "ash" })).toEqual(TERRAIN_MATERIAL_PALETTES.ash);
+    expect(resolveTerrainPalette({ material: "ash", colors: { low: "#000000" } })).toEqual({
+      low: "#000000",
+      high: TERRAIN_MATERIAL_PALETTES.ash.high,
+      waterline: TERRAIN_MATERIAL_PALETTES.ash.waterline,
+    });
   });
 
   test("fractalNoise averages toward zero over a wide sample", () => {

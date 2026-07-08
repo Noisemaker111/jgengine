@@ -40,6 +40,7 @@ export {
   resolveShoulder,
   resolveTopDown,
   rightVector,
+  rtsPanKeysConflict,
   seatPose,
   shakeOffset,
   shoulderPose,

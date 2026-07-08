@@ -20,7 +20,7 @@
  * on the surface layer (cell y=-1) rests with their feet at y=0.
  */
 
-import { MOVEMENT_TUNING, type MovementIntent } from "./movementModel";
+import { MOVEMENT_TUNING, type MovementIntent, type MovementTuningOverrides } from "./movementModel";
 
 export type SolidQuery = (x: number, y: number, z: number) => boolean;
 
@@ -234,8 +234,11 @@ export function advanceVoxelPlayer(
   rawDeltaSeconds: number,
   isSolid: SolidQuery,
   dims: VoxelPlayerDims = DEFAULT_VOXEL_DIMS,
+  tuning?: MovementTuningOverrides,
 ): void {
   const dt = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
+  const gravityAcceleration = tuning?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration;
+  const jumpVelocity = tuning?.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity;
 
   const target = targetHorizontalVelocity(intent, forwardX, forwardZ, baseSpeed);
   const acceleration = body.grounded
@@ -258,13 +261,13 @@ export function advanceVoxelPlayer(
 
   const jumpPressed = intent.jumping;
   if (jumpPressed && !body.jumpHeld && body.grounded && !intent.crouching) {
-    body.velocityY = MOVEMENT_TUNING.jumpVelocity;
+    body.velocityY = jumpVelocity;
     body.grounded = false;
   }
   body.jumpHeld = jumpPressed;
 
   if (!body.grounded) {
-    body.velocityY -= MOVEMENT_TUNING.gravityAcceleration * dt;
+    body.velocityY -= gravityAcceleration * dt;
     const nextY = body.y + body.velocityY * dt;
     if (body.velocityY <= 0) {
       if (overlapsSolid(body.x, nextY, body.z, isSolid, dims)) {

@@ -32,6 +32,15 @@ describe("gameFeed", () => {
     expect(recent[19].data).toBe(24);
   });
 
+  test("options.limit overrides the default ring buffer size", () => {
+    const feed = createGameFeed({ limit: 3 });
+    for (let i = 0; i < 5; i++) feed.push("chat", i);
+
+    const recent = feed.recent("chat");
+    expect(recent).toHaveLength(3);
+    expect(recent.map((entry) => entry.data)).toEqual([2, 3, 4]);
+  });
+
   test("bind pipes matching game events into the buffer", () => {
     const events = createGameEvents();
     const feed = createGameFeed();
