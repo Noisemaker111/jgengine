@@ -67,6 +67,23 @@ export const powerCells: readonly Cell[] = [
 
 const powerSet = new Set(powerCells.map((cell) => cellKey(cell.c, cell.r)));
 
+export type PowerupKind = "forcefield" | "doublebarrel" | "lantern";
+
+export interface PowerupSpawn extends Cell {
+  kind: PowerupKind;
+}
+
+export const POWERUP_SPAWNS: readonly PowerupSpawn[] = [
+  { c: 3, r: 3, kind: "forcefield" },
+  { c: COLS - 4, r: 3, kind: "doublebarrel" },
+  { c: 9, r: 3, kind: "lantern" },
+  { c: 3, r: ROWS - 4, kind: "doublebarrel" },
+  { c: COLS - 4, r: ROWS - 4, kind: "forcefield" },
+  { c: 9, r: ROWS - 4, kind: "lantern" },
+];
+
+const powerupSet = new Set(POWERUP_SPAWNS.map((cell) => cellKey(cell.c, cell.r)));
+
 export const pelletCells: readonly Cell[] = (() => {
   const cells: Cell[] = [];
   for (let r = 1; r < ROWS - 1; r += 1) {
@@ -76,11 +93,32 @@ export const pelletCells: readonly Cell[] = (() => {
       if (c === DOOR.c && r === DOOR.r) continue;
       if (c === PLAYER_START.c && r === PLAYER_START.r) continue;
       if (powerSet.has(cellKey(c, r))) continue;
+      if (powerupSet.has(cellKey(c, r))) continue;
       cells.push({ c, r });
     }
   }
   return cells;
 })();
+
+const PLAYER_RADIUS = 0.34;
+
+function cellBlocked(x: number, z: number): boolean {
+  const cell = worldToCell(x, z);
+  return isWall(cell.c, cell.r);
+}
+
+export function collideSlide(ox: number, oz: number, nx: number, nz: number): [number, number] {
+  const r = PLAYER_RADIUS;
+  const free = (x: number, z: number): boolean =>
+    !cellBlocked(x - r, z - r) &&
+    !cellBlocked(x + r, z - r) &&
+    !cellBlocked(x - r, z + r) &&
+    !cellBlocked(x + r, z + r);
+  if (free(nx, nz)) return [nx, nz];
+  if (free(nx, oz)) return [nx, oz];
+  if (free(ox, nz)) return [ox, nz];
+  return [ox, oz];
+}
 
 export const CORNERS: readonly Cell[] = [
   { c: 1, r: 1 },

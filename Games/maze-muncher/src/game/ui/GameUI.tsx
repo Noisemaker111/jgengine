@@ -2,10 +2,13 @@ import { useEntityStat, useGame, usePlayer, useSceneEntities } from "@jgengine/r
 
 import { LIVES, SCORE, START_LIVES } from "../catalog";
 import {
+  getForcefieldRemaining,
   getFrightenedRemaining,
+  getLanternRemaining,
   getLevel,
   getLevelUpRemaining,
   getPhase,
+  getShells,
   MAX_LEVEL,
   pelletsLeft,
 } from "../../loop";
@@ -13,9 +16,9 @@ import {
 function ScorePanel({ userId }: { userId: string }) {
   const score = useEntityStat(userId, SCORE);
   return (
-    <div className="rounded-md border border-sky-400/40 bg-black/70 px-3 py-1.5 shadow-lg">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-300">Score</div>
-      <div className="font-mono text-2xl leading-none text-yellow-300 tabular-nums">
+    <div className="rounded-md border border-red-500/40 bg-black/70 px-3 py-1.5 shadow-lg">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-400">Souls</div>
+      <div className="font-mono text-2xl leading-none text-amber-200 tabular-nums">
         {String(score?.current ?? 0).padStart(5, "0")}
       </div>
     </div>
@@ -26,11 +29,11 @@ function LivesPanel({ userId }: { userId: string }) {
   const lives = useEntityStat(userId, LIVES);
   const count = lives?.current ?? START_LIVES;
   return (
-    <div className="flex items-center gap-2 rounded-md border border-yellow-400/40 bg-black/70 px-3 py-1.5 shadow-lg">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-yellow-300">Lives</span>
+    <div className="flex items-center gap-2 rounded-md border border-red-500/40 bg-black/70 px-3 py-1.5 shadow-lg">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-400">Lives</span>
       <div className="flex gap-1">
         {Array.from({ length: Math.max(0, count) }, (_, index) => (
-          <span key={index} className="h-4 w-4 rounded-full bg-yellow-300 shadow-[0_0_6px_rgba(253,224,71,0.7)]" />
+          <span key={index} className="h-4 w-4 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
         ))}
       </div>
     </div>
@@ -40,8 +43,8 @@ function LivesPanel({ userId }: { userId: string }) {
 function LevelPanel() {
   useSceneEntities();
   return (
-    <div className="rounded-md border border-emerald-400/40 bg-black/70 px-3 py-1.5 text-center shadow-lg">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Level</div>
+    <div className="rounded-md border border-red-500/30 bg-black/70 px-3 py-1.5 text-center shadow-lg">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-300/80">Depth</div>
       <div className="font-mono text-2xl leading-none text-white tabular-nums">
         {getLevel()}/{MAX_LEVEL}
       </div>
@@ -52,9 +55,38 @@ function LevelPanel() {
 function PelletCounter() {
   useSceneEntities();
   return (
-    <div className="rounded-md border border-white/20 bg-black/70 px-3 py-1 text-center shadow-lg">
-      <span className="text-[10px] uppercase tracking-[0.2em] text-white/50">Dots left </span>
-      <span className="font-mono text-sm text-white tabular-nums">{pelletsLeft()}</span>
+    <div className="rounded-md border border-white/15 bg-black/70 px-3 py-1 text-center shadow-lg">
+      <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">Souls left </span>
+      <span className="font-mono text-sm text-amber-200 tabular-nums">{pelletsLeft()}</span>
+    </div>
+  );
+}
+
+function Pill({ label, tone, glow }: { label: string; tone: string; glow: string }) {
+  return (
+    <div
+      className={`rounded-md border ${tone} bg-black/75 px-3 py-1.5 text-center font-mono text-xs font-bold uppercase tracking-widest shadow-lg`}
+      style={{ boxShadow: `0 0 12px ${glow}` }}
+    >
+      {label}
+    </div>
+  );
+}
+
+function PowerBar() {
+  useSceneEntities();
+  const shields = getForcefieldRemaining();
+  const lantern = getLanternRemaining();
+  const shells = getShells();
+  const fright = getFrightenedRemaining();
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      {fright > 0 ? <Pill label={`The Hunt · ${fright.toFixed(1)}s`} tone="border-indigo-300/60 text-indigo-100" glow="rgba(99,102,241,0.5)" /> : null}
+      {shields > 0 ? <Pill label={`Force Field · ${shields.toFixed(1)}s`} tone="border-cyan-300/60 text-cyan-100" glow="rgba(56,224,255,0.5)" /> : null}
+      {lantern > 0 ? <Pill label={`Lantern · ${lantern.toFixed(1)}s`} tone="border-yellow-300/60 text-yellow-100" glow="rgba(255,225,77,0.5)" /> : null}
+      {shells > 0 ? (
+        <Pill label={`Double Barrel · ${shells} ▮ · Space`} tone="border-orange-400/70 text-orange-100" glow="rgba(255,122,41,0.55)" />
+      ) : null}
     </div>
   );
 }
@@ -63,21 +95,20 @@ function StatusBanner() {
   useSceneEntities();
   const { commands } = useGame();
   const phase = getPhase();
-  const fright = getFrightenedRemaining();
   if (phase === "levelup") {
     return (
       <Banner
-        title={`LEVEL ${getLevel()}`}
-        subtitle={`${getLevelUpRemaining().toFixed(1)}s to go`}
-        tone="text-emerald-300 border-emerald-400/50"
+        title={`DESCENDING`}
+        subtitle={`Depth ${getLevel()} · ${getLevelUpRemaining().toFixed(1)}s`}
+        tone="text-red-300 border-red-500/50"
       />
     );
   }
   if (phase === "won") {
     return (
       <Banner
-        title="MAZE CLEARED"
-        subtitle="Every dot devoured"
+        title="YOU ESCAPED"
+        subtitle="Every soul devoured"
         tone="text-emerald-300 border-emerald-400/50"
         onRestart={() => commands.run("restart", {})}
       />
@@ -86,18 +117,11 @@ function StatusBanner() {
   if (phase === "lost") {
     return (
       <Banner
-        title="GAME OVER"
-        subtitle="The ghosts got you"
-        tone="text-red-400 border-red-500/50"
+        title="DEVOURED"
+        subtitle="The eyes found you"
+        tone="text-red-500 border-red-600/60"
         onRestart={() => commands.run("restart", {})}
       />
-    );
-  }
-  if (fright > 0) {
-    return (
-      <div className="rounded-full border border-indigo-300/60 bg-indigo-600/30 px-4 py-1 text-center font-mono text-sm font-bold uppercase tracking-widest text-indigo-100 shadow-lg">
-        Power! {fright.toFixed(1)}s
-      </div>
     );
   }
   return null;
@@ -116,7 +140,7 @@ function Banner({
 }) {
   return (
     <div
-      className={`pointer-events-auto rounded-2xl border-2 ${tone} bg-black/80 px-10 py-6 text-center shadow-2xl backdrop-blur-sm`}
+      className={`pointer-events-auto rounded-2xl border-2 ${tone} bg-black/85 px-10 py-6 text-center shadow-2xl backdrop-blur-sm`}
     >
       <div className="font-mono text-4xl font-black tracking-[0.15em]">{title}</div>
       <div className="mt-1 text-xs uppercase tracking-[0.3em] text-white/60">{subtitle}</div>
@@ -126,7 +150,7 @@ function Banner({
           onClick={onRestart}
           className="mt-4 rounded-md border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
         >
-          Restart · R
+          Descend Again · R
         </button>
       ) : null}
     </div>
@@ -137,6 +161,10 @@ export function GameUI() {
   const player = usePlayer();
   return (
     <div className="pointer-events-none absolute inset-0 select-none font-sans text-white">
+      <div
+        className="absolute inset-0"
+        style={{ boxShadow: "inset 0 0 220px 60px rgba(0,0,0,0.92)", background: "radial-gradient(circle at 50% 50%, transparent 45%, rgba(0,0,0,0.55) 100%)" }}
+      />
       <div className="absolute left-4 top-4 flex gap-2">
         <ScorePanel userId={player.userId} />
         <LevelPanel />
@@ -146,6 +174,9 @@ export function GameUI() {
       </div>
       <div className="absolute left-1/2 top-4 -translate-x-1/2">
         <PelletCounter />
+      </div>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+        <PowerBar />
       </div>
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <StatusBanner />
