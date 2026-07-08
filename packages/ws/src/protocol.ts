@@ -13,9 +13,12 @@ export const WS_PROTOCOL_VERSION = 1;
 
 export type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice";
 
-export type WsPose = PlayerPose;
+/** Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only. */
+export type WsAppearance = Record<string, string | number | boolean>;
 
-export type WsPresenceRow = PresencePoseRow;
+export type WsPose = PlayerPose & { appearance?: WsAppearance };
+
+export type WsPresenceRow = PresencePoseRow & { appearance?: WsAppearance };
 
 export type WsChatMessage = {
   id: string;
@@ -97,6 +100,13 @@ function isWsChannel(value: unknown): value is WsChannel {
   );
 }
 
+function isAppearance(value: unknown): value is WsAppearance {
+  return (
+    isRecord(value) &&
+    Object.values(value).every((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+  );
+}
+
 function isPose(value: unknown): value is WsPose {
   return (
     isRecord(value) &&
@@ -104,7 +114,8 @@ function isPose(value: unknown): value is WsPose {
     typeof value.y === "number" &&
     typeof value.z === "number" &&
     typeof value.rotationY === "number" &&
-    typeof value.rotationPitch === "number"
+    typeof value.rotationPitch === "number" &&
+    (value.appearance === undefined || isAppearance(value.appearance))
   );
 }
 

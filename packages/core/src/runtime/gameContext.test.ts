@@ -358,3 +358,154 @@ describe("float text and projectile events", () => {
     expect(shots[0]!.origin).toEqual([0, 0, 0]);
   });
 });
+
+describe("game.store", () => {
+  test("set bumps ctx.version and notifies ctx.subscribe listeners; get reads it back", () => {
+    const ctx = makeContext();
+    let calls = 0;
+    ctx.subscribe(() => calls++);
+    const before = ctx.version();
+    ctx.game.store.set("score", 42);
+    expect(ctx.game.store.get("score")).toBe(42);
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(calls).toBe(1);
+  });
+
+  test("delete also bumps version and notifies", () => {
+    const ctx = makeContext();
+    ctx.game.store.set("flag", true);
+    let calls = 0;
+    ctx.subscribe(() => calls++);
+    ctx.game.store.delete("flag");
+    expect(ctx.game.store.has("flag")).toBe(false);
+    expect(calls).toBe(1);
+  });
+});
+
+describe("game.cards.pile", () => {
+  test("returns the same instance for the same id, requires config only on first access", () => {
+    const ctx = makeContext();
+    const a = ctx.game.cards.pile("deck", { zones: ["draw", "hand", "discard"] });
+    const b = ctx.game.cards.pile("deck");
+    expect(b).toBe(a);
+  });
+
+  test("throws when a pile has not been created yet and no config is given", () => {
+    const ctx = makeContext();
+    expect(() => ctx.game.cards.pile("missing")).toThrow();
+  });
+
+  test("mutating a pile bumps ctx.version", () => {
+    const ctx = makeContext();
+    const deck = ctx.game.cards.pile("deck", {
+      zones: ["draw", "hand", "discard"],
+      drawFrom: "draw",
+      handZone: "hand",
+      discardTo: "discard",
+    });
+    deck.reset({ zones: { draw: ["a", "b", "c"], hand: [], discard: [] } });
+    const before = ctx.version();
+    const drawn = deck.draw(2);
+    expect(drawn).toEqual(["a", "b"]);
+    expect(ctx.version()).toBeGreaterThan(before);
+  });
+});
+
+describe("game.turn.loop", () => {
+  test("returns the same instance for the same id, requires config only on first access", () => {
+    const ctx = makeContext();
+    const a = ctx.game.turn.loop("combat", { order: ["hero", "slime"] });
+    const b = ctx.game.turn.loop("combat");
+    expect(b).toBe(a);
+  });
+
+  test("throws when a loop has not been created yet and no config is given", () => {
+    const ctx = makeContext();
+    expect(() => ctx.game.turn.loop("missing")).toThrow();
+  });
+
+  test("advanceTurn bumps ctx.version", () => {
+    const ctx = makeContext();
+    const loop = ctx.game.turn.loop("combat", { order: ["hero", "slime"] });
+    const before = ctx.version();
+    loop.advanceTurn();
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(loop.active()).toBe("slime");
+  });
+
+  test("commit.submit on the sub-controller also bumps ctx.version", () => {
+    const ctx = makeContext();
+    const loop = ctx.game.turn.loop("simul", {
+      order: ["hero", "slime"],
+      commit: { mode: "simultaneous" },
+    });
+    const before = ctx.version();
+    loop.commit.submit("hero", { move: "attack" });
+    expect(ctx.version()).toBeGreaterThan(before);
+  });
+});
+
+describe("ctx.camera", () => {
+  test("follow/clear round-trips and distinguishes undefined from null", () => {
+    const ctx = makeContext();
+    expect(ctx.camera.followedEntityId()).toBeUndefined();
+    ctx.camera.follow("hero-1");
+    expect(ctx.camera.followedEntityId()).toBe("hero-1");
+    ctx.camera.follow(null);
+    expect(ctx.camera.followedEntityId()).toBeNull();
+  });
+
+  test("follow and setCinematic notify ctx.subscribe and bump ctx.version", () => {
+    const ctx = makeContext();
+    let calls = 0;
+    ctx.subscribe(() => calls++);
+    const before = ctx.version();
+    ctx.camera.follow("hero-1");
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(calls).toBe(1);
+    ctx.camera.setCinematic({ keyframes: [{ position: { x: 0, y: 0, z: 0 }, lookAt: { x: 0, y: 0, z: 1 } }] });
+    expect(ctx.camera.cinematic()).not.toBeNull();
+    expect(calls).toBe(2);
+  });
+});
+
+describe("ctx.input", () => {
+  test("publish replaces the held set and is readable via isDown/held", () => {
+    const ctx = makeContext();
+    ctx.input.publish(["jump", "fire"]);
+    expect(ctx.input.isDown("jump")).toBe(true);
+    expect(ctx.input.isDown("crouch")).toBe(false);
+    expect(ctx.input.held()).toEqual(["jump", "fire"]);
+    ctx.input.publish(["crouch"]);
+    expect(ctx.input.isDown("jump")).toBe(false);
+    expect(ctx.input.isDown("crouch")).toBe(true);
+  });
+
+  test("publish does not bump ctx.version", () => {
+    const ctx = makeContext();
+    const before = ctx.version();
+    ctx.input.publish(["jump"]);
+    expect(ctx.version()).toBe(before);
+  });
+});
+
+describe("ctx.player.motion", () => {
+  test("is reachable and round-trips an impulse via takePending", () => {
+    const ctx = makeContext();
+    ctx.player.motion.impulse(7);
+    expect(ctx.player.motion.takePending()).toEqual({
+      impulses: [7],
+      verticalVelocity: null,
+      y: null,
+    });
+  });
+
+  test("impulse does not bump ctx.version", () => {
+    const ctx = makeContext();
+    const before = ctx.version();
+    ctx.player.motion.impulse(7);
+    ctx.player.motion.setVerticalVelocity(3);
+    ctx.player.motion.setY(1);
+    expect(ctx.version()).toBe(before);
+  });
+});

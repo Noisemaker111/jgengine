@@ -13,6 +13,7 @@ import type {
 } from "@jgengine/core/world/features";
 import { resolveTerrainField, resolveTerrainPalette, type TerrainField } from "@jgengine/core/world/terrain";
 
+import { SkyDaylight } from "./Daylight";
 import { GeneratedBuilding } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
 import { ProceduralGround } from "../terrain/ProceduralGround";
@@ -142,6 +143,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const structures = feature.structures ?? [];
   return (
     <>
+      {feature.sky !== undefined && !feature.sky.timeOfDay ? <SkyDaylight sky={feature.sky} /> : null}
       {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} /> : null}
       {water.map((ocean, index) => (
         <Water key={`ocean-${index}`} ocean={ocean} />

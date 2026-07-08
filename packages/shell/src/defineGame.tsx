@@ -49,6 +49,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     multiplayer,
     WorldOverlay,
     renderEntity,
+    renderObject,
     entitySprites,
     entityModels,
     objectModels,
@@ -62,6 +63,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     objectSounds,
     worldItem,
     collision,
+    movement,
     ...engineFields
   } = config;
 
@@ -82,6 +84,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     camera: camera ?? { perspective: "third" },
     WorldOverlay,
     renderEntity,
+    renderObject,
     entitySprites,
     entityModels,
     objectModels,
@@ -95,5 +98,6 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     objectSounds,
     worldItem,
     collision,
+    movement,
   };
 }

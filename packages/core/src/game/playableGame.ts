@@ -27,6 +27,8 @@ export interface PointerConfig {
   grabWorldItems?: boolean;
   /** Press the bound `ping` action → `worldHit()` → run this command with `{ point, entity, object, normal }` (contextual ping, #94). */
   pingCommand?: string;
+  /** Right-click runs this command with `{ point, entity, object, aim }` when neither `orderCommand` nor `contextMenu` claims the click (#164.4). */
+  secondaryCommand?: string;
 }
 
 export interface CameraFollowState {
@@ -63,7 +65,32 @@ export interface FirstPersonCameraConfig {
  * - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views.
  * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
  */
-export type CameraRigKind = "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer";
+export type CameraRigKind =
+  | "orbit"
+  | "first"
+  | "topDown"
+  | "rts"
+  | "shoulder"
+  | "lockOn"
+  | "chase"
+  | "observer"
+  | "sideScroll"
+  | "none";
+
+/** Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input. */
+export interface SideScrollCameraConfig {
+  /** World axis the action travels along; the camera watches from the perpendicular side. Default "x". */
+  axis?: "x" | "z";
+  /** Camera distance from the followed entity along the perpendicular axis. Default 10. */
+  distance?: number;
+  /** Camera height above the followed entity. Default 3. */
+  height?: number;
+  /** Height of the look point above the entity. Default 1. */
+  lookHeight?: number;
+  /** Per-second smoothing factor for the follow (0 hard-locks). Default 8. */
+  followSmoothing?: number;
+  fov?: number;
+}
 
 /** Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow. */
 export interface TopDownCameraConfig {
@@ -230,6 +257,8 @@ export interface GameCameraConfig {
   chase?: ChaseCameraConfig;
   /** Detached spectator/photo cam tuning (#120); read when `rig: "observer"`. */
   observer?: ObserverCameraConfig;
+  /** Fixed side-on follow tuning; read when `rig: "sideScroll"`. */
+  sideScroll?: SideScrollCameraConfig;
   /** Camera-shake / trauma channel defaults (#28); read by every rig. */
   shake?: CameraShakeConfig;
   /** Scripted keyframe path (#29); when set, plays over the active rig. */
@@ -309,7 +338,29 @@ export interface ModelConfig {
   dims?: ModelDims;
 }
 
-export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never> {
+/** Movement-control levers for the shell-driven local player walk controller. */
+export interface PlayerMovementConfig {
+  /** "free" (default) moves camera-relative across the plane; "axis" locks travel to one world axis; "grid" snaps each committed position to cell centers. */
+  mode?: "free" | "axis" | "grid";
+  /** World axis for mode "axis". Default "x". */
+  axis?: "x" | "z";
+  /** Cell size for mode "grid". Default 1. */
+  cellSize?: number;
+  /** Collide the walking player against placed scene objects (unit-box AABBs) even without `collision.voxel`. Default false. */
+  collideObjects?: boolean;
+  /** Intercepts each frame's resolved position before the pose commits (and before onTick): return a replacement [x,y,z] to constrain or redirect the step, or nothing to accept it. */
+  beforeCommit?: (frame: MovementCommitFrame) => readonly [number, number, number] | undefined | void;
+}
+
+/** One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`. */
+export interface MovementCommitFrame {
+  entityId: string;
+  current: readonly [number, number, number];
+  next: readonly [number, number, number];
+  dt: number;
+}
+
+export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> {
   game: GameDefinition;
   content: GameContextContent;
   loop: Required<GameLoop<GameContext>>;
@@ -320,6 +371,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   environment?: TWorldOverlay;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
   renderEntity?: TRenderEntity;
+  /** Per-object visual override: return your own mesh for a placed scene object and the shell still positions it. Return null/undefined to fall back to objectModels → colored box. */
+  renderObject?: TRenderObject;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
   entitySprites?: Record<string, EntitySpriteConfig>;
   /** GLB models keyed by entity kind name; a string resolves as an asset-catalog key via game.assets, a ModelConfig renders directly. Takes priority over sprites, then primitives. */
@@ -350,6 +403,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   worldItem?: WorldItemRenderConfig;
   /** Player-vs-world collision for the first-person controller (block/voxel worlds). Off by default (flat ground). */
   collision?: VoxelCollisionConfig;
+  /** Movement-control levers (axis/grid constraints, object collision, pre-commit hook) for the shell-driven walk controller. */
+  movement?: PlayerMovementConfig;
 }
 
 export function worldHealthBarAllowsRole(

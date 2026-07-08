@@ -1,5 +1,10 @@
-import { useEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
+
+import type { SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
+
+import { daylightStateAt, SKY_PRESET_DAY_FRACTION } from "./daylightCycle";
 
 export interface SkyDomeProps {
   topColor?: string;
@@ -7,6 +12,8 @@ export interface SkyDomeProps {
   radius?: number;
   offset?: number;
   exponent?: number;
+  /** Exposes the created shader material so a time-of-day driver can mutate its uniforms per frame without recreating it. */
+  materialRef?: MutableRefObject<THREE.ShaderMaterial | null>;
 }
 
 const SKY_TOP = "#3fa4f2";
@@ -22,6 +29,7 @@ export function SkyDome({
   radius = 260,
   offset = 24,
   exponent = 0.65,
+  materialRef,
 }: SkyDomeProps = {}) {
   const material = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -55,7 +63,13 @@ export function SkyDome({
       fog: false,
     });
   }, [topColor, horizonColor, offset, exponent]);
-  useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => {
+    if (materialRef !== undefined) materialRef.current = material;
+    return () => {
+      material.dispose();
+      if (materialRef !== undefined) materialRef.current = null;
+    };
+  }, [material, materialRef]);
   return (
     <mesh material={material} renderOrder={-1}>
       <sphereGeometry args={[radius, 32, 16]} />
@@ -87,6 +101,75 @@ export function Daylight({ sky, fog, sun, ambient }: DaylightProps = {}) {
         color={sun?.color ?? SUN_COLOR}
         castShadow
       />
+    </>
+  );
+}
+
+/** Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates. */
+export function SkyDaylight({ sky }: { sky: SkyEnvironmentDescriptor }) {
+  const state = useMemo(() => daylightStateAt(SKY_PRESET_DAY_FRACTION[sky.preset], sky), [sky]);
+  return (
+    <Daylight
+      sky={{ topColor: state.skyTop, horizonColor: state.skyBottom }}
+      fog={{ color: sky.fog?.color ?? state.background, near: sky.fog?.near, far: sky.fog?.far }}
+      sun={{ position: state.sunPosition, intensity: state.sunIntensity }}
+      ambient={{ intensity: state.ambientIntensity }}
+    />
+  );
+}
+
+export interface TimeOfDayDaylightProps {
+  sky: SkyEnvironmentDescriptor;
+  /** The world's `SimClock` (or a stub exposing `calendar().dayFraction`). Absent means static rendering. */
+  clock?: { calendar(): { dayFraction: number } };
+}
+
+/**
+ * Drives `Daylight`'s sun/sky/fog from the world clock when `sky.timeOfDay` and `clock` are both present,
+ * sampling `daylightStateAt` every frame; otherwise renders the static preset look via `SkyDaylight`.
+ */
+export function TimeOfDayDaylight({ sky, clock }: TimeOfDayDaylightProps) {
+  if (!sky.timeOfDay || clock === undefined) return <SkyDaylight sky={sky} />;
+  return <DrivenDaylight sky={sky} clock={clock} />;
+}
+
+function DrivenDaylight({
+  sky,
+  clock,
+}: {
+  sky: SkyEnvironmentDescriptor;
+  clock: { calendar(): { dayFraction: number } };
+}) {
+  const initial = useMemo(() => daylightStateAt(clock.calendar().dayFraction, sky), [clock, sky]);
+  const sunRef = useRef<THREE.DirectionalLight>(null);
+  const hemiRef = useRef<THREE.HemisphereLight>(null);
+  const fogRef = useRef<THREE.Fog>(null);
+  const skyMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  useFrame(() => {
+    const state = daylightStateAt(clock.calendar().dayFraction, sky);
+    const sun = sunRef.current;
+    if (sun !== null) {
+      sun.position.set(state.sunPosition[0], state.sunPosition[1], state.sunPosition[2]);
+      sun.intensity = state.sunIntensity;
+    }
+    const hemi = hemiRef.current;
+    if (hemi !== null) hemi.intensity = state.ambientIntensity;
+    const fog = fogRef.current;
+    if (fog !== null) fog.color.set(sky.fog?.color ?? state.background);
+    const skyMaterial = skyMaterialRef.current;
+    if (skyMaterial !== null) {
+      (skyMaterial.uniforms.topColor!.value as THREE.Color).set(state.skyTop);
+      (skyMaterial.uniforms.bottomColor!.value as THREE.Color).set(state.skyBottom);
+    }
+  });
+
+  return (
+    <>
+      <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} />
+      <fog attach="fog" ref={fogRef} args={[sky.fog?.color ?? initial.background, sky.fog?.near ?? 70, sky.fog?.far ?? 260]} />
+      <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
+      <directionalLight ref={sunRef} position={initial.sunPosition} intensity={initial.sunIntensity} color={SUN_COLOR} castShadow />
     </>
   );
 }

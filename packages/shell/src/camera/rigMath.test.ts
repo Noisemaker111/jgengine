@@ -12,12 +12,16 @@ import {
   lockOnPose,
   observerPose,
   resolveChase,
+  resolveDirectedCamera,
   resolveObserver,
   resolveShoulder,
+  resolveSideScroll,
+  resolveSideScrollPose,
   rtsPanKeysConflict,
   seatPose,
   shakeOffset,
   shoulderPose,
+  sideScrollFollowBlend,
   smoothstep,
   smoothYaw,
   speedToFov,
@@ -241,6 +245,113 @@ describe("observerPose", () => {
   test("resolveObserver applies defaults", () => {
     const resolved = resolveObserver(undefined);
     expect(resolved).toEqual({ distance: 8, height: 3, lookHeight: 1.2, orbitSpeed: 0.2 });
+  });
+});
+
+describe("resolveSideScroll", () => {
+  test("applies defaults", () => {
+    expect(resolveSideScroll(undefined)).toEqual({
+      axis: "x",
+      distance: 10,
+      height: 3,
+      lookHeight: 1,
+      followSmoothing: 8,
+    });
+  });
+
+  test("honors overrides", () => {
+    expect(resolveSideScroll({ axis: "z", distance: 6, height: 2, lookHeight: 0.5, followSmoothing: 0 })).toEqual({
+      axis: "z",
+      distance: 6,
+      height: 2,
+      lookHeight: 0.5,
+      followSmoothing: 0,
+    });
+  });
+});
+
+describe("resolveSideScrollPose", () => {
+  test("axis x watches from the +z perpendicular side", () => {
+    const resolved = resolveSideScroll({ axis: "x", distance: 10, height: 3, lookHeight: 1 });
+    const pose = resolveSideScrollPose({ x: 5, y: 0, z: 2 }, resolved, 55);
+    expect(near(pose.position.x, 5)).toBe(true);
+    expect(near(pose.position.z, 12)).toBe(true);
+    expect(near(pose.position.y, 3)).toBe(true);
+    expect(pose.lookAt).toEqual({ x: 5, y: 1, z: 2 });
+    expect(pose.fov).toBe(55);
+  });
+
+  test("axis z watches from the +x perpendicular side", () => {
+    const resolved = resolveSideScroll({ axis: "z", distance: 8, height: 4, lookHeight: 2 });
+    const pose = resolveSideScrollPose({ x: -3, y: 1, z: 6 }, resolved, 60);
+    expect(near(pose.position.x, 5)).toBe(true);
+    expect(near(pose.position.z, 6)).toBe(true);
+    expect(near(pose.position.y, 5)).toBe(true);
+    expect(pose.lookAt).toEqual({ x: -3, y: 3, z: 6 });
+  });
+});
+
+describe("sideScrollFollowBlend", () => {
+  test("zero smoothing hard-locks (blend of 1) regardless of dt", () => {
+    expect(sideScrollFollowBlend(0, 0.016)).toBe(1);
+    expect(sideScrollFollowBlend(0, 1)).toBe(1);
+  });
+
+  test("positive smoothing follows the same exponential curve as other rigs", () => {
+    const blend = sideScrollFollowBlend(8, 0.1);
+    expect(blend).toBeGreaterThan(0);
+    expect(blend).toBeLessThan(1);
+    expect(near(blend, 1 - Math.exp(-8 * 0.1))).toBe(true);
+  });
+});
+
+describe("resolveDirectedCamera", () => {
+  test("passes the static config through when the director is absent", () => {
+    const result = resolveDirectedCamera(undefined, { followEntityId: "hero", cinematic: undefined });
+    expect(result).toEqual({ followEntityId: "hero", cinematic: undefined });
+  });
+
+  test("passes the static config through when the director reports no override", () => {
+    const result = resolveDirectedCamera(
+      { followEntityId: undefined, cinematic: null },
+      { followEntityId: "hero", cinematic: undefined },
+    );
+    expect(result).toEqual({ followEntityId: "hero", cinematic: undefined });
+  });
+
+  test("director follow(null) explicitly overrides the static follow target", () => {
+    const result = resolveDirectedCamera(
+      { followEntityId: null, cinematic: null },
+      { followEntityId: "hero", cinematic: undefined },
+    );
+    expect(result.followEntityId).toBeNull();
+  });
+
+  test("director follow(id) overrides the static follow target", () => {
+    const result = resolveDirectedCamera(
+      { followEntityId: "villain", cinematic: null },
+      { followEntityId: "hero", cinematic: undefined },
+    );
+    expect(result.followEntityId).toBe("villain");
+  });
+
+  test("director cinematic wins over the static cinematic", () => {
+    const staticCinematic = { keyframes: [] };
+    const directorCinematic = { keyframes: [], loop: true };
+    const result = resolveDirectedCamera(
+      { followEntityId: undefined, cinematic: directorCinematic },
+      { followEntityId: "hero", cinematic: staticCinematic },
+    );
+    expect(result.cinematic).toBe(directorCinematic);
+  });
+
+  test("director cinematic(null) falls back to the static cinematic", () => {
+    const staticCinematic = { keyframes: [] };
+    const result = resolveDirectedCamera(
+      { followEntityId: undefined, cinematic: null },
+      { followEntityId: "hero", cinematic: staticCinematic },
+    );
+    expect(result.cinematic).toBe(staticCinematic);
   });
 });
 

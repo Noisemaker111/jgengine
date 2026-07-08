@@ -1,9 +1,11 @@
 import type {
   CameraKeyframe,
   ChaseCameraConfig,
+  CinematicCameraConfig,
   LockOnCameraConfig,
   ObserverCameraConfig,
   ShoulderCameraConfig,
+  SideScrollCameraConfig,
   TopDownCameraConfig,
 } from "@jgengine/core/game/playableGame";
 import type { ActionCodes, ActionCodesMap } from "@jgengine/core/input/actionBindings";
@@ -102,6 +104,47 @@ export function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number
 /** Exponential spring-arm approach toward a desired point (frame-rate independent). */
 export function springArmStep(current: Vec3, desired: Vec3, damping: number, dt: number): Vec3 {
   return lerpVec3(current, desired, smoothBlend(dt, damping));
+}
+
+export interface ResolvedSideScroll {
+  axis: "x" | "z";
+  distance: number;
+  height: number;
+  lookHeight: number;
+  followSmoothing: number;
+}
+
+export function resolveSideScroll(config: SideScrollCameraConfig | undefined): ResolvedSideScroll {
+  return {
+    axis: config?.axis ?? "x",
+    distance: config?.distance ?? 10,
+    height: config?.height ?? 3,
+    lookHeight: config?.lookHeight ?? 1,
+    followSmoothing: config?.followSmoothing ?? 8,
+  };
+}
+
+/** Frame-rate independent follow blend for the side-scroll rig; `followSmoothing <= 0` hard-locks (blend 1) instead of freezing. */
+export function sideScrollFollowBlend(followSmoothing: number, dt: number): number {
+  return followSmoothing <= 0 ? 1 : smoothBlend(dt, followSmoothing);
+}
+
+/**
+ * Fixed lateral 2.5D follow pose: the camera sits perpendicular to the travel
+ * axis at `distance`, above the entity by `height`, and looks at the entity
+ * raised by `lookHeight`. Axis "x" watches from +z; axis "z" watches from +x.
+ */
+export function resolveSideScrollPose(entityPos: Vec3, resolved: ResolvedSideScroll, fov: number): CameraPose {
+  const perpendicular: Vec3 = resolved.axis === "x" ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+  return {
+    position: {
+      x: entityPos.x + perpendicular.x * resolved.distance,
+      y: entityPos.y + resolved.height,
+      z: entityPos.z + perpendicular.z * resolved.distance,
+    },
+    lookAt: { x: entityPos.x, y: entityPos.y + resolved.lookHeight, z: entityPos.z },
+    fov,
+  };
 }
 
 /** Speed→FOV curve: FOV climbs from base to max as speed rises to `speedForMax`. */
@@ -392,6 +435,40 @@ export function crossfadePose(from: CameraPose, to: CameraPose, t: number): Came
     lookAt: lerpVec3(from.lookAt, to.lookAt, blend),
     fov: lerp(from.fov, to.fov, blend),
   };
+}
+
+export interface DirectorCameraValues {
+  /** `undefined` = no runtime override (fall back to static); `null` = explicitly follow nothing. */
+  followEntityId?: string | null;
+  /** `null` = no runtime cinematic active (fall back to static). */
+  cinematic?: CinematicCameraConfig | null;
+}
+
+export interface StaticCameraValues {
+  followEntityId?: string | null;
+  cinematic?: CinematicCameraConfig;
+}
+
+export interface ResolvedDirectedCamera {
+  followEntityId: string | null | undefined;
+  cinematic: CinematicCameraConfig | undefined;
+}
+
+/**
+ * Merges a `CameraDirector` runtime snapshot over the static `GameCameraConfig`
+ * (#196.2). `director` omitted, or its fields `undefined`/`null`, is a pure
+ * passthrough to `staticConfig` so mounting a director with no active override
+ * changes nothing.
+ */
+export function resolveDirectedCamera(
+  director: DirectorCameraValues | undefined,
+  staticConfig: StaticCameraValues,
+): ResolvedDirectedCamera {
+  const directedFollow = director?.followEntityId;
+  const followEntityId = directedFollow === undefined ? staticConfig.followEntityId : directedFollow;
+  const directedCinematic = director?.cinematic;
+  const cinematic = directedCinematic === undefined || directedCinematic === null ? staticConfig.cinematic : directedCinematic;
+  return { followEntityId, cinematic };
 }
 
 export interface CinematicSample {

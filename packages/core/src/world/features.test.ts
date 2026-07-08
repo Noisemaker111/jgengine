@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { biomes, building, environment, flat, grass, ocean, plots, rain, snow, terrain, tilemap, voxel } from "./features";
+import { biomes, building, environment, flat, grass, ocean, plots, rain, sky, snow, terrain, tilemap, voxel } from "./features";
 
 describe("world features", () => {
   test("biomes carries its config", () => {
@@ -122,5 +122,39 @@ describe("world features", () => {
     expect(grass()).toMatchObject({ kind: "grass", density: 4, bladeHeight: [0.25, 0.9] });
     expect(ocean()).toMatchObject({ kind: "ocean", bounds: { w: 1024, d: 1024 }, waveHeight: 1.2 });
     expect(building()).toMatchObject({ kind: "building", count: 1, stories: [1, 4], style: "generic" });
+    expect(sky()).toEqual({ kind: "sky", preset: "day", timeOfDay: false });
+  });
+
+  test("sky carries its config and lets environment attach it", () => {
+    const descriptor = sky({
+      preset: "dusk",
+      timeOfDay: true,
+      horizonColor: "#ff8a5c",
+      zenithColor: "#1a2b4a",
+      sunIntensity: 0.7,
+      ambientIntensity: 0.4,
+      fog: { color: "#ffb37a", near: 40, far: 220 },
+    });
+    expect(descriptor).toEqual({
+      kind: "sky",
+      preset: "dusk",
+      timeOfDay: true,
+      horizonColor: "#ff8a5c",
+      zenithColor: "#1a2b4a",
+      sunIntensity: 0.7,
+      ambientIntensity: 0.4,
+      fog: { color: "#ffb37a", near: 40, far: 220 },
+    });
+
+    const world = environment({ sky: descriptor });
+    expect(world).toEqual({ kind: "environment", sky: descriptor });
+  });
+
+  test("terrain carries flatten masks", () => {
+    const descriptor = terrain({
+      height: 4,
+      flatten: [{ center: [10, -5], radius: 6, height: 2, falloff: 3 }],
+    });
+    expect(descriptor.flatten).toEqual([{ center: [10, -5], radius: 6, height: 2, falloff: 3 }]);
   });
 });

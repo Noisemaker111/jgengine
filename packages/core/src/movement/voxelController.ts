@@ -91,13 +91,17 @@ function overlapsSolid(
   return false;
 }
 
-/** True if a solid cell sits directly beneath the feet (i.e. the player is supported). */
+/** Samples the terrain floor height at a point; unset means flat ground plays no part in support. */
+export type GroundHeightQuery = (x: number, z: number) => number;
+
+/** True if a solid cell sits directly beneath the feet, or terrain supports them (i.e. the player is supported). */
 function hasSupport(
   x: number,
   z: number,
   y: number,
   isSolid: SolidQuery,
   dims: VoxelPlayerDims,
+  groundHeight?: GroundHeightQuery,
 ): boolean {
   const cy = Math.floor(y - SUPPORT_EPSILON);
   const minCellX = cellX(x - dims.halfWidth);
@@ -109,6 +113,7 @@ function hasSupport(
       if (isSolid(cx, cy, cz)) return true;
     }
   }
+  if (groundHeight !== undefined && y <= groundHeight(x, z) + SUPPORT_EPSILON) return true;
   return false;
 }
 
@@ -224,6 +229,11 @@ function moveAxis(
  * `forwardX`/`forwardZ` are the camera heading projected onto the ground plane
  * (need not be normalized). Pulling this out of the render loop is what lets us
  * assert "dig the block underfoot and the player drops a level" in a unit test.
+ *
+ * `groundHeight`, when supplied, is an additional solid floor sampled at the
+ * body's (x, z): the player never sinks below it and standing on it counts as
+ * supported (resets jump state like landing on a solid cell). Where terrain and
+ * a solid cell's top disagree, the higher of the two wins.
  */
 export function advanceVoxelPlayer(
   body: VoxelPlayerBody,
@@ -235,6 +245,7 @@ export function advanceVoxelPlayer(
   isSolid: SolidQuery,
   dims: VoxelPlayerDims = DEFAULT_VOXEL_DIMS,
   tuning?: MovementTuningOverrides,
+  groundHeight?: GroundHeightQuery,
 ): void {
   const dt = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
   const gravityAcceleration = tuning?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration;
@@ -256,7 +267,7 @@ export function advanceVoxelPlayer(
   if (moveAxis(body, "x", body.velocityX * dt, isSolid, dims) === 0) body.velocityX = 0;
   if (moveAxis(body, "z", body.velocityZ * dt, isSolid, dims) === 0) body.velocityZ = 0;
 
-  const supported = body.grounded && hasSupport(body.x, body.z, body.y, isSolid, dims);
+  const supported = body.grounded && hasSupport(body.x, body.z, body.y, isSolid, dims, groundHeight);
   body.grounded = supported;
 
   const jumpPressed = intent.jumping;
@@ -270,9 +281,14 @@ export function advanceVoxelPlayer(
     body.velocityY -= gravityAcceleration * dt;
     const nextY = body.y + body.velocityY * dt;
     if (body.velocityY <= 0) {
-      if (overlapsSolid(body.x, nextY, body.z, isSolid, dims)) {
-        const top = supportTopWithin(body.x, body.z, nextY, body.y + dims.height, isSolid, dims);
-        body.y = top ?? Math.floor(body.y);
+      const terrainFloor = groundHeight?.(body.x, body.z);
+      const solidBlocked = overlapsSolid(body.x, nextY, body.z, isSolid, dims);
+      const terrainBlocked = terrainFloor !== undefined && nextY <= terrainFloor;
+      if (solidBlocked || terrainBlocked) {
+        const solidTop = solidBlocked
+          ? (supportTopWithin(body.x, body.z, nextY, body.y + dims.height, isSolid, dims) ?? Math.floor(body.y))
+          : undefined;
+        body.y = Math.max(solidTop ?? -Infinity, terrainFloor ?? -Infinity);
         body.velocityY = 0;
         body.grounded = true;
       } else {

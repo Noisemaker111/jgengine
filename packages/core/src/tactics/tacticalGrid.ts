@@ -1,10 +1,18 @@
 export type Tile = readonly [number, number];
 
+/** Maps abstract `[col, row]` tiles onto world-space `[x, z]`, mirroring `navGrid`'s bounds+cellSize convention. */
+export interface TacticalGridWorldConfig {
+  /** World-space `[x, z]` of the min corner of tile `[0, 0]`. */
+  origin: readonly [number, number];
+  tileSize: number;
+}
+
 export interface TacticalGridConfig {
   width: number;
   height: number;
   blocked?: readonly Tile[];
   diagonal?: boolean;
+  world?: TacticalGridWorldConfig;
 }
 
 export interface ReachableOptions {
@@ -63,6 +71,10 @@ export interface TacticalGrid {
   push(id: string, direction: Tile, options?: PushOptions): PushResult;
   capture(): TacticalGridSnapshot;
   restore(snapshot: TacticalGridSnapshot): void;
+  /** World `[x, z]` to the containing tile, or `null` when outside the grid. Requires `config.world`. */
+  worldToTile(x: number, z: number): Tile | null;
+  /** A tile's world-space center. Requires `config.world`. */
+  tileToWorld(tile: Tile): readonly [number, number];
 }
 
 function key(tile: Tile): string {
@@ -81,9 +93,26 @@ export function createTacticalGrid(config: TacticalGridConfig): TacticalGrid {
   const blocked = new Set<string>((config.blocked ?? []).map(key));
   const occupants = new Map<string, string>();
   const tiles = new Map<string, Tile>();
+  const world = config.world;
 
   function inBounds(tile: Tile): boolean {
     return tile[0] >= 0 && tile[0] < width && tile[1] >= 0 && tile[1] < height;
+  }
+
+  function requireWorld(): TacticalGridWorldConfig {
+    if (world === undefined) throw new Error("tacticalGrid: worldToTile/tileToWorld require config.world.");
+    return world;
+  }
+
+  function worldToTile(x: number, z: number): Tile | null {
+    const { origin, tileSize } = requireWorld();
+    const tile: Tile = [Math.floor((x - origin[0]) / tileSize), Math.floor((z - origin[1]) / tileSize)];
+    return inBounds(tile) ? tile : null;
+  }
+
+  function tileToWorld(tile: Tile): readonly [number, number] {
+    const { origin, tileSize } = requireWorld();
+    return [origin[0] + (tile[0] + 0.5) * tileSize, origin[1] + (tile[1] + 0.5) * tileSize];
   }
 
   function isBlocked(tile: Tile): boolean {
@@ -279,6 +308,8 @@ export function createTacticalGrid(config: TacticalGridConfig): TacticalGrid {
     reachable,
     path,
     push,
+    worldToTile,
+    tileToWorld,
     capture: () => {
       const occ: Record<string, string> = {};
       for (const [k, unitId] of occupants) occ[k] = unitId;

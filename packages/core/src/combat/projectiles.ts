@@ -9,11 +9,24 @@ export interface ProjectileShotInput {
   effect: string;
 }
 
-export interface RaycastHit {
+/** A raycast hit against a scene entity — the ray reached `instanceId` at `distance` along its length. */
+export interface EntityRaycastHit {
+  kind: "entity";
   instanceId: string;
   distance: number;
   at: EntityPosition;
 }
+
+/** A raycast hit against a placed scene object's bounding box — see `ProjectileObjectsDeps.halfExtents`. */
+export interface ObjectRaycastHit {
+  kind: "object";
+  instanceId: string;
+  catalogId: string;
+  distance: number;
+  at: EntityPosition;
+}
+
+export type RaycastHit = EntityRaycastHit | ObjectRaycastHit;
 
 export type Raycast = (from: string, aim: Aim, range: number) => RaycastHit[];
 
@@ -25,17 +38,30 @@ export interface ProjectileSettleReport {
   hit: boolean;
 }
 
+/** Read-only scene object access for the default `raycast`; matches `ObjectStore.list()`/a catalog lookup structurally. */
+export interface ProjectileObjectsDeps {
+  list(): readonly { instanceId: string; catalogId: string; position: [number, number, number] }[];
+  /** Half-extents of the object's axis-aligned bounding box; `null`/omitted falls back to `[0.5, 0.5, 0.5]`. */
+  halfExtents?(catalogId: string): [number, number, number] | null;
+}
+
 export interface ProjectileSystemDeps {
   effects: EffectSystem;
   spatial: CombatSpatialDeps;
   getStat(itemId: string, stat: string): number | null;
   raycast?: Raycast;
+  /** Optional object awareness for the default `raycast`; when set, placed objects can block or absorb a shot. */
+  objects?: ProjectileObjectsDeps;
   now?: () => number;
   onSettle?(report: ProjectileSettleReport): void;
 }
 
+export type ProjectileHit =
+  | { kind: "entity"; instanceId: string; distance: number }
+  | { kind: "object"; instanceId: string; catalogId: string; distance: number };
+
 export interface ProjectilePrediction {
-  hits: { instanceId: string; distance: number }[];
+  hits: ProjectileHit[];
   blocked?: boolean;
 }
 
@@ -53,6 +79,44 @@ const DEFAULT_RANGE = 100;
 const DEFAULT_PROJECTILE_SPEED = 15;
 const GRAVITY = 9.8;
 const BASE_HIT_RADIUS = 0.5;
+const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition = [0.5, 0.5, 0.5];
+
+function isEntityHit(hit: RaycastHit): hit is EntityRaycastHit {
+  return hit.kind === "entity";
+}
+
+function isObjectHit(hit: RaycastHit): hit is ObjectRaycastHit {
+  return hit.kind === "object";
+}
+
+function raySegmentAabbDistance(
+  origin: EntityPosition,
+  direction: EntityPosition,
+  range: number,
+  min: EntityPosition,
+  max: EntityPosition,
+): number | null {
+  let tMin = 0;
+  let tMax = range;
+  for (let axis = 0; axis < 3; axis += 1) {
+    const o = origin[axis]!;
+    const d = direction[axis]!;
+    const lo = min[axis]!;
+    const hi = max[axis]!;
+    if (Math.abs(d) < 1e-9) {
+      if (o < lo || o > hi) return null;
+      continue;
+    }
+    const inv = 1 / d;
+    let t1 = (lo - o) * inv;
+    let t2 = (hi - o) * inv;
+    if (t1 > t2) [t1, t2] = [t2, t1];
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+    if (tMin > tMax) return null;
+  }
+  return tMin;
+}
 
 function normalize(vector: EntityPosition): EntityPosition | null {
   const length = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
@@ -97,7 +161,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       const direction = aimDirection(aim);
       if (direction === null) return [];
       const spreadRad = (aimSpreadDeg(aim) * Math.PI) / 180;
-      const hits: RaycastHit[] = [];
+      const entityHits: EntityRaycastHit[] = [];
       for (const instanceId of deps.spatial.inRadius(origin, range)) {
         if (instanceId === from) continue;
         const position = deps.spatial.positionOf(instanceId);
@@ -112,8 +176,40 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         const pz = dz - direction[2] * along;
         const perpendicular = Math.sqrt(px * px + py * py + pz * pz);
         if (perpendicular > BASE_HIT_RADIUS + Math.tan(spreadRad) * along) continue;
-        hits.push({ instanceId, distance: along, at: position });
+        entityHits.push({ kind: "entity", instanceId, distance: along, at: position });
       }
+      let nearestObject: ObjectRaycastHit | null = null;
+      for (const object of deps.objects?.list() ?? []) {
+        const half = deps.objects?.halfExtents?.(object.catalogId) ?? DEFAULT_OBJECT_HALF_EXTENTS;
+        const min: EntityPosition = [
+          object.position[0] - half[0],
+          object.position[1] - half[1],
+          object.position[2] - half[2],
+        ];
+        const max: EntityPosition = [
+          object.position[0] + half[0],
+          object.position[1] + half[1],
+          object.position[2] + half[2],
+        ];
+        const distance = raySegmentAabbDistance(origin, direction, range, min, max);
+        if (distance === null) continue;
+        if (nearestObject === null || distance < nearestObject.distance) {
+          nearestObject = {
+            kind: "object",
+            instanceId: object.instanceId,
+            catalogId: object.catalogId,
+            distance,
+            at: [
+              origin[0] + direction[0] * distance,
+              origin[1] + direction[1] * distance,
+              origin[2] + direction[2] * distance,
+            ],
+          };
+        }
+      }
+      const blockDistance = nearestObject?.distance ?? Infinity;
+      const hits: RaycastHit[] = entityHits.filter((hit) => hit.distance <= blockDistance);
+      if (nearestObject !== null) hits.push(nearestObject);
       return hits.sort((a, b) => a.distance - b.distance);
     });
 
@@ -150,7 +246,9 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   function predictHits(input: ProjectileShotInput): { rawHits: RaycastHit[]; visible: RaycastHit[] } {
     const aim = withWeaponSpread(input.via, input.aim);
     const rawHits = raycast(input.from, aim, resolveRange(input.via));
-    const visible = rawHits.filter((hit) => deps.spatial.hasLineOfSight(input.from, hit.instanceId));
+    const visible = rawHits.filter(
+      (hit) => isObjectHit(hit) || deps.spatial.hasLineOfSight(input.from, hit.instanceId),
+    );
     return { rawHits, visible };
   }
 
@@ -168,7 +266,11 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     willHitProjectile(input) {
       const { rawHits, visible } = predictHits(input);
       const prediction: ProjectilePrediction = {
-        hits: visible.map(({ instanceId, distance }) => ({ instanceId, distance })),
+        hits: visible.map((hit) =>
+          isObjectHit(hit)
+            ? { kind: "object", instanceId: hit.instanceId, catalogId: hit.catalogId, distance: hit.distance }
+            : { kind: "entity", instanceId: hit.instanceId, distance: hit.distance },
+        ),
       };
       if (rawHits.length > 0 && visible.length === 0) prediction.blocked = true;
       return prediction;
@@ -192,7 +294,9 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         return { status: "settled", shotId, at, hits: [] };
       }
       const { visible } = predictHits(input);
-      const receivable = visible.filter(
+      const entityHits = visible.filter(isEntityHit);
+      const objectHits = visible.filter(isObjectHit);
+      const receivable = entityHits.filter(
         (hit) => deps.effects.canReceive(hit.instanceId, input.effect) === null,
       );
       const pellets = Math.max(1, Math.round(itemStat(input.via, "pellets") ?? 1));
@@ -210,7 +314,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
           );
         }
       }
-      const at = settledAt(input, receivable);
+      const at = settledAt(input, receivable.length > 0 ? receivable : objectHits);
       deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: receivable.length > 0 });
       return { status: "settled", shotId, at, hits };
     },

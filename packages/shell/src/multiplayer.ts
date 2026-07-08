@@ -43,14 +43,16 @@ function buildWsMultiplayer(args: {
   };
 }
 
-export function resolveShellMultiplayer(args: {
+export type ResolveShellMultiplayerArgs = {
   game: GameDefinition;
   gameId: string;
   url?: string;
   userId?: string;
   force?: boolean;
   feedActions?: string[];
-}): ShellMultiplayer | null {
+};
+
+export function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): ShellMultiplayer | null {
   const userId = args.userId ?? randomPlayerId();
   const feedActions = args.feedActions ?? DEFAULT_FEED_ACTIONS;
   const build = (url: string) =>

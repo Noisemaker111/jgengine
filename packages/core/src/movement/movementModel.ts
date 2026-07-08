@@ -235,6 +235,103 @@ export function advancePlayerMotion(
   };
 }
 
+/** A placed scene object the walking player collides against as a circle-vs-AABB obstacle. */
+export interface CollisionObstacle {
+  position: readonly [number, number, number];
+  /** Box half-size on each axis. Default `[0.5, 0.5, 0.5]` (unit-box scene objects). */
+  halfExtents?: readonly [number, number, number];
+}
+
+const DEFAULT_OBSTACLE_HALF_EXTENTS: readonly [number, number, number] = [0.5, 0.5, 0.5];
+const DEFAULT_OBSTACLE_PLAYER_RADIUS = 0.3;
+/** Feet-to-head span used for the obstacle's vertical overlap test; matches DEFAULT_VOXEL_DIMS.height. */
+const OBSTACLE_PLAYER_HEIGHT = 1.8;
+
+interface ObstacleBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
+function clampAxisStep(originalCoord: number, step: number, min: number, max: number): number {
+  if (step === 0) return 0;
+  const target = originalCoord + step;
+  if (target <= min || target >= max) return step;
+  if (step > 0) return originalCoord <= min ? min - originalCoord : 0;
+  return originalCoord >= max ? max - originalCoord : 0;
+}
+
+/**
+ * Resolve a horizontal step against nearby placed objects with classic
+ * axis-separated sliding (try X, then Z against the post-X position) so
+ * walking into a wall stops the blocked axis but keeps sliding along the
+ * other. Obstacles are treated as circle-vs-AABB in the X/Z plane, inflated
+ * by `playerRadius`; an obstacle whose vertical span misses the player's
+ * feet-to-head span is skipped entirely. Callers should pre-filter to nearby
+ * objects — this also early-exits per obstacle on horizontal distance.
+ */
+export function resolveObstacleStep(
+  current: readonly [number, number, number],
+  stepX: number,
+  stepZ: number,
+  obstacles: readonly CollisionObstacle[],
+  playerRadius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS,
+): MovementFrameStep {
+  const feetY = current[1];
+  const headY = feetY + OBSTACLE_PLAYER_HEIGHT;
+  const reachX = Math.abs(stepX) + playerRadius;
+  const reachZ = Math.abs(stepZ) + playerRadius;
+
+  const nearby: ObstacleBounds[] = [];
+  for (const obstacle of obstacles) {
+    const halfExtents = obstacle.halfExtents ?? DEFAULT_OBSTACLE_HALF_EXTENTS;
+    const obstacleBottom = obstacle.position[1] - halfExtents[1];
+    const obstacleTop = obstacle.position[1] + halfExtents[1];
+    if (obstacleTop <= feetY || obstacleBottom >= headY) continue;
+
+    const dx = obstacle.position[0] - current[0];
+    const dz = obstacle.position[2] - current[2];
+    if (Math.abs(dx) > halfExtents[0] + reachX || Math.abs(dz) > halfExtents[2] + reachZ) continue;
+
+    nearby.push({
+      minX: obstacle.position[0] - halfExtents[0] - playerRadius,
+      maxX: obstacle.position[0] + halfExtents[0] + playerRadius,
+      minZ: obstacle.position[2] - halfExtents[2] - playerRadius,
+      maxZ: obstacle.position[2] + halfExtents[2] + playerRadius,
+    });
+  }
+
+  let resultX = stepX;
+  for (const box of nearby) {
+    if (current[2] <= box.minZ || current[2] >= box.maxZ) continue;
+    resultX = clampAxisStep(current[0], resultX, box.minX, box.maxX);
+  }
+
+  const nextX = current[0] + resultX;
+  let resultZ = stepZ;
+  for (const box of nearby) {
+    if (nextX <= box.minX || nextX >= box.maxX) continue;
+    resultZ = clampAxisStep(current[2], resultZ, box.minZ, box.maxZ);
+  }
+
+  return { stepX: resultX, stepZ: resultZ };
+}
+
+/** Zeroes the off-axis component so travel is locked to a single world axis (`PlayerMovementConfig.mode: "axis"`). */
+export function constrainStepToAxis(stepX: number, stepZ: number, axis: "x" | "z"): MovementFrameStep {
+  return axis === "x" ? { stepX, stepZ: 0 } : { stepX: 0, stepZ };
+}
+
+/**
+ * Snap a world position to its containing cell's center, matching the
+ * bounds-free form of `navGrid`'s and `tacticalGrid`'s `floor` + half-cell
+ * convention (`PlayerMovementConfig.mode: "grid"`).
+ */
+export function snapPositionToGrid(x: number, z: number, cellSize: number): [number, number] {
+  return [(Math.floor(x / cellSize) + 0.5) * cellSize, (Math.floor(z / cellSize) + 0.5) * cellSize];
+}
+
 /** Peak jump height from MOVEMENT_TUNING.jumpVelocity + gravity, with small buffer. */
 export const MAX_JUMP_OFFSET = 1.15;
 

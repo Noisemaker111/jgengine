@@ -22,7 +22,18 @@ const WEAPON_STATS: Record<string, Record<string, number>> = {
   },
 };
 
-function createRange(entities: Record<string, RangeEntity>, losBlocked: string[] = []) {
+interface RangeObject {
+  instanceId: string;
+  catalogId: string;
+  position: [number, number, number];
+}
+
+function createRange(
+  entities: Record<string, RangeEntity>,
+  losBlocked: string[] = [],
+  objects?: RangeObject[],
+  halfExtents?: (catalogId: string) => [number, number, number] | null,
+) {
   const stats: Record<string, StatValueMap> = {};
   for (const [instanceId, entity] of Object.entries(entities)) {
     stats[instanceId] = seedStatValues(entity.stats);
@@ -43,7 +54,15 @@ function createRange(entities: Record<string, RangeEntity>, losBlocked: string[]
     getStat,
     spatial,
   });
-  const projectiles = createProjectileSystem({ effects, spatial, getStat, now: () => 0 });
+  const projectiles = createProjectileSystem({
+    effects,
+    spatial,
+    getStat,
+    now: () => 0,
+    ...(objects !== undefined
+      ? { objects: { list: () => objects, ...(halfExtents !== undefined ? { halfExtents } : {}) } }
+      : {}),
+  });
   return { projectiles, stats };
 }
 
@@ -62,7 +81,7 @@ describe("projectile system", () => {
       aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
       effect: "damage",
     });
-    expect(prediction.hits).toEqual([{ instanceId: "enemy", distance: 10 }]);
+    expect(prediction.hits).toEqual([{ kind: "entity", instanceId: "enemy", distance: 10 }]);
     expect(prediction.blocked).toBeUndefined();
     expect(stats["enemy"]!["health"]!.current).toBe(100);
   });
@@ -156,5 +175,84 @@ describe("projectile system", () => {
     expect(settle.at[1]).toBeCloseTo(0);
     expect(settle.at[2]).toBeGreaterThan(5);
     expect(stats["enemy"]!["health"]!.current).toBe(100);
+  });
+});
+
+describe("object-aware raycast", () => {
+  const wallInPath: RangeObject = { instanceId: "wallA", catalogId: "wall", position: [0, 0, 5] };
+
+  test("an object blocks a shot before the entity behind it", () => {
+    const { projectiles, stats } = createRange({ enemy: target([0, 0, 10]) }, [], [wallInPath]);
+    const prediction = projectiles.willHitProjectile({
+      from: "shooter",
+      via: { item: "pistol" },
+      aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
+      effect: "damage",
+    });
+    expect(prediction.hits).toEqual([{ kind: "object", instanceId: "wallA", catalogId: "wall", distance: 4.5 }]);
+
+    const shotId = projectiles.fireProjectile({
+      from: "shooter",
+      via: { item: "pistol" },
+      aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
+      effect: "damage",
+    });
+    const settle = projectiles.settleProjectile(shotId);
+    expect(settle.status).toBe("settled");
+    if (settle.status !== "settled") return;
+    expect(settle.hits).toEqual([]);
+    expect(settle.at).toEqual([0, 0, 4.5]);
+    expect(stats["enemy"]!["health"]!.current).toBe(100);
+  });
+
+  test("an object off the ray path is a miss and the entity behind it is still hit", () => {
+    const offPath: RangeObject = { instanceId: "wallB", catalogId: "wall", position: [5, 0, 5] };
+    const { projectiles, stats } = createRange({ enemy: target([0, 0, 10]) }, [], [offPath]);
+    const prediction = projectiles.willHitProjectile({
+      from: "shooter",
+      via: { item: "pistol" },
+      aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
+      effect: "damage",
+    });
+    expect(prediction.hits).toEqual([{ kind: "entity", instanceId: "enemy", distance: 10 }]);
+
+    const shotId = projectiles.fireProjectile({
+      from: "shooter",
+      via: { item: "pistol" },
+      aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
+      effect: "damage",
+    });
+    const settle = projectiles.settleProjectile(shotId);
+    expect(settle.status).toBe("settled");
+    if (settle.status !== "settled") return;
+    expect(settle.hits).toHaveLength(1);
+    expect(stats["enemy"]!["health"]!.current).toBe(90);
+  });
+
+  test("half-extents are respected: default box misses, a wider resolved box hits", () => {
+    const offsetObject: RangeObject = { instanceId: "wallC", catalogId: "bigwall", position: [0.6, 0, 5] };
+
+    const withDefaults = createRange({ enemy: target([0, 0, 10]) }, [], [offsetObject]);
+    const missPrediction = withDefaults.projectiles.willHitProjectile({
+      from: "shooter",
+      via: { item: "pistol" },
+      aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
+      effect: "damage",
+    });
+    expect(missPrediction.hits).toEqual([{ kind: "entity", instanceId: "enemy", distance: 10 }]);
+
+    const withWideBox = createRange(
+      { enemy: target([0, 0, 10]) },
+      [],
+      [offsetObject],
+      (catalogId) => (catalogId === "bigwall" ? [1, 1, 1] : null),
+    );
+    const hitPrediction = withWideBox.projectiles.willHitProjectile({
+      from: "shooter",
+      via: { item: "pistol" },
+      aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
+      effect: "damage",
+    });
+    expect(hitPrediction.hits).toEqual([{ kind: "object", instanceId: "wallC", catalogId: "bigwall", distance: 4 }]);
   });
 });
