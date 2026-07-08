@@ -6,5 +6,6 @@ for (const block of BLOCKS) itemUse[block.id] = "placeBlock";
 
 export const content: GameContextContent = {
   itemById: (id) => (itemUse[id] === undefined ? null : { use: itemUse[id] }),
-  entityById: (id) => (id === "player" ? { movement: { walkSpeed: 5 }, role: "player" } : null),
+  entityById: (id) =>
+    id === "player" ? { movement: { walkSpeed: 2.6 }, role: "player" } : null,
 };

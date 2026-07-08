@@ -44,6 +44,11 @@ import {
   createPlayerMotionState,
   resolveMovementIntent,
 } from "@jgengine/core/movement/movementModel";
+import {
+  advanceVoxelPlayer,
+  createVoxelPlayerBody,
+  type VoxelPlayerBody,
+} from "@jgengine/core/movement/voxelController";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
@@ -485,9 +490,26 @@ function FrameDriver({
   pingCommand: string | undefined;
 }) {
   const motionRef = useRef(createPlayerMotionState());
+  const voxelBodyRef = useRef<VoxelPlayerBody | null>(null);
+  const solidCacheRef = useRef<{ count: number; set: Set<string> }>({ count: -1, set: new Set() });
   const hasReportedTickError = useRef(false);
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
+  const collision = playable.collision;
+  const voxelDims = useMemo(
+    () => ({
+      halfWidth: collision?.halfWidth ?? 0.3,
+      height: collision?.height ?? 1.8,
+      stepHeight: collision?.stepHeight ?? 0.6,
+    }),
+    [collision],
+  );
+  const autoPickupRadius = useMemo(() => {
+    const cfg = playable.worldItem?.autoPickup;
+    if (cfg === undefined || cfg === false) return null;
+    const fallback = playable.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
+    return cfg === true ? fallback : cfg.radius ?? fallback;
+  }, [playable]);
   const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
   const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
 
@@ -511,24 +533,65 @@ function FrameDriver({
       keys.shift = tracker.isDown("sprint");
       keys.space = tracker.isDown("jump");
       const intent = resolveMovementIntent(keys, true);
-      const motion = motionRef.current;
-      const step = advancePlayerMotion(
-        motion,
-        intent,
-        forwardX,
-        forwardZ,
-        player.movement.walkSpeed ?? 2,
-        rawDt,
-      );
-      const nextX = player.position[0] + step.stepX;
-      const nextZ = player.position[2] + step.stepZ;
-      ctx.scene.entity.setPose(playerId, {
-        position: [nextX, ground.sampleHeight(nextX, nextZ) + motion.jumpOffset, nextZ],
-        rotationY: intent.moving
-          ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
-          : player.rotationY,
-        dt: rawDt,
-      });
+      if (collision?.voxel) {
+        let body = voxelBodyRef.current;
+        if (body === null) {
+          body = createVoxelPlayerBody(player.position[0], player.position[1], player.position[2]);
+          voxelBodyRef.current = body;
+        }
+        const objects = ctx.scene.object.list();
+        const cache = solidCacheRef.current;
+        if (cache.count !== objects.length) {
+          cache.set = new Set(objects.map((o) => `${o.position[0]},${o.position[1]},${o.position[2]}`));
+          cache.count = objects.length;
+        }
+        const solids = cache.set;
+        const isSolid = (x: number, y: number, z: number) => solids.has(`${x},${y},${z}`);
+        advanceVoxelPlayer(
+          body,
+          intent,
+          forwardX,
+          forwardZ,
+          player.movement.walkSpeed ?? 2,
+          rawDt,
+          isSolid,
+          voxelDims,
+        );
+        ctx.scene.entity.setPose(playerId, {
+          position: [body.x, body.y, body.z],
+          rotationY: intent.moving
+            ? Math.atan2(body.velocityX, body.velocityZ)
+            : player.rotationY,
+          dt: rawDt,
+        });
+      } else {
+        const motion = motionRef.current;
+        const step = advancePlayerMotion(
+          motion,
+          intent,
+          forwardX,
+          forwardZ,
+          player.movement.walkSpeed ?? 2,
+          rawDt,
+        );
+        const nextX = player.position[0] + step.stepX;
+        const nextZ = player.position[2] + step.stepZ;
+        ctx.scene.entity.setPose(playerId, {
+          position: [nextX, ground.sampleHeight(nextX, nextZ) + motion.jumpOffset, nextZ],
+          rotationY: intent.moving
+            ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
+            : player.rotationY,
+          dt: rawDt,
+        });
+      }
+    }
+
+    if (autoPickupRadius !== null) {
+      const self = ctx.scene.entity.get(playerId);
+      if (self !== null) {
+        const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
+        if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
+      }
     }
 
     playable.loop.onTick(ctx, gameDt);
