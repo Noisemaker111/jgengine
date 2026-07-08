@@ -364,14 +364,16 @@ function GameUIInner() {
             Hover a box for daily count · Drag to rotate · Middle-drag to pan · Scroll to zoom
           </div>
 
-          <div style={{ borderTop: `1px solid ${EM.hairline}`, paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-            <ProfileRow profile={state.profile} />
-            <div style={{ display: "flex", flexDirection: "column", padding: "0 10px", borderRadius: 6, border: `1px solid ${EM.hairline}`, background: EM.statsBoxBg }}>
-              {statRows(stats).map(([label, statValue], index) => (
-                <StatRow key={label} label={label} value={statValue} first={index === 0} />
-              ))}
+          {state.status === "ready" ? (
+            <div style={{ borderTop: `1px solid ${EM.hairline}`, paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <ProfileRow profile={state.profile} />
+              <div style={{ display: "flex", flexDirection: "column", padding: "0 10px", borderRadius: 6, border: `1px solid ${EM.hairline}`, background: EM.statsBoxBg }}>
+                {statRows(stats).map(([label, statValue], index) => (
+                  <StatRow key={label} label={label} value={statValue} first={index === 0} />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </Sidebar>
       </div>
 
