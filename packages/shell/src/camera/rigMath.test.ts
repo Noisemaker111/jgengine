@@ -14,9 +14,11 @@ import {
   resolveChase,
   resolveObserver,
   resolveShoulder,
+  resolveSideOn,
   seatPose,
   shakeOffset,
   shoulderPose,
+  sideOnPose,
   smoothstep,
   smoothYaw,
   speedToFov,
@@ -240,6 +242,42 @@ describe("observerPose", () => {
   test("resolveObserver applies defaults", () => {
     const resolved = resolveObserver(undefined);
     expect(resolved).toEqual({ distance: 8, height: 3, lookHeight: 1.2, orbitSpeed: 0.2 });
+  });
+});
+
+describe("sideOnPose", () => {
+  test("resolveSideOn applies defaults", () => {
+    const resolved = resolveSideOn(undefined);
+    expect(resolved).toEqual({ distance: 10, height: 2, lookHeight: 1, axis: "x", facing: 1, followSmoothing: 8 });
+  });
+
+  test("offsets along x by distance*facing and looks back at the subject", () => {
+    const resolved = resolveSideOn({ distance: 10, height: 2, lookHeight: 1, axis: "x", facing: 1 });
+    const pose = sideOnPose({ x: 0, y: 0, z: 0 }, resolved, 55);
+    expect(near(pose.position.x, 10)).toBe(true);
+    expect(near(pose.position.z, 0)).toBe(true);
+    expect(near(pose.position.y, 2)).toBe(true);
+    expect(pose.lookAt).toEqual({ x: 0, y: 1, z: 0 });
+  });
+
+  test("negative facing flips to the other side of the subject", () => {
+    const resolved = resolveSideOn({ distance: 10, axis: "x", facing: -1 });
+    const pose = sideOnPose({ x: 3, y: 0, z: 0 }, resolved, 55);
+    expect(near(pose.position.x, -7)).toBe(true);
+  });
+
+  test("axis z offsets along z instead of x", () => {
+    const resolved = resolveSideOn({ distance: 6, axis: "z", facing: 1 });
+    const pose = sideOnPose({ x: 0, y: 0, z: 4 }, resolved, 55);
+    expect(near(pose.position.x, 0)).toBe(true);
+    expect(near(pose.position.z, 10)).toBe(true);
+  });
+
+  test("follows the subject as it moves and always looks at it", () => {
+    const resolved = resolveSideOn(undefined);
+    const pose = sideOnPose({ x: 2, y: 0, z: 5 }, resolved, 55);
+    expect(near(pose.position.x, 2 + resolved.distance)).toBe(true);
+    expect(pose.lookAt.z).toBe(5);
   });
 });
 

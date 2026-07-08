@@ -9,6 +9,7 @@ import {
   ObserverRig,
   RtsRig,
   ShoulderRig,
+  SideOnRig,
   TopDownRig,
 } from "./cameraRigs";
 import { GameFirstPersonCamera } from "./GameFirstPersonCamera";
@@ -63,6 +64,8 @@ export function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerC
         return <ChaseRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "observer":
         return <ObserverRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+      case "sideOn":
+        return <SideOnRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       default:
         return (
           <GameOrbitCamera

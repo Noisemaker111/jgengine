@@ -4,6 +4,7 @@ import type {
   LockOnCameraConfig,
   ObserverCameraConfig,
   ShoulderCameraConfig,
+  SideOnCameraConfig,
   TopDownCameraConfig,
 } from "@jgengine/core/game/playableGame";
 
@@ -259,6 +260,40 @@ export function observerPose(subject: Vec3, angle: number, resolved: ResolvedObs
     y: subject.y + resolved.height,
     z: subject.z + Math.cos(angle) * resolved.distance,
   };
+  return {
+    position,
+    lookAt: { x: subject.x, y: subject.y + resolved.lookHeight, z: subject.z },
+    fov,
+  };
+}
+
+export interface ResolvedSideOn {
+  distance: number;
+  height: number;
+  lookHeight: number;
+  axis: "x" | "z";
+  facing: 1 | -1;
+  followSmoothing: number;
+}
+
+export function resolveSideOn(config: SideOnCameraConfig | undefined): ResolvedSideOn {
+  return {
+    distance: config?.distance ?? 10,
+    height: config?.height ?? 2,
+    lookHeight: config?.lookHeight ?? 1,
+    axis: config?.axis ?? "x",
+    facing: config?.facing ?? 1,
+    followSmoothing: config?.followSmoothing ?? 8,
+  };
+}
+
+/** Fixed lateral follow pose: camera sits offset from `subject` along `axis`, at `height`, always looking back at the subject. */
+export function sideOnPose(subject: Vec3, resolved: ResolvedSideOn, fov: number): CameraPose {
+  const offset = resolved.facing * resolved.distance;
+  const position: Vec3 =
+    resolved.axis === "x"
+      ? { x: subject.x + offset, y: subject.y + resolved.height, z: subject.z }
+      : { x: subject.x, y: subject.y + resolved.height, z: subject.z + offset };
   return {
     position,
     lookAt: { x: subject.x, y: subject.y + resolved.lookHeight, z: subject.z },
