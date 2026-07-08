@@ -97,6 +97,8 @@ const emit = (context) => {
 const gitDir = git("rev-parse", "--absolute-git-dir");
 if (!gitDir) process.exit(0);
 
+git("fetch", "origin", "--prune", "--quiet");
+
 const branch = git("rev-parse", "--abbrev-ref", "HEAD") ?? "?";
 const inWorktree = /[\\/]\.git[\\/]worktrees[\\/]/.test(gitDir);
 
