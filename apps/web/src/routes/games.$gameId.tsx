@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
 import { GameArt } from "../components/GameArt";
@@ -22,7 +22,33 @@ export const Route = createFileRoute("/games/$gameId")({
 
 function GameStage({ game }: { game: Game }) {
   const [phase, setPhase] = useState<"poster" | "loading" | "playing">("poster");
-  const frameRef = useRef<HTMLIFrameElement>(null);
+  const frameRef = useRef<HTMLIFrameElement | null>(null);
+
+  const markPlaying = useCallback(() => {
+    setPhase((current) => (current === "playing" ? current : "playing"));
+    frameRef.current?.focus();
+  }, []);
+
+  const bindFrame = useCallback(
+    (el: HTMLIFrameElement | null) => {
+      frameRef.current = el;
+      if (el === null) return;
+      if (el.contentDocument?.readyState === "complete") markPlaying();
+    },
+    [markPlaying],
+  );
+
+  useEffect(() => {
+    if (phase !== "loading") return;
+    const frame = frameRef.current;
+    if (frame?.contentDocument?.readyState === "complete") {
+      markPlaying();
+      return;
+    }
+    const fallback = window.setTimeout(markPlaying, 8_000);
+    return () => window.clearTimeout(fallback);
+  }, [phase, markPlaying]);
+
   return (
     <div
       className="relative h-full w-full"
@@ -32,15 +58,12 @@ function GameStage({ game }: { game: Game }) {
     >
       {phase !== "poster" && (
         <iframe
-          ref={frameRef}
+          ref={bindFrame}
           src={`/play/?game=${encodeURIComponent(game.id)}`}
           title={game.title}
           allow="fullscreen; gamepad; pointer-lock"
           className={`h-full w-full border-0 transition-opacity duration-300 ${phase === "playing" ? "opacity-100" : "opacity-0"}`}
-          onLoad={() => {
-            setPhase("playing");
-            frameRef.current?.focus();
-          }}
+          onLoad={markPlaying}
         />
       )}
       {phase !== "playing" && (
