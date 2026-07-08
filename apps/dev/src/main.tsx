@@ -39,6 +39,8 @@ const gameRegistry: GameRegistry = {
   "extraction-map": () => import("@jgengine/shell/demo/mapDemo").then((module) => module.mapDemoGame),
   "sensor-showcase": () =>
     import("@jgengine/shell/demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
+  "social-hub": () =>
+    import("@jgengine/shell/demo/socialHubDemo").then((module) => module.socialHubGame),
   "block-stacker": () =>
     import("@games/block-stacker").then((module) => module.blockStackerGame),
   "maze-muncher": () => import("@games/maze-muncher").then((module) => module.mazeMuncherGame),
