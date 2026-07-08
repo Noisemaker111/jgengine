@@ -52,7 +52,7 @@ Split the blueprint into ordered phases. Each phase:
 - lands a coherent set of systems **finished end to end** — logic + that phase's share of the content budget + UI + real assets + feedback. Nothing in a phase is stubbed "for a later phase";
 - ends verified: type-check green, staged screenshot taken and judged against `jgengine-ui`;
 - flows into the next without stopping to ask "should I continue?" or demoing a half version — the confirmed blueprint is the approval. If a session ends mid-build, the phase plan is the roadmap the next session resumes from, exactly where it left off;
-- is reported as "phase N of M complete", never as a finished game. Done means the last phase landed and the full-game checklist below passes.
+- is reported in one line — "phase N of M complete", never as a finished game; the next phase starts on its own line, not buried in the status. Fan the phase's mechanical legs (catalog generation, the type-check, the staged screenshot) out to job-named subagents on a 🤖 line and judge their output — don't run them inline. Done means the last phase landed and the full-game checklist below passes.
 
 A sensible phase shape: (1) world + movement + camera + core combat loop with real assets; (2) full item/loot/economy breadth + inventory UI; (3) progression + quests + dialogue; (4) multiplayer sync + social; (5) remaining systems + content fill to budget + audio/juice. Adapt to the fantasy — but phase 1 already looks like the game, not a graybox.
 
