@@ -2,6 +2,8 @@
 
 A living document. Append new archetypes at the bottom. Update pain points when gaps close. Remove nothing — strike through resolved items.
 
+> **Engine drift (2026-07-08):** entries predate the 0.7.0 surface. 0.7.0 shipped the eight-rig camera library (`rts` free pan, `topDown`/iso, `observer`, cinematic keyframes), `nav/navGrid` A* + `pointer` move/select commands, `world/placementController` grid placement + ghost renderers, `turn/*` + `tactics/*`, `economy/techTree`, `physics/vehicleBody`, `world/weather` + fire grid, and `@jgengine/react` `dragLayer`. Resolved rows are struck in the summary table; per-entry strikethroughs happen as each archetype is re-audited.
+
 ---
 
 ## Flappy Bird
@@ -864,19 +866,24 @@ A living document. Append new archetypes at the bottom. Update pain points when 
 
 | Pain point | Archetypes affected | Classification |
 |------------|---------------------|----------------|
-| `enablePan={false}` / no free pan | Bloons TD, Fallout Shelter, Civilization, XCOM, Factorio, RimWorld, The Sims, Stardew Valley | `shell` |
+| ~~`enablePan={false}` / no free pan~~ resolved 0.7.0: `rig: "rts"` free pan/edge-scroll | Bloons TD, Fallout Shelter, Civilization, XCOM, Factorio, RimWorld, The Sims, Stardew Valley | `shell` |
 | No side-scrolling / 2D camera | Flappy Bird, Learn to Fly, Mario, Tetris, Angry Birds, PvZ | `shell` |
-| No isometric camera | Bloons TD, Fallout Shelter, Civilization, XCOM, Hades, The Sims | `shell` |
+| ~~No isometric camera~~ resolved 0.7.0: `rig: "topDown"` iso | Bloons TD, Fallout Shelter, Civilization, XCOM, Hades, The Sims | `shell` |
 | WASD movement monopoly | Flappy Bird, Learn to Fly, Bloons TD, The Sims, PvZ | `shell` |
-| No click-to-move / pathfinding | The Sims, Fallout Shelter, Stardew Valley, RimWorld, Club Penguin | `core` |
-| No grid-snap placement | Bloons TD, Fallout Shelter, The Sims, Factorio, RimWorld | `core` |
+| ~~No click-to-move / pathfinding~~ resolved 0.7.0: `nav/navGrid` + `pointer` move commands | The Sims, Fallout Shelter, Stardew Valley, RimWorld, Club Penguin | `core` |
+| ~~No grid-snap placement~~ resolved 0.7.0: `world/placementController` + ghost renderers | Bloons TD, Fallout Shelter, The Sims, Factorio, RimWorld | `core` |
 | No 2D sprite rendering | Mario, Tetris, PvZ, Flappy Bird | `shell` |
-| No turn-based action system | Civilization, XCOM | `core` |
-| No upgrade / tech tree primitive | Learn to Fly, Civilization, Cookie Clicker, Factorio, Hades | `core` |
+| ~~No turn-based action system~~ resolved 0.7.0: `turn/*` + `tactics/*` | Civilization, XCOM | `core` |
+| ~~No upgrade / tech tree primitive~~ resolved 0.7.0: `economy/techTree` | Learn to Fly, Civilization, Cookie Clicker, Factorio, Hades | `core` |
 | No offline/idle progress | Cookie Clicker, Fallout Shelter | `core` |
-| No vehicle physics | Rocket League, Fortnite, Minecraft | `core` |
-| No building / construction primitive | Fortnite, Minecraft, Factorio, RimWorld | `core` |
-| No drag-and-drop UI | The Sims, Fallout Shelter, Tetris, Candy Crush | `react` |
+| ~~No vehicle physics~~ resolved 0.7.0: `physics/vehicleBody` | Rocket League, Fortnite, Minecraft | `core` |
+| ~~No building / construction primitive~~ resolved 0.7.0: `world/placementController` + `world/structure` suite | Fortnite, Minecraft, Factorio, RimWorld | `core` |
+| ~~No drag-and-drop UI~~ resolved 0.7.0: `@jgengine/react` `dragLayer` | The Sims, Fallout Shelter, Tetris, Candy Crush | `react` |
 | No chat / social bubble | Club Penguin | `react` |
+| No runtime camera command (fly-to / shot queue / replay-cam) | kingdom/chronicle sim, Rocket League (replay), any cutscene | `shell` |
+| No LOD banding / game-facing instancing at 1000+ entities | Factorio, kingdom/chronicle sim | `shell` |
+| No unbounded classed event history (chronicle / storyteller / director beats) | kingdom/chronicle sim, RimWorld | `core` |
+| No seed-in-URL share link | kingdom/chronicle sim, daily-seed roguelikes | `shell` |
+| No season / year calendar layer | kingdom/chronicle sim, Stardew Valley | `core` |
 
 **Next step:** Run Step 5 (batch dispatch) against the 20+ archetypes above to validate and extend these pain points with exact API suggestions.
