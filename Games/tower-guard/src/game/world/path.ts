@@ -1,7 +1,7 @@
-import { resolveTerrainField } from "@jgengine/core/world/terrain";
+import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 
-import { TERRAIN } from "./terrain";
+import { world } from "../../world";
 
 export type Vec2 = readonly [number, number];
 
@@ -54,7 +54,7 @@ export function pathLength(points: readonly Vec2[]): number {
   return total;
 }
 
-const terrainField = resolveTerrainField(TERRAIN);
+const terrainField = groundFieldFor(world);
 
 export function groundHeightAt(x: number, z: number): number {
   return terrainField.sampleHeight(x, z);
