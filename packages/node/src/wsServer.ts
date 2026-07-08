@@ -6,9 +6,17 @@ import type { PoseSyncRules, PresencePoseState } from "@jgengine/core/multiplaye
 import { decidePoseSync } from "@jgengine/core/multiplayer/presenceModel";
 import { createPositionHistory, type PositionHistory } from "@jgengine/core/multiplayer/lagCompensation";
 import {
+  createChatRateLimiter,
+  DEFAULT_CHAT_BODY_LENGTH,
+  DEFAULT_CHAT_HISTORY_LIMIT,
+  DEFAULT_CHAT_RATE_LIMIT,
+  type ChatRateLimit,
+} from "@jgengine/core/game/chat";
+import {
   decodeWsClientMessage,
   encodeWsMessage,
   subscriptionKey,
+  type WsChatMessage,
   type WsClientMessage,
   type WsPose,
   type WsPresenceRow,
@@ -25,6 +33,9 @@ export type GameWsServerOptions = {
   authenticate?: (args: { userId: string; token?: string }) => Promise<string | null> | string | null;
   poseRules?: PoseSyncRules;
   positionHistoryMs?: number;
+  chatRateLimit?: ChatRateLimit;
+  chatHistoryLimit?: number;
+  chatMaxBodyLength?: number;
   now?: () => number;
 };
 
@@ -115,9 +126,72 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
     }
   };
 
+  const chatRings = new Map<string, WsChatMessage[]>();
+  const chatLimiter = createChatRateLimiter(options.chatRateLimit ?? DEFAULT_CHAT_RATE_LIMIT);
+  const chatHistoryLimit = options.chatHistoryLimit ?? DEFAULT_CHAT_HISTORY_LIMIT;
+  const chatMaxBodyLength = options.chatMaxBodyLength ?? DEFAULT_CHAT_BODY_LENGTH;
+  let chatCounter = 0;
+
+  const chatRing = (serverId: string, channelId: string): WsChatMessage[] => {
+    const key = `${serverId}|${channelId}`;
+    let ring = chatRings.get(key);
+    if (ring === undefined) {
+      ring = [];
+      chatRings.set(key, ring);
+    }
+    return ring;
+  };
+
+  const broadcastChat = (serverId: string, channelId: string) => {
+    const key = subscriptionKey("chat", serverId, channelId);
+    const data = chatRing(serverId, channelId).slice();
+    for (const connection of connections) {
+      if (!connection.subscriptions.has(key)) continue;
+      send(connection, { v: 1, t: "update", channel: "chat", serverId, action: channelId, data });
+    }
+  };
+
+  const handleChatSend = (
+    connection: Connection,
+    message: { id: number; serverId: string; channelId: string; body: string },
+  ) => {
+    const userId = connection.userId;
+    if (userId === null) {
+      replyError(connection, message.id, "Not authenticated");
+      return;
+    }
+    const body = message.body.trim();
+    if (body.length === 0) {
+      replyError(connection, message.id, "empty message");
+      return;
+    }
+    if (body.length > chatMaxBodyLength) {
+      replyError(connection, message.id, "message too long");
+      return;
+    }
+    const timestamp = now();
+    if (!chatLimiter.allow(`${userId}|${message.serverId}`, timestamp)) {
+      replyError(connection, message.id, "rate limited");
+      return;
+    }
+    chatCounter += 1;
+    const entry: WsChatMessage = {
+      id: `msg_${chatCounter}`,
+      channelId: message.channelId,
+      fromUserId: userId,
+      body,
+      at: timestamp,
+    };
+    const ring = chatRing(message.serverId, message.channelId);
+    ring.push(entry);
+    if (ring.length > chatHistoryLimit) ring.splice(0, ring.length - chatHistoryLimit);
+    reply(connection, message.id, null);
+    broadcastChat(message.serverId, message.channelId);
+  };
+
   const pushSubscription = async (
     connection: Connection,
-    channel: "server" | "player" | "feed" | "presence",
+    channel: "server" | "player" | "feed" | "presence" | "chat",
     serverId: string,
     action?: string,
   ) => {
@@ -131,6 +205,16 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
     } else if (channel === "feed") {
       const data = await host.getFeed({ userId: connection.userId, serverId, action: action ?? "" });
       send(connection, { v: 1, t: "update", channel, serverId, action: action ?? "", data });
+    } else if (channel === "chat") {
+      const channelId = action ?? "";
+      send(connection, {
+        v: 1,
+        t: "update",
+        channel,
+        serverId,
+        action: channelId,
+        data: chatRing(serverId, channelId).slice(),
+      });
     } else {
       send(connection, { v: 1, t: "update", channel, serverId, data: presenceRows(serverId) });
     }
@@ -281,6 +365,10 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
             entry: message.entry,
           });
           reply(connection, message.id, null);
+          return;
+        }
+        case "chatSend": {
+          handleChatSend(connection, message);
           return;
         }
         case "subscribe": {

@@ -3,8 +3,9 @@ import { createServer } from "node:http";
 
 import type { RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
 import type { GameRuntimeFeedView, GameRuntimeServerView } from "@jgengine/core/runtime/transport";
+import type { ChatMessage } from "@jgengine/core/game/chat";
 import { createWsBackend, type WsBackend } from "@jgengine/ws/createWsBackend";
-import type { WsPresenceRow } from "@jgengine/ws/protocol";
+import type { WsChatMessage, WsPresenceRow } from "@jgengine/ws/protocol";
 
 import { createGameHost, type GameHost } from "./host";
 import { memoryPersistence } from "./persistence";
@@ -209,6 +210,47 @@ test("presence poses broadcast to subscribers and clamp teleports", async () => 
     alice.close();
     const afterDisconnect = await rosters.next();
     expect(afterDisconnect).toEqual([]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("chat sends relay to channel subscribers and replay history to late joiners", async () => {
+  const stack = await startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game", serverId });
+
+    const bobFeed = channel<WsChatMessage[]>();
+    bob.chatSync.subscribe(serverId, "global", (messages) => bobFeed.push(messages));
+    expect(await bobFeed.next()).toEqual([]);
+
+    expect(await alice.chatSync.send(serverId, "global", "  hello bob  ")).toEqual({ ok: true });
+    const update = await bobFeed.next();
+    expect(update).toHaveLength(1);
+    expect(update[0]!.fromUserId).toBe("alice");
+    expect(update[0]!.body).toBe("hello bob");
+
+    expect(await alice.chatSync.send(serverId, "global", "   ")).toEqual({
+      ok: false,
+      reason: "empty message",
+    });
+    expect(await alice.chatSync.send(serverId, "global", "x".repeat(501))).toEqual({
+      ok: false,
+      reason: "message too long",
+    });
+
+    await alice.chatSync.send(serverId, "party", "party only");
+    await expect(bobFeed.next(200)).rejects.toThrow("timed out waiting for message");
+
+    const carol = stack.connect("carol");
+    await carol.transport.joinServer({ gameId: "test-game", serverId });
+    const carolFeed = channel<readonly ChatMessage[]>();
+    carol.chatSyncFor(serverId).subscribe("global", (messages) => carolFeed.push(messages));
+    const history = await carolFeed.next();
+    expect(history.map((message) => message.body)).toEqual(["hello bob"]);
   } finally {
     await stack.shutdown();
   }

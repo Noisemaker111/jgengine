@@ -8,11 +8,13 @@ import type {
 } from "@jgengine/core/runtime/transport";
 import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
+import type { ChatSendOutcome, ChatSync } from "@jgengine/core/multiplayer/chatContract";
 import {
   decodeWsServerMessage,
   encodeWsMessage,
   subscriptionKey,
   type WsChannel,
+  type WsChatMessage,
   type WsClientMessage,
   type WsPose,
   type WsPresenceRow,
@@ -33,12 +35,23 @@ export type WsPresenceSync = {
   syncPose: (serverId: string, pose: WsPose) => void;
 };
 
+export type WsChatSync = {
+  subscribe: (
+    serverId: string,
+    channelId: string,
+    onChange: (messages: WsChatMessage[]) => void,
+  ) => () => void;
+  send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>;
+};
+
 export type WsBackend = GameBackend & {
   pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>;
   browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>;
   joinByCode: (args: { gameId: string; code: string }) => Promise<JoinServerResult | null>;
   createSession: (args: { gameId: string; attributes?: SessionAttributes }) => Promise<JoinServerResult>;
   presenceSync: WsPresenceSync;
+  chatSync: WsChatSync;
+  chatSyncFor: (serverId: string) => ChatSync;
   close: () => void;
 };
 
@@ -109,7 +122,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     const key = subscriptionKey(
       message.channel,
       message.serverId,
-      message.channel === "feed" ? message.action : undefined,
+      message.channel === "feed" || message.channel === "chat" ? message.action : undefined,
     );
     const subscription = subscriptions.get(key);
     if (subscription === undefined) return;
@@ -278,10 +291,31 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     },
   };
 
+  const chatSync: WsChatSync = {
+    subscribe(serverId, channelId, onChange) {
+      return addSubscription("chat", serverId, channelId, (data) =>
+        onChange(data as WsChatMessage[]),
+      );
+    },
+    async send(serverId, channelId, body) {
+      try {
+        await request((id) => ({ v: 1, t: "chatSend", id, serverId, channelId, body }));
+        return { ok: true };
+      } catch (error) {
+        return { ok: false, reason: error instanceof Error ? error.message : "Transport error" };
+      }
+    },
+  };
+
   return {
     transport,
     feeds,
     presenceSync,
+    chatSync,
+    chatSyncFor: (serverId) => ({
+      subscribe: (channelId, onChange) => chatSync.subscribe(serverId, channelId, onChange),
+      send: (channelId, body) => chatSync.send(serverId, channelId, body),
+    }),
     async pushFeedEntry(args) {
       await request((id) => ({
         v: 1,

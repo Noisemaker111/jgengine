@@ -77,6 +77,15 @@ export interface SocialWorldAcceptedEvent {
   joinCode?: string;
 }
 
+export interface ChatMessageEvent {
+  id: string;
+  channelId: string;
+  fromUserId: string;
+  body: string;
+  at: number;
+  recipients?: readonly string[];
+}
+
 export interface StatLevelUpEvent {
   userId: string;
   stat: string;
@@ -174,6 +183,7 @@ export interface GameEventMap {
   "social.party.left": SocialPartyLeftEvent;
   "social.world.invited": SocialWorldInvitedEvent;
   "social.world.accepted": SocialWorldAcceptedEvent;
+  "chat.message": ChatMessageEvent;
   "stat.levelUp": StatLevelUpEvent;
   "projectile.settled": ProjectileSettledEvent;
   "worldItem.dropped": WorldItemDroppedEvent;

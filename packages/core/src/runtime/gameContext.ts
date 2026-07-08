@@ -50,6 +50,7 @@ import {
   type WorldItemRecord,
   type WorldItemSpawnInput,
 } from "../game/worldItem";
+import { createChat, type Chat } from "../game/chat";
 import { createSocial, type Social } from "../game/social";
 import { createTradeSystem, type TradeField, type TradeSystem } from "../game/trade";
 import { createUnlocks, type Unlocks } from "../game/unlocks";
@@ -265,6 +266,7 @@ export interface GameContext {
     trade: TradeSystem;
     quest: QuestJournal;
     social: Social;
+    chat: Chat;
     unlocks: Unlocks;
     economy: GameContextEconomy;
     leaderboard: Leaderboard;
@@ -393,6 +395,20 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       signal.notify,
     ),
   };
+  const chat = notifyAfter(
+    createChat({
+      events,
+      now,
+      party: rawSocial.party,
+      proximity: {
+        entities: { get: (id) => entities.get(id) },
+        spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
+      },
+      blockedBy: (userId) => rawSocial.friends.snapshot(userId).blocked,
+    }),
+    ["register", "send", "whisper", "hydrate"],
+    signal.notify,
+  );
   const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify);
   const roster = notifyAfter(
     createRoster({ now }),
@@ -875,6 +891,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       trade,
       quest,
       social,
+      chat,
       unlocks,
       economy,
       leaderboard,

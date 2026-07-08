@@ -9,7 +9,7 @@ import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/mat
 
 export const WS_PROTOCOL_VERSION = 1;
 
-export type WsChannel = "server" | "player" | "feed" | "presence";
+export type WsChannel = "server" | "player" | "feed" | "presence" | "chat";
 
 export type WsPose = {
   x: number;
@@ -27,6 +27,14 @@ export type WsPresenceRow = {
   lastSeenAt: number;
 };
 
+export type WsChatMessage = {
+  id: string;
+  channelId: string;
+  fromUserId: string;
+  body: string;
+  at: number;
+};
+
 export type WsClientMessage =
   | { v: 1; t: "hello"; id: number; userId: string; token?: string }
   | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes }
@@ -37,13 +45,15 @@ export type WsClientMessage =
   | { v: 1; t: "pushFeed"; id: number; serverId: string; action: string; entry: unknown }
   | { v: 1; t: "subscribe"; id: number; channel: WsChannel; serverId: string; action?: string }
   | { v: 1; t: "unsubscribe"; id: number; channel: WsChannel; serverId: string; action?: string }
-  | { v: 1; t: "pose"; serverId: string; pose: WsPose };
+  | { v: 1; t: "pose"; serverId: string; pose: WsPose }
+  | { v: 1; t: "chatSend"; id: number; serverId: string; channelId: string; body: string };
 
 export type WsUpdateMessage =
   | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null }
   | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null }
   | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unknown[] }
-  | { v: 1; t: "update"; channel: "presence"; serverId: string; data: WsPresenceRow[] };
+  | { v: 1; t: "update"; channel: "presence"; serverId: string; data: WsPresenceRow[] }
+  | { v: 1; t: "update"; channel: "chat"; serverId: string; action: string; data: WsChatMessage[] };
 
 export type WsServerMessage =
   | { v: 1; t: "reply"; id: number; ok: true; result?: unknown }
@@ -78,7 +88,13 @@ function parseVersioned(raw: unknown): Record<string, unknown> | null {
 }
 
 function isWsChannel(value: unknown): value is WsChannel {
-  return value === "server" || value === "player" || value === "feed" || value === "presence";
+  return (
+    value === "server" ||
+    value === "player" ||
+    value === "feed" ||
+    value === "presence" ||
+    value === "chat"
+  );
 }
 
 function isPose(value: unknown): value is WsPose {
@@ -145,6 +161,13 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
         : null;
     case "pose":
       return typeof message.serverId === "string" && isPose(message.pose)
+        ? (message as WsClientMessage)
+        : null;
+    case "chatSend":
+      return typeof message.id === "number" &&
+        typeof message.serverId === "string" &&
+        typeof message.channelId === "string" &&
+        typeof message.body === "string"
         ? (message as WsClientMessage)
         : null;
     default:
