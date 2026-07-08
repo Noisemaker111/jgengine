@@ -90,6 +90,30 @@ describe("swarm-survivor simulation", () => {
     expect(run.outcome).toBe("lost");
   });
 
+  test("enemy spawns and movement stay grounded to the ridged terrain", () => {
+    const ctx = boot();
+    tickSeconds(ctx, 6);
+    const enemies = ctx.scene.entity.list().filter((entity) => entity.id !== ctx.player.userId);
+    expect(enemies.length).toBeGreaterThan(0);
+    for (const enemy of enemies) {
+      expect(enemy.position[1]).toBeCloseTo(ctx.world.groundHeightAt(enemy.position[0], enemy.position[2]), 5);
+    }
+    expect(enemies.some((entity) => Math.abs(entity.position[1]) > 0.01)).toBe(true);
+  });
+
+  test("xp gems drop and get pulled at grounded terrain height", () => {
+    const ctx = boot();
+    tickSeconds(ctx, 6);
+    const enemy = ctx.scene.entity.list().find((entity) => entity.id !== ctx.player.userId);
+    expect(enemy).toBeDefined();
+    ctx.scene.entity.effect({ from: ctx.player.userId, to: enemy!.id, effect: "hit", via: { amount: 100_000 } });
+    const gem = ctx.scene.worldItem.list().find((record) => record.baseType === "xp_gem");
+    expect(gem).toBeDefined();
+    const gemEntity = ctx.scene.entity.get(gem!.instanceId);
+    expect(gemEntity).not.toBeNull();
+    expect(gemEntity!.position[1]).toBeCloseTo(ctx.world.groundHeightAt(gemEntity!.position[0], gemEntity!.position[2]), 5);
+  });
+
   test("surviving the full timer ends the run in victory", () => {
     const ctx = boot();
     const run = getRunState(ctx);

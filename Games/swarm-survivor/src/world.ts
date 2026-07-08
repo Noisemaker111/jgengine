@@ -4,12 +4,12 @@ import { building, environment, grass, rain, terrain, type WorldFeature } from "
 export const world: WorldFeature = environment({
   terrain: terrain({
     bounds: { w: 96, d: 96 },
-    height: 5.5,
+    height: 2.2,
     seed: "swarm-arena",
     frequency: 0.045,
     octaves: 3,
     ridged: true,
-    baseHeight: -0.6,
+    baseHeight: -0.2,
   }),
   vegetation: grass({
     area: { w: 90, d: 90 },

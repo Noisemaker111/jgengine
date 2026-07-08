@@ -38,9 +38,11 @@ function gemRarity(value: number): string {
   return "common";
 }
 
-function spawnRingPoint(run: RunState): [number, number, number] {
+function spawnRingPoint(ctx: GameContext, run: RunState): [number, number, number] {
   const angle = run.rng() * Math.PI * 2;
-  return [Math.cos(angle) * SPAWN_RING_RADIUS, 0, Math.sin(angle) * SPAWN_RING_RADIUS];
+  const x = Math.cos(angle) * SPAWN_RING_RADIUS;
+  const z = Math.sin(angle) * SPAWN_RING_RADIUS;
+  return [x, ctx.world.groundHeightAt(x, z), z];
 }
 
 function facing(fromX: number, fromZ: number, toX: number, toZ: number): number {
@@ -53,7 +55,7 @@ function advanceSpawning(ctx: GameContext, run: RunState, dt: number): void {
   run.spawn = step.state;
   for (const request of step.spawns) {
     if (swarmerDef(request.entryId) === null) continue;
-    ctx.scene.entity.spawn(request.entryId, { position: spawnRingPoint(run) });
+    ctx.scene.entity.spawn(request.entryId, { position: spawnRingPoint(ctx, run) });
   }
 }
 
@@ -67,8 +69,9 @@ function advanceEnemies(ctx: GameContext, run: RunState, dt: number): void {
     if (def === null) continue;
     const next = ctx.scene.entity.moveToward(enemy.id, playerId, { speed: def.walkSpeed, dt });
     if (next !== null) {
+      const grounded: readonly [number, number, number] = [next[0], ctx.world.groundHeightAt(next[0], next[2]), next[2]];
       ctx.scene.entity.setPose(enemy.id, {
-        position: next,
+        position: grounded,
         rotationY: facing(enemy.position[0], enemy.position[2], player.position[0], player.position[2]),
       });
     }
@@ -197,7 +200,10 @@ function advancePickups(ctx: GameContext, run: RunState, dt: number): void {
     }
     if (distance > run.magnetRadius) continue;
     const next = ctx.scene.entity.moveToward(record.instanceId, playerId, { speed: GEM_PULL_SPEED, dt });
-    if (next !== null) ctx.scene.entity.setPose(record.instanceId, { position: next });
+    if (next !== null) {
+      const grounded: readonly [number, number, number] = [next[0], ctx.world.groundHeightAt(next[0], next[2]), next[2]];
+      ctx.scene.entity.setPose(record.instanceId, { position: grounded });
+    }
   }
 }
 
