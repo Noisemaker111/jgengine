@@ -76,4 +76,30 @@ describe("environmentSummary", () => {
     const descriptor = building({ count: 9, footprint: { w: 10, d: 8 }, spacing: 4, seed: "grid" });
     expect(resolveStructureBuildings(descriptor)).toHaveLength(9);
   });
+
+  test("building position sites the cluster away from the origin", () => {
+    const config = { count: 9, footprint: { w: 10, d: 8 }, spacing: 4, seed: "grid" } as const;
+    const centered = summarizeEnvironment(environment({ structures: building(config) })).structures[0];
+    const sited = summarizeEnvironment(
+      environment({ structures: building({ ...config, position: [200, -150] }) }),
+    ).structures[0];
+    expect(sited.bounds.minX).toBeCloseTo(centered.bounds.minX + 200, 6);
+    expect(sited.bounds.maxX).toBeCloseTo(centered.bounds.maxX + 200, 6);
+    expect(sited.bounds.minZ).toBeCloseTo(centered.bounds.minZ - 150, 6);
+    expect(sited.bounds.maxZ).toBeCloseTo(centered.bounds.maxZ - 150, 6);
+    expect(sited.buildings).toBe(centered.buildings);
+  });
+
+  test("distinct sited clusters do not overlap", () => {
+    const summary = summarizeEnvironment(
+      environment({
+        structures: [
+          building({ count: 4, seed: "a", position: [-120, 0] }),
+          building({ count: 4, seed: "b", position: [120, 0] }),
+        ],
+      }),
+    );
+    const [west, east] = summary.structures;
+    expect(west.bounds.maxX).toBeLessThan(east.bounds.minX);
+  });
 });

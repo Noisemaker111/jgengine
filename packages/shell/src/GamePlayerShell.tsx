@@ -1078,7 +1078,14 @@ export function GamePlayerShell({
         }
       }}
     >
-      <Canvas camera={{ fov: 55, near: 0.1, far: 300 }} style={{ touchAction: "none" }}>
+      <Canvas
+        camera={{
+          fov: playable.camera?.frustum?.fov ?? 55,
+          near: playable.camera?.frustum?.near ?? 0.1,
+          far: playable.camera?.frustum?.far ?? 300,
+        }}
+        style={{ touchAction: "none" }}
+      >
         <color attach="background" args={["#14161b"]} />
         <ambientLight intensity={0.55} />
         <directionalLight position={[10, 16, 6]} intensity={1.3} />

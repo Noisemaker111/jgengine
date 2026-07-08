@@ -101,9 +101,10 @@ function Weather({ weather }: { weather: readonly WeatherEnvironmentDescriptor[]
 }
 
 function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
+  const [x, z] = ocean.position ?? [0, 0];
   return (
     <Ocean
-      position-y={ocean.level}
+      position={[x, ocean.level, z]}
       config={{
         size: Math.max(ocean.bounds.w, ocean.bounds.d),
         amplitude: ocean.waveHeight,
