@@ -32,22 +32,6 @@ export function standardMaterialsOf(root: THREE.Object3D): THREE.MeshStandardMat
   return materials;
 }
 
-export interface MaterialTuning {
-  tint?: string;
-  metalness?: number;
-  roughness?: number;
-}
-
-export function applyMaterialTuning(root: THREE.Object3D, tuning: MaterialTuning): void {
-  if (tuning.tint === undefined && tuning.metalness === undefined && tuning.roughness === undefined) return;
-  for (const material of standardMaterialsOf(root)) {
-    if (tuning.tint !== undefined) material.color.set(tuning.tint);
-    if (tuning.metalness !== undefined) material.metalness = tuning.metalness;
-    if (tuning.roughness !== undefined) material.roughness = tuning.roughness;
-    material.needsUpdate = true;
-  }
-}
-
 export interface PaintCanvas {
   canvas: HTMLCanvasElement;
   context: CanvasRenderingContext2D;

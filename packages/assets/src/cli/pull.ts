@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { downloadArchive, extractGlbs, extractTextures, resolveArchiveUrl, sha256Hex } from "../download";
+import { downloadPackArchive, extractGlbs, extractTextures } from "../download";
 import { generatedIndex } from "../generated";
 import { reindex } from "../indexGen";
 import { isScrapeDownload, type SingleAsset } from "../manifest";
@@ -18,7 +18,7 @@ const singlesJson = join(srcDir, "singles.json");
 const localDir = join(pkgRoot, "local");
 const CDN_BASE = "https://cdn.jsdelivr.net/gh/Noisemaker111/jgengine@main/packages/assets/local";
 
-function flag(argv: string[], name: string): string | undefined {
+export function flag(argv: string[], name: string): string | undefined {
   const index = argv.indexOf(`--${name}`);
   return index >= 0 ? argv[index + 1] : undefined;
 }
@@ -58,26 +58,42 @@ function cmdSearch(argv: string[]): void {
   console.log(`— ${Math.min(rows.length, limit)} of ${rows.length} matches for "${term}"`);
 }
 
-async function cmdPull(argv: string[]): Promise<void> {
+export function isPopulated(dir: string): boolean {
+  return existsSync(dir) && readdirSync(dir).length > 0;
+}
+
+export async function cmdPull(argv: string[]): Promise<void> {
   const sourceId = argv[0];
-  if (sourceId === undefined) fail("usage: pull <source-id> [--dir <dir>]");
+  if (sourceId === undefined) {
+    fail("usage: pull <source-id> [--dir <dir>] [--mirror <baseUrl>] [--offline]");
+  }
   const source = sourceById.get(sourceId);
   if (source === undefined) fail(`unknown source: ${sourceId}`);
 
   const outRoot = resolve(flag(argv, "dir") ?? "public");
   const outDir = join(outRoot, "models", sourceId);
+  const offline = argv.includes("--offline");
+  const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
 
-  console.log(`resolving ${sourceId}${isScrapeDownload(source.download) ? " (scrape)" : ""}…`);
-  const url = await resolveArchiveUrl(source);
-  console.log(`downloading ${url}`);
-  const archive = await downloadArchive(url);
-
-  if (!isScrapeDownload(source.download) && source.download.sha256 !== undefined) {
-    const actual = await sha256Hex(archive);
-    if (actual !== source.download.sha256) {
-      fail(`sha256 mismatch for ${sourceId}: expected ${source.download.sha256}, got ${actual}`);
+  if (offline) {
+    if (!isPopulated(outDir)) {
+      fail(
+        `--offline set but ${outDir} is empty; pull it once on a connected machine (or via ` +
+          `--mirror/JGENGINE_ASSETS_MIRROR) and commit/host that directory before running offline`,
+      );
     }
+    console.log(`offline: ${outDir} already populated, skipping network`);
+    return;
   }
+
+  console.log(
+    `resolving ${sourceId}${isScrapeDownload(source.download) ? " (scrape)" : ""}` +
+      `${mirrorBase !== undefined ? ` [mirror override: ${mirrorBase}]` : ""}…`,
+  );
+  const { archive, url, attempted } = await downloadPackArchive(source, { mirrorBase });
+  console.log(
+    `downloaded ${url}${attempted.length > 1 ? ` (after ${attempted.length - 1} failed attempt(s))` : ""}`,
+  );
 
   const glbs = extractGlbs(archive);
   if (glbs.length === 0) fail(`no .glb files found in ${sourceId} archive`);
@@ -156,27 +172,29 @@ function cmdVerify(): void {
   fail(`verify failed with ${result.errors.length} problem(s)`);
 }
 
-const [command, ...rest] = process.argv.slice(2);
-switch (command) {
-  case "list":
-    cmdList(rest);
-    break;
-  case "search":
-    cmdSearch(rest);
-    break;
-  case "pull":
-    await cmdPull(rest);
-    break;
-  case "add":
-    cmdAdd(rest);
-    break;
-  case "reindex":
-    cmdReindex(rest);
-    break;
-  case "verify":
-    cmdVerify();
-    break;
-  default:
-    console.log("usage: assets <list|search|pull|add|reindex|verify> [...args]");
-    if (command !== undefined && command !== "help") process.exit(1);
+if (import.meta.main) {
+  const [command, ...rest] = process.argv.slice(2);
+  switch (command) {
+    case "list":
+      cmdList(rest);
+      break;
+    case "search":
+      cmdSearch(rest);
+      break;
+    case "pull":
+      await cmdPull(rest);
+      break;
+    case "add":
+      cmdAdd(rest);
+      break;
+    case "reindex":
+      cmdReindex(rest);
+      break;
+    case "verify":
+      cmdVerify();
+      break;
+    default:
+      console.log("usage: assets <list|search|pull|add|reindex|verify> [...args]");
+      if (command !== undefined && command !== "help") process.exit(1);
+  }
 }

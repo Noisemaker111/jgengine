@@ -14,6 +14,7 @@ import type {
 import { resolveTerrainField, resolveTerrainPalette, type TerrainField } from "@jgengine/core/world/terrain";
 
 import { SkyDaylight } from "./Daylight";
+import { GroundPad } from "./GroundPad";
 import { GeneratedBuilding } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
 import { ProceduralGround } from "../terrain/ProceduralGround";
@@ -141,6 +142,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const vegetation = feature.vegetation ?? [];
   const water = feature.water ?? [];
   const structures = feature.structures ?? [];
+  const pads = feature.pads ?? [];
   return (
     <>
       {feature.sky !== undefined && !feature.sky.timeOfDay ? <SkyDaylight sky={feature.sky} /> : null}
@@ -150,6 +152,9 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
       ))}
       {structures.map((entry, index) => (
         <Structures key={`structures-${index}`} structures={entry} field={field} />
+      ))}
+      {pads.map((entry, index) => (
+        <GroundPad key={`pad-${index}`} pad={entry} field={field} />
       ))}
       {vegetation.map((grass, index) => (
         <Vegetation key={`grass-${index}`} grass={grass} field={field} />

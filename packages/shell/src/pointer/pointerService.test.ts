@@ -46,4 +46,19 @@ describe("pointerService worldHitCenter", () => {
     expect(service.worldHit()).toBeNull();
     expect(service.worldHitCenter()).toBeNull();
   });
+
+  test("samples the hit mesh's MeshStandardMaterial color and PBR params", () => {
+    const { service, mesh } = setup();
+    mesh.material = new THREE.MeshStandardMaterial({ color: "#ff0000", metalness: 0.4, roughness: 0.6 });
+    const hit = service.worldHitCenter();
+    expect(hit?.material?.color).toBe("#ff0000");
+    expect(hit?.material?.metalness).toBeCloseTo(0.4, 5);
+    expect(hit?.material?.roughness).toBeCloseTo(0.6, 5);
+  });
+
+  test("reports null material for a hit mesh without a MeshStandardMaterial", () => {
+    const { service } = setup();
+    const hit = service.worldHitCenter();
+    expect(hit?.material).toBeNull();
+  });
 });

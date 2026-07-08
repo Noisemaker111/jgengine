@@ -18,6 +18,8 @@ export interface PointerHit {
   object: string | null;
   /** Texture-space UV at the hit, when the intersected mesh carries UVs; absent for the ground-plane fallback. */
   uv?: { u: number; v: number };
+  /** Sampled `#rrggbb` color + PBR params from the hit mesh's `MeshStandardMaterial` (#151.2); `null`/unset when the hit surface has no standard material (e.g. the ground plane). */
+  material?: { color: string; metalness?: number; roughness?: number } | null;
 }
 
 export type PointerButton = "primary" | "secondary" | "middle";

@@ -82,9 +82,9 @@ import { createAudioEngine } from "./audio/audioEngine";
 import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
 import { TimeOfDayDaylight } from "./environment";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
+import { applyMaterialOverride } from "./materialOverride";
 import { PointerProbe } from "./pointer/PointerProbe";
 import {
-  applyMaterialTuning,
   applyPaintTexture,
   cloneModelScene,
   createPaintCanvas,
@@ -302,6 +302,7 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
 function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
   const gltf = useLoader(GLTFLoader, model.url);
   const ctx = useGameContext();
+  const material = model.material;
   const scale = model.scale ?? 1;
   const baseY = model.y ?? 0;
   const dims = model.dims;
@@ -310,14 +311,11 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
     ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
     : [0, baseY, 0];
 
-  const tint = model.tint;
-  const metalness = model.metalness;
-  const roughness = model.roughness;
   const scene = useMemo(() => {
     const cloned = cloneModelScene(gltf.scene);
-    applyMaterialTuning(cloned, { tint, metalness, roughness });
+    if (material !== undefined) applyMaterialOverride(cloned, material);
     return cloned;
-  }, [gltf, tint, metalness, roughness]);
+  }, [gltf, material]);
 
   const animation = model.animation;
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);

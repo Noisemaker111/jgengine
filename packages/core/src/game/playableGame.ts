@@ -346,6 +346,15 @@ export interface ModelAnimationConfig {
   time?: number;
 }
 
+/** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */
+export interface ModelMaterialOverride {
+  color?: string;
+  metalness?: number;
+  roughness?: number;
+  emissive?: string;
+  emissiveIntensity?: number;
+}
+
 export interface ModelConfig {
   url: string;
   scale?: number;
@@ -354,12 +363,8 @@ export interface ModelConfig {
   anchor?: "center" | "origin";
   /** Measured footprint/center/minY; supplied automatically when the model resolves through an `@jgengine/assets` catalog. Required for `anchor: "center"` to take effect. */
   dims?: ModelDims;
-  /** Overrides the base color on every `MeshStandardMaterial`-family material in the model (a hex string, e.g. `"#3366ff"`). Applied to a per-instance material clone — never mutates the shared GLTF cache. */
-  tint?: string;
-  /** Overrides `metalness` on every standard material in the model. */
-  metalness?: number;
-  /** Overrides `roughness` on every standard material in the model. */
-  roughness?: number;
+  /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
+  material?: ModelMaterialOverride;
   /** Plays a GLTF animation clip on the model when the source has any (skinned or not); omit to render the rig's bind pose. */
   animation?: ModelAnimationConfig;
 }

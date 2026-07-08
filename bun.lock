@@ -79,6 +79,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/loot-shooter": {
+      "name": "@games/loot-shooter",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/maze-muncher": {
       "name": "@games/maze-muncher",
       "version": "0.1.0",
@@ -594,6 +617,8 @@
     "@games/block-stacker": ["@games/block-stacker@workspace:Games/block-stacker"],
 
     "@games/grid-tactics": ["@games/grid-tactics@workspace:Games/grid-tactics"],
+
+    "@games/loot-shooter": ["@games/loot-shooter@workspace:Games/loot-shooter"],
 
     "@games/maze-muncher": ["@games/maze-muncher@workspace:Games/maze-muncher"],
 
