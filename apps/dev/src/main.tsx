@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
+import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
 import {
   resolvePeerShellMultiplayer,
   resolveShellMultiplayer,
@@ -74,6 +75,7 @@ const GAME_ID =
 const MODE = urlParams.get("mode") ?? "play";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
+const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 const P2P_ROLE = urlParams.get("p2p");
 
 function withCameraPreset(game: PlayableGame): PlayableGame {
@@ -95,12 +97,18 @@ function DevApp() {
         void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
       } else {
         setMultiplayer(
-          resolveShellMultiplayer({
+          resolveConvexMultiplayer({
             game: loaded.game,
             gameId: GAME_ID,
-            url: WS_URL,
-            force: WS_URL !== undefined,
-          }),
+            url: CONVEX_URL,
+            force: CONVEX_URL !== undefined,
+          }) ??
+            resolveShellMultiplayer({
+              game: loaded.game,
+              gameId: GAME_ID,
+              url: WS_URL,
+              force: WS_URL !== undefined,
+            }),
         );
       }
       setPlayable(withCameraPreset(loaded));

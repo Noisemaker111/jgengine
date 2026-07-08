@@ -44,6 +44,27 @@ export function offline(): MultiplayerAdapterConfig {
   return { kind: "offline" };
 }
 
+const ADAPTER_KINDS = new Set(["convex", "ws", "socketio", "p2p", "lan", "offline"]);
+
+function isAdapterConfig(value: unknown): value is MultiplayerAdapterConfig {
+  if (typeof value !== "object" || value === null) return false;
+  const kind = (value as { kind?: unknown }).kind;
+  return typeof kind === "string" && ADAPTER_KINDS.has(kind);
+}
+
+export function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null {
+  if (isAdapterConfig(multiplayer)) return multiplayer;
+  if (typeof multiplayer === "object" && multiplayer !== null) {
+    const nested = (multiplayer as { adapter?: unknown }).adapter;
+    if (isAdapterConfig(nested)) return nested;
+  }
+  return null;
+}
+
+export function multiplayerAdapterKind(multiplayer: unknown): string | null {
+  return adapterOf(multiplayer)?.kind ?? null;
+}
+
 export type ServersPoolConfig = {
   maxServers: number;
   slotsPerServer: number;

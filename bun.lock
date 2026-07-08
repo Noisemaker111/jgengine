@@ -148,7 +148,9 @@
       "name": "@jgengine-apps/dev",
       "version": "0.1.0",
       "dependencies": {
+        "@jgengine/convex": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "convex": "^1.31.2",
         "react": "19.2.3",
         "react-dom": "19.2.3",
       },
@@ -254,7 +256,7 @@
       "name": "@jgengine/convex",
       "version": "0.7.0",
       "dependencies": {
-        "@jgengine/core": "^0.2.0",
+        "@jgengine/core": "^0.7.0",
       },
       "devDependencies": {
         "@types/react": "^19",
