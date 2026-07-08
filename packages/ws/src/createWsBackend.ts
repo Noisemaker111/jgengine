@@ -9,6 +9,7 @@ import type {
 import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 import type { ChatSendOutcome, ChatSync } from "@jgengine/core/multiplayer/chatContract";
+import type { VoiceTransport } from "@jgengine/core/multiplayer/voiceContract";
 import {
   decodeWsServerMessage,
   encodeWsMessage,
@@ -18,6 +19,7 @@ import {
   type WsClientMessage,
   type WsPose,
   type WsPresenceRow,
+  type WsVoiceParticipant,
 } from "./protocol";
 
 export type WsBackendOptions = {
@@ -44,6 +46,17 @@ export type WsChatSync = {
   send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>;
 };
 
+export type WsVoiceSync = {
+  subscribe: (
+    serverId: string,
+    channelId: string,
+    onChange: (participants: WsVoiceParticipant[]) => void,
+  ) => () => void;
+  join: (serverId: string, channelId: string, streamId?: string) => Promise<void>;
+  leave: (serverId: string, channelId: string) => Promise<void>;
+  publish: (serverId: string, channelId: string, streamId: string) => Promise<void>;
+};
+
 export type WsBackend = GameBackend & {
   pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>;
   browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>;
@@ -52,6 +65,8 @@ export type WsBackend = GameBackend & {
   presenceSync: WsPresenceSync;
   chatSync: WsChatSync;
   chatSyncFor: (serverId: string) => ChatSync;
+  voiceSync: WsVoiceSync;
+  voiceTransportFor: (serverId: string) => VoiceTransport;
   close: () => void;
 };
 
@@ -122,7 +137,9 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     const key = subscriptionKey(
       message.channel,
       message.serverId,
-      message.channel === "feed" || message.channel === "chat" ? message.action : undefined,
+      message.channel === "feed" || message.channel === "chat" || message.channel === "voice"
+        ? message.action
+        : undefined,
     );
     const subscription = subscriptions.get(key);
     if (subscription === undefined) return;
@@ -307,6 +324,23 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     },
   };
 
+  const voiceSync: WsVoiceSync = {
+    subscribe(serverId, channelId, onChange) {
+      return addSubscription("voice", serverId, channelId, (data) =>
+        onChange(data as WsVoiceParticipant[]),
+      );
+    },
+    async join(serverId, channelId, streamId) {
+      await request((id) => ({ v: 1, t: "voiceJoin", id, serverId, channelId, streamId }));
+    },
+    async leave(serverId, channelId) {
+      await request((id) => ({ v: 1, t: "voiceLeave", id, serverId, channelId }));
+    },
+    async publish(serverId, channelId, streamId) {
+      await request((id) => ({ v: 1, t: "voicePublish", id, serverId, channelId, streamId }));
+    },
+  };
+
   return {
     transport,
     feeds,
@@ -315,6 +349,13 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     chatSyncFor: (serverId) => ({
       subscribe: (channelId, onChange) => chatSync.subscribe(serverId, channelId, onChange),
       send: (channelId, body) => chatSync.send(serverId, channelId, body),
+    }),
+    voiceSync,
+    voiceTransportFor: (serverId) => ({
+      join: (channelId, streamId) => voiceSync.join(serverId, channelId, streamId),
+      leave: (channelId) => voiceSync.leave(serverId, channelId),
+      publish: (channelId, streamId) => voiceSync.publish(serverId, channelId, streamId),
+      subscribers: (channelId, onChange) => voiceSync.subscribe(serverId, channelId, onChange),
     }),
     async pushFeedEntry(args) {
       await request((id) => ({

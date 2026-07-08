@@ -21,6 +21,7 @@ import {
   type WsPose,
   type WsPresenceRow,
   type WsServerMessage,
+  type WsVoiceParticipant,
 } from "@jgengine/ws/protocol";
 
 import type { GameHost, HostChangeEvent } from "./host";
@@ -151,6 +152,40 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
     }
   };
 
+  const voiceRosters = new Map<string, Map<string, WsVoiceParticipant>>();
+
+  const voiceRoster = (serverId: string, channelId: string): Map<string, WsVoiceParticipant> => {
+    const key = `${serverId}|${channelId}`;
+    let roster = voiceRosters.get(key);
+    if (roster === undefined) {
+      roster = new Map();
+      voiceRosters.set(key, roster);
+    }
+    return roster;
+  };
+
+  const voiceParticipants = (serverId: string, channelId: string): WsVoiceParticipant[] =>
+    [...voiceRoster(serverId, channelId).values()].map((participant) => ({ ...participant }));
+
+  const broadcastVoice = (serverId: string, channelId: string) => {
+    const key = subscriptionKey("voice", serverId, channelId);
+    const data = voiceParticipants(serverId, channelId);
+    for (const connection of connections) {
+      if (!connection.subscriptions.has(key)) continue;
+      send(connection, { v: 1, t: "update", channel: "voice", serverId, action: channelId, data });
+    }
+  };
+
+  const dropVoice = (connection: Connection) => {
+    if (connection.userId === null) return;
+    for (const [key, roster] of voiceRosters) {
+      if (!roster.delete(connection.userId)) continue;
+      if (roster.size === 0) voiceRosters.delete(key);
+      const [serverId, channelId] = key.split("|") as [string, string];
+      broadcastVoice(serverId, channelId);
+    }
+  };
+
   const handleChatSend = (
     connection: Connection,
     message: { id: number; serverId: string; channelId: string; body: string },
@@ -191,7 +226,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
 
   const pushSubscription = async (
     connection: Connection,
-    channel: "server" | "player" | "feed" | "presence" | "chat",
+    channel: "server" | "player" | "feed" | "presence" | "chat" | "voice",
     serverId: string,
     action?: string,
   ) => {
@@ -214,6 +249,16 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
         serverId,
         action: channelId,
         data: chatRing(serverId, channelId).slice(),
+      });
+    } else if (channel === "voice") {
+      const channelId = action ?? "";
+      send(connection, {
+        v: 1,
+        t: "update",
+        channel,
+        serverId,
+        action: channelId,
+        data: voiceParticipants(serverId, channelId),
       });
     } else {
       send(connection, { v: 1, t: "update", channel, serverId, data: presenceRows(serverId) });
@@ -371,6 +416,32 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
           handleChatSend(connection, message);
           return;
         }
+        case "voiceJoin": {
+          const participant: WsVoiceParticipant = { userId };
+          if (message.streamId !== undefined) participant.streamId = message.streamId;
+          voiceRoster(message.serverId, message.channelId).set(userId, participant);
+          reply(connection, message.id, null);
+          broadcastVoice(message.serverId, message.channelId);
+          return;
+        }
+        case "voiceLeave": {
+          const roster = voiceRoster(message.serverId, message.channelId);
+          const removed = roster.delete(userId);
+          reply(connection, message.id, null);
+          if (removed) broadcastVoice(message.serverId, message.channelId);
+          return;
+        }
+        case "voicePublish": {
+          const participant = voiceRoster(message.serverId, message.channelId).get(userId);
+          if (participant === undefined) {
+            replyError(connection, message.id, "not in this voice channel");
+            return;
+          }
+          participant.streamId = message.streamId;
+          reply(connection, message.id, null);
+          broadcastVoice(message.serverId, message.channelId);
+          return;
+        }
         case "subscribe": {
           connection.subscriptions.add(subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
@@ -403,6 +474,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
     socket.on("close", () => {
       connections.delete(connection);
       dropPresence(connection);
+      dropVoice(connection);
     });
   });
 
