@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
     "start": "node .output/server/index.mjs"
   },
   "dependencies": {

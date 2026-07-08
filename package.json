@@ -4,7 +4,7 @@
   "type": "module",
   "workspaces": ["packages/*", "Games/*", "apps/*", "examples/*", "registry"],
   "scripts": {
-    "build": "bun run --cwd packages/core build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build && bun run --cwd packages/assets build",
+    "build": "bun run --cwd packages/core build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build && bun run --cwd packages/assets build && bun run --cwd packages/github build",
     "check-artifacts": "bun scripts/check-no-src-artifacts.ts",
     "check-skills": "bun scripts/check-skill-sync.ts",
     "check-game-shape": "bun scripts/check-game-shape.ts",
