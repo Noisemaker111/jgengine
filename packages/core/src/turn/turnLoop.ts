@@ -8,13 +8,6 @@ export interface PoolConfig {
   start?: number;
 }
 
-export interface TurnLoopConfig {
-  order: readonly string[];
-  phases?: readonly string[];
-  pools?: readonly PoolConfig[];
-  commit?: { mode: CommitMode };
-}
-
 export interface PoolState {
   id: string;
   current: number;
@@ -28,6 +21,22 @@ export interface TurnState {
   active: string | null;
   phaseIndex: number;
   phase: string | null;
+}
+
+export interface TurnLoopHooks {
+  onTurnStart?: (participant: string, state: TurnState) => void;
+  onTurnEnd?: (participant: string, state: TurnState) => void;
+  onRoundStart?: (round: number, state: TurnState) => void;
+  onPoolChange?: (participant: string, pool: PoolState) => void;
+  onChange?: () => void;
+}
+
+export interface TurnLoopConfig {
+  order: readonly string[];
+  phases?: readonly string[];
+  pools?: readonly PoolConfig[];
+  commit?: { mode: CommitMode };
+  hooks?: TurnLoopHooks;
 }
 
 export interface TurnLoopSnapshot {
@@ -64,6 +73,7 @@ export interface TurnLoop<TAction = unknown> {
 export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> {
   const poolConfigs = config.pools ?? [];
   const phases = config.phases ?? [];
+  const hooks = config.hooks ?? {};
   const commit = createCommitController<TAction>({
     mode: config.commit?.mode ?? "immediate",
     participants: config.order,
@@ -81,6 +91,13 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
       set.set(pc.id, { id: pc.id, current: pc.start ?? pc.max, max: pc.max });
     }
     pools.set(participantId, set);
+  }
+
+  function resetPoolsAndNotify(participantId: string): void {
+    resetPools(participantId);
+    if (hooks.onPoolChange !== undefined) {
+      for (const pool of pools.get(participantId)!.values()) hooks.onPoolChange(participantId, { ...pool });
+    }
   }
 
   function ensurePools(participantId: string): Map<string, PoolState> {
@@ -111,42 +128,58 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
     };
   }
 
+  function changed(next: TurnState): TurnState {
+    hooks.onChange?.();
+    return next;
+  }
+
   function advanceTurn(): TurnState {
     if (order.length === 0) {
       activeIndex = -1;
-      return state();
+      return changed(state());
     }
+    const outgoing = active();
+    if (outgoing !== null) hooks.onTurnEnd?.(outgoing, state());
     phaseIndex = 0;
+    let wrapped = false;
     if (activeIndex < 0) {
       activeIndex = 0;
     } else if (activeIndex >= order.length - 1) {
       activeIndex = 0;
       round += 1;
+      wrapped = true;
     } else {
       activeIndex += 1;
     }
+    if (wrapped) hooks.onRoundStart?.(round, state());
     const current = active();
-    if (current !== null) resetPools(current);
-    return state();
+    if (current !== null) resetPoolsAndNotify(current);
+    if (current !== null) hooks.onTurnStart?.(current, state());
+    return changed(state());
   }
 
   function advancePhase(): TurnState {
     if (phases.length === 0) return advanceTurn();
     if (phaseIndex >= phases.length - 1) return advanceTurn();
     phaseIndex += 1;
-    return state();
+    return changed(state());
   }
 
   function advanceRound(): TurnState {
     if (order.length === 0) {
       round += 1;
-      return state();
+      return changed(state());
     }
+    const outgoing = active();
+    if (outgoing !== null) hooks.onTurnEnd?.(outgoing, state());
     round += 1;
     activeIndex = 0;
     phaseIndex = 0;
-    for (const id of order) resetPools(id);
-    return state();
+    hooks.onRoundStart?.(round, state());
+    for (const id of order) resetPoolsAndNotify(id);
+    const current = active();
+    if (current !== null) hooks.onTurnStart?.(current, state());
+    return changed(state());
   }
 
   function setOrder(next: readonly string[], keepActive = false): TurnState {
@@ -161,7 +194,7 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
     } else {
       activeIndex = Math.min(Math.max(activeIndex, 0), order.length - 1);
     }
-    return state();
+    return changed(state());
   }
 
   function addParticipant(id: string, atIndex?: number): TurnState {
@@ -171,7 +204,7 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
     resetPools(id);
     if (activeIndex < 0) activeIndex = 0;
     else if (index <= activeIndex) activeIndex += 1;
-    return state();
+    return changed(state());
   }
 
   function removeParticipant(id: string): TurnState {
@@ -186,7 +219,7 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
     } else if (activeIndex >= order.length) {
       activeIndex = 0;
     }
-    return state();
+    return changed(state());
   }
 
   return {
@@ -215,22 +248,34 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
       const p = ensurePools(participantId).get(poolId);
       if (p === undefined || p.current < amount) return false;
       p.current -= amount;
+      hooks.onPoolChange?.(participantId, { ...p });
+      hooks.onChange?.();
       return true;
     },
     gain: (participantId, poolId, amount) => {
       const p = ensurePools(participantId).get(poolId);
       if (p === undefined) return false;
       p.current = Math.min(p.max, p.current + amount);
+      hooks.onPoolChange?.(participantId, { ...p });
+      hooks.onChange?.();
       return true;
     },
     refill: (participantId, poolId) => {
       const set = ensurePools(participantId);
       if (poolId === undefined) {
-        for (const p of set.values()) p.current = p.max;
+        for (const p of set.values()) {
+          p.current = p.max;
+          hooks.onPoolChange?.(participantId, { ...p });
+        }
+        hooks.onChange?.();
         return;
       }
       const p = set.get(poolId);
-      if (p !== undefined) p.current = p.max;
+      if (p !== undefined) {
+        p.current = p.max;
+        hooks.onPoolChange?.(participantId, { ...p });
+        hooks.onChange?.();
+      }
     },
     capture: () => {
       const poolSnapshot: Record<string, Record<string, number>> = {};
@@ -260,6 +305,7 @@ export function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnL
         }
         pools.set(participantId, set);
       }
+      hooks.onChange?.();
     },
   };
 }

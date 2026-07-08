@@ -156,6 +156,70 @@ describe("effect system", () => {
     expect(stats["far"]!["health"]!.current).toBe(100);
   });
 
+  test("canReceive back-compat: omitted magnitude still rejects a fully depleted target", () => {
+    const { system } = createWorld({
+      enemy: { stats: { health: { max: 10 } }, receive: { damage: { order: ["health"] } } },
+    });
+    system.applyEffect({ from: "p", to: "enemy", effect: "damage", via: { amount: 10 } });
+    expect(system.canReceive("enemy", "damage")).toBe("pools-depleted");
+  });
+
+  test("a heal succeeds on a fully-depleted target instead of being blocked", () => {
+    const { system, stats } = createWorld({
+      enemy: { stats: { health: { max: 10 } }, receive: { heal: { order: ["health"] } } },
+    });
+    stats["enemy"]!["health"] = { current: 0, max: 10, min: 0 };
+    expect(system.canReceive("enemy", "heal", -5)).toBeNull();
+    const results = system.applyEffect({ from: "p", to: "enemy", effect: "heal", via: { amount: -5 } });
+    expect(results[0]!.applied).toEqual([{ statId: "health", delta: 5 }]);
+    expect(stats["enemy"]!["health"]!.current).toBe(5);
+  });
+
+  test("a heal is rejected with pools-full when every pool is already at max", () => {
+    const { system, stats } = createWorld({
+      ally: { stats: { health: { max: 10 } }, receive: { heal: { order: ["health"] } } },
+    });
+    expect(system.canReceive("ally", "heal", -5)).toBe("pools-full");
+    expect(system.applyEffect({ from: "p", to: "ally", effect: "heal", via: { amount: -5 } })).toEqual([]);
+    expect(stats["ally"]!["health"]!.current).toBe(10);
+  });
+
+  test("damage is still rejected pools-depleted when every pool is at min", () => {
+    const { system, stats } = createWorld({
+      enemy: { stats: { health: { max: 10 } }, receive: { damage: { order: ["health"] } } },
+    });
+    stats["enemy"]!["health"] = { current: 0, max: 10, min: 0 };
+    expect(system.canReceive("enemy", "damage", 5)).toBe("pools-depleted");
+    expect(system.applyEffect({ from: "p", to: "enemy", effect: "damage", via: { amount: 5 } })).toEqual([]);
+  });
+
+  test("AoE heal reaches depleted targets that a plain pools-depleted check would reject", () => {
+    const { system, stats } = createWorld({
+      a: {
+        stats: { health: { max: 100 } },
+        receive: { heal: { order: ["health"] } },
+        position: [0, 0, 0],
+      },
+      b: {
+        stats: { health: { max: 100 } },
+        receive: { heal: { order: ["health"] } },
+        position: [0, 0, 3],
+      },
+    });
+    stats["a"]!["health"] = { current: 0, max: 100, min: 0 };
+    stats["b"]!["health"] = { current: 0, max: 100, min: 0 };
+    const results = system.applyEffect({
+      from: "p",
+      effect: "heal",
+      via: { amount: -20 },
+      at: [0, 0, 0],
+      radius: 5,
+    });
+    expect(results.map((result) => result.instanceId).sort()).toEqual(["a", "b"]);
+    expect(stats["a"]!["health"]!.current).toBe(20);
+    expect(stats["b"]!["health"]!.current).toBe(20);
+  });
+
   test("AoE defaults skip LoS filtering only when los is false", () => {
     const { system, stats } = createWorld(
       {
