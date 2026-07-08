@@ -11,7 +11,7 @@ import type {
   TerrainEnvironmentDescriptor,
   WeatherEnvironmentDescriptor,
 } from "@jgengine/core/world/features";
-import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
+import { resolveTerrainField, resolveTerrainPalette, type TerrainField } from "@jgengine/core/world/terrain";
 
 import { GeneratedBuilding } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
@@ -28,10 +28,12 @@ export interface EnvironmentSceneProps {
 const DEFAULT_TERRAIN_FREQUENCY = 0.03;
 
 function TerrainGround({ terrain }: { terrain: TerrainEnvironmentDescriptor }) {
+  const palette = resolveTerrainPalette(terrain);
   return (
     <ProceduralGround
       terrain={{
         size: [terrain.bounds.w, terrain.bounds.d],
+        segments: terrain.segments,
         height: terrain.height,
         seed: terrain.seed,
         moundScale: terrain.frequency ?? DEFAULT_TERRAIN_FREQUENCY,
@@ -39,7 +41,11 @@ function TerrainGround({ terrain }: { terrain: TerrainEnvironmentDescriptor }) {
         ridged: terrain.ridged,
         baseOffset: terrain.baseHeight,
       }}
-      colors={terrain.waterLevel === undefined ? undefined : { waterlineHeight: terrain.waterLevel }}
+      colors={{
+        low: palette.low,
+        high: palette.high,
+        ...(terrain.waterLevel === undefined ? {} : { waterline: palette.waterline, waterlineHeight: terrain.waterLevel }),
+      }}
     />
   );
 }

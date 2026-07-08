@@ -9,11 +9,21 @@ export interface EnvironmentArea extends WorldBounds {
   h?: number;
 }
 
+export interface TerrainColors {
+  low?: string;
+  high?: string;
+  waterline?: string;
+}
+
 export interface TerrainEnvironmentConfig {
   bounds?: WorldBounds;
   height?: number;
   heightMap?: string;
+  /** Named palette preset (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); default "grass". Overridden field-by-field by `colors`. */
   material?: string;
+  /** Explicit low/high/waterline hex colors; any field left unset falls back to the resolved `material` preset. */
+  colors?: TerrainColors;
+  segments?: number;
   seed?: string;
   frequency?: number;
   octaves?: number;
@@ -193,6 +203,8 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
     {
       ...(config.heightMap === undefined ? {} : { heightMap: config.heightMap }),
       ...(config.material === undefined ? {} : { material: config.material }),
+      ...(config.colors === undefined ? {} : { colors: config.colors }),
+      ...(config.segments === undefined ? {} : { segments: config.segments }),
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.frequency === undefined ? {} : { frequency: config.frequency }),
       ...(config.octaves === undefined ? {} : { octaves: config.octaves }),

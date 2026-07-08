@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 import type { EventMeter } from "@jgengine/core/stats/eventMeter";
@@ -279,4 +280,65 @@ export interface EventMeterView {
 export function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView {
   useEngineHeartbeat(options?.intervalMs ?? 80);
   return { value: meter.value(), fraction: meter.fraction(), tier: meter.tier(), ready: meter.ready() };
+}
+
+type HeldKeyEventTarget = Pick<Window, "addEventListener" | "removeEventListener">;
+
+export function createHeldKeyTracker(target: HeldKeyEventTarget): {
+  isDown: (code: string) => boolean;
+  dispose: () => void;
+} {
+  const held = new Set<string>();
+  const onKeyDown = (event: KeyboardEvent) => held.add(event.code);
+  const onKeyUp = (event: KeyboardEvent) => held.delete(event.code);
+  const onBlur = () => held.clear();
+  target.addEventListener("keydown", onKeyDown);
+  target.addEventListener("keyup", onKeyUp);
+  target.addEventListener("blur", onBlur);
+  return {
+    isDown: (code) => held.has(code),
+    dispose: () => {
+      target.removeEventListener("keydown", onKeyDown);
+      target.removeEventListener("keyup", onKeyUp);
+      target.removeEventListener("blur", onBlur);
+      held.clear();
+    },
+  };
+}
+
+/**
+ * Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a
+ * released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module
+ * scope. The returned predicate is stable across renders.
+ */
+export function useHeldKeys(): (code: string) => boolean {
+  const trackerRef = useRef<ReturnType<typeof createHeldKeyTracker> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const tracker = createHeldKeyTracker(window);
+    trackerRef.current = tracker;
+    return () => {
+      tracker.dispose();
+      trackerRef.current = null;
+    };
+  }, []);
+
+  return useCallback((code: string) => trackerRef.current?.isDown(code) ?? false, []);
+}
+
+export interface UseAxisChannelResult {
+  channel: AxisChannel;
+  isDown: (code: string) => boolean;
+}
+
+/**
+ * Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
+ * The channel is recreated when `config` identity changes, so pass a stable config (useMemo/module
+ * constant at the call site) unless a rebind is intended.
+ */
+export function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult {
+  const isDown = useHeldKeys();
+  const channel = useMemo(() => new AxisChannel(config), [config]);
+  return { channel, isDown };
 }

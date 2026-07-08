@@ -1,7 +1,7 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
-import type { GameContext, GameContextContent } from "../runtime/gameContext";
+import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { LootFilterRule } from "./lootFilter";
@@ -332,12 +332,14 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   prompts?: (ctx: GameContext) => readonly PositionedPrompt[];
   /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
+  /** Cast/receive shadows across the scene (R3F Canvas shadow pass). Default true. */
+  shadows?: boolean;
   /** Pointer-driven input: click-to-move, box-select, right-click verbs, cursor aim (#22/#30/#31). */
   pointer?: PointerConfig;
   /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */
   touch?: TouchControlsConfig | false;
-  /** Opt in to world-space health bars floating over non-local entities that carry the stat. */
-  worldHealthBars?: boolean | { statId?: string };
+  /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles. */
+  worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[] };
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. */
   audio?: { sounds: Record<string, SoundDef>; buses?: Record<string, AudioBusDef> };
   /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */
@@ -348,4 +350,12 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   worldItem?: WorldItemRenderConfig;
   /** Player-vs-world collision for the first-person controller (block/voxel worlds). Off by default (flat ground). */
   collision?: VoxelCollisionConfig;
+}
+
+export function worldHealthBarAllowsRole(
+  roles: readonly CatalogEntityRole[] | undefined,
+  role: CatalogEntityRole | undefined,
+): boolean {
+  if (roles === undefined) return true;
+  return role !== undefined && roles.includes(role);
 }

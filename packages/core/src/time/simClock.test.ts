@@ -143,6 +143,51 @@ describe("createSimClock — calendar", () => {
     expect(clock.calendar().hour).toBe(12);
     expect(clock.calendar().dayFraction).toBeCloseTo(0.5, 5);
   });
+
+  test("year and dayOfYear default to a 365-day year without config", () => {
+    const clock = createSimClock({ config: { dayLength: 86400 } });
+    expect(clock.calendar().year).toBe(0);
+    expect(clock.calendar().dayOfYear).toBe(0);
+    clock.advance(365 * 86400 + 1);
+    const rolled = clock.calendar();
+    expect(rolled.year).toBe(1);
+    expect(rolled.dayOfYear).toBe(0);
+  });
+
+  test("daysPerYear configures a custom year length", () => {
+    const clock = createSimClock({ config: { dayLength: 86400, daysPerYear: 10 } });
+    clock.advance(9 * 86400);
+    expect(clock.calendar().year).toBe(0);
+    expect(clock.calendar().dayOfYear).toBe(9);
+    clock.advance(86400 + 1);
+    const rolled = clock.calendar();
+    expect(rolled.year).toBe(1);
+    expect(rolled.dayOfYear).toBe(0);
+  });
+
+  test("yearFraction tracks progress through the configured year", () => {
+    const clock = createSimClock({ config: { dayLength: 86400, daysPerYear: 4 } });
+    clock.advance(2 * 86400);
+    expect(clock.calendar().yearFraction).toBeCloseTo(0.5, 5);
+  });
+
+  test("season is derived from dayOfYear across equal segments when configured", () => {
+    const clock = createSimClock({
+      config: { dayLength: 86400, daysPerYear: 8, seasons: ["spring", "summer", "fall", "winter"] },
+    });
+    expect(clock.calendar().season).toBe("spring");
+    clock.advance(2 * 86400);
+    expect(clock.calendar().season).toBe("summer");
+    clock.advance(2 * 86400);
+    expect(clock.calendar().season).toBe("fall");
+    clock.advance(2 * 86400);
+    expect(clock.calendar().season).toBe("winter");
+  });
+
+  test("season is undefined unless seasons are configured", () => {
+    const clock = createSimClock({ config: { dayLength: 86400 } });
+    expect(clock.calendar().season).toBeUndefined();
+  });
 });
 
 describe("createSimClock — onChange", () => {

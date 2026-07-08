@@ -91,6 +91,27 @@ describe("pathFollow", () => {
     ]);
   });
 
+  test("pathFromNav samples terrain height via a sampleHeight source, plus an additive offset", () => {
+    const field = { sampleHeight: (x: number, z: number) => x + z };
+    expect(
+      pathFromNav(
+        [
+          [1, 2],
+          [3, 4],
+        ],
+        field,
+        0.5,
+      ),
+    ).toEqual([
+      [1, 3.5, 2],
+      [3, 7.5, 4],
+    ]);
+  });
+
+  test("pathFromNav applies an offset on top of a fixed y", () => {
+    expect(pathFromNav([[1, 2]], 1, 0.25)).toEqual([[1, 1.25, 2]]);
+  });
+
   test("single-waypoint path is immediately done and stationary", () => {
     const config: PathFollowConfig = { waypoints: [[5, 0, 5]], speed: 3 };
     let state = createPathFollow(config);

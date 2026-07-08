@@ -89,6 +89,18 @@ describe("createGameContext", () => {
     expect(ctx.scene.entity.stats.get(bare, "health")).toBeNull();
   });
 
+  test("scene.entity.update patches movement and rotation, bumps version, and is readable via get", () => {
+    const ctx = makeContext();
+    const id = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
+    const before = ctx.version();
+    expect(ctx.scene.entity.update(id, { movement: { walkSpeed: 4 }, rotationY: 1.5 })).toBe(true);
+    expect(ctx.version()).toBeGreaterThan(before);
+    const entity = ctx.scene.entity.get(id);
+    expect(entity?.movement).toEqual({ walkSpeed: 4 });
+    expect(entity?.rotationY).toBe(1.5);
+    expect(ctx.scene.entity.update("missing", { rotationY: 2 })).toBe(false);
+  });
+
   test("scene.object.catalog resolves a placed object via objectById", () => {
     const ctx = makeContext();
     const chest = ctx.scene.object.place("chest", 0, 0, 0);
@@ -133,6 +145,25 @@ describe("createGameContext", () => {
     expect(entries).toHaveLength(1);
     expect((entries[0]!.data as { instanceId: string }).instanceId).toBe(dummy);
     unbind();
+  });
+
+  test("feed.limit config caps entries retained per action", () => {
+    const ctx = createGameContext({
+      definition: defineGame({
+        name: "FeedLimitGame",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+        feed: { limit: 3 },
+      }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+    });
+
+    for (let i = 0; i < 5; i++) ctx.game.feed.push("chat", i);
+
+    const recent = ctx.game.feed.recent("chat");
+    expect(recent).toHaveLength(3);
+    expect(recent.map((entry) => entry.data)).toEqual([2, 3, 4]);
   });
 
   test("lethal hit from the local player attributes a player_kill reason", () => {

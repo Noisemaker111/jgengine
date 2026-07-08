@@ -132,6 +132,28 @@ describe("advanceVoxelPlayer", () => {
     expect(body.grounded).toBe(true);
   });
 
+  test("a jumpVelocity override reaches a higher peak than the default", () => {
+    const { isSolid } = solidFrom(floorLayer(-1));
+    const defaultBody = createVoxelPlayerBody(0, 0, 0);
+    advanceVoxelPlayer(defaultBody, jumpIntent(), 0, -1, 2.5, DT, isSolid);
+    let defaultPeak = defaultBody.y;
+    for (let frame = 0; frame < 90; frame += 1) {
+      advanceVoxelPlayer(defaultBody, idle, 0, -1, 2.5, DT, isSolid);
+      defaultPeak = Math.max(defaultPeak, defaultBody.y);
+    }
+
+    const boostedBody = createVoxelPlayerBody(0, 0, 0);
+    const tuning = { jumpVelocity: 14 };
+    advanceVoxelPlayer(boostedBody, jumpIntent(), 0, -1, 2.5, DT, isSolid, DEFAULT_VOXEL_DIMS, tuning);
+    let boostedPeak = boostedBody.y;
+    for (let frame = 0; frame < 90; frame += 1) {
+      advanceVoxelPlayer(boostedBody, idle, 0, -1, 2.5, DT, isSolid, DEFAULT_VOXEL_DIMS, tuning);
+      boostedPeak = Math.max(boostedPeak, boostedBody.y);
+    }
+
+    expect(boostedPeak).toBeGreaterThan(defaultPeak);
+  });
+
   test("respects a wide footprint against a diagonal gap it cannot fit", () => {
     // Two solid columns leaving a 0.0-wide seam at the cell boundary; a body of
     // half-width 0.3 should not tunnel through the shared edge downward.

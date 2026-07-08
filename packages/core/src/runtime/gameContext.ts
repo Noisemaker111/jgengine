@@ -83,7 +83,7 @@ import {
   type StatCatalog,
   type StatValueMap,
 } from "../scene/entityStats";
-import type { EntityPose, EntityPosition, SceneEntity, SpawnOptions } from "../scene/entityStore";
+import type { EntityPose, EntityPosition, EntityStore, SceneEntity, SpawnOptions } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
 import { createRoster, type Roster } from "../scene/roster";
@@ -183,6 +183,7 @@ export interface SceneEntityContext {
   spawn(name: string, options?: SpawnOptions): string;
   despawn(instanceId: string): boolean;
   setPose(instanceId: string, pose: EntityPose): boolean;
+  update: EntityStore["update"];
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
   stats: EntityStatsApi;
@@ -374,7 +375,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       signal.notify();
     },
   };
-  const feed = createGameFeed();
+  const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry();
   const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify);
   const rawSocial = createSocial({
@@ -840,6 +841,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         spawn: spawnEntity,
         despawn: despawnEntity,
         setPose: entities.setPose,
+        update: entities.update,
         get: entities.get,
         list: entities.list,
         stats: entityStats,

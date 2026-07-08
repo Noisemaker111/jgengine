@@ -15,9 +15,11 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import {
+  actionRepeatMs,
   createActionStateTracker,
   hotbarSlotActionIndex,
   resolveActionCommand,
+  shouldDispatchAction,
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
@@ -64,7 +66,7 @@ import type { EntitySpriteConfig, ModelConfig, PointerConfig } from "@jgengine/c
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
-import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind } from "./camera";
+import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
 import { PointerProbe } from "./pointer/PointerProbe";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import {
@@ -493,6 +495,7 @@ function FrameDriver({
   const voxelBodyRef = useRef<VoxelPlayerBody | null>(null);
   const solidCacheRef = useRef<{ count: number; set: Set<string> }>({ count: -1, set: new Set() });
   const hasReportedTickError = useRef(false);
+  const repeatFiredAtRef = useRef<Map<string, number>>(new Map());
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
   const collision = playable.collision;
@@ -504,6 +507,11 @@ function FrameDriver({
     }),
     [collision],
   );
+  const movementTuning = useMemo(() => {
+    const physics = playable.game.physics;
+    if (physics?.gravity === undefined && physics?.jumpVelocity === undefined) return undefined;
+    return { gravityAcceleration: physics.gravity, jumpVelocity: physics.jumpVelocity };
+  }, [playable]);
   const autoPickupRadius = useMemo(() => {
     const cfg = playable.worldItem?.autoPickup;
     if (cfg === undefined || cfg === false) return null;
@@ -556,6 +564,7 @@ function FrameDriver({
           rawDt,
           isSolid,
           voxelDims,
+          movementTuning,
         );
         ctx.scene.entity.setPose(playerId, {
           position: [body.x, body.y, body.z],
@@ -573,6 +582,7 @@ function FrameDriver({
           forwardZ,
           player.movement.walkSpeed ?? 2,
           rawDt,
+          movementTuning,
         );
         const nextX = player.position[0] + step.stepX;
         const nextZ = player.position[2] + step.stepZ;
@@ -615,10 +625,14 @@ function FrameDriver({
         });
       }
     }
+    const aimOverride = pointerAim ? pointerAimFor(ctx, pointerService) : undefined;
+    const commandAim: Aim = aimOverride ?? { yaw: yawRef.current, pitch: pitchRef.current };
+    const nowMs = performance.now();
     for (const action of Object.keys(playable.game.input ?? {})) {
-      if (!tracker.wasPressed(action)) continue;
+      const pressed = tracker.wasPressed(action);
       if (action === "ping" && pingCommand !== undefined) continue;
       if (action === "interact") {
+        if (!pressed) continue;
         const prompts = playable.prompts?.(ctx);
         const focus = prompts === undefined ? null : ctx.scene.entity.get(playerId);
         if (prompts !== undefined && focus !== null) {
@@ -629,15 +643,25 @@ function FrameDriver({
         }
         continue;
       }
+      const fire = shouldDispatchAction({
+        pressed,
+        down: tracker.isDown(action),
+        repeatMs: actionRepeatMs(playable.game.input?.[action]),
+        lastFiredAt: repeatFiredAtRef.current.get(action) ?? null,
+        now: nowMs,
+      });
+      if (!fire) continue;
+      repeatFiredAtRef.current.set(action, nowMs);
       const command = resolveActionCommand(
         action,
         (name) => ctx.game.commands.has(name),
         RESERVED_INPUT_ACTIONS,
       );
-      if (command !== null) ctx.game.commands.run(command, {});
+      if (command !== null) {
+        ctx.game.commands.run(command, { yaw: yawRef.current, pitch: pitchRef.current, aim: commandAim });
+      }
     }
     if (hotbarId !== null) {
-      const aimOverride = pointerAim ? pointerAimFor(ctx, pointerService) : undefined;
       for (const { action, slot } of slotActions) {
         if (!tracker.wasPressed(action)) continue;
         const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current, aimOverride);
@@ -916,6 +940,7 @@ export function GamePlayerShell({
   const firstPerson = rigKind === "first";
   const showReticle =
     (firstPerson && playable.camera?.firstPerson?.reticle !== false) || rigKind === "shoulder";
+  const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);
   const worldBars = playable.worldHealthBars;
   const barsStatId =
     worldBars === undefined || worldBars === false
@@ -923,6 +948,9 @@ export function GamePlayerShell({
       : worldBars === true
         ? "health"
         : worldBars.statId ?? "health";
+  const barsRoles =
+    worldBars === undefined || worldBars === true || worldBars === false ? undefined : worldBars.roles;
+  const resolveEntityRole = (entity: SceneEntity) => playable.content.entityById?.(entity.name)?.role;
 
   const pointer: PointerConfig | undefined = playable.pointer;
   const pointerUsesLeft = pointer !== undefined && (pointer.select === true || pointer.moveCommand !== undefined);
@@ -1084,6 +1112,7 @@ export function GamePlayerShell({
           near: playable.camera?.frustum?.near ?? 0.1,
           far: playable.camera?.frustum?.far ?? 300,
         }}
+        shadows={playable.shadows ?? true}
         style={{ touchAction: "none" }}
       >
         <color attach="background" args={["#14161b"]} />
@@ -1100,7 +1129,9 @@ export function GamePlayerShell({
             selectedIds={selectedIds}
           />
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
-          {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
+          {barsStatId !== null ? (
+            <WorldEntityBars statId={barsStatId} roles={barsRoles} resolveRole={resolveEntityRole} />
+          ) : null}
           <WorldItems config={playable.worldItem} />
           <WorldTelegraphs />
           <WorldFloatText />
@@ -1114,6 +1145,7 @@ export function GamePlayerShell({
             pitchRef={pitchRef}
             config={cameraConfig}
             pointerControls={pointerUsesLeft}
+            panKeysEnabled={rtsPanKeysEnabled}
             onDragChange={(dragging) => {
               cameraDraggingRef.current = dragging;
             }}
