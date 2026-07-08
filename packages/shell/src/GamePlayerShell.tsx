@@ -15,6 +15,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import {
+  actionRepeatIntervals,
+  createActionRepeater,
   createActionStateTracker,
   hotbarSlotActionIndex,
   resolveActionCommand,
@@ -509,6 +511,9 @@ function FrameDriver({
   const hasReportedTickError = useRef(false);
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
+  const declaredActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
+  const repeatIntervals = useMemo(() => actionRepeatIntervals(playable.game.input ?? {}), [playable]);
+  const actionRepeater = useMemo(() => createActionRepeater(repeatIntervals), [repeatIntervals]);
 
   useFrame((_state, rawDt) => {
     try {
@@ -516,6 +521,19 @@ function FrameDriver({
     const gameDt = ctx.time.advance(dt);
     if (tracker.isDown("turnLeft")) yawRef.current += TURN_SPEED * dt;
     if (tracker.isDown("turnRight")) yawRef.current -= TURN_SPEED * dt;
+
+    const heldActions = new Set<string>();
+    for (const action of declaredActions) if (tracker.isDown(action)) heldActions.add(action);
+    ctx.input.publish({
+      held: heldActions,
+      forward: (tracker.isDown("moveForward") ? 1 : 0) - (tracker.isDown("moveBack") ? 1 : 0),
+      right: (tracker.isDown("moveRight") ? 1 : 0) - (tracker.isDown("moveLeft") ? 1 : 0),
+      jump: tracker.isDown("jump"),
+      sprint: tracker.isDown("sprint"),
+      yaw: yawRef.current,
+      pitch: pitchRef.current,
+      pointerLocked: document.pointerLockElement !== null,
+    });
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
     const player = ctx.scene.entity.get(playerId);
@@ -569,8 +587,13 @@ function FrameDriver({
         });
       }
     }
-    for (const action of Object.keys(playable.game.input ?? {})) {
-      if (!tracker.wasPressed(action)) continue;
+    const nowMs = performance.now();
+    for (const action of declaredActions) {
+      const due =
+        repeatIntervals[action] === undefined
+          ? tracker.wasPressed(action)
+          : actionRepeater.due(action, tracker.isDown(action), tracker.wasPressed(action), nowMs);
+      if (!due) continue;
       if (action === "ping" && pingCommand !== undefined) continue;
       if (action === "interact") {
         const prompts = playable.prompts?.(ctx);
@@ -588,7 +611,9 @@ function FrameDriver({
         (name) => ctx.game.commands.has(name),
         RESERVED_INPUT_ACTIONS,
       );
-      if (command !== null) ctx.game.commands.run(command, {});
+      if (command !== null) {
+        ctx.game.commands.run(command, { aim: { yaw: yawRef.current, pitch: pitchRef.current } });
+      }
     }
     if (hotbarId !== null) {
       const aimOverride = pointerAim ? pointerAimFor(ctx, pointerService) : undefined;
@@ -693,6 +718,7 @@ export function GamePlayerShell({
   const cameraDraggingRef = useRef(false);
   const primaryClickRef = useRef(false);
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+  const secondaryDownRef = useRef<{ x: number; y: number } | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
   const pointerService = useMemo(() => createPointerService(), []);
   const selection = useMemo(() => createSelectionSet(), [playable]);
@@ -869,6 +895,9 @@ export function GamePlayerShell({
       pointerDownRef.current = point;
       if (pointer?.select === true) marqueeStartRef.current = point;
     }
+    if (event.button === 2 && pointer?.secondaryCommand !== undefined) {
+      secondaryDownRef.current = localXY(event);
+    }
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -880,6 +909,26 @@ export function GamePlayerShell({
   };
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button === 2) {
+      const start = secondaryDownRef.current;
+      secondaryDownRef.current = null;
+      const secondaryCommand = pointer?.secondaryCommand;
+      if (secondaryCommand === undefined || start === null || cameraDraggingRef.current) return;
+      const end = localXY(event);
+      const moved = (end.x - start.x) ** 2 + (end.y - start.y) ** 2;
+      if (moved > PRIMARY_CLICK_MOVE_THRESHOLD_PX * PRIMARY_CLICK_MOVE_THRESHOLD_PX) return;
+      const hit = pointerService.worldHit();
+      if (hit !== null && ctx.game.commands.has(secondaryCommand)) {
+        ctx.game.commands.run(secondaryCommand, {
+          point: hit.point,
+          entity: hit.entity,
+          object: hit.object,
+          normal: hit.normal,
+          aim: { yaw: yawRef.current, pitch: pitchRef.current },
+        });
+      }
+      return;
+    }
     if (event.button !== 0 || pointerDownRef.current === null) return;
     const start = pointerDownRef.current;
     pointerDownRef.current = null;

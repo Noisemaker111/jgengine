@@ -64,6 +64,7 @@ import {
 } from "../inventory/inventoryModel";
 import type { ContextVerb } from "../interaction/contextMenu";
 import type { ProximityPrompt } from "../interaction/proximityPrompt";
+import { createInputChannel, type InputChannel } from "../input/inputChannel";
 import {
   createItemUse,
   type ItemUseHandler,
@@ -293,6 +294,7 @@ export interface GameContext {
     use: GameContextItemUse;
     weapon: WeaponStats;
   };
+  input: InputChannel;
   time: SimClock;
   subscribe(listener: () => void): () => void;
   version(): number;
@@ -306,6 +308,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const signal = createChangeSignal();
   const state = createGameStateStore(signal.notify);
+  const input = createInputChannel();
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
 
   const entities = definition.scene;
@@ -932,6 +935,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       },
       weapon,
     },
+    input,
     time,
     subscribe: signal.subscribe,
     version: signal.version,

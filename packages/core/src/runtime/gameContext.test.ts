@@ -296,6 +296,27 @@ describe("game context change signal", () => {
     expect(ctx.version()).toBeGreaterThan(afterUpdate);
     expect(listener.count()).toBeGreaterThan(0);
   });
+
+  test("ctx.input starts neutral and publish never bumps ctx.version", () => {
+    const ctx = makeContext();
+    expect(ctx.input.isHeld("moveForward")).toBe(false);
+    expect(ctx.input.axis()).toEqual({ forward: 0, right: 0 });
+    const before = ctx.version();
+    ctx.input.publish({
+      held: new Set(["moveForward"]),
+      forward: 1,
+      right: 0,
+      jump: false,
+      sprint: false,
+      yaw: 0.4,
+      pitch: -0.1,
+      pointerLocked: true,
+    });
+    expect(ctx.input.isHeld("moveForward")).toBe(true);
+    expect(ctx.input.aim()).toEqual({ yaw: 0.4, pitch: -0.1 });
+    expect(ctx.input.pointerLocked()).toBe(true);
+    expect(ctx.version()).toBe(before);
+  });
 });
 
 describe("float text and projectile events", () => {

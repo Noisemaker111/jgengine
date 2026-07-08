@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import {
   actionLabel,
+  actionRepeatIntervals,
   bindingLabel,
   bindingMatches,
+  createActionRepeater,
   createActionStateTracker,
   hotbarSlotActionIndex,
   hotbarSlotBindings,
@@ -172,6 +174,61 @@ describe("resolveActionCommand", () => {
 
   test("returns null when neither the action nor ui.<action> command exists", () => {
     expect(resolveActionCommand("openParty", () => false, reserved)).toBeNull();
+  });
+});
+
+describe("createActionRepeater", () => {
+  test("the down edge always fires and restarts the timer", () => {
+    const repeater = createActionRepeater({ fire: 100 });
+    expect(repeater.due("fire", true, true, 0)).toBe(true);
+    expect(repeater.due("fire", true, false, 50)).toBe(false);
+  });
+
+  test("fires again every intervalMs while held", () => {
+    const repeater = createActionRepeater({ fire: 100 });
+    expect(repeater.due("fire", true, true, 0)).toBe(true);
+    expect(repeater.due("fire", true, false, 99)).toBe(false);
+    expect(repeater.due("fire", true, false, 100)).toBe(true);
+    expect(repeater.due("fire", true, false, 150)).toBe(false);
+    expect(repeater.due("fire", true, false, 200)).toBe(true);
+  });
+
+  test("releasing resets so the next press fires immediately", () => {
+    const repeater = createActionRepeater({ fire: 100 });
+    repeater.due("fire", true, true, 0);
+    repeater.due("fire", true, false, 100);
+    expect(repeater.due("fire", false, false, 120)).toBe(false);
+    expect(repeater.due("fire", true, true, 130)).toBe(true);
+    expect(repeater.due("fire", true, false, 140)).toBe(false);
+  });
+
+  test("actions without a configured interval never repeat past the edge", () => {
+    const repeater = createActionRepeater({});
+    expect(repeater.due("jump", true, true, 0)).toBe(true);
+    expect(repeater.due("jump", true, false, 1000)).toBe(false);
+  });
+
+  test("reset clears all timers", () => {
+    const repeater = createActionRepeater({ fire: 100 });
+    repeater.due("fire", true, true, 0);
+    repeater.reset();
+    expect(repeater.due("fire", true, false, 50)).toBe(false);
+  });
+});
+
+describe("actionRepeatIntervals", () => {
+  test("collects repeatMs from object-form entries only", () => {
+    expect(
+      actionRepeatIntervals({
+        fire: { hold: ["Mouse0"], repeatMs: 120 },
+        jump: ["Space"],
+        toggle: { toggle: ["KeyC"] },
+      }),
+    ).toEqual({ fire: 120 });
+  });
+
+  test("returns an empty map when nothing declares repeatMs", () => {
+    expect(actionRepeatIntervals({ jump: ["Space"] })).toEqual({});
   });
 });
 

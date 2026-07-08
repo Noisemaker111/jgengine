@@ -26,6 +26,8 @@ export interface PointerConfig {
   grabWorldItems?: boolean;
   /** Press the bound `ping` action → `worldHit()` → run this command with `{ point, entity, object, normal }` (contextual ping, #94). */
   pingCommand?: string;
+  /** Right-click on the world (not a drag) runs this command with `{ point, entity, object, normal, aim }`; suppresses the browser context menu. Independent of `contextMenu`/`orderCommand` — set at most one right-click behavior. */
+  secondaryCommand?: string;
 }
 
 export interface CameraFollowState {

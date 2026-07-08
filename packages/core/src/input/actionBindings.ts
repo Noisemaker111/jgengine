@@ -55,7 +55,7 @@ export type ActionStateBindingMap<TAction extends string, TCode extends string =
 
 export type ActionCodes<TCode extends string = string> =
   | readonly TCode[]
-  | { hold?: readonly TCode[]; toggle?: readonly TCode[] };
+  | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number };
 
 export type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record<
   TAction,
@@ -271,4 +271,56 @@ export function createActionStateTracker<TAction extends string, TCode extends s
       activeCodes.clear();
     },
   };
+}
+
+export interface ActionRepeatState {
+  lastFireMs: number;
+}
+
+/**
+ * Auto-repeat timing for held actions: the down edge always fires (and restarts
+ * the timer), holding fires again every `intervalsMs[action]` milliseconds, and
+ * releasing resets the timer so the next press fires immediately.
+ */
+export function createActionRepeater(intervalsMs: Record<string, number>): {
+  due(action: string, isDown: boolean, pressedThisFrame: boolean, nowMs: number): boolean;
+  reset(): void;
+} {
+  const stateByAction = new Map<string, ActionRepeatState>();
+
+  return {
+    due(action, isDown, pressedThisFrame, nowMs) {
+      if (pressedThisFrame) {
+        stateByAction.set(action, { lastFireMs: nowMs });
+        return true;
+      }
+      if (!isDown) {
+        stateByAction.delete(action);
+        return false;
+      }
+      const interval = intervalsMs[action];
+      if (interval === undefined) return false;
+      const state = stateByAction.get(action);
+      if (state === undefined || nowMs - state.lastFireMs < interval) return false;
+      stateByAction.set(action, { lastFireMs: nowMs });
+      return true;
+    },
+    reset() {
+      stateByAction.clear();
+    },
+  };
+}
+
+/** Collect `repeatMs` from an `ActionCodesMap`'s object-form entries, keyed by action. */
+export function actionRepeatIntervals<TAction extends string, TCode extends string>(
+  map: ActionCodesMap<TAction, TCode>,
+): Record<string, number> {
+  const intervals: Record<string, number> = {};
+  for (const action of Object.keys(map) as TAction[]) {
+    const codes = map[action];
+    if (Array.isArray(codes)) continue;
+    const modes = codes as { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number };
+    if (modes.repeatMs !== undefined) intervals[action] = modes.repeatMs;
+  }
+  return intervals;
 }
