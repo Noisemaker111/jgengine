@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
+import { BEDROCK_BLOCK, ORES } from "./blocks";
 import { content } from "./content";
 import { game } from "./game";
 import { loop } from "./loop";
@@ -30,11 +31,21 @@ describe("voxel-mine world", () => {
   });
 
   test("all six palette block types are present in the world", () => {
-    expect(countOf("block_stone")).toBe(span * span);
+    expect(countOf("block_stone")).toBeGreaterThanOrEqual(span * span);
     expect(countOf("block_dirt")).toBe(span * span);
     expect(countOf("block_grass")).toBeGreaterThan(span * span);
     expect(countOf("block_wood")).toBeGreaterThan(0);
     expect(countOf("block_leaves")).toBeGreaterThan(0);
     expect(countOf("block_sand")).toBe(4);
+  });
+
+  test("the shaft floor is a full bedrock layer", () => {
+    expect(countOf(BEDROCK_BLOCK)).toBe(span * span);
+  });
+
+  test("every ore type is mineable somewhere in the placed scene", () => {
+    for (const ore of ORES) {
+      expect(countOf(ore.id)).toBeGreaterThan(0);
+    }
   });
 });

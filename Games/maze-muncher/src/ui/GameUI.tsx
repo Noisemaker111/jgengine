@@ -1,7 +1,14 @@
-import { useEntityStat, usePlayer, useSceneEntities } from "@jgengine/react/hooks";
+import { useEntityStat, useGame, usePlayer, useSceneEntities } from "@jgengine/react/hooks";
 
 import { LIVES, SCORE, START_LIVES } from "../catalog";
-import { getFrightenedRemaining, getPhase, pelletsLeft } from "../loop";
+import {
+  getFrightenedRemaining,
+  getLevel,
+  getLevelUpRemaining,
+  getPhase,
+  MAX_LEVEL,
+  pelletsLeft,
+} from "../loop";
 
 function ScorePanel({ userId }: { userId: string }) {
   const score = useEntityStat(userId, SCORE);
@@ -30,6 +37,18 @@ function LivesPanel({ userId }: { userId: string }) {
   );
 }
 
+function LevelPanel() {
+  useSceneEntities();
+  return (
+    <div className="rounded-md border border-emerald-400/40 bg-black/70 px-3 py-1.5 text-center shadow-lg">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Level</div>
+      <div className="font-mono text-2xl leading-none text-white tabular-nums">
+        {getLevel()}/{MAX_LEVEL}
+      </div>
+    </div>
+  );
+}
+
 function PelletCounter() {
   useSceneEntities();
   return (
@@ -42,13 +61,37 @@ function PelletCounter() {
 
 function StatusBanner() {
   useSceneEntities();
+  const { commands } = useGame();
   const phase = getPhase();
   const fright = getFrightenedRemaining();
+  if (phase === "levelup") {
+    return (
+      <Banner
+        title={`LEVEL ${getLevel()}`}
+        subtitle={`${getLevelUpRemaining().toFixed(1)}s to go`}
+        tone="text-emerald-300 border-emerald-400/50"
+      />
+    );
+  }
   if (phase === "won") {
-    return <Banner title="MAZE CLEARED" subtitle="Every dot devoured" tone="text-emerald-300 border-emerald-400/50" />;
+    return (
+      <Banner
+        title="MAZE CLEARED"
+        subtitle="Every dot devoured"
+        tone="text-emerald-300 border-emerald-400/50"
+        onRestart={() => commands.run("restart", {})}
+      />
+    );
   }
   if (phase === "lost") {
-    return <Banner title="GAME OVER" subtitle="The ghosts got you" tone="text-red-400 border-red-500/50" />;
+    return (
+      <Banner
+        title="GAME OVER"
+        subtitle="The ghosts got you"
+        tone="text-red-400 border-red-500/50"
+        onRestart={() => commands.run("restart", {})}
+      />
+    );
   }
   if (fright > 0) {
     return (
@@ -60,11 +103,32 @@ function StatusBanner() {
   return null;
 }
 
-function Banner({ title, subtitle, tone }: { title: string; subtitle: string; tone: string }) {
+function Banner({
+  title,
+  subtitle,
+  tone,
+  onRestart,
+}: {
+  title: string;
+  subtitle: string;
+  tone: string;
+  onRestart?: () => void;
+}) {
   return (
-    <div className={`rounded-2xl border-2 ${tone} bg-black/80 px-10 py-6 text-center shadow-2xl backdrop-blur-sm`}>
+    <div
+      className={`pointer-events-auto rounded-2xl border-2 ${tone} bg-black/80 px-10 py-6 text-center shadow-2xl backdrop-blur-sm`}
+    >
       <div className="font-mono text-4xl font-black tracking-[0.15em]">{title}</div>
       <div className="mt-1 text-xs uppercase tracking-[0.3em] text-white/60">{subtitle}</div>
+      {onRestart !== undefined ? (
+        <button
+          type="button"
+          onClick={onRestart}
+          className="mt-4 rounded-md border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
+        >
+          Restart · R
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -73,8 +137,9 @@ export function GameUI() {
   const player = usePlayer();
   return (
     <div className="pointer-events-none absolute inset-0 select-none font-sans text-white">
-      <div className="absolute left-4 top-4">
+      <div className="absolute left-4 top-4 flex gap-2">
         <ScorePanel userId={player.userId} />
+        <LevelPanel />
       </div>
       <div className="absolute right-4 top-4">
         <LivesPanel userId={player.userId} />

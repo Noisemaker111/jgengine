@@ -19,7 +19,7 @@ function ghostCellSet(active: ActivePiece | null, ghostY: number | null): Set<nu
 }
 
 export function Board({ snapshot }: { snapshot: TetrisSnapshot }) {
-  const { board, active, ghostY } = snapshot;
+  const { board, active, ghostY, danger } = snapshot;
   const activeSet = activeCellSet(active);
   const ghostSet = ghostCellSet(active, ghostY);
   const activeColor = active === null ? null : PIECE_COLORS[active.type];
@@ -51,7 +51,9 @@ export function Board({ snapshot }: { snapshot: TetrisSnapshot }) {
 
   return (
     <div
-      className="grid gap-px rounded-lg bg-black/70 p-2 shadow-2xl ring-1 ring-cyan-400/30"
+      className={`grid gap-px rounded-lg bg-black/70 p-2 shadow-2xl ring-1 transition-shadow ${
+        danger ? "ring-2 ring-red-500 animate-pulse" : "ring-cyan-400/30"
+      }`}
       style={{ gridTemplateColumns: `repeat(${board.width}, ${CELL}px)` }}
     >
       {tiles}

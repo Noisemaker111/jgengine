@@ -3,11 +3,12 @@ import { describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { buildStartingDeck, cardTypeOf } from "./cards";
-import { combat } from "./combat";
+import { combat, scaleDamage } from "./combat";
 import { content } from "./content";
+import { ENCOUNTERS, ENEMY_ID, intentForEncounter } from "./enemy";
 import { game } from "./game.config";
-import { ENEMY_ID, intentForTurn } from "./enemy";
 import { onInit, onNewPlayer } from "./loop";
+import { run } from "./run";
 
 const HERO = "hero-test";
 
@@ -28,6 +29,10 @@ function totalCards(): number {
   return snap.hand.length + snap.deckCount + snap.discardCount + snap.exhaustCount;
 }
 
+function killEnemy(ctx: GameContext): void {
+  ctx.scene.entity.effect({ from: HERO, to: ENEMY_ID, effect: "strike", via: { amount: 999 } });
+}
+
 describe("spire-cards deck", () => {
   test("starting deck is 13 cards with the expected distribution", () => {
     const deck = buildStartingDeck();
@@ -41,10 +46,21 @@ describe("spire-cards deck", () => {
   });
 
   test("enemy intent pattern is deterministic and scales with strength", () => {
-    expect(intentForTurn(0, 0)).toEqual({ kind: "attack", value: 9 });
-    expect(intentForTurn(0, 3)).toEqual({ kind: "attack", value: 12 });
-    expect(intentForTurn(2, 0)).toEqual({ kind: "defend", value: 7 });
-    expect(intentForTurn(3, 0)).toEqual({ kind: "buff", value: 3 });
+    const slime = ENCOUNTERS[0]!;
+    expect(intentForEncounter(slime, 0, 0)).toEqual({ kind: "attack", value: 9, hits: undefined });
+    expect(intentForEncounter(slime, 0, 3)).toEqual({ kind: "attack", value: 12, hits: undefined });
+    expect(intentForEncounter(slime, 2, 0)).toEqual({ kind: "defend", value: 7 });
+    expect(intentForEncounter(slime, 3, 0)).toEqual({ kind: "buff", value: 3 });
+  });
+});
+
+describe("spire-cards status math", () => {
+  test("weak scales damage down, vulnerable scales it up, both floor and stack", () => {
+    expect(scaleDamage(12, 0, 0)).toBe(12);
+    expect(scaleDamage(9, 1, 0)).toBe(6);
+    expect(scaleDamage(9, 0, 1)).toBe(13);
+    expect(scaleDamage(9, 1, 1)).toBe(9);
+    expect(scaleDamage(0, 1, 1)).toBe(0);
   });
 });
 
@@ -56,10 +72,12 @@ describe("spire-cards combat", () => {
     expect(snap.hero.maxHp).toBe(72);
     expect(snap.enemy.maxHp).toBe(48);
     expect(snap.enemy.hp).toBe(48);
+    expect(snap.enemy.name).toBe("Acid Slime");
+    expect(snap.enemy.tier).toBe("normal");
     expect(snap.hand.length).toBe(5);
     expect(snap.deckCount).toBe(8);
     expect(snap.energy).toEqual({ current: 3, max: 3 });
-    expect(snap.intent).toEqual({ kind: "attack", value: 9 });
+    expect(snap.intent).toEqual({ kind: "attack", value: 9, hits: undefined });
     expect(totalCards()).toBe(13);
   });
 
@@ -95,7 +113,137 @@ describe("spire-cards combat", () => {
 
   test("reducing enemy health to zero wins the combat", () => {
     const ctx = boot();
-    ctx.scene.entity.effect({ from: HERO, to: ENEMY_ID, effect: "strike", via: { amount: 999 } });
+    killEnemy(ctx);
     expect(combat.getSnapshot().phase).toBe("won");
+  });
+});
+
+describe("spire-cards run progression", () => {
+  test("winning a non-final encounter offers a card reward drawn from non-starter cards", () => {
+    const ctx = boot();
+    killEnemy(ctx);
+    const snap = run.getSnapshot();
+    expect(snap.phase).toBe("reward");
+    expect(snap.rewardOptions.length).toBe(3);
+    const types = new Set(snap.rewardOptions.map((c) => c.type));
+    expect(types.size).toBe(3);
+    for (const card of snap.rewardOptions) {
+      expect(card.type).not.toBe("strike");
+      expect(card.type).not.toBe("defend");
+    }
+  });
+
+  test("choosing a reward adds the card to the deck and starts the next encounter", () => {
+    const ctx = boot();
+    killEnemy(ctx);
+    const before = totalCards();
+    const picked = run.getSnapshot().rewardOptions[0]!;
+    run.chooseReward(ctx, picked.type);
+    expect(totalCards()).toBe(before + 1);
+    const snap = run.getSnapshot();
+    expect(snap.phase).toBe("combat");
+    expect(snap.encounterIndex).toBe(1);
+    expect(snap.combat.enemy.name).toBe(ENCOUNTERS[1]!.name);
+    expect(snap.combat.enemy.maxHp).toBe(ENCOUNTERS[1]!.maxHp);
+    expect(snap.combat.enemy.hp).toBe(ENCOUNTERS[1]!.maxHp);
+  });
+
+  test("skipping a reward advances the run without growing the deck", () => {
+    const ctx = boot();
+    killEnemy(ctx);
+    const before = totalCards();
+    run.skipReward(ctx);
+    expect(totalCards()).toBe(before);
+    expect(run.getSnapshot().encounterIndex).toBe(1);
+  });
+
+  test("the hero keeps hp carried across encounters instead of healing on win", () => {
+    const ctx = boot();
+    ctx.game.commands.run("endTurn", {});
+    const hpAfterHit = combat.getSnapshot().hero.hp;
+    expect(hpAfterHit).toBeLessThan(72);
+    killEnemy(ctx);
+    run.skipReward(ctx);
+    expect(combat.getSnapshot().hero.hp).toBe(hpAfterHit);
+  });
+
+  test("clearing every encounter wins the run", () => {
+    const ctx = boot();
+    for (let i = 0; i < ENCOUNTERS.length; i += 1) {
+      killEnemy(ctx);
+      if (i < ENCOUNTERS.length - 1) {
+        expect(run.getSnapshot().phase).toBe("reward");
+        run.skipReward(ctx);
+      }
+    }
+    expect(run.getSnapshot().phase).toBe("victory");
+  });
+
+  test("hero defeat ends the run in defeat", () => {
+    const ctx = boot();
+    ctx.scene.entity.effect({ from: ENEMY_ID, to: HERO, effect: "strike", via: { amount: 999 } });
+    expect(run.getSnapshot().phase).toBe("defeat");
+    expect(combat.getSnapshot().phase).toBe("lost");
+  });
+
+  test("starting a new run resets the deck to the 13-card starter recipe", () => {
+    const ctx = boot();
+    killEnemy(ctx);
+    run.chooseReward(ctx, run.getSnapshot().rewardOptions[0]!.type);
+    expect(totalCards()).toBe(14);
+    run.start(ctx);
+    expect(totalCards()).toBe(13);
+    expect(run.getSnapshot().encounterIndex).toBe(0);
+    expect(run.getSnapshot().phase).toBe("combat");
+  });
+});
+
+describe("spire-cards enemy roster", () => {
+  test("cultist telegraphs a strength buff then applies Weak to the hero on schedule", () => {
+    const ctx = boot();
+    killEnemy(ctx);
+    run.skipReward(ctx);
+    expect(combat.getSnapshot().enemy.name).toBe("Cultist");
+    for (let i = 0; i < 4; i += 1) ctx.game.commands.run("endTurn", {});
+    expect(ctx.scene.entity.stats.get(HERO, "weak")?.current).toBe(2);
+  });
+
+  test("jaw worm's multi-hit attack strikes twice for the intent amount", () => {
+    const ctx = boot();
+    killEnemy(ctx);
+    run.skipReward(ctx);
+    killEnemy(ctx);
+    run.skipReward(ctx);
+    expect(combat.getSnapshot().enemy.name).toBe("Jaw Worm");
+    for (let i = 0; i < 3; i += 1) ctx.game.commands.run("endTurn", {});
+    const before = combat.getSnapshot().hero.hp;
+    const intent = combat.getSnapshot().intent;
+    expect(intent).toEqual({ kind: "attack", value: 11, hits: 2 });
+    ctx.game.commands.run("endTurn", {});
+    const after = combat.getSnapshot().hero.hp;
+    expect(before - after).toBe(22);
+  });
+});
+
+describe("spire-cards reward cards", () => {
+  test("exhaust cards move to the exhaust zone instead of discard when played", () => {
+    const ctx = boot();
+    killEnemy(ctx);
+    run.chooseReward(ctx, "battle_trance");
+    let played = false;
+    for (let i = 0; i < 3 && !played; i += 1) {
+      const found = combat.getSnapshot().hand.find((entry) => entry.card.type === "battle_trance");
+      if (found === undefined) {
+        ctx.game.commands.run("endTurn", {});
+        continue;
+      }
+      const discardBefore = combat.getSnapshot().discardCount;
+      const exhaustBefore = combat.getSnapshot().exhaustCount;
+      ctx.game.commands.run("playCard", { cardId: found.id });
+      expect(combat.getSnapshot().exhaustCount).toBe(exhaustBefore + 1);
+      expect(combat.getSnapshot().discardCount).toBe(discardBefore);
+      played = true;
+    }
+    expect(played).toBe(true);
   });
 });

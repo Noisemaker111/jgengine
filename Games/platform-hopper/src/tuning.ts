@@ -29,9 +29,46 @@ export interface EnemyPatrol {
 }
 
 export const ENEMIES: readonly EnemyPatrol[] = [
-  { id: "stomper-1", center: -14, span: 5, speed: 2.3 },
-  { id: "stomper-2", center: -30, span: 6, speed: 2.9 },
-  { id: "stomper-3", center: -42, span: 3, speed: 2.1 },
+  { id: "stomper-1", center: -14, span: 5, speed: 2.2 },
+  { id: "stomper-2", center: -30, span: 6, speed: 2.7 },
+  { id: "stomper-3", center: -42, span: 3, speed: 3.2 },
+];
+
+export const STOMP_SCORE = 1;
+
+export const HAZARD_OBJECT = "spikeTrap";
+export const HAZARD_HALF_X = 0.6;
+export const HAZARD_HALF_Y = 0.5;
+
+export interface Hazard {
+  readonly id: string;
+  readonly x: number;
+}
+
+export const HAZARDS: readonly Hazard[] = [
+  { id: "spike-1", x: -4 },
+  { id: "spike-2", x: -22 },
+  { id: "spike-3", x: -38 },
+];
+
+export const COIN_OBJECT = "coin";
+export const COIN_RADIUS = 0.9;
+export const COIN_SCORE = 1;
+export const COIN_HEIGHT = 0.9;
+
+export interface Collectible {
+  readonly id: string;
+  readonly x: number;
+  readonly y: number;
+}
+
+export const COINS: readonly Collectible[] = [
+  { id: "coin-1", x: -1, y: COIN_HEIGHT },
+  { id: "coin-2", x: -9, y: COIN_HEIGHT },
+  { id: "coin-3", x: -17, y: COIN_HEIGHT },
+  { id: "coin-4", x: -25, y: COIN_HEIGHT },
+  { id: "coin-5", x: -33, y: COIN_HEIGHT },
+  { id: "coin-6", x: -41, y: COIN_HEIGHT },
 ];
 
 export interface BackdropPlatform {

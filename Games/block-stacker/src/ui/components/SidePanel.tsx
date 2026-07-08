@@ -70,8 +70,23 @@ export function StatsPanel({ snapshot }: { snapshot: TetrisSnapshot }) {
     <Panel title="Stats">
       <div className="flex flex-col gap-2">
         <Stat name="Score" value={snapshot.score} />
+        <Stat name="Best" value={snapshot.best} />
         <Stat name="Lines" value={snapshot.lines} />
         <Stat name="Level" value={snapshot.level} />
+        <div className="flex items-baseline justify-between gap-4">
+          <span className="text-xs uppercase tracking-wide text-slate-400">Next level</span>
+          <span className="font-mono text-xs text-slate-300">{snapshot.linesToNextLevel} lines</span>
+        </div>
+        {snapshot.combo > 0 && (
+          <div className="rounded bg-amber-500/20 px-2 py-1 text-center text-xs font-bold uppercase tracking-wide text-amber-300">
+            Combo x{snapshot.combo}
+          </div>
+        )}
+        {snapshot.backToBack && (
+          <div className="rounded bg-fuchsia-500/20 px-2 py-1 text-center text-xs font-bold uppercase tracking-wide text-fuchsia-300">
+            Back-to-Back
+          </div>
+        )}
       </div>
     </Panel>
   );

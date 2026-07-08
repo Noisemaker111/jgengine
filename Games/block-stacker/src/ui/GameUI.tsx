@@ -22,10 +22,21 @@ export function GameUI() {
           Block Stacker
         </div>
         <Board snapshot={snapshot} />
+        {snapshot.message !== null && snapshot.status === "playing" && (
+          <div className="pointer-events-none absolute inset-x-0 top-14 text-center text-xl font-black uppercase tracking-wide text-amber-300 drop-shadow-lg">
+            {snapshot.message}
+          </div>
+        )}
         {snapshot.status === "gameover" && (
-          <div className="absolute inset-0 top-11 flex flex-col items-center justify-center gap-4 rounded-lg bg-black/80 backdrop-blur-sm">
+          <div className="absolute inset-0 top-11 flex flex-col items-center justify-center gap-3 rounded-lg bg-black/80 backdrop-blur-sm">
             <div className="text-3xl font-black uppercase tracking-widest text-red-400">Game Over</div>
             <div className="font-mono text-lg text-slate-200">Score {snapshot.score}</div>
+            <div className="font-mono text-sm text-slate-400">
+              Lines {snapshot.lines} · Level {snapshot.level}
+            </div>
+            {snapshot.score === snapshot.best && snapshot.score > 0 && (
+              <div className="text-xs font-bold uppercase tracking-widest text-amber-300">New Best!</div>
+            )}
             <button
               type="button"
               onClick={restart}

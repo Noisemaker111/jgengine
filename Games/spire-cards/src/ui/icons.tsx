@@ -72,8 +72,36 @@ const INTENT_PATHS: Record<IntentKind, ReactNode> = {
       <path d="M12 3l6 7h-4v11h-4V10H6z" />
     </>
   ),
+  debuff: (
+    <>
+      <path d="M12 2l8 3v6c0 5-3.4 8.7-8 11-4.6-2.3-8-6-8-11V5l8-3z" opacity="0.3" />
+      <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+    </>
+  ),
 };
 
 export function IntentIcon({ kind, className }: { kind: IntentKind; className?: string }) {
   return <Glyph className={className}>{INTENT_PATHS[kind]}</Glyph>;
+}
+
+export type StatusEffectKind = "weak" | "vulnerable";
+
+const STATUS_PATHS: Record<StatusEffectKind, ReactNode> = {
+  weak: (
+    <>
+      <path d="M20.5 2.5l-8.7 8.7 1.6 1.6 8.7-8.7-.4-1.2z" opacity="0.4" />
+      <path d="M11 12l-1.6-1.6-5.9 5.9a2 2 0 000 2.8l.4.4a2 2 0 002.8 0L12.6 13.6 11 12z" opacity="0.4" />
+      <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" fill="none" />
+    </>
+  ),
+  vulnerable: (
+    <>
+      <path d="M12 2l8 3v6c0 5-3.4 8.7-8 11-4.6-2.3-8-6-8-11V5l8-3z" opacity="0.35" />
+      <path d="M12 7v6M12 16v1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+    </>
+  ),
+};
+
+export function StatusIcon({ kind, className }: { kind: StatusEffectKind; className?: string }) {
+  return <Glyph className={className}>{STATUS_PATHS[kind]}</Glyph>;
 }

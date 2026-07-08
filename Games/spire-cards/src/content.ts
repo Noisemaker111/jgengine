@@ -8,6 +8,8 @@ const HERO: GameContextEntityEntry = {
     health: { max: 72, min: 0 },
     block: { max: 999, min: 0, current: 0 },
     strength: { max: 99, min: 0, current: 0 },
+    weak: { max: 20, min: 0, current: 0 },
+    vulnerable: { max: 20, min: 0, current: 0 },
   },
   receive: {
     strike: { order: ["block", "health"] },
@@ -20,6 +22,8 @@ const ENEMY: GameContextEntityEntry = {
     health: { max: 48, min: 0 },
     block: { max: 999, min: 0, current: 0 },
     strength: { max: 99, min: 0, current: 0 },
+    weak: { max: 20, min: 0, current: 0 },
+    vulnerable: { max: 20, min: 0, current: 0 },
   },
   receive: {
     strike: { order: ["block", "health"] },
