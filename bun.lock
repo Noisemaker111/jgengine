@@ -87,10 +87,12 @@
         "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
+        "react-dom": "19.2.3",
         "three": "^0.182.0",
       },
       "devDependencies": {
         "@types/react": "^19",
+        "@types/react-dom": "^19",
         "@types/three": "^0.182.0",
         "typescript": "^5",
       },

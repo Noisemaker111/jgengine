@@ -44,7 +44,7 @@ const gameRegistry: GameRegistry = {
   "block-stacker": () =>
     import("@games/block-stacker").then((module) => module.blockStackerGame),
   "maze-muncher": () => import("@games/maze-muncher").then((module) => module.mazeMuncherGame),
-  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.voxelMineGame),
+  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.game),
   "platform-hopper": () =>
     import("@games/platform-hopper").then((module) => module.platformHopperGame),
   "spire-cards": () => import("@games/spire-cards").then((module) => module.spireCardsGame),
