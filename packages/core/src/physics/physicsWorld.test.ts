@@ -232,6 +232,121 @@ describe("joints", () => {
   });
 });
 
+describe("removeBody", () => {
+  test("other bodies keep their ids and positions after a removal", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [-5, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    const b = w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    const c = w.addBody({ position: [5, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    w.removeBody(b);
+    expect(w.count).toBe(2);
+    expect(w.posX[a]!).toBe(-5);
+    expect(w.posX[c]!).toBe(5);
+    frames(w, 5);
+    expect(w.posX[a]!).toBe(-5);
+    expect(w.posX[c]!).toBe(5);
+  });
+
+  test("a removed body's slot is skipped by the broadphase and never collides again", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    const b = w.addBody({ position: [0.3, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    w.removeBody(b);
+    frames(w, 60);
+    expect(w.posX[a]!).toBe(0);
+    expect(w.posY[a]!).toBe(5);
+  });
+
+  test("a slot freed by removeBody is reused by the next addBody", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    w.removeBody(a);
+    expect(w.count).toBe(0);
+    const reused = w.addBody({ position: [1, 2, 3], halfExtents: [0.5, 0.5, 0.5] });
+    expect(reused).toBe(a);
+    expect(w.count).toBe(1);
+    expect(w.posX[reused]!).toBe(1);
+  });
+
+  test("removing a body twice is a no-op", () => {
+    const w = world();
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    w.removeBody(a);
+    expect(() => w.removeBody(a)).not.toThrow();
+    expect(w.count).toBe(0);
+  });
+
+  test("removing a supporting body wakes the sleeper resting on it", () => {
+    const w = world({ sleepThresholdSteps: 10 });
+    const support = w.addBody({ position: [0, 0.5, 0], halfExtents: [0.5, 0.5, 0.5], static: true });
+    const rider = w.addBody({ position: [0, 1.5, 0], halfExtents: [0.5, 0.5, 0.5] });
+    frames(w, 30);
+    expect(w.isSleeping(rider)).toBe(true);
+    w.removeBody(support);
+    expect(w.isSleeping(rider)).toBe(false);
+  });
+
+  test("removing a body far from any sleeper leaves it asleep", () => {
+    const w = world({ sleepThresholdSteps: 10 });
+    const sleeper = w.addBody({ position: [8, 0.5, 8], halfExtents: [0.5, 0.5, 0.5], asleep: true });
+    const distant = w.addBody({ position: [-8, 0.5, -8], halfExtents: [0.5, 0.5, 0.5], asleep: true });
+    w.removeBody(distant);
+    expect(w.isSleeping(sleeper)).toBe(true);
+  });
+});
+
+describe("setVelocity / setPosition / teleport", () => {
+  test("setVelocity overwrites velocity and wakes a sleeping body", () => {
+    const w = world({ sleepThresholdSteps: 5 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5], asleep: true });
+    expect(w.isSleeping(a)).toBe(true);
+    w.setVelocity(a, 3, 0, -2);
+    expect(w.velX[a]!).toBe(3);
+    expect(w.velZ[a]!).toBe(-2);
+    expect(w.isSleeping(a)).toBe(false);
+  });
+
+  test("setPosition moves a body, keeps velocity, and wakes it", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 5 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5], velocity: [1, 0, 0], asleep: true });
+    w.setPosition(a, 2, 6, -3);
+    expect(w.posX[a]!).toBe(2);
+    expect(w.posY[a]!).toBe(6);
+    expect(w.posZ[a]!).toBe(-3);
+    expect(w.velX[a]!).toBe(1);
+    expect(w.isSleeping(a)).toBe(false);
+  });
+
+  test("teleport moves a body and zeroes its velocity", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 5 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.5, 0.5, 0.5], velocity: [4, 1, -4] });
+    w.teleport(a, -3, 4, 3);
+    expect(w.posX[a]!).toBe(-3);
+    expect(w.posY[a]!).toBe(4);
+    expect(w.posZ[a]!).toBe(3);
+    expect(w.velX[a]!).toBe(0);
+    expect(w.velY[a]!).toBe(0);
+    expect(w.velZ[a]!).toBe(0);
+  });
+});
+
+describe("broadphase capacity guard", () => {
+  test("a tiny cellSize over huge bounds throws instead of hanging on allocation", () => {
+    expect(
+      () =>
+        new PhysicsWorld({
+          capacity: 16,
+          bounds: { min: [-5000, -5000, -5000], max: [5000, 5000, 5000] },
+          cellSize: 0.1,
+        }),
+    ).toThrow(/broadphase grid too large/);
+  });
+
+  test("bounds/cellSize that stay under the cap construct fine", () => {
+    expect(() => new PhysicsWorld({ capacity: 16, bounds: BOUNDS, cellSize: 1 })).not.toThrow();
+  });
+});
+
 describe("collision events", () => {
   test("onCollision delivers impacting pairs with an approach speed", () => {
     const w = world({ gravity: 0, restitution: 1, friction: 0, sleepThresholdSteps: 100000 });

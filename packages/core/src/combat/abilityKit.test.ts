@@ -105,6 +105,33 @@ describe("abilityKit", () => {
     expect(() => createAbilityKit([{ id: "x", cooldownMs: 1 }, { id: "x", cooldownMs: 2 }])).toThrow();
   });
 
+  it("retuneSlot updates cooldown and cost for future activations", () => {
+    const kit = createAbilityKit([{ id: "bolt", cooldownMs: 1000, resourceCost: 10, flashMs: 0 }]);
+    expect(kit.retuneSlot("bolt", { cooldownMs: 200, resourceCost: 50 })).toBe(true);
+    expect(kit.config("bolt")).toMatchObject({ cooldownMs: 200, resourceCost: 50 });
+    const cast = kit.cast("bolt", 50);
+    expect(cast.ok).toBe(true);
+    if (cast.ok) expect(cast.slot.resourceCost).toBe(50);
+    kit.tick(0.2);
+    expect(kit.state("bolt")?.state).toBe("ready");
+  });
+
+  it("retuneSlot does not crash an in-flight cooldown and clamps negative values to zero", () => {
+    const kit = createAbilityKit([{ id: "bolt", cooldownMs: 1000, flashMs: 0 }]);
+    kit.cast("bolt");
+    kit.tick(0.1);
+    expect(kit.retuneSlot("bolt", { cooldownMs: -50 })).toBe(true);
+    expect(kit.config("bolt")?.cooldownMs).toBe(0);
+    kit.tick(0.1);
+    expect(kit.state("bolt")?.state).toBe("ready");
+    expect(kit.state("bolt")?.charges).toBe(1);
+  });
+
+  it("retuneSlot returns false for an unknown slot", () => {
+    const kit = createAbilityKit([{ id: "bolt", cooldownMs: 1000 }]);
+    expect(kit.retuneSlot("missing", { cooldownMs: 500 })).toBe(false);
+  });
+
   it("state precedence puts just-cast ahead of no-resource", () => {
     const kit = createAbilityKit([{ id: "ult", cooldownMs: 1000, resourceCost: 100, flashMs: 300 }]);
     kit.cast("ult", 100);

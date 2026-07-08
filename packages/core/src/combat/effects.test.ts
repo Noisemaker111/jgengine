@@ -89,6 +89,27 @@ describe("effect system", () => {
     expect(lethalCalls).toHaveLength(0);
   });
 
+  test("restorative effect can raise a bounded stat from its minimum", () => {
+    const { system, stats } = createWorld({
+      ally: { stats: { health: { max: 100 } }, receive: { heal: { order: ["health"] } } },
+    });
+    stats["ally"]!["health"] = { current: 0, max: 100, min: 0 };
+    expect(system.canReceive("ally", "heal", -35)).toBeNull();
+    const results = system.applyEffect({ from: "p", to: "ally", effect: "heal", via: { amount: -35 } });
+    expect(results[0]!.applied).toEqual([{ statId: "health", delta: 35 }]);
+    expect(stats["ally"]!["health"]!.current).toBe(35);
+  });
+
+  test("damage still reports pools-depleted at minimum and clamps without going negative", () => {
+    const { system, stats } = createWorld({
+      enemy: { stats: { health: { max: 10 } }, receive: { damage: { order: ["health"] } } },
+    });
+    stats["enemy"]!["health"] = { current: 0, max: 10, min: 0 };
+    expect(system.canReceive("enemy", "damage")).toBe("pools-depleted");
+    expect(system.applyEffect({ from: "p", to: "enemy", effect: "damage", via: { amount: 10 } })).toEqual([]);
+    expect(stats["enemy"]!["health"]!.current).toBe(0);
+  });
+
   test("magnitude falls back to the weapon damage stat and honors modifiers", () => {
     const { system, stats } = createWorld(
       {

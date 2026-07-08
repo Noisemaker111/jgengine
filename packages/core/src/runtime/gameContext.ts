@@ -192,7 +192,7 @@ export interface SceneEntityContext {
   setTarget(fromId: string, toId: string | null): void;
   getTarget(fromId: string): string | null;
   cycleTarget(fromId: string, options?: CycleTargetOptions): string | null;
-  canReceive(instanceId: string, effect: string): string | null;
+  canReceive(instanceId: string, effect: string, magnitude?: number): string | null;
   preview(input: SingleTargetEffectInput): number;
   effect(input: EffectInput): EffectResult[];
   willHitProjectile: ProjectileSystem["willHitProjectile"];
@@ -220,6 +220,7 @@ export interface SceneWorldItemContext {
     filter?: (record: WorldItemRecord) => boolean,
   ): string | null;
   pickup(instanceId: string, userId: string): WorldItemPickupResult;
+  consume(instanceId: string): WorldItemRecord | null;
 }
 
 export interface GameContextCommands {
@@ -607,7 +608,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       despawnEntity,
       resolvePosition: (instanceId) => entities.get(instanceId)?.position,
     }),
-    ["spawn", "take"],
+    ["spawn", "take", "remove"],
     signal.notify,
   );
 
@@ -867,6 +868,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         list: worldItems.list,
         nearestInRadius: worldItems.nearestInRadius,
         pickup: pickupWorldItem,
+        consume: worldItems.remove,
       },
     },
     world: {

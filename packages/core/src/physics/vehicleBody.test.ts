@@ -82,6 +82,23 @@ describe("VehicleBody drive + tire grip response to axis input", () => {
     expect(forwardSpeed).toBeGreaterThan(lateral);
   });
 
+  test.each([0, Math.PI / 2, Math.PI, -Math.PI / 2])(
+    "throttle produces forward (not reversed) thrust at heading %p",
+    (heading) => {
+      const w = world();
+      const car = createVehicleBody(w, { position: [0, 2, 0], heading, groundHeight: () => 0 });
+      for (let i = 0; i < 200; i += 1) {
+        car.update(1 / 60, NEUTRAL_AXIS);
+        w.step(1 / 60);
+      }
+      for (let i = 0; i < 120; i += 1) {
+        car.update(1 / 60, axis({ throttle: 1 }));
+        w.step(1 / 60);
+      }
+      expect(car.speed).toBeGreaterThan(4);
+    },
+  );
+
   test("handbrake reduces grip so more lateral velocity survives (drift)", () => {
     function lateralAfterTurn(handbrake: number): number {
       const w = world();

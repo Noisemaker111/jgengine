@@ -71,7 +71,10 @@ export interface WorldItemStore {
     radius: number,
     filter?: (record: WorldItemRecord) => boolean,
   ): string | null;
+  /** Detaches the record for a pickup: caller is expected to grant its contents (e.g. `loot.grantToPlayer`) itself. */
   take(instanceId: string): WorldItemRecord | null;
+  /** Consumes/destroys the record with no grant implied (decay, an explosion, a cleanup sweep) — same despawn path as `take`, leaves no orphaned record. */
+  remove(instanceId: string): WorldItemRecord | null;
 }
 
 /** Pure pickup-radius + nearest-item selection, usable without a live store (click-to-grab, proximity prompts). */
@@ -95,6 +98,14 @@ export function selectNearestWorldItem(
 export function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore {
   const records = new Map<string, WorldItemRecord>();
   const now = deps.now ?? Date.now;
+
+  function removeRecord(instanceId: string): WorldItemRecord | null {
+    const record = records.get(instanceId);
+    if (record === undefined) return null;
+    records.delete(instanceId);
+    deps.despawnEntity(instanceId);
+    return record;
+  }
 
   return {
     spawn(input) {
@@ -128,11 +139,10 @@ export function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore {
       return selectNearestWorldItem(candidates, from, radius);
     },
     take(instanceId) {
-      const record = records.get(instanceId);
-      if (record === undefined) return null;
-      records.delete(instanceId);
-      deps.despawnEntity(instanceId);
-      return record;
+      return removeRecord(instanceId);
+    },
+    remove(instanceId) {
+      return removeRecord(instanceId);
     },
   };
 }
