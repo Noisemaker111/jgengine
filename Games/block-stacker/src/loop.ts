@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { blockStackerStore } from "./tetris/store";
+import { blockStackerStore } from "./game/tetris/store";
 
 type Command = () => void;
 

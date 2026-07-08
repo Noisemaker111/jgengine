@@ -6,7 +6,19 @@ import type { GameEvents } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/game/feed";
 import type { QuestInstance } from "@jgengine/core/game/quest";
 import type { ChatMessage } from "@jgengine/core/game/chat";
-import type { FriendEntry, PartyMemberEntry, PresenceInfo, WorldInvite } from "@jgengine/core/game/social";
+import type {
+  FriendEntry,
+  FriendRequestEntry,
+  PartyInviteEntry,
+  PartyMemberEntry,
+  PresenceInfo,
+  WorldInvite,
+} from "@jgengine/core/game/social";
+import {
+  browseSessions,
+  type MatchFilter,
+  type SessionListing,
+} from "@jgengine/core/multiplayer/matchmaking";
 import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import type { StatValue } from "@jgengine/core/scene/entityStats";
@@ -109,6 +121,78 @@ export function useChat(channelId: string, options?: { limit?: number }): ChatMe
   const limit = options?.limit ?? 50;
   return useGameStore((ctx) =>
     ctx.game.chat.history(channelId, { limit, viewerUserId: ctx.player.userId }),
+  );
+}
+
+export function useFriendRequests(): FriendRequestEntry[] {
+  return useGameStore((ctx) => ctx.game.social.friends.requestsFor(ctx.player.userId));
+}
+
+export function usePartyInvites(): PartyInviteEntry[] {
+  return useGameStore((ctx) => ctx.game.social.party.invitesFor(ctx.player.userId));
+}
+
+export interface WorldBrowserState {
+  listings: SessionListing[];
+  loading: boolean;
+  error: string | null;
+  refresh(): void;
+}
+
+/**
+ * Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and
+ * filters through matchmaking's browseSessions. fetchSessions must be
+ * identity-stable (wrap in useCallback at the call site) or every render
+ * refetches.
+ */
+export function useWorldBrowser(options: {
+  fetchSessions: () => Promise<readonly SessionListing[]>;
+  filter?: MatchFilter;
+  limit?: number;
+  refreshMs?: number;
+}): WorldBrowserState {
+  const { fetchSessions, refreshMs } = options;
+  const [raw, setRaw] = useState<readonly SessionListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchSessions()
+      .then((listings) => {
+        if (cancelled) return;
+        setRaw(listings);
+        setError(null);
+        setLoading(false);
+      })
+      .catch((cause: unknown) => {
+        if (cancelled) return;
+        setError(cause instanceof Error ? cause.message : "failed to browse sessions");
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchSessions, refreshTick]);
+
+  useEffect(() => {
+    if (refreshMs === undefined || refreshMs <= 0) return undefined;
+    const id = setInterval(() => setRefreshTick((tick) => tick + 1), refreshMs);
+    return () => clearInterval(id);
+  }, [refreshMs]);
+
+  const filter = options.filter;
+  const limit = options.limit;
+  const listings = useMemo(
+    () => browseSessions(raw, filter, limit === undefined ? {} : { limit }),
+    [raw, filter, limit],
+  );
+
+  return useMemo(
+    () => ({ listings, loading, error, refresh: () => setRefreshTick((tick) => tick + 1) }),
+    [listings, loading, error],
   );
 }
 

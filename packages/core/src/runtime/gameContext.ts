@@ -396,12 +396,12 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const social: Social = {
     friends: notifyAfter(
       rawSocial.friends,
-      ["request", "accept", "remove", "block", "hydrate"],
+      ["request", "accept", "decline", "remove", "block", "hydrate"],
       signal.notify,
     ),
     party: notifyAfter(
       rawSocial.party,
-      ["invite", "accept", "kick", "leave", "promote"],
+      ["invite", "accept", "decline", "kick", "leave", "promote"],
       signal.notify,
     ),
     presence: rawSocial.presence,

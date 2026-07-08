@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import type { RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
 import type { GameRuntimeFeedView, GameRuntimeServerView } from "@jgengine/core/runtime/transport";
 import type { ChatMessage } from "@jgengine/core/game/chat";
+import type { VoiceParticipant } from "@jgengine/core/multiplayer/voiceContract";
 import { createWsBackend, type WsBackend } from "@jgengine/ws/createWsBackend";
 import type { WsChatMessage, WsPresenceRow } from "@jgengine/ws/protocol";
 
@@ -294,6 +295,45 @@ test("chat sends relay to channel subscribers and replay history to late joiners
     carol.chatSyncFor(serverId).subscribe("global", (messages) => carolFeed.push(messages));
     const history = await carolFeed.next();
     expect(history.map((message) => message.body)).toEqual(["hello bob"]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("voice signaling relays channel rosters and drops participants on disconnect", async () => {
+  const stack = await startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game", serverId });
+
+    const bobVoice = bob.voiceTransportFor(serverId);
+    const rosters = channel<readonly VoiceParticipant[]>();
+    bobVoice.subscribers("crew", (participants) => rosters.push(participants));
+    expect(await rosters.next()).toEqual([]);
+
+    const aliceVoice = alice.voiceTransportFor(serverId);
+    await aliceVoice.join("crew");
+    expect(await rosters.next()).toEqual([{ userId: "alice" }]);
+
+    await aliceVoice.publish("crew", "stream-1");
+    expect(await rosters.next()).toEqual([{ userId: "alice", streamId: "stream-1" }]);
+
+    await expect(bobVoice.publish("proximity", "stream-2")).rejects.toThrow(
+      "not in this voice channel",
+    );
+
+    await bobVoice.join("crew", "stream-2");
+    const both = await rosters.next();
+    expect(both.map((participant) => participant.userId).sort()).toEqual(["alice", "bob"]);
+
+    alice.close();
+    const afterDisconnect = await rosters.next();
+    expect(afterDisconnect).toEqual([{ userId: "bob", streamId: "stream-2" }]);
+
+    await bobVoice.leave("crew");
+    expect(await rosters.next()).toEqual([]);
   } finally {
     await stack.shutdown();
   }

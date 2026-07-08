@@ -5,7 +5,7 @@ description: Use when building, extending, or debugging a game on JGengine, or w
 
 # JGengine — API Reference
 
-The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game/game.config.ts` or any game content. Companion skills: **`jgengine-newgame`** (master blueprint + phased build to completion), **`jgengine-ui`** (the look-and-behave quality bar), and **`jgengine-assets`** (real models/textures from day one) — read all three before building.
+The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game.config.ts` or any game content. Companion skills: **`jgengine-newgame`** (master blueprint + phased build to completion), **`jgengine-ui`** (the look-and-behave quality bar), and **`jgengine-assets`** (real models/textures from day one) — read all three before building.
 
 ## Packages
 
@@ -159,6 +159,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Session matchmaking | `multiplayer/matchmaking` | `browseSessions`, `findByJoinCode`, `quickMatch`, `matchesFilter`, `normalizeJoinCode`, `generateJoinCode`, `SessionListing`, `MatchFilter` |
 | Auth identity | `multiplayer/identity` | `AuthSession`, `PlayerIdentity`, `sessionPlayer`, `resolveGuestSession` |
 | Text chat | `game/chat`, `multiplayer/chatContract` | `createChat`, `Chat`, `ChatMessage`, `ChatChannelDef`, `whisperChannelId`, `createChatRateLimiter`, `ChatTransport`, `ChatSync`, `createLocalChatTransport` |
+| Voice seam | `multiplayer/voiceContract` | `VoiceTransport`, `VoiceParticipant`, `VoiceRoute`, `createLocalVoiceTransport`, `createPushToTalk`, `PushToTalkMode` |
 | Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes` |
 | Reveal query | `sensor/revealQuery` | `createRevealQuery`, `RevealQuery`, `RevealQueryOptions`, `RevealHit` |
 | Hidden-state probe | `sensor/hiddenStateProbe` | `probeHiddenState`, `probeHiddenStateAll`, `HiddenStateSource`, `HiddenStateValue`, `SensorProbeOptions`, `SensorReading` |
@@ -190,14 +191,27 @@ bun add @jgengine/core @jgengine/react @jgengine/shell react react-dom three thr
 bun add -d @tailwindcss/vite tailwindcss   # HUD styling (Vite + Tailwind v4)
 ```
 
-Wire the shell in any React app (Vite works out of the box):
+A single game's standalone entry mounts `GameHost` (`@jgengine/shell/GameHost`) over the `game` your `game.config.ts` exports:
+
+```tsx
+// main.tsx
+import { createRoot } from "react-dom/client";
+import { GameHost } from "@jgengine/shell/GameHost";
+import { game } from "./game.config";
+
+const root = document.getElementById("root");
+if (root === null) throw new Error("main: missing #root mount element");
+createRoot(root).render(<GameHost playable={game} />);
+```
+
+A multi-game host (a launcher, a dev registry) wires `GamePlayerShell` directly over a `GameRegistry`:
 
 ```tsx
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 const games: GameRegistry = {
-  "my-game": () => import("./game").then((m) => m.myGame),
+  "my-game": () => import("./my-game").then((m) => m.game),
 };
 
 function App() {
@@ -207,7 +221,7 @@ function App() {
 }
 ```
 
-HUD styling is Tailwind v4: register the `@tailwindcss/vite` plugin in `vite.config.ts` (`plugins: [react(), tailwindcss()]`) and add `@source "../node_modules/@jgengine/shell";` (and your game source dirs) to your CSS entry, or the HUD renders unstyled. Then build the game itself under `game/` per the layout below.
+HUD styling is Tailwind v4: register the `@tailwindcss/vite` plugin in `vite.config.ts` (`plugins: [react(), tailwindcss()]`) and add `@source "../node_modules/@jgengine/shell";` (and your game source dirs) to your CSS entry, or the HUD renders unstyled. Then build the game itself under `src/` per the layout below — `src/game.config.ts` is the single entry, defined with `defineGame` from `@jgengine/shell/defineGame`.
 
 ## Scope
 
@@ -239,40 +253,46 @@ A voxel block is an object. A rack is an object with a slot inventory. A GPU is 
 
 ## Game repo layout
 
-Everything under `game/` (or your package's `src/`). Dense files — one `catalog.ts` per domain, never one file per entry.
+Every game is one shape, enforced by `check-game-shape` (part of `check-types`): the top of `src/` holds only the skeleton, and every game-specific module, UI component, and test lives under `src/game/`. Dense files — one `catalog.ts` per domain, never one file per entry.
 
 ```
-game/
-  game.config.ts       defineGame entry — thin composition over keybinds/inventories/world
-  keybinds.ts          ActionCodesMap — named actions + hotbarSlotBindings(n)
-  inventories.ts       inventory declarations
-  world.ts             WorldFeature + PhysicsConfig
-  index.ts             PlayableGame export (game, content, loop, GameUI)
-  assets.ts            Render catalog
-  content.ts           itemById / entityById lookups over all catalogs
+src/
+  game.config.ts       single entry — export const game = defineGame({...}) from "@jgengine/shell/defineGame"
+  index.tsx            barrel — export { game } from "./game.config" (+ any UI-preview scenario re-export)
+  main.tsx             standalone host — mounts <GameHost playable={game}/> from "@jgengine/shell/GameHost"
   loop.ts              onInit, onNewPlayer, onTick
-  loadouts.ts          Loadout ids → items/economy/unlocks per inventory
-  world/               zones.ts, setup.ts (place/spawn from onInit)
-  items/               <domain>/catalog.ts + use-handlers.ts
-  objects/             catalog.ts (+ loot tables beside their domain)
-  entities/            players/ enemies/ npcs/ — catalog.ts per role (never actors/)
-  quests/catalog.ts    when using game.quest
-  progression/         curves.ts — game-owned XP curve numbers fed to game/progression
-  ui/GameUI.tsx        ALL layout/positioning
-  ui/components/       content-only pieces GameUI places
+  world.ts             WorldFeature + PhysicsConfig (only for games that have one)
+  game/
+    keybinds.ts          ActionCodesMap — named actions + hotbarSlotBindings(n)
+    inventories.ts       inventory declarations
+    assets.ts             Render catalog
+    content.ts             itemById / entityById lookups over all catalogs
+    loadouts.ts             Loadout ids → items/economy/unlocks per inventory
+    world/                zones.ts, setup.ts (place/spawn from onInit)
+    items/                <domain>/catalog.ts + use-handlers.ts
+    objects/              catalog.ts (+ loot tables beside their domain)
+    entities/             players/ enemies/ npcs/ — catalog.ts per role (never actors/)
+    quests/catalog.ts     when using game.quest
+    progression/          curves.ts — game-owned XP curve numbers fed to game/progression
+    ui/GameUI.tsx         ALL layout/positioning
+    ui/components/        content-only pieces GameUI places
 ```
 
-## `defineGame`
+## `defineGame` — the single authoring entry
 
-Platform boot only, and a **thin composition** — bindings, inventories, and world/physics live in their own modules because a big game makes each of them expansive. Never game tuning (walk speeds, damage, prompts — those live in catalogs).
+`@jgengine/shell/defineGame` is the game-authoring entry: one call in `game.config.ts` takes both engine fields (`name`, `assets`, `world`, `physics`, `inventories`, `input`, `server`, `save`, `time`, `multiplayer`) and presentation fields (`content`, `loop`, `GameUI`, `camera`, `environment`, `WorldOverlay`, `renderEntity`, `entitySprites`, `entityModels`, `objectModels`, `hotbarSelection`, `prompts`, `pointer`, `worldHealthBars`, `audio`, `entitySounds`, `objectSounds`, `worldItem`) and returns a ready `PlayableGame` — no separate object to assemble. It is a thin wrapper over the core `defineGame` primitive (below) plus the `PlayableGame` runner assembly; see `packages/shell/src/defineGame.tsx` for the exact accepted fields. Never game tuning (walk speeds, damage, prompts — those live in catalogs).
+
+**Smart defaults** — omit any of these and the call still resolves: `multiplayer` → `offline()`; `loop` hooks (`onInit`/`onNewPlayer`/`onTick`) → no-ops; `content` → `{}`; `GameUI` → an empty component; `camera` → third-person orbit; a `world` of kind `environment()` auto-renders as the backdrop with no `environment` component supplied — a non-`environment()` world (`flat()`, `voxel()`, …) still needs the game to hand it one.
 
 ```ts
 // game.config.ts — imports only, nothing inline
-import { defineGame } from "@jgengine/core/game/defineGame";
-import { offline } from "@jgengine/core/runtime/adapter";
-import { assets } from "./assets";
-import { inventories } from "./inventories";
-import { keybinds } from "./keybinds";
+import { defineGame } from "@jgengine/shell/defineGame";
+import { assets } from "./game/assets";
+import { content } from "./game/content";
+import { GameUI } from "./game/ui/GameUI";
+import { inventories } from "./game/inventories";
+import { keybinds } from "./game/keybinds";
+import { loop } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
@@ -284,14 +304,16 @@ export const game = defineGame({
   input: keybinds,
   server: "persistent",            // or { mode: "ffa", scoreLimit: 30 } — rules live in game code
   save: { auto: "5m", scope: "player+chunks" },   // or "none"
-  multiplayer: offline(),          // or ws({ topology }) / convex({ topology }) / servers({ …, adapter })
-  ui: GameUI,
-  loop,                            // GameLoop<GameContext>
+  multiplayer: offline(),          // or ws({ topology }) / convex({ topology }) / servers({ …, adapter }) — defaults to offline()
+  content,
+  loop,                            // Partial<GameLoop<GameContext>> — missing hooks default to no-ops
+  GameUI,
+  camera: { perspective: "third" },  // optional — this is the default
 });
 ```
 
 ```ts
-// keybinds.ts — named actions + generated hotbar slots; one key, one action
+// game/keybinds.ts — named actions + generated hotbar slots; one key, one action
 import { hotbarSlotBindings, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 
 export const keybinds: ActionCodesMap = {
@@ -306,7 +328,7 @@ export const keybinds: ActionCodesMap = {
 ```
 
 ```ts
-// inventories.ts
+// game/inventories.ts
 import type { InventoryDeclaration } from "@jgengine/core/game/defineGame";
 export const inventories: Record<string, InventoryDeclaration> = {
   hotbar: { slots: 9, hud: "hotbar" },
@@ -314,7 +336,7 @@ export const inventories: Record<string, InventoryDeclaration> = {
   equipment: { slots: 4, accepts: ["weapon", "armor"], applyModifiers: true },
 };
 
-// world.ts
+// world.ts — top of src/, not under game/
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { biomes, type WorldFeature } from "@jgengine/core/world/features";
 export const world: WorldFeature = biomes({ map: "world/biomes", zones: "world/zones" });
@@ -323,15 +345,36 @@ export const physics: PhysicsConfig = { gravity: -32 };
 
 - Input bindings are string arrays (hold semantics) or `{ hold, toggle }` for the same verb.
 - **Keybind → command convention.** The shell fires a command for any bound action that isn't reserved: pressing an action runs a command of the **same name** if one is defined, else a `ui.<action>` fallback (so `openBackpack` → `ui.openBackpack`). Just declare the binding and a matching command — no per-game `keydown` listener. Reserved actions the shell consumes natively and never routes to a command: `moveForward/moveBack/moveLeft/moveRight`, `turnLeft/turnRight`, `sprint`, `jump`, `tabTarget`, `clearTarget`, `useAbility`, `interact`, and any `hotbarSlotN`/`slotN`. `tabTarget`/`clearTarget` run `target.cycle`/`target.clear` (native `cycleTarget`/`setTarget` fallback).
-- **`interact`** is special: pressing it resolves the active proximity prompt from `PlayableGame.prompts` and runs that prompt's `invoke` command. A prompt with `invoke: null` is display-only and does nothing on the key.
+- **`interact`** is special: pressing it resolves the active proximity prompt from the `prompts` field of `defineGame({...})` and runs that prompt's `invoke` command. A prompt with `invoke: null` is display-only and does nothing on the key.
 - UI keybind badges derive from `keybinds` via `actionLabel(keybinds, "openBackpack")` — `bindingLabel` maps codes to short labels (`Digit1`→`1`, `KeyB`→`B`, `mouse0`→`LMB`, `Escape`→`Esc`). Never hardcode label strings; they drift the moment a binding changes.
 - `server.mode` is a string your loop/commands interpret — the engine ships no gamemode presets.
 - Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts, or inline binding/inventory/world blobs. The one exception is `physics.gravity`/`physics.jumpVelocity` — global controller tuning, not a catalog value (see "Controller kinematics" below).
 - `assets` may be omitted for a game with no models (a HUD-only card/board game, say) — `defineGame` injects an empty catalog, so `GameDefinition.assets` is always present downstream with no per-caller `?.` checks.
 
+### `@jgengine/core/game/defineGame` — the underlying primitive
+
+The low-level engine boot call the shell `defineGame` composes internally: engine fields only (`name`, `assets`, `world`, `physics`, `inventories`, `input`, `server`, `save`, `time`, `multiplayer`, `loop`) — no `content`/`GameUI`/`camera`/render fields, those are the shell layer's job.
+
+```ts
+import { defineGame as defineEngineGame } from "@jgengine/core/game/defineGame";
+import { offline } from "@jgengine/core/runtime/adapter";
+
+const game = defineEngineGame({
+  name: "My Game",
+  assets, world, physics, inventories,
+  input: keybinds,
+  server: "persistent",
+  save: { auto: "5m", scope: "player+chunks" },
+  multiplayer: offline(),
+  loop,                            // GameLoop<GameContext>
+});
+```
+
+Reach for this directly only outside a React host — a headless server, a non-shell runner; a browser game authors through `@jgengine/shell/defineGame` above, which calls this and returns the `PlayableGame` a runner needs.
+
 ## `PlayableGame` — how a game plugs into a runner
 
-`@jgengine/core/game/playableGame`:
+The type `@jgengine/shell/defineGame` returns and every runner (`GameHost`, `GamePlayerShell`) consumes. A game never builds this object by hand — `defineGame({...})` assembles it from the merged config. Source type at `@jgengine/core/game/playableGame`:
 
 ```ts
 export type PlayableGame<TUi = unknown> = {
@@ -372,8 +415,8 @@ Placed objects are unit boxes (half-extents `[0.5, 0.5, 0.5]`) centered on posit
 **Runtime paint layer** (`ctx.scene.entity.paint`, backed by `scene/paintLayer`) — a `PaintLayer` keyed by instance id (entity or object): `paint(instanceId, { u, v, radius, color })`, `strokes(instanceId)`, `clear(instanceId?)`, `version(instanceId)` (bumps per paint/clear), `subscribe(listener)`. The shell auto-renders painted instances through a lazily-created 512×512 canvas texture kept in sync — no per-game render wiring. Clearing refills with the material's base color; the original texture pixels are not restored.
 
 ### Audio — positional emitters, listener falloff, buses
-Catalog-first, no per-game audio glue. `PlayableGame.audio = { sounds: Record<string, SoundDef>, buses?: Record<string, AudioBusDef> }` declares the sound catalog (`SoundDef = { id, url, bus, gain?, loop?, positional?, falloff? }`) and mix buses (`music`/`sfx`/`ambient`/…, `AudioBusDef = { id, gain? }`) — both types from `@jgengine/core/audio/audioFalloff`. `entitySounds?: Record<string, string>` maps an entity **kind name** (same convention as `entitySprites`/`entityModels`) to a sound id: while a matching entity exists, the shell keeps a looping positional emitter on it, repositioned every frame. `objectSounds?: Record<string, string>` does the same keyed by placed-object catalog id. The pure distance→gain math (`computeFalloffGain(distance, config)`, curves `"linear" | "inverse" | "none"`) lives in core so it is unit-tested without a browser; `@jgengine/shell` (`shell/audio/audioEngine`, `shell/audio/AudioComponents`) is the only package that touches Web Audio — it owns an `AudioContext`, mounts `AudioListener` on the camera every frame, and `EntityAudioEmitters`/`ObjectAudioEmitters` drive per-instance emitter gain from the core falloff function. `GamePlayerShell` wires all of this automatically from `playable.audio`/`entitySounds`/`objectSounds` — a game never touches `AudioContext` directly.
-### Camera rigs (`PlayableGame.camera`)
+Catalog-first, no per-game audio glue. The `audio` field of `defineGame({...})` — `{ sounds: Record<string, SoundDef>, buses?: Record<string, AudioBusDef> }` — declares the sound catalog (`SoundDef = { id, url, bus, gain?, loop?, positional?, falloff? }`) and mix buses (`music`/`sfx`/`ambient`/…, `AudioBusDef = { id, gain? }`) — both types from `@jgengine/core/audio/audioFalloff`. `entitySounds?: Record<string, string>` maps an entity **kind name** (same convention as `entitySprites`/`entityModels`) to a sound id: while a matching entity exists, the shell keeps a looping positional emitter on it, repositioned every frame. `objectSounds?: Record<string, string>` does the same keyed by placed-object catalog id. The pure distance→gain math (`computeFalloffGain(distance, config)`, curves `"linear" | "inverse" | "none"`) lives in core so it is unit-tested without a browser; `@jgengine/shell` (`shell/audio/audioEngine`, `shell/audio/AudioComponents`) is the only package that touches Web Audio — it owns an `AudioContext`, mounts `AudioListener` on the camera every frame, and `EntityAudioEmitters`/`ObjectAudioEmitters` drive per-instance emitter gain from the core falloff function. `GamePlayerShell` wires all of this automatically from `playable.audio`/`entitySounds`/`objectSounds` — a game never touches `AudioContext` directly.
+### Camera rigs (`camera` field of `defineGame({...})`)
 The shell ships a **rig library**; a game picks and tunes one through `camera` config, never by writing camera positions from `onTick`. Select with `camera.rig` (or the `perspective: "third" | "first"` shorthand):
 | `rig` | For | Key config (`camera.<rig>`) |
 |-------|-----|------------------------------|
@@ -674,10 +717,10 @@ A `worldItem` is a scene **entity** (position + item ref + rarity), never an inv
 ctx.scene.worldItem.spawn({ itemId, position, rarity?, baseType?, count?, affixTier?, source? })
 ctx.scene.worldItem.get(instanceId) / list() / nearestInRadius(from, radius, filter?)
 ctx.scene.worldItem.pickup(instanceId, userId)   // grants to inventory + despawns, emits worldItem.picked_up
-Click-to-grab is engine-owned: `PlayableGame.pointer.grabWorldItems: true` makes `@jgengine/shell`'s `GamePlayerShell` resolve `pointer.worldHit()` on primary click, and — when the hit entity is a `worldItem` within `PlayableGame.worldItem.pickupRadius` (default `DEFAULT_PICKUP_RADIUS`) of the local player — calls `pickup` directly, no game command needed. `@jgengine/react`'s `useWorldItems()` / `useNearestWorldItem(radius)` drive a HUD pickup prompt off the same store.
+Click-to-grab is engine-owned: setting `pointer.grabWorldItems: true` in `defineGame({...})` makes `@jgengine/shell`'s `GamePlayerShell` resolve `pointer.worldHit()` on primary click, and — when the hit entity is a `worldItem` within the `worldItem.pickupRadius` (default `DEFAULT_PICKUP_RADIUS`) configured on `defineGame({...})` of the local player — calls `pickup` directly, no game command needed. `@jgengine/react`'s `useWorldItems()` / `useNearestWorldItem(radius)` drive a HUD pickup prompt off the same store.
 Presentation is a two-layer render binding, both engine-owned (rendered by `@jgengine/shell`'s `WorldItems`) over **game-supplied data**:
-1. **Rarity baseline** — `PlayableGame.worldItem.rarityStyle: Record<rarity, { color?, beam?, label? }>`, the game's rarity palette (Borderlands/Diablo-style beam + color coding).
-2. **Loot filter overlay** (#33) — `PlayableGame.worldItem.filter: LootFilterRule[]` built with `lootFilter([{ id, when: { rarity?, baseType?, minAffixTier?, maxAffixTier? }, hide?, color?, beam?, label? }])` from `game/lootFilter`. **First matching rule wins** (PoE/Last Epoch block semantics); a rule only overrides the fields it sets, everything else falls back to the rarity baseline. `resolveWorldItemPresentation(item, rarityStyle, rules)` composes both layers and is what the shell calls per item.
+1. **Rarity baseline** — the `worldItem.rarityStyle: Record<rarity, { color?, beam?, label? }>` field of `defineGame({...})`, the game's rarity palette (Borderlands/Diablo-style beam + color coding).
+2. **Loot filter overlay** (#33) — the `worldItem.filter: LootFilterRule[]` field of `defineGame({...})`, built with `lootFilter([{ id, when: { rarity?, baseType?, minAffixTier?, maxAffixTier? }, hide?, color?, beam?, label? }])` from `game/lootFilter`. **First matching rule wins** (PoE/Last Epoch block semantics); a rule only overrides the fields it sets, everything else falls back to the rarity baseline. `resolveWorldItemPresentation(item, rarityStyle, rules)` composes both layers and is what the shell calls per item.
 ## Gear systems — durability, affixes, modular items, storage tiers
 Four pure primitives that hang off item **instances** (not the stackable catalog id) — all catalog-first (specs are game-supplied config) and renderer-free. Item instances that carry durability/affix/modular state key off a game-assigned instance id, the same way targeting keys off entity instance ids.
 **Durability** (`item/durability`) — per-instance wear + repair. `DurabilitySpec` (`{ max, wearPerUse?, wearPerHit?, disableAtZero?, repair? }`) is catalog data; `createDurability(spec)` seeds a `DurabilityState`, `wear(spec, state, "use" | "hit", times?)` decrements (floors at 0), `isDisabled(spec, state)` gates use at zero, `durabilityFraction` feeds a HUD bar. Repair is quote-then-apply: `repairQuote(spec, state, { station?, to? })` returns the `{ item, count }[]` material cost (scaled by points restored) + the post-repair state (optional `qualityLossPerRepair` shrinks `max` each repair, Tarkov-style) — the game charges the materials through inventory, then commits the quote's `state`. `createDurabilityTracker()` keeps `DurabilityState` per instance id for the runtime.
@@ -753,8 +796,8 @@ Catalog: `{ id, title, giver?, turnIn?, requires?, objectives: [{ id, kind, targ
 ## Social
 
 ```ts
-ctx.game.social.friends.canRequest / request / accept / remove / block / list   // persisted
-ctx.game.social.party.register({ maxMembers })   // then canInvite / invite / accept / kick / leave / promote / list / membersOf
+ctx.game.social.friends.canRequest / request / accept / decline / remove / block / list / requestsFor   // persisted
+ctx.game.social.party.register({ maxMembers })   // then canInvite / invite / accept / decline / kick / leave / promote / list / membersOf / invitesFor
 ctx.game.social.presence.get(userId)             // { online, serverId?, zoneId?, instanceId? }
 ctx.game.social.emotes.play(fromUserId, emoteId, radius?)   // → { from, emoteId, at, recipients } | { reason }
 ctx.game.social.worldInvites.invite(fromUserId, toUserId, { serverId, joinCode? })   // then canInvite / accept / decline / listFor
@@ -879,9 +922,9 @@ Pair `constrain` with `constrainToNavGrid(grid, { y? })` (`@jgengine/core/nav/na
 One primitive for all float UI: `{ radius, display, invoke }` where `display` is `{ kind: "keybind", actionId }` | `{ kind: "gauge", gaugeId }` | `{ kind: "label", text }` and `invoke` is `{ command, args? }` or null (display-only). `talkable: "dialogue_id"` on an entity expands to a talk prompt. Engine picks the nearest prompt in radius (priority tie-break). Never build per-game hint resolver chains.
 
 ## Pointer-driven input and navigation
-The **pointer is a service, not per-game glue**. Opt in with `PlayableGame.camera` plus a `pointer` config; the shell casts the cursor into the world and dispatches commands you define — verbs stay commands, catalogs stay data.
+The **pointer is a service, not per-game glue**. Opt in with `camera` plus a `pointer` config in `defineGame({...})`; the shell casts the cursor into the world and dispatches commands you define — verbs stay commands, catalogs stay data.
 - **`pointer.worldHit()` (shell service).** The shell raycasts the cursor to `{ point, normal, entity, object }` (a renderer-free `PointerHit` from `@jgengine/core/input/pointer`) — entity/object are the topmost instance ids under the cursor, else `null`, with a ground-plane fallback for open terrain. Consume it renderer-free: `aimToPoint(origin, point)` builds an `Aim` for `item.use`/projectiles (ground-target skillshots, twin-stick), `groundOf(hit)` drops to `[x, z]` for routing.
-- **`PlayableGame.pointer`** (all optional): `moveCommand` (left-click ground → `run(cmd, { point, entity, object })`, click-to-move), `select` (left-drag marquee + single-click box-select of entities), `orderCommand` (right-click ground → `run(cmd, { selection, point })`, issue a command to the selection), `contextMenu` (right-click an entity/object → its catalog `verbs` menu), `aim` (route the primary ability's aim to the cursor), `grabWorldItems` (left-click a `worldItem` within pickup radius → engine-owned `ctx.scene.worldItem.pickup`, no game command), `secondaryCommand` (right-click, not drag, → `run(cmd, { point, entity, object, normal, aim })` from the same raycast `moveCommand`/`pingCommand` use — under pointer lock this is the crosshair-center ray; suppresses the context menu). Enabling `select`/`moveCommand` frees the left button for verbs; orbit moves to middle-drag. Pick at most one right-click behavior — `secondaryCommand`/`contextMenu`/`orderCommand` all bind the same button and will conflict if combined.
+- **The `pointer` field of `defineGame({...})`** (all optional): `moveCommand` (left-click ground → `run(cmd, { point, entity, object })`, click-to-move), `select` (left-drag marquee + single-click box-select of entities), `orderCommand` (right-click ground → `run(cmd, { selection, point })`, issue a command to the selection), `contextMenu` (right-click an entity/object → its catalog `verbs` menu), `aim` (route the primary ability's aim to the cursor), `grabWorldItems` (left-click a `worldItem` within pickup radius → engine-owned `ctx.scene.worldItem.pickup`, no game command), `secondaryCommand` (right-click, not drag, → `run(cmd, { point, entity, object, normal, aim })` from the same raycast `moveCommand`/`pingCommand` use — under pointer lock this is the crosshair-center ray; suppresses the context menu). Enabling `select`/`moveCommand` frees the left button for verbs; orbit moves to middle-drag. Pick at most one right-click behavior — `secondaryCommand`/`contextMenu`/`orderCommand` all bind the same button and will conflict if combined.
 - **Selection math** (`scene/selection`) is pure and testable: `createSelectionSet()`, `screenRect`/`selectWithinRect`/`isMarquee` over projected screen points.
 - **Context menu** (`interaction/contextMenu`): a catalog entity/object carries `verbs: contextVerb(label, command, args?)[]`; the shell builds the menu with `buildContextMenu` and dispatches the chosen command via `contextVerbInput` (verb args + `target`/`point`, so one handler can walk-then-act).
 - **Navmesh + A\*** (`nav/navGrid`): `createNavGrid({ bounds, cellSize, diagonal? })` → mark obstacles with `blockAabb`/`setWalkable`; `findPath(grid, from, to, { clearance?, smooth? })` returns a string-pulled `[x, z]` polyline (blocked start/goal snap to the nearest walkable cell) feeding **both click-to-move and AI routing**. Renderer-free — AI and gameplay consume it without the shell.
@@ -899,8 +942,8 @@ Minimap/world-map/fog/compass state is renderer-free core (`world/*`), the top-d
 - **Markers** (`world/markers`): `createMarkerSet()` is a reactive keyed set of `MapMarker { id, kind, position, label?, owner?, expiresAt?, meta? }` — `add`/`remove`/`get`/`list`/`query({ kind, owner, near, radius })`/`prune(now)`/`subscribe`. `kind` is a game-owned catalog string; `DEFAULT_MARKER_KINDS` (objective/enemy/loot/location/danger/ping/player/ally) supplies colors + glyphs the react map reads (override with your own `MarkerKindStyle` palette). Objective/entity/loot markers all live here.
 - **Fog of war** (`world/fog`): `createFogField({ bounds, cellSize })` is reveal-on-event — `reveal(x, z, radius?)` (a dig/act), `revealAlong(from, to, radius?)` (a walked trail); once a cell is revealed it stays revealed. `isRevealed`/`fraction`/`cells()` (stable snapshot for rendering)/`reset`/`subscribe`.
 - **Minimap math** (`world/minimap`): pure projection + bearings — `projectToMinimap(worldPoint, { center, worldRadius, size, rotate? })` → pixel `{ x, y, inside, distance }` (north = −Z maps up), `clampToMinimapEdge` for off-map markers, `compassBearing(from, to)`/`headingToBearing(yaw)`/`bearingToCardinal`/`relativeBearing` for the compass strip.
-- **Ping** (`game/ping`): `classifyPing(hit, { roleOf, categoryOf }, options?)` turns a G1 `pointer.worldHit()` `PointerHit` into a category (hostile entity → `enemy`, tagged object → its catalog category, open ground/ally → `location`). `createPingSystem({ markers, feed, party?, ttlMs?, classify, classifyOptions? })` composes classify + broadcast: `ping(from, hit, category?)` classifies, drops a categorized marker, and pushes the `PingPayload` to the party feed under `PING_FEED_ACTION` (`"party.ping"`) — the shell's feed bridge fans it to the squad. `DEFAULT_PING_CATEGORIES` is the enemy/loot/location/danger wheel. Enable the verb with `PlayableGame.pointer.pingCommand`: the shell binds the `ping` input action → `worldHit()` → runs your command with `{ point, entity, object, normal }`.
-- **Shell render** (`@jgengine/shell/map`): `bakeTerrainMap(field, bounds, { resolution? })` renders a `TerrainField`/`RegionField` to a top-down PNG data-URL for the map background; `MapMarkerBeacons({ markers })` renders world-space beacons (the visible side of a ping) — wire via `PlayableGame.WorldOverlay`. See the `extraction-map` demo game.
+- **Ping** (`game/ping`): `classifyPing(hit, { roleOf, categoryOf }, options?)` turns a G1 `pointer.worldHit()` `PointerHit` into a category (hostile entity → `enemy`, tagged object → its catalog category, open ground/ally → `location`). `createPingSystem({ markers, feed, party?, ttlMs?, classify, classifyOptions? })` composes classify + broadcast: `ping(from, hit, category?)` classifies, drops a categorized marker, and pushes the `PingPayload` to the party feed under `PING_FEED_ACTION` (`"party.ping"`) — the shell's feed bridge fans it to the squad. `DEFAULT_PING_CATEGORIES` is the enemy/loot/location/danger wheel. Enable the verb with the `pointer.pingCommand` field of `defineGame({...})`: the shell binds the `ping` input action → `worldHit()` → runs your command with `{ point, entity, object, normal }`.
+- **Shell render** (`@jgengine/shell/map`): `bakeTerrainMap(field, bounds, { resolution? })` renders a `TerrainField`/`RegionField` to a top-down PNG data-URL for the map background; `MapMarkerBeacons({ markers })` renders world-space beacons (the visible side of a ping) — wire via the `WorldOverlay` field of `defineGame({...})`. See the `extraction-map` demo game.
 ## Sensors, vision & observer tools (`sensor/`)
 Pure `@jgengine/core/sensor/*` primitives for querying and surfacing world state the player can't normally see or reach through the standard occlusion/proximity rules — reveal vision, hidden-state sensors, photo-mode framing, and session replay. Shell renderers/HUD pieces live in `@jgengine/shell/vision` and `@jgengine/shell/replay`.
 | Primitive | Answers |
@@ -1047,7 +1090,7 @@ Backends:
 - **Clients** — `@jgengine/shell` (`GamePlayerShell`; each client supplies its own `GameRegistry`) is the shared player: it works in Vite, Next.js, or a Tauri webview; the authoritative ws host stays a standalone process.
 - **Shell multiplayer** — `resolveShellMultiplayer({ game, gameId, url?, force?, feedActions? })` connects the shell to a ws host when the game's `multiplayer` adapter is `ws(...)` (or `force` — the web dev route forces via `?ws`, desktop via `VITE_JG_WS_URL`). The shell then joins a server, pose-syncs the local player, renders remote players from the presence roster, and bridges feed actions (default `entity.died`) both ways with echo suppression — game code unchanged.
 - **Appearance replication.** Presence rows (`WsPresenceRow`) carry an optional per-slot `appearance?: Record<string, string>` channel alongside pose — cosmetic ids, `"#rrggbb"` tints, model keys; slot semantics are game-defined, but the convention is slot `"tint"` = a hex tint the shell's `RemotePlayers` applies to recolor the remote capsule in place of the default hash color. Appearance rides the existing pose message — no protocol bump. The client pose-sync gate force-sends when appearance differs (shallow compare) even with zero movement, still rate-limited by `minIntervalMs`/heartbeat; the server accepts appearance-only changes and echoes the last-known appearance on every presence row. Wire `ctx.player.cosmetics.get(userId)` into the outgoing pose's `appearance` to replicate a player's equipped cosmetics for free.
-- **Voice channels** — `@jgengine/ws/voiceChannel` (`createVoiceChannelRouter(channels?)`) is a thin, coarse layer on top of the same transport/presence model: it ships the channel/falloff **routing model**, not a WebRTC media stack (no mic capture, no audio transport — pair it with a real signaling/media layer for actual voice bytes). `VoiceChannelDef = { id, positional, falloff?, gain? }` — `positional: true` channels (proximity voice) attenuate by distance using the same `@jgengine/core/audio/audioFalloff` curve as positional SFX; `positional: false` channels (walkie/crew) play at flat gain regardless of distance. A member `join`s any number of channels at once (a Sea of Thieves–style crew channel *and* nearby-ship proximity, simultaneously); `updatePosition(userId, xyz)` feeds positions (typically mirrored from `WsPresenceRow`); `setMuted(userId, bool)` silences every channel from that speaker at once. `resolveRoutes(listenerUserId)` returns one `{ fromUserId, channelId, gain }` per shared channel — the mixer plays each route independently, so the same speaker can be loud on `walkie` and near-silent on `proximity` at the same time.
+- **Voice channels** — `@jgengine/ws/voiceChannel` (`createVoiceChannelRouter(channels?)`) is a thin, coarse layer on top of the same transport/presence model: it ships the channel/falloff **routing model**, not a WebRTC media stack (no audio transport — the media plane stays behind `multiplayer/voiceContract`'s `VoiceTransport` signaling seam: `join / leave / publish(streamId) / subscribers`; `createWsBackend(...).voiceSync` / `.voiceTransportFor(serverId)` implement it over `voiceJoin`/`voiceLeave`/`voicePublish` frames with host-relayed channel rosters, and `createLocalVoiceTransport()` covers local/dev; peers exchange stream **descriptors** here and negotiate actual media host-side). Mic capture + push-to-talk live in `@jgengine/react/voice` (`useVoice`, `createPushToTalk` state model: hold / toggle / openMic, mute-gated). `VoiceChannelDef = { id, positional, falloff?, gain? }` — `positional: true` channels (proximity voice) attenuate by distance using the same `@jgengine/core/audio/audioFalloff` curve as positional SFX; `positional: false` channels (walkie/crew) play at flat gain regardless of distance. A member `join`s any number of channels at once (a Sea of Thieves–style crew channel *and* nearby-ship proximity, simultaneously); `updatePosition(userId, xyz)` feeds positions (typically mirrored from `WsPresenceRow`); `setMuted(userId, bool)` silences every channel from that speaker at once. `resolveRoutes(listenerUserId)` returns one `{ fromUserId, channelId, gain }` per shared channel — the mixer plays each route independently, so the same speaker can be loud on `walkie` and near-silent on `proximity` at the same time.
 
 ## UI — `@jgengine/react`
 
@@ -1074,8 +1117,11 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 | `useFeed({ action, limit? })` | recent entries — kills, loot, any action |
 | `useQuestJournal()` | active quests + objective progress |
 | `useFriends()` / `useParty()` / `usePresence(userId)` / `useWorldInvites()` | social panels |
+| `useFriendRequests()` / `usePartyInvites()` | pending inbound requests/invites for the local player |
+| `useWorldBrowser({ fetchSessions, filter?, limit?, refreshMs? })` | polls a host-supplied fetcher (e.g. `createWsBackend().browse`) through matchmaking's `browseSessions` |
 | `useSession()` / `useAuthedPlayer({ guestSeed? })` | auth session from `<GameIdentityProvider>` / the `{ userId, isNew }` player seam for `createGameContext` |
 | `useChat(channelId, { limit? })` | local-player-filtered recent messages from `ctx.game.chat` |
+| `useVoice({ transport?, channelId?, mode?, resolveRoutes? })` | mic capture + PTT + voice-channel roster over the `VoiceTransport` seam |
 | `useRoster(userId?)` | owned/captured roster entries for a user (defaults to the local player) |
 | `useLeaderboard(stat, { scope, limit? })` | `{ userId, value }[]` |
 | `useActivePrompt(prompts)` | nearest proximity prompt |
@@ -1089,8 +1135,12 @@ Import hooks from `@jgengine/react/hooks`, components from `@jgengine/react/comp
 Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox` (+ `lineClassName`/`speakerClassName`/`choicesClassName`/`choiceClassName`/`checkClassName`, `rollCheck`-gated choices), `SkillCheckBar` (+ `trackClassName`/`zoneClassName`/`markerClassName`), `QteTrack` (+ `stepClassName`/`activeClassName`/`doneClassName`), `CaptureOdds` (+ `fillClassName`), `ToastStack`, `DeathScreen`, `LevelUpFlash`. Not yet implemented: `useServer`.
 **Identity (`@jgengine/react/identity`)** — `<GameIdentityProvider source={…}>` + `useSession()`. Sources: `clerkIdentity({ isLoaded, isSignedIn, user })` maps Clerk's `useUser()` shape, `betterAuthIdentity({ data, isPending })` maps better-auth's `useSession()` shape (both pure structural mappers — no SDK imports, one line at the call site), `guestIdentity(seed?)` for local/dev. Gate UI with `<RequireSession fallback loading>`; `<UserBadge>` / `<SignOutButton>` are headless like everything else. `useAuthedPlayer({ guestSeed? })` returns the `{ userId, isNew }` to hand `createGameContext` — feed the player seam from the session instead of hand-picking a userId.
 **Chat (`@jgengine/react/chat`)** — headless `<ChatPanel>` (tabs + log + input composition with internal active-channel state), or compose `<ChannelTabs active onSelect>`, `<ChatLog channelId>` (auto-scrolls, `renderMessage` override), `<ChatInput channelId onSent onRejected>` yourself. All drive `ctx.game.chat` through `useChat`. `chatTransportFromSync(sync)` lifts a callback-style `ChatSync` (e.g. `createWsBackend(...).chatSyncFor(serverId)`) into the hook-shaped `ChatTransport` for remote chat.
+**Voice (`@jgengine/react/voice`)** — `useVoice()` once per channel: `getUserMedia` mic capture (`requestMic()`, tracks gated by transmission), push-to-talk via `createPushToTalk` (hold/toggle/openMic + mute), roster from `VoiceTransport.subscribers`, and per-speaker `gainFor(userId)` when you pass `resolveRoutes: () => router.resolveRoutes(myUserId)` from `@jgengine/ws/voiceChannel`. Hand the returned state to the headless `<PushToTalkButton voice>`, `<MicToggle voice>`, `<SpeakingIndicator voice userId>`, `<VoiceRoster voice>`.
+**Social (`@jgengine/react/social`)** — the headless social kit over `ctx.game.social`: friends (`<FriendsList>`, `<FriendRow>`, `<PresenceDot>`, `<AddFriendButton toUserId>`, `<FriendRequestsList>` with accept/decline), party (`<PartyFrame>`, `<PartyMemberRow>`, `<PartyInviteToast>`, `<LeavePartyButton>`), worlds (`<WorldBrowser listings onJoin>`, `<JoinByCode onJoin>` — normalizes codes, `<QuickMatchButton listings filter?>`, `<InviteToWorldButton toUserId target>`, `<WorldInviteToast onAccepted>` — hands you the `{ serverId, joinCode? }` join target), and `<EmoteWheel emotes>` over `emotes.play`. All className-passthrough with `data-*` hooks and `renderX` overrides; the `social-hub` demo in `apps/dev` (`?game=social-hub`) composes the whole kit.
 **Drag/rotate/drop/snap gesture layer** (`@jgengine/react/dragLayer`) — a 2-D UI-space gesture layer over the card/shaped-grid primitives, distinct from 3-D world drag. `useDragLayer<T>({ onDrop })` owns pointer-follow drag state (begin/rotate/setTarget/end); pair it with the headless, className-passthrough `DraggableCard` (right-click rotates), `DropZone` (reports the snapped `cellFromPoint` cell + active state), and `DragGhost` (a pointer-anchored preview). Drop resolution and overlap validation stay the game's job via `canPlace`/`placeShaped` from `inventory/shapedGrid` — Balatro hand→play drags, Backpack Hero grid placement, Slay-the-Spire card-onto-enemy targeting.
 Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox`, `ToastStack`, `DeathScreen`, `LevelUpFlash`. Map components (bind a core `MarkerSet`/`FogField`, `kindStyles` palette overridable): `Minimap` (framed circular player-centered map — fog + markers + facing arrow, optional baked terrain `background`+`mapBounds`), `Compass` (facing strip with cardinals + marker pips), `WorldMap` (full-bounds top-down overlay). Not yet implemented: `useServer`, `useDialogue`.
+
+**Styled game-UI kit (`@jgengine/react/gameui`)** — ~50 fully styled, game-native components (inline styles, zero CSS/Tailwind setup needed; every visual token comes from a theme). Start here before hand-rolling HUD chrome; the headless primitives above remain the low-level escape hatch. Theming: wrap in `<GameUiThemeProvider theme={emberTheme | synthwaveTheme | fieldkitTheme | your GameUiTheme}>` — every component reskins from the one token object (`useGameUiTheme()` inside custom components). Families, each with its own construction so nothing looks like the same card twice: **vitals** (`VitalBar`/`EntityVitalBar` slant-clipped bars with damage ghost-trail + segment ticks, `UnitFrame`/`TargetFrame` portrait plates with level rosette, `CastBar`, `BossBar` with phase ticks, `ResourceOrb` liquid orbs, `HeartRow`, `XpBar`, `ChargeMeter`, `BreakMeter`); **slots** (`AbilitySlotButton` with the four required states + conic cooldown sweep + charge pips + corner `KeybindBadge`, `ActionBar`, `AbilityActionBar` bound to an `AbilityKit` via `useAbilitySlots`, `HotbarSelector`, `ItemGrid`/`InventorySlotGrid` with rarity borders, `EquipmentDoll`, `BuffTray`/`MoodleTray`, `LootCard`); **feedback** (`CombatFloatLayer`/`GameEventFloats` floating combat text, `HitMarker`, `KillFeed`/`FeedKillFeed`, `AnnouncementBanner`, `ComboCounter`, `StreakCallout`, `PickupToastStack`/`FeedPickupToasts`, `LevelUpSplash`); **meters** (`ScoreReadout`, `MatchTimer`, `CountdownPips`, `WaveIndicator`, `AmmoCounter`, `CurrencyDisplay`/`WalletCurrencyDisplay`, `ObjectiveChannel`, `TeamScoreBoard`, `RacePosition`, `ArcGauge`, `EventChargeMeter`); **panels** (bracket-cornered `HudPanel` chrome: `QuestTracker`/`JournalQuestTracker` — frameless per MMO convention, `ScoreboardOverlay`, `RankList`/`StatLeaderboard`, `CombatLogPanel`/`FeedCombatLog`, `VendorPanel`, `CraftingPanel`, `DialoguePanel`); **screens** (`TitleScreen`, `PauseScreen`, `DeathScreenView`/`DeathOverlayBound`, `ResultsScreen`, `LoadingScreen`, `MenuButton`/`MenuList`, `SliderRow`/`ToggleRow`/`SettingsGroup`); **reticles** (`Reticle` variants with spread, `LockOnMarker`, `DamageDirectionIndicator`, `WaypointMarker`/`HudMarkerLayer`, `InteractionRing`); **icons** (`GameIcon` + 59-name `GAME_ICON_NAMES` silhouette catalog, `iconForItemId` keyword resolver — satisfies the no-placeholder-icon rule out of the box). Engine-bound variants (prefixed `Entity`/`Ability`/`Journal`/`Feed`/`Wallet`/`Stat`/`GameEvent`) wrap the hooks table above; everything else is prop-driven and works without a `GameContext`. Browse everything staged: `apps/dev` `?game=ui-kit&mode=ui` (tabs via `&tab=hud|items|meters|panels|screens|icons`, theme via `&kitTheme=`).
 
 **Layout rule:** all **screen** positioning (`absolute`, `inset-*`, grid zones, flex regions) lives on wrappers inside `ui/GameUI.tsx` only. `ui/components/` files are content + hooks only — internal `relative`/`absolute` for bar overlays or slot badges inside a component is fine; never anchor a component to the viewport from a child file. Pass `className` to primitives for **visual** styling (colors, borders, size), not screen placement.
 
@@ -1160,17 +1210,17 @@ Headless primitives mean **you** ship the visual design. Functional wiring alone
 
 This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengine-newgame`** skill). "Compiles and the hooks are wired" is not done; a declared system with no UI, no feedback, or no way to exercise it is not done — finish the system or cut it whole.
 
-- [ ] `game.config.ts` (defineGame) + `index.ts` (PlayableGame) + `loop.ts` + `content.ts`
-- [ ] Catalogs: `entities/<role>/catalog.ts`, `items/<domain>/catalog.ts`, `objects/catalog.ts`; loot tables beside their domain
+- [ ] `game.config.ts` (`defineGame` from `@jgengine/shell/defineGame`) + `index.tsx` (barrel) + `main.tsx` (standalone host) + `loop.ts` + `game/content.ts`
+- [ ] Catalogs: `game/entities/<role>/catalog.ts`, `game/items/<domain>/catalog.ts`, `game/objects/catalog.ts`; loot tables beside their domain
 - [ ] Entity `stats` + `receive` orders aligned on the same stat ids; `role` set (drives targeting + camera)
-- [ ] `items/use-handlers.ts` registered in `onInit`; handlers read `getTarget`/`aim`, never a target input
-- [ ] `loadouts.ts` + `applyLoadout` in `onNewPlayer` (gated on `isNew`)
-- [ ] `quests/catalog.ts` + binds; if using xp/level, a game-owned curve fed to `game/progression` (`curve`/`leveling`) — **with their HUD/tracker, or cut**
+- [ ] `game/items/use-handlers.ts` registered in `onInit`; handlers read `getTarget`/`aim`, never a target input
+- [ ] `game/loadouts.ts` + `applyLoadout` in `onNewPlayer` (gated on `isNew`)
+- [ ] `game/quests/catalog.ts` + binds; if using xp/level, a game-owned curve fed to `game/progression` (`curve`/`leveling`) — **with their HUD/tracker, or cut**
 - [ ] `onInit`: register handlers/loadouts/loot/quests, event listeners, feed binds, leaderboard tracks; `setupWorld`
 - [ ] Player spawns with `id === ctx.player.userId`
-- [ ] `ui/GameUI.tsx` owns layout; components use `@jgengine/react` hooks
+- [ ] `game/ui/GameUI.tsx` owns layout; components use `@jgengine/react` hooks
 - [ ] UI passes the **quality bar** above (contrast, scale, framing, genre fit) — not just hook wiring
-- [ ] Camera tuned via `PlayableGame.camera` — defaults untouched means the feel was never checked
+- [ ] Camera tuned via `camera` in `defineGame({...})` — defaults untouched means the feel was never checked
 - [ ] For an `environment()` world: a `<game>.world.test.ts` asserts `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) is non-empty with the expected counts — the browserless scene-correctness gate
 - [ ] HUD screenshotted over a staged `GameUiPreview` scenario and **judged by looking at the image** (see `jgengine-ui`) — the final human glance, not the verification loop
 - [ ] Co-located bun tests for pure game math (curves, cooldowns, spawn logic)
@@ -1179,8 +1229,10 @@ This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengi
 ## Quick reference
 
 ```
-defineGame         assets, world, physics, inventories, input, server, save, multiplayer, ui, loop
-PlayableGame       { game, content, loop, GameUI } — the runner contract
+defineGame (shell) engine fields (assets, world, physics, inventories, input, server, save, time, multiplayer)
+                   + presentation fields (content, loop, GameUI, camera, environment, …) in one call — smart defaults fill the rest
+defineGame (core)  the underlying engine-only primitive: assets, world, physics, inventories, input, server, save, time, multiplayer, loop
+PlayableGame       { game, content, loop, GameUI, camera, … } — the runner contract `defineGame` (shell) returns
 GameContext        ctx.scene / ctx.game / ctx.player / ctx.item + subscribe/version
 scene.object       place, remove, move, rotate
 scene.entity       spawn (anchor/offset), despawn, setPose; stats; targeting; effects;
@@ -1194,9 +1246,9 @@ death              onDeath (reason-aware drops/command), entity.died, auto kill 
 game.loot          register / has / roll / grantToPlayer   (lootTable() = pure factory)
 game.trade         canBuy / canSell / buy / sell / tradableAt
 game.quest         register, accept…turnIn, bind(entity.died | inventory.added), declarative rewards
-game.social        friends (persisted), party (ephemeral), presence
+game.social        friends (persisted, requests listable), party (ephemeral, invites listable), presence, emotes (nearby broadcast), worldInvites (accept → join target)
+game.chat          send / whisper / history / register — global/party/proximity channels, rate-limited, mute via blocked set
 game.roster        capture / release / list / setEquipped — persisted owned-creature roster
-game.social        friends (persisted), party (ephemeral), presence, emotes (nearby broadcast)
 game.events/feed/leaderboard   on / bind+push+recent / track+increment+getTop
 applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
@@ -1212,8 +1264,11 @@ physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not th
 audio/audioFalloff computeFalloffGain / resolveEmitterGain — pure distance→gain curve; shell plays it
 time/beatClock     createBeatClock (BPM ticks) + createBeatInputBuffer (buffered action → next beat)
 ws/voiceChannel    createVoiceChannelRouter — positional falloff + simultaneous non-positional channels
+multiplayer/identity   AuthSession + sessionPlayer + resolveGuestSession — Clerk/better-auth via react structural adapters
+multiplayer/chatContract  ChatTransport (hooks) / ChatSync (callbacks) — ws + convex bindings, local for dev
+multiplayer/voiceContract VoiceTransport (join/leave/publish/subscribers) + createPushToTalk — media plane host-supplied
 GameBackend        { transport, feeds?, presence? } — Convex is one adapter (createConvexBackend)
-@jgengine/react    GameProvider + hooks + headless primitives; layout only in GameUI.tsx
+@jgengine/react    GameProvider + hooks + headless primitives (incl. identity/chat/voice/social kits); layout only in GameUI.tsx
 ```
 
 Engine ships verbs and primitives. Your game ships nouns.

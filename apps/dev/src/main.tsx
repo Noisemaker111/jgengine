@@ -39,13 +39,14 @@ const gameRegistry: GameRegistry = {
   "extraction-map": () => import("@jgengine/shell/demo/mapDemo").then((module) => module.mapDemoGame),
   "sensor-showcase": () =>
     import("@jgengine/shell/demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
-  "block-stacker": () =>
-    import("@games/block-stacker").then((module) => module.blockStackerGame),
-  "maze-muncher": () => import("@games/maze-muncher").then((module) => module.mazeMuncherGame),
-  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.voxelMineGame),
-  "platform-hopper": () =>
-    import("@games/platform-hopper").then((module) => module.platformHopperGame),
-  "spire-cards": () => import("@games/spire-cards").then((module) => module.spireCardsGame),
+  "social-hub": () =>
+    import("@jgengine/shell/demo/socialHubDemo").then((module) => module.socialHubGame),
+  "ui-kit": () => import("@jgengine/shell/demo/uiKitDemo").then((module) => module.uiKitGame),
+  "block-stacker": () => import("@games/block-stacker").then((module) => module.game),
+  "maze-muncher": () => import("@games/maze-muncher").then((module) => module.game),
+  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.game),
+  "platform-hopper": () => import("@games/platform-hopper").then((module) => module.game),
+  "spire-cards": () => import("@games/spire-cards").then((module) => module.game),
 };
 
 const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {

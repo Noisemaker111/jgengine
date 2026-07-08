@@ -7,8 +7,7 @@ import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
-  "block-stacker": () =>
-    import("@games/block-stacker").then((module) => module.blockStackerGame),
+  "block-stacker": () => import("@games/block-stacker").then((module) => module.game),
 };
 
 const GAME_ID = process.env.NEXT_PUBLIC_GAME_ID ?? "block-stacker";

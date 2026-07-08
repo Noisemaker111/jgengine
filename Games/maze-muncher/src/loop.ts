@@ -4,12 +4,15 @@ import { createNavGrid, findPath, type NavGrid, type NavPoint } from "@jgengine/
 import {
   chaseTargetCell,
   farthestCorner,
+  frightSecondsForLevel,
+  ghostChainScore,
+  ghostSpeedForLevel,
   scheduledMode,
   slideMove,
   type Dir,
   type Mode,
-} from "./ai";
-import { LIVES, MUNCHER, SCORE } from "./catalog";
+} from "./game/ai";
+import { LIVES, MUNCHER, SCORE, START_LIVES } from "./game/catalog";
 import {
   CORNERS,
   cellKey,
@@ -24,19 +27,18 @@ import {
   worldToCell,
   type Cell,
   type GhostDef,
-} from "./maze";
+} from "./game/maze";
 
-export type Phase = "playing" | "won" | "lost";
+export type Phase = "playing" | "levelup" | "won" | "lost";
 
 const EAT_RADIUS = 0.72;
-const FRIGHT_SECONDS = 7;
 const PELLET_SCORE = 10;
 const POWER_SCORE = 50;
-const GHOST_SCORE = 200;
 const RETARGET_INTERVAL = 0.4;
-const SPEED_NORMAL = 3.6;
 const SPEED_FRIGHT = 2.4;
 const SPEED_EATEN = 8;
+const LEVEL_UP_PAUSE = 2;
+export const MAX_LEVEL = 5;
 
 interface GhostState {
   def: GhostDef;
@@ -49,15 +51,29 @@ interface GhostState {
 let nav: NavGrid | null = null;
 let elapsed = 0;
 let phase: Phase = "playing";
+let level = 1;
+let levelStartElapsed = 0;
+let levelUpUntil = 0;
 let frightenedUntil = 0;
+let ghostChain = 0;
 let lastMuncher: [number, number] = [0, 0];
 let muncherDir: Dir = { dc: 0, dr: -1 };
 const pelletSet = new Set<string>();
 const powerSet = new Set<string>();
 const ghosts = new Map<string, GhostState>();
 
+function levelElapsed(): number {
+  return elapsed - levelStartElapsed;
+}
+
 export function getPhase(): Phase {
   return phase;
+}
+export function getLevel(): number {
+  return level;
+}
+export function getLevelUpRemaining(): number {
+  return Math.max(0, levelUpUntil - elapsed);
 }
 export function pelletsLeft(): number {
   return pelletSet.size + powerSet.size;
@@ -75,7 +91,7 @@ export function remainingPowerCells(): Cell[] {
   return powerCells.filter((cell) => powerSet.has(cellKey(cell.c, cell.r)));
 }
 
-export function onInit(_ctx: GameContext): void {
+export function onInit(ctx: GameContext): void {
   const grid = createNavGrid({ bounds: NAV_BOUNDS, cellSize: 1, diagonal: false });
   grid.reset(true);
   for (let r = 0; r < grid.rows; r += 1) {
@@ -87,13 +103,24 @@ export function onInit(_ctx: GameContext): void {
 
   elapsed = 0;
   phase = "playing";
+  level = 1;
+  levelStartElapsed = 0;
+  levelUpUntil = 0;
   frightenedUntil = 0;
+  ghostChain = 0;
   muncherDir = { dc: 0, dr: -1 };
   pelletSet.clear();
   powerSet.clear();
   for (const cell of pelletCells) pelletSet.add(cellKey(cell.c, cell.r));
   for (const cell of powerCells) powerSet.add(cellKey(cell.c, cell.r));
   ghosts.clear();
+
+  ctx.game.commands.define("restart", {
+    apply(state: GameContext) {
+      fullRestart(state);
+      return state;
+    },
+  });
 }
 
 export function onNewPlayer(ctx: GameContext): void {
@@ -105,6 +132,25 @@ export function onNewPlayer(ctx: GameContext): void {
     ctx.scene.entity.spawn(def.kind, { id: def.id, position: gs, role: "npc" });
     ghosts.set(def.id, { def, route: null, ri: 0, mode: scheduledMode(0), retargetAt: 0 });
   }
+}
+
+function fullRestart(ctx: GameContext): void {
+  const userId = ctx.player.userId;
+  level = 1;
+  ctx.scene.entity.stats.set(userId, SCORE, { current: 0 });
+  ctx.scene.entity.stats.set(userId, LIVES, { current: START_LIVES });
+  startLevel(ctx);
+}
+
+function startLevel(ctx: GameContext): void {
+  pelletSet.clear();
+  powerSet.clear();
+  for (const cell of pelletCells) pelletSet.add(cellKey(cell.c, cell.r));
+  for (const cell of powerCells) powerSet.add(cellKey(cell.c, cell.r));
+  ghostChain = 0;
+  levelStartElapsed = elapsed;
+  resetActors(ctx);
+  phase = "playing";
 }
 
 function targetCellFor(gs: GhostState, muncherCell: Cell, ghostCell: Cell): Cell {
@@ -126,12 +172,17 @@ function resetActors(ctx: GameContext): void {
     ctx.scene.entity.setPose(gs.def.id, { position: home, rotationY: 0 });
     gs.route = null;
     gs.ri = 0;
-    gs.mode = scheduledMode(elapsed);
+    gs.mode = scheduledMode(levelElapsed());
     gs.retargetAt = 0;
   }
 }
 
 export function onTick(ctx: GameContext, dt: number): void {
+  if (phase === "levelup") {
+    elapsed += dt;
+    if (elapsed >= levelUpUntil) startLevel(ctx);
+    return;
+  }
   if (phase !== "playing" || nav === null) return;
   elapsed += dt;
   const userId = ctx.player.userId;
@@ -159,7 +210,8 @@ export function onTick(ctx: GameContext, dt: number): void {
   if (powerSet.has(mk)) {
     powerSet.delete(mk);
     ctx.scene.entity.stats.delta(userId, SCORE, POWER_SCORE);
-    frightenedUntil = elapsed + FRIGHT_SECONDS;
+    frightenedUntil = elapsed + frightSecondsForLevel(level);
+    ghostChain = 0;
     for (const gs of ghosts.values()) {
       if (gs.mode !== "eaten") {
         gs.route = null;
@@ -168,7 +220,13 @@ export function onTick(ctx: GameContext, dt: number): void {
     }
   }
   if (pelletSet.size === 0 && powerSet.size === 0) {
-    phase = "won";
+    if (level >= MAX_LEVEL) {
+      phase = "won";
+    } else {
+      level += 1;
+      phase = "levelup";
+      levelUpUntil = elapsed + LEVEL_UP_PAUSE;
+    }
     return;
   }
 
@@ -179,12 +237,13 @@ export function onTick(ctx: GameContext, dt: number): void {
     let gz = entity.position[2];
 
     if (gs.mode !== "eaten") {
-      gs.mode = frightenedUntil > elapsed ? "frightened" : scheduledMode(elapsed);
+      gs.mode = frightenedUntil > elapsed ? "frightened" : scheduledMode(levelElapsed());
     }
 
     const ghostCell = worldToCell(gx, gz);
     const target = targetCellFor(gs, muncherCell, ghostCell);
-    const speed = gs.mode === "eaten" ? SPEED_EATEN : gs.mode === "frightened" ? SPEED_FRIGHT : SPEED_NORMAL;
+    const speed =
+      gs.mode === "eaten" ? SPEED_EATEN : gs.mode === "frightened" ? SPEED_FRIGHT : ghostSpeedForLevel(level);
 
     if (gs.route === null || gs.ri >= gs.route.length || elapsed >= gs.retargetAt) {
       const tw = cellToWorld(target.c, target.r);
@@ -218,7 +277,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     if (gs.mode === "eaten") {
       const pen = cellToWorld(PEN_CENTER.c, PEN_CENTER.r);
       if (Math.hypot(gx - pen[0], gz - pen[2]) < 0.4) {
-        gs.mode = frightenedUntil > elapsed ? "frightened" : scheduledMode(elapsed);
+        gs.mode = frightenedUntil > elapsed ? "frightened" : scheduledMode(levelElapsed());
         gs.route = null;
       }
     }
@@ -229,8 +288,10 @@ export function onTick(ctx: GameContext, dt: number): void {
         gs.mode = "eaten";
         gs.route = null;
         gs.retargetAt = 0;
-        ctx.scene.entity.stats.delta(userId, SCORE, GHOST_SCORE);
-        ctx.scene.entity.floatText({ instanceId: userId, text: String(GHOST_SCORE), kind: "info" });
+        ghostChain += 1;
+        const chainScore = ghostChainScore(ghostChain);
+        ctx.scene.entity.stats.delta(userId, SCORE, chainScore);
+        ctx.scene.entity.floatText({ instanceId: userId, text: String(chainScore), kind: "info" });
       } else if (gs.mode !== "eaten") {
         ctx.scene.entity.stats.delta(userId, LIVES, -1);
         const lives = ctx.scene.entity.stats.get(userId, LIVES);

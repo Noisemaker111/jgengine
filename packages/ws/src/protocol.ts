@@ -9,7 +9,7 @@ import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/mat
 
 export const WS_PROTOCOL_VERSION = 1;
 
-export type WsChannel = "server" | "player" | "feed" | "presence" | "chat";
+export type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice";
 
 export type WsAppearance = Record<string, string>;
 
@@ -39,6 +39,11 @@ export type WsChatMessage = {
   at: number;
 };
 
+export type WsVoiceParticipant = {
+  userId: string;
+  streamId?: string;
+};
+
 export type WsClientMessage =
   | { v: 1; t: "hello"; id: number; userId: string; token?: string }
   | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes }
@@ -50,14 +55,18 @@ export type WsClientMessage =
   | { v: 1; t: "subscribe"; id: number; channel: WsChannel; serverId: string; action?: string }
   | { v: 1; t: "unsubscribe"; id: number; channel: WsChannel; serverId: string; action?: string }
   | { v: 1; t: "pose"; serverId: string; pose: WsPose }
-  | { v: 1; t: "chatSend"; id: number; serverId: string; channelId: string; body: string };
+  | { v: 1; t: "chatSend"; id: number; serverId: string; channelId: string; body: string }
+  | { v: 1; t: "voiceJoin"; id: number; serverId: string; channelId: string; streamId?: string }
+  | { v: 1; t: "voiceLeave"; id: number; serverId: string; channelId: string }
+  | { v: 1; t: "voicePublish"; id: number; serverId: string; channelId: string; streamId: string };
 
 export type WsUpdateMessage =
   | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null }
   | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null }
   | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unknown[] }
   | { v: 1; t: "update"; channel: "presence"; serverId: string; data: WsPresenceRow[] }
-  | { v: 1; t: "update"; channel: "chat"; serverId: string; action: string; data: WsChatMessage[] };
+  | { v: 1; t: "update"; channel: "chat"; serverId: string; action: string; data: WsChatMessage[] }
+  | { v: 1; t: "update"; channel: "voice"; serverId: string; action: string; data: WsVoiceParticipant[] };
 
 export type WsServerMessage =
   | { v: 1; t: "reply"; id: number; ok: true; result?: unknown }
@@ -97,7 +106,8 @@ function isWsChannel(value: unknown): value is WsChannel {
     value === "player" ||
     value === "feed" ||
     value === "presence" ||
-    value === "chat"
+    value === "chat" ||
+    value === "voice"
   );
 }
 
@@ -177,6 +187,26 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
         typeof message.serverId === "string" &&
         typeof message.channelId === "string" &&
         typeof message.body === "string"
+        ? (message as WsClientMessage)
+        : null;
+    case "voiceJoin":
+      return typeof message.id === "number" &&
+        typeof message.serverId === "string" &&
+        typeof message.channelId === "string" &&
+        (message.streamId === undefined || typeof message.streamId === "string")
+        ? (message as WsClientMessage)
+        : null;
+    case "voiceLeave":
+      return typeof message.id === "number" &&
+        typeof message.serverId === "string" &&
+        typeof message.channelId === "string"
+        ? (message as WsClientMessage)
+        : null;
+    case "voicePublish":
+      return typeof message.id === "number" &&
+        typeof message.serverId === "string" &&
+        typeof message.channelId === "string" &&
+        typeof message.streamId === "string"
         ? (message as WsClientMessage)
         : null;
     default:

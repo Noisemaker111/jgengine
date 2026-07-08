@@ -1,8 +1,10 @@
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { defineGame } from "@jgengine/core/game/defineGame";
-import { offline } from "@jgengine/core/runtime/adapter";
+import { defineGame } from "@jgengine/shell/defineGame";
 
-import { keybinds } from "./keybinds";
+import { content } from "./game/content";
+import { keybinds } from "./game/keybinds";
+import { GameUI } from "./game/ui/GameUI";
+import { onInit, onNewPlayer, onTick } from "./loop";
 
 export const game = defineGame({
   name: "Spire Cards",
@@ -10,5 +12,8 @@ export const game = defineGame({
   input: keybinds,
   server: "persistent",
   save: "none",
-  multiplayer: offline(),
+  content,
+  loop: { onInit, onNewPlayer, onTick },
+  GameUI,
+  camera: { followEntityId: null },
 });
