@@ -1,4 +1,5 @@
 import { AmmoCounter, GameUiThemeProvider, ResultsScreen, ScoreReadout, WaveIndicator, type ResultLine } from "@jgengine/react/gameui";
+import { useDisplayProfile } from "@jgengine/react/display";
 import { LEVELS } from "../levels/catalog";
 import { useSlingshotState, useSlingshotStore } from "../state/slingshotStore";
 import { siegeTheme } from "./theme";
@@ -40,6 +41,8 @@ function ResultsOverlay() {
 
 function Hud() {
   const state = useSlingshotState();
+  const { coarsePointer } = useDisplayProfile();
+  const hint = coarsePointer ? "Drag back from the pouch, release to fling." : "Drag back from the sling pouch to aim, release to fire.";
   return (
     <div className="pointer-events-none absolute inset-0 select-none">
       <div className="absolute left-6 top-6 flex flex-col gap-1">
@@ -59,9 +62,7 @@ function Hud() {
       <div className="absolute bottom-6 right-6">
         <AmmoCounter magazine={state.shotsLeft} lowAt={1} />
       </div>
-      <div className="absolute bottom-6 left-6 max-w-xs text-[11px] leading-4 text-[#ab977a]">
-        Drag back from the sling pouch to aim, release to fire.
-      </div>
+      <div className="absolute bottom-6 left-6 max-w-xs text-[11px] leading-4 text-[#ab977a]">{hint}</div>
       <ResultsOverlay />
     </div>
   );

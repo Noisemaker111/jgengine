@@ -1,14 +1,21 @@
 import type { ThreeEvent } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 
 import { InstancedBodies } from "@jgengine/shell/world/InstancedBodies";
+import { useDisplayProfile } from "@jgengine/react/display";
 
 import { DUMMY_COLOR, GROUND_COLOR, MATERIALS, PROJECTILE_COLOR } from "../physics/impact";
+import type { Vec3 } from "../physics/trajectory";
+import { coachFrame, coachVisible, demoTrajectory } from "./dragCoach";
 import {
+  GRAB_RADIUS_COARSE,
   GROUND_CENTER,
   GROUND_HALF,
+  MAX_PULL,
   SLING_ANCHOR,
+  grabRadiusFor,
   useSlingshotState,
   useSlingshotStore,
   type BodyMeta,
@@ -22,6 +29,11 @@ const PLATFORM_THICKNESS = 0.06;
 const SLING_PLATFORM_SIZE: readonly [number, number] = [2.6, 2.2];
 const SIEGE_ZONE_CENTER_X = 12.5;
 const SIEGE_ZONE_HALF: readonly [number, number] = [5, 3.5];
+const AIM_CATCHER_MARGIN = 20;
+const AIM_CATCHER_HALF_WIDTH = GROUND_HALF[0] + AIM_CATCHER_MARGIN;
+const AIM_CATCHER_HALF_HEIGHT = GRAB_RADIUS_COARSE + MAX_PULL + AIM_CATCHER_MARGIN;
+const COACH_DOT_COLOR = "#ffe9b8";
+const COACH_ARC_COLOR = "#f3e6cf";
 
 function bodyColor(meta: BodyMeta): readonly [number, number, number] {
   if (meta.kind === "ground") return GROUND_COLOR;
@@ -104,12 +116,18 @@ function TrajectoryPreview({ points }: { points: readonly (readonly [number, num
 
 function AimCatcher() {
   const store = useSlingshotStore();
+  const { coarsePointer } = useDisplayProfile();
   const draggingRef = useRef(false);
+  const capturedRef = useRef(false);
 
   const onPointerDown = (event: ThreeEvent<PointerEvent>): void => {
     event.stopPropagation();
-    store.beginAim([event.point.x, event.point.y, event.point.z]);
-    draggingRef.current = store.getState().phase === "dragging";
+    store.beginAim([event.point.x, event.point.y, event.point.z], grabRadiusFor(coarsePointer));
+    if (store.getState().phase !== "dragging") return;
+    draggingRef.current = true;
+    const target = event.target as Element;
+    target.setPointerCapture(event.pointerId);
+    capturedRef.current = target.hasPointerCapture(event.pointerId);
   };
 
   const onPointerMove = (event: ThreeEvent<PointerEvent>): void => {
@@ -117,23 +135,134 @@ function AimCatcher() {
     store.updateAim([event.point.x, event.point.y, event.point.z]);
   };
 
-  const onPointerRelease = (): void => {
+  const releaseCapture = (event: ThreeEvent<PointerEvent>): void => {
+    if (!capturedRef.current) return;
+    capturedRef.current = false;
+    const target = event.target as Element;
+    if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+  };
+
+  const onPointerUp = (event: ThreeEvent<PointerEvent>): void => {
+    releaseCapture(event);
     if (!draggingRef.current) return;
     draggingRef.current = false;
     store.releaseAim();
   };
 
+  const onPointerCancel = (event: ThreeEvent<PointerEvent>): void => {
+    releaseCapture(event);
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    store.cancelAim();
+  };
+
+  const onLostPointerCapture = (): void => {
+    capturedRef.current = false;
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    store.cancelAim();
+  };
+
+  const onPointerLeave = (): void => {
+    if (capturedRef.current) return;
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    store.cancelAim();
+  };
+
   return (
     <mesh
-      position={[GROUND_CENTER[0], 6, GROUND_CENTER[2]]}
+      position={[GROUND_CENTER[0], SLING_ANCHOR[1], GROUND_CENTER[2]]}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={onPointerRelease}
-      onPointerLeave={onPointerRelease}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onLostPointerCapture={onLostPointerCapture}
+      onPointerLeave={onPointerLeave}
     >
-      <planeGeometry args={[GROUND_HALF[0] * 2, 24]} />
+      <planeGeometry args={[AIM_CATCHER_HALF_WIDTH * 2, AIM_CATCHER_HALF_HEIGHT * 2]} />
       <meshBasicMaterial transparent opacity={0} depthWrite={false} />
     </mesh>
+  );
+}
+
+function DragCoach() {
+  const camera = useThree((s) => s.camera);
+  const groupRef = useRef<THREE.Group>(null);
+  const ringMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const circleMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const fingerMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const arcGroupRef = useRef<THREE.Group>(null);
+  const arcMaterialsRef = useRef<THREE.MeshBasicMaterial[]>([]);
+  const trajectory = useMemo(() => demoTrajectory(), []);
+
+  useFrame((frameState) => {
+    const frame = coachFrame(frameState.clock.elapsedTime);
+    const group = groupRef.current;
+    if (group === null) return;
+    group.visible = frame.opacity > 0.01;
+    if (group.visible) {
+      group.position.set(frame.position[0], frame.position[1], frame.position[2]);
+      group.quaternion.copy(camera.quaternion);
+    }
+    if (ringMaterialRef.current) ringMaterialRef.current.opacity = frame.opacity * 0.85;
+    if (circleMaterialRef.current) circleMaterialRef.current.opacity = frame.opacity * 0.5;
+    if (fingerMaterialRef.current) fingerMaterialRef.current.opacity = frame.opacity * 0.8;
+    const arcGroup = arcGroupRef.current;
+    if (arcGroup !== null) {
+      arcGroup.visible = frame.showArc;
+      for (const material of arcMaterialsRef.current) material.opacity = frame.opacity * 0.55;
+    }
+  });
+
+  return (
+    <>
+      <group ref={arcGroupRef}>
+        <CoachArcMaterials points={trajectory} materialsRef={arcMaterialsRef} />
+      </group>
+      <group ref={groupRef}>
+        <mesh raycast={() => null}>
+          <ringGeometry args={[0.16, 0.22, 20]} />
+          <meshBasicMaterial ref={ringMaterialRef} color={COACH_DOT_COLOR} transparent opacity={0} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+        <mesh raycast={() => null}>
+          <circleGeometry args={[0.1, 20]} />
+          <meshBasicMaterial ref={circleMaterialRef} color={COACH_DOT_COLOR} transparent opacity={0} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+        <mesh position={[0.02, 0.24, 0.001]} rotation={[0, 0, -0.3]} raycast={() => null}>
+          <capsuleGeometry args={[0.045, 0.2, 4, 8]} />
+          <meshBasicMaterial ref={fingerMaterialRef} color={COACH_DOT_COLOR} transparent opacity={0} depthWrite={false} />
+        </mesh>
+      </group>
+    </>
+  );
+}
+
+function CoachArcMaterials({
+  points,
+  materialsRef,
+}: {
+  points: readonly Vec3[];
+  materialsRef: MutableRefObject<THREE.MeshBasicMaterial[]>;
+}) {
+  const dots = points.filter((_, index) => index % 6 === 0);
+  return (
+    <>
+      {dots.map((point, index) => (
+        <mesh key={index} position={[point[0], point[1], point[2]]} raycast={() => null}>
+          <sphereGeometry args={[0.035, 6, 6]} />
+          <meshBasicMaterial
+            ref={(material) => {
+              if (material !== null) materialsRef.current[index] = material;
+            }}
+            color={COACH_ARC_COLOR}
+            transparent
+            opacity={0}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+    </>
   );
 }
 
@@ -173,6 +302,7 @@ export function SlingshotOverlay() {
           <meshStandardMaterial color={POUCH_COLOR} roughness={0.9} />
         </mesh>
       )}
+      {coachVisible(state.phase, state.hasDragged) && <DragCoach />}
       <AimCatcher />
     </>
   );
