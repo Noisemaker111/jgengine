@@ -119,6 +119,13 @@ const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
   "interact",
 ]);
 
+const SHELL_MOVEMENT_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] as const;
+
+function shellDrivesPlayerPose(input: PlayableGame["game"]["input"]): boolean {
+  const bound = input ?? {};
+  return SHELL_MOVEMENT_ACTIONS.some((action) => action in bound);
+}
+
 function findHotbarSlotActions(input: PlayableGame["game"]["input"]): { action: string; slot: number }[] {
   return Object.keys(input ?? {}).flatMap((action) => {
     const slot = hotbarSlotActionIndex(action);
@@ -479,6 +486,7 @@ function FrameDriver({
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
   const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
+  const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
 
   useFrame((_state, rawDt) => {
     try {
@@ -491,7 +499,7 @@ function FrameDriver({
     const player = ctx.scene.entity.get(playerId);
     const forwardX = Math.sin(yawRef.current);
     const forwardZ = Math.cos(yawRef.current);
-    if (player !== null) {
+    if (player !== null && drivesPose) {
       const keys = createEmptyMovementKeys();
       keys.w = tracker.isDown("moveForward");
       keys.s = tracker.isDown("moveBack");

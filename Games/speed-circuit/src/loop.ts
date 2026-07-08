@@ -13,6 +13,15 @@ const vehicle: VehicleController = createVehicleController({ position: SPAWN_POS
 
 let raceState: RaceState = createRaceState({ track: TRACK });
 
+let restPose: { position: readonly [number, number, number]; heading: number } = {
+  position: SPAWN_POSITION,
+  heading: SPAWN_HEADING,
+};
+
+function holdRestPose(ctx: GameContext): void {
+  ctx.scene.entity.setPose(ctx.player.userId, { position: restPose.position, rotationY: restPose.heading });
+}
+
 export function onInit(): void {}
 
 export function onNewPlayer(ctx: GameContext): void {
@@ -26,7 +35,8 @@ function restart(ctx: GameContext): void {
   raceState = createRaceState({ track: TRACK });
   raceState.addRacer(ctx.player.userId, ctx.time.now());
   runStore.setState(() => initialRunState(LAPS));
-  ctx.scene.entity.setPose(ctx.player.userId, { position: SPAWN_POSITION, rotationY: SPAWN_HEADING });
+  restPose = { position: SPAWN_POSITION, heading: SPAWN_HEADING };
+  holdRestPose(ctx);
 }
 
 export function onTick(ctx: GameContext, dt: number): void {
@@ -34,17 +44,20 @@ export function onTick(ctx: GameContext, dt: number): void {
 
   if (state.phase === "finished") {
     if (consumeRestart()) restart(ctx);
+    else holdRestPose(ctx);
     return;
   }
 
   if (state.phase === "countdown") {
     if (consumeRestart()) restart(ctx);
+    holdRestPose(ctx);
     runStore.setState((s) => tickCountdown(s, dt));
     return;
   }
 
   const axis = sampleDriveInput(dt);
   const pose = vehicle.tick(dt, axis);
+  restPose = { position: pose.position, heading: pose.heading };
   ctx.scene.entity.setPose(ctx.player.userId, { position: pose.position, rotationY: pose.heading, dt });
 
   const events = raceState.update(ctx.time.now(), { [ctx.player.userId]: pose.position });

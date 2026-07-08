@@ -3,6 +3,7 @@ import * as THREE from "three";
 import type { Aabb } from "@jgengine/core/world/geometry";
 import { scatter } from "@jgengine/core/world/scatter";
 import { groundFieldFor } from "@jgengine/core/world/terrain";
+import { Daylight } from "@jgengine/shell/environment";
 import { createFieldGroundGeometry, withNormal, type TerrainField } from "@jgengine/shell/terrain";
 
 import {
@@ -23,12 +24,6 @@ import {
 } from "../race/track";
 import { world as worldFeature } from "../../world";
 
-const SKY_TOP = "#3fa4f2";
-const SKY_HORIZON = "#e3f4ff";
-const FOG_COLOR = "#e9f6ff";
-const SUN_COLOR = "#fff1c9";
-const HEMI_SKY = "#bfe3ff";
-const HEMI_GROUND = "#4c6b34";
 
 const ASPHALT_COLOR = "#55585d";
 const EDGE_WHITE = "#f2f2f2";
@@ -39,9 +34,9 @@ const CURB_RED = new THREE.Color("#c81e1e");
 const CURB_WHITE = new THREE.Color("#f2f2f2");
 const CURB_GRASS = new THREE.Color(GRASS_LOW);
 
-const DASH_LENGTH = 2.4;
-const DASH_GAP = 2.4;
-const DASH_WIDTH = 0.28;
+const DASH_LENGTH = 2.6;
+const DASH_GAP = 2.2;
+const DASH_WIDTH = 0.42;
 
 const EMBANKMENT_HALF_WIDTH = TRACK_WIDTH / 2 + 3;
 const EMBANKMENT_RAMP = 14;
@@ -80,57 +75,6 @@ function useTrackAwareField(): TerrainField {
     };
     return { sampleHeight, sampleNormal: withNormal(sampleHeight) };
   }, []);
-}
-
-function SkyDome() {
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        topColor: { value: new THREE.Color(SKY_TOP) },
-        bottomColor: { value: new THREE.Color(SKY_HORIZON) },
-        offset: { value: 24 },
-        exponent: { value: 0.65 },
-      },
-      vertexShader: `
-        varying vec3 vWorldPosition;
-        void main() {
-          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-          vWorldPosition = worldPosition.xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 topColor;
-        uniform vec3 bottomColor;
-        uniform float offset;
-        uniform float exponent;
-        varying vec3 vWorldPosition;
-        void main() {
-          float h = normalize(vWorldPosition + vec3(0.0, offset, 0.0)).y;
-          gl_FragColor = vec4(mix(bottomColor, topColor, max(pow(max(h, 0.0), exponent), 0.0)), 1.0);
-        }
-      `,
-      side: THREE.BackSide,
-      depthWrite: false,
-      fog: false,
-    });
-  }, []);
-  useEffect(() => () => material.dispose(), [material]);
-  return (
-    <mesh material={material} renderOrder={-1}>
-      <sphereGeometry args={[260, 32, 16]} />
-    </mesh>
-  );
-}
-
-function DaylightRig() {
-  return (
-    <>
-      <fog attach="fog" args={[FOG_COLOR, 70, 260]} />
-      <hemisphereLight args={[HEMI_SKY, HEMI_GROUND, 0.55]} />
-      <directionalLight position={[120, 160, 70]} intensity={0.85} color={SUN_COLOR} castShadow />
-    </>
-  );
 }
 
 function TrackAwareGround({ field }: { field: TerrainField }) {
@@ -200,10 +144,10 @@ function CenterDashes() {
 function TrackSurface() {
   const curb = useRibbonGeometry(TRACK_CENTERLINE, TRACK_WIDTH + 1.6, TRACK_SURFACE_HEIGHT + 0.015, curbColorAt);
   const asphalt = useRibbonGeometry(TRACK_CENTERLINE, TRACK_WIDTH, TRACK_SURFACE_HEIGHT + 0.02);
-  const leftEdge = useMemo(() => offsetPolyline(TRACK_CENTERLINE, TRACK_WIDTH / 2 - 0.15), []);
-  const rightEdge = useMemo(() => offsetPolyline(TRACK_CENTERLINE, -(TRACK_WIDTH / 2 - 0.15)), []);
-  const leftLine = useRibbonGeometry(leftEdge, 0.28, TRACK_SURFACE_HEIGHT + 0.03);
-  const rightLine = useRibbonGeometry(rightEdge, 0.28, TRACK_SURFACE_HEIGHT + 0.03);
+  const leftEdge = useMemo(() => offsetPolyline(TRACK_CENTERLINE, TRACK_WIDTH / 2 - 0.2), []);
+  const rightEdge = useMemo(() => offsetPolyline(TRACK_CENTERLINE, -(TRACK_WIDTH / 2 - 0.2)), []);
+  const leftLine = useRibbonGeometry(leftEdge, 0.34, TRACK_SURFACE_HEIGHT + 0.03);
+  const rightLine = useRibbonGeometry(rightEdge, 0.34, TRACK_SURFACE_HEIGHT + 0.03);
   return (
     <>
       <mesh geometry={curb} receiveShadow>
@@ -374,8 +318,7 @@ export function TrackEnvironment() {
   const field = useTrackAwareField();
   return (
     <>
-      <SkyDome />
-      <DaylightRig />
+      <Daylight />
       <TrackAwareGround field={field} />
       <TrackSurface />
       <CheckpointGates />
