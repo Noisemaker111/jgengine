@@ -89,11 +89,41 @@ function formatLoadError(error: unknown): string {
   return String(error);
 }
 
+function ErrorPanel({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 bg-neutral-950 px-6 text-center">
+      <div className="text-sm font-semibold text-red-400">{title}</div>
+      <pre className="max-h-[50vh] max-w-3xl overflow-auto whitespace-pre-wrap break-words rounded border border-red-900/60 bg-black/60 p-3 text-left font-mono text-xs text-red-200">
+        {detail}
+      </pre>
+    </div>
+  );
+}
+
 function DevApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
   const [scenario, setScenario] = useState<UiPreviewScenario | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
+  useEffect(() => {
+    const onError = (event: ErrorEvent) => {
+      const detail = event.error instanceof Error ? (event.error.stack ?? event.error.message) : event.message;
+      console.error(`[jgengine/play] runtime error`, event.error ?? event.message);
+      setRuntimeError(detail);
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      const detail = formatLoadError(event.reason);
+      console.error(`[jgengine/play] unhandled rejection`, event.reason);
+      setRuntimeError(detail);
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
   useEffect(() => {
     const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
     if (load === undefined) {
@@ -137,14 +167,10 @@ function DevApp() {
     }
   }, []);
   if (loadError !== null) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 bg-neutral-950 px-6 text-center">
-        <div className="text-sm font-semibold text-red-400">Failed to load {GAME_ID}</div>
-        <pre className="max-h-[50vh] max-w-3xl overflow-auto whitespace-pre-wrap break-words rounded border border-red-900/60 bg-black/60 p-3 text-left font-mono text-xs text-red-200">
-          {loadError}
-        </pre>
-      </div>
-    );
+    return <ErrorPanel title={`Failed to load ${GAME_ID}`} detail={loadError} />;
+  }
+  if (runtimeError !== null) {
+    return <ErrorPanel title={`Runtime error in ${GAME_ID}`} detail={runtimeError} />;
   }
   if (playable === null) {
     return (
