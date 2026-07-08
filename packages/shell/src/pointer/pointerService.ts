@@ -66,12 +66,15 @@ export function createPointerService(): PointerService {
         scratch.copy(hit.face.normal).applyMatrix3(normalMatrix).normalize();
         normal = [scratch.x, scratch.y, scratch.z];
       }
+      const uv = hit.uv !== undefined ? { u: hit.uv.x, v: hit.uv.y } : undefined;
       return {
         point,
         normal,
         entity: tagOf(hit.object, POINTER_ENTITY_KEY),
         object: tagOf(hit.object, POINTER_OBJECT_KEY),
+        ...(uv !== undefined ? { uv } : {}),
         material: standardMaterialSample(mesh.material),
+        ...(hit.instanceId !== undefined ? { instanceId: hit.instanceId } : {}),
       };
     }
     const grounded = raycaster.ray.intersectPlane(groundPlane, scratch);

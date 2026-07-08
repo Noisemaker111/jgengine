@@ -61,4 +61,27 @@ describe("pointerService worldHitCenter", () => {
     const hit = service.worldHitCenter();
     expect(hit?.material).toBeNull();
   });
+
+  test("surfaces instanceId when the hit mesh is an InstancedMesh", () => {
+    const { service, scene, camera } = setup();
+    const instanced = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial(), 3);
+    const matrix = new THREE.Matrix4();
+    matrix.setPosition(0, 0, 2);
+    instanced.setMatrixAt(1, matrix);
+    matrix.setPosition(0, 0, -100);
+    instanced.setMatrixAt(0, matrix);
+    instanced.setMatrixAt(2, matrix);
+    instanced.instanceMatrix.needsUpdate = true;
+    scene.add(instanced);
+    instanced.updateMatrixWorld();
+    camera.updateMatrixWorld();
+    const hit = service.worldHitCenter();
+    expect(hit?.instanceId).toBe(1);
+  });
+
+  test("leaves instanceId unset for a plain (non-instanced) mesh hit", () => {
+    const { service } = setup();
+    const hit = service.worldHitCenter();
+    expect(hit?.instanceId).toBeUndefined();
+  });
 });

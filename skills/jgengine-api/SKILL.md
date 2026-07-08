@@ -41,7 +41,10 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Simulation clock | `time/simClock` | `createSimClock`, `SimClock`, `TimeConfig`, `ClockSnapshot`, `CalendarTime` |
 | Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |
+| Reactive keyed store | `store/observableKeyedStore` | `createObservableKeyedStore`, `ObservableKeyedStore` — backs `ctx.game.store` |
 | Scene instance role | `scene/entityStore` | `EntityRole`, `SceneEntity`, `SpawnOptions`, `EntityPose` |
+| Object spatial queries | `scene/objectQuery` | `raycastObjects`, `raycastObjectsAll`, `ObjectRaycastInput`, `ObjectRaycastHit` — backs `ctx.scene.object.raycast`/`raycastAll` |
+| Runtime paint layer | `scene/paintLayer` | `createPaintLayer`, `PaintLayer`, `PaintStroke` — backs `ctx.scene.entity.paint` |
 | Possession | `scene/possession` | `createPossession`, `Possession`, `PossessionDeps`, `PossessionSwappedEvent` |
 | Form / shapeshift | `scene/form` | `createForms`, `Forms`, `FormDef`, `FormsDeps`, `FormChangedEvent` |
 | Multiplayer adapters | `runtime/adapter` | `offline`, `ws`, `convex`, `socketIo`, `p2p`, `lan`, `fly`, `servers`, `MultiplayerTopology`, `ServersPoolConfig` |
@@ -52,6 +55,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Cosmetic loadout | `game/cosmetics` | `createCosmetics`, `Cosmetics`, `CosmeticLoadoutDef` |
 | Quest | `game/quest` | `QuestDef`, `QuestRewards`, `QuestObjective`, `QuestJournal` |
 | World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat`, `environment`, `terrain`, `rain`, `snow`, `grass`, `ocean`, `building` |
+| Voxel field | `world/voxelField` | `createVoxelField`, `VoxelField`, `VoxelCell`, `VoxelHit`, `VoxelBounds`, `VoxelFieldSummary`, `VoxelFace`, `VOXEL_FACES`, `VOXEL_FACE_NORMALS` — a chunked block lattice, distinct from the `voxel()` `WorldFeature` descriptor |
 | Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `rollingField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep`, `snapToGround`, `snapEntityToGround`, `resolveTerrainPalette`, `TERRAIN_MATERIAL_PALETTES` |
 | Seeded RNG | `random/rng` | `seededRng`, `seededStreams` |
 | Name generator | `random/nameGen` | `createNameGenerator`, `pickFrom`, `fillTemplate`, `NameGenerator`, `NameGeneratorOptions`, `SyllableBank` |
@@ -79,6 +83,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Round state | `session/roundState` | `createRoundState`, `lossBonusFor`, `RoundState`, `RoundConfig`, `RoundPhase`, `RoundTeam`, `RoundEvent`, `RoundEconomy`, `RoundSnapshot`, `LossBonusRule` |
 | Shrinking ring | `session/ring` | `createRing`, `ringSampleAt`, `Ring`, `RingConfig`, `RingPhase`, `RingSample`, `RingHit`, `RingPoint` |
 | Extraction session | `session/extraction` | `createRaidSession`, `RaidSession`, `RaidSessionConfig`, `ExtractPoint`, `ExtractionResult`, `DeathResult`, `RaidStatus` |
+| Role assignment | `session/roles` | `assignRoles`, `RoleSpec` |
 | Downed / revive | `combat/downed` | `createDownedState`, `DownedState`, `DownedConfig`, `DownedPhase`, `DownedEntry`, `DownedEvent` |
 | Persistence scopes | `runtime/persistenceScope` | `partitionScopes`, `resetRun`, `mergeScopes`, `clearRunFields`, `applyRunReset`, `planScenarioReset`, `ScopeSchema`, `ScenarioReset`, `PersistenceScope` |
 | Inventory | `inventory/inventoryModel` | `InventoryLayout`, `InventorySet`, `ItemTraits` |
@@ -114,12 +119,22 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Pointer hit | `input/pointer` | `PointerHit`, `PointerButton`, `aimToPoint`, `moveTargetFromHit`, `groundOf`, `PointerVec3` |
 | Navmesh + A* | `nav/navGrid` | `createNavGrid`, `findPath`, `smoothPath`, `NavGrid`, `NavGridConfig`, `NavPoint`, `FindPathOptions` |
 | Path follow | `nav/pathFollow` | `createPathFollow`, `advancePathFollow`, `pathFromNav`, `PathFollowConfig`, `PathFollowState`, `Waypoint` |
+| Nav-grid movement constraint | `nav/navConstrain` | `constrainToNavGrid`, `NavConstrainProposed`, `NavConstrainEntity`, `NavConstrainOptions` — a standalone walkable-pass-through + wall-slide helper; adapt its `(proposed, entity)` shape to `PlayerMovementConfig.beforeCommit`'s `(frame) => [x,y,z]` with a small closure |
 | Selection set | `scene/selection` | `createSelectionSet`, `SelectionSet`, `screenRect`, `selectWithinRect`, `rectContainsPoint`, `isMarquee`, `ScreenRect` |
 | Context menu | `interaction/contextMenu` | `contextVerb`, `buildContextMenu`, `contextVerbInput`, `ContextVerb`, `ContextMenu` |
 | Shared / group wallet | `economy/sharedWallet` | `createWalletBook`, `WalletBook`, `WalletScope`, `userScope`, `groupScope`, `balanceIn`, `grantTo`, `chargeFrom`, `contributionOf`, `contributorsOf` |
 | Analog axis input | `input/axisInput` | `AxisInput`, `AxisChannel`, `AxisBindingMap`, `DRIVE_AXIS_BINDINGS`, `clampAxis`, `rampToward`, `NEUTRAL_AXIS` |
-| Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions`, `JointOptions`, `JointKind`, `CollisionEvent` |
+| Raw control polling | `runtime/inputSnapshot` | `createInputSnapshot`, `InputSnapshot` — backs `ctx.input` |
+| Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` (`{ shape: "box", halfExtents }` \| `{ shape: "sphere", radius }`), `JointOptions`, `JointKind`, `CollisionEvent` |
+| Ballistic collision sweep | `physics/ballisticSweep` | `createBallisticSweep`, `BallisticSweep`, `BallisticSweepHit`, `BallisticSweepOptions` |
+| Tweening / easing | `anim/easing` | `Easing`, `lerp`, `clamp01`, `smoothstep`, `easeInQuad`, `easeOutQuad`, `easeInOutQuad`, `easeInCubic`, `easeOutCubic`, `easeInOutCubic`, `easeOutBack`, `easeOutElastic`, `tween`, `timedProgress` |
+| Async data source | `data/dataSource` | `createDataSource`, `DataSource`, `DataSourceState`, `DataSourceStatus`, `DataSourceOptions`, `DataSourceClock`, `RefreshOptions` |
+| JSON fetch | `data/fetchJson` | `fetchJson`, `FetchJsonOptions`, `FetchImpl`, `HttpStatusError`, `JsonParseError` |
+| JSON data source | `data/jsonDataSource` | `createJsonDataSource`, `JsonDataSourceOptions` |
+| Dev proxy routing | `data/devProxy` | `proxiedUrl`, `parseDevProxyTable`, `DevProxyTable`, `ProxiedUrlOptions`, `DEFAULT_DEV_PROXY_PREFIX` |
+| Grid-cell world rendering | `world/gridInstances` | `resolveGridInstances`, `GridInstanceTransform` |
 | Turn loop | `turn/turnLoop` | `createTurnLoop`, `TurnLoop`, `TurnLoopConfig`, `TurnState`, `PoolConfig`, `PoolState`, `TurnLoopSnapshot` |
+| Declared-action intent board | `turn/intent` | `createIntentBoard`, `IntentBoard`, `DeclaredIntent` — `declare(participantId, intent)`, `peek`, `all`, `consume`, `clear` |
 | Commit modes | `turn/commit` | `createCommitController`, `CommitController`, `CommitMode`, `CommitOutcome`, `SubmittedAction` |
 | Intent board | `turn/intent` | `createIntentBoard`, `IntentBoard`, `DeclaredIntent` |
 | Tactical grid | `tactics/tacticalGrid` | `createTacticalGrid`, `TacticalGrid`, `TacticalGridConfig`, `Tile`, `ReachableTile`, `PushResult`, `PushCollision` |
@@ -160,6 +175,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Hidden-state probe | `sensor/hiddenStateProbe` | `probeHiddenState`, `probeHiddenStateAll`, `HiddenStateSource`, `HiddenStateValue`, `SensorProbeOptions`, `SensorReading` |
 | View-frustum sensor | `sensor/frustumSensor` | `createFrustumSensor`, `projectToView`, `framingScore`, `FrustumCamera`, `FrustumTarget`, `FrustumProjection`, `FrustumSample`, `FrustumSensor`, `FramingConfig` |
 | Recording buffer | `sensor/recordingBuffer` | `createRecordingBuffer`, `RecordingBuffer`, `RecordingFrame`, `RecordingBufferOptions` |
+| Concealment scoring | `sensor/concealment` | `colorDistance`, `concealmentScore`, `createConcealmentSensor`, `ColorHex`, `ConcealmentTarget`, `ConcealmentSample`, `ConcealmentSensor` |
+| Freeze violation monitor | `sensor/freezeMonitor` | `createFreezeMonitor`, `FreezeMonitor`, `FreezeSubject`, `FreezeViolation` |
 | Animation SM | `combat/animationState` | `createAnimationState`, `AnimationState`, `AnimationClip`, `FramePhase`, `FrameRange`, `phasesAtFrame`, `activeRangeAtFrame`, `frameAtMs` |
 | Accumulator meter | `stats/accumulatorMeter` | `createAccumulatorMeter`, `AccumulatorMeter`, `AccumulatorMeterConfig`, `MeterTier`, `MeterAddResult`, `tierAt` |
 | Stagger / buildup | `combat/breakMeters` | `createStaggerMeter`, `createBuildupMeter`, `StaggerMeter`, `BuildupMeter`, `BuildupProc` |
@@ -174,6 +191,9 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Auto-target policy | `scene/autoTarget` | `selectAutoTarget`, `createAutoTargeter`, `AutoTargetPolicy`, `AutoTargeter`, `AutoTargetDeps` |
 | Resistance matrix | `combat/resistance` | `resolveResistance`, `resistanceScale`, `ResistanceMatrix`, `ResistVerdict`, `ResistanceResult` |
 | Run draft | `game/runDraft` | `createRunDraft`, `createRunModifierStack`, `RunDraft`, `RunModifierStack`, `RunModifierOffer` |
+| Uniform-cell grid | `puzzle/cellGrid` | `CellGrid`, `CellRun`, `createCellGrid`, `cellAt`, `inGridBounds`, `withCell`, `withCells`, `fullRows`, `clearRows`, `collapseColumns`, `findRuns` |
+| Falling piece | `puzzle/fallingPiece` | `FallingPiece`, `ShapeTable`, `LockDelayState`, `pieceCells`, `pieceCollides`, `mergePiece`, `dropDistance`, `gravityInterval`, `levelForLines`, `lineScore`, `createLockDelay`, `stepLockDelay` |
+| Falling tile grid | `tactics/fallingGrid` | `createFallingGrid`, `FallingGrid`, `FallingGridConfig`, `FallingGridCell`, `FallingGridSnapshot`, `LockState`, `gravityIntervalMs`, `GravityIntervalConfig` — a generic tile-drop grid (any `TCell` payload), distinct from `puzzle/cellGrid`+`puzzle/fallingPiece`'s row-clear/shape-table pair |
 | Spawn/respawn points | `game/spawnPoints` | `createSpawnPoints`, `SpawnPoints`, `SpawnPointPose`, `RespawnTarget` |
 | Level sequence | `game/levelSequence` | `createLevelSequence`, `LevelSequence`, `LevelSequenceConfig`, `LevelDescriptor`, `CurrentLevel`, `LevelSequenceStatus`, `LevelSequenceProgress` |
 
@@ -402,7 +422,8 @@ export const physics: PhysicsConfig = { gravity: -32 };
 - **`interact`** is special: pressing it resolves the active proximity prompt from the `prompts` field of `defineGame({...})` and runs that prompt's `invoke` command. A prompt with `invoke: null` is display-only and does nothing on the key.
 - UI keybind badges derive from `keybinds` via `actionLabel(keybinds, "openBackpack")` — `bindingLabel` maps codes to short labels (`Digit1`→`1`, `KeyB`→`B`, `mouse0`→`LMB`, `Escape`→`Esc`). Never hardcode label strings; they drift the moment a binding changes.
 - `server.mode` is a string your loop/commands interpret — the engine ships no gamemode presets.
-- Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts, or inline binding/inventory/world blobs.
+- Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts, or inline binding/inventory/world blobs. The one exception is `physics.gravity`/`physics.jumpVelocity` — global controller tuning, not a catalog value (see "Controller kinematics" below).
+- `assets` may be omitted for a game with no models (a HUD-only card/board game, say) — `defineGame` injects an empty catalog, so `GameDefinition.assets` is always present downstream with no per-caller `?.` checks.
 
 ### `@jgengine/core/game/defineGame` — the underlying primitive
 
@@ -441,28 +462,55 @@ export type PlayableGame<TUi = unknown> = {
 
 `prompts` is the **single source** of positioned proximity prompts: the shell reads it to fire the `interact` key, and the HUD should read the same list through `useActivePrompt(playable.prompts?.(ctx))` rather than building its own — one list, no drift. A prompt is only actionable if its `invoke` is non-null.
 
-Optional render/world fields the shell also reads: `entitySprites` / `entityModels` (billboards / GLBs keyed by entity kind), `objectModels` (GLBs keyed by object catalog id), `renderObject` (per-object visual override — return your own mesh for a placed object and the shell still positions it; falls back to `objectModels` → colored box), `WorldOverlay` (canvas-layer VFX), `environment` (canvas-layer scenery — ground/sky/structures; when set, replaces the default ground plane + debug grid + rock field), `camera`, `shadows` (cast/receive shadows across the R3F canvas; default true), and `worldHealthBars` (`boolean | { statId?, roles? }` — `roles` restricts bars to entities whose catalog `role` is in the given `CatalogEntityRole` list, e.g. skip friendly NPCs). A model value is a catalog id (`string`, resolved via `game.assets`) or an inline `ModelConfig { url, scale?, y?, anchor?, dims?, material? }` (`material` overrides color/metalness/roughness/emissive on the cloned mesh, leaving shared GLTF caches untouched). Catalog-resolved models carry measured `dims` (`catalog.resolve(id).dims = { footprint:{w,d}, center:{x,z}, minY }`); with the default `anchor: "center"` the shell centers the footprint on the placement point and ground-snaps `minY` to it, so corner-pivot kit models place correctly with no per-game pivot math.
+Optional render/world fields the shell also reads: `entitySprites` / `entityModels` (billboards / GLBs keyed by entity kind), `objectModels` (GLBs keyed by object catalog id), `renderObject` (per-object visual override — return your own mesh for a placed object and the shell still positions it; falls back to `objectModels` → colored box), `WorldOverlay` (canvas-layer VFX), `environment` (canvas-layer scenery — ground/sky/structures; when set, replaces the default ground plane + debug grid + rock field), `camera`, `shadows` (cast/receive shadows across the R3F canvas; default true), and `worldHealthBars` (`boolean | { statId?, roles? }` — `roles` restricts bars to entities whose catalog `role` is in the given `CatalogEntityRole` list, e.g. skip friendly NPCs). A model value is a catalog id (`string`, resolved via `game.assets`) or an inline `ModelConfig { url, scale?, y?, anchor?, dims?, material?, animation? }` (`material` overrides color/metalness/roughness/emissive/emissiveIntensity on the cloned mesh, leaving shared GLTF caches untouched; `animation?: { clip?, loop?, timeScale?, paused?, time? }` plays a GLTF clip — `clip` defaults to the first clip, `loop` defaults true — and `paused: true` + `time: <seconds>` holds the rig on one fixed frame, a pose library for inventory previews or held cutscene poses). Catalog-resolved models carry measured `dims` (`catalog.resolve(id).dims = { footprint:{w,d}, center:{x,z}, minY }`); with the default `anchor: "center"` the shell centers the footprint on the placement point and ground-snaps `minY` to it, so corner-pivot kit models place correctly with no per-game pivot math. Applies through both `entityModels` and `objectModels`.
+
+`renderEntity?: (entity: SceneEntity) => ReactNode` and `renderObject?: (object: SceneObject) => ReactNode` hand you the mesh for one entity/object while the shell still positions it and keeps it tagged for picking/selection; return null/undefined to fall through to model → sprite/box. `objectStyles?: Record<catalogId, { color?, opacity?, hidden? }>` styles the default colored-box object render — `color` overrides the hash color, `opacity < 1` sets transparent, `hidden` skips the mesh but keeps the picking tag.
+
+**Presentation mode.** `PlayableGame.presentation`: `"3d"` (default) mounts the canvas, camera rig, and pointer; `"hud"` mounts none of that — the game is `GameUI` plus the command/input loop, for board/card/menu games that need no 3D camera at all.
+
+**Auto environment.** When `world` is an `environment()` descriptor and `PlayableGame.environment` is unset, the shell renders that descriptor as the backdrop automatically — no manual `environment` wiring needed for the common case. Set `environment` explicitly only to override that default (a custom canvas component always wins). The same auto-render convention covers grid-cell worlds (`biomes`/`voxel`/`plots`/`tilemap`) — see "World features" below.
+
+**Lighting and backdrop.** `PlayableGame.lighting` (`LightingConfig`, `@jgengine/core/game/playableGame`) replaces the shell's hardcoded ambient/directional default when present, regardless of world kind: `ambient?: { color?, intensity? }`, `directional?: { color?, intensity?, position, castShadow? }[]`, `hemisphere?: { skyColor?, groundColor?, intensity? }`. `PlayableGame.backdrop` (`BackdropConfig`) is a generic background/sky/fog for **any** world kind, including a custom `environment` component: `background?: string` (CSS color), `sky?: SkyEnvironmentConfig` (same descriptor `environment()`'s `sky` field takes), `fog?: { color?, near?, far?, density? }` (`density` set switches to exponential `FogExp2` and `near`/`far` are ignored). Both are optional and additive to whatever the world/`environment` renderer already draws.
 
 **Player movement tuning** — the `movement` field (`PlayerMovementConfig`) tunes the shell's local-player walk controller beyond `physics.gravity`/`jumpVelocity`: `mode` (`"free"` camera-relative default, `"axis"` locks travel to one world `axis`, `"grid"` snaps each committed step to `cellSize` centers), `collideObjects` (collide against placed scene objects as unit-box AABBs even without `collision.voxel`), and `beforeCommit(frame)` — an escape hatch called each frame with `{ entityId, current, next, dt }` that can return a replacement `[x, y, z]` to constrain or redirect the step (rails, bounds, custom collision) before it commits and before `onTick` runs.
 
 The runner boots `createGameContext({ definition, content, player: { userId, isNew } })`, calls `loop.onInit(ctx)` then `loop.onNewPlayer(ctx)`, and drives `loop.onTick(ctx, dt)` per frame. **Convention: `onNewPlayer` spawns the player entity with `id === ctx.player.userId`** — bounded stats, targeting, and kill attribution key off that.
 
+### Object spatial queries, entity patching, and surface sampling
+
+```ts
+ctx.scene.object.at(x, y, z)                                   // cell lookup, cell size 1, most-recent wins
+ctx.scene.object.inBox(min, max)                                // inclusive AABB query
+ctx.scene.object.raycast({ origin, direction, maxDistance, halfExtents?, filter? })   // → nearest hit or null
+ctx.scene.object.raycastAll({ origin, direction, maxDistance, halfExtents?, filter? }) // → hits, nearest-first
+ctx.scene.entity.update(id, patch)   // name/position/rotations/role/movement/behaviors/meta; false for unknown id
+```
+
+Placed objects are unit boxes (half-extents `[0.5, 0.5, 0.5]`) centered on position, matching the shell's default render, so `raycast`/`raycastAll` (`scene/objectQuery`) match what a player sees. `entity.update` notifies subscribers and bumps `ctx.version()` the same as `spawn`/`despawn`/`setPose` — it's the general-purpose patch the more specific methods (`setPose`, `form.shapeshift`, `possession.possess`) build on.
+
+`ctx.scene.object.place(catalogId, x, y, z, { instanceId?, parentSpace?, rotation?, visual? })` takes an optional `visual: ObjectVisual` (`@jgengine/core/scene/objectStore`) — `{ scale?: number | [x,y,z], color?, opacity? }` — a per-instance render override independent of the catalog entry; `ctx.scene.object.setVisual(instanceId, visual | undefined)` changes it after placement (`undefined` clears back to the catalog default). Distinct from `objectStyles` on `PlayableGame` (styles a catalog id for every instance); `visual`/`setVisual` targets one placed instance (a damaged crate, a dyed banner, a resized prop).
+
+`pointerService.worldHitCenter()` (shell) casts from the viewport center regardless of cursor presence (pointer-lock aim) — combine with `pointer.worldHit()` (cursor-driven) to support both mouse-look and free-cursor games from the same probe. `PointerHit` also carries an optional `uv?: { u, v }` on UV-mapped mesh hits (absent for the ground fallback), `material?: { color, metalness?, roughness? } | null` sampled off the hit mesh's `MeshStandardMaterial` (`null`/unset for non-standard materials, e.g. the ground plane) — combine `uv` + `material` for paint tools, decals, and material-aware interaction — and `instanceId?: number`, the hit index when the intersected mesh is a `THREE.InstancedMesh` (grid-world cells, `InstancedBodies` debris, any instanced render), absent otherwise.
+
+**Runtime paint layer** (`ctx.scene.entity.paint`, backed by `scene/paintLayer`) — a `PaintLayer` keyed by instance id (entity or object): `paint(instanceId, { u, v, radius, color })`, `strokes(instanceId)`, `clear(instanceId?)`, `version(instanceId)` (bumps per paint/clear), `subscribe(listener)`. The shell auto-renders painted instances through a lazily-created 512×512 canvas texture kept in sync — no per-game render wiring. Clearing refills with the material's base color; the original texture pixels are not restored.
+
 ### Audio — positional emitters, listener falloff, buses
 Catalog-first, no per-game audio glue. The `audio` field of `defineGame({...})` — `{ sounds: Record<string, SoundDef>, buses?: Record<string, AudioBusDef> }` — declares the sound catalog (`SoundDef = { id, url, bus, gain?, loop?, positional?, falloff? }`) and mix buses (`music`/`sfx`/`ambient`/…, `AudioBusDef = { id, gain? }`) — both types from `@jgengine/core/audio/audioFalloff`. `entitySounds?: Record<string, string>` maps an entity **kind name** (same convention as `entitySprites`/`entityModels`) to a sound id: while a matching entity exists, the shell keeps a looping positional emitter on it, repositioned every frame. `objectSounds?: Record<string, string>` does the same keyed by placed-object catalog id. The pure distance→gain math (`computeFalloffGain(distance, config)`, curves `"linear" | "inverse" | "none"`) lives in core so it is unit-tested without a browser; `@jgengine/shell` (`shell/audio/audioEngine`, `shell/audio/AudioComponents`) is the only package that touches Web Audio — it owns an `AudioContext`, mounts `AudioListener` on the camera every frame, and `EntityAudioEmitters`/`ObjectAudioEmitters` drive per-instance emitter gain from the core falloff function. `GamePlayerShell` wires all of this automatically from `playable.audio`/`entitySounds`/`objectSounds` — a game never touches `AudioContext` directly.
 ### Camera rigs (`camera` field of `defineGame({...})`)
-The shell ships a **rig library**; a game picks and tunes one through `camera` config, never by writing camera positions from `onTick`. Select with `camera.rig` (or the `perspective: "third" | "first"` shorthand):
+The shell ships a **rig library**; a game picks and tunes one through `camera` config, never by writing camera positions from `onTick`. Select with `camera.rig` (or the `perspective: "third" | "first"` shorthand) — or by config block alone (#207.8): supplying `camera.<rig>` selects that rig with no redundant `rig` field, checked in the table's order; an explicit `rig` wins when several blocks are present:
 | `rig` | For | Key config (`camera.<rig>`) |
 |-------|-----|------------------------------|
 | `orbit` (default) | Third-person chase | `initialDistance`, `targetHeight`, `min/maxPolarAngle`, drag/zoom |
 | `first` | FPS mouse-look | `firstPerson: { eyeHeight, sensitivity, maxPitch, reticle, viewmodel }` |
 | `topDown` | ARPG iso / top-down (Diablo IV, Hades II) | `topDown: { height, pitch, yaw, followSmoothing, zoom }` — decoupled follow |
-| `rts` | Free-pan / edge-scroll (The Sims, Manor Lords) | `rts: { panSpeed, edgeScroll, rotateSpeed, bounds, start }` |
+| `rts` | Free-pan / edge-scroll (The Sims, Manor Lords) | `rts: { panSpeed, edgeScroll, rotateSpeed, bounds, start, pan }` — `pan: false` turns it into a static backdrop camera: no WASD/arrow pan, no edge-scroll, no Q/E rotate, no wheel zoom, still re-centers on `followEntityId` if one resolves |
 | `shoulder` | Over-the-shoulder (Helldivers 2, Remnant II) | `shoulder: { shoulderOffset, distance, ads, side }` — ADS + shoulder-swap (V) |
 | `lockOn` | Souls-like strafe (Elden Ring) | `lockOn: { targetEntityId?, distance, framingBias, yawSmoothing }` — yaw binds to player→target; WASD becomes strafe |
 | `chase` | Vehicle chase (Forza, Rocket League) | `chase: { distance, springDamping, fov: { base, max, speedForMax }, shakePerSpeed, view: "chase"|"cockpit"|"hood"|"rear" }` |
+| `sideScroll` | Fixed lateral follow — 2.5D platformer/beat-'em-up | `sideScroll: { distance, height, lookHeight, axis: "x"\|"z", followSmoothing, fov }` — reads no player input, follows like the other follow rigs (defaults to the local player) |
 | `observer` | Detached spectator/photo/kill-cam (#120) | `observer: { bind: { kind: "entity", entityId } \| { kind: "point", position }, distance, height, orbitSpeed }` — reads no player input, auto-orbits the bound subject |
-| `sideScroll` | Fixed lateral 2.5D follow (platformers) | `sideScroll: { axis: "x"\|"z", distance, height, lookHeight, followSmoothing, fov }` — camera sits perpendicular to the travel axis, never reads look input |
-| `none` | HUD-only / no 3D camera (menu-driven or externally-rendered games) | no config — the shell mounts no rig at all |
+| `inspection` | Model-viewer / data-viz orbit (#207.7) | `inspection: { anchor: "target"\|"cursor"\|"center", target, initialDistance, initialPosition, min/maxDistance, min/maxPolarAngle, pan, rotateSpeed, zoomSpeed, dampingFactor }` — left-drag orbit, middle/right-drag pan (pan defaults on for this rig only), scroll zoom toward the anchor (`cursor` = zoom-to-cursor); orbits a fixed `target`, never reads player/entity state |
+| `none` | No camera rig mounted | HUD-only presentations or a game that manages its own camera; see `presentation: "hud"` below |
 **Frustum:** `camera.frustum: { fov?, near?, far? }` overrides the canvas camera; `far` defaults to 300, so any world whose content spans more than a few hundred units must raise it or distant settlements/terrain silently clip out of view. **Every rig accepts `followEntityId: null`** so avatar-less games (city-builders, card games, auto-battlers) still mount a camera. Leave `followEntityId` unset and the shell defaults it to `ctx.player.possession.active(userId)` every frame, so a possession swap (party control-swap, BG3-style) or a form's mesh/camera-relevant change re-targets the camera automatically — set it explicitly only to override that default. **Shake / trauma (#28):** every rig reads a shake channel; feed it from anywhere with `import { cameraShake } from "@jgengine/shell/camera"` — `cameraShake(amplitude, decayPerSecond?)` (amplitude 0..1) — or from React via `useCameraShake()`. Tune with `camera.shake: { maxOffset, maxRoll, decayPerSecond, exponent, frequency }`. **Cinematic (#29):** set `camera.cinematic: { keyframes: [{ position, lookAt, fov?, duration?, ease? }], loop? }` to play a scripted path over the active rig, and `camera.transitionSeconds` cross-fades the camera when the rig changes so mode swaps don't hard-cut. The pure rig math (shake decay, spring-arm, speed→FOV, offset/strafe, keyframe lerp) is exported from `@jgengine/shell/camera` for testing.
 
 ## `GameContext` — the ctx surface
@@ -470,43 +518,44 @@ The shell ships a **rig library**; a game picks and tunes one through `camera` c
 `createGameContext` (in `@jgengine/core/runtime/gameContext`) wires every system:
 
 ```
-ctx.scene.object    place, remove, move, rotate, get, list, at, subscribe
+ctx.scene.object    place, remove, move, rotate, get, list, subscribe,
+                    at, inBox, raycast, raycastAll, catalog
 ctx.scene.entity    spawn, despawn, setPose, update, get, list,
                     stats.{get,set,delta}, setTarget, getTarget, cycleTarget,
-                    canReceive, preview, effect,
+                    canReceive, preview, effect, paint,
                     willHitProjectile, fireProjectile, settleProjectile,
                     distance, inRadius, hasLineOfSight, queryArc, moveToward,
+                    spawnPoseOf, resetToSpawn, resetAllToSpawn,
                     form.{register,get,active,abilities,shapeshift,revert}
-ctx.game            commands, events, feed, loot, trade, quest, social,
+ctx.game            commands, events, feed, loot, trade, quest, social, chat,
                     unlocks, economy, leaderboard, roster, store, cards, turn
-ctx.game.social     friends, party, presence, emotes.play
-ctx.game.store      keyed reactive slot for game-defined state — get/set/delete/has
-                    over any value; mutations bump ctx.version()/notify ctx.subscribe
-ctx.game.cards      cards.pile(id, config?) — lazily creates/returns a notify-wrapped
-                    CardPile (see Card & board primitives below)
-ctx.game.turn       turn.loop(id, config?) — lazily creates/returns a notify-wrapped
-                    TurnLoop (see Turn-based & tactics below)
+ctx.game.social     friends, party, presence, emotes.play, worldInvites
+ctx.game.store      set, delete, get, has, subscribe, mapSnapshot, arraySnapshot — game-defined
+                    keyed reactive store slot (any value type); mutations bump ctx.version()
+ctx.game.cards      pile(id, config?) — lazily creates (config required on first call) or returns
+                    the existing notify-wrapped CardPile for id
+ctx.game.turn       loop(id, config?) — lazily creates (config required on first call) or returns
+                    the existing notify-wrapped TurnLoop for id
 ctx.player          userId, isNew, inventory, stats (modifiers), loadout,
-                    applyLoadout, movement (pose/aim), possession, cosmetics, motion
-ctx.player.motion   impulse(vy), setVerticalVelocity(vy), setY(y) — game-code seam
-                    into the shell's vertical-motion integrator; drained once per
-                    frame before gravity, so a jump pad or grapple release calls
-                    this from onTick/commands instead of touching y directly
+                    applyLoadout, movement (pose/aim), motion (impulse/setVerticalVelocity/setY/takePending),
+                    possession, cosmetics
+ctx.player.motion   impulse(vy), setVerticalVelocity(vy), setY(y), takePending() — game-code
+                    seam into the shell's vertical-motion integrator; drained once per frame
+                    before gravity, so a jump pad or grapple release calls this from
+                    onTick/commands instead of touching y directly
 ctx.item            use, weapon
+ctx.input           publish(held), isDown(action), held() — per-frame held-action snapshot, polled from onTick
 ctx.world           ground (TerrainField), groundHeightAt(x, z) — the canonical
                     sampler for the game's declared world; environment worlds
                     resolve their terrain field, every other world kind is 0.
                     Use it for every spawn/placement/waypoint y — never
                     hand-roll a noise sampler or hardcode y = 0 on relief
+ctx.camera          follow(entityId | null), followedEntityId(), setCinematic(config), cinematic(),
+                    subscribe — runtime camera-follow/cinematic override; the shell reads
+                    followedEntityId() each frame, falling back to the static
+                    playable.camera.followEntityId when it returns undefined
 ctx.time            advance, now, calendar, snapshot; pause, play, toggle,
                     setSpeed, cycleSpeed; after, every, at (game-time timers)
-ctx.camera          follow(entityId | null), followedEntityId(), setCinematic,
-                    cinematic() — runtime camera-follow/cinematic override; the
-                    shell reads followedEntityId() every frame, falling back to
-                    the static defineGame camera.followEntityId when undefined
-ctx.input           isDown(action), held() — the shell's held-action snapshot,
-                    published once per frame before onTick; read-only mirror of
-                    the same input a command/handler would see, for onTick logic
 ctx.subscribe / ctx.version    change signal — UI layers bind via useSyncExternalStore
 ```
 
@@ -613,6 +662,8 @@ Health, mana, xp, level, energy — any stat id declared on the catalog. Spawn s
 
 **XP/level use the engine progression primitive.** `@jgengine/core/game/progression` ships `curve()`/`evalCurve()` (evaluate a game-owned XP-per-level curve *definition*) and `leveling()` (a level track over the bounded `xp`/`level` stats that reports overflow). You own the curve *numbers* in a catalog; the engine owns the overflow math — on level-up bump `level.current`, reset `xp.max` from the curve, push a `stat.levelUp` feed entry. Hand-rolling `xpForLevel`/`levelFromXp`/`xpToNextLevel` is the anti-pattern — those already exist. `LevelingConfig.thresholdMode` picks how the curve is read: `"perLevel"` (default) treats `xpForLevel(N)` as the incremental N-1→N cost, summed internally; `"cumulative"` treats `xpForLevel(N)` as the total lifetime XP to reach level N (0 at/below `startLevel`) and compares `xp.current` straight against those totals — pick this for a design that quotes "total XP to level N" tables.
 
+`leveling({ …, thresholdMode: "cumulative" })` switches to lifetime-total semantics: `xp` is a running total instead of a per-level bank, and `resolve(level, xp)` walks upward from `level` to the highest level whose cumulative threshold `xp` clears — it never demotes, and clamps the returned `xp` to the max-level threshold once capped. Default is `"perLevel"` (unchanged, fully back-compat) — pick `"cumulative"` for a total-XP display (MMO-style "12,450 XP") instead of a resettable per-level bank.
+
 `ctx.player.stats` is a different thing: **modifiers** (buffs, ADS zoom, walk-speed bonuses) via `base/add/remove/get` with expiries — never bounded current/max values.
 
 ## Targeting (MMO tab-target)
@@ -680,6 +731,8 @@ ctx.scene.entity.effect({ from, effect, via, at, radius, falloff?, los? })  // A
 
 AoE: `inRadius(at, radius)` → LoS filter (default on) → `canReceive` per target → absorption; `falloff: "linear" | "none"`. `via` = `{ item }` (magnitude from weapon stats) or `{ amount }`. `canReceive`'s `pools-depleted` reason checks headroom in the effect's direction: a positive (draining) magnitude needs a stat above its min, a negative (restorative) magnitude needs a stat below its max — so a heal can still raise a stat sitting at its minimum. Omitting `magnitude` assumes the draining direction.
 
+`canReceive`'s optional signed `magnitude` makes the check direction-aware: positive (or omitted) keeps the standard `"pools-depleted"` check; negative checks the opposite direction and returns `"pools-full"` only when every stat in the receive order is already at max — so a heal (`via: { amount: -n }`) correctly reaches a fully-depleted target and is rejected only when there's nothing left to restore.
+
 **Projectiles** (aim-based — no target ids):
 
 ```ts
@@ -741,7 +794,8 @@ Tables colocate with their domain (`entities/enemies/loot-tables.ts`, `objects/l
 Pure, renderer-free structures for card, board, and deckbuilder games — they sit **beside** the slot inventory, not in place of it. All are immutable-reducer + thin-controller pairs, mirroring the two-tier ctx/factory model: use the `create*` controller in game code, reach for the exported pure functions (`draw`, `moveCards`, `tickTimeline`, `laneAggregate`, `runPipeline`, `placeShaped`) for unit tests and headless servers.
 ```ts
 // cards/cardPile — named ordered zones (deck/hand/discard/exhaust); seeded shuffle, hand limit, reshuffle-on-empty
-const pile = createCardPile({ zones: ["deck","hand","discard","exhaust"], drawFrom:"deck", handZone:"hand", discardTo:"discard", handLimit:7, reshuffleFrom:"discard" }, { deck: ids });
+const pile = ctx.game.cards.pile("deck", { zones: ["deck","hand","discard","exhaust"], drawFrom:"deck", handZone:"hand", discardTo:"discard", handLimit:7, reshuffleFrom:"discard" });
+pile.reset(createCardPileState(pileConfig, { deck: ids }));   // seed zone contents once, from onInit
 pile.shuffle("deck", seed);            // seeded Fisher–Yates via pileRng — deterministic under the same seed
 pile.draw(5);                          // deck → hand, clamped to handLimit, reshuffles discard when deck runs dry
 pile.discard(ids); pile.exhaust(ids, "exhaust");   // Slay the Spire / Balatro lifecycle
@@ -758,6 +812,15 @@ gridAdjacencyQuery(grid).neighborsOf(id);   // feeds synergy effects
 Reuse the engine's seeded RNG (`pileRng`) for anything random — never `Math.random()` in game logic. The React drag/rotate/drop/snap gesture layer over these lives in `@jgengine/react` (see UI section).
 
 `ctx.game.cards.pile(id, config?)` is the runtime-wired accessor for `createCardPile`: lazily creates the pile on first call (`config` required then) or returns the existing one for `id` on every later call, and every mutation notifies `ctx.subscribe`/bumps `ctx.version()` — so a `useEngineState`-bound hand/discard view re-renders without a game-owned store. Reach for `createCardPile` directly only for a headless test or server; game code goes through `ctx.game.cards.pile`.
+
+## Puzzle primitives — cell grids and falling pieces
+
+Two pure, renderer-free `@jgengine/core` primitives for cell-based puzzle games (Tetris wells, match-3 boards); tile art and the drop-cadence loop are the shell's/game's job.
+
+- **`puzzle/cellGrid`** — a generic immutable `CellGrid<T>` for uniform typed-cell boards. Row 0 is the top; `y` grows downward. `createCellGrid`, `cellAt`, `withCell`/`withCells` (immutable single/batch writes), `fullRows`/`clearRows` (line-clear + compaction), `collapseColumns` (match-3 cascade gravity), `findRuns` (run detection with an optional custom matcher).
+- **`puzzle/fallingPiece`** — the falling-piece layer over a `CellGrid`: `ShapeTable<TShape>` maps rotation states to cell offsets; `pieceCells`/`pieceCollides`/`mergePiece` place, test, and commit a piece; `dropDistance` computes the ghost-piece landing row; `gravityInterval`/`levelForLines`/`lineScore` are the classic Tetris drop-speed/level/score curves (overridable); `createLockDelay`/`stepLockDelay` is the grounded→countdown→lock stepper (`delaySeconds: 0` locks instantly on touchdown).
+- **`tactics/fallingGrid`** — a generic tile-drop grid over any `TCell` payload (distinct from the `cellGrid`/`fallingPiece` row-clear pair): `createFallingGrid(config)`, `gravityIntervalMs(level, config?)` for the drop-speed curve, and a `FallingGridSnapshot`/`LockState` shape for the grounded→lock stepper.
+
 ## Dropped items — `worldItem` and the loot filter
 A `worldItem` is a scene **entity** (position + item ref + rarity), never an inventory item or object — see the three buckets. `onDeath.dropMode: "world"` (above) is the usual producer; games can also hand-place ground loot (chests, quest drops).
 ctx.scene.worldItem.spawn({ itemId, position, rarity?, baseType?, count?, affixTier?, source? })
@@ -779,6 +842,7 @@ Content-agnostic state machines for competitive/session shapes — plant/defuse,
 **Round state** (`session/roundState`) — the buy→live→end match machine (Valorant/CS). `createRoundState({ phases, teams, phaseOrder?, winCondition?, maxRounds?, winReward?, lossBonus? })`: `tick(dt)` runs the phase timer and auto-advances (emitting `phase.start`/`phase.end`, rolling the last phase back into the next round's first), `concludeRound(winner)` records the win on any "conclude-eligible" phase (any phase but the first/last in the cycle), settles `round.economy` (winner gets `winReward`, losers get an escalating `lossBonus` via `lossBonusFor(rule, streak)` clamped to `max`), and moves to the next phase. `onPhaseEnd(hook)` fires commerce/spawn gates on each transition; `match.end` fires at `maxRounds`. `server.mode` stays a game string — this is the timer/economy engine under it.
 
 Two extras beyond the default buy/live/end cycle: `phaseOrder?: string[]` overrides the phase names/cycle entirely (a wider `Record<string, number>` `phases` shape to match) — a draft→ban→play→score cycle is the same machine with different phase names. `teams: (string | { id, role? })[]` accepts a plain id or a `{ id, role }` pair; `roleOf(team)` reads the tag back (`"attacker"`/`"defender"`, Valorant side assignment) without a parallel lookup table. `winCondition?: (snapshot: RoundSnapshot) => string | null` lets `evaluate()` (call it from `onTick` alongside `tick(dt)`) auto-conclude the round the instant a score/objective condition is met, instead of the game hand-calling `concludeRound` — return a team id to end it, `null` to keep playing; `RoundSnapshot` is `{ round, phase, timeLeft, scores, lossStreaks, roles, matchOver }`.
+**Role assignment** (`session/roles`) — `assignRoles(players, specs: RoleSpec[])` distributes fixed-count or proportional roles (hider/seeker, spy/operative, prop/hunter) across a player list — the allocation half of an asymmetric session mode; `RoundConfig.teams`' per-team `role` is the lighter-weight alternative when a round machine already tracks the roster.
 **Downed / revive** (`combat/downed`) — the 3-state alive→downed→dead chain (Apex/Helldivers). `createDownedState({ bleedoutSeconds, reviveSeconds?, reviveHealthFraction?, banner? })`: `down(id)` starts the bleedout, `tick(dt)` counts it down (→ `died`, optionally spawning a `banner`), `revive(id, dt)` accumulates an ally's hold time (→ `revived` with the health fraction the game restores), `finish(id)` executes a downed enemy, and `respawnFromBanner(id)` brings a banner-holder back at a beacon. It sits **in front of** the engine death resolution: on lethal damage call `down` instead of dying; on `died`/`bleedout` run the real `resolveDeath`. No banner ⇒ death is terminal.
 **Shrinking ring** (`session/ring`) — the battle-royale safe zone with out-of-bounds DoT. A catalog `RingConfig` is `{ center, phases: RingPhase[] }` where each phase is `{ startTime, shrinkDuration, fromRadius, toRadius, damagePerSecond, center? }` on the game clock. `ringSampleAt(config, t)` / `createRing(config).at(t)` returns the live `{ center, radius, damagePerSecond, shrinking }` (radius/center interpolate during each shrink window, hold between phases); `isOutside(t, pos)` / `distanceOutside(t, pos)` test a point, and `damageOutside(t, dt, positions)` returns per-entity `{ id, damage }` for everyone beyond the wall — feed those into `scene.entity.stats.delta`/`effect` each tick.
 **Extraction session** (`session/extraction`) — the raid-scoped "reach an extract and leave to bank what you carried" wrapper (Tarkov/DMZ/Helldivers), composed from the contested channel + `inventory/storageTier`. `createRaidSession({ extracts, insurance?, consolation? })`: `beginExtract(userId, extractId, team?)` opens a hold-to-leave channel, `tickExtract`/`damage` drive it, and on completion `resolveExtraction(userId, containers)` banks everything carried. `resolveDeath(userId, containers, now, rng?)` runs `partitionOnDeath` (banked kept, carried lost), schedules insured items through the built-in delivery queue (`claimDeliveries(now)` drains it on the clock), and yields the consolation loadout id. `playerSnapshot(userId)` feeds the extraction-timer HUD.
@@ -915,6 +979,23 @@ ctx.game.leaderboard.increment(userId, stat, { scope, by? }) / getTop / getProfi
 
 `ctx.game.commands.define(name, { validate?(ctx, input), apply(ctx, input) })` registers a verb (`has`/`names`/`run` round it out); `run(name, input)` returns `{ status: "applied", state } | { status: "rejected", reason } | { status: "unknown-command" }`. `apply` may either **return** the next state (the classic reducer shape) or mutate `ctx` in place and return **nothing** — `run` keeps the current `ctx` as `state` when `apply` returns `void`, so a handler that only calls other `ctx` methods (spawn, effect, loot.grantToPlayer, …) doesn't need a pointless `return ctx`. **Event handlers use `ctx` directly** the same way (side effects: leaderboard, economy, scheduling) and never reassign state. One feed primitive for kill feeds, loot logs, quest updates — no per-domain feed hooks.
 
+## `ctx.game.store` — reactive game state
+
+```ts
+ctx.game.store.set("health", 100)      // any key, any value type
+ctx.game.store.get("health")           // T | undefined
+ctx.game.store.has("health")
+ctx.game.store.delete("health")
+ctx.game.store.subscribe(listener)     // change-signal fires on set/delete
+ctx.game.store.mapSnapshot() / arraySnapshot()
+```
+
+A reactive per-game keyed store (`ObservableKeyedStore<unknown>`) attached to `GameContext` — reach for it instead of a module-level singleton store for ad-hoc reactive game state (turn trackers, deck UIs, anything that doesn't already have a `ctx` surface). `set`/`delete` bump `ctx.version()` and notify `ctx.subscribe` listeners; `get`/`has` are plain reads. Unlike a per-slot handle, there is no `define`/seed step — a key simply doesn't exist until the first `set`.
+
+## `ctx.game.cards` / `ctx.game.turn` — lazily-created piles and turn loops
+
+`ctx.game.cards.pile(id, config?)` and `ctx.game.turn.loop(id, config?)` lazily create (config required on first call) or return the existing notify-wrapped `CardPile`/`TurnLoop` for `id` — call with just the id after the first `onInit` seed to fetch the same instance; every mutating method is wrapped so it bumps `ctx.version()`/notifies `ctx.subscribe` automatically, same as every other `ctx` surface. This replaces manually constructing `createCardPile`/`createTurnLoop` and wiring notification yourself.
+
 ## Movement, pose, input
 
 ```ts
@@ -923,6 +1004,36 @@ ctx.player.movement.getAim(id) / setAim(id, "ads")        // ADS = aim state + z
 ```
 
 Poses (`standing/crouch/prone/running`) change the collision capsule (`POSE_HITBOX`); aim pairs with a `player.stats` zoom modifier on `"reticle"`. Game code reads action names only (`isDown("aim")`, `wasPressed("interact")`) — hold vs toggle is resolved by the binding config, never by raw key branches.
+
+### `ctx.input` — polling the raw controls
+
+`ctx.input` (`@jgengine/core/runtime/inputSnapshot`) is a per-frame held-action snapshot for `onTick` to poll, distinct from the command-dispatch path (bound actions still run commands the normal way): `publish(held: readonly string[])` (the shell calls this once per frame before `onTick`), `isDown(action)`, `held()` for the full list. Publishing never bumps `ctx.version()` — it's a poll surface, not reactive state.
+
+**`repeatMs`** — bind an action as `{ hold: [...], repeatMs: 150 }` (`input/actionBindings`) and the shell fires its command on the down edge, then again every `repeatMs` while held, resetting on release (hotbar-style repeat-fire without a per-game timer).
+
+**Aim on generic commands** — every command resolved from a bound action now runs with `{ yaw, pitch, aim: { yaw, pitch } }` in its payload, so a handler can read the camera-relative aim without going through `pointer.worldHit()`.
+
+### Controller kinematics — movement config, physics tuning, respawn
+
+`PlayableGame.movement` (`PlayerMovementConfig`) tunes the shell's built-in walk controller (never touch `PhysicsWorld` for ordinary player movement):
+
+```ts
+movement: {
+  mode?: "free" | "axis" | "grid";           // "free" (default) camera-relative; "axis" locks travel to one world axis; "grid" snaps each committed position to cell centers
+  axis?: "x" | "z";                          // world axis for mode "axis". Default "x"
+  cellSize?: number;                         // cell size for mode "grid". Default 1
+  collideObjects?: boolean;                  // collide the walking player against placed scene objects (unit-box AABBs) even without collision.voxel
+  beforeCommit?: (frame: MovementCommitFrame) => readonly [number, number, number] | undefined | void;   // intercepts each frame's resolved position before the pose commits; return a replacement to constrain/redirect the step
+}
+```
+
+`nav/navConstrain`'s `constrainToNavGrid(grid, { y? })` is a standalone walkable-pass-through + wall-sliding helper over a `nav/navGrid`; its `(proposed, entity)` shape doesn't match `beforeCommit`'s `(frame) => [x,y,z]` signature directly, so wire it in with a small adapter closure rather than passing it straight through.
+
+`defineGame({ physics: { gravity, jumpVelocity } })` drives the kinematics controller directly: `gravity` (signed, e.g. `-24`) and `jumpVelocity` override the built-in tuning; omit either to keep the defaults. This is the one global exception to "never player tuning in `defineGame`" — it configures the shared controller, not a catalog entry. It is still **distinct** from `physics/physicsWorld`'s standalone rigid-body sim (see below) — `defineGame.physics` never touches that sim.
+
+**Vertical motion intents** — `ctx.player.motion` (`@jgengine/core/runtime/motionIntents`): `impulse(vy)` adds to the vertical velocity the shell's controller is about to integrate, `setVerticalVelocity(vy)` replaces it outright, `setY(y)` wins over physics for that frame. The shell calls `takePending()` once per frame, before integrating gravity, to drain what accumulated; this is not reactive state (jump pads, launch abilities, bounce pads).
+
+**Respawn** — `ctx.scene.entity.spawnPoseOf(id)` reads the spawn pose, `resetToSpawn(id)` teleports back to it with zero velocity, `resetAllToSpawn(filter?)` does it for every entity matching an optional filter and returns the count (round resets, out-of-bounds recovery).
 
 ## Touch & mobile
 
@@ -967,6 +1078,7 @@ The **pointer is a service, not per-game glue**. Opt in with `camera` plus a `po
 - **Context menu** (`interaction/contextMenu`): a catalog entity/object carries `verbs: contextVerb(label, command, args?)[]`; the shell builds the menu with `buildContextMenu` and dispatches the chosen command via `contextVerbInput` (verb args + `target`/`point`, so one handler can walk-then-act).
 - **Navmesh + A\*** (`nav/navGrid`): `createNavGrid({ bounds, cellSize, diagonal? })` → mark obstacles with `blockAabb`/`setWalkable`, or `populateNavGridFromEnvironment(grid, world)` to block every generated building's footprint on an `environment()` world's `structures` in one call (returns the count blocked) instead of hand-walking the district. `findPath(grid, from, to, { clearance?, smooth?, stepCost? })` returns a string-pulled `[x, z]` polyline (blocked start/goal snap to the nearest walkable cell) feeding **both click-to-move and AI routing**; `stepCost?(from, to)` multiplies the base cost of a grid step — `slopeStepCost(terrainField, weight?)` is the ready-made factory that penalizes steep terrain (routes around cliffs instead of over them). Renderer-free — AI and gameplay consume it without the shell.
 - **`pathFollow`** (`nav/pathFollow`): the lighter authored-polyline mover for tower-defense creeps that needs no navmesh — `createPathFollow({ waypoints, speed, loop? })` + pure `advancePathFollow(config, state, dt)` (crosses multiple waypoints per tick, reports `done`/`heading`/`distanceTravelled`). Feed it a navmesh route with `pathFromNav(route, elevation, offset?)` and the same follower drives click-to-move — `elevation` is either a fixed `y` or a `{ sampleHeight(x, z) }` field (any `TerrainField` qualifies), so a route across relief rides the ground instead of a flat plane.
+- **`constrainToNavGrid(grid, { y? })`** (`nav/navConstrain`) is a standalone walkable-pass-through + wall-slide helper: it passes through walkable moves, slides along walls at the navmesh boundary instead of stopping dead, and optionally remaps `y` to the grid. Its `(proposed, entity)` shape doesn't match `PlayerMovementConfig.beforeCommit`'s `(frame) => [x,y,z]` signature, so wire it in with a small adapter closure (see "Controller kinematics" above) to wall a player/AI to the same navmesh `findPath` already routes against.
 ## AI — director, threat, jobs, crowds (`ai/*`)
 Renderer-free AI over the same navmesh (`findPath`/`pathFollow`) gameplay already uses. Everything ticks on **game-time `dt`** (the `ctx.time` simClock delta), so it obeys pause and fast-forward for free. Manifests, patrol routes, job definitions, threat weights, and POIs are **game data** — the primitives own the loop, the catalog owns the content.
 - **Spawn director** (`ai/spawnDirector`) — budgets and escalates spawns for wave shooters and difficulty directors (Brotato, Bloons TD 6, Risk of Rain 2, Helldivers 2, Deep Rock Galactic). `createSpawnDirectorState(config)` then pure `advanceSpawnDirector(config, state, dt, { alive, players? })` → `{ state, spawns: SpawnRequest[] }`. Each `WaveManifest` grants a `budget` spent on affordable weighted `SpawnEntry`s (`cost`/`weight`/`minWave`), capped by `maxAlive`; `duration` auto-advances waves (or call `advanceWave` on "wave cleared"). Budget also trickles via `budgetPerSecond`, ramps a difficulty curve with `escalationPerSecond` (grows with sim-time), scales with `playerBudgetPerSecond`, and surges on `raiseAlert(state, amount)` decaying over time (bug-breach/dropship escalation). Seeded (`seed`) so ticks are deterministic. `pickSpawnPoint(points, players, { roll, bias })` biases placement toward (or away from) players. `config.spawnPoints?: NavPoint[]` lets the director pick a point itself: each `SpawnRequest` then also carries `point` (the chosen `[x, z]`, biased by `config.spawnPointBias`) and `laneId` (the point's index into `spawnPoints`) — feed multiple named lanes/portals and read `laneId` back to route the spawned entity down its lane instead of correlating positions by hand.
@@ -991,6 +1103,8 @@ Pure `@jgengine/core/sensor/*` primitives for querying and surfacing world state
 | `framingScore(projection, config?)` → `number` | 0..1 framing quality from screen-center placement + distance-to-ideal (photo-mode "is this subject framed", #117) |
 | `createFrustumSensor(config?)` → `FrustumSensor` | `tick(camera, targets, dt)` — per-target in-view + framing + `dwellSeconds` (resets the instant a target leaves frame); a view-frustum sensor on a held camera object (Content Warning-style monster-filming scoring) |
 | `createRecordingBuffer(options?)` → `RecordingBuffer<T>` | `append(t, data)` / `seek(t)` / `range(fromT, toT)` — a session-recording buffer for replay/photo mode/kill-cam (#120), keyed on game-time so pause/fast-forward scrub consistently |
+| `colorDistance(a, b)` / `concealmentScore(entityColors, backgroundColors)` / `createConcealmentSensor(config?)` → `ConcealmentSensor` | Camouflage/blend-in scoring — how well an entity's palette matches its surroundings (hide-and-seek, stealth camo checks) against a `threshold` |
+| `createFreezeMonitor(config?)` → `FreezeMonitor` | Detects a tracked subject moving past a tolerance speed during a "freeze" window (red-light-green-light, statue games) and reports `FreezeViolation`s |
 Shell wiring: `@jgengine/shell/vision/RevealVision` (`RevealHighlights` — depth-test-disabled 3D highlight meshes for tagged entities in radius, meant for `WorldOverlay`; `RevealScreenTint` — full-screen CSS tint for "vision mode is on", meant for `GameUI`), `@jgengine/shell/vision/HiddenStateProbeHud` (`SensorReadoutMeter` — needle-strength HUD readout), `@jgengine/shell/vision/FrustumSensorHud` (`FrustumSensorReadout` — drives the sensor off the live render camera via `useThree`/`useFrame`, portals its HUD through drei's `Html fullscreen`), `@jgengine/shell/replay/useSessionRecorder` (records an entity's pose into a `RecordingBuffer` every frame; drive an observer-cam ghost, scrubber, or kill-cam export from it). The detached spectator/photo cam itself is the `observer` camera rig (see Camera rigs above) — bind it to any entity or fixed point.
 
 ## World features
@@ -1005,6 +1119,8 @@ Descriptors from `@jgengine/core/world/features` — config data the runner/worl
 | `tilemap({ map })` | 2D/2.5D levels |
 | `flat()` | Plain arena |
 | `environment({ terrain, sky, weather, vegetation, water, structures, pads })` | Composable outdoor scene — terrain + sky/time-of-day + rain/snow + grass + ocean + buildings + ground pads. Each field takes the matching descriptor: `terrain()`, `sky()`, `rain()`/`snow()`, `grass()`, `ocean()`, `building()`, `pad()`. `building()` and `ocean()` take `position: [x, z]` to site a cluster/water body away from the origin (several settlements, an offset lake); building clusters ground-snap to the terrain field per building; each `pad()` (a flat platform/paved patch — `{ center, size: [w,d] | { radius }, height?, color?, rotationY? }`) implicitly flattens the terrain beneath it via a `TerrainFlattenMask`, so a building pad or spawn circle never fights the noise field underneath |
+
+`biomes`/`voxel`/`plots`/`tilemap` share a `WorldGridConfig` (`cells?: WorldGridCell[]`, `cellSize?`, `baseHeight?`, `defaultColor?`) — a `WorldGridCell` is `{ x, z, height?, color? }`, one extruded box per cell. `resolveGridInstances(config)` (`@jgengine/core/world/gridInstances`) is the pure cell→instance math (position, scale, color per cell); the shell renders the result as a single `THREE.InstancedMesh` **automatically whenever `PlayableGame.environment` is unset and `game.world` is one of these four grid kinds** — no manual render wiring for a cell-based world, same auto-render convention as `environment()` worlds.
 
 `terrain()`'s `material` (a named palette — `"grass" | "sand" | "snow" | "rock" | "ash"`, resolved via `resolveTerrainPalette`/`TERRAIN_MATERIAL_PALETTES` in `world/terrain`) sets the default low/high/waterline colors; `colors: { low?, high?, waterline? }` overrides any of them field-by-field, and `segments` tunes the render mesh's subdivision. `flatten: TerrainFlattenMask[]` (`{ center, radius, height?, falloff? }`) carves explicit flat circles into the noise field independent of pads — building foundations, spawn circles, roads — blending back to the noise height over `falloff` (default `radius * 0.5`). `sky({ preset?, timeOfDay?, horizonColor?, zenithColor?, sunIntensity?, ambientIntensity?, fog? })` — `preset: "day" | "dusk" | "night"` (default `"day"`) is the static look; `timeOfDay: true` instead drives sun position, sky colors, and fog from the world clock's `calendar().dayFraction` every frame (`@jgengine/shell`'s `TimeOfDayDaylight` mounts this automatically for an `environment()` world with `sky` set — no per-game render wiring).
 
@@ -1025,6 +1141,8 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
 | `createRegionField({ regions })` → `RegionField` | `sampleRegion(x,z)` blends content-agnostic biomes by nearest selector — height + `tint`/`water`/`fog`/`speedMultiplier` + opaque `data`. Extends `TerrainField`, so it ground-snaps too |
 | `scatterItems(field, area, layersFor)` → `ScatterInstance[]` | Region-driven content scatter — density per region, grounded, above-water/slope-aware. `pickWeighted` for weighted rolls. (vs `scatter`'s pure geometric points) |
 | `buildingIndex(district)` → `BuildingIndex` | `at`/`within`/`nearest`/`isInside`/`blockers` over a generated district — placement avoidance, pathfinding |
+
+**Voxel field (`world/voxelField`).** `createVoxelField<T extends string>({ chunkSize? })` (default 16) is a logical block lattice for voxel games and instanced renderers — distinct from the `voxel()` `WorldFeature` descriptor above (that's the runner-level world kind; this is the block data structure a voxel game's gameplay reads and writes). `set`/`remove`/`get`/`has`/`fill`/`clear`/`count`/`cells`/`bounds` are the block CRUD (`set` returns `false` only when the identical type is already there — a no-op write). `neighbors(x, y, z)` returns the 6-adjacent occupied cells; `exposedFaces(x, y, z)` returns the `VoxelFace`s (`"px"|"nx"|"py"|"ny"|"pz"|"nz"`) not touching another voxel — feed that straight into greedy-meshing/face-culling. `raycast(origin, direction, maxDistance)` runs a 3D DDA and returns `{ x, y, z, type, face, adjacent, distance }`, where `adjacent` is the empty cell just in front of the hit — the placement target for block-place tools. Renderers dirty-track via `chunkOf(x, y, z)` + `chunkVersion(chunk)` and `subscribe(listener)`, so an instanced mesh only rebuilds the chunks that changed. For a non-`environment()` voxel world, assert on `field.summary()` (`{ blocks, types, bounds }`) the same way an `environment()` world asserts on `summarizeEnvironment` (see `jgengine-verify`).
 
 **Destructible terrain (`world/carve`).** Two runtime-editable primitives for dig/carve worlds. `VoxelVolume` is a dense grid of material ids (0 = empty) — `carve({ center, radius, toolStrength })` clears a sphere of solid cells the tool is strong enough to break and returns the count removed (feed a loot roll), `deposit({ center, radius, material })` fills one (Deep Rock tunnels, Astroneer terrain add); `solidAtWorld` reads it back for collision. `CarvableField` (via `carvableTerrain(base)`) wraps any `TerrainField` and writes craters/mounds into its height — `carve({ x, z, radius, depth })`/`deposit({ x, z, radius, height })` — so ground-snap, collision, and the shell mesh all read the deformed surface (Helldivers 2 explosion craters). Cell strengths come from a `VoxelMaterial` table (DATA). Renders through `@jgengine/shell/terrain/CarvedTerrain`.
 
@@ -1055,7 +1173,13 @@ Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/F
 
 ### Physics world (optional, headless)
 
-`physics/physicsWorld` `PhysicsWorld` is a standalone fixed-capacity rigid-body sim (SoA buffers, spatial-hash broadphase, sleeping) — **not** the `defineGame` `physics: { gravity }` field, which only configures the shell's character controller. Reach for it when a game needs many colliding dynamic bodies (piles, debris, stress scenes): `new PhysicsWorld({ capacity, bounds, … })`, `addBody({ position, halfExtents, mass? })`, then `step(dt)` per tick → `PhysicsStats`. Core owns the sim; `@jgengine/shell/world/InstancedBodies` renders its bodies. Most games never need it — the character controller covers ordinary movement. The broadphase grid (`nx*ny*nz` cells from `bounds`/`cellSize`) throws at construction if it would exceed a sane cell cap — shrink `bounds` or raise `cellSize` (same guard on `physics/spatialGrid`'s `SpatialGrid`).
+`physics/physicsWorld` `PhysicsWorld` is a standalone fixed-capacity rigid-body sim (SoA buffers, spatial-hash broadphase, sleeping) — **not** the `defineGame` `physics: { gravity, jumpVelocity }` field, which the built-in walk controller reads directly every frame (see "Controller kinematics" above; both values are real and honored, not dead config). Reach for `PhysicsWorld` when a game needs many colliding dynamic bodies (piles, debris, stress scenes): `new PhysicsWorld({ capacity, bounds, … })`, `addBody({ position, mass?, ...shape })`, then `step(dt)` per tick → `PhysicsStats`. Core owns the sim; `@jgengine/shell/world/InstancedBodies` renders its bodies. Most games never need it — the character controller covers ordinary movement. The broadphase grid (`nx*ny*nz` cells from `bounds`/`cellSize`) throws at construction if it would exceed a sane cell cap — shrink `bounds` or raise `cellSize` (same guard on `physics/spatialGrid`'s `SpatialGrid`).
+
+**Body shape: box or sphere.** `AddBodyOptions` is a discriminated union — `{ shape?: "box", halfExtents }` (box is the default, `shape` omittable) or `{ shape: "sphere", radius }` (the radius fills all three half-extent columns, so broadphase/bounds see the sphere's enclosing AABB). `world.shape[i]` (`SHAPE_BOX` / `SHAPE_SPHERE`) reports a live body's shape for a consumer walking the raw SoA arrays. Sphere-sphere and sphere-box pairs resolve with a proper radial normal (not the axis-aligned box/box path) — balls, projectile bodies, and rolling debris collide correctly against both boxes and each other.
+
+**Collision shapes are box/sphere/voxel only.** Every collider in the engine — `PhysicsWorld` bodies (box `halfExtents` or sphere `radius`), object/entity picking (`scene/objectQuery` raycasts against unit boxes), and `world/voxelField`/`world/carve` blocks — is an axis-aligned box, a sphere, or a voxel cell. Arbitrary authored level-mesh collision (a sculpted GLB as a collider) is not supported. The seams for custom collision are `movement.beforeCommit` (steer or replace the walk controller's resolved step) and object raycasts (query the scene yourself and react) — not a mesh collider.
+
+**Ballistic collision sweep (`physics/ballisticSweep`).** `createBallisticSweep(world, { step?, radius? })` → `BallisticSweep`, a `(origin, velocity, gravity, maxTime) => BallisticSweepHit | null` function that marches the closed-form arc (constant gravity, straight lateral) through a `PhysicsWorld` and reports the first sample inside any live body's AABB (sleeping bodies included), refined by one bisection step; `null` means the whole arc is clear. `step` (default 1/60) is the march interval in seconds, `radius` (default 0) inflates every body's AABB before the point test — pass the projectile's own radius. Wire it into `combat/projectiles` via `ProjectileSystemDeps.sweepBallistic`: when set, a ballistic shot settles at the swept impact point instead of the closed-form landing; omitted or `null` falls back to that closed-form arc.
 
 **Removing and moving bodies.** `removeBody(id)` tombstones a body — it drops out of integration/broadphase and its slot is queued for the next `addBody` — without moving or invalidating any other body's `id` (ids are raw SoA slots, stored as-is in joints and game state, so nothing ever gets swapped). It conservatively wakes any sleeping body whose AABB touched the removed one's (no persistent contact set to consult, so this errs toward waking too much, never too little). `setVelocity(id, x, y, z)` and `setPosition(id, x, y, z)` write a body's velocity/position directly (instead of poking the public `velX`/`posX` SoA arrays) and wake it if asleep; `teleport(id, x, y, z)` is `setPosition` plus a hard velocity reset (respawn/teleporter, vs. sliding). `isAlive(id)`/`highWater` (one past the highest slot ever handed out) let a consumer that iterates the raw SoA arrays skip tombstoned holes correctly instead of assuming `count` is a dense `0..count` range.
 
@@ -1096,6 +1220,15 @@ Pure-`core` primitives for turn-based, grid-tactics, and card games — every on
 - **`tactics/predictiveQuery` — `predictAreaEffect`/`predictArcEffect`/`predictTiles`.** A "would-this-effect-hit" query for pre-commit overlays and enemy-intent telegraphs. It reuses the **exact** AoE/LoS targeting behind `ctx.scene.entity.effect` (`combat/effects` `resolveAreaTargets`) so the predicted target set matches what the effect would actually drain — without committing any state change.
 - **`tactics/snapshot` — `createSnapshotStore()`.** Cheap, repeatable turn-undo: `register(id, slice)` any `capture()/restore()` slice (the grid, surfaces, and turn loop all qualify), then `capture()/restore()` a deep-cloned snapshot or use the `push()/pop()` undo stack. `deepClone` handles objects/arrays/Map/Set so a held snapshot is immune to later mutation.
 - **`tactics/surface` — `createSurfaceLayer({ kinds, reactions })`.** A stateful tile surface layer with its own `tick(dt)` (timed surfaces decay + expire) and a **combination matrix** — `reactions` is data (`{ when: [a, b], result }`), so grease+fire→fire and water+lightning→electrified are catalog entries, not hard-coded. Distinct from terrain/water; drive its tick from `onTick`'s game-time `dt`.
+
+## External data — `data/dataSource` and the dev proxy
+
+Renderer-free async-state primitives (`@jgengine/core/data`) for a game that reads a live external source (a leaderboard API, a session browser, remote config) — distinct from `ctx.game.store`/multiplayer, which are for the game's own authoritative state.
+
+- **`createDataSource(load, options?)`** (`data/dataSource`) → `DataSource<T>` wraps one `load(signal)` async call as `{ status: "idle"|"loading"|"ready"|"error", data, error }`. `getState()` reads the current snapshot, `subscribe(listener)` fires on every change, `refresh({ force? })` re-runs `load` (de-duplicates a call already in flight unless `force`; aborts the prior call first when forced), `startPolling(intervalMs?)`/`stopPolling()` run `refresh` on an interval (`intervalMs` falls back to the one passed at construction; throws if neither is given), `dispose()` tears down polling and in-flight requests for good. Pass `options.clock` (`{ setInterval, clearInterval }`) to swap the timer source in tests.
+- **`fetchJson<T>(url, options?)`** (`data/fetchJson`) — `fetch` + JSON-parse in one call; throws `HttpStatusError` (`status`, `statusText`, `url`) on a non-OK response and `JsonParseError` (`url`, `cause`) on unparsable JSON, so a `DataSource`'s `error` is always one of these two typed shapes, never a bare `Error`. `options.fetchImpl` swaps the fetch implementation for tests/SSR.
+- **`createJsonDataSource<T>(url, options?)`** (`data/jsonDataSource`) — sugar combining the two above: a `DataSource<T>` whose `load` calls `fetchJson(url, options)`.
+- **Dev proxy (`data/devProxy`)** — same-origin routing for external APIs during `bun dev` so browser CORS never blocks a game's `fetchJson` call against a third-party host. `parseDevProxyTable(raw)` parses a `VITE_JGENGINE_DEV_PROXY` env value (a JSON object of `{ routeName: "https://api.example.com" }`) into a `DevProxyTable`; `proxiedUrl(target, { dev?, table?, prefix? })` rewrites a `target` URL whose prefix matches a table entry into `/proxy/<routeName>/<rest>` (default prefix `/proxy`) when `dev` is true (defaults to `import.meta.env.DEV`) — else returns `target` unchanged, so the same call hits the real host in production. `apps/dev`'s `vite.config.ts` reads the same env var and wires a matching Vite server `proxy` entry per route (`changeOrigin: true`, strips the `/proxy/<routeName>` prefix) — set `VITE_JGENGINE_DEV_PROXY` once and both sides (the URL rewrite and the actual proxy route) agree.
 
 ## Multiplayer and the backend seam
 
@@ -1158,6 +1291,7 @@ Backends:
 - **Postgres** — `@jgengine/sql` `ensureSchema(pool)` + `sqlPersistence(pool)` implement `HostPersistence` over any pg-compatible pool (structural interface, no hard `pg` dep; tables `jg_game_servers`, `jg_player_profiles`, `jg_world_chunks`, `jg_leaderboard_rows`, `jg_feed_buffers`). `HostPersistence.savePlan` applies a whole `ServerPersistPlan` in one transaction (leaderboard drain included); hosts fall back to per-tier calls when absent.
 - **Clients** — `@jgengine/shell` (`GamePlayerShell`; each client supplies its own `GameRegistry`) is the shared player: it works in Vite, Next.js, or a Tauri webview; the authoritative ws host stays a standalone process (or, over `@jgengine/ws/peer`, the host player's own browser tab).
 - **Shell multiplayer** — every resolver produces a `MultiplayerSession` (`ShellMultiplayer` is an alias of it). `resolveShellMultiplayer` resolves straight off `defineGame`'s `multiplayer` adapter config: `ws(...)` connects to `url ?? adapter.url ?? ws://localhost:8080/ws`; `lan(...)` derives `ws(s)://<page hostname>:<port ?? 8080><path ?? /ws>` from `window.location`, so any browser on the LAN auto-connects to whichever machine served the page; other adapter kinds resolve to `null` (or fall back to the plain ws URL under `force` / the web dev route's `?ws` / desktop's `VITE_JG_WS_URL`). `resolvePeerShellMultiplayer({ gameId, role: "host" | "join", room?, userId?, feedActions? }): Promise<ShellMultiplayer & { close }>` is the `p2p` counterpart — hosts or joins over `broadcastChannelSignaling`, no ws URL involved; `apps/dev` wires it behind `?p2p=host` / `?p2p=join`. `resolveConvexMultiplayer` is the `convex` counterpart (forced by `VITE_CONVEX_URL` the same way). `<GamePlayerShell multiplayer={session}>` then joins a server, pose-syncs the local player, renders remote players from the presence roster, bridges feed actions (default `entity.died`) both ways with echo suppression, and — when the backend exposes `chatSyncFor` — relays `global`-kind chat channels too. Game code unchanged either way.
+- **Appearance replication.** Presence rows (`WsPresenceRow`) carry an optional per-slot `appearance?: WsAppearance` (`Record<string, string | number | boolean>`) channel alongside pose — cosmetic ids, `"#rrggbb"` tints, model keys; slot semantics are game-defined, but the convention is slot `"tint"` = a hex tint the shell's `RemotePlayers` applies to recolor the remote capsule in place of the default hash color. Appearance rides the existing pose message — no protocol bump. The client pose-sync gate force-sends when appearance differs (shallow compare) even with zero movement, still rate-limited by `minIntervalMs`/heartbeat; the server accepts appearance-only changes and echoes the last-known appearance on every presence row. Wire `ctx.player.cosmetics.get(userId)` into the outgoing pose's `appearance` to replicate a player's equipped cosmetics for free.
 - **Voice channels** — `@jgengine/ws/voiceChannel` (`createVoiceChannelRouter(channels?)`) is a thin, coarse layer on top of the same transport/presence model: it ships the channel/falloff **routing model**, not a WebRTC media stack (no audio transport — the media plane stays behind `multiplayer/voiceContract`'s `VoiceTransport` signaling seam: `join / leave / publish(streamId) / subscribers`; `createWsBackend(...).voiceSync` / `.voiceTransportFor(serverId)` implement it over `voiceJoin`/`voiceLeave`/`voicePublish` frames with host-relayed channel rosters, and `createLocalVoiceTransport()` covers local/dev; peers exchange stream **descriptors** here and negotiate actual media host-side). Mic capture + push-to-talk live in `@jgengine/react/voice` (`useVoice`, `createPushToTalk` state model: hold / toggle / openMic, mute-gated). `VoiceChannelDef = { id, positional, falloff?, gain? }` — `positional: true` channels (proximity voice) attenuate by distance using the same `@jgengine/core/audio/audioFalloff` curve as positional SFX; `positional: false` channels (walkie/crew) play at flat gain regardless of distance. A member `join`s any number of channels at once (a Sea of Thieves–style crew channel *and* nearby-ship proximity, simultaneously); `updatePosition(userId, xyz)` feeds positions (typically mirrored from `WsPresenceRow`); `setMuted(userId, bool)` silences every channel from that speaker at once. `resolveRoutes(listenerUserId)` returns one `{ fromUserId, channelId, gain }` per shared channel — the mixer plays each route independently, so the same speaker can be loud on `walkie` and near-silent on `proximity` at the same time.
 
 ## UI — `@jgengine/react`
@@ -1305,7 +1439,7 @@ defineGame (shell) engine fields (assets, world, physics, inventories, input, se
 defineGame (core)  the underlying engine-only primitive: assets, world, physics, inventories, input, server, save, time, feed, multiplayer, loop
 PlayableGame       { game, content, loop, GameUI, camera, … } — the runner contract `defineGame` (shell) returns
 GameContext        ctx.scene / ctx.game / ctx.player / ctx.item / ctx.camera / ctx.input + subscribe/version
-scene.object       place, remove, move, rotate, at
+scene.object       place, remove, move, rotate, at, setVisual (per-instance ObjectVisual: scale/color/opacity override)
 scene.entity       spawn (anchor/offset), despawn, setPose, update; stats; targeting; effects;
                    projectiles (object-aware raycasts); spatial queries (opt-in grid broadphase)
 entity.stats       get / set / delta — bounded stats (health, mana, xp, level) on instances
@@ -1333,7 +1467,10 @@ skillCheck/qte     evaluateSkillCheck (moving zone + window) / evaluateQteSequen
 captureCheck       captureChance / rollCapture — hp% + catchPower → probability
 dialogue check     DialogueChoice.check (roll vs DC + advantage/disadvantage) → onSuccess/onFailure
 world features     biomes / voxel / plots / tilemap / flat descriptors
-physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not the defineGame physics field
+physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not the defineGame physics field (gravity/jumpVelocity, honored by the kinematics controller); bodies are box (halfExtents) or sphere (radius)
+physics/ballisticSweep  createBallisticSweep(world) → arc-vs-body hit test; wire into ProjectileSystemDeps.sweepBallistic
+anim/easing        lerp/clamp01/smoothstep/tween/timedProgress + easeIn/Out/InOut Quad/Cubic + easeOutBack/Elastic — pure 0..1 tweening math
+data/dataSource    createDataSource/createJsonDataSource — idle/loading/ready/error async state + polling; data/fetchJson + data/devProxy for CORS-safe dev fetches
 audio/audioFalloff computeFalloffGain / resolveEmitterGain — pure distance→gain curve; shell plays it
 time/beatClock     createBeatClock (BPM ticks) + createBeatInputBuffer (buffered action → next beat)
 ws/voiceChannel    createVoiceChannelRouter — positional falloff + simultaneous non-positional channels

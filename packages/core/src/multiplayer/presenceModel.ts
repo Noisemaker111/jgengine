@@ -3,12 +3,14 @@ export interface PresencePoseState {
   rotationY: number;
   rotationPitch?: number;
   lastSeenAtMs?: number;
+  appearance?: Record<string, string>;
 }
 
 export interface IncomingPose {
   position: { x: number; z: number; y?: number };
   rotationY?: number;
   rotationPitch?: number;
+  appearance?: Record<string, string>;
 }
 
 export interface PoseSyncRules {
@@ -27,10 +29,23 @@ export interface PoseSyncDecision {
   position: { x: number; y: number; z: number };
   rotationY: number;
   rotationPitch: number;
+  appearance?: Record<string, string>;
   /** True when the pose differs and a pose write is needed. */
   changed: boolean;
   /** True when only the keep-alive stamp should be written. */
   refreshKeepAlive: boolean;
+}
+
+function appearanceEqual(
+  a: Record<string, string> | undefined,
+  b: Record<string, string> | undefined,
+): boolean {
+  if (a === b) return true;
+  if (a === undefined || b === undefined) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((key) => a[key] === b[key]);
 }
 
 export function decidePoseSync(
@@ -64,16 +79,21 @@ export function decidePoseSync(
   const nextRotationY = incoming.rotationY ?? current.rotationY;
   const nextRotationPitch = incoming.rotationPitch ?? current.rotationPitch ?? 0;
 
+  const nextAppearance = incoming.appearance ?? current.appearance;
+  const appearanceChanged =
+    incoming.appearance !== undefined && !appearanceEqual(incoming.appearance, current.appearance);
+
   const moved = targetX !== current.position.x || targetZ !== current.position.z;
   const jumped = nextY !== current.position.y;
   const rotated =
     nextRotationY !== current.rotationY || nextRotationPitch !== (current.rotationPitch ?? 0);
-  const changed = moved || jumped || rotated;
+  const changed = moved || jumped || rotated || appearanceChanged;
 
   return {
     position: { x: targetX, y: nextY, z: targetZ },
     rotationY: nextRotationY,
     rotationPitch: nextRotationPitch,
+    appearance: nextAppearance,
     changed,
     refreshKeepAlive: !changed && shouldRefreshKeepAlive(current.lastSeenAtMs, nowMs, rules),
   };

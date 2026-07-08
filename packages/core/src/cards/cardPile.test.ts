@@ -133,3 +133,69 @@ describe("createCardPile controller", () => {
     expect(pile.count("hand")).toBe(2);
   });
 });
+
+describe("createCardPile onChange", () => {
+  function makePile(onChange: () => void) {
+    return createCardPile(
+      {
+        zones: ["deck", "hand", "discard", "exhaust"],
+        drawFrom: "deck",
+        handZone: "hand",
+        discardTo: "discard",
+        onChange,
+      },
+      { deck: deckIds },
+    );
+  }
+
+  test("fires on draw, discard, shuffle, and reset", () => {
+    let fired = 0;
+    const pile = makePile(() => {
+      fired += 1;
+    });
+    pile.shuffle("deck", "seed");
+    expect(fired).toBe(1);
+    const drawn = pile.draw(2);
+    expect(fired).toBe(2);
+    const discarded = pile.discard([drawn[0]]);
+    expect(discarded.status).toBe("ok");
+    expect(fired).toBe(3);
+    pile.reset(createCardPileState({ zones: ["deck", "hand", "discard", "exhaust"] }));
+    expect(fired).toBe(4);
+  });
+
+  test("fires on exhaust and move", () => {
+    let fired = 0;
+    const pile = makePile(() => {
+      fired += 1;
+    });
+    const drawn = pile.draw(2);
+    fired = 0;
+    const exhausted = pile.exhaust([drawn[0]], "exhaust");
+    expect(exhausted.status).toBe("ok");
+    expect(fired).toBe(1);
+    const moved = pile.move([drawn[1]], "hand", "discard");
+    expect(moved.status).toBe("ok");
+    expect(fired).toBe(2);
+  });
+
+  test("does not fire on a rejected move", () => {
+    let fired = 0;
+    const pile = makePile(() => {
+      fired += 1;
+    });
+    const rejected = pile.move(["not-in-hand"], "hand", "discard");
+    expect(rejected.status).toBe("rejected");
+    expect(fired).toBe(0);
+  });
+
+  test("does not fire on a rejected discard or exhaust", () => {
+    let fired = 0;
+    const pile = makePile(() => {
+      fired += 1;
+    });
+    expect(pile.discard(["not-in-hand"]).status).toBe("rejected");
+    expect(pile.exhaust(["not-in-hand"], "exhaust").status).toBe("rejected");
+    expect(fired).toBe(0);
+  });
+});

@@ -216,6 +216,49 @@ test("presence poses broadcast to subscribers and clamp teleports", async () => 
   }
 });
 
+test("presence rows include appearance and persist it across appearance-less updates", async () => {
+  const stack = await startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game", serverId });
+
+    const rosters = channel<WsPresenceRow[]>();
+    bob.presenceSync.subscribe(serverId, (rows) => rosters.push(rows));
+    expect(await rosters.next()).toEqual([]);
+
+    alice.presenceSync.syncPose(serverId, {
+      x: 1,
+      y: 0,
+      z: 2,
+      rotationY: 0.4,
+      rotationPitch: 0,
+      appearance: { skin: "blue" },
+    });
+    const first = await rosters.next();
+    expect(first[0]?.appearance).toEqual({ skin: "blue" });
+
+    alice.presenceSync.syncPose(serverId, {
+      x: 1,
+      y: 0,
+      z: 2,
+      rotationY: 0.4,
+      rotationPitch: 0,
+      appearance: { skin: "red" },
+    });
+    const second = await rosters.next();
+    expect(second[0]?.appearance).toEqual({ skin: "red" });
+
+    alice.presenceSync.syncPose(serverId, { x: 5, y: 0, z: 2, rotationY: 0.4, rotationPitch: 0 });
+    const third = await rosters.next();
+    expect(third[0]?.appearance).toEqual({ skin: "red" });
+    expect(third[0]?.position.x).toBeGreaterThan(1);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
 test("chat sends relay to channel subscribers and replay history to late joiners", async () => {
   const stack = await startStack();
   try {

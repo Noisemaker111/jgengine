@@ -27,6 +27,15 @@ describe("defineGame", () => {
     expect(second.scene.list()).toEqual([]);
   });
 
+  test("omitted assets resolve to an empty catalog", () => {
+    const game = defineGame({ name: "NoAssets", multiplayer: "off" as const });
+    expect(game.assets.ids()).toEqual([]);
+    expect(game.assets.resolve("anything")).toBeNull();
+    game.assets.register("crate", { url: "crate.glb" });
+    expect(game.assets.ids()).toEqual(["crate"]);
+    expect(defineGame({ name: "Other", multiplayer: "off" as const }).assets.ids()).toEqual([]);
+  });
+
   test("rejects empty names", () => {
     expect(() => defineGame({ ...VALID, name: "  " })).toThrow("name");
   });

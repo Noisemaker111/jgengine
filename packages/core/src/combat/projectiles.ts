@@ -1,3 +1,4 @@
+import type { BallisticSweep } from "../physics/ballisticSweep";
 import type { EntityPosition } from "../scene/entityStore";
 import type { Aim } from "../scene/spatial";
 import type { CombatSpatialDeps, EffectResult, EffectSystem, EffectVia } from "./effects";
@@ -52,6 +53,12 @@ export interface ProjectileSystemDeps {
   raycast?: Raycast;
   /** Optional object awareness for the default `raycast`; when set, placed objects can block or absorb a shot. */
   objects?: ProjectileObjectsDeps;
+  /**
+   * Optional collision-aware arc test for ballistic shots (see `createBallisticSweep` in
+   * `physics/ballisticSweep`). A hit settles the shot at the impact point; `null` or omission
+   * falls back to the closed-form landing.
+   */
+  sweepBallistic?: BallisticSweep;
   now?: () => number;
   onSettle?(report: ProjectileSettleReport): void;
 }
@@ -221,7 +228,15 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     return itemStat(via, "projectile.fuseTime") !== null || itemStat(via, "explosion.radius") !== null;
   }
 
-  function ballisticSettlePoint(input: ProjectileShotInput): [number, number, number] {
+  interface BallisticArc {
+    origin: EntityPosition;
+    velocity: readonly [number, number, number];
+    gravity: number;
+    flightTime: number;
+    landing: [number, number, number];
+  }
+
+  function ballisticArc(input: ProjectileShotInput): BallisticArc {
     const origin = shotOrigin(input.from, input.aim) ?? [0, 0, 0];
     const direction = aimDirection(input.aim) ?? [0, 0, 1];
     const speed = itemStat(input.via, "projectile.speed") ?? DEFAULT_PROJECTILE_SPEED;
@@ -236,11 +251,27 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         : flightCap;
     const flightTime = Math.min(impactTime, flightCap);
     const settledY = Math.max(0, origin[1] + verticalSpeed * flightTime - 0.5 * gravity * flightTime * flightTime);
-    return [
-      origin[0] + direction[0] * speed * flightTime,
-      settledY,
-      origin[2] + direction[2] * speed * flightTime,
-    ];
+    return {
+      origin,
+      velocity: [direction[0] * speed, verticalSpeed, direction[2] * speed],
+      gravity,
+      flightTime,
+      landing: [
+        origin[0] + direction[0] * speed * flightTime,
+        settledY,
+        origin[2] + direction[2] * speed * flightTime,
+      ],
+    };
+  }
+
+  function ballisticSettlePoint(input: ProjectileShotInput): [number, number, number] {
+    const arc = ballisticArc(input);
+    const sweep = deps.sweepBallistic;
+    if (sweep !== undefined) {
+      const impact = sweep(arc.origin, arc.velocity, arc.gravity, arc.flightTime);
+      if (impact !== null) return impact.point;
+    }
+    return arc.landing;
   }
 
   function predictHits(input: ProjectileShotInput): { rawHits: RaycastHit[]; visible: RaycastHit[] } {

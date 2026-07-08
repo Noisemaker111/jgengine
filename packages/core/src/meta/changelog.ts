@@ -8,6 +8,32 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  Unreleased: {
+    migrate: [
+      "Additive only — every 0.7.0 API is unchanged; opt into any of the below by importing it directly.",
+      "leveling({ thresholdMode: 'cumulative' }) is opt-in; the default 'perLevel' behavior is unchanged.",
+      "defineGame.physics.gravity/jumpVelocity are now read by the built-in kinematics controller every frame — if a game already set them expecting a no-op, jump/fall now actually reflects them; omit both to keep the previous defaults.",
+    ],
+    added: [
+      "Cumulative leveling — leveling({ thresholdMode: 'cumulative' }) tracks xp as a lifetime total that resolves upward across levels and clamps at the max-level threshold once capped (#12).",
+      "Direction-aware pool depletion — EffectSystem.canReceive(instanceId, effect, magnitude?) takes an optional signed magnitude; negative checks the opposite direction and returns 'pools-depleted' only when every stat in the receive order is already at max, so heals reach fully-depleted targets (#168).",
+      "Puzzle primitives — puzzle/cellGrid (uniform-cell boards: line-clear, match-3 cascade, run detection) and puzzle/fallingPiece (rotation-state shapes, ghost drop, lock delay, classic gravity/level/score curves) for Tetris/match-3 games (#166).",
+      "Voxel field — world/voxelField (createVoxelField, chunked block lattice, neighbors/exposedFaces, 3D DDA raycast, dirty-tracked chunkVersion) for voxel games and instanced renderers; assert on field.summary() the way environment worlds assert on summarizeEnvironment (#166).",
+      "defineGame games may omit assets (an empty catalog is injected); PlayableGame.presentation: 'hud' mounts no 3D canvas/camera/pointer for board/card/menu games; an environment() world auto-renders as the shell's backdrop when PlayableGame.environment is unset (#166).",
+      "Declared-action intent board — turn/intent createIntentBoard for one-turn-ahead intents (Slay-the-Spire style): declare/peek/all/consume/clear (#168).",
+      "turnLoop lifecycle hooks — config.onTurnStart/onTurnEnd fire on every advanceTurn(); ctx.game.turn.loop(id, config) lazily creates/returns a notify-wrapped TurnLoop so every mutation (advanceTurn/advancePhase/advanceRound/spend/gain/refill/setOrder/...) auto-bumps ctx.version() with no manual wiring (#163/#168).",
+      "ctx.game.store — a reactive per-game keyed store (set/delete/get/has/subscribe/mapSnapshot/arraySnapshot) plus @jgengine/react's useGameStore selector hook, replacing hand-rolled module-level stores for ad-hoc reactive game state; ctx.game.cards.pile(id, config?) lazily creates/returns a notify-wrapped CardPile the same way; createCardPile gained an onChange hook for headless use; CommandDefinition.apply may return void for side-effect-only commands (#163).",
+      "Camera — sideScroll rig (fixed lateral follow for 2.5D platformers/beat-'em-ups), a none rig (no camera mounted; pairs with PlayableGame.presentation: 'hud'), rts.pan: false (static backdrop camera: no pan/edge-scroll/rotate/zoom, still re-centers on the follow target), and the observer rig now defaults to the local player when bind is unset (#167).",
+      "Sensors + session — sensor/concealment (colorDistance/concealmentScore/createConcealmentSensor), sensor/freezeMonitor (createFreezeMonitor), session/roles (assignRoles); createRoundState's RoundConfig.teams accepts per-team roles and an optional winCondition that evaluate() checks each tick, and takes an optional phaseOrder for arbitrary named phase cycles (concludeRound/evaluate settle only while the current phase is neither the first nor the last entry) (#151).",
+      "Appearance replication — presence rows carry an optional per-slot appearance channel (cosmetic ids, hex tints, model keys) alongside pose, riding the existing pose message with no protocol bump; wire ctx.player.cosmetics.get(userId) into the outgoing pose (#151).",
+      "ctx.input — a per-frame held-action snapshot (publish(held)/isDown(action)/held()) without bumping ctx.version(); action bindings gained repeatMs (repeat-fire while held); every command resolved from a bound action now carries aim; pointer.secondaryCommand runs a command on right-click off the same raycast as move/ping (#164).",
+      "Object spatial queries + entity patching — ctx.scene.object.at/inBox/raycast/raycastAll over unit-box objects; ctx.scene.entity.update(id, patch) for name/position/rotation/role/movement/behaviors/meta; per-instance renderObject/objectStyles overrides; pointerService.worldHitCenter() + pointer-lock center-ray aiming (#165).",
+      "Controller movement config — PlayerMovementConfig (mode: free/axis/grid, axis, cellSize, collideObjects, beforeCommit pre-commit hook) for the shell-driven walk controller; defineGame.physics.gravity/jumpVelocity are honored by the built-in walk controller (distinct from the standalone physics/physicsWorld rigid-body sim); ctx.player.motion.impulse/setVerticalVelocity/setY/takePending (MotionIntents); entity.spawnPoseOf/resetToSpawn/resetAllToSpawn (#162).",
+      "Model material/animation + paint — ModelConfig.tint/metalness/roughness/animation (GLTF clip playback, paused pose holds); PointerHit.uv + pointerService.sampleSurface() for material-aware picking; ctx.scene.entity.paint runtime paint layer, auto-rendered via a per-instance canvas texture with no per-game wiring; remote-player appearance tint recolors the shell's default capsule (#151).",
+    ],
+    changed: [],
+    removed: [],
+  },
   "0.7.0": {
     migrate: [
       "Bump every @jgengine/* dependency to ^0.7.0 (the eight packages version in lockstep).",

@@ -14,6 +14,7 @@ import {
   TopDownRig,
 } from "./cameraRigs";
 import { GameFirstPersonCamera } from "./GameFirstPersonCamera";
+import { GameInspectionCamera } from "./GameInspectionCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
 import { resolveDirectedCamera } from "./rigMath";
 import { resolveRigKind, turntableAsObserver } from "./rigResolve";
@@ -114,6 +115,8 @@ export function GameCameraRig({
         );
       case "sideScroll":
         return <SideScrollRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+      case "inspection":
+        return <GameInspectionCamera config={config?.inspection} />;
       case "none":
         return null;
       default:

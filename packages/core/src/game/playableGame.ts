@@ -3,6 +3,7 @@ import type { TouchControlsConfig } from "../input/touchScheme";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
+import type { SkyEnvironmentConfig } from "../world/features";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
@@ -65,6 +66,9 @@ export interface FirstPersonCameraConfig {
  * - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views.
  * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
  * - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`.
+ * - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input.
+ * - `inspection` — model-viewer rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input.
+ * - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
  */
 export type CameraRigKind =
   | "orbit"
@@ -77,6 +81,7 @@ export type CameraRigKind =
   | "observer"
   | "turntable"
   | "sideScroll"
+  | "inspection"
   | "none";
 
 /** Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input. */
@@ -122,6 +127,8 @@ export interface RtsCameraConfig extends TopDownCameraConfig {
   bounds?: { minX?: number; maxX?: number; minZ?: number; maxZ?: number };
   /** Start centered on this world point when there is no follow target. */
   start?: { x?: number; z?: number };
+  /** Read WASD/arrow pan, edge-scroll, Q/E rotate, and wheel zoom. `false` sits static at the start/bounds position — a backdrop camera, no input at all. Default true. */
+  pan?: boolean;
 }
 
 /** Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle. */
@@ -229,6 +236,38 @@ export interface TurntableCameraConfig {
   fov?: number;
 }
 
+/**
+ * How scroll-zoom re-anchors the view for the inspection rig (#207.7):
+ * - `target` — dolly toward the orbit target (classic OrbitControls behavior).
+ * - `cursor` — dolly toward the point under the pointer.
+ * - `center` — dolly toward the viewport center; equivalent to `target` for an
+ *   OrbitControls-driven rig, since the camera always faces `target` and that
+ *   point already projects to the exact center of the viewport.
+ */
+export type InspectionZoomAnchor = "target" | "cursor" | "center";
+
+/** Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input. */
+export interface InspectionCameraConfig {
+  /** Where scroll-zoom re-anchors the view. Default "target". */
+  anchor?: InspectionZoomAnchor;
+  /** Orbit target (the point orbited/panned around). Default origin. */
+  target?: { x?: number; y?: number; z?: number };
+  /** Camera distance from `target` used to seed the initial camera position when `initialPosition` is unset. Default 6. */
+  initialDistance?: number;
+  /** Explicit starting camera world position; overrides `initialDistance` when set. */
+  initialPosition?: { x?: number; y?: number; z?: number };
+  minDistance?: number;
+  maxDistance?: number;
+  /** Vertical orbit clamp (radians). Unset allows a full pole-to-pole orbit, unlike the tighter default on the classic orbit rig. */
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
+  /** Middle-mouse/right-drag pan. Default true for this rig. */
+  pan?: boolean;
+  rotateSpeed?: number;
+  zoomSpeed?: number;
+  dampingFactor?: number;
+}
+
 /** One stop on a scripted camera path (#29). */
 export interface CameraKeyframe {
   position: { x: number; y: number; z: number };
@@ -286,6 +325,8 @@ export interface GameCameraConfig {
   turntable?: TurntableCameraConfig;
   /** Fixed side-on follow tuning; read when `rig: "sideScroll"`. */
   sideScroll?: SideScrollCameraConfig;
+  /** Model-viewer / inspection tuning (#207.7); read when `rig: "inspection"`. */
+  inspection?: InspectionCameraConfig;
   /** Camera-shake / trauma channel defaults (#28); read by every rig. */
   shake?: CameraShakeConfig;
   /** Scripted keyframe path (#29); when set, plays over the active rig. */
@@ -355,6 +396,20 @@ export interface VoxelCollisionConfig {
   stepHeight?: number;
 }
 
+/** Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses. */
+export interface ModelAnimationConfig {
+  /** Clip name to play; defaults to the GLB's first clip. */
+  clip?: string;
+  /** Loop the clip. Default true. */
+  loop?: boolean;
+  /** Playback rate multiplier. Default 1. */
+  timeScale?: number;
+  /** Hold the rig on a fixed frame instead of advancing it each tick. */
+  paused?: boolean;
+  /** Seek the clip to this time in seconds; combine with `paused: true` to hold a specific pose ("pose library" usage). */
+  time?: number;
+}
+
 /** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */
 export interface ModelMaterialOverride {
   color?: string;
@@ -374,6 +429,54 @@ export interface ModelConfig {
   dims?: ModelDims;
   /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
   material?: ModelMaterialOverride;
+  /** Plays a GLTF animation clip on the model when the source has any (skinned or not); omit to render the rig's bind pose. */
+  animation?: ModelAnimationConfig;
+}
+
+export interface ObjectStyle {
+  color?: string;
+  opacity?: number;
+  hidden?: boolean;
+}
+
+export interface AmbientLightingConfig {
+  color?: string;
+  intensity?: number;
+}
+
+export interface DirectionalLightingConfig {
+  color?: string;
+  intensity?: number;
+  position: readonly [number, number, number];
+  castShadow?: boolean;
+}
+
+export interface HemisphereLightingConfig {
+  skyColor?: string;
+  groundColor?: string;
+  intensity?: number;
+}
+
+/** Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied. */
+export interface LightingConfig {
+  ambient?: AmbientLightingConfig;
+  directional?: readonly DirectionalLightingConfig[];
+  hemisphere?: HemisphereLightingConfig;
+}
+
+export interface BackdropFogConfig {
+  color?: string;
+  near?: number;
+  far?: number;
+  /** Exponential (`FogExp2`) falloff instead of linear near/far; when set, `near`/`far` are ignored. */
+  density?: number;
+}
+
+/** Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6). */
+export interface BackdropConfig {
+  background?: string;
+  sky?: SkyEnvironmentConfig;
+  fog?: BackdropFogConfig;
 }
 
 /** Movement-control levers for the shell-driven local player walk controller. */
@@ -403,13 +506,15 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   content: GameContextContent;
   loop: Required<GameLoop<GameContext>>;
   GameUI: TUi;
+  /** Which shell mount to use. Default `"3d"` (canvas, camera rig, pointer, world rendering). `"hud"` mounts no 3D canvas, camera rig, or pointer — the game is `GameUI` plus the command/input loop, for board/card/menu games. */
+  presentation?: "3d" | "hud";
   /** Optional canvas-layer VFX component (e.g. traveling projectiles). */
   WorldOverlay?: TWorldOverlay;
-  /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. */
+  /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. When unset and `game.world` is an `environment()` descriptor, the shell auto-renders that world here — no manual wiring needed. */
   environment?: TWorldOverlay;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
   renderEntity?: TRenderEntity;
-  /** Per-object visual override: return your own mesh for a placed scene object and the shell still positions it. Return null/undefined to fall back to objectModels → colored box. */
+  /** Per-object visual override: return your own mesh for a placed scene object and the shell still positions it and drives picking. Return null/undefined to fall back to objectModels → styled box. */
   renderObject?: TRenderObject;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
   entitySprites?: Record<string, EntitySpriteConfig>;
@@ -417,6 +522,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   entityModels?: Record<string, string | ModelConfig>;
   /** GLB models keyed by object catalog id; a string resolves via game.assets, a ModelConfig renders directly. Replaces the colored box when present. */
   objectModels?: Record<string, string | ModelConfig>;
+  /** Styling for the default colored-box object render, keyed by catalog id: color override, opacity (< 1 sets transparent), hidden (skips the mesh but keeps the positioning group + picking). */
+  objectStyles?: Record<string, ObjectStyle>;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
   hotbarSelection?: () => number;
   /** Positioned proximity prompts for the interact key + HUD; single source shared with useActivePrompt. */
@@ -443,6 +550,10 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   collision?: VoxelCollisionConfig;
   /** Movement-control levers (axis/grid constraints, object collision, pre-commit hook) for the shell-driven walk controller. */
   movement?: PlayerMovementConfig;
+  /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
+  lighting?: LightingConfig;
+  /** Generic background/sky/fog (#207.6), applied for any world kind including a custom `environment` component. */
+  backdrop?: BackdropConfig;
 }
 
 export function worldHealthBarAllowsRole(

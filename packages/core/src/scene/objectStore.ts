@@ -1,18 +1,26 @@
 import { createObservableKeyedStore } from "../store/observableKeyedStore";
 import type { EntityPosition } from "./entityStore";
 
+export interface ObjectVisual {
+  scale?: number | readonly [number, number, number];
+  color?: string;
+  opacity?: number;
+}
+
 export interface SceneObject {
   instanceId: string;
   catalogId: string;
   position: EntityPosition;
   rotationY: number;
   parentSpace?: string;
+  visual?: ObjectVisual;
 }
 
 export interface PlaceOptions {
   instanceId?: string;
   parentSpace?: string;
   rotation?: number;
+  visual?: ObjectVisual;
 }
 
 export interface ObjectListFilter {
@@ -24,9 +32,11 @@ export interface ObjectStore {
   remove(instanceId: string): boolean;
   move(instanceId: string, x: number, y: number, z: number): boolean;
   rotate(instanceId: string, rotationY: number): boolean;
+  setVisual(instanceId: string, visual: ObjectVisual | undefined): boolean;
   get(instanceId: string): SceneObject | null;
   list(filter?: ObjectListFilter): readonly SceneObject[];
   at(x: number, y: number, z: number, tolerance?: number): SceneObject[];
+  inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
   clear(): void;
   subscribe(listener: () => void): () => void;
   snapshot(): readonly SceneObject[];
@@ -92,6 +102,7 @@ export function createObjectStore(): ObjectStore {
         position,
         rotationY: options.rotation ?? 0,
         ...(options.parentSpace !== undefined ? { parentSpace: options.parentSpace } : {}),
+        ...(options.visual !== undefined ? { visual: options.visual } : {}),
       });
       indexAdd(instanceId, position);
       return instanceId;
@@ -116,6 +127,19 @@ export function createObjectStore(): ObjectStore {
       const current = store.get(instanceId);
       if (!current) return false;
       store.set(instanceId, { ...current, rotationY });
+      return true;
+    },
+    setVisual(instanceId, visual) {
+      const current = store.get(instanceId);
+      if (!current) return false;
+      store.set(instanceId, {
+        instanceId: current.instanceId,
+        catalogId: current.catalogId,
+        position: current.position,
+        rotationY: current.rotationY,
+        ...(current.parentSpace !== undefined ? { parentSpace: current.parentSpace } : {}),
+        ...(visual !== undefined ? { visual } : {}),
+      });
       return true;
     },
     get(instanceId) {
@@ -152,6 +176,24 @@ export function createObjectStore(): ObjectStore {
       }
       return results;
     },
+    inBox(min, max) {
+      const hits: SceneObject[] = [];
+      for (const bucket of cellIndex.values()) {
+        for (const instanceId of bucket) {
+          const object = store.get(instanceId);
+          if (object === undefined) continue;
+          const [x, y, z] = object.position;
+          if (
+            x >= min[0] && x <= max[0] &&
+            y >= min[1] && y <= max[1] &&
+            z >= min[2] && z <= max[2]
+          ) {
+            hits.push(object);
+          }
+        }
+      }
+      return hits;
+    },
     clear() {
       for (const object of store.arraySnapshot()) {
         store.delete(object.instanceId);
@@ -165,4 +207,10 @@ export function createObjectStore(): ObjectStore {
       return store.arraySnapshot();
     },
   };
+}
+
+export function objectVisualScale(visual: ObjectVisual | undefined): readonly [number, number, number] {
+  const scale = visual?.scale;
+  if (scale === undefined) return [1, 1, 1];
+  return typeof scale === "number" ? [scale, scale, scale] : scale;
 }

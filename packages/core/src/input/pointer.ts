@@ -16,8 +16,12 @@ export interface PointerHit {
   entity: string | null;
   /** Topmost scene-object instance id under the cursor, or null. */
   object: string | null;
+  /** Texture-space UV at the hit, when the intersected mesh carries UVs; absent for the ground-plane fallback. */
+  uv?: { u: number; v: number };
   /** Sampled `#rrggbb` color + PBR params from the hit mesh's `MeshStandardMaterial` (#151.2); `null`/unset when the hit surface has no standard material (e.g. the ground plane). */
   material?: { color: string; metalness?: number; roughness?: number } | null;
+  /** Index of the hit instance when the intersected mesh is a `THREE.InstancedMesh`; absent otherwise. */
+  instanceId?: number;
 }
 
 export type PointerButton = "primary" | "secondary" | "middle";

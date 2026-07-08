@@ -150,3 +150,52 @@ describe("round state machine", () => {
     expect(round.phase()).toBe("live");
   });
 });
+
+describe("custom phase cycles", () => {
+  function hideAndSeek() {
+    return createRoundState({
+      phases: { hide: 3, seek: 5, reveal: 2 },
+      phaseOrder: ["hide", "seek", "reveal"] as const,
+      teams: ["hiders", "seekers"],
+      winReward: 2000,
+    });
+  }
+
+  test("advances through a custom phase order on the timer", () => {
+    const round = hideAndSeek();
+    expect(round.phase()).toBe("hide");
+    const events = round.tick(3);
+    expect(events.map((e) => e.kind)).toEqual(["phase.end", "phase.start"]);
+    expect(round.phase()).toBe("seek");
+    expect(round.timeLeft()).toBeCloseTo(5, 5);
+  });
+
+  test("wrapping from the last phase back to the first increments the round", () => {
+    const round = hideAndSeek();
+    round.tick(3);
+    expect(round.round()).toBe(1);
+    round.tick(5);
+    expect(round.round()).toBe(1);
+    expect(round.phase()).toBe("reveal");
+    round.tick(2);
+    expect(round.round()).toBe(2);
+    expect(round.phase()).toBe("hide");
+  });
+
+  test("concludeRound and scores still work with a custom cycle", () => {
+    const round = hideAndSeek();
+    round.tick(3);
+    const events = round.concludeRound("seekers");
+    expect(events.map((e) => e.kind)).toEqual(["round.win", "round.economy", "phase.end", "phase.start"]);
+    expect(round.score("seekers")).toBe(1);
+    expect(round.round()).toBe(1);
+    expect(round.phase()).toBe("reveal");
+    const economy = events.find((e) => e.kind === "round.economy")!.economy!;
+    expect(economy.find((r) => r.team === "seekers")).toEqual({
+      team: "seekers",
+      reward: 2000,
+      won: true,
+      lossStreak: 0,
+    });
+  });
+});

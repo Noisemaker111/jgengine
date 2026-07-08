@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createObjectStore } from "@jgengine/core/scene/objectStore";
+import { createObjectStore, objectVisualScale } from "@jgengine/core/scene/objectStore";
 
 describe("scene object store", () => {
   test("place generates unique ids when omitted and stores catalogId, position, rotation", () => {
@@ -97,6 +97,26 @@ describe("scene object store", () => {
     expect(store.list()).toEqual([]);
   });
 
+  test("at returns every match when cells collide", () => {
+    const store = createObjectStore();
+    const first = store.place("crate", 0, 0, 0);
+    const second = store.place("barrel", 0, 0, 0);
+    expect(store.at(0, 0, 0).map((o) => o.instanceId).sort()).toEqual([first, second].sort());
+    store.remove(second);
+    expect(store.at(0, 0, 0).map((o) => o.instanceId)).toEqual([first]);
+  });
+
+  test("inBox filters by inclusive AABB bounds", () => {
+    const store = createObjectStore();
+    const inside = store.place("crate", 1, 0, 1);
+    const onMinEdge = store.place("crate", 0, 0, 0);
+    const onMaxEdge = store.place("crate", 2, 0, 2);
+    const outside = store.place("crate", 3, 0, 3);
+    const ids = store.inBox([0, 0, 0], [2, 0, 2]).map((object) => object.instanceId);
+    expect(ids.sort()).toEqual([inside, onMaxEdge, onMinEdge].sort());
+    expect(ids).not.toContain(outside);
+  });
+
   test("subscribe fires once per mutation and snapshot is referentially stable", () => {
     const store = createObjectStore();
     let notified = 0;
@@ -115,5 +135,59 @@ describe("scene object store", () => {
     unsubscribe();
     store.place("rack", 0, 0, 0);
     expect(notified).toBe(3);
+  });
+
+  test("place carries an optional per-instance visual", () => {
+    const store = createObjectStore();
+    const id = store.place("crate", 0, 0, 0, { visual: { color: "#ff0000", opacity: 0.5, scale: 2 } });
+    expect(store.get(id)?.visual).toEqual({ color: "#ff0000", opacity: 0.5, scale: 2 });
+  });
+
+  test("place omits visual entirely when not given", () => {
+    const store = createObjectStore();
+    const id = store.place("crate", 0, 0, 0);
+    expect(store.get(id)?.visual).toBeUndefined();
+    expect(Object.keys(store.get(id)!)).not.toContain("visual");
+  });
+
+  test("setVisual updates an existing object's visual and reports missing ids", () => {
+    const store = createObjectStore();
+    const id = store.place("crate", 0, 0, 0);
+    expect(store.setVisual(id, { color: "#00ff00" })).toBe(true);
+    expect(store.get(id)?.visual).toEqual({ color: "#00ff00" });
+    expect(store.setVisual("missing", { color: "#00ff00" })).toBe(false);
+  });
+
+  test("setVisual with undefined clears a previously set visual", () => {
+    const store = createObjectStore();
+    const id = store.place("crate", 0, 0, 0, { visual: { color: "#ff0000" } });
+    expect(store.setVisual(id, undefined)).toBe(true);
+    expect(store.get(id)?.visual).toBeUndefined();
+  });
+
+  test("setVisual preserves position, rotation, and parentSpace", () => {
+    const store = createObjectStore();
+    const id = store.place("crate", 1, 2, 3, { rotation: 0.5, parentSpace: "plot:garage" });
+    store.setVisual(id, { scale: [2, 3, 4] });
+    const object = store.get(id);
+    expect(object?.position).toEqual([1, 2, 3]);
+    expect(object?.rotationY).toBe(0.5);
+    expect(object?.parentSpace).toBe("plot:garage");
+    expect(object?.visual).toEqual({ scale: [2, 3, 4] });
+  });
+});
+
+describe("objectVisualScale", () => {
+  test("defaults to a unit scale when no visual or scale is given", () => {
+    expect(objectVisualScale(undefined)).toEqual([1, 1, 1]);
+    expect(objectVisualScale({})).toEqual([1, 1, 1]);
+  });
+
+  test("broadcasts a numeric scale across all three axes", () => {
+    expect(objectVisualScale({ scale: 2.5 })).toEqual([2.5, 2.5, 2.5]);
+  });
+
+  test("passes a tuple scale through unchanged", () => {
+    expect(objectVisualScale({ scale: [1, 2, 3] })).toEqual([1, 2, 3]);
   });
 });
