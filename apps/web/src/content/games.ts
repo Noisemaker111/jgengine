@@ -1,7 +1,4 @@
-const gamePackages = import.meta.glob<{ name: string }>("../../../../Games/*/package.json", {
-  eager: true,
-  import: "default",
-});
+const gamePackages = import.meta.glob("../../../../Games/*/package.json");
 
 export type Game = {
   id: string;
