@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { SlingshotStore } from "./slingshotStore";
+import { GRAB_RADIUS, GRAB_RADIUS_COARSE, SlingshotStore, grabRadiusFor } from "./slingshotStore";
 
 function runUntilAiming(store: SlingshotStore, maxSeconds: number): void {
   const dt = 1 / 60;
@@ -9,6 +9,17 @@ function runUntilAiming(store: SlingshotStore, maxSeconds: number): void {
     elapsed += dt;
   }
 }
+
+describe("grabRadiusFor", () => {
+  test("fine pointers use the tight radius", () => {
+    expect(grabRadiusFor(false)).toBe(GRAB_RADIUS);
+  });
+
+  test("coarse (touch) pointers use a wider, more forgiving radius", () => {
+    expect(grabRadiusFor(true)).toBe(GRAB_RADIUS_COARSE);
+    expect(GRAB_RADIUS_COARSE).toBeGreaterThan(GRAB_RADIUS);
+  });
+});
 
 describe("SlingshotStore grab radius", () => {
   test("a pointer far from the pouch never starts a drag", () => {
@@ -21,6 +32,55 @@ describe("SlingshotStore grab radius", () => {
     const store = new SlingshotStore();
     store.beginAim([-1, 0.6, 0]);
     expect(store.getState().phase).toBe("dragging");
+  });
+
+  test("a touch outside the fine radius but inside the coarse radius still starts a drag", () => {
+    const store = new SlingshotStore();
+    const point: [number, number, number] = [-5, 1.2, 0];
+    store.beginAim(point, GRAB_RADIUS);
+    expect(store.getState().phase).toBe("aiming");
+    store.beginAim(point, GRAB_RADIUS_COARSE);
+    expect(store.getState().phase).toBe("dragging");
+  });
+});
+
+describe("SlingshotStore hasDragged / coach flag", () => {
+  test("starts undragged", () => {
+    const store = new SlingshotStore();
+    expect(store.getState().hasDragged).toBe(false);
+  });
+
+  test("cancelAim marks a real drag as complete without spending a shot", () => {
+    const store = new SlingshotStore();
+    const before = store.getState().shotsLeft;
+    store.beginAim([-1.5, 0.4, 0]);
+    store.cancelAim();
+    const state = store.getState();
+    expect(state.phase).toBe("aiming");
+    expect(state.shotsLeft).toBe(before);
+    expect(state.hasDragged).toBe(true);
+  });
+
+  test("cancelAim outside a drag is a no-op", () => {
+    const store = new SlingshotStore();
+    store.cancelAim();
+    expect(store.getState().hasDragged).toBe(false);
+  });
+
+  test("a real fired shot marks hasDragged and it survives loading the next level", () => {
+    const store = new SlingshotStore();
+    store.beginAim([-2.4, 0.5, 0]);
+    store.releaseAim();
+    expect(store.getState().hasDragged).toBe(true);
+    store.loadLevel(0, store.getState().totalScore);
+    expect(store.getState().hasDragged).toBe(true);
+  });
+
+  test("releasing with almost no pull still counts as a completed drag cycle", () => {
+    const store = new SlingshotStore();
+    store.beginAim([0.01, 1.2, 0]);
+    store.releaseAim();
+    expect(store.getState().hasDragged).toBe(true);
   });
 });
 

@@ -27,6 +27,7 @@ export interface SlingshotState {
   outcome: LevelOutcome;
   dragPoint: Vec3 | null;
   trajectory: readonly Vec3[];
+  hasDragged: boolean;
   epoch: number;
 }
 
@@ -51,6 +52,7 @@ export const GROUND_CENTER: Vec3 = [14, GROUND_SURFACE_Y - GROUND_HALF[1] - 0.05
 export const SLING_ANCHOR: Vec3 = [0, 1.2, 0];
 export const MAX_PULL = 2.6;
 export const GRAB_RADIUS = 3.5;
+export const GRAB_RADIUS_COARSE = 6.5;
 export const POWER_SCALE = 9;
 export const MAX_LAUNCH_SPEED = 24;
 export const PROJECTILE_HALF: Vec3 = [0.32, 0.32, 0.32];
@@ -61,7 +63,11 @@ export const MAX_STEP_DT = 0.05;
 export const TRAJECTORY_STEPS = 90;
 export const TRAJECTORY_DT = 1 / 60;
 const CAPACITY = 96;
-const GROUND_FIELD = groundFieldFor(world);
+export const GROUND_FIELD = groundFieldFor(world);
+
+export function grabRadiusFor(coarsePointer: boolean): number {
+  return coarsePointer ? GRAB_RADIUS_COARSE : GRAB_RADIUS;
+}
 
 function toLiveBlock(block: BlockPiece): LiveBlock {
   return { ...block, position: block.position };
@@ -91,7 +97,7 @@ export class SlingshotStore implements ReadableEngineStore<SlingshotState> {
       gravity: GRAVITY,
     });
     this.world.onCollision(this.handleCollision, MIN_IMPACT_SPEED);
-    this.state = this.freshLevelState(0, 0);
+    this.state = this.freshLevelState(0, 0, false);
     this.blocks = LEVELS[0]!.blocks.map(toLiveBlock);
     this.dummies = LEVELS[0]!.dummies.map(toLiveDummy);
     this.rebuildWorld();
@@ -115,7 +121,7 @@ export class SlingshotStore implements ReadableEngineStore<SlingshotState> {
     this.notify();
   }
 
-  private freshLevelState(levelIndex: number, totalScore: number): SlingshotState {
+  private freshLevelState(levelIndex: number, totalScore: number, hasDragged: boolean): SlingshotState {
     const level = LEVELS[levelIndex]!;
     return {
       levelIndex,
@@ -131,6 +137,7 @@ export class SlingshotStore implements ReadableEngineStore<SlingshotState> {
       outcome: "playing",
       dragPoint: null,
       trajectory: [],
+      hasDragged,
       epoch: (this.epochCounter += 1),
     };
   }
@@ -144,7 +151,7 @@ export class SlingshotStore implements ReadableEngineStore<SlingshotState> {
     this.destroyedDummies.clear();
     this.flightTimer = 0;
     this.rebuildWorld();
-    this.state = this.freshLevelState(levelIndex, totalScore);
+    this.state = this.freshLevelState(levelIndex, totalScore, this.state.hasDragged);
     this.notify();
   }
 
@@ -207,12 +214,12 @@ export class SlingshotStore implements ReadableEngineStore<SlingshotState> {
     this.world.wake(bodyIndex);
   }
 
-  beginAim(point: Vec3): void {
+  beginAim(point: Vec3, grabRadius: number = GRAB_RADIUS): void {
     if (this.state.phase !== "aiming") return;
     const dx = point[0] - SLING_ANCHOR[0];
     const dy = point[1] - SLING_ANCHOR[1];
     const dz = point[2] - SLING_ANCHOR[2];
-    if (Math.hypot(dx, dy, dz) > GRAB_RADIUS) return;
+    if (Math.hypot(dx, dy, dz) > grabRadius) return;
     this.setState({ phase: "dragging", dragPoint: point, trajectory: this.previewFor(point) });
   }
 
@@ -236,7 +243,7 @@ export class SlingshotStore implements ReadableEngineStore<SlingshotState> {
 
   cancelAim(): void {
     if (this.state.phase !== "dragging") return;
-    this.setState({ phase: "aiming", dragPoint: null, trajectory: [] });
+    this.setState({ phase: "aiming", dragPoint: null, trajectory: [], hasDragged: true });
   }
 
   releaseAim(): void {
@@ -266,6 +273,7 @@ export class SlingshotStore implements ReadableEngineStore<SlingshotState> {
       shotsLeft: this.state.shotsLeft - 1,
       dragPoint: null,
       trajectory: [],
+      hasDragged: true,
       epoch: (this.epochCounter += 1),
     });
   }
