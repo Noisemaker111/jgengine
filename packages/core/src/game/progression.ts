@@ -83,6 +83,7 @@ export interface LevelingConfig {
   startLevel?: number;
   xpStat?: string;
   levelStat?: string;
+  thresholdMode?: "perLevel" | "cumulative";
 }
 
 export interface LevelingStatAccess {
@@ -108,10 +109,14 @@ export function leveling(config: LevelingConfig): LevelingTrack {
   const startLevel = config.startLevel ?? 1;
   const xpStat = config.xpStat ?? "xp";
   const levelStat = config.levelStat ?? "level";
+  const thresholdMode = config.thresholdMode ?? "perLevel";
 
-  const xpForLevel = (level: number): number => evalCurve(config.xpForLevel, level);
+  const xpForLevel = (level: number): number => {
+    if (thresholdMode === "cumulative" && level <= startLevel) return 0;
+    return evalCurve(config.xpForLevel, level);
+  };
 
-  const resolve = (level: number, xp: number): LevelProgress => {
+  const resolvePerLevel = (level: number, xp: number): LevelProgress => {
     let currentLevel = level;
     let currentXp = xp;
     let levelsGained = 0;
@@ -128,6 +133,25 @@ export function leveling(config: LevelingConfig): LevelingTrack {
       levelsGained,
     };
   };
+
+  const resolveCumulative = (level: number, xp: number): LevelProgress => {
+    let currentLevel = level;
+    let levelsGained = 0;
+    while (currentLevel < maxLevel && xp >= xpForLevel(currentLevel + 1)) {
+      currentLevel += 1;
+      levelsGained += 1;
+    }
+    const capped = currentLevel >= maxLevel;
+    return {
+      level: currentLevel,
+      xp: capped ? xpForLevel(maxLevel) : xp,
+      xpMax: capped ? xpForLevel(maxLevel) : xpForLevel(currentLevel + 1),
+      levelsGained,
+    };
+  };
+
+  const resolve = (level: number, xp: number): LevelProgress =>
+    thresholdMode === "cumulative" ? resolveCumulative(level, xp) : resolvePerLevel(level, xp);
 
   const grantXp = (
     access: LevelingStatAccess,

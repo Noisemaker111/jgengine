@@ -153,7 +153,7 @@ export class VehicleBody {
       const rest = wheel.restLength ?? this.suspensionRest;
       const id = world.springJoint({
         bodyA: this.chassis,
-        anchorA: [wheel.offset[0], wheel.offset[1], wheel.offset[2]],
+        anchorA: this.rotateOffset(wheel.offset),
         anchorB: [worldPos[0], worldPos[1] - rest, worldPos[2]],
         restLength: rest,
         stiffness,
@@ -171,15 +171,21 @@ export class VehicleBody {
     }
   }
 
-  private wheelMount(wheel: WheelSpec): [number, number, number] {
+  /**
+   * A wheel's local offset rotated by the current heading — the ground-side mount and the
+   * chassis-side spring anchor both derive from this, so the suspension axis stays vertical (not a
+   * mix of rotated and unrotated ends) as the chassis turns.
+   */
+  private rotateOffset(offset: readonly [number, number, number]): [number, number, number] {
     const sin = Math.sin(this.heading);
     const cos = Math.cos(this.heading);
-    const [ox, oy, oz] = wheel.offset;
-    return [
-      this.world.posX[this.chassis]! + ox * cos + oz * sin,
-      this.world.posY[this.chassis]! + oy,
-      this.world.posZ[this.chassis]! - ox * sin + oz * cos,
-    ];
+    const [ox, oy, oz] = offset;
+    return [ox * cos + oz * sin, oy, -ox * sin + oz * cos];
+  }
+
+  private wheelMount(wheel: WheelSpec): [number, number, number] {
+    const [dx, dy, dz] = this.rotateOffset(wheel.offset);
+    return [this.world.posX[this.chassis]! + dx, this.world.posY[this.chassis]! + dy, this.world.posZ[this.chassis]! + dz];
   }
 
   get position(): [number, number, number] {
@@ -209,16 +215,8 @@ export class VehicleBody {
   }
 
   resetTo(position: readonly [number, number, number], heading: number): void {
-    const w = this.world;
-    const c = this.chassis;
-    w.posX[c] = position[0];
-    w.posY[c] = position[1];
-    w.posZ[c] = position[2];
-    w.velX[c] = 0;
-    w.velY[c] = 0;
-    w.velZ[c] = 0;
+    this.world.teleport(this.chassis, position[0], position[1], position[2]);
     this.heading = heading;
-    w.wake(c);
   }
 
   update(dt: number, input: AxisInput): void {
@@ -279,6 +277,8 @@ export class VehicleBody {
       const gap = mount[1] - (groundY + radius);
       const maxTravel = rest + radius;
       const grounded = gap <= maxTravel;
+      const anchorA = this.rotateOffset(wheel.offset);
+      w.setJointAnchorA(this.springs[i]!, anchorA[0], anchorA[1], anchorA[2]);
       w.setJointAnchor(this.springs[i]!, mount[0], groundY + radius, mount[2]);
       state.worldX = mount[0];
       state.worldY = groundY + radius;

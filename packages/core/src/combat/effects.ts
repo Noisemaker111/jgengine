@@ -101,7 +101,7 @@ export interface EffectSystemDeps {
 }
 
 export interface EffectSystem {
-  canReceive(instanceId: string, effect: string): string | null;
+  canReceive(instanceId: string, effect: string, magnitude?: number): string | null;
   preview(input: SingleTargetEffectInput): number;
   applyEffect(input: EffectInput): EffectResult[];
 }
@@ -128,16 +128,18 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     return result;
   }
 
-  function canReceive(instanceId: string, effect: string): string | null {
+  function canReceive(instanceId: string, effect: string, magnitude?: number): string | null {
     const rule = resolveRule(instanceId, effect);
     if (rule === null) return "not-receivable";
     const stats = deps.resolveStats(instanceId);
     if (stats === undefined) return "unknown-instance";
-    const anyPoolAboveMin = rule.order.some((statId) => {
+    const restorative = magnitude !== undefined && magnitude < 0;
+    const anyPoolHasHeadroom = rule.order.some((statId) => {
       const stat = stats[statId];
-      return stat !== undefined && stat.current > stat.min;
+      if (stat === undefined) return false;
+      return restorative ? stat.current < stat.max : stat.current > stat.min;
     });
-    if (!anyPoolAboveMin) return "pools-depleted";
+    if (!anyPoolHasHeadroom) return "pools-depleted";
     return null;
   }
 
@@ -174,11 +176,11 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     from: string,
     scale: number,
   ): EffectResult | null {
-    if (canReceive(instanceId, effect) !== null) return null;
     const rule = resolveRule(instanceId, effect);
     const stats = deps.resolveStats(instanceId);
     if (rule === null || stats === undefined) return null;
     const drainMagnitude = modifiedDrainMagnitude(baseDrainMagnitude(effect, via) * scale, rule);
+    if (canReceive(instanceId, effect, drainMagnitude) !== null) return null;
     const result = drainPools(instanceId, effect, rule, stats, drainMagnitude);
     if (result.lethal) deps.onLethal?.(instanceId, { from, via, effect });
     return result;

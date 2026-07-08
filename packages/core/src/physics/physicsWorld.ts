@@ -105,6 +105,10 @@ export interface CollisionEvent {
 
 const FLAG_SLEEPING = 1;
 const FLAG_STATIC = 2;
+const FLAG_DEAD = 4;
+
+/** Cap on `nx*ny*nz` broadphase cells — guards a huge-bounds/tiny-cellSize config from hanging `step()`. */
+export const MAX_BROADPHASE_CELLS = 1_000_000;
 
 /** Grid cell containing a point, clamped into the grid. Pure — exported for tests. */
 export function cellCoord(value: number, min: number, cellSize: number, cells: number): number {
@@ -189,6 +193,13 @@ export class PhysicsWorld {
   private jointHigh = 0;
   private jointActiveCount = 0;
 
+  // Removed bodies tombstone (FLAG_DEAD) rather than compact: `id` is the SoA slot itself, handed
+  // out to callers and stored raw in joints/game state, so a slot can never move once allocated.
+  // `bodyHigh` is the high-water mark of ever-used slots; `bodyFree` recycles dead ones for addBody.
+  private readonly bodyFree: Int32Array;
+  private bodyFreeCount = 0;
+  private bodyHigh = 0;
+
   private collisionListener: ((e: CollisionEvent) => void) | null = null;
   private collisionMinSpeed = 0;
   private readonly collisionEvent: CollisionEvent = {
@@ -258,12 +269,20 @@ export class PhysicsWorld {
     this.ny = Math.max(1, Math.ceil(span(1) / this.cellSize));
     this.nz = Math.max(1, Math.ceil(span(2) / this.cellSize));
     this.numCells = this.nx * this.ny * this.nz;
+    if (this.numCells > MAX_BROADPHASE_CELLS) {
+      throw new Error(
+        `PhysicsWorld: broadphase grid too large (${this.nx}x${this.ny}x${this.nz} = ${this.numCells} cells, ` +
+          `cap ${MAX_BROADPHASE_CELLS}). bounds=[${config.bounds.min}]..[${config.bounds.max}] cellSize=${this.cellSize}; ` +
+          `raise cellSize or shrink bounds.`,
+      );
+    }
     this.cellStart = new Int32Array(this.numCells + 1);
     this.cursor = new Int32Array(this.numCells);
     this.sorted = new Int32Array(cap);
     this.bodyCell = new Int32Array(cap);
     this.awakeList = new Int32Array(cap);
     this.awakeSlot = new Int32Array(cap).fill(-1);
+    this.bodyFree = new Int32Array(cap);
 
     const jc = this.jointCapacity;
     this.jSpring = new Uint8Array(jc);
@@ -302,6 +321,11 @@ export class PhysicsWorld {
 
   get count(): number {
     return this.bodyCount;
+  }
+
+  /** One past the highest slot `addBody` has ever handed out — the range `removeBody` leaves holes in. */
+  get highWater(): number {
+    return this.bodyHigh;
   }
 
   get cells(): { nx: number; ny: number; nz: number; total: number } {
@@ -381,6 +405,13 @@ export class PhysicsWorld {
     this.jAnchorBZ[id] = z;
   }
 
+  /** Move a joint's local anchor offset on A (world axes, no rotation applied by the solver). */
+  setJointAnchorA(id: number, x: number, y: number, z: number): void {
+    this.jAnchorAX[id] = x;
+    this.jAnchorAY[id] = y;
+    this.jAnchorAZ[id] = z;
+  }
+
   setJointRest(id: number, restLength: number): void {
     this.jRest[id] = restLength;
   }
@@ -420,8 +451,14 @@ export class PhysicsWorld {
   }
 
   addBody(options: AddBodyOptions): number {
-    if (this.bodyCount >= this.capacity) throw new Error("PhysicsWorld: capacity exceeded");
-    const i = this.bodyCount++;
+    let i: number;
+    if (this.bodyFreeCount > 0) {
+      i = this.bodyFree[--this.bodyFreeCount]!;
+    } else {
+      if (this.bodyHigh >= this.capacity) throw new Error("PhysicsWorld: capacity exceeded");
+      i = this.bodyHigh++;
+    }
+    this.bodyCount += 1;
     this.posX[i] = options.position[0];
     this.posY[i] = options.position[1];
     this.posZ[i] = options.position[2];
@@ -440,18 +477,66 @@ export class PhysicsWorld {
     else if (options.asleep === true) f |= FLAG_SLEEPING;
     this.flags[i] = f;
     this.sleepTimer[i] = 0;
+    this.contact[i] = 0;
     this.awakeSlot[i] = -1;
     this.bodyCell[i] = this.cellOf(i);
     if ((f & FLAG_SLEEPING) === 0) this.addAwake(i);
     return i;
   }
 
+  /**
+   * Remove a body: it drops out of integration, the solver, and the broadphase, and its slot is
+   * queued for the next `addBody` to reuse. `id` and every other body's `id` stay valid — a dead
+   * slot is tombstoned (`FLAG_DEAD`), never swapped, since ids are handed out raw and stored as-is
+   * in joints and game state. There is no persistent contact set to consult, so — conservatively —
+   * any sleeping body whose AABB touches the removed body's (padded by `slop`) is woken; a body
+   * that was resting on it always qualifies.
+   */
+  removeBody(id: number): void {
+    if (id < 0 || id >= this.bodyHigh) return;
+    if ((this.flags[id]! & FLAG_DEAD) !== 0) return;
+    this.wakeTouching(id);
+    this.removeAwake(id);
+    this.flags[id] = FLAG_DEAD;
+    this.invMass[id] = 0;
+    this.velX[id] = 0;
+    this.velY[id] = 0;
+    this.velZ[id] = 0;
+    this.sleepTimer[id] = 0;
+    this.contact[id] = 0;
+    this.bodyCount -= 1;
+    this.bodyFree[this.bodyFreeCount++] = id;
+  }
+
+  private wakeTouching(id: number): void {
+    const pad = this.slop + 0.01;
+    const minX = this.posX[id]! - this.halfX[id]! - pad;
+    const maxX = this.posX[id]! + this.halfX[id]! + pad;
+    const minY = this.posY[id]! - this.halfY[id]! - pad;
+    const maxY = this.posY[id]! + this.halfY[id]! + pad;
+    const minZ = this.posZ[id]! - this.halfZ[id]! - pad;
+    const maxZ = this.posZ[id]! + this.halfZ[id]! + pad;
+    for (let j = 0; j < this.bodyHigh; j += 1) {
+      if (j === id) continue;
+      const fj = this.flags[j]!;
+      if ((fj & (FLAG_DEAD | FLAG_STATIC)) !== 0 || (fj & FLAG_SLEEPING) === 0) continue;
+      if (this.posX[j]! - this.halfX[j]! > maxX || this.posX[j]! + this.halfX[j]! < minX) continue;
+      if (this.posY[j]! - this.halfY[j]! > maxY || this.posY[j]! + this.halfY[j]! < minY) continue;
+      if (this.posZ[j]! - this.halfZ[j]! > maxZ || this.posZ[j]! + this.halfZ[j]! < minZ) continue;
+      this.wake(j);
+    }
+  }
+
   isSleeping(i: number): boolean {
     return (this.flags[i]! & FLAG_SLEEPING) !== 0;
   }
 
+  isAlive(i: number): boolean {
+    return (this.flags[i]! & FLAG_DEAD) === 0;
+  }
+
   wake(i: number): void {
-    if ((this.flags[i]! & FLAG_STATIC) !== 0) return;
+    if ((this.flags[i]! & (FLAG_STATIC | FLAG_DEAD)) !== 0) return;
     this.flags[i]! &= ~FLAG_SLEEPING;
     this.sleepTimer[i] = 0;
     this.prevX[i] = this.posX[i]!;
@@ -460,9 +545,40 @@ export class PhysicsWorld {
     this.addAwake(i);
   }
 
+  /** Overwrite a body's velocity directly, waking it if asleep. */
+  setVelocity(id: number, x: number, y: number, z: number): void {
+    if ((this.flags[id]! & FLAG_DEAD) !== 0) return;
+    this.velX[id] = x;
+    this.velY[id] = y;
+    this.velZ[id] = z;
+    this.wake(id);
+  }
+
+  /** Move a body, keeping its current velocity, and wake it if asleep. */
+  setPosition(id: number, x: number, y: number, z: number): void {
+    if ((this.flags[id]! & FLAG_DEAD) !== 0) return;
+    this.posX[id] = x;
+    this.posY[id] = y;
+    this.posZ[id] = z;
+    this.prevX[id] = x;
+    this.prevY[id] = y;
+    this.prevZ[id] = z;
+    this.bodyCell[id] = this.cellOf(id);
+    this.wake(id);
+  }
+
+  /** Move a body and zero its velocity — a hard reset (respawn, teleporter) instead of a slide. */
+  teleport(id: number, x: number, y: number, z: number): void {
+    this.setPosition(id, x, y, z);
+    if ((this.flags[id]! & FLAG_DEAD) !== 0) return;
+    this.velX[id] = 0;
+    this.velY[id] = 0;
+    this.velZ[id] = 0;
+  }
+
   wakeAll(): void {
-    for (let i = 0; i < this.bodyCount; i += 1) {
-      if ((this.flags[i]! & FLAG_STATIC) === 0) {
+    for (let i = 0; i < this.bodyHigh; i += 1) {
+      if ((this.flags[i]! & (FLAG_STATIC | FLAG_DEAD)) === 0) {
         this.flags[i]! &= ~FLAG_SLEEPING;
         this.sleepTimer[i] = 0;
         this.addAwake(i);
@@ -472,6 +588,8 @@ export class PhysicsWorld {
 
   clear(): void {
     this.bodyCount = 0;
+    this.bodyHigh = 0;
+    this.bodyFreeCount = 0;
     this.accumulator = 0;
     this.awakeCount = 0;
     this.jointHigh = 0;
@@ -488,7 +606,7 @@ export class PhysicsWorld {
     let substeps = 0;
     this.stats.contacts = 0;
     this.stats.pairs = 0;
-    this.contact.fill(0, 0, this.bodyCount);
+    this.contact.fill(0, 0, this.bodyHigh);
     while (this.accumulator >= this.fixedDt) {
       this.substep(this.fixedDt);
       this.accumulator -= this.fixedDt;
@@ -574,7 +692,7 @@ export class PhysicsWorld {
   }
 
   private buildGrid(): void {
-    const n = this.bodyCount;
+    const n = this.bodyHigh;
     const start = this.cellStart;
     start.fill(0);
     // Sleeping bodies never move, so their cell index is cached from addBody / their last awake
@@ -584,12 +702,17 @@ export class PhysicsWorld {
       const i = this.awakeList[a]!;
       this.bodyCell[i] = this.cellOf(i);
     }
-    for (let i = 0; i < n; i += 1) start[this.bodyCell[i]! + 1]! += 1;
+    // Dead slots (tombstoned by removeBody) sit inside [0, bodyHigh) but never enter the grid.
+    for (let i = 0; i < n; i += 1) {
+      if ((this.flags[i]! & FLAG_DEAD) !== 0) continue;
+      start[this.bodyCell[i]! + 1]! += 1;
+    }
     for (let c = 0; c < this.numCells; c += 1) {
       start[c + 1]! += start[c]!;
       this.cursor[c] = start[c]!;
     }
     for (let i = 0; i < n; i += 1) {
+      if ((this.flags[i]! & FLAG_DEAD) !== 0) continue;
       const c = this.bodyCell[i]!;
       this.sorted[this.cursor[c]!++] = i;
     }

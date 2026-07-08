@@ -137,6 +137,24 @@ describe("createWorldItemStore", () => {
     expect(despawned).toEqual([record.instanceId]);
     expect(store.take(record.instanceId)).toBeNull();
   });
+
+  test("remove despawns the entity and drops the record with no grant involved", () => {
+    const { store, despawned } = createTestStore();
+    const record = store.spawn({ itemId: "a", position: [0, 0, 0] });
+    const removed = store.remove(record.instanceId);
+    expect(removed).toEqual(record);
+    expect(store.get(record.instanceId)).toBeNull();
+    expect(despawned).toEqual([record.instanceId]);
+  });
+
+  test("remove leaves no orphaned record once the entity is despawned", () => {
+    const { store } = createTestStore();
+    const a = store.spawn({ itemId: "a", position: [0, 0, 0] });
+    const b = store.spawn({ itemId: "b", position: [1, 0, 0] });
+    store.remove(a.instanceId);
+    expect(store.list()).toEqual([b]);
+    expect(store.remove(a.instanceId)).toBeNull();
+  });
 });
 
 describe("resolveDeathDrops", () => {

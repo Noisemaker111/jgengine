@@ -25,6 +25,7 @@ export {
   createFieldGroundGeometry,
   createProceduralGroundGeometry,
   createProceduralTerrainSampler,
+  normalizeHeightBlend,
   resolveTerrainSegments,
   resolveTerrainSize,
   toNoiseFieldConfig,
