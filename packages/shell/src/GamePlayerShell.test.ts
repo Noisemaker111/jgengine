@@ -5,9 +5,12 @@ import {
   hasEnvironmentTerrain,
   heldActionsFor,
   nearbyObstacles,
+  resolvePhysicsTuning,
   resolveWorldSky,
   shouldFireBoundAction,
 } from "./GamePlayerShell";
+import { advanceVoxelPlayer, createVoxelPlayerBody } from "@jgengine/core/movement/voxelController";
+import { resolveMovementIntent, createEmptyMovementKeys } from "@jgengine/core/movement/movementModel";
 
 function trackerStub(down: ReadonlySet<string>, pressed: ReadonlySet<string> = new Set()) {
   return {
@@ -93,6 +96,41 @@ describe("resolveWorldSky", () => {
   test("returns the sky descriptor when the environment declares one", () => {
     const sky = { kind: "sky" as const, preset: "day" as const, timeOfDay: true };
     expect(resolveWorldSky({ kind: "environment", sky })).toBe(sky);
+  });
+});
+
+describe("resolvePhysicsTuning", () => {
+  test("returns undefined when no physics fields are declared", () => {
+    expect(resolvePhysicsTuning(undefined)).toBeUndefined();
+    expect(resolvePhysicsTuning({})).toBeUndefined();
+  });
+
+  test("negates the signed gravity into a positive downward magnitude", () => {
+    // Games declare gravity as a signed acceleration (negative = down); the
+    // controllers subtract a positive magnitude, so the sign must flip here.
+    expect(resolvePhysicsTuning({ gravity: -24 })).toEqual({ gravityAcceleration: 24 });
+  });
+
+  test("passes jumpVelocity through unchanged and preserves it alongside gravity", () => {
+    expect(resolvePhysicsTuning({ gravity: -20, jumpVelocity: 7 })).toEqual({
+      gravityAcceleration: 20,
+      jumpVelocity: 7,
+    });
+  });
+
+  test("a player standing on the void with down-gravity falls instead of levitating (regression)", () => {
+    // The levitation bug: passing gravity: -24 straight through made the voxel
+    // controller integrate velocityY += 24*dt, launching airborne players up.
+    const body = createVoxelPlayerBody(0, 5, 0);
+    body.grounded = false;
+    const intent = resolveMovementIntent(createEmptyMovementKeys(), true);
+    const noSolids = () => false;
+    const tuning = resolvePhysicsTuning({ gravity: -24 });
+    for (let frame = 0; frame < 30; frame += 1) {
+      advanceVoxelPlayer(body, intent, 0, 1, 2, 1 / 60, noSolids, undefined, tuning);
+    }
+    expect(body.velocityY).toBeLessThan(0);
+    expect(body.y).toBeLessThan(5);
   });
 });
 

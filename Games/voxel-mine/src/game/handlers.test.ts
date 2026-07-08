@@ -106,6 +106,28 @@ describe("createEditorHandlers", () => {
     expect(dropped[0]!.itemId).toBe("block_stone");
   });
 
+  test("a drop from a floating block settles onto the surface below and scatters within its column", () => {
+    const ctx = createTestContext();
+    const grid = createFakeGrid({ "0,-1,0": "block_grass", "0,3,0": "block_leaves" });
+    const handlers = createEditorHandlers(grid, EYE_HEIGHT, REACH);
+
+    handlers.mine!.apply(ctx, {
+      from: ctx.player.userId,
+      itemId: "tool_pickaxe",
+      aim: { yaw: 0, pitch: Math.PI / 2 },
+    });
+
+    expect(grid.has(0, 3, 0)).toBe(false);
+    const dropped = ctx.scene.worldItem.list();
+    expect(dropped.length).toBe(1);
+    const position = ctx.scene.entity.get(dropped[0]!.instanceId)?.position;
+    // Falls from cell y=3 to rest on the grass top at world y=0, not left hanging at y=3.
+    expect(position?.[1]).toBe(0);
+    // Scatter stays inside the mined column (|offset| < 0.5) so it lands where it was dug.
+    expect(Math.abs(position![0])).toBeLessThan(0.5);
+    expect(Math.abs(position![2])).toBeLessThan(0.5);
+  });
+
   test("cannot place a block into the cell the player occupies", () => {
     const ctx = createTestContext();
     const grid = createFakeGrid({ "0,-1,0": "block_stone" });
