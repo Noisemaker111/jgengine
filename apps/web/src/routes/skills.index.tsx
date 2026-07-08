@@ -2,7 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { CommandBlock } from "../components/Copy";
 import { Page } from "../components/Layout";
-import { SKILLS } from "../content/skills";
+import { SKILL_SLUGS } from "../content/skills";
 import { INSTALL_CMD, SKILL_GUIDE } from "../lib/site";
 
 export const Route = createFileRoute("/skills/")({
@@ -35,11 +35,11 @@ function SkillsIndex() {
           </div>
 
           <div className="mt-12 space-y-4">
-            {SKILLS.map((s, i) => (
+            {SKILL_SLUGS.map((slug, i) => (
               <Link
-                key={s.slug}
+                key={slug}
                 to="/skills/$name"
-                params={{ name: s.slug }}
+                params={{ name: slug }}
                 className="card-hover group flex items-start gap-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 hover:border-emerald-400/30 sm:p-6"
               >
                 <span className="hidden pt-0.5 font-mono text-sm text-slate-600 sm:block">
@@ -47,14 +47,12 @@ function SkillsIndex() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="font-mono text-base font-semibold text-emerald-300">{s.name}</h2>
+                    <h2 className="font-mono text-base font-semibold text-emerald-300">{slug}</h2>
                     <span className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300">
                       →
                     </span>
                   </div>
-                  <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
-                    {SKILL_GUIDE[s.slug] ?? s.description}
-                  </p>
+                  <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">{SKILL_GUIDE[slug]}</p>
                 </div>
               </Link>
             ))}

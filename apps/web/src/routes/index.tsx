@@ -4,7 +4,7 @@ import { CommandBlock, CopyButton } from "../components/Copy";
 import { GameCard } from "../components/GameCard";
 import { GitHubIcon, Page } from "../components/Layout";
 import { GAMES } from "../content/games";
-import { SKILLS } from "../content/skills";
+import { SKILL_SLUGS } from "../content/skills";
 import { INSTALL_CMD, PACKAGES, REPO_URL, SKILL_GUIDE } from "../lib/site";
 
 export const Route = createFileRoute("/")({
@@ -146,22 +146,20 @@ function Home() {
             </Link>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {SKILLS.map((s) => (
+            {SKILL_SLUGS.map((slug) => (
               <Link
-                key={s.slug}
+                key={slug}
                 to="/skills/$name"
-                params={{ name: s.slug }}
+                params={{ name: slug }}
                 className="card-hover group flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 hover:border-emerald-400/30"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-sm font-semibold text-emerald-300">{s.name}</span>
+                  <span className="font-mono text-sm font-semibold text-emerald-300">{slug}</span>
                   <span className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300">
                     →
                   </span>
                 </div>
-                <p className="mt-2.5 text-sm leading-relaxed text-slate-400">
-                  {SKILL_GUIDE[s.slug] ?? s.description}
-                </p>
+                <p className="mt-2.5 text-sm leading-relaxed text-slate-400">{SKILL_GUIDE[slug]}</p>
               </Link>
             ))}
           </div>

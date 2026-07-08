@@ -1,7 +1,9 @@
+import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
+import { GameArt } from "../components/GameArt";
 import { Header } from "../components/Layout";
-import { GAMES } from "../content/games";
+import { GAMES, type Game } from "../content/games";
 
 export const Route = createFileRoute("/games/$gameId")({
   loader: ({ params }) => {
@@ -17,6 +19,66 @@ export const Route = createFileRoute("/games/$gameId")({
   }),
   component: PlayPage,
 });
+
+function GameStage({ game }: { game: Game }) {
+  const [phase, setPhase] = useState<"poster" | "loading" | "playing">("poster");
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  return (
+    <div
+      className="relative h-full w-full"
+      style={{
+        background: `radial-gradient(ellipse 80% 90% at 50% 110%, ${game.hue}2e, transparent 70%), linear-gradient(to bottom, #0a0e18, #060910)`,
+      }}
+    >
+      {phase !== "poster" && (
+        <iframe
+          ref={frameRef}
+          src={`/play/?game=${encodeURIComponent(game.id)}`}
+          title={game.title}
+          allow="fullscreen; gamepad; pointer-lock"
+          className={`h-full w-full border-0 transition-opacity duration-300 ${phase === "playing" ? "opacity-100" : "opacity-0"}`}
+          onLoad={() => {
+            setPhase("playing");
+            frameRef.current?.focus();
+          }}
+        />
+      )}
+      {phase !== "playing" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center">
+          <div className="h-32 w-48 sm:h-40 sm:w-60">
+            <GameArt id={game.id} hue={game.hue} />
+          </div>
+          <div className="max-w-md">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-50">{game.title}</h2>
+            <p className="mt-2 text-sm text-slate-400">{game.tagline}</p>
+            <p className="mt-3 font-mono text-xs text-slate-600">{game.controls}</p>
+          </div>
+          {phase === "poster" ? (
+            <button
+              type="button"
+              onClick={() => setPhase("loading")}
+              className="inline-flex items-center gap-2.5 rounded-xl px-7 py-3 text-sm font-semibold transition hover:brightness-110"
+              style={{ backgroundColor: game.hue, color: "#060910", boxShadow: `0 0 36px -8px ${game.hue}` }}
+            >
+              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor" aria-hidden>
+                <path d="M3 2.2v7.6L10 6 3 2.2Z" />
+              </svg>
+              Play now
+            </button>
+          ) : (
+            <div className="inline-flex items-center gap-3 text-sm text-slate-300">
+              <span
+                className="h-5 w-5 animate-spin rounded-full border-2 border-white/15"
+                style={{ borderTopColor: game.hue }}
+              />
+              Loading {game.title}…
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PlayPage() {
   const { game } = Route.useLoaderData();
@@ -36,12 +98,7 @@ function PlayPage() {
         </Link>
       </div>
       <main className="min-h-0 flex-1 bg-black">
-        <iframe
-          src={`/play/?game=${encodeURIComponent(game.id)}`}
-          title={game.title}
-          allow="fullscreen; gamepad; pointer-lock"
-          className="h-full w-full border-0"
-        />
+        <GameStage game={game} />
       </main>
     </div>
   );
