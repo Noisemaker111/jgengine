@@ -9,12 +9,11 @@
     "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@games/asset-showcase": "workspace:*",
-    "@games/destruction-demo": "workspace:*",
-    "@games/kart-circuit": "workspace:*",
-    "@games/loot-shooter": "workspace:*",
-    "@games/stress-bench": "workspace:*",
-    "@games/world-of-warcraft": "workspace:*",
+    "@games/block-stacker": "workspace:*",
+    "@games/maze-muncher": "workspace:*",
+    "@games/platform-hopper": "workspace:*",
+    "@games/spire-cards": "workspace:*",
+    "@games/voxel-mine": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3"

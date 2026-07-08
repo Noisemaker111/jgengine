@@ -39,9 +39,22 @@ const gameRegistry: GameRegistry = {
   "extraction-map": () => import("@jgengine/shell/demo/mapDemo").then((module) => module.mapDemoGame),
   "sensor-showcase": () =>
     import("@jgengine/shell/demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
+  "block-stacker": () =>
+    import("@games/block-stacker").then((module) => module.blockStackerGame),
+  "maze-muncher": () => import("@games/maze-muncher").then((module) => module.mazeMuncherGame),
+  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.voxelMineGame),
+  "platform-hopper": () =>
+    import("@games/platform-hopper").then((module) => module.platformHopperGame),
+  "spire-cards": () => import("@games/spire-cards").then((module) => module.spireCardsGame),
 };
 
-const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {};
+const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {
+  "block-stacker": () =>
+    import("@games/block-stacker").then((module) => module.blockStackerUiScenario),
+  "maze-muncher": () =>
+    import("@games/maze-muncher").then((module) => module.mazeMuncherScenario),
+  "spire-cards": () => import("@games/spire-cards").then((module) => module.uiScenario),
+};
 
 const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID =

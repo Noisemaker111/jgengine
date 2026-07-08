@@ -18,14 +18,8 @@ export default defineConfig({
       { find: /^@jgengine\/react\/(.*)$/, replacement: `${src("react")}/$1` },
       { find: /^@jgengine\/ws\/(.*)$/, replacement: `${src("ws")}/$1` },
       { find: /^@jgengine\/shell\/(.*)$/, replacement: `${src("shell")}/$1` },
-      {
-        find: /^@games\/world-of-warcraft$/,
-        replacement: `${game("world-of-warcraft")}/index.ts`,
-      },
-      {
-        find: /^@games\/world-of-warcraft\/(.*)$/,
-        replacement: `${game("world-of-warcraft")}/$1`,
-      },
+      { find: /^@games\/voxel-mine$/, replacement: `${game("voxel-mine")}/index.tsx` },
+      { find: /^@games\/voxel-mine\/(.*)$/, replacement: `${game("voxel-mine")}/$1` },
     ],
   },
 });

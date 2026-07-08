@@ -1,0 +1,27 @@
+{
+  "name": "@games/platform-hopper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*",
+    "@jgengine/react": "workspace:*",
+    "@jgengine/shell": "workspace:*",
+    "@react-three/fiber": "^9.5.0",
+    "react": "19.2.3",
+    "three": "^0.182.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/three": "^0.182.0",
+    "typescript": "^5"
+  },
+  "exports": {
+    ".": "./src/index.tsx",
+    "./*": "./src/*"
+  }
+}

@@ -10,14 +10,14 @@ import "./index.css";
 
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
-  "world-of-warcraft": () => import("@games/world-of-warcraft").then((module) => module.wowGame),
+  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.voxelMineGame),
 };
 
 const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID =
   urlParams.get("game") ??
   (import.meta.env.VITE_GAME_ID as string | undefined) ??
-  "world-of-warcraft";
+  "voxel-mine";
 const MODE = urlParams.get("mode") ?? "play";
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 
