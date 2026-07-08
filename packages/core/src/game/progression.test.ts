@@ -83,6 +83,68 @@ describe("leveling.resolve", () => {
   });
 });
 
+describe("leveling.resolve cumulative threshold mode", () => {
+  const steppedTrack = leveling({
+    xpForLevel: { kind: "steps", values: [0, 0, 100, 250, 500] },
+    maxLevel: 4,
+    thresholdMode: "cumulative",
+  });
+
+  test("xpForLevel(startLevel) is 0 for a steps curve anchored at the start level", () => {
+    expect(steppedTrack.xpForLevel(1)).toBe(0);
+  });
+
+  test("levels up once and keeps xp as the lifetime total", () => {
+    const progress = steppedTrack.resolve(1, 150);
+    expect(progress.level).toBe(2);
+    expect(progress.xp).toBe(150);
+    expect(progress.xpMax).toBe(steppedTrack.xpForLevel(3));
+    expect(progress.levelsGained).toBe(1);
+  });
+
+  test("chains multiple level-ups from one grant without decrementing xp", () => {
+    const progress = steppedTrack.resolve(1, 300);
+    expect(progress.level).toBe(3);
+    expect(progress.xp).toBe(300);
+    expect(progress.xpMax).toBe(steppedTrack.xpForLevel(4));
+    expect(progress.levelsGained).toBe(2);
+  });
+
+  test("never demotes when xp falls short of the current level's threshold", () => {
+    const progress = steppedTrack.resolve(3, 50);
+    expect(progress.level).toBe(3);
+    expect(progress.xp).toBe(50);
+    expect(progress.levelsGained).toBe(0);
+  });
+
+  test("clamps xp to the final threshold once maxLevel is reached", () => {
+    const progress = steppedTrack.resolve(1, 999_999);
+    expect(progress.level).toBe(4);
+    expect(progress.xp).toBe(steppedTrack.xpForLevel(4));
+    expect(progress.xpMax).toBe(steppedTrack.xpForLevel(4));
+    expect(progress.levelsGained).toBe(3);
+  });
+
+  test("walks a real-world power curve to the level cap without decrementing xp", () => {
+    const track = leveling({
+      xpForLevel: { kind: "power", base: 200, exponent: 1.8 },
+      maxLevel: 50,
+      thresholdMode: "cumulative",
+    });
+
+    const partial = track.resolve(1, track.xpForLevel(10) + 5);
+    expect(partial.level).toBe(10);
+    expect(partial.xp).toBe(track.xpForLevel(10) + 5);
+    expect(partial.xpMax).toBe(track.xpForLevel(11));
+
+    const capped = track.resolve(1, 999_999);
+    expect(capped.level).toBe(50);
+    expect(capped.levelsGained).toBe(49);
+    expect(capped.xp).toBe(track.xpForLevel(50));
+    expect(capped.xpMax).toBe(track.xpForLevel(50));
+  });
+});
+
 describe("leveling.grantXp", () => {
   function fakeAccess(initial: Record<string, { current: number; max: number }>): {
     access: LevelingStatAccess;
