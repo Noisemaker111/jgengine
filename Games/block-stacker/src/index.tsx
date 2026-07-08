@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 
 import type { PlayableGame } from "@jgengine/core/game/playableGame";
-import { EnvironmentScene } from "@jgengine/shell/environment";
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 
 import { content } from "./content";
@@ -9,18 +8,12 @@ import { game } from "./game.config";
 import { onInit, onNewPlayer, onTick } from "./loop";
 import { blockStackerStore } from "./tetris/store";
 import { GameUI } from "./ui/GameUI";
-import { world } from "./world";
-
-function Backdrop() {
-  return <EnvironmentScene feature={world} />;
-}
 
 export const blockStackerGame: PlayableGame<ComponentType, ComponentType> = {
   game,
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
-  environment: Backdrop,
   camera: {
     rig: "rts",
     followEntityId: null,

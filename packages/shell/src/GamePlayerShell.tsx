@@ -10,6 +10,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type WheelEvent as ReactWheelEvent,
 } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -18,8 +19,6 @@ import {
   actionRepeatIntervals,
   createActionRepeater,
   createActionStateTracker,
-  hotbarSlotActionIndex,
-  resolveActionCommand,
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
@@ -29,9 +28,6 @@ import {
   type ContextMenu,
   type ContextVerb,
 } from "@jgengine/core/interaction/contextMenu";
-import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
-import { aimToPoint } from "@jgengine/core/input/pointer";
-import type { Aim } from "@jgengine/core/scene/spatial";
 import {
   createSelectionSet,
   isMarquee,
@@ -64,9 +60,19 @@ import type {
   ProposedMovement,
 } from "@jgengine/core/game/playableGame";
 
+import type { WorldFeature } from "@jgengine/core/world/features";
+
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
 import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind } from "./camera";
+import { EnvironmentScene } from "./environment/EnvironmentScene";
+import {
+  dispatchFrameActions,
+  executeHotbarSlot,
+  findHotbarSlotActions,
+  hotbarIdFor,
+} from "./gameFrameDispatch";
+import { HudFrameDriver } from "./HudFrameDriver";
 import { PointerProbe } from "./pointer/PointerProbe";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import {
@@ -111,62 +117,6 @@ function logRuntimeError(error: unknown, phase: string): Omit<RuntimeDiagnostic,
   const diagnostic = errorToDiagnostic(error, phase);
   console.error(`[jgengine:${phase}] ${diagnostic.message}`, error);
   return diagnostic;
-}
-
-const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
-  "moveForward",
-  "moveBack",
-  "moveLeft",
-  "moveRight",
-  "turnLeft",
-  "turnRight",
-  "sprint",
-  "jump",
-  "tabTarget",
-  "clearTarget",
-  "useAbility",
-  "interact",
-]);
-
-function findHotbarSlotActions(input: PlayableGame["game"]["input"]): { action: string; slot: number }[] {
-  return Object.keys(input ?? {}).flatMap((action) => {
-    const slot = hotbarSlotActionIndex(action);
-    return slot === null ? [] : [{ action, slot }];
-  });
-}
-
-function hotbarIdFor(playable: PlayableGame): string | null {
-  const declarations = Object.entries(playable.game.inventories ?? {});
-  const hud = declarations.find(([, declaration]) => declaration.hud === "hotbar");
-  return (hud ?? declarations[0])?.[0] ?? null;
-}
-
-function executeHotbarSlot(
-  ctx: GameContext,
-  fromId: string,
-  hotbarId: string,
-  slot: number,
-  yaw: number,
-  pitch: number,
-  aimOverride?: Aim,
-): { ok: boolean; error?: string } {
-  const stack = ctx.player.inventory.state(hotbarId).slots[slot];
-  if (stack === undefined || stack === null) return { ok: false, error: `Hotbar slot ${slot + 1} is empty` };
-  const result = ctx.item.use.use({
-    from: fromId,
-    itemId: stack.itemId,
-    inventoryId: hotbarId,
-    aim: aimOverride ?? { yaw, pitch },
-  });
-  return result.error === undefined ? { ok: true } : { ok: false, error: result.error };
-}
-
-function pointerAimFor(ctx: GameContext, service: PointerService): Aim | undefined {
-  const hit = service.worldHit();
-  if (hit === null) return undefined;
-  const player = ctx.scene.entity.get(ctx.player.userId);
-  const origin = player === null ? hit.point : player.position;
-  return aimToPoint([origin[0], origin[1] + 1, origin[2]], hit.point);
 }
 
 function pointerContextMenu(ctx: GameContext, playable: PlayableGame, hit: { point: readonly [number, number, number]; entity: string | null; object: string | null }): ContextMenu | null {
@@ -395,6 +345,7 @@ function WorldView({
   objectModels,
   objectStyles,
   environment: Environment,
+  world,
   assets,
   renderEntity,
   renderObject,
@@ -405,6 +356,7 @@ function WorldView({
   objectModels: Record<string, string | ModelConfig> | undefined;
   objectStyles: Record<string, ObjectStyle> | undefined;
   environment: ComponentType | undefined;
+  world: WorldFeature | undefined;
   assets: AssetCatalog;
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
@@ -424,6 +376,8 @@ function WorldView({
     <>
       {Environment !== undefined ? (
         <Environment />
+      ) : world !== undefined && world.kind === "environment" ? (
+        <EnvironmentScene feature={world} />
       ) : (
         <>
           <GroundPlane />
@@ -605,60 +559,22 @@ function FrameDriver({
 
     playable.loop.onTick(ctx, gameDt);
 
-    if (tracker.wasPressed("tabTarget")) {
-      if (ctx.game.commands.has("target.cycle")) ctx.game.commands.run("target.cycle", {});
-      else ctx.scene.entity.cycleTarget(playerId, { filter: "hostile" });
-    }
-    if (tracker.wasPressed("clearTarget")) {
-      if (ctx.game.commands.has("target.clear")) ctx.game.commands.run("target.clear", {});
-      else ctx.scene.entity.setTarget(playerId, null);
-    }
-    if (pingCommand !== undefined && tracker.wasPressed("ping")) {
-      const hit = pointerService.worldHit();
-      if (hit !== null && ctx.game.commands.has(pingCommand)) {
-        ctx.game.commands.run(pingCommand, {
-          point: hit.point,
-          entity: hit.entity,
-          object: hit.object,
-          normal: hit.normal,
-        });
-      }
-    }
-    const nowMs = performance.now();
-    for (const action of declaredActions) {
-      const due =
-        repeatIntervals[action] === undefined
-          ? tracker.wasPressed(action)
-          : actionRepeater.due(action, tracker.isDown(action), tracker.wasPressed(action), nowMs);
-      if (!due) continue;
-      if (action === "ping" && pingCommand !== undefined) continue;
-      if (action === "interact") {
-        const prompts = playable.prompts?.(ctx);
-        const focus = prompts === undefined ? null : ctx.scene.entity.get(playerId);
-        if (prompts !== undefined && focus !== null) {
-          const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
-          if (active !== null && active.prompt.invoke !== null) {
-            ctx.game.commands.run(active.prompt.invoke.name, active.prompt.invoke.input);
-          }
-        }
-        continue;
-      }
-      const command = resolveActionCommand(
-        action,
-        (name) => ctx.game.commands.has(name),
-        RESERVED_INPUT_ACTIONS,
-      );
-      if (command !== null) {
-        ctx.game.commands.run(command, { aim: { yaw: yawRef.current, pitch: pitchRef.current } });
-      }
-    }
+    const { aimOverride } = dispatchFrameActions({
+      ctx,
+      playable,
+      tracker,
+      playerId,
+      declaredActions,
+      repeatIntervals,
+      actionRepeater,
+      slotActions,
+      hotbarId,
+      aim: { yaw: yawRef.current, pitch: pitchRef.current },
+      pingCommand,
+      pointerService,
+      pointerAim,
+    });
     if (hotbarId !== null) {
-      const aimOverride = pointerAim ? pointerAimFor(ctx, pointerService) : undefined;
-      for (const { action, slot } of slotActions) {
-        if (!tracker.wasPressed(action)) continue;
-        const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current, aimOverride);
-        if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
-      }
       const usePrimary =
         tracker.wasPressed("useAbility") || (primaryClickRef.current && hotbarId !== null);
       if (usePrimary) {
@@ -878,6 +794,7 @@ export function GamePlayerShell({
 
   if (ctx === null) return <div className="h-full w-full bg-neutral-950" />;
 
+  const isHud = playable.presentation === "hud";
   const GameUI = playable.GameUI;
   const WorldOverlay = playable.WorldOverlay;
   const controlledEntityId = ctx.player.possession.active(userId);
@@ -1060,81 +977,97 @@ export function GamePlayerShell({
       }}
       onKeyUp={(event) => tracker.handleUp(event.code)}
       onBlur={() => tracker.reset()}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onContextMenu={handleContextMenu}
-      onWheel={(event) => {
-        if (ctx === null || !event.shiftKey) return;
-        event.preventDefault();
-        if (event.deltaY < 0 && ctx.game.commands.has("ui.hotbarScrollNext")) {
-          ctx.game.commands.run("ui.hotbarScrollNext", {});
-        } else if (event.deltaY > 0 && ctx.game.commands.has("ui.hotbarScrollPrev")) {
-          ctx.game.commands.run("ui.hotbarScrollPrev", {});
-        }
-      }}
+      {...(isHud
+        ? {}
+        : {
+            onPointerDown: handlePointerDown,
+            onPointerMove: handlePointerMove,
+            onPointerUp: handlePointerUp,
+            onContextMenu: handleContextMenu,
+            onWheel: (event: ReactWheelEvent<HTMLDivElement>) => {
+              if (ctx === null || !event.shiftKey) return;
+              event.preventDefault();
+              if (event.deltaY < 0 && ctx.game.commands.has("ui.hotbarScrollNext")) {
+                ctx.game.commands.run("ui.hotbarScrollNext", {});
+              } else if (event.deltaY > 0 && ctx.game.commands.has("ui.hotbarScrollPrev")) {
+                ctx.game.commands.run("ui.hotbarScrollPrev", {});
+              }
+            },
+          })}
     >
-      <Canvas camera={{ fov: 55, near: 0.1, far: 300 }}>
-        <color attach="background" args={["#14161b"]} />
-        <ambientLight intensity={0.55} />
-        <directionalLight position={[10, 16, 6]} intensity={1.3} />
-        <GameProvider context={ctx}>
-          <WorldView
-            entitySprites={playable.entitySprites}
-            entityModels={playable.entityModels}
-            objectModels={playable.objectModels}
-            objectStyles={playable.objectStyles}
-            environment={playable.environment}
-            assets={playable.game.assets}
-            renderEntity={playable.renderEntity}
-            renderObject={playable.renderObject}
-            selectedIds={selectedIds}
-          />
-          {WorldOverlay !== undefined ? <WorldOverlay /> : null}
-          {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
-          <WorldItems config={playable.worldItem} />
-          <WorldTelegraphs />
-          <WorldFloatText />
-          <ProjectileTracers />
-          <CombatCameraShake />
-          <AudioListener engine={audioEngine} />
-          <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
-          <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />
-          <GameCameraRig
-            yawRef={yawRef}
-            pitchRef={pitchRef}
-            config={cameraConfig}
-            pointerControls={pointerUsesLeft}
-            onDragChange={(dragging) => {
-              cameraDraggingRef.current = dragging;
-            }}
-          />
-          <PointerProbe service={pointerService} />
-        </GameProvider>
-        <RemotePlayers rows={remotePlayers} />
-        <FrameDriver
+      {isHud ? (
+        <HudFrameDriver
           ctx={ctx}
           playable={playable}
           tracker={tracker}
-          yawRef={yawRef}
-          pitchRef={pitchRef}
-          primaryClickRef={primaryClickRef}
           onRuntimeError={reportRuntimeError}
           multiplayer={multiplayer}
           serverIdRef={serverIdRef}
-          pointerService={pointerService}
-          pointerAim={pointer?.aim === true}
-          pingCommand={pointer?.pingCommand}
         />
-      </Canvas>
+      ) : (
+        <Canvas camera={{ fov: 55, near: 0.1, far: 300 }}>
+          <color attach="background" args={["#14161b"]} />
+          <ambientLight intensity={0.55} />
+          <directionalLight position={[10, 16, 6]} intensity={1.3} />
+          <GameProvider context={ctx}>
+            <WorldView
+              entitySprites={playable.entitySprites}
+              entityModels={playable.entityModels}
+              objectModels={playable.objectModels}
+              objectStyles={playable.objectStyles}
+              environment={playable.environment}
+              world={playable.game.world}
+              assets={playable.game.assets}
+              renderEntity={playable.renderEntity}
+              renderObject={playable.renderObject}
+              selectedIds={selectedIds}
+            />
+            {WorldOverlay !== undefined ? <WorldOverlay /> : null}
+            {barsStatId !== null ? <WorldEntityBars statId={barsStatId} /> : null}
+            <WorldItems config={playable.worldItem} />
+            <WorldTelegraphs />
+            <WorldFloatText />
+            <ProjectileTracers />
+            <CombatCameraShake />
+            <AudioListener engine={audioEngine} />
+            <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
+            <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />
+            <GameCameraRig
+              yawRef={yawRef}
+              pitchRef={pitchRef}
+              config={cameraConfig}
+              pointerControls={pointerUsesLeft}
+              onDragChange={(dragging) => {
+                cameraDraggingRef.current = dragging;
+              }}
+            />
+            <PointerProbe service={pointerService} />
+          </GameProvider>
+          <RemotePlayers rows={remotePlayers} />
+          <FrameDriver
+            ctx={ctx}
+            playable={playable}
+            tracker={tracker}
+            yawRef={yawRef}
+            pitchRef={pitchRef}
+            primaryClickRef={primaryClickRef}
+            onRuntimeError={reportRuntimeError}
+            multiplayer={multiplayer}
+            serverIdRef={serverIdRef}
+            pointerService={pointerService}
+            pointerAim={pointer?.aim === true}
+            pingCommand={pointer?.pingCommand}
+          />
+        </Canvas>
+      )}
       <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
         <GameProvider context={ctx}>
           <GameUI />
         </GameProvider>
       </GameUiErrorBoundary>
-      {showReticle ? <Reticle /> : null}
-      {marquee !== null ? <MarqueeBox rect={marquee} /> : null}
-      {contextMenu !== null ? (
+      {!isHud && showReticle ? <Reticle /> : null}
+      {!isHud && marquee !== null ? <MarqueeBox rect={marquee} /> : null}
+      {!isHud && contextMenu !== null ? (
         <ContextMenuView
           menu={contextMenu.menu}
           x={contextMenu.x}

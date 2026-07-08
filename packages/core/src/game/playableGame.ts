@@ -352,9 +352,11 @@ export interface PlayableGame<
   content: GameContextContent;
   loop: Required<GameLoop<GameContext>>;
   GameUI: TUi;
+  /** Which shell mount to use. Default `"3d"` (canvas, camera rig, pointer, world rendering). `"hud"` mounts no 3D canvas, camera rig, or pointer — the game is `GameUI` plus the command/input loop, for board/card/menu games. */
+  presentation?: "3d" | "hud";
   /** Optional canvas-layer VFX component (e.g. traveling projectiles). */
   WorldOverlay?: TWorldOverlay;
-  /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. */
+  /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. When unset and `game.world` is an `environment()` descriptor, the shell auto-renders that world here — no manual wiring needed. */
   environment?: TWorldOverlay;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
   renderEntity?: TRenderEntity;
