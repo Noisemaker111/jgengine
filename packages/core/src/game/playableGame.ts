@@ -64,6 +64,7 @@ export interface FirstPersonCameraConfig {
  * - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe.
  * - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views.
  * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
+ * - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`.
  */
 export type CameraRigKind =
   | "orbit"
@@ -74,6 +75,7 @@ export type CameraRigKind =
   | "lockOn"
   | "chase"
   | "observer"
+  | "turntable"
   | "sideScroll"
   | "none";
 
@@ -204,6 +206,29 @@ export interface ObserverCameraConfig {
   fov?: number;
 }
 
+/**
+ * Turntable / showcase rig — slowly auto-orbits a fixed world point (no player
+ * input), the way a museum turntable rotates an object on display. A flat,
+ * self-describing spelling of `observer`'s point-orbit mode: `target` names the
+ * point directly instead of `bind: { kind: "point", position }`. Set
+ * `camera.turntable` and the rig is inferred — you don't also write `rig`.
+ */
+export interface TurntableCameraConfig {
+  /** World point the camera circles. Default the world origin. */
+  target?: { x: number; y: number; z: number };
+  /** Orbit radius from the target. Default 8. */
+  distance?: number;
+  /** Camera height above the target. Default 3. */
+  height?: number;
+  /** Height of the look point above the target. Default 1.2. */
+  lookHeight?: number;
+  /** Radians/second of rotation; 0 holds a fixed angle. Default 0.2. */
+  orbitSpeed?: number;
+  /** Starting angle in radians. Default 0. */
+  startAngle?: number;
+  fov?: number;
+}
+
 /** One stop on a scripted camera path (#29). */
 export interface CameraKeyframe {
   position: { x: number; y: number; z: number };
@@ -257,6 +282,8 @@ export interface GameCameraConfig {
   chase?: ChaseCameraConfig;
   /** Detached spectator/photo cam tuning (#120); read when `rig: "observer"`. */
   observer?: ObserverCameraConfig;
+  /** Turntable / showcase tuning; setting this selects the `turntable` rig on its own. */
+  turntable?: TurntableCameraConfig;
   /** Fixed side-on follow tuning; read when `rig: "sideScroll"`. */
   sideScroll?: SideScrollCameraConfig;
   /** Camera-shake / trauma channel defaults (#28); read by every rig. */

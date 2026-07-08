@@ -1,0 +1,35 @@
+{
+  "name": "@jgengine/github",
+  "version": "0.1.0",
+  "description": "GitHub data source for JGengine: contribution calendar fetch (GraphQL + HTML-scrape) with a server proxy handler, plus a browser client and contribution analytics.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/github"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test src"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

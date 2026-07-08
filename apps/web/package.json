@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "node .output/server/index.mjs"
+    "start": "node .output/server/index.mjs",
+    "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@jgengine/github": "workspace:*",
     "@tanstack/react-router": "^1.121.0",
     "@tanstack/react-start": "^1.121.0",
     "marked": "^15.0.0",
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.15",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "^6.0.3",

@@ -56,6 +56,30 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/commit-canopy": {
+      "name": "@games/commit-canopy",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/github": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/grid-tactics": {
       "name": "@games/grid-tactics",
       "version": "0.1.0",
@@ -331,6 +355,7 @@
       "dependencies": {
         "@fontsource-variable/inter": "^5.2.8",
         "@fontsource-variable/jetbrains-mono": "^5.2.8",
+        "@jgengine/github": "workspace:*",
         "@tanstack/react-router": "^1.121.0",
         "@tanstack/react-start": "^1.121.0",
         "marked": "^15.0.0",
@@ -340,6 +365,7 @@
       },
       "devDependencies": {
         "@tailwindcss/vite": "^4.0.15",
+        "@types/node": "^24",
         "@types/react": "^19",
         "@types/react-dom": "19.2.3",
         "@vitejs/plugin-react": "^6.0.3",
@@ -432,6 +458,10 @@
     "packages/core": {
       "name": "@jgengine/core",
       "version": "0.7.0",
+    },
+    "packages/github": {
+      "name": "@jgengine/github",
+      "version": "0.1.0",
     },
     "packages/node": {
       "name": "@jgengine/node",
@@ -616,6 +646,8 @@
 
     "@games/block-stacker": ["@games/block-stacker@workspace:Games/block-stacker"],
 
+    "@games/commit-canopy": ["@games/commit-canopy@workspace:Games/commit-canopy"],
+
     "@games/grid-tactics": ["@games/grid-tactics@workspace:Games/grid-tactics"],
 
     "@games/loot-shooter": ["@games/loot-shooter@workspace:Games/loot-shooter"],
@@ -703,6 +735,8 @@
     "@jgengine/convex": ["@jgengine/convex@workspace:packages/convex"],
 
     "@jgengine/core": ["@jgengine/core@workspace:packages/core"],
+
+    "@jgengine/github": ["@jgengine/github@workspace:packages/github"],
 
     "@jgengine/node": ["@jgengine/node@workspace:packages/node"],
 
