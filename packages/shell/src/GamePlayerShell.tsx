@@ -1473,6 +1473,7 @@ export function GamePlayerShell({
           far: playable.camera?.frustum?.far ?? 300,
         }}
         shadows={playable.shadows ?? true}
+        gl={{ preserveDrawingBuffer: true }}
         style={{ touchAction: "none" }}
       >
         {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
