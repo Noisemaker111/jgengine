@@ -16,6 +16,7 @@ import {
   profileLeaderboardStats,
   shouldAutoSave,
   topLeaderboardRows,
+  toOpenServerListings,
   toServerListing,
   trimFeedEntries,
 } from "@jgengine/core/runtime/hostPersistence";
@@ -429,7 +430,6 @@ export function createGameHost(options: GameHostOptions): GameHost {
       }),
 
     listOpenServers: async (args) => {
-      const limit = args.limit ?? 20;
       const byId = new Map<string, ServerListing>();
       for (const record of await persistence.listServers(args.gameId)) {
         byId.set(record.serverId, toServerListing(record));
@@ -438,10 +438,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
         if (entry.record.gameId !== args.gameId) continue;
         byId.set(entry.record.serverId, toServerListing(entry.record));
       }
-      return [...byId.values()]
-        .filter((listing) => listing.status === "running")
-        .sort((a, b) => b.updatedAt - a.updatedAt)
-        .slice(0, limit);
+      return toOpenServerListings(byId.values(), args.limit);
     },
 
     tickOnce,

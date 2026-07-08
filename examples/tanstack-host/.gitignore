@@ -1,0 +1,7 @@
+dist
+.output
+.nitro
+.vercel
+.tanstack
+.vite
+node_modules

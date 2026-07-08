@@ -232,6 +232,13 @@ export function toServerListing(record: GameServerRecord): ServerListing {
   };
 }
 
+export function toOpenServerListings(listings: Iterable<ServerListing>, limit = 20): ServerListing[] {
+  return [...listings]
+    .filter((listing) => listing.status === "running")
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, limit);
+}
+
 export type HostPersistence = {
   savePlan?: (plan: ServerPersistPlan) => Promise<void>;
   resetScenario?: (reset: NormalizedScenarioReset) => Promise<void>;

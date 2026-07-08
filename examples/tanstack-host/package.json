@@ -1,0 +1,35 @@
+{
+  "name": "@jgengine-examples/tanstack-host",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "start": "node .output/server/index.mjs",
+    "check-types": "tsgo --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@games/block-stacker": "workspace:*",
+    "@jgengine/core": "workspace:*",
+    "@jgengine/react": "workspace:*",
+    "@jgengine/shell": "workspace:*",
+    "@jgengine/sql": "workspace:*",
+    "@jgengine/ws": "workspace:*",
+    "@tanstack/react-router": "^1.121.0",
+    "@tanstack/react-start": "^1.121.0",
+    "nitro": "^3.0.260610-beta",
+    "pg": "^8.13.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@types/pg": "^8",
+    "@types/react": "^19",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "typescript": "^5",
+    "vite": "^8.1.3"
+  }
+}
