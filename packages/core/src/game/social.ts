@@ -1,4 +1,4 @@
-import type { GameEvents } from "./events";
+import type { GameEventMap, GameEvents } from "./events";
 
 export interface PresenceInfo {
   online: boolean;
@@ -29,6 +29,7 @@ export interface SocialDeps {
   presence?: (userId: string) => PresenceInfo;
   now?: () => number;
   emotes?: EmotesDeps;
+  worldInviteTtlMs?: number;
 }
 
 export interface FriendEntry {
@@ -89,11 +90,36 @@ export interface Emotes {
   play(fromUserId: string, emoteId: string, radius?: number): EmoteBroadcastResult | { reason: string };
 }
 
+export interface WorldInviteTarget {
+  serverId: string;
+  joinCode?: string;
+}
+
+export interface WorldInvite extends WorldInviteTarget {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  createdAt: number;
+}
+
+export interface WorldInvites {
+  canInvite(fromUserId: string, toUserId: string): { reason: string } | null;
+  invite(
+    fromUserId: string,
+    toUserId: string,
+    target: WorldInviteTarget,
+  ): { inviteId: string } | { reason: string };
+  accept(userId: string, inviteId: string): { target: WorldInviteTarget } | { reason: string };
+  decline(userId: string, inviteId: string): void;
+  listFor(userId: string): WorldInvite[];
+}
+
 export interface Social {
   friends: Friends;
   party: Party;
   presence: { get(userId: string): PresenceInfo };
   emotes: Emotes;
+  worldInvites: WorldInvites;
 }
 
 interface FriendRequest {
@@ -324,6 +350,88 @@ export function createSocial(deps: SocialDeps): Social {
     },
   };
 
+  const worldInviteTtlMs = deps.worldInviteTtlMs ?? DEFAULT_INVITE_TTL_MS;
+  const worldInviteEntries = new Map<string, WorldInvite>();
+  let worldInviteCounter = 0;
+
+  function pruneWorldInvites(): void {
+    const cutoff = now() - worldInviteTtlMs;
+    for (const [id, entry] of worldInviteEntries) {
+      if (entry.createdAt < cutoff) worldInviteEntries.delete(id);
+    }
+  }
+
+  function canWorldInvite(fromUserId: string, toUserId: string): { reason: string } | null {
+    if (fromUserId === toUserId) return { reason: "cannot invite yourself" };
+    if (blocked.get(toUserId)?.has(fromUserId) || blocked.get(fromUserId)?.has(toUserId)) {
+      return { reason: "blocked" };
+    }
+    pruneWorldInvites();
+    for (const entry of worldInviteEntries.values()) {
+      if (entry.fromUserId === fromUserId && entry.toUserId === toUserId) {
+        return { reason: "invite already pending" };
+      }
+    }
+    return null;
+  }
+
+  const worldInvites: WorldInvites = {
+    canInvite: canWorldInvite,
+    invite(fromUserId, toUserId, target) {
+      const denied = canWorldInvite(fromUserId, toUserId);
+      if (denied !== null) return denied;
+      worldInviteCounter += 1;
+      const inviteId = `winv_${worldInviteCounter}`;
+      const entry: WorldInvite = {
+        id: inviteId,
+        fromUserId,
+        toUserId,
+        serverId: target.serverId,
+        createdAt: now(),
+      };
+      if (target.joinCode !== undefined) entry.joinCode = target.joinCode;
+      worldInviteEntries.set(inviteId, entry);
+      const invited: GameEventMap["social.world.invited"] = {
+        inviteId,
+        fromUserId,
+        toUserId,
+        serverId: target.serverId,
+      };
+      if (target.joinCode !== undefined) invited.joinCode = target.joinCode;
+      events.emit("social.world.invited", invited);
+      return { inviteId };
+    },
+    accept(userId, inviteId) {
+      const entry = worldInviteEntries.get(inviteId);
+      if (entry === undefined) return { reason: `unknown invite "${inviteId}"` };
+      if (entry.toUserId !== userId) return { reason: "invite is not addressed to this user" };
+      if (now() - entry.createdAt > worldInviteTtlMs) {
+        worldInviteEntries.delete(inviteId);
+        return { reason: "invite expired" };
+      }
+      worldInviteEntries.delete(inviteId);
+      const target: WorldInviteTarget = { serverId: entry.serverId };
+      if (entry.joinCode !== undefined) target.joinCode = entry.joinCode;
+      const accepted: GameEventMap["social.world.accepted"] = {
+        inviteId,
+        userId,
+        fromUserId: entry.fromUserId,
+        serverId: entry.serverId,
+      };
+      if (entry.joinCode !== undefined) accepted.joinCode = entry.joinCode;
+      events.emit("social.world.accepted", accepted);
+      return { target };
+    },
+    decline(userId, inviteId) {
+      const entry = worldInviteEntries.get(inviteId);
+      if (entry !== undefined && entry.toUserId === userId) worldInviteEntries.delete(inviteId);
+    },
+    listFor(userId) {
+      pruneWorldInvites();
+      return Array.from(worldInviteEntries.values()).filter((entry) => entry.toUserId === userId);
+    },
+  };
+
   const emotes: Emotes = {
     play(fromUserId, emoteId, radius) {
       const emoteDeps = deps.emotes;
@@ -350,5 +458,6 @@ export function createSocial(deps: SocialDeps): Social {
       },
     },
     emotes,
+    worldInvites,
   };
 }
