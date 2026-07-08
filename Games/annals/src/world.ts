@@ -44,7 +44,7 @@ export const world: EnvironmentWorldFeature = environment({
   vegetation: grass({
     area: { w: 820, d: 820 },
     density: 3 + gen() * 1.5,
-    colors: ["#3f7d2d", "#6bbf4a", "#8fc25a"],
+    colors: ["#4a8a35", "#7ecc4f", "#a8d66e"],
     seed: `${WORLD_SEED}:grass`,
   }),
   water: ocean({

@@ -211,6 +211,8 @@ export interface CameraShakeConfig {
 export interface GameCameraConfig {
   /** Selects the rig. Overrides `perspective`; leave unset to fall back to `perspective`. */
   rig?: CameraRigKind;
+  /** Render frustum overrides applied to the canvas camera. `far` defaults to 300 — raise it for worlds whose content spans more than a few hundred units, or distant scenery silently clips. */
+  frustum?: { fov?: number; near?: number; far?: number };
   /** "third" mounts the orbit camera (default); "first" mounts pointer-lock mouse-look. Shorthand for `rig: "orbit" | "first"`. */
   perspective?: "third" | "first";
   /** First-person tuning; only read when the rig resolves to "first". */

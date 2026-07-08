@@ -17,7 +17,7 @@ export const game = defineGame({
   input: keybinds,
   server: { mode: "solo" },
   save: "none",
-  time: { scale: 60, dayLength: DAY_LENGTH, speeds: [1, 2, 4, 8] },
+  time: { scale: 60, dayLength: DAY_LENGTH, start: DAY_LENGTH / 3, speeds: [1, 2, 4, 8] },
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
@@ -25,10 +25,11 @@ export const game = defineGame({
   pointer: { moveCommand: "annals.focus" },
   camera: {
     rig: "rts",
+    frustum: { far: 2600 },
     rts: {
-      start: { x: 0, z: 40 },
-      height: 260,
-      pitch: 0.95,
+      start: { x: 0, z: 20 },
+      height: 240,
+      pitch: 0.98,
       yaw: Math.PI / 4,
       panSpeed: 90,
       edgeScroll: true,
