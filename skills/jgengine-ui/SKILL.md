@@ -78,7 +78,7 @@ Cooldown data lives in game code (`combat/abilityCooldowns.ts` or similar); UI r
 ## Modal structure
 
 ```
-ui/
+src/game/ui/
   GameUI.tsx              grid zones + modal backdrop host
   uiController.ts         panel open state (subscribe store)
   components/
@@ -91,7 +91,7 @@ ui/
     KeybindBadge.tsx
     FloatingCombatText.tsx
   combat/pendingProjectiles.ts  shot queue + bolt visual state
-  combat/<Game>ProjectileOverlay.tsx  R3F meshes; wire via PlayableGame.WorldOverlay
+  combat/<Game>ProjectileOverlay.tsx  R3F meshes; wire via `WorldOverlay` in `defineGame({...})`
 ```
 
 Inventory modal: **backpack slots only**. Character sheet: **equipment + stats**. Abilities page: **catalog abilities with costs/cooldowns/keybinds** — not the hotbar duplicate.
@@ -111,9 +111,9 @@ All screen positioning in `GameUI.tsx` only. Use CSS grid zones. Modals: full-vi
 | Left tap (no drag) | Primary ability (`useAbility` / mouse0) |
 | Shift + scroll | Hotbar slot scroll (when game registers `ui.hotbarScroll*`) |
 
-Movement uses camera yaw from `orbitYawFromCamera` so WASD is camera-relative. Per-game tuning via `PlayableGame.camera` (`minDistance`, `maxDistance`, `targetHeight`, …). Do not hardcode camera position in `onTick` when orbit mode is active.
+Movement uses camera yaw from `orbitYawFromCamera` so WASD is camera-relative. Per-game tuning via `camera` in `defineGame({...})` (`minDistance`, `maxDistance`, `targetHeight`, …). Do not hardcode camera position in `onTick` when orbit mode is active.
 
-**cameraFollow lock** — camera + target translate with entity delta; orbit radius re-locks via exponential lerp (`distanceSmoothing`), not hard snaps. `followLock: true` (default). Tune feel with `rotateSpeed` (~0.38), `zoomSpeed` (~0.62), `dampingFactor` (~0.07), `targetSmoothing`, `distanceSmoothing` on `PlayableGame.camera`. Optional `onCameraFollow` callback fires each frame with `{ entityId, target, camera, distance }`.
+**cameraFollow lock** — camera + target translate with entity delta; orbit radius re-locks via exponential lerp (`distanceSmoothing`), not hard snaps. `followLock: true` (default). Tune feel with `rotateSpeed` (~0.38), `zoomSpeed` (~0.62), `dampingFactor` (~0.07), `targetSmoothing`, `distanceSmoothing` on the `camera` field of `defineGame({...})`. Optional `onCameraFollow` callback fires each frame with `{ entityId, target, camera, distance }`.
 
 ## Self-check
 
