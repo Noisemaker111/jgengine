@@ -1,6 +1,7 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
-import type { MultiplayerAdapterConfig } from "@jgengine/core/runtime/adapter";
-import { createWsBackend, type WsBackend } from "@jgengine/ws/createWsBackend";
+import { adapterOf, type MultiplayerAdapterConfig } from "@jgengine/core/runtime/adapter";
+import type { MultiplayerSession } from "@jgengine/core/runtime/transport";
+import { createWsBackend } from "@jgengine/ws/createWsBackend";
 import {
   announcePeerHost,
   broadcastChannelSignaling,
@@ -9,29 +10,14 @@ import {
   joinPeerSession,
 } from "@jgengine/ws/peer";
 
-export type ShellMultiplayer = {
-  gameId: string;
-  userId: string;
-  backend: WsBackend;
-  feedActions: string[];
-};
+export type ShellMultiplayer = MultiplayerSession;
+
+export const DEFAULT_FEED_ACTIONS = ["entity.died"];
 
 const DEFAULT_WS_URL = "ws://localhost:8080/ws";
-const ADAPTER_KINDS = new Set(["convex", "ws", "socketio", "p2p", "lan", "offline"]);
 
-function isAdapterConfig(value: unknown): value is MultiplayerAdapterConfig {
-  if (typeof value !== "object" || value === null) return false;
-  const kind = (value as { kind?: unknown }).kind;
-  return typeof kind === "string" && ADAPTER_KINDS.has(kind);
-}
-
-function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null {
-  if (isAdapterConfig(multiplayer)) return multiplayer;
-  if (typeof multiplayer === "object" && multiplayer !== null) {
-    const nested = (multiplayer as { adapter?: unknown }).adapter;
-    if (isAdapterConfig(nested)) return nested;
-  }
-  return null;
+export function randomPlayerId(): string {
+  return `player-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function lanUrl(adapter: Extract<MultiplayerAdapterConfig, { kind: "lan" }>): string {
@@ -65,8 +51,8 @@ export function resolveShellMultiplayer(args: {
   force?: boolean;
   feedActions?: string[];
 }): ShellMultiplayer | null {
-  const userId = args.userId ?? `player-${Math.random().toString(36).slice(2, 10)}`;
-  const feedActions = args.feedActions ?? ["entity.died"];
+  const userId = args.userId ?? randomPlayerId();
+  const feedActions = args.feedActions ?? DEFAULT_FEED_ACTIONS;
   const build = (url: string) =>
     buildWsMultiplayer({ gameId: args.gameId, userId, feedActions, url });
 
@@ -88,8 +74,8 @@ export async function resolvePeerShellMultiplayer(args: {
   userId?: string;
   feedActions?: string[];
 }): Promise<ShellMultiplayer & { close: () => void }> {
-  const userId = args.userId ?? `player-${Math.random().toString(36).slice(2, 10)}`;
-  const feedActions = args.feedActions ?? ["entity.died"];
+  const userId = args.userId ?? randomPlayerId();
+  const feedActions = args.feedActions ?? DEFAULT_FEED_ACTIONS;
   const signaling = broadcastChannelSignaling(args.room ?? `jg-p2p-${args.gameId}`);
 
   if (args.role === "host") {

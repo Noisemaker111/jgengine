@@ -50,7 +50,7 @@ import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/ga
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
-import type { WsPresenceRow } from "@jgengine/ws/protocol";
+import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
 import type { EntitySpriteConfig, ModelConfig, PointerConfig } from "@jgengine/core/game/playableGame";
 
@@ -423,7 +423,7 @@ function WorldView({
   );
 }
 
-function RemotePlayers({ rows }: { rows: WsPresenceRow[] }) {
+function RemotePlayers({ rows }: { rows: PresencePoseRow[] }) {
   return (
     <>
       {rows.map((row) => (
@@ -653,7 +653,7 @@ export function GamePlayerShell({
 }) {
   const [ctx, setCtx] = useState<GameContext | null>(null);
   const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostic[]>([]);
-  const [remotePlayers, setRemotePlayers] = useState<WsPresenceRow[]>([]);
+  const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
@@ -755,6 +755,36 @@ export function GamePlayerShell({
             },
           );
           if (remoteUnsub !== undefined) cleanups.push(remoteUnsub);
+        }
+
+        const chatSync = multiplayer.backend.chatSyncFor?.(joined.serverId);
+        if (chatSync !== undefined) {
+          const globalChannelIds = new Set(
+            ctx.game.chat
+              .channels()
+              .filter((channel) => channel.kind === "global")
+              .map((channel) => channel.id),
+          );
+          const seenRemoteChat = new Set<string>();
+          cleanups.push(
+            ctx.game.events.subscribe("chat.message", (event) => {
+              if (event.fromUserId !== multiplayer.userId) return;
+              if (!globalChannelIds.has(event.channelId)) return;
+              void chatSync.send(event.channelId, event.body).catch(() => undefined);
+            }),
+          );
+          for (const channelId of globalChannelIds) {
+            cleanups.push(
+              chatSync.subscribe(channelId, (messages) => {
+                for (const message of messages) {
+                  if (message.fromUserId === multiplayer.userId) continue;
+                  if (seenRemoteChat.has(message.id)) continue;
+                  seenRemoteChat.add(message.id);
+                  ctx.game.chat.send(message.fromUserId, message.channelId, message.body);
+                }
+              }),
+            );
+          }
         }
       })
       .catch(() => undefined);
