@@ -114,13 +114,15 @@ function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
   );
 }
 
-function Structures({ structures }: { structures: BuildingEnvironmentDescriptor }) {
+function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {
   const buildings = useMemo(() => resolveStructureBuildings(structures), [structures]);
 
   return (
     <>
       {buildings.map((building) => (
-        <GeneratedBuilding key={building.id} building={building} />
+        <group key={building.id} position-y={field.sampleHeight(building.center[0], building.center[1])}>
+          <GeneratedBuilding building={building} />
+        </group>
       ))}
     </>
   );
@@ -138,7 +140,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
         <Water key={`ocean-${index}`} ocean={ocean} />
       ))}
       {structures.map((entry, index) => (
-        <Structures key={`structures-${index}`} structures={entry} />
+        <Structures key={`structures-${index}`} structures={entry} field={field} />
       ))}
       {vegetation.map((grass, index) => (
         <Vegetation key={`grass-${index}`} grass={grass} field={field} />

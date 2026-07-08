@@ -50,6 +50,7 @@ import {
   type VoxelPlayerBody,
 } from "@jgengine/core/movement/voxelController";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
@@ -125,6 +126,13 @@ const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
   "useAbility",
   "interact",
 ]);
+
+const SHELL_MOVEMENT_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] as const;
+
+function shellDrivesPlayerPose(input: PlayableGame["game"]["input"]): boolean {
+  const bound = input ?? {};
+  return SHELL_MOVEMENT_ACTIONS.some((action) => action in bound);
+}
 
 function findHotbarSlotActions(input: PlayableGame["game"]["input"]): { action: string; slot: number }[] {
   return Object.keys(input ?? {}).flatMap((action) => {
@@ -502,6 +510,8 @@ function FrameDriver({
     const fallback = playable.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
     return cfg === true ? fallback : cfg.radius ?? fallback;
   }, [playable]);
+  const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
+  const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
 
   useFrame((_state, rawDt) => {
     try {
@@ -514,7 +524,7 @@ function FrameDriver({
     const player = ctx.scene.entity.get(playerId);
     const forwardX = Math.sin(yawRef.current);
     const forwardZ = Math.cos(yawRef.current);
-    if (player !== null) {
+    if (player !== null && drivesPose) {
       const keys = createEmptyMovementKeys();
       keys.w = tracker.isDown("moveForward");
       keys.s = tracker.isDown("moveBack");
@@ -564,8 +574,10 @@ function FrameDriver({
           player.movement.walkSpeed ?? 2,
           rawDt,
         );
+        const nextX = player.position[0] + step.stepX;
+        const nextZ = player.position[2] + step.stepZ;
         ctx.scene.entity.setPose(playerId, {
-          position: [player.position[0] + step.stepX, motion.jumpOffset, player.position[2] + step.stepZ],
+          position: [nextX, ground.sampleHeight(nextX, nextZ) + motion.jumpOffset, nextZ],
           rotationY: intent.moving
             ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
             : player.rotationY,

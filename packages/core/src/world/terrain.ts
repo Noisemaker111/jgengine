@@ -1,4 +1,4 @@
-import type { TerrainEnvironmentDescriptor, WorldBounds } from "./features";
+import type { TerrainEnvironmentDescriptor, WorldBounds, WorldFeature } from "./features";
 
 export type TerrainNormal = readonly [number, number, number];
 
@@ -210,6 +210,11 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
     return (undulation + mesa + hill + basin) * (1 - spawn);
   };
   return fieldFromHeight(sampleHeight, { bounds: config.bounds, waterLevel: ARENA_WATER_LEVEL });
+}
+
+export function groundFieldFor(world?: WorldFeature): TerrainField {
+  if (world !== undefined && world.kind === "environment") return resolveTerrainField(world.terrain);
+  return flatField();
 }
 
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
