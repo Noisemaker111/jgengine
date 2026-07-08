@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer, type MutableRefObject } from "react";
 
-import type { CameraRigKind, GameCameraConfig } from "@jgengine/core/game/playableGame";
+import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import type { CameraDirector } from "@jgengine/core/runtime/cameraDirector";
 
 import {
@@ -14,9 +14,13 @@ import {
   TopDownRig,
 } from "./cameraRigs";
 import { GameFirstPersonCamera } from "./GameFirstPersonCamera";
+import { GameInspectionCamera } from "./GameInspectionCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
 import { resolveDirectedCamera } from "./rigMath";
+import { resolveRigKind, turntableAsObserver } from "./rigResolve";
 import { CameraShakeContext, createCameraShakeChannel } from "./shakeChannel";
+
+export { resolveRigKind } from "./rigResolve";
 
 export interface GameCameraRigProps {
   yawRef: MutableRefObject<number>;
@@ -28,12 +32,6 @@ export interface GameCameraRigProps {
   panKeysEnabled?: boolean;
   /** Runtime follow/cinematic override (#196.2). While present it wins over the static `config` for any field it reports non-`undefined`/non-`null`; absent (or an all-`undefined` snapshot) is a no-op. */
   director?: CameraDirector;
-}
-
-export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind {
-  if (config?.rig !== undefined) return config.rig;
-  if (config?.perspective === "first") return "first";
-  return "orbit";
 }
 
 export function GameCameraRig({
@@ -106,8 +104,19 @@ export function GameCameraRig({
         return <ChaseRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "observer":
         return <ObserverRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+      case "turntable":
+        return (
+          <ObserverRig
+            yawRef={yawRef}
+            pitchRef={pitchRef}
+            config={turntableAsObserver(config)}
+            followEntityId={followEntityId}
+          />
+        );
       case "sideScroll":
         return <SideScrollRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
+      case "inspection":
+        return <GameInspectionCamera config={config?.inspection} />;
       case "none":
         return null;
       default:

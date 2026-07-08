@@ -15,6 +15,7 @@
     "shoot": "bun scripts/shoot-dev.ts",
     "games:annals": "bun run --cwd Games/annals dev",
     "games:block-stacker": "bun run --cwd Games/block-stacker dev",
+    "games:commit-canopy": "bun run --cwd Games/commit-canopy dev",
     "games:grid-tactics": "bun run --cwd Games/grid-tactics dev",
     "games:loot-shooter": "bun run --cwd Games/loot-shooter dev",
     "games:maze-muncher": "bun run --cwd Games/maze-muncher dev",

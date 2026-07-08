@@ -61,7 +61,7 @@ import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
-import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
 import { useDisplayProfile } from "@jgengine/react/display";
@@ -70,17 +70,20 @@ import { GameProvider } from "@jgengine/react/provider";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
 import type {
+  BackdropConfig,
   EntitySpriteConfig,
+  LightingConfig,
   ModelConfig,
   MovementCommitFrame,
   ObjectStyle,
   PointerConfig,
 } from "@jgengine/core/game/playableGame";
+import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
 import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
-import { TimeOfDayDaylight } from "./environment";
+import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { applyMaterialOverride } from "./materialOverride";
 import { PointerProbe } from "./pointer/PointerProbe";
@@ -107,6 +110,7 @@ import {
   WorldFloatText,
   WorldTelegraphs,
 } from "./world/WorldHud";
+import { GridWorldScene } from "./world/GridWorldScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -117,6 +121,8 @@ const TURN_SPEED = 2.4;
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const GROUND_SIZE = 160;
 const GROUND_SEGMENTS = 80;
+const DEFAULT_BACKGROUND_COLOR = "#14161b";
+const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
 
 interface RuntimeDiagnostic {
   id: number;
@@ -282,6 +288,43 @@ function colorFromId(id: string): string {
   let hash = 0;
   for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
   return `hsl(${hash % 360}, 65%, 55%)`;
+}
+
+function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
+  return (
+    <>
+      {lighting.ambient !== undefined ? (
+        <ambientLight color={lighting.ambient.color} intensity={lighting.ambient.intensity ?? 0.55} />
+      ) : null}
+      {lighting.hemisphere !== undefined ? (
+        <hemisphereLight
+          args={[
+            lighting.hemisphere.skyColor ?? "#bfe3ff",
+            lighting.hemisphere.groundColor ?? "#4c6b34",
+            lighting.hemisphere.intensity ?? 0.55,
+          ]}
+        />
+      ) : null}
+      {(lighting.directional ?? []).map((entry, index) => (
+        <directionalLight
+          key={index}
+          position={[entry.position[0], entry.position[1], entry.position[2]]}
+          intensity={entry.intensity ?? 1.3}
+          color={entry.color}
+          castShadow={entry.castShadow ?? false}
+        />
+      ))}
+    </>
+  );
+}
+
+function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }) {
+  if (fog === undefined) return null;
+  return fog.density !== undefined ? (
+    <fogExp2 attach="fog" args={[fog.color ?? DEFAULT_BACKDROP_FOG_COLOR, fog.density]} />
+  ) : (
+    <fog attach="fog" args={[fog.color ?? DEFAULT_BACKDROP_FOG_COLOR, fog.near ?? 10, fog.far ?? 200]} />
+  );
 }
 
 function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
@@ -472,6 +515,9 @@ function ObjectMarker({
   model: ModelConfig | undefined;
   style: ObjectStyle | undefined;
 }) {
+  const [scaleX, scaleY, scaleZ] = objectVisualScale(object.visual);
+  const color = object.visual?.color ?? style?.color ?? colorFromId(object.catalogId);
+  const opacity = object.visual?.opacity ?? style?.opacity ?? 1;
   return (
     <group
       position={[object.position[0], object.position[1], object.position[2]]}
@@ -483,13 +529,9 @@ function ObjectMarker({
       ) : model !== undefined ? (
         <EntityModel model={model} instanceId={object.instanceId} />
       ) : style?.hidden === true ? null : (
-        <mesh position-y={0.5}>
+        <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]}>
           <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial
-            color={style?.color ?? colorFromId(object.catalogId)}
-            transparent={style?.opacity !== undefined && style.opacity < 1}
-            opacity={style?.opacity ?? 1}
-          />
+          <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} />
         </mesh>
       )}
     </group>
@@ -1254,7 +1296,17 @@ export function GamePlayerShell({
   const worldSky = resolveWorldSky(playable.game.world);
   const world = playable.game.world;
   const AutoEnvironment =
-    playable.environment ?? (world?.kind === "environment" ? () => <EnvironmentScene feature={world} /> : undefined);
+    playable.environment ??
+    (world?.kind === "environment"
+      ? () => <EnvironmentScene feature={world} />
+      : world?.kind === "biomes" || world?.kind === "voxel" || world?.kind === "plots" || world?.kind === "tilemap"
+        ? () => <GridWorldScene feature={world} />
+        : undefined);
+  const backdrop = playable.backdrop;
+  const backdropSky = backdrop?.sky !== undefined ? resolveSkyDescriptor(backdrop.sky) : undefined;
+  const effectiveSky = backdropSky ?? worldSky;
+  const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
+  const lighting = playable.lighting;
 
   const localXY = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -1423,15 +1475,22 @@ export function GamePlayerShell({
         shadows={playable.shadows ?? true}
         style={{ touchAction: "none" }}
       >
-        {worldSky === undefined ? (
-          <>
-            <color attach="background" args={["#14161b"]} />
-            <ambientLight intensity={0.55} />
-            <directionalLight position={[10, 16, 6]} intensity={1.3} />
-          </>
-        ) : worldSky.timeOfDay ? (
-          <TimeOfDayDaylight sky={worldSky} clock={ctx.time} />
+        {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
+        {effectiveSky === undefined ? (
+          lighting !== undefined ? (
+            <ConfiguredLighting lighting={lighting} />
+          ) : (
+            <>
+              <ambientLight intensity={0.55} />
+              <directionalLight position={[10, 16, 6]} intensity={1.3} />
+            </>
+          )
+        ) : effectiveSky.timeOfDay ? (
+          <TimeOfDayDaylight sky={effectiveSky} clock={ctx.time} />
+        ) : backdropSky !== undefined ? (
+          <SkyDaylight sky={backdropSky} />
         ) : null}
+        <BackdropFog fog={backdrop?.fog} />
         <GameProvider context={ctx}>
           <WorldView
             entitySprites={playable.entitySprites}

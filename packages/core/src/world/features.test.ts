@@ -44,6 +44,26 @@ describe("world features", () => {
     expect(flat()).toEqual({ kind: "flat" });
   });
 
+  test("grid world kinds additively carry cells/cellSize/baseHeight/defaultColor", () => {
+    const cells = [{ x: 0, z: 0, height: 2, color: "#ff0000" }, { x: 1, z: 0 }];
+    expect(tilemap({ map: "./level.ts", cells, cellSize: 2, baseHeight: 1, defaultColor: "#888888" })).toEqual({
+      kind: "tilemap",
+      map: "./level.ts",
+      cells,
+      cellSize: 2,
+      baseHeight: 1,
+      defaultColor: "#888888",
+    });
+    expect(voxel({ seed: "world-1", cells })).toEqual({ kind: "voxel", seed: "world-1", cells });
+    expect(biomes({ map: "./biomes.ts", zones: "./zones.ts", cells })).toEqual({
+      kind: "biomes",
+      map: "./biomes.ts",
+      zones: "./zones.ts",
+      cells,
+    });
+    expect(plots({ cells })).toEqual({ kind: "plots", cells });
+  });
+
   test("environment composes renderable descriptor groups", () => {
     const world = environment({
       terrain: terrain({ heightMap: "./height.png", bounds: { w: 512, d: 256 } }),

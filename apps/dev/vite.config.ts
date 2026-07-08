@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type ProxyOptions } from "vite";
+
+import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
 const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
@@ -17,12 +19,25 @@ const gameAliases = readdirSync(gamesDir, { withFileTypes: true })
     { find: new RegExp(`^@games/${entry.name}/(.*)$`), replacement: `${game(entry.name)}/$1` },
   ]);
 
+const devProxyTable = parseDevProxyTable(process.env.VITE_JGENGINE_DEV_PROXY);
+const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
+  Object.entries(devProxyTable).map(([routeName, target]) => [
+    `/proxy/${routeName}`,
+    {
+      target,
+      changeOrigin: true,
+      rewrite: (path: string) => path.replace(new RegExp(`^/proxy/${routeName}`), ""),
+    },
+  ]),
+);
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
   build: { target: "es2022" },
   server: {
     host: true,
+    proxy: devProxy,
     hmr:
       process.env.JG_PLAY_HMR_PORT === undefined
         ? undefined
