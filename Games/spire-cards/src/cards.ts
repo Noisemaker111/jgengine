@@ -3,9 +3,14 @@ export type CardArt = "sword" | "shield" | "mace" | "dagger" | "flame" | "brace"
 
 export interface CardEffects {
   damage?: number;
+  hits?: number;
   block?: number;
   strength?: number;
   draw?: number;
+  weak?: number;
+  vulnerable?: number;
+  energy?: number;
+  exhaust?: boolean;
 }
 
 export interface CardData {
@@ -27,6 +32,12 @@ export const CARD_CATALOG: Record<string, CardData> = {
   shrug_it_off: { type: "shrug_it_off", name: "Shrug It Off", kind: "skill", cost: 1, text: "Gain 8 Block. Draw 1 card.", art: "brace", effects: { block: 8, draw: 1 } },
   iron_wave: { type: "iron_wave", name: "Iron Wave", kind: "attack", cost: 1, text: "Deal 5 damage. Gain 5 Block.", art: "wave", effects: { damage: 5, block: 5 } },
   cleave: { type: "cleave", name: "Cleave", kind: "attack", cost: 1, text: "Deal 8 damage.", art: "axe", effects: { damage: 8 } },
+  twin_strike: { type: "twin_strike", name: "Twin Strike", kind: "attack", cost: 1, text: "Deal 4 damage twice.", art: "dagger", effects: { damage: 4, hits: 2 } },
+  uppercut: { type: "uppercut", name: "Uppercut", kind: "attack", cost: 2, text: "Deal 8 damage. Apply 2 Weak and 2 Vulnerable.", art: "mace", effects: { damage: 8, weak: 2, vulnerable: 2 } },
+  clothesline: { type: "clothesline", name: "Clothesline", kind: "attack", cost: 2, text: "Deal 12 damage. Apply 2 Weak.", art: "axe", effects: { damage: 12, weak: 2 } },
+  battle_trance: { type: "battle_trance", name: "Battle Trance", kind: "skill", cost: 0, text: "Draw 3 cards. Exhaust.", art: "brace", effects: { draw: 3, exhaust: true } },
+  impervious: { type: "impervious", name: "Impervious", kind: "skill", cost: 2, text: "Gain 15 Block. Exhaust.", art: "shield", effects: { block: 15, exhaust: true } },
+  adrenaline: { type: "adrenaline", name: "Adrenaline", kind: "skill", cost: 0, text: "Gain 1 Energy. Draw 1 card. Exhaust.", art: "flame", effects: { energy: 1, draw: 1, exhaust: true } },
 };
 
 const DECK_RECIPE: readonly [string, number][] = [

@@ -82,3 +82,32 @@ export function lineScore(cleared: number, level: number): number {
 export function gravityInterval(level: number): number {
   return Math.max(0.05, 0.8 - level * 0.07);
 }
+
+export const LOCK_DELAY_SECONDS = 0.5;
+export const MAX_LOCK_RESETS = 15;
+
+export function isGrounded(board: Board, piece: ActivePiece): boolean {
+  return collides(board, { ...piece, y: piece.y + 1 });
+}
+
+export function comboBonus(combo: number, level: number): number {
+  return combo > 0 ? 50 * combo * (level + 1) : 0;
+}
+
+export const BACK_TO_BACK_MULTIPLIER = 1.5;
+
+export const DANGER_ROW_THRESHOLD = 4;
+
+export function isBoardInDanger(board: Board): boolean {
+  for (let y = 0; y < DANGER_ROW_THRESHOLD; y += 1) {
+    for (let x = 0; x < board.width; x += 1) {
+      if (cellAt(board, x, y) !== null) return true;
+    }
+  }
+  return false;
+}
+
+export function linesUntilNextLevel(lines: number): number {
+  const remainder = lines % 10;
+  return remainder === 0 ? 10 : 10 - remainder;
+}

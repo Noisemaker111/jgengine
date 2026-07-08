@@ -35,4 +35,24 @@ describe("raycastVoxel", () => {
     const hit = raycastVoxel(only(3, 3, 3), [3.5, 3.5, 3.5], [0, -1, 0], 4);
     expect(hit!.cell).toEqual([3, 3, 3]);
   });
+
+  test("a fully diagonal ray still resolves the correct crossing face", () => {
+    const origin: Vec3 = [0.5, 5.5, 0.5];
+    const raw: Vec3 = [1, -1.3, 0.5];
+    const length = Math.hypot(...raw);
+    const direction: Vec3 = [raw[0] / length, raw[1] / length, raw[2] / length];
+    const isStoneLayer: SolidQuery = (_x, y, _z) => y === -3;
+    const hit = raycastVoxel(isStoneLayer, origin, direction, 15);
+    expect(hit).not.toBeNull();
+    expect(hit!.cell[1]).toBe(-3);
+    expect(hit!.normal).toEqual([0, 1, 0]);
+  });
+
+  test("negative-coordinate cells resolve correctly, matching the voxel-mine depth axis", () => {
+    const origin: Vec3 = [0.5, -1.5, 0.5];
+    const hit = raycastVoxel(only(0, -7, 0), origin, [0, -1, 0], 10);
+    expect(hit).not.toBeNull();
+    expect(hit!.cell).toEqual([0, -7, 0]);
+    expect(hit!.normal).toEqual([0, 1, 0]);
+  });
 });

@@ -5,4 +5,5 @@ export const keybinds: ActionCodesMap = {
   moveBack: ["KeyS", "ArrowDown"],
   moveLeft: ["KeyA", "ArrowLeft"],
   moveRight: ["KeyD", "ArrowRight"],
+  restart: ["KeyR"],
 };

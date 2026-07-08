@@ -1,30 +1,45 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { combat } from "./combat";
-import { ENEMY_CATALOG_ID, ENEMY_ID, HERO_CATALOG_ID } from "./enemy";
+import { run } from "./run";
 
 export function onInit(ctx: GameContext): void {
   ctx.game.commands.define<{ cardId: string }>("playCard", {
     validate: (_state, input) => {
-      const reason = combat.canPlay(input.cardId);
+      const reason = run.canPlay(input.cardId);
       return reason === null ? null : { reason };
     },
     apply: (state, input) => {
-      combat.playCard(state, input.cardId);
+      run.playCard(state, input.cardId);
       return state;
     },
   });
 
   ctx.game.commands.define<Record<string, never>>("endTurn", {
     apply: (state) => {
-      combat.endTurn(state);
+      run.endTurn(state);
       return state;
     },
   });
 
-  ctx.game.commands.define<Record<string, never>>("restartCombat", {
+  ctx.game.commands.define<{ cardType: string }>("chooseReward", {
+    validate: (_state, input) => (run.canChooseReward(input.cardType) ? null : { reason: "not a valid reward" }),
+    apply: (state, input) => {
+      run.chooseReward(state, input.cardType);
+      return state;
+    },
+  });
+
+  ctx.game.commands.define<Record<string, never>>("skipReward", {
     apply: (state) => {
-      combat.start(state);
+      run.skipReward(state);
+      return state;
+    },
+  });
+
+  ctx.game.commands.define<Record<string, never>>("startNewRun", {
+    apply: (state) => {
+      run.start(state);
       return state;
     },
   });
@@ -35,9 +50,7 @@ export function onInit(ctx: GameContext): void {
 }
 
 export function onNewPlayer(ctx: GameContext): void {
-  ctx.scene.entity.spawn(HERO_CATALOG_ID, { id: ctx.player.userId, role: "player", position: [-2, 0, 0] });
-  ctx.scene.entity.spawn(ENEMY_CATALOG_ID, { id: ENEMY_ID, role: "npc", position: [2, 0, 0] });
-  combat.start(ctx);
+  run.start(ctx);
 }
 
 export function onTick(_ctx: GameContext, _dt: number): void {}

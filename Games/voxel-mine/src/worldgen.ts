@@ -1,3 +1,6 @@
+import { seededRng } from "@jgengine/core/item/affix";
+import { BEDROCK_BLOCK, oreForDepth } from "./blocks";
+
 export interface Placement {
   catalogId: string;
   x: number;
@@ -6,6 +9,11 @@ export interface Placement {
 }
 
 export const WORLD_RADIUS = 6;
+export const SHAFT_TOP = -4;
+export const SHAFT_BOTTOM = -9;
+export const BEDROCK_Y = -10;
+
+const ORE_SEED = "voxel-mine-ore-veins";
 
 const TREES: readonly [number, number][] = [
   [-4, -4],
@@ -23,12 +31,19 @@ const SAND_PATCH: readonly [number, number][] = [
 export function generateWorld(): Placement[] {
   const out: Placement[] = [];
   const isSand = (x: number, z: number) => SAND_PATCH.some(([sx, sz]) => sx === x && sz === z);
+  const rollOre = seededRng(ORE_SEED);
 
   for (let x = -WORLD_RADIUS; x <= WORLD_RADIUS; x += 1) {
     for (let z = -WORLD_RADIUS; z <= WORLD_RADIUS; z += 1) {
       out.push({ catalogId: isSand(x, z) ? "block_sand" : "block_grass", x, y: -1, z });
       out.push({ catalogId: "block_dirt", x, y: -2, z });
       out.push({ catalogId: "block_stone", x, y: -3, z });
+      for (let y = SHAFT_TOP; y >= SHAFT_BOTTOM; y -= 1) {
+        const ore = oreForDepth(y);
+        const catalogId = ore !== undefined && rollOre() < ore.rarity ? ore.id : "block_stone";
+        out.push({ catalogId, x, y, z });
+      }
+      out.push({ catalogId: BEDROCK_BLOCK, x, y: BEDROCK_Y, z });
     }
   }
 

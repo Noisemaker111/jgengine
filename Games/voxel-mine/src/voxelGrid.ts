@@ -9,6 +9,7 @@ export interface VoxelGrid {
   set(catalogId: string, x: number, y: number, z: number): boolean;
   remove(x: number, y: number, z: number): boolean;
   has(x: number, y: number, z: number): boolean;
+  catalogAt(x: number, y: number, z: number): string | null;
   count(): number;
   raycast(origin: Vec3, direction: Vec3, maxDistance: number): VoxelHit | null;
 }
@@ -34,6 +35,11 @@ export function createVoxelGrid(ctx: GameContext): VoxelGrid {
     },
     has(x, y, z) {
       return cells.has(cellKey(x, y, z));
+    },
+    catalogAt(x, y, z) {
+      const instanceId = cells.get(cellKey(x, y, z));
+      if (instanceId === undefined) return null;
+      return ctx.scene.object.get(instanceId)?.catalogId ?? null;
     },
     count() {
       return cells.size;

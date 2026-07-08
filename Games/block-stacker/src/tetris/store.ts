@@ -1,15 +1,22 @@
 import { seededRng } from "@jgengine/core/item/affix";
 
 import {
+  BACK_TO_BACK_MULTIPLIER,
   BOARD_HEIGHT,
   BOARD_WIDTH,
+  LOCK_DELAY_SECONDS,
+  MAX_LOCK_RESETS,
   clearLines,
   collides,
+  comboBonus,
   createBoard,
   dropDistance,
   gravityInterval,
+  isBoardInDanger,
+  isGrounded,
   levelForLines,
   lineScore,
+  linesUntilNextLevel,
   merge,
   type ActivePiece,
   type Board,
@@ -26,12 +33,20 @@ export interface TetrisSnapshot {
   readonly hold: PieceType | null;
   readonly canHold: boolean;
   readonly score: number;
+  readonly best: number;
   readonly lines: number;
   readonly level: number;
+  readonly linesToNextLevel: number;
   readonly status: GameStatus;
+  readonly combo: number;
+  readonly backToBack: boolean;
+  readonly message: string | null;
+  readonly danger: boolean;
 }
 
 const PREVIEW_COUNT = 5;
+const MESSAGE_DURATION = 1.4;
+const CLEAR_LABEL: Record<number, string> = { 1: "Single", 2: "Double", 3: "Triple", 4: "Tetris!" };
 
 interface MutableState {
   board: Board;
@@ -41,10 +56,17 @@ interface MutableState {
   hold: PieceType | null;
   canHold: boolean;
   score: number;
+  best: number;
   lines: number;
   level: number;
   status: GameStatus;
   gravityAcc: number;
+  lockDelayAcc: number;
+  lockResets: number;
+  combo: number;
+  backToBack: boolean;
+  message: string | null;
+  messageTimer: number;
   rng: () => number;
 }
 
@@ -85,10 +107,17 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     hold: null,
     canHold: true,
     score: 0,
+    best: 0,
     lines: 0,
     level: 0,
     status: "playing",
     gravityAcc: 0,
+    lockDelayAcc: 0,
+    lockResets: 0,
+    combo: -1,
+    backToBack: false,
+    message: null,
+    messageTimer: 0,
     rng: seededRng(seed),
   };
   let snapshot: TetrisSnapshot = buildSnapshot();
@@ -108,7 +137,23 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     state.active = piece;
     state.canHold = true;
     state.gravityAcc = 0;
+    state.lockDelayAcc = 0;
+    state.lockResets = 0;
     if (collides(state.board, piece)) state.status = "gameover";
+  }
+
+  function noteMovement(): void {
+    const active = state.active;
+    if (active === null) return;
+    if (isGrounded(state.board, active)) {
+      if (state.lockResets < MAX_LOCK_RESETS) {
+        state.lockDelayAcc = 0;
+        state.lockResets += 1;
+      }
+    } else {
+      state.lockDelayAcc = 0;
+      state.lockResets = 0;
+    }
   }
 
   function lockActive(): void {
@@ -116,10 +161,25 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     state.board = merge(state.board, state.active);
     const result = clearLines(state.board);
     state.board = result.board;
+    state.lockDelayAcc = 0;
+    state.lockResets = 0;
     if (result.cleared > 0) {
       state.lines += result.cleared;
-      state.score += lineScore(result.cleared, state.level);
+      const isTetris = result.cleared === 4;
+      const isB2B = isTetris && state.backToBack;
+      let gained = lineScore(result.cleared, state.level);
+      if (isB2B) gained = Math.round(gained * BACK_TO_BACK_MULTIPLIER);
+      state.combo += 1;
+      gained += comboBonus(state.combo, state.level);
+      state.score += gained;
       state.level = levelForLines(state.lines);
+      state.backToBack = isTetris;
+      const label = CLEAR_LABEL[result.cleared] ?? "";
+      const comboSuffix = state.combo > 0 ? ` +Combo x${state.combo}` : "";
+      state.message = `${isB2B ? "Back-to-Back " : ""}${label}${comboSuffix}`;
+      state.messageTimer = MESSAGE_DURATION;
+    } else {
+      state.combo = -1;
     }
     state.active = null;
     spawnNext();
@@ -137,13 +197,20 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
       hold: state.hold,
       canHold: state.canHold,
       score: state.score,
+      best: state.best,
       lines: state.lines,
       level: state.level,
+      linesToNextLevel: linesUntilNextLevel(state.lines),
       status: state.status,
+      combo: state.combo,
+      backToBack: state.backToBack,
+      message: state.message,
+      danger: isBoardInDanger(state.board),
     };
   }
 
   function emit(): void {
+    state.best = Math.max(state.best, state.score);
     snapshot = buildSnapshot();
     for (const listener of listeners) listener(snapshot);
   }
@@ -160,6 +227,12 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     state.level = 0;
     state.status = "playing";
     state.gravityAcc = 0;
+    state.lockDelayAcc = 0;
+    state.lockResets = 0;
+    state.combo = -1;
+    state.backToBack = false;
+    state.message = null;
+    state.messageTimer = 0;
     state.rng = seededRng(nextSeed ?? `${seed}-${Date.now()}`);
     spawnNext();
     emit();
@@ -170,6 +243,7 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     const moved = { ...state.active, x: state.active.x + dx };
     if (!collides(state.board, moved)) {
       state.active = moved;
+      noteMovement();
       emit();
     }
   }
@@ -186,6 +260,7 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
       };
       if (!collides(state.board, candidate)) {
         state.active = candidate;
+        noteMovement();
         emit();
         return;
       }
@@ -195,13 +270,11 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
   function softDrop(): void {
     if (state.status !== "playing" || state.active === null) return;
     const moved = { ...state.active, y: state.active.y + 1 };
-    if (collides(state.board, moved)) {
-      lockActive();
-    } else {
-      state.active = moved;
-      state.score += 1;
-      state.gravityAcc = 0;
-    }
+    if (collides(state.board, moved)) return;
+    state.active = moved;
+    state.score += 1;
+    state.gravityAcc = 0;
+    noteMovement();
     emit();
   }
 
@@ -226,6 +299,8 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
       state.hold = current;
       state.active = spawnPiece(swapped);
       state.gravityAcc = 0;
+      state.lockDelayAcc = 0;
+      state.lockResets = 0;
       if (collides(state.board, state.active)) state.status = "gameover";
     }
     state.canHold = false;
@@ -234,21 +309,35 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
 
   function tick(dt: number): void {
     if (state.status !== "playing" || state.active === null) return;
-    state.gravityAcc += dt;
-    const interval = gravityInterval(state.level);
     let changed = false;
-    while (state.gravityAcc >= interval) {
-      state.gravityAcc -= interval;
-      const current: ActivePiece | null = state.active;
-      if (current === null) break;
-      const moved: ActivePiece = { ...current, y: current.y + 1 };
-      if (collides(state.board, moved)) {
+    if (state.messageTimer > 0) {
+      state.messageTimer = Math.max(0, state.messageTimer - dt);
+      if (state.messageTimer === 0) {
+        state.message = null;
+        changed = true;
+      }
+    }
+    const active = state.active;
+    if (active !== null && isGrounded(state.board, active)) {
+      state.lockDelayAcc += dt;
+      if (state.lockDelayAcc >= LOCK_DELAY_SECONDS) {
         lockActive();
         changed = true;
-        break;
       }
-      state.active = moved;
-      changed = true;
+    } else {
+      state.gravityAcc += dt;
+      const interval = gravityInterval(state.level);
+      while (state.gravityAcc >= interval) {
+        state.gravityAcc -= interval;
+        const current: ActivePiece | null = state.active;
+        if (current === null) break;
+        const moved: ActivePiece = { ...current, y: current.y + 1 };
+        if (collides(state.board, moved)) break;
+        state.active = moved;
+        changed = true;
+      }
+      state.lockDelayAcc = 0;
+      state.lockResets = 0;
     }
     if (changed) emit();
   }

@@ -1,5 +1,8 @@
-import { useEntityStat, useFeed, usePlayer } from "@jgengine/react/hooks";
+import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { useEntityStat, useFeed, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 
+import { keybinds } from "../keybinds";
+import { goalProgress } from "../physics";
 import { MAX_HEALTH, STATUS_FEED, type LevelResult } from "../tuning";
 
 function Hearts({ userId }: { userId: string }) {
@@ -22,11 +25,30 @@ function Hearts({ userId }: { userId: string }) {
 
 function Score({ userId }: { userId: string }) {
   const score = useEntityStat(userId, "score");
-  const stomps = score === null ? 0 : Math.round(score.current);
+  const total = score === null ? 0 : Math.round(score.current);
   return (
     <div className="flex items-baseline gap-1.5">
-      <span className="text-xs uppercase tracking-widest text-amber-300/80">Stomps</span>
-      <span className="tabular-nums text-lg font-semibold text-amber-200">{stomps}</span>
+      <span className="text-xs uppercase tracking-widest text-amber-300/80">Score</span>
+      <span className="tabular-nums text-lg font-semibold text-amber-200">{total}</span>
+    </div>
+  );
+}
+
+function GoalProgress({ userId }: { userId: string }) {
+  const playerX = useGameStore((ctx) => ctx.scene.entity.get(userId)?.position[0] ?? null);
+  const fraction = playerX === null ? 0 : goalProgress(playerX);
+  return (
+    <div className="flex w-56 flex-col gap-1" aria-label="progress to goal">
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-white/50">
+        <span>Start</span>
+        <span>Flag</span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-sky-400 to-emerald-400 transition-[width]"
+          style={{ width: `${Math.round(fraction * 100)}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -40,13 +62,16 @@ function useLevelResult(): LevelResult | null {
   return null;
 }
 
-function Banner() {
+function Banner({ userId }: { userId: string }) {
   const result = useLevelResult();
+  const score = useEntityStat(userId, "score");
+  const { commands } = useGame();
   if (result === null) return null;
   const won = result === "won";
+  const restartLabel = actionLabel(keybinds, "restart") ?? "R";
   return (
     <div
-      className={`rounded-xl border px-8 py-5 text-center shadow-2xl backdrop-blur ${
+      className={`pointer-events-auto rounded-xl border px-8 py-5 text-center shadow-2xl backdrop-blur ${
         won ? "border-emerald-400/60 bg-emerald-950/70" : "border-rose-500/60 bg-rose-950/70"
       }`}
     >
@@ -54,8 +79,18 @@ function Banner() {
         {won ? "Flag Reached!" : "Game Over"}
       </p>
       <p className="mt-1 text-sm text-white/70">
-        {won ? "You hopped across the level." : "A stomper got you — refresh to retry."}
+        Score {score === null ? 0 : Math.round(score.current)}
       </p>
+      <button
+        type="button"
+        onClick={() => commands.run("restart", {})}
+        className="mt-4 inline-flex items-center gap-2 rounded-md border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-white/20"
+      >
+        Restart
+        <kbd className="rounded border border-white/30 bg-black/30 px-1.5 py-0.5 text-[10px] font-semibold">
+          {restartLabel}
+        </kbd>
+      </button>
     </div>
   );
 }
@@ -66,14 +101,17 @@ export function GameUI() {
     <div className="pointer-events-none absolute inset-0 font-sans text-white">
       <div className="absolute left-4 top-4 rounded-lg border border-white/15 bg-black/55 px-3 py-2 shadow-lg">
         <p className="text-xs font-semibold uppercase tracking-widest text-sky-300/80">Platform Hopper</p>
-        <p className="mt-0.5 text-sm text-white/85">Run right, stomp the stompers, reach the flag.</p>
+        <p className="mt-0.5 text-sm text-white/85">Run right, stomp the stompers, dodge the spikes, reach the flag.</p>
       </div>
       <div className="absolute right-4 top-4 flex flex-col items-end gap-2 rounded-lg border border-white/15 bg-black/55 px-3 py-2 shadow-lg">
         <Hearts userId={userId} />
         <Score userId={userId} />
       </div>
+      <div className="absolute inset-x-0 top-4 flex justify-center">
+        <GoalProgress userId={userId} />
+      </div>
       <div className="absolute inset-x-0 top-1/3 flex justify-center">
-        <Banner />
+        <Banner userId={userId} />
       </div>
     </div>
   );

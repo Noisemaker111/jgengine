@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
-import { chaseTargetCell, farthestCorner, scheduledMode, slideMove } from "./ai";
+import {
+  chaseTargetCell,
+  farthestCorner,
+  frightSecondsForLevel,
+  ghostChainScore,
+  ghostSpeedForLevel,
+  scheduledMode,
+  slideMove,
+} from "./ai";
 import { cellToWorld, CORNERS, GHOSTS, type Cell } from "./maze";
 
 const hunter = GHOSTS.find((g) => g.id === "hunter")!;
@@ -41,5 +49,29 @@ describe("wall sliding", () => {
     const [x, z] = slideMove(from[0], from[2], into[0], from[2]);
     expect(x).toBe(from[0]);
     expect(z).toBe(from[2]);
+  });
+});
+
+describe("difficulty scaling", () => {
+  test("ghost speed climbs with level and caps out", () => {
+    expect(ghostSpeedForLevel(1)).toBeCloseTo(3.6);
+    expect(ghostSpeedForLevel(2)).toBeGreaterThan(ghostSpeedForLevel(1));
+    expect(ghostSpeedForLevel(20)).toBe(ghostSpeedForLevel(50));
+  });
+
+  test("frightened window shrinks with level and floors out", () => {
+    expect(frightSecondsForLevel(1)).toBe(7);
+    expect(frightSecondsForLevel(4)).toBe(4);
+    expect(frightSecondsForLevel(20)).toBe(3);
+  });
+});
+
+describe("ghost chain scoring", () => {
+  test("doubles per consecutive ghost then caps", () => {
+    expect(ghostChainScore(1)).toBe(200);
+    expect(ghostChainScore(2)).toBe(400);
+    expect(ghostChainScore(3)).toBe(800);
+    expect(ghostChainScore(4)).toBe(1600);
+    expect(ghostChainScore(5)).toBe(1600);
   });
 });

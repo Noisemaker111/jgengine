@@ -49,3 +49,25 @@ export function slideMove(ox: number, oz: number, nx: number, nz: number): [numb
   if (isWalkableWorld(ox, nz)) return [ox, nz];
   return [ox, oz];
 }
+
+export const GHOST_BASE_SPEED = 3.6;
+const GHOST_SPEED_STEP = 0.3;
+const GHOST_MAX_SPEED = 5.4;
+
+export function ghostSpeedForLevel(level: number): number {
+  return Math.min(GHOST_BASE_SPEED + (level - 1) * GHOST_SPEED_STEP, GHOST_MAX_SPEED);
+}
+
+const FRIGHT_BASE_SECONDS = 7;
+const FRIGHT_MIN_SECONDS = 3;
+
+export function frightSecondsForLevel(level: number): number {
+  return Math.max(FRIGHT_MIN_SECONDS, FRIGHT_BASE_SECONDS - (level - 1));
+}
+
+export const GHOST_BASE_SCORE = 200;
+const GHOST_MAX_CHAIN_SCORE = 1600;
+
+export function ghostChainScore(chain: number): number {
+  return Math.min(GHOST_BASE_SCORE * 2 ** Math.max(0, chain - 1), GHOST_MAX_CHAIN_SCORE);
+}
