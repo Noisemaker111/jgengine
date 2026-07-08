@@ -163,7 +163,7 @@ export function GameUI() {
     <div className="pointer-events-none absolute inset-0 select-none font-sans text-white">
       <div
         className="absolute inset-0"
-        style={{ boxShadow: "inset 0 0 220px 60px rgba(0,0,0,0.92)", background: "radial-gradient(circle at 50% 50%, transparent 45%, rgba(0,0,0,0.55) 100%)" }}
+        style={{ boxShadow: "inset 0 0 120px 40px rgba(0,0,0,0.55)", background: "radial-gradient(circle at 50% 50%, transparent 55%, rgba(0,0,0,0.35) 100%)" }}
       />
       <div className="absolute left-4 top-4 flex gap-2">
         <ScorePanel userId={player.userId} />
