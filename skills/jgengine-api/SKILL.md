@@ -1098,9 +1098,9 @@ death              onDeath (reason-aware drops/command), entity.died, auto kill 
 game.loot          register / has / roll / grantToPlayer   (lootTable() = pure factory)
 game.trade         canBuy / canSell / buy / sell / tradableAt
 game.quest         register, accept…turnIn, bind(entity.died | inventory.added), declarative rewards
-game.social        friends (persisted), party (ephemeral), presence
+game.social        friends (persisted, requests listable), party (ephemeral, invites listable), presence, emotes (nearby broadcast), worldInvites (accept → join target)
+game.chat          send / whisper / history / register — global/party/proximity channels, rate-limited, mute via blocked set
 game.roster        capture / release / list / setEquipped — persisted owned-creature roster
-game.social        friends (persisted), party (ephemeral), presence, emotes (nearby broadcast)
 game.events/feed/leaderboard   on / bind+push+recent / track+increment+getTop
 applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
@@ -1116,8 +1116,11 @@ physics/physicsWorld  optional headless rigid-body sim (PhysicsWorld) — not th
 audio/audioFalloff computeFalloffGain / resolveEmitterGain — pure distance→gain curve; shell plays it
 time/beatClock     createBeatClock (BPM ticks) + createBeatInputBuffer (buffered action → next beat)
 ws/voiceChannel    createVoiceChannelRouter — positional falloff + simultaneous non-positional channels
+multiplayer/identity   AuthSession + sessionPlayer + resolveGuestSession — Clerk/better-auth via react structural adapters
+multiplayer/chatContract  ChatTransport (hooks) / ChatSync (callbacks) — ws + convex bindings, local for dev
+multiplayer/voiceContract VoiceTransport (join/leave/publish/subscribers) + createPushToTalk — media plane host-supplied
 GameBackend        { transport, feeds?, presence? } — Convex is one adapter (createConvexBackend)
-@jgengine/react    GameProvider + hooks + headless primitives; layout only in GameUI.tsx
+@jgengine/react    GameProvider + hooks + headless primitives (incl. identity/chat/voice/social kits); layout only in GameUI.tsx
 ```
 
 Engine ships verbs and primitives. Your game ships nouns.
