@@ -1,13 +1,88 @@
 import { execFileSync } from "node:child_process";
+import { existsSync, readdirSync } from "node:fs";
 
 const git = (...args) => {
   try {
-    return execFileSync("git", args, { stdio: ["ignore", "pipe", "ignore"] })
+    return execFileSync("git", args, { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 })
       .toString()
       .trim();
   } catch {
     return null;
   }
+};
+
+const healPrimary = (primaryRoot) => {
+  const notes = [];
+  const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
+
+  const registered = new Set(
+    (git("-C", primaryRoot, "worktree", "list", "--porcelain") ?? "")
+      .split("\n")
+      .filter((line) => line.startsWith("worktree "))
+      .map((line) => norm(line.slice("worktree ".length))),
+  );
+  const worktreesDir = `${primaryRoot}/.claude/worktrees`;
+  if (existsSync(worktreesDir)) {
+    for (const entry of readdirSync(worktreesDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const full = `${worktreesDir}/${entry.name}`;
+      if (!registered.has(norm(full))) {
+        notes.push(
+          `⚠️ Stray folder ${full} is NOT a registered git worktree (its registration was removed ` +
+            `while the folder survived). A session still running inside it resolves git to the ` +
+            `primary checkout and loads no hooks — treat anything it reports about repo state as ` +
+            `wrong. The folder can be deleted once no session is using it; if unsure, tell the user.`,
+        );
+      }
+    }
+  }
+
+  const primaryBranch = git("-C", primaryRoot, "rev-parse", "--abbrev-ref", "HEAD");
+  if (!primaryBranch || primaryBranch === "HEAD") return notes;
+  const defaultBranch =
+    (git("-C", primaryRoot, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD") ?? "")
+      .split("/")
+      .pop() || "main";
+  const dirtyTracked = git("-C", primaryRoot, "status", "--porcelain", "--untracked-files=no");
+
+  if (primaryBranch === defaultBranch) {
+    if (dirtyTracked) {
+      notes.push(
+        `⚠️ The primary checkout has uncommitted tracked changes while on ${defaultBranch}. The ` +
+          `primary must always be clean — some process is editing it directly, bypassing the ` +
+          `worktree flow. Do NOT discard, overwrite, or commit those files; report this to the user.`,
+      );
+    }
+    return notes;
+  }
+
+  const unpushed = Number(
+    git("-C", primaryRoot, "rev-list", "--count", "HEAD", "--not", "--remotes"),
+  );
+  if (unpushed === 0 && dirtyTracked === "") {
+    if (git("-C", primaryRoot, "switch", defaultBranch) !== null) {
+      git("-C", primaryRoot, "pull", "--ff-only");
+      notes.push(
+        `Self-healed: the primary checkout was parked on "${primaryBranch}" (fully pushed, ` +
+          `clean) — a previous session ended without switching back. It is now on ${defaultBranch} ` +
+          `and fast-forwarded. Nothing for you to do about it.`,
+      );
+    } else {
+      notes.push(
+        `⚠️ The primary checkout is parked on "${primaryBranch}" and the automatic switch back ` +
+          `to ${defaultBranch} failed. Run: git -C "${primaryRoot}" switch ${defaultBranch}`,
+      );
+    }
+    return notes;
+  }
+
+  notes.push(
+    `⚠️ The primary checkout is parked on "${primaryBranch}" with ` +
+      (unpushed > 0 ? `${unpushed} unpushed commit(s)` : `uncommitted tracked changes`) +
+      ` — NOT auto-switching, that work would be stranded. Push or commit it from the primary ` +
+      `(git -C "${primaryRoot}" ...), then return it to ${defaultBranch}. Tell the user if unsure whose work it is.`,
+  );
+  return notes;
 };
 
 const emit = (context) => {
@@ -35,7 +110,10 @@ if (inWorktree) {
       `Fast-forward the primary checkout once the merge lands (git -C "${primaryRoot}" pull --ff-only — ` +
       `merging only moves origin/main, not the local clone), or leave it for the next session's pull, ` +
       `then ExitWorktree (remove) — don't ask the user to merge, and don't merge over doubt. ` +
-      `Echo 🚀 in your reply after queuing a merge so the chat shows it.`,
+      `Echo 🚀 in your reply after queuing a merge so the chat shows it.` +
+      healPrimary(primaryRoot)
+        .map((note) => `\n\n${note}`)
+        .join(""),
   );
 }
 
