@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const SKELETON_FILES = new Set(["game.config.ts", "index.tsx", "main.tsx", "loop.ts", "world.ts"]);
+const SKELETON_FILES = new Set(["game.config.ts", "index.tsx", "main.tsx", "loop.ts", "world.ts", "index.css"]);
 const SKELETON_DIRS = new Set(["game"]);
 
 const gamesDir = join(process.cwd(), "Games");
@@ -15,12 +15,28 @@ const problems: string[] = [];
 for (const name of readdirSync(gamesDir)) {
   const gameDir = join(gamesDir, name);
   if (!statSync(gameDir).isDirectory()) continue;
-  if (!existsSync(join(gameDir, "package.json"))) continue;
+  const packageJsonPath = join(gameDir, "package.json");
+  if (!existsSync(packageJsonPath)) continue;
+
+  if (!existsSync(join(gameDir, "index.html"))) {
+    problems.push(`${rel(gameDir)}: missing index.html for the standalone dev harness`);
+  }
+  if (!existsSync(join(gameDir, "vite.config.ts"))) {
+    problems.push(`${rel(gameDir)}: missing vite.config.ts for the standalone dev harness`);
+  }
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { scripts?: Record<string, string> };
+  if (packageJson.scripts?.dev === undefined) {
+    problems.push(`${rel(packageJsonPath)}: missing a "dev" script to launch the standalone harness`);
+  }
 
   const srcDir = join(gameDir, "src");
   if (!existsSync(srcDir)) {
     problems.push(`${rel(gameDir)}: missing src/`);
     continue;
+  }
+
+  if (!existsSync(join(srcDir, "index.css"))) {
+    problems.push(`${rel(srcDir)}: missing index.css for the standalone dev harness`);
   }
 
   const configPath = join(srcDir, "game.config.ts");
@@ -51,9 +67,11 @@ if (problems.length > 0) {
     `\ncheck-game-shape: ${problems.length} issue(s) off the canonical shape:\n` +
       problems.map((p) => `  ${p}`).join("\n") +
       `\n\nEvery game is one shape: src/ holds only the skeleton\n` +
-      `  game.config.ts  index.tsx  main.tsx  loop.ts  world.ts\n` +
+      `  game.config.ts  index.tsx  main.tsx  loop.ts  world.ts  index.css\n` +
       `and all game-specific modules, ui, and tests live under src/game/.\n` +
-      `game.config.ts is the single entry — defineGame({...}) from "@jgengine/shell/defineGame".\n`,
+      `game.config.ts is the single entry — defineGame({...}) from "@jgengine/shell/defineGame".\n` +
+      `Every game is also a standalone dev harness: index.html and vite.config.ts at the game root,\n` +
+      `src/index.css for Tailwind, and a "dev" script in package.json to launch it.\n`,
   );
   process.exit(1);
 }

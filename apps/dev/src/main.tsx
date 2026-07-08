@@ -26,6 +26,18 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   },
 };
 
+const gameModules = import.meta.glob<{ game: PlayableGame; uiScenario?: UiPreviewScenario }>(
+  "../../../Games/*/src/index.tsx",
+);
+
+const gameLoaders = Object.entries(gameModules).map(
+  ([path, loader]) => [path.split("/").at(-3)!, loader] as const,
+);
+
+const gameEntries = Object.fromEntries(
+  gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.game)]),
+);
+
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
   "pointer-commander": () =>
@@ -42,20 +54,13 @@ const gameRegistry: GameRegistry = {
   "social-hub": () =>
     import("@jgengine/shell/demo/socialHubDemo").then((module) => module.socialHubGame),
   "ui-kit": () => import("@jgengine/shell/demo/uiKitDemo").then((module) => module.uiKitGame),
-  "block-stacker": () => import("@games/block-stacker").then((module) => module.game),
-  "maze-muncher": () => import("@games/maze-muncher").then((module) => module.game),
-  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.game),
-  "platform-hopper": () => import("@games/platform-hopper").then((module) => module.game),
-  "spire-cards": () => import("@games/spire-cards").then((module) => module.game),
+  ...gameEntries,
 };
 
-const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {
-  "block-stacker": () =>
-    import("@games/block-stacker").then((module) => module.blockStackerUiScenario),
-  "maze-muncher": () =>
-    import("@games/maze-muncher").then((module) => module.mazeMuncherScenario),
-  "spire-cards": () => import("@games/spire-cards").then((module) => module.uiScenario),
-};
+const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario | undefined>>> =
+  Object.fromEntries(
+    gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.uiScenario)]),
+  );
 
 const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID =

@@ -8,9 +8,18 @@ import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import "./index.css";
 
+const gameModules = import.meta.glob<{ game: PlayableGame }>("../../../Games/*/src/index.tsx");
+
+const gameEntries = Object.fromEntries(
+  Object.entries(gameModules).map(([path, loader]) => [
+    path.split("/").at(-3)!,
+    () => loader().then((module) => module.game),
+  ]),
+);
+
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
-  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.game),
+  ...gameEntries,
 };
 
 const urlParams = new URLSearchParams(window.location.search);

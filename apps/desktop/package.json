@@ -10,7 +10,6 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@games/voxel-mine": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3"

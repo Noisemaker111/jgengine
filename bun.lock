@@ -23,10 +23,14 @@
         "three": "^0.182.0",
       },
       "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
         "typescript": "^5",
+        "vite": "^6.2.2",
       },
     },
     "Games/maze-muncher": {
@@ -42,10 +46,14 @@
         "three": "^0.182.0",
       },
       "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
         "typescript": "^5",
+        "vite": "^6.2.2",
       },
     },
     "Games/platform-hopper": {
@@ -61,10 +69,14 @@
         "three": "^0.182.0",
       },
       "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
         "typescript": "^5",
+        "vite": "^6.2.2",
       },
     },
     "Games/spire-cards": {
@@ -80,10 +92,14 @@
         "three": "^0.182.0",
       },
       "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
         "typescript": "^5",
+        "vite": "^6.2.2",
       },
     },
     "Games/voxel-mine": {
@@ -99,17 +115,20 @@
         "three": "^0.182.0",
       },
       "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
         "typescript": "^5",
+        "vite": "^6.2.2",
       },
     },
     "apps/desktop": {
       "name": "@jgengine-apps/desktop",
       "version": "0.1.0",
       "dependencies": {
-        "@games/voxel-mine": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -129,11 +148,6 @@
       "name": "@jgengine-apps/dev",
       "version": "0.1.0",
       "dependencies": {
-        "@games/block-stacker": "workspace:*",
-        "@games/maze-muncher": "workspace:*",
-        "@games/platform-hopper": "workspace:*",
-        "@games/spire-cards": "workspace:*",
-        "@games/voxel-mine": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
         "react-dom": "19.2.3",

@@ -1,2 +1,2 @@
 export { game } from "./game.config";
-export { mazeMuncherScenario } from "./game/scenario";
+export { mazeMuncherScenario as uiScenario } from "./game/scenario";

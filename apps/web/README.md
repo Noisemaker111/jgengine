@@ -11,6 +11,10 @@ The skill pages are rendered straight from the repo's `skills/*/SKILL.md` (bundl
 
 Because of that, **any push to `main` that touches `skills/` or `packages/` rebuilds and redeploys the site with the current engine.** Editing a skill or shipping an engine change *is* a website update — there is no separate content step.
 
+### Games are built from `apps/dev`, not authored here
+
+`vite build` also builds the game player: the `games-player` plugin in [`vite.config.ts`](vite.config.ts) shells out to `apps/dev`'s `build:site` script, which runs the same Vite app used for local game dev with `--base /play/` into `public/play`. Games are served at `/play/?game=<id>` (the dev runner already reads `?game` from the URL). The header's Games dropdown ([`src/components/Layout.tsx`](src/components/Layout.tsx)) is generated at build time from [`src/content/games.ts`](src/content/games.ts), which globs `Games/*/package.json` — add a game under `Games/` and it appears in the dropdown and at `/play/` with no other wiring.
+
 ## Develop
 
 ```sh
@@ -31,9 +35,9 @@ Uses the **Nitro** Vite plugin (`nitro/vite`). Nitro auto-detects Vercel at buil
 | Production Branch | **`main`** |
 | Install / Build Command | leave auto (`bun install` / `bun run build`) |
 | Output Directory | leave auto (Nitro emits the Vercel Build Output) |
-| Ignored Build Step | `git diff --quiet HEAD^ HEAD -- . ../../skills ../../packages` |
+| Ignored Build Step | `git diff --quiet HEAD^ HEAD -- . ../../skills ../../packages ../../Games ../dev` |
 
-The Ignored Build Step (run from `apps/web`) forces a rebuild whenever this app, the skills, or any engine package changed — so an engine release on `main` redeploys the site. Exit 1 = build, exit 0 = skip.
+The Ignored Build Step (run from `apps/web`) forces a rebuild whenever this app, the skills, an engine package, or a game changed — so an engine release or a new game on `main` redeploys the site. Exit 1 = build, exit 0 = skip.
 
 After the first import, add the **`jgengine.com`** domain to the project (Vercel → Domains). Every push to `main` then builds and goes live automatically.
 

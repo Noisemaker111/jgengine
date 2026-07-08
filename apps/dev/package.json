@@ -6,14 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:site": "vite build --base /play/ --outDir ../web/public/play --emptyOutDir",
     "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@games/block-stacker": "workspace:*",
-    "@games/maze-muncher": "workspace:*",
-    "@games/platform-hopper": "workspace:*",
-    "@games/spire-cards": "workspace:*",
-    "@games/voxel-mine": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3"
