@@ -1,20 +1,20 @@
-import apiMd from "../../../../skills/jgengine-api/SKILL.md?raw";
-import assetsMd from "../../../../skills/jgengine-assets/SKILL.md?raw";
-import newgameMd from "../../../../skills/jgengine-newgame/SKILL.md?raw";
-import uiMd from "../../../../skills/jgengine-ui/SKILL.md?raw";
-import verifyMd from "../../../../skills/jgengine-verify/SKILL.md?raw";
+const skillDocs = import.meta.glob<string>("../../../../skills/*/SKILL.md", {
+  query: "?raw",
+  import: "default",
+});
 
-const apiReferenceModules = import.meta.glob(
+const apiReferenceDocs = import.meta.glob<string>(
   "../../../../skills/jgengine-api/reference/*.md",
-  { query: "?raw", import: "default", eager: true },
-) as Record<string, string>;
+  { query: "?raw", import: "default" },
+);
 
-const apiFullMd = [
-  apiMd,
-  ...Object.keys(apiReferenceModules)
-    .sort()
-    .map((path) => apiReferenceModules[path]),
-].join("\n\n");
+export const SKILL_SLUGS = [
+  "jgengine-newgame",
+  "jgengine-api",
+  "jgengine-ui",
+  "jgengine-assets",
+  "jgengine-verify",
+] as const;
 
 export type Skill = {
   slug: string;
@@ -40,13 +40,17 @@ function parse(slug: string, raw: string): Skill {
   };
 }
 
-export const SKILLS: Skill[] = [
-  parse("jgengine-newgame", newgameMd),
-  parse("jgengine-api", apiFullMd),
-  parse("jgengine-ui", uiMd),
-  parse("jgengine-assets", assetsMd),
-  parse("jgengine-verify", verifyMd),
-];
-
-export const skillBySlug = (slug: string): Skill | undefined =>
-  SKILLS.find((s) => s.slug === slug);
+export async function loadSkill(slug: string): Promise<Skill | undefined> {
+  const docPath = Object.keys(skillDocs).find((path) => path.split("/").at(-2) === slug);
+  if (docPath === undefined) return undefined;
+  let raw = await skillDocs[docPath]!();
+  if (slug === "jgengine-api") {
+    const references = await Promise.all(
+      Object.keys(apiReferenceDocs)
+        .sort()
+        .map((path) => apiReferenceDocs[path]!()),
+    );
+    raw = [raw, ...references].join("\n\n");
+  }
+  return parse(slug, raw);
+}

@@ -1,13 +1,12 @@
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
-import { marked } from "marked";
 
 import { CopyButton } from "../components/Copy";
 import { Page } from "../components/Layout";
-import { skillBySlug } from "../content/skills";
+import { loadSkill } from "../content/skills";
 
 export const Route = createFileRoute("/skills/$name")({
-  loader: ({ params }) => {
-    const skill = skillBySlug(params.name);
+  loader: async ({ params }) => {
+    const [skill, { marked }] = await Promise.all([loadSkill(params.name), import("marked")]);
     if (!skill) throw notFound();
     return {
       name: skill.name,
