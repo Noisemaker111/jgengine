@@ -61,6 +61,22 @@ export interface SocialPartyLeftEvent {
   partyId: string;
 }
 
+export interface SocialWorldInvitedEvent {
+  inviteId: string;
+  fromUserId: string;
+  toUserId: string;
+  serverId: string;
+  joinCode?: string;
+}
+
+export interface SocialWorldAcceptedEvent {
+  inviteId: string;
+  userId: string;
+  fromUserId: string;
+  serverId: string;
+  joinCode?: string;
+}
+
 export interface StatLevelUpEvent {
   userId: string;
   stat: string;
@@ -156,6 +172,8 @@ export interface GameEventMap {
   "social.friend.added": SocialFriendAddedEvent;
   "social.party.joined": SocialPartyJoinedEvent;
   "social.party.left": SocialPartyLeftEvent;
+  "social.world.invited": SocialWorldInvitedEvent;
+  "social.world.accepted": SocialWorldAcceptedEvent;
   "stat.levelUp": StatLevelUpEvent;
   "projectile.settled": ProjectileSettledEvent;
   "worldItem.dropped": WorldItemDroppedEvent;

@@ -5,7 +5,7 @@ import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import type { GameEvents } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/game/feed";
 import type { QuestInstance } from "@jgengine/core/game/quest";
-import type { FriendEntry, PartyMemberEntry, PresenceInfo } from "@jgengine/core/game/social";
+import type { FriendEntry, PartyMemberEntry, PresenceInfo, WorldInvite } from "@jgengine/core/game/social";
 import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import type { StatValue } from "@jgengine/core/scene/entityStats";
@@ -94,6 +94,10 @@ export function useParty(): PartyMemberEntry[] {
 
 export function usePresence(userId: string): PresenceInfo {
   return useGameStore((ctx) => ctx.game.social.presence.get(userId));
+}
+
+export function useWorldInvites(): WorldInvite[] {
+  return useGameStore((ctx) => ctx.game.social.worldInvites.listFor(ctx.player.userId));
 }
 
 export function useRoster(userId?: string): readonly RosterEntry[] {

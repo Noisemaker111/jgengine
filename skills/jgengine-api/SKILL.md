@@ -702,9 +702,12 @@ ctx.game.social.friends.canRequest / request / accept / remove / block / list   
 ctx.game.social.party.register({ maxMembers })   // then canInvite / invite / accept / kick / leave / promote / list / membersOf
 ctx.game.social.presence.get(userId)             // { online, serverId?, zoneId?, instanceId? }
 ctx.game.social.emotes.play(fromUserId, emoteId, radius?)   // → { from, emoteId, at, recipients } | { reason }
+ctx.game.social.worldInvites.invite(fromUserId, toUserId, { serverId, joinCode? })   // then canInvite / accept / decline / listFor
 ```
 
 Party is ephemeral session state (invites expire; leader leaving promotes the next member). Events: `social.friend.added`, `social.party.joined`, `social.party.left`.
+
+**World invites** bridge friends and `multiplayer/matchmaking`: an invite carries the `{ serverId, joinCode? }` of the session you're in (the same fields as a `SessionListing`); `accept(userId, inviteId)` → `{ target }` is the join target you hand to your backend's `joinServer`/`joinByCode` — the invite never joins anything itself. Invites are ephemeral like party invites (TTL via `SocialDeps.worldInviteTtlMs`, default 60s; blocked users can't invite either direction). Events: `social.world.invited`, `social.world.accepted`. React: `useWorldInvites()` lists pending invites for the local player.
 
 `emotes.play` reuses `scene.entity.inRadius` to find nearby **player**-role entities (default radius 20) and emits `emote.played` — never build a parallel proximity broadcast. Emote ids are game-defined strings (no registration, same convention as effect ids). Bind it into the existing feed primitive for a HUD feed: `ctx.game.feed.bind("emote.played")` + `useFeed({ action: "emote.played" })` — no dedicated emote hook exists or is needed.
 
@@ -953,7 +956,7 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 | `useInventory(id)` / `useCurrency(id)` | slots / balance |
 | `useFeed({ action, limit? })` | recent entries — kills, loot, any action |
 | `useQuestJournal()` | active quests + objective progress |
-| `useFriends()` / `useParty()` / `usePresence(userId)` | social panels |
+| `useFriends()` / `useParty()` / `usePresence(userId)` / `useWorldInvites()` | social panels |
 | `useSession()` / `useAuthedPlayer({ guestSeed? })` | auth session from `<GameIdentityProvider>` / the `{ userId, isNew }` player seam for `createGameContext` |
 | `useRoster(userId?)` | owned/captured roster entries for a user (defaults to the local player) |
 | `useLeaderboard(stat, { scope, limit? })` | `{ userId, value }[]` |

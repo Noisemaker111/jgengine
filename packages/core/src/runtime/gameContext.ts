@@ -387,6 +387,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     ),
     presence: rawSocial.presence,
     emotes: rawSocial.emotes,
+    worldInvites: notifyAfter(
+      rawSocial.worldInvites,
+      ["invite", "accept", "decline"],
+      signal.notify,
+    ),
   };
   const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify);
   const roster = notifyAfter(
