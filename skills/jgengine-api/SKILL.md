@@ -149,6 +149,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Combat-snapshot replay | `multiplayer/combatSnapshot` | `serializeBoard`, `cloneSnapshot`, `replayCombat`, `BoardSnapshot`, `SnapshotUnit`, `CombatRules`, `ReplayResult` |
 | Session matchmaking | `multiplayer/matchmaking` | `browseSessions`, `findByJoinCode`, `quickMatch`, `matchesFilter`, `normalizeJoinCode`, `generateJoinCode`, `SessionListing`, `MatchFilter` |
 | Auth identity | `multiplayer/identity` | `AuthSession`, `PlayerIdentity`, `sessionPlayer`, `resolveGuestSession` |
+| Text chat | `game/chat`, `multiplayer/chatContract` | `createChat`, `Chat`, `ChatMessage`, `ChatChannelDef`, `whisperChannelId`, `createChatRateLimiter`, `ChatTransport`, `ChatSync`, `createLocalChatTransport` |
 | Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes` |
 | Reveal query | `sensor/revealQuery` | `createRevealQuery`, `RevealQuery`, `RevealQueryOptions`, `RevealHit` |
 | Hidden-state probe | `sensor/hiddenStateProbe` | `probeHiddenState`, `probeHiddenStateAll`, `HiddenStateSource`, `HiddenStateValue`, `SensorProbeOptions`, `SensorReading` |
@@ -711,6 +712,20 @@ Party is ephemeral session state (invites expire; leader leaving promotes the ne
 
 `emotes.play` reuses `scene.entity.inRadius` to find nearby **player**-role entities (default radius 20) and emits `emote.played` — never build a parallel proximity broadcast. Emote ids are game-defined strings (no registration, same convention as effect ids). Bind it into the existing feed primitive for a HUD feed: `ctx.game.feed.bind("emote.played")` + `useFeed({ action: "emote.played" })` — no dedicated emote hook exists or is needed.
 
+## Chat
+
+```ts
+ctx.game.chat.send(fromUserId, channelId, body)      // → { message, recipients } | { reason }
+ctx.game.chat.whisper(fromUserId, toUserId, body)    // stable per-pair channel "whisper:<a>:<b>"
+ctx.game.chat.history(channelId, { limit?, viewerUserId? })   // viewer filter drops blocked senders
+ctx.game.chat.register({ id, kind, radius?, historyLimit?, rateLimit? })   // custom channels
+ctx.game.chat.channels() / snapshot() / hydrate(data)
+```
+
+Built-in channels: `global` (everyone), `party` (reuses `social.party.membersOf`; rejects "not in a party"), `proximity` (reuses the same spatial/entity seam as emotes, default radius 20, **player**-role entities only). `kind` picks the recipient resolution; custom channels pick one of the three kinds. Sends are trimmed, capped (500 chars), and rate-limited per user per channel (default 10/10s, sliding window — `createChatRateLimiter` is the reusable pure primitive). Mute rides social's blocked set: blocked pairs can't whisper, and blocked senders are dropped from party/proximity recipients and from `history` when `viewerUserId` is passed. Every send emits `chat.message` (recipients omitted = broadcast). History is a bounded ring per channel (default 100) with `snapshot`/`hydrate` like `Friends`.
+
+**Remote chat seam** (`multiplayer/chatContract`): `ChatTransport` is the hook-shaped contract (`useMessages(channelId | "skip")` / `useActions()`, identity-stable like `PresenceTransport`); `ChatSync` is the callback shape for backends that can't host React hooks. Bindings: ws — `createWsBackend(...).chatSync` / `.chatSyncFor(serverId)` over `chatSend` frames + a `chat` update channel (host relays per-channel rings, validates length + rate limit); Convex — `@jgengine/convex/convexChatTransport` `createConvexChatTransport({ messages, sendMessage })` (one live query + one mutation); local/dev — `createLocalChatTransport()`. React lifts a `ChatSync` via `chatTransportFromSync`.
+
 ## Cosmetic loadout
 
 ```ts
@@ -958,6 +973,7 @@ All hooks bind through the ctx change signal (`ctx.subscribe`/`ctx.version`):
 | `useQuestJournal()` | active quests + objective progress |
 | `useFriends()` / `useParty()` / `usePresence(userId)` / `useWorldInvites()` | social panels |
 | `useSession()` / `useAuthedPlayer({ guestSeed? })` | auth session from `<GameIdentityProvider>` / the `{ userId, isNew }` player seam for `createGameContext` |
+| `useChat(channelId, { limit? })` | local-player-filtered recent messages from `ctx.game.chat` |
 | `useRoster(userId?)` | owned/captured roster entries for a user (defaults to the local player) |
 | `useLeaderboard(stat, { scope, limit? })` | `{ userId, value }[]` |
 | `useActivePrompt(prompts)` | nearest proximity prompt |
@@ -970,6 +986,7 @@ Import hooks from `@jgengine/react/hooks`, components from `@jgengine/react/comp
 
 Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox` (+ `lineClassName`/`speakerClassName`/`choicesClassName`/`choiceClassName`/`checkClassName`, `rollCheck`-gated choices), `SkillCheckBar` (+ `trackClassName`/`zoneClassName`/`markerClassName`), `QteTrack` (+ `stepClassName`/`activeClassName`/`doneClassName`), `CaptureOdds` (+ `fillClassName`), `ToastStack`, `DeathScreen`, `LevelUpFlash`. Not yet implemented: `useServer`.
 **Identity (`@jgengine/react/identity`)** — `<GameIdentityProvider source={…}>` + `useSession()`. Sources: `clerkIdentity({ isLoaded, isSignedIn, user })` maps Clerk's `useUser()` shape, `betterAuthIdentity({ data, isPending })` maps better-auth's `useSession()` shape (both pure structural mappers — no SDK imports, one line at the call site), `guestIdentity(seed?)` for local/dev. Gate UI with `<RequireSession fallback loading>`; `<UserBadge>` / `<SignOutButton>` are headless like everything else. `useAuthedPlayer({ guestSeed? })` returns the `{ userId, isNew }` to hand `createGameContext` — feed the player seam from the session instead of hand-picking a userId.
+**Chat (`@jgengine/react/chat`)** — headless `<ChatPanel>` (tabs + log + input composition with internal active-channel state), or compose `<ChannelTabs active onSelect>`, `<ChatLog channelId>` (auto-scrolls, `renderMessage` override), `<ChatInput channelId onSent onRejected>` yourself. All drive `ctx.game.chat` through `useChat`. `chatTransportFromSync(sync)` lifts a callback-style `ChatSync` (e.g. `createWsBackend(...).chatSyncFor(serverId)`) into the hook-shaped `ChatTransport` for remote chat.
 **Drag/rotate/drop/snap gesture layer** (`@jgengine/react/dragLayer`) — a 2-D UI-space gesture layer over the card/shaped-grid primitives, distinct from 3-D world drag. `useDragLayer<T>({ onDrop })` owns pointer-follow drag state (begin/rotate/setTarget/end); pair it with the headless, className-passthrough `DraggableCard` (right-click rotates), `DropZone` (reports the snapped `cellFromPoint` cell + active state), and `DragGhost` (a pointer-anchored preview). Drop resolution and overlap validation stay the game's job via `canPlace`/`placeShaped` from `inventory/shapedGrid` — Balatro hand→play drags, Backpack Hero grid placement, Slay-the-Spire card-onto-enemy targeting.
 Headless components (className passthrough, no baked-in styling): `SlotGrid`, `HealthBar` (+ `fillClassName`), `CurrencyPill`, `ProximityPrompt`, `Screen`, `KeybindRow`, `DialogueBox`, `ToastStack`, `DeathScreen`, `LevelUpFlash`. Map components (bind a core `MarkerSet`/`FogField`, `kindStyles` palette overridable): `Minimap` (framed circular player-centered map — fog + markers + facing arrow, optional baked terrain `background`+`mapBounds`), `Compass` (facing strip with cardinals + marker pips), `WorldMap` (full-bounds top-down overlay). Not yet implemented: `useServer`, `useDialogue`.
 

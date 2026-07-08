@@ -5,6 +5,7 @@ import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import type { GameEvents } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/game/feed";
 import type { QuestInstance } from "@jgengine/core/game/quest";
+import type { ChatMessage } from "@jgengine/core/game/chat";
 import type { FriendEntry, PartyMemberEntry, PresenceInfo, WorldInvite } from "@jgengine/core/game/social";
 import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
@@ -98,6 +99,13 @@ export function usePresence(userId: string): PresenceInfo {
 
 export function useWorldInvites(): WorldInvite[] {
   return useGameStore((ctx) => ctx.game.social.worldInvites.listFor(ctx.player.userId));
+}
+
+export function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] {
+  const limit = options?.limit ?? 50;
+  return useGameStore((ctx) =>
+    ctx.game.chat.history(channelId, { limit, viewerUserId: ctx.player.userId }),
+  );
 }
 
 export function useRoster(userId?: string): readonly RosterEntry[] {

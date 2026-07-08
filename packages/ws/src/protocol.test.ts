@@ -22,6 +22,8 @@ test("client messages round-trip through the codec", () => {
     { v: 1, t: "join", id: 8, gameId: "wow", attributes: { visibility: "private", joinCode: "ABC123" } },
     { v: 1, t: "joinByCode", id: 9, gameId: "wow", code: "ABC123" },
     { v: 1, t: "browse", id: 10, gameId: "wow", filter: { mode: "ranked", notFull: true }, limit: 5 },
+    { v: 1, t: "chatSend", id: 11, serverId: "srv-1", channelId: "global", body: "hello" },
+    { v: 1, t: "subscribe", id: 12, channel: "chat", serverId: "srv-1", action: "global" },
   ];
   for (const message of messages) {
     expect(decodeWsClientMessage(encodeWsMessage(message))).toEqual(message);
@@ -41,6 +43,14 @@ test("server messages round-trip through the codec", () => {
       serverId: "srv-1",
       data: [{ userId: "alice", position: { x: 0, y: 0, z: 0 }, rotationY: 0, rotationPitch: 0, lastSeenAt: 1 }],
     },
+    {
+      v: 1,
+      t: "update",
+      channel: "chat",
+      serverId: "srv-1",
+      action: "global",
+      data: [{ id: "msg_1", channelId: "global", fromUserId: "alice", body: "hello", at: 1 }],
+    },
   ];
   for (const message of messages) {
     expect(decodeWsServerMessage(encodeWsMessage(message))).toEqual(message);
@@ -55,6 +65,7 @@ test("decoder rejects garbage, wrong versions, and malformed fields", () => {
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { x: 1 } }))).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "joinByCode", id: 1, gameId: "g" }))).toBeNull();
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "browse", id: 1 }))).toBeNull();
+  expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "chatSend", id: 1, serverId: "s", channelId: "g" }))).toBeNull();
   expect(decodeWsServerMessage(JSON.stringify({ v: 1, t: "reply", id: 1, ok: false }))).toBeNull();
   expect(decodeWsServerMessage(JSON.stringify({ v: 1, t: "update", channel: "nope", serverId: "s" }))).toBeNull();
 });
