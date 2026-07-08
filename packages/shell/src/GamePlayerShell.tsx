@@ -44,6 +44,7 @@ import {
   resolveMovementIntent,
 } from "@jgengine/core/movement/movementModel";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
@@ -477,6 +478,7 @@ function FrameDriver({
   const hasReportedTickError = useRef(false);
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
+  const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
 
   useFrame((_state, rawDt) => {
     try {
@@ -507,8 +509,10 @@ function FrameDriver({
         player.movement.walkSpeed ?? 2,
         rawDt,
       );
+      const nextX = player.position[0] + step.stepX;
+      const nextZ = player.position[2] + step.stepZ;
       ctx.scene.entity.setPose(playerId, {
-        position: [player.position[0] + step.stepX, motion.jumpOffset, player.position[2] + step.stepZ],
+        position: [nextX, ground.sampleHeight(nextX, nextZ) + motion.jumpOffset, nextZ],
         rotationY: intent.moving
           ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
           : player.rotationY,
