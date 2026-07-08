@@ -41,6 +41,7 @@ const gameRegistry: GameRegistry = {
     import("@jgengine/shell/demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
   "social-hub": () =>
     import("@jgengine/shell/demo/socialHubDemo").then((module) => module.socialHubGame),
+  "ui-kit": () => import("@jgengine/shell/demo/uiKitDemo").then((module) => module.uiKitGame),
   "block-stacker": () =>
     import("@games/block-stacker").then((module) => module.blockStackerGame),
   "maze-muncher": () => import("@games/maze-muncher").then((module) => module.mazeMuncherGame),

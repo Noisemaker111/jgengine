@@ -7,6 +7,10 @@ description: Use when building, reviewing, or screenshotting a JGengine game's H
 
 Read **`jgengine-api`** for hooks, primitives, and `GameUI.tsx` layout ownership. This skill is **how things should look and behave** — never "put a bordered div around it."
 
+## Reach for the styled kit first
+
+`@jgengine/react/gameui` ships ~50 styled, game-native components that already pass this skill's quality bar — slant-clipped vital bars with damage ghost-trails, four-state ability slots with conic cooldown sweeps and corner keybind badges, bracket-cornered panels, frameless typographic readouts, floating combat text, title/death/results screens, parametric reticles, and a 59-glyph `GameIcon` silhouette catalog (`iconForItemId` maps item ids to sensible defaults). Everything themes through `GameUiThemeProvider` (`emberTheme`, `synthwaveTheme`, `fieldkitTheme`, or a custom `GameUiTheme`), uses inline styles (no Tailwind `@source` dependency), and takes `className` for overrides. Compose your HUD from it, restyle it via the theme, or drop to the headless primitives when a game needs something bespoke — but never hand-roll a gray-box version of a component the kit already ships. Browse it staged: `?game=ui-kit&mode=ui` in `apps/dev`.
+
 ## See what you ship (required)
 
 `@jgengine/shell`'s `GameUiPreview` renders your `GameUI` over a staged `GameContext` (ticks run, hostile targeted, first ability fired) with no gameplay or backend — mount it on a dev route and screenshot it. Judge the image against the quality bar before calling any HUD work done; pass a custom `scenario` to stage richer states (open modals, low health, active quest). Type-green says nothing about whether the HUD renders.
