@@ -49,7 +49,9 @@ import {
   resolveObstacleStep,
   snapPositionToGrid,
   type CollisionObstacle,
+  type MovementTuningOverrides,
 } from "@jgengine/core/movement/movementModel";
+import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import {
   advanceVoxelPlayer,
   createVoxelPlayerBody,
@@ -278,6 +280,23 @@ export function applyMotionImpulses(currentVelocity: number, batch: MotionIntent
 /** The world's declared sky, when its world feature is an environment with one (#196.1). */
 export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironmentDescriptor | undefined {
   return world?.kind === "environment" ? world.sky : undefined;
+}
+
+/**
+ * Maps the game's declared `physics` onto the movement controllers' tuning
+ * overrides. `PhysicsConfig.gravity` is a signed world acceleration (negative
+ * points down, matching every game's config and the Y-up convention), but the
+ * controllers integrate `velocityY -= gravityAcceleration * dt` and so expect a
+ * positive downward magnitude. Negating here is what keeps a down-pointing
+ * gravity pulling the player *down*; passing the signed value straight through
+ * flipped the sign and launched airborne players upward instead.
+ */
+export function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined {
+  if (physics?.gravity === undefined && physics?.jumpVelocity === undefined) return undefined;
+  const tuning: MovementTuningOverrides = {};
+  if (physics.gravity !== undefined) tuning.gravityAcceleration = -physics.gravity;
+  if (physics.jumpVelocity !== undefined) tuning.jumpVelocity = physics.jumpVelocity;
+  return tuning;
 }
 
 /** True when the world is an environment feature with terrain, so the voxel controller should sample its height. */
@@ -739,11 +758,7 @@ function FrameDriver({
     }),
     [collision],
   );
-  const movementTuning = useMemo(() => {
-    const physics = playable.game.physics;
-    if (physics?.gravity === undefined && physics?.jumpVelocity === undefined) return undefined;
-    return { gravityAcceleration: physics.gravity, jumpVelocity: physics.jumpVelocity };
-  }, [playable]);
+  const movementTuning = useMemo(() => resolvePhysicsTuning(playable.game.physics), [playable]);
   const autoPickupRadius = useMemo(() => {
     const cfg = playable.worldItem?.autoPickup;
     if (cfg === undefined || cfg === false) return null;

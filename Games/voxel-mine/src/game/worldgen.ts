@@ -8,7 +8,7 @@ export interface Placement {
   z: number;
 }
 
-export const WORLD_RADIUS = 6;
+export const WORLD_RADIUS = 12;
 export const SHAFT_TOP = -4;
 export const SHAFT_BOTTOM = -9;
 export const BEDROCK_Y = -10;
