@@ -932,7 +932,7 @@ Descriptors from `@jgengine/core/world/features` — config data the runner/worl
 | `plots(config)` | Shared city + instanced interiors |
 | `tilemap({ map })` | 2D/2.5D levels |
 | `flat()` | Plain arena |
-| `environment({ terrain, weather, vegetation, water, structures })` | Composable outdoor scene — terrain + rain/snow + grass + ocean + buildings. Each field takes the matching descriptor: `terrain()`, `rain()`/`snow()`, `grass()`, `ocean()`, `building()` |
+| `environment({ terrain, weather, vegetation, water, structures })` | Composable outdoor scene — terrain + rain/snow + grass + ocean + buildings. Each field takes the matching descriptor: `terrain()`, `rain()`/`snow()`, `grass()`, `ocean()`, `building()`. `building()` and `ocean()` take `position: [x, z]` to site a cluster/water body away from the origin (several settlements, an offset lake); building clusters ground-snap to the terrain field per building |
 
 `parentSpace` positions are local to that space — convert at seams only.
 

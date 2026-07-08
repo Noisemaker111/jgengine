@@ -101,9 +101,10 @@ function Weather({ weather }: { weather: readonly WeatherEnvironmentDescriptor[]
 }
 
 function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
+  const [x, z] = ocean.position ?? [0, 0];
   return (
     <Ocean
-      position-y={ocean.level}
+      position={[x, ocean.level, z]}
       config={{
         size: Math.max(ocean.bounds.w, ocean.bounds.d),
         amplitude: ocean.waveHeight,
@@ -114,14 +115,22 @@ function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
   );
 }
 
-function Structures({ structures }: { structures: BuildingEnvironmentDescriptor }) {
+function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {
   const buildings = useMemo(() => resolveStructureBuildings(structures), [structures]);
 
   return (
     <>
-      {buildings.map((building) => (
-        <GeneratedBuilding key={building.id} building={building} />
-      ))}
+      {buildings.map((building) => {
+        const groundY = field.sampleHeight(
+          (building.bounds.minX + building.bounds.maxX) / 2,
+          (building.bounds.minZ + building.bounds.maxZ) / 2,
+        );
+        return (
+          <group key={building.id} position-y={Number.isFinite(groundY) ? groundY : 0}>
+            <GeneratedBuilding building={building} />
+          </group>
+        );
+      })}
     </>
   );
 }
@@ -138,7 +147,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
         <Water key={`ocean-${index}`} ocean={ocean} />
       ))}
       {structures.map((entry, index) => (
-        <Structures key={`structures-${index}`} structures={entry} />
+        <Structures key={`structures-${index}`} structures={entry} field={field} />
       ))}
       {vegetation.map((grass, index) => (
         <Vegetation key={`grass-${index}`} grass={grass} field={field} />

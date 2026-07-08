@@ -53,6 +53,7 @@ export interface GrassEnvironmentConfig {
 
 export interface OceanEnvironmentConfig {
   bounds?: WorldBounds;
+  position?: EnvironmentVec2;
   level?: number;
   waveHeight?: number;
   waveScale?: number;
@@ -62,6 +63,7 @@ export interface OceanEnvironmentConfig {
 
 export interface BuildingEnvironmentConfig {
   count?: number;
+  position?: EnvironmentVec2;
   footprint?: WorldBounds;
   stories?: readonly [number, number];
   storyHeight?: number;
@@ -90,12 +92,13 @@ export type GrassEnvironmentDescriptor = { kind: "grass" } & Required<
 
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
->;
+> &
+  Pick<OceanEnvironmentConfig, "position">;
 
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
 > &
-  Pick<BuildingEnvironmentConfig, "seed">;
+  Pick<BuildingEnvironmentConfig, "seed" | "position">;
 
 export type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor;
 export type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor;
@@ -249,6 +252,7 @@ export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDesc
     waveScale: config.waveScale ?? 18,
     waveSpeed: config.waveSpeed ?? 0.55,
     color: config.color ?? "#1d7fa3",
+    ...(config.position === undefined ? {} : { position: config.position }),
   };
 }
 
@@ -263,7 +267,10 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
       spacing: config.spacing ?? 2,
       style: config.style ?? "generic",
     },
-    config.seed === undefined ? undefined : { seed: config.seed },
+    {
+      ...(config.seed === undefined ? {} : { seed: config.seed }),
+      ...(config.position === undefined ? {} : { position: config.position }),
+    },
   );
 }
 
