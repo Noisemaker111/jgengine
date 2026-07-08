@@ -5,6 +5,5 @@ dist
 .tanstack
 .vite
 node_modules
-src/routeTree.gen.ts
 public/play
 public/r

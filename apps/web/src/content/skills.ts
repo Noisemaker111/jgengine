@@ -1,6 +1,3 @@
-import apiMd from "../../../../skills/jgengine-api/SKILL.md?raw";
-import newgameMd from "../../../../skills/jgengine-newgame/SKILL.md?raw";
-import verifyMd from "../../../../skills/jgengine-verify/SKILL.md?raw";
 const skillDocs = import.meta.glob<string>("../../../../skills/*/SKILL.md", {
   query: "?raw",
   import: "default",
@@ -11,13 +8,7 @@ const apiReferenceDocs = import.meta.glob<string>(
   { query: "?raw", import: "default" },
 );
 
-export const SKILL_SLUGS = [
-  "jgengine-newgame",
-  "jgengine-api",
-  "jgengine-ui",
-  "jgengine-assets",
-  "jgengine-verify",
-] as const;
+export const SKILL_SLUGS = ["jgengine-newgame", "jgengine-api", "jgengine-verify"] as const;
 
 export type Skill = {
   slug: string;
@@ -43,14 +34,6 @@ function parse(slug: string, raw: string): Skill {
   };
 }
 
-export const SKILLS: Skill[] = [
-  parse("jgengine-newgame", newgameMd),
-  parse("jgengine-api", apiFullMd),
-  parse("jgengine-verify", verifyMd),
-];
-
-export const skillBySlug = (slug: string): Skill | undefined =>
-  SKILLS.find((s) => s.slug === slug);
 export async function loadSkill(slug: string): Promise<Skill | undefined> {
   const docPath = Object.keys(skillDocs).find((path) => path.split("/").at(-2) === slug);
   if (docPath === undefined) return undefined;
