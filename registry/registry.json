@@ -7,7 +7,7 @@
       "name": "game-icon",
       "type": "registry:ui",
       "title": "Game Icon",
-      "description": "79-glyph silhouette icon catalog with iconForItemId / iconForAction keyword resolvers — real, distinct icons for hotbar, inventory, and ability slots.",
+      "description": "79-glyph silhouette icon catalog with iconForItemId / iconForAction keyword resolvers \u2014 real, distinct icons for hotbar, inventory, and ability slots.",
       "files": [
         {
           "path": "jgengine/game-icon.tsx",
@@ -20,7 +20,7 @@
       "name": "keybind-badge",
       "type": "registry:ui",
       "title": "Keybind Badge",
-      "description": "Chamfered key-cap badge for showing a binding on its own control — hotbar slot corners, panel toggles.",
+      "description": "Chamfered key-cap badge for showing a binding on its own control \u2014 hotbar slot corners, panel toggles.",
       "files": [
         {
           "path": "jgengine/keybind-badge.tsx",
@@ -41,7 +41,7 @@
       "name": "vital-bar",
       "type": "registry:ui",
       "title": "Vital Bar",
-      "description": "Slant-clipped stat bar with damage ghost-trail, segment ticks, and health/mana/stamina/xp/shield tones — presentational, value-driven.",
+      "description": "Slant-clipped stat bar with damage ghost-trail, segment ticks, and health/mana/stamina/xp/shield tones \u2014 presentational, value-driven.",
       "files": [
         {
           "path": "jgengine/vital-bar.tsx",
@@ -73,9 +73,13 @@
       "name": "entity-vital-bar",
       "type": "registry:ui",
       "title": "Entity Vital Bar",
-      "description": "VitalBar bound to a live entity stat via useEntityStat — the one-line health bar for any entity instance.",
-      "dependencies": ["@jgengine/react"],
-      "registryDependencies": ["vital-bar"],
+      "description": "VitalBar bound to a live entity stat via useEntityStat \u2014 the one-line health bar for any entity instance.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "vital-bar"
+      ],
       "files": [
         {
           "path": "jgengine/entity-vital-bar.tsx",
@@ -89,8 +93,10 @@
       "name": "ability-slot",
       "type": "registry:ui",
       "title": "Ability Slot",
-      "description": "Four-state ability slot button — ready, cooldown (conic sweep + timer), no-resource, locked — with charge pips, just-cast flash, and a corner keybind badge.",
-      "registryDependencies": ["keybind-badge"],
+      "description": "Four-state ability slot button \u2014 ready, cooldown (conic sweep + timer), no-resource, locked \u2014 with charge pips, just-cast flash, and a corner keybind badge.",
+      "registryDependencies": [
+        "keybind-badge"
+      ],
       "files": [
         {
           "path": "jgengine/ability-slot.tsx",
@@ -112,8 +118,1954 @@
       },
       "css": {
         "@keyframes jg-flash": {
-          "from": { "opacity": "1" },
-          "to": { "opacity": "0" }
+          "0%": {
+            "opacity": "0.9"
+          },
+          "100%": {
+            "opacity": "0"
+          }
+        }
+      }
+    },
+    {
+      "name": "unit-frame",
+      "type": "registry:ui",
+      "title": "Unit Frame",
+      "description": "Portrait, name, level rosette, and stacked vital bars for a player or party-member HUD frame.",
+      "registryDependencies": [
+        "vital-bar"
+      ],
+      "files": [
+        {
+          "path": "jgengine/unit-frame.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/unit-frame.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text-dim": "#a3947a",
+          "jg-accent-deep": "#8a6425",
+          "jg-surface-deep": "#0b0906",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-surface": "#17120d",
+          "jg-edge-bright": "#93794c",
+          "jg-text": "#f2e7d0",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "target-frame",
+      "type": "registry:ui",
+      "title": "Target Frame",
+      "description": "Reversed UnitFrame with hostile/friendly/neutral relation coloring for an enemy or NPC target.",
+      "registryDependencies": [
+        "unit-frame"
+      ],
+      "files": [
+        {
+          "path": "jgengine/target-frame.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/target-frame.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-hostile": "#d84a3a",
+          "jg-friendly": "#4fa9e0",
+          "jg-neutral": "#d9d04f"
+        }
+      }
+    },
+    {
+      "name": "cast-bar",
+      "type": "registry:ui",
+      "title": "Cast Bar",
+      "description": "Slant-clipped cast/channel progress bar with a bright leading edge and an interrupted state.",
+      "files": [
+        {
+          "path": "jgengine/cast-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/cast-bar.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-accent": "#e3b054",
+          "jg-surface-deep": "#0b0906",
+          "jg-surface": "#17120d",
+          "jg-accent-deep": "#8a6425",
+          "jg-text": "#f2e7d0"
+        }
+      }
+    },
+    {
+      "name": "boss-bar",
+      "type": "registry:ui",
+      "title": "Boss Bar",
+      "description": "Wide boss health bar with finial end-caps, phase-transition ticks, a name, and a sub-label.",
+      "registryDependencies": [
+        "vital-bar"
+      ],
+      "files": [
+        {
+          "path": "jgengine/boss-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/boss-bar.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-deep": "#8a6425",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-text": "#f2e7d0",
+          "jg-surface-deep": "#0b0906",
+          "jg-surface": "#17120d",
+          "jg-edge": "#57452c",
+          "jg-hostile": "#d84a3a",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "resource-orb",
+      "type": "registry:ui",
+      "title": "Resource Orb",
+      "description": "Circular fill-from-bottom resource orb (mana, stamina, and other tones) with a percentage readout.",
+      "registryDependencies": [
+        "vital-bar"
+      ],
+      "files": [
+        {
+          "path": "jgengine/resource-orb.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/resource-orb.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-health": "#5cc35f",
+          "jg-health-deep": "#26662c",
+          "jg-mana": "#4a86d8",
+          "jg-mana-deep": "#20406f",
+          "jg-stamina": "#d9c33f",
+          "jg-stamina-deep": "#6e621c",
+          "jg-xp": "#a566d9",
+          "jg-xp-deep": "#4e2c6e",
+          "jg-shield": "#9fb9c9",
+          "jg-shield-deep": "#48606e",
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-edge-bright": "#93794c",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "heart-row",
+      "type": "registry:ui",
+      "title": "Heart Row",
+      "description": "Row of heart pips for discrete lives or health, with an optional custom icon renderer.",
+      "files": [
+        {
+          "path": "jgengine/heart-row.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/heart-row.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-edge": "#57452c"
+        }
+      }
+    },
+    {
+      "name": "xp-bar",
+      "type": "registry:ui",
+      "title": "Xp Bar",
+      "description": "Thin tick-marked experience bar with an optional level readout.",
+      "files": [
+        {
+          "path": "jgengine/xp-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/xp-bar.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-xp": "#a566d9",
+          "jg-surface-deep": "#0b0906",
+          "jg-xp-deep": "#4e2c6e"
+        }
+      }
+    },
+    {
+      "name": "charge-meter",
+      "type": "registry:ui",
+      "title": "Charge Meter",
+      "description": "Slant-clipped charge or ultimate meter with tier ticks and a ready-state glow animation.",
+      "files": [
+        {
+          "path": "jgengine/charge-meter.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/charge-meter.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-surface-deep": "#0b0906",
+          "jg-surface": "#17120d",
+          "jg-accent-deep": "#8a6425",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      },
+      "css": {
+        "@keyframes jg-ready-glow": {
+          "0%, 100%": {
+            "filter": "brightness(1)"
+          },
+          "50%": {
+            "filter": "brightness(1.45)"
+          }
+        }
+      }
+    },
+    {
+      "name": "break-meter",
+      "type": "registry:ui",
+      "title": "Break Meter",
+      "description": "Compact stagger/poise break meter that ramps color with fill and shakes and pulses when broken.",
+      "files": [
+        {
+          "path": "jgengine/break-meter.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/break-meter.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-warning": "#e8a33d",
+          "jg-text-dim": "#a3947a",
+          "jg-surface-deep": "#0b0906"
+        }
+      },
+      "css": {
+        "@keyframes jg-shake": {
+          "0%, 100%": {
+            "transform": "translateX(0)"
+          },
+          "20%": {
+            "transform": "translateX(-3px)"
+          },
+          "40%": {
+            "transform": "translateX(3px)"
+          },
+          "60%": {
+            "transform": "translateX(-2px)"
+          },
+          "80%": {
+            "transform": "translateX(2px)"
+          }
+        },
+        "@keyframes jg-pulse": {
+          "0%, 100%": {
+            "opacity": "1"
+          },
+          "50%": {
+            "opacity": "0.55"
+          }
+        }
+      }
+    },
+    {
+      "name": "action-bar",
+      "type": "registry:ui",
+      "title": "Action Bar",
+      "description": "Row of ability slot buttons driven by a plain slot-data array \u2014 presentational, value-driven.",
+      "registryDependencies": [
+        "ability-slot"
+      ],
+      "files": [
+        {
+          "path": "jgengine/action-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/action-bar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ability-action-bar",
+      "type": "registry:ui",
+      "title": "Ability Action Bar",
+      "description": "Action Bar wired to a live AbilityKit \u2014 derives slot state, cooldown, and charges from engine snapshots each tick.",
+      "registryDependencies": [
+        "action-bar"
+      ],
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "files": [
+        {
+          "path": "jgengine/ability-action-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ability-action-bar.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider> ancestor from @jgengine/react \u2014 AbilityActionBar reads live ability slot state via useAbilitySlots(kit) on every render, polling the engine at ~80ms."
+    },
+    {
+      "name": "hotbar-selector",
+      "type": "registry:ui",
+      "title": "Hotbar Selector",
+      "description": "Numbered hotbar slots with a selection caret and scale-up highlight for the active index.",
+      "files": [
+        {
+          "path": "jgengine/hotbar-selector.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hotbar-selector.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-edge-bright": "#93794c",
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a"
+        }
+      }
+    },
+    {
+      "name": "item-grid",
+      "type": "registry:ui",
+      "title": "Item Grid",
+      "description": "Rarity-tinted inventory/loot grid of clickable slots, driven by a plain slot-data array \u2014 presentational, value-driven.",
+      "files": [
+        {
+          "path": "jgengine/item-grid.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/item-grid.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-edge": "#57452c",
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-text": "#f2e7d0",
+          "jg-rarity-common": "#b4b2a8",
+          "jg-rarity-uncommon": "#57c14f",
+          "jg-rarity-rare": "#4a86d8",
+          "jg-rarity-epic": "#a04fd0",
+          "jg-rarity-legendary": "#e0862e"
+        }
+      }
+    },
+    {
+      "name": "inventory-slot-grid",
+      "type": "registry:ui",
+      "title": "Inventory Slot Grid",
+      "description": "Item Grid wired to a live inventory container \u2014 maps engine InventorySlot state to grid slots each render.",
+      "registryDependencies": [
+        "item-grid"
+      ],
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "files": [
+        {
+          "path": "jgengine/inventory-slot-grid.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/inventory-slot-grid.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider> ancestor from @jgengine/react \u2014 InventorySlotGrid reads live inventory slots via useInventory(inventoryId)."
+    },
+    {
+      "name": "equipment-doll",
+      "type": "registry:ui",
+      "title": "Equipment Doll",
+      "description": "Paper-doll figure flanked by left/right/bottom equipment slot wells, rarity-tinted by occupied item.",
+      "registryDependencies": [
+        "item-grid"
+      ],
+      "files": [
+        {
+          "path": "jgengine/equipment-doll.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/equipment-doll.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-edge": "#57452c",
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-rarity-common": "#b4b2a8",
+          "jg-rarity-uncommon": "#57c14f",
+          "jg-rarity-rare": "#4a86d8",
+          "jg-rarity-epic": "#a04fd0",
+          "jg-rarity-legendary": "#e0862e"
+        }
+      }
+    },
+    {
+      "name": "buff-tray",
+      "type": "registry:ui",
+      "title": "Buff Tray",
+      "description": "Row of chamfered buff/debuff chips with stack counts and a remaining-duration underline, driven by a plain chip array.",
+      "files": [
+        {
+          "path": "jgengine/buff-tray.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/buff-tray.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-success": "#6fce6f",
+          "jg-edge-bright": "#93794c",
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-text": "#f2e7d0"
+        }
+      }
+    },
+    {
+      "name": "moodle-tray",
+      "type": "registry:ui",
+      "title": "Moodle Tray",
+      "description": "Buff Tray adapter for survival-game Moodle records \u2014 maps severity to buff/debuff tint and fraction to the duration ring.",
+      "registryDependencies": [
+        "buff-tray"
+      ],
+      "dependencies": [
+        "@jgengine/core"
+      ],
+      "files": [
+        {
+          "path": "jgengine/moodle-tray.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/moodle-tray.tsx"
+        }
+      ]
+    },
+    {
+      "name": "loot-card",
+      "type": "registry:ui",
+      "title": "Loot Card",
+      "description": "Rarity-bordered item tooltip card with icon, stat lines, italic affixes, and flavor text.",
+      "registryDependencies": [
+        "item-grid"
+      ],
+      "files": [
+        {
+          "path": "jgengine/loot-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/loot-card.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-rarity-common": "#b4b2a8",
+          "jg-rarity-uncommon": "#57c14f",
+          "jg-rarity-rare": "#4a86d8",
+          "jg-rarity-epic": "#a04fd0",
+          "jg-rarity-legendary": "#e0862e"
+        }
+      }
+    },
+    {
+      "name": "combat-float-layer",
+      "type": "registry:ui",
+      "title": "Combat Float Layer",
+      "description": "Absolute-positioned layer of animated damage/heal/crit/info/error text floats, each jittered around a screen position \u2014 presentational, list-driven.",
+      "files": [
+        {
+          "path": "jgengine/combat-float-layer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/combat-float-layer.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-warning": "#e8a33d",
+          "jg-success": "#6fce6f",
+          "jg-danger": "#e0483e",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-font-numeric": "Consolas, \"Cascadia Mono\", \"SF Mono\", \"Roboto Mono\", monospace",
+          "jg-font-body": "\"Segoe UI\", system-ui, sans-serif"
+        }
+      },
+      "css": {
+        "@keyframes jg-float-up": {
+          "from": {
+            "transform": "translateY(0)",
+            "opacity": "1"
+          },
+          "to": {
+            "transform": "translateY(-46px)",
+            "opacity": "0"
+          }
+        },
+        "@keyframes jg-pop": {
+          "0%": {
+            "transform": "scale(0.4)",
+            "opacity": "0"
+          },
+          "60%": {
+            "transform": "scale(1.18)",
+            "opacity": "1"
+          },
+          "100%": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "game-event-floats",
+      "type": "registry:ui",
+      "title": "Game Event Floats",
+      "description": "CombatFloatLayer wired to the entity.floatText game event via useGame \u2014 spawns and auto-expires floats from live combat.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "combat-float-layer"
+      ],
+      "files": [
+        {
+          "path": "jgengine/game-event-floats.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/game-event-floats.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <GameEventFloats /> subscribes to entity.floatText events and renders a CombatFloatLayer; pass mapEvent to customize the event \u2192 CombatFloatEntry mapping."
+    },
+    {
+      "name": "hit-marker",
+      "type": "registry:ui",
+      "title": "Hit Marker",
+      "description": "Crosshair X-mark flash that pulses on a hit, brighter and larger on crit \u2014 presentational, active/crit-driven.",
+      "files": [
+        {
+          "path": "jgengine/hit-marker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hit-marker.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-warning": "#e8a33d",
+          "jg-text": "#f2e7d0"
+        }
+      },
+      "css": {
+        "@keyframes jg-flash": {
+          "0%": {
+            "opacity": "0.9"
+          },
+          "100%": {
+            "opacity": "0"
+          }
+        }
+      }
+    },
+    {
+      "name": "kill-feed",
+      "type": "registry:ui",
+      "title": "Kill Feed",
+      "description": "Right-aligned scrolling feed of kill/elimination rows with friendly/hostile coloring and an accent highlight bar \u2014 presentational, list-driven.",
+      "files": [
+        {
+          "path": "jgengine/kill-feed.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/kill-feed.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-font-body": "\"Segoe UI\", system-ui, sans-serif",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-friendly": "#4fa9e0",
+          "jg-hostile": "#d84a3a",
+          "jg-text-dim": "#a3947a"
+        }
+      },
+      "css": {
+        "@keyframes jg-slide-down": {
+          "from": {
+            "transform": "translateY(-18px)",
+            "opacity": "0"
+          },
+          "to": {
+            "transform": "translateY(0)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "feed-kill-feed",
+      "type": "registry:ui",
+      "title": "Feed Kill Feed",
+      "description": "KillFeed bound to a live game feed action via useFeed, mapping raw feed entries to kill-feed rows.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "kill-feed"
+      ],
+      "files": [
+        {
+          "path": "jgengine/feed-kill-feed.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/feed-kill-feed.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <FeedKillFeed action=\"kill\" mapEntry={(entry) => ({ id: entry.id, left: entry.payload.killer, right: entry.payload.victim })} />"
+    },
+    {
+      "name": "announcement-banner",
+      "type": "registry:ui",
+      "title": "Announcement Banner",
+      "description": "Centered match-event banner (victory/defeat/warning/neutral) with an accent rule and optional keybind hint.",
+      "registryDependencies": [
+        "keybind-badge"
+      ],
+      "files": [
+        {
+          "path": "jgengine/announcement-banner.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/announcement-banner.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-danger": "#e0483e",
+          "jg-warning": "#e8a33d",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-font-body": "\"Segoe UI\", system-ui, sans-serif"
+        }
+      },
+      "css": {
+        "@keyframes jg-slide-down": {
+          "from": {
+            "transform": "translateY(-18px)",
+            "opacity": "0"
+          },
+          "to": {
+            "transform": "translateY(0)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "combo-counter",
+      "type": "registry:ui",
+      "title": "Combo Counter",
+      "description": "Big pop-animated combo count with a HUD label and an optional decaying progress bar.",
+      "files": [
+        {
+          "path": "jgengine/combo-counter.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/combo-counter.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-font-numeric": "Consolas, \"Cascadia Mono\", \"SF Mono\", \"Roboto Mono\", monospace",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-text-dim": "#a3947a",
+          "jg-surface-deep": "#0b0906"
+        }
+      },
+      "css": {
+        "@keyframes jg-pop": {
+          "0%": {
+            "transform": "scale(0.4)",
+            "opacity": "0"
+          },
+          "60%": {
+            "transform": "scale(1.18)",
+            "opacity": "1"
+          },
+          "100%": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "streak-callout",
+      "type": "registry:ui",
+      "title": "Streak Callout",
+      "description": "Italic, skewed streak callout that intensifies size/color/pulse at higher tiers.",
+      "files": [
+        {
+          "path": "jgengine/streak-callout.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/streak-callout.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-warning": "#e8a33d",
+          "jg-text": "#f2e7d0",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      },
+      "css": {
+        "@keyframes jg-pop": {
+          "0%": {
+            "transform": "scale(0.4)",
+            "opacity": "0"
+          },
+          "60%": {
+            "transform": "scale(1.18)",
+            "opacity": "1"
+          },
+          "100%": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        },
+        "@keyframes jg-pulse": {
+          "0%, 100%": {
+            "opacity": "1"
+          },
+          "50%": {
+            "opacity": "0.55"
+          }
+        }
+      }
+    },
+    {
+      "name": "pickup-toast-stack",
+      "type": "registry:ui",
+      "title": "Pickup Toast Stack",
+      "description": "Stacked, fading pickup toasts with rarity-tinted icon/label/count \u2014 presentational, list-driven.",
+      "files": [
+        {
+          "path": "jgengine/pickup-toast-stack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pickup-toast-stack.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-rarity-common": "#b4b2a8",
+          "jg-rarity-uncommon": "#57c14f",
+          "jg-rarity-rare": "#4a86d8",
+          "jg-rarity-epic": "#a04fd0",
+          "jg-rarity-legendary": "#e0862e",
+          "jg-font-body": "\"Segoe UI\", system-ui, sans-serif",
+          "jg-font-numeric": "Consolas, \"Cascadia Mono\", \"SF Mono\", \"Roboto Mono\", monospace",
+          "jg-text-dim": "#a3947a"
+        }
+      },
+      "css": {
+        "@keyframes jg-slide-up": {
+          "from": {
+            "transform": "translateY(14px)",
+            "opacity": "0"
+          },
+          "to": {
+            "transform": "translateY(0)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "feed-pickup-toasts",
+      "type": "registry:ui",
+      "title": "Feed Pickup Toasts",
+      "description": "PickupToastStack bound to a live game feed action via useFeed, mapping raw feed entries to pickup toasts.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "pickup-toast-stack"
+      ],
+      "files": [
+        {
+          "path": "jgengine/feed-pickup-toasts.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/feed-pickup-toasts.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <FeedPickupToasts action=\"pickup\" mapEntry={(entry) => ({ id: entry.id, label: entry.payload.item })} />"
+    },
+    {
+      "name": "level-up-splash",
+      "type": "registry:ui",
+      "title": "Level Up Splash",
+      "description": "Radial-glow level-up splash that flashes in on the stat.levelUp game event via useGame and auto-dismisses.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "files": [
+        {
+          "path": "jgengine/level-up-splash.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/level-up-splash.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-accent": "#e3b054",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-font-numeric": "Consolas, \"Cascadia Mono\", \"SF Mono\", \"Roboto Mono\", monospace",
+          "jg-text": "#f2e7d0"
+        }
+      },
+      "css": {
+        "@keyframes jg-flash": {
+          "0%": {
+            "opacity": "0.9"
+          },
+          "100%": {
+            "opacity": "0"
+          }
+        },
+        "@keyframes jg-pop": {
+          "0%": {
+            "transform": "scale(0.4)",
+            "opacity": "0"
+          },
+          "60%": {
+            "transform": "scale(1.18)",
+            "opacity": "1"
+          },
+          "100%": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        }
+      },
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <LevelUpSplash stat=\"level\" /> listens for stat.levelUp events via useGame and flashes the new level for durationMs."
+    },
+    {
+      "name": "score-readout",
+      "type": "registry:ui",
+      "title": "Score Readout",
+      "description": "Zero-padded score counter that splits leading zeros from significant digits, with a pop-in animation on value change.",
+      "files": [
+        {
+          "path": "jgengine/score-readout.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/score-readout.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text-dim": "#a3947a",
+          "jg-text": "#f2e7d0",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)"
+        }
+      },
+      "css": {
+        "@keyframes jg-pop": {
+          "0%": {
+            "transform": "scale(0.4)",
+            "opacity": "0"
+          },
+          "60%": {
+            "transform": "scale(1.18)",
+            "opacity": "1"
+          },
+          "100%": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "match-timer",
+      "type": "registry:ui",
+      "title": "Match Timer",
+      "description": "MM:SS countdown clock with tick flanks and warning/critical color states, bundled with CountdownPips, a large pop-in number for a pre-round countdown.",
+      "files": [
+        {
+          "path": "jgengine/match-timer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/match-timer.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text-dim": "#a3947a",
+          "jg-danger": "#e0483e",
+          "jg-warning": "#e8a33d",
+          "jg-text": "#f2e7d0",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)"
+        }
+      },
+      "css": {
+        "@keyframes jg-pulse": {
+          "0%, 100%": {
+            "opacity": "1"
+          },
+          "50%": {
+            "opacity": "0.55"
+          }
+        },
+        "@keyframes jg-pop": {
+          "0%": {
+            "transform": "scale(0.4)",
+            "opacity": "0"
+          },
+          "60%": {
+            "transform": "scale(1.18)",
+            "opacity": "1"
+          },
+          "100%": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "wave-indicator",
+      "type": "registry:ui",
+      "title": "Wave Indicator",
+      "description": "Wave-number readout with an accent underline and an optional remaining-hostiles counter for horde/survival modes.",
+      "files": [
+        {
+          "path": "jgengine/wave-indicator.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/wave-indicator.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text-dim": "#a3947a",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-text": "#f2e7d0",
+          "jg-danger": "#e0483e",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "ammo-counter",
+      "type": "registry:ui",
+      "title": "Ammo Counter",
+      "description": "Magazine/reserve ammo readout with a low-ammo pulse, a reloading label, and a slanted divider between magazine and reserve counts.",
+      "files": [
+        {
+          "path": "jgengine/ammo-counter.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/ammo-counter.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-warning": "#e8a33d",
+          "jg-text-dim": "#a3947a",
+          "jg-danger": "#e0483e",
+          "jg-text": "#f2e7d0",
+          "jg-edge-bright": "#93794c"
+        }
+      },
+      "css": {
+        "@keyframes jg-pulse": {
+          "0%, 100%": {
+            "opacity": "1"
+          },
+          "50%": {
+            "opacity": "0.55"
+          }
+        }
+      }
+    },
+    {
+      "name": "currency-display",
+      "type": "registry:ui",
+      "title": "Currency Display",
+      "description": "Coin-glyph currency readout with optional compact k/m/b formatting and a currency name label \u2014 presentational, value-driven.",
+      "files": [
+        {
+          "path": "jgengine/currency-display.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/currency-display.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-deep": "#8a6425",
+          "jg-text": "#f2e7d0",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-text-dim": "#a3947a"
+        }
+      }
+    },
+    {
+      "name": "wallet-currency-display",
+      "type": "registry:ui",
+      "title": "Wallet Currency Display",
+      "description": "CurrencyDisplay bound to a live wallet balance via useCurrency \u2014 the one-line currency readout for any currency id.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "currency-display"
+      ],
+      "files": [
+        {
+          "path": "jgengine/wallet-currency-display.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/wallet-currency-display.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <WalletCurrencyDisplay currencyId=\"gold\" name=\"Gold\" />"
+    },
+    {
+      "name": "objective-channel",
+      "type": "registry:ui",
+      "title": "Objective Channel",
+      "description": "Slant-clipped capture/channel progress bar with friendly/hostile/neutral ownership tinting and a contested pulse.",
+      "files": [
+        {
+          "path": "jgengine/objective-channel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/objective-channel.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text-dim": "#a3947a",
+          "jg-text": "#f2e7d0",
+          "jg-surface-deep": "#0b0906",
+          "jg-surface": "#17120d",
+          "jg-friendly": "#4fa9e0",
+          "jg-hostile": "#d84a3a",
+          "jg-accent": "#e3b054"
+        }
+      },
+      "css": {
+        "@keyframes jg-pulse": {
+          "0%, 100%": {
+            "opacity": "1"
+          },
+          "50%": {
+            "opacity": "0.55"
+          }
+        }
+      }
+    },
+    {
+      "name": "team-score-board",
+      "type": "registry:ui",
+      "title": "Team Score Board",
+      "description": "Two-team score comparison with a diamond divider, per-team name labels, and an optional round label \u2014 presentational, value-driven.",
+      "files": [
+        {
+          "path": "jgengine/team-score-board.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/team-score-board.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-friendly": "#4fa9e0",
+          "jg-text-dim": "#a3947a",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-hostile": "#d84a3a"
+        }
+      }
+    },
+    {
+      "name": "race-position",
+      "type": "registry:ui",
+      "title": "Race Position",
+      "description": "Large ordinal position readout (1st/2nd/3rd) with an optional field-size suffix and a lap counter label.",
+      "files": [
+        {
+          "path": "jgengine/race-position.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/race-position.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text": "#f2e7d0",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-accent": "#e3b054",
+          "jg-text-dim": "#a3947a"
+        }
+      }
+    },
+    {
+      "name": "arc-gauge",
+      "type": "registry:ui",
+      "title": "Arc Gauge",
+      "description": "SVG sweep-arc gauge with tick marks, a glowing progress stroke in accent/danger/warning tones, and a centered readout + label.",
+      "files": [
+        {
+          "path": "jgengine/arc-gauge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/arc-gauge.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-warning": "#e8a33d",
+          "jg-accent": "#e3b054",
+          "jg-edge": "#57452c",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a"
+        }
+      }
+    },
+    {
+      "name": "event-charge-meter",
+      "type": "registry:ui",
+      "title": "Event Charge Meter",
+      "description": "ChargeMeter bound to a live EventMeter via useEventMeter \u2014 the one-line charge bar for combo/ultimate/hype meters.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "charge-meter"
+      ],
+      "files": [
+        {
+          "path": "jgengine/event-charge-meter.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/event-charge-meter.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: const meter = useMemo(() => new EventMeter({ max: 100 }), []); <EventChargeMeter meter={meter} label=\"Ultimate\" />"
+    },
+    {
+      "name": "hud-panel",
+      "type": "registry:ui",
+      "title": "Hud Panel",
+      "description": "Corner-bracketed HUD panel shell with a chamfer-free titled header \u2014 the base chrome every panel/overlay stacks on.",
+      "files": [
+        {
+          "path": "jgengine/hud-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hud-panel.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-edge": "#57452c",
+          "jg-text": "#f2e7d0",
+          "jg-accent": "#e3b054",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-font-body": "\"Segoe UI\", system-ui, sans-serif"
+        }
+      }
+    },
+    {
+      "name": "hud-label",
+      "type": "registry:ui",
+      "title": "Hud Label",
+      "description": "Small uppercase tracked-letterspacing caption for HUD field headers and table columns.",
+      "files": [
+        {
+          "path": "jgengine/hud-label.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hud-label.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-text-dim": "#a3947a"
+        }
+      }
+    },
+    {
+      "name": "accent-rule",
+      "type": "registry:ui",
+      "title": "Accent Rule",
+      "description": "Thin glowing gradient divider used under panel headers and section breaks.",
+      "files": [
+        {
+          "path": "jgengine/accent-rule.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/accent-rule.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)"
+        }
+      }
+    },
+    {
+      "name": "quest-tracker",
+      "type": "registry:ui",
+      "title": "Quest Tracker",
+      "description": "Stacked objective-list HUD widget \u2014 quest title rule plus checkable/countable objective rows, value-driven.",
+      "files": [
+        {
+          "path": "jgengine/quest-tracker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/quest-tracker.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-success": "#6fce6f",
+          "jg-edge-bright": "#93794c",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "journal-quest-tracker",
+      "type": "registry:ui",
+      "title": "Journal Quest Tracker",
+      "description": "QuestTracker bound to the live quest journal via useQuestJournal, mapped through a describe() projector.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "quest-tracker"
+      ],
+      "files": [
+        {
+          "path": "jgengine/journal-quest-tracker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/journal-quest-tracker.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <JournalQuestTracker describe={(quest) => ({ id: quest.questId, title: quest.questId, objectives: quest.objectives.map((o) => ({ id: o.id, label: o.id, count: o.progress, target: o.count, complete: o.complete })) })} />"
+    },
+    {
+      "name": "scoreboard-overlay",
+      "type": "registry:ui",
+      "title": "Scoreboard Overlay",
+      "description": "Full-screen modal scoreboard with configurable columns, numeric-aware alignment, and highlight/team-color row accents.",
+      "registryDependencies": [
+        "hud-panel",
+        "hud-label"
+      ],
+      "files": [
+        {
+          "path": "jgengine/scoreboard-overlay.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/scoreboard-overlay.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-edge": "#57452c",
+          "jg-accent": "#e3b054",
+          "jg-text": "#f2e7d0"
+        }
+      }
+    },
+    {
+      "name": "rank-list",
+      "type": "registry:ui",
+      "title": "Rank List",
+      "description": "Ranked leaderboard rows in a titled panel \u2014 gold star on first place, alternating row shading, value-driven.",
+      "registryDependencies": [
+        "hud-panel"
+      ],
+      "files": [
+        {
+          "path": "jgengine/rank-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/rank-list.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a"
+        }
+      }
+    },
+    {
+      "name": "stat-leaderboard",
+      "type": "registry:ui",
+      "title": "Stat Leaderboard",
+      "description": "RankList bound to a live stat leaderboard via useLeaderboard, with optional userId-to-display-name resolution.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "rank-list"
+      ],
+      "files": [
+        {
+          "path": "jgengine/stat-leaderboard.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/stat-leaderboard.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <StatLeaderboard stat=\"kills\" scope=\"global\" limit={10} />"
+    },
+    {
+      "name": "combat-log-panel",
+      "type": "registry:ui",
+      "title": "Combat Log Panel",
+      "description": "Auto-scrolling tone-colored combat log in a titled panel \u2014 damage/heal/system lines fade with age, value-driven.",
+      "registryDependencies": [
+        "hud-panel"
+      ],
+      "files": [
+        {
+          "path": "jgengine/combat-log-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/combat-log-panel.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-success": "#6fce6f",
+          "jg-accent": "#e3b054",
+          "jg-text-dim": "#a3947a"
+        }
+      }
+    },
+    {
+      "name": "feed-combat-log",
+      "type": "registry:ui",
+      "title": "Feed Combat Log",
+      "description": "CombatLogPanel bound to a live game feed action via useFeed, mapped through a mapLine() projector.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "combat-log-panel"
+      ],
+      "files": [
+        {
+          "path": "jgengine/feed-combat-log.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/feed-combat-log.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <FeedCombatLog action=\"combat.hit\" mapLine={(entry, i) => ({ id: String(i), text: String(entry.data), tone: \"damage\" })} />"
+    },
+    {
+      "name": "vendor-panel",
+      "type": "registry:ui",
+      "title": "Vendor Panel",
+      "description": "Shop listing panel with rarity-colored item names, stock counts, affordability-aware pricing, and a balance readout.",
+      "registryDependencies": [
+        "hud-panel"
+      ],
+      "files": [
+        {
+          "path": "jgengine/vendor-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/vendor-panel.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-edge-bright": "#93794c",
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-accent": "#e3b054",
+          "jg-danger": "#e0483e",
+          "jg-rarity-common": "#b4b2a8",
+          "jg-rarity-uncommon": "#57c14f",
+          "jg-rarity-rare": "#4a86d8",
+          "jg-rarity-epic": "#a04fd0",
+          "jg-rarity-legendary": "#e0862e"
+        }
+      }
+    },
+    {
+      "name": "crafting-panel",
+      "type": "registry:ui",
+      "title": "Crafting Panel",
+      "description": "Recipe list panel with per-input have/need coloring and an in-progress craft-fraction bar under each recipe.",
+      "registryDependencies": [
+        "hud-panel"
+      ],
+      "files": [
+        {
+          "path": "jgengine/crafting-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/crafting-panel.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-edge-bright": "#93794c",
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-success": "#6fce6f",
+          "jg-danger": "#e0483e"
+        }
+      }
+    },
+    {
+      "name": "dialogue-panel",
+      "type": "registry:ui",
+      "title": "Dialogue Panel",
+      "description": "Notched dialogue box with speaker nameplate, portrait well, and skill-check-annotated branching choices.",
+      "files": [
+        {
+          "path": "jgengine/dialogue-panel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dialogue-panel.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-surface": "#17120d",
+          "jg-surface-deep": "#0b0906",
+          "jg-edge": "#57452c",
+          "jg-edge-bright": "#93794c",
+          "jg-accent": "#e3b054",
+          "jg-accent-deep": "#8a6425",
+          "jg-text": "#f2e7d0",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-warning": "#e8a33d"
+        }
+      }
+    },
+    {
+      "name": "menu-button",
+      "type": "registry:ui",
+      "title": "Menu Button",
+      "description": "Slant-clipped menu button with primary/ghost/danger variants and an optional corner keybind badge.",
+      "registryDependencies": [
+        "keybind-badge"
+      ],
+      "files": [
+        {
+          "path": "jgengine/menu-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/menu-button.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-accent": "#e3b054",
+          "jg-accent-deep": "#8a6425",
+          "jg-edge-bright": "#93794c",
+          "jg-text": "#f2e7d0",
+          "jg-surface-deep": "#0b0906",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "menu-list",
+      "type": "registry:ui",
+      "title": "Menu List",
+      "description": "Keyboard/pointer-navigable vertical menu with a selection wedge, accent underline, and per-entry keybind badges.",
+      "registryDependencies": [
+        "keybind-badge"
+      ],
+      "files": [
+        {
+          "path": "jgengine/menu-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/menu-list.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "title-screen",
+      "type": "registry:ui",
+      "title": "Title Screen",
+      "description": "Full-screen title card with headline, subtitle, optional backdrop layer, version tag, and a MenuList of entries.",
+      "registryDependencies": [
+        "menu-list"
+      ],
+      "files": [
+        {
+          "path": "jgengine/title-screen.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/title-screen.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-deep": "#8a6425",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "pause-screen",
+      "type": "registry:ui",
+      "title": "Pause Screen",
+      "description": "Blurred full-screen pause overlay with a title and a MenuList of entries.",
+      "registryDependencies": [
+        "menu-list"
+      ],
+      "files": [
+        {
+          "path": "jgengine/pause-screen.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pause-screen.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-text": "#f2e7d0",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "death-screen-view",
+      "type": "registry:ui",
+      "title": "Death Screen View",
+      "description": "Presentational death overlay with a popping title, respawn countdown or respawn MenuButton \u2014 value-driven, no engine reads.",
+      "registryDependencies": [
+        "menu-button"
+      ],
+      "files": [
+        {
+          "path": "jgengine/death-screen-view.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/death-screen-view.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e",
+          "jg-text-dim": "#a3947a",
+          "jg-warning": "#e8a33d",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      },
+      "css": {
+        "@keyframes jg-pop": {
+          "0%": {
+            "transform": "scale(0.4)",
+            "opacity": "0"
+          },
+          "60%": {
+            "transform": "scale(1.18)",
+            "opacity": "1"
+          },
+          "100%": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "death-overlay-bound",
+      "type": "registry:ui",
+      "title": "Death Overlay Bound",
+      "description": "DeathScreenView bound to the local player's dead state via useLocalPlayerDead \u2014 renders nothing while alive.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "death-screen-view"
+      ],
+      "files": [
+        {
+          "path": "jgengine/death-overlay-bound.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/death-overlay-bound.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <DeathOverlayBound statId=\"health\" onRespawn={respawn} />"
+    },
+    {
+      "name": "results-screen",
+      "type": "registry:ui",
+      "title": "Results Screen",
+      "description": "Victory/defeat/draw results overlay with an animated outcome title, a two-column stat grid, and an optional MenuList.",
+      "registryDependencies": [
+        "menu-list"
+      ],
+      "files": [
+        {
+          "path": "jgengine/results-screen.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/results-screen.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-danger": "#e0483e",
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      },
+      "css": {
+        "@keyframes jg-slide-down": {
+          "from": {
+            "transform": "translateY(-18px)",
+            "opacity": "0"
+          },
+          "to": {
+            "transform": "translateY(0)",
+            "opacity": "1"
+          }
+        },
+        "@keyframes jg-slide-up": {
+          "from": {
+            "transform": "translateY(14px)",
+            "opacity": "0"
+          },
+          "to": {
+            "transform": "translateY(0)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "loading-screen",
+      "type": "registry:ui",
+      "title": "Loading Screen",
+      "description": "Full-screen loading card with a slant-clipped determinate progress bar or an indeterminate sheen sweep, plus an optional rotating tip line.",
+      "files": [
+        {
+          "path": "jgengine/loading-screen.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/loading-screen.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-surface-deep": "#0b0906",
+          "jg-accent": "#e3b054",
+          "jg-accent-deep": "#8a6425",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-text-dim": "#a3947a",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      },
+      "css": {
+        "@keyframes jg-sheen": {
+          "from": {
+            "background-position": "-160px 0"
+          },
+          "to": {
+            "background-position": "260px 0"
+          }
+        },
+        "@keyframes jg-slide-up": {
+          "from": {
+            "transform": "translateY(14px)",
+            "opacity": "0"
+          },
+          "to": {
+            "transform": "translateY(0)",
+            "opacity": "1"
+          }
+        }
+      }
+    },
+    {
+      "name": "slider-row",
+      "type": "registry:ui",
+      "title": "Slider Row",
+      "description": "Labeled pointer-draggable slant-clipped slider row with a formatted value readout \u2014 settings-menu style.",
+      "files": [
+        {
+          "path": "jgengine/slider-row.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/slider-row.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text-dim": "#a3947a",
+          "jg-text": "#f2e7d0",
+          "jg-surface-deep": "#0b0906",
+          "jg-accent": "#e3b054",
+          "jg-accent-deep": "#8a6425",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "toggle-row",
+      "type": "registry:ui",
+      "title": "Toggle Row",
+      "description": "Labeled two-segment on/off toggle row rendered as slant-clipped chips \u2014 settings-menu style.",
+      "files": [
+        {
+          "path": "jgengine/toggle-row.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/toggle-row.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text-dim": "#a3947a",
+          "jg-accent": "#e3b054",
+          "jg-accent-deep": "#8a6425",
+          "jg-surface-deep": "#0b0906",
+          "jg-edge": "#57452c",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "settings-group",
+      "type": "registry:ui",
+      "title": "Settings Group",
+      "description": "Titled settings section with an accent rule underline, wrapping SliderRow/ToggleRow children in a vertical stack.",
+      "files": [
+        {
+          "path": "jgengine/settings-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/settings-group.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text-dim": "#a3947a",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "reticle",
+      "type": "registry:ui",
+      "title": "Reticle",
+      "description": "Configurable crosshair reticle \u2014 dot, cross, circle, chevron, or shotgun spread pattern \u2014 with an optional hit-flash tick overlay.",
+      "files": [
+        {
+          "path": "jgengine/reticle.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/reticle.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text": "#f2e7d0",
+          "jg-warning": "#e8a33d"
+        }
+      },
+      "css": {
+        "@keyframes jg-flash": {
+          "0%": {
+            "opacity": "0.9"
+          },
+          "100%": {
+            "opacity": "0"
+          }
+        }
+      }
+    },
+    {
+      "name": "lock-on-marker",
+      "type": "registry:ui",
+      "title": "Lock-On Marker",
+      "description": "Rotating corner-bracket lock-on reticle that snaps into a diamond frame when a target is acquired, with an optional label.",
+      "files": [
+        {
+          "path": "jgengine/lock-on-marker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/lock-on-marker.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-hostile": "#d84a3a"
+        }
+      },
+      "css": {
+        "@keyframes jg-spin": {
+          "from": {
+            "transform": "rotate(0deg)"
+          },
+          "to": {
+            "transform": "rotate(360deg)"
+          }
+        }
+      }
+    },
+    {
+      "name": "damage-direction-indicator",
+      "type": "registry:ui",
+      "title": "Damage Direction Indicator",
+      "description": "Screen-edge arc that flashes toward the source of incoming damage, scaled by intensity.",
+      "files": [
+        {
+          "path": "jgengine/damage-direction-indicator.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/damage-direction-indicator.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-danger": "#e0483e"
+        }
+      },
+      "css": {
+        "@keyframes jg-flash": {
+          "0%": {
+            "opacity": "0.9"
+          },
+          "100%": {
+            "opacity": "0"
+          }
+        }
+      }
+    },
+    {
+      "name": "waypoint-marker",
+      "type": "registry:ui",
+      "title": "Waypoint Marker",
+      "description": "World-space HUD marker for objectives, danger, allies, or loot, with an off-screen clamp arrow, label, and distance readout.",
+      "files": [
+        {
+          "path": "jgengine/waypoint-marker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/waypoint-marker.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-accent": "#e3b054",
+          "jg-danger": "#e0483e",
+          "jg-friendly": "#4fa9e0",
+          "jg-rarity-legendary": "#e0862e",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-text-dim": "#a3947a"
+        }
+      },
+      "css": {
+        "@keyframes jg-pulse": {
+          "0%, 100%": {
+            "opacity": "1"
+          },
+          "50%": {
+            "opacity": "0.55"
+          }
+        }
+      }
+    },
+    {
+      "name": "hud-marker-layer",
+      "type": "registry:ui",
+      "title": "Hud Marker Layer",
+      "description": "Renders a full-screen layer of WaypointMarker instances from a list of HUD markers.",
+      "registryDependencies": [
+        "waypoint-marker"
+      ],
+      "files": [
+        {
+          "path": "jgengine/hud-marker-layer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hud-marker-layer.tsx"
+        }
+      ]
+    },
+    {
+      "name": "interaction-ring",
+      "type": "registry:ui",
+      "title": "Interaction Ring",
+      "description": "Circular interact-hold progress ring with a center keybind badge and optional label.",
+      "registryDependencies": [
+        "keybind-badge"
+      ],
+      "files": [
+        {
+          "path": "jgengine/interaction-ring.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/interaction-ring.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-edge": "#57452c",
+          "jg-accent": "#e3b054",
+          "jg-accent-glow": "rgba(227, 176, 84, 0.55)",
+          "jg-font-display": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif",
+          "jg-text-dim": "#a3947a"
         }
       }
     }
