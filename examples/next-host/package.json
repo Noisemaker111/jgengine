@@ -10,7 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@games/world-of-warcraft": "workspace:*",
+    "@games/block-stacker": "workspace:*",
     "@jgengine/core": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/sql": "workspace:*",

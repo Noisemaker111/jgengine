@@ -7,10 +7,11 @@ import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 const gameRegistry: GameRegistry = {
   demo: () => import("@jgengine/shell/demo/demoGame").then((module) => module.demoGame),
-  "world-of-warcraft": () => import("@games/world-of-warcraft").then((module) => module.wowGame),
+  "block-stacker": () =>
+    import("@games/block-stacker").then((module) => module.blockStackerGame),
 };
 
-const GAME_ID = process.env.NEXT_PUBLIC_GAME_ID ?? "world-of-warcraft";
+const GAME_ID = process.env.NEXT_PUBLIC_GAME_ID ?? "block-stacker";
 
 export default function GameClient() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);

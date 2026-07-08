@@ -10,22 +10,8 @@
         "typescript": "^5.9.3",
       },
     },
-    "Games/asset-showcase": {
-      "name": "@games/asset-showcase",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "react": "19.2.3",
-      },
-      "devDependencies": {
-        "@types/react": "^19",
-        "typescript": "^5",
-      },
-    },
-    "Games/destruction-demo": {
-      "name": "@games/destruction-demo",
+    "Games/block-stacker": {
+      "name": "@games/block-stacker",
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
@@ -41,8 +27,8 @@
         "typescript": "^5",
       },
     },
-    "Games/kart-circuit": {
-      "name": "@games/kart-circuit",
+    "Games/maze-muncher": {
+      "name": "@games/maze-muncher",
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
@@ -58,21 +44,8 @@
         "typescript": "^5",
       },
     },
-    "Games/loot-shooter": {
-      "name": "@games/loot-shooter",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "react": "19.2.3",
-      },
-      "devDependencies": {
-        "@types/react": "^19",
-        "typescript": "^5",
-      },
-    },
-    "Games/stress-bench": {
-      "name": "@games/stress-bench",
+    "Games/platform-hopper": {
+      "name": "@games/platform-hopper",
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
@@ -88,14 +61,31 @@
         "typescript": "^5",
       },
     },
-    "Games/world-of-warcraft": {
-      "name": "@games/world-of-warcraft",
+    "Games/spire-cards": {
+      "name": "@games/spire-cards",
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
         "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
-        "lucide-react": "^0.473.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
+        "typescript": "^5",
+      },
+    },
+    "Games/voxel-mine": {
+      "name": "@games/voxel-mine",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
         "three": "^0.182.0",
       },
@@ -109,7 +99,7 @@
       "name": "@jgengine-apps/desktop",
       "version": "0.1.0",
       "dependencies": {
-        "@games/world-of-warcraft": "workspace:*",
+        "@games/voxel-mine": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -129,12 +119,11 @@
       "name": "@jgengine-apps/dev",
       "version": "0.1.0",
       "dependencies": {
-        "@games/asset-showcase": "workspace:*",
-        "@games/destruction-demo": "workspace:*",
-        "@games/kart-circuit": "workspace:*",
-        "@games/loot-shooter": "workspace:*",
-        "@games/stress-bench": "workspace:*",
-        "@games/world-of-warcraft": "workspace:*",
+        "@games/block-stacker": "workspace:*",
+        "@games/maze-muncher": "workspace:*",
+        "@games/platform-hopper": "workspace:*",
+        "@games/spire-cards": "workspace:*",
+        "@games/voxel-mine": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -200,7 +189,7 @@
       "name": "@jgengine-examples/next-host",
       "version": "0.1.0",
       "dependencies": {
-        "@games/world-of-warcraft": "workspace:*",
+        "@games/block-stacker": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
@@ -430,17 +419,15 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.25.12", "", { "os": "win32", "cpu": "x64" }, "sha512-alJC0uCZpTFrSL0CCDjcgleBXPnCrEAhTBILpeAp7M/OFgoqtAetfBzX0xM00MUsVVPpVjlPuMbREqnZCXaTnA=="],
 
-    "@games/asset-showcase": ["@games/asset-showcase@workspace:Games/asset-showcase"],
+    "@games/block-stacker": ["@games/block-stacker@workspace:Games/block-stacker"],
 
-    "@games/destruction-demo": ["@games/destruction-demo@workspace:Games/destruction-demo"],
+    "@games/maze-muncher": ["@games/maze-muncher@workspace:Games/maze-muncher"],
 
-    "@games/kart-circuit": ["@games/kart-circuit@workspace:Games/kart-circuit"],
+    "@games/platform-hopper": ["@games/platform-hopper@workspace:Games/platform-hopper"],
 
-    "@games/loot-shooter": ["@games/loot-shooter@workspace:Games/loot-shooter"],
+    "@games/spire-cards": ["@games/spire-cards@workspace:Games/spire-cards"],
 
-    "@games/stress-bench": ["@games/stress-bench@workspace:Games/stress-bench"],
-
-    "@games/world-of-warcraft": ["@games/world-of-warcraft@workspace:Games/world-of-warcraft"],
+    "@games/voxel-mine": ["@games/voxel-mine@workspace:Games/voxel-mine"],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 
@@ -1043,8 +1030,6 @@
     "lightningcss-win32-x64-msvc": ["lightningcss-win32-x64-msvc@1.32.0", "", { "os": "win32", "cpu": "x64" }, "sha512-Amq9B/SoZYdDi1kFrojnoqPLxYhQ4Wo5XiL8EVJrVsB8ARoC1PWW6VGtT0WKCemjy8aC+louJnjS7U18x3b06Q=="],
 
     "lru-cache": ["lru-cache@6.0.0", "", { "dependencies": { "yallist": "^4.0.0" } }, "sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA=="],
-
-    "lucide-react": ["lucide-react@0.473.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-KW6u5AKeIjkvrxXZ6WuCu9zHE/gEYSXCay+Gre2ZoInD0Je/e3RBtP4OHpJVJ40nDklSvjVKjgH7VU8/e2dzRw=="],
 
     "maath": ["maath@0.10.8", "", { "peerDependencies": { "@types/three": ">=0.134.0", "three": ">=0.134.0" } }, "sha512-tRvbDF0Pgqz+9XUa4jjfgAQ8/aPKmQdWXilFu2tMy4GWj4NOsx99HlULO4IeREfbO3a0sA145DZYyvXPkybm0g=="],
 

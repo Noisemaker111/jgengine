@@ -39,30 +39,28 @@ const gameRegistry: GameRegistry = {
   "extraction-map": () => import("@jgengine/shell/demo/mapDemo").then((module) => module.mapDemoGame),
   "sensor-showcase": () =>
     import("@jgengine/shell/demo/sensorShowcase").then((module) => module.sensorShowcaseGame),
-  "world-of-warcraft": () => import("@games/world-of-warcraft").then((module) => module.wowGame),
-  "asset-showcase": () =>
-    import("@games/asset-showcase").then((module) => module.assetShowcaseGame),
-  "loot-shooter": () => import("@games/loot-shooter").then((module) => module.lootShooterGame),
-  "stress-bench": () => import("@games/stress-bench").then((module) => module.stressBenchGame),
-  "destruction-demo": () =>
-    import("@games/destruction-demo").then((module) => module.destructionDemoGame),
-  "kart-circuit": () => import("@games/kart-circuit").then((module) => module.kartCircuitGame),
+  "block-stacker": () =>
+    import("@games/block-stacker").then((module) => module.blockStackerGame),
+  "maze-muncher": () => import("@games/maze-muncher").then((module) => module.mazeMuncherGame),
+  "voxel-mine": () => import("@games/voxel-mine").then((module) => module.voxelMineGame),
+  "platform-hopper": () =>
+    import("@games/platform-hopper").then((module) => module.platformHopperGame),
+  "spire-cards": () => import("@games/spire-cards").then((module) => module.spireCardsGame),
 };
 
 const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario>>> = {
-  "world-of-warcraft": () =>
-    import("@games/world-of-warcraft/ui/uiPreviewScenario").then(
-      (module) => module.interactionShowcaseScenario,
-    ),
-  "loot-shooter": () =>
-    import("@games/loot-shooter").then((module) => module.lootShooterUiScenario),
+  "block-stacker": () =>
+    import("@games/block-stacker").then((module) => module.blockStackerUiScenario),
+  "maze-muncher": () =>
+    import("@games/maze-muncher").then((module) => module.mazeMuncherScenario),
+  "spire-cards": () => import("@games/spire-cards").then((module) => module.uiScenario),
 };
 
 const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID =
   urlParams.get("game") ??
   (import.meta.env.VITE_GAME_ID as string | undefined) ??
-  "world-of-warcraft";
+  "demo";
 const MODE = urlParams.get("mode") ?? "play";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
