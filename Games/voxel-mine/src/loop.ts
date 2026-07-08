@@ -18,6 +18,21 @@ function autoTurnInQuests(ctx: GameContext): void {
   });
 }
 
+/**
+ * Mining now drops a physical item the player walks over to collect, so credit
+ * flows through the world-item pickup rather than the break. Re-emit each pickup
+ * as `inventory.added` — the event quests and the pickup feed already listen to.
+ */
+export function creditPickupsToQuests(ctx: GameContext): void {
+  ctx.game.events.on("worldItem.picked_up", (event) => {
+    ctx.game.events.emit("inventory.added", {
+      userId: event.userId,
+      item: event.itemId,
+      count: event.count,
+    });
+  });
+}
+
 export const loop: Required<GameLoop<GameContext>> = {
   onInit(ctx) {
     const grid = createVoxelGrid(ctx);
@@ -28,6 +43,7 @@ export const loop: Required<GameLoop<GameContext>> = {
     ctx.game.quest.bind("inventory.added");
     ctx.game.feed.bind("inventory.added");
     ctx.game.feed.bind("quest.completed");
+    creditPickupsToQuests(ctx);
     autoTurnInQuests(ctx);
     for (const placement of generateWorld()) {
       grid.set(placement.catalogId, placement.x, placement.y, placement.z);

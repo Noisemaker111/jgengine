@@ -29,6 +29,8 @@ export const game = defineGame({
     firstPerson: { eyeHeight: EYE_HEIGHT, reticle: true, viewmodel: false },
   },
   hotbarSelection: getSelectedSlot,
+  collision: { voxel: true },
+  worldItem: { autoPickup: true, pickupRadius: 1.8 },
   touch: {
     hidden: Object.keys(keybinds).filter((action) => action.startsWith("selectSlot")),
   },

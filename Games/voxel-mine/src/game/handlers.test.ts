@@ -4,7 +4,7 @@ import { BEDROCK_BLOCK, ORE_COAL } from "./blocks";
 import { content } from "./content";
 import { game } from "../game.config";
 import { createEditorHandlers } from "./handlers";
-import { EYE_HEIGHT, REACH } from "../loop";
+import { creditPickupsToQuests, EYE_HEIGHT, REACH } from "../loop";
 import { QUEST_PROSPECTING, quests } from "./quests";
 import { raycastVoxel, type Vec3, type VoxelHit } from "./raycast";
 import type { VoxelGrid } from "./voxelGrid";
@@ -58,21 +58,30 @@ function createTestContext() {
 const straightDown = { yaw: 0, pitch: -Math.PI / 2 };
 
 describe("createEditorHandlers", () => {
-  test("mining an ore block grants its resource and credits the matching quest objective", () => {
+  test("mining an ore drops a collectable resource; collecting it credits the quest", () => {
     const ctx = createTestContext();
+    creditPickupsToQuests(ctx);
     const grid = createFakeGrid({ "0,-1,0": ORE_COAL.id });
     const handlers = createEditorHandlers(grid, EYE_HEIGHT, REACH);
 
     handlers.mine!.apply(ctx, { from: ctx.player.userId, itemId: "tool_pickaxe", aim: straightDown });
 
     expect(grid.has(0, -1, 0)).toBe(false);
+    // The break yields a ground item, not an instant inventory grant.
+    const dropped = ctx.scene.worldItem.list();
+    expect(dropped.length).toBe(1);
+    expect(dropped[0]!.itemId).toBe(ORE_COAL.resourceId);
+    expect(ctx.player.inventory.count("resources", ORE_COAL.resourceId)).toBe(0);
+
+    ctx.scene.worldItem.pickup(dropped[0]!.instanceId, ctx.player.userId);
+
     expect(ctx.player.inventory.count("resources", ORE_COAL.resourceId)).toBe(1);
     const quest = ctx.game.quest.list(ctx.player.userId).find((q) => q.questId === QUEST_PROSPECTING);
     const objective = quest?.objectives.find((o) => o.id === ORE_COAL.resourceId);
     expect(objective?.progress).toBe(1);
   });
 
-  test("bedrock cannot be mined", () => {
+  test("bedrock cannot be mined and drops nothing", () => {
     const ctx = createTestContext();
     const grid = createFakeGrid({ "0,-1,0": BEDROCK_BLOCK });
     const handlers = createEditorHandlers(grid, EYE_HEIGHT, REACH);
@@ -80,9 +89,10 @@ describe("createEditorHandlers", () => {
     handlers.mine!.apply(ctx, { from: ctx.player.userId, itemId: "tool_pickaxe", aim: straightDown });
 
     expect(grid.has(0, -1, 0)).toBe(true);
+    expect(ctx.scene.worldItem.list().length).toBe(0);
   });
 
-  test("mining a plain block grants no resource", () => {
+  test("mining a plain block drops the block itself", () => {
     const ctx = createTestContext();
     const grid = createFakeGrid({ "0,-1,0": "block_stone" });
     const handlers = createEditorHandlers(grid, EYE_HEIGHT, REACH);
@@ -90,7 +100,9 @@ describe("createEditorHandlers", () => {
     handlers.mine!.apply(ctx, { from: ctx.player.userId, itemId: "tool_pickaxe", aim: straightDown });
 
     expect(grid.has(0, -1, 0)).toBe(false);
-    expect(ctx.player.inventory.state("resources").slots.every((slot) => slot === null)).toBe(true);
+    const dropped = ctx.scene.worldItem.list();
+    expect(dropped.length).toBe(1);
+    expect(dropped[0]!.itemId).toBe("block_stone");
   });
 
   test("cannot place a block into the cell the player occupies", () => {
