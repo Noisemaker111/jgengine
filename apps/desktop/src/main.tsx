@@ -32,21 +32,36 @@ const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 function DesktopApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
     const load = gameRegistry[GAME_ID] ?? gameRegistry["voxel-mine"];
-    if (load === undefined) return;
-    void load().then((loaded) => {
-      setMultiplayer(
-        resolveShellMultiplayer({
-          game: loaded.game,
-          gameId: GAME_ID,
-          url: WS_URL,
-          force: WS_URL !== undefined,
-        }),
-      );
-      setPlayable(loaded);
-    });
+    if (load === undefined) {
+      setLoadError(`Unknown game "${GAME_ID}"`);
+      return;
+    }
+    void load()
+      .then((loaded) => {
+        setMultiplayer(
+          resolveShellMultiplayer({
+            game: loaded.game,
+            gameId: GAME_ID,
+            url: WS_URL,
+            force: WS_URL !== undefined,
+          }),
+        );
+        setPlayable(loaded);
+      })
+      .catch((error: unknown) => {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      });
   }, []);
+  if (loadError !== null) {
+    return (
+      <div className="flex h-full items-center justify-center bg-neutral-950 px-6 text-center text-sm text-red-400">
+        Failed to load {GAME_ID}: {loadError}
+      </div>
+    );
+  }
   if (playable === null) {
     return (
       <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
