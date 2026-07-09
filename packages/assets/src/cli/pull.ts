@@ -4,9 +4,12 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { downloadPackArchive, extractGlbs, extractTextures } from "../download";
+import { type AssetKind, type AssetMatch, rankAssets } from "../find";
 import { generatedIndex } from "../generated";
 import { reindex } from "../indexGen";
-import { isScrapeDownload, type SingleAsset } from "../manifest";
+import { isScrapeDownload, type AssetSource, type SingleAsset } from "../manifest";
+import { registryCatalog } from "../registry";
+import { componentWiringSnippet, iconWiringSnippet, modelWiringSnippet } from "../snippet";
 import { sourceById } from "../sources";
 import { verifyManifest } from "../verify";
 
@@ -86,29 +89,43 @@ export async function cmdPull(argv: string[]): Promise<void> {
     return;
   }
 
+  const result = await fetchPackInto(source, outRoot, { mirrorBase });
+  const textureNote = result.textures > 0 ? ` + ${result.textures} texture(s)` : "";
+  console.log(`pulled ${result.models} models${textureNote} -> ${result.outDir}`);
+}
+
+interface FetchPackResult {
+  outDir: string;
+  models: number;
+  textures: number;
+  url: string;
+}
+
+async function fetchPackInto(
+  source: AssetSource,
+  outRoot: string,
+  options: { mirrorBase?: string },
+): Promise<FetchPackResult> {
+  const outDir = join(outRoot, "models", source.id);
   console.log(
-    `resolving ${sourceId}${isScrapeDownload(source.download) ? " (scrape)" : ""}` +
-      `${mirrorBase !== undefined ? ` [mirror override: ${mirrorBase}]` : ""}…`,
+    `resolving ${source.id}${isScrapeDownload(source.download) ? " (scrape)" : ""}` +
+      `${options.mirrorBase !== undefined ? ` [mirror override: ${options.mirrorBase}]` : ""}…`,
   );
-  const { archive, url, attempted } = await downloadPackArchive(source, { mirrorBase });
+  const { archive, url, attempted } = await downloadPackArchive(source, { mirrorBase: options.mirrorBase });
   console.log(
     `downloaded ${url}${attempted.length > 1 ? ` (after ${attempted.length - 1} failed attempt(s))` : ""}`,
   );
-
   const glbs = extractGlbs(archive);
-  if (glbs.length === 0) fail(`no .glb files found in ${sourceId} archive`);
+  if (glbs.length === 0) fail(`no .glb files found in ${source.id} archive`);
   mkdirSync(outDir, { recursive: true });
   for (const glb of glbs) writeFileSync(join(outDir, glb.file), glb.bytes);
-
   const textures = extractTextures(archive);
   for (const texture of textures) {
     const dest = join(outDir, texture.file);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, texture.bytes);
   }
-
-  const textureNote = textures.length > 0 ? ` + ${textures.length} texture(s)` : "";
-  console.log(`pulled ${glbs.length} models${textureNote} -> ${outDir}`);
+  return { outDir, models: glbs.length, textures: textures.length, url };
 }
 
 function readSingles(): SingleAsset[] {
@@ -120,9 +137,11 @@ function writeSingles(list: SingleAsset[]): void {
   writeFileSync(singlesJson, `${JSON.stringify(list, null, 2)}\n`);
 }
 
-function cmdAdd(argv: string[]): void {
+function cmdRegisterSingle(argv: string[]): void {
   const target = argv[0];
-  if (target === undefined) fail("usage: add <path|url> --category <c> --license <l> [--author <a>] [--id <id>]");
+  if (target === undefined) {
+    fail("usage: register <path|url> --category <c> --license <l> [--author <a>] [--id <id>]");
+  }
   const license = flag(argv, "license");
   if (license === undefined) fail("add requires --license");
   const author = flag(argv, "author") ?? "Unknown";
@@ -152,6 +171,104 @@ function cmdAdd(argv: string[]): void {
   singles.push({ id, url, license, author, categories });
   writeSingles(singles);
   console.log(`added single ${id} -> ${url}${isUrl ? " (0 bytes stored)" : " (copied to local/)"}`);
+}
+
+const KINDS: readonly AssetKind[] = ["model", "pack", "component", "icon"];
+
+function describeMatch(match: AssetMatch): string {
+  switch (match.kind) {
+    case "model":
+      return `[model]     ${match.id}${match.via === "alias" ? "  (alias)" : match.via === "single" ? "  (single)" : ""}`;
+    case "pack":
+      return `[pack]      ${match.source} — ${match.title}`;
+    case "component":
+      return `[component] ${match.name} — ${match.title}`;
+    case "icon":
+      return `[icon]      ${match.name}`;
+  }
+}
+
+async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
+  if (match.kind === "component") {
+    const component = registryCatalog.components.find((entry) => entry.name === match.name);
+    if (component === undefined) fail(`component vanished from catalog: ${match.name}`);
+    console.log(`component: ${component.title} — ${component.description}\n`);
+    console.log(componentWiringSnippet(component));
+    return;
+  }
+  if (match.kind === "icon") {
+    console.log(`icon: ${match.name}\n`);
+    console.log(iconWiringSnippet(match.name));
+    return;
+  }
+
+  const source = sourceById.get(match.source);
+  if (source === undefined) fail(`match resolves to unknown source: ${match.source}`);
+  const outRoot = resolve(flag(argv, "dir") ?? "public");
+  const outDir = join(outRoot, "models", match.source);
+  const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
+
+  if (isPopulated(outDir)) {
+    console.log(`${match.source} already present in ${outDir}`);
+  } else {
+    const result = await fetchPackInto(source, outRoot, { mirrorBase });
+    const textureNote = result.textures > 0 ? ` + ${result.textures} texture(s)` : "";
+    console.log(`pulled ${result.models} models${textureNote} -> ${result.outDir}`);
+  }
+
+  const result = reindex(join(outRoot, "models"), generatedDir);
+  console.log(`reindexed ${result.total} entries -> ${generatedDir}`);
+
+  if (match.kind === "model") {
+    console.log(`\nwire it in (characters/enemies go in entityModels instead):\n`);
+    console.log(modelWiringSnippet(match.id));
+  } else {
+    console.log(
+      `\n${match.title}: browse ids with \`assets list --source ${match.source}\`, then wire like:\n`,
+    );
+    console.log(modelWiringSnippet(`${match.source}/<model>`));
+  }
+}
+
+async function cmdAdd(argv: string[]): Promise<void> {
+  const query = argv[0];
+  if (query === undefined) {
+    fail(
+      "usage: add <query> [--kind model|pack|component|icon] [--dir <dir>] [--mirror <baseUrl>] [--json]\n" +
+        "       add <path|url> --license <l> [--category <c>]   (register a one-off single into the shipped index)",
+    );
+  }
+  // Back-compat: the old `add` registered a one-off single, always with --license.
+  if (flag(argv, "license") !== undefined) {
+    cmdRegisterSingle(argv);
+    return;
+  }
+
+  const kindFlag = flag(argv, "kind");
+  if (kindFlag !== undefined && !KINDS.includes(kindFlag as AssetKind)) {
+    fail(`--kind must be one of ${KINDS.join(", ")}`);
+  }
+  const kind = kindFlag as AssetKind | undefined;
+  const ranked = rankAssets(query, { kind, limit: Number(flag(argv, "limit") ?? "12") });
+  if (ranked.length === 0) {
+    fail(`no asset matches "${query}" — try a broader term or \`assets search <term>\``);
+  }
+  if (argv.includes("--json")) {
+    console.log(JSON.stringify(ranked, null, 2));
+    return;
+  }
+
+  const top = ranked[0]!;
+  const runnerUp = ranked[1]?.score ?? 0;
+  const decisive = ranked.length === 1 || kind !== undefined || top.score - runnerUp >= 20;
+  if (!decisive) {
+    console.log(`several matches for "${query}" — narrow with --kind or a more specific term:\n`);
+    for (const entry of ranked.slice(0, 8)) console.log(`  ${describeMatch(entry.match)}`);
+    console.log(`\nthen re-run, e.g. \`assets add "${query}" --kind ${top.match.kind}\``);
+    return;
+  }
+  console.log(`→ ${describeMatch(top.match)}\n`);
+  await performAdd(top.match, argv);
 }
 
 function cmdReindex(argv: string[]): void {
@@ -185,7 +302,10 @@ if (import.meta.main) {
       await cmdPull(rest);
       break;
     case "add":
-      cmdAdd(rest);
+      await cmdAdd(rest);
+      break;
+    case "register":
+      cmdRegisterSingle(rest);
       break;
     case "reindex":
       cmdReindex(rest);
@@ -194,7 +314,7 @@ if (import.meta.main) {
       cmdVerify();
       break;
     default:
-      console.log("usage: assets <list|search|pull|add|reindex|verify> [...args]");
+      console.log("usage: assets <add|list|search|pull|register|reindex|verify> [...args]");
       if (command !== undefined && command !== "help") process.exit(1);
   }
 }

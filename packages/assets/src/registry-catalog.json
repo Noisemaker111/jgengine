@@ -1,0 +1,455 @@
+{
+  "homepage": "https://jgengine.com",
+  "components": [
+    {
+      "name": "ability-action-bar",
+      "title": "Ability Action Bar",
+      "description": "Action Bar wired to a live AbilityKit — derives slot state, cooldown, and charges from engine snapshots each tick."
+    },
+    {
+      "name": "ability-slot",
+      "title": "Ability Slot",
+      "description": "Four-state ability slot button — ready, cooldown (conic sweep + timer), no-resource, locked — with charge pips, just-cast flash, and a corner keybind badge."
+    },
+    {
+      "name": "accent-rule",
+      "title": "Accent Rule",
+      "description": "Thin glowing gradient divider used under panel headers and section breaks."
+    },
+    {
+      "name": "action-bar",
+      "title": "Action Bar",
+      "description": "Row of ability slot buttons driven by a plain slot-data array — presentational, value-driven."
+    },
+    {
+      "name": "ammo-counter",
+      "title": "Ammo Counter",
+      "description": "Magazine/reserve ammo readout with a low-ammo pulse, a reloading label, and a slanted divider between magazine and reserve counts."
+    },
+    {
+      "name": "announcement-banner",
+      "title": "Announcement Banner",
+      "description": "Centered match-event banner (victory/defeat/warning/neutral) with an accent rule and optional keybind hint."
+    },
+    {
+      "name": "arc-gauge",
+      "title": "Arc Gauge",
+      "description": "SVG sweep-arc gauge with tick marks, a glowing progress stroke in accent/danger/warning tones, and a centered readout + label."
+    },
+    {
+      "name": "boss-bar",
+      "title": "Boss Bar",
+      "description": "Wide boss health bar with finial end-caps, phase-transition ticks, a name, and a sub-label."
+    },
+    {
+      "name": "break-meter",
+      "title": "Break Meter",
+      "description": "Compact stagger/poise break meter that ramps color with fill and shakes and pulses when broken."
+    },
+    {
+      "name": "buff-tray",
+      "title": "Buff Tray",
+      "description": "Row of chamfered buff/debuff chips with stack counts and a remaining-duration underline, driven by a plain chip array."
+    },
+    {
+      "name": "cast-bar",
+      "title": "Cast Bar",
+      "description": "Slant-clipped cast/channel progress bar with a bright leading edge and an interrupted state."
+    },
+    {
+      "name": "charge-meter",
+      "title": "Charge Meter",
+      "description": "Slant-clipped charge or ultimate meter with tier ticks and a ready-state glow animation."
+    },
+    {
+      "name": "combat-float-layer",
+      "title": "Combat Float Layer",
+      "description": "Absolute-positioned layer of animated damage/heal/crit/info/error text floats, each jittered around a screen position — presentational, list-driven."
+    },
+    {
+      "name": "combat-log-panel",
+      "title": "Combat Log Panel",
+      "description": "Auto-scrolling tone-colored combat log in a titled panel — damage/heal/system lines fade with age, value-driven."
+    },
+    {
+      "name": "combo-counter",
+      "title": "Combo Counter",
+      "description": "Big pop-animated combo count with a HUD label and an optional decaying progress bar."
+    },
+    {
+      "name": "crafting-panel",
+      "title": "Crafting Panel",
+      "description": "Recipe list panel with per-input have/need coloring and an in-progress craft-fraction bar under each recipe."
+    },
+    {
+      "name": "currency-display",
+      "title": "Currency Display",
+      "description": "Coin-glyph currency readout with optional compact k/m/b formatting and a currency name label — presentational, value-driven."
+    },
+    {
+      "name": "damage-direction-indicator",
+      "title": "Damage Direction Indicator",
+      "description": "Screen-edge arc that flashes toward the source of incoming damage, scaled by intensity."
+    },
+    {
+      "name": "death-overlay-bound",
+      "title": "Death Overlay Bound",
+      "description": "DeathScreenView bound to the local player's dead state via useLocalPlayerDead — renders nothing while alive."
+    },
+    {
+      "name": "death-screen-view",
+      "title": "Death Screen View",
+      "description": "Presentational death overlay with a popping title, respawn countdown or respawn MenuButton — value-driven, no engine reads."
+    },
+    {
+      "name": "dialogue-panel",
+      "title": "Dialogue Panel",
+      "description": "Notched dialogue box with speaker nameplate, portrait well, and skill-check-annotated branching choices."
+    },
+    {
+      "name": "entity-vital-bar",
+      "title": "Entity Vital Bar",
+      "description": "VitalBar bound to a live entity stat via useEntityStat — the one-line health bar for any entity instance."
+    },
+    {
+      "name": "equipment-doll",
+      "title": "Equipment Doll",
+      "description": "Paper-doll figure flanked by left/right/bottom equipment slot wells, rarity-tinted by occupied item."
+    },
+    {
+      "name": "event-charge-meter",
+      "title": "Event Charge Meter",
+      "description": "ChargeMeter bound to a live EventMeter via useEventMeter — the one-line charge bar for combo/ultimate/hype meters."
+    },
+    {
+      "name": "feed-combat-log",
+      "title": "Feed Combat Log",
+      "description": "CombatLogPanel bound to a live game feed action via useFeed, mapped through a mapLine() projector."
+    },
+    {
+      "name": "feed-kill-feed",
+      "title": "Feed Kill Feed",
+      "description": "KillFeed bound to a live game feed action via useFeed, mapping raw feed entries to kill-feed rows."
+    },
+    {
+      "name": "feed-pickup-toasts",
+      "title": "Feed Pickup Toasts",
+      "description": "PickupToastStack bound to a live game feed action via useFeed, mapping raw feed entries to pickup toasts."
+    },
+    {
+      "name": "game-event-floats",
+      "title": "Game Event Floats",
+      "description": "CombatFloatLayer wired to the entity.floatText game event via useGame — spawns and auto-expires floats from live combat."
+    },
+    {
+      "name": "heart-row",
+      "title": "Heart Row",
+      "description": "Row of heart pips for discrete lives or health, with an optional custom icon renderer."
+    },
+    {
+      "name": "hit-marker",
+      "title": "Hit Marker",
+      "description": "Crosshair X-mark flash that pulses on a hit, brighter and larger on crit — presentational, active/crit-driven."
+    },
+    {
+      "name": "hotbar-selector",
+      "title": "Hotbar Selector",
+      "description": "Numbered hotbar slots with a selection caret and scale-up highlight for the active index."
+    },
+    {
+      "name": "hud-label",
+      "title": "Hud Label",
+      "description": "Small uppercase tracked-letterspacing caption for HUD field headers and table columns."
+    },
+    {
+      "name": "hud-marker-layer",
+      "title": "Hud Marker Layer",
+      "description": "Renders a full-screen layer of WaypointMarker instances from a list of HUD markers."
+    },
+    {
+      "name": "hud-panel",
+      "title": "Hud Panel",
+      "description": "Corner-bracketed HUD panel shell with a chamfer-free titled header — the base chrome every panel/overlay stacks on."
+    },
+    {
+      "name": "interaction-ring",
+      "title": "Interaction Ring",
+      "description": "Circular interact-hold progress ring with a center keybind badge and optional label."
+    },
+    {
+      "name": "inventory-slot-grid",
+      "title": "Inventory Slot Grid",
+      "description": "Item Grid wired to a live inventory container — maps engine InventorySlot state to grid slots each render."
+    },
+    {
+      "name": "item-grid",
+      "title": "Item Grid",
+      "description": "Rarity-tinted inventory/loot grid of clickable slots, driven by a plain slot-data array — presentational, value-driven."
+    },
+    {
+      "name": "journal-quest-tracker",
+      "title": "Journal Quest Tracker",
+      "description": "QuestTracker bound to the live quest journal via useQuestJournal, mapped through a describe() projector."
+    },
+    {
+      "name": "keybind-badge",
+      "title": "Keybind Badge",
+      "description": "Chamfered key-cap badge for showing a binding on its own control — hotbar slot corners, panel toggles."
+    },
+    {
+      "name": "kill-feed",
+      "title": "Kill Feed",
+      "description": "Right-aligned scrolling feed of kill/elimination rows with friendly/hostile coloring and an accent highlight bar — presentational, list-driven."
+    },
+    {
+      "name": "level-up-splash",
+      "title": "Level Up Splash",
+      "description": "Radial-glow level-up splash that flashes in on the stat.levelUp game event via useGame and auto-dismisses."
+    },
+    {
+      "name": "loading-screen",
+      "title": "Loading Screen",
+      "description": "Full-screen loading card with a slant-clipped determinate progress bar or an indeterminate sheen sweep, plus an optional rotating tip line."
+    },
+    {
+      "name": "lock-on-marker",
+      "title": "Lock-On Marker",
+      "description": "Rotating corner-bracket lock-on reticle that snaps into a diamond frame when a target is acquired, with an optional label."
+    },
+    {
+      "name": "loot-card",
+      "title": "Loot Card",
+      "description": "Rarity-bordered item tooltip card with icon, stat lines, italic affixes, and flavor text."
+    },
+    {
+      "name": "match-timer",
+      "title": "Match Timer",
+      "description": "MM:SS countdown clock with tick flanks and warning/critical color states, bundled with CountdownPips, a large pop-in number for a pre-round countdown."
+    },
+    {
+      "name": "menu-button",
+      "title": "Menu Button",
+      "description": "Slant-clipped menu button with primary/ghost/danger variants and an optional corner keybind badge."
+    },
+    {
+      "name": "menu-list",
+      "title": "Menu List",
+      "description": "Keyboard/pointer-navigable vertical menu with a selection wedge, accent underline, and per-entry keybind badges."
+    },
+    {
+      "name": "moodle-tray",
+      "title": "Moodle Tray",
+      "description": "Buff Tray adapter for survival-game Moodle records — maps severity to buff/debuff tint and fraction to the duration ring."
+    },
+    {
+      "name": "objective-channel",
+      "title": "Objective Channel",
+      "description": "Slant-clipped capture/channel progress bar with friendly/hostile/neutral ownership tinting and a contested pulse."
+    },
+    {
+      "name": "pause-screen",
+      "title": "Pause Screen",
+      "description": "Blurred full-screen pause overlay with a title and a MenuList of entries."
+    },
+    {
+      "name": "pickup-toast-stack",
+      "title": "Pickup Toast Stack",
+      "description": "Stacked, fading pickup toasts with rarity-tinted icon/label/count — presentational, list-driven."
+    },
+    {
+      "name": "quest-tracker",
+      "title": "Quest Tracker",
+      "description": "Stacked objective-list HUD widget — quest title rule plus checkable/countable objective rows, value-driven."
+    },
+    {
+      "name": "race-position",
+      "title": "Race Position",
+      "description": "Large ordinal position readout (1st/2nd/3rd) with an optional field-size suffix and a lap counter label."
+    },
+    {
+      "name": "rank-list",
+      "title": "Rank List",
+      "description": "Ranked leaderboard rows in a titled panel — gold star on first place, alternating row shading, value-driven."
+    },
+    {
+      "name": "resource-orb",
+      "title": "Resource Orb",
+      "description": "Circular fill-from-bottom resource orb (mana, stamina, and other tones) with a percentage readout."
+    },
+    {
+      "name": "results-screen",
+      "title": "Results Screen",
+      "description": "Victory/defeat/draw results overlay with an animated outcome title, a two-column stat grid, and an optional MenuList."
+    },
+    {
+      "name": "reticle",
+      "title": "Reticle",
+      "description": "Configurable crosshair reticle — dot, cross, circle, chevron, or shotgun spread pattern — with an optional hit-flash tick overlay."
+    },
+    {
+      "name": "score-readout",
+      "title": "Score Readout",
+      "description": "Zero-padded score counter that splits leading zeros from significant digits, with a pop-in animation on value change."
+    },
+    {
+      "name": "scoreboard-overlay",
+      "title": "Scoreboard Overlay",
+      "description": "Full-screen modal scoreboard with configurable columns, numeric-aware alignment, and highlight/team-color row accents."
+    },
+    {
+      "name": "settings-group",
+      "title": "Settings Group",
+      "description": "Titled settings section with an accent rule underline, wrapping SliderRow/ToggleRow children in a vertical stack."
+    },
+    {
+      "name": "slider-row",
+      "title": "Slider Row",
+      "description": "Labeled pointer-draggable slant-clipped slider row with a formatted value readout — settings-menu style."
+    },
+    {
+      "name": "stat-leaderboard",
+      "title": "Stat Leaderboard",
+      "description": "RankList bound to a live stat leaderboard via useLeaderboard, with optional userId-to-display-name resolution."
+    },
+    {
+      "name": "streak-callout",
+      "title": "Streak Callout",
+      "description": "Italic, skewed streak callout that intensifies size/color/pulse at higher tiers."
+    },
+    {
+      "name": "target-frame",
+      "title": "Target Frame",
+      "description": "Reversed UnitFrame with hostile/friendly/neutral relation coloring for an enemy or NPC target."
+    },
+    {
+      "name": "team-score-board",
+      "title": "Team Score Board",
+      "description": "Two-team score comparison with a diamond divider, per-team name labels, and an optional round label — presentational, value-driven."
+    },
+    {
+      "name": "title-screen",
+      "title": "Title Screen",
+      "description": "Full-screen title card with headline, subtitle, optional backdrop layer, version tag, and a MenuList of entries."
+    },
+    {
+      "name": "toggle-row",
+      "title": "Toggle Row",
+      "description": "Labeled two-segment on/off toggle row rendered as slant-clipped chips — settings-menu style."
+    },
+    {
+      "name": "unit-frame",
+      "title": "Unit Frame",
+      "description": "Portrait, name, level rosette, and stacked vital bars for a player or party-member HUD frame."
+    },
+    {
+      "name": "vendor-panel",
+      "title": "Vendor Panel",
+      "description": "Shop listing panel with rarity-colored item names, stock counts, affordability-aware pricing, and a balance readout."
+    },
+    {
+      "name": "vital-bar",
+      "title": "Vital Bar",
+      "description": "Slant-clipped stat bar with damage ghost-trail, segment ticks, and health/mana/stamina/xp/shield tones — presentational, value-driven."
+    },
+    {
+      "name": "wallet-currency-display",
+      "title": "Wallet Currency Display",
+      "description": "CurrencyDisplay bound to a live wallet balance via useCurrency — the one-line currency readout for any currency id."
+    },
+    {
+      "name": "wave-indicator",
+      "title": "Wave Indicator",
+      "description": "Wave-number readout with an accent underline and an optional remaining-hostiles counter for horde/survival modes."
+    },
+    {
+      "name": "waypoint-marker",
+      "title": "Waypoint Marker",
+      "description": "World-space HUD marker for objectives, danger, allies, or loot, with an off-screen clamp arrow, label, and distance readout."
+    },
+    {
+      "name": "xp-bar",
+      "title": "Xp Bar",
+      "description": "Thin tick-marked experience bar with an optional level readout."
+    }
+  ],
+  "icons": [
+    "amulet",
+    "apple",
+    "arrow",
+    "arrowDown",
+    "arrowLeft",
+    "arrowRight",
+    "arrowUp",
+    "axe",
+    "backpack",
+    "bomb",
+    "boots",
+    "bow",
+    "bread",
+    "buffArrow",
+    "check",
+    "chest",
+    "chestplate",
+    "cloak",
+    "coin",
+    "cross",
+    "crossbow",
+    "crosshairIcon",
+    "crouch",
+    "crystal",
+    "dagger",
+    "debuffArrow",
+    "eye",
+    "feather",
+    "fire",
+    "fish",
+    "fist",
+    "flag",
+    "frost",
+    "gauntlet",
+    "gear",
+    "gem",
+    "gun",
+    "hammer",
+    "hand",
+    "hardDrop",
+    "heart",
+    "helmet",
+    "hourglass",
+    "ingot",
+    "jump",
+    "key",
+    "leaf",
+    "lightning",
+    "map",
+    "meat",
+    "menu",
+    "ore",
+    "pause",
+    "pickaxe",
+    "pin",
+    "poison",
+    "potionBlue",
+    "potionRed",
+    "restart",
+    "ring",
+    "rotateCcw",
+    "rotateCw",
+    "scroll",
+    "shield",
+    "skip",
+    "skull",
+    "spear",
+    "sprint",
+    "staff",
+    "star",
+    "stone",
+    "swap",
+    "sword",
+    "tome",
+    "torch",
+    "wand",
+    "wing",
+    "wood"
+  ]
+}

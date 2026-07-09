@@ -31,6 +31,7 @@
   "scripts": {
     "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist && bun scripts/postbuild.ts",
     "check-types": "tsgo --noEmit -p tsconfig.json",
+    "gen:registry-catalog": "bun scripts/gen-registry-catalog.ts",
     "test": "bun test src"
   },
   "dependencies": {
