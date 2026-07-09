@@ -119,7 +119,7 @@ function drawAnalyticsOverlay(
 }
 
 function downloadImage(includeAnalytics: boolean, stats: ContributionStats, profile: GitHubProfile | null): void {
-  const source = document.querySelector("canvas");
+  const source = document.querySelector<HTMLCanvasElement>("canvas[data-engine]");
   if (source === null) return;
   const out = document.createElement("canvas");
   out.width = source.width;

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { extractPackageSurface } from "./apiSurface";
 
-const PACKAGES = ["core", "ws", "sql", "react", "convex", "node", "shell", "assets"];
+const PACKAGES = ["core", "ws", "sql", "react", "convex", "node", "shell", "assets", "github", "jgengine"];
 
 function main(): void {
   const root = fileURLToPath(new URL("..", import.meta.url));

@@ -107,6 +107,12 @@ export function drainPendingLeaderboardIncrements(session: Record<string, unknow
 
 export const LEADERBOARD_TOP_LIMIT = 100;
 
+export function clampLimit(value: number | undefined, fallback: number, max: number): number {
+  const candidate = value ?? fallback;
+  if (!Number.isFinite(candidate)) return fallback;
+  return Math.min(Math.max(Math.floor(candidate), 1), max);
+}
+
 export type LeaderboardRow = {
   gameId: string;
   stat: string;
@@ -156,7 +162,7 @@ export function topLeaderboardRows(
     limit?: number;
   },
 ): LeaderboardEntry[] {
-  const limit = Math.min(Math.max(args.limit ?? LEADERBOARD_TOP_LIMIT, 1), LEADERBOARD_TOP_LIMIT);
+  const limit = clampLimit(args.limit, LEADERBOARD_TOP_LIMIT, LEADERBOARD_TOP_LIMIT);
   return [...rows]
     .filter(
       (row) =>
@@ -232,11 +238,17 @@ export function toServerListing(record: GameServerRecord): ServerListing {
   };
 }
 
-export function toOpenServerListings(listings: Iterable<ServerListing>, limit = 20): ServerListing[] {
+export const OPEN_SERVER_LISTING_LIMIT = 20;
+export const OPEN_SERVER_LISTING_MAX = 100;
+
+export function toOpenServerListings(
+  listings: Iterable<ServerListing>,
+  limit: number = OPEN_SERVER_LISTING_LIMIT,
+): ServerListing[] {
   return [...listings]
     .filter((listing) => listing.status === "running")
     .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, limit);
+    .slice(0, clampLimit(limit, OPEN_SERVER_LISTING_LIMIT, OPEN_SERVER_LISTING_MAX));
 }
 
 export type HostPersistence = {
@@ -288,6 +300,7 @@ export type ServerPersistPlan = {
   server: GameServerRecord;
   profiles: PlayerProfileRecord[];
   chunks: WorldChunkRecord[];
+  deletedChunks: string[];
   leaderboard: LeaderboardIncrement[];
 };
 
@@ -330,11 +343,15 @@ export function planServerPersist(
   }
 
   const chunks: WorldChunkRecord[] = [];
+  const deletedChunks: string[] = [];
   if (isSaveEnabled(save) && saveScopeIncludesChunks(save.scope)) {
     for (const chunkKey of snapshot.dirty.chunks) {
       const chunk = snapshot.chunks[chunkKey];
-      if (!chunk) continue;
-      chunks.push({ serverId: server.serverId, chunkKey, snapshot: chunk, updatedAt: now });
+      if (chunk) {
+        chunks.push({ serverId: server.serverId, chunkKey, snapshot: chunk, updatedAt: now });
+      } else {
+        deletedChunks.push(chunkKey);
+      }
     }
   }
 
@@ -350,6 +367,7 @@ export function planServerPersist(
     },
     profiles,
     chunks,
+    deletedChunks,
     leaderboard,
   };
 }

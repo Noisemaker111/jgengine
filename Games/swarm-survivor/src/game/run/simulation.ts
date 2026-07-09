@@ -256,7 +256,8 @@ export function registerRunEvents(ctx: GameContext): void {
   const run = getRunState(ctx);
   ctx.game.leaderboard.track({ stat: "kills", scope: "profile" });
   ctx.player.stats.setBase("damageMultiplier", 1);
-  ctx.game.events.on("entity.died", (event) => {
+  run.disposeEvents?.();
+  run.disposeEvents = ctx.game.events.on("entity.died", (event) => {
     if (event.instanceId === ctx.player.userId) {
       if (run.outcome === "playing") {
         run.outcome = "lost";

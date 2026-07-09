@@ -135,10 +135,25 @@ test("planServerPersist drains leaderboard, splits sessions, and gates writes by
   expect(plan.profiles).toHaveLength(1);
   expect(plan.profiles[0]?.playerState.session).toEqual({});
   expect(plan.chunks.map((chunk) => chunk.chunkKey)).toEqual(["0,0"]);
+  expect(plan.deletedChunks).toEqual([]);
 
   const noSave = planServerPersist(server, snapshot, "none", 1_000);
   expect(noSave.profiles).toHaveLength(0);
   expect(noSave.chunks).toHaveLength(0);
+});
+
+test("planServerPersist records dirty chunks with no snapshot as deletions", () => {
+  const server = makeServer();
+  const base = createRuntimeSnapshot({ gameId: "demo", serverId: "srv-1" });
+  const snapshot = {
+    ...base,
+    revision: 2,
+    chunks: { "0,0": { chunkKey: "0,0", objects: [], entities: [] } },
+    dirty: { server: false, players: [], chunks: ["0,0", "1,0"] },
+  };
+  const plan = planServerPersist(server, snapshot, server.save, 1_000);
+  expect(plan.chunks.map((chunk) => chunk.chunkKey)).toEqual(["0,0"]);
+  expect(plan.deletedChunks).toEqual(["1,0"]);
 });
 
 test("planServerPersist keeps prior dirtyAt when snapshot is clean", () => {

@@ -40,9 +40,17 @@ export function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler {
     if (request.method !== "GET") {
       return json({ error: "method not allowed" }, 405);
     }
-    const segments = url.pathname.slice(basePath.length).split("/").filter(Boolean).map(decodeURIComponent);
+    let segments: string[];
+    try {
+      segments = url.pathname.slice(basePath.length).split("/").filter(Boolean).map(decodeURIComponent);
+    } catch {
+      return json({ error: "malformed path" }, 400);
+    }
     const gameId = url.searchParams.get("gameId") ?? "";
     const limitParam = url.searchParams.get("limit");
+    if (limitParam !== null && !Number.isFinite(Number(limitParam))) {
+      return json({ error: "limit must be a number" }, 400);
+    }
     const limit = limitParam === null ? undefined : Number(limitParam);
     const [head, tail] = segments;
 
