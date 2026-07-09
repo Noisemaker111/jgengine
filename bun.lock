@@ -482,12 +482,12 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
       "dependencies": {
-        "@jgengine/core": "^0.7.0",
+        "@jgengine/core": "^0.8.0",
         "fflate": "^0.8.2",
       },
       "devDependencies": {
@@ -496,7 +496,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@jgengine/core": "^0.7.0",
       },
@@ -512,15 +512,28 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.7.0",
+      "version": "0.8.0",
     },
     "packages/github": {
       "name": "@jgengine/github",
       "version": "0.1.0",
     },
+    "packages/jgengine": {
+      "name": "jgengine",
+      "version": "0.8.0",
+      "bin": {
+        "jgengine": "dist/cli/index.js",
+      },
+      "dependencies": {
+        "@jgengine/assets": "^0.8.0",
+      },
+      "devDependencies": {
+        "@types/node": "^24",
+      },
+    },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@jgengine/core": "^0.7.0",
         "@jgengine/ws": "^0.7.0",
@@ -535,7 +548,7 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@jgengine/core": "^0.7.0",
       },
@@ -549,7 +562,7 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@jgengine/core": "^0.7.0",
         "@jgengine/react": "^0.7.0",
@@ -574,7 +587,7 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@jgengine/core": "^0.7.0",
       },
@@ -584,7 +597,7 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@jgengine/core": "^0.7.0",
       },
@@ -1307,6 +1320,8 @@
     "isexe": ["isexe@2.0.0", "", {}, "sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw=="],
 
     "its-fine": ["its-fine@2.0.0", "", { "dependencies": { "@types/react-reconciler": "^0.28.9" }, "peerDependencies": { "react": "^19.0.0" } }, "sha512-KLViCmWx94zOvpLwSlsx6yOCeMhZYaxrJV87Po5k/FoZzcPSahvK5qJ7fYhS61sZi5ikmh2S3Hz55A2l3U69ng=="],
+
+    "jgengine": ["jgengine@workspace:packages/jgengine"],
 
     "jgengine-registry": ["jgengine-registry@workspace:registry"],
 
