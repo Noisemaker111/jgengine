@@ -83,8 +83,11 @@ import type {
 import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 
+import { devtools } from "@jgengine/core/devtools/devtools";
+
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
+import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
 import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
@@ -771,6 +774,7 @@ function FrameDriver({
   const hasTerrain = useMemo(() => hasEnvironmentTerrain(playable.game.world), [playable]);
 
   useFrame((_state, rawDt) => {
+    const simStart = performance.now();
     try {
     const dt = Math.min(rawDt, 0.05);
     const gameDt = ctx.time.advance(dt);
@@ -982,6 +986,7 @@ function FrameDriver({
         onRuntimeError(error, "tick");
       }
     }
+    devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
   }, GAME_SIM_FRAME_PRIORITY);
   return null;
 }
@@ -1009,8 +1014,9 @@ function HudOnlyDriver({
       const last = lastFrameRef.current;
       lastFrameRef.current = now;
       if (last === null) return;
+      const rawDt = (now - last) / 1000;
+      const simStart = performance.now();
       try {
-        const rawDt = (now - last) / 1000;
         const dt = Math.min(rawDt, 0.05);
         const gameDt = ctx.time.advance(dt);
         ctx.input.publish(heldActionsFor(tracker, inputActions));
@@ -1028,6 +1034,7 @@ function HudOnlyDriver({
           onRuntimeError(error, "tick");
         }
       }
+      devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
     };
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
@@ -1076,11 +1083,17 @@ function DiagnosticOverlay({ diagnostics }: { diagnostics: RuntimeDiagnostic[] }
 
 export function GamePlayerShell({
   playable,
-  multiplayer = null,
+  multiplayer: rawMultiplayer = null,
 }: {
   playable: PlayableGame;
   multiplayer?: ShellMultiplayer | null;
 }) {
+  const multiplayer = useMemo(
+    () => (rawMultiplayer === null ? null : withDevtoolsLatency(rawMultiplayer)),
+    [rawMultiplayer],
+  );
+  const devtoolsEnabled = playable.devtools !== false;
+  const [devtoolsOpen, setDevtoolsOpen] = useState(false);
   const [ctx, setCtx] = useState<GameContext | null>(null);
   const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostic[]>([]);
   const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
@@ -1274,6 +1287,11 @@ export function GamePlayerShell({
         tabIndex={0}
         className="relative h-full w-full bg-neutral-950 outline-none"
         onKeyDown={(event) => {
+          if (event.code === "F2" && devtoolsEnabled) {
+            event.preventDefault();
+            setDevtoolsOpen((current) => !current);
+            return;
+          }
           if (event.code === "Tab" || event.code === "Space") event.preventDefault();
           tracker.handleDown(event.code);
         }}
@@ -1286,6 +1304,9 @@ export function GamePlayerShell({
             <GameUI />
           </GameProvider>
         </GameUiErrorBoundary>
+        {devtoolsEnabled ? (
+          <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
+        ) : null}
         <DiagnosticOverlay diagnostics={diagnostics} />
       </div>
     );
@@ -1463,6 +1484,12 @@ export function GamePlayerShell({
       tabIndex={0}
       className="relative h-full w-full bg-neutral-950 outline-none"
       onKeyDown={(event) => {
+        if (event.code === "F2" && devtoolsEnabled) {
+          event.preventDefault();
+          document.exitPointerLock?.();
+          setDevtoolsOpen((current) => !current);
+          return;
+        }
         if (event.code === "Tab" || event.code === "Space") event.preventDefault();
         tracker.handleDown(event.code);
       }}
@@ -1560,6 +1587,7 @@ export function GamePlayerShell({
           pointerAim={pointer?.aim === true}
           pingCommand={pointer?.pingCommand}
         />
+        <DevtoolsRendererProbe />
       </Canvas>
       {coarsePointer && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
         <TouchPlaySurface
@@ -1591,6 +1619,9 @@ export function GamePlayerShell({
           onPick={handleVerbPick}
           onClose={() => setContextMenu(null)}
         />
+      ) : null}
+      {devtoolsEnabled ? (
+        <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
       ) : null}
       <DiagnosticOverlay diagnostics={diagnostics} />
     </div>
