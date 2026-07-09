@@ -5,6 +5,7 @@ import { aabbOverlap } from "@jgengine/core/world/geometry";
 import { settlements } from "./settlements";
 import { world } from "../world";
 
+// The Annals is built from a prompt by Ethan Mollick (https://x.com/emollick). Play it at https://annals-kingdom.netlify.app/.
 describe("annals world", () => {
   const summary = summarizeEnvironment(world);
 
