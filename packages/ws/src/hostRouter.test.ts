@@ -177,6 +177,28 @@ test("loopback: presence row has no appearance when the client never sent one", 
   }
 });
 
+test("loopback: leaving drops the leaver's presence row for other clients", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game", serverId });
+
+    const rosters = channel<WsPresenceRow[]>();
+    bob.presenceSync.subscribe(serverId, (rows) => rosters.push(rows));
+    expect(await rosters.next()).toEqual([]);
+
+    alice.presenceSync.syncPose(serverId, { x: 1, y: 0, z: 2, rotationY: 0.4, rotationPitch: 0 });
+    expect(await rosters.next()).toHaveLength(1);
+
+    await alice.transport.leaveServer({ serverId });
+    expect(await rosters.next()).toEqual([]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
 test("loopback: feed subscription fires when membership changes", async () => {
   const stack = startStack();
   try {

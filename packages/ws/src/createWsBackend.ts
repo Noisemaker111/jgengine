@@ -223,6 +223,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       return result as JoinServerResult;
     },
     async leaveServer(args) {
+      poseGates.delete(args.serverId);
       await request((id) => ({ v: 1, t: "leave", id, serverId: args.serverId }));
     },
     async runCommand(args) {
