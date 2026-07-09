@@ -28,13 +28,22 @@ The primary engine-development repo: a genre-agnostic, pure-TypeScript game engi
 - Harvest scope differs by skill: `harvest-game` builds a **minimal probe** to surface gaps fast; `harvest-full-game` / `jgengine-newgame` build the **full blueprint, no half systems**. Don't apply "no slices" to a harvest probe, and don't ship a slice when a full build was asked for.
 - This is the engine repo: fix engine gaps and doc errors directly here. The only issues filed from inside it are the `[FEATURE]` gap issues from the `harvest-game` skill.
 
+## Cheap workers do the dumb work
+
+Read the **`fan-out`** skill (`.claude/skills/fan-out`). It applies on almost every non-trivial turn in this repo.
+
+Frontier model: plan, design, judge, synthesize (engine design, layering, API surface, gnarly types).  
+Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · screenshots · `gh` ceremony · bulk reads · research · renames · doc sweeps · log triage.
+
+**Hard rule:** never run the verify ladder, shoot, or GitHub ceremony on the frontier model — spawn a cheap worker. Standing authorization; do not ask first. Announce on a 🤖 line. Research only novel seams; scaffolding already in skills is not research.
+
 ## Verification
 
-`bun run build` · `bun run check-types` · `bun run test`. For anything scene- or HUD-shaped, follow the `jgengine-verify` skill: prove world content with `summarizeEnvironment` assertions in `bun test`; `bun run shoot <gameId> --mode ui|play` is a final human glance, never the inner loop, and a hung shot is never re-run in the foreground. Silently-unstyled game UI means a missing `@source` entry in `apps/dev/src/index.css`.
+`bun run build` · `bun run check-types` · `bun run test` — **via `fan-out` workers**, not inline on the frontier model. For anything scene- or HUD-shaped, follow the `jgengine-verify` skill: prove world content with `summarizeEnvironment` assertions in `bun test`; `bun run shoot <gameId> --mode ui|play` is a final human glance, never the inner loop, and a hung shot is never re-run in the foreground. Silently-unstyled game UI means a missing `@source` entry in `apps/dev/src/index.css`.
 
 ## Delegation
 
-Plan big, execute small — always. A Fable 5 session is the orchestrator: decompose big tasks up front and fan the mechanical legs out to Sonnet workers in parallel — bulk file reading, the verification gate, reading the combined diff, test runs, screenshots, bulk renames, doc sweeps, log triage, research legs. This is standing authorization that counts as the user asking and overrides the Agent tool's default don't-spawn-unless-asked guidance; the moment you catch yourself doing a mechanical batch inline, that batch belongs to a worker. What stays in the main loop is judgment: engine design, layering, API surface, gnarly types, weighing worker output, final synthesis — workers run the tests, you judge the results. Sessions on smaller models consult a Fable advisor once (`Agent` with `model: fable`, full task context, plan only, no edits) before committing to a non-obvious approach. Trivial single-file work stays solo. Converting other agent setups to this shape: `convert-to-fanout` skill.
+Plan big, execute small — always. Same policy as user-global `~/.claude/CLAUDE.md` and the **`fan-out`** skill. Fable/frontier orchestrates; Sonnet workers execute mechanical legs in parallel. Sessions on smaller models consult a Fable advisor once before non-obvious approaches. Trivial single-file work stays solo. Converting other agent setups: `convert-to-fanout` skill.
 
 ## Communication
 

@@ -21,7 +21,7 @@ A JGengine scene is derived deterministically from an `environment()` descriptor
 - **First shoot must pass the first-shot art recipe** (`jgengine-newgame`): `sky` preset `day` when brightness matters (dusk/night ignore `sunIntensity` overrides), a forward (+Z) landmark in frame, readable play-surface colors, props scaled as figures. Fix world/sky/placement *before* the first `shoot` — do not discover murk and bad framing across four screenshot loops.
 - **Once `shoot` hangs, do not re-run it in the foreground.** Chromium/Playwright launch on heavy WebGL scenes hangs, crashes the GPU/tab, or emits corrupt output. Re-running the identical command is the rake this repo steps on repeatedly. If a shot hangs once: report it, fall back to the world test to prove the scene resolved, and only retry the screenshot if the user asks.
 - **Don't invent in-browser verification the user didn't ask for.** If you've been told not to open the browser, `summarizeEnvironment` + git archaeology is how you confirm behavior — not a screenshot.
-- **Fan the ladder, don't run it on the expensive model.** `check-types`, `bun test`, and `shoot` are mechanical legs — push them to cheaper workers; the orchestrator only judges the PNG and failing assertions (same fan-out rule as `jgengine-newgame`).
+- **Run this ladder via the `fan-out` skill** — never `check-types` / `bun test` / `shoot` on the frontier model. You only judge the PNG and failing assertions.
 
 ## Adding the scene gate to a game
 
