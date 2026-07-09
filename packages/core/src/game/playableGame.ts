@@ -84,6 +84,9 @@ export type CameraRigKind =
   | "inspection"
   | "none";
 
+/** Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective". */
+export type CameraProjection = "perspective" | "orthographic";
+
 /** Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input. */
 export interface SideScrollCameraConfig {
   /** World axis the action travels along; the camera watches from the perpendicular side. Default "x". */
@@ -300,13 +303,15 @@ export interface CameraShakeConfig {
   frequency?: number;
 }
 
-export const CAMERA_FRUSTUM_DEFAULTS = { fov: 55, near: 0.1, far: 300 } as const;
+export const CAMERA_FRUSTUM_DEFAULTS = { fov: 55, near: 0.1, far: 300, zoom: 50 } as const;
 
 export interface GameCameraConfig {
   /** Selects the rig. Overrides `perspective`; leave unset to fall back to `perspective`. */
   rig?: CameraRigKind;
-  /** Render frustum overrides applied to the canvas camera. `far` defaults to 300 — raise it for worlds whose content spans more than a few hundred units, or distant scenery silently clips. */
-  frustum?: { fov?: number; near?: number; far?: number };
+  /** Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default perspective. */
+  projection?: CameraProjection;
+  /** Render frustum overrides applied to the canvas camera. `far` defaults to 300 — raise it for worlds whose content spans more than a few hundred units, or distant scenery silently clips. `zoom` is the orthographic zoom in canvas pixels per world unit, read only when `projection` is "orthographic"; default 50. */
+  frustum?: { fov?: number; near?: number; far?: number; zoom?: number };
   /** "third" mounts the orbit camera (default); "first" mounts pointer-lock mouse-look. Shorthand for `rig: "orbit" | "first"`. */
   perspective?: "third" | "first";
   /** First-person tuning; only read when the rig resolves to "first". */

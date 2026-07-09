@@ -31,6 +31,7 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
     rig: "observer",
     observer: { bind: { kind: "entity", entityId: "sensor-showcase-culprit" }, distance: 7, height: 3.5, orbitSpeed: 0.3 },
   },
+  side2d: { rig: "sideScroll", projection: "orthographic" },
 };
 
 const gameModules = import.meta.glob<{ game: PlayableGame; uiScenario?: UiPreviewScenario }>(
