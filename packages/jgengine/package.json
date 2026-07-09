@@ -1,0 +1,45 @@
+{
+  "name": "jgengine",
+  "version": "0.8.0",
+  "description": "The JGengine command line — scaffold a playable game, diagnose a broken setup, and load engine docs and agent skills into any project. Start with `npx jgengine create <dir>`.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/jgengine"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "llms.txt"
+  ],
+  "bin": {
+    "jgengine": "dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@jgengine/assets": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

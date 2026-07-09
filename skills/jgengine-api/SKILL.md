@@ -204,6 +204,15 @@ Exact import paths and export names — **do not invent paths**; every row below
 
 ## Getting started (new project)
 
+Fastest path — the `jgengine` CLI scaffolds the entire canonical shape below (harness, skeleton, stub game, verify test, AGENTS.md) as a booting game:
+
+```sh
+npx jgengine create my-game   # then: cd my-game && bun dev
+npx jgengine doctor           # later, if the setup drifts (version skew, unstyled HUD, shape strays)
+```
+
+Manual equivalent:
+
 ```sh
 bun add @jgengine/core @jgengine/react @jgengine/shell react react-dom three three-stdlib @react-three/fiber @react-three/drei
 bun add -d @tailwindcss/vite tailwindcss   # HUD styling (Vite + Tailwind v4)
