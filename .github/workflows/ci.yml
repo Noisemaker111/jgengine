@@ -17,4 +17,5 @@ jobs:
       - run: bun run check-artifacts
       - run: bun run build
       - run: bun run check-types
+      - run: bun run check-llms
       - run: bun test packages Games

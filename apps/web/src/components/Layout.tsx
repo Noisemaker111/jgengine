@@ -119,6 +119,13 @@ export function Header() {
           >
             Skills
           </Link>
+          <Link
+            to="/api"
+            className="rounded-md px-2 py-1.5 transition hover:text-slate-100"
+            activeProps={{ className: "rounded-md px-2 py-1.5 text-emerald-300" }}
+          >
+            API
+          </Link>
           <GamesDropdown />
           <a
             href={REPO_URL}
@@ -156,6 +163,11 @@ export function Footer() {
                 <li>
                   <Link to="/skills" className="transition hover:text-emerald-300">
                     Skills
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/api" className="transition hover:text-emerald-300">
+                    API
                   </Link>
                 </li>
                 <li>
