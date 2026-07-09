@@ -166,6 +166,25 @@ const emit = (context) => {
 const gitDir = git("rev-parse", "--absolute-git-dir");
 if (!gitDir) process.exit(0);
 
+const unshallow = () => {
+  if (git("rev-parse", "--is-shallow-repository") !== "true") return "";
+  try {
+    execFileSync("git", ["fetch", "--unshallow", "--quiet", "origin"], {
+      stdio: "ignore",
+      timeout: 180000,
+    });
+    return "";
+  } catch {
+    return (
+      `\n\n⚠️ This clone is SHALLOW and un-shallowing failed (network/timeout). History ` +
+      `comparisons against origin are unreliable: an apparent divergence or "unpushed commits" ` +
+      `on ${git("symbolic-ref", "--quiet", "refs/remotes/origin/HEAD")?.split("/").pop() || "main"} ` +
+      `is likely phantom. Run git fetch --unshallow origin before diagnosing any branch state.`
+    );
+  }
+};
+const shallowNote = unshallow();
+
 git("fetch", "origin", "--prune", "--quiet");
 
 const branch = git("rev-parse", "--abbrev-ref", "HEAD") ?? "?";
@@ -184,7 +203,8 @@ if (inWorktree) {
       `Echo 🚀 in your reply after queuing a merge so the chat shows it.` +
       healPrimary(primaryRoot)
         .map((note) => `\n\n${note}`)
-        .join(""),
+        .join("") +
+      shallowNote,
   );
 }
 
@@ -209,4 +229,4 @@ if (branch !== defaultBranch) {
   );
 }
 
-emit(lines.join("\n"));
+emit(lines.join("\n") + shallowNote);
