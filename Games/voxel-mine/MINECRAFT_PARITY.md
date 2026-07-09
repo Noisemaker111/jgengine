@@ -16,7 +16,7 @@ Read before writing code:
 - `packages/core/src/runtime/snapshot.ts` + `packages/core/src/runtime/gameRuntime.ts`
 - `examples/convex-host/` (authoritative server shape)
 
-Work in a worktree off `main`. Claim no issue unless one exists. Verify with `bun run check-types`, `bun test` (world/summarizeEnvironment-style assertions on `VoxelField.summary()`), never hang on `bun run shoot`.
+Work on your session branch. Claim no issue unless one exists. Verify with `bun run check-types`, `bun test` (world/summarizeEnvironment-style assertions on `VoxelField.summary()`), never hang on `bun run shoot`.
 
 ---
 

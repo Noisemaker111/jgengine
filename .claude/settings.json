@@ -1,4 +1,7 @@
 {
+  "permissions": {
+    "defaultMode": "auto"
+  },
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -17,27 +20,6 @@
           {
             "type": "command",
             "command": "bun .claude/hooks/session-start.mjs"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bun .claude/hooks/guard-worktree.mjs"
-          }
-        ]
-      },
-      {
-        "matcher": "EnterWorktree",
-        "hooks": [
-          {
-            "type": "command",
-            "shell": "bash",
-            "command": "git fetch origin --prune --quiet 2>/dev/null || true"
           }
         ]
       }
