@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { GameCard } from "../components/GameCard";
 import { Page, PageHero } from "../components/Layout";
-import { GAMES } from "../content/games";
+import { GAMES, GAMES_BY_CATEGORY } from "../content/games";
 import { REPO_URL } from "../lib/site";
 
 export const Route = createFileRoute("/games/")({
@@ -24,14 +24,24 @@ function GamesPage() {
       <PageHero
         eyebrow="The arcade"
         title="Games"
-        blurb="Every game here was built by an AI agent from the JGengine skills — a different genre each time, on the same SDK. Click one and it runs in your browser, no install."
+        blurb={`Every game here was built by an AI agent from the JGengine skills — ${GAMES.length} games, a different genre each time, on the same SDK. Click one and it runs in your browser, no install.`}
       />
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {GAMES.map((game) => (
-            <GameCard key={game.id} game={game} />
-          ))}
-        </div>
+        {GAMES_BY_CATEGORY.map(({ category, games }) => (
+          <div key={category} className="mt-12 first:mt-10">
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-xl font-semibold tracking-tight text-slate-100">{category}</h2>
+              <span className="font-mono text-xs text-slate-600">
+                {games.length} {games.length === 1 ? "game" : "games"}
+              </span>
+            </div>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {games.map((game) => (
+                <GameCard key={game.id} game={game} />
+              ))}
+            </div>
+          </div>
+        ))}
 
         <div className="panel panel-top-glow mt-14 rounded-2xl p-6 sm:p-8">
           <h2 className="font-semibold tracking-tight text-slate-100">How a game gets on this page</h2>

@@ -1,8 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import { GAMES } from "../content/games";
 import { INSTALL_CMD, REPO_URL } from "../lib/site";
 
 export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
@@ -91,94 +89,6 @@ export function PageHero({
   );
 }
 
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 12 12"
-      className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-      aria-hidden
-    >
-      <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function GamesDropdown() {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition ${
-          open ? "bg-white/[0.07] text-slate-100" : "hover:bg-white/[0.04] hover:text-slate-100"
-        }`}
-      >
-        Games
-        <ChevronIcon open={open} />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full z-30 pt-3">
-          <div className="max-h-[calc(100vh-5rem)] w-64 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-ink-raised/95 p-1.5 shadow-2xl shadow-black/70 backdrop-blur-xl">
-            {GAMES.map((game) => (
-              <a
-                key={game.id}
-                href={game.href}
-                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/[0.05]"
-              >
-                <span
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[0.65rem] font-bold"
-                  style={{ backgroundColor: `${game.hue}1f`, color: game.hue }}
-                >
-                  {game.title
-                    .split(" ")
-                    .map((w) => w[0])
-                    .join("")}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium text-slate-200 transition group-hover:text-white">
-                    {game.title}
-                  </span>
-                  <span className="block truncate text-xs text-slate-500">{game.genre}</span>
-                </span>
-              </a>
-            ))}
-            <div className="mx-2 my-1.5 border-t border-white/[0.07]" />
-            <Link
-              to="/games"
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/10"
-            >
-              All games
-              <span aria-hidden>→</span>
-            </Link>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function Header() {
   return (
     <header className="sticky top-0 z-20 px-3 pt-3 sm:px-4">
@@ -202,7 +112,13 @@ export function Header() {
           >
             API
           </Link>
-          <GamesDropdown />
+          <Link
+            to="/games"
+            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
+            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
+          >
+            Games
+          </Link>
           <a
             href={REPO_URL}
             className="ml-1.5 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
