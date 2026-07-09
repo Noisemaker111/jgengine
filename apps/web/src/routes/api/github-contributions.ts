@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { githubContributionsHandler } from "@jgengine/github/server";
 
-const handle = githubContributionsHandler({ token: process.env.GITHUB_TOKEN });
+const token = process.env.GITHUB_TOKEN || undefined;
+const handle = githubContributionsHandler({ token });
 
 export const Route = createFileRoute("/api/github-contributions")({
   server: {

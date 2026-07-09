@@ -59,6 +59,7 @@ export interface RunState {
   nextFxId(): number;
   subscribe(listener: () => void): () => void;
   notify(): void;
+  disposeEvents?: () => void;
 }
 
 function buildWeaponKit(weapons: Record<WeaponId, WeaponRuntime>): AbilityKit {

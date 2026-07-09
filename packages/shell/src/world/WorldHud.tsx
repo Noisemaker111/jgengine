@@ -96,15 +96,23 @@ export function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number
   const ctx = useGameContext();
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const nextId = useRef(0);
+  const timers = useRef(new Set<number>());
   useEffect(() => {
-    return ctx.game.events.on("entity.floatText", (event) => {
+    const pending = timers.current;
+    const off = ctx.game.events.on("entity.floatText", (event) => {
       const id = nextId.current++;
       setFloaters((current) => [...current, { id, position: event.position, event }]);
-      window.setTimeout(
-        () => setFloaters((current) => current.filter((floater) => floater.id !== id)),
-        lifeMs,
-      );
+      const timer = window.setTimeout(() => {
+        pending.delete(timer);
+        setFloaters((current) => current.filter((floater) => floater.id !== id));
+      }, lifeMs);
+      pending.add(timer);
     });
+    return () => {
+      off();
+      for (const timer of pending) window.clearTimeout(timer);
+      pending.clear();
+    };
   }, [ctx, lifeMs]);
   return (
     <>
@@ -168,17 +176,25 @@ export function WorldTelegraphs() {
   const ctx = useGameContext();
   const [telegraphs, setTelegraphs] = useState<ActiveTelegraph[]>([]);
   const key = useRef(0);
+  const timers = useRef(new Set<number>());
   const [nowMs, setNowMs] = useState(() => performance.now());
   useFrame(() => setNowMs(performance.now()));
   useEffect(() => {
-    return ctx.game.events.on("combat.telegraph", (event) => {
+    const pending = timers.current;
+    const off = ctx.game.events.on("combat.telegraph", (event) => {
       const entry: ActiveTelegraph = { key: key.current++, event, bornMs: performance.now() };
       setTelegraphs((current) => [...current, entry]);
-      window.setTimeout(
-        () => setTelegraphs((current) => current.filter((t) => t.key !== entry.key)),
-        event.windupMs + 120,
-      );
+      const timer = window.setTimeout(() => {
+        pending.delete(timer);
+        setTelegraphs((current) => current.filter((t) => t.key !== entry.key));
+      }, event.windupMs + 120);
+      pending.add(timer);
     });
+    return () => {
+      off();
+      for (const timer of pending) window.clearTimeout(timer);
+      pending.clear();
+    };
   }, [ctx]);
   return (
     <>
@@ -194,6 +210,7 @@ export function CombatCameraShake() {
   const camera = useThree((state) => state.camera);
   const trauma = useRef(0);
   const decay = useRef(4);
+  const offset = useRef({ x: 0, y: 0 });
   useEffect(() => {
     return ctx.game.events.on("combat.hitReaction", (event) => {
       if (event.shake === undefined) return;
@@ -202,10 +219,18 @@ export function CombatCameraShake() {
     });
   }, [ctx]);
   useFrame((_state, dt) => {
-    if (trauma.current <= 0.0001) return;
+    camera.position.x -= offset.current.x;
+    camera.position.y -= offset.current.y;
+    if (trauma.current <= 0.0001) {
+      offset.current.x = 0;
+      offset.current.y = 0;
+      return;
+    }
     const magnitude = trauma.current * trauma.current;
-    camera.position.x += (Math.random() * 2 - 1) * magnitude * 0.4;
-    camera.position.y += (Math.random() * 2 - 1) * magnitude * 0.4;
+    offset.current.x = (Math.random() * 2 - 1) * magnitude * 0.4;
+    offset.current.y = (Math.random() * 2 - 1) * magnitude * 0.4;
+    camera.position.x += offset.current.x;
+    camera.position.y += offset.current.y;
     trauma.current = Math.max(0, trauma.current - decay.current * dt);
   });
   return null;

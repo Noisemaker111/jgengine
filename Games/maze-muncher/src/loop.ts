@@ -213,6 +213,11 @@ export function onInit(ctx: GameContext): void {
   muncherDir = { dc: 0, dr: -1 };
   seedPickups();
   ghosts.clear();
+  for (const def of GHOSTS) {
+    const gs = cellToWorld(def.start.c, def.start.r);
+    ctx.scene.entity.spawn(def.kind, { id: def.id, position: gs, role: "npc" });
+    ghosts.set(def.id, { def, route: null, ri: 0, mode: scheduledMode(0), retargetAt: 0 });
+  }
 
   ctx.game.commands.define("restart", {
     apply(state: GameContext) {
@@ -232,11 +237,6 @@ export function onNewPlayer(ctx: GameContext): void {
   const start = cellToWorld(PLAYER_START.c, PLAYER_START.r);
   ctx.scene.entity.spawn(MUNCHER, { id: ctx.player.userId, position: start, role: "player" });
   lastMuncher = [start[0], start[2]];
-  for (const def of GHOSTS) {
-    const gs = cellToWorld(def.start.c, def.start.r);
-    ctx.scene.entity.spawn(def.kind, { id: def.id, position: gs, role: "npc" });
-    ghosts.set(def.id, { def, route: null, ri: 0, mode: scheduledMode(0), retargetAt: 0 });
-  }
 }
 
 function fullRestart(ctx: GameContext): void {

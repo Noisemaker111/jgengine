@@ -31,10 +31,13 @@ export function CopyButton({
     <button
       type="button"
       onClick={() => {
-        void navigator.clipboard.writeText(value).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1400);
-        });
+        void navigator.clipboard
+          .writeText(value)
+          .then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1400);
+          })
+          .catch(() => setCopied(false));
       }}
       className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
         copied

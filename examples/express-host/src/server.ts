@@ -25,7 +25,9 @@ async function persistenceFromEnv(): Promise<HostPersistence> {
     console.log(`persistence: file (${process.env.DATA_DIR})`);
     return filePersistence(process.env.DATA_DIR);
   }
-  console.log("persistence: memory (set DATABASE_URL or DATA_DIR to persist)");
+  console.warn(
+    "persistence: memory — NON-PERSISTENT, all data is lost on restart. Set DATABASE_URL or DATA_DIR to persist.",
+  );
   return memoryPersistence();
 }
 
@@ -53,9 +55,15 @@ server.listen(port, () => {
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
     void (async () => {
-      await wsServer.close();
-      await host.stop();
-      server.close(() => process.exit(0));
+      try {
+        await wsServer.close();
+        await host.stop();
+        await new Promise<void>((resolve) => server.close(() => resolve()));
+        process.exit(0);
+      } catch (error) {
+        console.error("shutdown failed:", error);
+        process.exit(1);
+      }
     })();
   });
 }

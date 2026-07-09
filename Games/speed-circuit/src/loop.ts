@@ -18,6 +18,8 @@ let restPose: { position: readonly [number, number, number]; heading: number } =
   heading: SPAWN_HEADING,
 };
 
+let detachInput: (() => void) | null = null;
+
 function holdRestPose(ctx: GameContext): void {
   ctx.scene.entity.setPose(ctx.player.userId, { position: restPose.position, rotationY: restPose.heading });
 }
@@ -27,7 +29,8 @@ export function onInit(): void {}
 export function onNewPlayer(ctx: GameContext): void {
   spawnCar(ctx);
   raceState.addRacer(ctx.player.userId, ctx.time.now());
-  attachDriveInput();
+  detachInput?.();
+  detachInput = attachDriveInput();
 }
 
 function restart(ctx: GameContext): void {
