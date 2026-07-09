@@ -40,10 +40,12 @@ export interface CalendarTime {
 export interface ClockSnapshot {
   now: number;
   paused: boolean;
-  /** Effective multiplier applied to real time — 0 while paused. */
+  /** Speed-control multiplier — 0 while paused. The full game-time rate is `speed × timescale × scale`. */
   speed: number;
   /** The non-zero multiplier `play()` resumes to. */
   playSpeed: number;
+  /** Global slow-motion/fast-forward multiplier; 1 unless `setTimescale` was called. */
+  timescale: number;
   scale: number;
   speeds: readonly number[];
   calendar: CalendarTime;
@@ -64,6 +66,16 @@ export interface SimClock {
   setSpeed(multiplier: number): void;
   /** Step to the next configured speed (wraps); always unpauses. */
   cycleSpeed(): void;
+  /** Current global timescale multiplier; 1 by default. */
+  timescale(): number;
+  /**
+   * Global slow-motion/fast-forward multiplier composed with the speed control —
+   * `advance` returns `realDt × scale × speed × timescale`. `0` freezes game time
+   * without flipping pause state (`0.08` = bullet time, `2` = fast-forward); negative
+   * or non-finite values clamp to 0. Timescale is host-authoritative: in multiplayer
+   * it belongs to the host simulation, never to an individual client.
+   */
+  setTimescale(multiplier: number): void;
   /** Run `callback` once, `seconds` of game-time from now. Returns a cancel handle. */
   after(seconds: number, callback: () => void): () => void;
   /** Run `callback` every `seconds` of game-time. Returns a cancel handle. */
@@ -101,6 +113,7 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
   let now = config.start !== undefined && config.start > 0 ? config.start : 0;
   let paused = config.startPaused ?? false;
   let playSpeed = speeds[0]!;
+  let timescale = 1;
   let nextTimerId = 0;
   const timers = new Map<number, Timer>();
   let displayMinute = minuteIndex(now, dayLength);
@@ -153,8 +166,8 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
   }
 
   function advance(realDt: number): number {
-    if (paused || realDt <= 0) return 0;
-    const gameDt = realDt * scale * playSpeed;
+    if (paused || realDt <= 0 || timescale === 0) return 0;
+    const gameDt = realDt * scale * playSpeed * timescale;
     now += gameDt;
     fireDueTimers();
     const minute = minuteIndex(now, dayLength);
@@ -193,6 +206,13 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
     setSpeed(speeds[(index + 1) % speeds.length]!);
   }
 
+  function setTimescale(multiplier: number): void {
+    const next = Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 0;
+    if (next === timescale) return;
+    timescale = next;
+    onChange();
+  }
+
   function register(due: number, interval: number | null, callback: () => void): () => void {
     const id = nextTimerId;
     nextTimerId += 1;
@@ -211,6 +231,7 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
       paused,
       speed: paused ? 0 : playSpeed,
       playSpeed,
+      timescale,
       scale,
       speeds,
       calendar: calendar(),
@@ -222,6 +243,8 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
     toggle: () => (paused ? play() : pause()),
     setSpeed,
     cycleSpeed,
+    timescale: () => timescale,
+    setTimescale,
     after: (seconds, callback) => register(now + Math.max(0, seconds), null, callback),
     every: (seconds, callback) => {
       const interval = Math.max(Number.EPSILON, seconds);

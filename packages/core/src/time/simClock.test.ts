@@ -216,3 +216,57 @@ describe("createSimClock — onChange", () => {
     expect(changes).toBe(1);
   });
 });
+
+describe("createSimClock — timescale", () => {
+  test("defaults to 1 and scales the advanced game delta", () => {
+    const clock = createSimClock({ config: { scale: 1 } });
+    expect(clock.timescale()).toBe(1);
+    expect(clock.advance(1)).toBe(1);
+    clock.setTimescale(2);
+    expect(clock.advance(1)).toBe(2);
+    clock.setTimescale(0.5);
+    expect(clock.advance(1)).toBe(0.5);
+  });
+
+  test("composes with the speed control and the configured scale", () => {
+    const clock = createSimClock({ config: { scale: 10, speeds: [1, 4] } });
+    clock.setSpeed(4);
+    clock.setTimescale(0.5);
+    expect(clock.advance(1)).toBe(20);
+  });
+
+  test("timescale 0 freezes game time and timers without flipping pause state", () => {
+    const clock = createSimClock({ config: { scale: 1 } });
+    let fired = 0;
+    clock.after(1, () => (fired += 1));
+    clock.setTimescale(0);
+    expect(clock.advance(5)).toBe(0);
+    expect(clock.now()).toBe(0);
+    expect(fired).toBe(0);
+    expect(clock.isPaused()).toBe(false);
+    clock.setTimescale(1);
+    clock.advance(1.5);
+    expect(fired).toBe(1);
+  });
+
+  test("negative and non-finite values clamp to 0", () => {
+    const clock = createSimClock({ config: { scale: 1 } });
+    clock.setTimescale(-3);
+    expect(clock.timescale()).toBe(0);
+    clock.setTimescale(Number.NaN);
+    expect(clock.timescale()).toBe(0);
+    clock.setTimescale(2);
+    expect(clock.timescale()).toBe(2);
+  });
+
+  test("appears in the snapshot and notifies onChange only on real changes", () => {
+    let changes = 0;
+    const clock = createSimClock({ config: { scale: 1 }, onChange: () => (changes += 1) });
+    expect(clock.snapshot().timescale).toBe(1);
+    clock.setTimescale(0.25);
+    expect(clock.snapshot().timescale).toBe(0.25);
+    expect(changes).toBe(1);
+    clock.setTimescale(0.25);
+    expect(changes).toBe(1);
+  });
+});
