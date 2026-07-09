@@ -11,6 +11,39 @@ const git = (...args) => {
   }
 };
 
+const gitIn = (input, ...args) => {
+  try {
+    return execFileSync("git", args, { input, stdio: ["pipe", "pipe", "ignore"], timeout: 20000 })
+      .toString()
+      .trim();
+  } catch {
+    return null;
+  }
+};
+
+const patchIds = (diffText) => {
+  if (!diffText) return [];
+  const out = gitIn(diffText, "patch-id", "--stable");
+  if (!out) return [];
+  return out
+    .split("\n")
+    .map((line) => line.trim().split(/\s+/)[0])
+    .filter(Boolean);
+};
+
+const contentAlreadyUpstream = (primaryRoot, remoteRef, branch) => {
+  const base = git("-C", primaryRoot, "merge-base", remoteRef, branch);
+  if (!base) return false;
+  const upstream = new Set(
+    patchIds(git("-C", primaryRoot, "log", "-p", "--no-color", `${base}..${remoteRef}`)),
+  );
+  if (upstream.size === 0) return false;
+  const combined = patchIds(git("-C", primaryRoot, "diff", "--no-color", base, branch))[0];
+  if (combined && upstream.has(combined)) return true;
+  const local = patchIds(git("-C", primaryRoot, "log", "-p", "--no-color", `${remoteRef}..${branch}`));
+  return local.length > 0 && local.every((id) => upstream.has(id));
+};
+
 const healPrimary = (primaryRoot) => {
   const notes = [];
   const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
@@ -71,11 +104,21 @@ const healPrimary = (primaryRoot) => {
               `Nothing stranded (the old tip is recoverable via reflog and the remote branches that carry it).`,
           );
         }
+      } else if (contentAlreadyUpstream(primaryRoot, remoteRef, defaultBranch)) {
+        if (git("-C", primaryRoot, "reset", "--hard", remoteRef) !== null) {
+          notes.push(
+            `Self-healed: primary ${defaultBranch} had diverged from ${remoteRef} (${ahead} local / ${behind} ` +
+              `remote) with ${unpushed} commit(s) on no remote by SHA, but their content is already in ` +
+              `${remoteRef} (squash-merged — the combined diff matches an upstream commit patch-id) — ` +
+              `realigned to ${remoteRef}. Nothing stranded; the old tip is recoverable via reflog.`,
+          );
+        }
       } else {
         notes.push(
           `⚠️ The primary checkout's ${defaultBranch} has diverged from ${remoteRef} (${ahead} local / ${behind} ` +
-            `remote) with ${unpushed} commit(s) not on any remote — NOT auto-aligning, that work would be ` +
-            `stranded. Push or reconcile those commits from the primary before continuing; tell the user if unsure.`,
+            `remote) with ${unpushed} commit(s) whose content is NOT in ${remoteRef} — NOT auto-aligning, that ` +
+            `work would be stranded. Inspect with git -C "${primaryRoot}" log -p ${remoteRef}..${defaultBranch}; ` +
+            `push or reconcile those commits from the primary before continuing. Tell the user if unsure.`,
         );
       }
     }
