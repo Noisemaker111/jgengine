@@ -13,6 +13,84 @@ export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+export function LogoMark({ className = "h-8 w-8 rounded-xl text-sm" }: { className?: string }) {
+  return (
+    <span
+      className={`grid shrink-0 place-items-center bg-gradient-to-br from-emerald-400 via-emerald-300 to-cyan-400 font-mono font-bold text-ink-deep shadow-[0_0_24px_-4px_rgba(52,211,153,0.55)] ${className}`}
+    >
+      jg
+    </span>
+  );
+}
+
+export function Backdrop({ variant = "page" }: { variant?: "hero" | "page" }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <div className="bg-grid absolute inset-0" />
+      <div className="orb orb-emerald -top-32 left-[8%] h-96 w-96" />
+      <div className="orb orb-cyan -top-24 right-[10%] h-80 w-80" />
+      {variant === "hero" && <div className="orb orb-violet top-40 left-[42%] h-[28rem] w-[28rem]" />}
+      <div className="bg-noise absolute inset-0" />
+    </div>
+  );
+}
+
+export function SectionHeading({ eyebrow, title, blurb }: { eyebrow: string; title: string; blurb?: string }) {
+  return (
+    <div className="max-w-2xl">
+      <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.22em] text-emerald-400/90">
+        <span className="h-px w-6 bg-gradient-to-r from-emerald-400/70 to-transparent" />
+        {eyebrow}
+      </p>
+      <h2 className="mt-3 text-balance text-2xl font-bold tracking-tight text-slate-50 sm:text-[2rem] sm:leading-tight">
+        {title}
+      </h2>
+      {blurb && <p className="mt-3 text-pretty leading-relaxed text-slate-400">{blurb}</p>}
+    </div>
+  );
+}
+
+export function PageHero({
+  eyebrow,
+  title,
+  blurb,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  blurb: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="relative overflow-hidden">
+      <Backdrop />
+      <div className="relative mx-auto w-full max-w-6xl px-4 pb-4 pt-16 sm:px-6 sm:pt-24">
+        <p className="animate-fade-up flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.22em] text-emerald-400/90">
+          <span className="h-px w-6 bg-gradient-to-r from-emerald-400/70 to-transparent" />
+          {eyebrow}
+        </p>
+        <h1
+          className="animate-fade-up mt-3 text-4xl font-bold tracking-tight text-slate-50 sm:text-5xl"
+          style={{ animationDelay: "60ms" }}
+        >
+          {title}
+        </h1>
+        <p
+          className="animate-fade-up mt-4 max-w-2xl text-pretty leading-relaxed text-slate-400 sm:text-lg"
+          style={{ animationDelay: "120ms" }}
+        >
+          {blurb}
+        </p>
+        {children && (
+          <div className="animate-fade-up mt-8" style={{ animationDelay: "180ms" }}>
+            {children}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -52,16 +130,16 @@ function GamesDropdown() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 transition ${
-          open ? "bg-white/[0.06] text-slate-100" : "hover:text-slate-100"
+        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition ${
+          open ? "bg-white/[0.07] text-slate-100" : "hover:bg-white/[0.04] hover:text-slate-100"
         }`}
       >
         Games
         <ChevronIcon open={open} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-30 pt-2">
-          <div className="max-h-[calc(100vh-5rem)] w-64 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-ink-raised/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
+        <div className="absolute right-0 top-full z-30 pt-3">
+          <div className="max-h-[calc(100vh-5rem)] w-64 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-ink-raised/95 p-1.5 shadow-2xl shadow-black/70 backdrop-blur-xl">
             {GAMES.map((game) => (
               <a
                 key={game.id}
@@ -103,33 +181,31 @@ function GamesDropdown() {
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-ink/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
+    <header className="sticky top-0 z-20 px-3 pt-3 sm:px-4">
+      <div className="mx-auto flex max-w-6xl items-center justify-between rounded-2xl border border-white/[0.08] bg-ink/75 py-2.5 pl-4 pr-3 shadow-[0_8px_32px_-12px_rgba(2,3,8,0.9)] backdrop-blur-xl sm:pl-5">
         <Link to="/" className="flex items-center gap-2.5 font-semibold tracking-tight text-slate-100">
-          <span className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-400/25 bg-emerald-400/10 font-mono text-sm text-emerald-300 shadow-[0_0_18px_-4px_rgba(52,211,153,0.5)]">
-            jg
-          </span>
+          <LogoMark />
           JGengine
         </Link>
-        <nav className="flex items-center gap-1 text-sm text-slate-400 sm:gap-2">
+        <nav className="flex items-center gap-0.5 text-sm text-slate-400 sm:gap-1">
           <Link
             to="/skills"
-            className="rounded-md px-2 py-1.5 transition hover:text-slate-100"
-            activeProps={{ className: "rounded-md px-2 py-1.5 text-emerald-300" }}
+            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
+            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
           >
             Skills
           </Link>
           <Link
             to="/api"
-            className="rounded-md px-2 py-1.5 transition hover:text-slate-100"
-            activeProps={{ className: "rounded-md px-2 py-1.5 text-emerald-300" }}
+            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
+            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
           >
             API
           </Link>
           <GamesDropdown />
           <a
             href={REPO_URL}
-            className="ml-1 flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 transition hover:border-white/25 hover:text-slate-100"
+            className="ml-1.5 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
           >
             <GitHubIcon />
             <span className="hidden sm:inline">GitHub</span>
@@ -142,19 +218,19 @@ export function Header() {
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/[0.06]">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <footer className="relative mt-4 overflow-hidden">
+      <div className="hairline" />
+      <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-14 sm:px-6">
         <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
           <div className="max-w-xs">
             <div className="flex items-center gap-2.5 font-semibold text-slate-100">
-              <span className="grid h-7 w-7 place-items-center rounded-md border border-emerald-400/25 bg-emerald-400/10 font-mono text-xs text-emerald-300">
-                jg
-              </span>
+              <LogoMark className="h-7 w-7 rounded-lg text-xs" />
               JGengine
             </div>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
               A genre-agnostic, pure-TypeScript game engine SDK — built to be driven by AI agents.
             </p>
+            <code className="mt-4 block font-mono text-xs text-emerald-400/70">$ {INSTALL_CMD}</code>
           </div>
           <div className="flex gap-16 text-sm">
             <div>
@@ -183,27 +259,40 @@ export function Footer() {
               </ul>
             </div>
             <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-slate-600">Get started</p>
+              <p className="font-mono text-xs uppercase tracking-widest text-slate-600">Source</p>
               <ul className="mt-3 space-y-2 text-slate-400">
-                <li>
-                  <code className="font-mono text-xs text-slate-500">{INSTALL_CMD}</code>
-                </li>
                 <li>
                   <a href={`${REPO_URL}/tree/main/skills`} className="transition hover:text-emerald-300">
                     Skills source
+                  </a>
+                </li>
+                <li>
+                  <a href={`${REPO_URL}/tree/main/packages`} className="transition hover:text-emerald-300">
+                    Packages
+                  </a>
+                </li>
+                <li>
+                  <a href={`${REPO_URL}/tree/main/Games`} className="transition hover:text-emerald-300">
+                    Game sources
                   </a>
                 </li>
               </ul>
             </div>
           </div>
         </div>
-        <p className="mt-10 border-t border-white/[0.05] pt-6 text-xs text-slate-600">
+        <p className="mt-12 border-t border-white/[0.05] pt-6 text-xs text-slate-600">
           AGPL-3.0 · Open source ·{" "}
           <a href={REPO_URL} className="text-slate-500 underline decoration-slate-700 underline-offset-2 transition hover:text-slate-300">
             Noisemaker111/jgengine
           </a>
         </p>
       </div>
+      <p
+        className="pointer-events-none absolute inset-x-0 -bottom-[0.22em] select-none whitespace-nowrap text-center font-mono text-[17vw] font-bold leading-none tracking-tighter text-white/[0.018] sm:text-[13vw]"
+        aria-hidden
+      >
+        JGENGINE
+      </p>
     </footer>
   );
 }
@@ -212,7 +301,7 @@ export function Page({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="-mt-[3.75rem] flex-1 pt-[3.75rem]">{children}</main>
       <Footer />
     </div>
   );

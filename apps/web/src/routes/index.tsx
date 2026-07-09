@@ -1,17 +1,23 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { CommandBlock, CopyButton } from "../components/Copy";
+import { CommandBlock } from "../components/Copy";
 import { GameCard } from "../components/GameCard";
-import { GitHubIcon, Page } from "../components/Layout";
+import { HeroTerminal } from "../components/HeroTerminal";
+import { Backdrop, GitHubIcon, Page, SectionHeading } from "../components/Layout";
 import { GAMES } from "../content/games";
 import { SKILL_SLUGS } from "../content/skills";
-import { INSTALL_CMD, PACKAGES, REPO_URL, SKILL_GUIDE } from "../lib/site";
+import {
+  ASSETS_PACKAGE_NAME,
+  INSTALL_CMD,
+  PACKAGES,
+  PACKAGE_LAYERS,
+  REPO_URL,
+  SKILL_GUIDE,
+} from "../lib/site";
 
 export const Route = createFileRoute("/")({
   component: Home,
 });
-
-const AGENT_PROMPT = `Run \`${INSTALL_CMD}\`, then build me a game with jgengine. Read jgengine-newgame for the plan and jgengine-api for the engine surface before you start.`;
 
 const STEPS = [
   {
@@ -28,13 +34,30 @@ const STEPS = [
   },
 ];
 
-function SectionHeading({ eyebrow, title, blurb }: { eyebrow: string; title: string; blurb?: string }) {
+const STATS = [
+  { value: String(PACKAGES.length), label: "published packages" },
+  { value: String(SKILL_SLUGS.length), label: "agent skills" },
+  { value: String(GAMES.length), label: "playable games" },
+  { value: "0", label: "lines of boilerplate" },
+];
+
+const packageBlurb = (name: string) => PACKAGES.find((pkg) => pkg.name === name)?.blurb ?? "";
+
+function PackageChip({ name, highlight = false }: { name: string; highlight?: boolean }) {
   return (
-    <div className="max-w-2xl">
-      <p className="font-mono text-xs uppercase tracking-[0.2em] text-emerald-400/80">{eyebrow}</p>
-      <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl">{title}</h2>
-      {blurb && <p className="mt-3 text-slate-400">{blurb}</p>}
-    </div>
+    <a
+      href={`https://www.npmjs.com/package/${name}`}
+      className={`card-hover group flex min-w-0 flex-1 flex-col rounded-xl border p-4 ${
+        highlight
+          ? "border-emerald-400/30 bg-emerald-400/[0.06] hover:border-emerald-400/55"
+          : "panel hover:border-cyan-400/35"
+      }`}
+    >
+      <p className={`truncate font-mono text-[13px] font-semibold ${highlight ? "text-emerald-300" : "text-cyan-300"}`}>
+        {name}
+      </p>
+      <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{packageBlurb(name)}</p>
+    </a>
   );
 }
 
@@ -42,11 +65,10 @@ function Home() {
   return (
     <Page>
       <section className="relative overflow-hidden">
-        <div className="bg-grid pointer-events-none absolute inset-0" />
-        <div className="glow-emerald pointer-events-none absolute inset-0" />
-        <div className="relative mx-auto w-full max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
+        <Backdrop variant="hero" />
+        <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-20 sm:px-6 sm:pb-24 sm:pt-28">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="animate-fade-up mx-auto inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3.5 py-1.5 text-xs font-medium text-emerald-300">
+            <p className="animate-fade-up mx-auto inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3.5 py-1.5 text-xs font-medium text-emerald-300 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)]">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -54,84 +76,86 @@ function Home() {
               Pure TypeScript · Eight packages · AGPL-3.0
             </p>
             <h1
-              className="animate-fade-up mt-6 text-balance text-4xl font-bold leading-[1.08] tracking-tight text-slate-50 sm:text-6xl"
+              className="animate-fade-up mt-7 text-balance text-[2.6rem] font-bold leading-[1.05] tracking-tighter text-slate-50 sm:text-7xl"
               style={{ animationDelay: "60ms" }}
             >
-              A game engine your{" "}
-              <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
-                AI agent
-              </span>{" "}
-              already knows how to use.
+              A game engine your <span className="text-gradient">AI agent</span> already knows how
+              to use.
             </h1>
             <p
               className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-base text-slate-400 sm:text-lg"
               style={{ animationDelay: "120ms" }}
             >
-              Install the skills, prompt your agent, and it builds the whole game — engine verbs, HUD,
-              assets, and verification included. No docs to paste, no boilerplate to copy.
+              Install the skills, prompt your agent, and it builds the whole game — engine verbs,
+              HUD, assets, and verification included. No docs to paste, no boilerplate to copy.
             </p>
-            <div className="animate-fade-up mx-auto mt-9 max-w-xl" style={{ animationDelay: "180ms" }}>
-              <CommandBlock command={INSTALL_CMD} />
-            </div>
             <div
-              className="animate-fade-up mt-6 flex flex-wrap items-center justify-center gap-3"
-              style={{ animationDelay: "240ms" }}
+              className="animate-fade-up mt-9 flex flex-wrap items-center justify-center gap-3"
+              style={{ animationDelay: "180ms" }}
             >
               <Link
                 to="/games"
-                className="rounded-lg bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-ink shadow-[0_0_28px_-6px_rgba(52,211,153,0.6)] transition hover:bg-emerald-300"
+                className="group rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 px-6 py-3 text-sm font-semibold text-ink-deep shadow-[0_0_36px_-8px_rgba(52,211,153,0.7)] transition hover:shadow-[0_0_48px_-8px_rgba(52,211,153,0.9)]"
               >
                 Play the games
+                <span className="ml-2 inline-block transition-transform group-hover:translate-x-0.5" aria-hidden>
+                  →
+                </span>
               </Link>
               <Link
                 to="/skills"
-                className="rounded-lg border border-white/12 bg-white/[0.03] px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-white/25 hover:bg-white/[0.06]"
+                className="rounded-xl border border-white/12 bg-white/[0.03] px-6 py-3 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.06]"
               >
                 Browse the skills
               </Link>
             </div>
           </div>
+          <div
+            className="animate-fade-up mx-auto mt-14 max-w-3xl"
+            style={{ animationDelay: "260ms" }}
+          >
+            <HeroTerminal />
+          </div>
+          <dl
+            className="animate-fade-up mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.05] sm:grid-cols-4"
+            style={{ animationDelay: "340ms" }}
+          >
+            {STATS.map((stat) => (
+              <div key={stat.label} className="flex flex-col bg-ink px-4 py-5 text-center">
+                <dt className="order-2 mt-1.5 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">
+                  {stat.label}
+                </dt>
+                <dd className="order-1 bg-gradient-to-b from-slate-50 to-slate-400 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+                  {stat.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
-      <section className="relative border-t border-white/[0.05]">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <section className="relative">
+        <div className="hairline mx-auto max-w-4xl" />
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <SectionHeading eyebrow="How it works" title="From prompt to playable in three moves" />
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          <div className="relative mt-12 grid gap-4 sm:grid-cols-3 sm:gap-6">
+            <div className="pointer-events-none absolute left-[16.6%] right-[16.6%] top-10 hidden h-px bg-gradient-to-r from-emerald-400/30 via-white/15 to-cyan-400/30 sm:block" />
             {STEPS.map((step, i) => (
-              <div
-                key={step.title}
-                className="card-hover relative rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6"
-              >
-                <span className="font-mono text-sm font-semibold text-emerald-400/90">
+              <div key={step.title} className="card-hover panel panel-top-glow relative rounded-2xl p-6 sm:pt-7">
+                <span className="relative grid h-9 w-9 place-items-center rounded-full border border-emerald-400/35 bg-ink font-mono text-sm font-semibold text-emerald-300 shadow-[0_0_20px_-6px_rgba(52,211,153,0.6)]">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="mt-3 font-semibold tracking-tight text-slate-100">{step.title}</h3>
+                <h3 className="mt-4 font-semibold tracking-tight text-slate-100">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{step.body}</p>
               </div>
             ))}
           </div>
-
-          <div className="mt-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-ink-deep/70">
-            <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-500/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
-              <span className="ml-2 font-mono text-xs text-slate-600">your-agent — prompt</span>
-              <CopyButton value={AGENT_PROMPT} className="ml-auto" />
-            </div>
-            <div className="px-5 py-5">
-              <code className="block whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed text-slate-300 sm:text-sm">
-                <span className="select-none text-emerald-500/70">› </span>
-                {AGENT_PROMPT}
-              </code>
-            </div>
-          </div>
         </div>
       </section>
 
-      <section className="relative border-t border-white/[0.05]">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <section className="relative">
+        <div className="hairline mx-auto max-w-4xl" />
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
               eyebrow="The skills"
@@ -140,25 +164,29 @@ function Home() {
             />
             <Link
               to="/skills"
-              className="text-sm font-medium text-emerald-300 transition hover:text-emerald-200"
+              className="group text-sm font-medium text-emerald-300 transition hover:text-emerald-200"
             >
-              All skills →
+              All skills{" "}
+              <span className="inline-block transition-transform group-hover:translate-x-0.5" aria-hidden>
+                →
+              </span>
             </Link>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {SKILL_SLUGS.map((slug) => (
+            {SKILL_SLUGS.map((slug, i) => (
               <Link
                 key={slug}
                 to="/skills/$name"
                 params={{ name: slug }}
-                className="card-hover group flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 hover:border-emerald-400/30"
+                className="card-hover panel shine group flex flex-col rounded-2xl p-6 hover:border-emerald-400/35"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-sm font-semibold text-emerald-300">{slug}</span>
-                  <span className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300">
+                  <span className="font-mono text-xs text-slate-600">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300" aria-hidden>
                     →
                   </span>
                 </div>
+                <span className="mt-3 font-mono text-sm font-semibold text-emerald-300">{slug}</span>
                 <p className="mt-2.5 text-sm leading-relaxed text-slate-400">{SKILL_GUIDE[slug]}</p>
               </Link>
             ))}
@@ -166,17 +194,26 @@ function Home() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden border-t border-white/[0.05]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_50%_100%,rgba(16,185,129,0.07),transparent)]" />
-        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <section className="relative overflow-hidden">
+        <div className="hairline mx-auto max-w-4xl" />
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          <div className="orb orb-emerald bottom-0 left-[30%] h-96 w-96 opacity-60" />
+        </div>
+        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
               eyebrow="Proof, not promises"
               title="Games built by agents, playable now"
               blurb="Every one of these was built from the skills on this site — no hand-written boilerplate. They run right here in your browser."
             />
-            <Link to="/games" className="text-sm font-medium text-emerald-300 transition hover:text-emerald-200">
-              All games →
+            <Link
+              to="/games"
+              className="group text-sm font-medium text-emerald-300 transition hover:text-emerald-200"
+            >
+              All games{" "}
+              <span className="inline-block transition-transform group-hover:translate-x-0.5" aria-hidden>
+                →
+              </span>
             </Link>
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -187,43 +224,84 @@ function Home() {
         </div>
       </section>
 
-      <section className="relative border-t border-white/[0.05]">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <section className="relative">
+        <div className="hairline mx-auto max-w-4xl" />
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <SectionHeading
             eyebrow="The SDK"
             title="Eight packages, one-directional layering"
             blurb="core imports nothing. Every layer above it earns its dependencies. Your game imports what it needs and nothing more."
           />
-          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {PACKAGES.map((pkg) => (
-              <a
-                key={pkg.name}
-                href={`https://www.npmjs.com/package/${pkg.name}`}
-                className="card-hover group rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 hover:border-cyan-400/30"
-              >
-                <p className="font-mono text-[13px] font-semibold text-cyan-300">{pkg.name}</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{pkg.blurb}</p>
-              </a>
-            ))}
+          <div className="mt-12 grid gap-4 lg:grid-cols-[1fr_280px]">
+            <div className="space-y-3">
+              {PACKAGE_LAYERS.map((layer, i) => (
+                <div key={layer.label}>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+                    <div className="flex shrink-0 flex-col justify-center sm:w-44">
+                      <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-slate-500">
+                        {layer.label}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-600">{layer.note}</p>
+                    </div>
+                    <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+                      {layer.packages.map((name) => (
+                        <PackageChip key={name} name={name} highlight={name === "@jgengine/core"} />
+                      ))}
+                    </div>
+                  </div>
+                  {i < PACKAGE_LAYERS.length - 1 && (
+                    <div className="my-1 flex justify-center sm:ml-44">
+                      <span className="font-mono text-xs text-slate-700" aria-hidden>
+                        ↓ imports
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <aside className="flex flex-col gap-3">
+              <div className="panel rounded-2xl border-dashed p-5">
+                <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-slate-500">
+                  Outside the chain
+                </p>
+                <div className="mt-3">
+                  <PackageChip name={ASSETS_PACKAGE_NAME} />
+                </div>
+              </div>
+              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.04] p-5">
+                <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-emerald-400/80">
+                  The rule
+                </p>
+                <p className="mt-2.5 text-sm leading-relaxed text-slate-400">
+                  Layering is one-directional. A lower layer never imports a higher one, and core
+                  never touches React, three.js, or the browser.
+                </p>
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
-      <section className="relative overflow-hidden border-t border-white/[0.05]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_45%_60%_at_50%_120%,rgba(16,185,129,0.12),transparent)]" />
-        <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-24">
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl">
-            Your next game is one prompt away.
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          <div className="orb orb-emerald -bottom-40 left-[20%] h-[26rem] w-[26rem]" />
+          <div className="orb orb-cyan -bottom-32 right-[18%] h-80 w-80" />
+          <div className="bg-noise absolute inset-0" />
+        </div>
+        <div className="hairline mx-auto max-w-4xl" />
+        <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
+          <h2 className="text-balance text-3xl font-bold tracking-tight text-slate-50 sm:text-5xl">
+            Your next game is <span className="text-gradient">one prompt</span> away.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-slate-400">
+          <p className="mx-auto mt-5 max-w-xl text-pretty text-slate-400">
             Point your agent at the skills and describe what you want to play.
           </p>
-          <div className="mx-auto mt-8 max-w-xl">
+          <div className="mx-auto mt-9 max-w-xl">
             <CommandBlock command={INSTALL_CMD} />
           </div>
           <a
             href={REPO_URL}
-            className="mt-6 inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-slate-200"
+            className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-400 transition hover:border-white/25 hover:text-slate-200"
           >
             <GitHubIcon />
             Star on GitHub
