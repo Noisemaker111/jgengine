@@ -12,6 +12,7 @@ The primary engine-development repo: a genre-agnostic, pure-TypeScript game engi
 - **The user owns release timing.** Merging to `main` can trigger npm publish (`.github/workflows/publish.yml` publishes any `@jgengine/*` version not yet on npm, in dependency order). Never bump a package version to force a release unless asked.
 - **Layering is one-directional.** `core` imports nothing. `ws` and `sql` import only core. `react` adds React; `convex` adds Convex + React; `node` adds Node builtins + `ws`; `shell` adds React + three.js and is the only package that renders. `assets` sits outside this chain: it's a data/index package plus a pull CLI, usable by games and `shell` but never imported by `core`. Never let a lower layer import a higher one, and never let core import React, Convex, three.js, the browser, or any game.
 - **Extracting SDK primitives must not change how a game plays.** Extract the reusable core *behind* a user-facing feature; confirm before cutting anything a player sees.
+- **Ask why before patching a game.** Any time game work needs a fix, a tweak, or a surprising amount of code, find the underlying reason before writing the patch — it's usually a missing engine primitive, a wrong default, or a doc error. Fix that root cause here (or record it as a harvest gap) instead of burying a game-side workaround that hides it; the workaround costs the same code in every future game.
 - Run `git push` on its own line, never piped through a filter — a non-zero grep silently drops the push while looking like success.
 
 ## Stack
