@@ -72,6 +72,27 @@ export interface DevtoolsLogEntry {
   message: string;
 }
 
+export interface DiscoveredEntry {
+  readonly id: string;
+  readonly table: string;
+  readonly key: string;
+  readonly kind: DevtoolsControlKind;
+  readonly initial: unknown;
+  readonly enabled: boolean;
+  read(): unknown;
+}
+
+export interface TunableAccessor {
+  initial: unknown;
+  get(): unknown;
+  set(value: unknown): void;
+}
+
+export interface DevtoolsOverrides {
+  enabled: string[];
+  values: Record<string, unknown>;
+}
+
 export interface DevtoolsSnapshot {
   at: number;
   frame: FrameStats | null;
@@ -80,6 +101,7 @@ export interface DevtoolsSnapshot {
   logs: readonly DevtoolsLogEntry[];
   probes: Record<string, unknown>;
   controls: readonly { name: string; kind: DevtoolsControlKind; value: unknown; initial: unknown }[];
+  discovered: readonly { id: string; kind: DevtoolsControlKind; value: unknown; enabled: boolean }[];
 }
 
 export interface Devtools {
@@ -105,7 +127,21 @@ export interface Devtools {
     register<T>(name: string, initial: T, options?: TunableOptions<T>): Tunable<T>;
     list(): readonly DevtoolsControl[];
     get(name: string): DevtoolsControl | null;
+    remove(name: string): void;
     resetAll(): void;
+  };
+  discover: {
+    bind(table: string, key: string, accessor: TunableAccessor): void;
+    scanTable(table: string, candidate: unknown): number;
+    scanModule(exports: Record<string, unknown>): number;
+    list(): readonly DiscoveredEntry[];
+    enable(id: string): void;
+    disable(id: string): void;
+    clear(): void;
+  };
+  overrides: {
+    export(): DevtoolsOverrides;
+    apply(overrides: DevtoolsOverrides): void;
   };
   probes: {
     register(name: string, read: () => unknown): () => void;
@@ -182,6 +218,40 @@ interface ControlRecord {
   listeners: Set<(value: unknown) => void>;
 }
 
+interface DiscoveredRecord {
+  id: string;
+  table: string;
+  key: string;
+  kind: DevtoolsControlKind;
+  initial: unknown;
+  enabled: boolean;
+  source: object | null;
+  get(): unknown;
+  set(value: unknown): void;
+}
+
+const MAX_TABLE_ENTRIES = 64;
+
+function discoverableKind(value: unknown): DevtoolsControlKind | null {
+  if (typeof value === "number" && Number.isFinite(value)) return "slider";
+  if (typeof value === "boolean") return "toggle";
+  if (typeof value === "string" && COLOR_PATTERN.test(value)) return "color";
+  return null;
+}
+
+function discoverableEntries(candidate: unknown): [string, DevtoolsControlKind][] {
+  if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) return [];
+  const proto = Object.getPrototypeOf(candidate);
+  if (proto !== Object.prototype && proto !== null) return [];
+  const entries: [string, DevtoolsControlKind][] = [];
+  for (const [key, value] of Object.entries(candidate)) {
+    const kind = discoverableKind(value);
+    if (kind !== null) entries.push([key, kind]);
+    if (entries.length > MAX_TABLE_ENTRIES) return [];
+  }
+  return entries;
+}
+
 export function createDevtools(): Devtools {
   const signal = createChangeSignal();
 
@@ -198,6 +268,7 @@ export function createDevtools(): Devtools {
   const latencySamples: number[] = [];
 
   const controlRecords = new Map<string, ControlRecord>();
+  const discoveredRecords = new Map<string, DiscoveredRecord>();
   const probeReaders = new Map<string, () => unknown>();
 
   const readProbes = (): Record<string, unknown> => {
@@ -334,6 +405,67 @@ export function createDevtools(): Devtools {
     };
   };
 
+  const bindDiscovered = (
+    table: string,
+    key: string,
+    kind: DevtoolsControlKind,
+    accessor: TunableAccessor,
+    source: object | null,
+  ): boolean => {
+    const id = `${table}/${key}`;
+    const existing = discoveredRecords.get(id);
+    if (existing === undefined) {
+      discoveredRecords.set(id, {
+        id,
+        table,
+        key,
+        kind,
+        initial: accessor.initial,
+        enabled: false,
+        source,
+        get: accessor.get,
+        set: accessor.set,
+      });
+      return true;
+    }
+    if (source !== null && existing.source === source) return false;
+    existing.source = source;
+    existing.get = accessor.get;
+    existing.set = accessor.set;
+    const control = controlRecords.get(id);
+    if (existing.enabled && control !== undefined) accessor.set(control.value);
+    return true;
+  };
+
+  const scanTable = (table: string, candidate: unknown): number => {
+    const entries = discoverableEntries(candidate);
+    if (entries.length === 0) return 0;
+    const target = candidate as Record<string, unknown>;
+    let changed = false;
+    for (const [key, kind] of entries) {
+      const accessor: TunableAccessor = {
+        initial: target[key],
+        get: () => target[key],
+        set: (value) => {
+          target[key] = value;
+        },
+      };
+      if (bindDiscovered(table, key, kind, accessor, target)) changed = true;
+    }
+    if (changed) signal.notify();
+    return entries.length;
+  };
+
+  const enableDiscovered = (id: string): void => {
+    const record = discoveredRecords.get(id);
+    if (record === undefined || record.enabled) return;
+    record.enabled = true;
+    const current = record.get();
+    const handle = register<unknown>(id, record.initial, { group: record.table, label: record.key });
+    handle.subscribe((value) => record.set(value));
+    if (!Object.is(current, record.initial)) handle.set(current);
+  };
+
   return {
     frame: {
       record({ frameMs, simMs }) {
@@ -386,8 +518,76 @@ export function createDevtools(): Devtools {
         const record = controlRecords.get(name);
         return record === undefined ? null : toControl(record);
       },
+      remove(name) {
+        if (controlRecords.delete(name)) signal.notify();
+      },
       resetAll() {
         for (const record of controlRecords.values()) writeControl(record, record.initial);
+      },
+    },
+    discover: {
+      bind(table, key, accessor) {
+        const kind = discoverableKind(accessor.initial);
+        if (kind === null) return;
+        if (bindDiscovered(table, key, kind, accessor, null)) signal.notify();
+      },
+      scanTable,
+      scanModule(exports) {
+        let total = 0;
+        for (const [name, value] of Object.entries(exports)) {
+          total += scanTable(name, value);
+        }
+        return total;
+      },
+      list: () =>
+        [...discoveredRecords.values()].map((record) => ({
+          id: record.id,
+          table: record.table,
+          key: record.key,
+          kind: record.kind,
+          initial: record.initial,
+          enabled: record.enabled,
+          read: () => record.get(),
+        })),
+      enable(id) {
+        enableDiscovered(id);
+        signal.notify();
+      },
+      disable(id) {
+        const record = discoveredRecords.get(id);
+        if (record === undefined || !record.enabled) return;
+        record.enabled = false;
+        record.set(record.initial);
+        controlRecords.delete(id);
+        signal.notify();
+      },
+      clear() {
+        for (const record of discoveredRecords.values()) {
+          if (record.enabled) {
+            record.set(record.initial);
+            controlRecords.delete(record.id);
+          }
+        }
+        discoveredRecords.clear();
+        signal.notify();
+      },
+    },
+    overrides: {
+      export() {
+        const enabled = [...discoveredRecords.values()].filter((r) => r.enabled).map((r) => r.id);
+        const values: Record<string, unknown> = {};
+        for (const record of controlRecords.values()) {
+          if (!Object.is(record.value, record.initial)) values[record.name] = record.value;
+        }
+        return { enabled, values };
+      },
+      apply(overrides) {
+        for (const id of overrides.enabled) enableDiscovered(id);
+        for (const [name, value] of Object.entries(overrides.values)) {
+          const record = controlRecords.get(name);
+          if (record !== undefined) writeControl(record, value);
+        }
+        signal.notify();
       },
     },
     probes: {
@@ -415,6 +615,12 @@ export function createDevtools(): Devtools {
           kind: record.kind,
           value: record.value,
           initial: record.initial,
+        })),
+        discovered: [...discoveredRecords.values()].map((record) => ({
+          id: record.id,
+          kind: record.kind,
+          value: record.get(),
+          enabled: record.enabled,
         })),
       };
     },

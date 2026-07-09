@@ -198,7 +198,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Falling tile grid | `tactics/fallingGrid` | `createFallingGrid`, `FallingGrid`, `FallingGridConfig`, `FallingGridCell`, `FallingGridSnapshot`, `LockState`, `gravityIntervalMs`, `GravityIntervalConfig` — a generic tile-drop grid (any `TCell` payload), distinct from `puzzle/cellGrid`+`puzzle/fallingPiece`'s row-clear/shape-table pair |
 | Spawn/respawn points | `game/spawnPoints` | `createSpawnPoints`, `SpawnPoints`, `SpawnPointPose`, `RespawnTarget` |
 | Level sequence | `game/levelSequence` | `createLevelSequence`, `LevelSequence`, `LevelSequenceConfig`, `LevelDescriptor`, `CurrentLevel`, `LevelSequenceStatus`, `LevelSequenceProgress` |
-| Devtools overlay + tunables | `devtools/devtools` | `devtools`, `createDevtools`, `tunable`, `snapshotDevtools`, `instrumentLatency`, `Tunable`, `TunableOptions`, `DevtoolsControl`, `DevtoolsSnapshot` |
+| Devtools overlay + tunables | `devtools/devtools` | `devtools`, `createDevtools`, `tunable`, `snapshotDevtools`, `instrumentLatency`, `Tunable`, `TunableOptions`, `TunableAccessor`, `DevtoolsControl`, `DiscoveredEntry`, `DevtoolsOverrides`, `DevtoolsSnapshot` |
+| Tunable auto-discovery | `devtools/transformTunables` | `transformTunableExports`, `tunableModuleTable`, `tunableDiscoveryPlugin`, `TunableTransformResult` |
 
 ## Getting started (new project)
 
@@ -427,7 +428,7 @@ export const physics: PhysicsConfig = { gravity: -32 };
 - `server.mode` is a string your loop/commands interpret — the engine ships no gamemode presets.
 - Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts, or inline binding/inventory/world blobs. The one exception is `physics.gravity`/`physics.jumpVelocity` — global controller tuning, not a catalog value (see "Controller kinematics" below).
 - `assets` may be omitted for a game with no models (a HUD-only card/board game, say) — `defineGame` injects an empty catalog, so `GameDefinition.assets` is always present downstream with no per-caller `?.` checks.
-- `devtools` defaults to `true` — every game gets the F2-toggled debug overlay (Perf/Tune/Logs/Net/Keys) for free; set `false` to disable the toggle entirely. See "Devtools — F2 overlay and tunables" below.
+- `devtools` defaults to `true` — every game gets the F2-toggled debug overlay (Perf/Tune/Logs/Net/Keys) for free, and every top-level `export const` number/boolean/color and every exported flat table of them under `src/` is auto-discovered into the Tune tab with zero game code; set `false` to disable the toggle entirely. See "Devtools — F2 overlay and tunables" below.
 
 ### `@jgengine/core/game/defineGame` — the underlying primitive
 
@@ -1095,12 +1096,30 @@ The React layer — `GameProvider`, the hooks table, headless className-passthro
 | Tab | Shows |
 |-----|-------|
 | Perf | fps, frame/sim ms, draw calls, triangles, entity/object counts, state notifies/s, registered probes |
-| Tune | live `tunable()` controls, grouped by name prefix |
+| Tune | every discovered tunable — checklist grouped by source file or table export name; check one to control it live |
 | Logs | captured `console.log`/`info`/`warn`/`error` |
 | Net | observed backend round-trip latency (fed by `instrumentLatency`) |
 | Keys | the game's `ActionCodesMap` bindings |
 
-**Tunables** — one line in game code registers a live control:
+**Tunables are zero-annotation.** Write plain code under `Games/<id>/src/**` — no import, no wrapper — and it's discoverable:
+
+```ts
+// loop.ts — top-level export const, nothing else
+export const GRAVITY = -22;
+export const SKY_COLOR = "#87ceeb";
+export const GOD_MODE = false;
+
+// game/content.ts — an exported flat table of numbers/booleans/colors
+export const TUNING = { reach: 6, spawnRate: 0.4, fogColor: "#334455" };
+```
+
+The dev runner's Vite plugin, `tunableDiscoveryPlugin` (`@jgengine/core/devtools/transformTunables`, wired in `apps/dev/vite.config.ts`), rewrites each top-level `export const <number|boolean|"#hex">` literal to `export let` and binds it into the devtools registry as the module loads (`transformTunableExports` is the pure string transform underneath; `tunableModuleTable(id)` derives the table id from the file path, skipping `main.tsx` and `*.test.*`). Table exports need no transform at all — after each game module loads, the dev app calls `devtools.discover.scanModule(moduleExports)`, which walks every export's own properties for a flat plain-object table of numbers/booleans/`"#rrggbb"` strings.
+
+F2 → Tune tab lists every discovered entry as a checklist, grouped by source file (top-level constants) or by table export name (object tables). Checking an entry hands it a live slider/toggle/color picker; unchecking resets it to its initial value. Kind is inferred from the value: `number` → slider, `boolean` → toggle, a `"#rgb"`/`"#rrggbb"`/`"#rrggbbaa"` string → color.
+
+**Liveness.** An edit applies live wherever the code reads the constant/table entry at use time. A value captured once at init — passed into a function call, baked into worldgen — only picks up the new value on reload. Overrides persist in `localStorage` per game (key `jg-devtools:<game name>`) and are re-applied *before* `loop.onInit` runs, so even an init-baked constant respects its override after a refresh.
+
+**`tunable()` still exists — an optional low-level primitive, not the recommended path.** Reach for it only when you need explicit bounds, an `options` select, or a change subscription that discovery can't infer:
 
 ```ts
 import { tunable } from "@jgengine/core/devtools/devtools";
@@ -1108,9 +1127,9 @@ import { tunable } from "@jgengine/core/devtools/devtools";
 const gravity = tunable("physics/gravity", -22, { min: -60, max: 0 });
 ```
 
-Read `gravity.value` at use time (or `gravity.subscribe(listener)`) — never destructure once at module load — so an edit made from the Tune tab applies live. Kind is inferred from the initial value: `number` → slider, `boolean` → toggle, a `"#rrggbb"` string → color picker, an `options` array → select, any other string → text. A `"group/label"` name (e.g. `"physics/gravity"`) groups controls under `group` in the Tune tab. Real example: `Games/voxel-mine/src/loop.ts` — `tunable("mining/reach", REACH, { min: 2, max: 16, step: 1 })`, read via a getter passed to `createEditorHandlers`.
+Read `gravity.value` at use time (or `gravity.subscribe(listener)`) — never destructure once at module load. A `"group/label"` name (e.g. `"physics/gravity"`) groups the control under `group` in the Tune tab; `devtools.controls.register` is the same call underneath. Real example: `Games/voxel-mine/src/loop.ts` — `tunable("mining/reach", REACH, { min: 2, max: 16, step: 1 })`, read via a getter passed to `createEditorHandlers`.
 
-**Agent loop.** The overlay's "Copy report" button copies a JSON `DevtoolsSnapshot`; from a browser session an agent can instead call `window.__JG_DEVTOOLS.snapshot()` directly (or `snapshotDevtools()` from game code) for the same shape — frame stats, render sample, latency stats, captured logs, probe values, and every control's current + initial value — a single call to check "is this actually working" without a screenshot.
+**Agent loop.** The overlay's "Copy report" button copies a JSON `DevtoolsSnapshot`; from a browser session an agent can instead call `window.__JG_DEVTOOLS.snapshot()` directly (or `snapshotDevtools()` from game code) for the same shape — frame stats, render sample, latency stats, captured logs, probe values, every registered control's current + initial value, and a `discovered` array (`id`, `kind`, `value`, `enabled`) covering every auto-discovered tunable whether or not it's enabled — a single call to check "is this actually working" without a screenshot. `window.__JG_DEVTOOLS.discover` is exposed directly too (`list`/`enable`/`disable`/`bind`/`scanTable`/`scanModule`/`clear`) so an agent can flip a discovered tunable on and read/write it from the console without touching the UI.
 
 `devtools.probes.register("name", () => value)` (`@jgengine/core/devtools/devtools`) surfaces a game-specific gauge (entity count, queue depth, whatever) in both the Perf tab and the snapshot; call the returned unregister function to remove it.
 
@@ -1219,7 +1238,7 @@ game.chat          send / whisper / history / register — global/party/proximit
 game.roster        capture / release / list / setEquipped — persisted owned-creature roster
 game.store/cards/turn   store: keyed reactive slot; cards.pile(id): lazy CardPile; turn.loop(id): lazy TurnLoop
 game.events/feed/leaderboard   on / bind+push+recent / track+increment+getTop
-devtools           F2 overlay (Perf/Tune/Logs/Net/Keys); tunable() registers a live control read via .value; snapshotDevtools()/window.__JG_DEVTOOLS.snapshot() → DevtoolsSnapshot; probes.register(name, read) adds a Perf gauge
+devtools           F2 overlay (Perf/Tune/Logs/Net/Keys); zero-annotation — top-level export const number/boolean/color + exported flat tables auto-discover into Tune; tunable() is the optional low-level escape hatch; snapshotDevtools()/window.__JG_DEVTOOLS.snapshot() → DevtoolsSnapshot (+ discovered[]); probes.register(name, read) adds a Perf gauge
 applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
 player.motion      impulse / setVerticalVelocity / setY — vertical-motion seam into the shell's frame driver

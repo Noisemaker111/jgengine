@@ -7,6 +7,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type ProxyOptions } from "vite";
 
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
+import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
 
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
 const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
@@ -33,7 +34,7 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [tunableDiscoveryPlugin(), react(), tailwindcss()],
   clearScreen: false,
   build: { target: "es2022" },
   server: {

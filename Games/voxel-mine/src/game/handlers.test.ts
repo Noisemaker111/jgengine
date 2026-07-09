@@ -4,7 +4,7 @@ import { BEDROCK_BLOCK, ORE_COAL } from "./blocks";
 import { content } from "./content";
 import { game } from "../game.config";
 import { createEditorHandlers } from "./handlers";
-import { creditPickupsToQuests, EYE_HEIGHT, REACH } from "../loop";
+import { creditPickupsToQuests, EYE_HEIGHT } from "../loop";
 import { QUEST_PROSPECTING, quests } from "./quests";
 import { createVoxelField, VOXEL_FACE_NORMALS } from "@jgengine/core/world/voxelField";
 import type { Vec3, VoxelGrid, VoxelHit } from "./voxelGrid";
@@ -63,7 +63,7 @@ describe("createEditorHandlers", () => {
     const ctx = createTestContext();
     creditPickupsToQuests(ctx);
     const grid = createFakeGrid({ "0,-1,0": ORE_COAL.id });
-    const handlers = createEditorHandlers(grid, EYE_HEIGHT, () => REACH);
+    const handlers = createEditorHandlers(grid, EYE_HEIGHT);
 
     handlers.mine!.apply(ctx, { from: ctx.player.userId, itemId: "tool_pickaxe", aim: straightDown });
 
@@ -85,7 +85,7 @@ describe("createEditorHandlers", () => {
   test("bedrock cannot be mined and drops nothing", () => {
     const ctx = createTestContext();
     const grid = createFakeGrid({ "0,-1,0": BEDROCK_BLOCK });
-    const handlers = createEditorHandlers(grid, EYE_HEIGHT, () => REACH);
+    const handlers = createEditorHandlers(grid, EYE_HEIGHT);
 
     handlers.mine!.apply(ctx, { from: ctx.player.userId, itemId: "tool_pickaxe", aim: straightDown });
 
@@ -96,7 +96,7 @@ describe("createEditorHandlers", () => {
   test("mining a plain block drops the block itself", () => {
     const ctx = createTestContext();
     const grid = createFakeGrid({ "0,-1,0": "block_stone" });
-    const handlers = createEditorHandlers(grid, EYE_HEIGHT, () => REACH);
+    const handlers = createEditorHandlers(grid, EYE_HEIGHT);
 
     handlers.mine!.apply(ctx, { from: ctx.player.userId, itemId: "tool_pickaxe", aim: straightDown });
 
@@ -109,7 +109,7 @@ describe("createEditorHandlers", () => {
   test("a drop from a floating block settles onto the surface below and scatters within its column", () => {
     const ctx = createTestContext();
     const grid = createFakeGrid({ "0,-1,0": "block_grass", "0,3,0": "block_leaves" });
-    const handlers = createEditorHandlers(grid, EYE_HEIGHT, () => REACH);
+    const handlers = createEditorHandlers(grid, EYE_HEIGHT);
 
     handlers.mine!.apply(ctx, {
       from: ctx.player.userId,
@@ -131,7 +131,7 @@ describe("createEditorHandlers", () => {
   test("cannot place a block into the cell the player occupies", () => {
     const ctx = createTestContext();
     const grid = createFakeGrid({ "0,-1,0": "block_stone" });
-    const handlers = createEditorHandlers(grid, EYE_HEIGHT, () => REACH);
+    const handlers = createEditorHandlers(grid, EYE_HEIGHT);
 
     handlers.placeBlock!.apply(ctx, { from: ctx.player.userId, itemId: "block_dirt", aim: straightDown });
 
@@ -141,7 +141,7 @@ describe("createEditorHandlers", () => {
   test("placing a block away from the player succeeds", () => {
     const ctx = createTestContext();
     const grid = createFakeGrid({ "0,1,3": "block_stone" });
-    const handlers = createEditorHandlers(grid, EYE_HEIGHT, () => REACH);
+    const handlers = createEditorHandlers(grid, EYE_HEIGHT);
 
     handlers.placeBlock!.apply(ctx, {
       from: ctx.player.userId,

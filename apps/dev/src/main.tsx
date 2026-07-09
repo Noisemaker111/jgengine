@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
+import { devtools } from "@jgengine/core/devtools/devtools";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
+import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsOverlay";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
@@ -34,6 +36,27 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
 const gameModules = import.meta.glob<{ game: PlayableGame; uiScenario?: UiPreviewScenario }>(
   "../../../Games/*/src/index.tsx",
 );
+
+const gameSourceModules = import.meta.glob<Record<string, unknown>>([
+  "../../../Games/*/src/**/*.{ts,tsx}",
+  "!**/main.tsx",
+  "!**/*.test.*",
+]);
+
+async function discoverGameTunables(gameId: string, gameName: string): Promise<void> {
+  const prefix = `../../../Games/${gameId}/src/`;
+  const loaders = Object.entries(gameSourceModules).filter(([path]) => path.startsWith(prefix));
+  await Promise.all(
+    loaders.map(async ([path, loader]) => {
+      try {
+        devtools.discover.scanModule(await loader());
+      } catch (error) {
+        console.warn(`[jgengine:devtools] skipped ${path} during tunable discovery`, error);
+      }
+    }),
+  );
+  applyStoredDevtoolsOverrides(gameName);
+}
 
 const gameLoaders = Object.entries(gameModules).map(
   ([path, loader]) => [path.split("/").at(-3)!, loader] as const,
@@ -131,7 +154,8 @@ function DevApp() {
       return;
     }
     void load()
-      .then((loaded) => {
+      .then(async (loaded) => {
+        await discoverGameTunables(GAME_ID, loaded.game.name);
         if (P2P_ROLE === "host" || P2P_ROLE === "join") {
           void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
         } else {
