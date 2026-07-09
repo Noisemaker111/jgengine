@@ -1,4 +1,4 @@
-export const VERSION = "0.7.0";
+export const VERSION = "0.8.0";
 
 export interface ChangelogEntry {
   migrate: readonly string[];
@@ -8,13 +8,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry> = {
-  Unreleased: {
+  "0.8.0": {
     migrate: [
-      "Additive only — every 0.7.0 API is unchanged; opt into any of the below by importing it directly.",
+      "Bump every @jgengine/* dependency to ^0.8.0 (the eight packages version in lockstep).",
+      "Additive only, except for gameui — every other 0.7.0 API is unchanged; opt into any of the below by importing it directly.",
+      "Breaking: replace any @jgengine/react/gameui import with the equivalent registry component (npx shadcn@latest add https://jgengine.com/r/<name>.json), and swap GameUiThemeProvider for --jg-* CSS variables on a wrapper element. GameIcon and friends moved to @jgengine/react/gameIcons.",
       "leveling({ thresholdMode: 'cumulative' }) is opt-in; the default 'perLevel' behavior is unchanged.",
       "defineGame.physics.gravity/jumpVelocity are now read by the built-in kinematics controller every frame — if a game already set them expecting a no-op, jump/fall now actually reflects them; omit both to keep the previous defaults.",
     ],
     added: [
+      "Transport pipe seam (@jgengine/ws/pipe) — createWsBackend runs over any bidirectional string channel, not just a raw WebSocket, via TransportPipe/TransportPipeHandlers/TransportPipeFactory, with webSocketPipe as the default.",
+      "Browser-safe authoritative host — createGameHost and memoryPersistence moved from @jgengine/node to @jgengine/ws/host (zero Node dependencies; @jgengine/node re-exports both unchanged). @jgengine/ws/hostRouter's createHostRouter extracts the ws wire-protocol session logic into a transport-agnostic HostRouter; @jgengine/node's createGameWsServer is now a thin binding of this router onto the ws npm package. loopbackPipe connects a createWsBackend straight into an in-process router.",
+      "Socket.IO transport — @jgengine/ws/socketIoPipe (socketIoPipe, createSocketIoBackend) and @jgengine/node/socketIoServer (attachGameSocketIoServer) ride the existing ws JSON protocol over socket.io's send/message frames, no socket.io dependency in either package's types. New socketIo() adapter in @jgengine/core/runtime/adapter.",
+      "WebRTC peer-to-peer (@jgengine/ws/peer) — one browser tab hosts authoritatively with no server process: createPeerHost/createPeerGuest, encodePeerSignal/decodePeerSignal for copy-pasteable signaling codes, broadcastChannelSignaling for same-origin multi-tab play. New p2p() adapter.",
+      "LAN adapter + Fly sugar — lan() in @jgengine/core/runtime/adapter resolves to the page's own hostname over ws, no URL configuration; fly() is ws sugar for a Fly.io deploy. apps/dev's Vite server listens on the network and exposes ?p2p=host/join query params.",
+      "ws() (@jgengine/core/runtime/adapter) gained an optional url field, carried through by resolveShellMultiplayer.",
       "Cumulative leveling — leveling({ thresholdMode: 'cumulative' }) tracks xp as a lifetime total that resolves upward across levels and clamps at the max-level threshold once capped (#12).",
       "Direction-aware pool depletion — EffectSystem.canReceive(instanceId, effect, magnitude?) takes an optional signed magnitude; negative checks the opposite direction and returns 'pools-depleted' only when every stat in the receive order is already at max, so heals reach fully-depleted targets (#168).",
       "Puzzle primitives — puzzle/cellGrid (uniform-cell boards: line-clear, match-3 cascade, run detection) and puzzle/fallingPiece (rotation-state shapes, ghost drop, lock delay, classic gravity/level/score curves) for Tetris/match-3 games (#166).",
@@ -32,7 +40,9 @@ export const CHANGELOG: Record<string, ChangelogEntry> = {
       "Model material/animation + paint — ModelConfig.tint/metalness/roughness/animation (GLTF clip playback, paused pose holds); PointerHit.uv + pointerService.sampleSurface() for material-aware picking; ctx.scene.entity.paint runtime paint layer, auto-rendered via a per-instance canvas texture with no per-game wiring; remote-player appearance tint recolors the shell's default capsule (#151).",
     ],
     changed: [],
-    removed: [],
+    removed: [
+      "The gameui component kit (@jgengine/react/gameui) — the themed HUD kit and its GameUiThemeProvider/useGameUiTheme theming. Breaking for anyone importing @jgengine/react/gameui. Now ships as installable shadcn registry items at https://jgengine.com/r/<name>.json, styled with Tailwind + --jg-* CSS variables. GameIcon and friends moved to @jgengine/react/gameIcons.",
+    ],
   },
   "0.7.0": {
     migrate: [
