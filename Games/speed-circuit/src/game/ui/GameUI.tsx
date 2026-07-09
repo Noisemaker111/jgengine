@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { ArcGauge } from "@/components/ui/arc-gauge";
 import { CountdownPips } from "@/components/ui/match-timer";
 import { HudLabel } from "@/components/ui/hud-label";
@@ -32,27 +33,27 @@ function TimeReadout({ label, seconds }: { label: string; seconds: number | null
 
 function HudLayer() {
   const state = useSyncExternalStore(runStore.subscribe, runStore.getState);
+  const layout = useHudLayout({ storageKey: "speed-circuit" });
 
   return (
-    <div style={{ position: "fixed", inset: 0, pointerEvents: "none" }}>
+    <HudCanvas layout={layout}>
       {state.phase !== "finished" && (
-        <div style={{ position: "absolute", top: 20, left: 20 }}>
+        <HudPanel id="speed-gauge" anchor="top-left" inset={{ x: 20, y: 20 }}>
           <ArcGauge
             fraction={state.speedKmh / TOP_SPEED_KMH}
             label="KM/H"
             readout={String(Math.round(state.speedKmh))}
             tone={state.offTrack ? "warning" : "accent"}
           />
-        </div>
+        </HudPanel>
       )}
 
       {state.phase !== "finished" && (
-        <div
+        <HudPanel
+          id="lap-timer"
+          anchor="top"
+          inset={{ x: 0, y: 20 }}
           style={{
-            position: "absolute",
-            top: 20,
-            left: "50%",
-            transform: "translateX(-50%)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -81,7 +82,7 @@ function HudLayer() {
               Off Track
             </span>
           )}
-        </div>
+        </HudPanel>
       )}
 
       {state.phase === "countdown" && (
@@ -139,7 +140,7 @@ function HudLayer() {
           </div>
         </div>
       )}
-    </div>
+    </HudCanvas>
   );
 }
 

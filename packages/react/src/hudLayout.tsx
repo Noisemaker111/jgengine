@@ -311,6 +311,16 @@ export function HudPanel({
 
   if (panel === undefined) return null;
   const { fx, fy } = HUD_ANCHOR_FRACTIONS[panel.placement.anchor];
+  const position: CSSProperties = {};
+  if (fx === 0) position.left = panel.placement.dx;
+  else if (fx === 1) position.right = -panel.placement.dx;
+  else position.left = `calc(50% + ${panel.placement.dx}px)`;
+  if (fy === 0) position.top = panel.placement.dy;
+  else if (fy === 1) position.bottom = -panel.placement.dy;
+  else position.top = `calc(50% + ${panel.placement.dy}px)`;
+  if (fx === 0.5 || fy === 0.5) {
+    position.transform = `translate(${fx === 0.5 ? "-50%" : "0"}, ${fy === 0.5 ? "-50%" : "0"})`;
+  }
   return (
     <div
       ref={rootRef}
@@ -326,9 +336,7 @@ export function HudPanel({
       }}
       style={{
         position: "absolute",
-        left: `calc(${fx * 100}% + ${panel.placement.dx}px)`,
-        top: `calc(${fy * 100}% + ${panel.placement.dy}px)`,
-        transform: `translate(${-fx * 100}%, ${-fy * 100}%)`,
+        ...position,
         zIndex: panel.z,
         pointerEvents: "auto",
         touchAction: draggable ? "none" : undefined,

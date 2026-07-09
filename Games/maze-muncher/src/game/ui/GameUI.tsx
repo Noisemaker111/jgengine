@@ -1,4 +1,5 @@
 import { useEntityStat, useGame, usePlayer, useSceneEntities } from "@jgengine/react/hooks";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 
 import { LIVES, SCORE, START_LIVES } from "../catalog";
 import {
@@ -159,28 +160,29 @@ function Banner({
 
 export function GameUI() {
   const player = usePlayer();
+  const layout = useHudLayout({ storageKey: "maze-muncher" });
   return (
-    <div className="pointer-events-none absolute inset-0 select-none font-sans text-white">
+    <HudCanvas layout={layout} className="select-none font-sans text-white">
       <div
         className="absolute inset-0"
         style={{ boxShadow: "inset 0 0 120px 40px rgba(0,0,0,0.55)", background: "radial-gradient(circle at 50% 50%, transparent 55%, rgba(0,0,0,0.35) 100%)" }}
       />
-      <div className="absolute left-4 top-4 flex gap-2">
+      <HudPanel id="score" anchor="top-left" inset={{ x: 16, y: 16 }} className="flex gap-2">
         <ScorePanel userId={player.userId} />
         <LevelPanel />
-      </div>
-      <div className="absolute right-4 top-4">
+      </HudPanel>
+      <HudPanel id="lives" anchor="top-right" inset={{ x: 16, y: 16 }}>
         <LivesPanel userId={player.userId} />
-      </div>
-      <div className="absolute left-1/2 top-4 -translate-x-1/2">
+      </HudPanel>
+      <HudPanel id="pellets" anchor="top" inset={{ x: 0, y: 16 }}>
         <PelletCounter />
-      </div>
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+      </HudPanel>
+      <HudPanel id="power-bar" anchor="bottom" inset={{ x: 0, y: 24 }}>
         <PowerBar />
-      </div>
+      </HudPanel>
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <StatusBanner />
       </div>
-    </div>
+    </HudCanvas>
   );
 }

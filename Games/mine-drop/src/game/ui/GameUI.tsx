@@ -1,5 +1,6 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 
 import { keybinds } from "../keybinds";
 import { COMPANION_IDS, type Phase } from "../tuning";
@@ -175,21 +176,22 @@ function EndOverlay({ hud }: { hud: Hud }) {
 export function GameUI() {
   usePlayer();
   const hud = useHud();
+  const layout = useHudLayout({ storageKey: "mine-drop" });
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 font-sans text-white">
-      <div className="absolute left-4 top-4">
+    <HudCanvas layout={layout} className="z-20 font-sans text-white">
+      <HudPanel id="objective-panel" anchor="top-left" inset={{ x: 16, y: 16 }}>
         <ObjectivePanel hud={hud} />
-      </div>
-      <div className="absolute right-4 top-4">
+      </HudPanel>
+      <HudPanel id="crew-panel" anchor="top-right" inset={{ x: 16, y: 16 }}>
         <CrewPanel />
-      </div>
+      </HudPanel>
       <div className="absolute inset-x-0 top-[22%] flex justify-center px-4 text-center">
         <Banner hud={hud} />
       </div>
-      <div className="absolute inset-x-0 bottom-6 flex justify-center">
+      <HudPanel id="control-bar" anchor="bottom" inset={{ x: 0, y: 24 }}>
         <ControlBar />
-      </div>
+      </HudPanel>
       <EndOverlay hud={hud} />
-    </div>
+    </HudCanvas>
   );
 }

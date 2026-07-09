@@ -27,7 +27,9 @@ export default defineConfig({
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },
+      { find: /^@jgengine\/core$/, replacement: `${src("core")}/index.ts` },
       { find: /^@jgengine\/core\/(.*)$/, replacement: `${src("core")}/$1` },
+      { find: /^@jgengine\/react$/, replacement: `${src("react")}/index.ts` },
       { find: /^@jgengine\/react\/(.*)$/, replacement: `${src("react")}/$1` },
       { find: /^@jgengine\/ws\/(.*)$/, replacement: `${src("ws")}/$1` },
       { find: /^@jgengine\/convex\/(.*)$/, replacement: `${src("convex")}/$1` },

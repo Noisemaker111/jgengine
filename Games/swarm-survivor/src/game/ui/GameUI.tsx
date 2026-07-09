@@ -2,6 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useAbilitySlots, useEntityStat } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { GameIcon } from "@jgengine/react/gameIcons";
+import { HudCanvas, HudPanel as MovableHudPanel, useHudLayout } from "@jgengine/react";
 import { AbilitySlotButton, type AbilitySlotState as AbilitySlotButtonState } from "@/components/ui/ability-slot";
 import { DeathScreenView } from "@/components/ui/death-screen-view";
 import { HudPanel } from "@/components/ui/hud-panel";
@@ -167,6 +168,7 @@ function UpgradeModal() {
 export function GameUI() {
   const ctx = useGameContext();
   const run = getRunState(ctx);
+  const layout = useHudLayout({ storageKey: "swarm-survivor" });
   useRunPhase();
   useTick(200);
   const health = useEntityStat(ctx.player.userId, "health");
@@ -189,33 +191,27 @@ export function GameUI() {
         />
       )}
       {run.outcome === "playing" && (
-        <>
+        <HudCanvas layout={layout}>
           <UpgradeModal />
-          <div style={{ position: "fixed", top: 18, left: 18 }}>
+          <MovableHudPanel id="health" anchor="top-left" inset={{ x: 18, y: 18 }}>
             {health !== null && <VitalBar value={health} tone="health" label="Hull" width={220} />}
-          </div>
-          <div
-            style={{
-              position: "fixed",
-              top: 18,
-              left: "50%",
-              transform: "translateX(-50%)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 6,
-            }}
+          </MovableHudPanel>
+          <MovableHudPanel
+            id="timer"
+            anchor="top"
+            inset={{ x: 0, y: 18 }}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
           >
             <MatchTimer seconds={remaining} label="Survive" />
             {xp !== null && <XpBar fraction={(xp.current - xp.min) / Math.max(1, xp.max - xp.min)} level={level?.current} width={220} />}
-          </div>
-          <div style={{ position: "fixed", top: 18, right: 18 }}>
+          </MovableHudPanel>
+          <MovableHudPanel id="score" anchor="top-right" inset={{ x: 18, y: 18 }}>
             <ScoreReadout value={run.kills} digits={3} label="Kills" />
-          </div>
-          <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)" }}>
+          </MovableHudPanel>
+          <MovableHudPanel id="weapon-bar" anchor="bottom" inset={{ x: 0, y: 24 }}>
             <WeaponBar />
-          </div>
-        </>
+          </MovableHudPanel>
+        </HudCanvas>
       )}
     </div>
   );

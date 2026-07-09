@@ -1,4 +1,5 @@
 import { useGameClock, useGameStore } from "@jgengine/react/hooks";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 
 import { dateLabel, seasonOf } from "../calendar";
 import { monarch } from "../people";
@@ -11,10 +12,16 @@ export function GameUI() {
   const { paused, playSpeed, speeds, calendar, controls } = useGameClock();
   const ruler = useGameStore(() => monarch());
   const population = useGameStore(() => totalPopulation());
+  const layout = useHudLayout({ storageKey: "annals" });
 
   return (
-    <div className="pointer-events-none absolute inset-0 font-serif text-amber-50">
-      <div className="pointer-events-auto absolute left-4 top-4 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200/20 bg-stone-950/70 px-4 py-2 shadow-lg backdrop-blur-sm">
+    <HudCanvas layout={layout} className="font-serif text-amber-50">
+      <HudPanel
+        id="status-bar"
+        anchor="top-left"
+        inset={{ x: 16, y: 16 }}
+        className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200/20 bg-stone-950/70 px-4 py-2 shadow-lg backdrop-blur-sm"
+      >
         <span className="text-lg tracking-wide text-amber-200">{GAME_NAME}</span>
         <span className="h-4 w-px bg-amber-200/30" />
         <span className="tabular-nums text-sm text-amber-100/90">
@@ -49,8 +56,8 @@ export function GameUI() {
             </button>
           ))}
         </div>
-      </div>
+      </HudPanel>
       <ChroniclePanel />
-    </div>
+    </HudCanvas>
   );
 }
