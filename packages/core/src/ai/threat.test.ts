@@ -76,3 +76,48 @@ describe("threat stickiness", () => {
     expect(table.highest()).toBeNull();
   });
 });
+
+describe("threat taunt / forced target", () => {
+  test("taunt forces the highest target for its duration regardless of threat", () => {
+    const table = createThreatTable();
+    table.add("tank", 50);
+    table.add("dps", 200);
+    expect(table.highest()).toBe("dps");
+    table.taunt("tank", 3);
+    expect(table.forcedTarget()).toBe("tank");
+    expect(table.highest()).toBe("tank");
+  });
+
+  test("taunt lifts the taunter to the top threat so aggro sticks after it expires", () => {
+    const table = createThreatTable();
+    table.add("tank", 50);
+    table.add("dps", 200);
+    table.taunt("tank", 3);
+    table.decay(3);
+    expect(table.forcedTarget()).toBeNull();
+    expect(table.threatOf("tank")).toBe(200);
+    expect(table.highest()).toBe("tank");
+  });
+
+  test("forced target decays with game-time and releases", () => {
+    const table = createThreatTable();
+    table.add("dps", 200);
+    table.taunt("tank", 2);
+    table.decay(1);
+    expect(table.forcedTarget()).toBe("tank");
+    table.decay(1.5);
+    expect(table.forcedTarget()).toBeNull();
+    expect(table.highest()).toBe("dps");
+  });
+
+  test("removing or clearing the taunter drops the forced target", () => {
+    const table = createThreatTable();
+    table.add("dps", 200);
+    table.taunt("tank", 5);
+    table.remove("tank");
+    expect(table.forcedTarget()).toBeNull();
+    table.taunt("dps", 5);
+    table.clear();
+    expect(table.forcedTarget()).toBeNull();
+  });
+});

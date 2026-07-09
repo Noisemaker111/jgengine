@@ -21,6 +21,8 @@ export interface ThreatTable {
   decay(dt: number): void;
   highest(options?: HighestThreatOptions): string | null;
   ranked(): ThreatEntry[];
+  taunt(sourceId: string, durationSeconds: number): void;
+  forcedTarget(): string | null;
   remove(sourceId: string): void;
   clear(): void;
   size(): number;
@@ -33,6 +35,8 @@ export function createThreatTable(config: ThreatTableConfig = {}): ThreatTable {
   const max = config.max ?? Number.POSITIVE_INFINITY;
   const forgetBelow = config.forgetBelow ?? DEFAULT_FORGET_BELOW;
   const table = new Map<string, number>();
+  let forcedSource: string | null = null;
+  let forcedRemaining = 0;
 
   function store(sourceId: string, value: number): number {
     const clamped = Math.min(max, value);
@@ -42,6 +46,16 @@ export function createThreatTable(config: ThreatTableConfig = {}): ThreatTable {
     }
     table.set(sourceId, clamped);
     return clamped;
+  }
+
+  function topThreat(): number {
+    let best = 0;
+    for (const value of table.values()) if (value > best) best = value;
+    return best;
+  }
+
+  function forcedTarget(): string | null {
+    return forcedRemaining > 0 ? forcedSource : null;
   }
 
   return {
@@ -55,11 +69,20 @@ export function createThreatTable(config: ThreatTableConfig = {}): ThreatTable {
       return table.get(sourceId) ?? 0;
     },
     decay(dt) {
+      if (dt > 0 && forcedRemaining > 0) {
+        forcedRemaining -= dt;
+        if (forcedRemaining <= 0) {
+          forcedRemaining = 0;
+          forcedSource = null;
+        }
+      }
       if (decayPerSecond <= 0 || dt <= 0) return;
       const loss = decayPerSecond * dt;
       for (const [sourceId, value] of [...table]) store(sourceId, value - loss);
     },
     highest(options = {}) {
+      const forced = forcedTarget();
+      if (forced !== null) return forced;
       let bestId: string | null = null;
       let bestThreat = Number.NEGATIVE_INFINITY;
       for (const [sourceId, value] of table) {
@@ -81,11 +104,23 @@ export function createThreatTable(config: ThreatTableConfig = {}): ThreatTable {
         .map(([sourceId, threat]) => ({ sourceId, threat }))
         .sort((a, b) => b.threat - a.threat || a.sourceId.localeCompare(b.sourceId));
     },
+    taunt(sourceId, durationSeconds) {
+      store(sourceId, Math.max(table.get(sourceId) ?? 0, topThreat()));
+      forcedSource = sourceId;
+      forcedRemaining = Math.max(0, durationSeconds);
+    },
+    forcedTarget,
     remove(sourceId) {
       table.delete(sourceId);
+      if (forcedSource === sourceId) {
+        forcedSource = null;
+        forcedRemaining = 0;
+      }
     },
     clear() {
       table.clear();
+      forcedSource = null;
+      forcedRemaining = 0;
     },
     size() {
       return table.size;
