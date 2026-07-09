@@ -2045,6 +2045,45 @@
       ]
     },
     {
+      "name": "chat-bubble",
+      "type": "registry:ui",
+      "title": "Chat Bubble",
+      "description": "Over-entity speech bubble for proximity chat — presentational, value-driven.",
+      "files": [
+        {
+          "path": "jgengine/chat-bubble.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/chat-bubble.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-text": "#f2e7d0",
+          "jg-text-dim": "#a3947a"
+        }
+      }
+    },
+    {
+      "name": "entity-chat-bubble",
+      "type": "registry:ui",
+      "title": "Entity Chat Bubble",
+      "description": "ChatBubble bound to a live entity's latest proximity chat message via useEntityChatBubble — the one-line speech bubble for any entity instance.",
+      "dependencies": [
+        "@jgengine/react"
+      ],
+      "registryDependencies": [
+        "chat-bubble"
+      ],
+      "files": [
+        {
+          "path": "jgengine/entity-chat-bubble.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/entity-chat-bubble.tsx"
+        }
+      ],
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: project the entity's world position to screen-percent x/y and pass it down: <EntityChatBubble instanceId={userId} x={screenX} y={screenY} />"
+    },
+    {
       "name": "interaction-ring",
       "type": "registry:ui",
       "title": "Interaction Ring",

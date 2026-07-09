@@ -22,7 +22,7 @@ function ApiPackagePage() {
 
   return (
     <Page>
-      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 pb-20 pt-12 sm:px-6 sm:pt-16">
         <Link
           to="/api"
           className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-emerald-300"
@@ -31,7 +31,7 @@ function ApiPackagePage() {
         </Link>
 
         {pkg === null ? (
-          <div className="mt-6 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8">
+          <div className="panel mt-6 rounded-2xl p-6 sm:p-8">
             <h1 className="font-mono text-2xl font-bold tracking-tight text-slate-50">@jgengine/{slug}</h1>
             <p className="mt-3 text-sm leading-relaxed text-slate-400">
               No generated reference for this package. Run{" "}
@@ -43,14 +43,30 @@ function ApiPackagePage() {
           </div>
         ) : (
           <>
-            <div className="mt-6 rounded-2xl border border-white/[0.08] bg-gradient-to-b from-emerald-400/[0.06] to-transparent p-6 sm:p-8">
+            <div className="panel panel-top-glow mt-6 overflow-hidden rounded-2xl bg-gradient-to-b from-emerald-400/[0.07] to-transparent p-6 sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h1 className="font-mono text-2xl font-bold tracking-tight text-slate-50">{pkg.name}</h1>
-                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">{pkg.description}</p>
+                  <p className="font-mono text-xs uppercase tracking-[0.22em] text-emerald-400/80">Package</p>
+                  <h1 className="mt-2 font-mono text-2xl font-bold tracking-tight text-slate-50">{pkg.name}</h1>
+                  <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-slate-400">{pkg.description}</p>
                 </div>
-                <span className="font-mono text-xs text-slate-500">v{pkg.version}</span>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-xs text-slate-400">
+                  v{pkg.version}
+                </span>
               </div>
+              {pkg.modules.length > 1 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {pkg.modules.map((mod) => (
+                    <a
+                      key={mod.path}
+                      href={`#@jgengine/${slug}/${mod.path}`}
+                      className="rounded-full border border-white/10 bg-ink/60 px-3 py-1 font-mono text-xs text-slate-400 transition hover:border-emerald-400/40 hover:text-emerald-300"
+                    >
+                      {mod.path}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="mt-10 space-y-12">
@@ -58,12 +74,13 @@ function ApiPackagePage() {
                 const anchor = `@jgengine/${slug}/${mod.path}`;
                 return (
                   <section key={mod.path} id={anchor} className="scroll-mt-24">
-                    <h2 className="font-mono text-lg font-semibold text-emerald-300">
+                    <h2 className="flex items-center gap-3 font-mono text-lg font-semibold text-emerald-300">
                       <a href={`#${anchor}`} className="hover:underline">
                         {anchor}
                       </a>
+                      <span className="hairline min-w-0 flex-1" aria-hidden />
                     </h2>
-                    <div className="mt-4 divide-y divide-white/[0.06] rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+                    <div className="panel mt-4 divide-y divide-white/[0.06] rounded-2xl">
                       {mod.exports.map((exp) => (
                         <div key={exp.name} className="p-5 sm:p-6">
                           <div className="flex flex-wrap items-baseline justify-between gap-3">

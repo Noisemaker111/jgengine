@@ -41,7 +41,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 |---------|----------------------------------|-----------|
 | Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig`, `TimeConfig` |
 | Simulation clock | `time/simClock` | `createSimClock`, `SimClock`, `TimeConfig`, `ClockSnapshot`, `CalendarTime` |
-| Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
+| Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `CameraProjection`, `SideScrollCameraConfig`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |
 | Behaviour lifecycle | `behaviour/behaviour` | `Behaviour` (`onAwake`→`onEnable`→`onStart`→`onUpdate(dt)`→`onDisable`→`onDestroy`), `BehaviourModule`, `createBehaviourWorld`, `BehaviourWorld`, `JGEngineRegister`, `RegisterField`, `BehaviourModules` — Unity-style lifecycle over an id-keyed node tree (`setActive` cascade, lazy update dispatch); key nodes by entity instance ids. Games augment `JGEngineRegister` via `declare module "@jgengine/core/behaviour/behaviour"` for typed `world.modules`. Three.js binding: `Object3DBehaviour`, `attachObject3D`, `useBehaviourWorld` from `@jgengine/shell/behaviour` |
 | Reactive keyed store | `store/observableKeyedStore` | `createObservableKeyedStore`, `ObservableKeyedStore` — backs `ctx.game.store` |
@@ -61,6 +61,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Voxel field | `world/voxelField` | `createVoxelField`, `VoxelField`, `VoxelCell`, `VoxelHit`, `VoxelBounds`, `VoxelFieldSummary`, `VoxelFace`, `VOXEL_FACES`, `VOXEL_FACE_NORMALS` — a chunked block lattice, distinct from the `voxel()` `WorldFeature` descriptor |
 | Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `rollingField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep`, `snapToGround`, `snapEntityToGround`, `resolveTerrainPalette`, `TERRAIN_MATERIAL_PALETTES` |
 | Seeded RNG | `random/rng` | `seededRng`, `seededStreams` |
+| Seed share link | `random/seedLink` | `withSeedParam`, `seedFromUrl`, `seedFromSearch`, `dailySeed`, `DEFAULT_SEED_PARAM` — encode/decode a world seed to/from a shareable URL query param; `dailySeed` is the UTC daily-run seed |
 | Name generator | `random/nameGen` | `createNameGenerator`, `pickFrom`, `fillTemplate`, `NameGenerator`, `NameGeneratorOptions`, `SyllableBank` |
 | Regions | `world/regions` | `createRegionField`, `isRegionField`, `RegionDef`, `RegionField`, `RegionSample` |
 | Wind field | `world/wind` | `windField`, `WindField`, `WindFieldConfig`, `WindVector` |
@@ -91,6 +92,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Persistence scopes | `runtime/persistenceScope` | `partitionScopes`, `resetRun`, `mergeScopes`, `clearRunFields`, `applyRunReset`, `planScenarioReset`, `ScopeSchema`, `ScenarioReset`, `PersistenceScope` |
 | Inventory | `inventory/inventoryModel` | `InventoryLayout`, `InventorySet`, `ItemTraits` |
 | Progression | `game/progression` | `curve`, `evalCurve`, `leveling`, `Curve`, `LevelingTrack`, `LevelProgress` |
+| Talent tree | `game/talents` | `createTalentTree`, `TalentTree`, `TalentTreeConfig`, `TalentNodeDef`, `TalentRequirement`, `TalentAllocateResult`, `ResolvedTalents`, `TalentSnapshot` — point spends gated by prereqs + points-in-branch, resolved once into a cached flat `StatModifierSet` + ability grants |
 | Inventory slots | `inventory/slotModel` | `createSlots`, `placeAt`, `removeAt`, `moveSlot`, `firstEmpty`, `compactSlots`, `Slot`, `SlotGrid` |
 | Shaped inventory | `inventory/shapedGrid` | `createShapedGrid`, `placeShaped`, `moveShaped`, `removeShaped`, `canPlace`, `rotateFootprint`, `occupiedCells`, `gridAdjacencyQuery`, `cellFromPoint`, `ShapedGrid`, `Footprint`, `Placement`, `Rotation` |
 | Card piles | `cards/cardPile` | `createCardPile`, `createCardPileState`, `draw`, `moveCards`, `shuffleZone`, `pileRng`, `CardPile`, `CardPileState`, `CardPileConfig` |
@@ -108,6 +110,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Build permissions | `world/buildPermissions` | `createPlotPermissions`, `createContributionPool`, `PlotPermissions`, `ContributionPool`, `BuildRole`, `ContributionGoal` |
 | Interiors | `world/interiors` | `createInteriors`, `Interior`, `Exterior`, `SpaceRef` |
 | Game clock | `time/gameClock` | `getScaledElapsedMs`, `computeGameDay`, `SECONDS_PER_GAME_DAY` |
+| Idle / offline catch-up | `time/idleProgress` | `idleWindow`, `linearCatchUp`, `exponentialCatchUp`, `steppedCatchUp`, `IdleWindow`, `IdleWindowConfig`, `SteppedCatchUpResult` — elapsed-real-time production/growth/decay for a game reopened after being closed |
 | Scene behaviors | `scene/behaviors` | `wander`, `patrol`, `promptable`, `talkable`, `player` |
 | Capture check | `scene/captureCheck` | `captureChance`, `rollCapture`, `CaptureCheckInput` |
 | Owned roster | `scene/roster` | `createRoster`, `Roster`, `RosterEntry`, `RosterCaptureOptions` |
@@ -136,6 +139,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | JSON data source | `data/jsonDataSource` | `createJsonDataSource`, `JsonDataSourceOptions` |
 | Dev proxy routing | `data/devProxy` | `proxiedUrl`, `parseDevProxyTable`, `DevProxyTable`, `ProxiedUrlOptions`, `DEFAULT_DEV_PROXY_PREFIX` |
 | Grid-cell world rendering | `world/gridInstances` | `resolveGridInstances`, `GridInstanceTransform` |
+| Swarm LOD scheduler | `world/lod` | `createLodScheduler`, `LodScheduler`, `LodSchedulerConfig`, `LodBand` — distance→band index for render detail, `step(id, distance, dt)` throttles per-entity updates by band interval (staggered, accumulates skipped time); pairs with `@jgengine/shell/world/SpriteBatch` for 1000+ entity swarms |
 | Turn loop | `turn/turnLoop` | `createTurnLoop`, `TurnLoop`, `TurnLoopConfig`, `TurnState`, `PoolConfig`, `PoolState`, `TurnLoopSnapshot` |
 | Declared-action intent board | `turn/intent` | `createIntentBoard`, `IntentBoard`, `DeclaredIntent` — `declare(participantId, intent)`, `peek`, `all`, `consume`, `clear` |
 | Commit modes | `turn/commit` | `createCommitController`, `CommitController`, `CommitMode`, `CommitOutcome`, `SubmittedAction` |
@@ -155,6 +159,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Beat clock | `time/beatClock` | `createBeatClock`, `createBeatInputBuffer`, `nextBeatTime`, `BeatClock`, `BeatClockConfig`, `BeatSnapshot`, `BeatInputBuffer`, `BufferedAction` |
 | Spawn director | `ai/spawnDirector` | `createSpawnDirectorState`, `advanceSpawnDirector`, `advanceWave`, `raiseAlert`, `pickSpawnPoint`, `SpawnDirectorConfig`, `WaveManifest`, `SpawnEntry`, `SpawnRequest`, `DirectorContext` |
 | Threat table | `ai/threat` | `createThreatTable`, `ThreatTable`, `ThreatTableConfig`, `ThreatEntry`, `HighestThreatOptions` |
+| Group-assist aggro | `ai/groupAssist` | `createAssistNetwork`, `AssistNetwork`, `AssistNetworkConfig`, `AssistMember` — propagates one member's threat gains to same-group members (optional radius + `distanceBetween` gating) so a single pull rallies the group |
 | Job board | `ai/jobBoard` | `createJobBoard`, `JobBoard`, `JobDef`, `Job`, `JobPhase`, `WorkerState`, `JobReport`, `JobTickContext` |
 | Crowd flow | `ai/crowd` | `computeFlowField`, `createCrowdField`, `selectPoi`, `FlowField`, `FlowFieldOptions`, `CrowdField`, `Poi`, `SelectPoiOptions` |
 | Factions & reputation | `faction/factions`, `faction/reputation` | `createFactionGraph`, `createFactionRoster`, `FactionRelation`, `FactionDef`, `FactionGraph`, `FactionRoster`, `createReputationLedger`, `DEFAULT_REPUTATION_TIERS`, `tierForStanding`, `effectiveRelation`, `ReputationTier`, `ReputationLedger` |
@@ -173,6 +178,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Session matchmaking | `multiplayer/matchmaking` | `browseSessions`, `findByJoinCode`, `quickMatch`, `matchesFilter`, `normalizeJoinCode`, `generateJoinCode`, `SessionListing`, `MatchFilter` |
 | Auth identity | `multiplayer/identity` | `AuthSession`, `PlayerIdentity`, `sessionPlayer`, `resolveGuestSession` |
 | Text chat | `game/chat`, `multiplayer/chatContract` | `createChat`, `Chat`, `ChatMessage`, `ChatChannelDef`, `whisperChannelId`, `createChatRateLimiter`, `ChatTransport`, `ChatSync`, `createLocalChatTransport` |
+| Chat filter | `game/chatFilter` | `createChatFilter`, `normalizeChatText`, `ChatFilter`, `ChatFilterConfig`, `ChatFilterResult` — mask/reject blocked words (leet-normalized token match); wire via `ChatDeps.filter` (word lists are game data, the engine ships the mechanism) |
 | Voice seam | `multiplayer/voiceContract` | `VoiceTransport`, `VoiceParticipant`, `VoiceRoute`, `createLocalVoiceTransport`, `createPushToTalk`, `PushToTalkMode` |
 | Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes` |
 | Reveal query | `sensor/revealQuery` | `createRevealQuery`, `RevealQuery`, `RevealQueryOptions`, `RevealHit` |
@@ -191,6 +197,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Telegraph | `combat/telegraph` | `pointInTelegraph`, `telegraphProgress`, `telegraphFired`, `telegraphTurnProgress`, `telegraphFiredAtTurn`, `telegraphTurnsRemaining`, `TelegraphShape`, `TelegraphConfig` |
 | Dash / dodge | `movement/dash` | `createDashState`, `DashState`, `DashConfig`, `DashBurst`, `iframeActive`, `dashOffset` |
 | Ability kit | `combat/abilityKit` | `createAbilityKit`, `AbilityKit`, `AbilitySlotConfig`, `AbilitySlotSnapshot`, `AbilitySlotState`, `AbilityCastType`, `AbilityCastResult`, `AbilitySlotRetune` |
+| Resource pool | `combat/resourcePool` | `createResourcePool`, `ResourcePool`, `ResourcePoolConfig` — current/max with per-second regen/decay and spend/gain; `pool.current()` is the ability kit's `resourceAvailable` |
+| Combo points | `combat/comboPoints` | `createComboPoints`, `ComboPoints`, `ComboPointsConfig` — discrete points accrued on action, expiring after a timeout from the last gain, spent in bulk |
 | Event meter | `stats/eventMeter` | `createEventMeter`, `EventMeter`, `EventMeterConfig`, `EventMeterFeedResult` |
 | Auto-target policy | `scene/autoTarget` | `selectAutoTarget`, `createAutoTargeter`, `AutoTargetPolicy`, `AutoTargeter`, `AutoTargetDeps` |
 | Resistance matrix | `combat/resistance` | `resolveResistance`, `resistanceScale`, `ResistanceMatrix`, `ResistVerdict`, `ResistanceResult` |

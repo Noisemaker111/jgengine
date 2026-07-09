@@ -53,9 +53,19 @@ function GameStage({ game }: { game: Game }) {
     <div
       className="relative h-full w-full"
       style={{
-        background: `radial-gradient(ellipse 80% 90% at 50% 110%, ${game.hue}2e, transparent 70%), linear-gradient(to bottom, #0a0e18, #060910)`,
+        background: `radial-gradient(ellipse 80% 90% at 50% 110%, ${game.hue}38, transparent 70%), linear-gradient(to bottom, #0a0f1c, #04060c)`,
       }}
     >
+      {phase !== "playing" && (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage: `linear-gradient(to right, ${game.hue}12 1px, transparent 1px), linear-gradient(to bottom, ${game.hue}12 1px, transparent 1px)`,
+            backgroundSize: "36px 36px",
+            maskImage: "radial-gradient(ellipse 80% 90% at 50% 60%, black 30%, transparent 85%)",
+          }}
+        />
+      )}
       {phase !== "poster" && (
         <iframe
           ref={bindFrame}
@@ -86,8 +96,8 @@ function GameStage({ game }: { game: Game }) {
             <button
               type="button"
               onClick={() => setPhase("loading")}
-              className="inline-flex items-center gap-2.5 rounded-xl px-7 py-3 text-sm font-semibold transition hover:brightness-110"
-              style={{ backgroundColor: game.hue, color: "#060910", boxShadow: `0 0 36px -8px ${game.hue}` }}
+              className="inline-flex items-center gap-2.5 rounded-xl px-7 py-3 text-sm font-semibold transition hover:scale-[1.03] hover:brightness-110"
+              style={{ backgroundColor: game.hue, color: "#04060c", boxShadow: `0 0 44px -8px ${game.hue}` }}
             >
               <svg viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor" aria-hidden>
                 <path d="M3 2.2v7.6L10 6 3 2.2Z" />
