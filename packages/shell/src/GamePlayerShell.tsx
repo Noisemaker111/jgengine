@@ -1344,6 +1344,7 @@ export function GamePlayerShell({
   const effectiveSky = backdropSky ?? worldSky;
   const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
   const lighting = playable.lighting;
+  const orthographic = playable.camera?.projection === "orthographic";
 
   const localXY = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -1510,11 +1511,20 @@ export function GamePlayerShell({
       }}
     >
       <Canvas
-        camera={{
-          fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
-          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
-          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
-        }}
+        orthographic={orthographic}
+        camera={
+          orthographic
+            ? {
+                zoom: playable.camera?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
+                near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+              }
+            : {
+                fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
+                near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+              }
+        }
         shadows={playable.shadows ?? true}
         gl={{ preserveDrawingBuffer: true }}
         style={{ touchAction: "none" }}
