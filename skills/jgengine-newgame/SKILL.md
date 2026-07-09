@@ -16,6 +16,15 @@ The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and
 | `jgengine-api` | Install + setup, the engine surface, the UI quality bar, asset sourcing |
 | `jgengine-verify` | How to prove it works — browserless scene gate, shoot last |
 
+## Fan-out — research only novel seams
+
+Standing rule for every phase (same spirit as root `CLAUDE.md` Delegation):
+
+- **Do not** spawn research workers to rediscover scaffolding, Convex wiring, HUD/keybind idioms, `defineGame` fields, or anything already in `jgengine-api` / these recipes. Read the skill, then build.
+- **Do** fan research only when the mechanic needs an engine seam the skills do not document (a collision model, a motion intent, a sky/light mapping) — and stop the moment the seam is confirmed; do not keep workers alive for "more context."
+- **Do** fan mechanical legs every phase: catalog generation, `check-types`, `bun test`, staged screenshot, log triage — on cheaper workers (Sonnet), job-named on a 🤖 line. The orchestrator keeps design, layering, and judging worker output.
+- Copying another game's source to learn an API is a skill gap, not a research task — fix or report the skill instead (see Isolation below).
+
 ## Take the reading — don't ask
 
 A named game **is** the scope answer. "Make Fallout but multiplayer" means the canonical mainline experience — first/third-person wasteland RPG: gunplay plus targeted-shot mode, S.P.E.C.I.A.L.-style stats, XP/perks, loot + caps economy, quests + dialogue, settlements, party play — not a quiz about it. Never ask "isometric or FPS?", "does this scope work?", "want me to cut quests?", or offer a menu of smaller versions. State your reading in one line, then show the master blueprint.
@@ -51,7 +60,7 @@ Split the blueprint into ordered phases. Each phase:
 - lands a coherent set of systems **finished end to end** — logic + that phase's share of the content budget + UI + real assets + feedback. Nothing in a phase is stubbed "for a later phase";
 - ends verified: type-check green, staged screenshot taken and judged against `jgengine-api`'s UI quality bar;
 - flows into the next without stopping to ask "should I continue?" or demoing a half version — the confirmed blueprint is the approval. If a session ends mid-build, the phase plan is the roadmap the next session resumes from, exactly where it left off;
-- is reported in one line — "phase N of M complete", never as a finished game; the next phase starts on its own line, not buried in the status. Fan the phase's mechanical legs (catalog generation, the type-check, the staged screenshot) out to job-named subagents on a 🤖 line and judge their output — don't run them inline. Done means the last phase landed and the full-game checklist below passes.
+- is reported in one line — "phase N of M complete", never as a finished game; the next phase starts on its own line, not buried in the status. Fan the phase's **mechanical** legs (catalog generation, the type-check, the staged screenshot) out to job-named subagents on a 🤖 line and judge their output — don't run them inline. Do **not** fan "study how games scaffold" research — that is the Fan-out rule above. Done means the last phase landed and the full-game checklist below passes.
 
 A sensible phase shape: (1) world + movement + camera + core combat loop with real assets; (2) full item/loot/economy breadth + inventory UI; (3) progression + quests + dialogue; (4) multiplayer sync + social; (5) remaining systems + content fill to budget + audio/juice. Adapt to the fantasy — but phase 1 already looks like the game, not a graybox.
 
@@ -123,6 +132,29 @@ The interior analog of the shooter recipe: a life-sim, dollhouse, base-builder, 
 - **Time is a system, not a hack**: a life-sim runs on a clock. Set `defineGame({ time: { scale, dayLength, start } })` and write every need decay, growth, and schedule against `onTick`'s `dt` (game-time) or `ctx.time.after/every/at` — then pause and 1×/2×/3×/4× fast-forward affect the *whole* world (needs, jobs, pregnancies, cooking) for free. Never scale time by hand-multiplying in one system; that desyncs the rest. Render the clock + speed controls from `useGameClock()` (see `jgengine-api` → `ctx.time`).
 
 One interior is a probe; if a second needs this same cell→floor/wall/furniture loop, promote it to an engine `roomGrid` helper (cells → floor tiles + edge walls + doorways). Until then it is a recipe, not a `defineGame` field.
+
+## Archetype recipe — voxel trapdoor board (integer solids)
+
+When the fantasy is a board/grid you stand on that can open underfoot (minesweeper trapdoors, disappearing tiles, dig-through floors), use `collision: { voxel: true }` and treat placed scene objects as the solid lattice — do not script a fake fall with `setPose`:
+
+- **Integer positions are solid.** The shell builds `isSolid` from `ctx.scene.object.list()` as exact `` `${x},${y},${z}` `` string keys and queries integer cell coords. Place walkable tiles at integer `[x, y, z]`.
+- **Fractional positions are free decoration.** Furniture, frames, lamps at non-integer coords render but never block — no separate "decor layer" API.
+- **Remove the object → real gravity fall.** Deleting a solid tile drops the object count, rebuilds the solid cache, and the voxel body free-falls under `physics.gravity` until it hits another solid (pit floor below). Landing = poll `entity.position[1]` / vertical velocity in `onTick`.
+- **`visual.scale` does not change collision.** Every solid is a full unit cell regardless of mesh scale. Short "revealed" tiles that look thinner still collide as 1³ — differentiate revealed cells by color/billboard, not by shrinking the collider, or the player floats.
+- **Vertical motion only for the local voxel body.** `ctx.player.motion.setY` / `impulse` / `setVerticalVelocity` work; the voxel body is created once and is not a general XY teleport. Blast-off and ride-back are vertical; companions/NPCs can `setPose` freely.
+- **Solid cache keys off object count.** Place/remove that changes `list().length` rebuilds solids; in-place position edits that keep the same count will not — prefer remove+place when a tile must move.
+
+Full collision/lighting notes: `jgengine-api` → Controller kinematics + `reference/world.md` sky gotcha.
+
+## First-shot art recipe — before the first `shoot`
+
+The first `--mode play` screenshot must already pass this bar so you do not burn four shoot loops on framing and murk (see `jgengine-verify`):
+
+1. **Sky:** `sky({ preset: "day", … })` when you need readable brightness. `sunIntensity` / `ambientIntensity` overrides apply only to the **day** keyframe — `dusk` / `night` (and dawn) ignore them and stay dim. Want warm evening mood without murk? Use `day` + warm `horizonColor` / `zenithColor`, or accept dusk's hardcoded look.
+2. **Forward landmark:** default first-person yaw looks down **+Z** with pitch 0. Put the board, crew, or focal prop ahead on +Z — never a giant black panel / TV / void as the first thing in frame.
+3. **Readable play surface:** tile/ground colors that separate from the backdrop at a glance (ivory/brass on warm room, not murky green on dusk).
+4. **Scale props as figures, not edge crops:** billboard crew slightly ahead and sized so hats/silhouettes read as characters, not huge edge blobs.
+5. **Judge once:** open the PNG; if it fails this recipe, fix world/sky/placement and shoot **once** more — never iterate shoot as the design loop.
 
 ## Archetype recipe — living-world sim (kingdom / colony / ambient god-game)
 

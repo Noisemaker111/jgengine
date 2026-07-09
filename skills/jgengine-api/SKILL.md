@@ -979,6 +979,8 @@ movement: {
 
 **Vertical motion intents** — `ctx.player.motion` (`@jgengine/core/runtime/motionIntents`): `impulse(vy)` adds to the vertical velocity the shell's controller is about to integrate, `setVerticalVelocity(vy)` replaces it outright, `setY(y)` wins over physics for that frame. The shell calls `takePending()` once per frame, before integrating gravity, to drain what accumulated; this is not reactive state (jump pads, launch abilities, bounce pads).
 
+**`collision: { voxel: true }` — object lattice as solids.** When set, the shell's local player uses a voxel body whose `isSolid(x,y,z)` is rebuilt from `ctx.scene.object.list()` as exact `` `${x},${y},${z}` `` keys (integer cell queries). Integer-placed objects are walkable/blocking; fractional-coord objects decorate without colliding. Removing an object opens a real trapdoor under gravity — do not fake the fall with `setPose`. `visual.scale` does not shrink the collider (always a unit cell). The voxel body is created once; prefer `motion.setY` / `impulse` for vertical relocation — full XY teleport of the local voxel body is not supported. Solid cache rebuilds when object **count** changes. Recipe: `jgengine-newgame` → voxel trapdoor board.
+
 **Respawn** — `ctx.scene.entity.spawnPoseOf(id)` reads the spawn pose, `resetToSpawn(id)` teleports back to it with zero velocity, `resetAllToSpawn(filter?)` does it for every entity matching an optional filter and returns the count (round resets, out-of-bounds recovery).
 
 ## Touch & mobile
