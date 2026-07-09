@@ -47,12 +47,12 @@ function occupiesCell(position: readonly [number, number, number], x: number, y:
 export function createEditorHandlers(
   grid: VoxelGrid,
   eyeHeight: number,
-  reach: number,
+  reach: () => number,
 ): Record<string, ItemUseHandler<GameContext>> {
   return {
     mine: {
       apply(ctx, input) {
-        const hit = aimedHit(ctx, input, grid, eyeHeight, reach);
+        const hit = aimedHit(ctx, input, grid, eyeHeight, reach());
         if (hit === null) return { state: ctx };
         const [x, y, z] = hit.cell;
         const catalogId = grid.catalogAt(x, y, z);
@@ -77,7 +77,7 @@ export function createEditorHandlers(
     },
     placeBlock: {
       apply(ctx, input) {
-        const hit = aimedHit(ctx, input, grid, eyeHeight, reach);
+        const hit = aimedHit(ctx, input, grid, eyeHeight, reach());
         if (hit === null) return { state: ctx };
         const tx = hit.cell[0] + hit.normal[0];
         const ty = hit.cell[1] + hit.normal[1];

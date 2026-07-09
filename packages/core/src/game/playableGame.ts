@@ -556,6 +556,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   lighting?: LightingConfig;
   /** Generic background/sky/fog (#207.6), applied for any world kind including a custom `environment` component. */
   backdrop?: BackdropConfig;
+  /** F2 debug overlay (frame/sim timing, logs, backend latency, keybinds, live tunables). On for every game by default; `false` disables the toggle. */
+  devtools?: boolean;
 }
 
 export function worldHealthBarAllowsRole(
