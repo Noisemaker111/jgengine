@@ -51,9 +51,12 @@ const SHOTGUN_CONE_COS = 0.82;
 const SHOTGUN_SCORE = 150;
 const MUZZLE_FLASH_SECONDS = 0.12;
 
-export const FOG_NEAR = 2.5;
-const FOG_FAR_BASE = 8.5;
-const FOG_FAR_LANTERN = 20;
+export const FOG = {
+  near: 4.5,
+  far: 13,
+  farLantern: 26,
+};
+export const FOG_NEAR = FOG.near;
 
 interface GhostState {
   def: GhostDef;
@@ -130,7 +133,7 @@ export function getMuzzleFlash(): number {
   return lastFireAt < 0 || since > MUZZLE_FLASH_SECONDS ? 0 : 1 - since / MUZZLE_FLASH_SECONDS;
 }
 export function getFogFar(): number {
-  return lanternUntil > elapsed ? FOG_FAR_LANTERN : FOG_FAR_BASE;
+  return lanternUntil > elapsed ? FOG.farLantern : FOG.far;
 }
 export function ghostModeOf(id: string): Mode | null {
   return ghosts.get(id)?.mode ?? null;
