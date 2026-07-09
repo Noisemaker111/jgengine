@@ -12,14 +12,18 @@ for (const ghost of GHOSTS) {
   ghostEntries[ghost.kind] = { role: "enemy", movement: { walkSpeed: 0 } };
 }
 
-export const entityCatalog: Record<string, GameContextEntityEntry> = {
-  [MUNCHER]: {
+function muncherEntry(): GameContextEntityEntry {
+  return {
     role: "player",
     movement: { walkSpeed: 4.2 },
     stats: {
       [SCORE]: { max: 9_999_999, min: 0, current: 0 },
       [LIVES]: { max: START_LIVES, min: 0, current: START_LIVES },
     },
-  },
-  ...ghostEntries,
-};
+  };
+}
+
+export function entityCatalog(catalogId: string): GameContextEntityEntry | null {
+  if (catalogId === MUNCHER) return muncherEntry();
+  return ghostEntries[catalogId] ?? null;
+}

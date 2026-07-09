@@ -21,7 +21,7 @@ import {
 } from "../loop";
 import { cellToWorld, GHOSTS, PLAYER_START, POWERUP_SPAWNS, pelletCells, powerCells } from "./maze";
 
-const content = { entityById: (id: string) => entityCatalog[id] ?? null };
+const content = { entityById: (id: string) => entityCatalog(id) };
 const STEP = 1 / 60;
 
 function boot(): GameContext {

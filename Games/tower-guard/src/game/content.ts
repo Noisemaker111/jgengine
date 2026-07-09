@@ -12,17 +12,18 @@ function creepEntry(id: string): GameContextEntityEntry {
   };
 }
 
-const ENTITY_ENTRIES: Record<string, GameContextEntityEntry> = {
-  [BASE_CATALOG_ID]: {
+function baseEntry(): GameContextEntityEntry {
+  return {
     role: "npc",
     stats: { lives: { max: STARTING_LIVES } },
     receive: { leak: { order: ["lives"] } },
-  },
-  ...Object.fromEntries(Object.keys(CREEP_CATALOG).map((id) => [id, creepEntry(id)])),
-};
+  };
+}
 
 export const content: GameContextContent = {
   entityById(catalogId) {
-    return ENTITY_ENTRIES[catalogId] ?? null;
+    if (catalogId === BASE_CATALOG_ID) return baseEntry();
+    if (CREEP_CATALOG[catalogId] !== undefined) return creepEntry(catalogId);
+    return null;
   },
 };
