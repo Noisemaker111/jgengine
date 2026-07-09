@@ -130,8 +130,9 @@ emit(
   [
     `Cloud session on branch "${branch}" (default: ${defaultBranch}).`,
     `Flow: commit here, push with git push -u origin ${branch}, open a PR via the GitHub MCP ` +
-      `tools, queue it with auto-merge (squash), and subscribe to PR activity. No worktrees — ` +
-      `every session is its own isolated cloud container.`,
+      `tools, and squash-merge it immediately — the local gate already ran. If required checks ` +
+      `block the instant merge, queue auto-merge (squash) and end the turn; never subscribe to, ` +
+      `watch, or poll CI. No worktrees — every session is its own isolated cloud container.`,
     ...notes,
   ].join("\n\n") + shallowNote,
 );
