@@ -7,6 +7,8 @@ import type { Vec3, VoxelGrid, VoxelHit } from "./voxelGrid";
 
 /** Radius of the break-drop scatter, kept under half a cell so a drop lands in the column it was mined from. */
 const DROP_SCATTER: { radius: number; minRadius: number } = { radius: 0.28, minRadius: 0.08 };
+
+export const REACH = 6;
 /** How far a drop is allowed to fall looking for footing before it just rests where the block was. */
 const MAX_DROP_FALL = 48;
 
@@ -28,7 +30,6 @@ function aimedHit(
   input: ItemUseInput,
   grid: VoxelGrid,
   eyeHeight: number,
-  reach: number,
 ): VoxelHit | null {
   const player = ctx.scene.entity.get(input.from);
   if (player === null || input.aim === undefined || !("yaw" in input.aim)) return null;
@@ -36,7 +37,7 @@ function aimedHit(
   const cosPitch = Math.cos(pitch);
   const direction: Vec3 = [Math.sin(yaw) * cosPitch, Math.sin(pitch), Math.cos(yaw) * cosPitch];
   const origin: Vec3 = [player.position[0], player.position[1] + eyeHeight, player.position[2]];
-  return grid.raycast(origin, direction, reach);
+  return grid.raycast(origin, direction, REACH);
 }
 
 function occupiesCell(position: readonly [number, number, number], x: number, y: number, z: number): boolean {
@@ -47,12 +48,11 @@ function occupiesCell(position: readonly [number, number, number], x: number, y:
 export function createEditorHandlers(
   grid: VoxelGrid,
   eyeHeight: number,
-  reach: () => number,
 ): Record<string, ItemUseHandler<GameContext>> {
   return {
     mine: {
       apply(ctx, input) {
-        const hit = aimedHit(ctx, input, grid, eyeHeight, reach());
+        const hit = aimedHit(ctx, input, grid, eyeHeight);
         if (hit === null) return { state: ctx };
         const [x, y, z] = hit.cell;
         const catalogId = grid.catalogAt(x, y, z);
@@ -77,7 +77,7 @@ export function createEditorHandlers(
     },
     placeBlock: {
       apply(ctx, input) {
-        const hit = aimedHit(ctx, input, grid, eyeHeight, reach());
+        const hit = aimedHit(ctx, input, grid, eyeHeight);
         if (hit === null) return { state: ctx };
         const tx = hit.cell[0] + hit.normal[0];
         const ty = hit.cell[1] + hit.normal[1];

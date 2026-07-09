@@ -1,4 +1,3 @@
-import { tunable } from "@jgengine/core/devtools/devtools";
 import type { GameLoop } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createEditorHandlers } from "./game/handlers";
@@ -9,9 +8,6 @@ import { createVoxelGrid } from "./game/voxelGrid";
 import { generateWorld } from "./game/worldgen";
 
 export const EYE_HEIGHT = 1.6;
-export const REACH = 6;
-
-const miningReach = tunable("mining/reach", REACH, { min: 2, max: 16, step: 1 });
 
 function autoTurnInQuests(ctx: GameContext): void {
   ctx.game.events.on("quest.updated", (event) => {
@@ -39,7 +35,7 @@ export function creditPickupsToQuests(ctx: GameContext): void {
 export const loop: Required<GameLoop<GameContext>> = {
   onInit(ctx) {
     const grid = createVoxelGrid(ctx);
-    ctx.item.use.register(createEditorHandlers(grid, EYE_HEIGHT, () => miningReach.value));
+    ctx.item.use.register(createEditorHandlers(grid, EYE_HEIGHT));
     ctx.player.loadout.register(loadouts);
     registerSelectionCommands(ctx);
     ctx.game.quest.register(quests);

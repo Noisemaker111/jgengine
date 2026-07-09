@@ -130,3 +130,93 @@ describe("devtools snapshot", () => {
     expect(dev.snapshot().probes["boom"]).toBe("probe failed: Error: nope");
   });
 });
+
+describe("devtools discovery", () => {
+  test("scans flat primitive tables and skips everything else", () => {
+    const dev = createDevtools();
+    const MINING = { reach: 6, instaBreak: false, highlight: "#ffd166", name: "pick", fn: () => 1 };
+    expect(dev.discover.scanTable("MINING", MINING)).toBe(3);
+    expect(dev.discover.scanTable("nope", [1, 2])).toBe(0);
+    expect(dev.discover.scanTable("nope", 6)).toBe(0);
+    expect(dev.discover.scanTable("nope", new Map())).toBe(0);
+    const ids = dev.discover.list().map((entry) => entry.id);
+    expect(ids).toEqual(["MINING/reach", "MINING/instaBreak", "MINING/highlight"]);
+    expect(dev.discover.list()[0]!.kind).toBe("slider");
+    expect(dev.discover.list()[2]!.kind).toBe("color");
+  });
+
+  test("scanModule walks exports", () => {
+    const dev = createDevtools();
+    const total = dev.discover.scanModule({
+      MINING: { reach: 6 },
+      COLORS: { sky: "#87ceeb" },
+      helper: () => 1,
+      EYE_HEIGHT: 1.6,
+    });
+    expect(total).toBe(2);
+    expect(dev.discover.list()).toHaveLength(2);
+  });
+
+  test("enable creates a control that mutates the table in place; disable restores", () => {
+    const dev = createDevtools();
+    const MINING = { reach: 6 };
+    dev.discover.scanTable("MINING", MINING);
+    dev.discover.enable("MINING/reach");
+    const control = dev.controls.get("MINING/reach");
+    expect(control).not.toBeNull();
+    control!.write(12);
+    expect(MINING.reach).toBe(12);
+    dev.discover.disable("MINING/reach");
+    expect(MINING.reach).toBe(6);
+    expect(dev.controls.get("MINING/reach")).toBeNull();
+    expect(dev.discover.list()[0]!.enabled).toBe(false);
+  });
+
+  test("rescan with a new table reference keeps enabled overrides applied", () => {
+    const dev = createDevtools();
+    const first = { reach: 6 };
+    dev.discover.scanTable("MINING", first);
+    dev.discover.enable("MINING/reach");
+    dev.controls.get("MINING/reach")!.write(10);
+    const reloaded = { reach: 6 };
+    dev.discover.scanTable("MINING", reloaded);
+    expect(reloaded.reach).toBe(10);
+  });
+
+  test("overrides export/apply round trip", () => {
+    const dev = createDevtools();
+    const MINING = { reach: 6, instaBreak: false };
+    dev.discover.scanTable("MINING", MINING);
+    dev.discover.enable("MINING/reach");
+    dev.controls.get("MINING/reach")!.write(9);
+    const saved = dev.overrides.export();
+    expect(saved).toEqual({ enabled: ["MINING/reach"], values: { "MINING/reach": 9 } });
+
+    const fresh = createDevtools();
+    const MINING2 = { reach: 6, instaBreak: false };
+    fresh.discover.scanTable("MINING", MINING2);
+    fresh.overrides.apply(saved);
+    expect(MINING2.reach).toBe(9);
+    expect(fresh.discover.list()[0]!.enabled).toBe(true);
+  });
+
+  test("snapshot includes discovered entries", () => {
+    const dev = createDevtools();
+    dev.discover.scanTable("MINING", { reach: 6 });
+    expect(dev.snapshot().discovered).toEqual([
+      { id: "MINING/reach", kind: "slider", value: 6, enabled: false },
+    ]);
+  });
+
+  test("clear resets enabled entries and empties the registry", () => {
+    const dev = createDevtools();
+    const MINING = { reach: 6 };
+    dev.discover.scanTable("MINING", MINING);
+    dev.discover.enable("MINING/reach");
+    dev.controls.get("MINING/reach")!.write(14);
+    dev.discover.clear();
+    expect(MINING.reach).toBe(6);
+    expect(dev.discover.list()).toHaveLength(0);
+    expect(dev.controls.get("MINING/reach")).toBeNull();
+  });
+});

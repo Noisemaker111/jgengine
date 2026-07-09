@@ -5,7 +5,9 @@ import {
   devtools,
   instrumentLatency,
   type DevtoolsControl,
+  type DevtoolsOverrides,
   type DevtoolsSnapshot,
+  type DiscoveredEntry,
 } from "@jgengine/core/devtools/devtools";
 import { bindingLabel, type ActionCodes, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -15,6 +17,40 @@ import type { PlayableGame } from "../registry";
 
 const REFRESH_MS = 250;
 const LONG_FRAME_MS = 33.4;
+
+function overridesStorageKey(gameName: string): string {
+  return `jg-devtools:${gameName}`;
+}
+
+function readStoredOverrides(gameName: string): DevtoolsOverrides | null {
+  try {
+    const raw = localStorage.getItem(overridesStorageKey(gameName));
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw) as DevtoolsOverrides;
+    return Array.isArray(parsed.enabled) && typeof parsed.values === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function persistDevtoolsOverrides(gameName: string): DevtoolsOverrides {
+  const overrides = devtools.overrides.export();
+  try {
+    localStorage.setItem(overridesStorageKey(gameName), JSON.stringify(overrides));
+  } catch {
+    return overrides;
+  }
+  return overrides;
+}
+
+export function applyStoredDevtoolsOverrides(gameName: string): void {
+  const stored = readStoredOverrides(gameName);
+  if (stored === null) return;
+  const applied = stored.enabled.length + Object.keys(stored.values).length;
+  if (applied === 0) return;
+  devtools.overrides.apply(stored);
+  console.info(`[jgengine:devtools] applied ${applied} stored override(s) for ${gameName}`);
+}
 
 export function withDevtoolsLatency(multiplayer: ShellMultiplayer): ShellMultiplayer {
   return {
@@ -218,8 +254,12 @@ function KeysPanel({ input }: { input: ActionCodesMap | undefined }) {
   );
 }
 
-function ControlInput({ control }: { control: DevtoolsControl }) {
+function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite: () => void }) {
   const value = control.read();
+  const write = (next: unknown) => {
+    control.write(next);
+    onWrite();
+  };
   if (control.kind === "slider") {
     return (
       <div className="flex items-center gap-2">
@@ -230,7 +270,7 @@ function ControlInput({ control }: { control: DevtoolsControl }) {
           max={control.max}
           step={control.step}
           value={Number(value)}
-          onChange={(event) => control.write(Number(event.target.value))}
+          onChange={(event) => write(Number(event.target.value))}
         />
         <input
           type="number"
@@ -239,7 +279,7 @@ function ControlInput({ control }: { control: DevtoolsControl }) {
           value={Number(value)}
           onChange={(event) => {
             const next = Number(event.target.value);
-            if (!Number.isNaN(next)) control.write(next);
+            if (!Number.isNaN(next)) write(next);
           }}
         />
       </div>
@@ -251,7 +291,7 @@ function ControlInput({ control }: { control: DevtoolsControl }) {
         type="checkbox"
         className="h-4 w-4 accent-emerald-400"
         checked={Boolean(value)}
-        onChange={(event) => control.write(event.target.checked)}
+        onChange={(event) => write(event.target.checked)}
       />
     );
   }
@@ -261,7 +301,7 @@ function ControlInput({ control }: { control: DevtoolsControl }) {
         type="color"
         className="h-6 w-10 cursor-pointer rounded border border-neutral-600 bg-transparent"
         value={String(value)}
-        onChange={(event) => control.write(event.target.value)}
+        onChange={(event) => write(event.target.value)}
       />
     );
   }
@@ -272,7 +312,7 @@ function ControlInput({ control }: { control: DevtoolsControl }) {
         value={String(value)}
         onChange={(event) => {
           const match = control.options?.find((option) => String(option) === event.target.value);
-          control.write(match ?? event.target.value);
+          write(match ?? event.target.value);
         }}
       >
         {control.options?.map((option) => (
@@ -288,53 +328,95 @@ function ControlInput({ control }: { control: DevtoolsControl }) {
       type="text"
       className="w-32 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
       value={String(value)}
-      onChange={(event) => control.write(event.target.value)}
+      onChange={(event) => write(event.target.value)}
     />
   );
 }
 
-function TunePanel() {
+function formatPreview(value: unknown): string {
+  return typeof value === "number" ? String(Math.round(value * 1000) / 1000) : String(value);
+}
+
+function TunePanel({ gameName }: { gameName: string }) {
   const controls = devtools.controls.list();
-  if (controls.length === 0) {
+  const discovered = devtools.discover.list();
+  const persist = () => persistDevtoolsOverrides(gameName);
+  const discoveredIds = new Set(discovered.map((entry) => entry.id));
+  const explicit = controls.filter((control) => !discoveredIds.has(control.name));
+  const controlByName = new Map(controls.map((control) => [control.name, control]));
+  if (explicit.length === 0 && discovered.length === 0) {
     return (
       <div className="space-y-2 text-neutral-400">
-        <div>No tunables registered.</div>
+        <div>Nothing discovered.</div>
         <div className="font-mono text-[10px] text-neutral-500">
-          {'import { tunable } from "@jgengine/core/devtools/devtools";'}
+          {"export const TUNING = { gravity: -22, skyColor: \"#87ceeb\" };"}
           <br />
-          {'const gravity = tunable("physics/gravity", -22);'}
+          {"Exported tables of numbers, booleans, and colors appear here"}
           <br />
-          {"read gravity.value where the game uses it."}
+          {"automatically — check one to control it live."}
         </div>
       </div>
     );
   }
-  const groups = new Map<string, DevtoolsControl[]>();
-  for (const control of controls) {
-    const list = groups.get(control.group) ?? [];
-    list.push(control);
-    groups.set(control.group, list);
+  const tables = new Map<string, DiscoveredEntry[]>();
+  for (const entry of discovered) {
+    const list = tables.get(entry.table) ?? [];
+    list.push(entry);
+    tables.set(entry.table, list);
   }
   return (
     <div className="max-h-72 space-y-3 overflow-auto">
       <button
         type="button"
         className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
-        onClick={() => devtools.controls.resetAll()}
+        onClick={() => {
+          devtools.controls.resetAll();
+          persist();
+        }}
       >
         Reset all
       </button>
-      {[...groups.entries()].map(([group, members]) => (
-        <div key={group} className="space-y-1.5">
-          <div className="text-[9px] uppercase tracking-wide text-neutral-500">{group}</div>
-          {members.map((control) => (
+      {explicit.length > 0 ? (
+        <div className="space-y-1.5">
+          <div className="text-[9px] uppercase tracking-wide text-neutral-500">registered</div>
+          {explicit.map((control) => (
             <div key={control.name} className="flex items-center justify-between gap-3">
               <span className="text-neutral-300" title={control.name}>
                 {control.label}
               </span>
-              <ControlInput control={control} />
+              <ControlInput control={control} onWrite={persist} />
             </div>
           ))}
+        </div>
+      ) : null}
+      {[...tables.entries()].map(([table, entries]) => (
+        <div key={table} className="space-y-1.5">
+          <div className="text-[9px] uppercase tracking-wide text-neutral-500">{table}</div>
+          {entries.map((entry) => {
+            const control = entry.enabled ? controlByName.get(entry.id) : undefined;
+            return (
+              <div key={entry.id} className="flex items-center justify-between gap-3">
+                <label className="flex min-w-0 items-center gap-1.5 text-neutral-300" title={entry.id}>
+                  <input
+                    type="checkbox"
+                    className="h-3 w-3 shrink-0 accent-emerald-400"
+                    checked={entry.enabled}
+                    onChange={(event) => {
+                      if (event.target.checked) devtools.discover.enable(entry.id);
+                      else devtools.discover.disable(entry.id);
+                      persist();
+                    }}
+                  />
+                  <span className="truncate">{entry.key}</span>
+                </label>
+                {control !== undefined ? (
+                  <ControlInput control={control} onWrite={persist} />
+                ) : (
+                  <span className="font-mono text-neutral-500">{formatPreview(entry.read())}</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>
@@ -366,7 +448,30 @@ export function DevtoolsOverlay({
     (globalThis as { __JG_DEVTOOLS?: unknown }).__JG_DEVTOOLS = {
       snapshot: () => buildReport(playable),
       controls: devtools.controls,
+      discover: devtools.discover,
     };
+  }, [playable]);
+
+  useEffect(() => {
+    const stored = readStoredOverrides(playable.game.name);
+    if (stored === null) return;
+    const appliedEnables = new Set<string>();
+    const appliedValues = new Set<string>();
+    const applyLateRegistrations = () => {
+      const discovered = new Map(devtools.discover.list().map((entry) => [entry.id, entry]));
+      const needEnable = stored.enabled.filter(
+        (id) => !appliedEnables.has(id) && discovered.get(id)?.enabled === false,
+      );
+      const needValue = Object.entries(stored.values).filter(
+        ([name]) => !appliedValues.has(name) && devtools.controls.get(name) !== null,
+      );
+      if (needEnable.length === 0 && needValue.length === 0) return;
+      for (const id of needEnable) appliedEnables.add(id);
+      for (const [name] of needValue) appliedValues.add(name);
+      devtools.overrides.apply({ enabled: needEnable, values: Object.fromEntries(needValue) });
+    };
+    applyLateRegistrations();
+    return devtools.signal.subscribe(applyLateRegistrations);
   }, [playable]);
 
   useEffect(() => {
@@ -427,7 +532,7 @@ export function DevtoolsOverlay({
       {tab === "logs" ? <LogsPanel /> : null}
       {tab === "net" ? <NetPanel multiplayer={multiplayer} /> : null}
       {tab === "keys" ? <KeysPanel input={playable.game.input} /> : null}
-      {tab === "tune" ? <TunePanel /> : null}
+      {tab === "tune" ? <TunePanel gameName={playable.game.name} /> : null}
       <div className="mt-2 border-t border-neutral-800 pt-1.5 text-[9px] text-neutral-500">
         F2 toggles · agents: window.__JG_DEVTOOLS.snapshot()
       </div>
