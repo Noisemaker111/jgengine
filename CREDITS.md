@@ -1,6 +1,6 @@
 # Credits
 
-JGengine's outdoor-world layer stands on the shoulders of open work by others.
+JGengine stands on the shoulders of open work by others.
 This file records that debt and thanks the people whose projects shaped ours.
 
 ## achrefelouafi
@@ -27,3 +27,25 @@ renderer-agnostic (the wave math and building generator live in dependency-free
 `@jgengine/core`), prop-driven, and stripped of the reference projects' GUI,
 audio, post-processing, and app-specific scene setup. But the good ideas are
 his. Each source project is MIT-licensed; go star them.
+
+## Vladislav Kruteniuk (three-start)
+
+JGengine's behaviour lifecycle stands on
+**[three-start](https://github.com/vladkrutenyuk/three-start)** by
+**[Vladislav Kruteniuk](https://x.com/vladkrutenyuk)** (MIT License,
+Copyright (c) 2026 Vladislav Kruteniuk) — a minimal foundation layer for
+Three.js: bootstrap, lifecycle, and a unified component model. Read it; it is
+small, exact, and every ordering decision is deliberate.
+
+| JGengine feature | Where it lives | Derived from three-start |
+| --- | --- | --- |
+| **Behaviour lifecycle** | [`core/behaviour/behaviour.ts`](packages/core/src/behaviour/behaviour.ts) | `Object3DBehaviour`'s hook set and exact activation ordering (`onAwake` once → `onEnable` → `onStart` once → `onUpdate` → `onDisable` → `onDestroy` always), the `activeSelf`/`activeInHierarchy` cascade that prunes at self-inactive descendants so reactivation restores per-child flags, the Unity-style two-pass bootstrap (awake all, then enable/start all) with the bootstrap gate that defers mid-bootstrap attachments so modules always subscribe to update dispatch first, and the lazy frame-subscription trick — a behaviour joins update dispatch only if it actually overrides `onUpdate` (prototype-identity check at activation). |
+| **Typed module registry** | same file (`JGEngineRegister`, `RegisterField`, `BehaviourModule`) | The `ThreeStartRegister` declaration-merging pattern and `ContextModule`'s module lifecycle (awake/start before any behaviour, module updates dispatch first). |
+| **Three.js binding** | [`shell/behaviour.ts`](packages/shell/src/behaviour.ts) | `Object3DBehaviour`'s render hooks riding the object's own `onBeforeRender`/`onAfterRender`. |
+
+Ours is a re-implementation, not a copy: JGengine's lifecycle runs headless over
+an id-keyed node tree in dependency-free `@jgengine/core` (no three.js, no
+scene graph), keyed to entity ids, and it consciously diverges where three-start
+documents gaps (reparenting and mid-bootstrap deactivation re-check effective
+activity). The lifecycle model, its ordering guarantees, and the lazy-dispatch
+idea are his. three-start is MIT-licensed; go star it.

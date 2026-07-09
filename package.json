@@ -10,6 +10,9 @@
     "check-game-shape": "bun scripts/check-game-shape.ts",
     "check-types": "bun run check-artifacts && bun run check-skills && bun run check-game-shape && bun run --filter '*' check-types",
     "build:registry": "bun scripts/build-registry.ts",
+    "gen-llms": "bun scripts/gen-llms-txt.ts",
+    "check-llms": "bun scripts/gen-llms-txt.ts --check",
+    "gen-api-docs": "bun scripts/gen-api-docs.ts",
     "test": "bun test packages Games apps/dev scripts",
     "dev": "bun run --cwd apps/web dev",
     "dev:runner": "bun run --cwd apps/dev dev",
@@ -32,6 +35,7 @@
   "devDependencies": {
     "@typescript/native-preview": "^7.0.0-dev.20260705.1",
     "playwright-core": "^1.50.0",
+    "ts-morph": "^28.0.0",
     "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.3.8"

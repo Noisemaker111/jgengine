@@ -23,3 +23,9 @@ packages/*/src/**/*.d.ts.map
 
 # local git worktrees created by EnterWorktree
 .claude/worktrees/
+
+# llms.txt and the API-surface JSON are generated from packages/*/src by
+# scripts/gen-llms-txt.ts and scripts/gen-api-docs.ts (see check-llms/gen-api-docs) —
+# never author or commit these by hand.
+packages/*/llms.txt
+apps/web/src/generated/

@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills.index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
+import { Route as ApiIndexRouteImport } from './routes/api.index'
 import { Route as SkillsNameRouteImport } from './routes/skills.$name'
 import { Route as GamesGameIdRouteImport } from './routes/games.$gameId'
 import { Route as ApiGithubContributionsRouteImport } from './routes/api/github-contributions'
 import { Route as ApiGithubRouteImport } from './routes/api/github'
+import { Route as ApiPkgRouteImport } from './routes/api.$pkg'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -30,6 +32,11 @@ const SkillsIndexRoute = SkillsIndexRouteImport.update({
 const GamesIndexRoute = GamesIndexRouteImport.update({
   id: '/games/',
   path: '/games/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIndexRoute = ApiIndexRouteImport.update({
+  id: '/api/',
+  path: '/api/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SkillsNameRoute = SkillsNameRouteImport.update({
@@ -52,32 +59,43 @@ const ApiGithubRoute = ApiGithubRouteImport.update({
   path: '/api/github',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPkgRoute = ApiPkgRouteImport.update({
+  id: '/api/$pkg',
+  path: '/api/$pkg',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/$pkg': typeof ApiPkgRoute
   '/api/github': typeof ApiGithubRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
+  '/api/': typeof ApiIndexRoute
   '/games/': typeof GamesIndexRoute
   '/skills/': typeof SkillsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/$pkg': typeof ApiPkgRoute
   '/api/github': typeof ApiGithubRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
+  '/api': typeof ApiIndexRoute
   '/games': typeof GamesIndexRoute
   '/skills': typeof SkillsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/$pkg': typeof ApiPkgRoute
   '/api/github': typeof ApiGithubRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
+  '/api/': typeof ApiIndexRoute
   '/games/': typeof GamesIndexRoute
   '/skills/': typeof SkillsIndexRoute
 }
@@ -85,38 +103,46 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/api/$pkg'
     | '/api/github'
     | '/api/github-contributions'
     | '/games/$gameId'
     | '/skills/$name'
+    | '/api/'
     | '/games/'
     | '/skills/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/api/$pkg'
     | '/api/github'
     | '/api/github-contributions'
     | '/games/$gameId'
     | '/skills/$name'
+    | '/api'
     | '/games'
     | '/skills'
   id:
     | '__root__'
     | '/'
+    | '/api/$pkg'
     | '/api/github'
     | '/api/github-contributions'
     | '/games/$gameId'
     | '/skills/$name'
+    | '/api/'
     | '/games/'
     | '/skills/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPkgRoute: typeof ApiPkgRoute
   ApiGithubRoute: typeof ApiGithubRoute
   ApiGithubContributionsRoute: typeof ApiGithubContributionsRoute
   GamesGameIdRoute: typeof GamesGameIdRoute
   SkillsNameRoute: typeof SkillsNameRoute
+  ApiIndexRoute: typeof ApiIndexRoute
   GamesIndexRoute: typeof GamesIndexRoute
   SkillsIndexRoute: typeof SkillsIndexRoute
 }
@@ -142,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/games'
       fullPath: '/games/'
       preLoaderRoute: typeof GamesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/': {
+      id: '/api/'
+      path: '/api'
+      fullPath: '/api/'
+      preLoaderRoute: typeof ApiIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/skills/$name': {
@@ -172,15 +205,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGithubRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/$pkg': {
+      id: '/api/$pkg'
+      path: '/api/$pkg'
+      fullPath: '/api/$pkg'
+      preLoaderRoute: typeof ApiPkgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPkgRoute: ApiPkgRoute,
   ApiGithubRoute: ApiGithubRoute,
   ApiGithubContributionsRoute: ApiGithubContributionsRoute,
   GamesGameIdRoute: GamesGameIdRoute,
   SkillsNameRoute: SkillsNameRoute,
+  ApiIndexRoute: ApiIndexRoute,
   GamesIndexRoute: GamesIndexRoute,
   SkillsIndexRoute: SkillsIndexRoute,
 }
