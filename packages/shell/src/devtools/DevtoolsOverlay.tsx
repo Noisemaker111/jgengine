@@ -202,7 +202,7 @@ function LogsPanel() {
       >
         Clear
       </button>
-      <div className="max-h-64 space-y-0.5 overflow-auto font-mono text-[10px]">
+      <div className="jg-devtools-scroll max-h-64 space-y-0.5 overflow-auto font-mono text-[10px]">
         {entries.length === 0 ? <div className="text-neutral-400">No logs captured yet.</div> : null}
         {entries.map((entry, index) => (
           <div key={index} className={colors[entry.level]}>
@@ -240,7 +240,7 @@ function KeysPanel({ input }: { input: ActionCodesMap | undefined }) {
   const rows = keybindRows(input);
   if (rows.length === 0) return <div className="text-neutral-400">This game declares no keybinds.</div>;
   return (
-    <div className="max-h-64 space-y-0.5 overflow-auto">
+    <div className="jg-devtools-scroll max-h-64 space-y-0.5 overflow-auto">
       {rows.map((row, index) => (
         <div key={index} className="flex items-baseline justify-between gap-3">
           <span className="text-neutral-300">{row.action}</span>
@@ -337,13 +337,48 @@ function formatPreview(value: unknown): string {
   return typeof value === "number" ? String(Math.round(value * 1000) / 1000) : String(value);
 }
 
+function deltaSnippet(discovered: readonly DiscoveredEntry[]): string | null {
+  const overrides = devtools.overrides.export();
+  if (Object.keys(overrides.values).length === 0) return null;
+  const discoveredById = new Map(discovered.map((entry) => [entry.id, entry]));
+  const tables = new Map<string, Record<string, unknown>>();
+  const flat: Record<string, unknown> = {};
+  for (const [name, value] of Object.entries(overrides.values)) {
+    const entry = discoveredById.get(name);
+    if (entry !== undefined) {
+      const values = tables.get(entry.table) ?? {};
+      values[entry.key] = value;
+      tables.set(entry.table, values);
+    } else {
+      flat[name] = value;
+    }
+  }
+  const parts: string[] = [];
+  for (const [table, values] of tables) parts.push(`${table}: ${JSON.stringify(values, null, 2)}`);
+  if (Object.keys(flat).length > 0) parts.push(`controls: ${JSON.stringify(flat, null, 2)}`);
+  return parts.join("\n\n");
+}
+
 function TunePanel({ gameName }: { gameName: string }) {
+  const [deltasCopied, setDeltasCopied] = useState(false);
   const controls = devtools.controls.list();
   const discovered = devtools.discover.list();
   const persist = () => persistDevtoolsOverrides(gameName);
   const discoveredIds = new Set(discovered.map((entry) => entry.id));
   const explicit = controls.filter((control) => !discoveredIds.has(control.name));
   const controlByName = new Map(controls.map((control) => [control.name, control]));
+  const snippet = deltaSnippet(discovered);
+  const copyDeltas = () => {
+    if (snippet === null) return;
+    const clipboard = navigator.clipboard;
+    if (clipboard !== undefined) {
+      void clipboard.writeText(snippet).catch(() => console.log(snippet));
+    } else {
+      console.log(snippet);
+    }
+    setDeltasCopied(true);
+    setTimeout(() => setDeltasCopied(false), 1500);
+  };
   if (explicit.length === 0 && discovered.length === 0) {
     return (
       <div className="space-y-2 text-neutral-400">
@@ -365,17 +400,28 @@ function TunePanel({ gameName }: { gameName: string }) {
     tables.set(entry.table, list);
   }
   return (
-    <div className="max-h-72 space-y-3 overflow-auto">
-      <button
-        type="button"
-        className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
-        onClick={() => {
-          devtools.controls.resetAll();
-          persist();
-        }}
-      >
-        Reset all
-      </button>
+    <div className="jg-devtools-scroll max-h-72 space-y-3 overflow-auto">
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+          onClick={() => {
+            devtools.controls.resetAll();
+            persist();
+          }}
+        >
+          Reset all
+        </button>
+        <button
+          type="button"
+          disabled={snippet === null}
+          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-transparent"
+          onClick={copyDeltas}
+          title="Copy changed values as source snippets to paste upstream"
+        >
+          {deltasCopied ? "Copied" : "Copy deltas"}
+        </button>
+      </div>
       {explicit.length > 0 ? (
         <div className="space-y-1.5">
           <div className="text-[9px] uppercase tracking-wide text-neutral-500">registered</div>
@@ -506,6 +552,28 @@ export function DevtoolsOverlay({
 
   return (
     <div className="pointer-events-auto absolute left-4 top-4 z-50 w-80 rounded border border-neutral-700 bg-neutral-950/95 p-3 text-xs text-neutral-100 shadow-2xl">
+      <style>{`
+        .jg-devtools-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #52525b #18181b;
+        }
+        .jg-devtools-scroll::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .jg-devtools-scroll::-webkit-scrollbar-track {
+          background: #18181b;
+          border-radius: 9999px;
+        }
+        .jg-devtools-scroll::-webkit-scrollbar-thumb {
+          background-color: #52525b;
+          border-radius: 9999px;
+          border: 2px solid #18181b;
+        }
+        .jg-devtools-scroll::-webkit-scrollbar-thumb:hover {
+          background-color: #71717a;
+        }
+      `}</style>
       <div className="mb-2 flex items-center justify-between">
         <span className="font-semibold uppercase tracking-wide text-neutral-300">{playable.game.name} devtools</span>
         <button
