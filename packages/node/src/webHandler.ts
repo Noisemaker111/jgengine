@@ -4,19 +4,30 @@ export type WebHandler = (request: Request) => Promise<Response>;
 
 export type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void;
 
-export function toWebRequest(req: IncomingMessage): Request {
+export async function toWebRequest(req: IncomingMessage): Promise<Request> {
   const host = req.headers.host ?? "localhost";
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
     if (typeof value === "string") headers.set(key, value);
     else if (Array.isArray(value)) for (const entry of value) headers.append(key, entry);
   }
-  return new Request(`http://${host}${req.url ?? "/"}`, { method: req.method, headers });
+  const method = req.method ?? "GET";
+  let body: Uint8Array | undefined;
+  if (method !== "GET" && method !== "HEAD") {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk as Buffer);
+    if (chunks.length > 0) {
+      const buffer = Buffer.concat(chunks);
+      if (buffer.byteLength > 0) body = new Uint8Array(buffer);
+    }
+  }
+  return new Request(`http://${host}${req.url ?? "/"}`, { method, headers, body });
 }
 
 export function toNodeHandler(handler: WebHandler): NodeHandler {
   return (req, res) => {
-    void handler(toWebRequest(req))
+    void toWebRequest(req)
+      .then(handler)
       .then(async (response) => {
         res.statusCode = response.status;
         response.headers.forEach((value, key) => res.setHeader(key, value));

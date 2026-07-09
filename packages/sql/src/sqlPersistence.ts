@@ -6,7 +6,7 @@ import type {
   ServerPersistPlan,
   WorldChunkRecord,
 } from "@jgengine/core/runtime/hostPersistence";
-import { trimFeedEntries } from "@jgengine/core/runtime/hostPersistence";
+import { clampLimit, trimFeedEntries } from "@jgengine/core/runtime/hostPersistence";
 import { applyRunReset } from "@jgengine/core/runtime/persistenceScope";
 
 export type SqlQueryResult = { rows: Record<string, unknown>[] };
@@ -158,6 +158,12 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
         for (const chunk of plan.chunks) {
           await upsertChunk(client, chunk);
         }
+        if (plan.deletedChunks.length > 0) {
+          await client.query(`DELETE FROM jg_world_chunks WHERE server_id = $1 AND chunk_key = ANY($2::text[])`, [
+            plan.server.serverId,
+            plan.deletedChunks,
+          ]);
+        }
         await upsertServer(client, plan.server);
       });
     },
@@ -169,6 +175,11 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
             await client.query(`DELETE FROM jg_world_chunks WHERE server_id = $1`, [reset.serverId]);
           }
           if (reset.wipeServerSession) {
+            await client.query(`DELETE FROM jg_feed_buffers WHERE server_id = $1`, [reset.serverId]);
+            await client.query(`DELETE FROM jg_leaderboard_rows WHERE game_id = $1 AND server_id = $2`, [
+              reset.gameId,
+              reset.serverId,
+            ]);
             await client.query(`DELETE FROM jg_game_servers WHERE server_id = $1`, [reset.serverId]);
           }
         } else {
@@ -181,8 +192,12 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
             if (reset.wipeChunks) {
               await client.query(`DELETE FROM jg_world_chunks WHERE server_id = $1`, [serverId]);
             }
+            if (reset.wipeServerSession) {
+              await client.query(`DELETE FROM jg_feed_buffers WHERE server_id = $1`, [serverId]);
+            }
           }
           if (reset.wipeServerSession) {
+            await client.query(`DELETE FROM jg_leaderboard_rows WHERE game_id = $1`, [reset.gameId]);
             await client.query(`DELETE FROM jg_game_servers WHERE game_id = $1`, [reset.gameId]);
           }
         }
@@ -287,7 +302,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
     },
 
     async getLeaderboardTop(args) {
-      const limit = Math.floor(Math.min(Math.max(args.limit ?? MAX_TOP_LIMIT, 1), MAX_TOP_LIMIT));
+      const limit = clampLimit(args.limit, MAX_TOP_LIMIT, MAX_TOP_LIMIT);
       const params: unknown[] = [args.gameId, args.scope, args.stat];
       let filter = "";
       if (args.serverId !== undefined) {

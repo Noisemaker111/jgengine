@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -18,18 +19,29 @@ import {
 
 export { memoryPersistence } from "@jgengine/ws/host";
 
+function isMissing(error: unknown): boolean {
+  return (error as NodeJS.ErrnoException | null)?.code === "ENOENT";
+}
+
 async function readJson<T>(path: string): Promise<T | null> {
+  let text: string;
   try {
-    return JSON.parse(await readFile(path, "utf8")) as T;
-  } catch {
-    return null;
+    text = await readFile(path, "utf8");
+  } catch (error) {
+    if (isMissing(error)) return null;
+    throw error;
   }
+  return JSON.parse(text) as T;
+}
+
+async function stageJson(path: string, value: unknown): Promise<string> {
+  const temp = `${path}.${randomUUID()}.tmp`;
+  await writeFile(temp, JSON.stringify(value), "utf8");
+  return temp;
 }
 
 async function writeJson(path: string, value: unknown): Promise<void> {
-  const temp = `${path}.tmp`;
-  await writeFile(temp, JSON.stringify(value), "utf8");
-  await rename(temp, path);
+  await rename(await stageJson(path, value), path);
 }
 
 const enc = encodeURIComponent;
@@ -55,6 +67,7 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
   };
 
   let leaderboardLock: Promise<unknown> = Promise.resolve();
+  const feedLocks = new Map<string, Promise<unknown>>();
 
   return {
     async loadServer(serverId) {
@@ -105,9 +118,13 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
       await ensureDirs();
       const serverDir = join(chunksDir, enc(serverId));
       await mkdir(serverDir, { recursive: true });
-      for (const record of records) {
-        await writeJson(join(serverDir, `${enc(record.chunkKey)}.json`), record);
-      }
+      const staged = await Promise.all(
+        records.map(async (record) => {
+          const final = join(serverDir, `${enc(record.chunkKey)}.json`);
+          return { temp: await stageJson(final, record), final };
+        }),
+      );
+      await Promise.all(staged.map(({ temp, final }) => rename(temp, final)));
     },
     async loadFeed({ serverId, action }) {
       await ensureDirs();
@@ -116,9 +133,14 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
     async appendFeed({ serverId, action, entry }) {
       await ensureDirs();
       const path = join(feedsDir, `${enc(serverId)}__${enc(action)}.json`);
-      const entries = trimFeedEntries([...((await readJson<unknown[]>(path)) ?? []), entry]);
-      await writeJson(path, entries);
-      return entries;
+      const prev = feedLocks.get(path) ?? Promise.resolve();
+      const run = prev.then(async () => {
+        const entries = trimFeedEntries([...((await readJson<unknown[]>(path)) ?? []), entry]);
+        await writeJson(path, entries);
+        return entries;
+      });
+      feedLocks.set(path, run.catch(() => undefined));
+      return run;
     },
     async applyLeaderboardIncrements(gameId, entries) {
       const run = leaderboardLock.then(async () => {

@@ -331,6 +331,14 @@ async function persistServerSnapshot(
     }
   }
 
+  for (const chunkKey of plan.deletedChunks) {
+    const existing = await ctx.db
+      .query("jgWorldChunks")
+      .withIndex("by_server_and_chunk", (q) => q.eq("serverId", server._id).eq("chunkKey", chunkKey))
+      .unique();
+    if (existing) await ctx.db.delete(existing._id);
+  }
+
   await ctx.db.patch(server._id, {
     serverState: plan.server.serverState,
     sessionPlayers: plan.server.sessionPlayers,
