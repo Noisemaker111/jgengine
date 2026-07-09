@@ -14,27 +14,30 @@ for (const item of weaponItems) {
   itemNames.set(item.id, item.name);
 }
 
-const entityEntries = new Map<string, GameContextEntityEntry>();
-for (const p of players) {
-  entityEntries.set(p.id, {
-    stats: p.stats,
-    receive: p.receive,
-    movement: { poses: p.poses, walkSpeed: p.walkSpeed },
-  });
-}
-for (const enemy of enemies) {
-  entityEntries.set(enemy.id, {
-    stats: enemy.stats,
-    receive: enemy.receive,
-    onDeath: enemy.onDeath,
-    movement: { poses: ["standing"], walkSpeed: enemy.walkSpeed },
-    role: "enemy",
-  });
+const playersById = new Map(players.map((p) => [p.id, p]));
+const enemiesById = new Map(enemies.map((enemy) => [enemy.id, enemy]));
+
+function entityById(catalogId: string): GameContextEntityEntry | null {
+  const p = playersById.get(catalogId);
+  if (p !== undefined) {
+    return { stats: p.stats, receive: p.receive, movement: { poses: p.poses, walkSpeed: p.walkSpeed } };
+  }
+  const enemy = enemiesById.get(catalogId);
+  if (enemy !== undefined) {
+    return {
+      stats: enemy.stats,
+      receive: enemy.receive,
+      onDeath: enemy.onDeath,
+      movement: { poses: ["standing"], walkSpeed: enemy.walkSpeed },
+      role: "enemy",
+    };
+  }
+  return null;
 }
 
 export const content: GameContextContent = {
   itemById: (itemId) => itemEntries.get(itemId) ?? null,
-  entityById: (catalogId) => entityEntries.get(catalogId) ?? null,
+  entityById,
 };
 
 export function itemNameById(itemId: string): string {

@@ -18,7 +18,7 @@ export const game = defineGame({
   server: { mode: "solo" },
   save: "none",
   content: {
-    entityById: (catalogId) => entityCatalog[catalogId] ?? null,
+    entityById: entityCatalog,
   },
   loop: { onInit, onNewPlayer, onTick },
   GameUI,

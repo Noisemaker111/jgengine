@@ -8,22 +8,26 @@ import { COMPANION_IDS, PLAYER_WALK_SPEED } from "./tuning";
 
 export const PLAYER_CATALOG = "mine-person";
 
-const entries = new Map<string, GameContextEntityEntry>();
-
-entries.set(PLAYER_CATALOG, {
-  movement: { poses: ["standing"], walkSpeed: PLAYER_WALK_SPEED },
-  role: "player",
-});
-
-for (const id of COMPANION_IDS) {
-  entries.set(id, { movement: { poses: ["standing"], walkSpeed: PLAYER_WALK_SPEED * 0.9 }, role: "npc" });
-}
+const companionIds = new Set<string>(COMPANION_IDS);
 
 // Cosmetic billboard props (numbers, bombs, flags) — no stats, no movement.
-for (let n = 1; n <= 8; n += 1) entries.set(`${NUMBER_SPRITE_PREFIX}${n}`, { role: "npc" });
-entries.set(BOMB_SPRITE, { role: "npc" });
-entries.set(FLAG_SPRITE, { role: "npc" });
+const propIds = new Set<string>([
+  ...Array.from({ length: 8 }, (_, n) => `${NUMBER_SPRITE_PREFIX}${n + 1}`),
+  BOMB_SPRITE,
+  FLAG_SPRITE,
+]);
+
+function entityById(catalogId: string): GameContextEntityEntry | null {
+  if (catalogId === PLAYER_CATALOG) {
+    return { movement: { poses: ["standing"], walkSpeed: PLAYER_WALK_SPEED }, role: "player" };
+  }
+  if (companionIds.has(catalogId)) {
+    return { movement: { poses: ["standing"], walkSpeed: PLAYER_WALK_SPEED * 0.9 }, role: "npc" };
+  }
+  if (propIds.has(catalogId)) return { role: "npc" };
+  return null;
+}
 
 export const content: GameContextContent = {
-  entityById: (catalogId) => entries.get(catalogId) ?? null,
+  entityById,
 };
