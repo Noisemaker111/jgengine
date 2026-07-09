@@ -37,11 +37,16 @@ export interface HudPanelState {
 export interface HudLayoutState {
   panels: Record<string, HudPanelState>;
   locked: boolean;
+  editing: boolean;
 }
 
 export interface HudLayoutOptions {
   snap?: number;
   locked?: boolean;
+}
+
+export function isPanelDraggable(state: HudLayoutState, id: string): boolean {
+  return state.panels[id] !== undefined && (state.editing || !state.locked);
 }
 
 export interface HudLayoutStore {
@@ -51,6 +56,7 @@ export interface HudLayoutStore {
   move(id: string, rect: HudRect, viewport: HudSize): void;
   bringToFront(id: string): void;
   setLocked(locked: boolean): void;
+  setEditing(editing: boolean): void;
   reset(id?: string): void;
   serialize(): string;
   hydrate(raw: string | null | undefined): void;
@@ -171,7 +177,7 @@ export function createHudLayout(options?: HudLayoutOptions): HudLayoutStore {
   const defaults = new Map<string, HudPlacement>();
   const pending = new Map<string, HudPlacement>();
   let topZ = 0;
-  let state: HudLayoutState = { panels: {}, locked: options?.locked ?? false };
+  let state: HudLayoutState = { panels: {}, locked: options?.locked ?? true, editing: false };
   const listeners = new Set<(next: HudLayoutState) => void>();
 
   const emit = () => {
@@ -215,6 +221,11 @@ export function createHudLayout(options?: HudLayoutOptions): HudLayoutStore {
     setLocked(locked) {
       if (state.locked === locked) return;
       state = { ...state, locked };
+      emit();
+    },
+    setEditing(editing) {
+      if (state.editing === editing) return;
+      state = { ...state, editing };
       emit();
     },
     reset(id) {

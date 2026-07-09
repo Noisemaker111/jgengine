@@ -1105,6 +1105,8 @@ export function GamePlayerShell({
   const primaryClickRef = useRef(false);
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const f2HeldRef = useRef(false);
+  const f2ChordedRef = useRef(false);
   const pointerService = useMemo(() => createPointerService(), []);
   const selection = useMemo(() => createSelectionSet(), [playable]);
   const [marquee, setMarquee] = useState<ScreenRect | null>(null);
@@ -1289,14 +1291,29 @@ export function GamePlayerShell({
         onKeyDown={(event) => {
           if (event.code === "F2" && devtoolsEnabled) {
             event.preventDefault();
-            setDevtoolsOpen((current) => !current);
+            f2HeldRef.current = true;
+            f2ChordedRef.current = false;
+            return;
+          }
+          if (f2HeldRef.current) {
+            f2ChordedRef.current = true;
             return;
           }
           if (event.code === "Tab" || event.code === "Space") event.preventDefault();
           tracker.handleDown(event.code);
         }}
-        onKeyUp={(event) => tracker.handleUp(event.code)}
-        onBlur={() => tracker.reset()}
+        onKeyUp={(event) => {
+          if (event.code === "F2" && devtoolsEnabled) {
+            f2HeldRef.current = false;
+            if (!f2ChordedRef.current) setDevtoolsOpen((current) => !current);
+            return;
+          }
+          tracker.handleUp(event.code);
+        }}
+        onBlur={() => {
+          f2HeldRef.current = false;
+          tracker.reset();
+        }}
       >
         <HudOnlyDriver ctx={ctx} playable={playable} tracker={tracker} onRuntimeError={reportRuntimeError} />
         <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
@@ -1486,15 +1503,32 @@ export function GamePlayerShell({
       onKeyDown={(event) => {
         if (event.code === "F2" && devtoolsEnabled) {
           event.preventDefault();
-          document.exitPointerLock?.();
-          setDevtoolsOpen((current) => !current);
+          f2HeldRef.current = true;
+          f2ChordedRef.current = false;
+          return;
+        }
+        if (f2HeldRef.current) {
+          f2ChordedRef.current = true;
           return;
         }
         if (event.code === "Tab" || event.code === "Space") event.preventDefault();
         tracker.handleDown(event.code);
       }}
-      onKeyUp={(event) => tracker.handleUp(event.code)}
-      onBlur={() => tracker.reset()}
+      onKeyUp={(event) => {
+        if (event.code === "F2" && devtoolsEnabled) {
+          f2HeldRef.current = false;
+          if (!f2ChordedRef.current) {
+            document.exitPointerLock?.();
+            setDevtoolsOpen((current) => !current);
+          }
+          return;
+        }
+        tracker.handleUp(event.code);
+      }}
+      onBlur={() => {
+        f2HeldRef.current = false;
+        tracker.reset();
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

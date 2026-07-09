@@ -6,6 +6,7 @@ import {
   clampRect,
   createHudLayout,
   isHudAnchor,
+  isPanelDraggable,
   nearestAnchor,
   placementFromRect,
   rectFromPlacement,
@@ -212,7 +213,7 @@ describe("createHudLayout store", () => {
   });
 
   test("setLocked toggles state.locked and is a no-op emit when unchanged", () => {
-    const layout = createHudLayout();
+    const layout = createHudLayout({ locked: false });
     let calls = 0;
     layout.subscribe(() => {
       calls += 1;
@@ -339,7 +340,7 @@ describe("createHudLayout store", () => {
   });
 
   test("subscribe returns an unsubscribe that stops notifications", () => {
-    const layout = createHudLayout();
+    const layout = createHudLayout({ locked: false });
     let calls = 0;
     const unsubscribe = layout.subscribe(() => {
       calls += 1;
@@ -349,5 +350,61 @@ describe("createHudLayout store", () => {
     unsubscribe();
     layout.setLocked(false);
     expect(calls).toBe(1);
+  });
+
+  test("default state is locked=true and editing=false", () => {
+    const layout = createHudLayout();
+    const state = layout.getState();
+    expect(state.locked).toBe(true);
+    expect(state.editing).toBe(false);
+  });
+
+  test("setEditing toggles state.editing and is a no-op emit when unchanged", () => {
+    const layout = createHudLayout();
+    let calls = 0;
+    layout.subscribe(() => {
+      calls += 1;
+    });
+
+    layout.setEditing(false);
+    expect(calls).toBe(0);
+
+    layout.setEditing(true);
+    expect(layout.getState().editing).toBe(true);
+    expect(calls).toBe(1);
+
+    layout.setEditing(true);
+    expect(calls).toBe(1);
+
+    layout.setEditing(false);
+    expect(layout.getState().editing).toBe(false);
+    expect(calls).toBe(2);
+  });
+});
+
+describe("isPanelDraggable", () => {
+  test("false for an unknown panel id", () => {
+    const layout = createHudLayout();
+    layout.register("a", anchoredPlacement("top-left", { x: 8, y: 8 }));
+    expect(isPanelDraggable(layout.getState(), "ghost")).toBe(false);
+  });
+
+  test("false when locked and not editing", () => {
+    const layout = createHudLayout();
+    layout.register("a", anchoredPlacement("top-left", { x: 8, y: 8 }));
+    expect(isPanelDraggable(layout.getState(), "a")).toBe(false);
+  });
+
+  test("true when editing, even if locked", () => {
+    const layout = createHudLayout();
+    layout.register("a", anchoredPlacement("top-left", { x: 8, y: 8 }));
+    layout.setEditing(true);
+    expect(isPanelDraggable(layout.getState(), "a")).toBe(true);
+  });
+
+  test("true when not locked", () => {
+    const layout = createHudLayout({ locked: false });
+    layout.register("a", anchoredPlacement("top-left", { x: 8, y: 8 }));
+    expect(isPanelDraggable(layout.getState(), "a")).toBe(true);
   });
 });

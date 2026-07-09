@@ -14,6 +14,7 @@ import {
   HUD_ANCHOR_FRACTIONS,
   anchoredPlacement,
   createHudLayout,
+  isPanelDraggable,
   type HudAnchor,
   type HudLayoutStore,
 } from "@jgengine/core/ui/hudLayout";
@@ -22,6 +23,12 @@ import { useEngineState } from "./engineStore";
 const STORAGE_PREFIX = "jg:hud:";
 const DRAG_THRESHOLD_PX = 4;
 const PERSIST_DELAY_MS = 200;
+const EDIT_BAR_Z = 100000;
+
+export interface HudEditChord {
+  hold: string;
+  press: string;
+}
 
 export function useHudLayout(options?: {
   storageKey?: string;
@@ -66,28 +73,129 @@ interface HudCanvasContextValue {
 
 const HudCanvasContext = createContext<HudCanvasContextValue | null>(null);
 
+function HudEditBar({ layout }: { layout: HudLayoutStore }) {
+  return (
+    <div
+      data-hud-edit-bar=""
+      style={{
+        position: "absolute",
+        top: 12,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: EDIT_BAR_Z,
+        pointerEvents: "auto",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "6px 12px",
+        borderRadius: 999,
+        background: "rgba(10, 10, 14, 0.92)",
+        border: "1px solid rgba(255, 255, 255, 0.25)",
+        color: "rgba(255, 255, 255, 0.92)",
+        font: "12px/1.4 system-ui, sans-serif",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span>HUD layout — drag panels to rearrange</span>
+      <button
+        type="button"
+        onClick={() => layout.reset()}
+        style={{
+          padding: "2px 10px",
+          borderRadius: 999,
+          border: "1px solid rgba(255, 255, 255, 0.3)",
+          background: "transparent",
+          color: "inherit",
+          font: "inherit",
+          cursor: "pointer",
+        }}
+      >
+        Reset
+      </button>
+      <button
+        type="button"
+        onClick={() => layout.setEditing(false)}
+        style={{
+          padding: "2px 10px",
+          borderRadius: 999,
+          border: "1px solid transparent",
+          background: "rgba(255, 255, 255, 0.92)",
+          color: "rgb(10, 10, 14)",
+          font: "inherit",
+          cursor: "pointer",
+        }}
+      >
+        Done
+      </button>
+    </div>
+  );
+}
+
 export function HudCanvas({
   layout,
+  editChord,
   className,
   style,
   children,
 }: {
   layout: HudLayoutStore;
+  editChord?: HudEditChord | false;
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
 }) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const value = useMemo(() => ({ layout, canvasRef }), [layout]);
+  const editing = useEngineState(layout).editing;
+  const chordEnabled = editChord !== false;
+  const hold = editChord === false ? undefined : (editChord?.hold ?? "F2");
+  const press = editChord === false ? undefined : (editChord?.press ?? "KeyC");
+
+  useEffect(() => {
+    if (!chordEnabled || hold === undefined || press === undefined) return;
+    if (typeof window === "undefined") return;
+    let holding = false;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code === hold) {
+        holding = true;
+        return;
+      }
+      if (event.code === press && holding) {
+        event.preventDefault();
+        layout.setEditing(!layout.getState().editing);
+        return;
+      }
+      if (event.code === "Escape" && layout.getState().editing) {
+        layout.setEditing(false);
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code === hold) holding = false;
+    };
+    const onBlur = () => {
+      holding = false;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [layout, chordEnabled, hold, press]);
+
   return (
     <HudCanvasContext.Provider value={value}>
       <div
         ref={canvasRef}
         data-hud-canvas=""
+        data-hud-editing={editing ? "" : undefined}
         className={className}
         style={{ position: "absolute", inset: 0, pointerEvents: "none", ...style }}
       >
         {children}
+        {editing ? <HudEditBar layout={layout} /> : null}
       </div>
     </HudCanvasContext.Provider>
   );
@@ -132,7 +240,8 @@ export function HudPanel({
 
   const layoutState = useEngineState(layout);
   const panel = layoutState.panels[id];
-  const draggable = locked !== true && !layoutState.locked;
+  const draggable = locked !== true && isPanelDraggable(layoutState, id);
+  const editing = layoutState.editing && draggable;
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<PanelDrag | null>(null);
@@ -223,12 +332,40 @@ export function HudPanel({
         zIndex: panel.z,
         pointerEvents: "auto",
         touchAction: draggable ? "none" : undefined,
-        userSelect: dragging ? "none" : undefined,
-        cursor: dragging ? "grabbing" : undefined,
+        userSelect: editing || dragging ? "none" : undefined,
+        cursor: dragging ? "grabbing" : editing ? "grab" : undefined,
+        outline: editing ? "1px dashed rgba(255, 255, 255, 0.6)" : undefined,
+        outlineOffset: editing ? 2 : undefined,
         ...style,
       }}
     >
       {children}
+      {editing ? (
+        <>
+          <div
+            data-hud-panel-shield=""
+            style={{ position: "absolute", inset: 0, zIndex: 1, cursor: "inherit" }}
+          />
+          <div
+            data-hud-panel-label=""
+            style={{
+              position: "absolute",
+              top: -20,
+              left: 0,
+              zIndex: 2,
+              pointerEvents: "none",
+              padding: "1px 6px",
+              borderRadius: 4,
+              background: "rgba(10, 10, 14, 0.85)",
+              color: "rgba(255, 255, 255, 0.9)",
+              font: "10px/1.5 system-ui, sans-serif",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {id}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
