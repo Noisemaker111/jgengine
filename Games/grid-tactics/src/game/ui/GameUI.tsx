@@ -1,6 +1,7 @@
 import { useGameContext } from "@jgengine/react/provider";
 import { useEntityStat } from "@jgengine/react/hooks";
 import { useEngineState } from "@jgengine/react/engineStore";
+import { HudCanvas, HudPanel as MovableHudPanel, useHudLayout } from "@jgengine/react";
 import { AccentRule } from "@/components/ui/accent-rule";
 import { HudLabel } from "@/components/ui/hud-label";
 import { HudPanel } from "@/components/ui/hud-panel";
@@ -143,30 +144,31 @@ function EndTurnControls({ state }: { state: BattleState }) {
 
 function GameUIInner() {
   const state = useEngineState(store);
+  const layout = useHudLayout({ storageKey: "grid-tactics" });
   return (
-    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", fontFamily: "inherit" }}>
-      <div style={{ position: "absolute", top: 16, left: 16, pointerEvents: "auto" }}>
+    <HudCanvas layout={layout} style={{ fontFamily: "inherit" }}>
+      <MovableHudPanel id="turn-bar" anchor="top-left" inset={{ x: 16, y: 16 }}>
         <TurnBar state={state} />
-      </div>
-      <div style={{ position: "absolute", top: 16, right: 16, pointerEvents: "auto", display: "flex", gap: 6 }}>
+      </MovableHudPanel>
+      <MovableHudPanel id="roster" anchor="top-right" inset={{ x: 16, y: 16 }} style={{ display: "flex", gap: 6 }}>
         {PLAYER_ROSTER_ORDER.map((catalogId) => (
           <RosterChip key={catalogId} catalogId={catalogId} />
         ))}
-      </div>
+      </MovableHudPanel>
       {state.selectedUnitId !== null ? (
-        <div style={{ position: "absolute", bottom: 20, left: 16, pointerEvents: "auto" }}>
+        <MovableHudPanel id="unit-panel" anchor="bottom-left" inset={{ x: 16, y: 20 }}>
           <SelectedUnitPanel state={state} />
-        </div>
+        </MovableHudPanel>
       ) : null}
-      <div style={{ position: "absolute", bottom: 20, right: 16, pointerEvents: "auto" }}>
+      <MovableHudPanel id="end-turn" anchor="bottom-right" inset={{ x: 16, y: 20 }}>
         <EndTurnControls state={state} />
-      </div>
+      </MovableHudPanel>
       {state.banner !== null ? (
         <div style={{ position: "absolute", top: "16%", left: "50%", transform: "translateX(-50%)" }}>
           <AnnouncementBanner title={state.banner.title} subtitle={state.banner.subtitle} tone={state.banner.tone} />
         </div>
       ) : null}
-    </div>
+    </HudCanvas>
   );
 }
 
