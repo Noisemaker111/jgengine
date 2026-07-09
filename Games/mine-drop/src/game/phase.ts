@@ -40,17 +40,20 @@ export function easeOutRise(now: number, start: number, duration: number, floorY
   return lerp(floorY, topY, 1 - (1 - t) * (1 - t)); // decelerate upward
 }
 
-/** Which board cell a world (x, z) is standing over, or null if off the grid / not centred on one. */
+/** Which board cell a world (x, z) is standing over, or null if off the grid / in a crack. */
 export function cellFromPosition(
   x: number,
   z: number,
   n: number,
-  tolerance = 0.5,
+  pitch: number,
+  halfFootprint: number,
 ): { col: number; row: number; index: number } | null {
-  const col = Math.round(x);
-  const row = Math.round(z);
+  const col = Math.round(x / pitch) + 0;
+  const row = Math.round(z / pitch) + 0;
   if (col < 0 || col >= n || row < 0 || row >= n) return null;
-  if (Math.abs(x - col) > tolerance || Math.abs(z - row) > tolerance) return null;
+  if (Math.abs(x - col * pitch) > halfFootprint || Math.abs(z - row * pitch) > halfFootprint) {
+    return null;
+  }
   return { col, row, index: idx(n, col, row) };
 }
 

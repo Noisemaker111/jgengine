@@ -17,24 +17,24 @@ import {
 
 describe("mine-drop board", () => {
   test("places exactly bombCount bombs", () => {
-    const board = createBoard(7, 8, makeRng(1));
-    expect(bombTotal(board)).toBe(8);
+    const board = createBoard(10, 15, makeRng(1));
+    expect(bombTotal(board)).toBe(15);
   });
 
   test("is deterministic for a fixed seed", () => {
-    const a = createBoard(7, 8, makeRng(42));
-    const b = createBoard(7, 8, makeRng(42));
+    const a = createBoard(10, 15, makeRng(42));
+    const b = createBoard(10, 15, makeRng(42));
     expect(a.bomb).toEqual(b.bomb);
   });
 
   test("keeps the safe cell and its neighbours bomb-free", () => {
-    const n = 7;
-    const safe = idx(n, 3, 3);
-    const board = createBoard(n, 8, makeRng(7), safe);
+    const n = 10;
+    const safe = idx(n, 5, 5);
+    const board = createBoard(n, 15, makeRng(7), safe);
     expect(isBomb(board, safe)).toBe(false);
     for (let dr = -1; dr <= 1; dr += 1) {
       for (let dc = -1; dc <= 1; dc += 1) {
-        expect(isBomb(board, idx(n, 3 + dc, 3 + dr))).toBe(false);
+        expect(isBomb(board, idx(n, 5 + dc, 5 + dr))).toBe(false);
       }
     }
   });
@@ -60,7 +60,7 @@ describe("mine-drop board", () => {
   });
 
   test("row/col round-trip", () => {
-    const n = 7;
+    const n = 10;
     const i = idx(n, 4, 2);
     expect(colOf(n, i)).toBe(4);
     expect(rowOf(n, i)).toBe(2);

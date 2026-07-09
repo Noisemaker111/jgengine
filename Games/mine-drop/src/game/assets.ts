@@ -63,16 +63,16 @@ export const BOMB_SPRITE = "bomb-mark";
 export const FLAG_SPRITE = "flag-mark";
 
 export const entitySprites: Record<string, EntitySpriteConfig> = {
-  [BOMB_SPRITE]: { url: billboard(BOMB_SVG), width: 0.8, height: 0.8, y: 0.55 },
-  [FLAG_SPRITE]: { url: billboard(FLAG_SVG), width: 0.7, height: 0.85, y: 0.6 },
-  [COMPANION_IDS[0]]: { url: billboard(gnomeSvg("#ef4444", "#2563eb")), width: 0.6, height: 0.9, y: 0.42 },
-  [COMPANION_IDS[1]]: { url: billboard(gnomeSvg("#22c55e", "#b45309")), width: 0.6, height: 0.9, y: 0.42 },
+  [BOMB_SPRITE]: { url: billboard(BOMB_SVG), width: 2.4, height: 2.4, y: 1.4 },
+  [FLAG_SPRITE]: { url: billboard(FLAG_SVG), width: 2.1, height: 2.6, y: 1.5 },
+  [COMPANION_IDS[0]]: { url: billboard(gnomeSvg("#ef4444", "#2563eb")), width: 1.2, height: 1.8, y: 0.9 },
+  [COMPANION_IDS[1]]: { url: billboard(gnomeSvg("#22c55e", "#b45309")), width: 1.2, height: 1.8, y: 0.9 },
 };
 for (let n = 1; n <= 8; n += 1) {
   entitySprites[`${NUMBER_SPRITE_PREFIX}${n}`] = {
     url: billboard(numberSvg(n)),
-    width: 0.62,
-    height: 0.62,
-    y: 0.5,
+    width: 2.2,
+    height: 2.2,
+    y: 1.2,
   };
 }

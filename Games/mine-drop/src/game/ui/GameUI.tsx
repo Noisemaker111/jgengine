@@ -2,14 +2,11 @@ import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 
 import { keybinds } from "../keybinds";
-import { countdownPip } from "../phase";
-import { COMPANION_IDS, COUNTDOWN_SECONDS, type Phase } from "../tuning";
+import { COMPANION_IDS, type Phase } from "../tuning";
 import { roundSnapshot } from "../../loop";
 
 interface Hud {
   phase: Phase;
-  countdownStart: number;
-  now: number;
   safeRemaining: number;
   revealed: number;
   bombs: number;
@@ -23,8 +20,6 @@ function useHud(): Hud {
     const total = snap.boardN * snap.boardN;
     return {
       phase: snap.phase,
-      countdownStart: snap.countdownStart,
-      now: ctx.time.now(),
       safeRemaining: snap.safeRemaining,
       revealed: snap.revealed,
       bombs: snap.bombs,
@@ -51,7 +46,7 @@ function ObjectivePanel({ hud }: { hud: Hud }) {
   return (
     <div className="rounded-xl border border-amber-300/30 bg-gradient-to-b from-amber-950/85 to-stone-950/85 px-4 py-3 shadow-2xl backdrop-blur-sm">
       <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-200">Mine&nbsp;Drop</p>
-      <p className="mt-0.5 text-[11px] text-amber-100/60">tabletop minesweeper · one wrong leap and it&rsquo;s boom</p>
+      <p className="mt-0.5 text-[11px] text-amber-100/60">giant minesweeper · jump a tile to dig it</p>
       <div className="mt-3 flex items-end gap-4">
         <div>
           <p className="text-[10px] uppercase tracking-widest text-amber-100/50">Cleared</p>
@@ -100,19 +95,6 @@ function CrewPanel() {
 }
 
 function Banner({ hud }: { hud: Hud }) {
-  if (hud.phase === "countdown") {
-    const pip = countdownPip(hud.now, hud.countdownStart, COUNTDOWN_SECONDS);
-    return (
-      <div className="flex flex-col items-center">
-        <span className="text-7xl font-black tabular-nums text-amber-200 drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)] animate-pulse">
-          {pip}
-        </span>
-        <span className="mt-1 rounded-full bg-black/50 px-4 py-1 text-sm font-bold uppercase tracking-[0.25em] text-amber-100">
-          Everybody jump!
-        </span>
-      </div>
-    );
-  }
   if (hud.phase === "falling") {
     return (
       <span className="rounded-full bg-black/55 px-6 py-2 text-2xl font-black uppercase tracking-[0.3em] text-sky-200 drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
@@ -128,12 +110,12 @@ function Banner({ hud }: { hud: Hud }) {
     );
   }
   if (hud.phase === "ready") {
-    const leap = actionLabel(keybinds, "leap") ?? "F";
+    const jump = actionLabel(keybinds, "jump") ?? "Space";
     return (
       <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-amber-300/20 bg-black/45 px-6 py-3 backdrop-blur-sm">
-        <p className="text-sm font-semibold text-amber-100">Stand your crew on a covered tile.</p>
+        <p className="text-sm font-semibold text-amber-100">Stand on a covered tile with your crew.</p>
         <p className="flex items-center gap-2 text-xs text-amber-100/70">
-          Press <Kbd label={leap} /> to call the leap &mdash; then everyone plummets together.
+          Press <Kbd label={jump} /> to dig it &mdash; everyone drops together.
         </p>
       </div>
     );
@@ -145,13 +127,10 @@ function ControlBar() {
   return (
     <div className="flex items-center gap-3 rounded-full border border-amber-200/15 bg-black/50 px-4 py-1.5 text-[11px] text-amber-100/75 shadow-lg backdrop-blur-sm">
       <span className="flex items-center gap-1.5">
-        <Kbd label={actionLabel(keybinds, "leap") ?? "F"} /> leap
+        <Kbd label={actionLabel(keybinds, "jump") ?? "Space"} /> dig / jump
       </span>
       <span className="flex items-center gap-1.5">
         <Kbd label={actionLabel(keybinds, "flag") ?? "Q"} /> flag
-      </span>
-      <span className="flex items-center gap-1.5">
-        <Kbd label={actionLabel(keybinds, "jump") ?? "Space"} /> hop
       </span>
       <span className="text-amber-100/40">WASD move · drag to look</span>
     </div>
@@ -179,7 +158,7 @@ function EndOverlay({ hud }: { hud: Hud }) {
       <p className="mt-3 max-w-md text-center text-base text-white/80">
         {won
           ? "Every safe tile uncovered. The minefield is beaten."
-          : "You leapt onto a bomb. The board blows and the crew is flung across the living room."}
+          : "You dug a bomb. The board blows and the crew is flung across the living room."}
       </p>
       <button
         type="button"

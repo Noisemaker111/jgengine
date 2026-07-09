@@ -5,6 +5,7 @@ import { assets, entitySprites } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
 import {
+  CELL_PILLAR,
   EYE_HEIGHT,
   PLAYER_HALF_WIDTH,
   PLAYER_HEIGHT,
@@ -27,6 +28,9 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
+  objectStyles: {
+    [CELL_PILLAR]: { hidden: true },
+  },
   collision: {
     voxel: true,
     halfWidth: PLAYER_HALF_WIDTH,

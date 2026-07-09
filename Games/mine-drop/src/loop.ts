@@ -23,18 +23,21 @@ import { buildBoard, buildRoom, clearBoard, openCell, placeRevealed, revealBombs
 import {
   BLAST_UP,
   BOARD_N,
+  BOMB_COUNT,
   BOOM_HOLD_SECONDS,
-  COUNTDOWN_SECONDS,
+  CELL_PITCH,
   FLOOR_Y,
-  JUMP_VELOCITY,
+  FOOTPRINT_RADIUS,
   REVEAL_HOLD_SECONDS,
   STATUS_FEED,
   TABLE_TOP,
+  cellWorld,
   type Phase,
 } from "./game/tuning";
 
 const CENTER = Math.round((BOARD_N - 1) / 2);
 const CENTER_INDEX = idx(BOARD_N, CENTER, CENTER);
+const [CENTER_X, CENTER_Z] = cellWorld(CENTER, CENTER);
 
 const FALL_ANIM = 0.85;
 const FALL_TIMEOUT = 2.6;
@@ -47,10 +50,10 @@ interface RoundState {
   digCol: number;
   digRow: number;
   digIndex: number;
-  tCountdown: number;
   tFall: number;
   tReveal: number;
   tBoom: number;
+  jumpWasDown: boolean;
 }
 
 const round: RoundState = {
@@ -60,23 +63,23 @@ const round: RoundState = {
   digCol: -1,
   digRow: -1,
   digIndex: -1,
-  tCountdown: 0,
   tFall: 0,
   tReveal: 0,
   tBoom: 0,
+  jumpWasDown: false,
 };
 
 function startRound(ctx: GameContext, seed: number): void {
   round.seed = seed;
-  round.board = createBoard(BOARD_N, 8, makeRng(seed), CENTER_INDEX);
+  round.board = createBoard(BOARD_N, BOMB_COUNT, makeRng(seed), CENTER_INDEX);
   round.phase = "ready";
   round.digCol = -1;
   round.digRow = -1;
   round.digIndex = -1;
-  round.tCountdown = 0;
   round.tFall = 0;
   round.tReveal = 0;
   round.tBoom = 0;
+  round.jumpWasDown = false;
   clearBoard(ctx);
   buildBoard(ctx);
   resetCompanions(ctx);
@@ -86,11 +89,21 @@ function startRound(ctx: GameContext, seed: number): void {
 function playerCell(ctx: GameContext): { col: number; row: number; index: number } | null {
   const p = ctx.scene.entity.get(ctx.player.userId);
   if (p === null) return null;
-  return cellFromPosition(p.position[0], p.position[2], BOARD_N);
+  return cellFromPosition(p.position[0], p.position[2], BOARD_N, CELL_PITCH, FOOTPRINT_RADIUS + 0.45);
 }
 
 function status(ctx: GameContext, kind: string, extra?: Record<string, unknown>): void {
   ctx.game.feed.push(STATUS_FEED, { kind, ...extra });
+}
+
+function beginDig(ctx: GameContext, cell: { col: number; row: number; index: number }, now: number): void {
+  round.digCol = cell.col;
+  round.digRow = cell.row;
+  round.digIndex = cell.index;
+  openCell(ctx, cell.col, cell.row);
+  round.phase = "falling";
+  round.tFall = now;
+  status(ctx, "drop");
 }
 
 function resolveLanding(ctx: GameContext, now: number): void {
@@ -112,21 +125,6 @@ function resolveLanding(ctx: GameContext, now: number): void {
 }
 
 export function onInit(ctx: GameContext): void {
-  ctx.game.commands.define("leap", {
-    apply(state) {
-      if (round.phase !== "ready") return state;
-      const cell = playerCell(state);
-      if (cell === null || round.board.revealed[cell.index]) {
-        status(state, "offcell");
-        return state;
-      }
-      round.phase = "countdown";
-      round.tCountdown = state.time.now();
-      status(state, "arm");
-      return state;
-    },
-  });
-
   ctx.game.commands.define("flag", {
     apply(state) {
       if (round.phase !== "ready") return state;
@@ -153,7 +151,7 @@ export function onInit(ctx: GameContext): void {
 export function onNewPlayer(ctx: GameContext): void {
   ctx.scene.entity.spawn(PLAYER_CATALOG, {
     id: ctx.player.userId,
-    position: [CENTER, TABLE_TOP, CENTER],
+    position: [CENTER_X, TABLE_TOP, CENTER_Z],
     rotationY: Math.PI,
     role: "player",
   });
@@ -161,24 +159,17 @@ export function onNewPlayer(ctx: GameContext): void {
 
 export function onTick(ctx: GameContext, dt: number): void {
   const now = ctx.time.now();
+  const jumpDown = ctx.input.isDown("jump");
+  const jumpPressed = jumpDown && !round.jumpWasDown;
+  round.jumpWasDown = jumpDown;
 
   switch (round.phase) {
-    case "countdown": {
-      if (now - round.tCountdown >= COUNTDOWN_SECONDS) {
+    case "ready": {
+      if (jumpPressed) {
         const cell = playerCell(ctx);
-        if (cell === null || round.board.revealed[cell.index]) {
-          round.phase = "ready";
-          status(ctx, "missed");
-          return;
+        if (cell !== null && !round.board.revealed[cell.index]) {
+          beginDig(ctx, cell, now);
         }
-        round.digCol = cell.col;
-        round.digRow = cell.row;
-        round.digIndex = cell.index;
-        openCell(ctx, cell.col, cell.row);
-        ctx.player.motion.impulse(JUMP_VELOCITY * 0.55);
-        round.phase = "falling";
-        round.tFall = now;
-        status(ctx, "drop");
       }
       return;
     }
@@ -209,7 +200,6 @@ export function onTick(ctx: GameContext, dt: number): void {
     case "boom": {
       const t = (now - round.tBoom) / BOOM_SCATTER_TIME;
       scatterCompanions(ctx, Math.min(1, t), dt);
-      // Holds on the BOOM screen; the player restarts with R or the button.
       void BOOM_HOLD_SECONDS;
       return;
     }
@@ -224,7 +214,6 @@ export const loop: Required<GameLoop<GameContext>> = { onInit, onNewPlayer, onTi
 export interface RoundSnapshot {
   phase: Phase;
   seed: number;
-  countdownStart: number;
   boardN: number;
   safeRemaining: number;
   revealed: number;
@@ -232,12 +221,10 @@ export interface RoundSnapshot {
   flags: number;
 }
 
-/** Read-only round snapshot for the HUD. */
 export function roundSnapshot(): RoundSnapshot {
   return {
     phase: round.phase,
     seed: round.seed,
-    countdownStart: round.tCountdown,
     boardN: BOARD_N,
     safeRemaining: safeRemaining(round.board),
     revealed: countRevealed(round.board),
