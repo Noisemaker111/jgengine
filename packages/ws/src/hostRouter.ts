@@ -197,6 +197,16 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }
   };
 
+  const dropVoiceForServer = (userId: string, serverId: string) => {
+    const prefix = `${serverId}|`;
+    for (const [key, roster] of voiceRosters) {
+      if (!key.startsWith(prefix)) continue;
+      if (!roster.delete(userId)) continue;
+      if (roster.size === 0) voiceRosters.delete(key);
+      broadcastVoice(serverId, key.slice(prefix.length));
+    }
+  };
+
   const handleChatSend = (
     connection: Connection,
     message: { id: number; serverId: string; channelId: string; body: string },
@@ -347,6 +357,13 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }
   };
 
+  const dropPresenceForServer = (userId: string, serverId: string) => {
+    const rows = presence.get(serverId);
+    if (rows === undefined || !rows.delete(userId)) return;
+    if (rows.size === 0) presence.delete(serverId);
+    broadcastPresence(serverId);
+  };
+
   const handleMessage = async (connection: Connection, message: WsClientMessage) => {
     if (message.t === "hello") {
       const userId = await authenticate({ userId: message.userId, token: message.token });
@@ -403,6 +420,8 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         }
         case "leave": {
           await host.leaveServer({ userId, serverId: message.serverId });
+          dropPresenceForServer(userId, message.serverId);
+          dropVoiceForServer(userId, message.serverId);
           reply(connection, message.id, null);
           return;
         }

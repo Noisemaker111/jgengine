@@ -499,6 +499,14 @@ export function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; 
         status: memberUserIds.length === 0 ? "open" : server.status,
       });
 
+      const pose = await ctx.db
+        .query("jgPoses")
+        .withIndex("by_server_and_user", (q) =>
+          q.eq("serverId", args.serverId).eq("userId", actorUserId),
+        )
+        .unique();
+      if (pose) await ctx.db.delete(pose._id);
+
       return null;
     },
   });
