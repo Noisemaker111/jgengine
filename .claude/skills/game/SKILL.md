@@ -11,4 +11,4 @@ This skill is a thin redirect. Pick the real one by scope:
 - **`harvest-game`** — build a minimal playable slice to probe the engine surface for gaps. Use this for a quick harvest.
 - **`harvest-full-game`** — build the whole game via the `jgengine-newgame` blueprint-and-phases workflow. Use this when you want the deep gaps only a full build reaches.
 
-Both run the same loop (research → worktree → build → track gaps → verify per `jgengine-verify` → file `[FEATURE]` issue(s) → push, PR, queue auto-merge). Invoke the one that matches your scope; do not follow this file directly.
+Both run the same loop (research → build → track gaps → verify per `jgengine-verify` → file `[FEATURE]` issue(s) → push, PR, queue auto-merge). Invoke the one that matches your scope; do not follow this file directly.

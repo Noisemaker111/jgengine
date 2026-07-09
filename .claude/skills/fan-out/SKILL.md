@@ -3,7 +3,7 @@ name: fan-out
 description: >-
   Cheap workers do the dumb work. Use on almost every non-trivial turn — whenever
   you are about to run lint, typecheck, tests, build, preview, screenshot, shoot,
-  Playwright, gh pr/issue/checks, bulk file reads, research sweeps, renames, doc
+  Playwright, GitHub PR/issue ceremony, bulk file reads, research sweeps, renames, doc
   sweeps, or log triage on the frontier model; whenever another skill says to
   verify or fan mechanical legs; whenever you catch yourself about to do a
   mechanical batch inline. Standing authorization — do not ask first.
@@ -18,7 +18,7 @@ Cheap worker (Sonnet / cheaper Task model): every mechanical leg below.
 
 - lint · typecheck · test · build
 - preview · screenshot · `bun run shoot` · Playwright
-- `gh` after the decision is made (pr create/fill, checks watch, comments, issue ops)
+- GitHub ceremony after the decision is made (PR create, comments, issue ops — MCP tools or `gh` where it exists)
 - bulk file reads · research sweeps · renames · doc sweeps · log triage
 
 Announce workers on a 🤖 line, job-named. Judge their output; never dump raw worker text to the user.

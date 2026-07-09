@@ -4,7 +4,7 @@ Operational facts discovered the hard way. Update this when you learn something 
 
 ## Cheap workers do the dumb work
 
-Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, test, build, shoot, screenshots, `gh`, bulk reads, and research sweeps run on cheap workers — never on the frontier model in this chat. Standing authorization; do not ask first. Details: `.claude/skills/fan-out/SKILL.md` and root `CLAUDE.md`.
+Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, test, build, shoot, screenshots, GitHub ceremony, bulk reads, and research sweeps run on cheap workers — never on the frontier model in this chat. Standing authorization; do not ask first. Details: `.claude/skills/fan-out/SKILL.md` and root `CLAUDE.md`.
 
 ## Publishing
 
@@ -24,9 +24,11 @@ Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, te
 - **A hung `bun run shoot` is never re-run in the foreground.** Chromium/Playwright on heavy WebGL scenes hangs, crashes the GPU, or emits corrupt output. Report it once, fall back to the `summarizeEnvironment` world test to prove the scene resolved, and retry the shot only if the user asks. Full ladder: the `jgengine-verify` skill.
 - **Silently-unstyled game UI means a missing `@source` entry** in `apps/dev/src/index.css` (or the game's own `index.css`) — Tailwind never scanned the HUD's classes, so they compile to nothing.
 
-## Worktree / remote sessions
+## Cloud sessions
 
-- **Return the primary checkout to `main` after entering a worktree.** Remote sessions arrive checked out onto the task branch, not `main`; once that branch is pushed, `git -C <repo root> switch main`. Never leave the primary parked on a branch with unpushed local-only commits — a reclaimed container takes them with it. (Full rule: root `CLAUDE.md`.)
+- **Every session is an isolated cloud container on its own `claude/...` branch.** No worktrees. Push early — a reclaimed container takes unpushed commits with it.
+- **Never commit on top of a squash-merged branch.** That is where the recurring merge conflicts came from. The session-start hook restarts a clean, already-merged branch from `origin/main` automatically; by hand it's `git reset --hard origin/main` + `git push --force-with-lease`.
+- **GitHub goes through the MCP tools** (`create_pull_request`, `enable_pr_auto_merge`, `add_issue_comment`, `subscribe_pr_activity`) — there is no `gh` CLI in cloud containers.
 
 ## Environment
 
