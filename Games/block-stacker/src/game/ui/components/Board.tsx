@@ -1,24 +1,18 @@
-import { pieceCells, type ActivePiece } from "../../tetris/logic";
+import { type ActivePiece } from "../../tetris/logic";
 import { PIECE_COLORS, PIECE_ROTATIONS, type PieceType } from "../../tetris/pieces";
 import type { TetrisSnapshot } from "../../tetris/store";
-
-function activeCellSet(active: ActivePiece | null): Set<number> {
-  const set = new Set<number>();
-  if (active === null) return set;
-  for (const [x, y] of pieceCells(active)) set.add(y * 100 + x);
-  return set;
-}
 
 function ghostCellSet(active: ActivePiece | null, ghostY: number | null): Set<number> {
   const set = new Set<number>();
   if (active === null || ghostY === null) return set;
-  for (const [x, y] of pieceCells({ ...active, y: ghostY })) set.add(y * 100 + x);
+  for (const [ox, oy] of PIECE_ROTATIONS[active.type][active.rotation]) {
+    set.add((ghostY + oy) * 100 + (active.x + ox));
+  }
   return set;
 }
 
 export function Board({ snapshot, compact = false }: { snapshot: TetrisSnapshot; compact?: boolean }) {
-  const { board, active, ghostY, danger } = snapshot;
-  const activeSet = activeCellSet(active);
+  const { board, active, fallOffset, ghostY, danger } = snapshot;
   const ghostSet = ghostCellSet(active, ghostY);
   const activeColor = active === null ? null : PIECE_COLORS[active.type];
 
@@ -31,9 +25,8 @@ export function Board({ snapshot, compact = false }: { snapshot: TetrisSnapshot;
     for (let x = 0; x < board.width; x += 1) {
       const key = y * 100 + x;
       const locked = board.cells[y * board.width + x] ?? null;
-      const isActive = activeSet.has(key);
-      const isGhost = !isActive && locked === null && ghostSet.has(key);
-      const color = isActive ? activeColor : locked === null ? null : PIECE_COLORS[locked];
+      const isGhost = locked === null && ghostSet.has(key);
+      const color = locked === null ? null : PIECE_COLORS[locked];
       tiles.push(
         <div
           key={key}
@@ -51,14 +44,33 @@ export function Board({ snapshot, compact = false }: { snapshot: TetrisSnapshot;
     }
   }
 
+  const activeTiles: React.ReactNode[] =
+    active === null
+      ? []
+      : PIECE_ROTATIONS[active.type][active.rotation].map(([ox, oy], i) => (
+          <div
+            key={i}
+            className="absolute rounded-[3px]"
+            style={{
+              width: "var(--cell)",
+              height: "var(--cell)",
+              left: `calc((var(--cell) + 1px) * ${active.x + ox})`,
+              top: `calc((var(--cell) + 1px) * ${active.y + fallOffset + oy})`,
+              background: activeColor ?? undefined,
+              boxShadow: "inset 0 2px 3px rgba(255,255,255,0.35), inset 0 -3px 4px rgba(0,0,0,0.4)",
+            }}
+          />
+        ));
+
   return (
     <div
-      className={`grid gap-px rounded-lg bg-black/70 p-2 shadow-2xl ring-1 transition-shadow ${
+      className={`relative grid gap-px rounded-lg bg-black/70 p-2 shadow-2xl ring-1 transition-shadow ${
         danger ? "ring-2 ring-red-500 animate-pulse" : "ring-cyan-400/30"
       }`}
       style={{ "--cell": cellSize, gridTemplateColumns: `repeat(${board.width}, var(--cell))` } as React.CSSProperties}
     >
       {tiles}
+      <div className="absolute inset-2">{activeTiles}</div>
     </div>
   );
 }

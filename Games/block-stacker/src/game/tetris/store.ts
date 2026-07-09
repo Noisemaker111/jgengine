@@ -28,6 +28,7 @@ export type GameStatus = "playing" | "gameover";
 export interface TetrisSnapshot {
   readonly board: Board;
   readonly active: ActivePiece | null;
+  readonly fallOffset: number;
   readonly ghostY: number | null;
   readonly next: readonly PieceType[];
   readonly hold: PieceType | null;
@@ -61,6 +62,7 @@ interface MutableState {
   level: number;
   status: GameStatus;
   gravityAcc: number;
+  fallOffset: number;
   lockDelayAcc: number;
   lockResets: number;
   combo: number;
@@ -112,6 +114,7 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     level: 0,
     status: "playing",
     gravityAcc: 0,
+    fallOffset: 0,
     lockDelayAcc: 0,
     lockResets: 0,
     combo: -1,
@@ -137,6 +140,7 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     state.active = piece;
     state.canHold = true;
     state.gravityAcc = 0;
+    state.fallOffset = 0;
     state.lockDelayAcc = 0;
     state.lockResets = 0;
     if (collides(state.board, piece)) state.status = "gameover";
@@ -192,6 +196,7 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     return {
       board: state.board,
       active,
+      fallOffset: state.fallOffset,
       ghostY,
       next: state.queue.slice(0, PREVIEW_COUNT),
       hold: state.hold,
@@ -227,6 +232,7 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     state.level = 0;
     state.status = "playing";
     state.gravityAcc = 0;
+    state.fallOffset = 0;
     state.lockDelayAcc = 0;
     state.lockResets = 0;
     state.combo = -1;
@@ -274,6 +280,7 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
     state.active = moved;
     state.score += 1;
     state.gravityAcc = 0;
+    state.fallOffset = 0;
     noteMovement();
     emit();
   }
@@ -299,6 +306,7 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
       state.hold = current;
       state.active = spawnPiece(swapped);
       state.gravityAcc = 0;
+      state.fallOffset = 0;
       state.lockDelayAcc = 0;
       state.lockResets = 0;
       if (collides(state.board, state.active)) state.status = "gameover";
@@ -309,24 +317,18 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
 
   function tick(dt: number): void {
     if (state.status !== "playing" || state.active === null) return;
-    let changed = false;
     if (state.messageTimer > 0) {
       state.messageTimer = Math.max(0, state.messageTimer - dt);
-      if (state.messageTimer === 0) {
-        state.message = null;
-        changed = true;
-      }
+      if (state.messageTimer === 0) state.message = null;
     }
     const active = state.active;
     if (active !== null && isGrounded(state.board, active)) {
+      state.fallOffset = 0;
       state.lockDelayAcc += dt;
-      if (state.lockDelayAcc >= LOCK_DELAY_SECONDS) {
-        lockActive();
-        changed = true;
-      }
+      if (state.lockDelayAcc >= LOCK_DELAY_SECONDS) lockActive();
     } else {
-      state.gravityAcc += dt;
       const interval = gravityInterval(state.level);
+      state.gravityAcc += dt;
       while (state.gravityAcc >= interval) {
         state.gravityAcc -= interval;
         const current: ActivePiece | null = state.active;
@@ -334,12 +336,12 @@ export function createTetrisStore(seed = "block-stacker"): TetrisStore {
         const moved: ActivePiece = { ...current, y: current.y + 1 };
         if (collides(state.board, moved)) break;
         state.active = moved;
-        changed = true;
       }
+      state.fallOffset = interval > 0 ? Math.min(1, state.gravityAcc / interval) : 0;
       state.lockDelayAcc = 0;
       state.lockResets = 0;
     }
-    if (changed) emit();
+    emit();
   }
 
   reset(seed);
