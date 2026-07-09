@@ -4,23 +4,19 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 
 import { BOMB_SPRITE, FLAG_SPRITE, NUMBER_SPRITE_PREFIX } from "./assets";
-import { COMPANION_IDS } from "./tuning";
+import { COMPANION_IDS, PLAYER_WALK_SPEED } from "./tuning";
 
-// Catalog id for the tiny-person entity. The scene *instance* id is the joining
-// user's id (spawn convention), not this.
 export const PLAYER_CATALOG = "mine-person";
 
 const entries = new Map<string, GameContextEntityEntry>();
 
-// The local tiny person.
 entries.set(PLAYER_CATALOG, {
-  movement: { poses: ["standing"], walkSpeed: 3.4 },
+  movement: { poses: ["standing"], walkSpeed: PLAYER_WALK_SPEED },
   role: "player",
 });
 
-// Companion gnomes ("your friends"): scripted, no combat.
 for (const id of COMPANION_IDS) {
-  entries.set(id, { movement: { poses: ["standing"], walkSpeed: 3 }, role: "npc" });
+  entries.set(id, { movement: { poses: ["standing"], walkSpeed: PLAYER_WALK_SPEED * 0.9 }, role: "npc" });
 }
 
 // Cosmetic billboard props (numbers, bombs, flags) — no stats, no movement.

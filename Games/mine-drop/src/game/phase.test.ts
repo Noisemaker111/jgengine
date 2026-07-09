@@ -32,7 +32,7 @@ describe("mine-drop phase helpers", () => {
   test("fall eases from table top to floor and clamps", () => {
     expect(easeInFall(0, 0, 1, 5, 0)).toBe(5);
     expect(easeInFall(1, 0, 1, 5, 0)).toBe(0);
-    expect(easeInFall(2, 0, 1, 5, 0)).toBe(0); // clamped
+    expect(easeInFall(2, 0, 1, 5, 0)).toBe(0);
     expect(easeInFall(0.5, 0, 1, 5, 0)).toBeLessThan(5);
   });
 
@@ -41,18 +41,21 @@ describe("mine-drop phase helpers", () => {
     expect(easeOutRise(1, 0, 1, 0, 5)).toBe(5);
   });
 
-  test("cellFromPosition snaps to the grid within tolerance", () => {
-    expect(cellFromPosition(3, 3, 7)).toEqual({ col: 3, row: 3, index: 24 });
-    expect(cellFromPosition(3.1, 2.9, 7)).toEqual({ col: 3, row: 3, index: 24 });
-    expect(cellFromPosition(-1, 3, 7)).toBeNull();
-    expect(cellFromPosition(7, 3, 7)).toBeNull();
+  test("cellFromPosition snaps to pitched cells and rejects cracks", () => {
+    const pitch = 10;
+    const half = 3.5;
+    expect(cellFromPosition(30, 30, 10, pitch, half)).toEqual({ col: 3, row: 3, index: 33 });
+    expect(cellFromPosition(30.4, 29.6, 10, pitch, half)).toEqual({ col: 3, row: 3, index: 33 });
+    expect(cellFromPosition(35, 30, 10, pitch, half)).toBeNull();
+    expect(cellFromPosition(-5, 30, 10, pitch, half)).toBeNull();
+    expect(cellFromPosition(100, 30, 10, pitch, half)).toBeNull();
   });
 
   test("outwardDir points away from centre and is unit length", () => {
-    const d = outwardDir(6, 3, 3, 3);
+    const d = outwardDir(60, 30, 30, 30);
     expect(d.dx).toBeGreaterThan(0);
     expect(Math.hypot(d.dx, d.dz)).toBeCloseTo(1, 5);
-    const dead = outwardDir(3, 3, 3, 3);
+    const dead = outwardDir(30, 30, 30, 30);
     expect(Math.hypot(dead.dx, dead.dz)).toBeCloseTo(1, 5);
   });
 });
