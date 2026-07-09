@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
-import { GameArt } from "../components/GameArt";
+import { GameFace } from "../components/GameCard";
 import { Header } from "../components/Layout";
 import { GAMES, type Game } from "../content/games";
 
@@ -67,14 +67,20 @@ function GameStage({ game }: { game: Game }) {
         />
       )}
       {phase !== "playing" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center">
-          <div className="h-32 w-48 sm:h-40 sm:w-60">
-            <GameArt id={game.id} hue={game.hue} />
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 opacity-40 blur-[2px]">
+            <GameFace game={game} />
           </div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/55 to-black/75" />
+        </div>
+      )}
+      {phase !== "playing" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center">
           <div className="max-w-md">
             <h2 className="text-2xl font-bold tracking-tight text-slate-50">{game.title}</h2>
-            <p className="mt-2 text-sm text-slate-400">{game.tagline}</p>
-            <p className="mt-3 font-mono text-xs text-slate-600">{game.controls}</p>
+            <p className="mt-2 text-sm font-medium text-slate-300">{game.tagline}</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">{game.description}</p>
+            <p className="mt-3 font-mono text-xs text-slate-500">{game.controls}</p>
           </div>
           {phase === "poster" ? (
             <button
