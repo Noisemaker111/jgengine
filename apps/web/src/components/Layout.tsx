@@ -61,7 +61,7 @@ function GamesDropdown() {
       </button>
       {open && (
         <div className="absolute right-0 top-full z-30 pt-2">
-          <div className="w-64 rounded-2xl border border-white/10 bg-ink-raised/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
+          <div className="max-h-[calc(100vh-5rem)] w-64 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-ink-raised/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
             {GAMES.map((game) => (
               <a
                 key={game.id}
