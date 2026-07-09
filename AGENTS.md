@@ -2,6 +2,10 @@
 
 Operational facts discovered the hard way. Update this when you learn something that would have saved time.
 
+## Cheap workers do the dumb work
+
+Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, test, build, shoot, screenshots, `gh`, bulk reads, and research sweeps run on cheap workers — never on the frontier model in this chat. Standing authorization; do not ask first. Details: `.claude/skills/fan-out/SKILL.md` and root `CLAUDE.md`.
+
 ## Publishing
 
 - **Use `npm publish --access public`, not `bun publish`.** `bun publish` does not read `~/.npmrc` auth tokens; it fails with "missing authentication" even when `NPM_TOKEN` is written to `.npmrc`.
@@ -16,6 +20,7 @@ Operational facts discovered the hard way. Update this when you learn something 
 
 ## Verification & screenshots
 
+- **Run the verify ladder through `fan-out` workers**, not the frontier model (`check-types` · `bun test` · `shoot`).
 - **A hung `bun run shoot` is never re-run in the foreground.** Chromium/Playwright on heavy WebGL scenes hangs, crashes the GPU, or emits corrupt output. Report it once, fall back to the `summarizeEnvironment` world test to prove the scene resolved, and retry the shot only if the user asks. Full ladder: the `jgengine-verify` skill.
 - **Silently-unstyled game UI means a missing `@source` entry** in `apps/dev/src/index.css` (or the game's own `index.css`) — Tailwind never scanned the HUD's classes, so they compile to nothing.
 

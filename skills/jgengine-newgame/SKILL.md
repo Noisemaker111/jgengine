@@ -15,17 +15,11 @@ The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and
 |------|-----|
 | `jgengine-api` | Install + setup, the engine surface, the UI quality bar, asset sourcing |
 | `jgengine-verify` | How to prove it works — browserless scene gate, shoot last |
-
-## Fan-out — research only novel seams
-
-Standing rule for every phase (same spirit as root `CLAUDE.md` Delegation):
-
-- **Do not** spawn research workers to rediscover scaffolding, Convex wiring, HUD/keybind idioms, `defineGame` fields, or anything already in `jgengine-api` / these recipes. Read the skill, then build.
-- **Do** fan research only when the mechanic needs an engine seam the skills do not document (a collision model, a motion intent, a sky/light mapping) — and stop the moment the seam is confirmed; do not keep workers alive for "more context."
-- **Do** fan mechanical legs every phase: catalog generation, `check-types`, `bun test`, staged screenshot, log triage — on cheaper workers (Sonnet), job-named on a 🤖 line. The orchestrator keeps design, layering, and judging worker output.
-- Copying another game's source to learn an API is a skill gap, not a research task — fix or report the skill instead (see Isolation below).
+| `fan-out` | Cheap workers run verify / shoot / bulk work — not this session |
 
 ## Take the reading — don't ask
+
+Mechanical legs (verify, shoot, bulk reads) follow the **`fan-out`** skill — not this one. Research only novel engine seams; scaffolding already in `jgengine-api` is not research.
 
 A named game **is** the scope answer. "Make Fallout but multiplayer" means the canonical mainline experience — first/third-person wasteland RPG: gunplay plus targeted-shot mode, S.P.E.C.I.A.L.-style stats, XP/perks, loot + caps economy, quests + dialogue, settlements, party play — not a quiz about it. Never ask "isometric or FPS?", "does this scope work?", "want me to cut quests?", or offer a menu of smaller versions. State your reading in one line, then show the master blueprint.
 
@@ -60,7 +54,7 @@ Split the blueprint into ordered phases. Each phase:
 - lands a coherent set of systems **finished end to end** — logic + that phase's share of the content budget + UI + real assets + feedback. Nothing in a phase is stubbed "for a later phase";
 - ends verified: type-check green, staged screenshot taken and judged against `jgengine-api`'s UI quality bar;
 - flows into the next without stopping to ask "should I continue?" or demoing a half version — the confirmed blueprint is the approval. If a session ends mid-build, the phase plan is the roadmap the next session resumes from, exactly where it left off;
-- is reported in one line — "phase N of M complete", never as a finished game; the next phase starts on its own line, not buried in the status. Fan the phase's **mechanical** legs (catalog generation, the type-check, the staged screenshot) out to job-named subagents on a 🤖 line and judge their output — don't run them inline. Do **not** fan "study how games scaffold" research — that is the Fan-out rule above. Done means the last phase landed and the full-game checklist below passes.
+- is reported in one line — "phase N of M complete", never as a finished game; the next phase starts on its own line, not buried in the status. Fan the phase's mechanical legs per the **`fan-out`** skill (catalog generation, type-check, staged screenshot) — don't run them on the frontier model. Done means the last phase landed and the full-game checklist below passes.
 
 A sensible phase shape: (1) world + movement + camera + core combat loop with real assets; (2) full item/loot/economy breadth + inventory UI; (3) progression + quests + dialogue; (4) multiplayer sync + social; (5) remaining systems + content fill to budget + audio/juice. Adapt to the fantasy — but phase 1 already looks like the game, not a graybox.
 
