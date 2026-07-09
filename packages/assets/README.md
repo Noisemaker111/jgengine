@@ -18,19 +18,39 @@ A self-generating, license-verified index of thousands of CC0 3D models — host
 
 Everything collapses into the core `AssetCatalog` via `buildCatalog({ basePath })`.
 
+## `add` — one command for anything
+
+`assets add <query>` is the front door. It fuzzy-searches **every** catalog at once — 3D models, whole packs, HUD components (the shadcn registry), and `game-icon` glyphs — then does the fetch and prints the exact copy-paste wiring. One mental model instead of four.
+
+```bash
+assets add astronaut --dir ../../apps/dev/public   # model → pull + reindex + print the assets.ts snippet
+assets add nature    --dir ../../apps/dev/public   # whole pack → pull + reindex + how to wire an id
+assets add "mana bar"                              # HUD component → the `npx shadcn add` cmd + <VitalBar/> usage
+assets add sword                                    # icon → the game-icon name to drop in a slot
+```
+
+- A **model / pack** match is fully automated: if the pack isn't already in `<dir>/models/`, it's pulled and extracted, then `reindex` runs so the id is addressable, then the `buildCatalog` + model-seam snippet is printed.
+- A **component / icon** match prints the one-liner to run and the import + usage — no bytes to pull.
+- Ambiguous query? `add` lists the top matches across kinds; narrow with `--kind model|pack|component|icon` or a more specific term. `--json` emits the ranked matches for scripting.
+
+The same ranking is available programmatically: `import { findAssets } from "@jgengine/assets"`.
+
 ## CLI
 
 ```
+assets add <query> [--kind <k>] [--dir <dir>] [--mirror <baseUrl>] [--json]
+                                               # unified import: models, packs, components, icons
 assets list [--category <c>] [--source <s>]   # browse the generated index
 assets search <term>                          # grep the index
 assets pull <source-id> [--dir public] [--mirror <baseUrl>] [--offline]
-                                               # download + extract GLBs into <dir>/models/<source>/
-assets add <path|url> --category <c> --license <l> [--author <a>]
+                                               # download + extract a whole pack's GLBs into <dir>/models/<source>/
+assets register <path|url> --category <c> --license <l> [--author <a>]
+                                               # register a one-off single into the shipped index
 assets reindex [public/models]                # regenerate generated/*.json from pulled packs
 assets verify                                 # license + alias-integrity gate
 ```
 
-Run in-repo with `bun run --cwd packages/assets src/cli/pull.ts <verb> …`.
+Run in-repo with `bun run --cwd packages/assets src/cli/pull.ts <verb> …`. (`add <path|url> --license …` still works as an alias for `register`.)
 
 ### Mirror fallback and offline pulls
 
@@ -96,7 +116,7 @@ export const game: PlayableGame = {
 };
 ```
 
-`buildCatalog({ sources: ["kenney-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets search <term>` / `assets list --category <c>` instead of memorizing them. See `Games/asset-showcase` for a full working example.
+`buildCatalog({ sources: ["kenney-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets add <query>` (or `assets search <term>` / `assets list --category <c>`) instead of memorizing them.
 
 ### Serving the bytes
 
