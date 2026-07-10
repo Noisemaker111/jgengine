@@ -1,3 +1,5 @@
+import { useDisplayProfile } from "@jgengine/react/display";
+
 import type { SessionSnapshot } from "../../race/session";
 import { KeybindBadge } from "./KeybindBadge";
 import { formatRaceTime, PALETTE } from "./theme";
@@ -5,6 +7,7 @@ import { formatRaceTime, PALETTE } from "./theme";
 const SPEED_FOR_FULL_BAR = 42;
 
 export function FlightDeck({ snapshot }: { snapshot: SessionSnapshot }) {
+  const { coarsePointer } = useDisplayProfile();
   const speed = snapshot.playerSpeed;
   const speedFraction = Math.min(1, speed / SPEED_FOR_FULL_BAR);
   const speedColor = snapshot.flow.inCore ? PALETTE.skyTeal : snapshot.flow.inTube ? PALETTE.windsockOrange : PALETTE.cloudWhite;
@@ -26,7 +29,7 @@ export function FlightDeck({ snapshot }: { snapshot: SessionSnapshot }) {
         <div className="h-full rounded-full transition-[width] duration-100" style={{ width: `${speedFraction * 100}%`, backgroundColor: speedColor }} />
       </div>
       <div className="flex items-center gap-2">
-        <KeybindBadge action="dodge" />
+        {coarsePointer ? null : <KeybindBadge action="dodge" />}
         <div className="flex items-center gap-1.5">
           {Array.from({ length: snapshot.dodge.maxCharges }, (_, i) => i).map((i) => {
             const filled = i < snapshot.dodge.charges;

@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const AUTO_HIDE_MS = 6000;
 
 export function OrientationHint({ wanted }: { wanted: "landscape" | "portrait" }) {
   const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setDismissed(true), AUTO_HIDE_MS);
+    return () => clearTimeout(timer);
+  }, []);
   if (dismissed) return null;
   return (
     <div
