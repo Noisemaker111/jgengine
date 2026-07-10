@@ -1186,6 +1186,12 @@ export function GamePlayerShell({
     [playable],
   );
   useEffect(() => () => audioEngine.dispose(), [audioEngine]);
+  useEffect(() => {
+    if (ctx === null) return;
+    return ctx.game.events.on("audio.play", ({ sound, at }) => {
+      audioEngine.playOneShot(sound, at === undefined ? undefined : [at[0], at[1], at[2]]);
+    });
+  }, [ctx, audioEngine]);
   const userId = multiplayer?.userId ?? DEV_USER_ID;
   const reportRuntimeError = (error: unknown, phase: string) => {
     const diagnostic = logRuntimeError(error, phase);

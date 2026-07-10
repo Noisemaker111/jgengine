@@ -61,6 +61,13 @@ const FAMILY_SHAPES: Record<string, (body: string, accent: string, rank: string)
   `,
 };
 
+function rankHalo(rank: EnemyDef["rank"], color: string): string {
+  if (rank === "grunt") return "";
+  const inner = `<circle cx="32" cy="33" r="29" fill="none" stroke="${color}" stroke-width="2" opacity="0.75"/>`;
+  if (rank === "veteran") return inner;
+  return `${inner}<circle cx="32" cy="33" r="26" fill="none" stroke="${color}" stroke-width="1.2" opacity="0.5"/>`;
+}
+
 function spriteFor(def: EnemyDef): EntitySpriteConfig {
   const tint = FAMILY_TINTS[def.family];
   const rankColor = RANK_ACCENTS[def.rank];
@@ -68,7 +75,7 @@ function spriteFor(def: EnemyDef): EntitySpriteConfig {
   const width = 1.5 * def.scale;
   const height = 1.7 * def.scale;
   return {
-    url: billboard(shape(tint.body, tint.accent, rankColor)),
+    url: billboard(rankHalo(def.rank, rankColor) + shape(tint.body, tint.accent, rankColor)),
     width,
     height,
     y: height / 2,

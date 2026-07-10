@@ -102,6 +102,7 @@ function tickRanged(
   nextAttackAt.set(enemyId, nowMs + attack.intervalMs);
   const origin: EntityPosition = [enemyPos[0], enemyPos[1] + attack.eyeHeight, enemyPos[2]];
   const targetPoint: EntityPosition = [playerPos[0], playerPos[1] + 1.1, playerPos[2]];
+  ctx.game.events.emit("audio.play", { sound: "enemy_bolt", at: origin });
   const shotId = ctx.scene.entity.fireProjectile({
     from: enemyId,
     via: { item: attack.itemId },

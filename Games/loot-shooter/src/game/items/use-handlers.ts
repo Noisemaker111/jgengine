@@ -1,6 +1,7 @@
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../ammo";
+import { SOUND_IDS } from "../audio/catalog";
 import { session } from "../run/session";
 import { gearById } from "./gear/catalog";
 import { weaponById } from "./weapons/catalog";
@@ -13,12 +14,13 @@ export function resetWeaponState(): void {
   lastWarnAt.clear();
 }
 
-function warn(ctx: GameContext, from: string, text: string): void {
+function warn(ctx: GameContext, from: string, text: string, sound?: string): void {
   const nowMs = ctx.time.now() * 1000;
   const at = lastWarnAt.get(from) ?? 0;
   if (nowMs - at < 600) return;
   lastWarnAt.set(from, nowMs);
   ctx.scene.entity.floatText({ instanceId: from, text, kind: "warn" });
+  if (sound !== undefined) ctx.game.events.emit("audio.play", { sound });
 }
 
 const fireGun: ItemUseHandler<GameContext> = {
@@ -34,12 +36,13 @@ const fireGun: ItemUseHandler<GameContext> = {
     const statId = AMMO_STAT_IDS[def.ammo];
     const ammo = ctx.scene.entity.stats.get(input.from, statId);
     if (ammo === null || ammo.current < def.ammoPerShot) {
-      warn(ctx, input.from, `NO ${AMMO_LABELS[def.ammo].toUpperCase()} AMMO`);
+      warn(ctx, input.from, `NO ${AMMO_LABELS[def.ammo].toUpperCase()} AMMO`, SOUND_IDS.noAmmo);
       return { state: ctx };
     }
 
     lastFiredAt.set(gateKey, nowMs + def.weapon.fireIntervalMs);
     ctx.scene.entity.stats.delta(input.from, statId, -def.ammoPerShot);
+    ctx.game.events.emit("audio.play", { sound: SOUND_IDS.fire(def.family) });
 
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
     const shotId = ctx.scene.entity.fireProjectile({
@@ -55,6 +58,7 @@ const fireGun: ItemUseHandler<GameContext> = {
       ctx.time.after(fuse, () => {
         const settled = ctx.scene.entity.settleProjectile(shotId);
         if (settled.status !== "settled") return;
+        ctx.game.events.emit("audio.play", { sound: SOUND_IDS.explosion, at: settled.at });
         ctx.scene.entity.effect({
           from: input.from,
           at: settled.at,
@@ -70,6 +74,9 @@ const fireGun: ItemUseHandler<GameContext> = {
     const settled = ctx.scene.entity.settleProjectile(shotId);
     const hit = settled.status === "settled" && settled.hits.length > 0;
     session.noteShot(hit);
+    if (hit && settled.status === "settled") {
+      ctx.game.events.emit("audio.play", { sound: SOUND_IDS.hitImpact, at: settled.at });
+    }
 
     if (hit && settled.status === "settled" && session.rng() < def.weapon.critChance) {
       const first = settled.hits[0];
@@ -118,6 +125,7 @@ const throwGrenade: ItemUseHandler<GameContext> = {
     ctx.time.after(weapon.projectile?.fuseTime ?? 1.2, () => {
       const settled = ctx.scene.entity.settleProjectile(shotId);
       if (settled.status !== "settled") return;
+      ctx.game.events.emit("audio.play", { sound: SOUND_IDS.explosion, at: settled.at });
       ctx.scene.entity.effect({
         from: input.from,
         at: settled.at,
@@ -145,6 +153,7 @@ const useMedkit: ItemUseHandler<GameContext> = {
       return { state: ctx };
     }
     ctx.player.inventory.take("backpack", input.itemId, 1);
+    ctx.game.events.emit("audio.play", { sound: SOUND_IDS.medkit });
     ctx.scene.entity.effect({
       from: input.from,
       to: input.from,
