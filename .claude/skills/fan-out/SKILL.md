@@ -1,13 +1,9 @@
 ---
 name: fan-out
 description: >-
-  Cheap workers do the dumb work. Use on almost every non-trivial turn — whenever
-  you are about to run lint, typecheck, tests, build, preview, screenshot, shoot,
-  Playwright, GitHub PR/issue ceremony, bulk file reads, research sweeps, renames, doc
-  sweeps, or log triage on the frontier model; whenever a task lands in code you
-  haven't mapped and you're about to orient by opening files; whenever another
-  skill says to verify or fan mechanical legs; whenever you catch yourself about
-  to do a mechanical batch inline. Standing authorization — do not ask first.
+  Mechanical work on the frontier model burns 10-50x its cost for the same
+  result. Invoke on any turn with a mechanical leg — verify, ship, scouting,
+  sweeps. Standing authorization, don't ask.
 ---
 
 # Cheap workers do the dumb work
