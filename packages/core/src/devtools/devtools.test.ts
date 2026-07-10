@@ -68,10 +68,58 @@ describe("devtools frame stats", () => {
     expect(stats!.maxSimMs).toBe(30);
     expect(stats!.longFrames).toBe(1);
     expect(stats!.samples).toBe(101);
+    expect(stats!.avgOutsideMs).toBeGreaterThan(0);
   });
 
   test("returns null before any sample", () => {
     expect(createDevtools().frame.stats()).toBeNull();
+  });
+
+  test("profile.measure attributes phases and explains long frames", () => {
+    const dev = createDevtools();
+    dev.probes.register("entities", () => 12);
+    dev.profile.add("onTick", 18);
+    dev.profile.add("pose", 3);
+    dev.frame.record({ frameMs: 40, simMs: 22 });
+    const stats = dev.frame.stats();
+    expect(stats).not.toBeNull();
+    expect(stats!.phases.map((phase) => phase.name)).toContain("onTick");
+    expect(stats!.phases.map((phase) => phase.name)).toContain("pose");
+    expect(stats!.phases[0]!.name).toBe("onTick");
+    const longs = dev.frame.longFrames();
+    expect(longs).toHaveLength(1);
+    expect(longs[0]!.culprit).toBe("onTick");
+    expect(longs[0]!.reason).toContain("onTick");
+    expect(longs[0]!.phases[0]!.name).toBe("onTick");
+    expect(longs[0]!.probes["entities"]).toBe(12);
+    expect(longs[0]!.outsideMs).toBeCloseTo(18, 0);
+  });
+
+  test("outside-sim hitch is diagnosed when sim is light", () => {
+    const dev = createDevtools();
+    dev.profile.add("onTick", 1);
+    dev.frame.record({ frameMs: 50, simMs: 2 });
+    const event = dev.frame.longFrames()[0]!;
+    expect(event.culprit).toBe("outside-sim");
+    expect(event.reason).toContain("outside sim");
+  });
+
+  test("explicit phases override the in-flight profile buffer", () => {
+    const dev = createDevtools();
+    dev.profile.add("stale", 99);
+    dev.frame.record({ frameMs: 40, simMs: 25, phases: { physics: 18, ai: 4 } });
+    const event = dev.frame.longFrames()[0]!;
+    expect(event.culprit).toBe("physics");
+    expect(event.phases.map((phase) => phase.name)).toEqual(["physics", "ai"]);
+    expect(dev.profile.current()).toEqual({});
+  });
+
+  test("clearLongFrames empties the log", () => {
+    const dev = createDevtools();
+    dev.frame.record({ frameMs: 40, simMs: 5 });
+    expect(dev.frame.longFrames()).toHaveLength(1);
+    dev.frame.clearLongFrames();
+    expect(dev.frame.longFrames()).toHaveLength(0);
   });
 });
 
@@ -109,14 +157,17 @@ describe("devtools logs and latency", () => {
 });
 
 describe("devtools snapshot", () => {
-  test("bundles frame, controls, probes, and logs", () => {
+  test("bundles frame, controls, probes, logs, and long frames", () => {
     const dev = createDevtools();
-    dev.frame.record({ frameMs: 16, simMs: 1 });
+    dev.profile.add("onTick", 20);
+    dev.frame.record({ frameMs: 40, simMs: 22 });
     dev.controls.register("x", 1).set(2);
     dev.probes.register("entities", () => 42);
     dev.logs.push("warn", "careful");
     const snapshot = dev.snapshot();
     expect(snapshot.frame?.samples).toBe(1);
+    expect(snapshot.frame?.phases[0]?.name).toBe("onTick");
+    expect(snapshot.longFrames).toHaveLength(1);
     expect(snapshot.controls).toEqual([{ name: "x", kind: "slider", value: 2, initial: 1 }]);
     expect(snapshot.probes["entities"]).toBe(42);
     expect(snapshot.logs[0]!.message).toBe("careful");

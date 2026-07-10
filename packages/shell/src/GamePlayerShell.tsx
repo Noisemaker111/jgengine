@@ -801,17 +801,20 @@ function FrameDriver({
     }
     const simStart = performance.now();
     try {
+    let endPhase = devtools.profile.begin("time+input");
     const dt = Math.min(rawDt, 0.05);
     const gameDt = ctx.time.advance(dt);
     ctx.input.publish(heldActionsFor(tracker, inputActions));
     if (tracker.isDown("turnLeft")) yawRef.current += TURN_SPEED * dt;
     if (tracker.isDown("turnRight")) yawRef.current -= TURN_SPEED * dt;
+    endPhase();
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
     const player = ctx.scene.entity.get(playerId);
     const forwardX = Math.sin(yawRef.current);
     const forwardZ = Math.cos(yawRef.current);
     if (player !== null && drivesPose) {
+      endPhase = devtools.profile.begin("pose");
       const keys = createEmptyMovementKeys();
       keys.w = tracker.isDown("moveForward");
       keys.s = tracker.isDown("moveBack");
@@ -915,18 +918,24 @@ function FrameDriver({
           dt: rawDt,
         });
       }
+      endPhase();
     }
 
     if (autoPickupRadius !== null) {
+      endPhase = devtools.profile.begin("pickup");
       const self = ctx.scene.entity.get(playerId);
       if (self !== null) {
         const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
         if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
       }
+      endPhase();
     }
 
-    playable.loop.onTick(ctx, gameDt);
+    devtools.profile.measure("onTick", () => {
+      playable.loop.onTick(ctx, gameDt);
+    });
 
+    endPhase = devtools.profile.begin("actions");
     if (tracker.wasPressed("tabTarget")) {
       if (ctx.game.commands.has("target.cycle")) ctx.game.commands.run("target.cycle", {});
       else ctx.scene.entity.cycleTarget(playerId, { filter: "hostile" });
@@ -991,9 +1000,11 @@ function FrameDriver({
       }
     }
     tracker.endFrame();
+    endPhase();
 
     const serverId = serverIdRef.current;
     if (multiplayer !== null && serverId !== null) {
+      endPhase = devtools.profile.begin("presence");
       const focus = ctx.scene.entity.get(playerId);
       if (focus !== null) {
         multiplayer.backend.presenceSync.syncPose(serverId, {
@@ -1004,6 +1015,7 @@ function FrameDriver({
           rotationPitch: pitchRef.current,
         });
       }
+      endPhase();
     }
     } catch (error) {
       if (!hasReportedTickError.current) {
@@ -1042,10 +1054,15 @@ function HudOnlyDriver({
       const rawDt = (now - last) / 1000;
       const simStart = performance.now();
       try {
+        let endPhase = devtools.profile.begin("time+input");
         const dt = Math.min(rawDt, 0.05);
         const gameDt = ctx.time.advance(dt);
         ctx.input.publish(heldActionsFor(tracker, inputActions));
-        playable.loop.onTick(ctx, gameDt);
+        endPhase();
+        devtools.profile.measure("onTick", () => {
+          playable.loop.onTick(ctx, gameDt);
+        });
+        endPhase = devtools.profile.begin("actions");
         const nowMs = performance.now();
         for (const action of inputActions) {
           if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
@@ -1053,6 +1070,7 @@ function HudOnlyDriver({
           dispatchBoundAction(ctx, action, 0, 0, { yaw: 0, pitch: 0 });
         }
         tracker.endFrame();
+        endPhase();
       } catch (error) {
         if (!hasReportedTickError.current) {
           hasReportedTickError.current = true;

@@ -209,7 +209,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Falling tile grid | `tactics/fallingGrid` | `createFallingGrid`, `FallingGrid`, `FallingGridConfig`, `FallingGridCell`, `FallingGridSnapshot`, `LockState`, `gravityIntervalMs`, `GravityIntervalConfig` — a generic tile-drop grid (any `TCell` payload), distinct from `puzzle/cellGrid`+`puzzle/fallingPiece`'s row-clear/shape-table pair |
 | Spawn/respawn points | `game/spawnPoints` | `createSpawnPoints`, `SpawnPoints`, `SpawnPointPose`, `RespawnTarget` |
 | Level sequence | `game/levelSequence` | `createLevelSequence`, `LevelSequence`, `LevelSequenceConfig`, `LevelDescriptor`, `CurrentLevel`, `LevelSequenceStatus`, `LevelSequenceProgress` |
-| Devtools overlay + tunables | `devtools/devtools` | `devtools`, `createDevtools`, `tunable`, `snapshotDevtools`, `instrumentLatency`, `Tunable`, `TunableOptions`, `TunableAccessor`, `DevtoolsControl`, `DiscoveredEntry`, `DevtoolsOverrides`, `DevtoolsSnapshot` |
+| Devtools overlay + tunables | `devtools/devtools` | `devtools`, `createDevtools`, `tunable`, `snapshotDevtools`, `measureProfile`, `instrumentLatency`, `LONG_FRAME_MS`, `Tunable`, `TunableOptions`, `TunableAccessor`, `DevtoolsControl`, `DiscoveredEntry`, `DevtoolsOverrides`, `DevtoolsSnapshot`, `FrameStats`, `PhaseStats`, `LongFrameEvent` |
 | Tunable auto-discovery | `devtools/transformTunables` | `transformTunableExports`, `tunableModuleTable`, `tunableDiscoveryPlugin`, `TunableTransformResult` |
 
 ## Getting started (new project)
@@ -1116,11 +1116,25 @@ The React layer — `GameProvider`, the hooks table, headless className-passthro
 
 | Tab | Shows |
 |-----|-------|
-| Perf | fps, frame/sim ms, draw calls, triangles, entity/object counts, state notifies/s, registered probes |
+| Perf | fps, frame/sim/outside ms, frame-budget split (sim vs render/browser), **named sim phases** (avg/max/%), **long-frame log with culprit + reason**, draw calls, triangles, entity/object counts, state notifies/s, probes, and a live "Why slow" diagnosis |
 | Tune | every discovered tunable — filterable checklist grouped by source file or table export name; check one to control it live |
 | Logs | captured `console.log`/`info`/`warn`/`error` |
 | Net | observed backend round-trip latency (fed by `instrumentLatency`) |
 | Keys | the game's `ActionCodesMap` bindings |
+
+**Perf attribution.** The shell times each sim-driver phase (`time+input`, `pose`, `pickup`, `onTick`, `actions`, `presence`) via `devtools.profile`. Every frame over `LONG_FRAME_MS` (33.4) is stored with ranked phase ms, `outsideMs` (frame − sim = render/React/GPU/GC/missed vsync), a `culprit` id, a human `reason`, plus probes + the latest render sample — so a hitch answers *why*, not just *that* it happened. Games add their own spans inside `onTick`:
+
+```ts
+import { measureProfile } from "@jgengine/core/devtools/devtools";
+// or: devtools.profile.measure("physics", () => world.step(dt));
+
+export function onTick(ctx: GameContext, dt: number) {
+  measureProfile("physics", () => world.step(dt));
+  measureProfile("ai", () => director.tick(dt));
+}
+```
+
+`devtools.profile.begin("name")` returns an end handle for larger blocks; `add(name, ms)` records a pre-measured duration. Phase averages land on `frame.stats().phases`; long frames on `frame.longFrames()` / `snapshot().longFrames`.
 
 **Tunables are zero-annotation.** Write plain code under `Games/<id>/src/**` — no import, no wrapper — and it's discoverable:
 
@@ -1182,7 +1196,7 @@ const gravity = tunable("physics/gravity", -22, { min: -60, max: 0 });
 
 Read `gravity.value` at use time (or `gravity.subscribe(listener)`) — never destructure once at module load. A `"group/label"` name (e.g. `"physics/gravity"`) groups the control under `group` in the Tune tab; `devtools.controls.register` is the same call underneath. Real example: `Games/voxel-mine/src/loop.ts` — `tunable("mining/reach", REACH, { min: 2, max: 16, step: 1 })`, read via a getter passed to `createEditorHandlers`.
 
-**Agent loop.** The overlay's "Copy report" button copies a JSON `DevtoolsSnapshot`; from a browser session an agent can instead call `window.__JG_DEVTOOLS.snapshot()` directly (or `snapshotDevtools()` from game code) for the same shape — frame stats, render sample, latency stats, captured logs, probe values, every registered control's current + initial value, and a `discovered` array (`id`, `kind`, `value`, `enabled`) covering every auto-discovered tunable whether or not it's enabled — a single call to check "is this actually working" without a screenshot. `window.__JG_DEVTOOLS.discover` is exposed directly too (`list`/`enable`/`disable`/`bind`/`scanTable`/`scanModule`/`clear`) so an agent can flip a discovered tunable on and read/write it from the console without touching the UI.
+**Agent loop.** The overlay's "Copy report" button copies a JSON `DevtoolsSnapshot`; from a browser session an agent can instead call `window.__JG_DEVTOOLS.snapshot()` directly (or `snapshotDevtools()` from game code) for the same shape — frame stats (incl. `phases[]` with avg/max/% of sim), `longFrames[]` (culprit + reason + per-phase ms + probes at hitch time), render sample, latency stats, captured logs, probe values, every registered control's current + initial value, and a `discovered` array (`id`, `kind`, `value`, `enabled`) covering every auto-discovered tunable whether or not it's enabled — a single call to check "is this actually working" and **why frames hitch** without a screenshot. `window.__JG_DEVTOOLS.discover` is exposed directly too (`list`/`enable`/`disable`/`bind`/`scanTable`/`scanModule`/`clear`) so an agent can flip a discovered tunable on and read/write it from the console without touching the UI.
 
 `devtools.probes.register("name", () => value)` (`@jgengine/core/devtools/devtools`) surfaces a game-specific gauge (entity count, queue depth, whatever) in both the Perf tab and the snapshot; call the returned unregister function to remove it.
 
@@ -1303,7 +1317,7 @@ game.chat          send / whisper / history / register — global/party/proximit
 game.roster        capture / release / list / setEquipped — persisted owned-creature roster
 game.store/cards/turn   store: keyed reactive slot; cards.pile(id): lazy CardPile; turn.loop(id): lazy TurnLoop
 game.events/feed/leaderboard   on / bind+push+recent / track+increment+getTop
-devtools           F2 overlay (Perf/Tune/Logs/Net/Keys); zero-annotation — top-level export const scalars (literal or derived) + exported tables (nested objects/arrays included) auto-discover into Tune, plus the playable's physics/camera/movement/world config and engine MOVEMENT_TUNING defaults; tunable() is the optional low-level escape hatch; snapshotDevtools()/window.__JG_DEVTOOLS.snapshot() → DevtoolsSnapshot (+ discovered[]); probes.register(name, read) adds a Perf gauge
+devtools           F2 overlay (Perf/Tune/Logs/Net/Keys); Perf = fps + phase breakdown + long-frame culprit/reason log + sim-vs-outside budget; profile.measure/begin/add names spans inside onTick; snapshot().longFrames + frame.phases for agents; zero-annotation tunables into Tune; tunable()/probes.register escape hatches
 applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
 player.motion      impulse / setVerticalVelocity / setY — vertical-motion seam into the shell's frame driver
