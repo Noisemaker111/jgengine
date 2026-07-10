@@ -1,8 +1,11 @@
+import { useDisplayProfile } from "@jgengine/react/display";
+
 import type { SessionSnapshot } from "../../race/session";
 import { KeybindBadge } from "./KeybindBadge";
 import { formatRaceTime, PALETTE } from "./theme";
 
 export function ResultsScreen({ snapshot, onRestart }: { snapshot: SessionSnapshot; onRestart: () => void }) {
+  const { coarsePointer } = useDisplayProfile();
   const won = snapshot.outcome === "win";
   const accent = won ? PALETTE.skyTeal : PALETTE.windsockOrange;
   const headline = won ? "FIRST THROUGH THE FINAL RING" : snapshot.playerFinished ? "THE PACER HELD THE CORE" : "COURSE CLOSED — TIME EXPIRED";
@@ -12,7 +15,10 @@ export function ResultsScreen({ snapshot, onRestart }: { snapshot: SessionSnapsh
   return (
     <div
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-7 px-6 text-center"
-      style={{ background: `radial-gradient(circle at center, ${accent}22, #0d1b1c 78%)` }}
+      style={{
+        background: `radial-gradient(circle at center, ${accent}22, #0d1b1c 78%)`,
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + var(--jg-hud-dock-clearance, 0px))",
+      }}
     >
       <div className="flex flex-col items-center gap-1">
         <span className="text-xs font-bold uppercase tracking-[0.5em]" style={{ color: accent }}>
@@ -63,7 +69,7 @@ export function ResultsScreen({ snapshot, onRestart }: { snapshot: SessionSnapsh
         }}
       >
         Fly Again
-        <KeybindBadge action="restart" />
+        {coarsePointer ? null : <KeybindBadge action="restart" />}
       </button>
     </div>
   );

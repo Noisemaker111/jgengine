@@ -1,3 +1,5 @@
+import { useDisplayProfile } from "@jgengine/react/display";
+
 import type { SessionSnapshot } from "../../race/session";
 import { KeybindBadge } from "./KeybindBadge";
 import { formatRaceTime, PALETTE } from "./theme";
@@ -14,10 +16,14 @@ const CONTROLS: readonly { action: string; label: string }[] = [
 ];
 
 export function StartScreen({ snapshot, onStart }: { snapshot: SessionSnapshot; onStart: () => void }) {
+  const { coarsePointer } = useDisplayProfile();
   return (
     <div
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-7 px-6 text-center"
-      style={{ background: `radial-gradient(circle at center, ${PALETTE.skyTeal}22, #0d1b1c 78%)` }}
+      style={{
+        background: `radial-gradient(circle at center, ${PALETTE.skyTeal}22, #0d1b1c 78%)`,
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + var(--jg-hud-dock-clearance, 0px))",
+      }}
     >
       <div className="flex flex-col items-center gap-2">
         <span className="text-xs font-bold uppercase tracking-[0.5em]" style={{ color: PALETTE.skyTeal }}>
@@ -42,22 +48,30 @@ export function StartScreen({ snapshot, onStart }: { snapshot: SessionSnapshot; 
         )}
       </div>
 
-      <div
-        className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border px-6 py-5 sm:grid-cols-4"
-        style={{ borderColor: `${PALETTE.citySlate}55`, backgroundColor: "#0f1d1e" }}
-      >
-        {CONTROLS.map((control) => (
-          <div key={control.action} className="flex items-center gap-2">
-            <KeybindBadge action={control.action} />
-            <span className="text-xs" style={{ color: `${PALETTE.cloudWhite}cc` }}>
-              {control.label}
-            </span>
+      {coarsePointer ? (
+        <p className="text-[11px] uppercase tracking-[0.3em]" style={{ color: `${PALETTE.cloudWhite}66` }}>
+          Stick steers · Thrust and Airbrake on the right
+        </p>
+      ) : (
+        <>
+          <div
+            className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border px-6 py-5 sm:grid-cols-4"
+            style={{ borderColor: `${PALETTE.citySlate}55`, backgroundColor: "#0f1d1e" }}
+          >
+            {CONTROLS.map((control) => (
+              <div key={control.action} className="flex items-center gap-2">
+                <KeybindBadge action={control.action} />
+                <span className="text-xs" style={{ color: `${PALETTE.cloudWhite}cc` }}>
+                  {control.label}
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <p className="text-[11px] uppercase tracking-[0.3em]" style={{ color: `${PALETTE.cloudWhite}66` }}>
-        Mouse also steers pitch &amp; yaw
-      </p>
+          <p className="text-[11px] uppercase tracking-[0.3em]" style={{ color: `${PALETTE.cloudWhite}66` }}>
+            Mouse also steers pitch &amp; yaw
+          </p>
+        </>
+      )}
 
       <button
         type="button"
@@ -74,7 +88,7 @@ export function StartScreen({ snapshot, onStart }: { snapshot: SessionSnapshot; 
         }}
       >
         Cleared for Departure
-        <KeybindBadge action="start" />
+        {coarsePointer ? null : <KeybindBadge action="start" />}
       </button>
     </div>
   );
