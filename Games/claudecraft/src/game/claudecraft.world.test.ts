@@ -20,10 +20,10 @@ describe("claudecraft world", () => {
     expect((summary.terrain?.height.max ?? 0) - (summary.terrain?.height.min ?? 0)).toBeGreaterThan(3);
   });
 
-  test("hub settlements plus the crypt cluster stand as structures", () => {
-    expect(summary.counts.structureGroups).toBe(4);
+  test("hub settlements, the crypt, and five dungeon compounds stand as structures", () => {
+    expect(summary.counts.structureGroups).toBe(9);
     const buildingTotal = summary.structures.reduce((sum, entry) => sum + entry.buildings, 0);
-    expect(buildingTotal).toBeGreaterThanOrEqual(24);
+    expect(buildingTotal).toBeGreaterThanOrEqual(44);
   });
 
   test("rain sits over the marsh and snow over the peaks", () => {
