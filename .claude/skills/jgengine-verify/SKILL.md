@@ -11,8 +11,8 @@ A JGengine scene is derived deterministically from an `environment()` descriptor
 
 1. **`bun run check-types`** — the change compiles across the affected packages. Type-green says nothing about whether the scene has content; it is necessary, not sufficient.
 2. **`bun test packages`** — pure game math (curves, cooldowns, spawn logic) and world content. This is where scene correctness is proven:
-   - For any game with an `environment()` world, a co-located `<game>.world.test.ts` calls `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) and asserts the counts. `summarizeEnvironment` resolves the descriptor through the same core world-gen the renderer runs — building counts + part geometry + union bounds, terrain height stats (`min`/`max`/`mean`/`finite`), and water/vegetation/weather presence — plus an `isEmpty` flag.
-   - This catches the entire "the game looks broken" class deterministically: empty scene (`isEmpty`), wrong building count, dropped feature, flat or `NaN` terrain (`height.finite === false`, or `max === min` when relief was expected).
+   - For any game with an `environment()` world, a co-located `<game>.world.test.ts` calls `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) and asserts the counts. `summarizeEnvironment` resolves the descriptor through the same core world-gen the renderer runs — building counts + part geometry + union bounds, terrain height stats (`min`/`max`/`mean`/`finite`) plus the resolved terrain `palette` (low/high/waterline), and water/vegetation/weather presence plus each structure group's resolved `style` + `palette` — plus an `isEmpty` flag.
+   - This catches the entire "the game looks broken" class deterministically: empty scene (`isEmpty`), wrong building count, dropped feature, flat or `NaN` terrain (`height.finite === false`, or `max === min` when relief was expected), or a game left on the engine's untouched look (`terrain.palette`/`structures[].palette` still matching the default `material: "grass"` / `style: "generic"` instead of this game's own choice) — the identical-worlds bug the `material`/`style` unions exist to prevent.
 3. **`bun run shoot <game> --mode ui`** (HUD) / **`--mode play`** (full scene) — **only** for what the tests above cannot assert: the *look*. This is a final human glance you take once and open the PNG to judge (per `jgengine-api`'s UI quality bar). It is not the loop you iterate against. The HUD is responsive (`HudCanvas`/`HudPanel` scale, chip, and re-flow on phone-scale displays), so the glance includes a **mobile** shot alongside the desktop one — `bun run shoot <game> --device mobile --mode play` (and `--mode ui` where the HUD is the point) — confirming chips/hides land and nothing overflows a 390px viewport. `--device both` (desktop 1600×900 + mobile 390×844 PNGs) does both in one run; default is desktop. Implementation: system Chrome + raw CDP; page sets `data-jg-capture=ready` (tiny handshake, no PNG/base64 in-page); host `Page.captureScreenshot` writes binary to `shots/`. Optional **`--connect <port>`** attaches to an already-running Chrome with remote debugging.
 
 ## The screenshot rules — this is the friction this skill exists to kill
@@ -39,6 +39,10 @@ describe("<game> world", () => {
   test("has the expected content", () => {
     expect(summary.counts.buildings).toBe(6);
     expect(summary.terrain?.height.finite).toBe(true);
+  });
+  test("uses this game's own look, not the engine defaults", () => {
+    expect(summary.terrain?.palette.low).not.toBe("#30402c"); // untouched "grass" default
+    expect(summary.structures[0]?.palette.wall).not.toBe("#83766a"); // untouched "generic" default
   });
 });
 ```
