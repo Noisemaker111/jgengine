@@ -10,4 +10,6 @@ export const keybinds: ActionCodesMap = {
   toolCulture: ["Digit4"],
   toolMixed: ["Digit5"],
   toolPlaza: ["Digit6"],
+  undo: ["KeyZ"],
+  redo: ["KeyY"],
 };

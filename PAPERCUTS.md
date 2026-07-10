@@ -115,3 +115,7 @@ fixing minimap rotation → MinimapView.rotate's JSDoc said 'pass the facing bea
 2026-07-10T15:35:48.981Z — fable-5 — Claude
 
 Phase 2 verify → root check-types validates against packages/*/dist without rebuilding; a stale dist (pre-pull main + new core event) produced 20+ phantom errors in shell/cartridge/registry — check-types should depend on build or check against src
+
+2026-07-10T15:50:24.278Z — fable-5 — Claude
+
+resetting session branch onto origin/main → stop-hook flags GitHub's own squash commits (noreply@github.com) as unverified-and-unpushed, demanding a rebase that would diverge from main
