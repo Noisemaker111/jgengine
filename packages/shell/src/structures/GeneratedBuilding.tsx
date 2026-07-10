@@ -1,4 +1,5 @@
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import * as THREE from "three";
 
 export type BuildingFacade = "front" | "back" | "left" | "right" | "roof";
 export type BuildingPartKind =
@@ -60,6 +61,17 @@ export interface GeneratedBuildingProps {
   visibleKinds?: readonly BuildingPartKind[];
 }
 
+export interface InstancedBuildingPlacement {
+  building: GeneratedBuildingData;
+  position?: readonly [number, number, number];
+}
+
+export interface InstancedBuildingsProps {
+  buildings: readonly InstancedBuildingPlacement[];
+  palette?: BuildingMaterialPalette;
+  visibleKinds?: readonly BuildingPartKind[];
+}
+
 const DEFAULT_PALETTE: Required<BuildingMaterialPalette> = {
   wall: "#83766a",
   window: "#8ecae6",
@@ -108,6 +120,113 @@ function materialFor(part: BuildingPartPlacement, palette: BuildingMaterialPalet
   return <meshStandardMaterial color={color} roughness={0.88} metalness={0} />;
 }
 
+function batchMaterialFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): THREE.Material {
+  const color = colorFor(kind, palette);
+  if (kind === "window" || kind === "storefront") {
+    return new THREE.MeshPhysicalMaterial({ color, roughness: 0.12, metalness: 0, transparent: true, opacity: 0.56 });
+  }
+  if (kind === "storeSign") {
+    return new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6, roughness: 0.5 });
+  }
+  if (kind === "roofProp") {
+    return new THREE.MeshStandardMaterial({ color, roughness: 0.65, metalness: 0.1 });
+  }
+  return new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0 });
+}
+
+const CLOTHESLINE_ROW_OFFSETS = [-0.09, 0.09] as const;
+
+function bucketPartMatrices(
+  buildings: readonly InstancedBuildingPlacement[],
+  visible: ReadonlySet<BuildingPartKind> | null,
+): Map<BuildingPartKind, THREE.Matrix4[]> {
+  const dummy = new THREE.Object3D();
+  const buckets = new Map<BuildingPartKind, THREE.Matrix4[]>();
+  for (const placement of buildings) {
+    const [ox, oy, oz] = placement.position ?? [0, 0, 0];
+    for (const part of placement.building.parts) {
+      if (visible !== null && !visible.has(part.kind)) continue;
+      const [nx, nz] = normalFor(part.facade);
+      const offset = outwardOffset(part);
+      const px = ox + part.position[0] + nx * offset;
+      const py = oy + part.position[1];
+      const pz = oz + part.position[2] + nz * offset;
+      let bucket = buckets.get(part.kind);
+      if (bucket === undefined) {
+        bucket = [];
+        buckets.set(part.kind, bucket);
+      }
+      if (part.kind === "clothesline") {
+        const sin = Math.sin(part.rotationY);
+        const cos = Math.cos(part.rotationY);
+        for (const row of CLOTHESLINE_ROW_OFFSETS) {
+          dummy.position.set(px + row * sin, py, pz + row * cos);
+          dummy.rotation.set(0, part.rotationY, 0);
+          dummy.scale.set(part.scale[0], Math.max(part.scale[1], 0.025), 0.025);
+          dummy.updateMatrix();
+          bucket.push(dummy.matrix.clone());
+        }
+        continue;
+      }
+      dummy.position.set(px, py, pz);
+      dummy.rotation.set(0, part.rotationY, 0);
+      dummy.scale.set(part.scale[0], part.scale[1], part.scale[2]);
+      dummy.updateMatrix();
+      bucket.push(dummy.matrix.clone());
+    }
+  }
+  return buckets;
+}
+
+function BuildingKindBatch({
+  kind,
+  matrices,
+  palette,
+  geometry,
+}: {
+  kind: BuildingPartKind;
+  matrices: readonly THREE.Matrix4[];
+  palette?: BuildingMaterialPalette;
+  geometry: THREE.BoxGeometry;
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const material = useMemo(() => batchMaterialFor(kind, palette), [kind, palette]);
+  useEffect(() => () => material.dispose(), [material]);
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (mesh === null) return;
+    matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [matrices, material]);
+  return (
+    <instancedMesh
+      key={matrices.length}
+      ref={meshRef}
+      args={[geometry, material, matrices.length]}
+      castShadow
+      receiveShadow
+    />
+  );
+}
+
+export function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps) {
+  const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  const buckets = useMemo(() => {
+    const visible = visibleKinds === undefined ? null : new Set<BuildingPartKind>(visibleKinds);
+    return bucketPartMatrices(buildings, visible);
+  }, [buildings, visibleKinds]);
+  if (buckets.size === 0) return null;
+  return (
+    <group>
+      {[...buckets.entries()].map(([kind, matrices]) => (
+        <BuildingKindBatch key={kind} kind={kind} matrices={matrices} palette={palette} geometry={geometry} />
+      ))}
+    </group>
+  );
+}
+
 function BlockMesh({ part, palette }: BuildingBlockProps) {
   const [nx, nz] = normalFor(part.facade);
   const offset = outwardOffset(part);
@@ -150,18 +269,29 @@ export function BuildingBlock({ part, palette }: BuildingBlockProps) {
 }
 
 export function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps) {
-  const visible = useMemo(
-    () => (visibleKinds === undefined ? null : new Set<BuildingPartKind>(visibleKinds)),
-    [visibleKinds],
-  );
+  const { kitParts, batched } = useMemo(() => {
+    const visible = visibleKinds === undefined ? null : new Set<BuildingPartKind>(visibleKinds);
+    const kitRendered: { id: string; node: ReactNode }[] = [];
+    const batchedParts: BuildingPartPlacement[] = [];
+    for (const part of building.parts) {
+      if (visible !== null && !visible.has(part.kind)) continue;
+      const rendered = kit?.renderPart?.(part);
+      if (rendered !== undefined) {
+        kitRendered.push({ id: part.id, node: rendered });
+        continue;
+      }
+      batchedParts.push(part);
+    }
+    const placements: InstancedBuildingPlacement[] =
+      batchedParts.length === 0 ? [] : [{ building: { id: building.id, parts: batchedParts } }];
+    return { kitParts: kitRendered, batched: placements };
+  }, [building, kit, visibleKinds]);
   return (
     <group name={building.id}>
-      {building.parts.map((part) => {
-        if (visible !== null && !visible.has(part.kind)) return null;
-        const rendered = kit?.renderPart?.(part);
-        if (rendered !== undefined) return <group key={part.id}>{rendered}</group>;
-        return <BuildingBlock key={part.id} part={part} palette={palette} />;
-      })}
+      {kitParts.map((entry) => (
+        <group key={entry.id}>{entry.node}</group>
+      ))}
+      <InstancedBuildings buildings={batched} palette={palette} />
     </group>
   );
 }
