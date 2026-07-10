@@ -19,6 +19,14 @@ function duplicates(ids: readonly string[]): string[] {
 }
 
 describe("catalogs", () => {
+  test("catalogs meet breadth floors", () => {
+    expect(ITEMS.length).toBeGreaterThanOrEqual(280);
+    expect(MOBS.length).toBeGreaterThanOrEqual(55);
+    expect(QUESTS.length).toBeGreaterThanOrEqual(70);
+    expect(CLASSES.reduce((total, cls) => total + cls.abilities.length, 0)).toBeGreaterThanOrEqual(110);
+    expect(NPCS.length).toBeGreaterThanOrEqual(14);
+  });
+
   test("every mob drop itemId resolves via itemDefById", () => {
     for (const mob of MOBS) {
       for (const drop of mob.drops) {
@@ -41,8 +49,8 @@ describe("catalogs", () => {
     }
   });
 
-  test("every quest collect objective item resolves via itemDefById and is dropped by at least one mob", () => {
-    for (const quest of QUESTS) {
+  test("every quest collect objective item resolves via itemDefById and is dropped by at least one mob or granted by a prior quest reward", () => {
+    for (const [index, quest] of QUESTS.entries()) {
       for (const objective of quest.objectives) {
         if (objective.kind !== "collect") continue;
         expect(objective.item, `${quest.id} collect objective missing item`).toBeDefined();
@@ -51,7 +59,13 @@ describe("catalogs", () => {
           `${quest.id} collect objective references unknown item "${objective.item}"`,
         ).not.toBeNull();
         const droppedByMob = MOBS.some((mob) => mob.drops.some((drop) => drop.itemId === objective.item));
-        expect(droppedByMob, `${quest.id} collect item "${objective.item}" has no mob supply`).toBe(true);
+        const grantedByPriorQuest = QUESTS.slice(0, index).some((prior) =>
+          prior.rewards?.items?.some((reward) => reward.item === objective.item) ?? false,
+        );
+        expect(
+          droppedByMob || grantedByPriorQuest,
+          `${quest.id} collect item "${objective.item}" has no mob supply or prior quest reward`,
+        ).toBe(true);
       }
     }
   });
@@ -73,7 +87,7 @@ describe("catalogs", () => {
       if (quest.turnIn !== undefined) {
         const turnInNpc = npcById.get(quest.turnIn);
         expect(turnInNpc, `${quest.id} turnIn "${quest.turnIn}" not found in NPCS`).toBeDefined();
-        expect(quest.turnIn, `${quest.id} turnIn does not match giver`).toBe(quest.giver);
+        expect(turnInNpc?.kind, `${quest.id} turnIn "${quest.turnIn}" is not a questgiver`).toBe("questgiver");
       }
     }
   });

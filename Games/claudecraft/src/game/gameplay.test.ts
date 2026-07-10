@@ -59,8 +59,8 @@ describe("claudecraft gameplay (headless)", () => {
     expect(health?.current).toBe(health?.max);
     expect(ctx.game.economy.balance(USER, COPPER)).toBe(40);
     expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(5);
-    const equips = ctx.game.store.get(`equip:${USER}`) as { mainHand?: string };
-    expect(equips.mainHand).toBeDefined();
+    const equips = ctx.game.store.get(`equip:${USER}`) as { mainhand?: string };
+    expect(equips.mainhand).toBeDefined();
     expect(ctx.game.commands.run("class.select", { classId: "mage" }).status).toBe("rejected");
   });
 
