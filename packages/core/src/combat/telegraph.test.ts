@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  hazardCycleAt,
+  nextHazardActiveAt,
   pointInTelegraph,
   telegraphFired,
   telegraphFiredAtTurn,
@@ -92,5 +94,29 @@ describe("turn-scoped telegraph", () => {
   test("real-time windupMs API is untouched by the turn-scoped variant", () => {
     expect(telegraphProgress(1000, 0, 500)).toBeCloseTo(0.5);
     expect(telegraphFired(1000, 0, 1000)).toBe(true);
+  });
+
+  test("hazardCycleAt walks windup, active, cooldown deterministically and loops", () => {
+    const vent = { windupMs: 1000, activeMs: 500, cooldownMs: 1500 };
+    expect(hazardCycleAt(vent, 0)).toEqual({ phase: "windup", fraction: 0, remainingMs: 1000, cycleIndex: 0 });
+    expect(hazardCycleAt(vent, 500).fraction).toBeCloseTo(0.5, 5);
+    expect(hazardCycleAt(vent, 1200).phase).toBe("active");
+    expect(hazardCycleAt(vent, 1200).remainingMs).toBe(300);
+    expect(hazardCycleAt(vent, 2000).phase).toBe("cooldown");
+    const nextCycle = hazardCycleAt(vent, 3200);
+    expect(nextCycle.phase).toBe("windup");
+    expect(nextCycle.cycleIndex).toBe(1);
+  });
+
+  test("hazard offset staggers identical vents", () => {
+    const vent = { windupMs: 1000, activeMs: 1000, offsetMs: 1000 };
+    expect(hazardCycleAt(vent, 0).phase).toBe("active");
+  });
+
+  test("nextHazardActiveAt is the countdown seam from any phase", () => {
+    const vent = { windupMs: 1000, activeMs: 500, cooldownMs: 1500 };
+    expect(nextHazardActiveAt(vent, 400)).toBe(1000);
+    expect(nextHazardActiveAt(vent, 1200)).toBe(1200 + 300 + 1500 + 1000);
+    expect(nextHazardActiveAt(vent, 2000)).toBe(2000 + 1000 + 1000);
   });
 });

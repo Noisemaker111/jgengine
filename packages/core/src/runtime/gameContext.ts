@@ -780,11 +780,12 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     };
     if (input.dir !== undefined) telegraphEvent.dir = input.dir;
     events.emit("combat.telegraph", telegraphEvent);
+    const cancelVisual = () => events.emit("combat.telegraphCancelled", { id });
     const bound = input.effect;
-    if (bound === undefined) return () => {};
+    if (bound === undefined) return cancelVisual;
     const config: TelegraphConfig = { shape: input.shape, at: input.at, windupMs: input.windupMs };
     if (input.dir !== undefined) config.dir = input.dir;
-    return time.after(input.windupMs / 1000, () => {
+    const cancelEffect = time.after(input.windupMs / 1000, () => {
       const targets = entities.list().filter((entity) => pointInTelegraph(config, entity.position));
       for (const target of targets) {
         applyEffectAndFloat({
@@ -795,6 +796,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         });
       }
     });
+    return () => {
+      cancelEffect();
+      cancelVisual();
+    };
   }
 
   function applyHitReaction(input: HitReactionInput): HitReaction | null {
