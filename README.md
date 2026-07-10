@@ -66,6 +66,8 @@ bun dev              # jgengine.com locally, games playable at /play/?game=<id>
 bun run games:<id>   # one game standalone, e.g. bun run games:voxel-mine
 ```
 
+Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.
+
 ## Credits
 
 JGengine's procedural buildings, water, rain, and snow renderers were shaped
