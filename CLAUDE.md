@@ -50,7 +50,18 @@ Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · scre
 
 **Hard rule:** never run the verify ladder, shoot, or GitHub ceremony on the frontier model — spawn a cheap worker. Standing authorization; do not ask first. Announce on a 🤖 line. Research only novel seams; scaffolding already in skills is not research.
 
-**Worker model is Sonnet, always — never Opus.** Pass `model: "sonnet"` explicitly on every worker `Agent`/`Task` call; without it the worker inherits the session model, which is how CI triage and typecheck re-runs have silently landed on Opus 4.8. Opus buys nothing on mechanical legs — a well-written prompt on Sonnet does the same job — so no session, Fable included, spawns an Opus worker. Seeing "Opus" on a worker running typecheck, tests, screenshots, CI/Vercel triage, or GitHub ceremony is a bug: fix the call.
+**Pick the model by the intelligence the leg needs — and set it explicitly.** Omitting `model` makes the worker inherit the session model, which is how CI triage and typecheck re-runs have silently landed on Opus 4.8. Sonnet is the default worker; escalate a leg only when it genuinely needs more brain, and never let a mechanical leg inherit a frontier model.
+
+| Model | Character | Cost | Reach for it when |
+| --- | --- | --- | --- |
+| Fable 5 | Smartest and most creative; writes the best code | Very expensive | Orchestration, engine design, the rare leg nothing else can carry |
+| Opus 4.8 | Smart, reads intent well, codes well, can be creative | Medium | A leg needs real judgment or user-facing nuance beyond a workhorse |
+| Sonnet 5 | Nearly Opus-smart *given a well-written prompt*; the serious workhorse for streamlined, well-scoped, not-long tasks; weakest coder of the three above | Affordable — but grinding a too-hard task can cost Fable money; escalate instead of letting it churn | The default for every mechanical leg |
+| Haiku 4.5 | Not smart; never trust it with code | Near-free | Running scripts and fixed processes where the worker just executes |
+
+**Write worker prompts like a brief, not a script.** Give the goal, the context the worker can't discover itself, and the exact return shape — then stop. Never tell a worker which tools to call, paste in boilerplate footers or session links, or pad the prompt with contingency instructions it can figure out on its own. And don't delegate at all when the task is a couple of quick calls — if writing the prompt costs more than doing the work, do it inline.
+
+**Exchanges stay tight in both directions.** A worker gets one well-packed prompt and returns a judged, compact result — never essays round-tripped. The same discipline applies upward: a Sonnet session consults its Fable advisor with one good-sized prompt for implementation guidance, not paragraphs of story shuttled back and forth. Everyone in the fan-out is a worker; write like one.
 
 ## Verification
 
@@ -58,7 +69,7 @@ Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · scre
 
 ## Delegation
 
-Plan big, execute small — always. Same policy as user-global `~/.claude/CLAUDE.md` and the **`fan-out`** skill. Fable/frontier orchestrates; Sonnet workers (explicit `model: "sonnet"`, never Opus, never inherited) execute mechanical legs in parallel. Sessions on smaller models consult a Fable advisor once before non-obvious approaches. Trivial single-file work stays solo. Converting other agent setups: `convert-to-fanout` skill.
+Plan big, execute small — always. Same policy as user-global `~/.claude/CLAUDE.md` and the **`fan-out`** skill. The orchestrating model plans and judges; workers execute mechanical legs in parallel on the cheapest tier that fits (see the model table above — Sonnet by default, explicit `model`, never inherited). Sessions on smaller models consult a Fable advisor once before non-obvious approaches — one tight prompt, not a correspondence. Trivial single-file work stays solo. Converting other agent setups: `convert-to-fanout` skill.
 
 ## Communication
 

@@ -12,9 +12,13 @@ description: >-
 # Cheap workers do the dumb work
 
 Frontier model: plan, design, judge, synthesize.  
-Cheap worker (Sonnet): every mechanical leg below.
+Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
-**Pin the model on every worker call: `model: "sonnet"`.** Omitting it makes the worker inherit the session model — that is how typecheck re-runs and CI triage have ended up on Opus 4.8. Opus is never a worker model; even a Fable session gets identical results from Sonnet with a good prompt. If a worker shows up as Opus, the spawn call is wrong.
+**Set `model` explicitly on every worker call — Sonnet by default.** Omitting it makes the worker inherit the session model; that is how typecheck re-runs and CI triage have ended up on Opus 4.8. Match tier to the leg (full table in `CLAUDE.md` → Cheap workers): Haiku for pure script/process execution, Sonnet for everything mechanical, and escalate to Opus/Fable only when a leg truly needs the judgment — a Sonnet grinding a too-hard task burns frontier money without frontier results.
+
+**Prompts are briefs, not scripts.** Goal, non-discoverable context, exact return shape — nothing else. Never dictate which tools the worker uses, never paste boilerplate footers or session links into its deliverables, never pad with contingencies it can work out itself. Exchanges are tight both ways: one packed prompt out, one compact judged result back.
+
+**Don't delegate the trivial.** If the leg is a couple of quick calls or the prompt would outweigh the work, do it inline — spawning a worker has a cost too.
 
 ## Always fan these — never run them on the frontier model
 
