@@ -45,10 +45,25 @@ jobs:
       - run: bun run build
       - run: bun test packages Games
 
+  web-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd apps/web build
+
   ci:
-    needs: [checks, test]
+    needs: [checks, test, web-build]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - run: |
-          test "${{ needs.checks.result }}" = "success" && test "${{ needs.test.result }}" = "success"
+          test "${{ needs.checks.result }}" = "success" && test "${{ needs.test.result }}" = "success" && test "${{ needs.web-build.result }}" = "success"
