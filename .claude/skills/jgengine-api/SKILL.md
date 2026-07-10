@@ -65,6 +65,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Name generator | `random/nameGen` | `createNameGenerator`, `pickFrom`, `fillTemplate`, `NameGenerator`, `NameGeneratorOptions`, `SyllableBank` |
 | Regions | `world/regions` | `createRegionField`, `isRegionField`, `RegionDef`, `RegionField`, `RegionSample` |
 | Wind field | `world/wind` | `windField`, `WindField`, `WindFieldConfig`, `WindVector` |
+| Wind zones | `world/windZones` | `createWindZones`, `WindZones`, `WindZoneConfig`, `WindZoneState`, `WindShiftForecast` — named discrete zones over an ambient field, each on a deterministic state schedule; `forecastShift` drives "gale in 12s" countdowns |
 | Water surface | `world/water` | `waterSurface`, `waterSurfaceFromDescriptor`, `synthesizeWaves`, `WaterSurface`, `GerstnerWave` |
 | Scatter | `world/scatter` | `scatter`, `scatterAabb`, `ScatterConfig`, `ScatterPoint` |
 | Content scatter | `world/scatterItems` | `scatterItems`, `pickWeighted`, `ScatterLayer`, `ScatterInstance` |
@@ -125,7 +126,10 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Touch controls | `input/touchScheme` | `deriveTouchScheme`, `touchCode`, `touchActionLabel`, `touchButtonKind`, `withTouchCodes`, `TouchControlsConfig`, `TouchGestureBindings`, `TouchDragBinding`, `TouchButtonSpec`, `TouchButtonKind`, `TouchScheme`, `TouchJoystick`, `TouchButton` |
 | Pointer hit | `input/pointer` | `PointerHit`, `PointerButton`, `aimToPoint`, `moveTargetFromHit`, `groundOf`, `PointerVec3` |
 | Navmesh + A* | `nav/navGrid` | `createNavGrid`, `findPath`, `smoothPath`, `NavGrid`, `NavGridConfig`, `NavPoint`, `FindPathOptions` |
-| Path follow | `nav/pathFollow` | `createPathFollow`, `advancePathFollow`, `pathFromNav`, `PathFollowConfig`, `PathFollowState`, `Waypoint` |
+| Path follow | `nav/pathFollow` | `createPathFollow`, `advancePathFollow`, `pathFromNav`, `PathFollowConfig`, `PathFollowState`, `Waypoint` — dt-incremental; for timetabled movers use `nav/timetable` instead |
+| Route timetable | `nav/timetable` | `createRouteTimetable`, `RouteTimetable`, `RouteTimetableConfig`, `TimetableStop`, `TimetablePose` — position-at-absolute-time over an authored route with dwells; preview === live, so schedule forecasts can't drift |
+| Rail/switch graph | `nav/railGraph` | `createRailGraph`, `createRailRider`, `RailGraph`, `RailRider`, `RailNode`, `RailEdge`, `RailRiderPose` — directed track segments with junction switch-throw semantics; riders take the thrown edge at every junction |
+| Leader trail | `movement/leaderTrail` | `createLeaderTrail`, `LeaderTrail`, `LeaderTrailConfig`, `TrailPose` — live breadcrumb trail from a moving leader, followers placed by arc-length behind (convoys, conga lines, snake bodies) |
 | Nav-grid movement constraint | `nav/navConstrain` | `constrainToNavGrid`, `NavConstrainProposed`, `NavConstrainEntity`, `NavConstrainOptions` — a standalone walkable-pass-through + wall-slide helper; adapt its `(proposed, entity)` shape to `PlayerMovementConfig.beforeCommit`'s `(frame) => [x,y,z]` with a small closure |
 | Selection set | `scene/selection` | `createSelectionSet`, `SelectionSet`, `screenRect`, `selectWithinRect`, `rectContainsPoint`, `isMarquee`, `ScreenRect` |
 | Context menu | `interaction/contextMenu` | `contextVerb`, `buildContextMenu`, `contextVerbInput`, `ContextVerb`, `ContextMenu` |
@@ -159,6 +163,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Multi-region health | `survival/regionHealth` | `createMultiRegionHealth`, `MultiRegionHealth`, `HealthRegionConfig`, `AilmentConfig`, `RegionHealthState`, `AilmentInstance` |
 | Audio contract | `audio/audioFalloff` | `computeFalloffGain`, `resolveEmitterGain`, `distance3`, `AudioFalloffConfig`, `FalloffCurve`, `SoundDef`, `AudioBusDef`, `AudioBusId` |
 | Beat clock | `time/beatClock` | `createBeatClock`, `createBeatInputBuffer`, `nextBeatTime`, `BeatClock`, `BeatClockConfig`, `BeatSnapshot`, `BeatInputBuffer`, `BufferedAction` |
+| State schedule | `time/stateSchedule` | `createStateSchedule`, `StateSchedule`, `SchedulePhase`, `ScheduleSample`, `ScheduleWindow`, `nextClearWindow` — deterministic looping state timeline: `stateAt(t)` live, `nextTransitionAt` countdowns, `windowsOf`/`nextWindow` "when is it safe" forecasts |
 | Spawn director | `ai/spawnDirector` | `createSpawnDirectorState`, `advanceSpawnDirector`, `advanceWave`, `raiseAlert`, `pickSpawnPoint`, `SpawnDirectorConfig`, `WaveManifest`, `SpawnEntry`, `SpawnRequest`, `DirectorContext` |
 | Threat table | `ai/threat` | `createThreatTable`, `ThreatTable`, `ThreatTableConfig`, `ThreatEntry`, `HighestThreatOptions` |
 | Mob combat brain | `ai/mobBrain` | `createMobBrain`, `MobBrain`, `MobBrainConfig`, `MobBrainDeps`, `MobBrainStep`, `MobBrainMode` — the wander → aggro → chase → engage → leash-evade loop over `ai/threat`; the brain returns intent (`moveTo`, `speedScale`, `inAttackRange`, `arrivedHome`), the game executes it and routes damage into `addThreat`. Never hand-roll this loop per mob |
@@ -171,7 +176,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Structural destruction | `physics/structure` | `StructureGraph`, `StructureNodeSpec`, `StructureEdgeSpec`, `StructureMaterial`, `StructureMaterialTable`, `CollapseEvent`, `DebrisConfig` |
 | Destructible terrain | `world/carve` | `VoxelVolume`, `VoxelMaterial`, `VoxelMaterialTable`, `CarvableField`, `carvableTerrain`, `CarveOp`, `DepositOp`, `CraterOp`, `MoundOp`, `EMPTY_VOXEL` |
 | Vehicle body | `physics/vehicleBody` | `createVehicleBody`, `VehicleBody`, `VehicleBodyConfig`, `WheelSpec`, `GripCurve`, `sampleGripCurve`, `DEFAULT_GRIP_CURVE` |
-| Buoyant boat | `physics/buoyancy` | `createBuoyantBody`, `BuoyantBody`, `BuoyantBodyConfig` |
+| Buoyant boat | `physics/buoyancy` | `createBuoyantBody`, `BuoyantBody`, `BuoyantBodyConfig` — `current: (x, z, t) => [vx, vz]` adds a water-current drift while submerged, `currentBroadside` scales it by hull orientation |
+| Flow tube | `physics/flowTube` | `createFlowTube`, `combineFlowVelocity`, `FlowTube`, `FlowTubeConfig` — axial corridor of directional flow with radial core falloff and a spool scalar (fan tunnels, updraft shafts, river narrows); sample `velocityAt` and add to any integrator |
 | Crash damage | `physics/damageZones` | `createDamageModel`, `DamageModel`, `DamageZoneDef`, `DamageTransition` |
 | Mounts / rideables | `scene/mount` | `createMountController`, `MountController`, `MountKit`, `MountSeat`, `RideableConfig` |
 | Shared-vehicle stations | `scene/stationClaim` | `createStationClaim`, `StationClaim`, `Station`, `SharedVehicleConfig`, `ClaimResult` |
