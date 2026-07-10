@@ -60,6 +60,7 @@ export const activeCharter = (ctx: GameContext): DistrictCharter => read(ctx, "c
 export const systemsPanelOpen = (ctx: GameContext): boolean => read(ctx, "systems", false);
 export const briefStage = (ctx: GameContext): number => read(ctx, "briefStage", 0);
 export const focusMode = (ctx: GameContext): boolean => read(ctx, "focus", false);
+export const helpOpen = (ctx: GameContext): boolean => read(ctx, "help", false);
 export const welcomeOpen = (ctx: GameContext): boolean => read(ctx, "welcome", true);
 export const libraryRevision = (ctx: GameContext): number => read(ctx, "libraryRev", 0);
 export const cityDay = (ctx: GameContext): number => ctx.time.calendar().day + read(ctx, "dayBase", 0);
@@ -345,6 +346,10 @@ export function demolish(ctx: GameContext, id: string): void {
 
 export function toggleFocusMode(ctx: GameContext): void {
   ctx.game.store.set("focus", !focusMode(ctx));
+}
+
+export function toggleHelp(ctx: GameContext): void {
+  ctx.game.store.set("help", !helpOpen(ctx));
 }
 
 export function setWelcomeOpen(ctx: GameContext, open: boolean): void {

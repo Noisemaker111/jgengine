@@ -15,4 +15,5 @@ export const keybinds: ActionCodesMap = {
   cycleLens: ["KeyL"],
   cycleMood: ["KeyM"],
   focusToggle: ["KeyF"],
+  helpToggle: ["KeyH"],
 };

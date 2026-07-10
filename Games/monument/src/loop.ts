@@ -17,6 +17,7 @@ import {
   setMood,
   setWelcomeOpen,
   toggleFocusMode,
+  toggleHelp,
   captureHistory,
   demolish,
   growSibling,
@@ -118,6 +119,11 @@ export function onInit(ctx: GameContext): void {
   ctx.game.commands.define("focusToggle", {
     apply(state) {
       toggleFocusMode(state);
+    },
+  });
+  ctx.game.commands.define("helpToggle", {
+    apply(state) {
+      toggleHelp(state);
     },
   });
   ctx.game.commands.define("cycleMood", {
