@@ -18,7 +18,6 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { createFogField, type FogField } from "@jgengine/core/world/fog";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
-import { headingToBearing } from "@jgengine/core/world/minimap";
 import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
 import { Compass, Minimap, WorldMap } from "@jgengine/react/map";
 import { usePlayer, useSceneEntities, useFeed } from "@jgengine/react/hooks";
@@ -212,14 +211,14 @@ function MapUI() {
     entities.find((entity) => entity.role === "player") ??
     null;
   const center: [number, number] = self === null ? [0, 0] : [self.position[0], self.position[2]];
-  const heading = self === null ? 0 : headingToBearing(self.rotationY);
+  const facingYaw = self === null ? 0 : self.rotationY;
   const baked: BakedMap | null = useMemo(() => bakeTerrainMap(terrainField, BOUNDS, { resolution: 160 }), []);
   const background = baked?.url;
 
   return (
     <div className="pointer-events-none absolute inset-0 font-sans text-white">
       <div className="absolute left-1/2 top-4 -translate-x-1/2">
-        <Compass heading={heading} center={center} markers={markerSet} width={360} />
+        <Compass facingYaw={facingYaw} center={center} markers={markerSet} width={360} />
       </div>
 
       {open ? (
@@ -229,7 +228,7 @@ function MapUI() {
             bounds={BOUNDS}
             fog={fogField}
             player={center}
-            heading={heading}
+            facingYaw={facingYaw}
             background={background}
             width={340}
             onClose={() => setWorldMapOpen(false)}
@@ -246,7 +245,7 @@ function MapUI() {
           markers={markerSet}
           fog={fogField}
           center={center}
-          heading={heading}
+          facingYaw={facingYaw}
           worldRadius={46}
           size={188}
           background={background}

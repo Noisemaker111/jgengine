@@ -3,7 +3,7 @@ import { RIVALS } from "../../boats/catalog";
 import type { CurrentField } from "../../course/current";
 import { GATES } from "../../course/track";
 import { ZONE_IDS, ZONE_LABELS, zoneCentroid } from "../../course/zones";
-import { clampToMinimapEdge, projectToMinimap } from "@jgengine/core/world/minimap";
+import { clampToMinimapEdge, headingToBearing, projectToMinimap } from "@jgengine/core/world/minimap";
 
 const SIZE = 208;
 const WORLD_RADIUS = 148;
@@ -65,9 +65,9 @@ export function TidewayMinimap({ current }: { current: CurrentField }) {
         {boats.map((boat) => {
           const point = projectToMinimap(boat.position, VIEW);
           const isPlayer = boat.id === userId;
-          const heading = (boat.rotationY * 180) / Math.PI;
+          const bearingDeg = (headingToBearing(boat.rotationY) * 180) / Math.PI;
           return (
-            <g key={boat.id} transform={`translate(${point.x},${point.y}) rotate(${heading})`}>
+            <g key={boat.id} transform={`translate(${point.x},${point.y}) rotate(${bearingDeg})`}>
               <path d="M 0 -6 L 4 5 L -4 5 Z" fill={isPlayer ? "#c74a34" : "#e6f2ef"} stroke="#0e2a30" strokeWidth={0.75} />
             </g>
           );

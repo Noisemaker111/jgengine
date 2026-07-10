@@ -1,3 +1,4 @@
+import { steerYaw } from "@jgengine/core/movement/steering";
 import { DEFAULT_GRIP_CURVE, sampleGripCurve } from "@jgengine/core/physics/vehicleBody";
 
 import { blockedZ } from "../route/gates";
@@ -64,7 +65,7 @@ export function createVehicleController(spawn: {
       const speed0 = vx * fx0 + vz * fz0;
       const steerScale = Math.min(1, Math.abs(speed0) / TURN_SPEED_REF);
       const dir = speed0 >= 0 ? 1 : -1;
-      heading += axis.steer * turnRate * steerScale * dir * dt;
+      heading = steerYaw(heading, axis.steer * steerScale * dir, turnRate, dt);
 
       const [fx, fz] = forward();
       let drive = 0;

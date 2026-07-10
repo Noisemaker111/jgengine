@@ -1,4 +1,5 @@
 import { clamp01, lerp } from "@jgengine/core/anim/easing";
+import { steerYaw } from "@jgengine/core/movement/steering";
 import type { Vec3 } from "../world/canyonMath";
 import { clamp } from "../world/canyonMath";
 
@@ -74,7 +75,7 @@ export function advanceCar(
   const turnRate = input.handbrake ? baseTurnRate * tuning.handbrakeTurnBoost : baseTurnRate;
   const steerDir = (input.steerLeft ? -1 : 0) + (input.steerRight ? 1 : 0);
   const movingSign = speed >= 0 ? 1 : -1;
-  const heading = state.heading + steerDir * turnRate * dt * movingSign;
+  const heading = steerYaw(state.heading, steerDir * movingSign, turnRate, dt);
 
   const dx = Math.sin(heading) * speed * dt;
   const dz = Math.cos(heading) * speed * dt;

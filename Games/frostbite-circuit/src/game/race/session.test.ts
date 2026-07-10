@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { NEUTRAL_AXIS, type AxisInput } from "@jgengine/core/input/axisInput";
+import { steerToward } from "@jgengine/core/movement/steering";
 
 import { SLEDDERS } from "../ai/sledders";
 import { statusCounts } from "../ice/grid";
@@ -21,10 +22,7 @@ function autopilotAxis(position: readonly [number, number, number], heading: num
   const idx = nearestSampleIndex([position[0], position[2]]);
   const target = line[(idx + LOOKAHEAD_SAMPLES) % line.length]!;
   const desiredHeading = Math.atan2(target[0] - position[0], target[1] - position[2]);
-  let diff = desiredHeading - heading;
-  while (diff > Math.PI) diff -= Math.PI * 2;
-  while (diff < -Math.PI) diff += Math.PI * 2;
-  const steer = Math.max(-1, Math.min(1, diff * 2));
+  const steer = Math.max(-1, Math.min(1, steerToward(heading, desiredHeading) * 2));
   return { throttle: 1, brake: 0, steer, handbrake: 0 };
 }
 

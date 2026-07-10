@@ -1,3 +1,5 @@
+import { yawRight } from "@jgengine/core/movement/steering";
+
 export interface TrackSample {
   x: number;
   y: number;
@@ -184,7 +186,7 @@ export function sampleAtDistance(segments: readonly Segment[], distance: number)
 }
 
 export function lateralNormal(headingRad: number): readonly [number, number] {
-  return [Math.cos(headingRad), -Math.sin(headingRad)];
+  return yawRight(headingRad);
 }
 
 export function applyLateral(sample: TrackSample, lateral: number): TrackSample {

@@ -1,5 +1,6 @@
 import type { PhysicsWorld } from "./physicsWorld";
 import type { AxisInput } from "../input/axisInput";
+import { steerYaw } from "../movement/steering";
 
 export interface GripCurve {
   points: readonly (readonly [number, number])[];
@@ -231,7 +232,7 @@ export class VehicleBody {
     if (grounded) {
       const steerScale = Math.min(1, Math.abs(speed) / this.turnSpeedRef);
       const dir = speed >= 0 ? 1 : -1;
-      this.heading += input.steer * this.turnRate * steerScale * dir * dt;
+      this.heading = steerYaw(this.heading, input.steer * steerScale * dir, this.turnRate, dt);
     }
 
     const [fx, fz] = this.forward;

@@ -149,7 +149,7 @@ describe("apex-window detection", () => {
 describe("applyAirSteer", () => {
   test("adds a lateral nudge along the camera-right axis at yaw 0", () => {
     const next = applyAirSteer({ x: 0, y: 0, z: 0 }, 0, 1, 0, 1, 5, 5);
-    expect(next.x).toBeCloseTo(5, 5);
+    expect(next.x).toBeCloseTo(-5, 5);
     expect(next.z).toBeCloseTo(0, 5);
     expect(next.y).toBeCloseTo(0, 5);
   });

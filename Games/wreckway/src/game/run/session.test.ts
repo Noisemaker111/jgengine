@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { steerToward } from "@jgengine/core/movement/steering";
+
 import { EXIT_Z } from "./constants";
 import { PICKUPS } from "./pickups";
 import { createRunSession, type RunSession } from "./session";
@@ -16,17 +18,9 @@ function driveStraight(session: RunSession, seconds: number): void {
   }
 }
 
-function normalizeAngle(angle: number): number {
-  let a = angle % (2 * Math.PI);
-  if (a > Math.PI) a -= 2 * Math.PI;
-  if (a < -Math.PI) a += 2 * Math.PI;
-  return a;
-}
-
 function steerTowardX(heading: number, dx: number): number {
   const desiredHeading = Math.max(-0.5, Math.min(0.5, dx * 0.03));
-  const headingError = normalizeAngle(desiredHeading - heading);
-  return Math.max(-0.5, Math.min(0.5, headingError * 2));
+  return Math.max(-0.5, Math.min(0.5, steerToward(heading, desiredHeading) * 2));
 }
 
 function driveCollectingPickups(session: RunSession, seconds: number): void {

@@ -1,4 +1,5 @@
 import { raceTrack, type RaceTrack } from "@jgengine/core/game/race";
+import { yawRight } from "@jgengine/core/movement/steering";
 import { CHECKPOINT_DEFS } from "../cluster/catalog";
 import { KART_Y, LAPS } from "../constants";
 
@@ -30,8 +31,7 @@ function gridSlot(index: number): RacerSpawn {
   const finish = CHECKPOINT_DEFS[CHECKPOINT_DEFS.length - 1]!;
   const forwardX = Math.sin(START_HEADING);
   const forwardZ = Math.cos(START_HEADING);
-  const lateralX = Math.cos(START_HEADING);
-  const lateralZ = -Math.sin(START_HEADING);
+  const [lateralX, lateralZ] = yawRight(START_HEADING);
   const back = 10 + index * 6;
   const lateral = (index % 2 === 0 ? -1 : 1) * (4 + index * 0.5);
   return {

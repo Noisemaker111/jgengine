@@ -100,6 +100,14 @@ jgengine's three engine skills lived in top-level skills/ where Claude Code neve
 
 verifying loot-shooter → root check-types reported green twice while Games/loot-shooter had 7 TS errors; root gate skips Games/*, only the game-local check-types catches them
 
+2026-07-10T15:32:40.319Z — fable-5 — Claude
+
+chasing a 'wrong world map shows in every game' report → the dev runner silently swapped in the demo game for any unresolvable game id (gameRegistry[GAME_ID] ?? gameRegistry.demo), so a bad id looked like a content leak instead of erroring; made it a loud Unknown-game error
+
+2026-07-10T15:32:40.361Z — fable-5 — Claude
+
+fixing minimap rotation → MinimapView.rotate's JSDoc said 'pass the facing bearing' but the math needed its negative, and the compensating -heading lived in the react layer; drift-district followed the doc literally and spun its map backwards — doc and math now agree
+
 2026-07-10T15:35:48.981Z — fable-5 — Claude
 
 Phase 2 verify → root check-types validates against packages/*/dist without rebuilding; a stale dist (pre-pull main + new core event) produced 20+ phantom errors in shell/cartridge/registry — check-types should depend on build or check against src

@@ -160,9 +160,9 @@ function DevApp() {
     else if (runtimeError !== null) setCaptureStatus("error", runtimeError);
   }, [loadError, runtimeError]);
   useEffect(() => {
-    const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
+    const load = gameRegistry[GAME_ID];
     if (load === undefined) {
-      setLoadError(`Unknown game "${GAME_ID}"`);
+      setLoadError(`Unknown game "${GAME_ID}" — known ids: ${Object.keys(gameRegistry).sort().join(", ")}`);
       return;
     }
     void load()

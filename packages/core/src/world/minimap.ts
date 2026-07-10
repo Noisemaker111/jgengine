@@ -46,7 +46,11 @@ export interface MinimapView {
   worldRadius: number;
   /** Pixel diameter of the minimap. */
   size: number;
-  /** Rotate the projection so this facing bearing points up (rotating minimap). Omit for north-up. */
+  /**
+   * Compass bearing that points up (rotating minimap) — pass
+   * `headingToBearing(yaw)` so the map spins under a fixed north-up player
+   * arrow. Omit for north-up.
+   */
   rotate?: number;
 }
 
@@ -75,8 +79,8 @@ export function projectToMinimap(
   if (view.rotate !== undefined && view.rotate !== 0) {
     const cos = Math.cos(view.rotate);
     const sin = Math.sin(view.rotate);
-    const rx = dx * cos - dz * sin;
-    const rz = dx * sin + dz * cos;
+    const rx = dx * cos + dz * sin;
+    const rz = dz * cos - dx * sin;
     dx = rx;
     dz = rz;
   }
