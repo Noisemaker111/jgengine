@@ -3,11 +3,13 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-import { useGameClock } from "@jgengine/react/hooks";
+import { useGameClock, useGameStore } from "@jgengine/react/hooks";
 
-import { CELL, GRID } from "../catalog";
+import { CELL, GRID, type DistrictMood } from "../catalog";
 import { solarModel } from "../city/model";
+import { activeMood } from "../city/state";
 import { getConcreteTextureCanvas } from "./concrete";
+import { MoodDetails } from "./MoodDetails";
 import { Populace } from "./Populace";
 
 export interface MoodScene {
@@ -27,7 +29,7 @@ export interface MoodScene {
   lampIntensity: number;
 }
 
-export const MOOD_SCENES: Record<"default", MoodScene> = {
+export const MOOD_SCENES: Record<DistrictMood, MoodScene> = {
   default: {
     day: ["#5f91aa", "#b7c3bc", "#d0c2a5"],
     night: ["#111a24", "#24313c", "#0d1216"],
@@ -44,18 +46,98 @@ export const MOOD_SCENES: Record<"default", MoodScene> = {
     windowIntensity: 0.65,
     lampIntensity: 18,
   },
+  cyberpunk: {
+    day: ["#243f54", "#6c7f8f", "#9b927d"],
+    night: ["#020509", "#06111c", "#020304"],
+    backgroundDay: "#82919a",
+    backgroundNight: "#02060d",
+    fogDay: "#8e989e",
+    fogNight: "#050f18",
+    groundDay: "#4f5f60",
+    groundNight: "#070d0e",
+    window: "#38f6ff",
+    windowAlt: "#d7ff43",
+    lamp: "#ff386c",
+    accent: "#d7ff43",
+    windowIntensity: 0.86,
+    lampIntensity: 34,
+  },
+  green: {
+    day: ["#6f967e", "#c2c9af", "#c6b986"],
+    night: ["#0f1d18", "#203b2e", "#07120d"],
+    backgroundDay: "#b9bea0",
+    backgroundNight: "#0b1712",
+    fogDay: "#b9c6ad",
+    fogNight: "#112119",
+    groundDay: "#697766",
+    groundNight: "#12251c",
+    window: "#c9f0a2",
+    windowAlt: "#7fe083",
+    lamp: "#c6ff9a",
+    accent: "#7fe083",
+    windowIntensity: 0.8,
+    lampIntensity: 18,
+  },
+  totalitarian: {
+    day: ["#65747b", "#a7adb0", "#c1bcae"],
+    night: ["#070a0d", "#19222a", "#050607"],
+    backgroundDay: "#9fa4a5",
+    backgroundNight: "#080b0e",
+    fogDay: "#a6abad",
+    fogNight: "#0c1116",
+    groundDay: "#626a6b",
+    groundNight: "#11171b",
+    window: "#8fa8b7",
+    windowAlt: "#5f737d",
+    lamp: "#a8bfd0",
+    accent: "#9d111b",
+    windowIntensity: 0.56,
+    lampIntensity: 30,
+  },
+  university: {
+    day: ["#688ca0", "#c2bda8", "#d0bd8f"],
+    night: ["#111827", "#27304b", "#100f12"],
+    backgroundDay: "#b9b099",
+    backgroundNight: "#111827",
+    fogDay: "#b9b7aa",
+    fogNight: "#1a2034",
+    groundDay: "#6d7169",
+    groundNight: "#1b2430",
+    window: "#ffc86b",
+    windowAlt: "#f0c65e",
+    lamp: "#ffd58a",
+    accent: "#7aa4e8",
+    windowIntensity: 0.95,
+    lampIntensity: 20,
+  },
 };
+
+export const moodSceneFor = (mood: DistrictMood): MoodScene => MOOD_SCENES[mood] ?? MOOD_SCENES.default;
+
+export function useMoodScene(): MoodScene {
+  return moodSceneFor(useGameStore(activeMood));
+}
 
 export const MONUMENT_SCENE: MoodScene = MOOD_SCENES.default;
 
-const ATMOSPHERE = {
-  haze: 0.45,
-  clouds: 0.6,
-  stars: 0.5,
-  sun: 0.82,
-  twilight: "#d89567",
-  cloudDay: "#d6d3c8",
-  cloudNight: "#1a2530",
+interface AtmosphereCharacter {
+  haze: number;
+  clouds: number;
+  stars: number;
+  sun: number;
+  twilight: string;
+  cloudDay: string;
+  cloudNight: string;
+  sunColor: string;
+  moonColor: string;
+}
+
+const ATMOSPHERE: Record<DistrictMood, AtmosphereCharacter> = {
+  default: { haze: 0.45, clouds: 0.6, stars: 0.5, sun: 0.82, twilight: "#d89567", cloudDay: "#d6d3c8", cloudNight: "#1a2530", sunColor: "#ffe1aa", moonColor: "#b9c9dd" },
+  cyberpunk: { haze: 0.7, clouds: 0.48, stars: 0.16, sun: 0.52, twilight: "#b56d3f", cloudDay: "#657079", cloudNight: "#08131d", sunColor: "#ffbd72", moonColor: "#8ed9d4" },
+  green: { haze: 0.6, clouds: 0.7, stars: 0.32, sun: 0.72, twilight: "#e0b978", cloudDay: "#d1d8c8", cloudNight: "#172b22", sunColor: "#ffe1aa", moonColor: "#b9c9dd" },
+  totalitarian: { haze: 0.82, clouds: 0.88, stars: 0.05, sun: 0.4, twilight: "#9d9184", cloudDay: "#adb2b3", cloudNight: "#151d23", sunColor: "#d7dedf", moonColor: "#b9c9dd" },
+  university: { haze: 0.34, clouds: 0.36, stars: 0.72, sun: 0.9, twilight: "#e2a66b", cloudDay: "#e2d6be", cloudNight: "#20283c", sunColor: "#ffe1aa", moonColor: "#b9c9dd" },
 };
 
 const BACKGROUND_PALETTE = { a: "#817c72", b: "#6e716d", far: "#596565", roof: "#48504e", ridge: "#68705f" };
@@ -181,7 +263,7 @@ function backgroundInstances(): { masses: BoxInstance[]; roofs: BoxInstance[]; f
   return { masses, roofs, far };
 }
 
-function Atmosphere({ hour, daylight }: { hour: number; daylight: number }): ReactNode {
+function Atmosphere({ hour, daylight, mood }: { hour: number; daylight: number; mood: DistrictMood }): ReactNode {
   const sphere = useRef<THREE.Mesh>(null);
   const uniforms = useMemo(
     () => ({
@@ -211,6 +293,8 @@ function Atmosphere({ hour, daylight }: { hour: number; daylight: number }): Rea
     [],
   );
   useEffect(() => {
+    const scene = moodSceneFor(mood);
+    const character = ATMOSPHERE[mood] ?? ATMOSPHERE.default;
     const solar = solarModel(hour);
     const dir = new THREE.Vector3(solar.direction[0], solar.direction[1], solar.direction[2]);
     const moon = dir.clone().negate();
@@ -219,24 +303,24 @@ function Atmosphere({ hour, daylight }: { hour: number; daylight: number }): Rea
     uniforms.uDaylight.value = daylight;
     uniforms.uSunDir.value.copy(dir);
     uniforms.uMoonDir.value.copy(moon);
-    uniforms.uDayTop.value.set(MONUMENT_SCENE.day[0]);
-    uniforms.uDayHorizon.value.set(MONUMENT_SCENE.day[1]);
-    uniforms.uDayGround.value.set(MONUMENT_SCENE.day[2]);
-    uniforms.uNightTop.value.set(MONUMENT_SCENE.night[0]);
-    uniforms.uNightHorizon.value.set(MONUMENT_SCENE.night[1]);
-    uniforms.uNightGround.value.set(MONUMENT_SCENE.night[2]);
-    uniforms.uHazeDay.value.set(MONUMENT_SCENE.fogDay);
-    uniforms.uHazeNight.value.set(MONUMENT_SCENE.fogNight);
-    uniforms.uTwilightColor.value.set(ATMOSPHERE.twilight);
-    uniforms.uSunColor.value.set("#ffe1aa");
-    uniforms.uMoonColor.value.set("#b9c9dd");
-    uniforms.uCloudDay.value.set(ATMOSPHERE.cloudDay);
-    uniforms.uCloudNight.value.set(ATMOSPHERE.cloudNight);
-    uniforms.uHaze.value = ATMOSPHERE.haze;
-    uniforms.uCloudiness.value = ATMOSPHERE.clouds;
-    uniforms.uStarIntensity.value = ATMOSPHERE.stars;
-    uniforms.uSunStrength.value = ATMOSPHERE.sun;
-  }, [hour, daylight, uniforms]);
+    uniforms.uDayTop.value.set(scene.day[0]);
+    uniforms.uDayHorizon.value.set(scene.day[1]);
+    uniforms.uDayGround.value.set(scene.day[2]);
+    uniforms.uNightTop.value.set(scene.night[0]);
+    uniforms.uNightHorizon.value.set(scene.night[1]);
+    uniforms.uNightGround.value.set(scene.night[2]);
+    uniforms.uHazeDay.value.set(scene.fogDay);
+    uniforms.uHazeNight.value.set(scene.fogNight);
+    uniforms.uTwilightColor.value.set(character.twilight);
+    uniforms.uSunColor.value.set(character.sunColor);
+    uniforms.uMoonColor.value.set(character.moonColor);
+    uniforms.uCloudDay.value.set(character.cloudDay);
+    uniforms.uCloudNight.value.set(character.cloudNight);
+    uniforms.uHaze.value = character.haze;
+    uniforms.uCloudiness.value = character.clouds;
+    uniforms.uStarIntensity.value = character.stars;
+    uniforms.uSunStrength.value = character.sun;
+  }, [hour, daylight, mood, uniforms]);
   useFrame(({ camera, clock }) => {
     const mesh = sphere.current;
     if (mesh !== null) mesh.position.copy(camera.position);
@@ -259,22 +343,27 @@ function Atmosphere({ hour, daylight }: { hour: number; daylight: number }): Rea
 
 export function MonumentEnvironment(): ReactNode {
   const clock = useGameClock();
+  const mood = useGameStore(activeMood);
+  const scene = moodSceneFor(mood);
   const hour = clock.calendar.dayFraction * 24;
   const solar = solarModel(hour);
   const daylight = solar.daylight;
+  const night = solar.night;
   const sun: [number, number, number] = [
     solar.direction[0] * 220,
     Math.max(8, solar.direction[1] * 220),
     solar.direction[2] * 220,
   ];
   const blend = (from: string, to: string) => new THREE.Color(from).lerp(new THREE.Color(to), daylight).getStyle();
-  const background = blend(MONUMENT_SCENE.backgroundNight, MONUMENT_SCENE.backgroundDay);
-  const fogColor = blend(MONUMENT_SCENE.fogNight, MONUMENT_SCENE.fogDay);
-  const lightColor = blend(MONUMENT_SCENE.lamp, "#ffd19a");
-  const groundColor = blend(MONUMENT_SCENE.groundNight, MONUMENT_SCENE.groundDay);
+  const background = blend(scene.backgroundNight, scene.backgroundDay);
+  const fogColor = blend(scene.fogNight, scene.fogDay);
+  const lightColor = blend(scene.lamp, "#ffd19a");
+  const groundColor = blend(scene.groundNight, scene.groundDay);
   const backgroundTone = (hex: string, amount: number) => new THREE.Color(hex).lerp(new THREE.Color(fogColor), amount).getStyle();
-  const fogNear = THREE.MathUtils.lerp(220, 280, daylight);
-  const fogFar = 690;
+  const ambientNight = mood === "cyberpunk" ? 0.18 : 0.15;
+  const ambientDay = mood === "green" ? 0.5 : 0.42;
+  const fogNear = THREE.MathUtils.lerp(mood === "cyberpunk" ? 185 : 220, 280, daylight);
+  const fogFar = mood === "green" ? 760 : mood === "cyberpunk" ? 620 : mood === "totalitarian" ? 650 : 690;
 
   const background3d = useMemo(() => backgroundInstances(), []);
   const groundTexture = useMemo(() => {
@@ -326,9 +415,9 @@ export function MonumentEnvironment(): ReactNode {
     <>
       <color attach="background" args={[background]} />
       <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
-      <Atmosphere hour={hour} daylight={daylight} />
-      <ambientLight intensity={THREE.MathUtils.lerp(0.15, 0.42, daylight)} />
-      <hemisphereLight args={[blend(MONUMENT_SCENE.window, "#fff0cf"), "#3a4031", THREE.MathUtils.lerp(0.34, 0.86, daylight)]} />
+      <Atmosphere hour={hour} daylight={daylight} mood={mood} />
+      <ambientLight intensity={THREE.MathUtils.lerp(ambientNight, ambientDay, daylight)} />
+      <hemisphereLight args={[blend(scene.window, "#fff0cf"), "#3a4031", THREE.MathUtils.lerp(0.34, 0.86, daylight)]} />
       <directionalLight
         castShadow
         position={sun}
@@ -363,6 +452,7 @@ export function MonumentEnvironment(): ReactNode {
         <InstancedBoxes items={background3d.masses} color={backgroundTone(BACKGROUND_PALETTE.a, 0.58)} />
         <InstancedBoxes items={background3d.roofs} color={backgroundTone(BACKGROUND_PALETTE.roof, 0.58)} roughness={0.9} />
       </group>
+      <MoodDetails mood={mood} scene={scene} night={night} />
       <Populace />
     </>
   );

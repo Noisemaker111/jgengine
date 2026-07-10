@@ -7,10 +7,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SimClock } from "@jgengine/core/time/simClock";
 import { useGameClock, useGameStore } from "@jgengine/react/hooks";
 
-import { CELL, GRID } from "../catalog";
+import { CELL, GRID, type DistrictMood } from "../catalog";
 import { citySignals, resolveCityMetrics } from "../city/metrics";
 import { clamp } from "../city/model";
-import { activeCharter, cityBuildings, cityPlazas } from "../city/state";
+import { activeCharter, activeMood, cityBuildings, cityPlazas } from "../city/state";
 
 const EXTENT = GRID * CELL;
 const ROAD_HALF = EXTENT / 2;
@@ -39,6 +39,7 @@ interface Mover {
 const scratch = new THREE.Object3D();
 const scratchMatrix = new THREE.Matrix4();
 const scratchColor = new THREE.Color();
+const CYBER_BODY = new THREE.Color("#11181d");
 const CABIN_LOCAL = new THREE.Matrix4().makeTranslation(0, 0.55, 0);
 const WHEEL_QUAT = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2));
 const WHEEL_UNIT = new THREE.Vector3(1, 1, 1);
@@ -91,7 +92,8 @@ const RoadBands = memo(function RoadBands(): ReactNode {
   );
 });
 
-const PopulaceScene = memo(function PopulaceScene({ controls, peopleCount }: { controls: SimClock; peopleCount: number }): ReactNode {
+const PopulaceScene = memo(function PopulaceScene({ controls, peopleCount, mood }: { controls: SimClock; peopleCount: number; mood: DistrictMood }): ReactNode {
+  const cyber = mood === "cyberpunk";
   const vehicleBodies = useRef<THREE.InstancedMesh>(null);
   const vehicleCabins = useRef<THREE.InstancedMesh>(null);
   const vehicleWheels = useRef<THREE.InstancedMesh>(null);
@@ -195,7 +197,11 @@ const PopulaceScene = memo(function PopulaceScene({ controls, peopleCount }: { c
   useLayoutEffect(() => {
     const bodies = vehicleBodies.current;
     if (bodies !== null) {
-      vehicles.forEach((vehicle, index) => bodies.setColorAt(index, scratchColor.set(vehicle.color)));
+      vehicles.forEach((vehicle, index) => {
+        scratchColor.set(vehicle.color);
+        if (cyber) scratchColor.lerp(CYBER_BODY, 0.72);
+        bodies.setColorAt(index, scratchColor);
+      });
       if (bodies.instanceColor !== null) bodies.instanceColor.needsUpdate = true;
     }
     const figures = humanBodies.current;
@@ -217,7 +223,7 @@ const PopulaceScene = memo(function PopulaceScene({ controls, peopleCount }: { c
       </instancedMesh>
       <instancedMesh ref={vehicleCabins} args={[undefined, undefined, vehicles.length]} frustumCulled={false}>
         <boxGeometry args={[1.6, 0.55, 2.1]} />
-        <meshStandardMaterial color="#26343b" metalness={0.25} roughness={0.2} />
+        <meshStandardMaterial color={cyber ? "#050b12" : "#26343b"} emissive={cyber ? "#0b1c22" : "#000000"} emissiveIntensity={cyber ? 0.22 : 0} metalness={0.25} roughness={0.2} />
       </instancedMesh>
       <instancedMesh ref={vehicleWheels} args={[undefined, undefined, vehicles.length * 2]} frustumCulled={false}>
         <cylinderGeometry args={[0.3, 0.3, 2.05, 10]} />
@@ -238,5 +244,6 @@ const PopulaceScene = memo(function PopulaceScene({ controls, peopleCount }: { c
 export function Populace(): ReactNode {
   const { controls } = useGameClock();
   const peopleCount = useGameStore(peopleCountFor);
-  return <PopulaceScene key={peopleCount} controls={controls} peopleCount={peopleCount} />;
+  const mood = useGameStore(activeMood);
+  return <PopulaceScene key={`${peopleCount}-${mood}`} controls={controls} peopleCount={peopleCount} mood={mood} />;
 }

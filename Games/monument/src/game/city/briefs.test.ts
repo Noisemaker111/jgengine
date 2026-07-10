@@ -6,7 +6,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { content } from "../content";
 import type { CityMetrics } from "../catalog";
 import { briefCompleted, CITY_EVENTS, growthBriefs, nextCharterEvent, objectiveDone, objectiveProgress } from "./briefs";
-import { activeCharter, activeEventId, advanceGrowth, ageBuildingsDaily, briefStage, cityBuildings, cityDecisions, resolveCharter, undoCity } from "./state";
+import { activeCharter, activeEventId, advanceGrowth, ageBuildingsDaily, briefStage, cityBuildings, cityDecisions, resolveCharter, setWelcomeOpen, undoCity } from "./state";
 import { onInit } from "../../loop";
 
 const metrics = (overrides: Partial<CityMetrics>): CityMetrics => ({
@@ -66,6 +66,7 @@ describe("growth briefs", () => {
 describe("charter flow", () => {
   test("resolving a charter event records the decision and bends the city", () => {
     const ctx = makeContext();
+    setWelcomeOpen(ctx, false);
     ctx.game.store.set("briefStage", 1);
     advanceGrowth(ctx);
     expect(activeEventId(ctx)).toBe("undercroft");

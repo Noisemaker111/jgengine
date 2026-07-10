@@ -127,3 +127,7 @@ after branch reset onto origin/main, running check-types without build → shell
 2026-07-10T16:38:25.372Z — sonnet-5 — Claude
 
 ship-motion workers keep backgrounding the post-merge 60s sleep even when told 'foreground, never background' — turn ends, green check never runs, orchestrator re-spawns a verifier every phase
+
+2026-07-10T17:23:54.775Z — sonnet-5 — Claude
+
+shoot --url skips ensureServer so the shot soft-times-out unless a dev server is already running — caller must boot vite manually

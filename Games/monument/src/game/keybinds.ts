@@ -13,4 +13,7 @@ export const keybinds: ActionCodesMap = {
   undo: ["KeyZ"],
   redo: ["KeyY"],
   cycleLens: ["KeyL"],
+  cycleMood: ["KeyM"],
+  focusToggle: ["KeyF"],
+  helpToggle: ["KeyH"],
 };
