@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "./ammo";
+import { SOUND_IDS } from "./audio/catalog";
 import { gearById } from "./items/gear/catalog";
 import { weaponById } from "./items/weapons/catalog";
 import { session } from "./run/session";
@@ -43,6 +44,7 @@ function pickupWorldItem(ctx: GameContext): void {
       });
     }
     ctx.player.inventory.put("hotbar", weapon.id, 1, { slot });
+    ctx.game.events.emit("audio.play", { sound: SOUND_IDS.pickupWeapon });
     ctx.scene.entity.floatText({ instanceId: userId, text: weapon.name.toUpperCase(), kind: "pickup" });
     ctx.game.feed.push("loot.pickup", { itemId: weapon.id, rarity: weapon.rarity });
     return;
@@ -59,6 +61,7 @@ function pickupWorldItem(ctx: GameContext): void {
     }
     ctx.scene.worldItem.consume(record.instanceId);
     ctx.scene.entity.stats.delta(userId, statId, gear.ammoAmount * record.count);
+    ctx.game.events.emit("audio.play", { sound: SOUND_IDS.pickupGear });
     ctx.scene.entity.floatText({
       instanceId: userId,
       text: `+${gear.ammoAmount * record.count} ${AMMO_LABELS[gear.ammo].toUpperCase()}`,
@@ -72,6 +75,7 @@ function pickupWorldItem(ctx: GameContext): void {
     return;
   }
   ctx.scene.worldItem.consume(record.instanceId);
+  ctx.game.events.emit("audio.play", { sound: SOUND_IDS.pickupGear });
   ctx.scene.entity.floatText({ instanceId: userId, text: gear.name.toUpperCase(), kind: "pickup" });
 }
 

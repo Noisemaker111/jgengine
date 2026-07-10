@@ -1,5 +1,6 @@
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { SOUND_IDS } from "./game/audio/catalog";
 import { registerCommands } from "./game/commands";
 import { tickEnemies } from "./game/entities/enemies/ai";
 import { enemyById } from "./game/entities/enemies/catalog";
@@ -23,6 +24,7 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
   if (enemy === undefined) return;
   session.noteKill(ctx, event.catalogId);
   if (event.reason.kind === "player_kill" && event.reason.killerUserId === ctx.player.userId) {
+    ctx.game.events.emit("audio.play", { sound: SOUND_IDS.killConfirm });
     grantXp(ctx, event.reason.killerUserId, enemy.xp);
   }
 }
@@ -47,7 +49,10 @@ function onInit(ctx: GameContext): void {
 
   ctx.game.events.on("entity.died", (event) => onEntityDied(ctx, event));
   ctx.game.events.on("stat.levelUp", (event) => {
-    if (event.stat === "level") onLevelUp(ctx, event.userId, 1);
+    if (event.stat === "level") {
+      onLevelUp(ctx, event.userId, 1);
+      ctx.game.events.emit("audio.play", { sound: SOUND_IDS.levelUp });
+    }
   });
 
   setupWorld(ctx);

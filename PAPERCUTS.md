@@ -111,3 +111,7 @@ chasing a 'wrong world map shows in every game' report → the dev runner silent
 2026-07-10T15:32:40.361Z — fable-5 — Claude
 
 fixing minimap rotation → MinimapView.rotate's JSDoc said 'pass the facing bearing' but the math needed its negative, and the compensating -heading lived in the react layer; drift-district followed the doc literally and spun its map backwards — doc and math now agree
+
+2026-07-10T15:35:48.981Z — fable-5 — Claude
+
+Phase 2 verify → root check-types validates against packages/*/dist without rebuilding; a stale dist (pre-pull main + new core event) produced 20+ phantom errors in shell/cartridge/registry — check-types should depend on build or check against src

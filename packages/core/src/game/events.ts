@@ -168,6 +168,11 @@ export interface FormChangedEvent {
   formId: string | null;
 }
 
+export interface AudioPlayEvent {
+  sound: string;
+  at?: readonly [number, number, number];
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
@@ -192,6 +197,7 @@ export interface GameEventMap {
   "emote.played": EmotePlayedEvent;
   "possession.swapped": PossessionSwappedEvent;
   "form.changed": FormChangedEvent;
+  "audio.play": AudioPlayEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

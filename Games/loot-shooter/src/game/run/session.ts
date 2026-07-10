@@ -9,6 +9,7 @@ import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import { AMMO_POOLS, AMMO_START, AMMO_STAT_IDS } from "../ammo";
+import { SOUND_IDS } from "../audio/catalog";
 import { enemyById } from "../entities/enemies/catalog";
 import { player as playerDef } from "../entities/players/catalog";
 import { STARTER_WEAPON_ID } from "../items/weapons/catalog";
@@ -164,6 +165,7 @@ export function createRunSession(): RunSession {
       snapshot.status = "wave";
       slot = 0;
       ctx.game.store.set("selectedSlot", 0);
+      ctx.game.events.emit("audio.play", { sound: SOUND_IDS.waveHorn });
       publish(ctx);
     },
 
@@ -179,6 +181,7 @@ export function createRunSession(): RunSession {
           snapshot.status = "wave";
           snapshot.wave = director.wave + 1;
           snapshot.intermissionLeft = 0;
+          ctx.game.events.emit("audio.play", { sound: SOUND_IDS.waveHorn });
         }
         publish(ctx);
         return;
@@ -193,6 +196,7 @@ export function createRunSession(): RunSession {
         snapshot.score += WAVE_CLEAR_BONUS * (director.wave + 1);
         if (director.wave >= WAVE_COUNT - 1) {
           snapshot.status = "victory";
+          ctx.game.events.emit("audio.play", { sound: SOUND_IDS.victory });
         } else {
           snapshot.status = "intermission";
           intermissionLeft = INTERMISSION_SECONDS;
@@ -219,6 +223,7 @@ export function createRunSession(): RunSession {
     noteDefeat(ctx) {
       if (snapshot.status === "defeat") return;
       snapshot.status = "defeat";
+      ctx.game.events.emit("audio.play", { sound: SOUND_IDS.defeat });
       publish(ctx);
     },
 

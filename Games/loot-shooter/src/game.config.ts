@@ -5,6 +5,7 @@ import type { RarityStyle } from "@jgengine/core/game/worldItem";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { assets, entitySprites } from "./game/assets";
+import { gameAudio, objectSounds } from "./game/audio/catalog";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
@@ -59,6 +60,8 @@ export const game = defineGame({
   loop,
   GameUI,
   entitySprites,
+  audio: gameAudio,
+  objectSounds,
   renderObject: renderCoverObject,
   environment: Arena,
   worldHealthBars: { roles: ["enemy"] },
