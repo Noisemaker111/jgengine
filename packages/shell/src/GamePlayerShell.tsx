@@ -1189,7 +1189,7 @@ export function GamePlayerShell({
   useEffect(() => {
     if (ctx === null) return;
     return ctx.game.events.on("audio.play", ({ sound, at }) => {
-      audioEngine.playOneShot(sound, at === undefined ? undefined : [at[0], at[1], at[2]]);
+      audioEngine.playOneShot(sound, at === undefined ? undefined : { x: at[0], y: at[1], z: at[2] });
     });
   }, [ctx, audioEngine]);
   const userId = multiplayer?.userId ?? DEV_USER_ID;
