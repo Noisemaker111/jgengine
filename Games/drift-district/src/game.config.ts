@@ -4,6 +4,7 @@ import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
 import { OBJECT_STYLES } from "./game/objects/styles";
 import { GameUI } from "./game/ui/GameUI";
+import { renderVehicle } from "./game/world/carMesh";
 import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
@@ -15,6 +16,7 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  renderEntity: renderVehicle,
   objectStyles: OBJECT_STYLES,
   camera: {
     rig: "chase",

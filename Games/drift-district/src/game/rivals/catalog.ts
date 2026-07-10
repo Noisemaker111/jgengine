@@ -20,7 +20,7 @@ export const RIVALS: readonly RivalDef[] = [
     id: "vega",
     entityId: "car_rival_vega",
     name: "Vega",
-    livery: { primary: "#ff2d78", accent: "#4a0f28" },
+    livery: { primary: "#ffb347", accent: "#4a2c0f" },
     speed: 24,
     usesShortcuts: true,
   },
