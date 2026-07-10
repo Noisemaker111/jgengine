@@ -132,17 +132,69 @@ describe("devtools snapshot", () => {
 });
 
 describe("devtools discovery", () => {
-  test("scans flat primitive tables and skips everything else", () => {
+  test("scans flat primitive tables and skips non-containers", () => {
     const dev = createDevtools();
     const MINING = { reach: 6, instaBreak: false, highlight: "#ffd166", name: "pick", fn: () => 1 };
     expect(dev.discover.scanTable("MINING", MINING)).toBe(3);
-    expect(dev.discover.scanTable("nope", [1, 2])).toBe(0);
     expect(dev.discover.scanTable("nope", 6)).toBe(0);
     expect(dev.discover.scanTable("nope", new Map())).toBe(0);
     const ids = dev.discover.list().map((entry) => entry.id);
     expect(ids).toEqual(["MINING/reach", "MINING/instaBreak", "MINING/highlight"]);
     expect(dev.discover.list()[0]!.kind).toBe("slider");
     expect(dev.discover.list()[2]!.kind).toBe("color");
+  });
+
+  test("recurses nested tables and arrays into dotted paths that mutate in place", () => {
+    const dev = createDevtools();
+    const playable = {
+      shadows: true,
+      camera: { rig: "chase", chase: { distance: 8 } },
+      game: { physics: { gravity: -24 } },
+      waves: [{ speed: 2.2 }, { speed: 3 }],
+    };
+    dev.discover.scanTable("game", playable);
+    const ids = dev.discover.list().map((entry) => entry.id);
+    expect(ids).toContain("game/shadows");
+    expect(ids).toContain("game/camera.chase.distance");
+    expect(ids).toContain("game/game.physics.gravity");
+    expect(ids).toContain("game/waves.0.speed");
+    dev.discover.enable("game/camera.chase.distance");
+    dev.controls.get("game/camera.chase.distance")!.write(14);
+    expect(playable.camera.chase.distance).toBe(14);
+    dev.discover.enable("game/waves.1.speed");
+    dev.controls.get("game/waves.1.speed")!.write(5);
+    expect(playable.waves[1]!.speed).toBe(5);
+  });
+
+  test("a property already bound under one table is not duplicated by a later scan", () => {
+    const dev = createDevtools();
+    const physics = { gravity: -24 };
+    dev.discover.scanTable("physics", physics);
+    dev.discover.scanTable("game", { game: { physics } });
+    const ids = dev.discover.list().map((entry) => entry.id);
+    expect(ids).toContain("physics/gravity");
+    expect(ids).not.toContain("game/game.physics.gravity");
+  });
+
+  test("skips blob levels with too many scalar entries and survives cycles", () => {
+    const dev = createDevtools();
+    const blob: Record<string, number> = {};
+    for (let i = 0; i < 70; i += 1) blob[`k${i}`] = i;
+    expect(dev.discover.scanTable("blob", blob)).toBe(0);
+    const cyclic: { x: number; self?: unknown } = { x: 1 };
+    cyclic.self = cyclic;
+    expect(dev.discover.scanTable("cyclic", cyclic)).toBe(1);
+  });
+
+  test("caps a single scan at 512 targets", () => {
+    const dev = createDevtools();
+    const root: Record<string, Record<string, number>> = {};
+    for (let group = 0; group < 10; group += 1) {
+      const child: Record<string, number> = {};
+      for (let i = 0; i < 60; i += 1) child[`v${i}`] = i;
+      root[`g${group}`] = child;
+    }
+    expect(dev.discover.scanTable("big", root)).toBe(512);
   });
 
   test("scanModule walks exports", () => {

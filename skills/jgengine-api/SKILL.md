@@ -448,7 +448,7 @@ export const physics: PhysicsConfig = { gravity: -32 };
 - `server.mode` is a string your loop/commands interpret — the engine ships no gamemode presets.
 - Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts, or inline binding/inventory/world blobs. The one exception is `physics.gravity`/`physics.jumpVelocity` — global controller tuning, not a catalog value (see "Controller kinematics" below).
 - `assets` may be omitted for a game with no models (a HUD-only card/board game, say) — `defineGame` injects an empty catalog, so `GameDefinition.assets` is always present downstream with no per-caller `?.` checks.
-- `devtools` defaults to `true` — every game gets the F2-toggled debug overlay (Perf/Tune/Logs/Net/Keys) for free, and every top-level `export const` number/boolean/color and every exported flat table of them under `src/` is auto-discovered into the Tune tab with zero game code; set `false` to disable the toggle entirely. See "Devtools — F2 overlay and tunables" below.
+- `devtools` defaults to `true` — every game gets the F2-toggled debug overlay (Perf/Tune/Logs/Net/Keys) for free, and every top-level `export const` scalar (literal or derived) and every exported table of numbers/booleans/colors under `src/` — nested objects and arrays included — is auto-discovered into the Tune tab with zero game code, alongside the playable's own physics/camera/movement/world config and the engine's movement defaults; set `false` to disable the toggle entirely. See "Devtools — F2 overlay and tunables" below.
 
 ### `@jgengine/core/game/defineGame` — the underlying primitive
 
@@ -1117,7 +1117,7 @@ The React layer — `GameProvider`, the hooks table, headless className-passthro
 | Tab | Shows |
 |-----|-------|
 | Perf | fps, frame/sim ms, draw calls, triangles, entity/object counts, state notifies/s, registered probes |
-| Tune | every discovered tunable — checklist grouped by source file or table export name; check one to control it live |
+| Tune | every discovered tunable — filterable checklist grouped by source file or table export name; check one to control it live |
 | Logs | captured `console.log`/`info`/`warn`/`error` |
 | Net | observed backend round-trip latency (fed by `instrumentLatency`) |
 | Keys | the game's `ActionCodesMap` bindings |
@@ -1130,17 +1130,20 @@ export const GRAVITY = -22;
 export const SKY_COLOR = "#87ceeb";
 export const GOD_MODE = false;
 
-// game/content.ts — an exported flat table of numbers/booleans/colors
+// game/content.ts — an exported table of numbers/booleans/colors, nesting and arrays included
 export const TUNING = { reach: 6, spawnRate: 0.4, fogColor: "#334455" };
+export const WAVES = [{ count: 4, speed: 2.2 }, { count: 8, speed: 3.1 }];
 ```
 
-The dev runner's Vite plugin, `tunableDiscoveryPlugin` (`@jgengine/core/devtools/transformTunables`, wired in `apps/dev/vite.config.ts`), rewrites each top-level `export const <number|boolean|"#hex">` literal to `export let` and binds it into the devtools registry as the module loads (`transformTunableExports` is the pure string transform underneath; `tunableModuleTable(id)` derives the table id from the file path, skipping `main.tsx` and `*.test.*`). Table exports need no transform at all — after each game module loads, the dev app calls `devtools.discover.scanModule(moduleExports)`, which walks every export's own properties for a flat plain-object table of numbers/booleans/`"#rrggbb"` strings.
+The dev runner's Vite plugin, `tunableDiscoveryPlugin` (`@jgengine/core/devtools/transformTunables`, wired in `apps/dev/vite.config.ts`), rewrites each single-line top-level `export const NAME = <expression>;` to `export let` — literals, annotated consts, and derived expressions like `Math.sqrt(2 * Math.abs(GRAVITY) * JUMP_HEIGHT)` alike (string literals other than `"#hex"` colors are left alone to preserve literal types; non-scalar results are filtered out at runtime) — and binds it into the devtools registry as the module loads (`transformTunableExports` is the pure string transform underneath; `tunableModuleTable(id)` derives the table id from the file path, skipping `main.tsx` and `*.test.*`). Table exports need no transform at all — after each game module loads, the dev app calls `devtools.discover.scanModule(moduleExports)`, which walks every export for numbers/booleans/`"#rrggbb"` strings, recursing into nested plain objects and arrays (up to 5 levels deep, 512 entries per export, skipping any level with more than 64 scalars) into dotted paths like `camera.chase.distance` or `waves.0.speed`. A value reachable through two exports is bound once, under whichever scan saw it first.
 
-F2 → Tune tab lists every discovered entry as a checklist, grouped by source file (top-level constants) or by table export name (object tables). Checking an entry hands it a live slider/toggle/color picker; unchecking resets it to its initial value. Kind is inferred from the value: `number` → slider, `boolean` → toggle, a `"#rgb"`/`"#rrggbb"`/`"#rrggbbaa"` string → color.
+The overlay also self-scans on mount: the whole `PlayableGame` object under the `game` table (so `defineGame` physics, camera rigs, movement/collision/lighting config, and world feature dimensions are discoverable even when nothing exports them) and the engine's default `MOVEMENT_TUNING` under `engine` (live walk speed/jump/gravity defaults for every game, no config needed).
+
+F2 → Tune tab lists every discovered entry as a checklist with a filter box, grouped by source file (top-level constants) or by table export name (object tables). Checking an entry hands it a live slider/toggle/color picker; unchecking resets it to its initial value. Kind is inferred from the value: `number` → slider, `boolean` → toggle, a `"#rgb"`/`"#rrggbb"`/`"#rrggbbaa"` string → color.
 
 **Liveness.** An edit applies live wherever the code reads the constant/table entry at use time. A value captured once at init — passed into a function call, baked into worldgen — only picks up the new value on reload. Overrides persist in `localStorage` per game (key `jg-devtools:<game name>`) and are re-applied *before* `loop.onInit` runs, so even an init-baked constant respects its override after a refresh — *if* the read happens at or after `onInit`. A read that happens earlier than that (see below) never sees the override, reload or not.
 
-**Default assumption: almost every gameplay number, boolean, and color is a tunable, not a hardcoded fact.** Walk speed, jump height, gravity, damage, cooldowns, spawn rates, drop chances, radii, durations, thresholds, multipliers, colors — if it's a scalar a designer would plausibly want to nudge while playing, it belongs in a place discovery can see (a top-level `export const`, or a direct scalar field on a catalog def object like `PlayerDef`/`EnemyDef`) — never buried as a bare literal inside a deeper nested object with no named export, and never computed once and thrown away. Treat "should this be tunable" as opt-out, not opt-in.
+**Default assumption: almost every gameplay number, boolean, and color is a tunable, not a hardcoded fact.** Walk speed, jump height, gravity, damage, cooldowns, spawn rates, drop chances, radii, durations, thresholds, multipliers, colors — if it's a scalar a designer would plausibly want to nudge while playing, it belongs in a place discovery can see (a top-level `export const`, or a scalar field — nested objects and arrays are scanned too — on an exported catalog/config object like `PlayerDef`/`EnemyDef`) — never a bare literal inline in logic with no named export, and never computed once and thrown away. Treat "should this be tunable" as opt-out, not opt-in.
 
 **Catalog-derived content must read fields live, not bake them at import time.** A common trap: a `content.ts` (or any module implementing `GameContextContent`) that loops over a catalog array *once at module scope* and copies scalar fields into a separately cached `Map`:
 
@@ -1300,7 +1303,7 @@ game.chat          send / whisper / history / register — global/party/proximit
 game.roster        capture / release / list / setEquipped — persisted owned-creature roster
 game.store/cards/turn   store: keyed reactive slot; cards.pile(id): lazy CardPile; turn.loop(id): lazy TurnLoop
 game.events/feed/leaderboard   on / bind+push+recent / track+increment+getTop
-devtools           F2 overlay (Perf/Tune/Logs/Net/Keys); zero-annotation — top-level export const number/boolean/color + exported flat tables auto-discover into Tune; tunable() is the optional low-level escape hatch; snapshotDevtools()/window.__JG_DEVTOOLS.snapshot() → DevtoolsSnapshot (+ discovered[]); probes.register(name, read) adds a Perf gauge
+devtools           F2 overlay (Perf/Tune/Logs/Net/Keys); zero-annotation — top-level export const scalars (literal or derived) + exported tables (nested objects/arrays included) auto-discover into Tune, plus the playable's physics/camera/movement/world config and engine MOVEMENT_TUNING defaults; tunable() is the optional low-level escape hatch; snapshotDevtools()/window.__JG_DEVTOOLS.snapshot() → DevtoolsSnapshot (+ discovered[]); probes.register(name, read) adds a Perf gauge
 applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
 player.motion      impulse / setVerticalVelocity / setY — vertical-motion seam into the shell's frame driver

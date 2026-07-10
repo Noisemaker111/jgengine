@@ -231,6 +231,8 @@ interface DiscoveredRecord {
 }
 
 const MAX_TABLE_ENTRIES = 64;
+const MAX_SCAN_DEPTH = 5;
+const MAX_SCAN_TARGETS = 512;
 
 function discoverableKind(value: unknown): DevtoolsControlKind | null {
   if (typeof value === "number" && Number.isFinite(value)) return "slider";
@@ -239,17 +241,53 @@ function discoverableKind(value: unknown): DevtoolsControlKind | null {
   return null;
 }
 
-function discoverableEntries(candidate: unknown): [string, DevtoolsControlKind][] {
-  if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) return [];
-  const proto = Object.getPrototypeOf(candidate);
-  if (proto !== Object.prototype && proto !== null) return [];
+function isScannableContainer(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== "object") return false;
+  if (Array.isArray(value)) return value.length <= MAX_TABLE_ENTRIES;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+function scalarEntries(candidate: Record<string, unknown>): [string, DevtoolsControlKind][] | null {
   const entries: [string, DevtoolsControlKind][] = [];
   for (const [key, value] of Object.entries(candidate)) {
     const kind = discoverableKind(value);
     if (kind !== null) entries.push([key, kind]);
-    if (entries.length > MAX_TABLE_ENTRIES) return [];
+    if (entries.length > MAX_TABLE_ENTRIES) return null;
   }
   return entries;
+}
+
+interface ScanTarget {
+  path: string;
+  target: Record<string, unknown>;
+  key: string;
+  kind: DevtoolsControlKind;
+}
+
+function collectScanTargets(root: unknown): ScanTarget[] {
+  if (!isScannableContainer(root)) return [];
+  const out: ScanTarget[] = [];
+  const visited = new Set<object>([root]);
+  let frontier: { path: string; target: Record<string, unknown> }[] = [{ path: "", target: root }];
+  for (let depth = 0; depth <= MAX_SCAN_DEPTH && frontier.length > 0; depth += 1) {
+    const next: typeof frontier = [];
+    for (const { path, target } of frontier) {
+      const entries = scalarEntries(target);
+      if (entries === null) continue;
+      for (const [key, kind] of entries) {
+        if (out.length >= MAX_SCAN_TARGETS) return out;
+        out.push({ path: path === "" ? key : `${path}.${key}`, target, key, kind });
+      }
+      for (const [key, value] of Object.entries(target)) {
+        if (!isScannableContainer(value) || visited.has(value)) continue;
+        visited.add(value);
+        next.push({ path: path === "" ? key : `${path}.${key}`, target: value });
+      }
+    }
+    frontier = next;
+  }
+  return out;
 }
 
 export function createDevtools(): Devtools {
@@ -270,6 +308,7 @@ export function createDevtools(): Devtools {
   const controlRecords = new Map<string, ControlRecord>();
   const discoveredRecords = new Map<string, DiscoveredRecord>();
   const probeReaders = new Map<string, () => unknown>();
+  let boundProps = new WeakMap<object, Set<string>>();
 
   const readProbes = (): Record<string, unknown> => {
     const values: Record<string, unknown> = {};
@@ -438,11 +477,13 @@ export function createDevtools(): Devtools {
   };
 
   const scanTable = (table: string, candidate: unknown): number => {
-    const entries = discoverableEntries(candidate);
-    if (entries.length === 0) return 0;
-    const target = candidate as Record<string, unknown>;
+    const targets = collectScanTargets(candidate);
+    if (targets.length === 0) return 0;
     let changed = false;
-    for (const [key, kind] of entries) {
+    let bound = 0;
+    for (const { path, target, key, kind } of targets) {
+      const boundKeys = boundProps.get(target);
+      if (boundKeys?.has(key) === true && !discoveredRecords.has(`${table}/${path}`)) continue;
       const accessor: TunableAccessor = {
         initial: target[key],
         get: () => target[key],
@@ -450,10 +491,13 @@ export function createDevtools(): Devtools {
           target[key] = value;
         },
       };
-      if (bindDiscovered(table, key, kind, accessor, target)) changed = true;
+      if (bindDiscovered(table, path, kind, accessor, target)) changed = true;
+      bound += 1;
+      if (boundKeys === undefined) boundProps.set(target, new Set([key]));
+      else boundKeys.add(key);
     }
     if (changed) signal.notify();
-    return entries.length;
+    return bound;
   };
 
   const enableDiscovered = (id: string): void => {
@@ -569,6 +613,7 @@ export function createDevtools(): Devtools {
           }
         }
         discoveredRecords.clear();
+        boundProps = new WeakMap();
         signal.notify();
       },
     },
