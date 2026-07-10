@@ -203,6 +203,16 @@ export function initCity(ctx: GameContext): void {
   ctx.game.store.set("future", [] satisfies CitySnapshot[]);
   for (const building of buildings) ctx.scene.object.place("building", building.x, 0, building.z, { instanceId: building.id });
   ctx.time.pause();
+  applyBootParams(ctx);
+}
+
+function applyBootParams(ctx: GameContext): void {
+  if (typeof location === "undefined") return;
+  const params = new URLSearchParams(location.search);
+  const mood = params.get("mood");
+  const moodDef = MOOD_DEFS.find((def) => def.id === mood);
+  if (moodDef !== undefined) setMood(ctx, moodDef.id);
+  if (params.get("menu") === "0") setWelcomeOpen(ctx, false);
 }
 
 export function placeBuildingAt(ctx: GameContext, x: number, z: number, program: Program): Building | null {

@@ -8,12 +8,12 @@ import { hashMassingSeed, isVillageMassing, massingBase } from "@jgengine/core/w
 
 import { useGameClock, useGameStore } from "@jgengine/react/hooks";
 
-import { CELL, TONES, type Building, type CitySignals, type DistrictCharter, type FacadeStrategy, type Lens, type Plaza, type Program, type Tone } from "../catalog";
+import { CELL, TONES, type Building, type CitySignals, type DistrictCharter, type DistrictMood, type FacadeStrategy, type Lens, type Plaza, type Program, type Tone } from "../catalog";
 import { citySignals, resolveCityMetrics } from "../city/metrics";
 import { buildingBodies, clamp, programOccupancy, solarModel } from "../city/model";
-import { activeCharter, activeLens, cityBuildings, cityPlazas, selectedId } from "../city/state";
+import { activeCharter, activeLens, activeMood, cityBuildings, cityPlazas, selectedId } from "../city/state";
 import { concreteShader, getConcreteTexture, lensColor, roleSurfaceColor } from "./concrete";
-import { MONUMENT_SCENE } from "./Environment";
+import { moodSceneFor, type MoodScene } from "./Environment";
 import { MassingGizmo } from "./Gizmos";
 
 const FACADE_FLOORS = 12;
@@ -27,7 +27,13 @@ const ACCENT: Record<Program, string> = {
   mixed: "#697951",
 };
 
-const specialLightColor = (seed: number): string => (seed % 2 === 0 ? MONUMENT_SCENE.window : MONUMENT_SCENE.windowAlt);
+const specialLightColor = (scene: MoodScene, mood: DistrictMood, seed: number): string => {
+  if (mood === "cyberpunk") return ["#38f6ff", "#d7ff43", "#ff386c", "#ffd166"][Math.abs(seed) % 4];
+  if (mood === "green") return seed % 3 === 0 ? scene.windowAlt : scene.accent;
+  if (mood === "totalitarian") return seed % 4 === 0 ? scene.accent : scene.lamp;
+  if (mood === "university") return seed % 3 === 0 ? scene.windowAlt : scene.accent;
+  return seed % 2 === 0 ? scene.window : scene.windowAlt;
+};
 
 const bodyWorldPoint = (body: MassingBody, position: [number, number, number]): THREE.Vector3 =>
   new THREE.Vector3(position[0], position[1], position[2]).applyAxisAngle(new THREE.Vector3(0, 1, 0), body.ry ?? 0);
@@ -122,12 +128,16 @@ function FacadeLayer({
   strategy,
   night,
   occupancy,
+  mood,
+  scene,
 }: {
   b: Building;
   body: MassingBody;
   strategy: FacadeStrategy;
   night: boolean;
   occupancy: number;
+  mood: DistrictMood;
+  scene: MoodScene;
 }): ReactNode {
   if (body.h < b.floorHeight * 1.35 || body.facade !== true || body.kind === "capsule") return null;
   const floors = Math.max(1, Math.min(FACADE_FLOORS, Math.floor(body.h / b.floorHeight)));
@@ -139,12 +149,32 @@ function FacadeLayer({
   const windowMaterial = (seed: number) => {
     if (!night) return { glass: "#111e26", emissive: "#000000", intensity: 0 };
     const random = Math.abs(Math.sin(seed * 12.9898 + body.x * 0.17 + body.z * 0.11) * 43758.5453) % 1;
+    if (mood === "totalitarian") {
+      const active = random < clamp(0.04 + occupancy * 0.28, 0.04, 0.32);
+      const c = seed % 4 === 0 ? scene.window : scene.windowAlt;
+      return {
+        glass: new THREE.Color(c).multiplyScalar(active ? 0.34 : 0.08).getStyle(),
+        emissive: c,
+        intensity: active ? scene.windowIntensity * 0.5 : scene.windowIntensity * 0.035,
+      };
+    }
+    if (mood === "cyberpunk") {
+      const active = random < clamp(0.18 + occupancy * 0.68, 0.18, 0.9);
+      const palette = ["#38f6ff", "#d7ff43", "#ffa33b", "#738282", "#ff386c", "#2e5159"];
+      const c = palette[Math.abs(seed) % palette.length];
+      const hot = seed % 17 === 0;
+      return {
+        glass: new THREE.Color(c).multiplyScalar(active ? (hot ? 0.76 : 0.32) : 0.055).getStyle(),
+        emissive: c,
+        intensity: active ? scene.windowIntensity * (hot ? 1.35 : 0.42) : scene.windowIntensity * 0.025,
+      };
+    }
     const active = random < clamp(0.16 + occupancy * 0.7, 0.16, 0.88);
-    const c = seed % 3 === 0 ? MONUMENT_SCENE.windowAlt : MONUMENT_SCENE.window;
+    const c = seed % 3 === 0 ? scene.windowAlt : scene.window;
     return {
       glass: new THREE.Color(c).multiplyScalar(active ? 0.52 : 0.2).getStyle(),
       emissive: c,
-      intensity: active ? MONUMENT_SCENE.windowIntensity : MONUMENT_SCENE.windowIntensity * 0.18,
+      intensity: active ? scene.windowIntensity : scene.windowIntensity * 0.18,
     };
   };
   const concrete = TONES[b.tone].color;
@@ -408,7 +438,7 @@ function Palm({ x, z, scale = 1 }: { x: number; z: number; scale?: number }): Re
   );
 }
 
-function ForumArchitecture({ b, color, selected, active }: { b: Building; color: string; selected: boolean; active: boolean }): ReactNode {
+function ForumArchitecture({ b, color, selected, active, mood, scene }: { b: Building; color: string; selected: boolean; active: boolean; mood: DistrictMood; scene: MoodScene }): ReactNode {
   const base = massingBase({ pilotis: b.pilotis, height: b.height }, 0.24);
   const usable = Math.max(8, b.height - base);
   const tiers = Math.round(clamp(Math.max(2, Math.ceil(usable / (b.floorHeight * 2.4))), 2, 6));
@@ -436,7 +466,7 @@ function ForumArchitecture({ b, color, selected, active }: { b: Building; color:
     for (let i = 0; i < segments; i++) {
       if (b.voids > 18 && (i + level * 2) % skipEvery === 0) continue;
       const a = (i / segments) * Math.PI * 2 + turn;
-      const c = specialLightColor(i + level * 11);
+      const c = specialLightColor(scene, mood, i + level * 11);
       const lit = active && (i + level) % 3 !== 0;
       modules.push(
         <group key={`${level}-${i}`} position={[x + Math.sin(a) * radius, base + tierH * (level + 0.5), z + Math.cos(a) * radius]} rotation={[0, a, 0]}>
@@ -445,7 +475,7 @@ function ForumArchitecture({ b, color, selected, active }: { b: Building; color:
             <meshStandardMaterial
               color={active && level % 2 ? new THREE.Color(color).lerp(new THREE.Color(c), 0.22).getStyle() : color}
               emissive={lit ? c : "#000000"}
-              emissiveIntensity={lit ? 0.32 : 0}
+              emissiveIntensity={lit ? (mood === "cyberpunk" ? 0.68 : 0.32) : 0}
               roughness={0.94}
             />
           </mesh>
@@ -467,7 +497,7 @@ function ForumArchitecture({ b, color, selected, active }: { b: Building; color:
         {active && (
           <mesh position={[0, 0, 0.12]}>
             <torusGeometry args={[radius, Math.max(0.045, ringDepth * 0.035), 5, Math.max(24, segments * 2)]} />
-            <meshBasicMaterial color={specialLightColor(level)} transparent opacity={0.38} toneMapped={false} />
+            <meshBasicMaterial color={specialLightColor(scene, mood, level)} transparent opacity={0.38} toneMapped={false} />
           </mesh>
         )}
       </group>,
@@ -492,7 +522,7 @@ function ForumArchitecture({ b, color, selected, active }: { b: Building; color:
       {active && (
         <pointLight
           position={[0, base + usable * 0.45, 0]}
-          color={MONUMENT_SCENE.lamp}
+          color={scene.lamp}
           intensity={54}
           distance={Math.max(34, b.width * 1.6)}
           decay={1.7}
@@ -530,7 +560,7 @@ function ForumArchitecture({ b, color, selected, active }: { b: Building; color:
   );
 }
 
-function CapsuleDetails({ b, bodies, active }: { b: Building; bodies: MassingBody[]; active: boolean }): ReactNode {
+function CapsuleDetails({ b, bodies, active, mood, scene }: { b: Building; bodies: MassingBody[]; active: boolean; mood: DistrictMood; scene: MoodScene }): ReactNode {
   const pods = bodies.filter((body) => body.kind === "capsule");
   if (pods.length === 0) return null;
   const cores = bodies.filter((body) => body.role === "core");
@@ -543,7 +573,7 @@ function CapsuleDetails({ b, bodies, active }: { b: Building; bodies: MassingBod
       {pods.map((body, i) => (
         <group key={`pod-detail-${i}`} rotation={[0, body.ry ?? 0, 0]}>
           {[-1, 1].map((face) => {
-            const c = specialLightColor(i + face * 3);
+            const c = specialLightColor(scene, mood, i + face * 3);
             const lit = active && (i + face) % 4 !== 0;
             return (
               <group key={face}>
@@ -581,7 +611,7 @@ function CapsuleDetails({ b, bodies, active }: { b: Building; bodies: MassingBod
           })}
           <mesh position={[body.x, body.y - body.h * 0.47, body.z + body.d * 0.54]}>
             <boxGeometry args={[body.w * 0.56, Math.max(0.06, body.h * 0.055), 0.08]} />
-            <meshBasicMaterial color={specialLightColor(i + 17)} transparent opacity={active ? 0.5 : 0.1} toneMapped={false} />
+            <meshBasicMaterial color={specialLightColor(scene, mood, i + 17)} transparent opacity={active ? 0.5 : 0.1} toneMapped={false} />
           </mesh>
           {i % balconyEvery === 0 && (
             <mesh position={[body.x, body.y - body.h * 0.57, body.z]}>
@@ -595,7 +625,7 @@ function CapsuleDetails({ b, bodies, active }: { b: Building; bodies: MassingBod
         <group key={`service-spine-${i}`} rotation={[0, core.ry ?? 0, 0]}>
           {Array.from({ length: 3 }, (_, pipe) => {
             const offset = (pipe - 1) * core.w * 0.24;
-            const c = specialLightColor(i * 7 + pipe);
+            const c = specialLightColor(scene, mood, i * 7 + pipe);
             return (
               <mesh key={pipe} position={[core.x + offset, core.y, core.z + core.d * 0.52]}>
                 <boxGeometry args={[0.14, core.h * 0.9, 0.13]} />
@@ -615,7 +645,7 @@ function CapsuleDetails({ b, bodies, active }: { b: Building; bodies: MassingBod
         const direction = Math.sign(arm.z) || 1;
         const end = bodyWorldPoint(arm, [arm.x, arm.y + arm.h * 0.55, arm.z + direction * arm.d * 0.5]);
         const startY = Math.min(b.height * 0.92, Math.max(end.y + 5, b.height * (0.58 + i * 0.025)));
-        const c = specialLightColor(i + 31);
+        const c = specialLightColor(scene, mood, i + 31);
         return (
           <group key={`branch-rig-${i}`}>
             <BeamBetween from={[0, startY, 0]} to={[end.x, end.y, end.z]} width={0.052} color="#444b49" />
@@ -694,12 +724,16 @@ const BuildingContent = memo(function BuildingContent({
   night,
   occupancy,
   lens,
+  mood,
+  scene,
 }: {
   b: Building;
   selected: boolean;
   night: boolean;
   occupancy: number;
   lens: Lens;
+  mood: DistrictMood;
+  scene: MoodScene;
 }): ReactNode {
   const bodies = useMemo(() => buildingBodies(b), [b]);
   const color = useMemo(() => lensColor(b, lens), [b, lens]);
@@ -713,17 +747,17 @@ const BuildingContent = memo(function BuildingContent({
       </mesh>
       {b.composition !== "ring" && <Pilotis b={b} />}
       {b.composition === "ring" ? (
-        <ForumArchitecture b={b} color={color} selected={selected} active={active} />
+        <ForumArchitecture b={b} color={color} selected={selected} active={active} mood={mood} scene={scene} />
       ) : (
         bodies.map((body, i) => (
           <group key={`${b.composition}-${body.kind ?? "box"}-${body.role ?? "mass"}-${i}`} rotation={[0, body.ry ?? 0, 0]}>
             <ConcreteBody body={body} color={color} selected={selected} />
             <ConstructionJoints body={body} tone={b.tone} />
-            <FacadeLayer b={b} body={body} strategy={activeFacade} night={night} occupancy={occupancy} />
+            <FacadeLayer b={b} body={body} strategy={activeFacade} night={night} occupancy={occupancy} mood={mood} scene={scene} />
           </group>
         ))
       )}
-      {b.composition === "capsule" && <CapsuleDetails b={b} bodies={bodies} active={active} />}
+      {b.composition === "capsule" && <CapsuleDetails b={b} bodies={bodies} active={active} mood={mood} scene={scene} />}
       {b.composition !== "ring" && (
         <>
           <mesh position={[0, 0.08, b.depth / 2 + 2.1]} castShadow>
@@ -858,16 +892,18 @@ function BuildingNode({ id }: { id: string }): ReactNode {
   const b = useGameStore((ctx) => cityBuildings(ctx).find((entry) => entry.id === id) ?? null);
   const selected = useGameStore((ctx) => selectedId(ctx) === id);
   const lens = useGameStore(activeLens);
+  const mood = useGameStore(activeMood);
   const signals = useGameStore(liveSignals);
   const clock = useGameClock();
   if (b === null) return null;
+  const scene = moodSceneFor(mood);
   const hour = clock.calendar.dayFraction * 24;
   const solar = solarModel(hour);
   const night = solar.night;
   const occupancy = night ? Math.round(programOccupancy(b, hour, signals) * 12) / 12 : 0;
   return (
     <group rotation={[0, (b.rotation * Math.PI) / 180, 0]}>
-      <BuildingContent b={b} selected={selected} night={night} occupancy={occupancy} lens={lens} />
+      <BuildingContent b={b} selected={selected} night={night} occupancy={occupancy} lens={lens} mood={mood} scene={scene} />
       <CharterEvidence b={b} signals={signals} night={night} />
       {selected && <SelectionRing b={b} />}
       {selected && <MassingGizmo building={b} />}
