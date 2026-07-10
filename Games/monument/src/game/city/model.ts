@@ -46,8 +46,8 @@ export function occupiedLotKeys(buildings: readonly Building[], plazas: readonly
 }
 
 export function lotAt(x: number, z: number): { gx: number; gz: number; x: number; z: number } | null {
-  const gx = Math.round(x / CELL);
-  const gz = Math.round(z / CELL);
+  const gx = Math.round(x / CELL) + 0;
+  const gz = Math.round(z / CELL) + 0;
   if (Math.abs(gx) > HALF || Math.abs(gz) > HALF) return null;
   return { gx, gz, x: gx * CELL, z: gz * CELL };
 }

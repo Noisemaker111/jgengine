@@ -70,6 +70,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Content scatter | `world/scatterItems` | `scatterItems`, `pickWeighted`, `ScatterLayer`, `ScatterInstance` |
 | Building generator | `world/buildings` | `generateBuilding`, `generateBuildingDistrict`, `createBuildingGrid`, `GeneratedBuilding` |
 | Building index | `world/buildingIndex` | `buildingIndex`, `BuildingIndex`, `BuildingHit` |
+| Parametric massing | `world/massing` | `composeMassing`, `MassingSpec`, `MassingBody`, `MassingComposition`, `MassingProfile`, `MASSING_COMPOSITIONS`, `MASSING_PROFILES`, `massingBase`, `massingFloorCount`, `isVillageMassing`, `hashMassingSeed` — parametric building-massing grammar: one numeric spec (9 compositions × 6 profiles, voids/taper/articulation/branches/crown knobs) deterministically composes the box/capsule body list a city or base builder renders |
 | Scene summary | `world/environmentSummary` | `summarizeEnvironment`, `resolveStructureBuildings`, `EnvironmentSummary` |
 | Map markers | `world/markers` | `createMarkerSet`, `MarkerSet`, `MapMarker`, `MarkerInput`, `MarkerKindStyle`, `DEFAULT_MARKER_KINDS`, `markerKindStyle` |
 | Fog of war | `world/fog` | `createFogField`, `FogField`, `FogConfig`, `FogBounds`, `FogCells` |
