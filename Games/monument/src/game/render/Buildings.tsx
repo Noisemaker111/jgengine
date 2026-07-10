@@ -1,15 +1,17 @@
 import type { ReactNode } from "react";
 import { memo, useMemo } from "react";
 import * as THREE from "three";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { MassingBody } from "@jgengine/core/world/massing";
-import { isVillageMassing, massingBase } from "@jgengine/core/world/massing";
+import { hashMassingSeed, isVillageMassing, massingBase } from "@jgengine/core/world/massing";
 
 import { useGameClock, useGameStore } from "@jgengine/react/hooks";
 
-import { CELL, TONES, type Building, type FacadeStrategy, type Lens, type Plaza, type Program, type Tone } from "../catalog";
-import { buildingBodies, clamp, NEUTRAL_SIGNALS, programOccupancy, solarModel } from "../city/model";
-import { activeLens, cityBuildings, cityPlazas, selectedId } from "../city/state";
+import { CELL, TONES, type Building, type CitySignals, type DistrictCharter, type FacadeStrategy, type Lens, type Plaza, type Program, type Tone } from "../catalog";
+import { citySignals, resolveCityMetrics } from "../city/metrics";
+import { buildingBodies, clamp, programOccupancy, solarModel } from "../city/model";
+import { activeCharter, activeLens, cityBuildings, cityPlazas, selectedId } from "../city/state";
 import { concreteShader, getConcreteTexture, lensColor, roleSurfaceColor } from "./concrete";
 import { MONUMENT_SCENE } from "./Environment";
 import { MassingGizmo } from "./Gizmos";
@@ -742,19 +744,131 @@ const BuildingContent = memo(function BuildingContent({
   );
 });
 
+const COMMONS_PROGRAMS: readonly Program[] = ["housing", "mixed", "civic"];
+const SPECIALIST_PROGRAMS: readonly Program[] = ["work", "culture"];
+const REUSE_PANELS: readonly (readonly [number, number])[] = [
+  [-0.22, 0.24],
+  [0.19, 0.38],
+];
+const EVIDENCE_SLOTS = [-1, 0, 1] as const;
+
+let signalsCache: { buildings: Building[]; plazas: Plaza[]; charter: DistrictCharter; value: CitySignals } | null = null;
+
+function liveSignals(ctx: GameContext): CitySignals {
+  const buildings = cityBuildings(ctx);
+  const plazas = cityPlazas(ctx);
+  const charter = activeCharter(ctx);
+  if (signalsCache !== null && signalsCache.buildings === buildings && signalsCache.plazas === plazas && signalsCache.charter === charter)
+    return signalsCache.value;
+  const value = citySignals(resolveCityMetrics(buildings, plazas, charter), charter);
+  signalsCache = { buildings, plazas, charter, value };
+  return value;
+}
+
+function CharterEvidence({ b, signals, night }: { b: Building; signals: CitySignals; night: boolean }): ReactNode {
+  const evidence = useMemo(() => {
+    const seed = hashMassingSeed(b.id);
+    const front = b.depth / 2 + 0.18;
+    const elements: ReactNode[] = [];
+    if (signals.sharedRooms && COMMONS_PROGRAMS.includes(b.program))
+      elements.push(
+        <mesh key="shared-rooms" position={[0, Math.min(5.2, Math.max(2.5, b.height * 0.12)), front]}>
+          <boxGeometry args={[Math.max(3.8, b.width * 0.46), 0.72, 0.16]} />
+          <meshStandardMaterial color={night ? "#ffc86b" : "#876f49"} emissive={night ? "#ffc86b" : "#000000"} emissiveIntensity={night ? 0.88 : 0} roughness={0.58} />
+        </mesh>,
+      );
+    if (signals.reuse && seed % 2 === 0)
+      REUSE_PANELS.forEach(([x, y], i) =>
+        elements.push(
+          <mesh key={`reuse-panel-${i}`} position={[b.width * x, Math.max(4, b.height * y), front + 0.03]}>
+            <boxGeometry args={[Math.max(2.2, b.width * (i ? 0.16 : 0.22)), Math.max(1.1, Math.min(4, b.height * 0.08)), 0.12]} />
+            <meshStandardMaterial color={i ? "#7b776d" : "#9a8068"} roughness={1} />
+          </mesh>,
+        ),
+      );
+    if (signals.formal)
+      elements.push(
+        <mesh key="formal-joint" position={[0, Math.max(4, b.height * 0.22), front + 0.02]}>
+          <boxGeometry args={[b.width * 0.72, 0.18, 0.13]} />
+          <meshStandardMaterial color="#c4c2b9" roughness={0.84} />
+        </mesh>,
+      );
+    if (night && signals.nightAccess === "open" && b.pilotis > 1.2 && seed % 2 === 0)
+      EVIDENCE_SLOTS.forEach((slot, i) =>
+        elements.push(
+          <group key={`night-stall-${i}`} position={[slot * Math.min(3.4, b.width * 0.18), 0.9, front + 1.2]}>
+            <mesh position={[0, 0.82, 0]}>
+              <boxGeometry args={[2.4, 0.12, 1.4]} />
+              <meshStandardMaterial color={i % 2 ? "#d7ff43" : "#e28a55"} emissive={i % 2 ? "#7d9325" : "#8a3a1f"} emissiveIntensity={0.42} />
+            </mesh>
+            <mesh>
+              <boxGeometry args={[1.9, 1.2, 1.1]} />
+              <meshStandardMaterial color="#4c4640" roughness={0.9} />
+            </mesh>
+          </group>,
+        ),
+      );
+    if (signals.nightAccess === "quiet" && b.pilotis > 1.2 && seed % 2 === 0)
+      elements.push(
+        <group key="quiet-gardens" position={[0, 0.42, front + 0.9]}>
+          {EVIDENCE_SLOTS.map((slot, i) => (
+            <group key={`quiet-garden-${i}`} position={[slot * Math.min(3.6, b.width * 0.2), 0, 0]}>
+              <mesh>
+                <boxGeometry args={[2.7, 0.72, 1.5]} />
+                <meshStandardMaterial color="#796f5e" roughness={1} />
+              </mesh>
+              <mesh position={[0, 0.48, 0]}>
+                <boxGeometry args={[2.3, 0.22, 1.15]} />
+                <meshStandardMaterial color={i % 2 ? "#647b56" : "#536c50"} roughness={1} />
+              </mesh>
+              {night && (
+                <mesh position={[0, 0.72, 0.72]}>
+                  <boxGeometry args={[0.18, 0.26, 0.12]} />
+                  <meshStandardMaterial color="#ffd99a" emissive="#ffd99a" emissiveIntensity={0.62} />
+                </mesh>
+              )}
+            </group>
+          ))}
+        </group>,
+      );
+    if (signals.specialistGrowth && SPECIALIST_PROGRAMS.includes(b.program))
+      elements.push(
+        <group key="specialist-signage">
+          <mesh position={[0, Math.min(7, b.height * 0.18), front + 0.04]}>
+            <boxGeometry args={[Math.max(4, b.width * 0.54), 0.42, 0.13]} />
+            <meshStandardMaterial
+              color={b.program === "culture" ? "#bc86de" : "#7aa4e8"}
+              emissive={night ? (b.program === "culture" ? "#bc86de" : "#7aa4e8") : "#000000"}
+              emissiveIntensity={night ? 0.72 : 0}
+              roughness={0.48}
+            />
+          </mesh>
+          <mesh position={[b.width * 0.31, 2.1, front + 0.45]}>
+            <boxGeometry args={[Math.max(1.8, b.width * 0.13), 2.8, 0.5]} />
+            <meshStandardMaterial color="#6a6257" roughness={0.82} />
+          </mesh>
+        </group>,
+      );
+    return elements;
+  }, [b, night, signals.sharedRooms, signals.reuse, signals.formal, signals.nightAccess, signals.specialistGrowth]);
+  return <>{evidence}</>;
+}
+
 function BuildingNode({ id }: { id: string }): ReactNode {
   const b = useGameStore((ctx) => cityBuildings(ctx).find((entry) => entry.id === id) ?? null);
   const selected = useGameStore((ctx) => selectedId(ctx) === id);
   const lens = useGameStore(activeLens);
+  const signals = useGameStore(liveSignals);
   const clock = useGameClock();
   if (b === null) return null;
   const hour = clock.calendar.dayFraction * 24;
   const solar = solarModel(hour);
   const night = solar.night;
-  const occupancy = night ? Math.round(programOccupancy(b, hour, NEUTRAL_SIGNALS) * 12) / 12 : 0;
+  const occupancy = night ? Math.round(programOccupancy(b, hour, signals) * 12) / 12 : 0;
   return (
     <group rotation={[0, (b.rotation * Math.PI) / 180, 0]}>
       <BuildingContent b={b} selected={selected} night={night} occupancy={occupancy} lens={lens} />
+      <CharterEvidence b={b} signals={signals} night={night} />
       {selected && <SelectionRing b={b} />}
       {selected && <MassingGizmo building={b} />}
     </group>
