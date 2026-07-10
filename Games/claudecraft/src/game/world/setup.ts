@@ -4,7 +4,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { spawnAllMobs } from "../ai/mobs";
 import { NPCS } from "../entities/npcs/catalog";
 import { INTERACT_RANGE } from "../math/combat";
+import { placeGatherNodes } from "../professions/gathering";
 import { ZONES } from "./zones";
+
+export const STRONGBOX = "gilded_strongbox";
 
 export function setupWorld(ctx: GameContext): void {
   for (const npc of NPCS) {
@@ -15,7 +18,25 @@ export function setupWorld(ctx: GameContext): void {
       rotationY: Math.PI,
     });
   }
+  for (const zone of ZONES) {
+    const x = zone.hub.x + 7;
+    const z = zone.hub.z - 7;
+    ctx.scene.object.place(STRONGBOX, x, ctx.world.groundHeightAt(x, z), z);
+  }
   spawnAllMobs(ctx);
+  placeGatherNodes(ctx);
+}
+
+export function strongboxPrompts(ctx: GameContext): readonly PositionedPrompt[] {
+  return ZONES.map((zone) => ({
+    id: `bank:${zone.id}`,
+    position: { x: zone.hub.x + 7, z: zone.hub.z - 7 },
+    prompt: proximityPrompt({
+      radius: INTERACT_RANGE,
+      display: keybind("interact"),
+      invoke: command("bank.open", {}),
+    }),
+  }));
 }
 
 export function npcPrompts(ctx: GameContext): readonly PositionedPrompt[] {

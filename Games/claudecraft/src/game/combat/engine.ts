@@ -24,7 +24,8 @@ import {
   syncAuras,
   type HeroSheet,
 } from "../session/hero";
-import { addThreat, armorOfMob, isMobInstance } from "../ai/mobs";
+import { addThreat, applyMobCc, armorOfMob, isMobInstance } from "../ai/mobs";
+import { ZONES } from "../world/zones";
 
 const rng = seededRng("claudecraft-combat");
 
@@ -131,11 +132,41 @@ function abilityAmount(ctx: GameContext, userId: string, ability: AbilityDef, sh
   );
 }
 
+function applyCc(ctx: GameContext, userId: string, targetId: string, ability: AbilityDef): void {
+  const cc = ability.cc;
+  if (cc === undefined) return;
+  if (cc.kind === "armorShred") {
+    applyAura(
+      ctx,
+      targetId,
+      userId,
+      { ...ability, kind: "buff", duration: cc.durationSec },
+      0,
+      { stat: "armor", amount: -Math.abs(cc.amount ?? ability.base) },
+    );
+    addThreat(targetId, userId, 12);
+    enterCombat(ctx, userId);
+    return;
+  }
+  if (applyMobCc(ctx, targetId, userId, cc)) {
+    addThreat(targetId, userId, cc.kind === "taunt" ? 1 : 8);
+    enterCombat(ctx, userId);
+  }
+}
+
 function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): void {
   const sheet = heroSheet(ctx, userId);
   if (sheet === null) return;
   const hero = heroOf(userId);
   if (hero === null) return;
+  if (ability.selfResource !== undefined && ability.selfResource > 0) {
+    ctx.scene.entity.stats.delta(userId, "resource", ability.selfResource);
+  }
+  if (ability.cc !== undefined) {
+    const ccTarget = hostileTarget(ctx, userId);
+    if (ccTarget !== null) applyCc(ctx, userId, ccTarget, ability);
+    if (ability.kind === "buff" && ability.base === 0) return;
+  }
   const crit = rollCrit(rng, sheet.critPct);
   switch (ability.kind) {
     case "damage": {
@@ -183,6 +214,27 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
       break;
     }
     case "buff": {
+      if (ability.selfTarget === false) {
+        const targetId = hostileTarget(ctx, userId);
+        if (targetId === null) return;
+        const targets =
+          ability.aoeRadius !== undefined
+            ? ctx.scene.entity.inRadius(
+                ctx.scene.entity.get(targetId)?.position ?? [0, 0, 0],
+                ability.aoeRadius,
+                isMobInstance,
+              )
+            : [targetId];
+        for (const debuffed of targets) {
+          applyAura(ctx, debuffed, userId, ability, 0, {
+            ...(ability.buffStat === undefined ? {} : { stat: ability.buffStat }),
+            amount: -Math.abs(ability.buffAmount ?? ability.base),
+          });
+          addThreat(debuffed, userId, 10);
+        }
+        enterCombat(ctx, userId);
+        break;
+      }
       applyAura(ctx, userId, userId, ability, 0, buffFlatAmount(sheet, ability));
       break;
     }
@@ -208,6 +260,37 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
       break;
     }
   }
+}
+
+export function applyFood(
+  ctx: GameContext,
+  userId: string,
+  item: { id: string; name: string; icon: string; heal?: number; restore?: number },
+): void {
+  const now = ctx.time.now();
+  const list = aurasOf(userId);
+  for (const [auraId, kind] of [
+    [`food:${item.id}`, "hot"],
+    [`drink:${item.id}`, "drink"],
+  ] as const) {
+    const amountBase = kind === "hot" ? item.heal : item.restore;
+    if (amountBase === undefined || amountBase <= 0) continue;
+    const existing = list.findIndex((aura) => aura.id === auraId);
+    if (existing >= 0) list.splice(existing, 1);
+    list.push({
+      id: auraId,
+      name: item.name,
+      icon: item.icon,
+      school: "physical",
+      kind,
+      sourceId: userId,
+      amount: Math.max(1, Math.ceil(amountBase / 6)),
+      tickEvery: 3,
+      nextTickAt: now + 3,
+      expiresAt: now + 18.1,
+    });
+  }
+  syncAuras(ctx, userId);
 }
 
 export function castSlot(ctx: GameContext, userId: string, slot: number): void {
@@ -320,6 +403,18 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
   }
   if (now >= hero.regenAt) {
     hero.regenAt = now + 2;
+    const inHub = ZONES.some(
+      (zone) =>
+        Math.hypot(self.position[0] - zone.hub.x, self.position[2] - zone.hub.z) <=
+        zone.hub.radius + 6,
+    );
+    if (inHub) {
+      const xpMax = ctx.scene.entity.stats.get(userId, "xp")?.max ?? 400;
+      const pool = (ctx.game.store.get(storeKeys.rested(userId)) as number | undefined) ?? 0;
+      if (pool < xpMax * 1.5) {
+        ctx.game.store.set(storeKeys.rested(userId), Math.min(xpMax * 1.5, pool + 4));
+      }
+    }
     const sheet = heroSheet(ctx, userId);
     if (sheet !== null && ctx.game.store.get(storeKeys.dead(userId)) !== true) {
       const stats = ctx.scene.entity.stats;
@@ -358,6 +453,8 @@ export function tickAuras(ctx: GameContext): void {
             via: { amount: aura.amount },
           });
           addThreat(instanceId, aura.sourceId, aura.amount);
+        } else if (aura.kind === "drink") {
+          ctx.scene.entity.stats.delta(instanceId, "resource", aura.amount);
         } else {
           ctx.scene.entity.effect({
             from: aura.sourceId,

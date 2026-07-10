@@ -1,8 +1,11 @@
 import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/abilityKit";
+import { createTalentTree, type TalentTree } from "@jgengine/core/game/talents";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { classById } from "../classes/catalog";
 import { itemDefById } from "../items/catalog";
+import { SPECS, TALENT_POINTS_RULE } from "../talents/catalog";
+import type { HeroStatId } from "../model";
 import {
   ATTACK_POWER_PER_STR,
   BASE_CRIT_PCT,
@@ -18,7 +21,7 @@ export interface AuraState {
   name: string;
   icon: string;
   school: string;
-  kind: "dot" | "hot" | "buff";
+  kind: "dot" | "hot" | "buff" | "drink";
   sourceId: string;
   amount: number;
   tickEvery: number;
@@ -46,6 +49,7 @@ export interface HeroRuntime {
   combatUntil: number;
   lastPos: readonly [number, number, number] | null;
   regenAt: number;
+  talents: TalentTree<HeroStatId> | null;
 }
 
 const heroes = new Map<string, HeroRuntime>();
@@ -62,7 +66,74 @@ export const storeKeys = {
   autoAttack: (userId: string) => `autoattack:${userId}`,
   auras: (instanceId: string) => `auras:${instanceId}`,
   bar: (userId: string) => `bar:${userId}`,
+  spec: (userId: string) => `spec:${userId}`,
+  talents: (userId: string) => `talents:${userId}`,
+  rested: (userId: string) => `rested:${userId}`,
+  bank: (userId: string) => `bank:${userId}`,
+  professions: (userId: string) => `profs:${userId}`,
 } as const;
+
+export function talentPointsForLevel(level: number): number {
+  if (level < TALENT_POINTS_RULE.firstLevel) return 0;
+  return (level - TALENT_POINTS_RULE.firstLevel + 1) * TALENT_POINTS_RULE.perLevel;
+}
+
+export interface TalentsView {
+  specId: string;
+  pointsAvailable: number;
+  pointsSpent: number;
+  ranks: Record<string, number>;
+  granted: readonly string[];
+}
+
+export function syncTalents(ctx: GameContext, userId: string): void {
+  const hero = heroes.get(userId);
+  const specId = ctx.game.store.get(storeKeys.spec(userId));
+  if (hero?.talents == null || typeof specId !== "string") return;
+  const spec = SPECS.find((entry) => entry.id === specId);
+  const ranks: Record<string, number> = {};
+  for (const node of spec?.nodes ?? []) ranks[node.id] = hero.talents.rank(node.id);
+  const view: TalentsView = {
+    specId,
+    pointsAvailable: hero.talents.pointsAvailable(),
+    pointsSpent: hero.talents.pointsSpent(),
+    ranks,
+    granted: hero.talents.resolved().abilities ?? [],
+  };
+  ctx.game.store.set(storeKeys.talents(userId), view);
+}
+
+export function chooseSpec(ctx: GameContext, userId: string, specId: string): boolean {
+  const hero = heroes.get(userId);
+  const spec = SPECS.find((entry) => entry.id === specId);
+  if (hero === undefined || spec === undefined || spec.classId !== hero.classId) return false;
+  if (ctx.game.store.get(storeKeys.spec(userId)) !== undefined) return false;
+  const level = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
+  hero.talents = createTalentTree<HeroStatId>({
+    nodes: spec.nodes,
+    points: talentPointsForLevel(level),
+  });
+  ctx.game.store.set(storeKeys.spec(userId), specId);
+  syncTalents(ctx, userId);
+  return true;
+}
+
+export function allocateTalent(ctx: GameContext, userId: string, nodeId: string): boolean {
+  const hero = heroes.get(userId);
+  if (hero?.talents == null) return false;
+  const result = hero.talents.allocate(nodeId);
+  if (!result.ok) return false;
+  syncTalents(ctx, userId);
+  applySheet(ctx, userId);
+  return true;
+}
+
+export function grantTalentPoint(ctx: GameContext, userId: string, level: number): void {
+  const hero = heroes.get(userId);
+  if (hero?.talents == null || level < TALENT_POINTS_RULE.firstLevel) return;
+  hero.talents.grantPoints(TALENT_POINTS_RULE.perLevel);
+  syncTalents(ctx, userId);
+}
 
 export function barOf(ctx: GameContext, userId: string): readonly string[] {
   const raw = ctx.game.store.get(storeKeys.bar(userId));
@@ -151,6 +222,15 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
     else if (aura.buffStat === "spellPower") bonusSp += aura.buffAmount;
     else attributes[aura.buffStat as AttributeId] += aura.buffAmount;
   }
+  const talentStats = heroes.get(userId)?.talents?.resolved().stats;
+  const talented = (stat: string, value: number): number => {
+    const modifier = talentStats?.[stat as keyof typeof talentStats];
+    if (modifier === undefined) return value;
+    return (value + (modifier.add ?? 0)) * (modifier.multiply ?? 1);
+  };
+  for (const stat of Object.keys(attributes) as (keyof typeof attributes)[]) {
+    attributes[stat] = Math.round(talented(stat, attributes[stat]));
+  }
   const maxHp = cls.baseHp + cls.hpPerLevel * (level - 1) + attributes.sta * HP_PER_STA;
   const maxResource =
     cls.resource === "mana"
@@ -158,12 +238,15 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
       : 100;
   return {
     attributes,
-    maxHp,
-    maxResource,
-    attackPower: attributes.str * ATTACK_POWER_PER_STR + Math.floor(attributes.agi / 2) + bonusAp,
-    spellPower: attributes.int * SPELL_POWER_PER_INT + bonusSp,
-    armor: armor + attributes.agi * 2,
-    critPct: BASE_CRIT_PCT + attributes.agi * 0.05,
+    maxHp: Math.round(talented("maxHp", maxHp)),
+    maxResource: Math.round(talented("maxResource", maxResource)),
+    attackPower: talented(
+      "attackPower",
+      attributes.str * ATTACK_POWER_PER_STR + Math.floor(attributes.agi / 2) + bonusAp,
+    ),
+    spellPower: talented("spellPower", attributes.int * SPELL_POWER_PER_INT + bonusSp),
+    armor: talented("armor", armor + attributes.agi * 2),
+    critPct: talented("critPct", BASE_CRIT_PCT + attributes.agi * 0.05),
     weapon,
   };
 }
@@ -200,6 +283,7 @@ export function selectClass(ctx: GameContext, userId: string, classId: string): 
     combatUntil: 0,
     lastPos: null,
     regenAt: 0,
+    talents: null,
   };
   heroes.set(userId, hero);
   const stats = ctx.scene.entity.stats;

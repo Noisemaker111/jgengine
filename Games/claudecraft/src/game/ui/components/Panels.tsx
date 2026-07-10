@@ -13,6 +13,8 @@ import type { ReactNode } from "react";
 import { classById } from "../../classes/catalog";
 import { NPCS } from "../../entities/npcs/catalog";
 import { ITEMS, itemDefById } from "../../items/catalog";
+import { PROFESSIONS } from "../../professions/catalog";
+import { professionsOf } from "../../professions/gathering";
 import type { EquipSlot } from "../../model";
 import { QUESTS } from "../../quests/catalog";
 import { heroSheet } from "../../session/hero";
@@ -140,6 +142,7 @@ export function CharacterPanel() {
   const equips = useGameStore(
     (ctx) => (ctx.game.store.get(`equip:${userId}`) as Partial<Record<EquipSlot, string>> | undefined) ?? {},
   );
+  const profs = useGameStore((ctx) => professionsOf(ctx, userId));
   if (classId === undefined || sheet === null) return null;
   const cls = classById(classId);
   return (
@@ -161,6 +164,18 @@ export function CharacterPanel() {
           <div key={label} className="flex justify-between border-b border-stone-800/60 py-0.5">
             <span className="text-stone-400">{label}</span>
             <span className="font-semibold text-amber-100">{value}</span>
+          </div>
+        ))}
+      </div>
+      <h3 className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wider text-amber-500/80">Professions</h3>
+      <div className="grid grid-cols-3 gap-2 text-sm">
+        {PROFESSIONS.map((profession) => (
+          <div key={profession.id} className="flex items-center gap-1.5 rounded border border-stone-800 px-2 py-1">
+            <GameIcon name={profession.icon as GameIconName} size={16} className="text-amber-300" />
+            <span className="capitalize text-stone-300">{profession.name}</span>
+            <span className="ml-auto font-semibold text-amber-100">
+              {profs[profession.id]}/{profession.maxSkill}
+            </span>
           </div>
         ))}
       </div>

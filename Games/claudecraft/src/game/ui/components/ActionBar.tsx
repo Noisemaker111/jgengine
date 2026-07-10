@@ -147,16 +147,23 @@ export function XpBar() {
   const xp = useEntityStat(userId, "xp");
   const level = useEntityStat(userId, "level");
   const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
+  const rested = useGameStore((ctx) => (ctx.game.store.get(`rested:${userId}`) as number | undefined) ?? 0);
   if (classId === undefined || xp === null) return null;
   const capped = (level?.current ?? 1) >= 20;
   const fraction = capped ? 1 : xp.max > 0 ? xp.current / xp.max : 0;
+  const isRested = rested > 0;
   return (
     <div className="pointer-events-none w-[520px] max-w-[80vw]">
       <div className="relative h-2 overflow-hidden rounded-full bg-stone-950/80 ring-1 ring-black/70">
-        <div className="h-full bg-violet-500/90" style={{ width: `${fraction * 100}%` }} />
+        <div
+          className={`h-full ${isRested ? "bg-sky-400/90" : "bg-violet-500/90"}`}
+          style={{ width: `${fraction * 100}%` }}
+        />
       </div>
       <p className="mt-0.5 text-center text-[10px] font-medium text-violet-200/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
-        {capped ? "Level 20 — the road ends at the Hollow Crypt" : `${xp.current} / ${xp.max} XP`}
+        {capped
+          ? "Level 20 — the road ends at the Hollow Crypt"
+          : `${xp.current} / ${xp.max} XP${isRested ? ` · rested ${Math.round(rested)}` : ""}`}
       </p>
     </div>
   );

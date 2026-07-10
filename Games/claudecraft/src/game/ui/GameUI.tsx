@@ -4,8 +4,10 @@ import { useGameStore, usePlayer } from "@jgengine/react/hooks";
 import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
 import { ClassSelect } from "./components/ClassSelect";
 import { DialoguePanel } from "./components/Dialogue";
+import { BankPanel } from "./components/Bank";
 import { BagsPanel, CharacterPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
 import { SpellbookPanel } from "./components/Spellbook";
+import { TalentPanel } from "./components/Talents";
 import {
   CreditLine,
   DeathOverlay,
@@ -23,6 +25,7 @@ export function GameUI() {
   const panel = useGameStore((ctx) => ctx.game.store.get(`panel:${userId}`)) as string | undefined | null;
   const shopOpen = useGameStore((ctx) => typeof ctx.game.store.get(`shop:${userId}`) === "string");
   const dialogueOpen = useGameStore((ctx) => typeof ctx.game.store.get(`dialogue:${userId}`) === "string");
+  const bankOpen = useGameStore((ctx) => ctx.game.store.get(`bank:${userId}`) === true);
   if (classId === undefined) return <ClassSelect />;
   return (
     <>
@@ -59,15 +62,19 @@ export function GameUI() {
         panel === "character" ||
         panel === "quests" ||
         panel === "spellbook" ||
+        panel === "talents" ||
         shopOpen ||
-        dialogueOpen) && (
+        dialogueOpen ||
+        bankOpen) && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-4">
           {dialogueOpen && <DialoguePanel />}
           {shopOpen && <VendorPanel />}
+          {bankOpen && <BankPanel />}
           {panel === "bags" && <BagsPanel />}
           {panel === "character" && <CharacterPanel />}
           {panel === "quests" && <QuestLogPanel />}
           {panel === "spellbook" && <SpellbookPanel />}
+          {panel === "talents" && <TalentPanel />}
         </div>
       )}
       <LevelUpOverlay />

@@ -3,10 +3,21 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { castSlot } from "../combat/engine";
 import { NPCS } from "../entities/npcs/catalog";
 import { CLASS_ENTITY_ID } from "../model";
-import { applySheet, barOf, classOf, clearAuras, heroOf, selectClass, storeKeys } from "./hero";
+import {
+  allocateTalent,
+  applySheet,
+  barOf,
+  chooseSpec,
+  classOf,
+  clearAuras,
+  heroOf,
+  selectClass,
+  storeKeys,
+} from "./hero";
+import { gather } from "../professions/gathering";
 import { graveyardOf } from "../world/setup";
 
-type Panel = "bags" | "character" | "quests" | "spellbook";
+type Panel = "bags" | "character" | "quests" | "spellbook" | "talents";
 
 function togglePanel(ctx: GameContext, panel: Panel): void {
   const key = storeKeys.panel(ctx.player.userId);
@@ -128,6 +139,48 @@ export function registerCommands(ctx: GameContext): void {
       }
     },
   });
+  commands.define<{ instanceId: string }>("gather", {
+    apply(state, input) {
+      gather(state, state.player.userId, input.instanceId);
+    },
+  });
+  commands.define("bank.open", {
+    apply(state) {
+      state.game.store.set(storeKeys.bank(state.player.userId), true);
+    },
+  });
+  commands.define("bank.close", {
+    apply(state) {
+      state.game.store.delete(storeKeys.bank(state.player.userId));
+    },
+  });
+  commands.define<{ itemId: string }>("bank.deposit", {
+    apply(state, input) {
+      if (state.game.store.get(storeKeys.bank(state.player.userId)) !== true) return;
+      if (state.player.inventory.take("bags", input.itemId, 1).status !== "ok") return;
+      const result = state.player.inventory.put("bank", input.itemId, 1);
+      if (result.status !== "ok") state.player.inventory.put("bags", input.itemId, 1);
+    },
+  });
+  commands.define<{ itemId: string }>("bank.withdraw", {
+    apply(state, input) {
+      if (state.game.store.get(storeKeys.bank(state.player.userId)) !== true) return;
+      if (state.player.inventory.take("bank", input.itemId, 1).status !== "ok") return;
+      const result = state.player.inventory.put("bags", input.itemId, 1);
+      if (result.status !== "ok") state.player.inventory.put("bank", input.itemId, 1);
+    },
+  });
+  commands.define<{ specId: string }>("talent.choose", {
+    apply(state, input) {
+      chooseSpec(state, state.player.userId, input.specId);
+    },
+  });
+  commands.define<{ nodeId: string }>("talent.allocate", {
+    apply(state, input) {
+      allocateTalent(state, state.player.userId, input.nodeId);
+    },
+  });
+  commands.define("openTalents", { apply: (state) => togglePanel(state, "talents") });
   commands.define("player.release", {
     apply(state) {
       const userId = state.player.userId;

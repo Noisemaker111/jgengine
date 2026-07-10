@@ -22,4 +22,5 @@ export const keybinds: ActionCodesMap = {
   openCharacter: ["KeyC"],
   openQuestLog: ["KeyL"],
   openSpellbook: ["KeyP"],
+  openTalents: ["KeyN"],
 };
