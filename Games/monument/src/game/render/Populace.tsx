@@ -15,8 +15,8 @@ import { activeCharter, cityBuildings, cityPlazas } from "../city/state";
 const EXTENT = GRID * CELL;
 const ROAD_HALF = EXTENT / 2;
 const ROAD_Y = 0.015;
-const ROAD_WIDTH = 4.8;
-const ROAD_COLOR = "#6f6c62";
+const ROAD_WIDTH = 2.4;
+const ROAD_COLOR = "#cbc2a8";
 
 const VEHICLE_LIMIT = ROAD_HALF + 8;
 const HUMAN_LIMIT = 150;

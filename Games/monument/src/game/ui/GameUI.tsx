@@ -94,7 +94,7 @@ export function GameUI(): ReactNode {
         <ToolHint tool={tool} />
       </HudPanel>
 
-      <HudPanel id="timebar" anchor="bottom-left" order={1} compact="keep">
+      <HudPanel id="timebar" anchor="bottom-left" order={0} compact="keep">
         <TimeBar
           paused={paused}
           speed={playSpeed}
@@ -108,7 +108,7 @@ export function GameUI(): ReactNode {
         />
       </HudPanel>
 
-      <HudPanel id="credit" anchor="bottom-left" order={0} compact="keep">
+      <HudPanel id="credit" anchor="bottom-left" order={1} compact="keep">
         <Credit />
       </HudPanel>
 
