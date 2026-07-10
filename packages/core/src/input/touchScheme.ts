@@ -61,6 +61,8 @@ export interface TouchButtonSpec {
   label?: string;
   /** Glyph name from the capture layer's icon catalog (`@jgengine/react/gameIcons` `GameIconName`); unset derives one from the action name, `false` forces the text label. */
   icon?: string | false;
+  /** Overrides the derived classification: `primary` renders as a large thumb button, `utility` as a small chip away from the thumb zones. */
+  kind?: TouchButtonKind;
 }
 
 export interface TouchControlsConfig {
@@ -85,11 +87,15 @@ export interface TouchJoystick {
   right: string | null;
 }
 
+export type TouchButtonKind = "primary" | "utility";
+
 export interface TouchButton {
   action: string;
   label: string;
   /** Glyph hint for the capture layer: a name to render, `false` to force text, null to derive from the action name. */
   icon: string | false | null;
+  /** `primary` = frequent gameplay verb, rendered as a large thumb button; `utility` = meta action (start, restart, pause, toggles), rendered as a small chip. */
+  kind: TouchButtonKind;
 }
 
 export interface TouchScheme {
@@ -103,13 +109,46 @@ export interface TouchScheme {
 const DEFAULT_LOOK_SENSITIVITY = 0.005;
 
 const JOYSTICK_AXES = {
-  up: ["moveForward"],
-  down: ["moveBack"],
-  left: ["moveLeft", "turnLeft"],
-  right: ["moveRight", "turnRight"],
+  up: ["moveForward", "moveUp", "forward", "accelerate", "throttleUp", "pitchUp", "climb"],
+  down: ["moveBack", "moveBackward", "moveDown", "backward", "reverse", "brake", "throttleDown", "pitchDown", "dive"],
+  left: ["moveLeft", "turnLeft", "steerLeft", "yawLeft", "strafeLeft", "bankLeft", "rollLeft"],
+  right: ["moveRight", "turnRight", "steerRight", "yawRight", "strafeRight", "bankRight", "rollRight"],
 } as const;
 
 const BUTTONABLE_RESERVED: ReadonlySet<string> = new Set(["jump", "sprint", "interact", "useAbility"]);
+
+const UTILITY_ACTIONS: ReadonlySet<string> = new Set([
+  "start",
+  "restart",
+  "reset",
+  "retry",
+  "pause",
+  "resume",
+  "menu",
+  "quit",
+  "exit",
+  "mute",
+  "unmute",
+  "help",
+  "settings",
+  "options",
+  "map",
+  "inventory",
+  "scoreboard",
+  "leaderboard",
+]);
+
+const UTILITY_PREFIXES = ["toggle", "cycle", "switch", "open", "close", "show", "hide", "zoom"] as const;
+
+export function touchButtonKind(action: string): TouchButtonKind {
+  if (UTILITY_ACTIONS.has(action)) return "utility";
+  for (const prefix of UTILITY_PREFIXES) {
+    if (!action.startsWith(prefix)) continue;
+    const next = action.charAt(prefix.length);
+    if (next !== "" && next === next.toUpperCase()) return "utility";
+  }
+  return "primary";
+}
 
 export function touchActionLabel(action: string): string {
   const spaced = action.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
@@ -172,8 +211,13 @@ export function deriveTouchScheme(
   if (config?.buttons !== undefined) {
     buttons = config.buttons.map((spec) =>
       typeof spec === "string"
-        ? { action: spec, label: touchActionLabel(spec), icon: null }
-        : { action: spec.action, label: spec.label ?? touchActionLabel(spec.action), icon: spec.icon ?? null },
+        ? { action: spec, label: touchActionLabel(spec), icon: null, kind: touchButtonKind(spec) }
+        : {
+            action: spec.action,
+            label: spec.label ?? touchActionLabel(spec.action),
+            icon: spec.icon ?? null,
+            kind: spec.kind ?? touchButtonKind(spec.action),
+          },
     );
   } else {
     buttons = actions
@@ -182,7 +226,7 @@ export function deriveTouchScheme(
       .filter((action) => !consumedByGestures.has(action))
       .filter((action) => !hidden.has(action))
       .filter((action) => !reserved.has(action) || BUTTONABLE_RESERVED.has(action))
-      .map((action) => ({ action, label: touchActionLabel(action), icon: null }));
+      .map((action) => ({ action, label: touchActionLabel(action), icon: null, kind: touchButtonKind(action) }));
   }
 
   const look = config?.look ?? firstPerson;

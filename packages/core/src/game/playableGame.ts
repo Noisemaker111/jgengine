@@ -543,6 +543,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   pointer?: PointerConfig;
   /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */
   touch?: TouchControlsConfig | false;
+  /** Preferred phone orientation. When a coarse-pointer device is held the other way the shell shows a dismissible rotate hint; purely advisory, never blocks play. */
+  orientation?: "landscape" | "portrait";
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles. */
   worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[] };
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. */

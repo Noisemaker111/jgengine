@@ -11,7 +11,7 @@ export function FlightDeck({ snapshot }: { snapshot: SessionSnapshot }) {
 
   return (
     <div
-      className="absolute bottom-4 left-4 flex flex-col gap-2 rounded-lg border px-4 py-3"
+      className="flex flex-col gap-2 rounded-lg border px-4 py-3"
       style={{ borderColor: `${PALETTE.citySlate}55`, backgroundColor: "#0f1d1eda" }}
     >
       <div className="flex items-baseline gap-2">

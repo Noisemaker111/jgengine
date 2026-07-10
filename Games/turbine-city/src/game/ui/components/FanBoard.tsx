@@ -17,7 +17,7 @@ function stageLabel(fan: FanReadout): string {
 export function FanBoard({ snapshot }: { snapshot: SessionSnapshot }) {
   return (
     <div
-      className="absolute right-4 top-[214px] flex w-[190px] flex-col gap-1 rounded-lg border px-3 py-2"
+      className="flex w-[190px] flex-col gap-1 rounded-lg border px-3 py-2"
       style={{ borderColor: `${PALETTE.citySlate}55`, backgroundColor: "#0f1d1ee6" }}
     >
       <span className="text-[9px] font-bold uppercase tracking-[0.3em]" style={{ color: `${PALETTE.cloudWhite}77` }}>
