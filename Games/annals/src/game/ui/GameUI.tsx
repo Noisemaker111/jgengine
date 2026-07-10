@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { useGameClock, useGameStore } from "@jgengine/react/hooks";
 
 import { dateLabel, seasonOf } from "../calendar";
@@ -6,6 +8,37 @@ import { totalPopulation } from "../sim";
 import { ChroniclePanel } from "./components/ChroniclePanel";
 
 const GAME_NAME = "The Annals";
+
+function Credit() {
+  const [failed, setFailed] = useState(false);
+  return (
+    <a
+      href="https://x.com/emollick"
+      target="_blank"
+      rel="noreferrer"
+      className="pointer-events-auto absolute bottom-4 left-4 flex items-center gap-2 rounded-lg border border-amber-200/20 bg-stone-950/70 px-3 py-1.5 text-amber-100/80 shadow-lg backdrop-blur-sm transition hover:bg-amber-200/10"
+    >
+      {failed ? (
+        <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-200/20 text-[0.6rem] font-semibold text-amber-100">
+          EM
+        </span>
+      ) : (
+        <img
+          src="https://unavatar.io/x/emollick"
+          alt="Ethan Mollick"
+          width={24}
+          height={24}
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+          className="h-6 w-6 rounded-full object-cover ring-1 ring-amber-200/30"
+        />
+      )}
+      <span className="text-xs">
+        From a prompt by <span className="text-amber-200">Ethan Mollick</span>
+      </span>
+    </a>
+  );
+}
 
 export function GameUI() {
   const { paused, playSpeed, speeds, calendar, controls } = useGameClock();
@@ -50,6 +83,7 @@ export function GameUI() {
           ))}
         </div>
       </div>
+      <Credit />
       <ChroniclePanel />
     </div>
   );

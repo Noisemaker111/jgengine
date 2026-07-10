@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useEngineState } from "@jgengine/react/engineStore";
 
 import type { ContributionStats, GitHubProfile } from "@jgengine/github";
+import creditAvatar from "../credit-avatar.jpg";
 import { store } from "../store";
 
 const FONT = '"Geist", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
@@ -226,6 +227,36 @@ function ProfileRow({ profile }: { profile: GitHubProfile | null }) {
   );
 }
 
+function Credit() {
+  return (
+    <a
+      href="https://github.com/radiumcoders/Isometric-Github-Contributions"
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginTop: "auto",
+        paddingTop: 12,
+        borderTop: `1px solid ${EM.hairline}`,
+        textDecoration: "none",
+      }}
+    >
+      <img
+        src={creditAvatar}
+        alt="radiumcoders"
+        width={26}
+        height={26}
+        style={{ width: 26, height: 26, flexShrink: 0, borderRadius: 999, boxShadow: `0 0 0 1px ${EM.ring}` }}
+      />
+      <span style={{ fontSize: 11, lineHeight: 1.4, color: EM.helper }}>
+        Inspired by <span style={{ color: EM.green }}>radiumcoders</span>&rsquo; Isometric GitHub Contributions
+      </span>
+    </a>
+  );
+}
+
 function Sidebar({ children }: { children: ReactNode }) {
   return (
     <div
@@ -374,6 +405,8 @@ function GameUIInner() {
               </div>
             </div>
           ) : null}
+
+          <Credit />
         </Sidebar>
       </div>
 
