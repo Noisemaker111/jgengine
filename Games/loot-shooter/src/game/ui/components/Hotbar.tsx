@@ -9,8 +9,8 @@ import { useSelectedSlot } from "./useRun";
 export function Hotbar() {
   const selected = useSelectedSlot();
   const { compact } = useDisplayProfile();
-  const slotSize = compact ? "h-12 w-12" : "h-14 w-16";
-  const iconSize = compact ? "h-6 w-9" : "h-8 w-12";
+  const slotSize = compact ? "h-11 w-11" : "h-14 w-16";
+  const iconSize = compact ? "h-5 w-8" : "h-8 w-12";
   return (
     <SlotGrid
       inventoryId="hotbar"
@@ -22,7 +22,7 @@ export function Hotbar() {
           : "border-slate-600/60 bg-slate-950/70";
         if (slot === null) {
           return (
-            <div className={`relative flex h-14 w-16 items-center justify-center rounded-md border ${frame}`}>
+            <div className={`relative flex ${slotSize} items-center justify-center rounded-md border ${frame}`}>
               <span className="absolute left-1.5 top-0.5 text-xs font-bold text-slate-400">{index + 1}</span>
               <span className="text-lg font-light text-slate-600">—</span>
             </div>
@@ -33,14 +33,14 @@ export function Hotbar() {
         return (
           <div
             title={itemNameById(slot.itemId)}
-            className={`relative flex h-14 w-16 items-center justify-center rounded-md border ${frame}`}
+            className={`relative flex ${slotSize} items-center justify-center rounded-md border ${frame}`}
             style={{ borderBottomColor: rarityColor, borderBottomWidth: 3, color: rarityColor }}
           >
             <span className="absolute left-1.5 top-0.5 text-xs font-bold text-cyan-200/90">{index + 1}</span>
             {weapon === undefined ? (
               <span className="text-sm font-bold text-slate-200">{itemNameById(slot.itemId).slice(0, 2)}</span>
             ) : (
-              <WeaponIcon family={weapon.family} className="h-8 w-12" />
+              <WeaponIcon family={weapon.family} className={iconSize} />
             )}
           </div>
         );

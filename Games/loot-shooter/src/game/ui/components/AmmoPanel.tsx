@@ -1,3 +1,4 @@
+import { useDisplayProfile } from "@jgengine/react/display";
 import { useEntityStat, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { AMMO_LABELS, AMMO_POOLS, AMMO_STAT_IDS } from "../../ammo";
 import { weaponById } from "../../items/weapons/catalog";
@@ -5,6 +6,7 @@ import { RARITY_COLORS } from "../../palette";
 import { useSelectedSlot } from "./useRun";
 
 export function AmmoPanel() {
+  const { compact } = useDisplayProfile();
   const { userId } = usePlayer();
   const selected = useSelectedSlot();
   const slots = useInventory("hotbar");
@@ -18,6 +20,21 @@ export function AmmoPanel() {
   const energyPool = useEntityStat(userId, AMMO_STAT_IDS.energy);
   const pools = { light: lightPool, heavy: heavyPool, shell: shellPool, energy: energyPool };
   const empty = (ammo?.current ?? 0) < (weapon?.ammoPerShot ?? 1);
+
+  if (compact) {
+    return (
+      <div className="flex items-baseline gap-1.5">
+        <span
+          className={`text-3xl font-black tabular-nums drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] ${
+            empty ? "animate-pulse text-rose-400" : "text-cyan-100"
+          }`}
+        >
+          {Math.round(ammo?.current ?? 0)}
+        </span>
+        <span className="text-xs font-bold uppercase text-slate-400">{AMMO_LABELS[poolId]}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-end gap-1">

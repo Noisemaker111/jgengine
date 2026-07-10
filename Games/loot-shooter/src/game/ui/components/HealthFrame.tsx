@@ -14,7 +14,7 @@ export function HealthFrame() {
   const low = percent <= 30;
 
   return (
-    <div className={compact ? "min-w-[10rem] max-w-[11rem]" : "min-w-[16rem]"}>
+    <div className={compact ? "min-w-[7.5rem] max-w-[8rem]" : "min-w-[16rem]"}>
       <div className="mb-1 flex items-baseline justify-between">
         <span className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
           Operative

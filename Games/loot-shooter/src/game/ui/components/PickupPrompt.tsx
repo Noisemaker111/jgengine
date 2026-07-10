@@ -1,9 +1,11 @@
+import { useDisplayProfile } from "@jgengine/react/display";
 import { useNearestWorldItem } from "@jgengine/react/hooks";
 import { itemNameById } from "../../content";
 import { weaponById } from "../../items/weapons/catalog";
 import { RARITY_COLORS } from "../../palette";
 
 export function PickupPrompt() {
+  const { compact } = useDisplayProfile();
   const nearest = useNearestWorldItem(2.6);
   if (nearest === null) return null;
   const weapon = weaponById(nearest.itemId);
@@ -14,7 +16,7 @@ export function PickupPrompt() {
       <span className="text-sm font-bold uppercase tracking-wider" style={{ color }}>
         {weapon === undefined ? itemNameById(nearest.itemId) : weapon.name}
       </span>
-      {weapon !== undefined ? (
+      {weapon !== undefined && !compact ? (
         <span className="text-xs font-semibold uppercase text-slate-400">
           {weapon.rarity} · {weapon.weapon.damage} dmg
         </span>
