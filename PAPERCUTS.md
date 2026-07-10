@@ -27,3 +27,7 @@ scouting two games' camera setup → Sonnet scout ground for 7.5min/40 tool call
 2026-07-10T05:48:36.945Z — claude-fable-5 — Claude
 
 papercut-reminder Stop hook false-positived: flagged the check-types gate worker as a relaunch of the earlier ensure-ready warm-up worker — the prompt-overlap heuristic can't tell two different verify legs apart
+
+2026-07-10T05:53:22.562Z — claude-fable-5 — Claude
+
+ship worker hit a PAPERCUTS.md conflict, then spawned its own background merge child and ended its turn — stalled with no result; the foreground rule needs to bind nested delegation too
