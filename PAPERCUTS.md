@@ -135,3 +135,7 @@ shoot --url skips ensureServer so the shot soft-times-out unless a dev server is
 2026-07-10T22:58:21.043Z — fable-5 — Claude
 
 orchestrating 14 parallel game-build workers → freecell build worker's first run died with an unusable result and had to be relaunched by the harness
+
+2026-07-10T23:15:22.584Z — fable-5 — Claude
+
+parallel game builds with bun install forbidden mid-batch → session container had no node_modules, workers had to typecheck via tsgo from the bun cache and skip @types/react resolution
