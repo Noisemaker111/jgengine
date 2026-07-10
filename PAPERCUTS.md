@@ -55,3 +55,7 @@ Skipped logging a papercut mid-session because the CLAUDE.md wording read like t
 2026-07-10T04:50:45.550Z — grok — NoisemakerJon
 
 shell PATH missing bun → bun not recognized; needed full path C:\Users\Jk101\.bun\bin\bun.exe
+
+2026-07-10T05:38:06.748Z — sonnet — Claude
+
+ship-motion worker ended its turn during the 60s CI sleep instead of finishing the Actions check → needed a second worker to complete the green check
