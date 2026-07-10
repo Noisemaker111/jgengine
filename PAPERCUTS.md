@@ -131,3 +131,7 @@ ship-motion workers keep backgrounding the post-merge 60s sleep even when told '
 2026-07-10T17:23:54.775Z — sonnet-5 — Claude
 
 shoot --url skips ensureServer so the shot soft-times-out unless a dev server is already running — caller must boot vite manually
+
+2026-07-10T23:22:05.695Z — sonnet — Claude
+
+verifying asset pack URLs for #308 → WebFetch returned 403 on every URL (tool-level proxy outage, even example.com) and curl CONNECT also 403 — had to fall back to WebSearch-only cross-checking

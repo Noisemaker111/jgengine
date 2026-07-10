@@ -26,14 +26,33 @@ export interface TerrainFlattenMask {
   falloff?: number;
 }
 
+/** A circular palette zone painted over the base terrain palette — snow caps, ash wastes, sand shores on one heightfield. */
+export interface TerrainMaterialRegion {
+  center: EnvironmentVec2;
+  radius: number;
+  /** Named palette preset for this region (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); overridden field-by-field by `colors`. */
+  material?: string;
+  colors?: TerrainColors;
+  /** Blend-ring width outside `radius` back to the surrounding palette; default `radius * 0.5`. */
+  falloff?: number;
+}
+
 export interface TerrainEnvironmentConfig {
   bounds?: WorldBounds;
   height?: number;
   heightMap?: string;
+  /**
+   * Game-supplied height function replacing the built-in noise field — banded biomes, ridge walls,
+   * terracing, anything expressible as `(x, z) => y`. `flatten` masks still carve into it, and both
+   * the rendered ground and `ctx.world.ground` sample it. A function doesn't serialize; keep it pure.
+   */
+  heightField?: (x: number, z: number) => number;
   /** Named palette preset (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); default "grass". Overridden field-by-field by `colors`. */
   material?: string;
   /** Explicit low/high/waterline hex colors; any field left unset falls back to the resolved `material` preset. */
   colors?: TerrainColors;
+  /** Palette zones blended over the base `material`/`colors` for multi-biome readability. */
+  materialRegions?: readonly TerrainMaterialRegion[];
   segments?: number;
   seed?: string;
   frequency?: number;
@@ -300,8 +319,10 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
     },
     {
       ...(config.heightMap === undefined ? {} : { heightMap: config.heightMap }),
+      ...(config.heightField === undefined ? {} : { heightField: config.heightField }),
       ...(config.material === undefined ? {} : { material: config.material }),
       ...(config.colors === undefined ? {} : { colors: config.colors }),
+      ...(config.materialRegions === undefined ? {} : { materialRegions: config.materialRegions }),
       ...(config.segments === undefined ? {} : { segments: config.segments }),
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.frequency === undefined ? {} : { frequency: config.frequency }),
