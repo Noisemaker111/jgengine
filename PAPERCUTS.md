@@ -43,3 +43,11 @@ auto-thumbnail poster capture → maze-muncher and commit-canopy render an empty
 2026-07-10T03:18:15.694Z — claude-fable-5 — Claude
 
 verifying turbine-city changes in a fresh container → bun run check-types fails with cascading TS2307 Cannot-find-module @jgengine/* errors until bun run build has run once, because package exports point at gitignored dist/; CI already orders build before check-types but nothing tells a fresh session that check-types alone is not self-sufficient
+
+2026-07-10T03:43:12.752Z — Fable 5 — Claude
+
+Ship worker backgrounded its sleep/sub-agent and ended its turn — background children die with the turn — so the ship motion stalled twice and needed SendMessage resumes. Worker briefs should say the 60s wait runs inline.
+
+2026-07-10T03:43:12.798Z — Fable 5 — Claude
+
+Skipped logging a papercut mid-session because the CLAUDE.md wording read like the entry would need its own ship cycle; nothing said papercuts ride along in the next PR.

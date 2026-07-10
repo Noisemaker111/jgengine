@@ -1,6 +1,6 @@
 ---
 name: convert-to-fanout
-description: Convert a monolithic single-model agent into Anthropic's plan-big-execute-small patterns — Fable 5 orchestrator + Sonnet 5 workers (Claude Managed Agents) or Sonnet 5 executor + Fable 5 advisor (advisor tool). Use whenever the user wants to cut agent cost without losing quality, mentions "fan out", "fanout", "orchestrator", "advisor tool", "managed agents", "plan big execute small", "executor/worker", complains their agent or API bill is too high, or shows an agent loop that runs one big model for everything — even if they don't name a pattern.
+description: Rebuild a one-big-model agent as orchestrator + cheap workers (or executor + advisor) so it stops paying frontier prices for mechanical work. Invoke when someone wants agent/API cost cut without quality loss.
 ---
 
 # Convert to Fan-out
