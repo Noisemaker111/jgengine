@@ -63,7 +63,7 @@ export interface SpecDef {
   nodes: readonly import("@jgengine/core/game/talents").TalentNodeDef<HeroStatId>[];
 }
 
-export type ProfessionId = "mining" | "logging" | "herbalism";
+export type ProfessionId = "mining" | "logging" | "herbalism" | "fishing" | "crafting";
 
 export interface GatherNodeDef {
   id: string;

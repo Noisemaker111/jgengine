@@ -6,6 +6,7 @@ import { assets, entitySprites } from "./game/assets";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
+import { craftingPrompts, FISHING_SPOT, FORGE } from "./game/crafting/systems";
 import { GATHER_NODES } from "./game/professions/catalog";
 import { gatherPrompts } from "./game/professions/gathering";
 import { dungeonPrompts, npcPrompts, strongboxPrompts, STRONGBOX } from "./game/world/setup";
@@ -14,7 +15,13 @@ import { loop } from "./loop";
 import { physics, world } from "./world";
 
 function prompts(ctx: GameContext): readonly PositionedPrompt[] {
-  return [...npcPrompts(ctx), ...gatherPrompts(ctx), ...strongboxPrompts(ctx), ...dungeonPrompts(ctx)];
+  return [
+    ...npcPrompts(ctx),
+    ...gatherPrompts(ctx),
+    ...strongboxPrompts(ctx),
+    ...dungeonPrompts(ctx),
+    ...craftingPrompts(ctx),
+  ];
 }
 
 const NODE_COLORS: Record<string, string> = {
@@ -25,6 +32,8 @@ const NODE_COLORS: Record<string, string> = {
 
 const objectStyles = {
   [STRONGBOX]: { color: "#c9a227" },
+  [FORGE]: { color: "#5a4a3a" },
+  [FISHING_SPOT]: { color: "#3a6a8a" },
   ...Object.fromEntries(
     GATHER_NODES.map((node) => [node.id, { color: NODE_COLORS[node.profession] ?? "#888888" }]),
   ),

@@ -18,4 +18,6 @@ export const PROFESSIONS: readonly { id: ProfessionId; name: string; icon: strin
   { id: "mining", name: "Mining", icon: "pickaxe", maxSkill: 300 },
   { id: "logging", name: "Logging", icon: "axe", maxSkill: 300 },
   { id: "herbalism", name: "Herbalism", icon: "leaf", maxSkill: 300 },
+  { id: "fishing", name: "Fishing", icon: "fish", maxSkill: 300 },
+  { id: "crafting", name: "Crafting", icon: "hammer", maxSkill: 300 },
 ];

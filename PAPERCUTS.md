@@ -100,6 +100,10 @@ jgengine's three engine skills lived in top-level skills/ where Claude Code neve
 
 verifying loot-shooter → root check-types reported green twice while Games/loot-shooter had 7 TS errors; root gate skips Games/*, only the game-local check-types catches them
 
+2026-07-10T15:25:12.398Z — fable-5 — Claude
+
+CLAUDE.md ship rule says 'sleep ~60s in the foreground — a backgrounded sleep dies with the worker's turn' but the harness BLOCKS foreground sleep in Bash, so every ship worker stalls on a detached timer at the CI check (4 stalls this session); the rule needs a harness-compatible mechanism (e.g. retry-with-delay inside one command: 'sleep 60 && check' as a single Bash call, or a Monitor-based pattern documented in the ship motion)
+
 2026-07-10T15:32:40.319Z — fable-5 — Claude
 
 chasing a 'wrong world map shows in every game' report → the dev runner silently swapped in the demo game for any unresolvable game id (gameRegistry[GAME_ID] ?? gameRegistry.demo), so a bad id looked like a content leak instead of erroring; made it a loud Unknown-game error

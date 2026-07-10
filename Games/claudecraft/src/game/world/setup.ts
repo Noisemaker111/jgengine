@@ -2,6 +2,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { spawnAllMobs } from "../ai/mobs";
+import { placeCraftingWorld } from "../crafting/systems";
 import { DUNGEONS } from "../dungeons/catalog";
 import { NPCS } from "../entities/npcs/catalog";
 import { INTERACT_RANGE } from "../math/combat";
@@ -26,6 +27,7 @@ export function setupWorld(ctx: GameContext): void {
   }
   spawnAllMobs(ctx);
   placeGatherNodes(ctx);
+  placeCraftingWorld(ctx);
 }
 
 export function dungeonPrompts(ctx: GameContext): readonly PositionedPrompt[] {

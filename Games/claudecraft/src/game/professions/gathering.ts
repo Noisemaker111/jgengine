@@ -20,7 +20,7 @@ export function professionsOf(ctx: GameContext, userId: string): Record<Professi
   const raw = ctx.game.store.get(storeKeys.professions(userId)) as
     | Record<ProfessionId, number>
     | undefined;
-  return { mining: 1, logging: 1, herbalism: 1, ...raw };
+  return { mining: 1, logging: 1, herbalism: 1, fishing: 1, crafting: 1, ...raw };
 }
 
 function nodePlacement(def: GatherNodeDef, roll: () => number): readonly [number, number] {

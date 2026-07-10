@@ -5,6 +5,7 @@ import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
 import { ClassSelect } from "./components/ClassSelect";
 import { DialoguePanel } from "./components/Dialogue";
 import { BankPanel } from "./components/Bank";
+import { CraftingPanel, FishingOverlay } from "./components/Crafting";
 import { BagsPanel, CharacterPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
 import { SpellbookPanel } from "./components/Spellbook";
 import { TalentPanel } from "./components/Talents";
@@ -63,6 +64,7 @@ export function GameUI() {
         panel === "quests" ||
         panel === "spellbook" ||
         panel === "talents" ||
+        panel === "crafting" ||
         shopOpen ||
         dialogueOpen ||
         bankOpen) && (
@@ -75,8 +77,10 @@ export function GameUI() {
           {panel === "quests" && <QuestLogPanel />}
           {panel === "spellbook" && <SpellbookPanel />}
           {panel === "talents" && <TalentPanel />}
+          {panel === "crafting" && <CraftingPanel />}
         </div>
       )}
+      <FishingOverlay />
       <LevelUpOverlay />
       <DeathOverlay />
     </>
