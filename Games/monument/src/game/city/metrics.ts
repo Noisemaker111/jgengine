@@ -137,4 +137,18 @@ export function citySignals(metrics: CityMetrics, charter: DistrictCharter): Cit
   };
 }
 
+export interface PlazaPerformance {
+  shade: number;
+  water: number;
+  social: number;
+}
+
+export function plazaPerformance(p: Plaza): PlazaPerformance {
+  return {
+    shade: Math.min(96, 18 + p.trees * 7 + (p.kind === "garden" ? 20 : 0)),
+    water: p.kind === "water" ? 94 : p.kind === "garden" ? 72 : 38,
+    social: p.kind === "forum" ? 96 : p.kind === "garden" ? 78 : 68,
+  };
+}
+
 export const formatStat = (n: number): string => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : Math.round(n).toString());

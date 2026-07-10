@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { CELL, initialBuildings, makeBuilding, type Plaza } from "../catalog";
-import { citySignals, formatStat, metricsFor, performanceFor, resolveCityMetrics } from "./metrics";
+import { citySignals, formatStat, metricsFor, performanceFor, plazaPerformance, resolveCityMetrics } from "./metrics";
 
 const district = initialBuildings();
 const plaza = (id: string, gx: number, gz: number, kind: Plaza["kind"], trees = 6): Plaza => ({
@@ -84,6 +84,14 @@ describe("city signals", () => {
     expect(signals.sharedRooms).toBe(true);
     expect(signals.specialistGrowth).toBe(false);
     expect(signals.formal).toBe(true);
+  });
+});
+
+describe("plaza performance", () => {
+  test("kind and canopy drive the three bars", () => {
+    expect(plazaPerformance(plaza("p", 0, 0, "garden", 11))).toEqual({ shade: 96, water: 72, social: 78 });
+    expect(plazaPerformance(plaza("p", 0, 0, "water", 0))).toEqual({ shade: 18, water: 94, social: 68 });
+    expect(plazaPerformance(plaza("p", 0, 0, "forum", 4))).toEqual({ shade: 46, water: 38, social: 96 });
   });
 });
 
