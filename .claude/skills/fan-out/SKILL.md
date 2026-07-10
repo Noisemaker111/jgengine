@@ -24,7 +24,8 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
 - lint · typecheck · test · build
 - preview · screenshot · `bun run shoot` · Playwright
-- GitHub ceremony after the decision is made (PR create, comments, issue ops — MCP tools or `gh` where it exists)
+- git ceremony once the diff is decided — commit, push, and whatever recovery the push needs (stale refs, prune, restart from origin/main, cherry-pick); the frontier model never grinds through git errors inline
+- GitHub ceremony after the decision is made (PR create, comments, issue ops — MCP tools or `gh` where it exists); the whole ship motion (commit → push → PR → merge → 60s green check) is one worker brief
 - bulk file reads · research sweeps · renames · doc sweeps · log triage
 
 Announce workers on a 🤖 line, job-named. Judge their output; never dump raw worker text to the user.
