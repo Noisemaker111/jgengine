@@ -85,21 +85,40 @@ export function ActionBar() {
   const gameNow = useGameStore((ctx) => ctx.time.now());
   const level = useEntityStat(userId, "level")?.current ?? 1;
   const resource = useEntityStat(userId, "resource")?.current ?? 0;
+  const bar = useGameStore((ctx) => {
+    const raw = ctx.game.store.get(`bar:${userId}`);
+    return Array.isArray(raw) ? (raw as string[]) : [];
+  });
   if (classId === undefined) return null;
   const cls = classById(classId);
   return (
     <div className="flex items-end gap-1.5">
-      {cls.abilities.map((ability, index) => (
-        <Slot
-          key={ability.id}
-          ability={ability}
-          index={index}
-          userId={userId}
-          level={level}
-          resource={resource}
-          now={gameNow}
-        />
-      ))}
+      {Array.from({ length: 9 }, (_, index) => {
+        const ability = cls.abilities.find((entry) => entry.id === bar[index]);
+        if (ability === undefined) {
+          return (
+            <span
+              key={`empty-${index}`}
+              className="relative flex h-12 w-12 items-center justify-center rounded-md border border-dashed border-stone-800 bg-stone-950/50"
+            >
+              <kbd className="absolute right-0.5 top-0.5 rounded bg-stone-800/70 px-1 text-[9px] font-bold text-stone-500">
+                {index + 1}
+              </kbd>
+            </span>
+          );
+        }
+        return (
+          <Slot
+            key={ability.id}
+            ability={ability}
+            index={index}
+            userId={userId}
+            level={level}
+            resource={resource}
+            now={gameNow}
+          />
+        );
+      })}
     </div>
   );
 }

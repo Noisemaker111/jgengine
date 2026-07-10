@@ -14,6 +14,7 @@ import type { AbilityDef, AttributeId } from "../model";
 import {
   auraEntries,
   aurasOf,
+  barOf,
   classOf,
   enterCombat,
   gainRage,
@@ -215,7 +216,8 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
   if (cls === null || hero === null) return;
   if (ctx.game.store.get(storeKeys.dead(userId)) === true) return;
   const level = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
-  const ability = cls.abilities[slot];
+  const abilityId = barOf(ctx, userId)[slot];
+  const ability = cls.abilities.find((entry) => entry.id === abilityId);
   if (ability === undefined) return;
   if (ability.levelReq > level) {
     say(ctx, userId, `Requires level ${ability.levelReq}`);

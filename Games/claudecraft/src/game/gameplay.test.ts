@@ -3,6 +3,7 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 
 import { game } from "../game.config";
 import { loop } from "../loop";
+import { classById } from "./classes/catalog";
 import { isMobInstance, mobCount, mobRuntimeOf } from "./ai/mobs";
 import { content } from "./content";
 import { CLASS_ENTITY_ID, COPPER } from "./model";
@@ -59,14 +60,25 @@ describe("claudecraft gameplay (headless)", () => {
     expect(health?.current).toBe(health?.max);
     expect(ctx.game.economy.balance(USER, COPPER)).toBe(40);
     expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(5);
-    const equips = ctx.game.store.get(`equip:${USER}`) as { mainHand?: string };
-    expect(equips.mainHand).toBeDefined();
+    const equips = ctx.game.store.get(`equip:${USER}`) as { mainhand?: string };
+    expect(equips.mainhand).toBeDefined();
     expect(ctx.game.commands.run("class.select", { classId: "mage" }).status).toBe("rejected");
   });
 
+  test("action bar defaults from the kit and spellbook reassigns slots", () => {
+    const bar = ctx.game.store.get(`bar:${USER}`) as string[];
+    expect(bar.length).toBeGreaterThanOrEqual(9);
+    expect(bar.filter((id) => id !== "").length).toBe(9);
+    const warrior = classById("warrior");
+    const starter = warrior.abilities.find((ability) => ability.levelReq <= 1);
+    expect(starter).toBeDefined();
+    ctx.game.commands.run("spellbook.assign", { abilityId: starter?.id ?? "", slot: 8 });
+    const after = ctx.game.store.get(`bar:${USER}`) as string[];
+    expect(after[8]).toBe(starter?.id ?? "");
+  });
+
   test("auto-attack kills a wolf, grants xp, copper, and quest credit", () => {
-    const accept = ctx.game.quest.accept(USER, "wolves_at_the_door");
-    void accept;
+    expect(ctx.game.quest.accept(USER, "q_wolves")).toBeNull();
     const wolfId = firstMobOf(ctx, "forest_wolf");
     const startCopper = ctx.game.economy.balance(USER, COPPER);
     const startXp = ctx.scene.entity.stats.get(USER, "xp")?.current ?? 0;
@@ -87,11 +99,10 @@ describe("claudecraft gameplay (headless)", () => {
     expect(mobRuntimeOf(wolfId)).toBeNull();
     expect(ctx.scene.entity.stats.get(USER, "xp")?.current ?? 0).toBeGreaterThan(startXp - 1);
     expect(ctx.game.economy.balance(USER, COPPER)).toBeGreaterThan(startCopper);
-    const journal = ctx.game.quest.list(USER).find((quest) => quest.questId === "wolves_at_the_door");
-    if (journal !== undefined) {
-      const killObjective = journal.objectives.find((objective) => objective.kind === "kill");
-      expect(killObjective?.progress ?? 0).toBeGreaterThan(0);
-    }
+    const journal = ctx.game.quest.list(USER).find((quest) => quest.questId === "q_wolves");
+    expect(journal).toBeDefined();
+    const killObjective = journal?.objectives.find((objective) => objective.kind === "kill");
+    expect(killObjective?.progress ?? 0).toBeGreaterThan(0);
   });
 
   test("rage built from swings pays for a warrior strike", () => {

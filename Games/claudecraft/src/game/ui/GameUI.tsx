@@ -5,6 +5,7 @@ import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
 import { ClassSelect } from "./components/ClassSelect";
 import { DialoguePanel } from "./components/Dialogue";
 import { BagsPanel, CharacterPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
+import { SpellbookPanel } from "./components/Spellbook";
 import {
   CreditLine,
   DeathOverlay,
@@ -54,13 +55,19 @@ export function GameUI() {
           <CreditLine />
         </HudPanel>
       </HudCanvas>
-      {(panel === "bags" || panel === "character" || panel === "quests" || shopOpen || dialogueOpen) && (
+      {(panel === "bags" ||
+        panel === "character" ||
+        panel === "quests" ||
+        panel === "spellbook" ||
+        shopOpen ||
+        dialogueOpen) && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-4">
           {dialogueOpen && <DialoguePanel />}
           {shopOpen && <VendorPanel />}
           {panel === "bags" && <BagsPanel />}
           {panel === "character" && <CharacterPanel />}
           {panel === "quests" && <QuestLogPanel />}
+          {panel === "spellbook" && <SpellbookPanel />}
         </div>
       )}
       <LevelUpOverlay />
