@@ -15,3 +15,11 @@ Log one:
 Every so often these get swept: read the list, make the easy fixes, clear them.
 
 ---
+
+2026-07-10T00:20:12.284Z — claude-sonnet-5 — Claude
+
+Spawned a general-purpose worker to run check-types/tests; it backgrounded the bun commands itself and returned 'Both workers running in background, I'll wait for their results' as its final answer instead of the actual results — had to relaunch a second worker with explicit 'run synchronously, don't background' instructions to get a real report.
+
+2026-07-10T00:20:18.720Z — claude-sonnet-5 — Claude
+
+Fresh cloud session had incomplete node_modules — bun run check-types failed with 'tsgo: command not found' and tests failed with 'Cannot find package three' across the whole repo, unrelated to the diff being verified. Had to run a manual bun install (64s) before verification could produce a real signal; a stale/missing install in a supposedly-ready session container wastes a full verify round-trip.
