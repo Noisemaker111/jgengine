@@ -12,4 +12,5 @@ export const keybinds: ActionCodesMap = {
   toolPlaza: ["Digit6"],
   undo: ["KeyZ"],
   redo: ["KeyY"],
+  cycleLens: ["KeyL"],
 };

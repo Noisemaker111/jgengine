@@ -7,6 +7,7 @@ import {
   makeBuilding,
   TYPOLOGY_CYCLE,
   type Building,
+  type DistrictCharter,
   type DistrictMood,
   type Lens,
   type Plaza,
@@ -47,6 +48,7 @@ export const selectedId = (ctx: GameContext): string | null => read(ctx, "select
 export const activeLens = (ctx: GameContext): Lens => read(ctx, "lens", "material");
 export const activeMood = (ctx: GameContext): DistrictMood => read(ctx, "mood", "default");
 export const activeToast = (ctx: GameContext): Toast | null => read(ctx, "toast", null);
+export const activeCharter = (ctx: GameContext): DistrictCharter => read(ctx, "charter", {});
 export const historyDepth = (ctx: GameContext): number => read(ctx, "history", [] as CitySnapshot[]).length;
 export const futureDepth = (ctx: GameContext): number => read(ctx, "future", [] as CitySnapshot[]).length;
 
