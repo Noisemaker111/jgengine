@@ -110,6 +110,9 @@ async function fetchViaScrape(user: string): Promise<ContributionsWire> {
   if (!res.ok) throw new Error(`GitHub responded with ${res.status}`);
 
   const days = parseContributionsHtml(await res.text());
+  if (days.length === 0) {
+    throw new Error(`Could not read '${user}'’s contribution calendar — GitHub may have blocked the request or changed its page markup.`);
+  }
   const weeks: ContributionsWire["weeks"] = [];
   for (let i = 0; i < days.length; i += 7) weeks.push({ days: days.slice(i, i + 7) });
   return {

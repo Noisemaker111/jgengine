@@ -136,11 +136,13 @@ export function DataObjects<T>({
     );
   }
 
+  if (capacity === 0) return null;
+
   return (
     <instancedMesh
       key={capacity}
       ref={meshRef}
-      args={[geometry, material, Math.max(capacity, 1)]}
+      args={[geometry, material, capacity]}
       castShadow={castShadow}
       receiveShadow={receiveShadow}
       frustumCulled={false}
