@@ -17,7 +17,7 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
 **Set `model` explicitly on every worker call — Sonnet by default.** Omitting it makes the worker inherit the session model; that is how typecheck re-runs and CI triage have ended up on Opus 4.8. Match tier to the leg (full table in `CLAUDE.md` → Cheap workers): Haiku for pure script/process execution, Sonnet for everything mechanical, and escalate to Opus/Fable only when a leg truly needs the judgment — a Sonnet grinding a too-hard task burns frontier money without frontier results.
 
-**Prompts are briefs, not scripts.** Goal, non-discoverable context, exact return shape — nothing else. Never dictate which tools the worker uses, never paste boilerplate footers or session links into its deliverables, never pad with contingencies it can work out itself. Exchanges are tight both ways: one packed prompt out, one compact judged result back.
+**Prompts are briefs, not scripts.** Telegraph style — goal, non-discoverable context, exact return shape, nothing else. Never dictate which tools the worker uses, never paste boilerplate footers or session links into its deliverables, never pad with contingencies it can work out itself. Exchanges are tight both ways: one packed prompt out, one compact judged result back.
 
 **Workers read `CLAUDE.md` and the skills too — never restate them.** Anything the repo docs already define (the ship motion, push retries, merge/green-check steps, tool names) is one reference, not a numbered script; a brief that re-explains it pays for those tokens twice. The whole ship brief is: branch, commit message, PR title + a sentence of body, "run the ship motion." If a brief has step numbers, it's a script — cut it down.
 

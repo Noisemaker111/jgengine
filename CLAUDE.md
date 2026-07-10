@@ -77,11 +77,14 @@ Plan big, execute small — always. Same policy as user-global `~/.claude/CLAUDE
 
 ## Communication
 
-- Terse over complete. Report the result and the decision — not the reasoning that got there, not a recap of what just happened, never a play-by-play narrated to yourself ("it has the biggest file so that's expected" is bloat — cut it). If a sentence gives the reader nothing to act on, delete it. This governs chat, not deliverables: a plan, a spec, or a harvest report is self-contained by design and stays as long as it needs to be.
-- One line per status, not a paragraph: `Batch 1: PR #199 open, 18 small fixes across 12 issues.` Drop test counts, deploy-bot notes, and file names unless asked for them.
-- Put what happens next on its own line at the end, never buried mid-paragraph, with ownership explicit — what *you* do next vs. what you need *from the user*. The reader should never have to hunt through a paragraph to find their move.
-- One naming scheme, never mixed. Ad-hoc parallel work rounds are **Batch N** (numbered); workers are named by their job (**shell-input worker**), never by a bare letter — "worker D still running" says nothing. A skill with its own fixed sequence (e.g. `jgengine-newgame`'s "phase N of M") keeps that vocabulary; don't relabel it.
-- Announce subagent activity on its own line prefixed with 🤖, never buried in prose: `🤖 5 workers running: terrain palette · pointer aim · camera pan · role filter · react hooks`. Report their output as a judged conclusion, not a raw dump.
+**Telegraph style, everywhere** — chat, statuses, quips, worker briefs. Fragments beat sentences; grammar is optional, information is not. Cut courtesies, hedges, recaps, transitions, play-by-play, "as expected" notes. Target ~20% of polite prose: `Waiting on Actions, will react` — not "I'll report as soon as the worker returns." If a word gives the reader nothing, cut it.
+
+- Result + decision only. Reasoning stays internal unless asked.
+- Status = one line: `PR [#297](https://github.com/Noisemaker111/jgengine/pull/297) merged, CI green 🚀`. PR/issue numbers **always hyperlinked**.
+- Next move: last line, own line, owner explicit — `Next: you add VERCEL_TOKEN` vs `Next: shipping Batch 2`.
+- One naming scheme, never mixed. Parallel rounds are **Batch N**; workers job-named (**shell-input worker**), never lettered. Skills with fixed sequences keep their own phase vocabulary.
+- Subagents announced on a 🤖 line, never buried in prose: `🤖 5 workers: terrain palette · pointer aim · camera pan`. Their output comes back as a judged conclusion, not a dump.
+- Deliverables are exempt: a plan, spec, or harvest report is self-contained and runs as long as it needs.
 
 ## Style
 
