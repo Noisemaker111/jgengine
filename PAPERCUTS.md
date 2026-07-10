@@ -80,6 +80,10 @@ ship worker hit a PAPERCUTS.md conflict, then spawned its own background merge c
 
 fresh container: bun run check-types before any build → hundreds of false TS2307 'Cannot find module @jgengine/core/...' from missing dist; real signal only after bun run build
 
+2026-07-10T06:22:13.971Z — sonnet-5 — Claude
+
+ship worker's 60s wait: brief said 'sleep inline, do not background' yet worker still armed a Monitor and ended its turn — needed a SendMessage resume; the inline-wait rule needs to be enforced, not just briefed
+
 2026-07-10T06:41:08.482Z — frontier — Claude
 
 batch-editing .claude/settings.json + hooks → two Edit calls dropped with 'permission stream closed', silently unapplied; had to notice and retry next turn
