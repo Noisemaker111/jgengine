@@ -56,7 +56,7 @@ export function MinimapPanel(): ReactNode {
             const angle = cameraAngleAt(camera, t).angle;
             const p = projectToMinimap([camera.position[0], camera.position[2]], VIEW);
             const dx = Math.sin(angle) * 10;
-            const dy = -Math.cos(angle) * 10;
+            const dy = Math.cos(angle) * 10;
             return (
               <g key={camera.id}>
                 <circle cx={p.x} cy={p.y} r={3.5} fill={PALETTE.midnightBlue} stroke={PALETTE.brass} strokeWidth={1} />
@@ -68,7 +68,7 @@ export function MinimapPanel(): ReactNode {
             const pose = guardPositionAt(guard, t);
             const p = projectToMinimap([pose.position[0], pose.position[2]], VIEW);
             const dx = Math.sin(pose.heading) * 9;
-            const dy = -Math.cos(pose.heading) * 9;
+            const dy = Math.cos(pose.heading) * 9;
             return (
               <g key={guard.id}>
                 <circle cx={p.x} cy={p.y} r={4} fill={PALETTE.velvetRed} />
@@ -80,7 +80,7 @@ export function MinimapPanel(): ReactNode {
             (() => {
               const p = projectToMinimap([player.position[0], player.position[2]], VIEW);
               const dx = Math.sin(player.rotationY) * 8;
-              const dy = -Math.cos(player.rotationY) * 8;
+              const dy = Math.cos(player.rotationY) * 8;
               return (
                 <g>
                   <circle cx={p.x} cy={p.y} r={5} fill={PALETTE.brass} stroke="#000" strokeWidth={0.5} />

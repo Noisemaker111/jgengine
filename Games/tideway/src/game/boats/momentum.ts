@@ -1,3 +1,5 @@
+import { steerYaw } from "@jgengine/core/movement/steering";
+
 import { clamp, headingToVec, type Vec2, vecAdd, vecDot, vecLength } from "../shared/vec2";
 
 export interface BoatState {
@@ -51,7 +53,7 @@ function nextHeading(headingRad: number, speed: number, input: BoatInput, dt: nu
     BOAT_TURN_MIN_FACTOR + (1 - BOAT_TURN_MIN_FACTOR) * clamp(Math.abs(speed) / BOAT_MAX_FORWARD_SPEED, 0, 1);
   const turnRate = BOAT_TURN_RATE * speedFactor * (input.brake ? BOAT_BRAKE_TURN_MULTIPLIER : 1);
   const reverseFlip = speed < 0 ? -1 : 1;
-  return headingRad + input.rudder * turnRate * reverseFlip * dt;
+  return steerYaw(headingRad, input.rudder * reverseFlip, turnRate, dt);
 }
 
 export function ownVelocity(state: BoatState): Vec2 {

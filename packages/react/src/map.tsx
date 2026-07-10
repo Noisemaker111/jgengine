@@ -11,6 +11,7 @@ import {
   bearingToCardinal,
   clampToMinimapEdge,
   compassBearing,
+  headingToBearing,
   projectToMinimap,
   relativeBearing,
   type Cardinal,
@@ -31,7 +32,8 @@ export interface MinimapProps {
   worldRadius: number;
   fog?: FogField;
   size?: number;
-  heading?: number;
+  /** Facing yaw (`rotationY`, forward = `(sin yaw, cos yaw)`) of the tracked entity — pass it raw, never pre-converted to a bearing. */
+  facingYaw?: number;
   rotate?: boolean;
   kindStyles?: Record<string, MarkerKindStyle>;
   background?: string;
@@ -60,7 +62,7 @@ export function Minimap({
   worldRadius,
   fog,
   size = 176,
-  heading = 0,
+  facingYaw = 0,
   rotate = false,
   kindStyles = DEFAULT_MARKER_KINDS,
   background,
@@ -75,11 +77,12 @@ export function Minimap({
     fog?.cells ?? NULL_CELLS,
     fog?.cells ?? NULL_CELLS,
   );
+  const bearing = headingToBearing(facingYaw);
   const view = {
     center,
     worldRadius,
     size,
-    ...(rotate ? { rotate: -heading } : {}),
+    ...(rotate ? { rotate: bearing } : {}),
   };
   const half = size / 2;
   const clipId = `mm-clip-${size}`;
@@ -141,7 +144,7 @@ export function Minimap({
       >
         <span>{title}</span>
         <span style={{ color: "rgba(148,163,184,0.6)" }}>
-          {bearingToCardinal(heading)}
+          {bearingToCardinal(bearing)}
         </span>
       </div>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} data-minimap-canvas>
@@ -203,7 +206,7 @@ export function Minimap({
               </g>
             );
           })}
-          <g transform={`translate(${half} ${half}) rotate(${(rotate ? 0 : heading) * (180 / Math.PI)})`}>
+          <g transform={`translate(${half} ${half}) rotate(${(rotate ? 0 : bearing) * (180 / Math.PI)})`}>
             <path d="M0,-9 L6,7 L0,3 L-6,7 Z" fill="#4ade80" stroke="#052e16" strokeWidth={0.75} />
           </g>
         </g>
@@ -234,7 +237,8 @@ const COMPASS_TICKS: readonly { cardinal: Cardinal; bearing: number }[] = [
 ];
 
 export interface CompassProps {
-  heading: number;
+  /** Facing yaw (`rotationY`, forward = `(sin yaw, cos yaw)`) of the tracked entity — pass it raw, never pre-converted to a bearing. */
+  facingYaw: number;
   center?: WorldXZ;
   markers?: MarkerSet;
   width?: number;
@@ -244,11 +248,11 @@ export interface CompassProps {
 }
 
 /**
- * Horizontal compass strip centered on the player's facing bearing, with the
+ * Horizontal compass strip centered on the player's facing direction, with the
  * eight cardinals and optional marker pips (bearing to each `MarkerSet` entry).
  */
 export function Compass({
-  heading,
+  facingYaw,
   center,
   markers,
   width = 340,
@@ -261,9 +265,10 @@ export function Compass({
     markers?.snapshot ?? EMPTY_MARKERS,
     markers?.snapshot ?? EMPTY_MARKERS,
   );
+  const facingBearing = headingToBearing(facingYaw);
   const half = fov / 2;
   const toX = (bearing: number): number | null => {
-    const delta = relativeBearing(bearing, heading);
+    const delta = relativeBearing(bearing, facingBearing);
     if (Math.abs(delta) > half) return null;
     return width / 2 + (delta / half) * (width / 2);
   };
@@ -348,7 +353,8 @@ export interface WorldMapProps {
   markers: MarkerSet;
   bounds: MapBounds;
   player?: WorldXZ;
-  heading?: number;
+  /** Facing yaw (`rotationY`, forward = `(sin yaw, cos yaw)`) of the player — pass it raw, never pre-converted to a bearing. */
+  facingYaw?: number;
   fog?: FogField;
   background?: string;
   width?: number;
@@ -368,7 +374,7 @@ export function WorldMap({
   markers,
   bounds,
   player,
-  heading = 0,
+  facingYaw = 0,
   fog,
   background,
   width = 520,
@@ -480,7 +486,7 @@ export function WorldMap({
           ? (() => {
               const at = project(player[0], player[1]);
               return (
-                <g transform={`translate(${at.x} ${at.y}) rotate(${heading * (180 / Math.PI)})`}>
+                <g transform={`translate(${at.x} ${at.y}) rotate(${headingToBearing(facingYaw) * (180 / Math.PI)})`}>
                   <path d="M0,-11 L7,9 L0,4 L-7,9 Z" fill="#4ade80" stroke="#052e16" strokeWidth={1} />
                 </g>
               );

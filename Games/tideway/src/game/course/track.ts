@@ -1,4 +1,5 @@
 import type { Checkpoint } from "@jgengine/core/game/race";
+import { yawRight } from "@jgengine/core/movement/steering";
 import { seededRng } from "@jgengine/core/random/rng";
 import { lerp } from "../shared/vec2";
 import { type ZoneId, zoneAt } from "./zones";
@@ -63,7 +64,8 @@ export interface StartSlot {
 }
 
 function lateralOffset(headingRad: number, distance: number): readonly [number, number] {
-  return [Math.cos(headingRad) * distance, -Math.sin(headingRad) * distance];
+  const [x, z] = yawRight(headingRad);
+  return [x * distance, z * distance];
 }
 
 const GRID_LANE_OFFSETS: readonly number[] = [0, -1, 1, -2, 2];

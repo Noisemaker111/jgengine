@@ -70,8 +70,8 @@ export function steerRival(
   const diff = normalizeAngle(desiredHeading - state.heading);
   const absDiff = Math.abs(diff);
 
-  const rotateLeft = diff < -0.06;
-  const rotateRight = diff > 0.06;
+  const rotateLeft = diff > 0.06;
+  const rotateRight = diff < -0.06;
   const thrust = errMag > 1.2 && absDiff < personality.alignTolerance;
   const retro = errMag > 1.2 && absDiff > Math.PI - personality.alignTolerance;
 

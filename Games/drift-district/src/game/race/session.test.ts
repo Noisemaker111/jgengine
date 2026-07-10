@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createRaceState, raceTrack } from "@jgengine/core/game/race";
+import { steerToward } from "@jgengine/core/movement/steering";
 
 import { CHECKPOINTS, DRIFT_GATES, LAPS } from "./route";
 import { createRaceSession } from "./session";
@@ -20,10 +21,7 @@ function driveTowardGate(session: ReturnType<typeof createRaceSession>, gateInde
     const dx = target[0] - pos[0];
     const dz = target[1] - pos[2];
     const desired = Math.atan2(dx, dz);
-    let diff = desired - snap.playerPose.heading;
-    while (diff > Math.PI) diff -= Math.PI * 2;
-    while (diff < -Math.PI) diff += Math.PI * 2;
-    const steer = Math.max(-1, Math.min(1, diff * 2));
+    const steer = Math.max(-1, Math.min(1, steerToward(snap.playerPose.heading, desired) * 2));
     session.tick(DT, { throttle: 1, brake: 0, steer, handbrake: 1 }, false);
   }
 }

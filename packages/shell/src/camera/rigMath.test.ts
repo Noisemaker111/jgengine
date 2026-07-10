@@ -170,8 +170,9 @@ describe("lockOnPose", () => {
 describe("shoulder rig", () => {
   test("shoulder swap flips lateral offset sign", () => {
     const shoulder = resolveShoulder({ shoulderOffset: 1, heightOffset: 1.6, distance: 3 }, false);
-    const right = shoulderPose({ x: 0, y: 0, z: 0 }, 0, 0, 1, shoulder);
-    const left = shoulderPose({ x: 0, y: 0, z: 0 }, 0, 0, -1, shoulder);
+    const facingNorth = Math.PI;
+    const right = shoulderPose({ x: 0, y: 0, z: 0 }, facingNorth, 0, 1, shoulder);
+    const left = shoulderPose({ x: 0, y: 0, z: 0 }, facingNorth, 0, -1, shoulder);
     expect(Math.sign(right.position.x)).toBe(1);
     expect(Math.sign(left.position.x)).toBe(-1);
   });

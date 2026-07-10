@@ -52,6 +52,7 @@ import {
   type CollisionObstacle,
   type MovementTuningOverrides,
 } from "@jgengine/core/movement/movementModel";
+import { steerYaw } from "@jgengine/core/movement/steering";
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import {
   advanceVoxelPlayer,
@@ -807,8 +808,8 @@ function FrameDriver({
     const dt = Math.min(rawDt, 0.05);
     const gameDt = ctx.time.advance(dt);
     ctx.input.publish(heldActionsFor(tracker, inputActions));
-    if (tracker.isDown("turnLeft")) yawRef.current += TURN_SPEED * dt;
-    if (tracker.isDown("turnRight")) yawRef.current -= TURN_SPEED * dt;
+    const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
+    if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
     endPhase();
 
     const playerId = ctx.player.possession.active(ctx.player.userId);

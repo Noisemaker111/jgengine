@@ -42,6 +42,16 @@ describe("stepGlider", () => {
     expect(boosted.position[2]).toBeGreaterThan(unboosted.position[2] * 3);
   });
 
+  test("yaw-right input turns the glider toward screen-right", () => {
+    const state = initialGliderState([0, 20, 0], 0);
+    let next = state;
+    for (let i = 0; i < 10; i += 1) {
+      next = stepGlider(next, { yaw: 1, pitch: 0, thrust: 1, brake: 0 }, NO_FLOW, [0, 0], 0.1, i * 0.1, DEFAULT_GLIDER_TUNING);
+    }
+    expect(next.heading).toBeLessThan(0);
+    expect(next.position[0]).toBeLessThan(0);
+  });
+
   test("stepGlider is a pure function of its inputs", () => {
     const state = initialGliderState([1, 20, 2], 0.3);
     const a = stepGlider(state, input, NO_FLOW, [0.2, 0.1], 0.05, 3, DEFAULT_GLIDER_TUNING);

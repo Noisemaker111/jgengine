@@ -1,4 +1,5 @@
 import type { AxisInput } from "@jgengine/core/input/axisInput";
+import { steerYaw } from "@jgengine/core/movement/steering";
 import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "@jgengine/core/physics/vehicleBody";
 
 import { lateralOffset } from "../race/geometry";
@@ -69,7 +70,7 @@ export function createVehicleController(
       const speed = vx * fx0 + vz * fz0;
       const steerScale = Math.min(1, Math.abs(speed) / tuning.turnSpeedRef);
       const dir = speed >= 0 ? 1 : -1;
-      heading += axis.steer * tuning.turnRate * steerScale * dir * dt;
+      heading = steerYaw(heading, axis.steer * steerScale * dir, tuning.turnRate, dt);
 
       const [fx, fz] = forward();
       let accel = 0;

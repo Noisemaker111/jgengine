@@ -1,3 +1,5 @@
+import { steerYaw, yawRight } from "@jgengine/core/movement/steering";
+
 import type { FlowSample, Vec3 } from "./flowTube";
 
 export interface GliderTuning {
@@ -48,7 +50,8 @@ export function headingVector(heading: number, pitch: number): Vec3 {
 }
 
 export function rightVector(heading: number): Vec3 {
-  return [Math.cos(heading), 0, -Math.sin(heading)];
+  const [x, z] = yawRight(heading);
+  return [x, 0, z];
 }
 
 export function initialGliderState(position: Vec3, heading = 0): GliderPhysicsState {
@@ -65,7 +68,7 @@ export function stepGlider(
   tuning: GliderTuning = DEFAULT_GLIDER_TUNING,
 ): GliderPhysicsState {
   const degrade = controlDegradation(flow.buffet, tuning.minControlAtBuffet);
-  const heading = state.heading + input.yaw * tuning.yawRate * degrade * dt;
+  const heading = steerYaw(state.heading, input.yaw * degrade, tuning.yawRate, dt);
   const pitch = Math.min(tuning.maxPitch, Math.max(-tuning.maxPitch, state.pitch + input.pitch * tuning.pitchRate * degrade * dt));
 
   const forward = headingVector(heading, pitch);
