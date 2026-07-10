@@ -235,7 +235,12 @@ export function onInit(ctx: GameContext): void {
 
 export function onNewPlayer(ctx: GameContext): void {
   const start = cellToWorld(PLAYER_START.c, PLAYER_START.r);
-  ctx.scene.entity.spawn(MUNCHER, { id: ctx.player.userId, position: start, role: "player" });
+  ctx.scene.entity.spawn(MUNCHER, {
+    id: ctx.player.userId,
+    position: start,
+    rotationY: Math.PI,
+    role: "player",
+  });
   lastMuncher = [start[0], start[2]];
 }
 
@@ -269,7 +274,7 @@ function targetCellFor(gs: GhostState, muncherCell: Cell, ghostCell: Cell): Cell
 
 function resetActors(ctx: GameContext): void {
   const start = cellToWorld(PLAYER_START.c, PLAYER_START.r);
-  ctx.scene.entity.setPose(ctx.player.userId, { position: start, rotationY: 0 });
+  ctx.scene.entity.setPose(ctx.player.userId, { position: start, rotationY: Math.PI });
   lastMuncher = [start[0], start[2]];
   muncherDir = { dc: 0, dr: -1 };
   frightenedUntil = 0;
