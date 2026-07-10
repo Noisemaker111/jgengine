@@ -3,7 +3,16 @@ export type AbilitySchool = "physical" | "holy" | "fire" | "frost" | "arcane" | 
 export type AbilityKind = "damage" | "heal" | "dot" | "hot" | "buff" | "aoe";
 export type AttributeId = "str" | "agi" | "sta" | "int" | "spi";
 export type ItemQuality = "poor" | "common" | "uncommon" | "rare" | "epic";
-export type EquipSlot = "mainHand" | "head" | "chest" | "legs" | "feet" | "hands" | "trinket";
+export type EquipSlot =
+  | "mainhand"
+  | "helmet"
+  | "shoulder"
+  | "chest"
+  | "waist"
+  | "legs"
+  | "feet"
+  | "gloves"
+  | "trinket";
 export type ZoneId = "vale" | "marsh" | "peaks";
 
 export interface AbilityDef {

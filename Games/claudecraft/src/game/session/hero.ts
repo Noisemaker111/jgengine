@@ -61,7 +61,13 @@ export const storeKeys = {
   dialogue: (userId: string) => `dialogue:${userId}`,
   autoAttack: (userId: string) => `autoattack:${userId}`,
   auras: (instanceId: string) => `auras:${instanceId}`,
+  bar: (userId: string) => `bar:${userId}`,
 } as const;
+
+export function barOf(ctx: GameContext, userId: string): readonly string[] {
+  const raw = ctx.game.store.get(storeKeys.bar(userId));
+  return Array.isArray(raw) ? (raw as string[]) : [];
+}
 
 export function heroOf(userId: string): HeroRuntime | null {
   return heroes.get(userId) ?? null;
@@ -201,9 +207,16 @@ export function selectClass(ctx: GameContext, userId: string, classId: string): 
   stats.set(userId, "xp", { max: 400, current: 0 });
   applySheet(ctx, userId, { fill: true });
   ctx.player.applyLoadout(userId, `kit_${cls.id}`);
-  const equips: Partial<Record<EquipSlot, string>> = { mainHand: cls.startWeapon };
+  const equips: Partial<Record<EquipSlot, string>> = { mainhand: cls.startWeapon };
   ctx.player.inventory.take("bags", cls.startWeapon, 1);
   ctx.game.store.set(storeKeys.equip(userId), equips);
+  ctx.game.store.set(
+    storeKeys.bar(userId),
+    [...cls.abilities]
+      .sort((a, b) => a.levelReq - b.levelReq)
+      .slice(0, 9)
+      .map((ability) => ability.id),
+  );
   applySheet(ctx, userId, { fill: true });
 }
 

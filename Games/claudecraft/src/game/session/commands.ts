@@ -3,10 +3,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { castSlot } from "../combat/engine";
 import { NPCS } from "../entities/npcs/catalog";
 import { CLASS_ENTITY_ID } from "../model";
-import { applySheet, clearAuras, heroOf, selectClass, storeKeys } from "./hero";
+import { applySheet, barOf, classOf, clearAuras, heroOf, selectClass, storeKeys } from "./hero";
 import { graveyardOf } from "../world/setup";
 
-type Panel = "bags" | "character" | "quests";
+type Panel = "bags" | "character" | "quests" | "spellbook";
 
 function togglePanel(ctx: GameContext, panel: Panel): void {
   const key = storeKeys.panel(ctx.player.userId);
@@ -24,7 +24,7 @@ export function registerCommands(ctx: GameContext): void {
       selectClass(state, state.player.userId, input.classId);
     },
   });
-  for (let slot = 0; slot < 6; slot += 1) {
+  for (let slot = 0; slot < 9; slot += 1) {
     commands.define(`castSlot${slot + 1}`, {
       apply(state) {
         castSlot(state, state.player.userId, slot);
@@ -42,6 +42,21 @@ export function registerCommands(ctx: GameContext): void {
   commands.define("openBags", { apply: (state) => togglePanel(state, "bags") });
   commands.define("openCharacter", { apply: (state) => togglePanel(state, "character") });
   commands.define("openQuestLog", { apply: (state) => togglePanel(state, "quests") });
+  commands.define("openSpellbook", { apply: (state) => togglePanel(state, "spellbook") });
+  commands.define<{ abilityId: string; slot: number }>("spellbook.assign", {
+    apply(state, input) {
+      const userId = state.player.userId;
+      const cls = classOf(state, userId);
+      if (cls === null || !cls.abilities.some((ability) => ability.id === input.abilityId)) return;
+      if (!Number.isInteger(input.slot) || input.slot < 0 || input.slot > 8) return;
+      const bar = [...barOf(state, userId)];
+      while (bar.length < 9) bar.push("");
+      const existing = bar.indexOf(input.abilityId);
+      if (existing >= 0) bar[existing] = bar[input.slot];
+      bar[input.slot] = input.abilityId;
+      state.game.store.set(storeKeys.bar(userId), bar);
+    },
+  });
   commands.define<{ npcId: string }>("dialogue.open", {
     apply(state, input) {
       if (NPCS.some((npc) => npc.id === input.npcId)) {
