@@ -1,10 +1,12 @@
 import { clampToMinimapEdge, projectToMinimap, type MinimapView } from "@jgengine/core/world/minimap";
+import { useDisplayProfile } from "@jgengine/react/display";
 
 import type { SessionSnapshot } from "../../race/session";
 import { FLOW_TUBES, RING_NODES } from "../../race/route";
 import { PALETTE } from "./theme";
 
 const SIZE = 190;
+const COMPACT_SIZE = 132;
 
 function courseCenterAndRadius(): { center: readonly [number, number]; radius: number } {
   const xs = RING_NODES.map((n) => n.position[0]);
@@ -28,14 +30,16 @@ function fanColor(power: number, stage: string): string {
 }
 
 export function Minimap({ snapshot }: { snapshot: SessionSnapshot }) {
-  const view: MinimapView = { center: COURSE_CENTER, worldRadius: COURSE_RADIUS, size: SIZE };
+  const { compact } = useDisplayProfile();
+  const size = compact ? COMPACT_SIZE : SIZE;
+  const view: MinimapView = { center: COURSE_CENTER, worldRadius: COURSE_RADIUS, size };
 
   return (
     <div
-      className="absolute right-4 top-4 overflow-hidden rounded-lg border"
-      style={{ width: SIZE, height: SIZE, borderColor: `${PALETTE.citySlate}55`, backgroundColor: "#0f1d1ee6" }}
+      className="overflow-hidden rounded-lg border"
+      style={{ width: size, height: size, borderColor: `${PALETTE.citySlate}55`, backgroundColor: "#0f1d1ee6" }}
     >
-      <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {FLOW_TUBES.map((tube) => {
           const from = projectToMinimap([tube.from[0], tube.from[2]], view);
           const to = projectToMinimap([tube.to[0], tube.to[2]], view);
@@ -75,11 +79,11 @@ export function Minimap({ snapshot }: { snapshot: SessionSnapshot }) {
         })}
 
         {(() => {
-          const proj = clampToMinimapEdge(projectToMinimap([snapshot.pacerPose.position[0], snapshot.pacerPose.position[2]], view), SIZE);
+          const proj = clampToMinimapEdge(projectToMinimap([snapshot.pacerPose.position[0], snapshot.pacerPose.position[2]], view), size);
           return <circle cx={proj.x} cy={proj.y} r={4} fill={PALETTE.shadowBlue} stroke={PALETTE.cloudWhite} strokeWidth={1} />;
         })()}
         {(() => {
-          const proj = clampToMinimapEdge(projectToMinimap([snapshot.playerPose.position[0], snapshot.playerPose.position[2]], view), SIZE);
+          const proj = clampToMinimapEdge(projectToMinimap([snapshot.playerPose.position[0], snapshot.playerPose.position[2]], view), size);
           return <circle cx={proj.x} cy={proj.y} r={4.5} fill={PALETTE.windsockOrange} stroke="#0f1d1e" strokeWidth={1.2} />;
         })()}
       </svg>

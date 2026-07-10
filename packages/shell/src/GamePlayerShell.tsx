@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type ComponentType,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
@@ -120,7 +121,8 @@ import { GridWorldScene } from "./world/GridWorldScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
-import { TouchControlsDock, TouchPlaySurface } from "./touch/TouchControlsOverlay";
+import { OrientationHint } from "./touch/OrientationHint";
+import { TouchControlsDock, TouchPlaySurface, touchDockClearance } from "./touch/TouchControlsOverlay";
 
 const DEV_USER_ID = "dev-player";
 const TURN_SPEED = 2.4;
@@ -1174,7 +1176,7 @@ export function GamePlayerShell({
       }),
     [playable],
   );
-  const { coarsePointer } = useDisplayProfile();
+  const { coarsePointer, portrait } = useDisplayProfile();
   const touchSink = useMemo(
     () => ({ onCodeDown: (code: string) => tracker.handleDown(code), onCodeUp: (code: string) => tracker.handleUp(code) }),
     [tracker],
@@ -1545,12 +1547,28 @@ export function GamePlayerShell({
     }
   };
 
+  const dockMounted =
+    !poster &&
+    coarsePointer &&
+    touchScheme !== null &&
+    (touchScheme.joystick !== null || touchScheme.buttons.length > 0);
+  const orientationMismatch =
+    !poster &&
+    coarsePointer &&
+    playable.orientation !== undefined &&
+    (playable.orientation === "landscape") === portrait;
+
   return (
     <div
       ref={wrapperRef}
       tabIndex={0}
       {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
       className="relative h-full w-full bg-neutral-950 outline-none"
+      style={
+        {
+          "--jg-hud-dock-clearance": `${dockMounted ? touchDockClearance(touchScheme) : 0}px`,
+        } as CSSProperties
+      }
       onKeyDown={(event) => {
         if (event.code === "F2" && devtoolsEnabled) {
           event.preventDefault();
@@ -1708,8 +1726,9 @@ export function GamePlayerShell({
         </GameProvider>
       </GameUiErrorBoundary>
       {!poster && showReticle ? <Reticle /> : null}
-      {!poster && coarsePointer && touchScheme !== null && (touchScheme.joystick !== null || touchScheme.buttons.length > 0) ? (
-        <TouchControlsDock scheme={touchScheme} sink={touchSink} />
+      {dockMounted && touchScheme !== null ? <TouchControlsDock scheme={touchScheme} sink={touchSink} /> : null}
+      {orientationMismatch && playable.orientation !== undefined ? (
+        <OrientationHint wanted={playable.orientation} />
       ) : null}
       {marquee !== null ? <MarqueeBox rect={marquee} /> : null}
       {contextMenu !== null ? (

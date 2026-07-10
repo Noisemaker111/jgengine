@@ -39,6 +39,7 @@ export type Game = {
   hue: string;
   shot?: string;
   credit?: GameCredit;
+  platforms?: readonly ("web" | "mobile")[];
 };
 
 type GameDetails = Omit<Game, "id" | "title" | "href" | "shot"> & { title?: string };
@@ -381,6 +382,7 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Action & Arcade",
     controls: "↑/↓ pitch · ←/→ yaw · W thrust · S airbrake · Space dodge · Mouse steer",
     hue: "#ec4899",
+    platforms: ["web", "mobile"],
   },
   wreckway: {
     tagline: "Bolt on parts, outrun the compactor eating the yard.",

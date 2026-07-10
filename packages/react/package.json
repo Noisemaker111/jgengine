@@ -34,11 +34,14 @@
     "@jgengine/core": "^0.8.0"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "react": "19.2.3",
-    "@types/react": "^19"
+    "react-dom": "19.2.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
   },
   "publishConfig": {
     "access": "public"

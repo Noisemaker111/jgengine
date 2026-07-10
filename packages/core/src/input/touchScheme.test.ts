@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createActionStateTracker, toActionStateBindingMap } from "./actionBindings";
-import { deriveTouchScheme, touchCode, withTouchCodes } from "./touchScheme";
+import { deriveTouchScheme, touchButtonKind, touchCode, withTouchCodes } from "./touchScheme";
 
 const RESERVED = new Set([
   "moveForward",
@@ -48,8 +48,8 @@ describe("deriveTouchScheme", () => {
     );
     expect(scheme?.joystick).toEqual({ up: null, down: null, left: "moveLeft", right: "moveRight" });
     expect(scheme?.buttons).toEqual([
-      { action: "jump", label: "Jump", icon: null },
-      { action: "restart", label: "Restart", icon: null },
+      { action: "jump", label: "Jump", icon: null, kind: "primary" },
+      { action: "restart", label: "Restart", icon: null, kind: "utility" },
     ]);
     expect(scheme?.look).toBe(false);
   });
@@ -90,7 +90,7 @@ describe("deriveTouchScheme", () => {
       { moveForward: ["KeyW"], tabTarget: ["Tab"], slot1: ["Digit1"], interact: ["KeyE"] },
       { reserved: RESERVED, firstPerson: false },
     );
-    expect(scheme?.buttons).toEqual([{ action: "interact", label: "Interact", icon: null }]);
+    expect(scheme?.buttons).toEqual([{ action: "interact", label: "Interact", icon: null, kind: "primary" }]);
   });
 
   test("explicit button list wins over derivation and honors custom labels and icons", () => {
@@ -99,14 +99,56 @@ describe("deriveTouchScheme", () => {
       {
         reserved: RESERVED,
         firstPerson: false,
-        config: { buttons: [{ action: "hardDrop", label: "Drop" }, { action: "hold", icon: "star" }, { action: "taunt", icon: false }] },
+        config: {
+          buttons: [
+            { action: "hardDrop", label: "Drop" },
+            { action: "hold", icon: "star" },
+            { action: "taunt", icon: false, kind: "utility" },
+          ],
+        },
       },
     );
     expect(scheme?.buttons).toEqual([
-      { action: "hardDrop", label: "Drop", icon: null },
-      { action: "hold", label: "Hold", icon: "star" },
-      { action: "taunt", label: "Taunt", icon: false },
+      { action: "hardDrop", label: "Drop", icon: null, kind: "primary" },
+      { action: "hold", label: "Hold", icon: "star", kind: "primary" },
+      { action: "taunt", label: "Taunt", icon: false, kind: "utility" },
     ]);
+  });
+
+  test("flight-style bindings map pitch/yaw to the joystick and split primary from utility buttons", () => {
+    const scheme = deriveTouchScheme(
+      {
+        pitchUp: ["ArrowUp"],
+        pitchDown: ["ArrowDown"],
+        yawLeft: ["ArrowLeft"],
+        yawRight: ["ArrowRight"],
+        thrust: ["KeyW"],
+        airbrake: ["KeyS"],
+        dodge: ["Space"],
+        restart: ["KeyR"],
+        start: ["Enter"],
+      },
+      { reserved: RESERVED, firstPerson: false },
+    );
+    expect(scheme?.joystick).toEqual({ up: "pitchUp", down: "pitchDown", left: "yawLeft", right: "yawRight" });
+    expect(scheme?.buttons.filter((button) => button.kind === "primary").map((button) => button.action)).toEqual([
+      "thrust",
+      "airbrake",
+      "dodge",
+    ]);
+    expect(scheme?.buttons.filter((button) => button.kind === "utility").map((button) => button.action)).toEqual([
+      "restart",
+      "start",
+    ]);
+  });
+
+  test("driving-style bindings map accelerate/brake/steer to the joystick", () => {
+    const scheme = deriveTouchScheme(
+      { accelerate: ["KeyW"], brake: ["KeyS"], steerLeft: ["KeyA"], steerRight: ["KeyD"], boost: ["Space"] },
+      { reserved: RESERVED, firstPerson: false },
+    );
+    expect(scheme?.joystick).toEqual({ up: "accelerate", down: "brake", left: "steerLeft", right: "steerRight" });
+    expect(scheme?.buttons.map((button) => button.action)).toEqual(["boost"]);
   });
 
   test("first person defaults look on; touch: false disables everything", () => {
@@ -119,5 +161,19 @@ describe("deriveTouchScheme", () => {
   test("returns null when nothing is derivable", () => {
     expect(deriveTouchScheme({}, { reserved: RESERVED, firstPerson: false })).toBeNull();
     expect(deriveTouchScheme(undefined, { reserved: RESERVED, firstPerson: false })).toBeNull();
+  });
+});
+
+describe("touchButtonKind", () => {
+  test("meta actions and toggle-style prefixes are utility, gameplay verbs are primary", () => {
+    expect(touchButtonKind("restart")).toBe("utility");
+    expect(touchButtonKind("start")).toBe("utility");
+    expect(touchButtonKind("pause")).toBe("utility");
+    expect(touchButtonKind("toggleMute")).toBe("utility");
+    expect(touchButtonKind("cycleCamera")).toBe("utility");
+    expect(touchButtonKind("zoomIn")).toBe("utility");
+    expect(touchButtonKind("toggler")).toBe("primary");
+    expect(touchButtonKind("fire")).toBe("primary");
+    expect(touchButtonKind("dodge")).toBe("primary");
   });
 });

@@ -10,7 +10,7 @@ export function RaceHud({ snapshot }: { snapshot: SessionSnapshot }) {
 
   return (
     <div
-      className="absolute left-1/2 top-4 flex -translate-x-1/2 flex-col items-center gap-1 rounded-lg border px-6 py-3"
+      className="flex flex-col items-center gap-1 rounded-lg border px-6 py-3"
       style={{ borderColor: `${PALETTE.citySlate}55`, backgroundColor: "#0f1d1eda" }}
     >
       <div className="flex items-baseline gap-4">

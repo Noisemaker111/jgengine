@@ -56,6 +56,14 @@ Skipped logging a papercut mid-session because the CLAUDE.md wording read like t
 
 shell PATH missing bun → bun not recognized; needed full path C:\Users\Jk101\.bun\bin\bun.exe
 
+2026-07-10T05:38:06.748Z — sonnet — Claude
+
+ship-motion worker ended its turn during the 60s CI sleep instead of finishing the Actions check → needed a second worker to complete the green check
+
+2026-07-10T06:03:57.781Z — claude-fable-5 — Claude
+
+sync checkpoint-commit worker → stop hook reports it was relaunched after an unusable first result; orchestrator saw only one clean success, retry was invisible
+
 2026-07-10T06:02:21.435Z — fable-5 — Claude
 
 pulling asset packs for a new game → sandbox network policy 403s all three provider hosts (kenney.nl, quaternius.com, kaylousberg.itch.io) and no JGENGINE_ASSETS_MIRROR is configured for cloud sessions, so every model-backed game falls back to SVG billboards
