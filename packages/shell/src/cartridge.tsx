@@ -36,6 +36,7 @@ export type CartridgeResultLine = { label: string; accent?: boolean } & (
 );
 
 export interface CartridgeScreens {
+  start?: { title: string; subtitle?: string; buttonLabel?: string };
   win?: { title: string; lines: readonly CartridgeResultLine[] };
   lose?: { title: string; subtitle?: string };
 }
@@ -55,6 +56,8 @@ export interface CartridgePanels {
   Score: ComponentType<{ value: number; label: string; digits?: number }>;
   AbilityBar: ComponentType<{ slots: readonly CartridgeAbilitySlot[] }>;
   DraftModal: ComponentType<{ offers: readonly { id: string; label: string }[]; choose(id: string): void }>;
+  StartScreen: ComponentType<{ title: string; subtitle?: string; buttonLabel?: string; begin(): void }>;
+  Countdown: ComponentType<{ seconds: number }>;
   WinScreen: ComponentType<{ title: string; lines: readonly { label: string; value: string | number; accent?: boolean }[] }>;
   LoseScreen: ComponentType<{ title: string; subtitle?: string }>;
 }
@@ -86,7 +89,7 @@ function useRunPhase(ctx: GameContext, runtime: CartridgeRuntime): void {
   const run = runtime.run(ctx);
   useSyncExternalStore(
     run.subscribe,
-    () => `${run.outcome}:${run.pendingOffers?.map((offer) => offer.id).join(",") ?? ""}`,
+    () => `${run.phase}:${run.pendingOffers?.map((offer) => offer.id).join(",") ?? ""}`,
   );
 }
 
@@ -110,10 +113,19 @@ function XpItem({ config, item }: { config: CartridgeConfig; item: Extract<Cartr
   return <config.panels.Xp fraction={fraction} level={level?.current} width={item.width} />;
 }
 
-function TimerItem({ config, item }: { config: CartridgeConfig; item: Extract<CartridgePanelItem, { kind: "timer" }> }) {
+function TimerItem({
+  config,
+  runtime,
+  item,
+}: {
+  config: CartridgeConfig;
+  runtime: CartridgeRuntime;
+  item: Extract<CartridgePanelItem, { kind: "timer" }>;
+}) {
   const ctx = useGameContext();
   const target = winSeconds(config);
-  const seconds = target === null ? ctx.time.now() : Math.max(0, target - ctx.time.now());
+  const elapsed = runtime.run(ctx).playingSeconds;
+  const seconds = target === null ? elapsed : Math.max(0, target - elapsed);
   return <config.panels.Timer seconds={seconds} label={item.label} />;
 }
 
@@ -172,7 +184,7 @@ function PanelItems({
           case "xp":
             return <XpItem key={index} config={config} item={item} />;
           case "timer":
-            return <TimerItem key={index} config={config} item={item} />;
+            return <TimerItem key={index} config={config} runtime={runtime} item={item} />;
           case "score":
             return <ScoreItem key={index} config={config} runtime={runtime} item={item} />;
           case "abilityBar":
@@ -216,11 +228,20 @@ function CartridgeUI({ config, runtime }: { config: CartridgeConfig; runtime: Ca
 
   return (
     <div style={{ ...config.theme, display: "contents" }}>
-      {run.outcome === "lost" && config.screens.lose !== undefined && (
+      {run.phase === "start" && (
+        <config.panels.StartScreen
+          title={config.screens.start?.title ?? config.name}
+          subtitle={config.screens.start?.subtitle}
+          buttonLabel={config.screens.start?.buttonLabel}
+          begin={() => runtime.begin(ctx)}
+        />
+      )}
+      {run.phase === "countdown" && <config.panels.Countdown seconds={Math.ceil(run.countdownRemaining)} />}
+      {run.phase === "lost" && config.screens.lose !== undefined && (
         <config.panels.LoseScreen title={config.screens.lose.title} subtitle={config.screens.lose.subtitle} />
       )}
-      {run.outcome === "won" && <WinScreenHost config={config} runtime={runtime} />}
-      {run.outcome === "playing" && (
+      {run.phase === "won" && <WinScreenHost config={config} runtime={runtime} />}
+      {run.phase === "playing" && (
         <HudCanvas layout={layout}>
           <DraftModalHost config={config} runtime={runtime} />
           {config.hud.panels.map((panel) => (
@@ -377,7 +398,7 @@ function OrbitPool({
   useFrame(() => {
     const run = runtime.run(ctx);
     const player = ctx.scene.entity.get(ctx.player.userId);
-    if (player === null || run.outcome !== "playing") {
+    if (player === null || run.phase !== "playing") {
       if (groupRef.current !== null) groupRef.current.visible = false;
       return;
     }

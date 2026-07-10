@@ -9,6 +9,10 @@ export function validateCartridge(spec: CartridgeSpec): string[] {
   if (spec.player.walkSpeed <= 0) problems.push(`player "${spec.player.kind}": walkSpeed must be positive`);
   if (enemyIds.has(spec.player.kind)) problems.push(`player kind "${spec.player.kind}" collides with an enemy id`);
 
+  if (spec.flow?.countdownSeconds !== undefined && spec.flow.countdownSeconds < 0) {
+    problems.push("flow.countdownSeconds must not be negative");
+  }
+
   for (const [id, enemy] of Object.entries(spec.enemies)) {
     if (enemy.health <= 0) problems.push(`enemy "${id}": health must be positive`);
     if (enemy.walkSpeed <= 0) problems.push(`enemy "${id}": walkSpeed must be positive`);

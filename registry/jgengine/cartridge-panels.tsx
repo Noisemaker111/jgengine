@@ -9,6 +9,7 @@ import { MatchTimer } from "@/components/ui/match-timer";
 import { MenuButton } from "@/components/ui/menu-button";
 import { ResultsScreen } from "@/components/ui/results-screen";
 import { ScoreReadout } from "@/components/ui/score-readout";
+import { TitleScreen } from "@/components/ui/title-screen";
 import { VitalBar, type VitalTone } from "@/components/ui/vital-bar";
 import { XpBar } from "@/components/ui/xp-bar";
 
@@ -97,6 +98,40 @@ export const standardCartridgePanels: CartridgePanels = {
           ))}
         </div>
       </HudPanel>
+    </div>
+  ),
+  StartScreen: ({ title, subtitle, buttonLabel, begin }) => (
+    <TitleScreen
+      title={title}
+      subtitle={subtitle}
+      entries={[{ id: "start", label: buttonLabel ?? "Start" }]}
+      selectedId="start"
+      onActivate={begin}
+    />
+  ),
+  Countdown: ({ seconds }) => (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        pointerEvents: "none",
+        zIndex: 30,
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "var(--jg-font-display)",
+          fontSize: 120,
+          fontWeight: 800,
+          color: "var(--jg-accent)",
+          textShadow: "0 0 24px var(--jg-accent-glow), 0 2px 4px rgba(0,0,0,0.8)",
+        }}
+      >
+        {seconds}
+      </span>
     </div>
   ),
   WinScreen: ({ title, lines }) => <ResultsScreen outcome="victory" title={title} lines={lines} />,

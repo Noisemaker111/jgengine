@@ -1,6 +1,6 @@
 ---
 name: jgengine-verify
-description: Scene correctness is data, not pixels — bun test asserts it in milliseconds. Invoke before verifying any scene/world/HUD "works" or "renders", or when a screenshot hangs.
+description: Scene truth is data. Invoke before verifying anything works or renders.
 ---
 
 # JGengine — Verify without the browser

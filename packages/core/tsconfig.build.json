@@ -6,6 +6,12 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/testFixtures.ts"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/testFixtures.ts",
+    "src/cartridge/testkit.ts"
+  ]
 }

@@ -13,7 +13,7 @@ import {
   XP_GEM_BASE_TYPE,
   leveled,
   type BoltFx,
-  type CartridgeOutcome,
+  type CartridgePhase,
   type CartridgeRun,
   type CartridgeSpec,
   type CartridgeWeapon,
@@ -26,17 +26,21 @@ export interface CartridgeRuntime {
   run(ctx: GameContext): CartridgeRun;
   weaponKit(ctx: GameContext): AbilityKit;
   chooseUpgrade(ctx: GameContext, offerId: string): void;
+  begin(ctx: GameContext): void;
+  reset(ctx: GameContext): void;
   spec: CartridgeSpec;
 }
 
-interface InternalRun {
+interface SeededRunState {
   rng(): number;
   spawn: SpawnDirectorState;
   weaponLevels: Record<string, number>;
   kit: AbilityKit;
   fields: Record<string, number>;
   enemyNextHitAt: Map<string, number>;
-  outcome: CartridgeOutcome;
+  phase: CartridgePhase;
+  playingSeconds: number;
+  countdownRemaining: number;
   kills: number;
   levelUpQueue: number;
   draft: RunDraft<string, never>;
@@ -44,6 +48,9 @@ interface InternalRun {
   bolts: BoltFx[];
   pulses: PulseFx[];
   fxCounter: number;
+}
+
+interface InternalRun extends SeededRunState {
   listeners: Set<() => void>;
   disposeEvents?: () => void;
   view: CartridgeRun;
@@ -98,7 +105,13 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
   const entities = compileEntities(spec);
   const runs = new WeakMap<GameContext, InternalRun>();
 
-  function createRun(): InternalRun {
+  function initialPhase(): CartridgePhase {
+    if (spec.flow?.start === "gate") return "start";
+    if ((spec.flow?.countdownSeconds ?? 0) > 0) return "countdown";
+    return "playing";
+  }
+
+  function seededState(): SeededRunState {
     const seed = spec.seed ?? "cartridge";
     const weaponLevels: Record<string, number> = {};
     for (const id of Object.keys(spec.weapons)) weaponLevels[id] = 1;
@@ -108,14 +121,16 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
       weight: upgrade.weight,
       maxStacks: upgrade.maxStacks,
     }));
-    const run: InternalRun = {
+    return {
       rng: seededRng(seed),
       spawn: createSpawnDirectorState(spec.spawning.director),
       weaponLevels,
       kit: buildKit(spec, weaponLevels),
       fields: { ...spec.fields },
       enemyNextHitAt: new Map(),
-      outcome: "playing",
+      phase: initialPhase(),
+      playingSeconds: 0,
+      countdownRemaining: spec.flow?.countdownSeconds ?? 0,
       kills: 0,
       levelUpQueue: 0,
       draft: createRunDraft({ offers, rng: seededRng(`${seed}-draft`) }),
@@ -123,10 +138,22 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
       bolts: [],
       pulses: [],
       fxCounter: 0,
-      listeners: new Set(),
+    };
+  }
+
+  function createRun(): InternalRun {
+    const run: InternalRun = {
+      ...seededState(),
+      listeners: new Set<() => void>(),
       view: {
-        get outcome() {
-          return run.outcome;
+        get phase() {
+          return run.phase;
+        },
+        get playingSeconds() {
+          return run.playingSeconds;
+        },
+        get countdownRemaining() {
+          return run.countdownRemaining;
         },
         get kills() {
           return run.kills;
@@ -196,7 +223,8 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
     for (const enemy of ctx.scene.entity.list()) {
       const def = spec.enemies[enemy.name];
       if (def === undefined) continue;
-      const next = ctx.scene.entity.moveToward(enemy.id, playerId, { speed: def.walkSpeed, dt });
+      const next =
+        def.behavior === "none" ? null : ctx.scene.entity.moveToward(enemy.id, playerId, { speed: def.walkSpeed, dt });
       if (next !== null) {
         const grounded: readonly [number, number, number] = [
           next[0],
@@ -351,7 +379,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
   }
 
   function maybeOpenDraft(ctx: GameContext, run: InternalRun): void {
-    if (run.pendingOffers !== null || run.levelUpQueue <= 0 || run.outcome !== "playing") return;
+    if (run.pendingOffers !== null || run.levelUpQueue <= 0 || run.phase !== "playing") return;
     run.levelUpQueue -= 1;
     run.pendingOffers = run.draft.present(spec.progression.draft.choices);
     ctx.time.pause();
@@ -458,8 +486,8 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
     run.disposeEvents?.();
     run.disposeEvents = ctx.game.events.on("entity.died", (event) => {
       if (event.instanceId === ctx.player.userId) {
-        if (spec.rules.lose?.kind === "playerDeath" && run.outcome === "playing") {
-          run.outcome = "lost";
+        if (spec.rules.lose?.kind === "playerDeath" && run.phase === "playing") {
+          run.phase = "lost";
           notify(run);
         }
         return;
@@ -483,17 +511,69 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
 
   function checkOutcome(ctx: GameContext, run: InternalRun): void {
     const win = spec.rules.win;
-    if (win === undefined) return;
-    const won = win.kind === "survive" ? ctx.time.now() >= win.seconds : win.check(ctx, run.view);
-    if (won) {
-      run.outcome = "won";
+    if (win !== undefined) {
+      const won = win.kind === "survive" ? run.playingSeconds >= win.seconds : win.check(ctx, run.view);
+      if (won) {
+        run.phase = "won";
+        notify(run);
+        return;
+      }
+    }
+    const lose = spec.rules.lose;
+    if (lose?.kind === "custom" && lose.check(ctx, run.view)) {
+      run.phase = "lost";
       notify(run);
     }
   }
 
+  function begin(ctx: GameContext): void {
+    const run = getRun(ctx);
+    if (run.phase !== "start") return;
+    run.phase = run.countdownRemaining > 0 ? "countdown" : "playing";
+    notify(run);
+  }
+
+  function despawnCartridgeEntities(ctx: GameContext): void {
+    for (const entity of ctx.scene.entity.list()) {
+      if (spec.enemies[entity.name] !== undefined) ctx.scene.entity.despawn(entity.id);
+    }
+    for (const record of ctx.scene.worldItem.list()) {
+      if (record.baseType === XP_GEM_BASE_TYPE) ctx.scene.entity.despawn(record.instanceId);
+    }
+  }
+
+  function reset(ctx: GameContext): void {
+    const run = getRun(ctx);
+    Object.assign(run, seededState());
+    despawnCartridgeEntities(ctx);
+    if (ctx.scene.entity.get(ctx.player.userId) === null) {
+      ctx.scene.entity.spawn(spec.player.kind, {
+        id: ctx.player.userId,
+        position: spec.player.spawnAt ?? [0, 0, 0],
+      });
+    }
+    ctx.scene.entity.stats.set(ctx.player.userId, "health", { max: spec.player.health, current: spec.player.health });
+    ctx.scene.entity.stats.set(ctx.player.userId, "xp", { max: track.xpForLevel(1), current: 0 });
+    ctx.scene.entity.stats.set(ctx.player.userId, "level", { current: 1 });
+    ctx.scene.entity.setPose(ctx.player.userId, { position: spec.player.spawnAt ?? [0, 0, 0] });
+    ctx.time.play();
+    notify(run);
+  }
+
   function tick(ctx: GameContext, dt: number): void {
     const run = getRun(ctx);
-    if (run.outcome !== "playing" || run.pendingOffers !== null || dt <= 0) return;
+    if (dt <= 0 || run.pendingOffers !== null) return;
+    if (run.phase === "countdown") {
+      run.countdownRemaining -= dt;
+      if (run.countdownRemaining <= 0) {
+        run.countdownRemaining = 0;
+        run.phase = "playing";
+      }
+      notify(run);
+      return;
+    }
+    if (run.phase !== "playing") return;
+    run.playingSeconds += dt;
     advanceSpawning(ctx, run, dt);
     advanceEnemies(ctx, run, dt);
     fireWeapons(ctx, run, dt);
@@ -506,6 +586,14 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
   const loop: GameLoop<GameContext> = {
     onInit(ctx) {
       registerEvents(ctx);
+      if (spec.flow?.restart === true && !ctx.game.commands.has("restart")) {
+        ctx.game.commands.define("restart", {
+          apply(state) {
+            reset(ctx);
+            return state;
+          },
+        });
+      }
     },
     onNewPlayer(ctx) {
       ctx.scene.entity.spawn(spec.player.kind, {
@@ -526,6 +614,8 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
     run: (ctx) => getRun(ctx).view,
     weaponKit: (ctx) => getRun(ctx).kit,
     chooseUpgrade,
+    begin,
+    reset,
     spec,
   };
 }

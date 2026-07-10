@@ -16,19 +16,22 @@ import { standardCartridgePanels } from "@/components/ui/cartridge-panels";
 
 export const config: CartridgeConfig = {
   name, seed, panels: standardCartridgePanels, assets, entitySprites,
+  flow: { start: "gate", countdownSeconds: 3, restart: true },  // press-to-start → 3-2-1 → playing; "restart" command
   player: { kind, health, walkSpeed },              // compiled into content + spawned per player
-  enemies: { id: { label, health, walkSpeed, xp, contact: { damage, intervalSeconds } } },
+  enemies: { id: { label, health, walkSpeed, xp, contact: { damage, intervalSeconds }, behavior: "chase" | "none" } },
   combat: { contactRadius },
   spawning: { director: SpawnDirectorConfig, placement: { kind: "ring", radius } },
   weapons: { id: { kind: "projectile" | "orbit" | "pulse" | "custom", damage, cooldownMs, maxLevel, ... } },
   progression: { xp: Curve, maxLevel, draft: { choices, upgrades } },
   fields: { magnetRadius, damageMultiplier },       // named run-scalars upgrades mutate
   xpGems: { collectRadius, pullSpeed, rarityThresholds, defaultRarity },
-  rules: { win: { kind: "survive", seconds }, lose: { kind: "playerDeath" }, killLeaderboardStat },
-  world, physics, camera, worldItem, theme, hud, screens,
+  rules: { win: { kind: "survive", seconds }, lose: { kind: "playerDeath" } | { kind: "custom", check }, killLeaderboardStat },
+  world, physics, camera, worldItem, theme, hud, screens,   // screens: start/win/lose
 };
 export const game = cartridge(config);
 ```
+
+The run is a phase machine every game gets for free: `start → countdown → playing → won | lost`. `flow.start: "gate"` renders `screens.start` (TitleScreen binding) until begin; `flow.countdownSeconds` renders the big-number countdown; `flow.restart: true` registers a `restart` command that resets the run in place, clears cartridge entities, and restores player stats — no hand-rolled session store, phase union, or reset function. `run.playingSeconds` is the run clock (drives the survive rule and the timer panel), so pauses and pre-game phases never skew timing.
 
 ## Core surface (`@jgengine/core/cartridge/`)
 
@@ -55,4 +58,11 @@ A game that is *mostly* bespoke simulation (custom physics, session machines) sh
 
 ## Testing
 
-Cartridge behaviors are engine-tested once (`packages/core/src/cartridge/runtime.test.ts`); the game test is thin: `validateCartridge(config)` is `[]`, `summarizeEnvironment(config.world)` assertions, and one headless smoke via `createCartridge(config)` + `createGameContext` ticking the loop — see `Games/swarm-survivor/src/game/cartridge.test.ts`.
+Cartridge behaviors are engine-tested once (`packages/core/src/cartridge/runtime.test.ts`); the game test is one call plus any game-specific assertions:
+
+```ts
+import { bootCartridge, cartridgeSmokeTest, tickCartridge } from "@jgengine/core/cartridge/testkit";
+cartridgeSmokeTest(config);   // validate + world summary + headless run/spawn/kill/gem smoke
+```
+
+`bootCartridge`/`tickCartridge` build a headless `GameContext` and drive the loop (auto-choosing drafts) for custom assertions — see `Games/swarm-survivor/src/game/cartridge.test.ts`. The testkit imports `bun:test`; import it from test files only.

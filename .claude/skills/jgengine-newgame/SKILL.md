@@ -1,6 +1,6 @@
 ---
 name: jgengine-newgame
-description: Half-built games are the failure mode this kills. Invoke whenever asked to make or build a game — master blueprint first, then phased build to the complete game.
+description: Blueprint then phased full build. Invoke whenever asked to build a game.
 ---
 
 # JGengine — Blueprint the whole game, build it in phases

@@ -192,8 +192,8 @@ describe("cartridge runtime", () => {
     const { ctx, cart } = boot();
     const run = cart.run(ctx);
     ctx.scene.entity.spawn("brute", { id: "hugger", position: [0, 0, 0] });
-    for (let i = 0; i < 60 && run.outcome === "playing"; i += 1) advanceAuto(ctx, cart, 1);
-    expect(run.outcome).toBe("lost");
+    for (let i = 0; i < 60 && run.phase === "playing"; i += 1) advanceAuto(ctx, cart, 1);
+    expect(run.phase).toBe("lost");
   });
 
   test("surviving the win timer ends the run in victory", () => {
@@ -201,11 +201,11 @@ describe("cartridge runtime", () => {
     const run = cart.run(ctx);
     ctx.scene.entity.stats.set(ctx.player.userId, "health", { max: 1_000_000, current: 1_000_000 });
     let elapsed = 0;
-    while (elapsed < 32 && run.outcome === "playing") {
+    while (elapsed < 32 && run.phase === "playing") {
       advanceAuto(ctx, cart, 1);
       elapsed += 1;
     }
-    expect(run.outcome).toBe("won");
+    expect(run.phase).toBe("won");
   });
 
   test("weapons fire and produce fx feeds", () => {
@@ -235,5 +235,69 @@ describe("cartridge runtime", () => {
     const { ctx, cart } = boot(spec);
     tickSeconds(ctx, cart, 1);
     expect(ticks).toBeGreaterThan(0);
+  });
+});
+
+describe("cartridge flow", () => {
+  test("gate start holds at start until begin, then counts down into playing", () => {
+    const spec = fixtureSpec();
+    spec.flow = { start: "gate", countdownSeconds: 3 };
+    const cart = createCartridge(spec);
+    const definition = defineGame({ name: "Flow Fixture", multiplayer: offline() });
+    const ctx = createGameContext({ definition, content: cart.content, player: { userId: "p1", isNew: true } });
+    cart.loop.onInit?.(ctx);
+    cart.loop.onNewPlayer?.(ctx);
+    const run = cart.run(ctx);
+    expect(run.phase).toBe("start");
+    advance(ctx, cart, 1);
+    expect(run.phase).toBe("start");
+    expect(ctx.scene.entity.list().filter((entity) => entity.name !== "runner").length).toBe(0);
+    cart.begin(ctx);
+    expect(run.phase).toBe("countdown");
+    advance(ctx, cart, 1);
+    expect(run.phase).toBe("countdown");
+    expect(Math.ceil(run.countdownRemaining)).toBe(2);
+    advance(ctx, cart, 2.5);
+    expect(run.phase).toBe("playing");
+    advance(ctx, cart, 1);
+    expect(run.playingSeconds).toBeGreaterThan(0);
+  });
+
+  test("restart flow resets the run in place", () => {
+    const spec = fixtureSpec();
+    spec.flow = { restart: true };
+    const { ctx, cart } = boot(spec);
+    const run = cart.run(ctx);
+    tickSeconds(ctx, cart, 5);
+    ctx.scene.entity.spawn("brute", { id: "hugger", position: [0, 0, 0] });
+    for (let i = 0; i < 60 && run.phase === "playing"; i += 1) advanceAuto(ctx, cart, 1);
+    expect(run.phase).toBe("lost");
+    ctx.game.commands.run("restart", {});
+    expect(run.phase).toBe("playing");
+    expect(run.kills).toBe(0);
+    expect(run.playingSeconds).toBe(0);
+    expect(ctx.scene.entity.list().filter((entity) => entity.name !== "runner").length).toBe(0);
+    const health = ctx.scene.entity.stats.get(ctx.player.userId, "health");
+    expect(health?.current).toBe(100);
+  });
+
+  test("custom lose rule ends the run", () => {
+    const spec = fixtureSpec();
+    spec.rules.lose = { kind: "custom", check: (_ctx, run) => run.playingSeconds >= 2 };
+    const { ctx, cart } = boot(spec);
+    const run = cart.run(ctx);
+    for (let i = 0; i < 40 && run.phase === "playing"; i += 1) advanceAuto(ctx, cart, 0.1);
+    expect(run.phase).toBe("lost");
+  });
+
+  test("behavior none keeps an enemy stationary but biting", () => {
+    const spec = fixtureSpec();
+    spec.enemies["brute"]!.behavior = "none";
+    const { ctx, cart } = boot(spec);
+    ctx.scene.entity.spawn("brute", { id: "statue", position: [5, 0, 0] });
+    tickSeconds(ctx, cart, 2);
+    const statue = ctx.scene.entity.get("statue");
+    expect(statue).not.toBeNull();
+    expect(statue!.position[0]).toBeCloseTo(5, 5);
   });
 });

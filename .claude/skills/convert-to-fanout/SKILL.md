@@ -1,6 +1,6 @@
 ---
 name: convert-to-fanout
-description: Rebuild a one-big-model agent as orchestrator + cheap workers (or executor + advisor) so it stops paying frontier prices for mechanical work. Invoke when someone wants agent/API cost cut without quality loss.
+description: Rebuild a one-model agent as orchestrator plus cheap workers. Invoke to cut cost.
 ---
 
 # Convert to Fan-out
