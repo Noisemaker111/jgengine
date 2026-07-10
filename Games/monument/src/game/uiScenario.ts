@@ -1,8 +1,8 @@
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 
-import { selectInstance, setLens } from "./city/state";
+import { advanceGrowth } from "./city/state";
 
 export const uiScenario: UiPreviewScenario = (ctx) => {
-  selectInstance(ctx, "b-seed-5");
-  setLens(ctx, "program");
+  ctx.game.store.set("briefStage", 1);
+  advanceGrowth(ctx);
 };

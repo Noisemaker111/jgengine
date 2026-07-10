@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import type { CityMetrics } from "../../catalog";
+import type { CityMetrics, DecisionRecord, DistrictCharter } from "../../catalog";
 import { formatStat } from "../../city/metrics";
 import { EYEBROW, HAIRLINE, PANEL } from "../theme";
 import { Meter } from "./InspectorControls";
@@ -14,7 +14,21 @@ const BALANCE_COLORS = {
   culture: "#bc86de",
 } as const;
 
-export function SystemsPanel({ metrics, onClose }: { metrics: CityMetrics; onClose: () => void }): ReactNode {
+const PRINCIPLES: readonly { id: keyof DistrictCharter; title: string; sketch: number }[] = [
+  { id: "undercroft", title: "Ground life", sketch: 1 },
+  { id: "commons", title: "Shared space", sketch: 2 },
+  { id: "aggregate", title: "Material language", sketch: 3 },
+];
+
+export function SystemsPanel({
+  metrics,
+  decisions,
+  onClose,
+}: {
+  metrics: CityMetrics;
+  decisions: DecisionRecord[];
+  onClose: () => void;
+}): ReactNode {
   const bars: readonly { label: string; value: number; color: string }[] = [
     { label: "Housing", value: clampPct((metrics.population / Math.max(1, metrics.capacity)) * 100), color: BALANCE_COLORS.housing },
     { label: "Employment", value: clampPct((metrics.jobs / Math.max(1, metrics.population)) * 100), color: BALANCE_COLORS.work },
@@ -65,6 +79,50 @@ export function SystemsPanel({ metrics, onClose }: { metrics: CityMetrics; onClo
           {bars.map((bar) => (
             <Meter key={bar.label} label={bar.label} value={bar.value} color={bar.color} suffix="%" />
           ))}
+        </div>
+
+        <div className={`border-b py-2 ${HAIRLINE}`}>
+          <div className="flex items-baseline justify-between px-3.5 pb-1 pt-2">
+            <span className={EYEBROW}>Growth principles</span>
+            <span className="text-[9px] uppercase tracking-[0.06em] text-[#8a8d84]">what the city becomes</span>
+          </div>
+          <div className={`mx-3.5 mb-1 border ${HAIRLINE}`}>
+            {PRINCIPLES.map((principle) => {
+              const record = decisions.find((entry) => entry.eventId === principle.id);
+              const resolved = record !== undefined;
+              return (
+                <div
+                  key={principle.id}
+                  className={`flex items-center gap-2.5 border-b bg-[rgba(255,255,255,0.13)] px-2 py-2 last:border-b-0 ${HAIRLINE} ${
+                    resolved ? "" : "opacity-70"
+                  }`}
+                >
+                  <span
+                    className={`grid h-[19px] w-[19px] shrink-0 place-items-center border text-[8px] leading-none ${
+                      resolved ? "border-[#171916] bg-[#171916] text-[#d7ff43]" : "border-[#92958d] text-[#868980]"
+                    }`}
+                  >
+                    {resolved ? "◆" : "○"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-[6.5px] uppercase tracking-[0.04em] text-[#777a72]">{principle.title}</span>
+                    <b
+                      className={`mt-0.5 block truncate text-[8px] font-semibold uppercase ${
+                        resolved ? "text-[#171916]" : "text-[#868980]"
+                      }`}
+                    >
+                      {resolved ? record.choice : `Awaiting sketch ${principle.sketch}`}
+                    </b>
+                  </div>
+                  {resolved && (
+                    <em className="shrink-0 whitespace-nowrap text-[6px] font-medium not-italic text-[#696c64]">
+                      DAY {record.day}
+                    </em>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <section className="flex items-start gap-3 px-3.5 py-3.5">

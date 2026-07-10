@@ -1,8 +1,12 @@
+import { createDayTicker } from "@jgengine/core/crafting/crop";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import type { Building, Lens, Plaza, Tool } from "./game/catalog";
+import type { Building, DistrictCharter, Lens, Plaza, Tool } from "./game/catalog";
 import {
   activeLens,
+  advanceGrowth,
+  ageBuildingsDaily,
+  resolveCharter,
   captureHistory,
   demolish,
   growSibling,
@@ -96,7 +100,17 @@ export function onInit(ctx: GameContext): void {
       redoCity(state);
     },
   });
+  ctx.game.commands.define<{ eventId: keyof DistrictCharter; choice: number }>("charter.resolve", {
+    apply(state, input) {
+      resolveCharter(state, input.eventId, input.choice);
+    },
+  });
   initCity(ctx);
+  const dayTicker = createDayTicker(ctx.time.calendar().day);
+  ctx.time.every(1, () => {
+    advanceGrowth(ctx);
+    ageBuildingsDaily(ctx, dayTicker.tick(ctx.time.calendar().day));
+  });
 }
 
 export function onNewPlayer(_ctx: GameContext): void {}

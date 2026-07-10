@@ -7,6 +7,7 @@ import {
   makeBuilding,
   TYPOLOGY_CYCLE,
   type Building,
+  type DecisionRecord,
   type DistrictCharter,
   type DistrictMood,
   type Lens,
@@ -15,6 +16,8 @@ import {
   type Program,
   type Tool,
 } from "../catalog";
+import { briefCompleted, growthBriefs, nextCharterEvent, AGE_PER_DAY, CITY_EVENTS, CONDITION_FLOOR, FORMAL_WEAR_PER_DAY, WEAR_PER_DAY } from "./briefs";
+import { resolveCityMetrics } from "./metrics";
 import { lotAt, occupiedLotKeys } from "./model";
 
 export interface Toast {
@@ -31,6 +34,9 @@ export interface PointerInput {
 export interface CitySnapshot {
   buildings: Building[];
   plazas: Plaza[];
+  briefStage: number;
+  charter: DistrictCharter;
+  decisions: DecisionRecord[];
 }
 
 const HISTORY_LIMIT = 60;
@@ -50,6 +56,9 @@ export const activeMood = (ctx: GameContext): DistrictMood => read(ctx, "mood", 
 export const activeToast = (ctx: GameContext): Toast | null => read(ctx, "toast", null);
 export const activeCharter = (ctx: GameContext): DistrictCharter => read(ctx, "charter", {});
 export const systemsPanelOpen = (ctx: GameContext): boolean => read(ctx, "systems", false);
+export const briefStage = (ctx: GameContext): number => read(ctx, "briefStage", 0);
+export const cityDecisions = (ctx: GameContext): DecisionRecord[] => read(ctx, "decisions", []);
+export const activeEventId = (ctx: GameContext): keyof DistrictCharter | null => read(ctx, "activeEvent", null);
 export const historyDepth = (ctx: GameContext): number => read(ctx, "history", [] as CitySnapshot[]).length;
 export const futureDepth = (ctx: GameContext): number => read(ctx, "future", [] as CitySnapshot[]).length;
 
@@ -97,7 +106,13 @@ const nextId = (ctx: GameContext, prefix: string): string => {
 const placedCount = (ctx: GameContext): number => read(ctx, "placedCount", 0);
 
 const citySnapshot = (ctx: GameContext): CitySnapshot =>
-  structuredClone({ buildings: cityBuildings(ctx), plazas: cityPlazas(ctx) });
+  structuredClone({
+    buildings: cityBuildings(ctx),
+    plazas: cityPlazas(ctx),
+    briefStage: briefStage(ctx),
+    charter: activeCharter(ctx),
+    decisions: cityDecisions(ctx),
+  });
 
 export function captureHistory(ctx: GameContext): void {
   const history = [...read(ctx, "history", [] as CitySnapshot[]), citySnapshot(ctx)];
@@ -128,6 +143,9 @@ function syncSceneObjects(ctx: GameContext): void {
 function applySnapshot(ctx: GameContext, snapshot: CitySnapshot): void {
   ctx.game.store.set("buildings", snapshot.buildings);
   ctx.game.store.set("plazas", snapshot.plazas);
+  ctx.game.store.set("briefStage", snapshot.briefStage);
+  ctx.game.store.set("charter", snapshot.charter);
+  ctx.game.store.set("decisions", snapshot.decisions);
   syncSceneObjects(ctx);
   const id = selectedId(ctx);
   if (id !== null && snapshot.buildings.every((b) => b.id !== id) && snapshot.plazas.every((p) => p.id !== id)) {
@@ -164,6 +182,10 @@ export function initCity(ctx: GameContext): void {
   ctx.game.store.set("lens", "material" satisfies Lens);
   ctx.game.store.set("mood", "default" satisfies DistrictMood);
   ctx.game.store.set("systems", false);
+  ctx.game.store.set("briefStage", 0);
+  ctx.game.store.set("charter", {} satisfies DistrictCharter);
+  ctx.game.store.set("decisions", [] satisfies DecisionRecord[]);
+  ctx.game.store.set("activeEvent", null);
   ctx.game.store.set("seq", 0);
   ctx.game.store.set("placedCount", buildings.length);
   ctx.game.store.set("history", [] satisfies CitySnapshot[]);
@@ -308,6 +330,49 @@ export function demolish(ctx: GameContext, id: string): void {
   }
   ctx.scene.object.remove(id);
   if (selectedId(ctx) === id) selectInstance(ctx, null);
+}
+
+export function advanceGrowth(ctx: GameContext): void {
+  const stage = briefStage(ctx);
+  const charter = activeCharter(ctx);
+  const briefs = growthBriefs(resolveCityMetrics(cityBuildings(ctx), cityPlazas(ctx), charter), cityBuildings(ctx).length, cityPlazas(ctx).length);
+  if (stage < briefs.length && briefCompleted(briefs[stage])) {
+    ctx.game.store.set("briefStage", stage + 1);
+    pushToast(ctx, "Sketch complete · a city choice is ready");
+  }
+  if (activeEventId(ctx) !== null) return;
+  const next = nextCharterEvent(briefStage(ctx), charter);
+  if (next === null) return;
+  ctx.game.store.set("pausedBeforeChoice", ctx.time.snapshot().paused);
+  ctx.time.pause();
+  ctx.game.store.set("activeEvent", next.id);
+}
+
+export function resolveCharter(ctx: GameContext, eventId: keyof DistrictCharter, choiceIndex: number): void {
+  const event = CITY_EVENTS.find((entry) => entry.id === eventId);
+  const choice = event?.choices[choiceIndex];
+  if (event === undefined || choice === undefined) return;
+  captureHistory(ctx);
+  ctx.game.store.set("charter", { ...activeCharter(ctx), [eventId]: choice.choice } satisfies DistrictCharter);
+  const day = ctx.time.calendar().day + 1;
+  ctx.game.store.set("decisions", [
+    ...cityDecisions(ctx).filter((record) => record.eventId !== eventId),
+    { eventId, choice: choice.label, day } satisfies DecisionRecord,
+  ]);
+  ctx.game.store.set("activeEvent", null);
+  if (read(ctx, "pausedBeforeChoice", false) === false) ctx.time.play();
+  pushToast(ctx, `City changed · ${choice.label} · ${choice.impacts[0]}`);
+}
+
+export function ageBuildingsDaily(ctx: GameContext, days: number): void {
+  if (days <= 0) return;
+  const wear = activeCharter(ctx).aggregate === "formal" ? FORMAL_WEAR_PER_DAY : WEAR_PER_DAY;
+  const aged = cityBuildings(ctx).map((b) => ({
+    ...b,
+    age: b.age + AGE_PER_DAY * days,
+    condition: Math.max(CONDITION_FLOOR, b.condition - wear * days),
+  }));
+  ctx.game.store.set("buildings", aged);
 }
 
 export function pointerAction(ctx: GameContext, input: PointerInput): void {
