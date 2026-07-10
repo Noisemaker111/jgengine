@@ -132,6 +132,7 @@ describe("cartridge runtime", () => {
 
   test("killing an enemy drops an xp gem, credits a kill, and grants xp on pickup", () => {
     const { ctx, cart } = boot();
+    ctx.scene.entity.stats.set(ctx.player.userId, "health", { max: 1_000_000, current: 1_000_000 });
     tickSeconds(ctx, cart, 4);
     const run = cart.run(ctx);
     const enemy = ctx.scene.entity.list().find((entity) => entity.name !== "runner");
@@ -165,6 +166,7 @@ describe("cartridge runtime", () => {
 
   test("upgrade effects: weapon level, stat bonus, field add, field multiply", () => {
     const { ctx, cart } = boot();
+    ctx.scene.entity.stats.set(ctx.player.userId, "health", { max: 1_000_000, current: 1_000_000 });
     const run = cart.run(ctx);
     const draft = (id: string): void => {
       const max = ctx.scene.entity.stats.get(ctx.player.userId, "xp")?.max ?? 1;
@@ -211,8 +213,15 @@ describe("cartridge runtime", () => {
     ctx.scene.entity.spawn("crawler", { id: "target", position: [3, 0, 0] });
     ctx.scene.entity.stats.set(ctx.player.userId, "health", { max: 1_000_000, current: 1_000_000 });
     const run = cart.run(ctx);
-    tickSeconds(ctx, cart, 3);
-    expect(run.bolts.length + run.pulses.length).toBeGreaterThan(0);
+    let boltsSeen = 0;
+    let pulsesSeen = 0;
+    for (let elapsed = 0; elapsed < 3; elapsed += 0.1) {
+      advanceAuto(ctx, cart, 0.1);
+      boltsSeen = Math.max(boltsSeen, run.bolts.length);
+      pulsesSeen = Math.max(pulsesSeen, run.pulses.length);
+    }
+    expect(boltsSeen).toBeGreaterThan(0);
+    expect(pulsesSeen).toBeGreaterThan(0);
   });
 
   test("custom systems run each playing tick", () => {

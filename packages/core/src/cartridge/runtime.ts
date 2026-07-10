@@ -373,7 +373,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
       const distance = ctx.scene.entity.distance(record.instanceId, playerId);
       if (distance === null) continue;
       if (distance <= spec.xpGems.collectRadius) {
-        ctx.scene.entity.despawn(record.instanceId);
+        ctx.scene.worldItem.consume(record.instanceId);
         track.grantXp(
           {
             get: (userId, statId) => ctx.scene.entity.stats.get(userId, statId),
