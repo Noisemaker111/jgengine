@@ -104,3 +104,28 @@ movement, armor, and XP formulas, the class kits, the three zone bands
 (Eastbrook Vale, Mirefen Marsh, Thornpeak Heights), the mob rosters and loot
 tables, and the Gravecaller storyline down to Morthen in the Hollow Crypt —
 credited on the game's HUD and on its page at jgengine.com/games/claudecraft.
+
+### Classic games (Wave 1)
+
+Fourteen genre-anchor classics in `Games/*` are our own builds of decades-old
+game concepts — original code, art, and levels, but the mechanics trace back
+to specific inventors and titles. Credited here, on each game's HUD, and (where
+applicable) via the `credit` field in
+[`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
+
+| Game | id | Lineage |
+| --- | --- | --- |
+| **[2048](Games/slide-2048)** | `slide-2048` | **[Gabriele Cirulli](https://github.com/gabrielecirulli)**'s MIT-licensed **[2048](https://github.com/gabrielecirulli/2048)**, itself inspired by **Threes!** (Asher Vollmer) and **1024!**. |
+| **[Brick Breaker](Games/brick-breaker)** | `brick-breaker` | Atari's **Breakout** (1976). |
+| **[Paddle Duel](Games/paddle-duel)** | `paddle-duel` | Atari's **Pong** (1972), designed by Allan Alcorn. |
+| **[Gem Cascade](Games/gem-cascade)** | `gem-cascade` | The match-3 genre: **Shariki** (Eugene Alemzhin, 1994) and **Bejeweled** (PopCap). |
+| **[Crate Keeper](Games/crate-keeper)** | `crate-keeper` | **Sokoban** (Hiroyuki Imabayashi, Thinking Rabbit, 1982) — mechanics homage; levels are original. |
+| **[Flag Sweep](Games/flag-sweep)** | `flag-sweep` | **Minesweeper** (Robert Donner & Curt Johnson, Microsoft, 1990). |
+| **[Snake](Games/snake)** | `snake` | **Blockade** (Gremlin, 1976) and **Nokia Snake** (Taneli Armanto, 1997). |
+| **[Klondike Solitaire](Games/klondike)** | `klondike` | Traditional Klondike patience, popularized by **Microsoft Solitaire** (Wes Cherry, 1990). |
+| **[FreeCell](Games/freecell)** | `freecell` | **Paul Alfille**'s FreeCell (1978), popularized in digital form by **Jim Horne**. |
+| **[Video Poker](Games/video-poker)** | `video-poker` | **Draw Poker** video cabinets (SIRCOMA/IGT, 1979). |
+| **[15 Puzzle](Games/fifteen-slide)** | `fifteen-slide` | The **15 Puzzle**, popularized in the 1870s and long attributed to **Noyes Chapman**. |
+| **[Blackjack](Games/blackjack)** | `blackjack` | Traditional casino Blackjack / Twenty-One. |
+| **[Memory Match](Games/memory-match)** | `memory-match` | Traditional **Concentration**. |
+| **[Pachinko Parlor](Games/pachinko-parlor)** | `pachinko-parlor` | Traditional Japanese **Pachinko**. |

@@ -8,11 +8,11 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 
 | Game | Status | id |
 | --- | --- | --- |
-| Klondike Solitaire | 🔨 | `klondike` |
-| FreeCell | 🔨 | `freecell` |
-| Video Poker (Jacks or Better) | 🔨 | `video-poker` |
-| Blackjack | 🔨 | `blackjack` |
-| Memory / Concentration | 🔨 | `memory-match` |
+| Klondike Solitaire | ✅ | `klondike` |
+| FreeCell | ✅ | `freecell` |
+| Video Poker (Jacks or Better) | ✅ | `video-poker` |
+| Blackjack | ✅ | `blackjack` |
+| Memory / Concentration | ✅ | `memory-match` |
 | Spider Solitaire | W2 | |
 | Pyramid Solitaire | W2 | |
 | TriPeaks | W2 | |
@@ -28,11 +28,11 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 
 | Game | Status | id |
 | --- | --- | --- |
-| Minesweeper (classic 2D) | 🔨 | `flag-sweep` |
+| Minesweeper (classic 2D) | ✅ | `flag-sweep` |
 | Minesweeper (co-op 3D) | ✅ | `mine-drop` |
-| 2048 | 🔨 | `slide-2048` |
-| 15 Puzzle | 🔨 | `fifteen-slide` |
-| Sokoban | 🔨 | `crate-keeper` |
+| 2048 | ✅ | `slide-2048` |
+| 15 Puzzle | ✅ | `fifteen-slide` |
+| Sokoban | ✅ | `crate-keeper` |
 | Sudoku | W2 | |
 | Nonogram / Picross | W2 | |
 | Lights Out | W2 | |
@@ -60,10 +60,10 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | --- | --- | --- |
 | Falling blocks (Tetris lineage) | ✅ | `block-stacker` |
 | Maze chase (Pac-Man lineage) | ✅ | `maze-muncher` |
-| Match-3 | 🔨 | `gem-cascade` |
-| Snake | 🔨 | `snake` |
-| Breakout | 🔨 | `brick-breaker` |
-| Pong | 🔨 | `paddle-duel` |
+| Match-3 | ✅ | `gem-cascade` |
+| Snake | ✅ | `snake` |
+| Breakout | ✅ | `brick-breaker` |
+| Pong | ✅ | `paddle-duel` |
 | Columns | W2 | |
 | Chain-drop (Puyo lineage) | W2 | |
 | Bubble shooter | W2 | |
@@ -81,7 +81,7 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 
 | Game | Status | id |
 | --- | --- | --- |
-| Pachinko | 🔨 | `pachinko-parlor` |
+| Pachinko | ✅ | `pachinko-parlor` |
 | Pinball | W2 | |
 | Peg-bounce scorer (Peggle lineage) | W2 | |
 | Mahjong Solitaire | W2 | |
