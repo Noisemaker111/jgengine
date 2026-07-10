@@ -155,3 +155,7 @@ wiring swipe controls for a hud-presentation game → touch.gestures/buttons are
 2026-07-10T23:19:24.784Z — opus-4.8 — Claude
 
 binding snake steering → reserved action names turnLeft/turnRight are swallowed by the shell even in hud mode with no camera rig, renamed to steer*
+
+2026-07-10T23:19:55.635Z — opus-4.8 — Claude
+
+building klondike/video-poker card UIs → @jgengine/react ships no playing-card face or stacked-pile component, every card game hand-rolls rank/suit rendering and drag piles; candidate registry component
