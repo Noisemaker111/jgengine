@@ -57,7 +57,7 @@ function fixtureSpec(): CartridgeSpec {
       },
     },
     progression: {
-      xp: { kind: "geometric", base: 4, ratio: 1.3, round: "ceil" },
+      xp: { kind: "geometric", base: 200, ratio: 1.3, round: "ceil" },
       maxLevel: 10,
       draft: {
         choices: 2,
@@ -142,16 +142,17 @@ describe("cartridge runtime", () => {
     const gem = ctx.scene.worldItem.list().find((record) => record.baseType === XP_GEM_BASE_TYPE);
     expect(gem).toBeDefined();
     ctx.scene.entity.setPose(gem!.instanceId, { position: [0, 0, 0] });
-    const xpBefore = ctx.scene.entity.stats.get(ctx.player.userId, "xp")?.current ?? 0;
+    ctx.scene.entity.stats.set(ctx.player.userId, "xp", { current: 0 });
     advance(ctx, cart, 0.1);
     const xpAfter = ctx.scene.entity.stats.get(ctx.player.userId, "xp")?.current ?? 0;
-    expect(xpAfter).toBeGreaterThan(xpBefore);
+    expect(xpAfter).toBeGreaterThan(0);
   });
 
   test("leveling up pauses the run for a draft, and choosing resumes it", () => {
     const { ctx, cart } = boot();
     const run = cart.run(ctx);
-    ctx.scene.entity.stats.set(ctx.player.userId, "xp", { current: 3 });
+    const threshold = ctx.scene.entity.stats.get(ctx.player.userId, "xp")?.max ?? 0;
+    ctx.scene.entity.stats.set(ctx.player.userId, "xp", { current: threshold - 1 });
     ctx.scene.worldItem.spawn({ itemId: XP_GEM_BASE_TYPE, baseType: XP_GEM_BASE_TYPE, position: [0, 0, 0], count: 5, rarity: "common" });
     advance(ctx, cart, 0.1);
     expect(run.pendingOffers).not.toBeNull();
@@ -166,7 +167,8 @@ describe("cartridge runtime", () => {
     const { ctx, cart } = boot();
     const run = cart.run(ctx);
     const draft = (id: string): void => {
-      ctx.scene.entity.stats.set(ctx.player.userId, "xp", { current: 1_000_000 });
+      const max = ctx.scene.entity.stats.get(ctx.player.userId, "xp")?.max ?? 1;
+      ctx.scene.entity.stats.set(ctx.player.userId, "xp", { current: max - 1 });
       ctx.scene.worldItem.spawn({ itemId: XP_GEM_BASE_TYPE, baseType: XP_GEM_BASE_TYPE, position: [0, 0, 0], count: 1, rarity: "common" });
       advance(ctx, cart, 0.1);
       while (run.pendingOffers !== null) {

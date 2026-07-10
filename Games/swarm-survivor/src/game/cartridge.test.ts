@@ -41,7 +41,7 @@ describe("swarm-survivor cartridge", () => {
       elapsed += 0.1;
     }
 
-    const enemies = ctx.scene.entity.list().filter((entity) => entity.id !== ctx.player.userId);
+    const enemies = ctx.scene.entity.list().filter((entity) => config.enemies[entity.name] !== undefined);
     expect(enemies.length).toBeGreaterThan(0);
     for (const enemy of enemies) {
       expect(enemy.position[1]).toBeCloseTo(ctx.world.groundHeightAt(enemy.position[0], enemy.position[2]), 5);
