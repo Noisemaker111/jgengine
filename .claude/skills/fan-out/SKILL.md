@@ -4,9 +4,10 @@ description: >-
   Cheap workers do the dumb work. Use on almost every non-trivial turn — whenever
   you are about to run lint, typecheck, tests, build, preview, screenshot, shoot,
   Playwright, GitHub PR/issue ceremony, bulk file reads, research sweeps, renames, doc
-  sweeps, or log triage on the frontier model; whenever another skill says to
-  verify or fan mechanical legs; whenever you catch yourself about to do a
-  mechanical batch inline. Standing authorization — do not ask first.
+  sweeps, or log triage on the frontier model; whenever a task lands in code you
+  haven't mapped and you're about to orient by opening files; whenever another
+  skill says to verify or fan mechanical legs; whenever you catch yourself about
+  to do a mechanical batch inline. Standing authorization — do not ask first.
 ---
 
 # Cheap workers do the dumb work
@@ -26,7 +27,7 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 - preview · screenshot · `bun run shoot` · Playwright
 - git ceremony once the diff is decided — commit, push, and whatever recovery the push needs (stale refs, prune, restart from origin/main, cherry-pick); the frontier model never grinds through git errors inline
 - GitHub ceremony after the decision is made (PR create, comments, issue ops — MCP tools or `gh` where it exists); the whole ship motion (commit → push → PR → merge → 60s green check) is one worker brief
-- bulk file reads · research sweeps · renames · doc sweeps · log triage
+- bulk file reads · codebase scouting · research sweeps · renames · doc sweeps · log triage
 
 Announce workers on a 🤖 line, job-named. Judge their output; never dump raw worker text to the user.
 
@@ -36,9 +37,11 @@ Announce workers on a 🤖 line, job-named. Judge their output; never dump raw w
 - synthesizing worker results into the user-facing answer
 - trivial single-file edits and direct Q&A
 
-## Research is not free
+## Scouts before deep reads
 
-Do **not** spawn research workers to rediscover scaffolding, HUD idioms, or anything already in skills. Research only for novel engine seams the skills do not document — then stop.
+The frontier model never orients by reading breadth-first — a frontier turn that opens 35 files costs more than a whole fleet of Sonnet scouts. When a task lands in code you haven't mapped, spawn 1–3 Sonnet scouts (the `Explore` agent type fits), each briefed on one angle, each returning a scoped digest: relevant files with `file:line` pointers, key APIs and types, constraints, surprises. Then read deeply only the files the diff will touch. Even two scouts are noise next to a few paragraphs of frontier output; when in doubt, scout.
+
+The one research *don't*: rediscovering scaffolding, HUD idioms, or anything already documented in skills — that's a doc lookup, not research. Codebase scouting is always in bounds.
 
 ## Done when
 
