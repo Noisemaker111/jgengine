@@ -1,3 +1,5 @@
+import { pointerAxisValue, type PointerAxisBinding, type PointerAxisState } from "./pointerAxis";
+
 export interface AxisInput {
   throttle: number;
   brake: number;
@@ -12,6 +14,8 @@ export type AxisName = keyof AxisInput;
 export interface AxisBinding {
   positive: readonly string[];
   negative?: readonly string[];
+  /** Pointer-position source for this axis (#293) — takes over from the key lists whenever a pointer is active. */
+  pointer?: PointerAxisBinding;
 }
 
 export type AxisBindingMap = Record<AxisName, AxisBinding>;
@@ -54,8 +58,9 @@ function digitalTarget(binding: AxisBinding, isDown: (code: string) => boolean):
 /**
  * Analog control channel — distinct from the digital action bindings. Throttle/brake/steer/handbrake
  * are continuous values ramped from held keys (a keyboard feels like a pedal) or driven directly from
- * a gamepad axis via `setAnalog`. `sample(dt, isDown)` folds the current held-key state into the
- * smoothed value; a `setAnalog` override replaces the digital target for that axis until cleared.
+ * a gamepad axis via `setAnalog`. `sample(dt, isDown, pointer?)` folds the current held-key state into
+ * the smoothed value; a binding's `pointer` source takes over from its keys while a pointer is active,
+ * and a `setAnalog` override replaces both for that axis until cleared.
  */
 export class AxisChannel {
   private readonly bindings: AxisBindingMap;
@@ -87,12 +92,16 @@ export class AxisChannel {
     return this.current;
   }
 
-  sample(dt: number, isDown: (code: string) => boolean): AxisInput {
+  sample(dt: number, isDown: (code: string) => boolean, pointer?: PointerAxisState | null): AxisInput {
     for (const axis of Object.keys(this.bindings) as AxisName[]) {
       const range = AXIS_RANGE[axis];
       const override = this.overrides[axis];
+      const binding = this.bindings[axis];
+      const fromPointer = binding.pointer === undefined ? null : pointerAxisValue(binding.pointer, pointer);
       const target =
-        override !== undefined ? override : clampAxis(digitalTarget(this.bindings[axis], isDown), range);
+        override !== undefined
+          ? override
+          : clampAxis(fromPointer ?? digitalTarget(binding, isDown), range);
       this.current[axis] = clampAxis(rampToward(this.current[axis], target, this.smoothing, dt), range);
     }
     return this.current;
