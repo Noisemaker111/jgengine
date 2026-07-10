@@ -108,7 +108,7 @@ export interface ChartConfig {
   readonly cycle: readonly MotifSpec[];
 }
 
-export function buildMovementChart(config: ChartConfig): readonly ObstacleEvent[] {
+export function buildMovementChart(config: ChartConfig, idPrefix: string): readonly ObstacleEvent[] {
   const events: ObstacleEvent[] = [];
   const limit = config.totalBeats - config.outroBeats;
   let cursor = config.introBeats;
@@ -117,7 +117,7 @@ export function buildMovementChart(config: ChartConfig): readonly ObstacleEvent[
     const spec = config.cycle[i % config.cycle.length]!;
     const span = motifSpan(spec);
     if (cursor + span > limit) break;
-    events.push(...buildMotif(spec, cursor));
+    events.push(...buildMotif(spec, cursor).map((event) => ({ ...event, id: `${idPrefix}-${event.id}` })));
     cursor += span + config.gapBeats;
     i += 1;
   }
@@ -145,20 +145,23 @@ export const MOVEMENTS: readonly Movement[] = [
     beatsPerBar: BEATS_PER_BAR,
     totalBeats: 135,
     unitsPerBeat: UNITS_PER_BEAT,
-    obstacles: buildMovementChart({
-      introBeats: 16,
-      outroBeats: 8,
-      totalBeats: 135,
-      gapBeats: 5,
-      cycle: [
-        { kind: "gap", lane: 0 },
-        { kind: "door" },
-        { kind: "gap", lane: 2 },
-        { kind: "narrows", beats: 3, openLane: 1 },
-        { kind: "gap", lane: 1 },
-        { kind: "door" },
-      ],
-    }),
+    obstacles: buildMovementChart(
+      {
+        introBeats: 16,
+        outroBeats: 8,
+        totalBeats: 135,
+        gapBeats: 5,
+        cycle: [
+          { kind: "gap", lane: 0 },
+          { kind: "door" },
+          { kind: "gap", lane: 2 },
+          { kind: "narrows", beats: 3, openLane: 1 },
+          { kind: "gap", lane: 1 },
+          { kind: "door" },
+        ],
+      },
+      "movement-i",
+    ),
   },
   {
     id: "movement-ii",
@@ -167,22 +170,25 @@ export const MOVEMENTS: readonly Movement[] = [
     beatsPerBar: BEATS_PER_BAR,
     totalBeats: 165,
     unitsPerBeat: UNITS_PER_BEAT,
-    obstacles: buildMovementChart({
-      introBeats: 12,
-      outroBeats: 8,
-      totalBeats: 165,
-      gapBeats: 4,
-      cycle: [
-        { kind: "censer", beats: 4, lane: 0 },
-        { kind: "gap", lane: 2 },
-        { kind: "zigzag", beats: 4 },
-        { kind: "door" },
-        { kind: "narrows", beats: 3, openLane: 2 },
-        { kind: "twinCenser", beats: 4, safeLanes: [0, 2, 1] },
-        { kind: "gap", lane: 1 },
-        { kind: "door" },
-      ],
-    }),
+    obstacles: buildMovementChart(
+      {
+        introBeats: 12,
+        outroBeats: 8,
+        totalBeats: 165,
+        gapBeats: 4,
+        cycle: [
+          { kind: "censer", beats: 4, lane: 0 },
+          { kind: "gap", lane: 2 },
+          { kind: "zigzag", beats: 4 },
+          { kind: "door" },
+          { kind: "narrows", beats: 3, openLane: 2 },
+          { kind: "twinCenser", beats: 4, safeLanes: [0, 2, 1] },
+          { kind: "gap", lane: 1 },
+          { kind: "door" },
+        ],
+      },
+      "movement-ii",
+    ),
   },
   {
     id: "movement-iii",
@@ -191,23 +197,26 @@ export const MOVEMENTS: readonly Movement[] = [
     beatsPerBar: BEATS_PER_BAR,
     totalBeats: 192,
     unitsPerBeat: UNITS_PER_BEAT,
-    obstacles: buildMovementChart({
-      introBeats: 12,
-      outroBeats: 8,
-      totalBeats: 192,
-      gapBeats: 3,
-      cycle: [
-        { kind: "zigzag", beats: 5 },
-        { kind: "twinCenser", beats: 4, safeLanes: [1, 0, 2] },
-        { kind: "door" },
-        { kind: "censer", beats: 4, lane: 2 },
-        { kind: "gap", lane: 0 },
-        { kind: "narrows", beats: 3, openLane: 0 },
-        { kind: "door" },
-        { kind: "zigzag", beats: 5 },
-        { kind: "twinCenser", beats: 4, safeLanes: [2, 1, 0] },
-      ],
-    }),
+    obstacles: buildMovementChart(
+      {
+        introBeats: 12,
+        outroBeats: 8,
+        totalBeats: 192,
+        gapBeats: 3,
+        cycle: [
+          { kind: "zigzag", beats: 5 },
+          { kind: "twinCenser", beats: 4, safeLanes: [1, 0, 2] },
+          { kind: "door" },
+          { kind: "censer", beats: 4, lane: 2 },
+          { kind: "gap", lane: 0 },
+          { kind: "narrows", beats: 3, openLane: 0 },
+          { kind: "door" },
+          { kind: "zigzag", beats: 5 },
+          { kind: "twinCenser", beats: 4, safeLanes: [2, 1, 0] },
+        ],
+      },
+      "movement-iii",
+    ),
   },
 ];
 
