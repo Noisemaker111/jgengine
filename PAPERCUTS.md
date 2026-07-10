@@ -147,3 +147,11 @@ persisting a mutable single-player credit bank in video-poker → game/recordBoo
 2026-07-10T23:18:58.003Z — opus-4.8 — Claude
 
 importing HUD primitives in a game → bare @jgengine/react barrel import only resolves against built dist; game tsconfig paths map @jgengine/react/* subpaths only, two builders independently had to discover the /hudLayout subpath
+
+2026-07-10T23:19:24.750Z — opus-4.8 — Claude
+
+wiring swipe controls for a hud-presentation game → touch.gestures/buttons are inert under presentation:'hud' (shell mounts TouchControlsDock only in the 3D branch), had to hand-wire swipe on the board canvas
+
+2026-07-10T23:19:24.784Z — opus-4.8 — Claude
+
+binding snake steering → reserved action names turnLeft/turnRight are swallowed by the shell even in hud mode with no camera rig, renamed to steer*
