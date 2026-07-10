@@ -4,7 +4,7 @@ import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import { content } from "../content";
-import { HALF, CELL } from "../catalog";
+import { DAY_LENGTH, HALF, CELL } from "../catalog";
 import { buildingBodies } from "./model";
 import { CITY_TEMPLATES, readCityLibrary, snapshotSummary, writeCityLibrary, type CitySaveRecord, type LibraryStorage } from "./library";
 import { activeCharter, activeMood, captureCity, cityBuildings, cityDay, cityPlazas, loadCity, welcomeOpen } from "./state";
@@ -12,7 +12,12 @@ import { onInit } from "../../loop";
 
 function makeContext() {
   const ctx = createGameContext({
-    definition: defineGame({ name: "Monument", assets: createAssetCatalog(), multiplayer: "off" }),
+    definition: defineGame({
+      name: "Monument",
+      assets: createAssetCatalog(),
+      multiplayer: "off",
+      time: { scale: 1, dayLength: DAY_LENGTH, start: DAY_LENGTH * (15 / 24), speeds: [1, 3, 8] },
+    }),
     content,
     player: { userId: "architect", isNew: true },
   });
@@ -89,6 +94,17 @@ describe("save library", () => {
     const storage = memoryStorage();
     storage.setItem("jg-monument-city-library-v1", "{nonsense");
     expect(readCityLibrary(storage)).toEqual([]);
+  });
+});
+
+describe("mood hour jump", () => {
+  test("setting a mood moves the clock to its representative hour even while paused", () => {
+    const ctx = makeContext();
+    expect(ctx.time.snapshot().paused).toBe(true);
+    ctx.game.commands.run("site.mood", { mood: "cyberpunk" });
+    expect(activeMood(ctx)).toBe("cyberpunk");
+    expect(ctx.time.calendar().dayFraction * 24).toBeCloseTo(22, 1);
+    expect(ctx.time.snapshot().paused).toBe(true);
   });
 });
 

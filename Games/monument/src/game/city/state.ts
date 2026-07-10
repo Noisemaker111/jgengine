@@ -375,7 +375,13 @@ export function bumpLibraryRevision(ctx: GameContext): void {
 export function jumpToHour(ctx: GameContext, hour: number, day?: number): void {
   const targetFraction = ((hour / 24) % 1 + 1) % 1;
   const current = ctx.time.calendar().dayFraction;
-  ctx.time.advance(((targetFraction - current + 1) % 1) * DAY_LENGTH);
+  const gameDelta = ((targetFraction - current + 1) % 1) * DAY_LENGTH;
+  const wasPaused = ctx.time.snapshot().paused;
+  if (wasPaused) ctx.time.play();
+  const live = ctx.time.snapshot();
+  const rate = live.scale * live.speed * live.timescale;
+  if (rate > 0) ctx.time.advance(gameDelta / rate);
+  if (wasPaused) ctx.time.pause();
   if (day !== undefined) ctx.game.store.set("dayBase", day - 1 - ctx.time.calendar().day);
 }
 
