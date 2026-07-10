@@ -12,7 +12,9 @@ description: >-
 # Cheap workers do the dumb work
 
 Frontier model: plan, design, judge, synthesize.  
-Cheap worker (Sonnet / cheaper Task model): every mechanical leg below.
+Cheap worker (Sonnet): every mechanical leg below.
+
+**Pin the model on every worker call: `model: "sonnet"`.** Omitting it makes the worker inherit the session model — that is how typecheck re-runs and CI triage have ended up on Opus 4.8. Opus is never a worker model; even a Fable session gets identical results from Sonnet with a good prompt. If a worker shows up as Opus, the spawn call is wrong.
 
 ## Always fan these — never run them on the frontier model
 
