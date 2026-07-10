@@ -4,10 +4,14 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { game } from "../game.config";
 import { loop } from "../loop";
 import { classById } from "./classes/catalog";
-import { isMobInstance, mobCount, mobRuntimeOf } from "./ai/mobs";
+import { applyMobCc, isMobInstance, mobCount, mobRuntimeOf } from "./ai/mobs";
 import { content } from "./content";
 import { CLASS_ENTITY_ID, COPPER } from "./model";
 import { NPCS } from "./entities/npcs/catalog";
+import { grantTalentPoint } from "./session/hero";
+import { SPECS } from "./talents/catalog";
+import { GATHER_NODES } from "./professions/catalog";
+import { gatherNodeCount } from "./professions/gathering";
 
 const USER = "hero-test";
 
@@ -157,5 +161,82 @@ describe("claudecraft gameplay (headless)", () => {
     step(ctx, 14);
     const allowed = ctx.item.use.can({ from: USER, itemId: "baked_bread", inventoryId: "bags" });
     expect(allowed).toBeNull();
+  });
+
+  test("talent points are withheld before level 10 and grantTalentPoint unlocks allocation", () => {
+    const chosen = ctx.game.commands.run("talent.choose", { specId: "warrior_arms" });
+    expect(chosen.status).toBe("applied");
+    const before = ctx.game.store.get(`talents:${USER}`) as { pointsAvailable: number } | undefined;
+    expect(before?.pointsAvailable ?? 0).toBe(0);
+    ctx.scene.entity.stats.set(USER, "level", { current: 10 });
+    grantTalentPoint(ctx, USER, 10);
+    const granted = ctx.game.store.get(`talents:${USER}`) as { pointsAvailable: number } | undefined;
+    expect(granted?.pointsAvailable).toBe(1);
+    const spec = SPECS.find((entry) => entry.id === "warrior_arms");
+    const node = spec?.nodes.find(
+      (entry) => entry.requires === undefined && entry.requiresPointsInBranch === undefined,
+    );
+    expect(node).toBeDefined();
+    const allocated = ctx.game.commands.run("talent.allocate", { nodeId: node?.id ?? "" });
+    expect(allocated.status).toBe("applied");
+    const after = ctx.game.store.get(`talents:${USER}`) as
+      | { pointsAvailable: number; ranks: Record<string, number> }
+      | undefined;
+    expect(after?.ranks[node?.id ?? ""]).toBe(1);
+    expect(after?.pointsAvailable).toBe(0);
+  });
+
+  test("gathering nodes are placed and gathering grants materials and profession skill", () => {
+    expect(gatherNodeCount()).toBeGreaterThan(50);
+    const valeStarterIds = new Set(
+      GATHER_NODES.filter((node) => node.zone === "vale" && node.skillReq === 0).map((node) => node.id),
+    );
+    const object = ctx.scene.object.list().find((entry) => valeStarterIds.has(entry.catalogId));
+    expect(object).toBeDefined();
+    const node = GATHER_NODES.find((entry) => entry.id === object?.catalogId);
+    expect(node).toBeDefined();
+    const material = node?.materials[0];
+    expect(material).toBeDefined();
+    const before = ctx.player.inventory.count("bags", material?.itemId ?? "");
+    ctx.game.commands.run("gather", { instanceId: object?.instanceId ?? "" });
+    const after = ctx.player.inventory.count("bags", material?.itemId ?? "");
+    expect(after).toBeGreaterThan(before);
+    const profs = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
+    expect(profs?.[node?.profession ?? ""]).toBe(2);
+  });
+
+  test("bank deposit and withdraw round-trip bags contents", () => {
+    ctx.game.commands.run("bank.open", {});
+    const bagsBefore = ctx.player.inventory.count("bags", "baked_bread");
+    ctx.game.commands.run("bank.deposit", { itemId: "baked_bread" });
+    expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(bagsBefore - 1);
+    expect(ctx.player.inventory.count("bank", "baked_bread")).toBe(1);
+    ctx.game.commands.run("bank.withdraw", { itemId: "baked_bread" });
+    expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(bagsBefore);
+    expect(ctx.player.inventory.count("bank", "baked_bread")).toBe(0);
+    ctx.game.commands.run("bank.close", {});
+  });
+
+  test("rested xp pool is drawn down by a kill", () => {
+    ctx.game.store.set(`rested:${USER}`, 500);
+    const wolfId = firstMobOf(ctx, "forest_wolf");
+    moveNextTo(ctx, wolfId);
+    ctx.scene.entity.setTarget(USER, wolfId);
+    ctx.game.commands.run("attack", {});
+    let guard = 0;
+    while (ctx.scene.entity.get(wolfId) !== null && guard < 400) {
+      moveNextTo(ctx, wolfId);
+      step(ctx, 0.5);
+      guard += 1;
+    }
+    expect(ctx.scene.entity.get(wolfId)).toBeNull();
+    const pool = ctx.game.store.get(`rested:${USER}`) as number;
+    expect(pool).toBeLessThan(500);
+  });
+
+  test("applyMobCc lands on a live mob and rejects an unknown instance id", () => {
+    const wolfId = firstMobOf(ctx, "forest_wolf");
+    expect(applyMobCc(ctx, wolfId, USER, { kind: "stun", durationSec: 2 })).toBe(true);
+    expect(applyMobCc(ctx, "not-a-real-instance", USER, { kind: "stun", durationSec: 2 })).toBe(false);
   });
 });
