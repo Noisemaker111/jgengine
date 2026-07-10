@@ -73,6 +73,55 @@ describe("lootTable", () => {
     expect(createLootRegistry().has("chest")).toBe(false);
   });
 
+  test("independent mode rolls each entry's own chance — several drops or none, no filler entry", () => {
+    const registry = createLootRegistry();
+    registry.register({
+      id: "wolf",
+      mode: "independent",
+      entries: [
+        { item: "pelt", count: 1, chance: 0.5 },
+        { item: "fang", count: 1, chance: 0.25 },
+        { currency: "coins", count: 3, chance: 1 },
+      ],
+    });
+    const rolls = [0.4, 0.3, 0.0];
+    let index = 0;
+    const rng = () => rolls[index++ % rolls.length];
+    expect(registry.roll("wolf", rng)).toEqual([
+      { item: "pelt", count: 1 },
+      { currency: "coins", count: 3 },
+    ]);
+    expect(registry.roll("wolf", () => 0.99)).toEqual([{ currency: "coins", count: 3 }]);
+  });
+
+  test("independent mode multiplies passes via rolls", () => {
+    const registry = createLootRegistry();
+    registry.register({
+      id: "boss",
+      mode: "independent",
+      rolls: 2,
+      entries: [{ item: "gem", count: 1, chance: 1 }],
+    });
+    expect(registry.roll("boss", () => 0)).toEqual([
+      { item: "gem", count: 1 },
+      { item: "gem", count: 1 },
+    ]);
+  });
+
+  test("mode-mismatched entries are rejected", () => {
+    const registry = createLootRegistry();
+    expect(() =>
+      registry.register({ id: "bad-weighted", entries: [{ item: "gold", count: 1, chance: 0.5, weight: 1 }] }),
+    ).toThrow();
+    expect(() => registry.register({ id: "bad-no-weight", entries: [{ item: "gold", count: 1 }] })).toThrow();
+    expect(() =>
+      registry.register({ id: "bad-ind", mode: "independent", entries: [{ item: "gold", count: 1, weight: 1, chance: 0.5 }] }),
+    ).toThrow();
+    expect(() =>
+      registry.register({ id: "bad-chance", mode: "independent", entries: [{ item: "gold", count: 1, chance: 1.5 }] }),
+    ).toThrow();
+  });
+
   test("grantDrops routes items and currency to their appliers", () => {
     const putItem = (itemId: string, count: number) => calls.push(["putItem", itemId, count]);
     const grantCurrency = (currencyId: string, amount: number) => calls.push(["grantCurrency", currencyId, amount]);

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { environment, terrain } from "./features";
 import {
   arenaField,
+  createTerrainPaletteSampler,
   fractalNoise,
   flatField,
   groundFieldFor,
@@ -179,5 +180,41 @@ describe("terrain field", () => {
     const config = { seed: 11, frequency: 0.05, octaves: 4, lacunarity: 2, persistence: 0.5, ridged: false };
     for (let i = 0; i < 400; i += 1) sum += fractalNoise(i * 1.7, i * -0.9, config);
     expect(Math.abs(sum / 400)).toBeLessThan(0.15);
+  });
+
+  test("a game-supplied heightField replaces the noise and still takes flatten masks", () => {
+    const banded = terrain({
+      heightField: (x) => (x < 0 ? 2 : 10),
+      waterLevel: 1,
+      flatten: [{ center: [50, 0], radius: 5, height: 4 }],
+    });
+    const field = resolveTerrainField(banded);
+    expect(field.sampleHeight(-20, 0)).toBe(2);
+    expect(field.sampleHeight(20, 0)).toBe(10);
+    expect(field.sampleHeight(50, 0)).toBe(4);
+    expect(field.waterLevel).toBe(1);
+    const world = environment({ terrain: banded });
+    expect(groundFieldFor(world).sampleHeight(20, 0)).toBe(10);
+  });
+
+  test("createTerrainPaletteSampler paints regions inside their radius and blends across falloff", () => {
+    const sampler = createTerrainPaletteSampler({
+      material: "grass",
+      materialRegions: [{ center: [100, 0], radius: 10, material: "snow", falloff: 10 }],
+    });
+    const base = resolveTerrainPalette({ material: "grass" });
+    const snow = resolveTerrainPalette({ material: "snow" });
+    expect(sampler(0, 0)).toEqual(base);
+    expect(sampler(100, 0)).toEqual(snow);
+    const blended = sampler(115, 0);
+    expect(blended.low).not.toBe(base.low);
+    expect(blended.low).not.toBe(snow.low);
+    expect(sampler(125, 0)).toEqual(base);
+  });
+
+  test("createTerrainPaletteSampler without regions is the flat base palette", () => {
+    const sampler = createTerrainPaletteSampler({ colors: { low: "#112233", high: "#445566" } });
+    expect(sampler(3, 4).low).toBe("#112233");
+    expect(sampler(-90, 12).high).toBe("#445566");
   });
 });

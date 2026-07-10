@@ -11,13 +11,18 @@ import type {
   TerrainEnvironmentDescriptor,
   WeatherEnvironmentDescriptor,
 } from "@jgengine/core/world/features";
-import { resolveTerrainField, resolveTerrainPalette, type TerrainField } from "@jgengine/core/world/terrain";
+import {
+  createTerrainPaletteSampler,
+  resolveTerrainField,
+  resolveTerrainPalette,
+  type TerrainField,
+} from "@jgengine/core/world/terrain";
 
 import { SkyDaylight } from "./Daylight";
 import { GroundPad } from "./GroundPad";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
-import { ProceduralGround } from "../terrain/ProceduralGround";
+import { CarvedTerrain } from "../terrain/CarvedTerrain";
 import { Ocean } from "../water/Ocean";
 import { RainField } from "../weather/RainField";
 import { SnowField } from "../weather/SnowField";
@@ -27,27 +32,38 @@ export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;
 }
 
-const DEFAULT_TERRAIN_FREQUENCY = 0.03;
-
-function TerrainGround({ terrain }: { terrain: TerrainEnvironmentDescriptor }) {
-  const palette = resolveTerrainPalette(terrain);
+function TerrainGround({ terrain, field }: { terrain: TerrainEnvironmentDescriptor; field: TerrainField }) {
+  const palette = useMemo(() => resolveTerrainPalette(terrain), [terrain]);
+  const paletteAt = useMemo(
+    () =>
+      terrain.materialRegions === undefined || terrain.materialRegions.length === 0
+        ? undefined
+        : createTerrainPaletteSampler(terrain),
+    [terrain],
+  );
+  const colors = useMemo(
+    () => ({
+      low: palette.low,
+      high: palette.high,
+      ...(terrain.waterLevel === undefined ? {} : { waterline: palette.waterline, waterlineHeight: terrain.waterLevel }),
+    }),
+    [palette, terrain.waterLevel],
+  );
+  const size = useMemo(() => [terrain.bounds.w, terrain.bounds.d] as const, [terrain.bounds]);
+  const heightRange = useMemo(() => {
+    const base = terrain.baseHeight ?? 0;
+    const swing = terrain.height * 1.2;
+    return [base - swing, base + swing] as const;
+  }, [terrain.baseHeight, terrain.height]);
   return (
-    <ProceduralGround
-      terrain={{
-        size: [terrain.bounds.w, terrain.bounds.d],
-        segments: terrain.segments,
-        height: terrain.height,
-        seed: terrain.seed,
-        moundScale: terrain.frequency ?? DEFAULT_TERRAIN_FREQUENCY,
-        octaves: terrain.octaves,
-        ridged: terrain.ridged,
-        baseOffset: terrain.baseHeight,
-      }}
-      colors={{
-        low: palette.low,
-        high: palette.high,
-        ...(terrain.waterLevel === undefined ? {} : { waterline: palette.waterline, waterlineHeight: terrain.waterLevel }),
-      }}
+    <CarvedTerrain
+      field={field}
+      size={size}
+      segments={terrain.segments}
+      colors={colors}
+      heightRange={heightRange}
+      paletteAt={paletteAt}
+      roughness={0.94}
     />
   );
 }
@@ -164,7 +180,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   return (
     <>
       {feature.sky !== undefined && !feature.sky.timeOfDay ? <SkyDaylight sky={feature.sky} /> : null}
-      {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} /> : null}
+      {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} /> : null}
       {water.map((ocean, index) => (
         <Water key={`ocean-${index}`} ocean={ocean} />
       ))}

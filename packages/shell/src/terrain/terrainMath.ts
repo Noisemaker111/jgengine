@@ -65,12 +65,17 @@ export function createProceduralTerrainSampler(config: ProceduralTerrainConfig =
   return noiseField(toNoiseFieldConfig(config)).sampleHeight;
 }
 
+/** Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/world/terrain` returns exactly this shape. */
+export type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string };
+
 export interface FieldGroundOptions {
   size?: TerrainArea;
   segments?: number | readonly [x: number, z: number];
   center?: readonly [x: number, z: number];
   colors?: TerrainVertexColorOptions;
   heightRange?: readonly [min: number, max: number];
+  /** Sampled per vertex when set; `colors` still supplies `waterlineHeight` and the fallback. */
+  paletteAt?: TerrainPaletteSampler;
 }
 
 /**
@@ -86,6 +91,7 @@ export function createFieldGroundGeometry(field: TerrainField, options: FieldGro
     colors: options.colors ?? {},
     center: [cx, cz],
     heightRange: options.heightRange,
+    paletteAt: options.paletteAt,
   });
 }
 
@@ -93,9 +99,15 @@ function buildGroundGeometry(
   size: ResolvedTerrainSize,
   segments: ResolvedTerrainSegments,
   sampler: TerrainHeightSampler,
-  opts: { colors: TerrainVertexColorOptions; center: readonly [number, number]; heightRange?: readonly [number, number] },
+  opts: {
+    colors: TerrainVertexColorOptions;
+    center: readonly [number, number];
+    heightRange?: readonly [number, number];
+    paletteAt?: TerrainPaletteSampler;
+  },
 ): THREE.BufferGeometry {
   const colors = opts.colors;
+  const paletteAt = opts.paletteAt;
   const vertexCountX = segments.x + 1;
   const vertexCountZ = segments.z + 1;
   const positions = new Float32Array(vertexCountX * vertexCountZ * 3);
@@ -122,6 +134,12 @@ function buildGroundGeometry(
       positions[index + 2] = z;
       uvs[uvIndex] = u;
       uvs[uvIndex + 1] = v;
+      if (paletteAt !== undefined) {
+        const palette = paletteAt(x, z);
+        low.set(palette.low);
+        high.set(palette.high);
+        if (waterline !== null && palette.waterline !== undefined) waterline.set(palette.waterline);
+      }
       const blend = normalizeHeightBlend(y, minHeight, maxHeight);
       const color = low.clone().lerp(high, blend);
       if (waterline !== null && y <= (colors.waterlineHeight ?? 0)) color.lerp(waterline, 0.65);

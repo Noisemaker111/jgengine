@@ -140,3 +140,67 @@ describe("abilityKit", () => {
     expect(kit.state("ult", 0)?.state).toBe("cooldown");
   });
 });
+
+describe("abilityKit cooldown groups", () => {
+  const gcdKit = () =>
+    createAbilityKit(
+      [
+        { id: "strike", cooldownMs: 0, groups: ["gcd"] },
+        { id: "fireball", cooldownMs: 6000, groups: ["gcd"] },
+        { id: "potion", cooldownMs: 2000 },
+      ],
+      { groups: [{ id: "gcd", cooldownMs: 1500 }] },
+    );
+
+  it("casting one member blocks every member until the group recovers", () => {
+    const kit = gcdKit();
+    expect(kit.cast("strike").ok).toBe(true);
+    const blocked = kit.canCast("fireball");
+    expect(blocked.ok).toBe(false);
+    expect(blocked.ok === false && blocked.reason).toBe("group-cooldown");
+    expect(kit.canCast("potion").ok).toBe(true);
+    kit.tick(1.5);
+    expect(kit.canCast("fireball").ok).toBe(true);
+    expect(kit.canCast("strike").ok).toBe(true);
+  });
+
+  it("snapshots surface the group block as cooldown state and fraction", () => {
+    const kit = gcdKit();
+    kit.cast("strike");
+    kit.tick(0.3);
+    const strike = kit.state("strike")!;
+    expect(strike.state).toBe("cooldown");
+    expect(strike.groupRemainingMs).toBe(1200);
+    expect(strike.cooldownRemainingMs).toBe(1200);
+    expect(strike.cooldownFraction).toBeCloseTo(0.8, 5);
+    expect(strike.ready).toBe(false);
+    expect(kit.groupRemaining("gcd")).toBe(1200);
+    expect(kit.groupRemaining("nope")).toBeNull();
+  });
+
+  it("a slot's own longer cooldown outlives the group", () => {
+    const kit = gcdKit();
+    kit.cast("fireball");
+    kit.tick(1.5);
+    expect(kit.canCast("strike").ok).toBe(true);
+    const fireball = kit.canCast("fireball");
+    expect(fireball.ok).toBe(false);
+    expect(fireball.ok === false && fireball.reason).toBe("cooldown");
+  });
+
+  it("full reset clears groups, slot-scoped reset does not", () => {
+    const kit = gcdKit();
+    kit.cast("strike");
+    kit.reset("fireball");
+    expect(kit.canCast("fireball").ok).toBe(false);
+    kit.reset();
+    expect(kit.canCast("fireball").ok).toBe(true);
+  });
+
+  it("rejects unknown group references and duplicate groups", () => {
+    expect(() => createAbilityKit([{ id: "a", cooldownMs: 0, groups: ["missing"] }])).toThrow();
+    expect(() =>
+      createAbilityKit([], { groups: [{ id: "g", cooldownMs: 100 }, { id: "g", cooldownMs: 200 }] }),
+    ).toThrow();
+  });
+});

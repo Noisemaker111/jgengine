@@ -251,6 +251,65 @@ export function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig,
   };
 }
 
+function hexToRgb(hex: string): readonly [number, number, number] {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const value = ((Math.round(r) & 0xff) << 16) | ((Math.round(g) & 0xff) << 8) | (Math.round(b) & 0xff);
+  return `#${value.toString(16).padStart(6, "0")}`;
+}
+
+function mixHex(from: string, to: string, t: number): string {
+  if (t <= 0) return from;
+  if (t >= 1) return to;
+  const [fr, fg, fb] = hexToRgb(from);
+  const [tr, tg, tb] = hexToRgb(to);
+  return rgbToHex(lerp(fr, tr, t), lerp(fg, tg, t), lerp(fb, tb, t));
+}
+
+function mixPalette(from: TerrainPalette, to: TerrainPalette, t: number): TerrainPalette {
+  if (t <= 0) return from;
+  if (t >= 1) return to;
+  return {
+    low: mixHex(from.low, to.low, t),
+    high: mixHex(from.high, to.high, t),
+    waterline: mixHex(from.waterline, to.waterline, t),
+  };
+}
+
+/**
+ * Per-position palette sampler over the descriptor's base `material`/`colors` plus its
+ * `materialRegions` — the multi-biome coloring seam. Regions paint fully inside `radius`
+ * and blend back to the surrounding palette across `falloff`; later regions win overlaps.
+ */
+export function createTerrainPaletteSampler(
+  descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions">,
+): (x: number, z: number) => TerrainPalette {
+  const base = resolveTerrainPalette(descriptor);
+  const regions = (descriptor.materialRegions ?? []).map((region) => ({
+    center: region.center,
+    radius: region.radius,
+    falloff: region.falloff ?? region.radius * 0.5,
+    palette: resolveTerrainPalette(region),
+  }));
+  if (regions.length === 0) return () => base;
+  return (x, z) => {
+    let palette = base;
+    for (const region of regions) {
+      const distance = Math.hypot(x - region.center[0], z - region.center[1]);
+      if (distance <= region.radius) {
+        palette = region.palette;
+      } else if (distance <= region.radius + region.falloff) {
+        const t = smoothstep(region.radius, region.radius + region.falloff, distance);
+        palette = mixPalette(region.palette, palette, t);
+      }
+    }
+    return palette;
+  };
+}
+
 function withFlattenMasks(
   sampleHeight: (x: number, z: number) => number,
   masks: readonly TerrainFlattenMask[],
@@ -279,20 +338,26 @@ function withFlattenMasks(
 
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
   if (descriptor === undefined) return flatField();
-  const noise = noiseField({
-    seed: descriptor.seed,
-    amplitude: descriptor.height,
-    frequency: descriptor.frequency,
-    octaves: descriptor.octaves,
-    ridged: descriptor.ridged,
-    baseHeight: descriptor.baseHeight,
-    waterLevel: descriptor.waterLevel,
-    bounds: descriptor.bounds,
-  });
-  if (descriptor.flatten === undefined || descriptor.flatten.length === 0) return noise;
-  return fieldFromHeight(withFlattenMasks(noise.sampleHeight, descriptor.flatten), {
-    bounds: noise.bounds,
-    waterLevel: noise.waterLevel,
+  const base =
+    descriptor.heightField !== undefined
+      ? fieldFromHeight(descriptor.heightField, {
+          bounds: descriptor.bounds,
+          ...(descriptor.waterLevel === undefined ? {} : { waterLevel: descriptor.waterLevel }),
+        })
+      : noiseField({
+          seed: descriptor.seed,
+          amplitude: descriptor.height,
+          frequency: descriptor.frequency,
+          octaves: descriptor.octaves,
+          ridged: descriptor.ridged,
+          baseHeight: descriptor.baseHeight,
+          waterLevel: descriptor.waterLevel,
+          bounds: descriptor.bounds,
+        });
+  if (descriptor.flatten === undefined || descriptor.flatten.length === 0) return base;
+  return fieldFromHeight(withFlattenMasks(base.sampleHeight, descriptor.flatten), {
+    bounds: base.bounds,
+    waterLevel: base.waterLevel,
   });
 }
 

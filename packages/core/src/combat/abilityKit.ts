@@ -9,6 +9,18 @@ export interface AbilitySlotConfig {
   resourceCost?: number;
   castType?: AbilityCastType;
   flashMs?: number;
+  /** Shared cooldown groups this slot participates in — ids declared in `AbilityKitOptions.groups`. */
+  groups?: readonly string[];
+}
+
+/** A cooldown shared across every member slot: casting any member starts it, and no member can cast while it runs. One group that every slot joins is an MMO global cooldown. */
+export interface AbilityCooldownGroup {
+  id: string;
+  cooldownMs: number;
+}
+
+export interface AbilityKitOptions {
+  groups?: readonly AbilityCooldownGroup[];
 }
 
 export interface AbilitySlotSnapshot {
@@ -18,13 +30,16 @@ export interface AbilitySlotSnapshot {
   resourceCost: number;
   charges: number;
   chargesMax: number;
+  /** Max of the slot's own recharge and any blocking group cooldown. */
   cooldownRemainingMs: number;
   cooldownFraction: number;
+  /** Remaining ms on the slowest of the slot's shared cooldown groups; 0 when unblocked. */
+  groupRemainingMs: number;
   justCast: boolean;
   ready: boolean;
 }
 
-export type AbilityCastReason = "unknown-slot" | "cooldown" | "no-resource";
+export type AbilityCastReason = "unknown-slot" | "cooldown" | "group-cooldown" | "no-resource";
 
 export interface AbilitySlotRetune {
   cooldownMs?: number;
@@ -43,6 +58,8 @@ export interface AbilityKit {
   canCast(slotId: string, resourceAvailable?: number): AbilityCastResult;
   cast(slotId: string, resourceAvailable?: number): AbilityCastResult;
   tick(dtSeconds: number): void;
+  /** Remaining ms on a shared cooldown group; 0 when ready, null for an unknown group. */
+  groupRemaining(groupId: string): number | null;
   reset(slotId?: string): void;
   retuneSlot(slotId: string, patch: AbilitySlotRetune): boolean;
 }
@@ -64,20 +81,27 @@ function normalizeConfig(config: AbilitySlotConfig): Required<AbilitySlotConfig>
     resourceCost: Math.max(0, config.resourceCost ?? 0),
     castType: config.castType ?? "instant",
     flashMs: Math.max(0, config.flashMs ?? DEFAULT_FLASH_MS),
+    groups: config.groups ?? [],
   };
 }
 
-function deriveState(runtime: SlotRuntime, resourceAvailable: number): AbilitySlotState {
+interface GroupBlock {
+  remainingMs: number;
+  fraction: number;
+}
+
+function deriveState(runtime: SlotRuntime, resourceAvailable: number, group: GroupBlock): AbilitySlotState {
   if (runtime.flashRemainingMs > 0) return "just-cast";
   if (runtime.charges <= 0) return "cooldown";
+  if (group.remainingMs > 0) return "cooldown";
   if (resourceAvailable < runtime.config.resourceCost) return "no-resource";
   return "ready";
 }
 
-function snapshotOf(runtime: SlotRuntime, resourceAvailable: number): AbilitySlotSnapshot {
+function snapshotOf(runtime: SlotRuntime, resourceAvailable: number, group: GroupBlock): AbilitySlotSnapshot {
   const { config } = runtime;
-  const state = deriveState(runtime, resourceAvailable);
-  const cooldownFraction =
+  const state = deriveState(runtime, resourceAvailable, group);
+  const ownFraction =
     config.cooldownMs <= 0 ? 0 : Math.max(0, Math.min(1, runtime.rechargeRemainingMs / config.cooldownMs));
   return {
     id: config.id,
@@ -86,19 +110,33 @@ function snapshotOf(runtime: SlotRuntime, resourceAvailable: number): AbilitySlo
     resourceCost: config.resourceCost,
     charges: runtime.charges,
     chargesMax: config.chargesMax,
-    cooldownRemainingMs: runtime.rechargeRemainingMs,
-    cooldownFraction,
+    cooldownRemainingMs: Math.max(runtime.rechargeRemainingMs, group.remainingMs),
+    cooldownFraction: Math.max(ownFraction, group.fraction),
+    groupRemainingMs: group.remainingMs,
     justCast: runtime.flashRemainingMs > 0,
-    ready: runtime.charges > 0 && resourceAvailable >= config.resourceCost,
+    ready: runtime.charges > 0 && group.remainingMs <= 0 && resourceAvailable >= config.resourceCost,
   };
 }
 
-export function createAbilityKit(configs: readonly AbilitySlotConfig[]): AbilityKit {
+export function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit {
+  const groupCooldowns = new Map<string, number>();
+  const groupRemaining = new Map<string, number>();
+  for (const group of options.groups ?? []) {
+    if (groupCooldowns.has(group.id)) throw new Error(`duplicate cooldown group: ${group.id}`);
+    groupCooldowns.set(group.id, Math.max(0, group.cooldownMs));
+    groupRemaining.set(group.id, 0);
+  }
+
   const runtimes = new Map<string, SlotRuntime>();
   const order: string[] = [];
   for (const config of configs) {
     const normalized = normalizeConfig(config);
     if (runtimes.has(normalized.id)) throw new Error(`duplicate ability slot: ${normalized.id}`);
+    for (const groupId of normalized.groups) {
+      if (!groupCooldowns.has(groupId)) {
+        throw new Error(`ability slot "${normalized.id}" references unknown cooldown group "${groupId}"`);
+      }
+    }
     runtimes.set(normalized.id, {
       config: normalized,
       charges: normalized.chargesMax,
@@ -108,17 +146,31 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[]): Ability
     order.push(normalized.id);
   }
 
+  function groupBlockOf(runtime: SlotRuntime): GroupBlock {
+    let remainingMs = 0;
+    let fraction = 0;
+    for (const groupId of runtime.config.groups) {
+      const remaining = groupRemaining.get(groupId) ?? 0;
+      if (remaining <= remainingMs) continue;
+      remainingMs = remaining;
+      const cooldownMs = groupCooldowns.get(groupId) ?? 0;
+      fraction = cooldownMs <= 0 ? 0 : Math.max(0, Math.min(1, remaining / cooldownMs));
+    }
+    return { remainingMs, fraction };
+  }
+
   function fail(slotId: string, reason: AbilityCastReason, resourceAvailable: number): AbilityCastResult {
     const runtime = runtimes.get(slotId);
-    return { ok: false, reason, slot: runtime ? snapshotOf(runtime, resourceAvailable) : null };
+    return { ok: false, reason, slot: runtime ? snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime)) : null };
   }
 
   function evaluate(slotId: string, resourceAvailable: number): AbilityCastResult {
     const runtime = runtimes.get(slotId);
     if (runtime === undefined) return fail(slotId, "unknown-slot", resourceAvailable);
     if (runtime.charges <= 0) return fail(slotId, "cooldown", resourceAvailable);
+    if (groupBlockOf(runtime).remainingMs > 0) return fail(slotId, "group-cooldown", resourceAvailable);
     if (resourceAvailable < runtime.config.resourceCost) return fail(slotId, "no-resource", resourceAvailable);
-    return { ok: true, slot: snapshotOf(runtime, resourceAvailable) };
+    return { ok: true, slot: snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime)) };
   }
 
   return {
@@ -130,10 +182,13 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[]): Ability
     },
     state(slotId, resourceAvailable = Number.POSITIVE_INFINITY) {
       const runtime = runtimes.get(slotId);
-      return runtime === undefined ? null : snapshotOf(runtime, resourceAvailable);
+      return runtime === undefined ? null : snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime));
     },
     snapshot(resourceAvailable = Number.POSITIVE_INFINITY) {
-      return order.map((slotId) => snapshotOf(runtimes.get(slotId)!, resourceAvailable));
+      return order.map((slotId) => {
+        const runtime = runtimes.get(slotId)!;
+        return snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime));
+      });
     },
     canCast(slotId, resourceAvailable = Number.POSITIVE_INFINITY) {
       return evaluate(slotId, resourceAvailable);
@@ -145,11 +200,17 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[]): Ability
       runtime.charges -= 1;
       if (runtime.rechargeRemainingMs <= 0) runtime.rechargeRemainingMs = runtime.config.cooldownMs;
       runtime.flashRemainingMs = runtime.config.flashMs;
-      return { ok: true, slot: snapshotOf(runtime, resourceAvailable) };
+      for (const groupId of runtime.config.groups) {
+        groupRemaining.set(groupId, groupCooldowns.get(groupId) ?? 0);
+      }
+      return { ok: true, slot: snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime)) };
     },
     tick(dtSeconds) {
       if (dtSeconds <= 0) return;
       const dtMs = dtSeconds * 1000;
+      for (const [groupId, remaining] of groupRemaining) {
+        if (remaining > 0) groupRemaining.set(groupId, Math.max(0, remaining - dtMs));
+      }
       for (const runtime of runtimes.values()) {
         if (runtime.flashRemainingMs > 0) runtime.flashRemainingMs = Math.max(0, runtime.flashRemainingMs - dtMs);
         if (runtime.charges >= runtime.config.chargesMax) {
@@ -170,12 +231,18 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[]): Ability
         runtime.rechargeRemainingMs = runtime.charges >= runtime.config.chargesMax ? 0 : remaining;
       }
     },
+    groupRemaining(groupId) {
+      return groupCooldowns.has(groupId) ? groupRemaining.get(groupId) ?? 0 : null;
+    },
     reset(slotId) {
       const targets = slotId === undefined ? runtimes.values() : [runtimes.get(slotId)].filter((r): r is SlotRuntime => r !== undefined);
       for (const runtime of targets) {
         runtime.charges = runtime.config.chargesMax;
         runtime.rechargeRemainingMs = 0;
         runtime.flashRemainingMs = 0;
+      }
+      if (slotId === undefined) {
+        for (const groupId of groupRemaining.keys()) groupRemaining.set(groupId, 0);
       }
     },
     retuneSlot(slotId, patch) {
