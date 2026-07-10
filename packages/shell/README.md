@@ -49,6 +49,17 @@ import { generateBuilding } from "@jgengine/core/world/buildings";
 <GeneratedBuilding building={generateBuilding({ seed: "block-a", floors: 6 })} />;
 ```
 
+Building parts are batched into one `InstancedMesh` per part kind, so a whole building costs about a dozen draw calls regardless of part count. `InstancedBuildings` batches many buildings together the same way — a full district in one pass — and is what `EnvironmentScene` uses for `building()` world features:
+
+```tsx
+import { InstancedBuildings } from "@jgengine/shell/structures/GeneratedBuilding";
+import { generateBuildingDistrict } from "@jgengine/core/world/buildings";
+
+const district = generateBuildingDistrict({ rows: 3, cols: 3, seed: "downtown" });
+
+<InstancedBuildings buildings={district.map((building) => ({ building }))} />;
+```
+
 The component vocabulary (windows, awnings, AC units, clotheslines, storefronts, shutters, store signs, roof props, guardrails) and placement logic follow achrefelouafi's MIT [BuildingGeneratorThreeJS](https://github.com/achrefelouafi/BuildingGeneratorThreeJS) (see [CREDITS.md](../../CREDITS.md)).
 
 ## Terrain primitives

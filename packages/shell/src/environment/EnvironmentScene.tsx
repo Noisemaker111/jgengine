@@ -15,7 +15,7 @@ import { resolveTerrainField, resolveTerrainPalette, type TerrainField } from "@
 
 import { SkyDaylight } from "./Daylight";
 import { GroundPad } from "./GroundPad";
-import { GeneratedBuilding } from "../structures/GeneratedBuilding";
+import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
 import { ProceduralGround } from "../terrain/ProceduralGround";
 import { Ocean } from "../water/Ocean";
@@ -143,17 +143,16 @@ function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
 }
 
 function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {
-  const buildings = useMemo(() => resolveStructureBuildings(structures), [structures]);
-
-  return (
-    <>
-      {buildings.map((building) => (
-        <group key={building.id} position-y={field.sampleHeight(building.center[0], building.center[1])}>
-          <GeneratedBuilding building={building} />
-        </group>
-      ))}
-    </>
+  const placements = useMemo<InstancedBuildingPlacement[]>(
+    () =>
+      resolveStructureBuildings(structures).map((building) => ({
+        building,
+        position: [0, field.sampleHeight(building.center[0], building.center[1]), 0],
+      })),
+    [structures, field],
   );
+
+  return <InstancedBuildings buildings={placements} />;
 }
 
 export function EnvironmentScene({ feature }: EnvironmentSceneProps) {

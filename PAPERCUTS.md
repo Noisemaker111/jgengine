@@ -16,19 +16,19 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 
 ---
 
-2026-07-09T23:50:48.991Z — claude-sonnet-5 — Claude
+2026-07-10T05:38:06.748Z — sonnet — Claude
 
-Building tideway (regatta racing game): assets add/pull for kenney-pirate and other CDN packs (kenney.nl, quaternius.com, poly.pizza) all failed with proxy CONNECT 403 — this sandboxed session has no outbound access to any asset provider host, so real GLB models are unreachable; built the game with procedural low-poly three.js primitive geometry (renderObject/renderEntity) instead of pulled asset packs.
+ship-motion worker ended its turn during the 60s CI sleep instead of finishing the Actions check → needed a second worker to complete the green check
 
-2026-07-10T00:20:12.284Z — claude-sonnet-5 — Claude
+2026-07-10T05:48:36.907Z — claude-fable-5 — Claude
 
-Spawned a general-purpose worker to run check-types/tests; it backgrounded the bun commands itself and returned 'Both workers running in background, I'll wait for their results' as its final answer instead of the actual results — had to relaunch a second worker with explicit 'run synchronously, don't background' instructions to get a real report.
+scouting two games' camera setup → Sonnet scout ground for 7.5min/40 tool calls and only returned after a SendMessage status nudge; scoped scout briefs need an explicit 'static-code answer only, don't run anything' cap
 
-2026-07-10T00:20:18.720Z — claude-sonnet-5 — Claude
+2026-07-10T05:48:36.945Z — claude-fable-5 — Claude
 
-Fresh cloud session had incomplete node_modules — bun run check-types failed with 'tsgo: command not found' and tests failed with 'Cannot find package three' across the whole repo, unrelated to the diff being verified. Had to run a manual bun install (64s) before verification could produce a real signal; a stale/missing install in a supposedly-ready session container wastes a full verify round-trip.
+papercut-reminder Stop hook false-positived: flagged the check-types gate worker as a relaunch of the earlier ensure-ready warm-up worker — the prompt-overlap heuristic can't tell two different verify legs apart
 
-2026-07-10T00:33:50.149Z — claude-fable-5 — Claude
+2026-07-10T05:53:22.562Z — claude-fable-5 — Claude
 
 Batch worker ran a stray 'bun install' mid-parallel-build; interrupted install left node_modules half-extracted, failing check-types/tests repo-wide with phantom TS2307s until a clean reinstall — parallel workers must never run installs
 
@@ -63,3 +63,7 @@ pulling asset packs for a new game → sandbox network policy 403s all three pro
 2026-07-10T06:02:29.272Z — fable-5 — Claude
 
 porting an MMO's biome-banded world → environment() weather/vegetation areas had no position field (only building/ocean take one); had to add the seam to core+shell mid-game instead of it being uniform across descriptors
+
+2026-07-10T05:53:22.562Z — claude-fable-5 — Claude
+
+ship worker hit a PAPERCUTS.md conflict, then spawned its own background merge child and ended its turn — stalled with no result; the foreground rule needs to bind nested delegation too

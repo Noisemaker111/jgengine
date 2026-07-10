@@ -31,6 +31,7 @@ export function GameFirstPersonCamera({
   const camera = useThree((state) => state.camera);
   const domElement = useThree((state) => state.gl.domElement);
   const followId = followEntityId ?? userId;
+  const seededRef = useRef(false);
 
   useEffect(() => {
     const requestLock = () => {
@@ -56,6 +57,10 @@ export function GameFirstPersonCamera({
   useFrame(() => {
     const entity = ctx.scene.entity.get(followId);
     if (entity === null) return;
+    if (!seededRef.current) {
+      seededRef.current = true;
+      yawRef.current = entity.rotationY;
+    }
     const cosPitch = Math.cos(pitchRef.current);
     camera.position.set(entity.position[0], entity.position[1] + eyeHeight, entity.position[2]);
     camera.lookAt(
