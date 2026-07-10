@@ -1,14 +1,17 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import type { Building, Plaza, Tool } from "./game/catalog";
+import type { Building, Lens, Plaza, Tool } from "./game/catalog";
 import {
+  activeLens,
   captureHistory,
   demolish,
   growSibling,
   initCity,
   pointerAction,
   redoCity,
+  setLens,
   setTool,
+  toggleSystems,
   undoCity,
   updateBuilding,
   updatePlaza,
@@ -64,6 +67,23 @@ export function onInit(ctx: GameContext): void {
     apply(state, input) {
       if (input.capture === true) captureHistory(state);
       updatePlaza(state, input.id, input.patch);
+    },
+  });
+  ctx.game.commands.define("cycleLens", {
+    apply(state) {
+      const order: Lens[] = ["material", "program", "structure", "daylight", "activity", "carbon"];
+      const current = activeLens(state);
+      setLens(state, order[(order.indexOf(current) + 1) % order.length]);
+    },
+  });
+  ctx.game.commands.define<{ lens: Lens }>("site.lens", {
+    apply(state, input) {
+      setLens(state, input.lens);
+    },
+  });
+  ctx.game.commands.define("systems.toggle", {
+    apply(state) {
+      toggleSystems(state);
     },
   });
   ctx.game.commands.define("undo", {

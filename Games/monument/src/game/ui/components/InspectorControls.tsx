@@ -161,6 +161,34 @@ export function Swatch({
   );
 }
 
+export function Meter({
+  label,
+  value,
+  color = "#d7ff43",
+  suffix = "",
+}: {
+  label: string;
+  value: number;
+  color?: string;
+  suffix?: string;
+}): ReactNode {
+  const pct = Math.max(0, Math.min(100, value));
+  return (
+    <div className="grid grid-cols-[92px_1fr_30px] items-center gap-2 px-3.5 py-1.5">
+      <span className="truncate text-[8.5px] font-medium uppercase tracking-[0.04em] leading-tight text-[#4b4e47]">
+        {label}
+      </span>
+      <span className="h-[5px] bg-[rgba(20,22,18,0.16)]">
+        <span className="block h-full" style={{ width: `${pct}%`, background: color }} />
+      </span>
+      <b className="text-right text-[10px] font-semibold tabular-nums text-[#171916]">
+        {Math.round(value)}
+        {suffix}
+      </b>
+    </div>
+  );
+}
+
 export function StatCell({ label, value, sub }: { label: string; value: string; sub?: string }): ReactNode {
   return (
     <div className="flex flex-col gap-0.5 border border-[rgba(20,22,18,0.14)] bg-[rgba(255,255,255,0.35)] px-2 py-1.5">

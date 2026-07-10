@@ -8,6 +8,7 @@ import { useGameClock } from "@jgengine/react/hooks";
 import { CELL, GRID } from "../catalog";
 import { solarModel } from "../city/model";
 import { getConcreteTextureCanvas } from "./concrete";
+import { Populace } from "./Populace";
 
 export interface MoodScene {
   day: [string, string, string];
@@ -362,6 +363,7 @@ export function MonumentEnvironment(): ReactNode {
         <InstancedBoxes items={background3d.masses} color={backgroundTone(BACKGROUND_PALETTE.a, 0.58)} />
         <InstancedBoxes items={background3d.roofs} color={backgroundTone(BACKGROUND_PALETTE.roof, 0.58)} roughness={0.9} />
       </group>
+      <Populace />
     </>
   );
 }

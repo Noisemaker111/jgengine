@@ -7,10 +7,10 @@ import { isVillageMassing, massingBase } from "@jgengine/core/world/massing";
 
 import { useGameClock, useGameStore } from "@jgengine/react/hooks";
 
-import { CELL, TONES, type Building, type FacadeStrategy, type Plaza, type Program, type Tone } from "../catalog";
+import { CELL, TONES, type Building, type FacadeStrategy, type Lens, type Plaza, type Program, type Tone } from "../catalog";
 import { buildingBodies, clamp, NEUTRAL_SIGNALS, programOccupancy, solarModel } from "../city/model";
-import { cityBuildings, cityPlazas, selectedId } from "../city/state";
-import { concreteShader, getConcreteTexture, roleSurfaceColor, weatheredColor } from "./concrete";
+import { activeLens, cityBuildings, cityPlazas, selectedId } from "../city/state";
+import { concreteShader, getConcreteTexture, lensColor, roleSurfaceColor } from "./concrete";
 import { MONUMENT_SCENE } from "./Environment";
 import { MassingGizmo } from "./Gizmos";
 
@@ -691,14 +691,16 @@ const BuildingContent = memo(function BuildingContent({
   selected,
   night,
   occupancy,
+  lens,
 }: {
   b: Building;
   selected: boolean;
   night: boolean;
   occupancy: number;
+  lens: Lens;
 }): ReactNode {
   const bodies = useMemo(() => buildingBodies(b), [b]);
-  const color = useMemo(() => weatheredColor(b), [b]);
+  const color = useMemo(() => lensColor(b, lens), [b, lens]);
   const activeFacade: FacadeStrategy = isVillageMassing(b) ? "punched" : b.facade;
   const active = night && occupancy > 0.18;
   return (
@@ -743,6 +745,7 @@ const BuildingContent = memo(function BuildingContent({
 function BuildingNode({ id }: { id: string }): ReactNode {
   const b = useGameStore((ctx) => cityBuildings(ctx).find((entry) => entry.id === id) ?? null);
   const selected = useGameStore((ctx) => selectedId(ctx) === id);
+  const lens = useGameStore(activeLens);
   const clock = useGameClock();
   if (b === null) return null;
   const hour = clock.calendar.dayFraction * 24;
@@ -751,7 +754,7 @@ function BuildingNode({ id }: { id: string }): ReactNode {
   const occupancy = night ? Math.round(programOccupancy(b, hour, NEUTRAL_SIGNALS) * 12) / 12 : 0;
   return (
     <group rotation={[0, (b.rotation * Math.PI) / 180, 0]}>
-      <BuildingContent b={b} selected={selected} night={night} occupancy={occupancy} />
+      <BuildingContent b={b} selected={selected} night={night} occupancy={occupancy} lens={lens} />
       {selected && <SelectionRing b={b} />}
       {selected && <MassingGizmo building={b} />}
     </group>
