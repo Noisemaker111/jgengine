@@ -99,6 +99,27 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "←/→ move · ↑/Z rotate · Space drop · C hold",
     hue: "#a78bfa",
   },
+  claudecraft: {
+    title: "World of ClaudeCraft",
+    tagline: "A classic-era MMORPG, ported whole onto the engine.",
+    description:
+      "Levy Street's WoW-Classic-style MMO reborn as an engine game. Pick one of nine classes, quest through Eastbrook Vale, Mirefen Marsh, and Thornpeak Heights, tab-target your way through wolves, cultists, and murlocs, and follow the Gravecaller storyline down into the Hollow Crypt to face Morthen.",
+    genre: "Classic MMORPG",
+    category: "Action & Arcade",
+    controls: "WASD · Tab target · 1-6 abilities · T attack · E talk · B bags",
+    hue: "#f59e0b",
+    credit: {
+      name: "Levy Street",
+      label: "Ported from",
+      handle: "levy-street",
+      href: "https://github.com/levy-street",
+      avatar: "https://unavatar.io/github/levy-street",
+      source: {
+        name: "world-of-claudecraft",
+        href: "https://github.com/levy-street/world-of-claudecraft",
+      },
+    },
+  },
   "mine-drop": {
     tagline: "Giant minesweeper you walk on — with friends.",
     description:

@@ -1,0 +1,70 @@
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { useGameStore, usePlayer } from "@jgengine/react/hooks";
+
+import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
+import { ClassSelect } from "./components/ClassSelect";
+import { DialoguePanel } from "./components/Dialogue";
+import { BagsPanel, CharacterPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
+import {
+  CreditLine,
+  DeathOverlay,
+  KillLootToasts,
+  LevelUpOverlay,
+  QuestTracker,
+  ZoneLabel,
+} from "./components/Overlays";
+import { PlayerFrame, TargetFrame } from "./components/UnitFrames";
+
+export function GameUI() {
+  const { userId } = usePlayer();
+  const layout = useHudLayout({ storageKey: "claudecraft-hud" });
+  const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
+  const panel = useGameStore((ctx) => ctx.game.store.get(`panel:${userId}`)) as string | undefined | null;
+  const shopOpen = useGameStore((ctx) => typeof ctx.game.store.get(`shop:${userId}`) === "string");
+  const dialogueOpen = useGameStore((ctx) => typeof ctx.game.store.get(`dialogue:${userId}`) === "string");
+  if (classId === undefined) return <ClassSelect />;
+  return (
+    <>
+      <HudCanvas layout={layout}>
+        <HudPanel id="player" anchor="top-left" inset={{ x: 16, y: 14 }}>
+          <PlayerFrame />
+        </HudPanel>
+        <HudPanel id="target" anchor="top-left" inset={{ x: 16, y: 118 }}>
+          <TargetFrame />
+        </HudPanel>
+        <HudPanel id="zone" anchor="top" inset={{ x: 0, y: 12 }}>
+          <ZoneLabel />
+        </HudPanel>
+        <HudPanel id="quests" anchor="top-right" inset={{ x: 16, y: 14 }}>
+          <QuestTracker />
+        </HudPanel>
+        <HudPanel id="feed" anchor="bottom-left" inset={{ x: 16, y: 60 }}>
+          <KillLootToasts />
+        </HudPanel>
+        <HudPanel id="cast" anchor="bottom" inset={{ x: 0, y: 132 }}>
+          <CastBar />
+        </HudPanel>
+        <HudPanel id="actionbar" anchor="bottom" inset={{ x: 0, y: 64 }}>
+          <ActionBar />
+        </HudPanel>
+        <HudPanel id="xp" anchor="bottom" inset={{ x: 0, y: 26 }}>
+          <XpBar />
+        </HudPanel>
+        <HudPanel id="credit" anchor="bottom-right" inset={{ x: 14, y: 10 }}>
+          <CreditLine />
+        </HudPanel>
+      </HudCanvas>
+      {(panel === "bags" || panel === "character" || panel === "quests" || shopOpen || dialogueOpen) && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-4">
+          {dialogueOpen && <DialoguePanel />}
+          {shopOpen && <VendorPanel />}
+          {panel === "bags" && <BagsPanel />}
+          {panel === "character" && <CharacterPanel />}
+          {panel === "quests" && <QuestLogPanel />}
+        </div>
+      )}
+      <LevelUpOverlay />
+      <DeathOverlay />
+    </>
+  );
+}
