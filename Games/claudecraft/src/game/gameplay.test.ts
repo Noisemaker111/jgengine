@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
 
 import { game } from "../game.config";
 import { loop } from "../loop";
@@ -7,6 +8,8 @@ import { classById } from "./classes/catalog";
 import { applyMobCc, isMobInstance, mobCount, mobRuntimeOf } from "./ai/mobs";
 import { buildLootTables, content } from "./content";
 import { CLASS_ENTITY_ID, COPPER } from "./model";
+import { FISH_TABLE } from "./crafting/catalog";
+import { FISHING_CHECK, RECIPES, RECIPE_SKILL } from "./crafting/systems";
 import { DUNGEONS, dungeonById } from "./dungeons/catalog";
 import { mobById } from "./entities/enemies/catalog";
 import { NPCS } from "./entities/npcs/catalog";
@@ -335,5 +338,48 @@ describe("claudecraft gameplay (headless)", () => {
       .filter((item): item is string => item !== undefined);
     expect(items).toContain("deathless_heartwood");
     expect(items).toContain("kingsbane_last_oath");
+  });
+
+  test("crafting a skillReq-0 recipe consumes its inputs and grants the output plus a skill-up", () => {
+    const starterRecipes = RECIPES.filter((entry) => (RECIPE_SKILL[entry.id] ?? 0) === 0);
+    const cheapest = starterRecipes.reduce((best, entry) => {
+      const cost = entry.inputs.reduce((sum, input) => sum + input.count, 0);
+      const bestCost = best.inputs.reduce((sum, input) => sum + input.count, 0);
+      return cost < bestCost ? entry : best;
+    });
+    for (const input of cheapest.inputs) ctx.player.inventory.put("bags", input.itemId, input.count);
+    const output = cheapest.outputs[0];
+    if (output === undefined) throw new Error("recipe has no output");
+    const outputBefore = ctx.player.inventory.count("bags", output.itemId);
+    const result = ctx.game.commands.run("craft.make", { recipeId: cheapest.id });
+    expect(result.status).toBe("applied");
+    for (const input of cheapest.inputs) {
+      expect(ctx.player.inventory.count("bags", input.itemId)).toBe(0);
+    }
+    expect(ctx.player.inventory.count("bags", output.itemId)).toBe(outputBefore + output.count);
+    const profs = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
+    expect(profs?.crafting).toBe(2);
+  });
+
+  test("fishing casts, resolves a passing skill check, and lands a fish plus a skill-up", () => {
+    ctx.game.commands.run("fishing.cast", {});
+    expect(ctx.game.store.get(`fishing:${USER}`)).toBeDefined();
+    let passingElapsed: number | null = null;
+    for (let elapsed = 0; elapsed <= 6; elapsed += 0.05) {
+      if (evaluateSkillCheck(FISHING_CHECK, elapsed).success) {
+        passingElapsed = elapsed;
+        break;
+      }
+    }
+    if (passingElapsed === null) throw new Error("no passing elapsed found for FISHING_CHECK");
+    ctx.time.advance(passingElapsed);
+    const bagsBefore = FISH_TABLE.map((entry) => ctx.player.inventory.count("bags", entry.itemId));
+    const profsBefore = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
+    ctx.game.commands.run("fishing.cast", {});
+    expect(ctx.game.store.get(`fishing:${USER}`)).toBeUndefined();
+    const bagsAfter = FISH_TABLE.map((entry) => ctx.player.inventory.count("bags", entry.itemId));
+    expect(bagsAfter.some((count, index) => count > bagsBefore[index])).toBe(true);
+    const profsAfter = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
+    expect(profsAfter?.fishing).toBe((profsBefore?.fishing ?? 1) + 1);
   });
 });

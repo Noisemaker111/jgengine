@@ -9,12 +9,14 @@ import { professionsOf } from "../professions/gathering";
 import { storeKeys } from "../session/hero";
 import { ZONES } from "../world/zones";
 
+export { RECIPES, RECIPE_SKILL };
+
 export const FORGE = "hub_forge";
 export const FISHING_SPOT = "fishing_spot";
 
 export const FISHING_CHECK: SkillCheckConfig = {
   trackWidth: 1,
-  zone: { start: 0.38, width: 0.24 },
+  zone: { start: 0.38, end: 0.62 },
   markerPeriod: 1.6,
   window: 6,
 };
