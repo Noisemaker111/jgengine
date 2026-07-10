@@ -121,7 +121,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Crop tile / farming | `crafting/crop` | `createCropField`, `CropField`, `CropDef`, `CropTileState`, `tillTile`, `plantCrop`, `waterTile`, `advanceCropDay`, `harvestCrop`, `applyToolToTiles`, `squarePattern`, `diamondPattern`, `createDayTicker` |
 | Skill-check roll | `stats/rollCheck` | `rollCheck`, `CheckInput`, `CheckResult`, `CheckAdvantage` |
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
-| Touch controls | `input/touchScheme` | `deriveTouchScheme`, `touchCode`, `touchActionLabel`, `withTouchCodes`, `TouchControlsConfig`, `TouchGestureBindings`, `TouchDragBinding`, `TouchButtonSpec`, `TouchScheme`, `TouchJoystick`, `TouchButton` |
+| Touch controls | `input/touchScheme` | `deriveTouchScheme`, `touchCode`, `touchActionLabel`, `touchButtonKind`, `withTouchCodes`, `TouchControlsConfig`, `TouchGestureBindings`, `TouchDragBinding`, `TouchButtonSpec`, `TouchButtonKind`, `TouchScheme`, `TouchJoystick`, `TouchButton` |
 | Pointer hit | `input/pointer` | `PointerHit`, `PointerButton`, `aimToPoint`, `moveTargetFromHit`, `groundOf`, `PointerVec3` |
 | Navmesh + A* | `nav/navGrid` | `createNavGrid`, `findPath`, `smoothPath`, `NavGrid`, `NavGridConfig`, `NavPoint`, `FindPathOptions` |
 | Path follow | `nav/pathFollow` | `createPathFollow`, `advancePathFollow`, `pathFromNav`, `PathFollowConfig`, `PathFollowState`, `Waypoint` |
@@ -1006,7 +1006,7 @@ movement: {
 
 ## Touch & mobile
 
-Every game is touch-playable with zero per-game input code. On a coarse-pointer device the shell derives a `TouchScheme` from the game's `input` bindings (`deriveTouchScheme`, `@jgengine/core/input/touchScheme`): a virtual joystick binds whichever of `moveForward`/`moveBack`/`moveLeft`/`moveRight` (or `turnLeft`/`turnRight`) are bound, on-screen buttons cover the remaining actions, and drag-to-look mounts automatically for `first`-person camera rigs. Touch controls feed synthetic `touch:<action>` codes into the same `ActionStateTracker` the keyboard uses — game code reads `isDown`/`wasPressed` and never branches on input source.
+Every game is touch-playable with zero per-game input code. On a coarse-pointer device the shell derives a `TouchScheme` from the game's `input` bindings (`deriveTouchScheme`, `@jgengine/core/input/touchScheme`): a virtual joystick binds whichever movement axes are bound — the synonym lists cover walking, turning, **and** driving/flight vocab (`accelerate`/`brake`, `steerLeft`/`steerRight`, `pitchUp`/`pitchDown`, `yawLeft`/`yawRight`, `throttleUp`/`bankLeft`, …), so racers and flyers get a proper virtual stick with zero config. On-screen buttons cover the remaining actions, and drag-to-look mounts automatically for `first`-person camera rigs. Each button is classified `kind: "primary" | "utility"` (`touchButtonKind`): meta actions (start, restart, pause, `toggle*`/`cycle*`/`switch*`/…) render as small chips at the bottom-center of the dock, and primary gameplay verbs as large thumb-arc buttons around the bottom-right corner — so the frequent verbs sit under the thumb and the menu actions stay out of the way. Touch controls feed synthetic `touch:<action>` codes into the same `ActionStateTracker` the keyboard uses — game code reads `isDown`/`wasPressed` and never branches on input source.
 
 Refine the derived scheme with the `touch` field of `defineGame({...})` (`TouchControlsConfig`, all optional):
 
@@ -1026,13 +1026,15 @@ touch: {
 ```
 
 - **`gestures`** — bind `tap` / `swipeUp` / `swipeDown` / `swipeLeft` / `swipeRight` / `drag` (`{ left?, right?, up?, down?, stepPx? }`, repeats its action every `stepPx` of travel) on the play surface. An action consumed by a gesture is removed from the derived button set.
-- **`buttons`** — curate the on-screen cluster (order preserved; bare string or `{ action, label?, icon? }`); omit to auto-derive one button per remaining bound action. Buttons render a glyph, not text: `iconForAction` (`@jgengine/react/gameIcons`) resolves the action name to a `GameIconName` (`jump`, `sprint`, `rotateCw`, `hardDrop`, `swap`, `hand`, `restart`, arrows, …), the `label` becomes the `aria-label`; set `icon: "<GameIconName>"` to pick one explicitly or `icon: false` to force the text label.
+- **`buttons`** — curate the on-screen cluster (order preserved; bare string or `{ action, label?, icon?, kind? }`); omit to auto-derive one button per remaining bound action. Buttons render a glyph, not text: `iconForAction` (`@jgengine/react/gameIcons`) resolves the action name to a `GameIconName` (`jump`, `sprint`, `rotateCw`, `hardDrop`, `swap`, `hand`, `restart`, arrows, …), the `label` becomes the `aria-label`; set `icon: "<GameIconName>"` to pick one explicitly or `icon: false` to force the text label. `kind` overrides the derived `primary`/`utility` classification (thumb button vs meta chip) when the name-based guess is wrong.
 - **`hidden`** — actions to drop from the derived buttons without gesture-binding them.
 - **`movement: false`** — suppress the virtual joystick even when movement actions are bound.
 - **`look` / `lookSensitivity`** — drag-to-look on the play surface; defaults to `true` for `first`-person camera rigs, `0.005` radians/px.
 - **`touch: false`** — opt out entirely when the game's own DOM UI is already touch-native.
 
-`useDisplayProfile()` (`@jgengine/react/display`) reports `{ coarsePointer, compact, portrait }` — live media-query state, SSR-safe — for adaptive HUD layout; see the mobile/touch rules in [`reference/ui-react.md`](reference/ui-react.md).
+**`orientation: "landscape" | "portrait"`** (top-level `defineGame({...})` field, not under `touch`) is an advisory rotate hint: on a coarse-pointer device held the wrong way the shell shows a dismissible prompt to rotate. It never blocks play — a racer/flyer sets `orientation: "landscape"`, a vertical faller sets `"portrait"`.
+
+`useDisplayProfile()` (`@jgengine/react/display`) reports `{ coarsePointer, compact, portrait }` — live media-query state, SSR-safe — for adaptive HUD layout; `compact` trips on narrow width **or** the short height of a landscape phone. The `HudCanvas`/`HudPanel` system already consumes it to scale and re-flow the HUD (see the mobile/touch rules in [`reference/ui-react.md`](reference/ui-react.md)); read it directly only for content-level tuning inside a component.
 
 ## Interaction — `proximityPrompt`
 
