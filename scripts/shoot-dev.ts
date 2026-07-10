@@ -412,6 +412,15 @@ let chrome: ChildProcess | null = null;
 const debugPort = args.connect ?? pickDebugPort();
 let exitCode = 0;
 
+const hardDeadlineMs = args.timeoutMs * Math.max(targets.length, 1) + 120_000;
+const watchdog = setTimeout(() => {
+  console.error(`shoot: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline — force-killing Chrome and dev server`);
+  killProcessTree(chrome);
+  killProcessTree(server);
+  process.exit(124);
+}, hardDeadlineMs);
+watchdog.unref();
+
 try {
   if (args.connect === undefined) {
     chrome = launchChrome(debugPort);

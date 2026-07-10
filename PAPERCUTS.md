@@ -79,3 +79,7 @@ ship worker hit a PAPERCUTS.md conflict, then spawned its own background merge c
 2026-07-10T06:05:48.049Z — fable-5 — Claude
 
 fresh container: bun run check-types before any build → hundreds of false TS2307 'Cannot find module @jgengine/core/...' from missing dist; real signal only after bun run build
+
+2026-07-10T06:41:08.482Z — frontier — Claude
+
+batch-editing .claude/settings.json + hooks → two Edit calls dropped with 'permission stream closed', silently unapplied; had to notice and retry next turn

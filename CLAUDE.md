@@ -69,7 +69,7 @@ Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · scre
 
 ## Verification
 
-`bun run build` · `bun run check-types` · `bun run test` — **via `fan-out` workers**, not inline on the frontier model. For anything scene- or HUD-shaped, follow the `jgengine-verify` skill: prove world content with `summarizeEnvironment` assertions in `bun test`; `bun run shoot <gameId> --mode ui|play` is a final human glance, never the inner loop, and a hung shot is never re-run in the foreground. Silently-unstyled game UI means a missing `@source` entry in `apps/dev/src/index.css`.
+`bun run build` · `bun run check-types` · `bun run test` — **via `fan-out` workers**, not inline on the frontier model. Every gate is hard-bounded by `scripts/guard.ts` (kills the whole process tree, exits 124); `shoot` also carries an internal watchdog and CI jobs carry `timeout-minutes`. A hang is now a fast, loud 124 — on one, diagnose the cause; never re-run and wait, never raise the budget to paper over it. For anything scene- or HUD-shaped, follow the `jgengine-verify` skill: prove world content with `summarizeEnvironment` assertions in `bun test`; `bun run shoot <gameId> --mode ui|play` is a final human glance, never the inner loop, and a hung shot is never re-run in the foreground. Silently-unstyled game UI means a missing `@source` entry in `apps/dev/src/index.css`.
 
 ## Delegation
 
