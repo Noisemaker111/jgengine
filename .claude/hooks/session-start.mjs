@@ -133,10 +133,12 @@ emit(
       `tools, subscribe_pr_activity on it, and squash-merge it immediately — the local gate ` +
       `already ran (queue auto-merge (squash) if required checks block the instant merge). The ` +
       `session ends only when the PR is merged AND the Actions run on its merge commit on ` +
-      `${defaultBranch} is green: arm a send_later check-in (~15-30 min) before ending each ` +
-      `turn, act on red runs (fix forward from origin/${defaultBranch}), re-arm on pending, and ` +
-      `stop + unsubscribe once merged+green. Never sleep-loop or foreground-poll CI. No ` +
-      `worktrees — every session is its own isolated cloud container.`,
+      `${defaultBranch} is green. Nothing in this repo's Actions takes longer than ~1 minute: ` +
+      `after the merge, have a cheap worker sleep ~60s then read the merge commit's runs. ` +
+      `Green → unsubscribe + stop. Red → fix forward from origin/${defaultBranch}. Still ` +
+      `pending on a second look → treat as broken and investigate. Never arm send_later ` +
+      `check-ins or scheduled remote sessions for CI. No worktrees — every session is its ` +
+      `own isolated cloud container.`,
     ...notes,
   ].join("\n\n") + shallowNote,
 );
