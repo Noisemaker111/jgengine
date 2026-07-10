@@ -68,6 +68,19 @@ version reimagines the same idea on the engine: monarchs reign and die,
 caravans thread between settlements, and every event lands in a running
 chronicle you can pause and speed through.
 
+### Ethan Mollick — *Monument*
+
+**[Monument](Games/monument)** is a full port of
+**[Ethan Mollick](https://x.com/emollick)**'s (@emollick)
+**[monument-brutalist-city-builder](https://github.com/emollick/monument-brutalist-city-builder)**
+(MIT License, © 2026 Ethan Mollick) — a brutalist-architecture city toy where
+you sculpt parametric megastructures with direct handles and watch the district
+live through day and night, with no economy and no fail state. Our version
+rebuilds it on the engine and promotes its parametric massing grammar (nine
+compositions × six profiles) into `@jgengine/core/world/massing`, where every
+future city game can reach it. The design, catalogs, formulas, and the
+data-not-meshes architecture are his.
+
 ### Jay Sharma (radiumcoders) — *Commit Canopy*
 
 **[Commit Canopy](Games/commit-canopy)** is inspired by

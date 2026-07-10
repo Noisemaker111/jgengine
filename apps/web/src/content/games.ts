@@ -192,6 +192,27 @@ const GAME_DETAILS: Record<string, GameDetails> = {
       source: { name: "annals-kingdom", href: "https://github.com/emollick/annals-kingdom" },
     },
   },
+  monument: {
+    title: "Monument",
+    tagline: "Sculpt a brutalist district and watch it live.",
+    description:
+      "A brutalist architecture toy. Cast slabs, towers, megastructures, and capsule spines onto an open site, sculpt each one through nine compositions and six profiles, and watch the concrete district live through day and night — no economy, no fail state, just consequences.",
+    genre: "City-building toy",
+    category: "Sandbox & Simulation",
+    controls: "1–6 build tools · V select · X demolish · Space pause",
+    hue: "#d7ff43",
+    credit: {
+      name: "Ethan Mollick",
+      label: "A port of Monument by",
+      handle: "@emollick",
+      href: "https://x.com/emollick",
+      avatar: "https://unavatar.io/x/emollick",
+      source: {
+        name: "monument-brutalist-city-builder",
+        href: "https://github.com/emollick/monument-brutalist-city-builder",
+      },
+    },
+  },
   "commit-canopy": {
     tagline: "Your GitHub year as a 3D landscape.",
     description:

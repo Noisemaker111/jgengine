@@ -42,6 +42,7 @@
     "games:magnet-run": "bun run --cwd Games/magnet-run dev",
     "games:maze-muncher": "bun run --cwd Games/maze-muncher dev",
     "games:mine-drop": "bun run --cwd Games/mine-drop dev",
+    "games:monument": "bun run --cwd Games/monument dev",
     "games:neon-shepherd": "bun run --cwd Games/neon-shepherd dev",
     "games:orbit-kart": "bun run --cwd Games/orbit-kart dev",
     "games:platform-hopper": "bun run --cwd Games/platform-hopper dev",
