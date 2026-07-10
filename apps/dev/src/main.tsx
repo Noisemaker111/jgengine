@@ -135,6 +135,7 @@ function DevApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
   const [scenario, setScenario] = useState<UiPreviewScenario | undefined>(undefined);
+  const [scenarioPending, setScenarioPending] = useState(STAGE && MODE !== "ui");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   useEffect(() => {
@@ -198,12 +199,18 @@ function DevApp() {
         setLoadError(message);
       });
     const loadScenario = uiScenarioRegistry[GAME_ID];
-    if (MODE === "ui" && loadScenario !== undefined) {
+    if ((MODE === "ui" || STAGE) && loadScenario !== undefined) {
       void loadScenario()
-        .then((resolved) => setScenario(() => resolved))
+        .then((resolved) => {
+          setScenario(() => resolved);
+          setScenarioPending(false);
+        })
         .catch((error: unknown) => {
           console.error(`[jgengine/play] failed to load ui scenario ${GAME_ID}`, error);
+          setScenarioPending(false);
         });
+    } else {
+      setScenarioPending(false);
     }
   }, []);
   if (loadError !== null) {
@@ -221,6 +228,13 @@ function DevApp() {
   }
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
   if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
+  if (scenarioPending) {
+    return (
+      <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
+        Staging scenario…
+      </div>
+    );
+  }
   const stageScenario =
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={stageScenario} />;
