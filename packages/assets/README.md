@@ -64,7 +64,7 @@ If every attempt fails, `pull` throws one aggregated error naming every URL it t
 
 `--offline` skips the network entirely: it succeeds immediately if `<dir>/models/<source-id>/` already has files in it, and otherwise fails fast with a message telling you to pull once on a connected machine or point `--mirror`/`JGENGINE_ASSETS_MIRROR` at a reachable archive — useful for CI scripts that should error in seconds instead of hanging on a blocked fetch.
 
-**Network-restricted environments** — pull once on a machine that can reach the providers, then either:
+**Network-restricted environments** — a `403` on `CONNECT` from an outbound proxy means the environment's network policy blocks that provider host (common in sandboxed cloud sessions); it is a policy decision, not a transient failure, so retrying never helps. Either allowlist the host in the environment settings, or pull once on a machine that can reach the providers, then:
 
 - commit (or otherwise host) the resulting `public/models/<source-id>/` directory so restricted environments read it straight off disk and use `assets pull --offline` as a fast, honest no-op check, or
 - host your own mirror of the zip archives at `<baseUrl>/<provider>/<source-id>.zip` and set `JGENGINE_ASSETS_MIRROR=<baseUrl>` (or pass `--mirror <baseUrl>`) so `pull` fetches from it instead of the original provider.

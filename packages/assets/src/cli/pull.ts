@@ -31,6 +31,21 @@ function fail(message: string): never {
   process.exit(1);
 }
 
+export function describeNetworkFailure(error: unknown): string {
+  const chain: string[] = [];
+  let current: unknown = error;
+  while (current instanceof Error) {
+    chain.push(current.message);
+    current = current.cause;
+  }
+  const text = chain.length > 0 ? chain.join(" — ") : String(error);
+  const looksPolicyBlocked =
+    /\b403\b|CONNECT|proxy|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|fetch failed/i.test(text);
+  return looksPolicyBlocked
+    ? `${text}\nhint: a 403/CONNECT failure here usually means the sandbox network policy blocks this host — not a transient error, retrying won't help. Allowlist the host in the environment settings, point JGENGINE_ASSETS_MIRROR at a reachable mirror, or build with procedural geometry.`
+    : text;
+}
+
 function cmdList(argv: string[]): void {
   const category = flag(argv, "category");
   const source = flag(argv, "source");
@@ -299,10 +314,10 @@ if (import.meta.main) {
       cmdSearch(rest);
       break;
     case "pull":
-      await cmdPull(rest);
+      await cmdPull(rest).catch((error: unknown) => fail(describeNetworkFailure(error)));
       break;
     case "add":
-      await cmdAdd(rest);
+      await cmdAdd(rest).catch((error: unknown) => fail(describeNetworkFailure(error)));
       break;
     case "register":
       cmdRegisterSingle(rest);

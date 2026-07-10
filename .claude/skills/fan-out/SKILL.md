@@ -19,6 +19,8 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
 **Don't delegate the trivial.** If the leg is a couple of quick calls or the prompt would outweigh the work, do it inline — spawning a worker has a cost too.
 
+**Workers run their legs in the foreground.** A worker that backgrounds its command and ends its turn returns nothing — background children die with the turn, so "running in background, I'll wait for results" is a failed leg, not a result. Same for waits: the ~60s green-check sleep in a ship brief runs inline. And no worker in a parallel batch ever runs `bun install` — a mid-batch install leaves `node_modules` half-extracted and fails every sibling with phantom TS2307s; if an install is needed, it runs alone, before the batch launches.
+
 **Independent legs launch in parallel, never in sequence.** Before spawning anything, split the turn into legs and sort them: everything that doesn't need another leg's output goes out together in one message as one Batch — lint + typecheck + test, scouts on different angles, doc sweep alongside a build. Serialize only true data dependencies (fix before verify, verify before ship). Spawning one worker, waiting, then spawning the next pays wall-clock for nothing and is the same smell as step numbers in a brief.
 
 ## Always fan these — never run them on the frontier model
