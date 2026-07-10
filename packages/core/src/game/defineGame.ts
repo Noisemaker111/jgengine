@@ -11,6 +11,8 @@ import type { WorldFeature } from "../world/features";
 export interface PhysicsConfig {
   gravity?: number;
   jumpVelocity?: number;
+  /** Opt placed scene objects into projectile raycasts as blocking cover AABBs. Default false — enabling changes where shots land. */
+  projectileObstacles?: boolean;
 }
 
 export interface InventoryDeclaration {
