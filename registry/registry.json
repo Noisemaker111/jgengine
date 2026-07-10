@@ -2048,7 +2048,7 @@
       "name": "chat-bubble",
       "type": "registry:ui",
       "title": "Chat Bubble",
-      "description": "Over-entity speech bubble for proximity chat — presentational, value-driven.",
+      "description": "Over-entity speech bubble for proximity chat \u2014 presentational, value-driven.",
       "files": [
         {
           "path": "jgengine/chat-bubble.tsx",
@@ -2067,7 +2067,7 @@
       "name": "entity-chat-bubble",
       "type": "registry:ui",
       "title": "Entity Chat Bubble",
-      "description": "ChatBubble bound to a live entity's latest proximity chat message via useEntityChatBubble — the one-line speech bubble for any entity instance.",
+      "description": "ChatBubble bound to a live entity's latest proximity chat message via useEntityChatBubble \u2014 the one-line speech bubble for any entity instance.",
       "dependencies": [
         "@jgengine/react"
       ],
@@ -2107,6 +2107,43 @@
           "jg-text-dim": "#a3947a"
         }
       }
+    },
+    {
+      "name": "cartridge-panels",
+      "type": "registry:ui",
+      "title": "Cartridge Panels",
+      "description": "Standard panel bindings for @jgengine/shell/cartridge: vital/xp/timer/score/ability-bar HUD items, upgrade-draft modal, and win/lose screens composed from the jgengine UI kit.",
+      "registryDependencies": [
+        "ability-slot",
+        "death-screen-view",
+        "hud-panel",
+        "match-timer",
+        "menu-button",
+        "results-screen",
+        "score-readout",
+        "vital-bar",
+        "xp-bar"
+      ],
+      "files": [
+        {
+          "path": "jgengine/cartridge-panels.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/cartridge-panels.tsx"
+        }
+      ]
+    },
+    {
+      "name": "mount",
+      "type": "registry:ui",
+      "title": "Mount",
+      "description": "One-call React root mount for a PlayableGame: mountGame(game) renders GameHost into #root.",
+      "files": [
+        {
+          "path": "jgengine/mount.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/mount.tsx"
+        }
+      ]
     }
   ]
 }
