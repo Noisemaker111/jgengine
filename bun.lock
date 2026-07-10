@@ -57,6 +57,31 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/clockwork-heist": {
+      "name": "@games/clockwork-heist",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/commit-canopy": {
       "name": "@games/commit-canopy",
       "version": "0.1.0",
@@ -81,6 +106,131 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/courier-zero": {
+      "name": "@games/courier-zero",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/craterball": {
+      "name": "@games/craterball",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/drift-district": {
+      "name": "@games/drift-district",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/drone-derby": {
+      "name": "@games/drone-derby",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/dune-nomads": {
+      "name": "@games/dune-nomads",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/grid-tactics": {
       "name": "@games/grid-tactics",
       "version": "0.1.0",
@@ -88,6 +238,31 @@
         "@jgengine/core": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/loop-station": {
+      "name": "@games/loop-station",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
         "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -196,6 +371,31 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/rooftop-relay": {
+      "name": "@games/rooftop-relay",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/slingshot-siege": {
       "name": "@games/slingshot-siege",
       "version": "0.1.0",
@@ -265,6 +465,31 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/stormline": {
+      "name": "@games/stormline",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/swarm-survivor": {
       "name": "@games/swarm-survivor",
       "version": "0.1.0",
@@ -272,6 +497,31 @@
         "@jgengine/core": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/tideway": {
+      "name": "@games/tideway",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
         "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -550,7 +800,7 @@
       "name": "@jgengine/react",
       "version": "0.8.0",
       "dependencies": {
-        "@jgengine/core": "^0.7.0",
+        "@jgengine/core": "^0.8.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -564,9 +814,9 @@
       "name": "@jgengine/shell",
       "version": "0.8.0",
       "dependencies": {
-        "@jgengine/core": "^0.7.0",
-        "@jgengine/react": "^0.7.0",
-        "@jgengine/ws": "^0.7.0",
+        "@jgengine/core": "^0.8.0",
+        "@jgengine/react": "^0.8.0",
+        "@jgengine/ws": "^0.8.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -599,7 +849,7 @@
       "name": "@jgengine/ws",
       "version": "0.8.0",
       "dependencies": {
-        "@jgengine/core": "^0.7.0",
+        "@jgengine/core": "^0.8.0",
       },
     },
     "registry": {
@@ -725,9 +975,23 @@
 
     "@games/block-stacker": ["@games/block-stacker@workspace:Games/block-stacker"],
 
+    "@games/clockwork-heist": ["@games/clockwork-heist@workspace:Games/clockwork-heist"],
+
     "@games/commit-canopy": ["@games/commit-canopy@workspace:Games/commit-canopy"],
 
+    "@games/courier-zero": ["@games/courier-zero@workspace:Games/courier-zero"],
+
+    "@games/craterball": ["@games/craterball@workspace:Games/craterball"],
+
+    "@games/drift-district": ["@games/drift-district@workspace:Games/drift-district"],
+
+    "@games/drone-derby": ["@games/drone-derby@workspace:Games/drone-derby"],
+
+    "@games/dune-nomads": ["@games/dune-nomads@workspace:Games/dune-nomads"],
+
     "@games/grid-tactics": ["@games/grid-tactics@workspace:Games/grid-tactics"],
+
+    "@games/loop-station": ["@games/loop-station@workspace:Games/loop-station"],
 
     "@games/loot-shooter": ["@games/loot-shooter@workspace:Games/loot-shooter"],
 
@@ -737,13 +1001,19 @@
 
     "@games/platform-hopper": ["@games/platform-hopper@workspace:Games/platform-hopper"],
 
+    "@games/rooftop-relay": ["@games/rooftop-relay@workspace:Games/rooftop-relay"],
+
     "@games/slingshot-siege": ["@games/slingshot-siege@workspace:Games/slingshot-siege"],
 
     "@games/speed-circuit": ["@games/speed-circuit@workspace:Games/speed-circuit"],
 
     "@games/spire-cards": ["@games/spire-cards@workspace:Games/spire-cards"],
 
+    "@games/stormline": ["@games/stormline@workspace:Games/stormline"],
+
     "@games/swarm-survivor": ["@games/swarm-survivor@workspace:Games/swarm-survivor"],
+
+    "@games/tideway": ["@games/tideway@workspace:Games/tideway"],
 
     "@games/tower-guard": ["@games/tower-guard@workspace:Games/tower-guard"],
 
