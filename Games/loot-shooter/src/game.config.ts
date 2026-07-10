@@ -9,6 +9,7 @@ import { gameAudio, objectSounds } from "./game/audio/catalog";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
+import { stations } from "./game/objects/stations";
 import { RARITY_COLORS, ARENA_COLORS } from "./game/palette";
 import { session } from "./game/run/session";
 import { GameUI } from "./game/ui/GameUI";
@@ -26,17 +27,29 @@ const rarityStyle: Record<string, RarityStyle> = {
   legendary: { color: RARITY_COLORS.legendary, beam: true, label: "Legendary" },
 };
 
+const stationPrompts: readonly PositionedPrompt[] = stations.map((station) => ({
+  id: `shop:${station.id}`,
+  position: { x: station.position[0], z: station.position[1] },
+  prompt: {
+    radius: 3,
+    display: { kind: "keybind", actionId: "interact" },
+    invoke: { name: "shop.open", input: { station: station.id } },
+  },
+}));
+
 function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   const playerEntity = ctx.scene.entity.get(ctx.player.userId);
   if (playerEntity === null) return [];
   const nearestId = ctx.scene.worldItem.nearestInRadius(playerEntity.position, 2.6);
-  if (nearestId === null) return [];
+  if (nearestId === null) return stationPrompts;
   const itemEntity = ctx.scene.entity.get(nearestId);
-  if (itemEntity === null) return [];
+  if (itemEntity === null) return stationPrompts;
   return [
+    ...stationPrompts,
     {
       id: `pickup:${nearestId}`,
       position: { x: itemEntity.position[0], z: itemEntity.position[2] },
+      priority: 1,
       prompt: {
         radius: 2.6,
         display: { kind: "keybind", actionId: "interact" },

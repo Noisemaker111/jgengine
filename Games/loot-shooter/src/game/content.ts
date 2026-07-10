@@ -43,6 +43,7 @@ function itemById(itemId: string): GameContextItemEntry | null {
     return {
       use: gear.use,
       weapon: gear.weapon === undefined ? undefined : toWeaponRecord(gear.weapon),
+      trade: gear.trade,
       rarity: "common",
       baseType: gear.kind,
     };

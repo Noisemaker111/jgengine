@@ -10,7 +10,11 @@ export function WaveStatus() {
         <span className="text-2xl font-black tabular-nums text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
           {run.wave}
         </span>
-        <span className="text-sm font-bold text-slate-500">/ {run.waveTotal}</span>
+        {run.endless ? (
+          <span className="text-sm font-black uppercase tracking-widest text-rose-400">Endless</span>
+        ) : (
+          <span className="text-sm font-bold text-slate-500">/ {run.waveTotal}</span>
+        )}
       </div>
       {run.status === "wave" && run.alive > 0 ? (
         <span className="text-xs font-semibold uppercase tracking-wider text-rose-300">

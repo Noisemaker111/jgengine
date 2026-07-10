@@ -2,6 +2,7 @@ import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../ammo";
 import { SOUND_IDS } from "../audio/catalog";
+import { FIRE_KICK, SHOT_KNOCKBACK, kickCamera } from "../feel";
 import { session } from "../run/session";
 import { gearById } from "./gear/catalog";
 import { weaponById } from "./weapons/catalog";
@@ -43,6 +44,7 @@ const fireGun: ItemUseHandler<GameContext> = {
     lastFiredAt.set(gateKey, nowMs + def.weapon.fireIntervalMs);
     ctx.scene.entity.stats.delta(input.from, statId, -def.ammoPerShot);
     ctx.game.events.emit("audio.play", { sound: SOUND_IDS.fire(def.family) });
+    kickCamera(FIRE_KICK[def.family]);
 
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
     const shotId = ctx.scene.entity.fireProjectile({
@@ -76,6 +78,15 @@ const fireGun: ItemUseHandler<GameContext> = {
     session.noteShot(hit);
     if (hit && settled.status === "settled") {
       ctx.game.events.emit("audio.play", { sound: SOUND_IDS.hitImpact, at: settled.at });
+      const first = settled.hits[0];
+      if (first !== undefined) {
+        ctx.scene.entity.hitReaction({
+          from: input.from,
+          to: first.instanceId,
+          config: SHOT_KNOCKBACK,
+          power: Math.min(2.4, def.weapon.damage / 30),
+        });
+      }
     }
 
     if (hit && settled.status === "settled" && session.rng() < def.weapon.critChance) {

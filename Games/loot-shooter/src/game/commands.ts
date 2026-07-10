@@ -2,7 +2,9 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "./ammo";
 import { SOUND_IDS } from "./audio/catalog";
 import { gearById } from "./items/gear/catalog";
-import { weaponById } from "./items/weapons/catalog";
+import { weaponById, type AmmoPool } from "./items/weapons/catalog";
+import { AMMO_PRICES, MYSTERY_CRATE, SHOP_ID, stationById } from "./objects/stations";
+import { CHALLENGE_IDS } from "./quests/catalog";
 import { session } from "./run/session";
 
 const PICKUP_RADIUS = 2.6;
@@ -47,6 +49,9 @@ function pickupWorldItem(ctx: GameContext): void {
     ctx.game.events.emit("audio.play", { sound: SOUND_IDS.pickupWeapon });
     ctx.scene.entity.floatText({ instanceId: userId, text: weapon.name.toUpperCase(), kind: "pickup" });
     ctx.game.feed.push("loot.pickup", { itemId: weapon.id, rarity: weapon.rarity });
+    if (weapon.rarity === "legendary") {
+      ctx.game.quest.progress(userId, CHALLENGE_IDS.legendaryFind, "pickup", 1);
+    }
     return;
   }
 
@@ -136,6 +141,87 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("pickup", {
     apply(state: GameContext) {
       pickupWorldItem(state);
+    },
+  });
+
+  ctx.game.commands.define("run.endless", {
+    apply(state: GameContext) {
+      session.enterEndless(state);
+    },
+  });
+
+  ctx.game.commands.define<{ station?: string }>("shop.open", {
+    apply(state: GameContext, input) {
+      if (input.station === undefined || stationById(input.station) === undefined) return;
+      state.game.store.set("shopOpen", input.station);
+    },
+  });
+
+  ctx.game.commands.define("shop.close", {
+    apply(state: GameContext) {
+      state.game.store.delete("shopOpen");
+    },
+  });
+
+  ctx.game.commands.define<{ itemId?: string }>("shop.buyGear", {
+    apply(state: GameContext, input) {
+      if (input.itemId === undefined) return;
+      const userId = state.player.userId;
+      const rejection = state.game.trade.buy(input.itemId, 1, { shop: SHOP_ID, inventoryId: "backpack" });
+      if (rejection !== null) {
+        state.scene.entity.floatText({ instanceId: userId, text: "NOT ENOUGH SCRAP", kind: "warn" });
+        return;
+      }
+      state.game.events.emit("audio.play", { sound: SOUND_IDS.pickupGear });
+    },
+  });
+
+  ctx.game.commands.define<{ pool?: AmmoPool }>("shop.buyAmmo", {
+    apply(state: GameContext, input) {
+      if (input.pool === undefined) return;
+      const price = AMMO_PRICES[input.pool];
+      const userId = state.player.userId;
+      const statId = AMMO_STAT_IDS[input.pool];
+      const stat = state.scene.entity.stats.get(userId, statId);
+      if (stat !== null && stat.current >= stat.max) {
+        state.scene.entity.floatText({ instanceId: userId, text: "AMMO FULL", kind: "warn" });
+        return;
+      }
+      const rejection = state.game.economy.charge(userId, "scrap", price.scrap);
+      if (rejection !== null) {
+        state.scene.entity.floatText({ instanceId: userId, text: "NOT ENOUGH SCRAP", kind: "warn" });
+        return;
+      }
+      state.scene.entity.stats.delta(userId, statId, price.amount);
+      state.game.events.emit("audio.play", { sound: SOUND_IDS.pickupGear });
+    },
+  });
+
+  ctx.game.commands.define<{ station?: string }>("shop.mystery", {
+    apply(state: GameContext, input) {
+      const userId = state.player.userId;
+      const station = stationById(input.station ?? "") ?? stationById("station_gear")!;
+      const rejection = state.game.economy.charge(userId, "scrap", MYSTERY_CRATE.scrap);
+      if (rejection !== null) {
+        state.scene.entity.floatText({ instanceId: userId, text: "NOT ENOUGH SCRAP", kind: "warn" });
+        return;
+      }
+      const drops = state.game.loot.roll(MYSTERY_CRATE.table);
+      const weaponDrop = drops.find((drop) => drop.item !== undefined);
+      if (weaponDrop?.item === undefined) {
+        state.game.economy.grant(userId, "scrap", MYSTERY_CRATE.scrap);
+        return;
+      }
+      const def = weaponById(weaponDrop.item);
+      state.scene.worldItem.spawn({
+        itemId: weaponDrop.item,
+        position: [station.position[0] + 1.6, 0, station.position[1] + 1.6],
+        rarity: def?.rarity,
+        baseType: def?.family,
+        source: "mystery_crate",
+      });
+      state.game.events.emit("audio.play", { sound: SOUND_IDS.pickupWeapon });
+      state.scene.entity.floatText({ instanceId: userId, text: "CRATE CRACKED", kind: "pickup" });
     },
   });
 }

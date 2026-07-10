@@ -2,7 +2,9 @@ import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { LevelUpFlash, ToastStack } from "@jgengine/react/components";
 import { itemNameById } from "../content";
 import { AmmoPanel } from "./components/AmmoPanel";
+import { ChallengeTracker } from "./components/ChallengeTracker";
 import { GearRow } from "./components/GearRow";
+import { ShopPanel } from "./components/ShopPanel";
 import { HealthFrame } from "./components/HealthFrame";
 import { Hotbar } from "./components/Hotbar";
 import { KillFeed } from "./components/KillFeed";
@@ -46,6 +48,10 @@ export function GameUI() {
         <KillFeed />
       </HudPanel>
 
+      <HudPanel id="challenges" anchor="left" compact="hide" interactive={false}>
+        <ChallengeTracker />
+      </HudPanel>
+
       <HudPanel id="health" anchor="bottom-left" order={0} compact="keep" interactive={false}>
         <HealthFrame />
       </HudPanel>
@@ -67,6 +73,7 @@ export function GameUI() {
       </HudPanel>
 
       <IntermissionBanner />
+      <ShopPanel />
 
       <LevelUpFlash className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
         <span className="text-3xl font-black uppercase tracking-[0.3em] text-amber-300 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">

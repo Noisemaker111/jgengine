@@ -25,6 +25,7 @@ type Args = {
   game: string;
   mode: Mode;
   device: DeviceArg;
+  stage?: boolean;
   out?: string;
   url?: string;
   connect?: number;
@@ -60,7 +61,8 @@ function parseArgs(argv: string[]): Args {
         throw new Error(`--device must be desktop, mobile, or both (got ${device ?? "nothing"})`);
       }
       args.device = device;
-    } else if (value === "--out") args.out = argv[++index];
+    } else if (value === "--stage") args.stage = true;
+    else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") args.url = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
@@ -329,6 +331,7 @@ function targetUrl(args: Args, device: Device): string {
   url.searchParams.set("mode", args.mode);
   url.searchParams.set("device", device);
   url.searchParams.set("capture", "1");
+  if (args.stage === true) url.searchParams.set("stage", "1");
   return url.toString();
 }
 

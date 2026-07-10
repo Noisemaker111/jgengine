@@ -53,6 +53,8 @@ export function setupWorld(ctx: GameContext): void {
   for (const placement of COVER_LAYOUT) {
     ctx.scene.object.place(placement.id, placement.x, (placement.y ?? 0) + 0.5, placement.z);
   }
+  ctx.scene.object.place("station_ammo", 12, 0.5, 0);
+  ctx.scene.object.place("station_gear", -12, 0.5, 0);
 }
 
 export function clampToArena(x: number, z: number): readonly [number, number] {

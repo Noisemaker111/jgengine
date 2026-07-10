@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsOverlay";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
@@ -101,6 +102,7 @@ const GAME_ID =
   (import.meta.env.VITE_GAME_ID as string | undefined) ??
   "demo";
 const MODE = urlParams.get("mode") ?? "play";
+const STAGE = urlParams.get("stage") === "1";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
@@ -219,7 +221,9 @@ function DevApp() {
   }
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
   if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
-  return <GamePlayerShell playable={playable} multiplayer={multiplayer} />;
+  const stageScenario =
+    STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
+  return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={stageScenario} />;
 }
 
 createRoot(document.getElementById("root")!).render(<DevApp />);
