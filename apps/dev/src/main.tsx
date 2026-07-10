@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsOverlay";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
@@ -101,6 +102,7 @@ const GAME_ID =
   (import.meta.env.VITE_GAME_ID as string | undefined) ??
   "demo";
 const MODE = urlParams.get("mode") ?? "play";
+const STAGE = urlParams.get("stage") === "1";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
@@ -133,6 +135,7 @@ function DevApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
   const [scenario, setScenario] = useState<UiPreviewScenario | undefined>(undefined);
+  const [scenarioPending, setScenarioPending] = useState(STAGE && MODE !== "ui");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   useEffect(() => {
@@ -196,12 +199,18 @@ function DevApp() {
         setLoadError(message);
       });
     const loadScenario = uiScenarioRegistry[GAME_ID];
-    if (MODE === "ui" && loadScenario !== undefined) {
+    if ((MODE === "ui" || STAGE) && loadScenario !== undefined) {
       void loadScenario()
-        .then((resolved) => setScenario(() => resolved))
+        .then((resolved) => {
+          setScenario(() => resolved);
+          setScenarioPending(false);
+        })
         .catch((error: unknown) => {
           console.error(`[jgengine/play] failed to load ui scenario ${GAME_ID}`, error);
+          setScenarioPending(false);
         });
+    } else {
+      setScenarioPending(false);
     }
   }, []);
   if (loadError !== null) {
@@ -219,7 +228,16 @@ function DevApp() {
   }
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
   if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
-  return <GamePlayerShell playable={playable} multiplayer={multiplayer} />;
+  if (scenarioPending) {
+    return (
+      <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
+        Staging scenario…
+      </div>
+    );
+  }
+  const stageScenario =
+    STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
+  return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={stageScenario} />;
 }
 
 createRoot(document.getElementById("root")!).render(<DevApp />);

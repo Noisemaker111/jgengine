@@ -3,13 +3,23 @@ import { content } from "../../content";
 import { lootTables } from "./loot-tables";
 
 describe("loot tables", () => {
-  test("four rank tables exist", () => {
+  test("rank tables and the mystery crate exist", () => {
     expect(lootTables.map((table) => table.id).sort()).toEqual([
       "drops_boss",
       "drops_elite",
       "drops_grunt",
       "drops_veteran",
+      "mystery_crate",
     ]);
+  });
+
+  test("mystery crate rolls weapons only, rare or better", () => {
+    const crate = lootTables.find((table) => table.id === "mystery_crate")!;
+    expect(crate.entries.length).toBeGreaterThan(0);
+    for (const entry of crate.entries) {
+      expect(entry.item).toBeDefined();
+      expect(entry.item!.endsWith("_common") || entry.item!.endsWith("_uncommon")).toBe(false);
+    }
   });
 
   test("every item entry resolves through content", () => {

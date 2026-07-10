@@ -12,6 +12,7 @@ export const SOUND_IDS = {
   pickupGear: "pickup_gear",
   medkit: "medkit_use",
   noAmmo: "no_ammo",
+  mortarWarn: "mortar_warn",
   waveHorn: "wave_horn",
   levelUp: "level_up",
   victory: "victory_sting",
@@ -80,6 +81,10 @@ const ONE_SHOTS: Record<string, ToneSpec[]> = {
     { seconds: 0.24, startFreq: 520, endFreq: 780, wave: "sine", decay: 9, gain: 0.4, attack: 0.03 },
   ],
   [SOUND_IDS.noAmmo]: [{ seconds: 0.05, startFreq: 190, wave: "square", decay: 60, gain: 0.35 }],
+  [SOUND_IDS.mortarWarn]: [
+    { seconds: 0.5, startFreq: 320, endFreq: 640, wave: "saw", decay: 4, gain: 0.4, attack: 0.05 },
+    { seconds: 0.4, startFreq: 160, endFreq: 320, wave: "sine", decay: 4, gain: 0.35, at: 0.08 },
+  ],
   [SOUND_IDS.waveHorn]: [
     { seconds: 0.7, startFreq: 220, wave: "saw", decay: 3.2, gain: 0.4, attack: 0.12 },
     { seconds: 0.7, startFreq: 277, wave: "saw", decay: 3.2, gain: 0.3, attack: 0.12 },

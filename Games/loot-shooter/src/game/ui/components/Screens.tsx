@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useGame } from "@jgengine/react/hooks";
 import { WAVE_COUNT } from "../../waves/manifest";
-import { useRun } from "./useRun";
+import { useRecords, useRun } from "./useRun";
 
 function ScreenShell({ children }: { children: ReactNode }) {
   return (
@@ -46,10 +46,33 @@ function StatLine({ run }: { run: ReturnType<typeof useRun> }) {
   );
 }
 
+function RecordsLine() {
+  const records = useRecords();
+  if (records.score === undefined) return null;
+  return (
+    <div className="mt-3 flex gap-5 text-xs font-semibold uppercase tracking-widest text-slate-400">
+      <span>
+        Best score <span className="text-amber-300">{records.score}</span>
+      </span>
+      {records.wave !== undefined ? (
+        <span>
+          Best wave <span className="text-amber-300">{records.wave}</span>
+        </span>
+      ) : null}
+      {records.accuracy !== undefined ? (
+        <span>
+          Best accuracy <span className="text-amber-300">{records.accuracy}%</span>
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export function RunScreens() {
   const run = useRun();
   const { commands } = useGame();
   const start = () => commands.run("run.start", {});
+  const endless = () => commands.run("run.endless", {});
 
   if (run.status === "ready") {
     return (
@@ -62,6 +85,7 @@ export function RunScreens() {
           {WAVE_COUNT} waves of scav machines are coming for the yard. Drop them, grab whatever
           outguns your kit, and hold the line.
         </p>
+        <RecordsLine />
         <ActionButton label="Deploy" onClick={start} />
       </ScreenShell>
     );
@@ -77,7 +101,11 @@ export function RunScreens() {
           All {WAVE_COUNT} waves cleared
         </span>
         <StatLine run={run} />
-        <ActionButton label="Run it back" onClick={start} />
+        <RecordsLine />
+        <div className="flex gap-4">
+          <ActionButton label="Endless mode" onClick={endless} />
+          <ActionButton label="Run it back" onClick={start} />
+        </div>
       </ScreenShell>
     );
   }
@@ -90,8 +118,10 @@ export function RunScreens() {
         </span>
         <span className="mt-2 text-sm font-semibold uppercase tracking-widest text-slate-300">
           Overrun on wave {run.wave}
+          {run.endless ? " — endless" : ""}
         </span>
         <StatLine run={run} />
+        <RecordsLine />
         <ActionButton label="Redeploy" onClick={start} />
       </ScreenShell>
     );

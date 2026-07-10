@@ -63,7 +63,7 @@ export interface QuestJournalDeps {
 }
 
 export interface QuestJournal {
-  register(catalog: QuestDef[] | Record<string, QuestDef>): void;
+  register(catalog: readonly QuestDef[] | Record<string, QuestDef>): void;
   has(questId: string): boolean;
   canAccept(userId: string, questId: string): { reason: string } | null;
   accept(userId: string, questId: string): { reason: string } | null;

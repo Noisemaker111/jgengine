@@ -9,6 +9,7 @@ export interface GearItemDef {
   ammo?: AmmoPool;
   ammoAmount?: number;
   weapon?: WeaponStats;
+  trade?: { buy: Record<string, number>; shops: string[] };
 }
 
 export const frag_grenade: GearItemDef = {
@@ -16,6 +17,7 @@ export const frag_grenade: GearItemDef = {
   name: "Frag Grenade",
   kind: "gear",
   use: "throwGrenade",
+  trade: { buy: { scrap: 35 }, shops: ["requisition"] },
   weapon: {
     damage: 70,
     range: 32,
@@ -34,6 +36,7 @@ export const medkit_small: GearItemDef = {
   kind: "gear",
   use: "useMedkit",
   heal: 35,
+  trade: { buy: { scrap: 40 }, shops: ["requisition"] },
 };
 
 export const medkit_large: GearItemDef = {
@@ -42,6 +45,7 @@ export const medkit_large: GearItemDef = {
   kind: "gear",
   use: "useMedkit",
   heal: 80,
+  trade: { buy: { scrap: 90 }, shops: ["requisition"] },
 };
 
 const AMMO_PACKS: readonly { pool: AmmoPool; label: string; small: number; large: number }[] = [

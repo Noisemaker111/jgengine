@@ -82,12 +82,12 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     hue: "#a3e635",
   },
   "loot-shooter": {
-    tagline: "Shoot, loot, and upgrade your arsenal.",
+    tagline: "Ten waves, forty guns, one salvage yard.",
     description:
-      "A first-person arena looter. Drop targets to make them spill rarity-tiered weapons, grab whatever outguns your current kit into a three-slot hotbar, and keep levelling your operative between firefights.",
+      "A first-person arena looter. Fight ten escalating waves of scav machines, crack their rarity-beamed weapon drops, swap whatever outguns your kit into a three-slot hotbar, and spend scrap at requisition stations between firefights. Bosses telegraph mortars, challenges pay out, and victory unlocks endless mode.",
     genre: "First-person looter",
     category: "Action & Arcade",
-    controls: "WASD · mouse shoot · E pick up",
+    controls: "WASD · mouse fire · E grab/shop · G frag · Q medkit · 1-3 weapons",
     hue: "#f87171",
   },
   "block-stacker": {

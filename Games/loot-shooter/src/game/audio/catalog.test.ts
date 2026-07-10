@@ -25,6 +25,7 @@ describe("audio catalog", () => {
       SOUND_IDS.pickupGear,
       SOUND_IDS.medkit,
       SOUND_IDS.noAmmo,
+      SOUND_IDS.mortarWarn,
       SOUND_IDS.waveHorn,
       SOUND_IDS.levelUp,
       SOUND_IDS.victory,

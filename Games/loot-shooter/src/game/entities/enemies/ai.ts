@@ -1,12 +1,18 @@
 import { aimToPoint } from "@jgengine/core/input/pointer";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
+import { SOUND_IDS } from "../../audio/catalog";
+import { shakeOnPlayerDamage } from "../../feel";
 import { enemyById, type EnemyDef } from "./catalog";
 
 const nextAttackAt = new Map<string, number>();
+const nextMortarAt = new Map<string, number>();
+
+export const MORTAR = { intervalMs: 6500, windupMs: 1400, radius: 3.6, damage: 32 };
 
 export function resetAiState(): void {
   nextAttackAt.clear();
+  nextMortarAt.clear();
 }
 
 function idHash(id: string): number {
@@ -75,6 +81,7 @@ function tickMelee(
     effect: "damage",
     via: { amount: def.attack.damage },
   });
+  shakeOnPlayerDamage(def.attack.damage);
 }
 
 function tickRanged(
@@ -111,8 +118,37 @@ function tickRanged(
   });
   const speed = 26;
   const flightSeconds = Math.min(1.2, distance / speed);
+  const playerId = ctx.player.userId;
   ctx.time.after(flightSeconds, () => {
-    ctx.scene.entity.settleProjectile(shotId);
+    const settled = ctx.scene.entity.settleProjectile(shotId);
+    if (settled.status === "settled" && settled.hits.some((hit) => hit.instanceId === playerId)) {
+      shakeOnPlayerDamage(12);
+    }
+  });
+}
+
+function tickMortar(
+  ctx: GameContext,
+  def: EnemyDef,
+  enemyId: string,
+  playerPos: EntityPosition,
+  nowMs: number,
+): void {
+  if (def.family !== "boss") return;
+  const readyAt = nextMortarAt.get(enemyId) ?? nowMs + MORTAR.intervalMs * 0.6;
+  if (nextMortarAt.get(enemyId) === undefined) {
+    nextMortarAt.set(enemyId, readyAt);
+    return;
+  }
+  if (nowMs < readyAt) return;
+  nextMortarAt.set(enemyId, nowMs + MORTAR.intervalMs);
+  ctx.game.events.emit("audio.play", { sound: SOUND_IDS.mortarWarn, at: playerPos });
+  ctx.scene.entity.telegraph({
+    from: enemyId,
+    shape: { kind: "circle", radius: MORTAR.radius },
+    at: [playerPos[0], 0, playerPos[2]],
+    windupMs: MORTAR.windupMs,
+    effect: { effect: "damage", via: { amount: MORTAR.damage }, radius: MORTAR.radius },
   });
 }
 
@@ -136,6 +172,7 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
       tickMelee(ctx, def, entity.id, entity.position, playerId, playerPos, dt, nowMs);
     } else {
       tickRanged(ctx, def, entity.id, entity.position, playerPos, dt, nowMs);
+      tickMortar(ctx, def, entity.id, playerPos, nowMs);
     }
   }
 }

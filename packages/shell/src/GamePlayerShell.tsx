@@ -1133,10 +1133,13 @@ export function GamePlayerShell({
   playable,
   multiplayer: rawMultiplayer = null,
   poster = false,
+  onContextReady,
 }: {
   playable: PlayableGame;
   multiplayer?: ShellMultiplayer | null;
   poster?: boolean;
+  /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots, tests, analytics. */
+  onContextReady?: (ctx: GameContext) => void;
 }) {
   const multiplayer = useMemo(
     () => (rawMultiplayer === null ? null : withDevtoolsLatency(rawMultiplayer)),
@@ -1210,6 +1213,7 @@ export function GamePlayerShell({
       });
       playable.loop.onInit(context);
       playable.loop.onNewPlayer(context);
+      onContextReady?.(context);
       setCtx(context);
     } catch (error) {
       reportRuntimeError(error, "init");

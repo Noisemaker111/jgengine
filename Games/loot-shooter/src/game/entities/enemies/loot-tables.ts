@@ -103,4 +103,21 @@ function buildTable(profile: TierProfile): LootTableDef {
   };
 }
 
-export const lootTables: readonly LootTableDef[] = TIER_PROFILES.map((profile) => buildTable(profile));
+const RARITY_MYSTERY_WEIGHTS: Partial<Record<Rarity, number>> = { rare: 55, epic: 32, legendary: 13 };
+
+const mysteryCrate: LootTableDef = {
+  id: "mystery_crate",
+  rolls: 1,
+  entries: weapons
+    .filter((weapon) => RARITY_MYSTERY_WEIGHTS[weapon.rarity] !== undefined)
+    .map((weapon) => ({
+      item: weapon.id,
+      count: 1,
+      weight: RARITY_MYSTERY_WEIGHTS[weapon.rarity]!,
+    })),
+};
+
+export const lootTables: readonly LootTableDef[] = [
+  ...TIER_PROFILES.map((profile) => buildTable(profile)),
+  mysteryCrate,
+];
