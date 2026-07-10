@@ -8,13 +8,13 @@ import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
 import { GATHER_NODES } from "./game/professions/catalog";
 import { gatherPrompts } from "./game/professions/gathering";
-import { npcPrompts, strongboxPrompts, STRONGBOX } from "./game/world/setup";
+import { dungeonPrompts, npcPrompts, strongboxPrompts, STRONGBOX } from "./game/world/setup";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { physics, world } from "./world";
 
 function prompts(ctx: GameContext): readonly PositionedPrompt[] {
-  return [...npcPrompts(ctx), ...gatherPrompts(ctx), ...strongboxPrompts(ctx)];
+  return [...npcPrompts(ctx), ...gatherPrompts(ctx), ...strongboxPrompts(ctx), ...dungeonPrompts(ctx)];
 }
 
 const NODE_COLORS: Record<string, string> = {

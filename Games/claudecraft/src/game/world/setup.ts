@@ -2,6 +2,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { spawnAllMobs } from "../ai/mobs";
+import { DUNGEONS } from "../dungeons/catalog";
 import { NPCS } from "../entities/npcs/catalog";
 import { INTERACT_RANGE } from "../math/combat";
 import { placeGatherNodes } from "../professions/gathering";
@@ -25,6 +26,33 @@ export function setupWorld(ctx: GameContext): void {
   }
   spawnAllMobs(ctx);
   placeGatherNodes(ctx);
+}
+
+export function dungeonPrompts(ctx: GameContext): readonly PositionedPrompt[] {
+  void ctx;
+  const prompts: PositionedPrompt[] = [];
+  for (const dungeon of DUNGEONS) {
+    prompts.push({
+      id: `enter:${dungeon.id}`,
+      position: { x: dungeon.entrance[0], z: dungeon.entrance[1] },
+      priority: 2,
+      prompt: proximityPrompt({
+        radius: INTERACT_RANGE,
+        display: keybind("interact"),
+        invoke: command("dungeon.enter", { dungeonId: dungeon.id }),
+      }),
+    });
+    prompts.push({
+      id: `exit:${dungeon.id}`,
+      position: { x: dungeon.inside[0], z: dungeon.inside[1] },
+      prompt: proximityPrompt({
+        radius: 3,
+        display: keybind("interact"),
+        invoke: command("dungeon.exit", { dungeonId: dungeon.id }),
+      }),
+    });
+  }
+  return prompts;
 }
 
 export function strongboxPrompts(ctx: GameContext): readonly PositionedPrompt[] {

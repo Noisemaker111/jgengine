@@ -93,6 +93,11 @@ export interface ClassDef {
   abilities: readonly AbilityDef[];
 }
 
+export interface BossMechanicsDef {
+  enrage?: { belowHpFraction: number; hasteMult: number; damageMult?: number };
+  summons?: { mobId: string; count: number; intervalSec: number; maxAlive?: number };
+}
+
 export interface MobAbilityDef {
   id: string;
   name: string;
@@ -129,6 +134,20 @@ export interface MobDef {
   rare?: boolean;
   boss?: boolean;
   abilities?: readonly MobAbilityDef[];
+  mechanics?: BossMechanicsDef;
+  dungeonId?: string;
+}
+
+export interface DungeonDef {
+  id: string;
+  name: string;
+  zone: ZoneId;
+  center: readonly [number, number];
+  radius: number;
+  levelRange: readonly [number, number];
+  entrance: readonly [number, number];
+  inside: readonly [number, number];
+  raid?: boolean;
 }
 
 export interface ItemDef {

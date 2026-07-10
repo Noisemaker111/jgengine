@@ -6,6 +6,7 @@ import { LEASH_DISTANCE, mitigate, mobDamage, mobHp } from "../math/combat";
 import type { MobDef } from "../model";
 import { MOBS, mobById } from "../entities/enemies/catalog";
 import { aurasOf, enterCombat, gainRage, heroSheet, storeKeys } from "../session/hero";
+import { dungeonById } from "../dungeons/catalog";
 import { CRYPT, zoneById } from "../world/zones";
 import { HIT_TAKEN_RAGE } from "../combat/engine";
 
@@ -23,6 +24,9 @@ interface MobRuntime {
   telegraphedAt: number;
   stunnedUntil: number;
   rootedUntil: number;
+  enraged: boolean;
+  nextSummonAt: number;
+  summonedIds: string[];
 }
 
 const runtimes = new Map<string, MobRuntime>();
@@ -63,6 +67,13 @@ export function addThreat(instanceId: string, sourceId: string, amount: number):
 }
 
 function placementFor(def: MobDef, roll: () => number, index: number): readonly [number, number] {
+  const dungeon = def.dungeonId === undefined ? null : dungeonById(def.dungeonId);
+  if (dungeon !== null) {
+    if (def.boss === true) return [dungeon.center[0], dungeon.center[1] + 4];
+    const angle = roll() * Math.PI * 2;
+    const radius = 5 + roll() * Math.max(4, dungeon.radius - 9);
+    return [dungeon.center[0] + Math.cos(angle) * radius, dungeon.center[1] + Math.sin(angle) * radius];
+  }
   if (CRYPT_MOB_IDS.has(def.id)) {
     if (def.id === "morthen") return [CRYPT.x, CRYPT.z + 6];
     const angle = roll() * Math.PI * 2;
@@ -102,6 +113,9 @@ function spawnMob(ctx: GameContext, def: MobDef, position: readonly [number, num
     telegraphedAt: 0,
     stunnedUntil: 0,
     rootedUntil: 0,
+    enraged: false,
+    nextSummonAt: 0,
+    summonedIds: [],
   });
   return instanceId;
 }
@@ -176,15 +190,21 @@ function swingAtPlayer(ctx: GameContext, def: MobDef, runtime: MobRuntime, insta
     (sum, aura) => (aura.buffStat === "attackPower" && (aura.buffAmount ?? 0) < 0 ? sum + (aura.buffAmount ?? 0) : sum),
     0,
   );
+  const enrage = runtime.enraged ? def.mechanics?.enrage : undefined;
   const raw = Math.max(
     1,
-    Math.round(mobDamage(def.dmgBase, def.dmgPerLevel, runtime.level) * Math.max(0.3, (100 + weakenPct) / 100)),
+    Math.round(
+      mobDamage(def.dmgBase, def.dmgPerLevel, runtime.level) *
+        Math.max(0.3, (100 + weakenPct) / 100) *
+        (enrage?.damageMult ?? 1),
+    ),
   );
   const amount = mitigate(raw, sheet?.armor ?? 0, runtime.level);
   ctx.scene.entity.effect({ from: instanceId, to: targetId, effect: "damage", via: { amount } });
   gainRage(ctx, targetId, HIT_TAKEN_RAGE);
   enterCombat(ctx, targetId);
-  const haste = now < runtime.frenzyUntil ? (def.packFrenzy?.hasteMult ?? 1) : 1;
+  const haste =
+    (now < runtime.frenzyUntil ? (def.packFrenzy?.hasteMult ?? 1) : 1) * (enrage?.hasteMult ?? 1);
   runtime.nextSwingAt = now + def.attackSpeed / haste;
 }
 
@@ -206,6 +226,50 @@ function castMobAbility(ctx: GameContext, def: MobDef, runtime: MobRuntime, inst
     kind: ability.school,
     effect: { effect: "damage", via: { amount: ability.amount }, radius: ability.radius ?? 8 },
   });
+}
+
+function runBossMechanics(
+  ctx: GameContext,
+  def: MobDef,
+  runtime: MobRuntime,
+  instanceId: string,
+  targetId: string,
+  now: number,
+): void {
+  const mechanics = def.mechanics;
+  if (mechanics === undefined) return;
+  if (mechanics.enrage !== undefined && !runtime.enraged) {
+    const health = ctx.scene.entity.stats.get(instanceId, "health");
+    if (health !== null && health.max > 0 && health.current / health.max <= mechanics.enrage.belowHpFraction) {
+      runtime.enraged = true;
+      ctx.scene.entity.floatText({ instanceId, text: `${def.name} enrages!`, kind: "info", scale: 1.4 });
+    }
+  }
+  const summons = mechanics.summons;
+  if (summons !== undefined) {
+    if (runtime.nextSummonAt === 0) runtime.nextSummonAt = now + summons.intervalSec;
+    if (now >= runtime.nextSummonAt) {
+      runtime.nextSummonAt = now + summons.intervalSec;
+      runtime.summonedIds = runtime.summonedIds.filter((id) => ctx.scene.entity.get(id) !== null);
+      const room = (summons.maxAlive ?? 4) - runtime.summonedIds.length;
+      const addDef = mobById(summons.mobId);
+      const self = ctx.scene.entity.get(instanceId);
+      if (addDef === null || self === null || room <= 0) return;
+      for (let index = 0; index < Math.min(room, summons.count); index += 1) {
+        const angle = (index / summons.count) * Math.PI * 2;
+        const addId = spawnMob(
+          ctx,
+          addDef,
+          [self.position[0] + Math.cos(angle) * 3, self.position[2] + Math.sin(angle) * 3],
+          Math.max(addDef.minLevel, runtime.level - 1),
+        );
+        const addRuntime = runtimes.get(addId);
+        addRuntime?.threat.add(targetId, 5);
+        runtime.summonedIds.push(addId);
+      }
+      ctx.scene.entity.floatText({ instanceId, text: "Rise!", kind: "info" });
+    }
+  }
 }
 
 function moveMob(
@@ -292,6 +356,7 @@ export function tickMobs(ctx: GameContext, dt: number): void {
         swingAtPlayer(ctx, def, runtime, instanceId, targetId);
       }
       if (def.abilities !== undefined) castMobAbility(ctx, def, runtime, instanceId);
+      if (def.mechanics !== undefined) runBossMechanics(ctx, def, runtime, instanceId, targetId, now);
       continue;
     }
     if (now >= runtime.nextWanderAt) {
