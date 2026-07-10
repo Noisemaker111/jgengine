@@ -83,3 +83,7 @@ fresh container: bun run check-types before any build → hundreds of false TS23
 2026-07-10T06:41:08.482Z — frontier — Claude
 
 batch-editing .claude/settings.json + hooks → two Edit calls dropped with 'permission stream closed', silently unapplied; had to notice and retry next turn
+
+2026-07-10T06:44:19.939Z — frontier — Claude
+
+ship worker briefed to run the whole ship motion in the foreground → spawned a background child for it and ended its turn ('will report back'), stalling the green check; repeat of the known nested-delegation gap
