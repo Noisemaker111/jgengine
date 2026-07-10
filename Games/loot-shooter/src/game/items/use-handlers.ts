@@ -76,7 +76,7 @@ const fireGun: ItemUseHandler<GameContext> = {
       if (first !== undefined) {
         ctx.scene.entity.effect({
           from: input.from,
-          to: first.to,
+          to: first.instanceId,
           effect: "damage",
           via: { amount: Math.round(def.weapon.damage * (def.weapon.critMult - 1)) },
         });

@@ -87,7 +87,7 @@ export function registerCommands(ctx: GameContext): void {
       if (session.status() !== "wave" && session.status() !== "intermission") return;
       const itemId = selectedWeaponId(state);
       if (itemId === null) return;
-      state.item.use.use(state, {
+      state.item.use.use({
         from: state.player.userId,
         itemId,
         inventoryId: "hotbar",
@@ -107,7 +107,7 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define<AimPayload>("throwGrenade", {
     apply(state: GameContext, input) {
       if (session.status() !== "wave" && session.status() !== "intermission") return;
-      state.item.use.use(state, {
+      state.item.use.use({
         from: state.player.userId,
         itemId: "frag_grenade",
         inventoryId: "backpack",
@@ -125,7 +125,7 @@ export function registerCommands(ctx: GameContext): void {
           : backpack.count("backpack", "medkit_large") > 0
             ? "medkit_large"
             : "medkit_small";
-      state.item.use.use(state, { from: state.player.userId, itemId, inventoryId: "backpack" });
+      state.item.use.use({ from: state.player.userId, itemId, inventoryId: "backpack" });
     },
   });
 

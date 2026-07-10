@@ -30,16 +30,16 @@ function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   if (playerEntity === null) return [];
   const nearestId = ctx.scene.worldItem.nearestInRadius(playerEntity.position, 2.6);
   if (nearestId === null) return [];
-  const record = ctx.scene.worldItem.get(nearestId);
-  if (record === null) return [];
+  const itemEntity = ctx.scene.entity.get(nearestId);
+  if (itemEntity === null) return [];
   return [
     {
-      id: `pickup:${record.instanceId}`,
-      position: { x: record.position[0], z: record.position[2] },
+      id: `pickup:${nearestId}`,
+      position: { x: itemEntity.position[0], z: itemEntity.position[2] },
       prompt: {
         radius: 2.6,
         display: { kind: "keybind", actionId: "interact" },
-        invoke: { command: "pickup" },
+        invoke: { name: "pickup", input: undefined },
       },
     },
   ];

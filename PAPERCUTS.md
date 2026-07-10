@@ -95,3 +95,7 @@ ship worker briefed to run the whole ship motion in the foreground → spawned a
 2026-07-10T06:47:35.010Z — fable-5 — Claude
 
 jgengine's three engine skills lived in top-level skills/ where Claude Code never surfaces them — no session ever auto-invoked jgengine-api, so games hand-rolled primitives the engine already had; skills must live in .claude/skills with tight model-invocable descriptions, now gate-enforced
+
+2026-07-10T15:17:27.120Z — fable-5 — Claude
+
+verifying loot-shooter → root check-types reported green twice while Games/loot-shooter had 7 TS errors; root gate skips Games/*, only the game-local check-types catches them
