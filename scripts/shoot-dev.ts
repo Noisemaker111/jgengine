@@ -6,7 +6,7 @@ import { chromium, type Browser } from "playwright-core";
 
 type Args = {
   game: string;
-  mode: "ui" | "play";
+  mode: "ui" | "play" | "poster";
   out?: string;
   url?: string;
 };
@@ -106,6 +106,9 @@ try {
   if (args.mode === "ui" && args.url === undefined) {
     await page.waitForSelector("[data-ui-preview-ready]", { timeout: 20_000 });
     await page.waitForTimeout(750);
+  } else if (args.mode === "poster" && args.url === undefined) {
+    await page.waitForSelector("[data-poster-ready]", { timeout: 20_000 });
+    await page.waitForTimeout(250);
   } else {
     await page.waitForTimeout(5_000);
   }

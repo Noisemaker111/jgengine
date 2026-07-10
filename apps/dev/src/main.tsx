@@ -157,7 +157,9 @@ function DevApp() {
     void load()
       .then(async (loaded) => {
         await discoverGameTunables(GAME_ID, loaded.game.name);
-        if (P2P_ROLE === "host" || P2P_ROLE === "join") {
+        if (MODE === "poster") {
+          setMultiplayer(null);
+        } else if (P2P_ROLE === "host" || P2P_ROLE === "join") {
           void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
         } else {
           setMultiplayer(
@@ -205,6 +207,7 @@ function DevApp() {
     );
   }
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
+  if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} />;
 }
 
