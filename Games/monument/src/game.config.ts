@@ -22,6 +22,7 @@ export const game = defineGame({
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
   environment: MonumentEnvironment,
+  lighting: { ambient: { intensity: 0.06 } },
   renderObject: renderCityObject,
   pointer: { moveCommand: "site.pointer" },
   camera: {
