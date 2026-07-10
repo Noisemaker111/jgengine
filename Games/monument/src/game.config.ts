@@ -25,6 +25,7 @@ export const game = defineGame({
   lighting: { ambient: { intensity: 0.06 } },
   renderObject: renderCityObject,
   pointer: { moveCommand: "site.pointer" },
+  touch: { buttons: [] },
   camera: {
     rig: "rts",
     followEntityId: null,

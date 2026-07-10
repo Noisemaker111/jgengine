@@ -34,7 +34,7 @@ export const MOOD_SCENES: Record<"default", MoodScene> = {
     backgroundNight: "#10171c",
     fogDay: "#b7c1b8",
     fogNight: "#10171c",
-    groundDay: "#6f746d",
+    groundDay: "#d8cfb8",
     groundNight: "#17201e",
     window: "#ffd89b",
     windowAlt: "#f6c16f",
@@ -136,9 +136,9 @@ function backgroundInstances(): { masses: BoxInstance[]; roofs: BoxInstance[]; f
   const roofs: BoxInstance[] = [];
   const far: BoxInstance[] = [];
   const zones = [
-    { kind: "north" as const, fixed: 218, start: -190, end: 190 },
-    { kind: "west" as const, fixed: -218, start: -150, end: 195 },
-    { kind: "east" as const, fixed: 218, start: -150, end: 195 },
+    { kind: "north" as const, fixed: 450, start: -380, end: 380 },
+    { kind: "west" as const, fixed: -450, start: -300, end: 390 },
+    { kind: "east" as const, fixed: 450, start: -300, end: 390 },
   ];
   const limit = 48;
   let placed = 0;
@@ -153,12 +153,12 @@ function backgroundInstances(): { masses: BoxInstance[]; roofs: BoxInstance[]; f
       if (cursor + frontage / 2 > zone.end) break;
       const deep = 14 + seeded(seed + 7) * 13;
       const along = cursor + (seeded(seed + 9) - 0.5) * 3.5;
-      const offset = zone.fixed + seeded(seed + 13) * 12;
+      const offset = zone.fixed + (seeded(seed + 13) - 0.5) * 60;
       const x = zone.kind === "north" ? along : offset;
       const z = zone.kind === "north" ? offset : along;
       const w = zone.kind === "north" ? frontage : deep;
       const d = zone.kind === "north" ? deep : frontage;
-      const h = 18 + seeded(seed + 19) * 48;
+      const h = (18 + seeded(seed + 19) * 48) * 0.6;
       masses.push({ position: [x, h / 2, z], scale: [w, h, d] });
       roofs.push({ position: [x, h + 0.65, z], scale: [Math.max(3, w * 0.24), 1.3, Math.max(3, d * 0.24)] });
       cursor += frontage / 2 + gap;
@@ -169,8 +169,8 @@ function backgroundInstances(): { masses: BoxInstance[]; roofs: BoxInstance[]; f
   const farCount = 24;
   for (let i = 0; i < farCount; i++) {
     const angle = (i / farCount) * Math.PI * 2 + 0.08;
-    const radius = 390 + seeded(600 + i) * 74;
-    const h = 18 + seeded(800 + i) * 70;
+    const radius = 560 + seeded(600 + i) * 110;
+    const h = (18 + seeded(800 + i) * 70) * 0.6;
     far.push({
       position: [Math.sin(angle) * radius, h / 2 - 2, Math.cos(angle) * radius],
       scale: [16 + seeded(900 + i) * 28, h, 15 + seeded(1000 + i) * 20],
@@ -270,6 +270,8 @@ export function MonumentEnvironment(): ReactNode {
   const background = blend(MONUMENT_SCENE.backgroundNight, MONUMENT_SCENE.backgroundDay);
   const fogColor = blend(MONUMENT_SCENE.fogNight, MONUMENT_SCENE.fogDay);
   const lightColor = blend(MONUMENT_SCENE.lamp, "#ffd19a");
+  const groundColor = blend(MONUMENT_SCENE.groundNight, MONUMENT_SCENE.groundDay);
+  const backgroundTone = (hex: string, amount: number) => new THREE.Color(hex).lerp(new THREE.Color(fogColor), amount).getStyle();
   const fogNear = THREE.MathUtils.lerp(220, 280, daylight);
   const fogFar = 690;
 
@@ -280,7 +282,7 @@ export function MonumentEnvironment(): ReactNode {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(GROUND_SIZE / 24, GROUND_SIZE / 24);
+    texture.repeat.set(GROUND_SIZE / 6, GROUND_SIZE / 6);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = 4;
     return texture;
@@ -344,21 +346,21 @@ export function MonumentEnvironment(): ReactNode {
       />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
         <planeGeometry args={[GROUND_SIZE, GROUND_SIZE]} />
-        <meshStandardMaterial color="#b8afa0" map={groundTexture} roughness={0.97} />
+        <meshStandardMaterial color={groundColor} map={groundTexture} roughness={0.97} />
       </mesh>
       <gridHelper
-        args={[GRID * CELL, GRID, "#8a8574", "#8a8574"]}
+        args={[GRID * CELL, GRID, "#c7bfa8", "#c7bfa8"]}
         position={[0, 0.02, 0]}
         material-transparent
-        material-opacity={0.28}
+        material-opacity={0.1}
       />
       <group>
         <mesh geometry={ridgeGeometry} castShadow={false} receiveShadow={false}>
           <meshStandardMaterial color={BACKGROUND_PALETTE.ridge} roughness={1} />
         </mesh>
-        <InstancedBoxes items={background3d.far} color={BACKGROUND_PALETTE.far} />
-        <InstancedBoxes items={background3d.masses} color={BACKGROUND_PALETTE.a} />
-        <InstancedBoxes items={background3d.roofs} color={BACKGROUND_PALETTE.roof} roughness={0.9} />
+        <InstancedBoxes items={background3d.far} color={backgroundTone(BACKGROUND_PALETTE.far, 0.68)} />
+        <InstancedBoxes items={background3d.masses} color={backgroundTone(BACKGROUND_PALETTE.a, 0.58)} />
+        <InstancedBoxes items={background3d.roofs} color={backgroundTone(BACKGROUND_PALETTE.roof, 0.58)} roughness={0.9} />
       </group>
     </>
   );
