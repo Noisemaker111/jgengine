@@ -50,13 +50,15 @@ Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · scre
 
 **Hard rule:** never run the verify ladder, shoot, or GitHub ceremony on the frontier model — spawn a cheap worker. Standing authorization; do not ask first. Announce on a 🤖 line. Research only novel seams; scaffolding already in skills is not research.
 
+**Worker model is Sonnet, always — never Opus.** Pass `model: "sonnet"` explicitly on every worker `Agent`/`Task` call; without it the worker inherits the session model, which is how CI triage and typecheck re-runs have silently landed on Opus 4.8. Opus buys nothing on mechanical legs — a well-written prompt on Sonnet does the same job — so no session, Fable included, spawns an Opus worker. Seeing "Opus" on a worker running typecheck, tests, screenshots, CI/Vercel triage, or GitHub ceremony is a bug: fix the call.
+
 ## Verification
 
 `bun run build` · `bun run check-types` · `bun run test` — **via `fan-out` workers**, not inline on the frontier model. For anything scene- or HUD-shaped, follow the `jgengine-verify` skill: prove world content with `summarizeEnvironment` assertions in `bun test`; `bun run shoot <gameId> --mode ui|play` is a final human glance, never the inner loop, and a hung shot is never re-run in the foreground. Silently-unstyled game UI means a missing `@source` entry in `apps/dev/src/index.css`.
 
 ## Delegation
 
-Plan big, execute small — always. Same policy as user-global `~/.claude/CLAUDE.md` and the **`fan-out`** skill. Fable/frontier orchestrates; Sonnet workers execute mechanical legs in parallel. Sessions on smaller models consult a Fable advisor once before non-obvious approaches. Trivial single-file work stays solo. Converting other agent setups: `convert-to-fanout` skill.
+Plan big, execute small — always. Same policy as user-global `~/.claude/CLAUDE.md` and the **`fan-out`** skill. Fable/frontier orchestrates; Sonnet workers (explicit `model: "sonnet"`, never Opus, never inherited) execute mechanical legs in parallel. Sessions on smaller models consult a Fable advisor once before non-obvious approaches. Trivial single-file work stays solo. Converting other agent setups: `convert-to-fanout` skill.
 
 ## Communication
 
