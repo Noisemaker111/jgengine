@@ -15,8 +15,8 @@ import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as ApiIndexRouteImport } from './routes/api.index'
 import { Route as SkillsNameRouteImport } from './routes/skills.$name'
 import { Route as GamesGameIdRouteImport } from './routes/games.$gameId'
+import { Route as ApiGithubProxyRouteImport } from './routes/api/github-proxy'
 import { Route as ApiGithubContributionsRouteImport } from './routes/api/github-contributions'
-import { Route as ApiGithubRouteImport } from './routes/api/github'
 import { Route as ApiPkgRouteImport } from './routes/api.$pkg'
 
 const IndexRoute = IndexRouteImport.update({
@@ -49,14 +49,14 @@ const GamesGameIdRoute = GamesGameIdRouteImport.update({
   path: '/games/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGithubProxyRoute = ApiGithubProxyRouteImport.update({
+  id: '/api/github-proxy',
+  path: '/api/github-proxy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGithubContributionsRoute = ApiGithubContributionsRouteImport.update({
   id: '/api/github-contributions',
   path: '/api/github-contributions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiGithubRoute = ApiGithubRouteImport.update({
-  id: '/api/github',
-  path: '/api/github',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPkgRoute = ApiPkgRouteImport.update({
@@ -68,8 +68,8 @@ const ApiPkgRoute = ApiPkgRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/$pkg': typeof ApiPkgRoute
-  '/api/github': typeof ApiGithubRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
+  '/api/github-proxy': typeof ApiGithubProxyRoute
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
   '/api/': typeof ApiIndexRoute
@@ -79,8 +79,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/$pkg': typeof ApiPkgRoute
-  '/api/github': typeof ApiGithubRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
+  '/api/github-proxy': typeof ApiGithubProxyRoute
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
   '/api': typeof ApiIndexRoute
@@ -91,8 +91,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/$pkg': typeof ApiPkgRoute
-  '/api/github': typeof ApiGithubRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
+  '/api/github-proxy': typeof ApiGithubProxyRoute
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
   '/api/': typeof ApiIndexRoute
@@ -104,8 +104,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/api/$pkg'
-    | '/api/github'
     | '/api/github-contributions'
+    | '/api/github-proxy'
     | '/games/$gameId'
     | '/skills/$name'
     | '/api/'
@@ -115,8 +115,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/api/$pkg'
-    | '/api/github'
     | '/api/github-contributions'
+    | '/api/github-proxy'
     | '/games/$gameId'
     | '/skills/$name'
     | '/api'
@@ -126,8 +126,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/api/$pkg'
-    | '/api/github'
     | '/api/github-contributions'
+    | '/api/github-proxy'
     | '/games/$gameId'
     | '/skills/$name'
     | '/api/'
@@ -138,8 +138,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiPkgRoute: typeof ApiPkgRoute
-  ApiGithubRoute: typeof ApiGithubRoute
   ApiGithubContributionsRoute: typeof ApiGithubContributionsRoute
+  ApiGithubProxyRoute: typeof ApiGithubProxyRoute
   GamesGameIdRoute: typeof GamesGameIdRoute
   SkillsNameRoute: typeof SkillsNameRoute
   ApiIndexRoute: typeof ApiIndexRoute
@@ -191,18 +191,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/github-proxy': {
+      id: '/api/github-proxy'
+      path: '/api/github-proxy'
+      fullPath: '/api/github-proxy'
+      preLoaderRoute: typeof ApiGithubProxyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/github-contributions': {
       id: '/api/github-contributions'
       path: '/api/github-contributions'
       fullPath: '/api/github-contributions'
       preLoaderRoute: typeof ApiGithubContributionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/github': {
-      id: '/api/github'
-      path: '/api/github'
-      fullPath: '/api/github'
-      preLoaderRoute: typeof ApiGithubRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/$pkg': {
@@ -218,8 +218,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiPkgRoute: ApiPkgRoute,
-  ApiGithubRoute: ApiGithubRoute,
   ApiGithubContributionsRoute: ApiGithubContributionsRoute,
+  ApiGithubProxyRoute: ApiGithubProxyRoute,
   GamesGameIdRoute: GamesGameIdRoute,
   SkillsNameRoute: SkillsNameRoute,
   ApiIndexRoute: ApiIndexRoute,
