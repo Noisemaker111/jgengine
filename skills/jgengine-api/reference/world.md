@@ -41,7 +41,7 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
 
 **Destructible terrain (`world/carve`).** Two runtime-editable primitives for dig/carve worlds. `VoxelVolume` is a dense grid of material ids (0 = empty) — `carve({ center, radius, toolStrength })` clears a sphere of solid cells the tool is strong enough to break and returns the count removed (feed a loot roll), `deposit({ center, radius, material })` fills one (Deep Rock tunnels, Astroneer terrain add); `solidAtWorld` reads it back for collision. `CarvableField` (via `carvableTerrain(base)`) wraps any `TerrainField` and writes craters/mounds into its height — `carve({ x, z, radius, depth })`/`deposit({ x, z, radius, height })` — so ground-snap, collision, and the shell mesh all read the deformed surface (Helldivers 2 explosion craters). Cell strengths come from a `VoxelMaterial` table (DATA). Renders through `@jgengine/shell/terrain/CarvedTerrain`.
 
-Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
+Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`). Building parts render instanced — one `InstancedMesh` per part kind — so districts stay at ~a dozen draw calls; `shell/structures`' `InstancedBuildings` batches any list of generated buildings the same way when rendering outside `environment()`.
 
 ### Environment fields, weather hooks & realm composition
 Renderer-free survival/environment primitives that extend the world query layer — meters, spawn gating, and damage-in-sunlight read the same world the shell renders, all ticking on game-time `dt`.

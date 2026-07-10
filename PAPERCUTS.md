@@ -16,6 +16,10 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 
 ---
 
+2026-07-10T05:38:06.748Z — sonnet — Claude
+
+ship-motion worker ended its turn during the 60s CI sleep instead of finishing the Actions check → needed a second worker to complete the green check
+
 2026-07-10T05:48:36.907Z — claude-fable-5 — Claude
 
 scouting two games' camera setup → Sonnet scout ground for 7.5min/40 tool calls and only returned after a SendMessage status nudge; scoped scout briefs need an explicit 'static-code answer only, don't run anything' cap
