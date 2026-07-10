@@ -10,6 +10,7 @@ import {
   type DiscoveredEntry,
 } from "@jgengine/core/devtools/devtools";
 import { bindingLabel, type ActionCodes, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import type { ShellMultiplayer } from "../multiplayer";
@@ -361,13 +362,17 @@ function deltaSnippet(discovered: readonly DiscoveredEntry[]): string | null {
 
 function TunePanel({ gameName }: { gameName: string }) {
   const [deltasCopied, setDeltasCopied] = useState(false);
+  const [query, setQuery] = useState("");
   const controls = devtools.controls.list();
-  const discovered = devtools.discover.list();
+  const allDiscovered = devtools.discover.list();
   const persist = () => persistDevtoolsOverrides(gameName);
-  const discoveredIds = new Set(discovered.map((entry) => entry.id));
-  const explicit = controls.filter((control) => !discoveredIds.has(control.name));
+  const discoveredIds = new Set(allDiscovered.map((entry) => entry.id));
+  const needle = query.trim().toLowerCase();
+  const matches = (id: string) => needle === "" || id.toLowerCase().includes(needle);
+  const discovered = allDiscovered.filter((entry) => entry.enabled || matches(entry.id));
+  const explicit = controls.filter((control) => !discoveredIds.has(control.name) && matches(control.name));
   const controlByName = new Map(controls.map((control) => [control.name, control]));
-  const snippet = deltaSnippet(discovered);
+  const snippet = deltaSnippet(allDiscovered);
   const copyDeltas = () => {
     if (snippet === null) return;
     const clipboard = navigator.clipboard;
@@ -379,16 +384,16 @@ function TunePanel({ gameName }: { gameName: string }) {
     setDeltasCopied(true);
     setTimeout(() => setDeltasCopied(false), 1500);
   };
-  if (explicit.length === 0 && discovered.length === 0) {
+  if (controls.length === 0 && allDiscovered.length === 0) {
     return (
       <div className="space-y-2 text-neutral-400">
         <div>Nothing discovered.</div>
         <div className="font-mono text-[10px] text-neutral-500">
           {"export const TUNING = { gravity: -22, skyColor: \"#87ceeb\" };"}
           <br />
-          {"Exported tables of numbers, booleans, and colors appear here"}
+          {"Exported constants and tables of numbers, booleans, and colors"}
           <br />
-          {"automatically — check one to control it live."}
+          {"(nested included) appear here — check one to control it live."}
         </div>
       </div>
     );
@@ -421,7 +426,17 @@ function TunePanel({ gameName }: { gameName: string }) {
         >
           {deltasCopied ? "Copied" : "Copy deltas"}
         </button>
+        <input
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="filter…"
+          className="min-w-0 flex-1 rounded border border-neutral-600 bg-transparent px-2 py-0.5 text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
+        />
       </div>
+      {explicit.length === 0 && discovered.length === 0 ? (
+        <div className="text-neutral-500">No tunables match “{query}”.</div>
+      ) : null}
       {explicit.length > 0 ? (
         <div className="space-y-1.5">
           <div className="text-[9px] uppercase tracking-wide text-neutral-500">registered</div>
@@ -496,6 +511,11 @@ export function DevtoolsOverlay({
       controls: devtools.controls,
       discover: devtools.discover,
     };
+  }, [playable]);
+
+  useEffect(() => {
+    devtools.discover.scanTable("game", playable);
+    devtools.discover.scanTable("engine", { movement: MOVEMENT_TUNING });
   }, [playable]);
 
   useEffect(() => {

@@ -25,6 +25,27 @@ describe("transformTunableExports", () => {
     expect(result.code).toContain('__jg_devtools.discover.bind("game/worldgen", "WORLD_RADIUS"');
   });
 
+  test("rewrites annotated and derived const exports, skipping string literals", () => {
+    const source = [
+      "export const GROUND_Y: number = 0;",
+      "export const JUMP_VELOCITY = Math.sqrt(2 * Math.abs(GRAVITY) * JUMP_HEIGHT);",
+      "export const EYE_HEIGHT = PLAYER_HEIGHT - 0.15;",
+      'export const MODE = "chase";',
+      "export const SPAWN: readonly [number, number, number] = [4, GROUND_Y, 0];",
+    ].join("\n");
+    const result = transformTunableExports(source, "game/tuning");
+    expect(result.bound).toEqual(["GROUND_Y", "JUMP_VELOCITY", "EYE_HEIGHT", "SPAWN"]);
+    expect(result.code).toContain("export let GROUND_Y: number = 0;");
+    expect(result.code).toContain(
+      "export let JUMP_VELOCITY = Math.sqrt(2 * Math.abs(GRAVITY) * JUMP_HEIGHT);",
+    );
+    expect(result.code).toContain("export let EYE_HEIGHT = PLAYER_HEIGHT - 0.15;");
+    expect(result.code).toContain('export const MODE = "chase";');
+    expect(result.code).toContain(
+      "export let SPAWN: readonly [number, number, number] = [4, GROUND_Y, 0];",
+    );
+  });
+
   test("returns input unchanged when nothing matches", () => {
     const source = "export const TABLE = { a: 1 };\n";
     const result = transformTunableExports(source, "x");

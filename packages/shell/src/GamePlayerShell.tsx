@@ -295,11 +295,15 @@ export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironment
  * flipped the sign and launched airborne players upward instead.
  */
 export function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined {
-  if (physics?.gravity === undefined && physics?.jumpVelocity === undefined) return undefined;
-  const tuning: MovementTuningOverrides = {};
-  if (physics.gravity !== undefined) tuning.gravityAcceleration = -physics.gravity;
-  if (physics.jumpVelocity !== undefined) tuning.jumpVelocity = physics.jumpVelocity;
-  return tuning;
+  if (physics === undefined) return undefined;
+  return {
+    get gravityAcceleration() {
+      return physics.gravity === undefined ? undefined : -physics.gravity;
+    },
+    get jumpVelocity() {
+      return physics.jumpVelocity;
+    },
+  };
 }
 
 /** True when the world is an environment feature with terrain, so the voxel controller should sample its height. */
@@ -761,9 +765,15 @@ function FrameDriver({
   const movement = playable.movement;
   const voxelDims = useMemo(
     () => ({
-      halfWidth: collision?.halfWidth ?? 0.3,
-      height: collision?.height ?? 1.8,
-      stepHeight: collision?.stepHeight ?? 0.6,
+      get halfWidth() {
+        return collision?.halfWidth ?? 0.3;
+      },
+      get height() {
+        return collision?.height ?? 1.8;
+      },
+      get stepHeight() {
+        return collision?.stepHeight ?? 0.6;
+      },
     }),
     [collision],
   );

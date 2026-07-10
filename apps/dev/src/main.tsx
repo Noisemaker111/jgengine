@@ -47,15 +47,19 @@ const gameSourceModules = import.meta.glob<Record<string, unknown>>([
 async function discoverGameTunables(gameId: string, gameName: string): Promise<void> {
   const prefix = `../../../Games/${gameId}/src/`;
   const loaders = Object.entries(gameSourceModules).filter(([path]) => path.startsWith(prefix));
-  await Promise.all(
+  const loaded = await Promise.all(
     loaders.map(async ([path, loader]) => {
       try {
-        devtools.discover.scanModule(await loader());
+        return await loader();
       } catch (error) {
         console.warn(`[jgengine:devtools] skipped ${path} during tunable discovery`, error);
+        return null;
       }
     }),
   );
+  for (const moduleExports of loaded) {
+    if (moduleExports !== null) devtools.discover.scanModule(moduleExports);
+  }
   applyStoredDevtoolsOverrides(gameName);
 }
 
