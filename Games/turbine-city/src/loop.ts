@@ -1,20 +1,28 @@
+import { createRecordBook, type RecordStorage } from "@jgengine/core/game/recordBook";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { GLIDER_PACER_ENTITY, GLIDER_PLAYER_ENTITY } from "./game/entities/gliders/catalog";
+import { GLIDER_GHOST_ENTITY, GLIDER_PACER_ENTITY, GLIDER_PLAYER_ENTITY } from "./game/entities/gliders/catalog";
 import { fanSpoolState } from "./game/flight/fanSchedule";
 import { createMouseSteer, type MouseSteer } from "./game/input/mouseSteer";
-import { createRaceSession, PACER_RACER_ID, SESSION_STORE_KEY, type RaceSession } from "./game/race/session";
+import { createRaceSession, PACER_RACER_ID, RECORD_BOOK_KEY, RECORD_FIELDS, SESSION_STORE_KEY, type RaceSession } from "./game/race/session";
 import { FANS, SPAWN_HEADING, SPAWN_POSITION } from "./game/race/route";
 import { placeCityProps, syncFanRotors } from "./game/world/setup";
 
 const MOUSE_KEY = "mouseSteer";
+const GHOST_SPAWNED_KEY = "ghostSpawned";
+export const GHOST_RACER_ID = "ghost";
+
+function browserStorage(): RecordStorage | null {
+  return typeof localStorage === "undefined" ? null : localStorage;
+}
 
 export function onInit(ctx: GameContext): void {
   const previousMouse = ctx.game.store.get(MOUSE_KEY) as MouseSteer | undefined;
   if (previousMouse !== undefined) previousMouse.detach();
 
-  const session = createRaceSession();
+  const session = createRaceSession(createRecordBook({ key: RECORD_BOOK_KEY, fields: RECORD_FIELDS, storage: browserStorage() }));
   ctx.game.store.set(SESSION_STORE_KEY, session);
+  ctx.game.store.set(GHOST_SPAWNED_KEY, false);
 
   const mouseSteer = createMouseSteer();
   mouseSteer.attach();
@@ -55,6 +63,30 @@ export function onNewPlayer(ctx: GameContext): void {
     rotationY: SPAWN_HEADING,
     role: "npc",
   });
+
+  ctx.scene.entity.despawn(GHOST_RACER_ID);
+  ctx.game.store.set(GHOST_SPAWNED_KEY, false);
+}
+
+function syncGhost(ctx: GameContext, pose: { position: readonly [number, number, number]; heading: number } | null, dt: number): void {
+  const spawned = ctx.game.store.get(GHOST_SPAWNED_KEY) === true;
+  if (pose === null) {
+    if (spawned) {
+      ctx.scene.entity.despawn(GHOST_RACER_ID);
+      ctx.game.store.set(GHOST_SPAWNED_KEY, false);
+    }
+    return;
+  }
+  if (!spawned) {
+    ctx.scene.entity.spawn(GLIDER_GHOST_ENTITY, {
+      id: GHOST_RACER_ID,
+      position: pose.position,
+      rotationY: pose.heading,
+      role: "npc",
+    });
+    ctx.game.store.set(GHOST_SPAWNED_KEY, true);
+  }
+  ctx.scene.entity.setPose(GHOST_RACER_ID, { position: pose.position, rotationY: pose.heading, dt });
 }
 
 export function onTick(ctx: GameContext, dt: number): void {
@@ -88,6 +120,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     rotationY: snapshot.pacerPose.heading,
     dt,
   });
+  syncGhost(ctx, snapshot.ghost.pose, dt);
 
   const fanStates = new Map(FANS.map((schedule) => [schedule.id, fanSpoolState(schedule, snapshot.totalTime)]));
   syncFanRotors(ctx, fanStates, snapshot.totalTime);

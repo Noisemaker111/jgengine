@@ -39,3 +39,7 @@ canyon-chase build: assets add / pull kenney-nature and kenney-racing to source 
 2026-07-10T01:35:49.041Z — claude-opus-4-8 — Claude
 
 auto-thumbnail poster capture → maze-muncher and commit-canopy render an empty 3D scene at their default play camera (poster stddev <4); their old committed screenshots only looked non-empty because the HUD DOM was in frame. Real camera-framing gap: these games' world content isn't in the default camera view.
+
+2026-07-10T03:18:15.694Z — claude-fable-5 — Claude
+
+verifying turbine-city changes in a fresh container → bun run check-types fails with cascading TS2307 Cannot-find-module @jgengine/* errors until bun run build has run once, because package exports point at gitignored dist/; CI already orders build before check-types but nothing tells a fresh session that check-types alone is not self-sufficient

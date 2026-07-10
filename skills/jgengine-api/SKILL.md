@@ -181,10 +181,11 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Chat filter | `game/chatFilter` | `createChatFilter`, `normalizeChatText`, `ChatFilter`, `ChatFilterConfig`, `ChatFilterResult` — mask/reject blocked words (leet-normalized token match); wire via `ChatDeps.filter` (word lists are game data, the engine ships the mechanism) |
 | Voice seam | `multiplayer/voiceContract` | `VoiceTransport`, `VoiceParticipant`, `VoiceRoute`, `createLocalVoiceTransport`, `createPushToTalk`, `PushToTalkMode` |
 | Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes` |
+| Personal-best records | `game/recordBook` | `createRecordBook`, `RecordBook`, `RecordBookConfig`, `RecordStorage`, `RecordDirection`, `RecordSubmission` — named numeric fields racing "lower" (times) or "higher" (scores/streaks) behind a structural key-value storage (pass `localStorage`, a test stub, or `null` for in-memory); corrupt or unavailable storage degrades to an empty book, never throws into a tick |
 | Reveal query | `sensor/revealQuery` | `createRevealQuery`, `RevealQuery`, `RevealQueryOptions`, `RevealHit` |
 | Hidden-state probe | `sensor/hiddenStateProbe` | `probeHiddenState`, `probeHiddenStateAll`, `HiddenStateSource`, `HiddenStateValue`, `SensorProbeOptions`, `SensorReading` |
 | View-frustum sensor | `sensor/frustumSensor` | `createFrustumSensor`, `projectToView`, `framingScore`, `FrustumCamera`, `FrustumTarget`, `FrustumProjection`, `FrustumSample`, `FrustumSensor`, `FramingConfig` |
-| Recording buffer | `sensor/recordingBuffer` | `createRecordingBuffer`, `RecordingBuffer`, `RecordingFrame`, `RecordingBufferOptions` |
+| Recording buffer | `sensor/recordingBuffer` | `createRecordingBuffer`, `RecordingBuffer`, `RecordingFrame`, `RecordingPair`, `RecordingBufferOptions` — `seekPair(t)` brackets a time with its floor and next frames for interpolated playback (ghost racers, kill-cams) |
 | Concealment scoring | `sensor/concealment` | `colorDistance`, `concealmentScore`, `createConcealmentSensor`, `ColorHex`, `ConcealmentTarget`, `ConcealmentSample`, `ConcealmentSensor` |
 | Freeze violation monitor | `sensor/freezeMonitor` | `createFreezeMonitor`, `FreezeMonitor`, `FreezeSubject`, `FreezeViolation` |
 | Animation SM | `combat/animationState` | `createAnimationState`, `AnimationState`, `AnimationClip`, `FramePhase`, `FrameRange`, `phasesAtFrame`, `activeRangeAtFrame`, `frameAtMs` |

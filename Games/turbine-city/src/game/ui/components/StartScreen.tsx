@@ -1,5 +1,6 @@
+import type { SessionSnapshot } from "../../race/session";
 import { KeybindBadge } from "./KeybindBadge";
-import { PALETTE } from "./theme";
+import { formatRaceTime, PALETTE } from "./theme";
 
 const CONTROLS: readonly { action: string; label: string }[] = [
   { action: "pitchUp", label: "Pitch Up" },
@@ -12,7 +13,7 @@ const CONTROLS: readonly { action: string; label: string }[] = [
   { action: "restart", label: "Restart" },
 ];
 
-export function StartScreen({ onStart }: { onStart: () => void }) {
+export function StartScreen({ snapshot, onStart }: { snapshot: SessionSnapshot; onStart: () => void }) {
   return (
     <div
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-7 px-6 text-center"
@@ -28,8 +29,17 @@ export function StartScreen({ onStart }: { onStart: () => void }) {
         <p className="max-w-lg text-sm" style={{ color: `${PALETTE.cloudWhite}b3` }}>
           Ten rings, two laps, one pace-glider. Ride the core of a gale like a marble in a garden hose — stray to the
           edge and the turbulence eats your line. Fans spool on their own clock, so read the schedule and pick the
-          canyon that will be breathing when you arrive.
+          canyon that will be breathing when you arrive. Two barrel-shift charges dodge you sideways, and your best
+          finish flies again as a shadow glider.
         </p>
+        {snapshot.records.bestTime !== null && (
+          <span
+            className="rounded-full border px-4 py-1 font-mono text-sm font-bold"
+            style={{ borderColor: `${PALETTE.skyTeal}77`, color: PALETTE.skyTeal, backgroundColor: `${PALETTE.skyTeal}11` }}
+          >
+            Personal best {formatRaceTime(snapshot.records.bestTime)}
+          </span>
+        )}
       </div>
 
       <div
