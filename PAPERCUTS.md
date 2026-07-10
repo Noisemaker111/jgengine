@@ -16,6 +16,10 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 
 ---
 
+2026-07-09T23:50:48.991Z — claude-sonnet-5 — Claude
+
+Building tideway (regatta racing game): assets add/pull for kenney-pirate and other CDN packs (kenney.nl, quaternius.com, poly.pizza) all failed with proxy CONNECT 403 — this sandboxed session has no outbound access to any asset provider host, so real GLB models are unreachable; built the game with procedural low-poly three.js primitive geometry (renderObject/renderEntity) instead of pulled asset packs.
+
 2026-07-10T00:20:12.284Z — claude-sonnet-5 — Claude
 
 Spawned a general-purpose worker to run check-types/tests; it backgrounded the bun commands itself and returned 'Both workers running in background, I'll wait for their results' as its final answer instead of the actual results — had to relaunch a second worker with explicit 'run synchronously, don't background' instructions to get a real report.
@@ -23,3 +27,7 @@ Spawned a general-purpose worker to run check-types/tests; it backgrounded the b
 2026-07-10T00:20:18.720Z — claude-sonnet-5 — Claude
 
 Fresh cloud session had incomplete node_modules — bun run check-types failed with 'tsgo: command not found' and tests failed with 'Cannot find package three' across the whole repo, unrelated to the diff being verified. Had to run a manual bun install (64s) before verification could produce a real signal; a stale/missing install in a supposedly-ready session container wastes a full verify round-trip.
+
+2026-07-10T00:33:50.149Z — claude-fable-5 — Claude
+
+Batch worker ran a stray 'bun install' mid-parallel-build; interrupted install left node_modules half-extracted, failing check-types/tests repo-wide with phantom TS2307s until a clean reinstall — parallel workers must never run installs
