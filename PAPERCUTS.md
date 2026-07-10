@@ -159,3 +159,7 @@ binding snake steering → reserved action names turnLeft/turnRight are swallowe
 2026-07-10T23:19:55.635Z — opus-4.8 — Claude
 
 building klondike/video-poker card UIs → @jgengine/react ships no playing-card face or stacked-pile component, every card game hand-rolls rank/suit rendering and drag piles; candidate registry component
+
+2026-07-10T23:23:57.038Z — opus-4.8 — Claude
+
+building sokoban level-select → game/levelSequence has no jump-to-level select() and tracks no per-level stars/completion; campaign frontier had to be reseeded from recordBook records
