@@ -1,10 +1,10 @@
-const skillDocs = import.meta.glob<string>("../../../../skills/*/SKILL.md", {
+const skillDocs = import.meta.glob<string>("../../../../.claude/skills/jgengine-*/SKILL.md", {
   query: "?raw",
   import: "default",
 });
 
 const apiReferenceDocs = import.meta.glob<string>(
-  "../../../../skills/jgengine-api/reference/*.md",
+  "../../../../.claude/skills/jgengine-api/reference/*.md",
   { query: "?raw", import: "default" },
 );
 

@@ -7,16 +7,16 @@ import { extractPackageSurface, type ApiPackage } from "./apiSurface";
 
 const REPO_URL = "https://github.com/Noisemaker111/jgengine";
 const DOCS_URL = "https://jgengine.com";
-const SKILL_GUIDE = "skills/jgengine-api/SKILL.md";
+const SKILL_GUIDE = ".claude/skills/jgengine-api/SKILL.md";
 
 const PACKAGE_GUIDES: Record<string, readonly string[]> = {
-  core: [SKILL_GUIDE, "skills/jgengine-api/reference/combat.md", "skills/jgengine-api/reference/world.md"],
-  ws: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
-  sql: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
-  react: [SKILL_GUIDE, "skills/jgengine-api/reference/ui-react.md"],
-  convex: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
-  node: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
-  shell: [SKILL_GUIDE, "skills/jgengine-api/reference/ui-react.md", "skills/jgengine-api/reference/world.md"],
+  core: [SKILL_GUIDE, ".claude/skills/jgengine-api/reference/combat.md", ".claude/skills/jgengine-api/reference/world.md"],
+  ws: [SKILL_GUIDE, ".claude/skills/jgengine-api/reference/multiplayer.md"],
+  sql: [SKILL_GUIDE, ".claude/skills/jgengine-api/reference/multiplayer.md"],
+  react: [SKILL_GUIDE, ".claude/skills/jgengine-api/reference/ui-react.md"],
+  convex: [SKILL_GUIDE, ".claude/skills/jgengine-api/reference/multiplayer.md"],
+  node: [SKILL_GUIDE, ".claude/skills/jgengine-api/reference/multiplayer.md"],
+  shell: [SKILL_GUIDE, ".claude/skills/jgengine-api/reference/ui-react.md", ".claude/skills/jgengine-api/reference/world.md"],
   assets: [SKILL_GUIDE],
   github: [SKILL_GUIDE],
   jgengine: [SKILL_GUIDE],

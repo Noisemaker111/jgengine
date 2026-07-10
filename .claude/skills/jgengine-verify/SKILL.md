@@ -1,6 +1,6 @@
 ---
 name: jgengine-verify
-description: How to verify a JGengine change or game build without burning time on the browser. Invoke when about to "check it works", "verify the scene/world/HUD", "screenshot the game", "make sure it renders", or when a `bun run shoot` / Chrome CDP screenshot is hanging, crashing the GPU, or producing corrupt output. The rule this skill exists to enforce: scene correctness is a property of *data* (the environment() descriptor + core world-gen), so it is asserted deterministically in `bun test` — the screenshot is a final human glance, never the verification loop.
+description: Scene correctness is data, not pixels — bun test asserts it in milliseconds. Invoke before verifying any scene/world/HUD "works" or "renders", or when a screenshot hangs.
 ---
 
 # JGengine — Verify without the browser

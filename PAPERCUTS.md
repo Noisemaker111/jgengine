@@ -91,3 +91,7 @@ batch-editing .claude/settings.json + hooks → two Edit calls dropped with 'per
 2026-07-10T06:44:19.939Z — frontier — Claude
 
 ship worker briefed to run the whole ship motion in the foreground → spawned a background child for it and ended its turn ('will report back'), stalling the green check; repeat of the known nested-delegation gap
+
+2026-07-10T06:47:35.010Z — fable-5 — Claude
+
+jgengine's three engine skills lived in top-level skills/ where Claude Code never surfaces them — no session ever auto-invoked jgengine-api, so games hand-rolled primitives the engine already had; skills must live in .claude/skills with tight model-invocable descriptions, now gate-enforced

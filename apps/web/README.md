@@ -7,9 +7,9 @@ The landing page for JGengine and the front door for agents. TanStack Start (SSR
 
 ## The site is generated from the engine — deploying the engine updates the site
 
-The skill pages are rendered straight from the repo's `skills/*/SKILL.md` (bundled at build via Vite `?raw` in [`src/content/skills.ts`](src/content/skills.ts)). The per-skill "grab this when…" guidance lives in [`src/lib/site.ts`](src/lib/site.ts). Nothing on this site is a hand-copied duplicate of a skill.
+The skill pages are rendered straight from the repo's `.claude/skills/jgengine-*/SKILL.md` (bundled at build via Vite `?raw` in [`src/content/skills.ts`](src/content/skills.ts)). The per-skill "grab this when…" guidance lives in [`src/lib/site.ts`](src/lib/site.ts). Nothing on this site is a hand-copied duplicate of a skill.
 
-Because of that, **any push to `main` that touches `skills/` or `packages/` rebuilds and redeploys the site with the current engine.** Editing a skill or shipping an engine change *is* a website update — there is no separate content step.
+Because of that, **any push to `main` that touches `.claude/skills/` or `packages/` rebuilds and redeploys the site with the current engine** (the paths are listed in [`vercel.json`](vercel.json)'s `ignoreCommand`). Editing a skill or shipping an engine change *is* a website update — there is no separate content step.
 
 ### Games are built from `apps/dev`, not authored here
 
