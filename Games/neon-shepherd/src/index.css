@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@source "../../../packages/react/src";
+@source "../../../packages/shell/src";
+
+@keyframes caretaker-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

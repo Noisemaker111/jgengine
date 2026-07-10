@@ -31,3 +31,7 @@ Fresh cloud session had incomplete node_modules — bun run check-types failed w
 2026-07-10T00:33:50.149Z — claude-fable-5 — Claude
 
 Batch worker ran a stray 'bun install' mid-parallel-build; interrupted install left node_modules half-extracted, failing check-types/tests repo-wide with phantom TS2307s until a clean reinstall — parallel workers must never run installs
+
+2026-07-10T00:44:29.170Z — claude-sonnet-5 — Claude
+
+canyon-chase build: assets add / pull kenney-nature and kenney-racing to source real GLB props (rocks, cacti, cars) → blocked, proxy policy-denies kenney.nl/quaternius.com/poly.pizza (403 on CONNECT) in this sandbox with no mirror configured, so this session's games ship with primitive/colored-box props instead of real assets
