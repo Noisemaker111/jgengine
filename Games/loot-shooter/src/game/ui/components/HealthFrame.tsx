@@ -4,24 +4,36 @@ export function HealthFrame() {
   const { userId } = usePlayer();
   const health = useEntityStat(userId, "health");
   const level = useEntityStat(userId, "level");
+  const xp = useEntityStat(userId, "xp");
   const current = Math.round(health?.current ?? 0);
   const max = Math.round(health?.max ?? 0);
   const percent = health === null || health.max <= 0 ? 0 : (health.current / health.max) * 100;
+  const xpPercent = xp === null || xp.max <= 0 ? 0 : (xp.current / xp.max) * 100;
+  const low = percent <= 30;
 
   return (
-    <div className="min-w-[15rem] rounded-md border border-cyan-400/30 bg-slate-950/80 p-3 shadow-lg backdrop-blur-sm">
-      <div className="mb-1.5 flex items-baseline justify-between">
-        <span className="text-sm font-bold uppercase tracking-wider text-cyan-100">Operative</span>
-        <span className="text-sm font-semibold text-cyan-300/90">Lv {level?.current ?? 1}</span>
+    <div className="min-w-[16rem]">
+      <div className="mb-1 flex items-baseline justify-between">
+        <span className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+          Operative
+        </span>
+        <span className="text-sm font-bold text-amber-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+          LV {level?.current ?? 1}
+        </span>
       </div>
-      <div className="relative h-5 overflow-hidden rounded border border-black/60 bg-black/70">
+      <div className="relative h-6 skew-x-[-8deg] overflow-hidden rounded-sm border border-black/70 bg-black/70 shadow-lg">
         <div
-          className="h-full bg-gradient-to-r from-rose-600 to-red-400 transition-[width] duration-200 ease-out"
+          className={`h-full transition-[width] duration-200 ease-out ${
+            low ? "animate-pulse bg-gradient-to-r from-rose-700 to-rose-500" : "bg-gradient-to-r from-emerald-600 to-lime-400"
+          }`}
           style={{ width: `${percent}%` }}
         />
-        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
+        <span className="absolute inset-0 flex skew-x-[8deg] items-center justify-center text-sm font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
           {current} / {max}
         </span>
+      </div>
+      <div className="mt-1 h-1.5 skew-x-[-8deg] overflow-hidden rounded-sm bg-black/60">
+        <div className="h-full bg-gradient-to-r from-amber-500 to-amber-300" style={{ width: `${xpPercent}%` }} />
       </div>
     </div>
   );

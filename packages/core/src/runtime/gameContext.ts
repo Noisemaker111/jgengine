@@ -858,6 +858,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       effects: floatingEffects,
       spatial: combatSpatial,
       getStat: weapon.getStat,
+      objects: definition.physics?.projectileObstacles === true ? { list: () => objects.list() } : undefined,
       now,
       onSettle(report) {
         events.emit("projectile.settled", {

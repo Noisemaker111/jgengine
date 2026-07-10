@@ -41,7 +41,7 @@ export interface ProjectileSettleReport {
 
 /** Read-only scene object access for the default `raycast`; matches `ObjectStore.list()`/a catalog lookup structurally. */
 export interface ProjectileObjectsDeps {
-  list(): readonly { instanceId: string; catalogId: string; position: [number, number, number] }[];
+  list(): readonly { instanceId: string; catalogId: string; position: readonly [number, number, number] }[];
   /** Half-extents of the object's axis-aligned bounding box; `null`/omitted falls back to `[0.5, 0.5, 0.5]`. */
   halfExtents?(catalogId: string): [number, number, number] | null;
 }
