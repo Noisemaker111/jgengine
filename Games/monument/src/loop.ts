@@ -1,7 +1,19 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import type { Tool } from "./game/catalog";
-import { demolish, initCity, pointerAction, setTool, type PointerInput } from "./game/city/state";
+import type { Building, Plaza, Tool } from "./game/catalog";
+import {
+  captureHistory,
+  demolish,
+  growSibling,
+  initCity,
+  pointerAction,
+  redoCity,
+  setTool,
+  undoCity,
+  updateBuilding,
+  updatePlaza,
+  type PointerInput,
+} from "./game/city/state";
 
 const TOOL_COMMANDS: ReadonlyArray<[string, Tool]> = [
   ["toolSelect", "select"],
@@ -35,6 +47,33 @@ export function onInit(ctx: GameContext): void {
   ctx.game.commands.define<{ id: string }>("site.demolish", {
     apply(state, input) {
       demolish(state, input.id);
+    },
+  });
+  ctx.game.commands.define<{ id: string; patch: Partial<Building>; capture?: boolean }>("building.update", {
+    apply(state, input) {
+      if (input.capture === true) captureHistory(state);
+      updateBuilding(state, input.id, input.patch);
+    },
+  });
+  ctx.game.commands.define<{ id: string }>("building.duplicate", {
+    apply(state, input) {
+      growSibling(state, input.id);
+    },
+  });
+  ctx.game.commands.define<{ id: string; patch: Partial<Plaza>; capture?: boolean }>("plaza.update", {
+    apply(state, input) {
+      if (input.capture === true) captureHistory(state);
+      updatePlaza(state, input.id, input.patch);
+    },
+  });
+  ctx.game.commands.define("undo", {
+    apply(state) {
+      undoCity(state);
+    },
+  });
+  ctx.game.commands.define("redo", {
+    apply(state) {
+      redoCity(state);
     },
   });
   initCity(ctx);

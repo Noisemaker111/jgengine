@@ -4,11 +4,12 @@ import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 
-import { activeToast, activeTool, selectedBuilding, selectedPlaza } from "../city/state";
+import { activeToast, activeTool, futureDepth, historyDepth, selectedBuilding, selectedPlaza } from "../city/state";
 import { keybinds } from "../keybinds";
 import { BrandChip } from "./components/BrandChip";
 import { Credit } from "./components/Credit";
-import { SelectedCard } from "./components/SelectedCard";
+import { HistoryControls } from "./components/HistoryControls";
+import { Inspector } from "./components/Inspector";
 import { TimeBar } from "./components/TimeBar";
 import { Toast } from "./components/Toast";
 import { ToolHint } from "./components/ToolHint";
@@ -23,6 +24,8 @@ export function GameUI(): ReactNode {
   const building = useGameStore(selectedBuilding);
   const plaza = useGameStore(selectedPlaza);
   const toast = useGameStore(activeToast);
+  const canUndo = useGameStore(historyDepth) > 0;
+  const canRedo = useGameStore(futureDepth) > 0;
 
   const day = calendar.day + 1;
   const pauseKey = actionLabel(keybinds, "pauseToggle") ?? "";
@@ -34,17 +37,22 @@ export function GameUI(): ReactNode {
         <BrandChip day={day} hour={calendar.hour} minute={calendar.minute} />
       </HudPanel>
 
-      <HudPanel id="tools" anchor="top-left" order={2} compact="chip" chip="Tools">
+      <HudPanel id="history" anchor="top-left" order={2} compact="keep">
+        <HistoryControls
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={() => commands.run("undo", {})}
+          onRedo={() => commands.run("redo", {})}
+        />
+      </HudPanel>
+
+      <HudPanel id="tools" anchor="top-left" order={3} compact="chip" chip="Tools">
         <ToolRail activeTool={tool} onSelect={(action) => commands.run(action, {})} />
       </HudPanel>
 
       {hasSelection && (
         <HudPanel id="selection" anchor="top-right" compact="chip" chip="Selected">
-          <SelectedCard
-            building={building}
-            plaza={plaza}
-            onRemove={(id) => commands.run("site.demolish", { id })}
-          />
+          <Inspector building={building} plaza={plaza} />
         </HudPanel>
       )}
 

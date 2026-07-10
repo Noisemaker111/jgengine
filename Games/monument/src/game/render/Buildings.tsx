@@ -12,6 +12,7 @@ import { buildingBodies, clamp, NEUTRAL_SIGNALS, programOccupancy, solarModel } 
 import { cityBuildings, cityPlazas, selectedId } from "../city/state";
 import { concreteShader, getConcreteTexture, roleSurfaceColor, weatheredColor } from "./concrete";
 import { MONUMENT_SCENE } from "./Environment";
+import { MassingGizmo } from "./Gizmos";
 
 const FACADE_FLOORS = 12;
 const FACADE_BAYS = 6;
@@ -752,6 +753,7 @@ function BuildingNode({ id }: { id: string }): ReactNode {
     <group rotation={[0, (b.rotation * Math.PI) / 180, 0]}>
       <BuildingContent b={b} selected={selected} night={night} occupancy={occupancy} />
       {selected && <SelectionRing b={b} />}
+      {selected && <MassingGizmo building={b} />}
     </group>
   );
 }
