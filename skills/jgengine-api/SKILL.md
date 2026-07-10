@@ -7,7 +7,7 @@ description: Use when building, extending, or debugging a game on JGengine, or w
 
 The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. Read this before writing `game.config.ts` or any game content. Companion skills: **`jgengine-newgame`** (master blueprint + phased build to completion) and **`jgengine-verify`** (browserless scene gate) — read them before building. The UI quality bar lives in [`reference/ui-react.md`](reference/ui-react.md); asset sourcing lives in the **Assets** section below. Don't hesitate to file issues for gaps or improvements — a missing primitive, a shell that hardcodes a choice a game should own, a doc that's wrong ([Hit a snag?](#hit-a-snag-file-an-issue) below); reporting them proactively is how the engine surface grows.
 
-The heaviest domains live in on-demand reference modules under [`reference/`](reference/) — load one only when you're building in that domain: [`reference/combat.md`](reference/combat.md) (effects, projectiles, death, feel, abilities), [`reference/world.md`](reference/world.md) (terrain, environment, physics, vehicles, spawn), [`reference/multiplayer.md`](reference/multiplayer.md) (transport, host, persistence, presence), [`reference/ui-react.md`](reference/ui-react.md) (`@jgengine/react` hooks, headless + styled UI kits, the registry install path, and the UI quality bar). Each domain's section below is a one-line pointer to its module.
+The heaviest domains live in on-demand reference modules under [`reference/`](reference/) — load one only when you're building in that domain: [`reference/combat.md`](reference/combat.md) (effects, projectiles, death, feel, abilities), [`reference/world.md`](reference/world.md) (terrain, environment, physics, vehicles, spawn), [`reference/multiplayer.md`](reference/multiplayer.md) (transport, host, persistence, presence), [`reference/ui-react.md`](reference/ui-react.md) (`@jgengine/react` hooks, headless + styled UI kits, the registry install path, and the UI quality bar), [`reference/cartridge.md`](reference/cartridge.md) (the declarative cartridge layer — a whole game as one validated config). Each domain's section below is a one-line pointer to its module.
 
 ## Packages
 
@@ -374,6 +374,10 @@ src/
     ui/GameUI.tsx         ALL layout/positioning
     ui/components/        content-only pieces GameUI places
 ```
+
+## `cartridge` — the declarative authoring entry
+
+`@jgengine/shell/cartridge` builds a whole game from **one declarative config**: entities, spawning, weapons, progression, pickups, rules, HUD schema, and screens as data, compiled onto `defineGame` with the loop/state/UI engine-owned (`@jgengine/core/cartridge/` runtime + validator). Default to it when the game fits the cartridge archetypes — a cartridge game is ~75% smaller and nearly all data. Full surface, escape hatches, and testing pattern: **[reference/cartridge.md](reference/cartridge.md)**.
 
 ## `defineGame` — the single authoring entry
 

@@ -109,3 +109,102 @@ export const fieldkitVars: JgThemeVars = {
   "--jg-rarity-epic": "#b06fc9",
   "--jg-rarity-legendary": "#d8952f",
 };
+
+interface Rgb {
+  r: number;
+  g: number;
+  b: number;
+}
+
+function hexToRgb(hex: string): Rgb {
+  const raw = hex.replace("#", "");
+  const full = raw.length === 3 ? raw.split("").map((c) => c + c).join("") : raw;
+  return {
+    r: parseInt(full.slice(0, 2), 16),
+    g: parseInt(full.slice(2, 4), 16),
+    b: parseInt(full.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex({ r, g, b }: Rgb): string {
+  const channel = (v: number) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0");
+  return `#${channel(r)}${channel(g)}${channel(b)}`;
+}
+
+function mix(from: string, to: string, amount: number): string {
+  const a = hexToRgb(from);
+  const b = hexToRgb(to);
+  return rgbToHex({
+    r: a.r + (b.r - a.r) * amount,
+    g: a.g + (b.g - a.g) * amount,
+    b: a.b + (b.b - a.b) * amount,
+  });
+}
+
+function alpha(hex: string, value: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${value})`;
+}
+
+export interface JgThemeSeed {
+  accent: string;
+  surface: string;
+  text?: string;
+  health?: string;
+  mana?: string;
+  stamina?: string;
+  xp?: string;
+  shield?: string;
+  danger?: string;
+  warning?: string;
+  friendly?: string;
+  fontDisplay?: string;
+}
+
+export function deriveJgTheme(seed: JgThemeSeed): JgThemeVars {
+  const accent = seed.accent;
+  const surface = seed.surface;
+  const text = seed.text ?? mix("#f4f4f0", accent, 0.12);
+  const health = seed.health ?? "#e0483e";
+  const mana = seed.mana ?? "#4a86d8";
+  const stamina = seed.stamina ?? "#d9c33f";
+  const xp = seed.xp ?? "#a566d9";
+  const shield = seed.shield ?? "#9fb9c9";
+  const danger = seed.danger ?? "#e0483e";
+  const warning = seed.warning ?? "#e8a33d";
+  return {
+    "--jg-accent": accent,
+    "--jg-accent-glow": alpha(accent, 0.5),
+    "--jg-accent-deep": mix(accent, "#000000", 0.55),
+    "--jg-surface": surface,
+    "--jg-surface-deep": mix(surface, "#000000", 0.5),
+    "--jg-edge": mix(surface, accent, 0.22),
+    "--jg-edge-bright": mix(surface, accent, 0.42),
+    "--jg-text": text,
+    "--jg-text-dim": mix(text, surface, 0.42),
+    "--jg-health": health,
+    "--jg-health-deep": mix(health, "#000000", 0.5),
+    "--jg-mana": mana,
+    "--jg-mana-deep": mix(mana, "#000000", 0.5),
+    "--jg-stamina": stamina,
+    "--jg-stamina-deep": mix(stamina, "#000000", 0.5),
+    "--jg-xp": xp,
+    "--jg-xp-deep": mix(xp, "#000000", 0.5),
+    "--jg-shield": shield,
+    "--jg-shield-deep": mix(shield, "#000000", 0.5),
+    "--jg-danger": danger,
+    "--jg-warning": warning,
+    "--jg-success": accent,
+    "--jg-hostile": danger,
+    "--jg-friendly": seed.friendly ?? mana,
+    "--jg-neutral": stamina,
+    "--jg-rarity-common": "#b4b2a8",
+    "--jg-rarity-uncommon": "#7fb84a",
+    "--jg-rarity-rare": "#4a86d8",
+    "--jg-rarity-epic": "#a04fd0",
+    "--jg-rarity-legendary": "#e0862e",
+    "--jg-font-display": seed.fontDisplay ?? '"Segoe UI", system-ui, sans-serif',
+    "--jg-font-numeric": 'Consolas, "Cascadia Mono", "SF Mono", "Roboto Mono", monospace',
+    "--jg-font-body": '"Segoe UI", system-ui, sans-serif',
+  };
+}
