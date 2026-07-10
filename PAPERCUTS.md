@@ -35,3 +35,7 @@ Batch worker ran a stray 'bun install' mid-parallel-build; interrupted install l
 2026-07-10T00:44:29.170Z — claude-sonnet-5 — Claude
 
 canyon-chase build: assets add / pull kenney-nature and kenney-racing to source real GLB props (rocks, cacti, cars) → blocked, proxy policy-denies kenney.nl/quaternius.com/poly.pizza (403 on CONNECT) in this sandbox with no mirror configured, so this session's games ship with primitive/colored-box props instead of real assets
+
+2026-07-10T01:35:49.041Z — claude-opus-4-8 — Claude
+
+auto-thumbnail poster capture → maze-muncher and commit-canopy render an empty 3D scene at their default play camera (poster stddev <4); their old committed screenshots only looked non-empty because the HUD DOM was in frame. Real camera-framing gap: these games' world content isn't in the default camera view.

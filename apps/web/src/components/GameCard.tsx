@@ -1,19 +1,20 @@
 import type { Game } from "../content/games";
 import { GameArt } from "./GameArt";
+import { SceneThumbnail } from "./SceneThumbnail";
 
-export function GameFace({ game, className = "" }: { game: Game; className?: string }) {
+function FacePlaceholder({ game }: { game: Game }) {
   if (game.shot !== undefined) {
     return (
       <img
         src={game.shot}
         alt={`${game.title} gameplay`}
         loading="lazy"
-        className={`h-full w-full object-cover ${className}`}
+        className="absolute inset-0 h-full w-full object-cover"
       />
     );
   }
   return (
-    <div className={`relative h-full w-full ${className}`}>
+    <>
       <div
         className="absolute inset-0 opacity-40"
         style={{
@@ -25,7 +26,15 @@ export function GameFace({ game, className = "" }: { game: Game; className?: str
       <div className="absolute inset-0 p-6">
         <GameArt id={game.id} hue={game.hue} />
       </div>
-    </div>
+    </>
+  );
+}
+
+export function GameFace({ game, className = "" }: { game: Game; className?: string }) {
+  return (
+    <SceneThumbnail id={game.id} className={className}>
+      <FacePlaceholder game={game} />
+    </SceneThumbnail>
   );
 }
 
