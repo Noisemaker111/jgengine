@@ -3,6 +3,7 @@ import { ResultsScreen, type ResultLine } from "@/components/ui/results-screen";
 import { ScoreReadout } from "@/components/ui/score-readout";
 import { WaveIndicator } from "@/components/ui/wave-indicator";
 import { useDisplayProfile } from "@jgengine/react/display";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { LEVELS } from "../levels/catalog";
 import { useSlingshotState, useSlingshotStore } from "../state/slingshotStore";
 import { siegeVars } from "./theme";
@@ -46,28 +47,31 @@ function Hud() {
   const state = useSlingshotState();
   const { coarsePointer } = useDisplayProfile();
   const hint = coarsePointer ? "Drag back from the pouch, release to fling." : "Drag back from the sling pouch to aim, release to fire.";
+  const layout = useHudLayout({ storageKey: "slingshot-siege" });
   return (
-    <div className="pointer-events-none absolute inset-0 select-none">
-      <div className="absolute left-6 top-6 flex flex-col gap-1">
+    <HudCanvas layout={layout} className="select-none">
+      <HudPanel id="level-info" anchor="top-left" inset={{ x: 24, y: 24 }} className="flex flex-col gap-1">
         <span className="font-serif text-xs uppercase tracking-[0.3em] text-[#ab977a]">
           Siege {state.levelIndex + 1} / {LEVELS.length}
         </span>
         <span className="text-2xl font-bold text-[#f3e6cf]" style={{ textShadow: "0 2px 6px rgba(0,0,0,0.9)" }}>
           {state.levelName}
         </span>
-      </div>
-      <div className="absolute right-6 top-6">
+      </HudPanel>
+      <HudPanel id="score" anchor="top-right" inset={{ x: 24, y: 24 }}>
         <ScoreReadout value={state.totalScore} label="Score" size="lg" />
-      </div>
-      <div className="absolute left-1/2 top-6 -translate-x-1/2">
+      </HudPanel>
+      <HudPanel id="wave-indicator" anchor="top" inset={{ x: 0, y: 24 }}>
         <WaveIndicator wave={state.levelIndex + 1} totalWaves={LEVELS.length} remaining={state.targetsTotal - state.targetsDestroyed} remainingLabel="dummies" />
-      </div>
-      <div className="absolute bottom-6 right-6">
+      </HudPanel>
+      <HudPanel id="ammo" anchor="bottom-right" inset={{ x: 24, y: 24 }}>
         <AmmoCounter magazine={state.shotsLeft} lowAt={1} />
-      </div>
-      <div className="absolute bottom-6 left-6 max-w-xs text-[11px] leading-4 text-[#ab977a]">{hint}</div>
+      </HudPanel>
+      <HudPanel id="hint" anchor="bottom-left" inset={{ x: 24, y: 24 }} className="max-w-xs text-[11px] leading-4 text-[#ab977a]">
+        {hint}
+      </HudPanel>
       <ResultsOverlay />
-    </div>
+    </HudCanvas>
   );
 }
 

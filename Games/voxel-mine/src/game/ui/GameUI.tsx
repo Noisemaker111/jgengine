@@ -1,4 +1,5 @@
 import { useDisplayProfile } from "@jgengine/react/display";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 
 import { Hotbar } from "./Hotbar";
 import { Objectives } from "./Objectives";
@@ -7,20 +8,21 @@ import { ResourceTally } from "./ResourceTally";
 
 export function GameUI() {
   const { coarsePointer } = useDisplayProfile();
+  const layout = useHudLayout({ storageKey: "voxel-mine" });
   return (
-    <div className="pointer-events-none absolute inset-0">
-      <div className="absolute left-4 top-4">
+    <HudCanvas layout={layout}>
+      <HudPanel id="objectives" anchor="top-left" inset={{ x: 16, y: 16 }}>
         <Objectives />
-      </div>
-      <div className="absolute right-4 top-4">
+      </HudPanel>
+      <HudPanel id="resource-tally" anchor="top-right" inset={{ x: 16, y: 16 }}>
         <ResourceTally />
-      </div>
+      </HudPanel>
       <div className={`absolute inset-x-0 flex justify-center ${coarsePointer ? "bottom-72" : "bottom-28"}`}>
         <PickupToast />
       </div>
-      <div className={`absolute inset-x-0 flex justify-center ${coarsePointer ? "bottom-52" : "bottom-6"}`}>
+      <HudPanel id="hotbar" anchor="bottom" inset={{ x: 0, y: coarsePointer ? 208 : 24 }}>
         <Hotbar />
-      </div>
-    </div>
+      </HudPanel>
+    </HudCanvas>
   );
 }

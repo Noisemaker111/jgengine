@@ -1,5 +1,6 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame } from "@jgengine/react/hooks";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 
 import type { CardData, CardKind } from "../cards";
 import type { CombatSnapshot, HandCard, Phase } from "../combat";
@@ -90,7 +91,7 @@ function intentColor(kind: Intent["kind"]): string {
 function EnemyPanel({ enemy, intent }: { enemy: CombatSnapshot["enemy"]; intent: Intent | null }) {
   const tierStyle = TIER_STYLE[enemy.tier];
   return (
-    <div className="absolute left-1/2 top-10 flex -translate-x-1/2 flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-3">
       {intent && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-400/50 bg-stone-950/80 px-3 py-1.5 shadow-lg shadow-black/40">
           <IntentIcon kind={intent.kind} className={intentColor(intent.kind)} />
@@ -118,7 +119,7 @@ function EnemyPanel({ enemy, intent }: { enemy: CombatSnapshot["enemy"]; intent:
 
 function PlayerPanel({ hero }: { hero: CombatSnapshot["hero"] }) {
   return (
-    <div className="absolute bottom-6 left-6 flex flex-col gap-2 rounded-xl border border-stone-700/60 bg-stone-950/55 px-4 py-3 backdrop-blur-sm">
+    <div className="flex flex-col gap-2 rounded-xl border border-stone-700/60 bg-stone-950/55 px-4 py-3 backdrop-blur-sm">
       <div className="flex items-center gap-2">
         <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-400/50 bg-amber-800/60">
           <CardArtIcon art="sword" className="h-5 w-5 text-amber-200" />
@@ -204,7 +205,7 @@ function Hand({
   onPlay: (cardId: string) => void;
 }) {
   return (
-    <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-end gap-3">
+    <div className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 items-end gap-3">
       {hand.length === 0 && <span className="pb-6 text-sm text-stone-500">Hand empty</span>}
       {hand.map((entry) => (
         <CardFace
@@ -220,7 +221,7 @@ function Hand({
 
 function CombatLog({ log }: { log: readonly string[] }) {
   return (
-    <div className="absolute right-6 top-1/2 flex w-60 -translate-y-1/2 flex-col rounded-xl border border-stone-700/70 bg-stone-950/75 shadow-xl backdrop-blur-sm">
+    <div className="flex w-60 flex-col rounded-xl border border-stone-700/70 bg-stone-950/75 shadow-xl backdrop-blur-sm">
       <div className="border-b border-stone-700/60 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-stone-400">
         Combat Log
       </div>
@@ -240,7 +241,7 @@ function CombatLog({ log }: { log: readonly string[] }) {
 
 function EncounterBadge({ index, count }: { index: number; count: number }) {
   return (
-    <div className="absolute left-6 top-16 flex items-center gap-2 rounded-lg border border-stone-700/60 bg-stone-950/60 px-3 py-1.5">
+    <div className="flex items-center gap-2 rounded-lg border border-stone-700/60 bg-stone-950/60 px-3 py-1.5">
       <span className="text-xs uppercase tracking-widest text-stone-400">Encounter</span>
       <span className="text-lg font-black text-amber-300">{index + 1}</span>
       <span className="text-xs text-stone-500">/ {count}</span>
@@ -285,7 +286,7 @@ function RewardOverlay({
 }) {
   if (phase !== "reward") return null;
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 bg-black/75 backdrop-blur-sm">
+    <div className="pointer-events-auto absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 bg-black/75 backdrop-blur-sm">
       <h2 className="text-3xl font-black tracking-tight text-amber-300">Choose a Card</h2>
       <div className="flex gap-5">
         {options.map((card) => (
@@ -318,7 +319,7 @@ function ResultOverlay({
   const won = phase === "victory";
   const restartKey = actionLabel(keybinds, "startNewRun");
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm">
+    <div className="pointer-events-auto absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm">
       <h1 className={["text-6xl font-black tracking-tight", won ? "text-amber-300" : "text-rose-400"].join(" ")}>
         {won ? "Run Complete" : "Run Failed"}
       </h1>
@@ -350,26 +351,37 @@ export function GameUI() {
   const skipReward = () => commands.run("skipReward", {});
   const inCombat = runSnapshot.phase === "combat";
   const playerTurn = inCombat && snapshot.phase === "player";
+  const layout = useHudLayout({ storageKey: "spire-cards" });
 
   return (
-    <div className="relative h-full w-full select-none overflow-hidden text-stone-100">
+    <HudCanvas layout={layout} className="select-none overflow-hidden text-stone-100">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,#3b3457_0%,#231f36_45%,#12101c_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/60 to-transparent" />
 
-      <div className="absolute left-6 top-5 flex items-center gap-2 rounded-lg border border-stone-700/60 bg-stone-950/60 px-3 py-1.5">
-        <span className="text-xs uppercase tracking-widest text-stone-400">Turn</span>
-        <span className="text-lg font-black text-amber-300">{snapshot.round}</span>
-      </div>
-      <EncounterBadge index={runSnapshot.encounterIndex} count={runSnapshot.encounterCount} />
+      <HudPanel id="turn-indicator" anchor="top-left" inset={{ x: 24, y: 20 }}>
+        <div className="flex items-center gap-2 rounded-lg border border-stone-700/60 bg-stone-950/60 px-3 py-1.5">
+          <span className="text-xs uppercase tracking-widest text-stone-400">Turn</span>
+          <span className="text-lg font-black text-amber-300">{snapshot.round}</span>
+        </div>
+      </HudPanel>
+      <HudPanel id="encounter-badge" anchor="top-left" inset={{ x: 24, y: 64 }}>
+        <EncounterBadge index={runSnapshot.encounterIndex} count={runSnapshot.encounterCount} />
+      </HudPanel>
 
-      <EnemyPanel enemy={snapshot.enemy} intent={snapshot.intent} />
-      <CombatLog log={snapshot.log} />
-      <PlayerPanel hero={snapshot.hero} />
+      <HudPanel id="enemy-panel" anchor="top" inset={{ x: 0, y: 40 }}>
+        <EnemyPanel enemy={snapshot.enemy} intent={snapshot.intent} />
+      </HudPanel>
+      <HudPanel id="combat-log" anchor="right" inset={{ x: 24, y: 0 }}>
+        <CombatLog log={snapshot.log} />
+      </HudPanel>
+      <HudPanel id="player-panel" anchor="bottom-left" inset={{ x: 24, y: 24 }}>
+        <PlayerPanel hero={snapshot.hero} />
+      </HudPanel>
 
       {inCombat && (
         <>
           <Hand hand={snapshot.hand} energy={snapshot.energy.current} phase={snapshot.phase} onPlay={play} />
-          <div className="absolute bottom-6 right-6 flex items-end gap-4">
+          <HudPanel id="resource-bar" anchor="bottom-right" inset={{ x: 24, y: 24 }} style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
             <div className="flex flex-col items-center gap-2">
               <div className="flex gap-2">
                 <PileCount label="Draw" count={snapshot.deckCount} />
@@ -394,7 +406,7 @@ export function GameUI() {
                 <span className="rounded bg-stone-950/40 px-1.5 text-sm font-mono">{endTurnKey}</span>
               </button>
             </div>
-          </div>
+          </HudPanel>
         </>
       )}
 
@@ -405,6 +417,6 @@ export function GameUI() {
         encounterCount={runSnapshot.encounterCount}
         onRestart={restart}
       />
-    </div>
+    </HudCanvas>
   );
 }
