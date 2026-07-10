@@ -21,6 +21,17 @@ export const Route = createFileRoute("/games/$gameId")({
   component: PlayPage,
 });
 
+function MobileBadge({ hue }: { hue: string }) {
+  return (
+    <span
+      className="shrink-0 rounded-full border px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider"
+      style={{ color: hue, borderColor: `${hue}45`, backgroundColor: `${hue}16` }}
+    >
+      Mobile
+    </span>
+  );
+}
+
 function GameStage({ game }: { game: Game }) {
   const [phase, setPhase] = useState<"poster" | "loading" | "playing">("poster");
   const frameRef = useRef<HTMLIFrameElement | null>(null);
@@ -88,7 +99,10 @@ function GameStage({ game }: { game: Game }) {
       {phase !== "playing" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center">
           <div className="max-w-md">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-50">{game.title}</h2>
+            <div className="flex items-center justify-center gap-2">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-50">{game.title}</h2>
+              {game.platforms?.includes("mobile") === true && <MobileBadge hue={game.hue} />}
+            </div>
             <p className="mt-2 text-sm font-medium text-slate-300">{game.tagline}</p>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">{game.description}</p>
             <p className="mt-3 font-mono text-xs text-slate-500">{game.controls}</p>
@@ -133,6 +147,7 @@ function PlayPage() {
       <div className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-4 py-2 sm:px-6">
         <div className="flex min-w-0 items-baseline gap-3">
           <h1 className="truncate text-sm font-semibold tracking-tight text-slate-100">{game.title}</h1>
+          {game.platforms?.includes("mobile") === true && <MobileBadge hue={game.hue} />}
           <p className="hidden truncate font-mono text-xs text-slate-500 sm:block">{game.controls}</p>
         </div>
         <div className="flex shrink-0 items-center gap-3">
