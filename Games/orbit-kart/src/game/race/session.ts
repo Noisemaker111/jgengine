@@ -15,7 +15,7 @@ export type RacePhase = "start" | "countdown" | "racing" | "finished";
 export type RaceOutcome = "win" | "lose" | null;
 
 const COUNTDOWN_SECONDS = 3;
-const TIME_LIMIT_SECONDS = 700;
+const TIME_LIMIT_SECONDS = 300;
 const ANNOUNCER_HOLD_SECONDS = 3.2;
 
 export interface RawKartInput {

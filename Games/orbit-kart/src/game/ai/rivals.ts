@@ -1,5 +1,5 @@
 import { CHECKPOINT_DEFS, PLANETOIDS, type Planetoid } from "../cluster/catalog";
-import type { KartControlInput, KartPhysicsState } from "../physics/orbitalSim";
+import { isDischargeWindow, type KartControlInput, type KartPhysicsState } from "../physics/orbitalSim";
 import { PALETTE } from "../theme";
 
 export type RivalKind = "cautious" | "aggressive";
@@ -9,10 +9,9 @@ export interface RivalPersonality {
   name: string;
   kind: RivalKind;
   color: string;
-  headingTolerance: number;
-  orbitBias: number;
+  cruiseSpeed: number;
+  alignTolerance: number;
   dischargeChargeThreshold: number;
-  retroOnOvershoot: boolean;
 }
 
 export const RIVALS: readonly RivalPersonality[] = [
@@ -21,20 +20,18 @@ export const RIVALS: readonly RivalPersonality[] = [
     name: "Marla \"Steady\" Kwan",
     kind: "cautious",
     color: PALETTE.planetMint,
-    headingTolerance: 0.32,
-    orbitBias: -0.4,
-    dischargeChargeThreshold: 0.85,
-    retroOnOvershoot: true,
+    cruiseSpeed: 21.5,
+    alignTolerance: 0.5,
+    dischargeChargeThreshold: 0.75,
   },
   {
     id: "rival_aggressive",
     name: "Dex Solari",
     kind: "aggressive",
     color: PALETTE.boostTangerine,
-    headingTolerance: 0.55,
-    orbitBias: 0.45,
-    dischargeChargeThreshold: 0.35,
-    retroOnOvershoot: false,
+    cruiseSpeed: 25,
+    alignTolerance: 0.75,
+    dischargeChargeThreshold: 0.25,
   },
 ];
 
@@ -45,17 +42,9 @@ function normalizeAngle(angle: number): number {
   return value;
 }
 
-function nearestPlanetoid(x: number, z: number, planetoids: readonly Planetoid[]): Planetoid | null {
-  let best: Planetoid | null = null;
-  let bestDist = Number.POSITIVE_INFINITY;
-  for (const planetoid of planetoids) {
-    const dist = Math.hypot(planetoid.position[0] - x, planetoid.position[1] - z);
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = planetoid;
-    }
-  }
-  return best;
+function wellPlanetoid(state: KartPhysicsState, planetoids: readonly Planetoid[]): Planetoid | null {
+  if (state.wellId === null) return null;
+  return planetoids.find((planetoid) => planetoid.id === state.wellId) ?? null;
 }
 
 export function steerRival(
@@ -65,35 +54,32 @@ export function steerRival(
   planetoids: readonly Planetoid[] = PLANETOIDS,
 ): KartControlInput {
   const checkpoint = CHECKPOINT_DEFS[targetCheckpointIndex % CHECKPOINT_DEFS.length]!;
-  let targetX = checkpoint.position[0];
-  let targetZ = checkpoint.position[1];
-
-  const nearest = nearestPlanetoid(state.x, state.z, planetoids);
-  if (nearest !== null) {
-    const dx = nearest.position[0] - state.x;
-    const dz = nearest.position[1] - state.z;
-    const dist = Math.hypot(dx, dz);
-    if (dist > 0 && dist < nearest.wellRadius) {
-      targetX += (dx / dist) * nearest.radius * personality.orbitBias * 0.2;
-      targetZ += (dz / dist) * nearest.radius * personality.orbitBias * 0.2;
-    }
-  }
-
-  const toX = targetX - state.x;
-  const toZ = targetZ - state.z;
+  const toX = checkpoint.position[0] - state.x;
+  const toZ = checkpoint.position[1] - state.z;
   const distToTarget = Math.hypot(toX, toZ);
-  const desiredHeading = Math.atan2(toX, toZ);
+
+  const desiredSpeed = personality.cruiseSpeed;
+  const desiredVx = distToTarget > 0 ? (toX / distToTarget) * desiredSpeed : 0;
+  const desiredVz = distToTarget > 0 ? (toZ / distToTarget) * desiredSpeed : 0;
+
+  const errX = desiredVx - state.vx;
+  const errZ = desiredVz - state.vz;
+  const errMag = Math.hypot(errX, errZ);
+
+  const desiredHeading = errMag > 0.5 ? Math.atan2(errX, errZ) : Math.atan2(toX, toZ);
   const diff = normalizeAngle(desiredHeading - state.heading);
-  const turnDeadzone = personality.headingTolerance * 0.2;
-  const rotateLeft = diff < -turnDeadzone;
-  const rotateRight = diff > turnDeadzone;
-  const speed = Math.hypot(state.vx, state.vz);
-  const approachGain = personality.retroOnOvershoot ? 0.5 : 0.7;
-  const desiredSpeed = Math.min(24, Math.max(7, distToTarget * approachGain));
   const absDiff = Math.abs(diff);
-  const thrust = absDiff < 0.4 && speed < desiredSpeed;
-  const retro = speed > desiredSpeed + 4 || (absDiff > 1.2 && speed > 6);
-  const discharge = state.wellId !== null && state.wellCharge >= personality.dischargeChargeThreshold;
+
+  const rotateLeft = diff < -0.06;
+  const rotateRight = diff > 0.06;
+  const thrust = errMag > 1.2 && absDiff < personality.alignTolerance;
+  const retro = errMag > 1.2 && absDiff > Math.PI - personality.alignTolerance;
+
+  const well = wellPlanetoid(state, planetoids);
+  const discharge =
+    well !== null &&
+    state.wellCharge >= personality.dischargeChargeThreshold &&
+    isDischargeWindow([state.x - well.position[0], state.z - well.position[1]], [state.vx, state.vz]);
 
   return { thrust, retro, rotateLeft, rotateRight, discharge };
 }
