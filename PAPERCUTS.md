@@ -51,3 +51,7 @@ Ship worker backgrounded its sleep/sub-agent and ended its turn — background c
 2026-07-10T03:43:12.798Z — Fable 5 — Claude
 
 Skipped logging a papercut mid-session because the CLAUDE.md wording read like the entry would need its own ship cycle; nothing said papercuts ride along in the next PR.
+
+2026-07-10T04:50:45.550Z — grok — NoisemakerJon
+
+shell PATH missing bun → bun not recognized; needed full path C:\Users\Jk101\.bun\bin\bun.exe
