@@ -295,11 +295,15 @@ export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironment
  * flipped the sign and launched airborne players upward instead.
  */
 export function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined {
-  if (physics?.gravity === undefined && physics?.jumpVelocity === undefined) return undefined;
-  const tuning: MovementTuningOverrides = {};
-  if (physics.gravity !== undefined) tuning.gravityAcceleration = -physics.gravity;
-  if (physics.jumpVelocity !== undefined) tuning.jumpVelocity = physics.jumpVelocity;
-  return tuning;
+  if (physics === undefined) return undefined;
+  return {
+    get gravityAcceleration() {
+      return physics.gravity === undefined ? undefined : -physics.gravity;
+    },
+    get jumpVelocity() {
+      return physics.jumpVelocity;
+    },
+  };
 }
 
 /** True when the world is an environment feature with terrain, so the voxel controller should sample its height. */
@@ -730,6 +734,8 @@ function FrameDriver({
   pointerService,
   pointerAim,
   pingCommand,
+  poster,
+  onPosterSettled,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
@@ -743,7 +749,11 @@ function FrameDriver({
   pointerService: PointerService;
   pointerAim: boolean;
   pingCommand: string | undefined;
+  poster: boolean;
+  onPosterSettled: () => void;
 }) {
+  const posterElapsedRef = useRef(0);
+  const posterDoneRef = useRef(false);
   const motionRef = useRef(createPlayerMotionState());
   const voxelBodyRef = useRef<VoxelPlayerBody | null>(null);
   const solidCacheRef = useRef<{ count: number; set: Set<string> }>({ count: -1, set: new Set() });
@@ -755,9 +765,15 @@ function FrameDriver({
   const movement = playable.movement;
   const voxelDims = useMemo(
     () => ({
-      halfWidth: collision?.halfWidth ?? 0.3,
-      height: collision?.height ?? 1.8,
-      stepHeight: collision?.stepHeight ?? 0.6,
+      get halfWidth() {
+        return collision?.halfWidth ?? 0.3;
+      },
+      get height() {
+        return collision?.height ?? 1.8;
+      },
+      get stepHeight() {
+        return collision?.stepHeight ?? 0.6;
+      },
     }),
     [collision],
   );
@@ -774,6 +790,15 @@ function FrameDriver({
   const hasTerrain = useMemo(() => hasEnvironmentTerrain(playable.game.world), [playable]);
 
   useFrame((_state, rawDt) => {
+    if (poster) {
+      if (posterDoneRef.current) return;
+      posterElapsedRef.current += Math.min(rawDt, 0.05);
+      if (posterElapsedRef.current >= POSTER_SETTLE_SECONDS) {
+        posterDoneRef.current = true;
+        onPosterSettled();
+        return;
+      }
+    }
     const simStart = performance.now();
     try {
     const dt = Math.min(rawDt, 0.05);
@@ -1081,19 +1106,25 @@ function DiagnosticOverlay({ diagnostics }: { diagnostics: RuntimeDiagnostic[] }
   );
 }
 
+const POSTER_SETTLE_SECONDS = 1.6;
+
 export function GamePlayerShell({
   playable,
   multiplayer: rawMultiplayer = null,
+  poster = false,
 }: {
   playable: PlayableGame;
   multiplayer?: ShellMultiplayer | null;
+  poster?: boolean;
 }) {
   const multiplayer = useMemo(
     () => (rawMultiplayer === null ? null : withDevtoolsLatency(rawMultiplayer)),
     [rawMultiplayer],
   );
-  const devtoolsEnabled = playable.devtools !== false;
+  const devtoolsEnabled = playable.devtools !== false && !poster;
   const [devtoolsOpen, setDevtoolsOpen] = useState(false);
+  const [posterFrozen, setPosterFrozen] = useState(false);
+  const posterSettledRef = useRef(false);
   const [ctx, setCtx] = useState<GameContext | null>(null);
   const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostic[]>([]);
   const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
@@ -1361,6 +1392,7 @@ export function GamePlayerShell({
   const effectiveSky = backdropSky ?? worldSky;
   const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
   const lighting = playable.lighting;
+  const orthographic = playable.camera?.projection === "orthographic";
 
   const localXY = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -1499,6 +1531,7 @@ export function GamePlayerShell({
     <div
       ref={wrapperRef}
       tabIndex={0}
+      {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
       className="relative h-full w-full bg-neutral-950 outline-none"
       onKeyDown={(event) => {
         if (event.code === "F2" && devtoolsEnabled) {
@@ -1544,11 +1577,21 @@ export function GamePlayerShell({
       }}
     >
       <Canvas
-        camera={{
-          fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
-          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
-          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
-        }}
+        frameloop={poster && posterFrozen ? "demand" : "always"}
+        orthographic={orthographic}
+        camera={
+          orthographic
+            ? {
+                zoom: playable.camera?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
+                near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+              }
+            : {
+                fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
+                near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+              }
+        }
         shadows={playable.shadows ?? true}
         gl={{ preserveDrawingBuffer: true }}
         style={{ touchAction: "none" }}
@@ -1620,10 +1663,16 @@ export function GamePlayerShell({
           pointerService={pointerService}
           pointerAim={pointer?.aim === true}
           pingCommand={pointer?.pingCommand}
+          poster={poster}
+          onPosterSettled={() => {
+            if (posterSettledRef.current) return;
+            posterSettledRef.current = true;
+            setPosterFrozen(true);
+          }}
         />
         <DevtoolsRendererProbe />
       </Canvas>
-      {coarsePointer && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
+      {!poster && coarsePointer && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
         <TouchPlaySurface
           scheme={touchScheme}
           sink={touchSink}
@@ -1640,8 +1689,8 @@ export function GamePlayerShell({
           <GameUI />
         </GameProvider>
       </GameUiErrorBoundary>
-      {showReticle ? <Reticle /> : null}
-      {coarsePointer && touchScheme !== null && (touchScheme.joystick !== null || touchScheme.buttons.length > 0) ? (
+      {!poster && showReticle ? <Reticle /> : null}
+      {!poster && coarsePointer && touchScheme !== null && (touchScheme.joystick !== null || touchScheme.buttons.length > 0) ? (
         <TouchControlsDock scheme={touchScheme} sink={touchSink} />
       ) : null}
       {marquee !== null ? <MarqueeBox rect={marquee} /> : null}
@@ -1657,7 +1706,7 @@ export function GamePlayerShell({
       {devtoolsEnabled ? (
         <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
       ) : null}
-      <DiagnosticOverlay diagnostics={diagnostics} />
+      {poster ? null : <DiagnosticOverlay diagnostics={diagnostics} />}
     </div>
   );
 }

@@ -6,7 +6,7 @@ const GameClient = dynamic(() => import("../../components/GameClient"), { ssr: f
 
 export default function PlayPage() {
   return (
-    <div style={{ height: "100vh" }}>
+    <div style={{ height: "100dvh" }}>
       <GameClient />
     </div>
   );

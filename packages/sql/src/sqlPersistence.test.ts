@@ -159,6 +159,7 @@ test("savePlan applies leaderboard, profiles, chunks, and server atomically", as
     chunks: [
       { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 10 },
     ],
+    deletedChunks: [],
     leaderboard: [{ userId: "alice", stat: "gold", scope: "profile", by: 2 }],
   });
 
@@ -166,4 +167,55 @@ test("savePlan applies leaderboard, profiles, chunks, and server atomically", as
   expect((await persistence.loadProfile({ userId: "alice", gameId: "demo" }))?.revision).toBe(1);
   expect(await persistence.loadChunks("srv-1")).toHaveLength(1);
   expect(await persistence.getLeaderboardProfile({ gameId: "demo", userId: "alice" })).toEqual({ gold: 2 });
+});
+
+test("savePlan removes chunks named in deletedChunks", async () => {
+  const persistence = await makePersistence();
+  await persistence.saveChunks("srv-1", [
+    { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 10 },
+    { serverId: "srv-1", chunkKey: "1,0", snapshot: { chunkKey: "1,0", objects: [], entities: [] }, updatedAt: 10 },
+  ]);
+
+  await persistence.savePlan?.({
+    server: makeServer(),
+    profiles: [],
+    chunks: [],
+    deletedChunks: ["0,0"],
+    leaderboard: [],
+  });
+
+  expect((await persistence.loadChunks("srv-1")).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
+});
+
+test("getLeaderboardTop ignores non-finite limits", async () => {
+  const persistence = await makePersistence();
+  await persistence.applyLeaderboardIncrements("demo", [
+    { userId: "alice", stat: "kills", scope: "global", by: 3 },
+  ]);
+  expect(
+    await persistence.getLeaderboardTop({ gameId: "demo", stat: "kills", scope: "global", limit: Number.NaN }),
+  ).toEqual([{ userId: "alice", value: 3 }]);
+});
+
+test("resetScenario clears feeds and leaderboard rows for the server", async () => {
+  const persistence = await makePersistence();
+  await persistence.saveServer(makeServer());
+  await persistence.appendFeed({ serverId: "srv-1", action: "kill", entry: { index: 1 } });
+  await persistence.applyLeaderboardIncrements("demo", [
+    { userId: "alice", stat: "kills", scope: "server", serverId: "srv-1", by: 4 },
+  ]);
+
+  await persistence.resetScenario?.({
+    gameId: "demo",
+    serverId: "srv-1",
+    wipeChunks: true,
+    wipeServerSession: true,
+    resetPlayers: "none",
+    runFields: [],
+  });
+
+  expect(await persistence.loadFeed({ serverId: "srv-1", action: "kill" })).toEqual([]);
+  expect(
+    await persistence.getLeaderboardTop({ gameId: "demo", stat: "kills", scope: "server", serverId: "srv-1" }),
+  ).toEqual([]);
 });

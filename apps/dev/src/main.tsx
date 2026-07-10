@@ -31,6 +31,7 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
     rig: "observer",
     observer: { bind: { kind: "entity", entityId: "sensor-showcase-culprit" }, distance: 7, height: 3.5, orbitSpeed: 0.3 },
   },
+  side2d: { rig: "sideScroll", projection: "orthographic" },
 };
 
 const gameModules = import.meta.glob<{ game: PlayableGame; uiScenario?: UiPreviewScenario }>(
@@ -46,15 +47,19 @@ const gameSourceModules = import.meta.glob<Record<string, unknown>>([
 async function discoverGameTunables(gameId: string, gameName: string): Promise<void> {
   const prefix = `../../../Games/${gameId}/src/`;
   const loaders = Object.entries(gameSourceModules).filter(([path]) => path.startsWith(prefix));
-  await Promise.all(
+  const loaded = await Promise.all(
     loaders.map(async ([path, loader]) => {
       try {
-        devtools.discover.scanModule(await loader());
+        return await loader();
       } catch (error) {
         console.warn(`[jgengine:devtools] skipped ${path} during tunable discovery`, error);
+        return null;
       }
     }),
   );
+  for (const moduleExports of loaded) {
+    if (moduleExports !== null) devtools.discover.scanModule(moduleExports);
+  }
   applyStoredDevtoolsOverrides(gameName);
 }
 
@@ -156,7 +161,9 @@ function DevApp() {
     void load()
       .then(async (loaded) => {
         await discoverGameTunables(GAME_ID, loaded.game.name);
-        if (P2P_ROLE === "host" || P2P_ROLE === "join") {
+        if (MODE === "poster") {
+          setMultiplayer(null);
+        } else if (P2P_ROLE === "host" || P2P_ROLE === "join") {
           void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
         } else {
           setMultiplayer(
@@ -204,6 +211,7 @@ function DevApp() {
     );
   }
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
+  if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} />;
 }
 

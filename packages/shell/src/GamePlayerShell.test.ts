@@ -100,9 +100,21 @@ describe("resolveWorldSky", () => {
 });
 
 describe("resolvePhysicsTuning", () => {
-  test("returns undefined when no physics fields are declared", () => {
+  test("returns undefined when no physics config is declared", () => {
     expect(resolvePhysicsTuning(undefined)).toBeUndefined();
-    expect(resolvePhysicsTuning({})).toBeUndefined();
+    const empty = resolvePhysicsTuning({});
+    expect(empty?.gravityAcceleration).toBeUndefined();
+    expect(empty?.jumpVelocity).toBeUndefined();
+  });
+
+  test("reads the physics config live so devtools edits apply mid-session", () => {
+    const physics = { gravity: -24, jumpVelocity: 7 };
+    const tuning = resolvePhysicsTuning(physics)!;
+    expect(tuning.gravityAcceleration).toBe(24);
+    physics.gravity = -48;
+    physics.jumpVelocity = 9;
+    expect(tuning.gravityAcceleration).toBe(48);
+    expect(tuning.jumpVelocity).toBe(9);
   });
 
   test("negates the signed gravity into a positive downward magnitude", () => {

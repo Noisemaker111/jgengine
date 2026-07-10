@@ -41,7 +41,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 |---------|----------------------------------|-----------|
 | Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig`, `TimeConfig` |
 | Simulation clock | `time/simClock` | `createSimClock`, `SimClock`, `TimeConfig`, `ClockSnapshot`, `CalendarTime` |
-| Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
+| Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `CameraProjection`, `SideScrollCameraConfig`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |
 | Behaviour lifecycle | `behaviour/behaviour` | `Behaviour` (`onAwake`→`onEnable`→`onStart`→`onUpdate(dt)`→`onDisable`→`onDestroy`), `BehaviourModule`, `createBehaviourWorld`, `BehaviourWorld`, `JGEngineRegister`, `RegisterField`, `BehaviourModules` — Unity-style lifecycle over an id-keyed node tree (`setActive` cascade, lazy update dispatch); key nodes by entity instance ids. Games augment `JGEngineRegister` via `declare module "@jgengine/core/behaviour/behaviour"` for typed `world.modules`. Three.js binding: `Object3DBehaviour`, `attachObject3D`, `useBehaviourWorld` from `@jgengine/shell/behaviour` |
 | Reactive keyed store | `store/observableKeyedStore` | `createObservableKeyedStore`, `ObservableKeyedStore` — backs `ctx.game.store` |
@@ -61,6 +61,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Voxel field | `world/voxelField` | `createVoxelField`, `VoxelField`, `VoxelCell`, `VoxelHit`, `VoxelBounds`, `VoxelFieldSummary`, `VoxelFace`, `VOXEL_FACES`, `VOXEL_FACE_NORMALS` — a chunked block lattice, distinct from the `voxel()` `WorldFeature` descriptor |
 | Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `rollingField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep`, `snapToGround`, `snapEntityToGround`, `resolveTerrainPalette`, `TERRAIN_MATERIAL_PALETTES` |
 | Seeded RNG | `random/rng` | `seededRng`, `seededStreams` |
+| Seed share link | `random/seedLink` | `withSeedParam`, `seedFromUrl`, `seedFromSearch`, `dailySeed`, `DEFAULT_SEED_PARAM` — encode/decode a world seed to/from a shareable URL query param; `dailySeed` is the UTC daily-run seed |
 | Name generator | `random/nameGen` | `createNameGenerator`, `pickFrom`, `fillTemplate`, `NameGenerator`, `NameGeneratorOptions`, `SyllableBank` |
 | Regions | `world/regions` | `createRegionField`, `isRegionField`, `RegionDef`, `RegionField`, `RegionSample` |
 | Wind field | `world/wind` | `windField`, `WindField`, `WindFieldConfig`, `WindVector` |
@@ -91,6 +92,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Persistence scopes | `runtime/persistenceScope` | `partitionScopes`, `resetRun`, `mergeScopes`, `clearRunFields`, `applyRunReset`, `planScenarioReset`, `ScopeSchema`, `ScenarioReset`, `PersistenceScope` |
 | Inventory | `inventory/inventoryModel` | `InventoryLayout`, `InventorySet`, `ItemTraits` |
 | Progression | `game/progression` | `curve`, `evalCurve`, `leveling`, `Curve`, `LevelingTrack`, `LevelProgress` |
+| Talent tree | `game/talents` | `createTalentTree`, `TalentTree`, `TalentTreeConfig`, `TalentNodeDef`, `TalentRequirement`, `TalentAllocateResult`, `ResolvedTalents`, `TalentSnapshot` — point spends gated by prereqs + points-in-branch, resolved once into a cached flat `StatModifierSet` + ability grants |
 | Inventory slots | `inventory/slotModel` | `createSlots`, `placeAt`, `removeAt`, `moveSlot`, `firstEmpty`, `compactSlots`, `Slot`, `SlotGrid` |
 | Shaped inventory | `inventory/shapedGrid` | `createShapedGrid`, `placeShaped`, `moveShaped`, `removeShaped`, `canPlace`, `rotateFootprint`, `occupiedCells`, `gridAdjacencyQuery`, `cellFromPoint`, `ShapedGrid`, `Footprint`, `Placement`, `Rotation` |
 | Card piles | `cards/cardPile` | `createCardPile`, `createCardPileState`, `draw`, `moveCards`, `shuffleZone`, `pileRng`, `CardPile`, `CardPileState`, `CardPileConfig` |
@@ -108,6 +110,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Build permissions | `world/buildPermissions` | `createPlotPermissions`, `createContributionPool`, `PlotPermissions`, `ContributionPool`, `BuildRole`, `ContributionGoal` |
 | Interiors | `world/interiors` | `createInteriors`, `Interior`, `Exterior`, `SpaceRef` |
 | Game clock | `time/gameClock` | `getScaledElapsedMs`, `computeGameDay`, `SECONDS_PER_GAME_DAY` |
+| Idle / offline catch-up | `time/idleProgress` | `idleWindow`, `linearCatchUp`, `exponentialCatchUp`, `steppedCatchUp`, `IdleWindow`, `IdleWindowConfig`, `SteppedCatchUpResult` — elapsed-real-time production/growth/decay for a game reopened after being closed |
 | Scene behaviors | `scene/behaviors` | `wander`, `patrol`, `promptable`, `talkable`, `player` |
 | Capture check | `scene/captureCheck` | `captureChance`, `rollCapture`, `CaptureCheckInput` |
 | Owned roster | `scene/roster` | `createRoster`, `Roster`, `RosterEntry`, `RosterCaptureOptions` |
@@ -136,6 +139,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | JSON data source | `data/jsonDataSource` | `createJsonDataSource`, `JsonDataSourceOptions` |
 | Dev proxy routing | `data/devProxy` | `proxiedUrl`, `parseDevProxyTable`, `DevProxyTable`, `ProxiedUrlOptions`, `DEFAULT_DEV_PROXY_PREFIX` |
 | Grid-cell world rendering | `world/gridInstances` | `resolveGridInstances`, `GridInstanceTransform` |
+| Swarm LOD scheduler | `world/lod` | `createLodScheduler`, `LodScheduler`, `LodSchedulerConfig`, `LodBand` — distance→band index for render detail, `step(id, distance, dt)` throttles per-entity updates by band interval (staggered, accumulates skipped time); pairs with `@jgengine/shell/world/SpriteBatch` for 1000+ entity swarms |
 | Turn loop | `turn/turnLoop` | `createTurnLoop`, `TurnLoop`, `TurnLoopConfig`, `TurnState`, `PoolConfig`, `PoolState`, `TurnLoopSnapshot` |
 | Declared-action intent board | `turn/intent` | `createIntentBoard`, `IntentBoard`, `DeclaredIntent` — `declare(participantId, intent)`, `peek`, `all`, `consume`, `clear` |
 | Commit modes | `turn/commit` | `createCommitController`, `CommitController`, `CommitMode`, `CommitOutcome`, `SubmittedAction` |
@@ -155,6 +159,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Beat clock | `time/beatClock` | `createBeatClock`, `createBeatInputBuffer`, `nextBeatTime`, `BeatClock`, `BeatClockConfig`, `BeatSnapshot`, `BeatInputBuffer`, `BufferedAction` |
 | Spawn director | `ai/spawnDirector` | `createSpawnDirectorState`, `advanceSpawnDirector`, `advanceWave`, `raiseAlert`, `pickSpawnPoint`, `SpawnDirectorConfig`, `WaveManifest`, `SpawnEntry`, `SpawnRequest`, `DirectorContext` |
 | Threat table | `ai/threat` | `createThreatTable`, `ThreatTable`, `ThreatTableConfig`, `ThreatEntry`, `HighestThreatOptions` |
+| Group-assist aggro | `ai/groupAssist` | `createAssistNetwork`, `AssistNetwork`, `AssistNetworkConfig`, `AssistMember` — propagates one member's threat gains to same-group members (optional radius + `distanceBetween` gating) so a single pull rallies the group |
 | Job board | `ai/jobBoard` | `createJobBoard`, `JobBoard`, `JobDef`, `Job`, `JobPhase`, `WorkerState`, `JobReport`, `JobTickContext` |
 | Crowd flow | `ai/crowd` | `computeFlowField`, `createCrowdField`, `selectPoi`, `FlowField`, `FlowFieldOptions`, `CrowdField`, `Poi`, `SelectPoiOptions` |
 | Factions & reputation | `faction/factions`, `faction/reputation` | `createFactionGraph`, `createFactionRoster`, `FactionRelation`, `FactionDef`, `FactionGraph`, `FactionRoster`, `createReputationLedger`, `DEFAULT_REPUTATION_TIERS`, `tierForStanding`, `effectiveRelation`, `ReputationTier`, `ReputationLedger` |
@@ -173,12 +178,14 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Session matchmaking | `multiplayer/matchmaking` | `browseSessions`, `findByJoinCode`, `quickMatch`, `matchesFilter`, `normalizeJoinCode`, `generateJoinCode`, `SessionListing`, `MatchFilter` |
 | Auth identity | `multiplayer/identity` | `AuthSession`, `PlayerIdentity`, `sessionPlayer`, `resolveGuestSession` |
 | Text chat | `game/chat`, `multiplayer/chatContract` | `createChat`, `Chat`, `ChatMessage`, `ChatChannelDef`, `whisperChannelId`, `createChatRateLimiter`, `ChatTransport`, `ChatSync`, `createLocalChatTransport` |
+| Chat filter | `game/chatFilter` | `createChatFilter`, `normalizeChatText`, `ChatFilter`, `ChatFilterConfig`, `ChatFilterResult` — mask/reject blocked words (leet-normalized token match); wire via `ChatDeps.filter` (word lists are game data, the engine ships the mechanism) |
 | Voice seam | `multiplayer/voiceContract` | `VoiceTransport`, `VoiceParticipant`, `VoiceRoute`, `createLocalVoiceTransport`, `createPushToTalk`, `PushToTalkMode` |
 | Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes` |
+| Personal-best records | `game/recordBook` | `createRecordBook`, `RecordBook`, `RecordBookConfig`, `RecordStorage`, `RecordDirection`, `RecordSubmission` — named numeric fields racing "lower" (times) or "higher" (scores/streaks) behind a structural key-value storage (pass `localStorage`, a test stub, or `null` for in-memory); corrupt or unavailable storage degrades to an empty book, never throws into a tick |
 | Reveal query | `sensor/revealQuery` | `createRevealQuery`, `RevealQuery`, `RevealQueryOptions`, `RevealHit` |
 | Hidden-state probe | `sensor/hiddenStateProbe` | `probeHiddenState`, `probeHiddenStateAll`, `HiddenStateSource`, `HiddenStateValue`, `SensorProbeOptions`, `SensorReading` |
 | View-frustum sensor | `sensor/frustumSensor` | `createFrustumSensor`, `projectToView`, `framingScore`, `FrustumCamera`, `FrustumTarget`, `FrustumProjection`, `FrustumSample`, `FrustumSensor`, `FramingConfig` |
-| Recording buffer | `sensor/recordingBuffer` | `createRecordingBuffer`, `RecordingBuffer`, `RecordingFrame`, `RecordingBufferOptions` |
+| Recording buffer | `sensor/recordingBuffer` | `createRecordingBuffer`, `RecordingBuffer`, `RecordingFrame`, `RecordingPair`, `RecordingBufferOptions` — `seekPair(t)` brackets a time with its floor and next frames for interpolated playback (ghost racers, kill-cams) |
 | Concealment scoring | `sensor/concealment` | `colorDistance`, `concealmentScore`, `createConcealmentSensor`, `ColorHex`, `ConcealmentTarget`, `ConcealmentSample`, `ConcealmentSensor` |
 | Freeze violation monitor | `sensor/freezeMonitor` | `createFreezeMonitor`, `FreezeMonitor`, `FreezeSubject`, `FreezeViolation` |
 | Animation SM | `combat/animationState` | `createAnimationState`, `AnimationState`, `AnimationClip`, `FramePhase`, `FrameRange`, `phasesAtFrame`, `activeRangeAtFrame`, `frameAtMs` |
@@ -191,6 +198,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Telegraph | `combat/telegraph` | `pointInTelegraph`, `telegraphProgress`, `telegraphFired`, `telegraphTurnProgress`, `telegraphFiredAtTurn`, `telegraphTurnsRemaining`, `TelegraphShape`, `TelegraphConfig` |
 | Dash / dodge | `movement/dash` | `createDashState`, `DashState`, `DashConfig`, `DashBurst`, `iframeActive`, `dashOffset` |
 | Ability kit | `combat/abilityKit` | `createAbilityKit`, `AbilityKit`, `AbilitySlotConfig`, `AbilitySlotSnapshot`, `AbilitySlotState`, `AbilityCastType`, `AbilityCastResult`, `AbilitySlotRetune` |
+| Resource pool | `combat/resourcePool` | `createResourcePool`, `ResourcePool`, `ResourcePoolConfig` — current/max with per-second regen/decay and spend/gain; `pool.current()` is the ability kit's `resourceAvailable` |
+| Combo points | `combat/comboPoints` | `createComboPoints`, `ComboPoints`, `ComboPointsConfig` — discrete points accrued on action, expiring after a timeout from the last gain, spent in bulk |
 | Event meter | `stats/eventMeter` | `createEventMeter`, `EventMeter`, `EventMeterConfig`, `EventMeterFeedResult` |
 | Auto-target policy | `scene/autoTarget` | `selectAutoTarget`, `createAutoTargeter`, `AutoTargetPolicy`, `AutoTargeter`, `AutoTargetDeps` |
 | Resistance matrix | `combat/resistance` | `resolveResistance`, `resistanceScale`, `ResistanceMatrix`, `ResistVerdict`, `ResistanceResult` |
@@ -439,7 +448,7 @@ export const physics: PhysicsConfig = { gravity: -32 };
 - `server.mode` is a string your loop/commands interpret — the engine ships no gamemode presets.
 - Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts, or inline binding/inventory/world blobs. The one exception is `physics.gravity`/`physics.jumpVelocity` — global controller tuning, not a catalog value (see "Controller kinematics" below).
 - `assets` may be omitted for a game with no models (a HUD-only card/board game, say) — `defineGame` injects an empty catalog, so `GameDefinition.assets` is always present downstream with no per-caller `?.` checks.
-- `devtools` defaults to `true` — every game gets the F2-toggled debug overlay (Perf/Tune/Logs/Net/Keys) for free, and every top-level `export const` number/boolean/color and every exported flat table of them under `src/` is auto-discovered into the Tune tab with zero game code; set `false` to disable the toggle entirely. See "Devtools — F2 overlay and tunables" below.
+- `devtools` defaults to `true` — every game gets the F2-toggled debug overlay (Perf/Tune/Logs/Net/Keys) for free, and every top-level `export const` scalar (literal or derived) and every exported table of numbers/booleans/colors under `src/` — nested objects and arrays included — is auto-discovered into the Tune tab with zero game code, alongside the playable's own physics/camera/movement/world config and the engine's movement defaults; set `false` to disable the toggle entirely. See "Devtools — F2 overlay and tunables" below.
 
 ### `@jgengine/core/game/defineGame` — the underlying primitive
 
@@ -1108,7 +1117,7 @@ The React layer — `GameProvider`, the hooks table, headless className-passthro
 | Tab | Shows |
 |-----|-------|
 | Perf | fps, frame/sim ms, draw calls, triangles, entity/object counts, state notifies/s, registered probes |
-| Tune | every discovered tunable — checklist grouped by source file or table export name; check one to control it live |
+| Tune | every discovered tunable — filterable checklist grouped by source file or table export name; check one to control it live |
 | Logs | captured `console.log`/`info`/`warn`/`error` |
 | Net | observed backend round-trip latency (fed by `instrumentLatency`) |
 | Keys | the game's `ActionCodesMap` bindings |
@@ -1121,17 +1130,20 @@ export const GRAVITY = -22;
 export const SKY_COLOR = "#87ceeb";
 export const GOD_MODE = false;
 
-// game/content.ts — an exported flat table of numbers/booleans/colors
+// game/content.ts — an exported table of numbers/booleans/colors, nesting and arrays included
 export const TUNING = { reach: 6, spawnRate: 0.4, fogColor: "#334455" };
+export const WAVES = [{ count: 4, speed: 2.2 }, { count: 8, speed: 3.1 }];
 ```
 
-The dev runner's Vite plugin, `tunableDiscoveryPlugin` (`@jgengine/core/devtools/transformTunables`, wired in `apps/dev/vite.config.ts`), rewrites each top-level `export const <number|boolean|"#hex">` literal to `export let` and binds it into the devtools registry as the module loads (`transformTunableExports` is the pure string transform underneath; `tunableModuleTable(id)` derives the table id from the file path, skipping `main.tsx` and `*.test.*`). Table exports need no transform at all — after each game module loads, the dev app calls `devtools.discover.scanModule(moduleExports)`, which walks every export's own properties for a flat plain-object table of numbers/booleans/`"#rrggbb"` strings.
+The dev runner's Vite plugin, `tunableDiscoveryPlugin` (`@jgengine/core/devtools/transformTunables`, wired in `apps/dev/vite.config.ts`), rewrites each single-line top-level `export const NAME = <expression>;` to `export let` — literals, annotated consts, and derived expressions like `Math.sqrt(2 * Math.abs(GRAVITY) * JUMP_HEIGHT)` alike (string literals other than `"#hex"` colors are left alone to preserve literal types; non-scalar results are filtered out at runtime) — and binds it into the devtools registry as the module loads (`transformTunableExports` is the pure string transform underneath; `tunableModuleTable(id)` derives the table id from the file path, skipping `main.tsx` and `*.test.*`). Table exports need no transform at all — after each game module loads, the dev app calls `devtools.discover.scanModule(moduleExports)`, which walks every export for numbers/booleans/`"#rrggbb"` strings, recursing into nested plain objects and arrays (up to 5 levels deep, 512 entries per export, skipping any level with more than 64 scalars) into dotted paths like `camera.chase.distance` or `waves.0.speed`. A value reachable through two exports is bound once, under whichever scan saw it first.
 
-F2 → Tune tab lists every discovered entry as a checklist, grouped by source file (top-level constants) or by table export name (object tables). Checking an entry hands it a live slider/toggle/color picker; unchecking resets it to its initial value. Kind is inferred from the value: `number` → slider, `boolean` → toggle, a `"#rgb"`/`"#rrggbb"`/`"#rrggbbaa"` string → color.
+The overlay also self-scans on mount: the whole `PlayableGame` object under the `game` table (so `defineGame` physics, camera rigs, movement/collision/lighting config, and world feature dimensions are discoverable even when nothing exports them) and the engine's default `MOVEMENT_TUNING` under `engine` (live walk speed/jump/gravity defaults for every game, no config needed).
+
+F2 → Tune tab lists every discovered entry as a checklist with a filter box, grouped by source file (top-level constants) or by table export name (object tables). Checking an entry hands it a live slider/toggle/color picker; unchecking resets it to its initial value. Kind is inferred from the value: `number` → slider, `boolean` → toggle, a `"#rgb"`/`"#rrggbb"`/`"#rrggbbaa"` string → color.
 
 **Liveness.** An edit applies live wherever the code reads the constant/table entry at use time. A value captured once at init — passed into a function call, baked into worldgen — only picks up the new value on reload. Overrides persist in `localStorage` per game (key `jg-devtools:<game name>`) and are re-applied *before* `loop.onInit` runs, so even an init-baked constant respects its override after a refresh — *if* the read happens at or after `onInit`. A read that happens earlier than that (see below) never sees the override, reload or not.
 
-**Default assumption: almost every gameplay number, boolean, and color is a tunable, not a hardcoded fact.** Walk speed, jump height, gravity, damage, cooldowns, spawn rates, drop chances, radii, durations, thresholds, multipliers, colors — if it's a scalar a designer would plausibly want to nudge while playing, it belongs in a place discovery can see (a top-level `export const`, or a direct scalar field on a catalog def object like `PlayerDef`/`EnemyDef`) — never buried as a bare literal inside a deeper nested object with no named export, and never computed once and thrown away. Treat "should this be tunable" as opt-out, not opt-in.
+**Default assumption: almost every gameplay number, boolean, and color is a tunable, not a hardcoded fact.** Walk speed, jump height, gravity, damage, cooldowns, spawn rates, drop chances, radii, durations, thresholds, multipliers, colors — if it's a scalar a designer would plausibly want to nudge while playing, it belongs in a place discovery can see (a top-level `export const`, or a scalar field — nested objects and arrays are scanned too — on an exported catalog/config object like `PlayerDef`/`EnemyDef`) — never a bare literal inline in logic with no named export, and never computed once and thrown away. Treat "should this be tunable" as opt-out, not opt-in.
 
 **Catalog-derived content must read fields live, not bake them at import time.** A common trap: a `content.ts` (or any module implementing `GameContextContent`) that loops over a catalog array *once at module scope* and copies scalar fields into a separately cached `Map`:
 
@@ -1291,7 +1303,7 @@ game.chat          send / whisper / history / register — global/party/proximit
 game.roster        capture / release / list / setEquipped — persisted owned-creature roster
 game.store/cards/turn   store: keyed reactive slot; cards.pile(id): lazy CardPile; turn.loop(id): lazy TurnLoop
 game.events/feed/leaderboard   on / bind+push+recent / track+increment+getTop
-devtools           F2 overlay (Perf/Tune/Logs/Net/Keys); zero-annotation — top-level export const number/boolean/color + exported flat tables auto-discover into Tune; tunable() is the optional low-level escape hatch; snapshotDevtools()/window.__JG_DEVTOOLS.snapshot() → DevtoolsSnapshot (+ discovered[]); probes.register(name, read) adds a Perf gauge
+devtools           F2 overlay (Perf/Tune/Logs/Net/Keys); zero-annotation — top-level export const scalars (literal or derived) + exported tables (nested objects/arrays included) auto-discover into Tune, plus the playable's physics/camera/movement/world config and engine MOVEMENT_TUNING defaults; tunable() is the optional low-level escape hatch; snapshotDevtools()/window.__JG_DEVTOOLS.snapshot() → DevtoolsSnapshot (+ discovered[]); probes.register(name, read) adds a Perf gauge
 applyLoadout       all-or-nothing kit seeding per userId
 player.movement    pose (hitboxes) + aim (zoom modifier)
 player.motion      impulse / setVerticalVelocity / setY — vertical-motion seam into the shell's frame driver

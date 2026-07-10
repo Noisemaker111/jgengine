@@ -11,6 +11,31 @@ export const SKILL_GUIDE: Record<string, string> = {
     "Grab this to check a build works without fighting the browser — assert the scene's content in a test, keep the flaky screenshot as a final glance instead of the loop.",
 };
 
+export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }[] = [
+  {
+    label: "Render shell",
+    note: "React + three.js — the only package that renders",
+    packages: ["@jgengine/shell"],
+  },
+  {
+    label: "Bindings & hosts",
+    note: "React UI · Convex adapters · Node host",
+    packages: ["@jgengine/react", "@jgengine/convex", "@jgengine/node"],
+  },
+  {
+    label: "Transport & persistence",
+    note: "import core and nothing else",
+    packages: ["@jgengine/ws", "@jgengine/sql"],
+  },
+  {
+    label: "Foundation",
+    note: "zero dependencies",
+    packages: ["@jgengine/core"],
+  },
+];
+
+export const ASSETS_PACKAGE_NAME = "@jgengine/assets";
+
 export const PACKAGES: { name: string; blurb: string }[] = [
   { name: "@jgengine/core", blurb: "The engine SDK: runtime, state store, scene, combat, loot, quests, economy. Zero deps." },
   { name: "@jgengine/react", blurb: "React UI layer: GameProvider, hooks, headless primitives." },

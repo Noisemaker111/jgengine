@@ -65,4 +65,23 @@ describe("recordingBuffer", () => {
     const scrub = buffer.seek(1.9);
     expect(scrub?.data.position).toEqual([1, 0, 0]);
   });
+
+  test("seekPair brackets a mid-recording time for interpolation", () => {
+    const buffer = createRecordingBuffer<number>();
+    buffer.append(0, 10);
+    buffer.append(1, 20);
+    buffer.append(2, 30);
+    const pair = buffer.seekPair(1.4);
+    expect(pair.before?.data).toBe(20);
+    expect(pair.after?.data).toBe(30);
+  });
+
+  test("seekPair before the first frame has no before, past the end has no after", () => {
+    const buffer = createRecordingBuffer<number>();
+    buffer.append(1, 10);
+    buffer.append(2, 20);
+    expect(buffer.seekPair(0.5)).toEqual({ before: null, after: { t: 1, data: 10 } });
+    expect(buffer.seekPair(9)).toEqual({ before: { t: 2, data: 20 }, after: null });
+    expect(createRecordingBuffer<number>().seekPair(0)).toEqual({ before: null, after: null });
+  });
 });

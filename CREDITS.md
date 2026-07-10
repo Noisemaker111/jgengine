@@ -49,3 +49,31 @@ scene graph), keyed to entity ids, and it consciously diverges where three-start
 documents gaps (reparenting and mid-bootstrap deactivation re-check effective
 activity). The lifecycle model, its ordering guarantees, and the lazy-dispatch
 idea are his. three-start is MIT-licensed; go star it.
+
+## Game concepts
+
+Some of the games in `Games/*` are our own take on someone else's idea. We
+credit the originators here, in the game's on-screen HUD, and on its page at
+jgengine.com/games/&lt;id&gt; (via the `credit` field in
+[`apps/web/src/content/games.ts`](apps/web/src/content/games.ts)).
+
+### Ethan Mollick — *The Annals*
+
+**[The Annals](Games/annals)** grows from a prompt by
+**[Ethan Mollick](https://x.com/emollick)** (@emollick), Associate Professor at
+The Wharton School — his
+**[annals-kingdom](https://github.com/emollick/annals-kingdom)**, a living
+medieval kingdom that writes its own chronicle in a single HTML file. Our
+version reimagines the same idea on the engine: monarchs reign and die,
+caravans thread between settlements, and every event lands in a running
+chronicle you can pause and speed through.
+
+### Jay Sharma (radiumcoders) — *Commit Canopy*
+
+**[Commit Canopy](Games/commit-canopy)** is inspired by
+**[Isometric GitHub Contributions](https://github.com/radiumcoders/Isometric-Github-Contributions)**
+([live](https://isometric-github-contributions.vercel.app)) by
+**[Jay Sharma / radiumcoders](https://github.com/radiumcoders)** — a Three.js
+web app that turns any GitHub profile into an interactive 3D isometric terrain.
+Our take renders the contribution year as an orbitable block landscape you can
+export as a shareable image, and mirrors the reference app's panel layout.

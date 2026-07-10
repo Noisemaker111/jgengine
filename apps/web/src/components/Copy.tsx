@@ -31,10 +31,13 @@ export function CopyButton({
     <button
       type="button"
       onClick={() => {
-        void navigator.clipboard.writeText(value).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1400);
-        });
+        void navigator.clipboard
+          .writeText(value)
+          .then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1400);
+          })
+          .catch(() => setCopied(false));
       }}
       className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
         copied
@@ -50,10 +53,11 @@ export function CopyButton({
 
 export function CommandBlock({ command }: { command: string }) {
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-emerald-400/20 bg-ink-deep/80 shadow-[0_0_40px_-12px_rgba(16,185,129,0.25)]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
-      <div className="flex items-center gap-2 sm:gap-3 p-3 sm:px-4 sm:py-3.5">
-        <span className="select-none font-mono text-sm text-emerald-500/70">$</span>
+    <div className="shine group relative overflow-hidden rounded-2xl border border-emerald-400/25 bg-ink-deep/85 shadow-[0_0_50px_-12px_rgba(16,185,129,0.35),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
+      <div className="pointer-events-none absolute -inset-x-8 -top-12 h-16 bg-emerald-400/10 blur-2xl" />
+      <div className="relative flex items-center gap-2 p-3 sm:gap-3 sm:px-5 sm:py-4">
+        <span className="select-none font-mono text-sm font-semibold text-emerald-500/80">$</span>
         <code className="flex-1 break-all text-left font-mono text-[13px] leading-relaxed text-emerald-300 sm:text-sm">
           {command}
         </code>

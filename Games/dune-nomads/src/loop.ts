@@ -1,0 +1,165 @@
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { createDecayMeterSet, type DecayMeterSet } from "@jgengine/core/survival/decayMeter";
+import { createRaceState, type RaceState } from "@jgengine/core/game/race";
+
+import { PACK_ENTITY_IDS, placeDuneProps, spawnCaravan } from "./game/world/setup";
+import { RIVAL_WAYPOINTS, WIND_SCHEDULE } from "./game/run/deps";
+import { CARAVAN_RACE_TRACK, CARAVAN_WIN_CONDITION, PLAYER_RACER_ID, RIVAL_RACER_ID } from "./game/race/track";
+import { WATER_MAX } from "./game/caravan/water";
+import {
+  applyRaceFinish,
+  beginRun,
+  cancelDockChoice,
+  commitDock,
+  initialRunState,
+  openDockChoice,
+  pinFlag,
+  racerPositions,
+  stepRun,
+  toggleMap,
+  unpinFlag,
+  type RunState,
+} from "./game/run/runState";
+import { terrainField } from "./world";
+
+function freshWaterMeter(): DecayMeterSet {
+  return createDecayMeterSet([{ id: "water", max: WATER_MAX, start: WATER_MAX, rate: 1 }]);
+}
+
+function freshRaceEngine(): RaceState {
+  const engine = createRaceState({ track: CARAVAN_RACE_TRACK, win: CARAVAN_WIN_CONDITION });
+  engine.addRacer(PLAYER_RACER_ID);
+  engine.addRacer(RIVAL_RACER_ID);
+  return engine;
+}
+
+function getRun(ctx: GameContext): RunState {
+  return ctx.game.store.get("run") as RunState;
+}
+
+function setRun(ctx: GameContext, next: RunState): void {
+  ctx.game.store.set("run", next);
+}
+
+export function onInit(ctx: GameContext): void {
+  placeDuneProps(ctx);
+  ctx.game.store.set("waterMeter", freshWaterMeter());
+  ctx.game.store.set("raceEngine", freshRaceEngine());
+  setRun(ctx, initialRunState("start", RIVAL_WAYPOINTS));
+
+  ctx.game.commands.define<void>("start", {
+    apply(state) {
+      setRun(state, beginRun(getRun(state)));
+    },
+  });
+
+  ctx.game.commands.define<void>("toggleMap", {
+    apply(state) {
+      setRun(state, toggleMap(getRun(state)));
+    },
+  });
+
+  ctx.game.commands.define<{ oasisId: string }>("dock.open", {
+    apply(state, input) {
+      setRun(state, openDockChoice(getRun(state), input.oasisId));
+    },
+  });
+
+  ctx.game.commands.define<{ kind: "full" | "quick" }>("dock.commit", {
+    apply(state, input) {
+      setRun(state, commitDock(getRun(state), input.kind));
+    },
+  });
+
+  ctx.game.commands.define<void>("dock.cancel", {
+    apply(state) {
+      setRun(state, cancelDockChoice(getRun(state)));
+    },
+  });
+
+  ctx.game.commands.define<{ x: number; z: number }>("map.pin", {
+    apply(state, input) {
+      setRun(state, pinFlag(getRun(state), input));
+    },
+  });
+
+  ctx.game.commands.define<{ index: number }>("map.unpin", {
+    apply(state, input) {
+      setRun(state, unpinFlag(getRun(state), input.index));
+    },
+  });
+
+  ctx.game.commands.define<void>("restart", {
+    apply(state) {
+      state.game.store.set("waterMeter", freshWaterMeter());
+      state.game.store.set("raceEngine", freshRaceEngine());
+      setRun(state, initialRunState("playing", RIVAL_WAYPOINTS));
+    },
+  });
+}
+
+export function onNewPlayer(ctx: GameContext): void {
+  const run = getRun(ctx);
+  spawnCaravan(ctx, run.player.heading);
+}
+
+function headingFromDelta(dx: number, dz: number, fallback: number): number {
+  if (Math.abs(dx) < 1e-5 && Math.abs(dz) < 1e-5) return fallback;
+  return Math.atan2(dx, dz);
+}
+
+export function onTick(ctx: GameContext, dt: number): void {
+  const run = getRun(ctx);
+  if (run.phase !== "playing") return;
+
+  const input = {
+    urge: ctx.input.isDown("urge"),
+    ease: ctx.input.isDown("ease"),
+    steerLeft: ctx.input.isDown("steerLeft"),
+    steerRight: ctx.input.isDown("steerRight"),
+  };
+
+  const waterMeter = ctx.game.store.get("waterMeter") as DecayMeterSet;
+  let next = stepRun(run, dt, input, {
+    terrainField,
+    windSchedule: WIND_SCHEDULE,
+    rivalWaypoints: RIVAL_WAYPOINTS,
+    waterMeter,
+  });
+
+  const playerY = terrainField.sampleHeight(next.player.x, next.player.z);
+  ctx.scene.entity.setPose(ctx.player.userId, {
+    position: [next.player.x, playerY, next.player.z],
+    rotationY: next.player.heading,
+    dt,
+  });
+
+  for (let index = 0; index < PACK_ENTITY_IDS.length; index += 1) {
+    const id = PACK_ENTITY_IDS[index]!;
+    const previous = run.followers[index]!;
+    const follower = next.followers[index]!;
+    const fallback = ctx.scene.entity.get(id)?.rotationY ?? next.player.heading;
+    const heading = headingFromDelta(follower.x - previous.x, follower.z - previous.z, fallback);
+    const y = terrainField.sampleHeight(follower.x, follower.z);
+    ctx.scene.entity.setPose(id, { position: [follower.x, y, follower.z], rotationY: heading, dt });
+  }
+
+  const rivalY = terrainField.sampleHeight(next.rival.position[0], next.rival.position[2]);
+  ctx.scene.entity.setPose(RIVAL_RACER_ID, {
+    position: [next.rival.position[0], rivalY, next.rival.position[2]],
+    rotationY: next.rival.heading,
+    dt,
+  });
+
+  if (next.phase === "playing") {
+    const raceEngine = ctx.game.store.get("raceEngine") as RaceState;
+    const events = raceEngine.update(next.elapsed, racerPositions(next));
+    for (const event of events) {
+      if (event.type === "race.finished") {
+        next = applyRaceFinish(next, event.ranking[0]!);
+      }
+    }
+  }
+
+  setRun(ctx, next);
+}

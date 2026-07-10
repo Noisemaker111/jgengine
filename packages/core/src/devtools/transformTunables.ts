@@ -1,5 +1,5 @@
 const TUNABLE_EXPORT_PATTERN =
-  /^export const ([A-Za-z_$][\w$]*)\s*=\s*(-?\d+(?:\.\d+)?|true|false|"#(?:[0-9a-fA-F]{3,8})"|'#(?:[0-9a-fA-F]{3,8})')\s*;[ \t]*$/gm;
+  /^export const ([A-Za-z_$][\w$]*)((?:\s*:\s*[^=;\r\n]+?)?)\s*=\s*("#(?:[0-9a-fA-F]{3,8})"|'#(?:[0-9a-fA-F]{3,8})'|[^"'`;{}<>\r\n]+?)\s*;[ \t]*$/gm;
 
 export interface TunableTransformResult {
   code: string;
@@ -8,10 +8,13 @@ export interface TunableTransformResult {
 
 export function transformTunableExports(code: string, table: string): TunableTransformResult {
   const bound: string[] = [];
-  const rewritten = code.replace(TUNABLE_EXPORT_PATTERN, (_match, name: string, literal: string) => {
-    bound.push(name);
-    return `export let ${name} = ${literal};`;
-  });
+  const rewritten = code.replace(
+    TUNABLE_EXPORT_PATTERN,
+    (_match, name: string, annotation: string, expression: string) => {
+      bound.push(name);
+      return `export let ${name}${annotation} = ${expression};`;
+    },
+  );
   if (bound.length === 0) return { code, bound };
   const bindings = bound
     .map(

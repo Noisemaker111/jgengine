@@ -23,6 +23,8 @@ const PKG_DIRS: Record<string, string> = {
   sql: "packages/sql/src",
   convex: "packages/convex/src",
   assets: "packages/assets/src",
+  github: "packages/github/src",
+  jgengine: "packages/jgengine/src",
 };
 
 const ALLOW_DOC_REFS = new Set(["@jgengine/core/CHANGELOG", "@jgengine/react/dist", "@jgengine/shell/dist"]);
@@ -42,7 +44,7 @@ function resolves(pkg: string, sub: string): boolean {
 
 const badPaths: string[] = [];
 const seen = new Set<string>();
-for (const m of text.matchAll(/@jgengine\/(core|react|shell|ws|node|sql|convex|assets)\/[A-Za-z0-9_/]+/g)) {
+for (const m of text.matchAll(/@jgengine\/(core|react|shell|ws|node|sql|convex|assets|github|jgengine)\/[A-Za-z0-9_/]+/g)) {
   const ref = m[0];
   if (seen.has(ref) || ALLOW_DOC_REFS.has(ref)) continue;
   seen.add(ref);

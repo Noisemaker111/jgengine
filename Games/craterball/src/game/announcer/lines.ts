@@ -1,0 +1,65 @@
+export type AnnouncerEvent =
+  | "kickoff"
+  | "goalCyan"
+  | "goalMagenta"
+  | "crater"
+  | "overtime"
+  | "matchWin"
+  | "matchLoss";
+
+export const ANNOUNCER_LINES: Readonly<Record<AnnouncerEvent, readonly string[]>> = {
+  kickoff: [
+    "THE PITCH FALLS SILENT — HERE WE GO",
+    "CHARGES ARMED, NOBODY TOUCH THAT BALL",
+    "BACK TO THE CENTER CIRCLE, CRATERBALL RESUMES",
+    "SET YOUR FUSES — KICKOFF INCOMING",
+    "THE ARENA HOLDS ITS BREATH",
+  ],
+  goalCyan: [
+    "GOOOAL FOR CYAN",
+    "CYAN BLASTS IT HOME",
+    "CYAN READS THE CRATERS PERFECTLY — GOAL",
+    "THAT'S A BANK SHOT FOR THE AGES — CYAN SCORES",
+    "CYAN LIGHTS UP THE SCOREBOARD",
+  ],
+  goalMagenta: [
+    "GOOOAL FOR MAGENTA",
+    "MAGENTA DETONATES ITS WAY TO GLORY",
+    "MAGENTA FINDS THE GAP — GOAL",
+    "THE PITCH REMEMBERS THAT ONE — MAGENTA SCORES",
+    "MAGENTA STRIKES BACK",
+  ],
+  crater: [
+    "THE PITCH REMEMBERS",
+    "ANOTHER SCAR ON THE BASALT",
+    "THAT GROUND WILL NEVER BE THE SAME",
+    "A FRESH BOWL CARVED INTO THE ARENA",
+    "THE MAP JUST CHANGED FOREVER",
+  ],
+  overtime: [
+    "OVERTIME — SUDDEN DEATH",
+    "NEXT BLAST WINS IT",
+    "SUDDEN DEATH ON THE SCORCHED PITCH",
+    "ONE CRATER FROM GLORY",
+    "THE ARENA GOES QUIET FOR SUDDEN DEATH",
+  ],
+  matchWin: [
+    "CYAN TAKES THE ARENA",
+    "VICTORY ETCHED INTO THE CRATERS",
+    "CYAN WALKS OFF THE SCORCHED PITCH A WINNER",
+    "GAME OVER — CYAN HOLDS THE TROPHY",
+    "THE BASALT BELONGS TO CYAN TONIGHT",
+  ],
+  matchLoss: [
+    "MAGENTA TAKES THE ARENA",
+    "CYAN FALLS SHORT ON THE SCORCHED PITCH",
+    "GAME OVER — MAGENTA HOLDS THE TROPHY",
+    "THE BASALT BELONGS TO MAGENTA TONIGHT",
+    "A HARD-FOUGHT LOSS AMONG THE CRATERS",
+  ],
+};
+
+export function pickAnnouncerLine(event: AnnouncerEvent, index: number): string {
+  const lines = ANNOUNCER_LINES[event];
+  return lines[index % lines.length]!;
+}

@@ -1,4 +1,5 @@
 import type { GameEventMap, GameEvents } from "./events";
+import type { ChatFilter } from "./chatFilter";
 import type { EmotesDeps } from "./social";
 
 export type ChatChannelKind = "global" | "party" | "proximity";
@@ -53,6 +54,7 @@ export interface ChatDeps {
   blockedBy?: (userId: string) => readonly string[];
   maxBodyLength?: number;
   defaultRateLimit?: ChatRateLimit;
+  filter?: ChatFilter;
 }
 
 export const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit = { count: 10, perMs: 10_000 };
@@ -99,6 +101,7 @@ export function createChat(deps: ChatDeps): Chat {
   const maxBodyLength = deps.maxBodyLength ?? DEFAULT_CHAT_BODY_LENGTH;
   const defaultRateLimit = deps.defaultRateLimit ?? DEFAULT_CHAT_RATE_LIMIT;
   const blockedBy = deps.blockedBy ?? (() => []);
+  const filter = deps.filter;
 
   const channelDefs = new Map<string, ChatChannelDef>();
   for (const def of BUILTIN_CHANNELS) channelDefs.set(def.id, { ...def });
@@ -176,6 +179,13 @@ export function createChat(deps: ChatDeps): Chat {
     if (trimmed.length === 0) return { reason: "empty message" };
     if (trimmed.length > maxBodyLength) return { reason: "message too long" };
 
+    let filteredBody = trimmed;
+    if (filter !== undefined) {
+      const filtered = filter.apply(trimmed);
+      if (!filtered.ok) return { reason: "filtered" };
+      filteredBody = filtered.body;
+    }
+
     const resolved = resolveRecipients(fromUserId, channelId, def);
     if ("reason" in resolved) return resolved;
 
@@ -190,7 +200,7 @@ export function createChat(deps: ChatDeps): Chat {
       id: `msg_${counter}`,
       channelId,
       fromUserId,
-      body: trimmed,
+      body: filteredBody,
       at,
     };
     append(channelId, message, def?.historyLimit ?? DEFAULT_CHAT_HISTORY_LIMIT);

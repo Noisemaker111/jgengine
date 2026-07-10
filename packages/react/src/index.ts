@@ -1,6 +1,7 @@
 export * from "./provider";
 export * from "./identity";
 export * from "./chat";
+export * from "./chatBubbles";
 export * from "./voice";
 export * from "./social";
 export * from "./hooks";

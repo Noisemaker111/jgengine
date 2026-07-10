@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@/components/ui/*": ["../../registry/jgengine/*"],
+      "@jgengine/core/*": ["../../packages/core/src/*"],
+      "@jgengine/react/*": ["../../packages/react/src/*"],
+      "@jgengine/ws/*": ["../../packages/ws/src/*"],
+      "@jgengine/shell/*": ["../../packages/shell/src/*"],
+      "@jgengine/assets": ["../../packages/assets/src/index.ts"],
+      "@jgengine/assets/*": ["../../packages/assets/src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

@@ -18,6 +18,8 @@ const PACKAGE_GUIDES: Record<string, readonly string[]> = {
   node: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
   shell: [SKILL_GUIDE, "skills/jgengine-api/reference/ui-react.md", "skills/jgengine-api/reference/world.md"],
   assets: [SKILL_GUIDE],
+  github: [SKILL_GUIDE],
+  jgengine: [SKILL_GUIDE],
 };
 
 const PACKAGES = Object.keys(PACKAGE_GUIDES);
