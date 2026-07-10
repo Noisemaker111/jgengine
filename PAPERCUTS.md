@@ -143,3 +143,7 @@ parallel game builds with bun install forbidden mid-batch → session container 
 2026-07-10T23:18:24.805Z — opus-4.8 — Claude
 
 persisting a mutable single-player credit bank in video-poker → game/recordBook is monotonic-only and the save system is host-authoritative overkill; no lightweight local KV persistence primitive, fell back to raw RecordStorage
+
+2026-07-10T23:18:58.003Z — opus-4.8 — Claude
+
+importing HUD primitives in a game → bare @jgengine/react barrel import only resolves against built dist; game tsconfig paths map @jgengine/react/* subpaths only, two builders independently had to discover the /hudLayout subpath
