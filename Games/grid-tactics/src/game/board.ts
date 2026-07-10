@@ -14,6 +14,7 @@ export const TERRAIN: TerrainEnvironmentDescriptor = terrain({
   height: 0.16,
   frequency: 0.05,
   seed: "grid-tactics-outpost",
+  colors: { low: "#3d4a3a", high: "#7d8a68", waterline: "#35404a" },
 });
 
 const groundField = resolveTerrainField(TERRAIN);

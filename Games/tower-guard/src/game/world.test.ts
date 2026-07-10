@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
+import { TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/world/terrain";
 
 import { world } from "../world";
 
@@ -22,5 +23,9 @@ describe("tower-guard world", () => {
   test("terrain has finite relief", () => {
     expect(summary.terrain?.height.finite).toBe(true);
     expect(summary.terrain?.height.max).toBeGreaterThan(summary.terrain?.height.min ?? 0);
+  });
+
+  test("terrain uses the highland palette, not the default grass", () => {
+    expect(summary.terrain?.palette).toEqual(TERRAIN_MATERIAL_PALETTES.highland);
   });
 });
