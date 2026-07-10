@@ -131,3 +131,7 @@ ship-motion workers keep backgrounding the post-merge 60s sleep even when told '
 2026-07-10T17:23:54.775Z — sonnet-5 — Claude
 
 shoot --url skips ensureServer so the shot soft-times-out unless a dev server is already running — caller must boot vite manually
+
+2026-07-10T22:58:21.043Z — fable-5 — Claude
+
+orchestrating 14 parallel game-build workers → freecell build worker's first run died with an unusable result and had to be relaunched by the harness
