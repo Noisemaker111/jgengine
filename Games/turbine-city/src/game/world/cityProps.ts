@@ -1,3 +1,4 @@
+import { yawRight } from "@jgengine/core/movement/steering";
 import { scatter } from "@jgengine/core/world/scatter";
 
 import type { Vec3 } from "../flight/flowTube";
@@ -22,8 +23,8 @@ function lerpVec3(a: Vec3, b: Vec3, t: number): Vec3 {
 }
 
 function lateralOffset(from: Vec3, to: Vec3, distance: number, side: 1 | -1): Vec3 {
-  const heading = headingBetween(from, to);
-  return [Math.cos(heading) * distance * side, 0, -Math.sin(heading) * distance * side];
+  const [rx, rz] = yawRight(headingBetween(from, to));
+  return [rx * distance * side, 0, rz * distance * side];
 }
 
 function fanTube(fanId: string) {

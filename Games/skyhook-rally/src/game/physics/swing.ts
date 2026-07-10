@@ -1,3 +1,5 @@
+import { yawRight } from "@jgengine/core/movement/steering";
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -124,8 +126,7 @@ export function applyAirSteer(
   pitchAccel: number,
 ): Vec3 {
   if (steer === 0 && pitch === 0) return velocity;
-  const rightX = Math.cos(yaw);
-  const rightZ = -Math.sin(yaw);
+  const [rightX, rightZ] = yawRight(yaw);
   return {
     x: velocity.x + rightX * steer * steerAccel * dt,
     y: velocity.y + pitch * pitchAccel * dt,

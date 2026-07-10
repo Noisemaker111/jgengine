@@ -1,5 +1,5 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
-import { clampToMinimapEdge, projectToMinimap, type MinimapPoint } from "@jgengine/core/world/minimap";
+import { clampToMinimapEdge, headingToBearing, projectToMinimap, type MinimapPoint } from "@jgengine/core/world/minimap";
 import { useGame } from "@jgengine/react/hooks";
 import { keybinds } from "../../keybinds";
 import {
@@ -90,9 +90,9 @@ function VillageMark({ village, tideLevel, nextLevel, projector, isOrigin, isDes
   );
 }
 
-function PlayerMark({ x, y, heading }: { x: number; y: number; heading: number }) {
+function PlayerMark({ x, y, facingYaw }: { x: number; y: number; facingYaw: number }) {
   return (
-    <g transform={`translate(${x} ${y}) rotate(${(heading * 180) / Math.PI})`}>
+    <g transform={`translate(${x} ${y}) rotate(${(headingToBearing(facingYaw) * 180) / Math.PI})`}>
       <path d="M0,-9 L6,7 L0,3 L-6,7 Z" fill="#e76f51" stroke="#26413c" strokeWidth={0.75} />
     </g>
   );
@@ -126,7 +126,7 @@ function MapContents({ projector }: { projector: Projector }) {
         (() => {
           const raw = projector.project(player.position[0], player.position[2]);
           const at = projector.clip ? clampToMinimapEdge(raw, projector.size) : raw;
-          return <PlayerMark x={at.x} y={at.y} heading={player.rotationY} />;
+          return <PlayerMark x={at.x} y={at.y} facingYaw={player.rotationY} />;
         })()
       ) : null}
     </>

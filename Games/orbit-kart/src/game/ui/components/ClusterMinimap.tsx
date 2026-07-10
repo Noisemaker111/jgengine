@@ -28,7 +28,7 @@ export function ClusterMinimap() {
         center={player !== undefined ? [player.position[0], player.position[2]] : [0, 0]}
         worldRadius={175}
         size={compact ? 140 : 188}
-        heading={player?.heading ?? 0}
+        facingYaw={player?.heading ?? 0}
         kindStyles={CLUSTER_MARKER_STYLES}
         title="Cluster Chart"
         className="border border-[#f5f3ff]/20"

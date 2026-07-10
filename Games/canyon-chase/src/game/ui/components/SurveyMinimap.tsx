@@ -31,7 +31,7 @@ export function CornerSurveyMap({ carPosition, carHeading, markers }: CornerSurv
       markers={markers}
       center={[carPosition[0], carPosition[2]]}
       worldRadius={CORNER_MAP_WORLD_RADIUS}
-      heading={carHeading}
+      facingYaw={carHeading}
       size={CORNER_MAP_SIZE}
       kindStyles={MARKER_KIND_STYLES}
       title="Survey"

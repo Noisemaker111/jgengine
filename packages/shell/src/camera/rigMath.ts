@@ -50,8 +50,9 @@ export function forwardVector(yaw: number): Vec3 {
   return { x: Math.sin(yaw), y: 0, z: Math.cos(yaw) };
 }
 
+/** Screen-right of a yaw: `forward × up` with up = +Y. */
 export function rightVector(yaw: number): Vec3 {
-  return { x: Math.cos(yaw), y: 0, z: -Math.sin(yaw) };
+  return { x: -Math.cos(yaw), y: 0, z: Math.sin(yaw) };
 }
 
 export interface ResolvedTopDown {
