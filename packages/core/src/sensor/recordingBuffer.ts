@@ -11,10 +11,17 @@ export interface RecordingBufferOptions {
   maxFrames?: number;
 }
 
+export interface RecordingPair<T> {
+  before: RecordingFrame<T> | null;
+  after: RecordingFrame<T> | null;
+}
+
 export interface RecordingBuffer<T> {
   append(t: number, data: T): void;
   /** Nearest frame at or before `t`, or null if the buffer is empty or `t` precedes every frame. */
   seek(t: number): RecordingFrame<T> | null;
+  /** The frames bracketing `t` for interpolated playback: `before` is `seek(t)`, `after` is the next recorded frame (null past the end). */
+  seekPair(t: number): RecordingPair<T>;
   /** Frames with `fromT <= t <= toT`, in recorded order. */
   range(fromT: number, toT: number): RecordingFrame<T>[];
   clear(): void;
@@ -68,6 +75,13 @@ export function createRecordingBuffer<T>(options: RecordingBufferOptions = {}): 
     seek(t) {
       const index = floorIndex(t);
       return index === -1 ? null : frames[index]!;
+    },
+    seekPair(t) {
+      const index = floorIndex(t);
+      return {
+        before: index === -1 ? null : frames[index]!,
+        after: frames[index + 1] ?? null,
+      };
     },
     range(fromT, toT) {
       return frames.filter((frame) => frame.t >= fromT && frame.t <= toT);

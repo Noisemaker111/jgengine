@@ -22,7 +22,7 @@ describe("controlDegradation", () => {
 });
 
 describe("stepGlider", () => {
-  const input = { yaw: 0, pitch: 0, thrust: 1, brake: 0, dodgeRequested: false };
+  const input = { yaw: 0, pitch: 0, thrust: 1, brake: 0 };
 
   test("thrust with no flow accelerates forward from rest", () => {
     const state = initialGliderState([0, 20, 0], 0);
@@ -40,17 +40,6 @@ describe("stepGlider", () => {
       unboosted = stepGlider(unboosted, input, NO_FLOW, [0, 0], 0.1, i * 0.1, DEFAULT_GLIDER_TUNING);
     }
     expect(boosted.position[2]).toBeGreaterThan(unboosted.position[2] * 3);
-  });
-
-  test("dodge shifts position laterally and then respects its cooldown", () => {
-    const state = initialGliderState([0, 20, 0], 0);
-    const dodgeInput = { ...input, thrust: 0, yaw: 1, dodgeRequested: true };
-    const dodged = stepGlider(state, dodgeInput, NO_FLOW, [0, 0], 0.016, 0, DEFAULT_GLIDER_TUNING);
-    expect(Math.abs(dodged.position[0])).toBeGreaterThan(0);
-    expect(dodged.dodgeCooldownRemaining).toBeGreaterThan(0);
-
-    const cannotRedodge = stepGlider(dodged, dodgeInput, NO_FLOW, [0, 0], 0.016, 0.02, DEFAULT_GLIDER_TUNING);
-    expect(cannotRedodge.position[0]).toBeCloseTo(dodged.position[0], 5);
   });
 
   test("stepGlider is a pure function of its inputs", () => {

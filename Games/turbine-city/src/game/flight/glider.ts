@@ -9,8 +9,6 @@ export interface GliderTuning {
   readonly damping: number;
   readonly buffetStrength: number;
   readonly minControlAtBuffet: number;
-  readonly dodgeDistance: number;
-  readonly dodgeCooldown: number;
 }
 
 export const DEFAULT_GLIDER_TUNING: GliderTuning = {
@@ -22,8 +20,6 @@ export const DEFAULT_GLIDER_TUNING: GliderTuning = {
   damping: 2.6,
   buffetStrength: 7,
   minControlAtBuffet: 0.4,
-  dodgeDistance: 6,
-  dodgeCooldown: 1.2,
 };
 
 export interface GliderPhysicsState {
@@ -31,7 +27,6 @@ export interface GliderPhysicsState {
   readonly velocity: Vec3;
   readonly heading: number;
   readonly pitch: number;
-  readonly dodgeCooldownRemaining: number;
 }
 
 export interface GliderInput {
@@ -39,10 +34,9 @@ export interface GliderInput {
   readonly pitch: number;
   readonly thrust: number;
   readonly brake: number;
-  readonly dodgeRequested: boolean;
 }
 
-export const NEUTRAL_GLIDER_INPUT: GliderInput = { yaw: 0, pitch: 0, thrust: 0, brake: 0, dodgeRequested: false };
+export const NEUTRAL_GLIDER_INPUT: GliderInput = { yaw: 0, pitch: 0, thrust: 0, brake: 0 };
 
 export function controlDegradation(buffet: number, minControl = DEFAULT_GLIDER_TUNING.minControlAtBuffet): number {
   const clamped = Math.min(1, Math.max(0, buffet));
@@ -53,12 +47,12 @@ export function headingVector(heading: number, pitch: number): Vec3 {
   return [Math.sin(heading) * Math.cos(pitch), Math.sin(pitch), Math.cos(heading) * Math.cos(pitch)];
 }
 
-function rightVector(heading: number): Vec3 {
+export function rightVector(heading: number): Vec3 {
   return [Math.cos(heading), 0, -Math.sin(heading)];
 }
 
 export function initialGliderState(position: Vec3, heading = 0): GliderPhysicsState {
-  return { position, velocity: [0, 0, 0], heading, pitch: 0, dodgeCooldownRemaining: 0 };
+  return { position, velocity: [0, 0, 0], heading, pitch: 0 };
 }
 
 export function stepGlider(
@@ -98,17 +92,9 @@ export function stepGlider(
     state.velocity[2] + (targetVelocity[2] - state.velocity[2]) * blend,
   ];
 
-  let position: Vec3 = [state.position[0] + velocity[0] * dt, state.position[1] + velocity[1] * dt, state.position[2] + velocity[2] * dt];
+  const position: Vec3 = [state.position[0] + velocity[0] * dt, state.position[1] + velocity[1] * dt, state.position[2] + velocity[2] * dt];
 
-  let dodgeCooldownRemaining = Math.max(0, state.dodgeCooldownRemaining - dt);
-  if (input.dodgeRequested && dodgeCooldownRemaining <= 0) {
-    const dodgeSign = input.yaw !== 0 ? Math.sign(input.yaw) : 1;
-    const right = rightVector(heading);
-    position = [position[0] + right[0] * tuning.dodgeDistance * dodgeSign, position[1], position[2] + right[2] * tuning.dodgeDistance * dodgeSign];
-    dodgeCooldownRemaining = tuning.dodgeCooldown;
-  }
-
-  return { position, velocity, heading, pitch, dodgeCooldownRemaining };
+  return { position, velocity, heading, pitch };
 }
 
 export interface RawSteerInput {

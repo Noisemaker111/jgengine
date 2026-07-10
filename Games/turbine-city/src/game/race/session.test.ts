@@ -1,10 +1,15 @@
 import { createRaceState, firstPastPost } from "@jgengine/core/game/race";
+import { createRecordBook } from "@jgengine/core/game/recordBook";
 import { describe, expect, test } from "bun:test";
 import type { RawSteerInput } from "../flight/glider";
-import { createRaceSession, type RaceSession } from "./session";
+import { COUNTDOWN_SECONDS, createRaceSession, RECORD_FIELDS, type RaceSession } from "./session";
 import { CHECKPOINTS, LAPS, LOOP_VIA_CONNECTOR, RING_NODES } from "./route";
 
 const NEUTRAL_RAW: RawSteerInput = { pitchUp: false, pitchDown: false, yawLeft: false, yawRight: false, mouseX: 0, mouseY: 0 };
+
+function tickThroughCountdown(session: RaceSession): void {
+  for (let i = 0; i < COUNTDOWN_SECONDS * 10 + 1; i += 1) session.tick(0.1, NEUTRAL_RAW, false, false);
+}
 
 describe("ring sequence + lap logic (route data against the engine race state)", () => {
   test("visiting every ring in order completes a lap, two laps finishes the race", () => {
@@ -37,10 +42,75 @@ describe("RaceSession phase machine", () => {
     expect(session.snapshot().totalTime).toBe(0);
   });
 
-  test("start() moves the session into racing", () => {
+  test("start() arms the countdown, and the countdown resolves into racing", () => {
     const session = createRaceSession();
     session.start();
+    expect(session.snapshot().phase).toBe("countdown");
+    expect(session.snapshot().countdown).toBeCloseTo(COUNTDOWN_SECONDS, 5);
+    tickThroughCountdown(session);
     expect(session.snapshot().phase).toBe("racing");
+  });
+
+  test("the race clock and the player hold still during the countdown", () => {
+    const session = createRaceSession();
+    const spawn = session.snapshot().playerPose.position;
+    session.start();
+    for (let i = 0; i < 20; i += 1) session.tick(0.1, { ...NEUTRAL_RAW, mouseX: 1 }, true, false);
+    const snapshot = session.snapshot();
+    expect(snapshot.phase).toBe("countdown");
+    expect(snapshot.totalTime).toBe(0);
+    expect(snapshot.playerPose.position).toEqual(spawn);
+  });
+});
+
+describe("RaceSession barrel-shift dodge", () => {
+  function racingPair(): [RaceSession, RaceSession] {
+    const a = createRaceSession();
+    const b = createRaceSession();
+    a.start();
+    b.start();
+    tickThroughCountdown(a);
+    tickThroughCountdown(b);
+    return [a, b];
+  }
+
+  test("a dodge displaces the glider laterally relative to an identical non-dodging run", () => {
+    const [dodging, control] = racingPair();
+    dodging.requestDodge();
+    for (let i = 0; i < 6; i += 1) {
+      dodging.tick(0.1, NEUTRAL_RAW, false, false);
+      control.tick(0.1, NEUTRAL_RAW, false, false);
+    }
+    const moved = dodging.snapshot().playerPose.position;
+    const still = control.snapshot().playerPose.position;
+    const displacement = Math.hypot(moved[0] - still[0], moved[2] - still[2]);
+    expect(displacement).toBeGreaterThan(4);
+  });
+
+  test("two charges spend down and the pips recharge over time", () => {
+    const [session] = racingPair();
+    expect(session.snapshot().dodge.charges).toBe(2);
+
+    session.requestDodge();
+    session.tick(0.1, NEUTRAL_RAW, false, false);
+    expect(session.snapshot().dodge.charges).toBe(1);
+
+    for (let i = 0; i < 5; i += 1) session.tick(0.1, NEUTRAL_RAW, false, false);
+    session.requestDodge();
+    session.tick(0.1, NEUTRAL_RAW, false, false);
+    expect(session.snapshot().dodge.charges).toBe(0);
+
+    for (let i = 0; i < 30; i += 1) session.tick(0.1, NEUTRAL_RAW, false, false);
+    expect(session.snapshot().dodge.charges).toBeGreaterThanOrEqual(1);
+  });
+
+  test("a dodge inside the cooldown window is rejected", () => {
+    const [session] = racingPair();
+    session.requestDodge();
+    session.tick(0.05, NEUTRAL_RAW, false, false);
+    session.requestDodge();
+    session.tick(0.05, NEUTRAL_RAW, false, false);
+    expect(session.snapshot().dodge.charges).toBe(1);
   });
 });
 
@@ -52,6 +122,7 @@ describe("RaceSession lose-by-timeout", () => {
     const snapshot = session.snapshot();
     expect(snapshot.phase).toBe("finished");
     expect(snapshot.outcome).toBe("lose");
+    expect(snapshot.records.bestTime).toBeNull();
   });
 });
 
@@ -84,11 +155,33 @@ describe("RaceSession full flight — win/lose against the pacer", () => {
   test("an autopiloted player completes both laps and the race resolves with a verdict", () => {
     const session = createRaceSession();
     session.start();
-    flyAutopilot(session, 3200, 0.1);
+    flyAutopilot(session, 3400, 0.1);
     const snapshot = session.snapshot();
     expect(snapshot.phase).toBe("finished");
     expect(snapshot.outcome === "win" || snapshot.outcome === "lose").toBe(true);
     expect(snapshot.laminar.percent).toBeGreaterThanOrEqual(0);
+  });
+
+  test("a finished run banks a personal best and a shadow ghost for the next race", () => {
+    const book = createRecordBook({ key: "test", fields: RECORD_FIELDS });
+    const session = createRaceSession(book);
+    session.start();
+    flyAutopilot(session, 3400, 0.1);
+    const finished = session.snapshot();
+    if (!finished.playerFinished) return;
+
+    expect(finished.records.bestTime).not.toBeNull();
+    expect(finished.records.improved).toContain("totalTime");
+    expect(finished.ghost.bestTime).not.toBeNull();
+    expect(book.bestOf("totalTime")).toBe(finished.records.bestTime);
+
+    session.restart();
+    expect(session.snapshot().ghost.pose).not.toBeNull();
+    tickThroughCountdown(session);
+    for (let i = 0; i < 30; i += 1) session.tick(0.1, NEUTRAL_RAW, true, false);
+    const ghostPose = session.snapshot().ghost.pose;
+    expect(ghostPose).not.toBeNull();
+    expect(Number.isFinite(ghostPose!.position[0])).toBe(true);
   });
 });
 
@@ -99,6 +192,7 @@ describe("RaceSession restart purity", () => {
 
     const session = createRaceSession();
     session.start();
+    tickThroughCountdown(session);
     for (let i = 0; i < 50; i += 1) session.tick(0.1, { ...NEUTRAL_RAW, mouseX: 0.3 }, true, false);
 
     session.restart();
@@ -112,6 +206,7 @@ describe("RaceSession restart purity", () => {
     expect(restarted.laminar.best).toBe(baseline.laminar.best);
     expect(restarted.playerPose.position).toEqual(baseline.playerPose.position);
     expect(restarted.outcome).toBe(baseline.outcome);
+    expect(restarted.dodge.charges).toBe(baseline.dodge.charges);
   });
 
   test("restart clears a finished outcome so the session can race again", () => {
@@ -121,9 +216,10 @@ describe("RaceSession restart purity", () => {
     expect(session.snapshot().phase).toBe("finished");
 
     session.restart();
-    expect(session.snapshot().phase).toBe("racing");
+    expect(session.snapshot().phase).toBe("countdown");
     expect(session.snapshot().outcome).toBeNull();
     expect(session.snapshot().totalTime).toBe(0);
+    tickThroughCountdown(session);
+    expect(session.snapshot().phase).toBe("racing");
   });
 });
-

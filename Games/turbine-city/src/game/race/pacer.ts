@@ -78,7 +78,6 @@ export function advancePacer(
     pitch: Math.min(1, Math.max(-1, angleDiff(desiredPitch, runtime.glider.pitch) * STEER_GAIN)),
     thrust: 1,
     brake: 0,
-    dodgeRequested: false,
   };
 
   const flow = resolveActiveFlow(FLOW_TUBES, fanPowerOf, runtime.glider.position) ?? NO_FLOW;
