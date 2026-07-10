@@ -82,6 +82,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/claudecraft": {
+      "name": "@games/claudecraft",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/clockwork-heist": {
       "name": "@games/clockwork-heist",
       "version": "0.1.0",
@@ -1226,6 +1249,8 @@
     "@games/block-stacker": ["@games/block-stacker@workspace:Games/block-stacker"],
 
     "@games/canyon-chase": ["@games/canyon-chase@workspace:Games/canyon-chase"],
+
+    "@games/claudecraft": ["@games/claudecraft@workspace:Games/claudecraft"],
 
     "@games/clockwork-heist": ["@games/clockwork-heist@workspace:Games/clockwork-heist"],
 

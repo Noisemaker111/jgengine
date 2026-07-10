@@ -77,3 +77,17 @@ chronicle you can pause and speed through.
 web app that turns any GitHub profile into an interactive 3D isometric terrain.
 Our take renders the contribution year as an orbitable block landscape you can
 export as a shareable image, and mirrors the reference app's panel layout.
+
+### Levy Street — *World of ClaudeCraft*
+
+**[World of ClaudeCraft](Games/claudecraft)** is a port of
+**[world-of-claudecraft](https://github.com/levy-street/world-of-claudecraft)**
+by **[Levy Street](https://github.com/levy-street)** (MIT) — a from-scratch,
+browser-based classic-era MMORPG built almost entirely with AI coding agents:
+nine classes, three zones, dungeons, professions, PvP, and a deterministic
+20 Hz simulation that doubles as a Gymnasium RL environment. Our version
+rebuilds the core of that game on the engine's own primitives — the exact
+movement, armor, and XP formulas, the class kits, the three zone bands
+(Eastbrook Vale, Mirefen Marsh, Thornpeak Heights), the mob rosters and loot
+tables, and the Gravecaller storyline down to Morthen in the Hollow Crypt —
+credited on the game's HUD and on its page at jgengine.com/games/claudecraft.
