@@ -99,3 +99,7 @@ jgengine's three engine skills lived in top-level skills/ where Claude Code neve
 2026-07-10T15:17:27.120Z — fable-5 — Claude
 
 verifying loot-shooter → root check-types reported green twice while Games/loot-shooter had 7 TS errors; root gate skips Games/*, only the game-local check-types catches them
+
+2026-07-10T15:35:48.981Z — fable-5 — Claude
+
+Phase 2 verify → root check-types validates against packages/*/dist without rebuilding; a stale dist (pre-pull main + new core event) produced 20+ phantom errors in shell/cartridge/registry — check-types should depend on build or check against src
