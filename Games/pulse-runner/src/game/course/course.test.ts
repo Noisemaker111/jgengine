@@ -25,13 +25,13 @@ describe("obstacle chart determinism", () => {
       { kind: "narrows", beats: 3, openLane: 1 },
     ];
     const config = { introBeats: 8, outroBeats: 4, totalBeats: 64, gapBeats: 4, cycle };
-    expect(buildMovementChart(config)).toEqual(buildMovementChart(config));
+    expect(buildMovementChart(config, "test")).toEqual(buildMovementChart(config, "test"));
   });
 
   test("obstacle beat positions never fall inside the intro or outro margins", () => {
     const cycle: readonly MotifSpec[] = [{ kind: "gap", lane: 0 }, { kind: "door" }];
     const config = { introBeats: 10, outroBeats: 6, totalBeats: 60, gapBeats: 3, cycle };
-    const chart = buildMovementChart(config);
+    const chart = buildMovementChart(config, "test");
     for (const event of chart) {
       expect(event.beatIndex).toBeGreaterThanOrEqual(10);
       expect(event.beatIndex).toBeLessThan(60 - 6);
@@ -75,6 +75,11 @@ describe("movement sequencing + checkpoints", () => {
     for (const movement of MOVEMENTS) {
       expect(movement.obstacles.length).toBeGreaterThan(0);
     }
+  });
+
+  test("obstacle ids are unique across every movement", () => {
+    const ids = MOVEMENTS.flatMap((movement) => movement.obstacles.map((event) => event.id));
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   test("movement start offsets are monotonically increasing and non-overlapping", () => {
