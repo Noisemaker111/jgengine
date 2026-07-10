@@ -123,3 +123,7 @@ resetting session branch onto origin/main → stop-hook flags GitHub's own squas
 2026-07-10T16:09:06.631Z — fable-5 — Claude
 
 after branch reset onto origin/main, running check-types without build → shell fails on stale packages/core/dist (missing new core modules) while CI is green; check-types alone never rebuilds dist
+
+2026-07-10T16:38:25.372Z — sonnet-5 — Claude
+
+ship-motion workers keep backgrounding the post-merge 60s sleep even when told 'foreground, never background' — turn ends, green check never runs, orchestrator re-spawns a verifier every phase
