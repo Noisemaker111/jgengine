@@ -32,7 +32,13 @@ export interface CartridgeEnemy {
   walkSpeed: number;
   xp: number;
   contact: { damage: number; intervalSeconds: number };
-  behavior?: "chase";
+  behavior?: "chase" | "none";
+}
+
+export interface CartridgeFlow {
+  start?: "auto" | "gate";
+  countdownSeconds?: number;
+  restart?: boolean;
 }
 
 export interface WeaponCommon {
@@ -106,12 +112,13 @@ export interface CartridgeXpGems {
 
 export interface CartridgeRules {
   win?: { kind: "survive"; seconds: number } | { kind: "custom"; check(ctx: GameContext, run: CartridgeRun): boolean };
-  lose?: { kind: "playerDeath" };
+  lose?: { kind: "playerDeath" } | { kind: "custom"; check(ctx: GameContext, run: CartridgeRun): boolean };
   killLeaderboardStat?: string;
 }
 
 export interface CartridgeSpec {
   seed?: string | number;
+  flow?: CartridgeFlow;
   player: CartridgePlayer;
   enemies: Record<string, CartridgeEnemy>;
   combat: { contactRadius: number };
@@ -143,10 +150,12 @@ export interface PulseFx {
   maxRadius: number;
 }
 
-export type CartridgeOutcome = "playing" | "won" | "lost";
+export type CartridgePhase = "start" | "countdown" | "playing" | "won" | "lost";
 
 export interface CartridgeRun {
-  outcome: CartridgeOutcome;
+  phase: CartridgePhase;
+  playingSeconds: number;
+  countdownRemaining: number;
   kills: number;
   weaponLevel(weaponId: string): number;
   field(name: string): number;

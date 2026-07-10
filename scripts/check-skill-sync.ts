@@ -12,13 +12,15 @@ if (existsSync(join(root, "skills"))) {
   process.exit(1);
 }
 
+const skillsRoot = join(root, ".claude", "skills");
+
 for (const required of ["jgengine-api", "jgengine-newgame", "jgengine-verify"]) {
-  const skillPath = join(root, ".claude", "skills", required, "SKILL.md");
-  if (!existsSync(skillPath)) {
+  if (!existsSync(join(skillsRoot, required, "SKILL.md"))) {
     console.error(`check-skill-sync: missing .claude/skills/${required}/SKILL.md`);
     process.exit(1);
   }
-  const frontmatter = readFileSync(skillPath, "utf8").match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
+  const frontmatter =
+    readFileSync(join(skillsRoot, required, "SKILL.md"), "utf8").match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
   if (/disable-model-invocation:\s*true/.test(frontmatter)) {
     console.error(
       `check-skill-sync: .claude/skills/${required} must stay model-invocable — ` +
@@ -26,10 +28,20 @@ for (const required of ["jgengine-api", "jgengine-newgame", "jgengine-verify"]) 
     );
     process.exit(1);
   }
-  const description = frontmatter.match(/^description:\s*(.*)$/m)?.[1] ?? "";
-  if (description.split(/\s+/).filter(Boolean).length > 35) {
+}
+
+for (const name of readdirSync(skillsRoot)) {
+  const skillPath = join(skillsRoot, name, "SKILL.md");
+  if (!existsSync(skillPath)) continue;
+  const frontmatter = readFileSync(skillPath, "utf8").match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
+  if (/disable-model-invocation:\s*true/.test(frontmatter)) continue;
+  const description = (frontmatter.match(/^description:\s*>?-?\s*([\s\S]*?)(?=\n\S|$)/m)?.[1] ?? "")
+    .replace(/\n\s+/g, " ")
+    .trim();
+  const words = description.split(/\s+/).filter(Boolean).length;
+  if (words > 15) {
     console.error(
-      `check-skill-sync: .claude/skills/${required} description exceeds 35 words — ` +
+      `check-skill-sync: .claude/skills/${name} description is ${words} words (cap 15, aim ~10) — ` +
         "long descriptions never get invoked; lead with why, keep mechanics in the body (CLAUDE.md style rule).",
     );
     process.exit(1);

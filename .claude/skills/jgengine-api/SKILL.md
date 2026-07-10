@@ -1,6 +1,6 @@
 ---
 name: jgengine-api
-description: Games must build on engine primitives, never reinvent them. Invoke before writing or editing ANY game code — game.config.ts, cartridge, catalogs, loop, combat, world, HUD.
+description: The engine surface. Invoke before writing or editing any game code.
 ---
 
 # JGengine — API Reference

@@ -1,9 +1,6 @@
 ---
 name: fan-out
-description: >-
-  Mechanical work on the frontier model burns 10-50x its cost for the same
-  result. Invoke on any turn with a mechanical leg — verify, ship, scouting,
-  sweeps. Standing authorization, don't ask.
+description: Invoke on any mechanical leg — verify, ship, scout, sweep. Standing authorization.
 ---
 
 # Cheap workers do the dumb work
