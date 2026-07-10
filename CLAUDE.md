@@ -63,6 +63,8 @@ Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · scre
 
 **Write worker prompts like a brief, not a script.** Give the goal, the context the worker can't discover itself, and the exact return shape — then stop. Never tell a worker which tools to call, paste in boilerplate footers or session links, or pad the prompt with contingency instructions it can figure out on its own. And don't delegate at all when the task is a couple of quick calls — if writing the prompt costs more than doing the work, do it inline.
 
+**Never restate this file in a brief.** Workers load `CLAUDE.md` and the skills themselves; re-explaining the ship motion, push retries, or tool names pays for those tokens twice. A ship brief carries only what the frontier decides — branch, commit message, PR title + a sentence of body — plus "run the ship motion." Step numbers in a brief mean it's become a script.
+
 **Exchanges stay tight in both directions.** A worker gets one well-packed prompt and returns a judged, compact result — never essays round-tripped. The same discipline applies upward: a Sonnet session consults its Fable advisor with one good-sized prompt for implementation guidance, not paragraphs of story shuttled back and forth. Everyone in the fan-out is a worker; write like one.
 
 ## Verification
