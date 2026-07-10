@@ -33,6 +33,7 @@ import {
 } from "@jgengine/core/interaction/contextMenu";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { aimToPoint } from "@jgengine/core/input/pointer";
+import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import {
   createSelectionSet,
@@ -731,6 +732,7 @@ function FrameDriver({
   yawRef,
   pitchRef,
   primaryClickRef,
+  pointerAxisRef,
   onRuntimeError,
   multiplayer,
   serverIdRef,
@@ -746,6 +748,7 @@ function FrameDriver({
   yawRef: { current: number };
   pitchRef: { current: number };
   primaryClickRef: { current: boolean };
+  pointerAxisRef: { current: PointerAxisState | null };
   onRuntimeError: (error: unknown, phase: string) => void;
   multiplayer: ShellMultiplayer | null;
   serverIdRef: { current: string | null };
@@ -808,6 +811,7 @@ function FrameDriver({
     const dt = Math.min(rawDt, 0.05);
     const gameDt = ctx.time.advance(dt);
     ctx.input.publish(heldActionsFor(tracker, inputActions));
+    ctx.input.publishPointer(pointerAxisRef.current);
     const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
     if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
     endPhase();
@@ -1035,11 +1039,13 @@ function HudOnlyDriver({
   ctx,
   playable,
   tracker,
+  pointerAxisRef,
   onRuntimeError,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
   tracker: ActionStateTracker<string>;
+  pointerAxisRef: { current: PointerAxisState | null };
   onRuntimeError: (error: unknown, phase: string) => void;
 }) {
   const hasReportedTickError = useRef(false);
@@ -1061,6 +1067,7 @@ function HudOnlyDriver({
         const dt = Math.min(rawDt, 0.05);
         const gameDt = ctx.time.advance(dt);
         ctx.input.publish(heldActionsFor(tracker, inputActions));
+        ctx.input.publishPointer(pointerAxisRef.current);
         endPhase();
         devtools.profile.measure("onTick", () => {
           playable.loop.onTick(ctx, gameDt);
@@ -1084,7 +1091,7 @@ function HudOnlyDriver({
     };
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [ctx, playable, tracker, onRuntimeError, inputActions]);
+  }, [ctx, playable, tracker, pointerAxisRef, onRuntimeError, inputActions]);
 
   return null;
 }
@@ -1159,6 +1166,7 @@ export function GamePlayerShell({
   const cameraDraggingRef = useRef(false);
   const primaryClickRef = useRef(false);
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerAxisRef = useRef<PointerAxisState | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
   const f2HeldRef = useRef(false);
   const f2ChordedRef = useRef(false);
@@ -1171,6 +1179,15 @@ export function GamePlayerShell({
     () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(playable.game.input))),
     [playable],
   );
+  const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    if (rect === undefined) return;
+    pointerAxisRef.current = normalizePointerToAxis(event.clientX, event.clientY, rect);
+  };
+  const deactivatePointerAxis = () => {
+    const state = pointerAxisRef.current;
+    if (state !== null && state.active) pointerAxisRef.current = { ...state, active: false };
+  };
   const touchScheme = useMemo(
     () =>
       deriveTouchScheme(playable.game.input, {
@@ -1376,8 +1393,17 @@ export function GamePlayerShell({
           f2HeldRef.current = false;
           tracker.reset();
         }}
+        onPointerMove={trackPointerAxis}
+        onPointerLeave={deactivatePointerAxis}
+        onPointerCancel={deactivatePointerAxis}
       >
-        <HudOnlyDriver ctx={ctx} playable={playable} tracker={tracker} onRuntimeError={reportRuntimeError} />
+        <HudOnlyDriver
+          ctx={ctx}
+          playable={playable}
+          tracker={tracker}
+          pointerAxisRef={pointerAxisRef}
+          onRuntimeError={reportRuntimeError}
+        />
         <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
           <GameProvider context={ctx}>
             <GameUI />
@@ -1449,6 +1475,7 @@ export function GamePlayerShell({
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     wrapperRef.current?.focus();
+    trackPointerAxis(event);
     audioEngine.resume();
     if (contextMenu !== null) setContextMenu(null);
     if (event.button === 0) {
@@ -1459,6 +1486,7 @@ export function GamePlayerShell({
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    trackPointerAxis(event);
     if (pointer?.select !== true) return;
     const start = marqueeStartRef.current;
     if (start === null || (event.buttons & 1) === 0) return;
@@ -1612,6 +1640,8 @@ export function GamePlayerShell({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerLeave={deactivatePointerAxis}
+      onPointerCancel={deactivatePointerAxis}
       onContextMenu={handleContextMenu}
       onWheel={(event) => {
         if (ctx === null || !event.shiftKey) return;
@@ -1704,6 +1734,7 @@ export function GamePlayerShell({
           yawRef={yawRef}
           pitchRef={pitchRef}
           primaryClickRef={primaryClickRef}
+          pointerAxisRef={pointerAxisRef}
           onRuntimeError={reportRuntimeError}
           multiplayer={multiplayer}
           serverIdRef={serverIdRef}

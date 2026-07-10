@@ -130,8 +130,9 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Selection set | `scene/selection` | `createSelectionSet`, `SelectionSet`, `screenRect`, `selectWithinRect`, `rectContainsPoint`, `isMarquee`, `ScreenRect` |
 | Context menu | `interaction/contextMenu` | `contextVerb`, `buildContextMenu`, `contextVerbInput`, `ContextVerb`, `ContextMenu` |
 | Shared / group wallet | `economy/sharedWallet` | `createWalletBook`, `WalletBook`, `WalletScope`, `userScope`, `groupScope`, `balanceIn`, `grantTo`, `chargeFrom`, `contributionOf`, `contributorsOf` |
-| Analog axis input | `input/axisInput` | `AxisInput`, `AxisChannel`, `AxisBindingMap`, `DRIVE_AXIS_BINDINGS`, `clampAxis`, `rampToward`, `NEUTRAL_AXIS` |
-| Raw control polling | `runtime/inputSnapshot` | `createInputSnapshot`, `InputSnapshot` — backs `ctx.input` |
+| Analog axis input | `input/axisInput` | `AxisInput`, `AxisChannel`, `AxisBindingMap`, `DRIVE_AXIS_BINDINGS`, `clampAxis`, `rampToward`, `NEUTRAL_AXIS` — an `AxisBinding.pointer` source steers the axis from `ctx.input.pointer()` via `sample(dt, isDown, pointer)` |
+| Pointer-position axis | `input/pointerAxis` | `PointerAxisState`, `PointerAxisBinding`, `pointerAxisValue`, `normalizePointerToAxis` — normalized `[-1,1]` pointer position (`+y` down), published to `ctx.input.pointer()` by the shell every frame; never hand-roll a `mousemove` listener for steer-by-cursor |
+| Raw control polling | `runtime/inputSnapshot` | `createInputSnapshot`, `InputSnapshot` — backs `ctx.input`, held actions + pointer position |
 | Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` (`{ shape: "box", halfExtents }` \| `{ shape: "sphere", radius }`), `JointOptions`, `JointKind`, `CollisionEvent` |
 | Ballistic collision sweep | `physics/ballisticSweep` | `createBallisticSweep`, `BallisticSweep`, `BallisticSweepHit`, `BallisticSweepOptions` |
 | Tweening / easing | `anim/easing` | `Easing`, `lerp`, `clamp01`, `smoothstep`, `easeInQuad`, `easeOutQuad`, `easeInOutQuad`, `easeInCubic`, `easeOutCubic`, `easeInOutCubic`, `easeOutBack`, `easeOutElastic`, `tween`, `timedProgress` |
@@ -575,7 +576,7 @@ ctx.player.motion   impulse(vy), setVerticalVelocity(vy), setY(y), takePending()
                     before gravity, so a jump pad or grapple release calls this from
                     onTick/commands instead of touching y directly
 ctx.item            use, weapon
-ctx.input           publish(held), isDown(action), held() — per-frame held-action snapshot, polled from onTick
+ctx.input           publish(held), isDown(action), held(), pointer() — per-frame held-action + pointer-position snapshot, polled from onTick
 ctx.world           ground (TerrainField), groundHeightAt(x, z) — the canonical
                     sampler for the game's declared world; environment worlds
                     resolve their terrain field, every other world kind is 0.
@@ -981,6 +982,8 @@ Poses (`standing/crouch/prone/running`) change the collision capsule (`POSE_HITB
 ### `ctx.input` — polling the raw controls
 
 `ctx.input` (`@jgengine/core/runtime/inputSnapshot`) is a per-frame held-action snapshot for `onTick` to poll, distinct from the command-dispatch path (bound actions still run commands the normal way): `publish(held: readonly string[])` (the shell calls this once per frame before `onTick`), `isDown(action)`, `held()` for the full list. Publishing never bumps `ctx.version()` — it's a poll surface, not reactive state.
+
+**Pointer position as an axis** — `ctx.input.pointer()` (`input/pointerAxis`) is the cursor over the play surface, normalized to `[-1, 1]` per axis (center origin, `+y` down — negate for aim-up), `active: false` once the pointer leaves, `null` before the first move. The shell publishes it every frame alongside the held set; a steer-by-cursor game polls it from `onTick` (`const p = ctx.input.pointer() ?? { x: 0, y: 0 }`) instead of hand-rolling a `mousemove` listener. To bind it through the analog seam, give an `AxisBinding` a `pointer: { source: "x" | "y", invert?, deadzone?, curve? }` and pass the state to `AxisChannel.sample(dt, isDown, ctx.input.pointer())` — the pointer takes over from the key lists while active; `pointerAxisValue` is the standalone helper for custom axis sets.
 
 **`repeatMs`** — bind an action as `{ hold: [...], repeatMs: 150 }` (`input/actionBindings`) and the shell fires its command on the down edge, then again every `repeatMs` while held, resetting on release (hotbar-style repeat-fire without a per-game timer).
 

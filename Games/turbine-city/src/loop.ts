@@ -3,12 +3,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { GLIDER_GHOST_ENTITY, GLIDER_PACER_ENTITY, GLIDER_PLAYER_ENTITY } from "./game/entities/gliders/catalog";
 import { fanSpoolState } from "./game/flight/fanSchedule";
-import { createMouseSteer, type MouseSteer } from "./game/input/mouseSteer";
 import { createRaceSession, PACER_RACER_ID, RECORD_BOOK_KEY, RECORD_FIELDS, SESSION_STORE_KEY, type RaceSession } from "./game/race/session";
 import { FANS, SPAWN_HEADING, SPAWN_POSITION } from "./game/race/route";
 import { placeCityProps, syncFanRotors } from "./game/world/setup";
 
-const MOUSE_KEY = "mouseSteer";
 const GHOST_SPAWNED_KEY = "ghostSpawned";
 export const GHOST_RACER_ID = "ghost";
 
@@ -17,16 +15,9 @@ function browserStorage(): RecordStorage | null {
 }
 
 export function onInit(ctx: GameContext): void {
-  const previousMouse = ctx.game.store.get(MOUSE_KEY) as MouseSteer | undefined;
-  if (previousMouse !== undefined) previousMouse.detach();
-
   const session = createRaceSession(createRecordBook({ key: RECORD_BOOK_KEY, fields: RECORD_FIELDS, storage: browserStorage() }));
   ctx.game.store.set(SESSION_STORE_KEY, session);
   ctx.game.store.set(GHOST_SPAWNED_KEY, false);
-
-  const mouseSteer = createMouseSteer();
-  mouseSteer.attach();
-  ctx.game.store.set(MOUSE_KEY, mouseSteer);
 
   if (!ctx.game.commands.has("start")) {
     ctx.game.commands.define("start", {
@@ -91,10 +82,9 @@ function syncGhost(ctx: GameContext, pose: { position: readonly [number, number,
 
 export function onTick(ctx: GameContext, dt: number): void {
   const session = ctx.game.store.get(SESSION_STORE_KEY) as RaceSession | undefined;
-  const mouseSteer = ctx.game.store.get(MOUSE_KEY) as MouseSteer | undefined;
-  if (session === undefined || mouseSteer === undefined) return;
+  if (session === undefined) return;
 
-  const mouse = mouseSteer.sample();
+  const mouse = ctx.input.pointer() ?? { x: 0, y: 0 };
   session.tick(
     dt,
     {
