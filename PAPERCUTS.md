@@ -139,3 +139,7 @@ orchestrating 14 parallel game-build workers → freecell build worker's first r
 2026-07-10T23:15:22.584Z — fable-5 — Claude
 
 parallel game builds with bun install forbidden mid-batch → session container had no node_modules, workers had to typecheck via tsgo from the bun cache and skip @types/react resolution
+
+2026-07-10T23:18:24.805Z — opus-4.8 — Claude
+
+persisting a mutable single-player credit bank in video-poker → game/recordBook is monotonic-only and the save system is host-authoritative overkill; no lightweight local KV persistence primitive, fell back to raw RecordStorage
