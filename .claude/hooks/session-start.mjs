@@ -130,9 +130,13 @@ emit(
   [
     `Cloud session on branch "${branch}" (default: ${defaultBranch}).`,
     `Flow: commit here, push with git push -u origin ${branch}, open a PR via the GitHub MCP ` +
-      `tools, and squash-merge it immediately — the local gate already ran. If required checks ` +
-      `block the instant merge, queue auto-merge (squash) and end the turn; never subscribe to, ` +
-      `watch, or poll CI. No worktrees — every session is its own isolated cloud container.`,
+      `tools, subscribe_pr_activity on it, and squash-merge it immediately — the local gate ` +
+      `already ran (queue auto-merge (squash) if required checks block the instant merge). The ` +
+      `session ends only when the PR is merged AND the Actions run on its merge commit on ` +
+      `${defaultBranch} is green: arm a send_later check-in (~15-30 min) before ending each ` +
+      `turn, act on red runs (fix forward from origin/${defaultBranch}), re-arm on pending, and ` +
+      `stop + unsubscribe once merged+green. Never sleep-loop or foreground-poll CI. No ` +
+      `worktrees — every session is its own isolated cloud container.`,
     ...notes,
   ].join("\n\n") + shallowNote,
 );
