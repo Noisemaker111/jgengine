@@ -1,0 +1,30 @@
+import { defineGame } from "@jgengine/shell/defineGame";
+
+import { content } from "./game/content";
+import { keybinds } from "./game/keybinds";
+import { OBJECT_STYLES } from "./game/objects/styles";
+import { GameUI } from "./game/ui/GameUI";
+import { onInit, onNewPlayer, onTick } from "./loop";
+import { physics, world } from "./world";
+
+export const game = defineGame({
+  name: "Drift District",
+  world,
+  physics,
+  input: keybinds,
+  content,
+  loop: { onInit, onNewPlayer, onTick },
+  GameUI,
+  objectStyles: OBJECT_STYLES,
+  camera: {
+    rig: "chase",
+    chase: {
+      distance: 7.2,
+      height: 2.6,
+      lookHeight: 1,
+      springDamping: 5.5,
+      fov: { base: 64, max: 84, speedForMax: 28 },
+      shakePerSpeed: 0.012,
+    },
+  },
+});
