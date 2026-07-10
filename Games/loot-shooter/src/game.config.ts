@@ -86,9 +86,12 @@ export const game = defineGame({
     fog: { color: ARENA_COLORS.fog, near: 55, far: 140 },
   },
   lighting: {
-    ambient: { color: "#5a6b7e", intensity: 1.35 },
-    hemisphere: { skyColor: "#48607e", groundColor: "#232a36", intensity: 1.15 },
-    directional: [{ color: "#e4f0ff", intensity: 2.0, position: [22, 34, 12], castShadow: true }],
+    ambient: { color: "#6d7f94", intensity: 1.8 },
+    hemisphere: { skyColor: "#5a7396", groundColor: "#2c3542", intensity: 1.5 },
+    directional: [
+      { color: "#e4f0ff", intensity: 2.4, position: [22, 34, 12], castShadow: true },
+      { color: "#8fb3d9", intensity: 0.9, position: [-26, 28, -18] },
+    ],
   },
   movement: {
     collideObjects: true,
