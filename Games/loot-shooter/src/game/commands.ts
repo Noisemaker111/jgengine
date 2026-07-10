@@ -44,7 +44,7 @@ function pickupWorldItem(ctx: GameContext): void {
     }
     ctx.player.inventory.put("hotbar", weapon.id, 1, { slot });
     ctx.scene.entity.floatText({ instanceId: userId, text: weapon.name.toUpperCase(), kind: "pickup" });
-    ctx.game.feed.push("loot.pickup", { data: { itemId: weapon.id, rarity: weapon.rarity } });
+    ctx.game.feed.push("loot.pickup", { itemId: weapon.id, rarity: weapon.rarity });
     return;
   }
 

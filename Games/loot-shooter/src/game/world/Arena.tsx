@@ -96,7 +96,7 @@ function CornerPylons() {
               emissiveIntensity={2.2}
             />
           </mesh>
-          <pointLight position={[0, 5.6, 0]} color={ARENA_COLORS.pylon} intensity={30} distance={26} decay={1.8} />
+          <pointLight position={[0, 5.6, 0]} color={ARENA_COLORS.pylon} intensity={70} distance={38} decay={1.6} />
         </group>
       ))}
     </group>

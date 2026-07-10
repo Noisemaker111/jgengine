@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import { coverObjectById } from "../objects/catalog";
 import { ARENA_COLORS } from "../palette";
 
 function Crate({ color }: { color: string }) {
@@ -26,7 +27,7 @@ function Barrier() {
     <group>
       <mesh position={[0, -0.05, 0]} castShadow receiveShadow>
         <boxGeometry args={[1, 0.9, 0.55]} />
-        <meshStandardMaterial color="#2c333a" roughness={0.75} metalness={0.25} />
+        <meshStandardMaterial color="#3a434e" roughness={0.75} metalness={0.25} />
       </mesh>
       <mesh position={[0, 0.42, 0]}>
         <boxGeometry args={[1.02, 0.08, 0.58]} />
@@ -76,11 +77,11 @@ function Wreck() {
 }
 
 export function renderCoverObject(object: SceneObject): ReactNode {
+  const def = coverObjectById(object.catalogId);
   switch (object.catalogId) {
     case "crate_metal":
-      return <Crate color="#3a4450" />;
     case "crate_amber":
-      return <Crate color="#7a5a1c" />;
+      return <Crate color={def?.color ?? "#4a5566"} />;
     case "barrier_slab":
       return <Barrier />;
     case "pylon_beacon":

@@ -1,4 +1,5 @@
 import { SlotGrid } from "@jgengine/react/components";
+import { useDisplayProfile } from "@jgengine/react/display";
 import { itemNameById } from "../../content";
 import { weaponById } from "../../items/weapons/catalog";
 import { RARITY_COLORS } from "../../palette";
@@ -7,6 +8,9 @@ import { useSelectedSlot } from "./useRun";
 
 export function Hotbar() {
   const selected = useSelectedSlot();
+  const { compact } = useDisplayProfile();
+  const slotSize = compact ? "h-12 w-12" : "h-14 w-16";
+  const iconSize = compact ? "h-6 w-9" : "h-8 w-12";
   return (
     <SlotGrid
       inventoryId="hotbar"

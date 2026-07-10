@@ -31,11 +31,11 @@ export const RANK_ACCENTS = {
 };
 
 export const ARENA_COLORS = {
-  floor: "#14161c",
-  floorLine: "#232833",
-  wall: "#1b2026",
+  floor: "#272c38",
+  floorLine: "#3c4556",
+  wall: "#343d47",
   wallTrim: "#f5a623",
   pylon: "#38e1ff",
-  sky: "#05070d",
-  fog: "#0a0d14",
+  sky: "#0a1020",
+  fog: "#111828",
 };

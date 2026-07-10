@@ -67,12 +67,12 @@ export const game = defineGame({
   hotbarSelection: () => session.selectedSlot(),
   backdrop: {
     background: ARENA_COLORS.sky,
-    fog: { color: ARENA_COLORS.fog, near: 45, far: 115 },
+    fog: { color: ARENA_COLORS.fog, near: 55, far: 140 },
   },
   lighting: {
-    ambient: { color: "#31404f", intensity: 0.4 },
-    hemisphere: { skyColor: "#243447", groundColor: "#0c0e12", intensity: 0.55 },
-    directional: [{ color: "#cfe4ff", intensity: 1.15, position: [22, 34, 12], castShadow: true }],
+    ambient: { color: "#5a6b7e", intensity: 1.35 },
+    hemisphere: { skyColor: "#48607e", groundColor: "#232a36", intensity: 1.15 },
+    directional: [{ color: "#e4f0ff", intensity: 2.0, position: [22, 34, 12], castShadow: true }],
   },
   movement: {
     collideObjects: true,

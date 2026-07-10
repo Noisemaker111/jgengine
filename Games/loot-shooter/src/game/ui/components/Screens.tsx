@@ -6,7 +6,7 @@ import { useRun } from "./useRun";
 function ScreenShell({ children }: { children: ReactNode }) {
   return (
     <div
-      className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm"
+      className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center justify-center bg-gradient-to-b from-black/65 via-black/25 to-black/70"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + var(--jg-hud-dock-clearance, 0px))" }}
     >
       {children}
