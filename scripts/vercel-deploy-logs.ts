@@ -3,9 +3,15 @@ const teamId = process.env.VERCEL_TEAM_ID;
 const sha = process.env.COMMIT_SHA ?? process.env.GITHUB_SHA;
 
 if (!token) {
-  console.log("VERCEL_TOKEN secret is not set — skipping Vercel deploy log collection.");
-  console.log("Add VERCEL_TOKEN (and VERCEL_TEAM_ID for team projects) in repo secrets to enable it.");
-  process.exit(0);
+  console.error(
+    "VERCEL_TOKEN secret is not set — this workflow cannot see Vercel deployments, so its " +
+      "green check would be meaningless. Failing loudly instead of silently passing.",
+  );
+  console.error(
+    "Fix: create a token at vercel.com/account/tokens, then add VERCEL_TOKEN (and " +
+      "VERCEL_TEAM_ID for team projects) under repo Settings → Secrets and variables → Actions.",
+  );
+  process.exit(1);
 }
 if (!sha) {
   console.error("No commit SHA (COMMIT_SHA/GITHUB_SHA) provided.");
