@@ -6,10 +6,13 @@ import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 
 import {
   activeCharter,
+  activeEventId,
   activeLens,
   activeToast,
   activeTool,
+  briefStage,
   cityBuildings,
+  cityDecisions,
   cityPlazas,
   futureDepth,
   historyDepth,
@@ -17,13 +20,16 @@ import {
   selectedPlaza,
   systemsPanelOpen,
 } from "../city/state";
+import { CITY_EVENTS, growthBriefs } from "../city/briefs";
 import { resolveCityMetrics } from "../city/metrics";
 import { keybinds } from "../keybinds";
 import { BrandChip } from "./components/BrandChip";
 import { Credit } from "./components/Credit";
+import { EventModal } from "./components/EventModal";
 import { HistoryControls } from "./components/HistoryControls";
 import { Inspector } from "./components/Inspector";
 import { Legend } from "./components/Legend";
+import { ObjectivePanel } from "./components/ObjectivePanel";
 import { StatsRibbon } from "./components/StatsRibbon";
 import { SystemsPanel } from "./components/SystemsPanel";
 import { TimeBar } from "./components/TimeBar";
@@ -46,10 +52,17 @@ export function GameUI(): ReactNode {
   const lens = useGameStore(activeLens);
   const systemsOpen = useGameStore(systemsPanelOpen);
   const metrics = useGameStore((ctx) => resolveCityMetrics(cityBuildings(ctx), cityPlazas(ctx), activeCharter(ctx)));
+  const stage = useGameStore(briefStage);
+  const buildingsCount = useGameStore((ctx) => cityBuildings(ctx).length);
+  const plazasCount = useGameStore((ctx) => cityPlazas(ctx).length);
+  const decisions = useGameStore(cityDecisions);
+  const eventId = useGameStore(activeEventId);
 
   const day = calendar.day + 1;
   const pauseKey = actionLabel(keybinds, "pauseToggle") ?? "";
   const hasSelection = building !== null || plaza !== null;
+  const briefs = growthBriefs(metrics, buildingsCount, plazasCount);
+  const activeEvent = eventId !== null ? (CITY_EVENTS.find((event) => event.id === eventId) ?? null) : null;
 
   return (
     <HudCanvas layout={layout} className="font-mono text-[#171916]">
@@ -70,6 +83,10 @@ export function GameUI(): ReactNode {
         <ToolRail activeTool={tool} onSelect={(action) => commands.run(action, {})} />
       </HudPanel>
 
+      <HudPanel id="objective" anchor="top-left" order={4} compact="hide">
+        <ObjectivePanel briefs={briefs} stage={stage} />
+      </HudPanel>
+
       <HudPanel id="stats" anchor="top" compact="hide">
         <StatsRibbon
           metrics={metrics}
@@ -86,7 +103,7 @@ export function GameUI(): ReactNode {
 
       {systemsOpen && (
         <HudPanel id="systems" anchor="top-right" compact="chip" chip="City life">
-          <SystemsPanel metrics={metrics} onClose={() => commands.run("systems.toggle", {})} />
+          <SystemsPanel metrics={metrics} decisions={decisions} onClose={() => commands.run("systems.toggle", {})} />
         </HudPanel>
       )}
 
@@ -125,6 +142,13 @@ export function GameUI(): ReactNode {
       <div className="pointer-events-none absolute inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom,0px)+var(--jg-hud-dock-clearance,0px))] flex justify-center px-4">
         <Toast toast={toast} />
       </div>
+
+      {activeEvent !== null && (
+        <EventModal
+          event={activeEvent}
+          onChoose={(choice) => commands.run("charter.resolve", { eventId: activeEvent.id, choice })}
+        />
+      )}
     </HudCanvas>
   );
 }
