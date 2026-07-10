@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import {
   CELL,
+  DAY_LENGTH,
   initialBuildings,
   lots,
   makeBuilding,
@@ -17,6 +18,7 @@ import {
   type Tool,
 } from "../catalog";
 import { briefCompleted, growthBriefs, nextCharterEvent, AGE_PER_DAY, CITY_EVENTS, CONDITION_FLOOR, FORMAL_WEAR_PER_DAY, WEAR_PER_DAY } from "./briefs";
+import { MOOD_DEFS, type SavedCity } from "./library";
 import { resolveCityMetrics } from "./metrics";
 import { lotAt, occupiedLotKeys } from "./model";
 
@@ -57,6 +59,10 @@ export const activeToast = (ctx: GameContext): Toast | null => read(ctx, "toast"
 export const activeCharter = (ctx: GameContext): DistrictCharter => read(ctx, "charter", {});
 export const systemsPanelOpen = (ctx: GameContext): boolean => read(ctx, "systems", false);
 export const briefStage = (ctx: GameContext): number => read(ctx, "briefStage", 0);
+export const focusMode = (ctx: GameContext): boolean => read(ctx, "focus", false);
+export const welcomeOpen = (ctx: GameContext): boolean => read(ctx, "welcome", true);
+export const libraryRevision = (ctx: GameContext): number => read(ctx, "libraryRev", 0);
+export const cityDay = (ctx: GameContext): number => ctx.time.calendar().day + read(ctx, "dayBase", 0);
 export const cityDecisions = (ctx: GameContext): DecisionRecord[] => read(ctx, "decisions", []);
 export const activeEventId = (ctx: GameContext): keyof DistrictCharter | null => read(ctx, "activeEvent", null);
 export const historyDepth = (ctx: GameContext): number => read(ctx, "history", [] as CitySnapshot[]).length;
@@ -182,6 +188,10 @@ export function initCity(ctx: GameContext): void {
   ctx.game.store.set("lens", "material" satisfies Lens);
   ctx.game.store.set("mood", "default" satisfies DistrictMood);
   ctx.game.store.set("systems", false);
+  ctx.game.store.set("focus", false);
+  ctx.game.store.set("welcome", true);
+  ctx.game.store.set("libraryRev", 0);
+  ctx.game.store.set("dayBase", 0);
   ctx.game.store.set("briefStage", 0);
   ctx.game.store.set("charter", {} satisfies DistrictCharter);
   ctx.game.store.set("decisions", [] satisfies DecisionRecord[]);
@@ -191,6 +201,7 @@ export function initCity(ctx: GameContext): void {
   ctx.game.store.set("history", [] satisfies CitySnapshot[]);
   ctx.game.store.set("future", [] satisfies CitySnapshot[]);
   for (const building of buildings) ctx.scene.object.place("building", building.x, 0, building.z, { instanceId: building.id });
+  ctx.time.pause();
 }
 
 export function placeBuildingAt(ctx: GameContext, x: number, z: number, program: Program): Building | null {
@@ -330,6 +341,64 @@ export function demolish(ctx: GameContext, id: string): void {
   }
   ctx.scene.object.remove(id);
   if (selectedId(ctx) === id) selectInstance(ctx, null);
+}
+
+export function toggleFocusMode(ctx: GameContext): void {
+  ctx.game.store.set("focus", !focusMode(ctx));
+}
+
+export function setWelcomeOpen(ctx: GameContext, open: boolean): void {
+  ctx.game.store.set("welcome", open);
+  if (open) ctx.time.pause();
+  else ctx.time.play();
+}
+
+export function bumpLibraryRevision(ctx: GameContext): void {
+  ctx.game.store.set("libraryRev", libraryRevision(ctx) + 1);
+}
+
+export function jumpToHour(ctx: GameContext, hour: number, day?: number): void {
+  const targetFraction = ((hour / 24) % 1 + 1) % 1;
+  const current = ctx.time.calendar().dayFraction;
+  ctx.time.advance(((targetFraction - current + 1) % 1) * DAY_LENGTH);
+  if (day !== undefined) ctx.game.store.set("dayBase", day - 1 - ctx.time.calendar().day);
+}
+
+export function setMood(ctx: GameContext, mood: DistrictMood): void {
+  ctx.game.store.set("mood", mood);
+  const def = MOOD_DEFS.find((entry) => entry.id === mood);
+  if (def !== undefined) jumpToHour(ctx, def.hour);
+}
+
+export function captureCity(ctx: GameContext): SavedCity {
+  return structuredClone({
+    buildings: cityBuildings(ctx),
+    plazas: cityPlazas(ctx),
+    briefStage: briefStage(ctx),
+    charter: activeCharter(ctx),
+    decisions: cityDecisions(ctx),
+    mood: activeMood(ctx),
+    hour: ctx.time.calendar().dayFraction * 24,
+    day: cityDay(ctx) + 1,
+  });
+}
+
+export function loadCity(ctx: GameContext, saved: SavedCity): void {
+  ctx.game.store.set("buildings", structuredClone(saved.buildings));
+  ctx.game.store.set("plazas", structuredClone(saved.plazas));
+  ctx.game.store.set("briefStage", saved.briefStage);
+  ctx.game.store.set("charter", structuredClone(saved.charter));
+  ctx.game.store.set("decisions", structuredClone(saved.decisions));
+  ctx.game.store.set("mood", saved.mood);
+  ctx.game.store.set("placedCount", saved.buildings.length);
+  ctx.game.store.set("selectedId", null);
+  ctx.game.store.set("systems", false);
+  ctx.game.store.set("activeEvent", null);
+  ctx.game.store.set("history", [] satisfies CitySnapshot[]);
+  ctx.game.store.set("future", [] satisfies CitySnapshot[]);
+  syncSceneObjects(ctx);
+  jumpToHour(ctx, saved.hour, saved.day);
+  setWelcomeOpen(ctx, false);
 }
 
 export function advanceGrowth(ctx: GameContext): void {

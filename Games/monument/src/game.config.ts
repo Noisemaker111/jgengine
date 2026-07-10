@@ -1,5 +1,6 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 
+import { DAY_LENGTH } from "./game/catalog";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
 import { renderCityObject } from "./game/render/Buildings";
@@ -7,8 +8,6 @@ import { MonumentEnvironment } from "./game/render/Environment";
 import { GameUI } from "./game/ui/GameUI";
 import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
-
-export const DAY_LENGTH = 54;
 
 export const game = defineGame({
   name: "Monument",

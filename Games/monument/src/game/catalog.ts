@@ -94,6 +94,7 @@ export interface CityMetrics {
 export const GRID = 11;
 export const CELL = 32;
 export const HALF = (GRID - 1) / 2;
+export const DAY_LENGTH = 54;
 
 export const PROGRAMS: Record<Program, { label: string; short: string; color: string; description: string }> = {
   housing: { label: "Residential", short: "Residential", color: "#e96b50", description: "Apartments, duplexes, hotels, or live-work floors." },
