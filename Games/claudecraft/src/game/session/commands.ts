@@ -15,11 +15,12 @@ import {
   storeKeys,
   teleportHero,
 } from "./hero";
+import { castFishing, craftRecipe } from "../crafting/systems";
 import { dungeonById } from "../dungeons/catalog";
 import { gather } from "../professions/gathering";
 import { graveyardOf } from "../world/setup";
 
-type Panel = "bags" | "character" | "quests" | "spellbook" | "talents";
+type Panel = "bags" | "character" | "quests" | "spellbook" | "talents" | "crafting";
 
 function togglePanel(ctx: GameContext, panel: Panel): void {
   const key = storeKeys.panel(ctx.player.userId);
@@ -183,6 +184,17 @@ export function registerCommands(ctx: GameContext): void {
     },
   });
   commands.define("openTalents", { apply: (state) => togglePanel(state, "talents") });
+  commands.define("craft.open", { apply: (state) => togglePanel(state, "crafting" as Panel) });
+  commands.define<{ recipeId: string }>("craft.make", {
+    apply(state, input) {
+      craftRecipe(state, state.player.userId, input.recipeId);
+    },
+  });
+  commands.define("fishing.cast", {
+    apply(state) {
+      castFishing(state, state.player.userId);
+    },
+  });
   commands.define<{ dungeonId: string }>("dungeon.enter", {
     apply(state, input) {
       const dungeon = dungeonById(input.dungeonId);
