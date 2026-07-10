@@ -6,17 +6,13 @@ import { loadSkill } from "../content/skills";
 
 export const Route = createFileRoute("/skills/$name")({
   loader: async ({ params }) => {
-    const [skill, { marked }, { default: DOMPurify }] = await Promise.all([
-      loadSkill(params.name),
-      import("marked"),
-      import("isomorphic-dompurify"),
-    ]);
+    const [skill, { marked }] = await Promise.all([loadSkill(params.name), import("marked")]);
     if (!skill) throw notFound();
     return {
       name: skill.name,
       description: skill.description,
       markdown: skill.markdown,
-      html: DOMPurify.sanitize(marked.parse(skill.body, { async: false })),
+      html: marked.parse(skill.body, { async: false }),
     };
   },
   head: ({ loaderData }) => ({
