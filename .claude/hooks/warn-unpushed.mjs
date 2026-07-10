@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 
 const git = (...args) => {
   try {
-    return execFileSync("git", args, { stdio: ["ignore", "pipe", "ignore"] })
+    return execFileSync("git", args, { stdio: ["ignore", "pipe", "ignore"], timeout: 15000 })
       .toString()
       .trim();
   } catch {

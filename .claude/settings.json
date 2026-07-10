@@ -2,6 +2,13 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "env": {
+    "GIT_TERMINAL_PROMPT": "0",
+    "GIT_EDITOR": "true",
+    "GIT_PAGER": "cat",
+    "PAGER": "cat",
+    "GIT_SSH_COMMAND": "ssh -oBatchMode=yes"
+  },
   "hooks": {
     "UserPromptSubmit": [
       {

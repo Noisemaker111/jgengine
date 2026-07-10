@@ -12,6 +12,7 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -31,6 +32,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -47,6 +49,7 @@ jobs:
 
   web-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -64,6 +67,7 @@ jobs:
     needs: [checks, test, web-build]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - run: |
           test "${{ needs.checks.result }}" = "success" && test "${{ needs.test.result }}" = "success" && test "${{ needs.web-build.result }}" = "success"
