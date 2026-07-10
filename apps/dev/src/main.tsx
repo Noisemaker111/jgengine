@@ -14,6 +14,7 @@ import {
 } from "@jgengine/shell/multiplayer";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
+import { armCaptureReady, captureArmed, setCaptureStatus } from "./captureReady";
 import "./index.css";
 
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
@@ -152,6 +153,12 @@ function DevApp() {
       window.removeEventListener("unhandledrejection", onRejection);
     };
   }, []);
+  useEffect(() => armCaptureReady(MODE), []);
+  useEffect(() => {
+    if (!captureArmed()) return;
+    if (loadError !== null) setCaptureStatus("error", loadError);
+    else if (runtimeError !== null) setCaptureStatus("error", runtimeError);
+  }, [loadError, runtimeError]);
   useEffect(() => {
     const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
     if (load === undefined) {
