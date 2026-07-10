@@ -5,7 +5,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { LEASH_DISTANCE, mitigate, mobDamage, mobHp } from "../math/combat";
 import type { MobDef } from "../model";
 import { MOBS, mobById } from "../entities/enemies/catalog";
-import { enterCombat, gainRage, heroSheet, storeKeys } from "../session/hero";
+import { aurasOf, enterCombat, gainRage, heroSheet, storeKeys } from "../session/hero";
 import { CRYPT, zoneById } from "../world/zones";
 import { HIT_TAKEN_RAGE } from "../combat/engine";
 
@@ -21,6 +21,8 @@ interface MobRuntime {
   frenzyUntil: number;
   nextAbilityAt: number;
   telegraphedAt: number;
+  stunnedUntil: number;
+  rootedUntil: number;
 }
 
 const runtimes = new Map<string, MobRuntime>();
@@ -46,7 +48,12 @@ export function armorOfMob(instanceId: string): number {
   const runtime = runtimes.get(instanceId);
   if (runtime === undefined) return 0;
   const def = mobById(runtime.defId);
-  return def === null ? 0 : def.armorPerLevel * runtime.level;
+  const base = def === null ? 0 : def.armorPerLevel * runtime.level;
+  const shred = aurasOf(instanceId).reduce(
+    (sum, aura) => (aura.buffStat === "armor" ? sum + (aura.buffAmount ?? 0) : sum),
+    0,
+  );
+  return Math.max(0, base + shred);
 }
 
 export function addThreat(instanceId: string, sourceId: string, amount: number): void {
@@ -93,8 +100,31 @@ function spawnMob(ctx: GameContext, def: MobDef, position: readonly [number, num
     frenzyUntil: 0,
     nextAbilityAt: 0,
     telegraphedAt: 0,
+    stunnedUntil: 0,
+    rootedUntil: 0,
   });
   return instanceId;
+}
+
+export function applyMobCc(
+  ctx: GameContext,
+  instanceId: string,
+  sourceId: string,
+  cc: { kind: "stun" | "root" | "taunt" | "armorShred"; durationSec: number },
+): boolean {
+  const runtime = runtimes.get(instanceId);
+  if (runtime === undefined || runtime.evading) return false;
+  const now = ctx.time.now();
+  if (cc.kind === "stun") {
+    runtime.stunnedUntil = Math.max(runtime.stunnedUntil, now + cc.durationSec);
+    ctx.scene.entity.floatText({ instanceId, text: "Stunned", kind: "info" });
+  } else if (cc.kind === "root") {
+    runtime.rootedUntil = Math.max(runtime.rootedUntil, now + cc.durationSec);
+    ctx.scene.entity.floatText({ instanceId, text: "Rooted", kind: "info" });
+  } else if (cc.kind === "taunt") {
+    runtime.threat.taunt(sourceId, cc.durationSec);
+  }
+  return true;
 }
 
 export function spawnAllMobs(ctx: GameContext): number {
@@ -142,7 +172,14 @@ function swingAtPlayer(ctx: GameContext, def: MobDef, runtime: MobRuntime, insta
   const now = ctx.time.now();
   if (now < runtime.nextSwingAt) return;
   const sheet = heroSheet(ctx, targetId);
-  const raw = mobDamage(def.dmgBase, def.dmgPerLevel, runtime.level);
+  const weakenPct = aurasOf(instanceId).reduce(
+    (sum, aura) => (aura.buffStat === "attackPower" && (aura.buffAmount ?? 0) < 0 ? sum + (aura.buffAmount ?? 0) : sum),
+    0,
+  );
+  const raw = Math.max(
+    1,
+    Math.round(mobDamage(def.dmgBase, def.dmgPerLevel, runtime.level) * Math.max(0.3, (100 + weakenPct) / 100)),
+  );
   const amount = mitigate(raw, sheet?.armor ?? 0, runtime.level);
   ctx.scene.entity.effect({ from: instanceId, to: targetId, effect: "damage", via: { amount } });
   gainRage(ctx, targetId, HIT_TAKEN_RAGE);
@@ -238,6 +275,7 @@ export function tickMobs(ctx: GameContext, dt: number): void {
       targetId = null;
     }
     if (targetId !== null) {
+      if (now < runtime.stunnedUntil) continue;
       const distHome = Math.hypot(self.position[0] - runtime.spawn[0], self.position[2] - runtime.spawn[2]);
       if (distHome > LEASH_DISTANCE) {
         runtime.threat.clear();
@@ -247,7 +285,9 @@ export function tickMobs(ctx: GameContext, dt: number): void {
       const targetDist = ctx.scene.entity.distance(instanceId, targetId);
       if (targetDist === null) continue;
       if (targetDist > MELEE_REACH) {
-        moveMob(ctx, instanceId, targetId, def.moveSpeed, dt, MELEE_REACH - 0.4);
+        if (now >= runtime.rootedUntil) {
+          moveMob(ctx, instanceId, targetId, def.moveSpeed, dt, MELEE_REACH - 0.4);
+        }
       } else {
         swingAtPlayer(ctx, def, runtime, instanceId, targetId);
       }

@@ -15,6 +15,12 @@ export type EquipSlot =
   | "trinket";
 export type ZoneId = "vale" | "marsh" | "peaks";
 
+export interface AbilityCcDef {
+  kind: "stun" | "root" | "taunt" | "armorShred";
+  durationSec: number;
+  amount?: number;
+}
+
 export interface AbilityDef {
   id: string;
   name: string;
@@ -36,6 +42,39 @@ export interface AbilityDef {
   buffStat?: AttributeId | "armor" | "attackPower" | "spellPower";
   buffAmount?: number;
   buffPerLevel?: number;
+  cc?: AbilityCcDef;
+  selfResource?: number;
+}
+
+export type HeroStatId =
+  | AttributeId
+  | "armor"
+  | "attackPower"
+  | "spellPower"
+  | "critPct"
+  | "maxHp"
+  | "maxResource";
+
+export interface SpecDef {
+  id: string;
+  classId: string;
+  name: string;
+  icon: string;
+  nodes: readonly import("@jgengine/core/game/talents").TalentNodeDef<HeroStatId>[];
+}
+
+export type ProfessionId = "mining" | "logging" | "herbalism";
+
+export interface GatherNodeDef {
+  id: string;
+  name: string;
+  profession: ProfessionId;
+  zone: ZoneId;
+  skillReq: number;
+  count: number;
+  respawnSec: number;
+  materials: readonly { itemId: string; min: number; max: number }[];
+  skillUpTo: number;
 }
 
 export interface ClassDef {

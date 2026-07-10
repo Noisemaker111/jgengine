@@ -12,4 +12,5 @@ export function registerStackLimit(itemId: string, stack: number): void {
 
 export const inventories: Record<string, InventoryDeclaration> = {
   bags: { slots: 24, traits },
+  bank: { slots: 28, traits },
 };

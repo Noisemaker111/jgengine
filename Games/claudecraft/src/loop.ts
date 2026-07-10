@@ -9,7 +9,7 @@ import { loadouts } from "./game/loadouts";
 import { CLASS_ENTITY_ID } from "./game/model";
 import { killXp, levelTrack } from "./game/progression/curves";
 import { registerCommands } from "./game/session/commands";
-import { applySheet, clearAuras, heroOf, storeKeys } from "./game/session/hero";
+import { applySheet, clearAuras, grantTalentPoint, heroOf, storeKeys } from "./game/session/hero";
 import { QUESTS } from "./game/quests/catalog";
 import { setupWorld } from "./game/world/setup";
 import { PLAYER_SPAWN } from "./game/world/zones";
@@ -39,13 +39,22 @@ function onKill(ctx: GameContext, victimInstanceId: string): void {
   if (runtime === null) return;
   const userId = ctx.player.userId;
   const playerLevel = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
-  const amount = killXp(playerLevel, runtime.level);
-  if (amount <= 0) return;
+  const baseAmount = killXp(playerLevel, runtime.level);
+  if (baseAmount <= 0) return;
+  const pool = (ctx.game.store.get(storeKeys.rested(userId)) as number | undefined) ?? 0;
+  const restedBonus = Math.min(pool, baseAmount);
+  if (restedBonus > 0) ctx.game.store.set(storeKeys.rested(userId), pool - restedBonus);
+  const amount = baseAmount + restedBonus;
   levelTrack.grantXp(ctx.scene.entity.stats, userId, amount, (newLevel) => {
     applySheet(ctx, userId, { fill: true });
+    grantTalentPoint(ctx, userId, newLevel);
     ctx.game.events.emit("stat.levelUp", { userId, stat: "level", level: newLevel });
   });
-  ctx.scene.entity.floatText({ instanceId: userId, text: `+${amount} XP`, kind: "xp" });
+  ctx.scene.entity.floatText({
+    instanceId: userId,
+    text: restedBonus > 0 ? `+${amount} XP (rested)` : `+${amount} XP`,
+    kind: "xp",
+  });
 }
 
 export const loop: GameLoop<GameContext> = {
