@@ -41,7 +41,7 @@ function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
-const MIN_LUMINANCE_STDDEV = 12;
+const MIN_LUMINANCE_STDDEV = 10;
 
 function hasSceneContent(canvas: HTMLCanvasElement): boolean {
   const ctx = canvas.getContext("2d");
