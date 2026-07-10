@@ -84,16 +84,17 @@ export const world: EnvironmentWorldFeature = environment({
     }),
   ],
   structures: [
-    building({ position: [vale.hub.x, vale.hub.z], count: 9, seed: "eastbrook", stories: [1, 2] }),
-    building({ position: [marsh.hub.x, marsh.hub.z], count: 7, seed: "fenbridge", stories: [1, 2] }),
-    building({ position: [peaks.hub.x, peaks.hub.z], count: 7, seed: "highwatch", stories: [1, 3] }),
-    building({ position: [CRYPT.x, CRYPT.z], count: 3, seed: "hollow-crypt", stories: [1, 1] }),
+    building({ position: [vale.hub.x, vale.hub.z], count: 9, seed: "eastbrook", stories: [1, 2], style: "village" }),
+    building({ position: [marsh.hub.x, marsh.hub.z], count: 7, seed: "fenbridge", stories: [1, 2], style: "village" }),
+    building({ position: [peaks.hub.x, peaks.hub.z], count: 7, seed: "highwatch", stories: [1, 3], style: "village" }),
+    building({ position: [CRYPT.x, CRYPT.z], count: 3, seed: "hollow-crypt", stories: [1, 1], style: "ruin" }),
     ...compounds.map((dungeon) =>
       building({
         position: [dungeon.center[0], dungeon.center[1]],
         count: dungeon.raid === true ? 6 : 4,
         seed: dungeon.id,
         stories: [1, 2],
+        style: "ruin",
       }),
     ),
   ],

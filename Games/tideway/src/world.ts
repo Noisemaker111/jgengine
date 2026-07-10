@@ -51,7 +51,7 @@ export const world = environment({
       stories: cluster.stories,
       storyHeight: 3,
       spacing: 3,
-      style: "harbor",
+      style: "coastal",
       seed: `${WORLD_SEED}:${cluster.id}`,
     }),
   ),

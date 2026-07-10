@@ -21,7 +21,7 @@ export const world: WorldFeature = environment({
       count: 3,
       footprint: { w: 6, d: 6 },
       stories: [1, 2],
-      style: "outpost",
+      style: "frontier",
       seed: "canyon-chase-outpost-a",
     }),
     building({
@@ -29,7 +29,7 @@ export const world: WorldFeature = environment({
       count: 2,
       footprint: { w: 6, d: 6 },
       stories: [1, 2],
-      style: "outpost",
+      style: "frontier",
       seed: "canyon-chase-outpost-b",
     }),
   ],

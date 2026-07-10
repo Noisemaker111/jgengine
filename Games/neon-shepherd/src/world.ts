@@ -38,7 +38,7 @@ const buildingClusters = BUILDING_Z_BANDS.flatMap((z, bandIndex) =>
       stories: [2, 6],
       storyHeight: 3.1,
       spacing: 2.5,
-      style: side > 0 ? "east-block" : "west-block",
+      style: "neon",
       seed: `neon-shepherd-buildings-${bandIndex}-${side}`,
       position: [side * (WORLD_HALF_WIDTH - 4), z],
     }),

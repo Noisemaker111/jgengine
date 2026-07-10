@@ -135,3 +135,7 @@ shoot --url skips ensureServer so the shot soft-times-out unless a dev server is
 2026-07-10T23:45:41.127Z — sonnet — Claude
 
 surveying all 37 games' environments in one scout → worker died on API server error mid-run, resumed via SendMessage and finished fine
+
+2026-07-10T23:51:04.164Z — sonnet — Claude
+
+running repo-root check-types → its --filter '*' pass emitted no Games/* lines, so the repo-wide gate may silently skip all games; per-game tsgo runs were needed for a direct signal
