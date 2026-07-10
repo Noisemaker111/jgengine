@@ -142,7 +142,7 @@ describe("claudecraft gameplay (headless)", () => {
     const blocked = ctx.item.use.can({ from: USER, itemId: "baked_bread", inventoryId: "bags" });
     expect(blocked).not.toBeNull();
     ctx.scene.entity.setTarget(USER, null);
-    ctx.scene.entity.setPose(USER, { position: [-34, ctx.world.groundHeightAt(-34, -270), -270] });
+    ctx.scene.entity.setPose(USER, { position: [0, ctx.world.groundHeightAt(0, 300), 300] });
     step(ctx, 14);
     const allowed = ctx.item.use.can({ from: USER, itemId: "baked_bread", inventoryId: "bags" });
     expect(allowed).toBeNull();
