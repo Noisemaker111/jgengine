@@ -31,7 +31,7 @@ Judge every engine change against three axes — extensibility, modularity, scal
 
 - bun workspaces: `packages/*` (the eight `@jgengine/*` packages, consumers import by path), `Games/*` (private, source-consumed, one directory per game, built via the `harvest-game` skill), `apps/*` (`dev` = Vite game runner + screenshot target, games auto-register from `Games/*` via a glob in `apps/dev/src/main.tsx` — no manual registry entry; root `bun dev` runs the website where every game is playable at `/games/<id>` (the page embeds the runner from its internal `/play` mount, proxied in dev, static in prod), `bun run dev:runner` runs the runner alone, `bun run games:<id>` plays one game standalone; `desktop` = Tauri wrapper; `web` = jgengine.com), `examples/*` (deployable host examples).
 - The compiler is `tsgo` (`@typescript/native-preview`), not `tsc`. Strict TS everywhere; no `any` escapes in engine code.
-- `skills/` is the spec — build games from these three, not by copying other games (`check-types` also validates that the skills match the real API surface):
+- The three engine skills in `.claude/skills/` are the spec — **invoke them** (they auto-surface in every session; never work game code from memory or by copying other games). `check-types` validates they match the real API surface, live in `.claude/skills/` (a top-level `skills/` dir is invisible to sessions and fails the gate), and stay model-invocable with ≤35-word descriptions:
 
   | Skill | Role |
   | --- | --- |

@@ -1,6 +1,6 @@
 ---
 name: jgengine-newgame
-description: Use when the user asks to build or make a new game with JGengine — the master blueprint (full-scope plan for the whole game) and the phased build workflow that carries an empty project to the complete game, each phase whole, no half systems.
+description: Half-built games are the failure mode this kills. Invoke whenever asked to make or build a game — master blueprint first, then phased build to the complete game.
 ---
 
 # JGengine — Blueprint the whole game, build it in phases

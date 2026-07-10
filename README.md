@@ -41,13 +41,13 @@ Building a game with an AI coding agent? Install the JGengine skills (API refere
 npx skills add Noisemaker111/jgengine
 ```
 
-Then prompts like "make a tower defense game with jgengine" pick up the full engine surface and definition of done automatically. The skills live in [`skills/`](skills).
+Then prompts like "make a tower defense game with jgengine" pick up the full engine surface and definition of done automatically. The skills live in [`.claude/skills/`](.claude/skills) — the directory Claude Code auto-surfaces in every session, so they get invoked instead of merely existing.
 
 ## Website — [jgengine.com](https://jgengine.com)
 
-[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and a front door for agents. It points agents at `npx skills add Noisemaker111/jgengine` and explains which skill to grab for what — the skill pages are **rendered from `skills/`**, with no separate content to maintain.
+[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and a front door for agents. It points agents at `npx skills add Noisemaker111/jgengine` and explains which skill to grab for what — the skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
 
-It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
+It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
 Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header dropdown — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally with the runner served for it in dev, so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine-api`'s standalone dev harness) launches one game on its own, no host app required.
 

@@ -2,7 +2,39 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
-const skillDir = join(root, "skills", "jgengine-api");
+const skillDir = join(root, ".claude", "skills", "jgengine-api");
+
+if (existsSync(join(root, "skills"))) {
+  console.error(
+    "check-skill-sync: a top-level skills/ directory exists. Agent skills live in .claude/skills/ — " +
+      "that is the only place Claude Code auto-surfaces them; a top-level skills/ dir is invisible to sessions and rots.",
+  );
+  process.exit(1);
+}
+
+for (const required of ["jgengine-api", "jgengine-newgame", "jgengine-verify"]) {
+  const skillPath = join(root, ".claude", "skills", required, "SKILL.md");
+  if (!existsSync(skillPath)) {
+    console.error(`check-skill-sync: missing .claude/skills/${required}/SKILL.md`);
+    process.exit(1);
+  }
+  const frontmatter = readFileSync(skillPath, "utf8").match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
+  if (/disable-model-invocation:\s*true/.test(frontmatter)) {
+    console.error(
+      `check-skill-sync: .claude/skills/${required} must stay model-invocable — ` +
+        "it is the route by which sessions discover the engine surface.",
+    );
+    process.exit(1);
+  }
+  const description = frontmatter.match(/^description:\s*(.*)$/m)?.[1] ?? "";
+  if (description.split(/\s+/).filter(Boolean).length > 35) {
+    console.error(
+      `check-skill-sync: .claude/skills/${required} description exceeds 35 words — ` +
+        "long descriptions never get invoked; lead with why, keep mechanics in the body (CLAUDE.md style rule).",
+    );
+    process.exit(1);
+  }
+}
 const refDir = join(skillDir, "reference");
 const refFiles = existsSync(refDir)
   ? readdirSync(refDir)
@@ -74,7 +106,7 @@ if (missingDomains.length > 0) {
   problems.push(
     `Public @jgengine/core domains never referenced in the skill (${missingDomains.length}):\n` +
       missingDomains.map((d) => `  ${d}/`).join("\n") +
-      `\n  → a new engine domain landed with no skill coverage. Document it in skills/jgengine-api/SKILL.md,` +
+      `\n  → a new engine domain landed with no skill coverage. Document it in .claude/skills/jgengine-api/SKILL.md,` +
       `\n    or add it to INTERNAL_DOMAINS in this script if it is genuinely internal.`,
   );
 }

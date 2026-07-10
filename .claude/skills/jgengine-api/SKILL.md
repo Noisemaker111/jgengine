@@ -1,6 +1,6 @@
 ---
 name: jgengine-api
-description: Use when building, extending, or debugging a game on JGengine, or when another skill needs the engine surface — defineGame, GameContext, the three buckets, catalogs, the world/combat/loot/quest/trade primitives, the UI quality bar, and asset sourcing. Read before writing any game.config.ts or catalog.
+description: Games must build on engine primitives, never reinvent them. Invoke before writing or editing ANY game code — game.config.ts, cartridge, catalogs, loop, combat, world, HUD.
 ---
 
 # JGengine — API Reference
