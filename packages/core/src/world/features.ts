@@ -1,7 +1,11 @@
+import type { BuildingPaletteOverrides, BuildingStyle } from "./buildings";
+
 export interface WorldBounds {
   w: number;
   d: number;
 }
+
+export type TerrainMaterial = "grass" | "sand" | "snow" | "rock" | "ash" | "highland" | "slate";
 
 export type EnvironmentVec2 = readonly [number, number];
 
@@ -31,7 +35,7 @@ export interface TerrainEnvironmentConfig {
   height?: number;
   heightMap?: string;
   /** Named palette preset (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); default "grass". Overridden field-by-field by `colors`. */
-  material?: string;
+  material?: TerrainMaterial;
   /** Explicit low/high/waterline hex colors; any field left unset falls back to the resolved `material` preset. */
   colors?: TerrainColors;
   segments?: number;
@@ -103,7 +107,10 @@ export interface BuildingEnvironmentConfig {
   stories?: readonly [number, number];
   storyHeight?: number;
   spacing?: number;
-  style?: string;
+  /** Named palette archetype (see `BUILDING_STYLE_PALETTES` in `world/buildings`); default "generic". Overridden part-by-part by `palette`. */
+  style?: BuildingStyle;
+  /** Explicit per-part-kind hex colors; any part left unset falls back to the resolved `style` palette. */
+  palette?: BuildingPaletteOverrides;
   seed?: string;
 }
 
@@ -145,7 +152,7 @@ export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
 > &
-  Pick<BuildingEnvironmentConfig, "seed" | "position">;
+  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette">;
 
 export type PadEnvironmentDescriptor = { kind: "pad" } & Required<
   Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color">
@@ -398,6 +405,7 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
     {
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.position === undefined ? {} : { position: config.position }),
+      ...(config.palette === undefined ? {} : { palette: config.palette }),
     },
   );
 }

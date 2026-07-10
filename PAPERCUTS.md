@@ -131,3 +131,7 @@ ship-motion workers keep backgrounding the post-merge 60s sleep even when told '
 2026-07-10T17:23:54.775Z — sonnet-5 — Claude
 
 shoot --url skips ensureServer so the shot soft-times-out unless a dev server is already running — caller must boot vite manually
+
+2026-07-10T23:45:41.127Z — sonnet — Claude
+
+surveying all 37 games' environments in one scout → worker died on API server error mid-run, resumed via SendMessage and finished fine

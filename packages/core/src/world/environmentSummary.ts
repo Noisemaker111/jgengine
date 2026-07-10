@@ -1,4 +1,10 @@
-import { generateBuildingDistrict, type GeneratedBuilding } from "./buildings";
+import {
+  generateBuildingDistrict,
+  resolveBuildingPalette,
+  type BuildingPalette,
+  type BuildingStyle,
+  type GeneratedBuilding,
+} from "./buildings";
 import type {
   BuildingEnvironmentDescriptor,
   EnvironmentWorldFeature,
@@ -6,7 +12,7 @@ import type {
   WorldBounds,
 } from "./features";
 import type { Aabb } from "./geometry";
-import { resolveTerrainField } from "./terrain";
+import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "./terrain";
 
 export function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] {
   const columns = Math.max(1, Math.ceil(Math.sqrt(descriptor.count)));
@@ -39,11 +45,13 @@ export interface TerrainHeightStats {
 export interface TerrainSummary {
   bounds: WorldBounds;
   height: TerrainHeightStats;
+  palette: TerrainPalette;
   waterLevel?: number;
 }
 
 export interface StructureSummary {
-  style: string;
+  style: BuildingStyle;
+  palette: BuildingPalette;
   requested: number;
   buildings: number;
   parts: number;
@@ -134,6 +142,7 @@ function summarizeStructures(descriptor: BuildingEnvironmentDescriptor): Structu
   const buildings = resolveStructureBuildings(descriptor);
   return {
     style: descriptor.style,
+    palette: resolveBuildingPalette(descriptor.style, descriptor.palette),
     requested: descriptor.count,
     buildings: buildings.length,
     parts: buildings.reduce((sum, building) => sum + building.parts.length, 0),
@@ -145,6 +154,7 @@ function summarizeTerrain(descriptor: TerrainEnvironmentDescriptor): TerrainSumm
   return {
     bounds: descriptor.bounds,
     height: sampleTerrainHeights(descriptor),
+    palette: resolveTerrainPalette(descriptor),
     ...(descriptor.waterLevel === undefined ? {} : { waterLevel: descriptor.waterLevel }),
   };
 }

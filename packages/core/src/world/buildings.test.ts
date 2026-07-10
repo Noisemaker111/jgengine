@@ -1,11 +1,34 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  BUILDING_STYLE_PALETTES,
   createBuildingConfig,
   createBuildingGrid,
   generateBuilding,
   generateBuildingDistrict,
+  resolveBuildingPalette,
 } from "./buildings";
+
+describe("building palettes", () => {
+  test("resolveBuildingPalette resolves style presets and per-part overrides", () => {
+    expect(resolveBuildingPalette()).toEqual(BUILDING_STYLE_PALETTES.generic);
+    expect(resolveBuildingPalette("desert")).toEqual(BUILDING_STYLE_PALETTES.desert);
+    expect(resolveBuildingPalette("capital", { wall: "#111111" })).toEqual({
+      ...BUILDING_STYLE_PALETTES.capital,
+      wall: "#111111",
+    });
+  });
+
+  test("resolveBuildingPalette rejects unknown styles instead of silently falling back", () => {
+    expect(() => resolveBuildingPalette("tents" as never)).toThrow(/Unknown building style "tents"/);
+    expect(() => resolveBuildingPalette("aerodrome" as never)).toThrow(/Valid styles:/);
+  });
+
+  test("every building style palette has a distinct wall color", () => {
+    const walls = Object.values(BUILDING_STYLE_PALETTES).map((palette) => palette.wall);
+    expect(new Set(walls).size).toBe(walls.length);
+  });
+});
 
 describe("buildings", () => {
   test("normalizes configurable building inputs", () => {

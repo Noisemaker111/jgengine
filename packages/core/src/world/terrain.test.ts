@@ -95,11 +95,23 @@ describe("terrain field", () => {
   test("resolveTerrainPalette resolves material presets and explicit color overrides", () => {
     expect(resolveTerrainPalette()).toEqual(TERRAIN_MATERIAL_PALETTES.grass);
     expect(resolveTerrainPalette({ material: "ash" })).toEqual(TERRAIN_MATERIAL_PALETTES.ash);
+    expect(resolveTerrainPalette({ material: "highland" })).toEqual(TERRAIN_MATERIAL_PALETTES.highland);
+    expect(resolveTerrainPalette({ material: "slate" })).toEqual(TERRAIN_MATERIAL_PALETTES.slate);
     expect(resolveTerrainPalette({ material: "ash", colors: { low: "#000000" } })).toEqual({
       low: "#000000",
       high: TERRAIN_MATERIAL_PALETTES.ash.high,
       waterline: TERRAIN_MATERIAL_PALETTES.ash.waterline,
     });
+  });
+
+  test("resolveTerrainPalette rejects unknown material names instead of silently falling back", () => {
+    expect(() => resolveTerrainPalette({ material: "grassland" as never })).toThrow(/Unknown terrain material "grassland"/);
+    expect(() => resolveTerrainPalette({ material: "highland-turf" as never })).toThrow(/Valid materials:/);
+  });
+
+  test("every terrain material palette is visually distinct", () => {
+    const highs = Object.values(TERRAIN_MATERIAL_PALETTES).map((palette) => palette.high);
+    expect(new Set(highs).size).toBe(highs.length);
   });
 
   test("snapToGround replaces y with the field height at x/z, plus offset", () => {
