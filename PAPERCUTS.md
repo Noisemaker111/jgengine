@@ -27,3 +27,7 @@ Spawned a general-purpose worker to run check-types/tests; it backgrounded the b
 2026-07-10T00:20:18.720Z — claude-sonnet-5 — Claude
 
 Fresh cloud session had incomplete node_modules — bun run check-types failed with 'tsgo: command not found' and tests failed with 'Cannot find package three' across the whole repo, unrelated to the diff being verified. Had to run a manual bun install (64s) before verification could produce a real signal; a stale/missing install in a supposedly-ready session container wastes a full verify round-trip.
+
+2026-07-10T00:33:50.149Z — claude-fable-5 — Claude
+
+Batch worker ran a stray 'bun install' mid-parallel-build; interrupted install left node_modules half-extracted, failing check-types/tests repo-wide with phantom TS2307s until a clean reinstall — parallel workers must never run installs
