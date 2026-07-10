@@ -31,7 +31,7 @@ export interface CartridgeRuntime {
   spec: CartridgeSpec;
 }
 
-interface InternalRun {
+interface SeededRunState {
   rng(): number;
   spawn: SpawnDirectorState;
   weaponLevels: Record<string, number>;
@@ -48,6 +48,9 @@ interface InternalRun {
   bolts: BoltFx[];
   pulses: PulseFx[];
   fxCounter: number;
+}
+
+interface InternalRun extends SeededRunState {
   listeners: Set<() => void>;
   disposeEvents?: () => void;
   view: CartridgeRun;
@@ -108,7 +111,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
     return "playing";
   }
 
-  function seedRun(run: InternalRun): void {
+  function seededState(): SeededRunState {
     const seed = spec.seed ?? "cartridge";
     const weaponLevels: Record<string, number> = {};
     for (const id of Object.keys(spec.weapons)) weaponLevels[id] = 1;
@@ -118,26 +121,29 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
       weight: upgrade.weight,
       maxStacks: upgrade.maxStacks,
     }));
-    run.rng = seededRng(seed);
-    run.spawn = createSpawnDirectorState(spec.spawning.director);
-    run.weaponLevels = weaponLevels;
-    run.kit = buildKit(spec, weaponLevels);
-    run.fields = { ...spec.fields };
-    run.enemyNextHitAt = new Map();
-    run.phase = initialPhase();
-    run.playingSeconds = 0;
-    run.countdownRemaining = spec.flow?.countdownSeconds ?? 0;
-    run.kills = 0;
-    run.levelUpQueue = 0;
-    run.draft = createRunDraft({ offers, rng: seededRng(`${seed}-draft`) });
-    run.pendingOffers = null;
-    run.bolts = [];
-    run.pulses = [];
-    run.fxCounter = 0;
+    return {
+      rng: seededRng(seed),
+      spawn: createSpawnDirectorState(spec.spawning.director),
+      weaponLevels,
+      kit: buildKit(spec, weaponLevels),
+      fields: { ...spec.fields },
+      enemyNextHitAt: new Map(),
+      phase: initialPhase(),
+      playingSeconds: 0,
+      countdownRemaining: spec.flow?.countdownSeconds ?? 0,
+      kills: 0,
+      levelUpQueue: 0,
+      draft: createRunDraft({ offers, rng: seededRng(`${seed}-draft`) }),
+      pendingOffers: null,
+      bolts: [],
+      pulses: [],
+      fxCounter: 0,
+    };
   }
 
   function createRun(): InternalRun {
-    const run = {
+    const run: InternalRun = {
+      ...seededState(),
       listeners: new Set<() => void>(),
       view: {
         get phase() {
@@ -169,8 +175,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
           return () => run.listeners.delete(listener);
         },
       },
-    } as InternalRun;
-    seedRun(run);
+    };
     return run;
   }
 
@@ -539,8 +544,14 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
 
   function reset(ctx: GameContext): void {
     const run = getRun(ctx);
-    seedRun(run);
+    Object.assign(run, seededState());
     despawnCartridgeEntities(ctx);
+    if (ctx.scene.entity.get(ctx.player.userId) === null) {
+      ctx.scene.entity.spawn(spec.player.kind, {
+        id: ctx.player.userId,
+        position: spec.player.spawnAt ?? [0, 0, 0],
+      });
+    }
     ctx.scene.entity.stats.set(ctx.player.userId, "health", { max: spec.player.health, current: spec.player.health });
     ctx.scene.entity.stats.set(ctx.player.userId, "xp", { max: track.xpForLevel(1), current: 0 });
     ctx.scene.entity.stats.set(ctx.player.userId, "level", { current: 1 });

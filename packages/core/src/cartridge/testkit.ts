@@ -52,9 +52,10 @@ export function cartridgeSmokeTest(
       expect(validateCartridge(spec)).toEqual([]);
     });
 
-    if (spec.world !== undefined) {
+    const world = spec.world;
+    if (world !== undefined && world.kind === "environment") {
       test("world renders a populated scene", () => {
-        expect(summarizeEnvironment(spec.world!).isEmpty).toBe(false);
+        expect(summarizeEnvironment(world).isEmpty).toBe(false);
       });
     }
 
