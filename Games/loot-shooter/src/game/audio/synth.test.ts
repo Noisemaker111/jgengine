@@ -4,7 +4,7 @@ import { SAMPLE_RATE, renderTones, synthWavDataUri, wavBytes } from "./synth";
 describe("audio synth", () => {
   test("renders the requested duration", () => {
     const samples = renderTones([{ seconds: 0.5, startFreq: 440 }]);
-    expect(samples.length).toBe(Math.ceil(0.5 * SAMPLE_RATE));
+    expect(samples.length).toBe(Math.round(0.5 * SAMPLE_RATE));
   });
 
   test("layers with offsets extend the buffer", () => {
@@ -12,7 +12,7 @@ describe("audio synth", () => {
       { seconds: 0.1, startFreq: 440 },
       { seconds: 0.1, startFreq: 660, at: 0.2 },
     ]);
-    expect(samples.length).toBe(Math.ceil(0.3 * SAMPLE_RATE));
+    expect(samples.length).toBe(Math.round(0.3 * SAMPLE_RATE));
   });
 
   test("wav bytes carry a valid RIFF/WAVE header", () => {

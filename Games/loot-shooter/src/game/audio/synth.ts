@@ -39,7 +39,7 @@ function oscillate(shape: WaveShape, phase: number, noise: () => number): number
 
 export function renderTones(layers: readonly ToneSpec[]): Float32Array {
   const total = layers.reduce((max, layer) => Math.max(max, (layer.at ?? 0) + layer.seconds), 0);
-  const samples = new Float32Array(Math.ceil(total * SAMPLE_RATE));
+  const samples = new Float32Array(Math.round(total * SAMPLE_RATE));
   const noise = seededNoise(0x1007e7);
   for (const layer of layers) {
     const start = Math.floor((layer.at ?? 0) * SAMPLE_RATE);
