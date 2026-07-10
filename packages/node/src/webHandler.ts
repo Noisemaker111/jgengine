@@ -12,13 +12,13 @@ export async function toWebRequest(req: IncomingMessage): Promise<Request> {
     else if (Array.isArray(value)) for (const entry of value) headers.append(key, entry);
   }
   const method = req.method ?? "GET";
-  let body: Uint8Array | undefined;
+  let body: Uint8Array<ArrayBuffer> | undefined;
   if (method !== "GET" && method !== "HEAD") {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(chunk as Buffer);
     if (chunks.length > 0) {
       const buffer = Buffer.concat(chunks);
-      if (buffer.byteLength > 0) body = new Uint8Array(buffer);
+      if (buffer.byteLength > 0) body = Uint8Array.from(buffer);
     }
   }
   return new Request(`http://${host}${req.url ?? "/"}`, { method, headers, body });
