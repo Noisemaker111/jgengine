@@ -27,6 +27,7 @@
     "games:annals": "bun run --cwd Games/annals dev",
     "games:block-stacker": "bun run --cwd Games/block-stacker dev",
     "games:canyon-chase": "bun run --cwd Games/canyon-chase dev",
+    "games:claudecraft": "bun run --cwd Games/claudecraft dev",
     "games:clockwork-heist": "bun run --cwd Games/clockwork-heist dev",
     "games:commit-canopy": "bun run --cwd Games/commit-canopy dev",
     "games:courier-zero": "bun run --cwd Games/courier-zero dev",
