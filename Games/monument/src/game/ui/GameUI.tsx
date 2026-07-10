@@ -175,12 +175,10 @@ export function GameUI(): ReactNode {
         </HudPanel>
       )}
 
-      <HudPanel id="hint" anchor="bottom-left" order={3} compact="hide" interactive={false}>
-        <ToolHint tool={tool} />
-      </HudPanel>
-
       <HudPanel id="timebar" anchor="bottom-left" order={0} compact="keep">
-        <TimeBar
+        <div className="flex flex-col items-start gap-1.5">
+          <ToolHint tool={tool} />
+          <TimeBar
           paused={paused}
           speed={playSpeed}
           speeds={speeds}
@@ -190,7 +188,8 @@ export function GameUI(): ReactNode {
           pauseKey={actionLabel(keybinds, "pauseToggle") ?? ""}
           onPauseToggle={() => run("pauseToggle", {})}
           onSetSpeed={(value) => controls.setSpeed(value)}
-        />
+          />
+        </div>
       </HudPanel>
 
       <HudPanel id="focus" anchor="bottom-left" order={1} compact="keep">
