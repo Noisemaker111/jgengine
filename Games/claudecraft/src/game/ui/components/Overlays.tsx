@@ -1,6 +1,7 @@
 import { LevelUpFlash, ToastStack } from "@jgengine/react/components";
 import { useGame, useGameStore, usePlayer, useQuestJournal } from "@jgengine/react/hooks";
 
+import { DUNGEONS } from "../../dungeons/catalog";
 import { mobById } from "../../entities/enemies/catalog";
 import { itemDefById } from "../../items/catalog";
 import { QUESTS } from "../../quests/catalog";
@@ -73,7 +74,11 @@ export function ZoneLabel() {
   const { userId } = usePlayer();
   const position = useGameStore((ctx) => ctx.scene.entity.get(userId)?.position ?? null);
   if (position === null) return null;
-  const label = inCrypt(position[0], position[2]) ? "The Hollow Crypt" : zoneAt(position[2]).name;
+  const dungeon = DUNGEONS.find(
+    (entry) => Math.hypot(position[0] - entry.center[0], position[2] - entry.center[1]) <= entry.radius,
+  );
+  const label =
+    dungeon?.name ?? (inCrypt(position[0], position[2]) ? "The Hollow Crypt" : zoneAt(position[2]).name);
   return (
     <p className="text-center font-serif text-lg font-semibold tracking-wide text-amber-200/90 [text-shadow:0_1px_4px_rgba(0,0,0,0.9)]">
       {label}

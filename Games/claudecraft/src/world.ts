@@ -10,9 +10,11 @@ import {
   type EnvironmentWorldFeature,
 } from "@jgengine/core/world/features";
 
+import { DUNGEONS } from "./game/dungeons/catalog";
 import { CRYPT, WORLD_DEPTH, WORLD_WIDTH, ZONES } from "./game/world/zones";
 
 const [vale, marsh, peaks] = ZONES;
+const compounds = DUNGEONS.filter((dungeon) => dungeon.id !== "hollow_crypt");
 
 export const world: EnvironmentWorldFeature = environment({
   terrain: terrain({
@@ -34,6 +36,11 @@ export const world: EnvironmentWorldFeature = environment({
       { center: [marsh.graveyard.x, marsh.graveyard.z], radius: 8, falloff: 6 },
       { center: [peaks.graveyard.x, peaks.graveyard.z], radius: 8, falloff: 6 },
       { center: [CRYPT.x, CRYPT.z], radius: CRYPT.radius, falloff: 14 },
+      ...compounds.map((dungeon) => ({
+        center: dungeon.center,
+        radius: dungeon.radius,
+        falloff: 12,
+      })),
     ],
   }),
   sky: sky({
@@ -81,6 +88,14 @@ export const world: EnvironmentWorldFeature = environment({
     building({ position: [marsh.hub.x, marsh.hub.z], count: 7, seed: "fenbridge", stories: [1, 2] }),
     building({ position: [peaks.hub.x, peaks.hub.z], count: 7, seed: "highwatch", stories: [1, 3] }),
     building({ position: [CRYPT.x, CRYPT.z], count: 3, seed: "hollow-crypt", stories: [1, 1] }),
+    ...compounds.map((dungeon) =>
+      building({
+        position: [dungeon.center[0], dungeon.center[1]],
+        count: dungeon.raid === true ? 6 : 4,
+        seed: dungeon.id,
+        stories: [1, 2],
+      }),
+    ),
   ],
 });
 

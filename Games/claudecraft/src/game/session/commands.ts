@@ -13,7 +13,9 @@ import {
   heroOf,
   selectClass,
   storeKeys,
+  teleportHero,
 } from "./hero";
+import { dungeonById } from "../dungeons/catalog";
 import { gather } from "../professions/gathering";
 import { graveyardOf } from "../world/setup";
 
@@ -181,6 +183,29 @@ export function registerCommands(ctx: GameContext): void {
     },
   });
   commands.define("openTalents", { apply: (state) => togglePanel(state, "talents") });
+  commands.define<{ dungeonId: string }>("dungeon.enter", {
+    apply(state, input) {
+      const dungeon = dungeonById(input.dungeonId);
+      if (dungeon === null) return;
+      const userId = state.player.userId;
+      const level = state.scene.entity.stats.get(userId, "level")?.current ?? 1;
+      if (level < dungeon.levelRange[0] - 2) {
+        state.scene.entity.floatText({
+          instanceId: userId,
+          text: `${dungeon.name} calls for level ${dungeon.levelRange[0]}+`,
+          kind: "info",
+        });
+      }
+      teleportHero(state, userId, dungeon.inside[0], dungeon.inside[1]);
+    },
+  });
+  commands.define<{ dungeonId: string }>("dungeon.exit", {
+    apply(state, input) {
+      const dungeon = dungeonById(input.dungeonId);
+      if (dungeon === null) return;
+      teleportHero(state, state.player.userId, dungeon.entrance[0], dungeon.entrance[1]);
+    },
+  });
   commands.define("player.release", {
     apply(state) {
       const userId = state.player.userId;

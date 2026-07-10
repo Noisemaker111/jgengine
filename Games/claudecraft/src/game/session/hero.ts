@@ -5,7 +5,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { classById } from "../classes/catalog";
 import { itemDefById } from "../items/catalog";
 import { SPECS, TALENT_POINTS_RULE } from "../talents/catalog";
-import type { HeroStatId } from "../model";
+import { CLASS_ENTITY_ID, type HeroStatId } from "../model";
 import {
   ATTACK_POWER_PER_STR,
   BASE_CRIT_PCT,
@@ -319,6 +319,32 @@ export function gainRage(ctx: GameContext, userId: string, amount: number): void
   const cls = classOf(ctx, userId);
   if (cls?.resource !== "rage") return;
   ctx.scene.entity.stats.delta(userId, "resource", amount);
+}
+
+export function teleportHero(ctx: GameContext, userId: string, x: number, z: number): boolean {
+  const stats = ctx.scene.entity.stats;
+  const held = (["health", "resource", "xp", "level"] as const).map(
+    (statId) => [statId, stats.get(userId, statId)] as const,
+  );
+  if (ctx.scene.entity.get(userId) === null) return false;
+  ctx.scene.entity.despawn(userId);
+  ctx.scene.entity.spawn(CLASS_ENTITY_ID, {
+    id: userId,
+    position: [x, ctx.world.groundHeightAt(x, z), z],
+  });
+  for (const [statId, value] of held) {
+    if (value !== null) stats.set(userId, statId, { max: value.max, current: value.current });
+  }
+  applySheet(ctx, userId);
+  const hero = heroes.get(userId);
+  if (hero !== undefined) {
+    hero.casting = null;
+    hero.autoAttack = false;
+    hero.lastPos = null;
+  }
+  ctx.game.store.delete(storeKeys.cast(userId));
+  ctx.game.store.set(storeKeys.autoAttack(userId), false);
+  return true;
 }
 
 export function resetHero(userId: string): void {

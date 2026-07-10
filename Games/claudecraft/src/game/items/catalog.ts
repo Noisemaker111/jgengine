@@ -305,6 +305,16 @@ export const ITEMS: readonly ItemDef[] = [
   { id: "crypt_keystone", name: "Crypt Keystone", icon: "crystal", kind: "quest", quality: "uncommon", sellPrice: 0 },
   { id: "crypt_ritual_circle", name: "Ritual Circle", icon: "star", kind: "quest", quality: "common", sellPrice: 0 },
   { id: "kings_signet", name: "King's Signet", icon: "ring", kind: "quest", quality: "rare", sellPrice: 0 },
+  { id: "pale_pearl", name: "Pale Pearl", icon: "gem", kind: "junk", quality: "poor", sellPrice: 30, stack: 20 },
+  { id: "moonpale_scale", name: "Moonpale Scale", icon: "gem", kind: "junk", quality: "poor", sellPrice: 26, stack: 20 },
+  { id: "briny_idol", name: "Briny Idol", icon: "amulet", kind: "junk", quality: "poor", sellPrice: 32, stack: 20 },
+  { id: "selthes_seastriders", name: "Selthe's Sea-Striders", icon: "boots", kind: "armor", quality: "rare", slot: "feet", armor: 75, stats: { agi: 4, sta: 3 }, sellPrice: 1200 },
+  { id: "ysols_pearl_greaves", name: "Ysolei's Pearl Greaves", icon: "chestplate", kind: "armor", quality: "rare", slot: "legs", armor: 130, stats: { sta: 6, spi: 3 }, sellPrice: 2000 },
+  { id: "moonshroud_breastplate", name: "Moonwrack Breastplate", icon: "chestplate", kind: "armor", quality: "rare", slot: "chest", armor: 200, stats: { sta: 7, str: 4 }, sellPrice: 2400 },
+  { id: "moonshroud_robe", name: "Moonwrack Robe", icon: "chestplate", kind: "armor", quality: "rare", slot: "chest", armor: 70, stats: { int: 10, spi: 5 }, sellPrice: 2400 },
+  { id: "moonshroud_tunic", name: "Moonwrack Tunic", icon: "chestplate", kind: "armor", quality: "rare", slot: "chest", armor: 125, stats: { agi: 9, sta: 4 }, sellPrice: 2400 },
+  { id: "deathless_heartwood", name: "Heartwood of the Deathless Crown", icon: "staff", kind: "weapon", quality: "epic", slot: "mainhand", weapon: { min: 42, max: 68, speed: 3.2 }, stats: { int: 14, spi: 17, sta: 13 }, sellPrice: 25000 },
+  { id: "kingsbane_last_oath", name: "Thronebane, Last Oath of Thornpeak", icon: "sword", kind: "weapon", quality: "epic", slot: "mainhand", weapon: { min: 46, max: 74, speed: 2.8 }, stats: { str: 15, agi: 15, sta: 14 }, sellPrice: 25000 },
 ];
 
 const ITEMS_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));

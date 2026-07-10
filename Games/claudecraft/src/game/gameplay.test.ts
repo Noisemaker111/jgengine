@@ -5,8 +5,10 @@ import { game } from "../game.config";
 import { loop } from "../loop";
 import { classById } from "./classes/catalog";
 import { applyMobCc, isMobInstance, mobCount, mobRuntimeOf } from "./ai/mobs";
-import { content } from "./content";
+import { buildLootTables, content } from "./content";
 import { CLASS_ENTITY_ID, COPPER } from "./model";
+import { DUNGEONS, dungeonById } from "./dungeons/catalog";
+import { mobById } from "./entities/enemies/catalog";
 import { NPCS } from "./entities/npcs/catalog";
 import { grantTalentPoint } from "./session/hero";
 import { SPECS } from "./talents/catalog";
@@ -230,5 +232,108 @@ describe("claudecraft gameplay (headless)", () => {
     const wolfId = firstMobOf(ctx, "forest_wolf");
     expect(applyMobCc(ctx, wolfId, USER, { kind: "stun", durationSec: 2 })).toBe(true);
     expect(applyMobCc(ctx, "not-a-real-instance", USER, { kind: "stun", durationSec: 2 })).toBe(false);
+  });
+
+  test("dungeon door round-trip teleports into and out of the sunken bastion, preserving hero stats", () => {
+    const dungeon = dungeonById("sunken_bastion");
+    if (dungeon === null) throw new Error("sunken_bastion missing from catalog");
+    const before = {
+      level: ctx.scene.entity.stats.get(USER, "level"),
+      xp: ctx.scene.entity.stats.get(USER, "xp"),
+      health: ctx.scene.entity.stats.get(USER, "health"),
+    };
+    const enter = ctx.game.commands.run("dungeon.enter", { dungeonId: "sunken_bastion" });
+    expect(enter.status).toBe("applied");
+    const insideHero = ctx.scene.entity.get(USER);
+    expect(insideHero).not.toBeNull();
+    const insideDist = Math.hypot(
+      (insideHero?.position[0] ?? 0) - dungeon.inside[0],
+      (insideHero?.position[2] ?? 0) - dungeon.inside[1],
+    );
+    expect(insideDist).toBeLessThan(1);
+    expect(ctx.scene.entity.stats.get(USER, "level")?.current).toBe(before.level?.current);
+    expect(ctx.scene.entity.stats.get(USER, "xp")?.current).toBe(before.xp?.current);
+    expect(ctx.scene.entity.stats.get(USER, "health")?.current).toBe(before.health?.current);
+    expect(ctx.scene.entity.stats.get(USER, "health")?.max).toBe(before.health?.max);
+    const exit = ctx.game.commands.run("dungeon.exit", { dungeonId: "sunken_bastion" });
+    expect(exit.status).toBe("applied");
+    const outsideHero = ctx.scene.entity.get(USER);
+    const entranceDist = Math.hypot(
+      (outsideHero?.position[0] ?? 0) - dungeon.entrance[0],
+      (outsideHero?.position[2] ?? 0) - dungeon.entrance[1],
+    );
+    expect(entranceDist).toBeLessThan(1);
+  });
+
+  test("every dungeon has at least one of its catalog mobs spawned within its radius", () => {
+    for (const dungeon of DUNGEONS) {
+      const inhabited = ctx.scene.entity.list().some((entity) => {
+        const runtime = mobRuntimeOf(entity.id);
+        if (runtime === null) return false;
+        if (mobById(runtime.defId)?.dungeonId !== dungeon.id) return false;
+        const dist = Math.hypot(entity.position[0] - dungeon.center[0], entity.position[2] - dungeon.center[1]);
+        return dist <= dungeon.radius + 8;
+      });
+      expect(inhabited).toBe(true);
+    }
+  });
+
+  test("korgath_the_bound enrages once his health drops below the threshold", () => {
+    const enter = ctx.game.commands.run("dungeon.enter", { dungeonId: "gravewyrm_sanctum" });
+    expect(enter.status).toBe("applied");
+    const bossId = firstMobOf(ctx, "korgath_the_bound");
+    ctx.scene.entity.stats.set(USER, "health", { max: 100000, current: 100000 });
+    moveNextTo(ctx, bossId);
+    ctx.scene.entity.setTarget(USER, bossId);
+    ctx.game.commands.run("attack", {});
+    step(ctx, 3);
+    const floats: string[] = [];
+    const unsubscribe = ctx.game.events.on("entity.floatText", (event) => {
+      if (event.instanceId === bossId) floats.push(event.text);
+    });
+    const bossHealth = ctx.scene.entity.stats.get(bossId, "health");
+    expect(bossHealth).not.toBeNull();
+    ctx.scene.entity.stats.set(bossId, "health", { current: Math.round((bossHealth?.max ?? 0) * 0.2) });
+    step(ctx, 3);
+    unsubscribe();
+    expect(floats.some((text) => text.includes("enrages!"))).toBe(true);
+    ctx.scene.entity.setTarget(USER, null);
+    const exit = ctx.game.commands.run("dungeon.exit", { dungeonId: "gravewyrm_sanctum" });
+    expect(exit.status).toBe("applied");
+  });
+
+  test("grand_necromancer_velkhar raises new bonewalkers while fighting", () => {
+    const enter = ctx.game.commands.run("dungeon.enter", { dungeonId: "gravewyrm_sanctum" });
+    expect(enter.status).toBe("applied");
+    const bossId = firstMobOf(ctx, "grand_necromancer_velkhar");
+    const before = new Set(
+      ctx.scene.entity
+        .list()
+        .filter((entity) => mobRuntimeOf(entity.id)?.defId === "raised_bonewalker")
+        .map((entity) => entity.id),
+    );
+    ctx.scene.entity.stats.set(USER, "health", { max: 100000, current: 100000 });
+    moveNextTo(ctx, bossId);
+    ctx.scene.entity.setTarget(USER, bossId);
+    ctx.game.commands.run("attack", {});
+    step(ctx, 26);
+    const newBonewalkers = ctx.scene.entity
+      .list()
+      .filter((entity) => mobRuntimeOf(entity.id)?.defId === "raised_bonewalker" && !before.has(entity.id));
+    expect(newBonewalkers.length).toBeGreaterThan(0);
+    ctx.scene.entity.setTarget(USER, null);
+    const exit = ctx.game.commands.run("dungeon.exit", { dungeonId: "gravewyrm_sanctum" });
+    expect(exit.status).toBe("applied");
+  });
+
+  test("nythraxis raid loot table carries its two legendary drops", () => {
+    const tables = buildLootTables();
+    const table = tables.find((entry) => entry.id === "drops:nythraxis_scourge_of_thornpeak");
+    expect(table).toBeDefined();
+    const items = (table?.entries ?? [])
+      .map((entry) => entry.item)
+      .filter((item): item is string => item !== undefined);
+    expect(items).toContain("deathless_heartwood");
+    expect(items).toContain("kingsbane_last_oath");
   });
 });
