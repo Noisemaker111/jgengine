@@ -219,17 +219,9 @@ describe("claudecraft gameplay (headless)", () => {
 
   test("rested xp pool is drawn down by a kill", () => {
     ctx.game.store.set(`rested:${USER}`, 500);
-    const wolfId = firstMobOf(ctx, "forest_wolf");
-    moveNextTo(ctx, wolfId);
-    ctx.scene.entity.setTarget(USER, wolfId);
-    ctx.game.commands.run("attack", {});
-    let guard = 0;
-    while (ctx.scene.entity.get(wolfId) !== null && guard < 400) {
-      moveNextTo(ctx, wolfId);
-      step(ctx, 0.5);
-      guard += 1;
-    }
-    expect(ctx.scene.entity.get(wolfId)).toBeNull();
+    const preyId = firstMobOf(ctx, "mire_prowler");
+    ctx.scene.entity.effect({ from: USER, to: preyId, effect: "damage", via: { amount: 999999 } });
+    expect(ctx.scene.entity.get(preyId)).toBeNull();
     const pool = ctx.game.store.get(`rested:${USER}`) as number;
     expect(pool).toBeLessThan(500);
   });

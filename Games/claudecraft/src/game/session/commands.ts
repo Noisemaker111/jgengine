@@ -157,17 +157,17 @@ export function registerCommands(ctx: GameContext): void {
   commands.define<{ itemId: string }>("bank.deposit", {
     apply(state, input) {
       if (state.game.store.get(storeKeys.bank(state.player.userId)) !== true) return;
-      if (state.player.inventory.take("bags", input.itemId, 1) !== null) return;
-      const rejection = state.player.inventory.put("bank", input.itemId, 1);
-      if (rejection !== null) state.player.inventory.put("bags", input.itemId, 1);
+      if (state.player.inventory.take("bags", input.itemId, 1).status !== "ok") return;
+      const result = state.player.inventory.put("bank", input.itemId, 1);
+      if (result.status !== "ok") state.player.inventory.put("bags", input.itemId, 1);
     },
   });
   commands.define<{ itemId: string }>("bank.withdraw", {
     apply(state, input) {
       if (state.game.store.get(storeKeys.bank(state.player.userId)) !== true) return;
-      if (state.player.inventory.take("bank", input.itemId, 1) !== null) return;
-      const rejection = state.player.inventory.put("bags", input.itemId, 1);
-      if (rejection !== null) state.player.inventory.put("bank", input.itemId, 1);
+      if (state.player.inventory.take("bank", input.itemId, 1).status !== "ok") return;
+      const result = state.player.inventory.put("bags", input.itemId, 1);
+      if (result.status !== "ok") state.player.inventory.put("bank", input.itemId, 1);
     },
   });
   commands.define<{ specId: string }>("talent.choose", {
