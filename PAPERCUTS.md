@@ -131,3 +131,7 @@ ship-motion workers keep backgrounding the post-merge 60s sleep even when told '
 2026-07-10T17:23:54.775Z — sonnet-5 — Claude
 
 shoot --url skips ensureServer so the shot soft-times-out unless a dev server is already running — caller must boot vite manually
+
+2026-07-10T17:41:39.034Z — fable-5 — Claude
+
+CI test job wedged on a dead runner (16min past its own timeout-minutes with zero heartbeat) → whole merge-green check stalls; raw 'bun test packages Games' step has no guard.ts wrapper so nothing inside the job could time out loudly
