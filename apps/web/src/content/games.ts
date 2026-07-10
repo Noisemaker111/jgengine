@@ -1,3 +1,5 @@
+import radiumcodersAvatar from "../assets/credits/radiumcoders.jpg";
+
 const gamePackages = import.meta.glob("../../../../Games/*/package.json");
 
 const shotUrls = import.meta.glob<string>("../assets/screens/*.png", {
@@ -16,6 +18,15 @@ export const GAME_CATEGORIES = [
 
 export type GameCategory = (typeof GAME_CATEGORIES)[number];
 
+export type GameCredit = {
+  name: string;
+  label: string;
+  handle: string;
+  href: string;
+  avatar: string;
+  source?: { name: string; href: string };
+};
+
 export type Game = {
   id: string;
   title: string;
@@ -27,6 +38,7 @@ export type Game = {
   controls: string;
   hue: string;
   shot?: string;
+  credit?: GameCredit;
 };
 
 type GameDetails = Omit<Game, "id" | "title" | "href" | "shot"> & { title?: string };
@@ -149,6 +161,14 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Sandbox & Simulation",
     controls: "Space pause · F cycle speed · click to focus",
     hue: "#eab308",
+    credit: {
+      name: "Ethan Mollick",
+      label: "From a prompt by",
+      handle: "@emollick",
+      href: "https://x.com/emollick",
+      avatar: "https://unavatar.io/x/emollick",
+      source: { name: "annals-kingdom", href: "https://github.com/emollick/annals-kingdom" },
+    },
   },
   "commit-canopy": {
     tagline: "Your GitHub year as a 3D landscape.",
@@ -158,6 +178,17 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Others",
     controls: "Drag to rotate · scroll to zoom",
     hue: "#6ee7b7",
+    credit: {
+      name: "Jay Sharma",
+      label: "Inspired by",
+      handle: "radiumcoders",
+      href: "https://github.com/radiumcoders",
+      avatar: radiumcodersAvatar,
+      source: {
+        name: "Isometric GitHub Contributions",
+        href: "https://github.com/radiumcoders/Isometric-Github-Contributions",
+      },
+    },
   },
 };
 

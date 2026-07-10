@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
+import { CreditCard, CreditTag } from "../components/Credit";
 import { GameFace } from "../components/GameCard";
 import { Header } from "../components/Layout";
 import { GAMES, type Game } from "../content/games";
@@ -91,6 +92,11 @@ function GameStage({ game }: { game: Game }) {
             <p className="mt-2 text-sm font-medium text-slate-300">{game.tagline}</p>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">{game.description}</p>
             <p className="mt-3 font-mono text-xs text-slate-500">{game.controls}</p>
+            {game.credit !== undefined && (
+              <div className="mt-5">
+                <CreditCard credit={game.credit} hue={game.hue} />
+              </div>
+            )}
           </div>
           {phase === "poster" ? (
             <button
@@ -129,12 +135,15 @@ function PlayPage() {
           <h1 className="truncate text-sm font-semibold tracking-tight text-slate-100">{game.title}</h1>
           <p className="hidden truncate font-mono text-xs text-slate-500 sm:block">{game.controls}</p>
         </div>
-        <Link
-          to="/games"
-          className="shrink-0 rounded-md px-2 py-1 text-xs text-slate-400 transition hover:text-emerald-300"
-        >
-          ← All games
-        </Link>
+        <div className="flex shrink-0 items-center gap-3">
+          {game.credit !== undefined && <CreditTag credit={game.credit} hue={game.hue} />}
+          <Link
+            to="/games"
+            className="rounded-md px-2 py-1 text-xs text-slate-400 transition hover:text-emerald-300"
+          >
+            ← All games
+          </Link>
+        </div>
       </div>
       <main className="min-h-0 flex-1 bg-black">
         <GameStage game={game} />
