@@ -52,19 +52,33 @@ function TerrainGround({ terrain }: { terrain: TerrainEnvironmentDescriptor }) {
   );
 }
 
+function areaCenter(area: { position?: readonly [number, number] }): readonly [number, number] {
+  return area.position ?? [0, 0];
+}
+
 function Vegetation({ grass, field }: { grass: GrassEnvironmentDescriptor; field: TerrainField }) {
+  const [cx, cz] = areaCenter(grass.area);
+  const heightAt = useMemo(
+    () =>
+      cx === 0 && cz === 0
+        ? field.sampleHeight
+        : (x: number, z: number) => field.sampleHeight(x + cx, z + cz),
+    [cx, cz, field],
+  );
   return (
-    <GrassField
-      area={[grass.area.w, grass.area.d]}
-      density={grass.density}
-      seed={grass.seed}
-      bladeHeight={grass.bladeHeight}
-      bladeWidth={grass.bladeWidth}
-      heightAt={field.sampleHeight}
-      colorBase={grass.colors[0]}
-      colorTip={grass.colors[grass.colors.length - 1]}
-      wind={{ strength: grass.windStrength }}
-    />
+    <group position={[cx, 0, cz]}>
+      <GrassField
+        area={[grass.area.w, grass.area.d]}
+        density={grass.density}
+        seed={grass.seed}
+        bladeHeight={grass.bladeHeight}
+        bladeWidth={grass.bladeWidth}
+        heightAt={heightAt}
+        colorBase={grass.colors[0]}
+        colorTip={grass.colors[grass.colors.length - 1]}
+        wind={{ strength: grass.windStrength }}
+      />
+    </group>
   );
 }
 
@@ -73,28 +87,33 @@ function weatherVolume(area: { w: number; d: number; h?: number }): readonly [nu
 }
 
 function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowEnvironmentDescriptor; index: number }) {
+  const [cx, cz] = areaCenter(weather.area);
   if (weather.kind === "rain") {
     return (
-      <RainField
+      <group position={[cx, 0, cz]}>
+        <RainField
+          density={weather.density}
+          speed={weather.speed}
+          length={weather.dropLength}
+          color={weather.color}
+          wind={[weather.wind[0], 0, weather.wind[1]]}
+          volume={weatherVolume(weather.area)}
+        />
+      </group>
+    );
+  }
+  return (
+    <group position={[cx, 0, cz]}>
+      <SnowField
         density={weather.density}
         speed={weather.speed}
-        length={weather.dropLength}
+        size={weather.flakeSize}
+        sway={weather.drift}
         color={weather.color}
         wind={[weather.wind[0], 0, weather.wind[1]]}
         volume={weatherVolume(weather.area)}
       />
-    );
-  }
-  return (
-    <SnowField
-      density={weather.density}
-      speed={weather.speed}
-      size={weather.flakeSize}
-      sway={weather.drift}
-      color={weather.color}
-      wind={[weather.wind[0], 0, weather.wind[1]]}
-      volume={weatherVolume(weather.area)}
-    />
+    </group>
   );
 }
 

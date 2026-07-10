@@ -55,3 +55,11 @@ Skipped logging a papercut mid-session because the CLAUDE.md wording read like t
 2026-07-10T04:50:45.550Z — grok — NoisemakerJon
 
 shell PATH missing bun → bun not recognized; needed full path C:\Users\Jk101\.bun\bin\bun.exe
+
+2026-07-10T06:02:21.435Z — fable-5 — Claude
+
+pulling asset packs for a new game → sandbox network policy 403s all three provider hosts (kenney.nl, quaternius.com, kaylousberg.itch.io) and no JGENGINE_ASSETS_MIRROR is configured for cloud sessions, so every model-backed game falls back to SVG billboards
+
+2026-07-10T06:02:29.272Z — fable-5 — Claude
+
+porting an MMO's biome-banded world → environment() weather/vegetation areas had no position field (only building/ocean take one); had to add the seam to core+shell mid-game instead of it being uniform across descriptors

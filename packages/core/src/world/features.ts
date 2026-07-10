@@ -7,6 +7,8 @@ export type EnvironmentVec2 = readonly [number, number];
 
 export interface EnvironmentArea extends WorldBounds {
   h?: number;
+  /** World-space center of the area; default `[0, 0]` (the world origin). Sites a weather/vegetation band away from the origin, like `building()`/`ocean()` `position`. */
+  position?: EnvironmentVec2;
 }
 
 export interface TerrainColors {
@@ -63,7 +65,7 @@ export interface SnowEnvironmentConfig {
 }
 
 export interface GrassEnvironmentConfig {
-  area?: WorldBounds;
+  area?: EnvironmentArea;
   density?: number;
   bladeHeight?: readonly [number, number];
   bladeWidth?: number;

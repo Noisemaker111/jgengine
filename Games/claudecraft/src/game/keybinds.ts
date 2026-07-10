@@ -1,0 +1,21 @@
+import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
+
+export const keybinds: ActionCodesMap = {
+  moveForward: ["KeyW"],
+  moveBack: ["KeyS"],
+  moveLeft: ["KeyA"],
+  moveRight: ["KeyD"],
+  jump: ["Space"],
+  castSlot1: ["Digit1"],
+  castSlot2: ["Digit2"],
+  castSlot3: ["Digit3"],
+  castSlot4: ["Digit4"],
+  castSlot5: ["Digit5"],
+  castSlot6: ["Digit6"],
+  tabTarget: ["Tab"],
+  attack: ["KeyT"],
+  interact: ["KeyE"],
+  openBags: ["KeyB"],
+  openCharacter: ["KeyC"],
+  openQuestLog: ["KeyL"],
+};
