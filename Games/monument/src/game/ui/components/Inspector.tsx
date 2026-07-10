@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import { useGame } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/react/hooks";
 
 import {
   ARCHITECTURAL_TRAJECTORIES,
@@ -25,8 +25,10 @@ import {
   type Typology,
 } from "../../catalog";
 import { controlContextNote, controlDisabledReason } from "../../city/applicability";
+import { cityBuildings, cityPlazas } from "../../city/state";
+import { performanceFor, plazaPerformance } from "../../city/metrics";
 import { EYEBROW, HAIRLINE, PANEL } from "../theme";
-import { CardButton, LabelRow, OptionStrip, Range, StatCell, Swatch, type Run } from "./InspectorControls";
+import { CardButton, LabelRow, Meter, OptionStrip, Range, StatCell, Swatch, type Run } from "./InspectorControls";
 
 const CHIP_ACTIVE = "border border-[#171916] bg-[#171916] text-[#eeeae0]";
 const CHIP_IDLE = "border border-[rgba(20,22,18,0.22)] text-[#171916] hover:bg-[rgba(20,22,18,0.08)]";
@@ -39,6 +41,7 @@ const TABS = [
   ["massing", "Massing"],
   ["envelope", "Envelope"],
   ["use", "Use"],
+  ["analysis", "Analysis"],
 ] as const;
 
 type Tab = (typeof TABS)[number][0];
@@ -119,6 +122,18 @@ export function Inspector({ building, plaza }: { building: Building | null; plaz
 function BuildingInspector({ building, run }: { building: Building; run: Run }): ReactNode {
   const [tab, setTab] = useState<Tab>("massing");
   const nameCapture = useRef(true);
+  const buildings = useGameStore(cityBuildings);
+  const plazas = useGameStore(cityPlazas);
+
+  const performance = performanceFor(building, buildings, plazas);
+  const score = Math.round((performance.daylight + performance.egress + performance.publicLife) / 3);
+  const egressLow = performance.egress < 70;
+  const adviceTitle = egressLow ? "Egress pressure" : "Spatial reading";
+  const adviceCopy = egressLow
+    ? "Height and occupancy exceed the current core strategy. Add a core or reduce the floor plate."
+    : performance.daylight < 55
+      ? "Deep floor plates are limiting useful daylight. Narrow the section or increase facade porosity."
+      : "The structure has a legible load path, viable daylight, and an active relationship to the district.";
 
   const apply = (patch: Partial<Building>): void => run("building.update", { id: building.id, patch, capture: true });
   const slide = (patch: Partial<Building>, capture: boolean): void =>
@@ -464,6 +479,50 @@ function BuildingInspector({ building, run }: { building: Building; run: Run }):
             </div>
           </>
         )}
+
+        {tab === "analysis" && (
+          <>
+            <div className="mx-3.5 mt-3 flex items-center justify-between bg-[#171916] px-3.5 py-3 text-[#eeeae0]">
+              <div>
+                <span className="block text-[8px] uppercase tracking-[0.12em] text-[#a8ada2]">Building performance</span>
+                <b className="mt-1 block text-[30px] font-semibold leading-none text-[#d7ff43]">{score}</b>
+                <small className="text-[8px] uppercase tracking-[0.06em] text-[#a8ada2]">integrated score / 100</small>
+              </div>
+              <span
+                className="relative h-14 w-14 shrink-0 rounded-full"
+                style={{ background: `conic-gradient(#d7ff43 ${score}%, #42463f ${score}%)` }}
+              >
+                <span className="absolute inset-[7px] rounded-full bg-[#171916]" />
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1 px-3.5 py-2">
+              <StatCell label="Gross floor area" value={`${fmt(performance.gfa)} m²`} sub={`FAR ${performance.far.toFixed(1)}`} />
+              <StatCell
+                label="Embodied carbon"
+                value={`${fmt(performance.carbon)} t`}
+                sub={`${Math.round((performance.carbon / performance.gfa) * 1000)} kg/m²`}
+              />
+              <StatCell label="Useful daylight" value={`${performance.daylight}%`} sub={`${performance.shadeHours}h shade / day`} />
+              <StatCell label="Energy demand" value={String(performance.energy)} sub="kWh/m²·yr" />
+            </div>
+
+            <LabelRow label="Design checks" hint="live model" />
+            <Meter label="Daylight autonomy" value={performance.daylight} />
+            <Meter label="Egress resilience" value={performance.egress} />
+            <Meter label="Public interface" value={performance.publicLife} />
+            <Meter label="Program diversity" value={Math.min(100, performance.diversity * 25)} />
+
+            <div
+              className={`mx-3.5 mt-3 border-l-[3px] bg-[rgba(255,255,255,0.4)] p-2.5 ${
+                egressLow ? "border-[#d6634e]" : "border-[#6f8250]"
+              }`}
+            >
+              <b className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#171916]">{adviceTitle}</b>
+              <p className="mt-1 text-[10px] leading-snug text-[#4b4e47]">{adviceCopy}</p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className={`flex border-t ${HAIRLINE}`}>
@@ -519,6 +578,12 @@ function PlazaInspector({ plaza, run }: { plaza: Plaza; run: Run }): ReactNode {
           max={14}
           onChange={(v, c) => run("plaza.update", { id: plaza.id, patch: { trees: v }, capture: c })}
         />
+        <LabelRow label="Ground performance" hint="live" />
+        <div className="flex flex-col gap-1.5 px-3.5 py-1.5">
+          <Meter label="Shade cover" value={plazaPerformance(plaza).shade} color="#6f8f5c" />
+          <Meter label="Stormwater" value={plazaPerformance(plaza).water} color="#5f91aa" />
+          <Meter label="Social charge" value={plazaPerformance(plaza).social} color="#d7a13f" />
+        </div>
       </div>
 
       <div className={`flex border-t ${HAIRLINE}`}>

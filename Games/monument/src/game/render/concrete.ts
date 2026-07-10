@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { MassingBodyRole } from "@jgengine/core/world/massing";
 
-import { TONES, type Building } from "../catalog";
+import { PROGRAMS, TONES, type Building, type Lens } from "../catalog";
 import { livedWeathering } from "../city/model";
 
 let concreteTextureCanvas: HTMLCanvasElement | undefined;
@@ -62,6 +62,24 @@ export function weatheredColor(b: Building): string {
   const weather = livedWeathering(b);
   material.offsetHSL(0, -weather * 0.00035, -weather * 0.0007);
   return material.getStyle();
+}
+
+export function lensColor(b: Building, lens: Lens): string {
+  if (lens === "program") return PROGRAMS[b.program].color;
+  if (lens === "structure") return b.structural === "frame" ? "#91a7b8" : b.structural === "walls" ? "#d4ad67" : "#a98ebd";
+  if (lens === "carbon") {
+    const intensity = Math.min(1, (b.height * b.width * b.depth) / 48000);
+    return new THREE.Color().lerpColors(new THREE.Color("#a7c97b"), new THREE.Color("#d64e3a"), intensity).getStyle();
+  }
+  if (lens === "activity") {
+    const energy = b.program === "culture" || b.program === "mixed" ? 0.9 : b.program === "civic" ? 0.62 : 0.28;
+    return new THREE.Color().lerpColors(new THREE.Color("#25313c"), new THREE.Color("#e69a37"), energy).getStyle();
+  }
+  if (lens === "daylight") {
+    const access = Math.max(0.12, 1 - b.depth / 38);
+    return new THREE.Color().lerpColors(new THREE.Color("#3b4f69"), new THREE.Color("#e8c87b"), access).getStyle();
+  }
+  return weatheredColor(b);
 }
 
 export function roleSurfaceColor(color: string, role: MassingBodyRole | undefined): string {

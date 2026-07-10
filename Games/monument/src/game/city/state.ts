@@ -49,6 +49,7 @@ export const activeLens = (ctx: GameContext): Lens => read(ctx, "lens", "materia
 export const activeMood = (ctx: GameContext): DistrictMood => read(ctx, "mood", "default");
 export const activeToast = (ctx: GameContext): Toast | null => read(ctx, "toast", null);
 export const activeCharter = (ctx: GameContext): DistrictCharter => read(ctx, "charter", {});
+export const systemsPanelOpen = (ctx: GameContext): boolean => read(ctx, "systems", false);
 export const historyDepth = (ctx: GameContext): number => read(ctx, "history", [] as CitySnapshot[]).length;
 export const futureDepth = (ctx: GameContext): number => read(ctx, "future", [] as CitySnapshot[]).length;
 
@@ -78,6 +79,13 @@ export function setLens(ctx: GameContext, lens: Lens): void {
 
 export function selectInstance(ctx: GameContext, id: string | null): void {
   ctx.game.store.set("selectedId", id);
+  if (id !== null) ctx.game.store.set("systems", false);
+}
+
+export function toggleSystems(ctx: GameContext): void {
+  const next = !systemsPanelOpen(ctx);
+  ctx.game.store.set("systems", next);
+  if (next) ctx.game.store.set("selectedId", null);
 }
 
 const nextId = (ctx: GameContext, prefix: string): string => {
@@ -155,6 +163,7 @@ export function initCity(ctx: GameContext): void {
   ctx.game.store.set("selectedId", null);
   ctx.game.store.set("lens", "material" satisfies Lens);
   ctx.game.store.set("mood", "default" satisfies DistrictMood);
+  ctx.game.store.set("systems", false);
   ctx.game.store.set("seq", 0);
   ctx.game.store.set("placedCount", buildings.length);
   ctx.game.store.set("history", [] satisfies CitySnapshot[]);

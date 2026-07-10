@@ -11,6 +11,7 @@ import {
   redoCity,
   setLens,
   setTool,
+  toggleSystems,
   undoCity,
   updateBuilding,
   updatePlaza,
@@ -78,6 +79,11 @@ export function onInit(ctx: GameContext): void {
   ctx.game.commands.define<{ lens: Lens }>("site.lens", {
     apply(state, input) {
       setLens(state, input.lens);
+    },
+  });
+  ctx.game.commands.define("systems.toggle", {
+    apply(state) {
+      toggleSystems(state);
     },
   });
   ctx.game.commands.define("undo", {
