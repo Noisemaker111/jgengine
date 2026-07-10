@@ -46,9 +46,11 @@ Judge every engine change against three axes — extensibility, modularity, scal
 Read the **`fan-out`** skill (`.claude/skills/fan-out`). It applies on almost every non-trivial turn in this repo.
 
 Frontier model: plan, design, judge, synthesize (engine design, layering, API surface, gnarly types).  
-Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · screenshots · git ceremony (commit, push, stale-ref/force-with-lease recovery, branch restarts, cherry-picks) · GitHub ceremony · bulk reads · research · renames · doc sweeps · log triage.
+Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · screenshots · git ceremony (commit, push, stale-ref/force-with-lease recovery, branch restarts, cherry-picks) · GitHub ceremony · bulk reads · codebase scouting · research · renames · doc sweeps · log triage.
 
-**Hard rule:** never run the verify ladder, shoot, git ceremony, or GitHub ceremony on the frontier model — spawn a cheap worker. The whole ship motion (commit → push → PR → merge → 60s green check), including any push recovery it hits along the way, is one light worker brief; the frontier model only decides the diff and the messages. Standing authorization; do not ask first. Announce on a 🤖 line. Research only novel seams; scaffolding already in skills is not research.
+**Hard rule:** never run the verify ladder, shoot, git ceremony, or GitHub ceremony on the frontier model — spawn a cheap worker. The whole ship motion (commit → push → PR → merge → 60s green check), including any push recovery it hits along the way, is one light worker brief; the frontier model only decides the diff and the messages. Standing authorization; do not ask first. Announce on a 🤖 line.
+
+**Orientation is a scout job.** The frontier model never reads its way into unfamiliar territory — a frontier turn that opens 35 files costs more than a fleet of Sonnet scouts. When a task lands in code you haven't mapped, spawn 1–3 Sonnet scouts, each briefed on one angle and returning a scoped digest (relevant files with `file:line` pointers, key APIs and types, constraints, surprises), then read deeply only the files the diff will touch. The one research *don't* is rediscovering scaffolding already documented in skills — that's a doc lookup, not research; codebase scouting is always in bounds.
 
 **Pick the model by the intelligence the leg needs — and set it explicitly.** Omitting `model` makes the worker inherit the session model, which is how CI triage and typecheck re-runs have silently landed on Opus 4.8. Sonnet is the default worker; escalate a leg only when it genuinely needs more brain, and never let a mechanical leg inherit a frontier model.
 
