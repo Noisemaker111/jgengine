@@ -40,9 +40,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          # TODO: re-add jgengine once the npm token can publish the unscoped
-          # name (E403 — the token cannot claim it; owner action required).
-          for p in core ws sql react convex node shell assets; do
+          for p in core ws sql react convex node shell assets jgengine; do
             name=$(node -p "require('./packages/$p/package.json').name")
             version=$(node -p "require('./packages/$p/package.json').version")
             if npm view "$name@$version" version >/dev/null 2>&1; then
