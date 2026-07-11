@@ -60,6 +60,11 @@ export function stationSatisfied(recipe: RecipeDef, context: CraftContext): bool
   if (recipe.station === undefined) return true;
   const range = recipe.stationRange !== undefined && recipe.stationRange > 0 ? recipe.stationRange : Infinity;
   const origin = context.origin;
+  if (range !== Infinity && origin === undefined) {
+    throw new Error(
+      `recipe "${recipe.id}" sets stationRange=${recipe.stationRange} but CraftContext.origin is missing`,
+    );
+  }
   const stations = context.stations ?? [];
   for (const station of stations) {
     if (station.catalogId !== recipe.station) continue;
@@ -74,7 +79,7 @@ export function stationSatisfied(recipe: RecipeDef, context: CraftContext): bool
 function lockedRequirements(recipe: RecipeDef, context: CraftContext): readonly string[] {
   if (recipe.requires === undefined || recipe.requires.length === 0) return [];
   const unlocked = context.unlocked;
-  if (unlocked === undefined) return [];
+  if (unlocked === undefined) return recipe.requires;
   return recipe.requires.filter((id) => !unlocked(id));
 }
 

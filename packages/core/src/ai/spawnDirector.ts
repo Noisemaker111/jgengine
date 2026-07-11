@@ -155,7 +155,7 @@ export function advanceSpawnDirector(
   const alert = Math.max(0, state.alert - alertDecay * dt);
 
   const trickle = config.waves[wave]?.budgetPerSecond ?? 0;
-  const escalation = (config.escalationPerSecond ?? 0) * elapsed;
+  const escalation = config.escalationPerSecond ?? 0;
   const alertBonus = (config.alertBudgetPerSecond ?? 0) * alert;
   const playerBonus = (config.playerBudgetPerSecond ?? 0) * players;
   budget += (trickle + escalation + alertBonus + playerBonus) * dt;

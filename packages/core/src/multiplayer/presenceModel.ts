@@ -16,8 +16,10 @@ export interface IncomingPose {
 export interface PoseSyncRules {
   /** Speed cap (units/sec) for client-authoritative movement. */
   maxSpeed: number;
-  /** Vertical offset clamp (e.g. peak jump height). */
+  /** Vertical offset clamp above floorY (e.g. peak jump height). */
   maxVerticalOffset: number;
+  /** World-floor Y used as the base of the jump band. Defaults to 0. */
+  floorY?: number;
   /** Elapsed-time clamp so stale or bursty clients cannot teleport. */
   minElapsedSec: number;
   maxElapsedSec: number;
@@ -53,6 +55,7 @@ export function decidePoseSync(
   incoming: IncomingPose,
   rules: PoseSyncRules,
   nowMs: number,
+  floorY?: number,
 ): PoseSyncDecision {
   const elapsedSec = Math.max(
     rules.minElapsedSec,
@@ -72,10 +75,12 @@ export function decidePoseSync(
     targetZ = current.position.z + dz * scale;
   }
 
+  const floor = floorY ?? rules.floorY ?? 0;
+  const ceiling = floor + rules.maxVerticalOffset;
   const nextY =
     incoming.position.y === undefined
       ? current.position.y
-      : Math.max(0, Math.min(rules.maxVerticalOffset, incoming.position.y));
+      : Math.max(floor, Math.min(ceiling, incoming.position.y));
   const nextRotationY = incoming.rotationY ?? current.rotationY;
   const nextRotationPitch = incoming.rotationPitch ?? current.rotationPitch ?? 0;
 

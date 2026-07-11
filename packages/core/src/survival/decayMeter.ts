@@ -45,7 +45,7 @@ export interface DecayMeterSet {
   refill(id: string, amount: number): void;
   /** Overwrite the base drain rate (e.g. a game mode with harsher hunger). */
   setRate(id: string, rate: number): void;
-  /** Multiply the drain rate this tick onward — cold biome speeds warmth loss, sprint burns stamina. */
+  /** Multiply drain until cleared via `setRateModifier(id, 1)` — cold biome, sprint, etc. */
   setRateModifier(id: string, multiplier: number): void;
   /** Moodles for every crossed threshold, worst-first per meter. */
   moodles(): Moodle[];
@@ -115,7 +115,6 @@ export function createDecayMeterSet(configs: readonly DecayMeterConfig[]): Decay
           runtime.min,
           runtime.max,
         );
-        runtime.modifier = 1;
       }
     },
     value(id) {

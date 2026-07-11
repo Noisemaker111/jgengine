@@ -1,4 +1,4 @@
-export type CommitMode = "immediate" | "simultaneous" | "rewind";
+export type CommitMode = "immediate" | "simultaneous" | "resealable";
 
 export interface SubmittedAction<TAction> {
   participant: string;
@@ -25,7 +25,7 @@ export interface CommitController<TAction> {
   pending(): SubmittedAction<TAction>[];
   reveal(): SubmittedAction<TAction>[];
   commit(): SubmittedAction<TAction>[];
-  rewind(): SubmittedAction<TAction>[];
+  discard(): SubmittedAction<TAction>[];
   clear(): void;
 }
 
@@ -63,7 +63,7 @@ export function createCommitController<TAction>(config: CommitControllerConfig):
       if (mode === "immediate") {
         return { status: "committed", committed: [{ participant, action }] };
       }
-      if (sealed.has(participant) && !(mode === "rewind")) {
+      if (sealed.has(participant) && mode !== "resealable") {
         return { status: "rejected", committed: [], reason: "already-submitted" };
       }
       sealed.set(participant, action);
@@ -91,7 +91,7 @@ export function createCommitController<TAction>(config: CommitControllerConfig):
       clear();
       return out;
     },
-    rewind() {
+    discard() {
       const discarded = orderedSubmissions();
       clear();
       return discarded;

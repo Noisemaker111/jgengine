@@ -37,23 +37,39 @@ describe("simultaneous hidden-reveal commit", () => {
   });
 });
 
-describe("rewind-then-commit", () => {
-  test("pending actions are visible, rewind discards, commit finalizes", () => {
-    const commit = createCommitController<PlayCard>({ mode: "rewind", participants: ["p1"] });
+describe("resealable commit", () => {
+  test("pending actions are visible, discard returns them without world rollback, commit finalizes", () => {
+    const commit = createCommitController<PlayCard>({ mode: "resealable", participants: ["p1"] });
     commit.submit("p1", { card: "a" });
     expect(commit.pending()).toEqual([{ participant: "p1", action: { card: "a" } }]);
-    expect(commit.rewind()).toEqual([{ participant: "p1", action: { card: "a" } }]);
+    expect(commit.discard()).toEqual([{ participant: "p1", action: { card: "a" } }]);
     expect(commit.pending()).toEqual([]);
     commit.submit("p1", { card: "c" });
     expect(commit.commit()).toEqual([{ participant: "p1", action: { card: "c" } }]);
     expect(commit.pending()).toEqual([]);
   });
 
-  test("rewind mode allows re-submitting the same participant", () => {
-    const commit = createCommitController<PlayCard>({ mode: "rewind", participants: ["p1"] });
+  test("resealable mode allows re-submitting the same participant", () => {
+    const commit = createCommitController<PlayCard>({ mode: "resealable", participants: ["p1"] });
     commit.submit("p1", { card: "a" });
     expect(commit.submit("p1", { card: "b" }).status).toBe("pending");
     expect(commit.pending()).toEqual([{ participant: "p1", action: { card: "b" } }]);
+  });
+
+  test("discard only clears sealed intents and does not restore prior actions", () => {
+    const commit = createCommitController<PlayCard>({ mode: "resealable", participants: ["p1", "p2"] });
+    commit.submit("p1", { card: "first" });
+    commit.submit("p2", { card: "second" });
+    const discarded = commit.discard();
+    expect(discarded).toEqual([
+      { participant: "p1", action: { card: "first" } },
+      { participant: "p2", action: { card: "second" } },
+    ]);
+    expect(commit.pending()).toEqual([]);
+    expect(commit.hasSubmitted("p1")).toBe(false);
+    expect(commit.hasSubmitted("p2")).toBe(false);
+    commit.submit("p1", { card: "retry" });
+    expect(commit.pending()).toEqual([{ participant: "p1", action: { card: "retry" } }]);
   });
 });
 

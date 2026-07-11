@@ -108,11 +108,21 @@ describe("pure quest evaluator", () => {
 
   test("applyQuestRewards fans a reward payload out to injected appliers", () => {
     const calls: string[] = [];
-    applyQuestRewards(defs[0]!.rewards!, {
+    const result = applyQuestRewards(defs[0]!.rewards!, {
       grantXp: (amount) => calls.push(`xp:${amount}`),
       grantEconomy: (currency, amount) => calls.push(`eco:${currency}:${amount}`),
       grantUnlock: (id) => calls.push(`unlock:${id}`),
     });
+    expect(result).toBeNull();
     expect(calls).toEqual(["xp:100", "eco:coins:50", "unlock:recipe_bread"]);
+  });
+
+  test("applyQuestRewards surfaces inventory grant failures", () => {
+    expect(
+      applyQuestRewards(
+        { items: [{ item: "sword", count: 1, inventory: "bag" }] },
+        { grantItem: () => ({ reason: "inventory full" }) },
+      ),
+    ).toEqual({ reason: "inventory full" });
   });
 });

@@ -922,7 +922,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     const raw = createTurnLoop(config);
     const wrappedCommit = notifyAfter(
       raw.commit,
-      ["submit", "expected", "commit", "rewind", "clear"],
+      ["submit", "expected", "commit", "discard", "clear"],
       signal.notify,
     );
     const wrapped: TurnLoop = {
