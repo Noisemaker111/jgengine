@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 
 import { getSession } from "../../loop";

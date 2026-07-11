@@ -1,3 +1,4 @@
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { RIVALS } from "./game/boats/catalog";
 import { BOAT_Y } from "./game/boats/momentum";
@@ -10,6 +11,10 @@ const SIM_KEY = "simRef";
 
 function getSim(ctx: GameContext): Sim | undefined {
   return ctx.game.store.get(SIM_KEY) as Sim | undefined;
+}
+
+function syncPhase(ctx: GameContext, status: Sim["status"]): void {
+  setGamePhase(ctx, status === "racing" ? "playing" : status === "start" ? "menu" : "ended");
 }
 
 function spawnRivals(ctx: GameContext, sim: Sim): void {
@@ -49,6 +54,7 @@ export function onInit(ctx: GameContext): void {
   });
 
   spawnRivals(ctx, sim);
+  syncPhase(ctx, sim.status);
 
   ctx.game.commands.define("startRace", {
     validate: () => {
@@ -60,6 +66,7 @@ export function onInit(ctx: GameContext): void {
       if (current === undefined) return;
       current.status = "racing";
       current.raceStartSec = ctx.time.now();
+      syncPhase(ctx, current.status);
     },
   });
 
@@ -72,6 +79,7 @@ export function onInit(ctx: GameContext): void {
       fresh.raceStartSec = ctx.time.now();
       ctx.game.store.set(SIM_KEY, fresh);
       posePlayerAndRivalsToGrid(ctx, fresh);
+      syncPhase(ctx, fresh.status);
     },
   });
 }
@@ -90,5 +98,7 @@ export function onNewPlayer(ctx: GameContext): void {
 export function onTick(ctx: GameContext, dt: number): void {
   const sim = getSim(ctx);
   if (sim === undefined) return;
+  const previousStatus = sim.status;
   tickSim(ctx, sim, dt);
+  if (sim.status !== previousStatus) syncPhase(ctx, sim.status);
 }
