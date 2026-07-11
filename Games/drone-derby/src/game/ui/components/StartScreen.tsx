@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { HudLabel } from "@/components/ui/hud-label";
 import { HudPanel } from "@/components/ui/hud-panel";
 import { KeybindBadge } from "@/components/ui/keybind-badge";
@@ -19,6 +20,10 @@ const CONTROLS: readonly [string, string][] = [
 export function StartScreen({ courseId }: { courseId: CourseId }) {
   return (
     <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-8 overflow-y-auto py-8">
+      <div className="absolute top-5 right-5">
+        <SettingsTrigger className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#3a4048] bg-[#20242b]/90 text-[#9ef01a] transition-colors hover:bg-[#2a2f37]/90" />
+      </div>
+
       <div className="flex flex-col items-center gap-2">
         <h1
           className="m-0 text-[clamp(30px,5vw,46px)] font-extrabold uppercase tracking-[0.22em]"
