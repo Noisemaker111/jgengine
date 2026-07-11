@@ -36,9 +36,9 @@ Uses the **Nitro** Vite plugin (`nitro/vite`). Nitro auto-detects Vercel at buil
 | Production Branch | **`main`** |
 | Install / Build Command | leave auto (`bun install` / `bun run build`) |
 | Output Directory | leave auto (Nitro emits the Vercel Build Output) |
-| Ignored Build Step | `git diff --quiet HEAD^ HEAD -- . ../../skills ../../packages ../../Games ../dev` |
+| Ignored Build Step | the `ignoreCommand` in [`vercel.json`](vercel.json) |
 
-The Ignored Build Step (run from `apps/web`) forces a rebuild whenever this app, the skills, an engine package, or a game changed — so an engine release or a new game on `main` redeploys the site. Exit 1 = build, exit 0 = skip.
+The Ignored Build Step resolves the repository root before running `git diff`, then checks explicit repository-relative paths (`apps/web`, `apps/dev`, `packages`, `Games`, and `.claude/skills`). This works when Vercel invokes the command from the `apps/web` project root: exit 1 = build, exit 0 = skip. To reproduce locally from any directory, run `bunx vercel --cwd apps/web` and inspect the `ignoreCommand` result in the build output; a commit touching `packages/` must return exit 1, while a docs-only commit may return exit 0.
 
 After the first import, add the **`jgengine.com`** domain to the project (Vercel → Domains). Every push to `main` then builds and goes live automatically.
 
