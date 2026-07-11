@@ -33,11 +33,28 @@ import {
   type PositionedPrompt,
 } from "@jgengine/core/interaction/proximityPrompt";
 import { useGameContext } from "./provider";
+import { createSelectCache, readSelectSnapshot } from "./selectSnapshot";
 
-export function useGameStore<T>(selector: (ctx: GameContext) => T): T {
+export function useGameStore<T>(
+  selector: (ctx: GameContext) => T,
+  isEqual: (previous: T, next: T) => boolean = Object.is,
+): T {
   const ctx = useGameContext();
-  useSyncExternalStore(ctx.subscribe, ctx.version, ctx.version);
-  return selector(ctx);
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+  const isEqualRef = useRef(isEqual);
+  isEqualRef.current = isEqual;
+  const cacheRef = useRef(createSelectCache<T>());
+
+  const getSnapshot = useCallback(
+    () =>
+      readSelectSnapshot(cacheRef.current, () => selectorRef.current(ctx), (previous, next) =>
+        isEqualRef.current(previous, next),
+      ),
+    [ctx],
+  );
+
+  return useSyncExternalStore(ctx.subscribe, getSnapshot, getSnapshot);
 }
 
 export function useGame(): { commands: GameContext["game"]["commands"]; events: GameEvents } {

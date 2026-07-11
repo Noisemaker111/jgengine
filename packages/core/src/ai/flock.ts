@@ -126,6 +126,71 @@ export interface FlockStepAgent {
   velocity: FlockVec3;
 }
 
+const CELL_KEY_STRIDE = 1_048_576;
+const gridCells = new Map<number, number[]>();
+const freeBuckets: number[][] = [];
+const neighborScratch: FlockAgent[] = [];
+let steerScratch = new Float64Array(0);
+
+function cellKey(cx: number, cz: number): number {
+  return cx * CELL_KEY_STRIDE + cz;
+}
+
+function takeBucket(): number[] {
+  return freeBuckets.pop() ?? [];
+}
+
+function ensureSteerCapacity(agentCount: number): void {
+  const needed = agentCount * 3;
+  if (steerScratch.length < needed) {
+    steerScratch = new Float64Array(needed);
+  }
+}
+
+function buildAgentGrid(agents: readonly FlockStepAgent[], invCell: number): void {
+  for (const bucket of gridCells.values()) {
+    bucket.length = 0;
+    freeBuckets.push(bucket);
+  }
+  gridCells.clear();
+
+  for (let i = 0; i < agents.length; i += 1) {
+    const position = agents[i]!.position;
+    const key = cellKey(Math.floor(position[0] * invCell), Math.floor(position[2] * invCell));
+    let bucket = gridCells.get(key);
+    if (bucket === undefined) {
+      bucket = takeBucket();
+      gridCells.set(key, bucket);
+    }
+    bucket.push(i);
+  }
+}
+
+function fillNeighbors(
+  agents: readonly FlockStepAgent[],
+  agentIndex: number,
+  invCell: number,
+): number {
+  const agent = agents[agentIndex]!;
+  const cx = Math.floor(agent.position[0] * invCell);
+  const cz = Math.floor(agent.position[2] * invCell);
+  let count = 0;
+  for (let dz = -1; dz <= 1; dz += 1) {
+    for (let dx = -1; dx <= 1; dx += 1) {
+      const bucket = gridCells.get(cellKey(cx + dx, cz + dz));
+      if (bucket === undefined) continue;
+      for (let b = 0; b < bucket.length; b += 1) {
+        const otherIndex = bucket[b]!;
+        if (otherIndex === agentIndex) continue;
+        neighborScratch[count] = agents[otherIndex]!;
+        count += 1;
+      }
+    }
+  }
+  neighborScratch.length = count;
+  return count;
+}
+
 /** Integrate one tick in place: steer every agent, clamp to `maxSpeed`, advance positions. */
 export function stepFlock(
   agents: FlockStepAgent[],
@@ -133,13 +198,29 @@ export function stepFlock(
   dt: number,
   target?: FlockVec3,
 ): void {
-  const steers = agents.map((agent) => flockSteer(agent, agents, config, target));
-  for (let i = 0; i < agents.length; i += 1) {
+  const count = agents.length;
+  if (count === 0) return;
+
+  const cellSize = config.neighborRadius > 1e-6 ? config.neighborRadius : 1;
+  const invCell = 1 / cellSize;
+  buildAgentGrid(agents, invCell);
+  ensureSteerCapacity(count);
+
+  for (let i = 0; i < count; i += 1) {
+    fillNeighbors(agents, i, invCell);
+    const steer = flockSteer(agents[i]!, neighborScratch, config, target);
+    const base = i * 3;
+    steerScratch[base] = steer[0];
+    steerScratch[base + 1] = steer[1];
+    steerScratch[base + 2] = steer[2];
+  }
+
+  for (let i = 0; i < count; i += 1) {
     const agent = agents[i]!;
-    const steer = steers[i]!;
-    let vx = agent.velocity[0] + steer[0] * dt;
-    let vy = agent.velocity[1] + steer[1] * dt;
-    let vz = agent.velocity[2] + steer[2] * dt;
+    const base = i * 3;
+    let vx = agent.velocity[0] + steerScratch[base]! * dt;
+    let vy = agent.velocity[1] + steerScratch[base + 1]! * dt;
+    let vz = agent.velocity[2] + steerScratch[base + 2]! * dt;
     const speed = Math.hypot(vx, vy, vz);
     if (speed > config.maxSpeed) {
       const clamp = config.maxSpeed / speed;

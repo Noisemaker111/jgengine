@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { createSelectCache, readSelectSnapshot } from "./selectSnapshot";
 
 export interface ReadableEngineStore<TState> {
   getState(): TState;
@@ -21,8 +22,28 @@ export function useEngineState<TState>(store: ReadableEngineStore<TState>): TSta
 export function useEngineStore<TState, TSelected>(
   store: ReadableEngineStore<TState>,
   selector: (state: TState) => TSelected,
+  isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is,
 ): TSelected {
-  return selector(useEngineState(store));
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+  const isEqualRef = useRef(isEqual);
+  isEqualRef.current = isEqual;
+  const cacheRef = useRef(createSelectCache<TSelected>());
+
+  const subscribe = useCallback(
+    (onChange: () => void) => store.subscribe(() => onChange()),
+    [store],
+  );
+
+  const getSnapshot = useCallback(
+    () =>
+      readSelectSnapshot(cacheRef.current, () => selectorRef.current(store.getState()), (previous, next) =>
+        isEqualRef.current(previous, next),
+      ),
+    [store],
+  );
+
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 export function useEngineEvent<TEventMap extends object, K extends keyof TEventMap>(

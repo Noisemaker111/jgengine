@@ -98,6 +98,37 @@ describe("scene entity store", () => {
     expect(store.setPose("missing", { position: [0, 0, 0] })).toBe(false);
   });
 
+  test("setPose mutates the entity in place and notifies", () => {
+    const store = createEntityStore();
+    const id = store.spawn("runner", { position: [0, 0, 0] });
+    const before = store.get(id);
+    let notified = 0;
+    store.subscribe(() => {
+      notified += 1;
+    });
+    store.setPose(id, { position: [3, 0, 4], rotationY: 1.5, dt: 1 });
+    const after = store.get(id);
+    expect(after).toBe(before);
+    expect(after?.position).toEqual([3, 0, 4]);
+    expect(after?.velocity).toEqual([3, 0, 4]);
+    expect(after?.rotationY).toBe(1.5);
+    expect(notified).toBe(1);
+  });
+
+  test("repeated setPose coalesces snapshot rebuild until read", () => {
+    const store = createEntityStore();
+    const id = store.spawn("runner", { position: [0, 0, 0] });
+    const first = store.snapshot();
+    store.setPose(id, { position: [1, 0, 0] });
+    store.setPose(id, { position: [2, 0, 0] });
+    store.setPose(id, { position: [3, 0, 0] });
+    const second = store.snapshot();
+    expect(second).not.toBe(first);
+    expect(store.snapshot()).toBe(second);
+    expect(second[0]?.position).toEqual([3, 0, 0]);
+    expect(second[0]).toBe(store.get(id));
+  });
+
   test("get and list reflect current contents", () => {
     const store = createEntityStore();
     expect(store.list()).toEqual([]);
