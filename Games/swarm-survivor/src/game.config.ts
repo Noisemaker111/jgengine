@@ -24,7 +24,7 @@ export const config: CartridgeConfig = {
   spawning: {
     director: {
       waves: [
-        { budget: 10, duration: 25, entries: [{ id: "skitterling", cost: 1, weight: 6 }] },
+        { budget: 10, duration: 25, budgetPerSecond: 0.8, entries: [{ id: "skitterling", cost: 1, weight: 6 }] },
         {
           budget: 16,
           duration: 30,
