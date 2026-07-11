@@ -1,5 +1,5 @@
-import { createRecordBook, type RecordStorage } from "@jgengine/core/game/recordBook";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
+import { createRecordBook, type RecordStorage } from "@jgengine/core/game/recordBook";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { GLIDER_GHOST_ENTITY, GLIDER_PACER_ENTITY, GLIDER_PLAYER_ENTITY } from "./game/entities/gliders/catalog";
