@@ -79,8 +79,7 @@ function Home() {
               className="animate-fade-up mt-7 text-balance text-[2.6rem] font-bold leading-[1.05] tracking-tighter text-slate-50 sm:text-7xl"
               style={{ animationDelay: "60ms" }}
             >
-              A game engine your <span className="text-gradient">AI agent</span> already knows how
-              to use.
+              A TypeScript game engine built for <span className="text-gradient">AI coding agents</span>.
             </h1>
             <p
               className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-base text-slate-400 sm:text-lg"
@@ -160,8 +159,8 @@ function Home() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
               eyebrow="The skills"
-              title="Which skill does my agent need?"
-              blurb="Each skill is the spec your agent reads before it builds. Install them all with one command — it picks the right one for the job."
+              title="One intake, focused engine knowledge"
+              blurb="The main skill records a short numbered build blueprint and routes the agent to only the relevant API domains."
             />
             <Link
               to="/skills"

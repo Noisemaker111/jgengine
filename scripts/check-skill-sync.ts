@@ -1,8 +1,7 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+﻿import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
-const skillDir = join(root, ".claude", "skills", "jgengine-api");
 
 if (existsSync(join(root, "skills"))) {
   console.error(
@@ -13,8 +12,19 @@ if (existsSync(join(root, "skills"))) {
 }
 
 const skillsRoot = join(root, ".claude", "skills");
+const requiredSkills = [
+  "jgengine",
+  "jgengine-world",
+  "jgengine-procedural",
+  "jgengine-combat",
+  "jgengine-gameplay",
+  "jgengine-multiplayer",
+  "jgengine-ui",
+  "jgengine-assets",
+  "jgengine-verify",
+];
 
-for (const required of ["jgengine-api", "jgengine-newgame", "jgengine-verify"]) {
+for (const required of requiredSkills) {
   if (!existsSync(join(skillsRoot, required, "SKILL.md"))) {
     console.error(`check-skill-sync: missing .claude/skills/${required}/SKILL.md`);
     process.exit(1);
@@ -47,16 +57,17 @@ for (const name of readdirSync(skillsRoot)) {
     process.exit(1);
   }
 }
-const refDir = join(skillDir, "reference");
-const refFiles = existsSync(refDir)
-  ? readdirSync(refDir)
-      .filter((n) => n.endsWith(".md"))
-      .sort()
-  : [];
-const text = [
-  readFileSync(join(skillDir, "SKILL.md"), "utf8"),
-  ...refFiles.map((n) => readFileSync(join(refDir, n), "utf8")),
-].join("\n");
+
+const apiSkillDirs = readdirSync(skillsRoot)
+  .filter((name) => name === "jgengine" || (name.startsWith("jgengine-") && name !== "jgengine-verify"))
+  .sort();
+const skillFiles = apiSkillDirs.flatMap((name) => {
+  const dir = join(skillsRoot, name);
+  return readdirSync(dir)
+    .filter((file) => file.endsWith(".md"))
+    .map((file) => join(dir, file));
+});
+const text = skillFiles.map((file) => readFileSync(file, "utf8")).join("\n");
 
 const PKG_DIRS: Record<string, string> = {
   core: "packages/core/src",
@@ -118,18 +129,18 @@ if (missingDomains.length > 0) {
   problems.push(
     `Public @jgengine/core domains never referenced in the skill (${missingDomains.length}):\n` +
       missingDomains.map((d) => `  ${d}/`).join("\n") +
-      `\n  → a new engine domain landed with no skill coverage. Document it in .claude/skills/jgengine-api/SKILL.md,` +
+      `\n  → a new engine domain landed with no skill coverage. Document it in the matching .claude/skills/jgengine-* domain,` +
       `\n    or add it to INTERNAL_DOMAINS in this script if it is genuinely internal.`,
   );
 }
 
 if (problems.length > 0) {
-  console.error(`\ncheck-skill-sync: jgengine-api skill is out of sync with the code.\n\n${problems.join("\n\n")}\n`);
+  console.error(`\ncheck-skill-sync: JGengine API skills is out of sync with the code.\n\n${problems.join("\n\n")}\n`);
   process.exit(1);
 }
 
 console.log(
-  `check-skill-sync: clean — ${seen.size} import paths resolve, ` +
+  `check-skill-sync: clean — ${seen.size} import paths resolve across ${apiSkillDirs.length} API skills, ` +
     `${coreDomains.length - INTERNAL_DOMAINS.size} public core domains covered ` +
-    `(SKILL.md + ${refFiles.length} reference module${refFiles.length === 1 ? "" : "s"})`,
+    `(${skillFiles.length} markdown files)`,
 );

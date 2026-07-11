@@ -15,7 +15,7 @@ Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, te
 
 ## Skills
 
-- **Human interface outside this monorepo: one sentence** — `Make a game that … with jgengine`. Not “run these CLI steps.” The CLI is for agents (and optional power users); create auto-installs skills when the agent scaffolds.
+- **Human interface outside this monorepo: one sentence** — `Make a game that … with jgengine`. Not “run these CLI steps.” The CLI is for agents (and optional power users); create auto-installs skills when the agent scaffolds. From this source monorepo, build `packages/jgengine` first or force the published CLI with `npm exec --yes --package=jgengine@latest -- jgengine skills`; npm otherwise prefers the unbuilt local workspace bin on Windows.
 - **Pushing to `main` does NOT auto-update existing skill installs.** Agents re-run `npx jgengine skills -p` (or `-g`) / `npx skills update` if needed.
 
 ## Verification & screenshots

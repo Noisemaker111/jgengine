@@ -11,7 +11,7 @@ export const Route = createFileRoute("/skills/")({
       { title: "Skills — JGengine" },
       {
         name: "description",
-        content: "The specs your AI agent reads before it builds a game on JGengine.",
+        content: "One JGengine intake router plus focused API domains for AI coding agents building on the TypeScript SDK.",
       },
     ],
   }),
@@ -24,7 +24,7 @@ function SkillsIndex() {
       <PageHero
         eyebrow="The spec"
         title="Skills"
-        blurb="Each skill is the spec your agent reads before it builds. You never install them yourself — say the prompt and the agent loads them."
+        blurb="The main skill captures a short numbered blueprint, then routes the agent to only the API domains the game needs. You never install them yourself — say the prompt and the agent loads them."
       >
         <div className="max-w-xl">
           <CommandBlock command={ENTRY_PROMPT} kind="prompt" />

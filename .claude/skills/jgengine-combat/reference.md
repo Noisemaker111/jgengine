@@ -1,0 +1,67 @@
+# jgengine domain API â€” Combat
+
+Reference module for the [`jgengine-combat` API](SKILL.md) skill. Load this when you need the combat surface â€” effects, projectiles, death, feel, and abilities.
+
+## Effects and projectiles
+
+Effect ids are **game-defined strings**. Magnitudes **drain** stats: positive subtracts down `receive.<effect>.order` (spilling to the next stat in the order), negative restores. Heals pass a negative amount (`via: { amount: -flashHeal }`, typically read from a `weapon.heal` stat).
+
+```ts
+ctx.scene.entity.canReceive(instanceId, effect, magnitude?)  // null | reason â€” reads catalog receive
+ctx.scene.entity.preview({ from, to, effect, via })      // magnitude, no state change
+ctx.scene.entity.effect({ from, to, effect, via })                          // single target
+ctx.scene.entity.effect({ from, effect, via, at, radius, falloff?, los? })  // AoE at a point
+```
+
+AoE: `inRadius(at, radius)` â†’ LoS filter (default on) â†’ `canReceive` per target â†’ absorption; `falloff: "linear" | "none"`. `via` = `{ item }` (magnitude from weapon stats) or `{ amount }`. `canReceive`'s `pools-depleted` reason checks headroom in the effect's direction: a positive (draining) magnitude needs a stat above its min, a negative (restorative) magnitude needs a stat below its max â€” so a heal can still raise a stat sitting at its minimum. Omitting `magnitude` assumes the draining direction.
+
+`canReceive`'s optional signed `magnitude` makes the check direction-aware: positive (or omitted) keeps the standard `"pools-depleted"` check; negative checks the opposite direction and returns `"pools-full"` only when every stat in the receive order is already at max â€” so a heal (`via: { amount: -n }`) correctly reaches a fully-depleted target and is rejected only when there's nothing left to restore.
+
+**Projectiles** (aim-based â€” no target ids):
+
+```ts
+willHitProjectile({ from, via, aim, effect })   // prediction only, for crosshair UI
+fireProjectile({ from, via, aim, effect })      // â†’ shotId (pending)
+settleProjectile(shotId)                        // authoritative â†’ { at, hits } | rejection
+```
+
+`Aim = { origin, direction } | { yaw, pitch, spread? }`. Hitscan settles into per-hit effects; ballistic shots (`weapon.projectile` with `fuseTime`/`settleOn`) settle to a landing point â€” the handler then calls `effect({ at: settle.at, radius })`. Settling twice rejects. Prediction is never authority.
+
+Raycasts are **object-aware**: the default raycast checks placed scene objects as well as entities, discriminated by `RaycastHit.kind` (`"entity" | "object"` â€” an `ObjectRaycastHit` also carries `catalogId`). A crate or wall between shooter and target blocks or absorbs the shot instead of every projectile passing through scenery; supply `ProjectileSystemDeps.objects` (`{ list(), halfExtents?(catalogId) }`, matching `ObjectStore.list()` structurally) to opt in, with a `[0.5, 0.5, 0.5]` half-extent default per object.
+
+## Death
+
+Resolved **once** by the engine when the last stat in the receive order hits min. No HP polling in `onTick`, ever.
+
+- `entity.died` is emitted (before despawn â€” handlers can still read the victim's stats), then reason-matching `onDeath` entries run.
+- `DeathReason = { kind: "player_kill", killerUserId, via? } | { kind: "environment", source } | { kind: "self", source }`. Kills by the local player attribute automatically.
+- `onDeath.drops` tables are rolled and **granted to the killer** on player kills (emits `loot.granted`) when `onDeath.dropMode` is `"grant"` (default); `onDeath.command` runs through `ctx.game.commands`.
+- `onDeath.dropMode: "world"` routes item drops through a scatter impulse into ground `worldItem`s instead of straight to inventory (currency drops still grant directly) â€” tune the impulse with `onDeath.scatter: { radius, minRadius?, height? }` (defaults from `game/worldItem`'s `DEFAULT_SCATTER`).
+- Respawning under the same instance id revives it (it can die again). Same-id respawn must not happen synchronously inside the `entity.died` handler â€” defer a tick.
+- `quest.bind("entity.died")` credits kill objectives from the same event; leaderboards and kill feeds hang off it too.
+
+## Combat feel (melee, defense, telegraphs)
+
+Layered on top of effects/projectiles/death â€” none of it replaces them, it adds **feel**. All models are renderer-free pure `@jgengine/core` factories a game composes per entity (like the `ctx`-vs-factory split above); the shell renders the telegraphs, styled damage numbers, hitstop shake.
+
+- **Animation state machine** (`combat/animationState`) is the root the rest hangs on. A `AnimationClip` is catalog data â€” `{ frames, fps, ranges }` where each `FrameRange` tags a window `windup | active | recovery | cancel` (cancel may overlap recovery). `createAnimationState({ clips })` gives a per-entity SM: `play(clipId)`, `tick(dt)` â†’ `{ entered, exited, completed }`, and queries combat/defense subscribe to â€” `inPhase("active")`, `isActive()`, `canCancel()`, `activeWindowMs()`. Frame ranges are the "commit frame" contract for delayed/feinted attacks.
+- **Attack tags** (`combat/attackTags`) â€” `attackMeta(["unblockable" | "thrust" | "sweep" | "grab" | â€¦], { effect, power })`. Defense logic reads them: `isBlockable`, `isParryable`, `isDodgeable`, `counters(meta, "mikiri")`. A grab beats all defenses; an unblockable is parry/dodge-only.
+- **Defensive window** (`combat/defensiveWindow`) â€” a parry/block/dodge with `{ startupMs, activeMs, recoveryMs, iframes }`. `resolveDefense({ config, elapsedMs, attack })` is the pure overlap of the defender's window against the moment the attacker's `active` frames land â†’ `parry | block | iframe | hit`. `createDefensiveWindow(config)` tracks the open time (`open(now)` / `evaluate(now, attack)` / `isInvulnerable(now)`).
+- **Combo strings** (`combat/comboString`) â€” `ComboStep`s with `cancelInto` + `cancelPhases` + optional `stance`, over the anim SM. `advanceCombo(...)` (pure) accepts the next attack only inside the current step's cancel window and matching stance; `createComboRunner(combo, anim)` drives the SM.
+- **Meters share one accumulator** (`stats/accumulatorMeter`) â€” `createAccumulatorMeter({ max, mode: "hold" | "reset", decayPerSecond, decayDelayMs, tiers })`: fill via `add(n)` â†’ `MeterAddResult { fired, overflow, tier, tierChanged }`, `tick(dt)` decays after an idle grace. `combat/breakMeters` builds two on it: `createStaggerMeter` (mode `hold` â€” fills from hits, `broke()` stays true until `recover()` after a riposte/deathblow) and `createBuildupMeter` (mode `reset` â€” `add(n)` returns a `BuildupProc { status, durationMs }` at threshold for bleed/frost/rot, then decays). The same base backs G6's ult/streak meters.
+- **Dash / dodge** (`movement/dash`) â€” `createDashState({ distance, durationMs, iframes, staminaCost, staminaMax, staminaRegenPerSecond, cooldownMs })`: `tryDash(dir, now)` â†’ burst or `{ reason: "no-stamina" | "cooldown" | "dashing" }`, `isInvulnerable(now)` for the i-frame window, `offset(now)` for the burst displacement, `tick(dt, now)` regens stamina.
+- **Hit reaction** (`combat/hitReaction`) â€” `resolveHitReaction(config, { attackerPos, targetPos, power })` (pure) â†’ `{ hitstopMs, impulse, shake }`. Wired on `ctx`: `ctx.scene.entity.hitReaction({ from, to, config, power? })` knocks the target back and emits `combat.hitReaction` (the shell reads `shake` for a trauma channel â€” feeds a G2 camera-shake rig when present, else the shell's own kick).
+- **Telegraph** (`combat/telegraph`) â€” a `TelegraphShape` (`circle | ring | cone | line`) + `windupMs`. `ctx.scene.entity.telegraph({ from, shape, at, dir?, windupMs, kind?, effect? })` emits `combat.telegraph` for the shell to draw a ground decal that fills over the windup, and â€” if `effect` is bound â€” applies that effect to everyone inside the shape (`pointInTelegraph`) at activation. Returns a cancel handle. **Turn-scoped variant**, for tactics/turn-based enemy intents instead of a real-time windup: set `TelegraphConfig.turns` (a count of turns instead of `windupMs`), then read `telegraphTurnProgress(config, startedTurn, currentTurn)` (0..1 fill fraction), `telegraphFiredAtTurn(config, startedTurn, currentTurn)` (has it resolved), and `telegraphTurnsRemaining(config, startedTurn, currentTurn)` â€” the same "enemy will hit this tile" decal, advanced by `turnLoop.round()`/`active()` instead of a clock.
+- **Damage-number typing** â€” `ctx.scene.entity.floatText({ â€¦, crit?, element?, hitType?, scale? })` (and the `entity.floatText` event) carry hit metadata; the shell's `resolveFloatTextStyle` (`@jgengine/shell/world/floatTextStyle`) maps crit/element to color + scale + glow.
+
+## Abilities, resources, auto-target, resistance, run drafts
+
+Genre systems layered over the same effects/projectiles/targeting/loot primitives â€” all renderer-free pure `@jgengine/core` factories a game holds per player and ticks on **game-time** `dt` (so pause/fast-forward carry through). The ability kit is deliberately **separate from inventory items**: an item is a stackable id, an ability slot is cooldown/charge/resource state the HUD's four slot-states bind to.
+
+- **Ability kit** (`combat/abilityKit`) â€” `createAbilityKit([{ id, cooldownMs, chargesMax?, resourceCost?, castType?, flashMs? }])`. `state(id, resourceAvailable?)` â†’ `AbilitySlotSnapshot { state: "ready" | "cooldown" | "no-resource" | "just-cast", charges, chargesMax, cooldownRemainingMs, cooldownFraction, justCast, ready }`; `cast(id, resourceAvailable?)` consumes a charge, starts the recharge, and flashes just-cast; `canCast` / `tick(dt)` / `reset` / `retuneSlot(id, { cooldownMs?, resourceCost? })` (rebalance a slot at runtime â€” patches the config in place without touching charges or an in-flight cooldown timer, returns `false` for an unknown slot). The kit is resource-**agnostic** â€” it reports `no-resource` by comparing `resourceCost` to a supplied `resourceAvailable` (a mana stat, or an ult meter), and never spends the resource itself; the game's handler spends it and calls `cast`. Charges recharge one at a time; the four states drive the hotbar slot art. Cooldowns tick on `dt`, so hang `kit.tick(dt)` in `onTick`.
+- **Event-fed meters** (`stats/eventMeter`, built on `stats/accumulatorMeter`) â€” `createEventMeter({ max, mode, gains, resets?, tiers?, decayPerSecond? })`. `feed(tag, scale?)` maps a tagged combat event to a gain (or a reset when `tag âˆˆ resets`) â†’ `EventMeterFeedResult { fired, ready, tier, tierChanged, reset }`. Mode `"hold"` is the **ult/adrenaline** economy â€” charges off `{ damageDealt, damageTaken, kill }` events, `ready()` at full, `consume()` spends it (Overwatch/Marvel Rivals). Mode `"reset"` is the **streak/combo** meter â€” builds on `kill`, resets on a break tag like `damageTaken`, climbs ascending `tiers` (Returnal adrenaline, DMC style rank). One primitive, two catalog configs.
+- **Auto-target policy** (`scene/autoTarget`) â€” `selectAutoTarget(policy, fromId, deps)` / `createAutoTargeter(policy, deps)` evaluated each tick with zero input: `"nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last"`. `deps` supplies `candidates`/`distance` and optional `strength` (health/threat) + `progress` (path progress for first/last-on-path). Bullet-heaven auto-fire (Vampire Survivors nearest), Bloons tower priority (first/last on path). Feed the picked id to `abilityKit.cast` + `effect`.
+- **Resistance matrix** (`combat/resistance`) â€” a damage-category Ã— target-property table distinct from `combat/attackTags` (those are defense tags). `resolveResistance(matrix, category, targetProperties)` â†’ `{ verdict: "immune" | "resist" | "normal" | "vulnerable", multiplier, immune }`; `resistanceScale` returns just the multiplier (default `immune:0, resist:0.5, normal:1, vulnerable:2`, overridable). Immune on any property wins; resists stack multiplicatively. Sits over the `receive` gate â€” the handler multiplies its effect `amount` by the scale (Bloons lead/camo immunities, elemental RPG weaknesses).
+- **Run draft** (`game/runDraft`, built on `world/scatterItems` `pickWeighted` + `stats/statModifiers`) â€” `createRunModifierStack(offers)` accumulates stacking picks (`add`, `count`, `atMax`, `total(stat)` aggregating adds Ã— exponentiated multiplies, `apply(stats)` onto a `createStats` source). `createRunDraft({ offers, rng? })` adds the pause-flow: `present(n)` draws N distinct weighted offers (excluding maxed-out ones), `choose(id)` applies to the stack. Pause/resume is game-side (`ctx.time.pause()` before `present`, `play()` after `choose`). Vampire Survivors level-up picks, Hades boons, Risk of Rain stacking items.
+
+
