@@ -1,6 +1,6 @@
 ---
 name: jgengine-ui
-description: Game presentation and interface direction for HUDs, menus, touch controls, motion, feedback, accessibility, and visual verification.
+description: Game-first HUDs, menus, touch controls, motion, accessibility, art direction, and visual verification.
 ---
 
 # jgengine-ui
@@ -23,12 +23,22 @@ Before shipping UI:
 6. Add purposeful motion and feedback.
 7. Capture screenshots and revise what actually renders.
 
-The full quality bar, forbidden patterns, layout rules, and verification checklist are in **[reference.md](reference.md)** and are mandatory.
+## Ownership boundary
 
-## Separation of responsibilities
+The main `jgengine` skill owns intake, engine architecture, API routing, hooks, commands, state, and verification routing. This skill owns presentation quality.
 
-- `jgengine`: intake, project shape, engine APIs, hooks, input commands, shell integration, and routing to this skill.
-- `jgengine-ui`: art direction, composition, visual hierarchy, interaction presentation, responsive game layouts, touch-control treatment, and visual acceptance criteria.
-- `jgengine-verify`: final proof, screenshots, and runtime checks after implementation.
+Read [reference.md](reference.md) when building or reviewing a game interface. It contains the implementation quality bar, layout rules, art-direction template, touch-control requirements, acceptance criteria, and the compact existing React API surface.
 
-Do not create additional UI skills to solve ordinary presentation work. Improve the game UI and this skill instead.
+## Non-negotiable defaults
+
+- Active play owns the viewport; no marketing header, page title bar, document scrolling, or website container.
+- Screen placement belongs in the game's `ui/GameUI.tsx` composition layer.
+- Persistent gameplay information is frameless unless a physical/diegetic frame is part of the game's art direction.
+- Instructions are contextual and temporary, not permanent keyboard grids.
+- Mobile controls share input mechanics but not one universal visual skin.
+- Themes change geometry, composition, typography roles, icons, motion, materials, sound, and density—not only colors.
+- Ordinary rounded cards, pill buttons, generic dark modals, and dashboard grids are fallback failures, not defaults.
+
+## Rejection test
+
+Reject and revise the UI when it could be mistaken for a SaaS dashboard, landing page, admin panel, documentation page, or generic emulator overlay.
