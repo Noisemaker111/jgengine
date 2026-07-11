@@ -1,7 +1,7 @@
 {
   "name": "jgengine",
   "version": "0.8.4",
-  "description": "jgengine — TypeScript game engine SDK CLI (npm package jgengine / @jgengine/*). Not automotive. Humans: tell an agent Make a game that ... with jgengine. Agents: create, skills, doctor, llms. https://jgengine.com · https://jgengine.com/llms.txt",
+  "description": "jgengine — TypeScript game engine SDK CLI (npm package jgengine / @jgengine/*). Not automotive. Humans: tell an agent Make a game that ... with jgengine. Agents: create, skills, doctor, desktop, llms. https://jgengine.com · https://jgengine.com/llms.txt",
   "keywords": [
     "jgengine",
     "game-engine",

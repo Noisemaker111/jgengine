@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 import { runCreate } from "../create";
+import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
 import { cliVersion, findUp, readPackageJson } from "../pkg";
 import { runSkills } from "../skills";
@@ -29,6 +30,8 @@ usage: jgengine <command> [...args]
   create "<Game Name>"  scaffold playable base + install agent skills into the project
                         folder My-Game-Name; name → game.config / HUD / title
                         [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]
+  desktop [dir]         ship a Windows NSIS installer (local project or --url https://…)
+                        [--url] [--name] [--id] [--version] [--icon] [--out] [--dry-run]
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
   llms [package]        print packaged API docs (llms.txt) — agent-ready
@@ -93,6 +96,9 @@ const [command, ...rest] = process.argv.slice(2);
 switch (command) {
   case "create":
     process.exit(runCreate(rest));
+    break;
+  case "desktop":
+    runDesktop(rest);
     break;
   case "doctor":
     process.exit(runDoctor(rest));
