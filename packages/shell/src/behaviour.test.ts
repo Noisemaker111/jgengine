@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { Object3D } from "three";
-import { createBehaviourWorld } from "@jgengine/core/behaviour/behaviour";
-import { attachObject3D, Object3DBehaviour } from "./behaviour";
+import { Behaviour, createBehaviourWorld } from "@jgengine/core/behaviour/behaviour";
+import { createBehaviourWorldDriver } from "./behaviourDriver";
+import { attachObject3D, Object3DBehaviour } from "./behaviourAttach";
 
 class RenderProbe extends Object3DBehaviour {
   calls: string[] = [];
@@ -88,5 +89,41 @@ describe("attachObject3D", () => {
     attachObject3D(world, new Object3D(), new Ticker(), "ticker");
     world.update(0.5);
     expect(seen).toEqual([0.5]);
+  });
+});
+
+describe("createBehaviourWorldDriver", () => {
+  test("starts the world once and stops driving updates on stop", () => {
+    const world = createBehaviourWorld();
+    const seen: number[] = [];
+    class Ticker extends Behaviour {
+      override onUpdate(dt: number): void {
+        seen.push(dt);
+      }
+    }
+    world.attach("root", new Ticker());
+    const driver = createBehaviourWorldDriver(world);
+    expect(world.started()).toBe(false);
+    driver.start();
+    expect(world.started()).toBe(true);
+    expect(driver.isRunning()).toBe(true);
+    driver.step(0.16);
+    expect(seen).toEqual([0.16]);
+    driver.stop();
+    expect(driver.isRunning()).toBe(false);
+    driver.step(0.32);
+    expect(seen).toEqual([0.16]);
+  });
+
+  test("remount-style restart does not double-start the world", () => {
+    const world = createBehaviourWorld();
+    const first = createBehaviourWorldDriver(world);
+    first.start();
+    first.stop();
+    const second = createBehaviourWorldDriver(world);
+    second.start();
+    expect(world.started()).toBe(true);
+    expect(second.isRunning()).toBe(true);
+    expect(first.isRunning()).toBe(false);
   });
 });

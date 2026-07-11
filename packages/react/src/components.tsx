@@ -12,6 +12,9 @@ import type { StatLevelUpEvent } from "@jgengine/core/game/events";
 import { rollCheck, type CheckAdvantage, type CheckResult } from "@jgengine/core/stats/rollCheck";
 import { useGameContext } from "./provider";
 import { useCurrency, useEntityStat, useFeed, useInventory, useLocalPlayerDead } from "./hooks";
+import { paintQteStepDom, paintSkillCheckDom } from "./skillCheckPaint";
+
+export { paintQteStepDom, paintSkillCheckDom } from "./skillCheckPaint";
 
 export function SlotGrid({
   inventoryId,
@@ -250,36 +253,51 @@ export function SkillCheckBar({
   renderStatus?: (result: SkillCheckResult) => ReactNode;
 }) {
   const ctx = useGameContext();
-  const [, tick] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const zoneRef = useRef<HTMLDivElement>(null);
+  const markerRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<SkillCheckResult | null>(null);
+  const statusKeyRef = useRef("");
   useEffect(() => {
     let frame: number;
     const step = () => {
-      tick((n) => n + 1);
+      const elapsed = Math.max(0, ctx.time.now() - startedAt);
+      const result = evaluateSkillCheck(config, elapsed);
+      const root = rootRef.current;
+      const zone = zoneRef.current;
+      const marker = markerRef.current;
+      if (root !== null && zone !== null && marker !== null) {
+        paintSkillCheckDom(root, zone, marker, config, result);
+      }
+      if (renderStatus !== undefined) {
+        const key = `${result.success}:${result.timedOut}:${Math.round(result.markerPosition)}`;
+        if (key !== statusKeyRef.current) {
+          statusKeyRef.current = key;
+          setStatus(result);
+        }
+      }
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, []);
-  const elapsed = Math.max(0, ctx.time.now() - startedAt);
-  const result = evaluateSkillCheck(config, elapsed);
-  const zoneLeft = (result.zone.start / config.trackWidth) * 100;
-  const zoneWidth = ((result.zone.end - result.zone.start) / config.trackWidth) * 100;
-  const markerLeft = (result.markerPosition / config.trackWidth) * 100;
+  }, [ctx, config, startedAt, renderStatus]);
   return (
-    <div className={className} data-skill-check data-in-zone={result.success} data-timed-out={result.timedOut}>
+    <div ref={rootRef} className={className} data-skill-check data-in-zone="false" data-timed-out="false">
       <div className={trackClassName} data-track style={{ position: "relative" }}>
         <div
+          ref={zoneRef}
           className={zoneClassName}
           data-zone
-          style={{ position: "absolute", left: `${zoneLeft}%`, width: `${zoneWidth}%`, height: "100%" }}
+          style={{ position: "absolute", left: "0%", width: "0%", height: "100%" }}
         />
         <div
+          ref={markerRef}
           className={markerClassName}
           data-marker
-          style={{ position: "absolute", left: `${markerLeft}%`, height: "100%" }}
+          style={{ position: "absolute", left: "0%", height: "100%" }}
         />
       </div>
-      {renderStatus?.(result)}
+      {renderStatus !== undefined && status !== null ? renderStatus(status) : null}
     </div>
   );
 }
@@ -300,38 +318,43 @@ export function QteTrack({
   doneClassName?: string;
 }) {
   const ctx = useGameContext();
-  const [, tick] = useState(0);
+  const stepRefs = useRef(new Map<string, HTMLElement>());
   useEffect(() => {
     let frame: number;
     const step = () => {
-      tick((n) => n + 1);
+      const elapsed = Math.max(0, ctx.time.now() - startedAt);
+      const active = pendingQteStep(steps, elapsed);
+      paintQteStepDom(
+        stepRefs.current,
+        steps,
+        elapsed,
+        active?.id ?? null,
+        stepClassName,
+        activeClassName,
+        doneClassName,
+      );
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, []);
-  const elapsed = Math.max(0, ctx.time.now() - startedAt);
-  const active = pendingQteStep(steps, elapsed);
+  }, [ctx, steps, startedAt, stepClassName, activeClassName, doneClassName]);
   return (
     <div className={className} data-qte>
-      {steps.map((step) => {
-        const isActive = active?.id === step.id;
-        const isDone = elapsed > step.windowEnd;
-        const classes = [stepClassName, isActive ? activeClassName : isDone ? doneClassName : undefined]
-          .filter(Boolean)
-          .join(" ");
-        return (
-          <div
-            key={step.id}
-            className={classes.length > 0 ? classes : undefined}
-            data-qte-step={step.id}
-            data-active={isActive}
-            data-done={isDone}
-          >
-            {step.action}
-          </div>
-        );
-      })}
+      {steps.map((step) => (
+        <div
+          key={step.id}
+          ref={(node) => {
+            if (node === null) stepRefs.current.delete(step.id);
+            else stepRefs.current.set(step.id, node);
+          }}
+          className={stepClassName}
+          data-qte-step={step.id}
+          data-active="false"
+          data-done="false"
+        >
+          {step.action}
+        </div>
+      ))}
     </div>
   );
 }

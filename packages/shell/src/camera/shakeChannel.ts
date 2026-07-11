@@ -1,42 +1,12 @@
 import { createContext, useContext } from "react";
 
-import { addTrauma, createTrauma, shakeOffset, stepTrauma, type ShakeOffset, type TraumaState } from "./rigMath";
+import {
+  createCameraShakeChannel,
+  type CameraShakeChannel,
+} from "./shakeChannelMath";
 
-export interface CameraShakeChannel {
-  /**
-   * Add a trauma impulse. `amplitude` is a 0..1 fraction (1 = a full boss slam);
-   * `decayPerSecond` optionally overrides how fast this and subsequent trauma
-   * bleed off. Any gameplay system (combat hitstop, explosions, vehicle crashes)
-   * can call this — the active rig reads the resulting shake every frame.
-   */
-  shake(amplitude: number, decayPerSecond?: number): void;
-  /** Advance decay + the shake clock (called once per frame by the mounted rig). */
-  step(dt: number): void;
-  /** Current positional + roll shake for the given tuning. */
-  sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset;
-  /** Live trauma in [0,1] (for HUD/debug). */
-  trauma(): number;
-}
-
-export function createCameraShakeChannel(defaultDecayPerSecond = 1.6): CameraShakeChannel {
-  const state: TraumaState = createTrauma();
-  let decay = defaultDecayPerSecond;
-  return {
-    shake(amplitude, decayPerSecond) {
-      if (decayPerSecond !== undefined) decay = decayPerSecond;
-      addTrauma(state, amplitude);
-    },
-    step(dt) {
-      stepTrauma(state, decay, dt);
-    },
-    sample(config) {
-      return shakeOffset(state, config);
-    },
-    trauma() {
-      return state.trauma;
-    },
-  };
-}
+export type { CameraShakeChannel } from "./shakeChannelMath";
+export { createCameraShakeChannel } from "./shakeChannelMath";
 
 /**
  * Process-wide default channel. A shell mounts its own channel via

@@ -3,12 +3,13 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { createWeatherQuadGeometry } from "./weatherGeometry";
-import { resolveWeatherInstanceCount } from "./weatherMath";
+import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms";
 
 export interface RainFieldProps {
   count?: number;
   density?: number;
+  budget?: number;
   volume?: WeatherVector;
   wind?: WeatherVector;
   origin?: WeatherVector;
@@ -22,6 +23,7 @@ export interface RainFieldProps {
   timeScale?: number;
   seed?: number;
   renderOrder?: number;
+  frustumCulled?: boolean;
 }
 
 const DEFAULT_VOLUME: WeatherVector = [56, 42, 56];
@@ -29,8 +31,9 @@ const DEFAULT_ORIGIN: WeatherVector = [0, 0, 0];
 const DEFAULT_RAIN_COLOR = "#b8c4d8";
 
 export function RainField({
-  count = 8000,
-  density = 0.45,
+  count = DEFAULT_RAIN_COUNT,
+  density = DEFAULT_RAIN_DENSITY,
+  budget,
   volume = DEFAULT_VOLUME,
   wind,
   origin = DEFAULT_ORIGIN,
@@ -44,6 +47,7 @@ export function RainField({
   timeScale,
   seed = 11939,
   renderOrder = 10,
+  frustumCulled,
 }: RainFieldProps) {
   const { camera } = useThree();
   const shared = useWeatherUniformSet({ wind, lightning, timeScale });
@@ -133,7 +137,7 @@ export function RainField({
     uniforms.uWidth.value = width;
     uniforms.uOpacity.value = opacity;
     (uniforms.uColor.value as THREE.Color).set(color);
-    geometry.instanceCount = resolveWeatherInstanceCount(count, density);
+    geometry.instanceCount = resolveWeatherInstanceCount(count, density, budget);
   });
 
   useEffect(
@@ -144,5 +148,12 @@ export function RainField({
     [geometry, material],
   );
 
-  return <mesh geometry={geometry} material={material} frustumCulled={false} renderOrder={renderOrder} />;
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      frustumCulled={frustumCulled ?? !followCamera}
+      renderOrder={renderOrder}
+    />
+  );
 }

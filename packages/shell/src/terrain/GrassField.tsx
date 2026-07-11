@@ -4,10 +4,18 @@ import { useEffect, useMemo } from "react";
 import { createGrassBladeGeometry, type GrassBladeGeometryOptions, type GrassRange } from "./grassGeometry";
 import { createGrassMaterial, type GrassMaterialOptions, type GrassWindOptions } from "./grassMaterial";
 import type { TerrainArea, TerrainHeightSampler } from "./terrainMath";
+import {
+  DEFAULT_GRASS_COUNT,
+  DEFAULT_GRASS_DENSITY,
+  resolveGrassInstanceBudget,
+} from "./grassBudget";
+
+export { DEFAULT_GRASS_COUNT, DEFAULT_GRASS_DENSITY, resolveGrassInstanceBudget } from "./grassBudget";
 
 export interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
   count?: number;
   density?: number;
+  budget?: number;
   area?: TerrainArea;
   seed?: GrassBladeGeometryOptions["seed"];
   segments?: number;
@@ -23,8 +31,9 @@ export interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "c
 }
 
 export function GrassField({
-  count = 6000,
-  density = 1,
+  count = DEFAULT_GRASS_COUNT,
+  density = DEFAULT_GRASS_DENSITY,
+  budget,
   area = 40,
   seed = 1,
   segments = 4,
@@ -39,7 +48,7 @@ export function GrassField({
   roughness,
   castShadow = false,
   receiveShadow = true,
-  frustumCulled = false,
+  frustumCulled = true,
   ...meshProps
 }: GrassFieldProps) {
   const geometry = useMemo(
@@ -68,7 +77,7 @@ export function GrassField({
     [colorBase, colorTip, colorVariation, roughness, wind],
   );
 
-  geometry.instanceCount = Math.floor(Math.max(0, Math.min(1, density)) * count);
+  geometry.instanceCount = resolveGrassInstanceBudget(count, density, budget);
 
   useFrame((state) => {
     handle.uniforms.uTime.value = state.clock.elapsedTime;

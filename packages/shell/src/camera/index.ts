@@ -34,6 +34,12 @@ export {
   type RigProps,
 } from "./cameraRigs";
 export {
+  applyCameraBlendStep,
+  captureCameraBlendFrom,
+  createCameraBlendScratch,
+  type CameraBlendScratch,
+} from "./cameraBlendMath";
+export {
   CameraShakeContext,
   cameraShake,
   createCameraShakeChannel,

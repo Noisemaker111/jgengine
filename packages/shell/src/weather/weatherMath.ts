@@ -1,3 +1,8 @@
+export const DEFAULT_RAIN_COUNT = 2000;
+export const DEFAULT_SNOW_COUNT = 1500;
+export const DEFAULT_RAIN_DENSITY = 0.45;
+export const DEFAULT_SNOW_DENSITY = 0.5;
+
 export function clampWeatherRatio(value: number): number {
   if (!Number.isFinite(value)) return 0;
   if (value <= 0) return 0;
@@ -5,9 +10,10 @@ export function clampWeatherRatio(value: number): number {
   return value;
 }
 
-export function resolveWeatherInstanceCount(maxCount: number, density: number): number {
+export function resolveWeatherInstanceCount(maxCount: number, density: number, budget?: number): number {
   const safeMax = Math.max(0, Math.floor(maxCount));
-  return Math.floor(safeMax * clampWeatherRatio(density));
+  const capped = budget === undefined ? safeMax : Math.min(safeMax, Math.max(0, Math.floor(budget)));
+  return Math.floor(capped * clampWeatherRatio(density));
 }
 
 export interface WeatherSeedAttributes {
