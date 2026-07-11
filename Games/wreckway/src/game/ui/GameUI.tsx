@@ -1,4 +1,5 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { RUN_STORE_KEY, type RunSession, type SessionSnapshot } from "../run/session";
@@ -32,6 +33,7 @@ export function GameUI() {
             <CompactorBar snapshot={snapshot} />
           </div>
           <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+            <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded border border-[#8d99a6]/40 bg-[#1c1a17]/85 text-[#f0c419] transition hover:bg-[#8d99a6]/20" />
             <CorridorMinimap snapshot={snapshot} />
             <KartDiagram snapshot={snapshot} />
           </div>

@@ -1,32 +1,48 @@
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createRecordBook, type RecordStorage } from "@jgengine/core/game/recordBook";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { GLIDER_GHOST_ENTITY, GLIDER_PACER_ENTITY, GLIDER_PLAYER_ENTITY } from "./game/entities/gliders/catalog";
 import { fanSpoolState } from "./game/flight/fanSchedule";
-import { createRaceSession, PACER_RACER_ID, RECORD_BOOK_KEY, RECORD_FIELDS, SESSION_STORE_KEY, type RaceSession } from "./game/race/session";
+import { createRaceSession, PACER_RACER_ID, RECORD_BOOK_KEY, RECORD_FIELDS, SESSION_STORE_KEY, type RaceSession, type RacePhase } from "./game/race/session";
 import { FANS, SPAWN_HEADING, SPAWN_POSITION } from "./game/race/route";
 import { placeCityProps, syncFanRotors } from "./game/world/setup";
 
 const GHOST_SPAWNED_KEY = "ghostSpawned";
+const PREVIOUS_PHASE_KEY = "previousRacePhase";
 export const GHOST_RACER_ID = "ghost";
 
 function browserStorage(): RecordStorage | null {
   return typeof localStorage === "undefined" ? null : localStorage;
 }
 
+function syncPhase(ctx: GameContext, phase: RacePhase): void {
+  ctx.game.store.set(PREVIOUS_PHASE_KEY, phase);
+  setGamePhase(ctx, phase === "racing" ? "playing" : phase === "finished" ? "ended" : "menu");
+}
+
 export function onInit(ctx: GameContext): void {
   const session = createRaceSession(createRecordBook({ key: RECORD_BOOK_KEY, fields: RECORD_FIELDS, storage: browserStorage() }));
   ctx.game.store.set(SESSION_STORE_KEY, session);
   ctx.game.store.set(GHOST_SPAWNED_KEY, false);
+  syncPhase(ctx, "start");
 
   if (!ctx.game.commands.has("start")) {
     ctx.game.commands.define("start", {
-      apply: (state) => (state.game.store.get(SESSION_STORE_KEY) as RaceSession | undefined)?.start(),
+      apply: (state) => {
+        const session = state.game.store.get(SESSION_STORE_KEY) as RaceSession | undefined;
+        session?.start();
+        if (session !== undefined) syncPhase(state, session.snapshot().phase);
+      },
     });
   }
   if (!ctx.game.commands.has("restart")) {
     ctx.game.commands.define("restart", {
-      apply: (state) => (state.game.store.get(SESSION_STORE_KEY) as RaceSession | undefined)?.restart(),
+      apply: (state) => {
+        const session = state.game.store.get(SESSION_STORE_KEY) as RaceSession | undefined;
+        session?.restart();
+        if (session !== undefined) syncPhase(state, session.snapshot().phase);
+      },
     });
   }
   if (!ctx.game.commands.has("dodge")) {
@@ -84,6 +100,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   const session = ctx.game.store.get(SESSION_STORE_KEY) as RaceSession | undefined;
   if (session === undefined) return;
 
+  const previousPhase = ctx.game.store.get(PREVIOUS_PHASE_KEY) as RacePhase;
   const mouse = ctx.input.pointer() ?? { x: 0, y: 0 };
   session.tick(
     dt,
@@ -100,6 +117,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   );
 
   const snapshot = session.snapshot();
+  if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
   ctx.scene.entity.setPose(ctx.player.userId, {
     position: snapshot.playerPose.position,
     rotationY: snapshot.playerPose.heading,

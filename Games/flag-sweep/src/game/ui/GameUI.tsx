@@ -4,6 +4,7 @@ import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 import { useGame } from "@jgengine/react/hooks";
 import { useDisplayProfile } from "@jgengine/react/display";
+import { SettingsTrigger } from "@jgengine/react";
 
 import {
   DIFFICULTIES,
@@ -279,6 +280,9 @@ export function GameUI() {
 
       <HudPanel id="records" anchor="top-right" compact="chip" chip="Records">
         <div className="rounded-xl border border-white/10 bg-slate-900/85 p-3 shadow-xl backdrop-blur">
+          <div className="mb-2 flex items-center justify-end">
+            <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition-colors hover:bg-white/10" />
+          </div>
           <RecordsPanel app={app} run={run} />
         </div>
       </HudPanel>

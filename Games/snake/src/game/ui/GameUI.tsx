@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { useGame } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { SPEEDUP_MS, START_INTERVAL_MS } from "../logic";
 import { snakeStore } from "../store";
@@ -64,6 +65,10 @@ export function GameUI(): ReactNode {
               {snap.streak > 1 ? ` · Streak x${snap.streak}` : ""}
             </div>
           </Card>
+        </HudPanel>
+
+        <HudPanel id="settings" anchor="top-right" compact="keep">
+          <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-lg border border-[#7dffb0]/30 bg-[#04120c]/70 text-[#7dffb0] shadow-[0_0_16px_rgba(0,0,0,0.45)] transition-colors hover:bg-[#7dffb0]/10" />
         </HudPanel>
 
         <HudPanel id="meta" anchor="top-right" compact="chip" chip="Stats">

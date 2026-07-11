@@ -1,10 +1,15 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { GHOST_ENTITY, GHOST_ENTITY_FADED, RUNNER_ENTITY, ghostEntityId } from "./game/entities/catalog";
 import { ghostPositionAt } from "./game/run/ghosts";
 import { freshRunState, stepRun } from "./game/run/runState";
-import { RUN_STORE_KEY, type RunInputState, type RunState } from "./game/run/types";
+import { RUN_STORE_KEY, type RunInputState, type RunPhase, type RunState } from "./game/run/types";
 import { placeTrackProps } from "./game/world/setup";
+
+function syncPhase(ctx: GameContext, phase: RunPhase): void {
+  setGamePhase(ctx, phase === "start" ? "menu" : phase === "running" ? "playing" : "ended");
+}
 
 function readRun(ctx: GameContext): RunState {
   return ctx.game.store.get(RUN_STORE_KEY) as RunState;
@@ -43,6 +48,7 @@ function syncGhostEntities(ctx: GameContext, run: RunState): void {
 export function onInit(ctx: GameContext): void {
   placeTrackProps(ctx);
   ctx.game.store.set(RUN_STORE_KEY, freshRunState(null, "start", ctx.time.now()));
+  syncPhase(ctx, "start");
 }
 
 export function onNewPlayer(ctx: GameContext): void {
@@ -60,6 +66,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   const input = sampleInput(ctx);
   const { state } = stepRun(run, input, dt, ctx.time.now());
   ctx.game.store.set(RUN_STORE_KEY, state);
+  if (state.phase !== run.phase) syncPhase(ctx, state.phase);
 
   ctx.scene.entity.setPose(ctx.player.userId, {
     position: [state.position.x, state.position.y, state.position.z],

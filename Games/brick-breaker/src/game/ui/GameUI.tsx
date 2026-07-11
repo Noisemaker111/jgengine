@@ -1,6 +1,7 @@
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { useGame } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { brickBreakerStore } from "../breakout/store";
 import { Hud } from "./components/Hud";
@@ -28,13 +29,16 @@ export function GameUI() {
           <div className="min-w-0">
             <Hud snapshot={snapshot} compact={compact} />
           </div>
-          <button
-            type="button"
-            onClick={togglePause}
-            className="min-h-10 border border-cyan-300/45 bg-[#071429]/80 px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] transition hover:border-cyan-200 hover:bg-cyan-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200 active:scale-[0.96]"
-          >
-            {paused ? "Resume" : "Pause"}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <SettingsTrigger className="shrink-0 flex h-8 w-8 items-center justify-center rounded-md border border-white/15 bg-white/5 text-slate-200 transition hover:bg-white/15" />
+            <button
+              type="button"
+              onClick={togglePause}
+              className="min-h-10 border border-cyan-300/45 bg-[#071429]/80 px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] transition hover:border-cyan-200 hover:bg-cyan-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200 active:scale-[0.96]"
+            >
+              {paused ? "Resume" : "Pause"}
+            </button>
+          </div>
         </header>
 
         <div className="relative mt-2 min-h-0 flex-1 border-x-2 border-t-2 border-violet-500/55 bg-[#06051b] shadow-[0_0_40px_rgba(76,29,149,0.38),inset_0_0_38px_rgba(34,211,238,0.04)]">

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 
+import { SettingsTrigger } from "@jgengine/react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
@@ -73,11 +74,14 @@ export function GameUI(): ReactNode {
         </HudPanel>
 
         <HudPanel id="wave" anchor="top-right" compact="chip" chip="Wave">
-          <div style={{ ...CARD, textAlign: "right" }}>
-            <Label>Wave</Label>
-            <div className="text-2xl font-black leading-none" style={{ color: "#bfe0ff", textShadow: GLOW }}>
-              {snap.wave}
+          <div style={{ ...CARD, display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ textAlign: "right" }}>
+              <Label>Wave</Label>
+              <div className="text-2xl font-black leading-none" style={{ color: "#bfe0ff", textShadow: GLOW }}>
+                {snap.wave}
+              </div>
             </div>
+            <SettingsTrigger className="flex h-7 w-7 items-center justify-center rounded-md border border-[rgba(150,190,255,0.35)] text-[#bfe0ff] transition-colors hover:bg-[rgba(150,190,255,0.12)]" />
           </div>
         </HudPanel>
 

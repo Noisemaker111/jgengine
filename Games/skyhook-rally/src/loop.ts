@@ -1,3 +1,4 @@
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createMarkerSet } from "@jgengine/core/world/markers";
 
@@ -6,7 +7,15 @@ import { CLOUD_TRIGGER_Y, type Archipelago } from "./game/world/archipelago";
 import { beginCourse, registerCommands, settleFlight } from "./game/runtime/commands";
 import { getBridge, resetBridge } from "./game/runtime/bridge";
 import { storeGet, storeSet } from "./game/runtime/store";
-import { applyCheckpoint, applyFinish, applyRespawnPenalty, applyTimeCap, initialSession, type SessionState } from "./game/session/sessionState";
+import {
+  applyCheckpoint,
+  applyFinish,
+  applyRespawnPenalty,
+  applyTimeCap,
+  initialSession,
+  type GamePhase as SessionPhase,
+  type SessionState,
+} from "./game/session/sessionState";
 import type { CourseDef } from "./game/world/courses";
 import { spawnPoseId } from "./game/world/spawnIds";
 import { archipelago, courses } from "./world";
@@ -14,10 +23,15 @@ import type { RaceState } from "@jgengine/core/game/race";
 import type { SpawnPoints } from "@jgengine/core/game/spawnPoints";
 import type { MarkerSet } from "@jgengine/core/world/markers";
 
+function syncPhase(ctx: GameContext, phase: SessionPhase): void {
+  setGamePhase(ctx, phase === "playing" ? "playing" : phase === "menu" ? "menu" : "ended");
+}
+
 export function onInit(ctx: GameContext): void {
   resetBridge();
   storeSet<SessionState>(ctx, "session", initialSession(courses[0]!.id));
   storeSet<Archipelago>(ctx, "archipelago", archipelago);
+  syncPhase(ctx, "menu");
 
   const markers = createMarkerSet(() => ctx.time.now());
   archipelago.islets.forEach((islet) => {
@@ -50,6 +64,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   void dt;
   const session = storeGet<SessionState>(ctx, "session");
   if (session === undefined) return;
+  syncPhase(ctx, session.phase);
   const bridge = getBridge();
   bridge.input.steer = (ctx.input.isDown("steerRight") ? 1 : 0) - (ctx.input.isDown("steerLeft") ? 1 : 0);
   bridge.input.pitch = (ctx.input.isDown("pitchUp") ? 1 : 0) - (ctx.input.isDown("pitchDown") ? 1 : 0);
@@ -91,7 +106,10 @@ export function onTick(ctx: GameContext, dt: number): void {
     if (elapsed > course.totalTimeCapSeconds) nextSession = applyTimeCap(nextSession, now);
   }
 
-  if (nextSession !== session) storeSet(ctx, "session", nextSession);
+  if (nextSession !== session) {
+    storeSet(ctx, "session", nextSession);
+    syncPhase(ctx, nextSession.phase);
+  }
 }
 
 export { beginCourse };

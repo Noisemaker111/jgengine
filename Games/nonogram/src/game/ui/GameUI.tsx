@@ -1,5 +1,6 @@
 import { useGame } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { SettingsTrigger } from "@jgengine/react";
 import type { CSSProperties } from "react";
 import { puzzleById } from "../puzzles/catalog";
 import { Board } from "./components/Board";
@@ -53,6 +54,9 @@ export function GameUI() {
       <HudCanvas layout={layout} editChord={false} className="select-none">
         {playing && puzzle !== undefined && (
           <>
+            <HudPanel id="settings" anchor="top-right" compact="keep">
+              <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-[14px] border border-[rgba(148,163,184,0.18)] bg-[rgba(15,20,28,0.82)] text-[#e6ecf3] shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-md transition-colors hover:bg-[rgba(30,41,59,0.85)]" />
+            </HudPanel>
             <HudPanel id="stats" anchor="top" compact="keep" interactive={false}>
               <div style={panelWrap}>
                 <Stats app={app} puzzle={puzzle} />

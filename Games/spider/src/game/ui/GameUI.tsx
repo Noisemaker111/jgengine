@@ -10,6 +10,7 @@ import {
 
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { SettingsTrigger } from "@jgengine/react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
@@ -327,6 +328,7 @@ export function GameUI(): ReactNode {
 
         <HudPanel id="controls" anchor="top-right" compact="chip" chip="Menu">
           <div style={{ ...panelStyle, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", maxWidth: 380 }}>
+            <SettingsTrigger className="flex h-8 w-8 items-center justify-center rounded-[9px] border border-[#cfd3dc]/30 bg-white/[0.06] text-[#cfd3dc] transition-colors hover:bg-white/[0.12]" />
             <div style={{ display: "flex", gap: 3, padding: 2, borderRadius: 9, background: "rgba(255,255,255,0.05)" }}>
               {DIFFICULTIES.map((suits) => (
                 <SegButton key={suits} active={state.suits === suits} onClick={() => commands.run("setDifficulty", { suits })}>

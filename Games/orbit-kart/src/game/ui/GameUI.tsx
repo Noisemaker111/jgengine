@@ -1,4 +1,5 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 import { readSnapshot } from "../race/sessionStore";
 import { AnnouncerTicker, RaceHud } from "./components/RaceHud";
 import { ClusterMinimap } from "./components/ClusterMinimap";
@@ -18,6 +19,7 @@ export function GameUI() {
       {(snapshot.phase === "countdown" || snapshot.phase === "racing") && (
         <>
           <RaceHud snapshot={snapshot} />
+          <SettingsTrigger className="pointer-events-auto absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full border border-[#f5f3ff]/20 bg-[#0a0820]/90 text-[#f5f3ff] shadow-[0_0_30px_rgba(0,0,0,0.55)] backdrop-blur transition hover:bg-[#f5f3ff]/15 sm:right-4 sm:top-4" />
           <ClusterMinimap />
           <AnnouncerTicker snapshot={snapshot} />
           {snapshot.phase === "countdown" && (

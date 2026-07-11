@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useGameClock, useGameStore } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 
 import { dateLabel, seasonOf } from "../calendar";
 import { monarch } from "../people";
@@ -89,6 +89,8 @@ export function GameUI() {
             </button>
           ))}
         </div>
+        <span className="h-4 w-px bg-amber-200/30" />
+        <SettingsTrigger className="flex h-6 w-6 items-center justify-center rounded border border-amber-200/30 text-amber-100/80 hover:bg-amber-200/10" />
       </HudPanel>
       <Credit />
       <ChroniclePanel />

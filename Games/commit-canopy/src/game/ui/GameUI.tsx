@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 import { useEngineState } from "@jgengine/react/engineStore";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 
 import type { ContributionStats, GitHubProfile } from "@jgengine/github";
 import creditAvatar from "../credit-avatar.jpg";
@@ -410,6 +410,10 @@ function GameUIInner() {
 
           <Credit />
         </Sidebar>
+      </HudPanel>
+
+      <HudPanel id="settings" anchor="top-right" compact="keep">
+        <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center border border-[rgba(110,231,183,0.15)] bg-black/80 p-1.5 text-[#34d399] backdrop-blur transition-colors hover:bg-[rgba(52,211,153,0.1)]" />
       </HudPanel>
 
       {hoveredCell !== null && cursor !== null ? (

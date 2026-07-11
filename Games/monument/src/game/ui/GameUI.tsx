@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { SettingsTrigger } from "@jgengine/react";
 
 import {
   activeCharter,
@@ -51,6 +52,10 @@ import { ToolHint } from "./components/ToolHint";
 import { ToolRail } from "./components/ToolRail";
 import { ViewDock } from "./components/ViewDock";
 import { WelcomeModal } from "./components/WelcomeModal";
+import { PANEL } from "./theme";
+
+const SETTINGS_BUTTON =
+  `pointer-events-auto flex h-8 w-8 items-center justify-center text-[14px] text-[#171916] transition hover:bg-[rgba(20,22,18,0.08)] ${PANEL}`;
 
 const TOAST_WRAP =
   "pointer-events-none absolute inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom,0px)+var(--jg-hud-dock-clearance,0px))] flex justify-center px-4";
@@ -108,6 +113,9 @@ export function GameUI(): ReactNode {
   if (focus) {
     return (
       <HudCanvas layout={layout} className="font-mono text-[#171916]">
+        <HudPanel id="settings" anchor="top-right" order={-1} compact="keep">
+          <SettingsTrigger className={SETTINGS_BUTTON} />
+        </HudPanel>
         <HudPanel id="credit" anchor="bottom-left" compact="keep">
           <Credit />
         </HudPanel>
@@ -130,6 +138,10 @@ export function GameUI(): ReactNode {
 
   return (
     <HudCanvas layout={layout} className="font-mono text-[#171916]">
+      <HudPanel id="settings" anchor="top-right" order={-1} compact="keep">
+        <SettingsTrigger className={SETTINGS_BUTTON} />
+      </HudPanel>
+
       <HudPanel id="brand" anchor="top-left" order={1} compact="keep">
         <BrandChip day={day} hour={calendar.hour} minute={calendar.minute} />
       </HudPanel>

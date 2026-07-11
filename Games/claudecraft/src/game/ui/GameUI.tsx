@@ -1,5 +1,6 @@
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 import { useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
 import { ClassSelect } from "./components/ClassSelect";
@@ -41,6 +42,9 @@ export function GameUI() {
         </HudPanel>
         <HudPanel id="zone" anchor="top" inset={{ x: 0, y: 12 }}>
           <ZoneLabel />
+        </HudPanel>
+        <HudPanel id="settings" anchor="top-right" inset={{ x: 16, y: 14 }} order={-1}>
+          <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-stone-700 bg-stone-950/80 text-amber-300 transition hover:border-amber-500 hover:bg-stone-800" />
         </HudPanel>
         <HudPanel id="quests" anchor="top-right" inset={{ x: 16, y: 14 }}>
           <QuestTracker />

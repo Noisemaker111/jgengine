@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useActivePrompt, useGame, useGameStore } from "@jgengine/react/hooks";
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 
@@ -47,6 +48,9 @@ function PlayingHud({ state }: { state: RunState }) {
           <span className="font-mono text-[11px]" style={{ color: "var(--jg-text-dim)" }}>
             {Math.round(distance)}m to Meridaan
           </span>
+        </div>
+        <div className="pointer-events-auto">
+          <SettingsTrigger className="flex h-9 w-9 items-center justify-center border border-[var(--jg-edge)] bg-[var(--jg-surface)] text-[var(--jg-accent)] transition-colors hover:bg-[var(--jg-surface-deep)]" />
         </div>
         <div className="pointer-events-auto">
           <MapPanel

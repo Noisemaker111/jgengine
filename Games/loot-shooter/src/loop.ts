@@ -1,5 +1,6 @@
 import { setPlayControlsActive } from "@jgengine/core/game/controlGate";
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { SOUND_IDS } from "./game/audio/catalog";
 import { registerCommands } from "./game/commands";
@@ -73,6 +74,7 @@ function onInit(ctx: GameContext): void {
   setupWorld(ctx);
   ctx.game.store.set("records", { ...session.records().best() });
   setPlayControlsActive(ctx, false);
+  setGamePhase(ctx, "menu");
 }
 
 function onNewPlayer(ctx: GameContext): void {

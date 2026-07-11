@@ -153,7 +153,7 @@ import type { PlayableGame } from "./registry";
 import { OrientationHint } from "./touch/OrientationHint";
 import { TouchControlsDock, TouchPlaySurface, touchDockClearance } from "./touch/TouchControlsOverlay";
 import { BUILT_IN_SETTING_CATEGORIES } from "@jgengine/core/settings/settingsModel";
-import { SettingsProvider } from "@jgengine/react/settings";
+import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings";
 import { SettingsRuntime } from "./settings/SettingsRuntime";
 import { SettingsChrome } from "./settings/SettingsChrome";
 import { AudioSettingsBridge, useGraphicsSettings } from "./settings/appliedSettings";
@@ -1791,11 +1791,20 @@ export function GamePlayerShell({
   const settingsDisabled = playable.settings === false;
   const settingsConfig: GameSettingsConfig =
     playable.settings === false || playable.settings === undefined ? {} : playable.settings;
-  const settingsSurface = settingsDisabled ? false : settingsConfig.surface ?? "menu";
+  const settingsSurface = settingsDisabled ? false : settingsConfig.surface ?? false;
+  const settingsVariant = settingsConfig.variant ?? "panel";
   const hideCategories = settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? [];
   const fovControlEnabled = !orthographic && playable.camera?.playerFov?.control !== false;
-  const settingsHostsFov =
-    settingsSurface === "menu" && !hideCategories.includes("gameplay") && fovControlEnabled;
+  const settingsHostsFov = !settingsDisabled && !hideCategories.includes("gameplay") && fovControlEnabled;
+  const settingsActions: SettingsActionView[] = settingsDisabled
+    ? []
+    : (settingsConfig.actions ?? []).map((action) => ({
+        id: action.id,
+        label: action.label,
+        kind: action.kind ?? "default",
+        description: action.description,
+        run: () => action.run(ctx),
+      }));
   const touchScale = compact ? 0.88 : 1;
   const dockMounted =
     !poster &&
@@ -1814,14 +1823,16 @@ export function GamePlayerShell({
     <PlayerFovProvider config={playable.camera} orthographic={orthographic}>
     <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={playable.audio?.buses} />
     <SettingsRuntime
-      mode={settingsConfig.mode ?? "overlay"}
+      variant={settingsVariant}
       surface={settingsSurface}
+      actions={settingsActions}
       input={playable.game.input ?? {}}
       buses={playable.audio?.buses}
       extra={settingsConfig.extra ?? []}
       categories={settingsConfig.categories ?? []}
       hide={hideCategories}
       fovEnabled={fovControlEnabled}
+      hideBindings={settingsConfig.hideBindings ?? []}
       overrides={bindingOverrides}
       rebind={rebindAction}
       resetBinding={resetActionBinding}

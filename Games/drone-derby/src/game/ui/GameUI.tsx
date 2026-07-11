@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { SettingsTrigger } from "@jgengine/react";
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 import { CountdownPips } from "@/components/ui/match-timer";
 
@@ -51,7 +52,8 @@ function FlightHud() {
         />
       </div>
 
-      <div className="absolute top-5 right-5">
+      <div className="absolute top-5 right-5 flex flex-col items-end gap-2">
+        <SettingsTrigger className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#3a4048] bg-[#20242b]/90 text-[#9ef01a] transition-colors hover:bg-[#2a2f37]/90" />
         <BatteryColumn
           cells={state.telemetry.batteryCells}
           drawRate={state.telemetry.drawRate}
@@ -60,7 +62,7 @@ function FlightHud() {
         />
       </div>
 
-      <div className="absolute top-24 right-5">
+      <div className="absolute top-36 right-5">
         <DroneMinimap
           center={[state.telemetry.position[0], state.telemetry.position[2]]}
           heading={state.telemetry.heading}

@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
 import { NORMAL_WALK_SPEED, PLAYER_CATALOG_KIND, SERVANT_DOOR_SPAWN, SNEAK_WALK_SPEED } from "./game/entities/player";
 import { ensureCollectiblesPlaced, placeStaticWorld, tickWorld } from "./game/mansion/setup";
@@ -38,17 +39,25 @@ function readUi(ctx: GameContext): HeistUiState {
   return (ctx.game.store.get(UI_KEY) as HeistUiState | undefined) ?? initialUiState();
 }
 
+function syncPhase(ctx: GameContext, status: HeistState["status"]): void {
+  setGamePhase(ctx, status === "playing" ? "playing" : status === "intro" ? "menu" : "ended");
+}
+
 export function onInit(ctx: GameContext): void {
   placeStaticWorld(ctx);
   ensureCollectiblesPlaced(ctx, [], []);
   ctx.game.store.set(HEIST_KEY, initialHeistState());
   ctx.game.store.set(UI_KEY, initialUiState());
+  syncPhase(ctx, "intro");
 
   ctx.game.commands.define("startHeist", {
     apply(state: GameContext) {
       const current = readHeist(state);
       const next = startHeist(current, state.time.now());
-      if (next !== current) writeHeist(state, next);
+      if (next !== current) {
+        writeHeist(state, next);
+        syncPhase(state, next.status);
+      }
       return state;
     },
   });
@@ -58,6 +67,7 @@ export function onInit(ctx: GameContext): void {
       const current = readHeist(state);
       const next = restartHeist(current, state.time.now());
       writeHeist(state, next);
+      syncPhase(state, next.status);
       ensureCollectiblesPlaced(state, next.collectedTreasureIds, next.collectedLootIds);
       state.scene.entity.setPose(state.player.userId, { position: SERVANT_DOOR_SPAWN, rotationY: 0 });
       state.scene.entity.update(state.player.userId, { movement: { walkSpeed: NORMAL_WALK_SPEED } });
@@ -70,7 +80,10 @@ export function onInit(ctx: GameContext): void {
     apply(state: GameContext) {
       const current = readHeist(state);
       const next = attemptExit(current, state.time.now());
-      if (next !== current) writeHeist(state, next);
+      if (next !== current) {
+        writeHeist(state, next);
+        if (next.status !== current.status) syncPhase(state, next.status);
+      }
       return state;
     },
   });
@@ -155,6 +168,7 @@ export function onTick(ctx: GameContext, _dt: number): void {
   if (heist.status === "playing") {
     heist = applyDetectionTick(heist, worldResult.detected, worldResult.source, now);
     heist = applyDawnCheck(heist, now);
+    if (heist.status !== "playing") syncPhase(ctx, heist.status);
   }
 
   if (heist.status === "playing") {

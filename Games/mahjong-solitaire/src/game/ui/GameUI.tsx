@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Reac
 
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { SettingsTrigger } from "@jgengine/react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 
@@ -171,6 +172,10 @@ export function GameUI(): ReactNode {
             <Stat label="Time" value={formatTime(elapsedMs)} />
             <Stat label="Best" value={session.best === null ? "—" : formatTime(session.best)} muted />
           </div>
+        </HudPanel>
+
+        <HudPanel id="settings" anchor="top-right" compact="keep">
+          <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-xl border border-[rgba(230,198,90,0.28)] bg-[rgba(9,32,22,0.84)] text-[#f2eeda] shadow-[0_6px_18px_rgba(0,0,0,0.4)] backdrop-blur-md transition hover:bg-white/10" />
         </HudPanel>
 
         <HudPanel id="controls" anchor="top-right" compact="chip" chip="Menu">

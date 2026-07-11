@@ -1,4 +1,5 @@
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { SettingsTrigger } from "@jgengine/react";
 import { useGame, usePlayer } from "@jgengine/react/hooks";
 
 import { CLASSES } from "../../classes/catalog";
@@ -9,6 +10,7 @@ export function ClassSelect() {
   void userId;
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-stone-950/90">
+      <SettingsTrigger className="pointer-events-auto absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-md border border-stone-700 bg-stone-950/80 text-amber-300 transition hover:border-amber-500 hover:bg-stone-800" />
       <div className="max-w-4xl px-6 text-center">
         <p className="text-sm uppercase tracking-[0.3em] text-amber-500/80">World of ClaudeCraft</p>
         <h1 className="mt-1 font-serif text-4xl font-bold text-amber-100">Choose your class</h1>

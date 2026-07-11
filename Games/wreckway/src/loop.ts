@@ -1,10 +1,15 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { COMPACTOR_ENTITY, KART_PLAYER_ENTITY } from "./game/entities/catalog";
-import { createRunSession, RUN_STORE_KEY, type RunSession } from "./game/run/session";
+import { createRunSession, RUN_STORE_KEY, type RunPhase, type RunSession } from "./game/run/session";
 import { createWorldRuntime, INPUT_STORE_KEY, WORLD_STORE_KEY, type WorldRuntime } from "./game/run/store";
 import { createDriveInput, type DriveInput } from "./game/vehicle/input";
 import { placeExitGate, placeGateBarricades, placePickupMarkers, placeZoneDressing, syncCompactorRow, syncPickupMarkers } from "./game/world/setup";
+
+function syncPhase(ctx: GameContext, phase: RunPhase): void {
+  setGamePhase(ctx, phase === "running" ? "playing" : phase === "start" ? "menu" : "ended");
+}
 
 export function onInit(ctx: GameContext): void {
   const previousInput = ctx.game.store.get(INPUT_STORE_KEY) as DriveInput | undefined;
@@ -18,6 +23,7 @@ export function onInit(ctx: GameContext): void {
 
   const session = createRunSession(ctx.world.groundHeightAt);
   ctx.game.store.set(RUN_STORE_KEY, session);
+  syncPhase(ctx, "start");
 
   const input = createDriveInput();
   input.attach();
@@ -49,6 +55,8 @@ export function onTick(ctx: GameContext, dt: number): void {
   const world = ctx.game.store.get(WORLD_STORE_KEY) as WorldRuntime | undefined;
   if (session === undefined || input === undefined || world === undefined) return;
 
+  const previousPhase = session.snapshot().phase;
+
   if (input.consumeRestart()) session.restart();
   if (input.consumeStart()) session.start();
 
@@ -58,6 +66,8 @@ export function onTick(ctx: GameContext, dt: number): void {
   session.tick(dt, axis, { jumpPressed, plowBracing });
 
   const snapshot = session.snapshot();
+  if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
+
   ctx.scene.entity.setPose(ctx.player.userId, {
     position: snapshot.pose.position,
     rotationY: snapshot.pose.heading,

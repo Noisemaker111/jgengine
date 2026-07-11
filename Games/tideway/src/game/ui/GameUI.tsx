@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { GateToasts } from "./components/GateToasts";
 import { KnotsMeter } from "./components/KnotsMeter";
 import { ResultsScreen } from "./components/ResultsScreen";
@@ -21,6 +22,7 @@ export function GameUI() {
           <StatusPanel hud={hud} />
         </div>
         <div className="flex flex-col items-end gap-2">
+          <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-sm border border-[#f2c14e]/30 bg-[#0e2a30]/75 text-[#f2c14e] backdrop-blur transition-colors hover:bg-[#f2c14e]/15" />
           <div className="pointer-events-auto">
             <TidewayMinimap current={current} />
           </div>

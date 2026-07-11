@@ -1,3 +1,5 @@
+import { SettingsTrigger } from "@jgengine/react";
+
 import { PALETTE } from "../theme";
 import { KeybindBadge } from "./KeybindBadge";
 
@@ -18,6 +20,7 @@ export function StartScreen({ onStart }: { onStart: () => void }) {
         background: `radial-gradient(circle at center, ${PALETTE.iceBlue}22, ${PALETTE.deepWater}f2 70%)`,
       }}
     >
+      <SettingsTrigger className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-[#a8dadc]/30 bg-[#0d1b2a]/70 text-[#a8dadc] backdrop-blur transition-colors hover:bg-[#a8dadc]/15" />
       <div className="flex flex-col items-center gap-2">
         <span className="text-xs font-bold uppercase tracking-[0.5em]" style={{ color: PALETTE.auroraGreen }}>
           Expedition Radio — Arctic Midnight Circuit

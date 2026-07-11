@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useGameContext } from "@jgengine/react/provider";
 import { useActivePrompt, useGameStore } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 import { heistPrompts } from "../prompts";
 import type { HeistState } from "../state/heistState";
 import { StartScreen } from "./components/StartScreen";
@@ -43,6 +44,10 @@ export function GameUI(): ReactNode {
         <>
           <div className="flex justify-center">
             <DawnClockHud />
+          </div>
+
+          <div className="pointer-events-none absolute left-3 top-3">
+            <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[#c9a227]/60 bg-[#0b0f1c]/85 text-[#c9a227] transition hover:bg-[#1d2b4a]" />
           </div>
 
           <div className="pointer-events-none absolute right-3 top-3">

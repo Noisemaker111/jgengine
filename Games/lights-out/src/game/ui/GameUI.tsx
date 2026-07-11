@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
@@ -36,6 +37,9 @@ export function GameUI() {
       <HudCanvas layout={layout} className="select-none text-[#ece0c8]">
         <HudPanel id="brand" anchor="top-left" compact="hide" interactive={false}>
           <Brand />
+        </HudPanel>
+        <HudPanel id="settings" anchor="top-right" compact="keep">
+          <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-lg border border-[#4a4030] bg-[#211b12] text-base text-[#e8d7ad] shadow-[0_2px_6px_rgba(0,0,0,0.4)] transition hover:border-[#6a5a3c] hover:bg-[#2a2318]" />
         </HudPanel>
         {playing ? (
           <HudPanel id="stats" anchor="top" compact="keep" interactive={false}>

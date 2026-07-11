@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 
+import { SettingsTrigger } from "@jgengine/react";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { useGame } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
@@ -123,11 +124,14 @@ export function GameUI() {
         <HudPanel id="status" anchor="top-right" order={0} compact="keep" inset={{ x: 14, y: 14 }}>
           {panelBox(
             <div className="flex flex-col items-end gap-2">
-              <div className="flex flex-col items-end">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.22em]" style={{ color: PALETTE.textDim }}>
-                  Lives
-                </span>
-                <Lives lives={snapshot.lives} />
+              <div className="flex items-center gap-2">
+                <SettingsTrigger className="pointer-events-auto rounded-md border border-[rgba(95,208,255,0.4)] px-1.5 py-1.5 text-sm text-[#5fd0ff] transition-colors hover:bg-[rgba(95,208,255,0.12)]" />
+                <div className="flex flex-col items-end">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.22em]" style={{ color: PALETTE.textDim }}>
+                    Lives
+                  </span>
+                  <Lives lives={snapshot.lives} />
+                </div>
               </div>
               <button
                 type="button"

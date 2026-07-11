@@ -1,8 +1,10 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { BOT_ENTITY_ID } from "./game/entities/catalog";
 import { RunController } from "./game/systems/runController";
 import { botPoseFor } from "./game/systems/pose";
+import type { RunPhase } from "./game/systems/runState";
 import { setupWorld } from "./game/world/setup";
 
 function controllerOf(ctx: GameContext): RunController {
@@ -11,24 +13,38 @@ function controllerOf(ctx: GameContext): RunController {
   throw new Error("run controller accessed before onInit");
 }
 
+function syncPhase(ctx: GameContext, phase: RunPhase): void {
+  setGamePhase(ctx, phase === "menu" ? "menu" : phase === "running" ? "playing" : "ended");
+}
+
 export function onInit(ctx: GameContext): void {
   const controller = new RunController();
   ctx.game.store.set("controller", controller);
   ctx.game.store.set("run", controller.snapshot());
+  syncPhase(ctx, controller.snapshot().phase);
 
   setupWorld(ctx);
 
+  function withPhaseSync(mutate: () => void): () => void {
+    return () => {
+      const previousPhase = controller.snapshot().phase;
+      mutate();
+      const nextPhase = controller.snapshot().phase;
+      if (nextPhase !== previousPhase) syncPhase(ctx, nextPhase);
+    };
+  }
+
   ctx.game.commands.define("startRun", {
-    apply() {
+    apply: withPhaseSync(() => {
       const phase = controller.snapshot().phase;
       if (phase === "sectorClear") controller.continueAfterClear();
       else controller.start();
-    },
+    }),
   });
-  ctx.game.commands.define("laneLeft", { apply: () => controller.moveLane(-1) });
-  ctx.game.commands.define("laneRight", { apply: () => controller.moveLane(1) });
-  ctx.game.commands.define("polarityFlip", { apply: () => controller.flip() });
-  ctx.game.commands.define("restartSector", { apply: () => controller.restartSector() });
+  ctx.game.commands.define("laneLeft", { apply: withPhaseSync(() => controller.moveLane(-1)) });
+  ctx.game.commands.define("laneRight", { apply: withPhaseSync(() => controller.moveLane(1)) });
+  ctx.game.commands.define("polarityFlip", { apply: withPhaseSync(() => controller.flip()) });
+  ctx.game.commands.define("restartSector", { apply: withPhaseSync(() => controller.restartSector()) });
 }
 
 export function onNewPlayer(ctx: GameContext): void {
@@ -45,11 +61,13 @@ export function onNewPlayer(ctx: GameContext): void {
 
 export function onTick(ctx: GameContext, dt: number): void {
   const controller = controllerOf(ctx);
+  const previousPhase = controller.snapshot().phase;
   const boosting = ctx.input.isDown("boost");
   const braking = ctx.input.isDown("brake");
   controller.tick(dt, { boosting, braking }, ctx.time.now());
 
   const snapshot = controller.snapshot();
+  if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
   ctx.game.store.set("run", snapshot);
 
   const pose = botPoseFor(snapshot);

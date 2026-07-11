@@ -3,6 +3,7 @@ import { building, environment, grass, rain, sky, terrain } from "@jgengine/core
 import { standardCartridgePanels } from "@/components/ui/cartridge-panels";
 
 import { assets, entitySprites } from "./game/assets";
+import { SettingsButton } from "./game/ui/SettingsButton";
 
 export const config: CartridgeConfig = {
   name: "Swarm Survivor",
@@ -233,7 +234,12 @@ export const config: CartridgeConfig = {
     panels: [
       { id: "health", anchor: "top-left", inset: { x: 18, y: 18 }, items: [{ kind: "vital", stat: "health", label: "Hull", width: 220 }] },
       { id: "timer", anchor: "top", inset: { x: 0, y: 18 }, items: [{ kind: "timer", label: "Survive" }, { kind: "xp", width: 220 }] },
-      { id: "score", anchor: "top-right", inset: { x: 18, y: 18 }, items: [{ kind: "score", source: "kills", label: "Kills", digits: 3 }] },
+      {
+        id: "score",
+        anchor: "top-right",
+        inset: { x: 18, y: 18 },
+        items: [{ kind: "component", Component: SettingsButton }, { kind: "score", source: "kills", label: "Kills", digits: 3 }],
+      },
       { id: "weapon-bar", anchor: "bottom", inset: { x: 0, y: 24 }, items: [{ kind: "abilityBar", icons: { pulseLance: "spear", rotorBlades: "sword", quakePulse: "lightning" } }] },
     ],
   },

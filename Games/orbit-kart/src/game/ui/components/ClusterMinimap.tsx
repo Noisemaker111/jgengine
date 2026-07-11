@@ -22,7 +22,7 @@ export function ClusterMinimap() {
   if (markers === undefined || snapshot === null) return null;
   const player = snapshot.karts[PLAYER_ID];
   return (
-    <div className="absolute right-2 top-2 sm:right-4 sm:top-4">
+    <div className="absolute right-2 top-14 sm:right-4 sm:top-16">
       <Minimap
         markers={markers}
         center={player !== undefined ? [player.position[0], player.position[2]] : [0, 0]}

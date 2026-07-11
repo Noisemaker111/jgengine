@@ -1,6 +1,7 @@
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { STORE_KEY } from "../../loop";
 import type { YachtState } from "../state/game";
@@ -37,6 +38,10 @@ export function GameUI() {
     >
       <style>{KEYFRAMES}</style>
       <HudCanvas layout={layout}>
+        <HudPanel id="settings" anchor="top-right" compact="keep" interactive>
+          <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[#875734] bg-[#0c3a27]/85 text-[#e9c46a] shadow-lg backdrop-blur transition-colors hover:bg-[#14503686]" />
+        </HudPanel>
+
         <HudPanel id="board" anchor="center" compact="keep" interactive>
           <div
             style={{

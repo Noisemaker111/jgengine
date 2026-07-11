@@ -1,11 +1,12 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { CREATURE_RADIUS, PARK_Z, SANCTUARY_Z } from "./game/constants";
 import { TIERS, isTierId, type TierId } from "./game/difficulty/tiers";
 import { SHEPHERD_ENTITY_ID } from "./game/entities/shepherd/catalog";
 import { DEFAULT_FLOCK_TUNING, stepFlock, type CreaturePos, type HerdMode } from "./game/flock/boids";
 import { ROADS } from "./game/roads/catalog";
 import { advanceHold, canTriggerWhistle, isGatherActive, triggerWhistle, type HoldState } from "./game/session/gather";
-import { hasLost, hasWon, resolveMedal } from "./game/session/runState";
+import { hasLost, hasWon, resolveMedal, type Phase } from "./game/session/runState";
 import {
   aliveCount,
   createInitialRunState,
@@ -17,6 +18,10 @@ import { laneVehicleX, pointHitByVehicle } from "./game/vehicles/schedule";
 import { placeProps, resetCreatureEntities, spawnVehiclePool, vehicleEntityId } from "./game/world/setup";
 
 let toastCounter = 0;
+
+function syncPhase(ctx: GameContext, phase: Phase): void {
+  setGamePhase(ctx, phase === "playing" ? "playing" : phase === "start" ? "menu" : "ended");
+}
 
 function pushToast(run: RunState, text: string, now: number): RunState {
   const toast: ToastEntry = { id: `toast-${toastCounter}`, text, createdAt: now };
@@ -40,6 +45,7 @@ export function onInit(ctx: GameContext): void {
   placeProps(ctx);
   spawnVehiclePool(ctx);
   resetCreatureEntities(ctx);
+  syncPhase(ctx, readRun(ctx).phase);
 
   ctx.game.commands.define<{ tier?: string }>("selectTier", {
     apply(state, input) {
@@ -59,6 +65,7 @@ export function onInit(ctx: GameContext): void {
       next.playStartedAt = state.time.now();
       resetCreatureEntities(state);
       writeRun(state, next);
+      syncPhase(state, next.phase);
     },
   });
 
@@ -66,7 +73,9 @@ export function onInit(ctx: GameContext): void {
     apply(state) {
       const run = readRun(state);
       resetCreatureEntities(state);
-      writeRun(state, createInitialRunState(run.tier));
+      const next = createInitialRunState(run.tier);
+      writeRun(state, next);
+      syncPhase(state, next.phase);
     },
   });
 
@@ -214,6 +223,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     } else if (hasWon(shepherd.z, SANCTUARY_Z, alive)) {
       nextRun = { ...nextRun, phase: "won", finishedAt: t, medal: resolveMedal(alive) };
     }
+    if (nextRun.phase !== run.phase) syncPhase(ctx, nextRun.phase);
   }
 
   writeRun(ctx, nextRun);

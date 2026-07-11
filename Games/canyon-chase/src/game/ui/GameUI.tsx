@@ -1,4 +1,4 @@
-import { useGameStore } from "@jgengine/react";
+import { useGameStore, SettingsTrigger } from "@jgengine/react";
 import { SELECTED_SEED_STORE_KEY } from "../run/storeKeys";
 import { isSurging } from "../run/surge";
 import { useRunState } from "../run/useRunState";
@@ -19,7 +19,8 @@ export function GameUI() {
       {run.phase === "playing" ? (
         <>
           <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/65 to-transparent" />
-          <div className="absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] sm:left-5 sm:top-5">
+          <div className="absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-start gap-2 sm:left-5 sm:top-5">
+            <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[#ffc857]/30 bg-[#241a2c]/70 text-[#ffc857] backdrop-blur transition-colors hover:bg-[#ffc857]/15" />
             <BorderCountdown truckMainDistance={run.truck.mainDistance} />
           </div>
           <div className="absolute left-1/2 top-[max(0.75rem,env(safe-area-inset-top))] w-[min(32rem,52vw)] -translate-x-1/2 sm:top-5">

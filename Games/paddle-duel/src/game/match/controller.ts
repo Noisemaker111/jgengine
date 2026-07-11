@@ -1,3 +1,4 @@
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
@@ -58,6 +59,10 @@ function resetEffects(m: MatchState): void {
   m.matchPointR = false;
 }
 
+function syncPhase(ctx: GameContext, m: MatchState): void {
+  setGamePhase(ctx, m.phase === "menu" ? "menu" : m.phase === "gameover" ? "ended" : m.paused ? "paused" : "playing");
+}
+
 function centerBall(m: MatchState): void {
   m.ball.x = COURT_W / 2;
   m.ball.y = COURT_H / 2;
@@ -104,6 +109,7 @@ export function startMatch(ctx: GameContext, mode: Mode): void {
   resetEffects(m);
   beginServe(m);
   bumpUi(ctx);
+  syncPhase(ctx, m);
 }
 
 export function togglePause(ctx: GameContext): void {
@@ -111,6 +117,7 @@ export function togglePause(ctx: GameContext): void {
   if (m.phase === "serve" || m.phase === "rally") {
     m.paused = !m.paused;
     bumpUi(ctx);
+    syncPhase(ctx, m);
   }
 }
 
@@ -133,6 +140,7 @@ export function toMenu(ctx: GameContext): void {
   resetEffects(m);
   centerBall(m);
   bumpUi(ctx);
+  syncPhase(ctx, m);
 }
 
 function recordWin(ctx: GameContext, m: MatchState, winner: Side): void {
@@ -161,6 +169,7 @@ function scorePoint(ctx: GameContext, m: MatchState, scorer: Side): void {
     centerBall(m);
     recordWin(ctx, m, winner);
     bumpUi(ctx);
+    syncPhase(ctx, m);
     return;
   }
   m.server = serverFor(m.scoreL + m.scoreR, m.firstServer);

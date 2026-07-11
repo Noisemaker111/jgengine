@@ -1,4 +1,4 @@
-import { HudCanvas, HudPanel, useEngineState, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useEngineState, useHudLayout } from "@jgengine/react";
 import { PALETTE } from "../palette";
 import { pinballStore } from "../store";
 import { Backglass } from "./components/backglass";
@@ -33,6 +33,9 @@ export function GameUI() {
       <HudCanvas layout={layout}>
         <HudPanel id="Title" anchor="top-left" compact="chip" chip="Info" interactive={false}>
           <Title />
+        </HudPanel>
+        <HudPanel id="Settings" anchor="top-right" order={-1} compact="keep">
+          <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-xl border border-[#8a6522] bg-[#1f130d]/90 text-[#ffb15e] shadow-lg transition-colors hover:bg-[#3a2216]/90" />
         </HudPanel>
         <HudPanel id="Backglass" anchor="top-right" compact="keep" interactive={false}>
           <Backglass snap={snap} />

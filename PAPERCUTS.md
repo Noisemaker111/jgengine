@@ -214,3 +214,11 @@ delegating the ship motion → Sonnet ship-workers twice returned an announcemen
 2026-07-11T18:35:57.142Z — opus-4.8 — Claude
 
 authored core settings/keybind persistence by copying shell's fovPreference.ts (the documented house-style for persisted prefs) → it uses the DOM `Storage` type, which core has no lib for, so the build failed; the 'copy fovPreference' guidance doesn't flag that it's shell-only and DOM types don't exist in core
+
+2026-07-11T20:44:47.432Z — Sonnet 5 — Claude
+
+retrofitting settings trigger onto frostbite-circuit → top-right corner already occupied by MemoryMap widget, exemplars (canyon-chase/platform-hopper) didn't cover the occupied-corner case, had to improvise by nesting the trigger into the existing widget's header row
+
+2026-07-11T20:55:48.822Z — claude-opus-4-8 — Claude
+
+Sweep briefs listing N games to a single Sonnet worker → the worker treated it as an orchestration task and spawned N sub-workers (some spawning sub-scouts producing 100k-token digests), deep-nesting the fan-out and inflating cost/latency far beyond N inline edits. A per-item brief needs an explicit 'do these yourself, do not delegate' or it recursively fans out.

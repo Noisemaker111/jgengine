@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useGame, useGameClock, usePlayer, useSceneEntities } from "@jgengine/react/hooks";
 import { PARK_Z, ROAD_Z } from "../constants";
 import type { TierId } from "../difficulty/tiers";
@@ -50,6 +51,7 @@ export function GameUI(): React.ReactNode {
           <BreathBar roadIndex={roadIndex} tier={run.tier} t={elapsed} />
         </div>
         <div className="pointer-events-auto flex flex-col items-end gap-1">
+          <SettingsTrigger className="flex h-8 w-8 items-center justify-center rounded-full border border-[#7ef9c8]/20 bg-[#101318]/70 text-[#f5c56b] backdrop-blur-sm transition-colors hover:bg-[#101318]" />
           <CorridorMap run={run} shepherd={shepherd} size={run.mapOpen ? 240 : 132} />
           <button
             type="button"

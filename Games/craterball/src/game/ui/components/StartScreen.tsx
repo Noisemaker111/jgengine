@@ -1,4 +1,5 @@
 import { actionLabel, bindingLabel } from "@jgengine/core/input/actionBindings";
+import { SettingsTrigger } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 import { keybinds } from "../../keybinds";
 import { DIFFICULTY_PRESETS } from "../../match/difficulty";
@@ -26,7 +27,8 @@ export function StartScreen() {
 
   return (
     <div className="pointer-events-auto absolute inset-0 flex items-center justify-center bg-[#0c0806]/85 px-4">
-      <div className="flex w-full max-w-lg flex-col gap-5 rounded-2xl border border-[#ff6b35]/30 bg-[#160f0c]/95 p-6 shadow-2xl shadow-black/60 sm:p-8">
+      <div className="relative flex w-full max-w-lg flex-col gap-5 rounded-2xl border border-[#ff6b35]/30 bg-[#160f0c]/95 p-6 shadow-2xl shadow-black/60 sm:p-8">
+        <SettingsTrigger className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg border border-[#cdb891]/25 bg-black/25 text-[#ff6b35] transition-colors hover:border-[#cdb891]/40" />
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-4xl font-black uppercase tracking-wide text-[#ff6b35] drop-shadow-[0_0_16px_rgba(255,107,53,0.5)] sm:text-5xl">
             Craterball

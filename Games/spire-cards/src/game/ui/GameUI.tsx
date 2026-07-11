@@ -1,6 +1,6 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 
 import type { CardData, CardKind } from "../cards";
 import type { CombatSnapshot, HandCard, Phase } from "../combat";
@@ -366,6 +366,9 @@ export function GameUI() {
       </HudPanel>
       <HudPanel id="encounter-badge" anchor="top-left" inset={{ x: 24, y: 64 }}>
         <EncounterBadge index={runSnapshot.encounterIndex} count={runSnapshot.encounterCount} />
+      </HudPanel>
+      <HudPanel id="settings" anchor="top-right" inset={{ x: 24, y: 20 }}>
+        <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-stone-700/60 bg-stone-950/60 text-amber-300 transition-colors hover:bg-stone-800/80" />
       </HudPanel>
 
       <HudPanel id="enemy-panel" anchor="top" inset={{ x: 0, y: 40 }}>

@@ -18,6 +18,7 @@ import {
 } from "@jgengine/core/settings/settingsModel";
 import {
   useSettingsStore,
+  type SettingsActionView,
   type SettingsKeybindRow,
   type SettingsCategoryView,
   type SettingsController,
@@ -26,7 +27,7 @@ import {
 
 import { usePlayerFov } from "../camera/PlayerFov";
 
-export type { SettingsKeybindRow, SettingsCategoryView, SettingsController, SettingsRow };
+export type { SettingsActionView, SettingsKeybindRow, SettingsCategoryView, SettingsController, SettingsRow };
 
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
   sound: "Sound",
@@ -44,6 +45,7 @@ export interface SettingsControllerInput {
   categories: readonly SettingCategoryDef[];
   hide: readonly SettingCategory[];
   fovEnabled: boolean;
+  hideBindings: readonly string[];
   overrides: BindingOverrides;
   rebind: (action: string, code: string) => void;
   resetBinding: (action: string) => void;
@@ -138,7 +140,10 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
     ...extrasFor("gameplay"),
   ];
 
-  const keybinds: SettingsKeybindRow[] = Object.keys(config.input).map((action) => {
+  const hiddenBindings = new Set(config.hideBindings);
+  const keybinds: SettingsKeybindRow[] = Object.keys(config.input)
+    .filter((action) => !hiddenBindings.has(action))
+    .map((action) => {
     const override = config.overrides[action];
     const effective = override === undefined ? config.input : { ...config.input, [action]: override };
     return {

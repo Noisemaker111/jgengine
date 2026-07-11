@@ -20,6 +20,19 @@ export const game = defineGame({
   content: { entityById },
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "panel",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart level",
+        kind: "danger",
+        description: "Drop back at the start flag with fresh hearts.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
   camera: {
     rig: "observer",
     observer: {

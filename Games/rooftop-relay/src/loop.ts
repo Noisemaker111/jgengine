@@ -1,4 +1,5 @@
 import { createResourcePool, type ResourcePool } from "@jgengine/core/combat/resourcePool";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createRaceState, type RaceState, type RaceTrack } from "@jgengine/core/game/race";
 import type { SpawnPoints } from "@jgengine/core/game/spawnPoints";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -6,7 +7,7 @@ import { groundSpeed } from "@jgengine/core/scene/entityStore";
 import type { MarkerSet } from "@jgengine/core/world/markers";
 
 import { classifyHandoff, type HandoffQuality } from "./game/baton";
-import { applyFallPenalty, applyHandoff, INITIAL_RELAY_STATE, startRelay, tickRelayClock, TOTAL_LEGS, type RelayState } from "./game/relay/state";
+import { applyFallPenalty, applyHandoff, INITIAL_RELAY_STATE, startRelay, tickRelayClock, TOTAL_LEGS, type RelayPhase, type RelayState } from "./game/relay/state";
 import { buildLegTracks } from "./game/route/race";
 import { ROUTE } from "./game/route/legs";
 import { runnerByLegIndex } from "./game/runners/catalog";
@@ -24,6 +25,10 @@ export interface Session {
   legTracks: readonly RaceTrack[];
   raceState: RaceState;
   prevJumpDown: boolean;
+}
+
+function syncPhase(ctx: GameContext, phase: RelayPhase): void {
+  setGamePhase(ctx, phase === "running" ? "playing" : phase === "menu" ? "menu" : "ended");
 }
 
 function freshRaceStateForLeg(legIndex: number, tracks: readonly RaceTrack[], now: number): RaceState {
@@ -71,6 +76,7 @@ export function onInit(ctx: GameContext): void {
     prevJumpDown: false,
   };
   ctx.game.store.set(STORE_KEY, session);
+  syncPhase(ctx, session.relay.phase);
 
   ctx.game.commands.define("start", {
     validate(state) {
@@ -81,6 +87,7 @@ export function onInit(ctx: GameContext): void {
       const current = getSession(state);
       resetSession(state, current);
       state.game.store.set(STORE_KEY, current);
+      syncPhase(state, current.relay.phase);
       return state;
     },
   });
@@ -90,6 +97,7 @@ export function onInit(ctx: GameContext): void {
       const current = getSession(state);
       resetSession(state, current);
       state.game.store.set(STORE_KEY, current);
+      syncPhase(state, current.relay.phase);
       return state;
     },
   });
@@ -114,6 +122,7 @@ export function onInit(ctx: GameContext): void {
       const quality = classifyHandoff(current.relay.baton, groundSpeed(entity));
       performHandoff(state, current, quality);
       state.game.store.set(STORE_KEY, current);
+      syncPhase(state, current.relay.phase);
       return state;
     },
   });
@@ -142,6 +151,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     const leg = ROUTE.legs[session.relay.legIndex]!;
     session.spawnPoints.respawn(ctx.scene.entity, activeId, leg.startCheckpoint.id);
     ctx.game.store.set(STORE_KEY, session);
+    syncPhase(ctx, session.relay.phase);
     return;
   }
 
@@ -168,4 +178,5 @@ export function onTick(ctx: GameContext, dt: number): void {
   }
 
   ctx.game.store.set(STORE_KEY, session);
+  syncPhase(ctx, session.relay.phase);
 }

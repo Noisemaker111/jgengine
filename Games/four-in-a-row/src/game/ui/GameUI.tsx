@@ -4,6 +4,7 @@ import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 import { useGame } from "@jgengine/react/hooks";
 import { useDisplayProfile } from "@jgengine/react/display";
+import { SettingsTrigger } from "@jgengine/react/settings";
 
 import { COLS, type Board } from "../logic/board";
 import { keybinds } from "../keybinds";
@@ -151,6 +152,9 @@ export function GameUI() {
 
         <HudPanel id="status" anchor="top-right" compact="chip" chip="Players">
           <div className="w-64 rounded-xl border border-white/10 bg-slate-900/85 p-3 shadow-xl backdrop-blur">
+            <div className="mb-2 flex items-center justify-end">
+              <SettingsTrigger className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-white/5 text-slate-200 transition-colors hover:bg-white/10" />
+            </div>
             <Scoreboard board={board} mode={app.mode} aiThinking={app.aiThinking} records={app.records} />
             {isAiMode(app.mode) ? (
               <button

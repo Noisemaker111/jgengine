@@ -5,6 +5,7 @@ import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { useGame } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { keybinds } from "../keybinds";
 import { HAND_LABELS } from "../paytable";
@@ -169,9 +170,10 @@ export function GameUI() {
               Jacks or Better · 9/6
             </p>
           </div>
-          <div className="flex gap-2 text-right">
+          <div className="flex items-center gap-2 text-right">
             <Stat label="Best Bank" value={bankLabel} />
             <Stat label="Top Win" value={winLabel} accent />
+            <SettingsTrigger className="flex h-9 w-9 items-center justify-center rounded-md border border-amber-500/40 bg-black/45 text-amber-200 transition hover:bg-amber-500/20" />
           </div>
         </header>
 

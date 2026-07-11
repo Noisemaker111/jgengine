@@ -5,6 +5,7 @@ import { withSeedParam } from "@jgengine/core/random/seedLink";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { keybinds } from "../keybinds";
 import { type EchoMode } from "../echo/catalog";
@@ -95,6 +96,10 @@ export function GameUI() {
               </StatChip>
             </div>
           </div>
+        </HudPanel>
+
+        <HudPanel id="settings" anchor="top-right" order={-1}>
+          <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-[#d9a441]/30 bg-[#100a06]/80 text-[#f3dfae] transition hover:bg-[#d9a441]/15" />
         </HudPanel>
 
         <HudPanel id="console" anchor="center" compact="keep">

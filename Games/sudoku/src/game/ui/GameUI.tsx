@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { SettingsTrigger } from "@jgengine/react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 import { useGame } from "@jgengine/react/hooks";
@@ -117,6 +118,9 @@ function StatsPanel({ app }: { app: AppState }) {
   const board = app.board;
   return (
     <div className="flex w-48 flex-col gap-3 rounded-xl p-3" style={T.cardStyle}>
+      <div className="flex justify-end">
+        <SettingsTrigger className="flex h-7 w-7 items-center justify-center rounded-md border border-[#d3c7a4] bg-[#fbf8f0] text-[#26221b] transition-colors hover:bg-[#eef0fb]" />
+      </div>
       <div>
         <h2 className="mb-1 text-xs font-bold uppercase tracking-wider" style={{ color: T.INDIGO }}>
           Best times

@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 
@@ -26,7 +27,10 @@ export function GameUI() {
       </HudPanel>
 
       <HudPanel id="stats" anchor="top-right" compact="chip" chip="Stats">
-        <StatsPanel snapshot={snapshot} />
+        <div className="flex flex-col items-end gap-2">
+          <SettingsTrigger className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-slate-300/25 bg-slate-800/70 text-slate-200 transition hover:border-sky-300/60 hover:bg-slate-700/80" />
+          <StatsPanel snapshot={snapshot} />
+        </div>
       </HudPanel>
 
       <HudPanel id="credit" anchor="bottom" compact="keep" interactive={false}>

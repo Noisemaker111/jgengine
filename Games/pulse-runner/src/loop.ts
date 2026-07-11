@@ -1,10 +1,11 @@
 import { cameraShake } from "@jgengine/shell/camera";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameLoop } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { RUNNER_CATALOG_ID, RUNNER_HOVER_OFFSET } from "./game/entities/catalog";
 import { installEngine, readEngine } from "./game/session/engineStore";
-import { createRunnerEngine } from "./game/session/runnerEngine";
+import { createRunnerEngine, type RunnerPhase } from "./game/session/runnerEngine";
 import { placeWorldDressing } from "./game/world/setup";
 
 const BEAT_SHAKE_AMPLITUDE = 0.035;
@@ -20,10 +21,15 @@ function requireEngine(ctx: GameContext) {
   return engine;
 }
 
+function syncPhase(ctx: GameContext, phase: RunnerPhase): void {
+  setGamePhase(ctx, phase === "playing" ? "playing" : phase === "idle" ? "menu" : "ended");
+}
+
 function onInit(ctx: GameContext): void {
   const engine = createRunnerEngine();
   installEngine(ctx, engine);
   placeWorldDressing(ctx);
+  syncPhase(ctx, "idle");
 
   ctx.game.commands.define("start", {
     apply(_state: GameContext, _input: unknown) {
@@ -72,6 +78,7 @@ function onTick(ctx: GameContext, dt: number): void {
   const engine = requireEngine(ctx);
   engine.tick(dt);
   const snapshot = engine.snapshot();
+  syncPhase(ctx, snapshot.phase);
   const groundY = ctx.world.groundHeightAt(snapshot.laneX, snapshot.worldZ);
   ctx.scene.entity.setPose(ctx.player.userId, {
     position: [snapshot.laneX, groundY + RUNNER_HOVER_OFFSET, snapshot.worldZ],

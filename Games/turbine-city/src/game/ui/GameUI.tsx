@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { SettingsTrigger } from "@jgengine/react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 
@@ -37,6 +38,9 @@ export function GameUI() {
         {racingHud && (
           <>
             <BuffetVignette snapshot={snapshot} />
+            <HudPanel id="settings" anchor="top-left">
+              <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-lg border border-[#5d737e]/35 bg-[#0f1d1e]/90 text-[#4ecdc4] transition-colors hover:bg-[#5d737e]/25" />
+            </HudPanel>
             <HudPanel id="race" anchor="top" interactive={false}>
               <RaceHud snapshot={snapshot} />
             </HudPanel>

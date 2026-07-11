@@ -1,3 +1,4 @@
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createRecordBook, type RecordDirection, type RecordStorage } from "@jgengine/core/game/recordBook";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
@@ -29,6 +30,7 @@ export function onInit(ctx: GameContext): void {
     RECORDS_KEY,
     createRecordBook<RecordField>({ key: RECORD_BOOK_KEY, fields: RECORD_FIELDS, storage: browserStorage() }),
   );
+  setGamePhase(ctx, "menu");
 
   ctx.game.commands.define<{ mode: Mode }>("setMode", {
     apply: (state, input) => {

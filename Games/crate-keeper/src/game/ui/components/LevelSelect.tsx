@@ -1,3 +1,5 @@
+import { SettingsTrigger } from "@jgengine/react";
+
 import type { KeeperSnapshot, LevelCard } from "../../store";
 import { Stars } from "./Stars";
 
@@ -54,12 +56,15 @@ export function LevelSelect({
             </h1>
             <p className="mt-0.5 text-sm text-amber-200/50">Push every crate onto its lamp.</p>
           </div>
-          <div className="flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-2 ring-1 ring-amber-900/40">
-            <Stars earned={3} size={15} />
-            <span className="text-sm font-bold tabular-nums text-amber-100">
-              {snapshot.totalStars}
-              <span className="text-amber-300/40"> / {snapshot.maxStars}</span>
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-2 ring-1 ring-amber-900/40">
+              <Stars earned={3} size={15} />
+              <span className="text-sm font-bold tabular-nums text-amber-100">
+                {snapshot.totalStars}
+                <span className="text-amber-300/40"> / {snapshot.maxStars}</span>
+              </span>
+            </div>
+            <SettingsTrigger className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/30 text-amber-100/80 ring-1 ring-amber-900/40 transition hover:bg-black/40" />
           </div>
         </div>
 
