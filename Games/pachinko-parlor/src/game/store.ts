@@ -6,7 +6,7 @@ import type { PachinkoSnapshot } from "./types";
 export class PachinkoStore {
   sim: PachinkoSim;
   private records: PachinkoRecords;
-  private listeners = new Set<() => void>();
+  private listeners = new Set<(snapshot: PachinkoSnapshot) => void>();
   private snapshot: PachinkoSnapshot;
   private signature = "";
   private pointerHeld = false;
@@ -24,7 +24,7 @@ export class PachinkoStore {
     return this.snapshot;
   }
 
-  subscribe(listener: () => void): () => void {
+  subscribe(listener: (snapshot: PachinkoSnapshot) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
@@ -66,7 +66,7 @@ export class PachinkoStore {
     if (!force && sig === this.signature) return;
     this.signature = sig;
     this.snapshot = this.build();
-    for (const listener of this.listeners) listener();
+    for (const listener of this.listeners) listener(this.snapshot);
   }
 
   private sign(): string {

@@ -103,6 +103,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/bubble-burst": {
+      "name": "@games/bubble-burst",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/canyon-chase": {
       "name": "@games/canyon-chase",
       "version": "0.1.0",
@@ -160,6 +183,29 @@
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/codebreaker": {
+      "name": "@games/codebreaker",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -348,6 +394,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/echo-lights": {
+      "name": "@games/echo-lights",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/fifteen-slide": {
       "name": "@games/fifteen-slide",
       "version": "0.1.0",
@@ -373,6 +442,29 @@
     },
     "Games/flag-sweep": {
       "name": "@games/flag-sweep",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/four-in-a-row": {
+      "name": "@games/four-in-a-row",
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
@@ -511,6 +603,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/lights-out": {
+      "name": "@games/lights-out",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/loop-station": {
       "name": "@games/loop-station",
       "version": "0.1.0",
@@ -568,6 +683,29 @@
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/mahjong-solitaire": {
+      "name": "@games/mahjong-solitaire",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -701,6 +839,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/nonogram": {
+      "name": "@games/nonogram",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/orbit-kart": {
       "name": "@games/orbit-kart",
       "version": "0.1.0",
@@ -751,6 +912,52 @@
     },
     "Games/paddle-duel": {
       "name": "@games/paddle-duel",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/peg-solitaire": {
+      "name": "@games/peg-solitaire",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/pinball": {
+      "name": "@games/pinball",
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
@@ -829,6 +1036,75 @@
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/reversi": {
+      "name": "@games/reversi",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/road-hopper": {
+      "name": "@games/road-hopper",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/rock-blaster": {
+      "name": "@games/rock-blaster",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -987,8 +1263,54 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/spider": {
+      "name": "@games/spider",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/spire-cards": {
       "name": "@games/spire-cards",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/star-invaders": {
+      "name": "@games/star-invaders",
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
@@ -1019,6 +1341,29 @@
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/sudoku": {
+      "name": "@games/sudoku",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -1186,6 +1531,29 @@
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
+    "Games/yacht-dice": {
+      "name": "@games/yacht-dice",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -1388,7 +1756,7 @@
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.8.0",
+      "version": "0.8.4",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
@@ -1603,11 +1971,15 @@
 
     "@games/brick-breaker": ["@games/brick-breaker@workspace:Games/brick-breaker"],
 
+    "@games/bubble-burst": ["@games/bubble-burst@workspace:Games/bubble-burst"],
+
     "@games/canyon-chase": ["@games/canyon-chase@workspace:Games/canyon-chase"],
 
     "@games/claudecraft": ["@games/claudecraft@workspace:Games/claudecraft"],
 
     "@games/clockwork-heist": ["@games/clockwork-heist@workspace:Games/clockwork-heist"],
+
+    "@games/codebreaker": ["@games/codebreaker@workspace:Games/codebreaker"],
 
     "@games/commit-canopy": ["@games/commit-canopy@workspace:Games/commit-canopy"],
 
@@ -1623,9 +1995,13 @@
 
     "@games/dune-nomads": ["@games/dune-nomads@workspace:Games/dune-nomads"],
 
+    "@games/echo-lights": ["@games/echo-lights@workspace:Games/echo-lights"],
+
     "@games/fifteen-slide": ["@games/fifteen-slide@workspace:Games/fifteen-slide"],
 
     "@games/flag-sweep": ["@games/flag-sweep@workspace:Games/flag-sweep"],
+
+    "@games/four-in-a-row": ["@games/four-in-a-row@workspace:Games/four-in-a-row"],
 
     "@games/freecell": ["@games/freecell@workspace:Games/freecell"],
 
@@ -1637,11 +2013,15 @@
 
     "@games/klondike": ["@games/klondike@workspace:Games/klondike"],
 
+    "@games/lights-out": ["@games/lights-out@workspace:Games/lights-out"],
+
     "@games/loop-station": ["@games/loop-station@workspace:Games/loop-station"],
 
     "@games/loot-shooter": ["@games/loot-shooter@workspace:Games/loot-shooter"],
 
     "@games/magnet-run": ["@games/magnet-run@workspace:Games/magnet-run"],
+
+    "@games/mahjong-solitaire": ["@games/mahjong-solitaire@workspace:Games/mahjong-solitaire"],
 
     "@games/maze-muncher": ["@games/maze-muncher@workspace:Games/maze-muncher"],
 
@@ -1653,17 +2033,29 @@
 
     "@games/neon-shepherd": ["@games/neon-shepherd@workspace:Games/neon-shepherd"],
 
+    "@games/nonogram": ["@games/nonogram@workspace:Games/nonogram"],
+
     "@games/orbit-kart": ["@games/orbit-kart@workspace:Games/orbit-kart"],
 
     "@games/pachinko-parlor": ["@games/pachinko-parlor@workspace:Games/pachinko-parlor"],
 
     "@games/paddle-duel": ["@games/paddle-duel@workspace:Games/paddle-duel"],
 
+    "@games/peg-solitaire": ["@games/peg-solitaire@workspace:Games/peg-solitaire"],
+
+    "@games/pinball": ["@games/pinball@workspace:Games/pinball"],
+
     "@games/platform-hopper": ["@games/platform-hopper@workspace:Games/platform-hopper"],
 
     "@games/pulse-runner": ["@games/pulse-runner@workspace:Games/pulse-runner"],
 
     "@games/rail-rushers": ["@games/rail-rushers@workspace:Games/rail-rushers"],
+
+    "@games/reversi": ["@games/reversi@workspace:Games/reversi"],
+
+    "@games/road-hopper": ["@games/road-hopper@workspace:Games/road-hopper"],
+
+    "@games/rock-blaster": ["@games/rock-blaster@workspace:Games/rock-blaster"],
 
     "@games/rooftop-relay": ["@games/rooftop-relay@workspace:Games/rooftop-relay"],
 
@@ -1677,9 +2069,15 @@
 
     "@games/speed-circuit": ["@games/speed-circuit@workspace:Games/speed-circuit"],
 
+    "@games/spider": ["@games/spider@workspace:Games/spider"],
+
     "@games/spire-cards": ["@games/spire-cards@workspace:Games/spire-cards"],
 
+    "@games/star-invaders": ["@games/star-invaders@workspace:Games/star-invaders"],
+
     "@games/stormline": ["@games/stormline@workspace:Games/stormline"],
+
+    "@games/sudoku": ["@games/sudoku@workspace:Games/sudoku"],
 
     "@games/swarm-survivor": ["@games/swarm-survivor@workspace:Games/swarm-survivor"],
 
@@ -1694,6 +2092,8 @@
     "@games/voxel-mine": ["@games/voxel-mine@workspace:Games/voxel-mine"],
 
     "@games/wreckway": ["@games/wreckway@workspace:Games/wreckway"],
+
+    "@games/yacht-dice": ["@games/yacht-dice@workspace:Games/yacht-dice"],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 
