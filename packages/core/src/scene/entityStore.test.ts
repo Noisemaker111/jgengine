@@ -301,4 +301,52 @@ describe("scene entity store", () => {
     expect(updated?.position).toEqual([9, 0, 9]);
     expect(updated?.velocity).toEqual(velocityBefore);
   });
+
+  test("setPoseConstraint clamps the committed position and receives the full constraint frame", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    const frames: unknown[] = [];
+    store.setPoseConstraint(id, (frame) => {
+      frames.push(frame);
+      return [Math.min(frame.next[0], 5), frame.next[1], frame.next[2]];
+    });
+    store.setPose(id, { position: [10, 0, 0], dt: 1 });
+    expect(store.get(id)?.position).toEqual([5, 0, 0]);
+    expect(frames).toEqual([{ entityId: id, current: [0, 0, 0], next: [10, 0, 0], dt: 1 }]);
+  });
+
+  test("a constraint returning undefined accepts the requested position unchanged", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    store.setPoseConstraint(id, () => undefined);
+    store.setPose(id, { position: [3, 0, 0] });
+    expect(store.get(id)?.position).toEqual([3, 0, 0]);
+  });
+
+  test("velocity derives from the constrained position, not the requested one", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    store.setPoseConstraint(id, (frame) => [Math.min(frame.next[0], 5), frame.next[1], frame.next[2]]);
+    store.setPose(id, { position: [10, 0, 0], dt: 1 });
+    expect(store.get(id)?.velocity).toEqual([5, 0, 0]);
+  });
+
+  test("setPoseConstraint(id, null) clears a previously registered constraint", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    store.setPoseConstraint(id, () => [0, 0, 0]);
+    store.setPoseConstraint(id, null);
+    store.setPose(id, { position: [10, 0, 0] });
+    expect(store.get(id)?.position).toEqual([10, 0, 0]);
+  });
+
+  test("despawn clears the constraint so a respawned id under the same id is unconstrained", () => {
+    const store = createEntityStore();
+    store.spawn("car", { id: "hero", position: [0, 0, 0] });
+    store.setPoseConstraint("hero", () => [0, 0, 0]);
+    store.despawn("hero");
+    store.spawn("car", { id: "hero", position: [1, 1, 1] });
+    store.setPose("hero", { position: [10, 0, 0] });
+    expect(store.get("hero")?.position).toEqual([10, 0, 0]);
+  });
 });

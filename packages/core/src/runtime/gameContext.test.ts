@@ -574,6 +574,7 @@ describe("ctx.player.motion", () => {
     ctx.player.motion.impulse(7);
     expect(ctx.player.motion.takePending()).toEqual({
       impulses: [7],
+      horizontalImpulses: [],
       verticalVelocity: null,
       y: null,
     });
@@ -586,6 +587,16 @@ describe("ctx.player.motion", () => {
     ctx.player.motion.setVerticalVelocity(3);
     ctx.player.motion.setY(1);
     expect(ctx.version()).toBe(before);
+  });
+});
+
+describe("ctx.scene.entity.setPoseConstraint", () => {
+  test("wires through to the entity store: constrains setPose to a fixed point", () => {
+    const ctx = makeContext();
+    const id = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
+    ctx.scene.entity.setPoseConstraint(id, () => [1, 0, 1]);
+    ctx.scene.entity.setPose(id, { position: [50, 0, 50] });
+    expect(ctx.scene.entity.get(id)?.position).toEqual([1, 0, 1]);
   });
 });
 
