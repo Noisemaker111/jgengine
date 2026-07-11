@@ -1,4 +1,5 @@
 import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/abilityKit";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createTalentTree, type TalentTree } from "@jgengine/core/game/talents";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
@@ -290,6 +291,7 @@ export function applySheet(ctx: GameContext, userId: string, options?: { fill?: 
 export function selectClass(ctx: GameContext, userId: string, classId: string): void {
   const cls = classById(classId);
   ctx.game.store.set(storeKeys.class(userId), cls.id);
+  setGamePhase(ctx, "playing");
   const hero: HeroRuntime = {
     classId: cls.id,
     kit: createAbilityKit(

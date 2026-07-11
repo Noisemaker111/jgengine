@@ -1,10 +1,11 @@
 import { cameraShake } from "@jgengine/shell/camera";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameLoop } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { RUNNER_CATALOG_ID, RUNNER_HOVER_OFFSET } from "./game/entities/catalog";
 import { installEngine, readEngine } from "./game/session/engineStore";
-import { createRunnerEngine } from "./game/session/runnerEngine";
+import { createRunnerEngine, type RunnerPhase } from "./game/session/runnerEngine";
 import { placeWorldDressing } from "./game/world/setup";
 
 const BEAT_SHAKE_AMPLITUDE = 0.035;

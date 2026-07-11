@@ -60,7 +60,7 @@ export function GameUI() {
           <TitleCard />
         </HudPanel>
 
-        <HudPanel id="settings" anchor="top-right" order={-1} compact="hide">
+        <HudPanel id="settings" anchor="top-right" order={-1}>
           <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-amber-200/15 bg-[#241a12]/85 text-amber-100 shadow-lg backdrop-blur transition hover:bg-amber-100/20" />
         </HudPanel>
 

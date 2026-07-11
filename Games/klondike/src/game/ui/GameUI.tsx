@@ -5,6 +5,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { SettingsTrigger } from "@jgengine/react/settings";
 
 import { keybinds } from "../keybinds";
 import { SUITS, type Card, type CardSource, type MoveTarget } from "../klondike/engine";
@@ -319,6 +320,10 @@ export function GameUI(): ReactNode {
           <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.16)" }} />
           <Stat label={`Best ${state.drawMode === 1 ? "◆" : "◆◆◆"}`} value={bestLabel(session)} muted />
         </div>
+      </HudPanel>
+
+      <HudPanel id="settings" anchor="top-right" compact="keep">
+        <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[#e6c65a]/25 bg-[#081c12]/82 text-[#e6c65a] backdrop-blur transition-colors hover:bg-[#e6c65a]/15" />
       </HudPanel>
 
       <HudPanel id="controls" anchor="top-right" compact="chip" chip="Menu">

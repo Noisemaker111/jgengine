@@ -1,7 +1,7 @@
 import { useGameContext } from "@jgengine/react/provider";
 import { useEntityStat } from "@jgengine/react/hooks";
 import { useEngineState } from "@jgengine/react/engineStore";
-import { HudCanvas, HudPanel as MovableHudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel as MovableHudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { AccentRule } from "@/components/ui/accent-rule";
 import { HudLabel } from "@/components/ui/hud-label";
 import { HudPanel } from "@/components/ui/hud-panel";
@@ -151,6 +151,7 @@ function GameUIInner() {
         <TurnBar state={state} />
       </MovableHudPanel>
       <MovableHudPanel id="roster" anchor="top-right" inset={{ x: 16, y: 16 }} style={{ display: "flex", gap: 6 }}>
+        <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center border border-[var(--jg-edge)] bg-[var(--jg-surface)] text-[var(--jg-accent)] transition-colors hover:border-[var(--jg-accent)] hover:bg-[var(--jg-accent-deep)]" />
         {PLAYER_ROSTER_ORDER.map((catalogId) => (
           <RosterChip key={catalogId} catalogId={catalogId} />
         ))}

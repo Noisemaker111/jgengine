@@ -1,3 +1,5 @@
+import { SettingsTrigger } from "@jgengine/react";
+
 import { PLAYER_RACER_ID, type SessionSnapshot } from "../../race/session";
 import { PALETTE } from "../theme";
 import { formatRaceTime } from "../theme";
@@ -20,6 +22,7 @@ export function ResultsScreen({ snapshot, onRestart }: { snapshot: SessionSnapsh
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-7 px-6 text-center"
       style={{ background: `radial-gradient(circle at center, ${PALETTE.iceBlue}14, ${PALETTE.deepWater}f7 75%)` }}
     >
+      <SettingsTrigger className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-[#a8dadc]/30 bg-[#0d1b2a]/70 text-[#a8dadc] backdrop-blur transition-colors hover:bg-[#a8dadc]/15" />
       <div className="flex flex-col items-center gap-1">
         <span className="text-xs font-bold uppercase tracking-[0.5em]" style={{ color: accent }}>
           {sub}

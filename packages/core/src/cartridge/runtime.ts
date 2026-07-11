@@ -1,6 +1,7 @@
 import { advanceSpawnDirector, createSpawnDirectorState, type SpawnDirectorState } from "../ai/spawnDirector";
 import { createAbilityKit, type AbilityKit } from "../combat/abilityKit";
 import type { GameLoop } from "../game/defineGame";
+import { setGamePhase } from "../game/gamePhase";
 import { leveling, type LevelingTrack } from "../game/progression";
 import { createRunDraft, type RunDraft, type RunModifierOffer } from "../game/runDraft";
 import { aimToPoint } from "../input/pointer";
@@ -190,6 +191,10 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
 
   function notify(run: InternalRun): void {
     for (const listener of run.listeners) listener();
+  }
+
+  function syncPhase(ctx: GameContext, run: InternalRun): void {
+    setGamePhase(ctx, run.phase === "playing" ? "playing" : run.phase === "won" || run.phase === "lost" ? "ended" : "menu");
   }
 
   function damageMultiplier(run: InternalRun): number {
@@ -480,6 +485,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
 
   function registerEvents(ctx: GameContext): void {
     const run = getRun(ctx);
+    syncPhase(ctx, run);
     if (spec.rules.killLeaderboardStat !== undefined) {
       ctx.game.leaderboard.track({ stat: spec.rules.killLeaderboardStat, scope: "profile" });
     }
@@ -488,6 +494,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
       if (event.instanceId === ctx.player.userId) {
         if (spec.rules.lose?.kind === "playerDeath" && run.phase === "playing") {
           run.phase = "lost";
+          syncPhase(ctx, run);
           notify(run);
         }
         return;
@@ -515,6 +522,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
       const won = win.kind === "survive" ? run.playingSeconds >= win.seconds : win.check(ctx, run.view);
       if (won) {
         run.phase = "won";
+        syncPhase(ctx, run);
         notify(run);
         return;
       }
@@ -522,6 +530,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
     const lose = spec.rules.lose;
     if (lose?.kind === "custom" && lose.check(ctx, run.view)) {
       run.phase = "lost";
+      syncPhase(ctx, run);
       notify(run);
     }
   }
@@ -530,6 +539,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
     const run = getRun(ctx);
     if (run.phase !== "start") return;
     run.phase = run.countdownRemaining > 0 ? "countdown" : "playing";
+    syncPhase(ctx, run);
     notify(run);
   }
 
@@ -557,6 +567,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
     ctx.scene.entity.stats.set(ctx.player.userId, "level", { current: 1 });
     ctx.scene.entity.setPose(ctx.player.userId, { position: spec.player.spawnAt ?? [0, 0, 0] });
     ctx.time.play();
+    syncPhase(ctx, run);
     notify(run);
   }
 
@@ -568,6 +579,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
       if (run.countdownRemaining <= 0) {
         run.countdownRemaining = 0;
         run.phase = "playing";
+        syncPhase(ctx, run);
       }
       notify(run);
       return;

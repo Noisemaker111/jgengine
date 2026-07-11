@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { SettingsTrigger } from "@jgengine/react";
 
 import type { SessionSnapshot } from "../../race/session";
 import { SLEDDERS } from "../../ai/sledders";
@@ -50,9 +51,12 @@ export function MemoryMap({ snapshot }: { snapshot: SessionSnapshot }) {
       className="absolute right-4 top-4 flex flex-col gap-1 rounded-lg border p-2 shadow-[0_0_24px_rgba(0,0,0,0.55)]"
       style={{ borderColor: `${PALETTE.iceBlue}33`, backgroundColor: `${PALETTE.deepWater}f0` }}
     >
-      <span className="text-center text-[9px] font-bold uppercase tracking-[0.3em]" style={{ color: PALETTE.auroraGreen }}>
-        Memory Map
-      </span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[9px] font-bold uppercase tracking-[0.3em]" style={{ color: PALETTE.auroraGreen }}>
+          Memory Map
+        </span>
+        <SettingsTrigger className="pointer-events-auto flex h-5 w-5 items-center justify-center rounded-full border border-[#a8dadc]/30 text-[#a8dadc] transition-colors hover:bg-[#a8dadc]/15" />
+      </div>
       <div className="relative" style={{ width: DISPLAY_SIZE, height: displayHeight }}>
         <canvas
           ref={canvasRef}
