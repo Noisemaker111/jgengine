@@ -32,13 +32,20 @@ describe("spatial", () => {
     expect(api.inRadius([0, 0, 0], 5, (id) => id !== "b")).toEqual(["a", "c"]);
   });
 
-  test("hasLineOfSight defaults to true and delegates to the occluder", () => {
+  test("hasLineOfSight defaults to true without an occluder (open-field bypass)", () => {
     const open = apiFrom({ a: [0, 0, 0], b: [0, 0, 10] });
     expect(open.hasLineOfSight("a", "b")).toBe(true);
     expect(open.hasLineOfSight("a", "missing")).toBe(false);
+  });
 
+  test("hasLineOfSight is blocked when the occluder reports a wall", () => {
     const walled = apiFrom({ a: [0, 0, 0], b: [0, 0, 10] }, () => true);
     expect(walled.hasLineOfSight("a", "b")).toBe(false);
+    const gated = apiFrom({ a: [0, 0, 0], b: [0, 0, 10], c: [10, 0, 0] }, (from, to) => {
+      return from[2] === 0 && to[2] === 10;
+    });
+    expect(gated.hasLineOfSight("a", "b")).toBe(false);
+    expect(gated.hasLineOfSight("a", "c")).toBe(true);
   });
 
   test("queryArc returns candidates inside the XZ cone", () => {

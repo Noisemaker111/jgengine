@@ -147,6 +147,7 @@ export interface GameContextOptions<
   content: GameContextContent;
   player: { userId: string; isNew: boolean };
   now?: () => number;
+  occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
 }
 
 export interface SceneObjectContext extends ObjectStore {
@@ -348,6 +349,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 ): GameContext {
   const { definition, content, player } = options;
   const now = options.now ?? Date.now;
+  const occluder = options.occluder;
 
   const signal = createChangeSignal();
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
@@ -387,6 +389,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const spatial = createSpatialApi({
     resolvePosition: (instanceId) => entities.get(instanceId)?.position,
     candidates: () => entities.list().map((entity) => entity.id),
+    ...(occluder !== undefined ? { occluder } : {}),
   });
   const targeting = notifyAfter(
     createTargeting({
@@ -402,8 +405,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   );
   const combatSpatial: CombatSpatialDeps = {
     inRadius: (center, radius) => spatial.inRadius(center, radius),
-    hasLineOfSight: (from, to) =>
-      typeof from === "string" ? spatial.hasLineOfSight(from, to) : entities.get(to) !== null,
+    hasLineOfSight: (from, to) => {
+      if (typeof from === "string") return spatial.hasLineOfSight(from, to);
+      const toPos = entities.get(to)?.position;
+      if (toPos === undefined) return false;
+      if (occluder === undefined) return true;
+      return !occluder(from, toPos);
+    },
     positionOf: (instanceId) => entities.get(instanceId)?.position,
   };
 

@@ -109,6 +109,52 @@ describe("createGameContext", () => {
     expect(ctx.scene.entity.stats.get(bare, "health")).toBeNull();
   });
 
+  test("without an occluder, entity and AoE LoS stay open", () => {
+    const ctx = makeContext();
+    const a = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
+    const b = ctx.scene.entity.spawn("dummy", { position: [0, 0, 8] });
+    expect(ctx.scene.entity.hasLineOfSight(a, b)).toBe(true);
+    ctx.scene.entity.effect({
+      from: a,
+      effect: "damage",
+      via: { amount: 5 },
+      at: [0, 0, 0],
+      radius: 10,
+    });
+    expect(ctx.scene.entity.stats.get(b, "health")?.current).toBe(25);
+  });
+
+  test("occluder blocks entity LoS and position-origin AoE through walls", () => {
+    const ctx = createGameContext({
+      definition: defineGame({
+        name: "LosGame",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+      }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+      occluder: (from, to) => {
+        const crossesWall =
+          Math.min(from[2], to[2]) < 4 && Math.max(from[2], to[2]) > 4 && Math.abs(from[0] - to[0]) < 0.01;
+        return crossesWall;
+      },
+    });
+    const shooter = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
+    const behindWall = ctx.scene.entity.spawn("dummy", { position: [0, 0, 8] });
+    const open = ctx.scene.entity.spawn("dummy", { position: [5, 0, 2] });
+    expect(ctx.scene.entity.hasLineOfSight(shooter, behindWall)).toBe(false);
+    expect(ctx.scene.entity.hasLineOfSight(shooter, open)).toBe(true);
+    ctx.scene.entity.effect({
+      from: shooter,
+      effect: "damage",
+      via: { amount: 5 },
+      at: [0, 0, 0],
+      radius: 12,
+    });
+    expect(ctx.scene.entity.stats.get(behindWall, "health")?.current).toBe(30);
+    expect(ctx.scene.entity.stats.get(open, "health")?.current).toBe(25);
+  });
+
   test("scene.entity.update patches movement and rotation, bumps version, and is readable via get", () => {
     const ctx = makeContext();
     const id = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });

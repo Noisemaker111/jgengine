@@ -5,12 +5,16 @@ export interface StatModifier {
 
 export type StatModifierSet<TStat extends string> = Partial<Record<TStat, StatModifier>>;
 
+export interface CreateStatsOptions {
+  now?: () => number;
+}
+
 export interface Stats<TStat extends string> {
   setBase(stat: TStat, value: number): void;
   getBase(stat: TStat): number;
   addSource(sourceId: string, modifiers: StatModifierSet<TStat>, options?: { expiresAtMs?: number }): void;
   removeSource(sourceId: string): void;
-  hasSource(sourceId: string): boolean;
+  hasSource(sourceId: string, nowMs?: number): boolean;
   get(stat: TStat, nowMs?: number): number;
   pruneExpired(nowMs: number): string[];
   sources(): string[];
@@ -21,12 +25,31 @@ interface StatSourceEntry<TStat extends string> {
   expiresAtMs: number | undefined;
 }
 
-export function createStats<TStat extends string>(base: Record<TStat, number>): Stats<TStat> {
+export function createStats<TStat extends string>(
+  base: Record<TStat, number>,
+  options?: CreateStatsOptions,
+): Stats<TStat> {
   const baseValues: Record<TStat, number> = { ...base };
   const sourceEntries = new Map<string, StatSourceEntry<TStat>>();
+  const clock = options?.now;
+
+  function resolveNow(nowMs: number | undefined): number | undefined {
+    return nowMs ?? clock?.();
+  }
 
   function isExpired(entry: StatSourceEntry<TStat>, nowMs: number | undefined): boolean {
     return nowMs !== undefined && entry.expiresAtMs !== undefined && entry.expiresAtMs <= nowMs;
+  }
+
+  function dropExpired(nowMs: number): string[] {
+    const pruned: string[] = [];
+    for (const [sourceId, entry] of sourceEntries) {
+      if (isExpired(entry, nowMs)) {
+        sourceEntries.delete(sourceId);
+        pruned.push(sourceId);
+      }
+    }
+    return pruned;
   }
 
   function resolve(stat: TStat, nowMs: number | undefined): number {
@@ -51,27 +74,29 @@ export function createStats<TStat extends string>(base: Record<TStat, number>): 
     getBase(stat) {
       return baseValues[stat];
     },
-    addSource(sourceId, modifiers, options) {
-      sourceEntries.set(sourceId, { modifiers, expiresAtMs: options?.expiresAtMs });
+    addSource(sourceId, modifiers, sourceOptions) {
+      sourceEntries.set(sourceId, { modifiers, expiresAtMs: sourceOptions?.expiresAtMs });
     },
     removeSource(sourceId) {
       sourceEntries.delete(sourceId);
     },
-    hasSource(sourceId) {
-      return sourceEntries.has(sourceId);
+    hasSource(sourceId, nowMs) {
+      const entry = sourceEntries.get(sourceId);
+      if (entry === undefined) return false;
+      const time = resolveNow(nowMs);
+      if (isExpired(entry, time)) {
+        sourceEntries.delete(sourceId);
+        return false;
+      }
+      return true;
     },
     get(stat, nowMs) {
-      return resolve(stat, nowMs);
+      const time = resolveNow(nowMs);
+      if (time !== undefined) dropExpired(time);
+      return resolve(stat, time);
     },
     pruneExpired(nowMs) {
-      const pruned: string[] = [];
-      for (const [sourceId, entry] of sourceEntries) {
-        if (isExpired(entry, nowMs)) {
-          sourceEntries.delete(sourceId);
-          pruned.push(sourceId);
-        }
-      }
-      return pruned;
+      return dropExpired(nowMs);
     },
     sources() {
       return Array.from(sourceEntries.keys());

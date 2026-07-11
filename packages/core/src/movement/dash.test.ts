@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { createDashState, dashOffset, iframeActive, type DashConfig } from "@jgengine/core/movement/dash";
+import {
+  createDashState,
+  dashDisplacement,
+  dashFrameDelta,
+  dashOffset,
+  iframeActive,
+  type DashConfig,
+} from "@jgengine/core/movement/dash";
 
 const config: DashConfig = {
   distance: 6,
@@ -18,10 +25,31 @@ describe("dash", () => {
     expect(iframeActive(config, 250)).toBe(false);
   });
 
-  test("displacement eases from 0 to full distance", () => {
-    expect(dashOffset(config, { x: 1, z: 0 }, 0)[0]).toBeCloseTo(0);
+  test("displacement is cumulative arc travel from dash origin", () => {
+    expect(dashDisplacement(config, { x: 1, z: 0 }, 0)[0]).toBeCloseTo(0);
+    expect(dashDisplacement(config, { x: 1, z: 0 }, 300)[0]).toBeCloseTo(6);
     expect(dashOffset(config, { x: 1, z: 0 }, 300)[0]).toBeCloseTo(6);
-    expect(dashOffset(config, { x: 0, z: 0 }, 150)).toEqual([0, 0, 0]);
+    expect(dashDisplacement(config, { x: 0, z: 0 }, 150)).toEqual([0, 0, 0]);
+  });
+
+  test("frame delta is the step between two elapsed samples, not cumulative travel", () => {
+    const mid = dashDisplacement(config, { x: 1, z: 0 }, 150)[0];
+    const end = dashDisplacement(config, { x: 1, z: 0 }, 300)[0];
+    const delta = dashFrameDelta(config, { x: 1, z: 0 }, 150, 300);
+    expect(delta[0]).toBeCloseTo(end - mid);
+    expect(delta[0]).toBeLessThan(end);
+    let naive = 0;
+    for (const t of [100, 200, 300]) {
+      naive += dashDisplacement(config, { x: 1, z: 0 }, t)[0];
+    }
+    expect(naive).toBeGreaterThan(config.distance);
+    let correct = 0;
+    let prev = 0;
+    for (const t of [100, 200, 300]) {
+      correct += dashFrameDelta(config, { x: 1, z: 0 }, prev, t)[0];
+      prev = t;
+    }
+    expect(correct).toBeCloseTo(config.distance);
   });
 
   test("dash spends stamina and grants i-frames mid-burst", () => {

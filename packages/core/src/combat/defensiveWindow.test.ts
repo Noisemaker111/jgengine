@@ -58,4 +58,15 @@ describe("defensive window", () => {
     win.close();
     expect(win.evaluate(1050, spear).outcome).toBe("hit");
   });
+
+  test("isOpen tracks the live window and auto-expires after recovery", () => {
+    const win = createDefensiveWindow(parry);
+    expect(win.isOpen(0)).toBe(false);
+    win.open(1000);
+    expect(win.isOpen(1050)).toBe(true);
+    expect(win.isOpen(1319)).toBe(true);
+    expect(win.isOpen(1320)).toBe(false);
+    expect(win.evaluate(1320, spear).outcome).toBe("hit");
+    expect(win.isOpen(1400)).toBe(false);
+  });
 });

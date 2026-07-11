@@ -58,11 +58,40 @@ describe("stat modifiers", () => {
     expect(stats.get("speed", 1500)).toBe(10);
   });
 
-  test("expiry is not evaluated when nowMs is omitted", () => {
+  test("get with nowMs auto-removes expired sources so hasSource cleans up", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("potion", { speed: { add: 10 } }, { expiresAtMs: 1000 });
+
+    expect(stats.hasSource("potion")).toBe(true);
+    expect(stats.get("speed", 1000)).toBe(10);
+    expect(stats.hasSource("potion")).toBe(false);
+  });
+
+  test("hasSource with nowMs expires without a separate prune call", () => {
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    stats.addSource("potion", { speed: { add: 10 } }, { expiresAtMs: 1000 });
+
+    expect(stats.hasSource("potion", 500)).toBe(true);
+    expect(stats.hasSource("potion", 1000)).toBe(false);
+    expect(stats.get("speed")).toBe(10);
+  });
+
+  test("expiry is not evaluated when nowMs is omitted and no clock is bound", () => {
     const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
     stats.addSource("potion", { speed: { add: 10 } }, { expiresAtMs: 1 });
 
     expect(stats.get("speed")).toBe(20);
+  });
+
+  test("a bound clock auto-expires timed sources on get without an explicit nowMs", () => {
+    let nowMs = 500;
+    const stats = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 }, { now: () => nowMs });
+    stats.addSource("potion", { speed: { add: 10 } }, { expiresAtMs: 1000 });
+
+    expect(stats.get("speed")).toBe(20);
+    nowMs = 1000;
+    expect(stats.get("speed")).toBe(10);
+    expect(stats.hasSource("potion")).toBe(false);
   });
 
   test("pruneExpired removes expired sources and returns their ids", () => {

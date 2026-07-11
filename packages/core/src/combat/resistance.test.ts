@@ -1,5 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import { resolveResistance, resistanceScale, type ResistanceMatrix } from "./resistance";
+import {
+  resolveResistance,
+  resistanceScale,
+  UnknownResistanceCategoryError,
+  UnknownResistancePropertyError,
+  type ResistanceMatrix,
+} from "./resistance";
 
 const bloonsMatrix: ResistanceMatrix = {
   categories: {
@@ -37,7 +43,7 @@ describe("resolveResistance", () => {
     expect(result.multiplier).toBe(0.5);
   });
 
-  it("returns normal when no property matches", () => {
+  it("returns normal when a valid property has no rule for the category", () => {
     const result = resolveResistance(bloonsMatrix, "sharp", ["red"]);
     expect(result.verdict).toBe("normal");
     expect(result.multiplier).toBe(1);
@@ -66,10 +72,36 @@ describe("resolveResistance", () => {
     expect(resistanceScale(matrix, "fire", ["stone"])).toBe(0.75);
   });
 
-  it("supports an immune default for unlisted categories", () => {
+  it("supports an empty catalog with a default verdict for any category", () => {
     const matrix: ResistanceMatrix = { categories: {}, default: "immune" };
     const result = resolveResistance(matrix, "holy", ["ghost"]);
     expect(result.immune).toBe(true);
     expect(result.multiplier).toBe(0);
+  });
+
+  it("throws on a misspelled category that is not in the catalog", () => {
+    expect(() => resolveResistance(bloonsMatrix, "sharpp", ["lead"])).toThrow(
+      UnknownResistanceCategoryError,
+    );
+  });
+
+  it("uses unknownCategory when a category is intentionally unlisted", () => {
+    const matrix: ResistanceMatrix = {
+      categories: { fire: { stone: "resist" } },
+      unknownCategory: "immune",
+    };
+    const result = resolveResistance(matrix, "holy", ["ghost"]);
+    expect(result.immune).toBe(true);
+    expect(result.multiplier).toBe(0);
+  });
+
+  it("throws on invalid property ids when propertyIds is declared", () => {
+    const matrix: ResistanceMatrix = {
+      categories: { sharp: { lead: "immune" } },
+      propertyIds: ["lead", "red"],
+      default: "normal",
+    };
+    expect(resolveResistance(matrix, "sharp", ["red"]).verdict).toBe("normal");
+    expect(() => resolveResistance(matrix, "sharp", ["leed"])).toThrow(UnknownResistancePropertyError);
   });
 });
