@@ -23,6 +23,7 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
+  settings: { variant: "panel" },
   environment: Environment,
   camera: {
     perspective: "first",

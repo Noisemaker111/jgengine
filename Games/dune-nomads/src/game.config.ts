@@ -16,6 +16,25 @@ export const game = defineGame({
   input: keybinds,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "toggleMap", "start"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart caravan",
+        kind: "danger",
+        description: "Reset the caravan and route from the start oasis.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+      {
+        id: "toggleMap",
+        label: "Toggle route map",
+        description: "Show or hide the caravan's pinned route.",
+        run: (ctx) => ctx.game.commands.run("toggleMap", {}),
+      },
+    ],
+  },
   renderEntity: renderCaravanEntity,
   renderObject: renderDuneObject,
   prompts: oasisPrompts,

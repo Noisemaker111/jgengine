@@ -37,4 +37,23 @@ export const game = defineGame({
       shakePerSpeed: 0.006,
     },
   },
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restartCourse"],
+    actions: [
+      {
+        id: "restartCourse",
+        label: "Restart course",
+        kind: "danger",
+        description: "Restart the current course from the first checkpoint.",
+        run: (ctx) => ctx.game.commands.run("restartCourse", {}),
+      },
+      {
+        id: "returnToMenu",
+        label: "Return to menu",
+        description: "Exit back to the course-select menu.",
+        run: (ctx) => ctx.game.commands.run("returnToMenu", {}),
+      },
+    ],
+  },
 });

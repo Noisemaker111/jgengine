@@ -81,6 +81,24 @@ export const game = defineGame({
   worldItem: { rarityStyle, pickupRadius: 2.6 },
   prompts,
   hotbarSelection: () => session.selectedSlot(),
+  settings: {
+    variant: "fullscreen",
+    actions: [
+      {
+        id: "run.start",
+        label: "Redeploy",
+        kind: "danger",
+        description: "Abandon this run and restart from wave one.",
+        run: (ctx) => ctx.game.commands.run("run.start", {}),
+      },
+      {
+        id: "run.endless",
+        label: "Enter endless mode",
+        description: "Push past the final wave into endless waves.",
+        run: (ctx) => ctx.game.commands.run("run.endless", {}),
+      },
+    ],
+  },
   backdrop: {
     background: ARENA_COLORS.sky,
     fog: { color: ARENA_COLORS.fog, near: 55, far: 140 },

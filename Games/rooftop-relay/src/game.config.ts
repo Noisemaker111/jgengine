@@ -39,4 +39,17 @@ export const game = defineGame({
     maxPolarAngle: 1.25,
     frustum: { far: 420 },
   },
+  settings: {
+    variant: "fullscreen",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart relay",
+        kind: "danger",
+        description: "Reset the route and start the relay from the first leg.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

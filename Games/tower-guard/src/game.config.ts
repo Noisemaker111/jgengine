@@ -19,6 +19,9 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
+  settings: {
+    variant: "panel",
+  },
   renderEntity: renderTowerGuardEntity,
   WorldOverlay: TowerGuardWorldOverlay,
   worldHealthBars: { statId: "health" },

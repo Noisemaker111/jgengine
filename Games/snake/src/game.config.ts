@@ -25,4 +25,17 @@ export const game = defineGame({
       tap: "confirm",
     },
   },
+  settings: {
+    variant: "panel",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart",
+        kind: "danger",
+        description: "Clear the board and start a fresh run.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

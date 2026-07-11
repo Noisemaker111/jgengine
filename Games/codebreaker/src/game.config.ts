@@ -13,4 +13,23 @@ export const game = defineGame({
   GameUI,
   camera: { followEntityId: null },
   touch: false,
+  settings: {
+    variant: "panel",
+    hideBindings: ["newGame", "daily"],
+    actions: [
+      {
+        id: "newGame",
+        label: "New Game",
+        kind: "danger",
+        description: "Start a fresh ranked round with a new secret code.",
+        run: (ctx) => ctx.game.commands.run("newGame", {}),
+      },
+      {
+        id: "daily",
+        label: "Daily Puzzle",
+        description: "Jump to today's shared daily challenge.",
+        run: (ctx) => ctx.game.commands.run("daily", {}),
+      },
+    ],
+  },
 });

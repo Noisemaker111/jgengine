@@ -10,6 +10,19 @@ export const game = defineGame({
   save: "none",
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "sidebar",
+    hideBindings: ["clearBoard"],
+    actions: [
+      {
+        id: "clearBoard",
+        label: "Clear board",
+        kind: "danger",
+        description: "Wipe every fill and cross, keep the same puzzle.",
+        run: (ctx) => ctx.game.commands.run("clearBoard", {}),
+      },
+    ],
+  },
   camera: { followEntityId: null },
   touch: false,
 });

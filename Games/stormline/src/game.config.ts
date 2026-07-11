@@ -39,4 +39,17 @@ export const game = defineGame({
     [OBJECT_IDS.wreckTruck]: { color: "#5c4a3d" },
     [OBJECT_IDS.wreckSilo]: { color: "#6b6f63" },
   },
+  settings: {
+    variant: "panel",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Pull back to the checkpoint and outrun the storm again.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

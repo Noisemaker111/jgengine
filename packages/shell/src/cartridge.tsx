@@ -75,6 +75,7 @@ export type CartridgeConfig = CartridgeSpec & {
   camera?: GameConfig["camera"];
   entitySprites?: GameConfig["entitySprites"];
   worldItem?: GameConfig["worldItem"];
+  settings?: GameConfig["settings"];
 };
 
 function useTick(intervalMs: number): void {
@@ -485,5 +486,6 @@ export function cartridge(config: CartridgeConfig): PlayableGame {
     camera: config.camera,
     entitySprites: config.entitySprites,
     worldItem: config.worldItem,
+    settings: config.settings,
   });
 }

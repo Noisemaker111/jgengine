@@ -229,6 +229,7 @@ export const config: CartridgeConfig = {
     "--jg-font-numeric": 'Consolas, "Cascadia Mono", "SF Mono", "Roboto Mono", monospace',
     "--jg-font-body": '"Segoe UI", system-ui, sans-serif',
   },
+  settings: { variant: "fullscreen" },
   hud: {
     storageKey: "swarm-survivor",
     panels: [

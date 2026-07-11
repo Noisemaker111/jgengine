@@ -16,6 +16,19 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "confirm"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Reset the drift run from the start line.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
   renderEntity: renderVehicle,
   objectStyles: OBJECT_STYLES,
   camera: {

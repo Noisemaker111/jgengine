@@ -12,5 +12,30 @@ export const game = defineGame({
   save: "none",
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "panel",
+    hideBindings: ["newGame", "toggleMode", "daily"],
+    actions: [
+      {
+        id: "newGame",
+        label: "New game",
+        kind: "danger",
+        description: "Scrap the current sequence and start a fresh one.",
+        run: (ctx) => ctx.game.commands.run("newGame", {}),
+      },
+      {
+        id: "toggleMode",
+        label: "Switch mode",
+        description: "Swap between Classic and Practice.",
+        run: (ctx) => ctx.game.commands.run("toggleMode", {}),
+      },
+      {
+        id: "daily",
+        label: "Daily challenge",
+        description: "Play today's shared sequence.",
+        run: (ctx) => ctx.game.commands.run("daily", {}),
+      },
+    ],
+  },
   touch: false,
 });

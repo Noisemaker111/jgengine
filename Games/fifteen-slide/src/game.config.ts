@@ -14,4 +14,23 @@ export const game = defineGame({
   GameUI,
   camera: { rig: "none", followEntityId: null },
   touch: false,
+  settings: {
+    variant: "panel",
+    hideBindings: ["restart", "newShuffle"],
+    actions: [
+      {
+        id: "newShuffle",
+        label: "New shuffle",
+        description: "Scramble the tiles into a fresh puzzle.",
+        run: (ctx) => ctx.game.commands.run("newShuffle", {}),
+      },
+      {
+        id: "restart",
+        label: "Restart",
+        kind: "danger",
+        description: "Reset the current puzzle back to its starting arrangement.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

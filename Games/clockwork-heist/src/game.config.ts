@@ -25,6 +25,19 @@ export const game = defineGame({
   backdrop: { background: PALETTE.midnightBlue },
   lighting: { ambient: { color: PALETTE.candlelight, intensity: 0.2 } },
   movement: { collideObjects: true },
+  settings: {
+    variant: "panel",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart heist",
+        kind: "danger",
+        description: "Back to the gate with the clock reset to dusk.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
   camera: {
     rig: "topDown",
     topDown: { height: 15, pitch: 1.05, yaw: Math.PI / 4, followSmoothing: 7, zoom: { min: 9, max: 22 } },

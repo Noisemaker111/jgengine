@@ -19,4 +19,17 @@ export const game = defineGame({
   camera: { followEntityId: null },
   orientation: "portrait",
   touch: false,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Drop back to the start with fresh lives.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

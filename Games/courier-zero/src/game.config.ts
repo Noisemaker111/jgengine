@@ -17,6 +17,25 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "panel",
+    hideBindings: ["restartRun", "toggleMap"],
+    actions: [
+      {
+        id: "restartRun",
+        label: "Restart run",
+        kind: "danger",
+        description: "Wash the delivery route away and start the tide clock over.",
+        run: (ctx) => ctx.game.commands.run("restartRun", {}),
+      },
+      {
+        id: "toggleMap",
+        label: "Toggle flood map",
+        description: "Show or hide the tide and route overlay.",
+        run: (ctx) => ctx.game.commands.run("toggleMap", {}),
+      },
+    ],
+  },
   prompts,
   WorldOverlay: TideOcean,
   objectStyles: PROP_OBJECT_STYLES,

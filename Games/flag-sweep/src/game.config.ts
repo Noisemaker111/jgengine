@@ -13,4 +13,17 @@ export const game = defineGame({
   GameUI,
   camera: { followEntityId: null },
   touch: false,
+  settings: {
+    variant: "panel",
+    hideBindings: ["newGame"],
+    actions: [
+      {
+        id: "newGame",
+        label: "New game",
+        kind: "danger",
+        description: "Clear the board and start a fresh sweep.",
+        run: (ctx) => ctx.game.commands.run("newGame", {}),
+      },
+    ],
+  },
 });

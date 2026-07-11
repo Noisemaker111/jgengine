@@ -13,4 +13,17 @@ export const game = defineGame({
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
   touch: false,
+  settings: {
+    variant: "panel",
+    hideBindings: ["newGame"],
+    actions: [
+      {
+        id: "newGame",
+        label: "New game",
+        kind: "danger",
+        description: "Shuffle and deal a fresh board.",
+        run: (ctx) => ctx.game.commands.run("newGame", {}),
+      },
+    ],
+  },
 });

@@ -14,6 +14,19 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restartRace"],
+    actions: [
+      {
+        id: "restartRace",
+        label: "Restart race",
+        kind: "danger",
+        description: "Reset the race and start fresh from the line.",
+        run: (ctx) => ctx.game.commands.run("restartRace", {}),
+      },
+    ],
+  },
   camera: {
     rig: "chase",
     chase: {

@@ -17,6 +17,9 @@ export const game = defineGame({
   input: keybinds,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "sheet",
+  },
   renderEntity: renderDrone,
   renderObject,
   camera: {

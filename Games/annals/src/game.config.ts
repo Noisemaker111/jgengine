@@ -23,6 +23,7 @@ export const game = defineGame({
   GameUI,
   renderEntity: renderAnnalsEntity,
   pointer: { moveCommand: "annals.focus" },
+  settings: { variant: "panel" },
   camera: {
     rig: "rts",
     frustum: { far: 2600 },

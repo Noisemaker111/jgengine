@@ -35,4 +35,17 @@ export const game = defineGame({
     followEntityId: null,
     rts: { start: { x: 0, z: 0 }, height: 60, pitch: 1.0, panSpeed: 0, edgeScroll: false },
   },
+  settings: {
+    variant: "panel",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart",
+        kind: "danger",
+        description: "Clear the board and start a fresh stack.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

@@ -18,4 +18,17 @@ export const game = defineGame({
   GameUI,
   camera: { followEntityId: null },
   touch: false,
+  settings: {
+    variant: "panel",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart",
+        kind: "danger",
+        description: "Clear the tank and start a fresh climb from the top.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

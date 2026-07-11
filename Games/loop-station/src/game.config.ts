@@ -22,6 +22,7 @@ export const game = defineGame({
   environment: TrackEnvironment,
   renderEntity: renderRunnerEntity,
   objectStyles: Object.fromEntries(Object.entries(OBJECT_BASE_COLORS).map(([id, color]) => [id, { color }])),
+  settings: { variant: "sheet" },
   camera: {
     rig: "chase",
     chase: {

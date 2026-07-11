@@ -34,4 +34,23 @@ export const game = defineGame({
   objectStyles,
   renderEntity: () => createElement(BotMesh),
   WorldOverlay: CourseOverlay,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restartSector", "startRun"],
+    actions: [
+      {
+        id: "restartSector",
+        label: "Restart sector",
+        kind: "danger",
+        description: "Jump back to the start of the current sector.",
+        run: (ctx) => ctx.game.commands.run("restartSector", {}),
+      },
+      {
+        id: "startRun",
+        label: "Start / continue run",
+        description: "Begin the run or continue past the current screen.",
+        run: (ctx) => ctx.game.commands.run("startRun", {}),
+      },
+    ],
+  },
 });
