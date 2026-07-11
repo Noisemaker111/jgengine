@@ -21,6 +21,11 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import type { ShellMultiplayer } from "../multiplayer";
 import type { PlayableGame } from "../registry";
+import {
+  COLLISION_DEBUG_LAYERS,
+  collisionDebug,
+  type CollisionDebugLayer,
+} from "./collisionDebug";
 
 const REFRESH_MS = 250;
 const PHASE_BAR_BUDGET_MS = 16.7;
@@ -135,11 +140,12 @@ function flattenCodes(codes: ActionCodes): { codes: string; mode: "press" | "hol
   return result;
 }
 
-type DevtoolsTab = "perf" | "logs" | "net" | "keys" | "tune";
+type DevtoolsTab = "perf" | "logs" | "net" | "keys" | "tune" | "col";
 
 const TABS: { id: DevtoolsTab; label: string }[] = [
   { id: "perf", label: "Perf" },
   { id: "tune", label: "Tune" },
+  { id: "col", label: "Col" },
   { id: "logs", label: "Logs" },
   { id: "net", label: "Net" },
   { id: "keys", label: "Keys" },
@@ -456,6 +462,60 @@ function KeysPanel({ input }: { input: ActionCodesMap | undefined }) {
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+const LAYER_LABELS: Record<CollisionDebugLayer, string> = {
+  hitboxes: "Damage hitboxes",
+  bodies: "Physical bodies",
+  projectiles: "Projectile paths",
+  muzzles: "Muzzle / shot origins",
+  aimLaser: "Aim laser (authoritative)",
+};
+
+function ColPanel() {
+  const state = useSyncExternalStore(
+    collisionDebug.subscribe,
+    () => collisionDebug.getState(),
+    () => collisionDebug.getState(),
+  );
+  return (
+    <div className="space-y-2">
+      <div className="text-[10px] text-neutral-500">
+        F2 world collision debugger · layers stay on when panel closes · zero cost when all off
+      </div>
+      <div className="flex gap-1">
+        <button
+          type="button"
+          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+          onClick={() => collisionDebug.setAllLayers(true)}
+        >
+          All on
+        </button>
+        <button
+          type="button"
+          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+          onClick={() => collisionDebug.setAllLayers(false)}
+        >
+          All off
+        </button>
+      </div>
+      <div className="space-y-1">
+        {COLLISION_DEBUG_LAYERS.map((layer) => (
+          <label key={layer} className="flex cursor-pointer items-center gap-2 text-neutral-200">
+            <input
+              type="checkbox"
+              checked={state.layers[layer]}
+              onChange={(event) => collisionDebug.setLayer(layer, event.target.checked)}
+            />
+            <span>{LAYER_LABELS[layer]}</span>
+          </label>
+        ))}
+      </div>
+      <div className="border-t border-neutral-800 pt-1.5 font-mono text-[9px] text-neutral-500">
+        hitbox pink · body cyan · muzzle red · laser lime · X damage · ○ solid · · miss
+      </div>
     </div>
   );
 }
@@ -950,6 +1010,7 @@ export function DevtoolsOverlay({
       discover: devtools.discover,
       frame: devtools.frame,
       profile: devtools.profile,
+      collisionDebug,
     };
   }, [playable]);
 
@@ -1061,8 +1122,9 @@ export function DevtoolsOverlay({
       {tab === "net" ? <NetPanel multiplayer={multiplayer} /> : null}
       {tab === "keys" ? <KeysPanel input={playable.game.input} /> : null}
       {tab === "tune" ? <TunePanel gameName={playable.game.name} /> : null}
+      {tab === "col" ? <ColPanel /> : null}
       <div className="mt-2 border-t border-neutral-800 pt-1.5 text-[9px] text-neutral-500">
-        F2 toggles · agents: __JG_DEVTOOLS.snapshot() · full: .snapshotFull()
+        F2 toggles · Col = collision · agents: __JG_DEVTOOLS.snapshot() · .collisionDebug
       </div>
     </div>
   );
