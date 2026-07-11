@@ -16,17 +16,18 @@ Pure-TypeScript, genre-agnostic game engine SDK. Packages: ${ENGINE_PACKAGES.map
 
 usage: jgengine <command> [...args]
 
-  create <dir>     scaffold a playable game — flat world, spawned player, HUD, verify test.
-                   [--name <display name>] [--in-repo|--standalone] [--no-install] [--pm bun|npm|pnpm]
-  doctor [dir]     diagnose a game project: version skew, missing peers, unstyled-UI @source gaps, shape drift
-  skills           install the JGengine agent skills (API reference, game-build workflow, verify gate) into .claude/skills
-  llms [package]   print packaged API docs (llms.txt) for an installed @jgengine/* package — agent-ready context
-  assets [...]     delegate to the @jgengine/assets CLI: list, search, pull CC0 3D model packs
-  versions         show CLI + installed @jgengine/* versions
-  help             this map
+  create "<Game Name>"  scaffold a playable base — flat world, spawned player, HUD, verify test.
+                        folder becomes My-Game-Name; name lands in game.config / HUD / title.
+                        [--in-repo|--standalone] [--no-install] [--pm bun|npm|pnpm]
+  doctor [dir]          diagnose a game project: version skew, missing peers, unstyled-UI @source gaps, shape drift
+  skills                install the JGengine agent skills (API reference, game-build workflow, verify gate) into .claude/skills
+  llms [package]        print packaged API docs (llms.txt) for an installed @jgengine/* package — agent-ready context
+  assets [...]          delegate to the @jgengine/assets CLI: list, search, pull CC0 3D model packs
+  versions              show CLI + installed @jgengine/* versions
+  help                  this map
 
 docs: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
-new here (human or agent)? run: npx jgengine create my-game && cd my-game && npx jgengine skills
+new here (human or agent)? run: npx jgengine create "My Game Name" && cd My-Game-Name && npx jgengine skills
 `;
 
 function runVersions(): number {
