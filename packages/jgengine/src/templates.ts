@@ -406,6 +406,8 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 
 **How people use JGengine:** they say *Make a game that … with jgengine* to an agent. They do **not** start from a CLI tutorial. \`npx jgengine\` is for **you** (scaffold, skills, docs).
 
+**Identity:** npm package \`jgengine\` / \`@jgengine/*\` — https://jgengine.com/llms.txt. Generic web search for "jgengine" collides with unrelated car-engine businesses; use \`npm view jgengine\` or that URL.
+
 ## What to do when the user wants this game built
 
 1. Read skills if present: \`jgengine-newgame\` (workflow), \`jgengine-api\` (API), \`jgengine-verify\` (prove it works). They land under \`.agents/skills/\` or \`.claude/skills/\` when scaffolded via create.
