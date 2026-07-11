@@ -126,11 +126,17 @@ export function createNavGrid(config: NavGridConfig): NavGrid {
         if (walkable[index(x, y)] === 0) return false;
         if (x === b.col && y === b.row) return true;
         const e2 = 2 * err;
-        if (e2 > -dy) {
+        const stepX = e2 > -dy;
+        const stepY = e2 < dx;
+        if (stepX && stepY) {
+          if (walkable[index(x + sx, y)] === 0) return false;
+          if (walkable[index(x, y + sy)] === 0) return false;
+        }
+        if (stepX) {
           err -= dy;
           x += sx;
         }
-        if (e2 < dx) {
+        if (stepY) {
           err += dx;
           y += sy;
         }
@@ -189,6 +195,26 @@ function withClearance(grid: NavGrid, clearance: number): (col: number, row: num
   };
 }
 
+function nearestPassable(
+  grid: NavGrid,
+  point: NavPoint,
+  passable: (col: number, row: number) => boolean,
+): NavCell | null {
+  const start = grid.cellAt(point);
+  if (passable(start.col, start.row)) return start;
+  const maxRadius = Math.max(grid.cols, grid.rows);
+  for (let radius = 1; radius <= maxRadius; radius += 1) {
+    for (let row = start.row - radius; row <= start.row + radius; row += 1) {
+      for (let col = start.col - radius; col <= start.col + radius; col += 1) {
+        const onRing = Math.abs(col - start.col) === radius || Math.abs(row - start.row) === radius;
+        if (!onRing || !grid.inBounds(col, row)) continue;
+        if (passable(col, row)) return { col, row };
+      }
+    }
+  }
+  return null;
+}
+
 /**
  * A* over the walkable grid. Returns a polyline of world-space `[x, z]` waypoints
  * from `from` to `to`, or `null` when no route exists. Blocked start/goal snap to
@@ -204,8 +230,8 @@ export function findPath(
   const stepCost = options.stepCost;
   const startCell = grid.cellAt(from);
   const goalCell = grid.cellAt(to);
-  const start = passable(startCell.col, startCell.row) ? startCell : grid.nearestWalkable(from);
-  const goal = passable(goalCell.col, goalCell.row) ? goalCell : grid.nearestWalkable(to);
+  const start = passable(startCell.col, startCell.row) ? startCell : nearestPassable(grid, from, passable);
+  const goal = passable(goalCell.col, goalCell.row) ? goalCell : nearestPassable(grid, to, passable);
   if (start === null || goal === null) return null;
 
   const cols = grid.cols;

@@ -80,11 +80,16 @@ export const SHAPE_BOX = 0;
 export const SHAPE_SPHERE = 1;
 
 /**
- * `hinge`/`fixed`/`distance` are hard bilateral constraints; `spring` is a soft PD constraint.
- * No angular state → `hinge`/`fixed` both pin the shared anchor (`axis` is metadata), `distance`
- * holds a fixed separation, `spring` drives toward `restLength` (suspension, follow-point carry).
+ * Hard bilateral: `fixed` pins the shared anchor (3-DOF), `hinge` pins only the plane
+ * perpendicular to `axis` (free along the axis — translational cylindrical), `distance`
+ * holds a fixed separation. `spring` is a soft PD drive toward `restLength`.
  */
 export type JointKind = "hinge" | "distance" | "spring" | "fixed";
+
+export const JOINT_FIXED = 0;
+export const JOINT_HINGE = 1;
+export const JOINT_DISTANCE = 2;
+export const JOINT_SPRING = 3;
 
 export interface JointOptions {
   /** First body index. */
@@ -103,7 +108,7 @@ export interface JointOptions {
   damping?: number;
   /** Clamp on the per-substep spring impulse (a follow-point that never yanks). Default unbounded. */
   maxImpulse?: number;
-  /** Hinge axis, retained as metadata (this sim has no angular DOF). */
+  /** Unit hinge axis (world). Required semantics for `hingeJoint`; free motion along this axis. Default [0,1,0]. */
   axis?: readonly [number, number, number];
 }
 
@@ -182,7 +187,7 @@ export class PhysicsWorld {
   private readonly numCells: number;
   private readonly cellStart: Int32Array;
   private readonly cursor: Int32Array;
-  private readonly sorted: Int32Array;
+  private sorted: Int32Array;
   private readonly bodyCell: Int32Array;
 
   // Awake-body index: the hot loops (integrate, solver outer, bounds, sleep) walk only these,
@@ -191,7 +196,7 @@ export class PhysicsWorld {
   private readonly awakeSlot: Int32Array;
   private awakeCount = 0;
 
-  private readonly jSpring: Uint8Array;
+  private readonly jKind: Uint8Array;
   private readonly jActive: Uint8Array;
   private readonly jBodyA: Int32Array;
   private readonly jBodyB: Int32Array;
@@ -201,6 +206,9 @@ export class PhysicsWorld {
   private readonly jAnchorBX: Float32Array;
   private readonly jAnchorBY: Float32Array;
   private readonly jAnchorBZ: Float32Array;
+  private readonly jAxisX: Float32Array;
+  private readonly jAxisY: Float32Array;
+  private readonly jAxisZ: Float32Array;
   private readonly jRest: Float32Array;
   private readonly jStiffness: Float32Array;
   private readonly jDamping: Float32Array;
@@ -303,7 +311,7 @@ export class PhysicsWorld {
     this.bodyFree = new Int32Array(cap);
 
     const jc = this.jointCapacity;
-    this.jSpring = new Uint8Array(jc);
+    this.jKind = new Uint8Array(jc);
     this.jActive = new Uint8Array(jc);
     this.jBodyA = new Int32Array(jc);
     this.jBodyB = new Int32Array(jc);
@@ -313,6 +321,9 @@ export class PhysicsWorld {
     this.jAnchorBX = new Float32Array(jc);
     this.jAnchorBY = new Float32Array(jc);
     this.jAnchorBZ = new Float32Array(jc);
+    this.jAxisX = new Float32Array(jc);
+    this.jAxisY = new Float32Array(jc);
+    this.jAxisZ = new Float32Array(jc);
     this.jRest = new Float32Array(jc);
     this.jStiffness = new Float32Array(jc);
     this.jDamping = new Float32Array(jc);
@@ -365,22 +376,33 @@ export class PhysicsWorld {
   }
 
   hingeJoint(options: JointOptions): number {
-    return this.addJoint(options, false, 0);
+    const raw = options.axis ?? ([0, 1, 0] as const);
+    const len = Math.hypot(raw[0], raw[1], raw[2]);
+    if (!(len > 1e-9)) throw new Error("PhysicsWorld: hingeJoint axis must be non-zero");
+    return this.addJoint(options, JOINT_HINGE, 0, [raw[0] / len, raw[1] / len, raw[2] / len]);
   }
 
   fixedJoint(options: JointOptions): number {
-    return this.addJoint(options, false, 0);
+    return this.addJoint(options, JOINT_FIXED, 0, null);
   }
 
   distanceJoint(options: JointOptions): number {
-    return this.addJoint(options, false, null);
+    return this.addJoint(options, JOINT_DISTANCE, null, null);
   }
 
   springJoint(options: JointOptions): number {
-    return this.addJoint(options, true, null);
+    return this.addJoint(options, JOINT_SPRING, null, null);
   }
 
-  private addJoint(options: JointOptions, spring: boolean, restOverride: number | null): number {
+  private addJoint(
+    options: JointOptions,
+    kind: number,
+    restOverride: number | null,
+    axis: readonly [number, number, number] | null,
+  ): number {
+    if (kind !== JOINT_FIXED && kind !== JOINT_HINGE && kind !== JOINT_DISTANCE && kind !== JOINT_SPRING) {
+      throw new Error(`PhysicsWorld: joint kind ${kind} is not implemented`);
+    }
     let id: number;
     if (this.jFreeCount > 0) {
       id = this.jFree[--this.jFreeCount]!;
@@ -399,7 +421,10 @@ export class PhysicsWorld {
     this.jAnchorBX[id] = aB?.[0] ?? 0;
     this.jAnchorBY[id] = aB?.[1] ?? 0;
     this.jAnchorBZ[id] = aB?.[2] ?? 0;
-    this.jSpring[id] = spring ? 1 : 0;
+    this.jKind[id] = kind;
+    this.jAxisX[id] = axis?.[0] ?? 0;
+    this.jAxisY[id] = axis?.[1] ?? 0;
+    this.jAxisZ[id] = axis?.[2] ?? 0;
     this.jStiffness[id] = options.stiffness ?? 40;
     this.jDamping[id] = options.damping ?? 6;
     this.jMaxImpulse[id] = options.maxImpulse ?? Number.POSITIVE_INFINITY;
@@ -721,26 +746,53 @@ export class PhysicsWorld {
     const n = this.bodyHigh;
     const start = this.cellStart;
     start.fill(0);
-    // Sleeping bodies never move, so their cell index is cached from addBody / their last awake
-    // substep — only awake bodies pay the cell recomputation each substep.
     const awakeCount = this.awakeCount;
     for (let a = 0; a < awakeCount; a += 1) {
       const i = this.awakeList[a]!;
       this.bodyCell[i] = this.cellOf(i);
     }
-    // Dead slots (tombstoned by removeBody) sit inside [0, bodyHigh) but never enter the grid.
+    const nx = this.nx;
+    const ny = this.ny;
     for (let i = 0; i < n; i += 1) {
       if ((this.flags[i]! & FLAG_DEAD) !== 0) continue;
-      start[this.bodyCell[i]! + 1]! += 1;
+      const x0 = cellCoord(this.posX[i]! - this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+      const x1 = cellCoord(this.posX[i]! + this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+      const y0 = cellCoord(this.posY[i]! - this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+      const y1 = cellCoord(this.posY[i]! + this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+      const z0 = cellCoord(this.posZ[i]! - this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+      const z1 = cellCoord(this.posZ[i]! + this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+      for (let z = z0; z <= z1; z += 1) {
+        for (let y = y0; y <= y1; y += 1) {
+          const rowBase = (z * ny + y) * nx;
+          for (let x = x0; x <= x1; x += 1) start[rowBase + x + 1]! += 1;
+        }
+      }
     }
     for (let c = 0; c < this.numCells; c += 1) {
       start[c + 1]! += start[c]!;
       this.cursor[c] = start[c]!;
     }
+    const total = start[this.numCells]!;
+    if (total > this.sorted.length) {
+      this.sorted = new Int32Array(Math.max(total, this.sorted.length * 2));
+    }
     for (let i = 0; i < n; i += 1) {
       if ((this.flags[i]! & FLAG_DEAD) !== 0) continue;
-      const c = this.bodyCell[i]!;
-      this.sorted[this.cursor[c]!++] = i;
+      const x0 = cellCoord(this.posX[i]! - this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+      const x1 = cellCoord(this.posX[i]! + this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+      const y0 = cellCoord(this.posY[i]! - this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+      const y1 = cellCoord(this.posY[i]! + this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+      const z0 = cellCoord(this.posZ[i]! - this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+      const z1 = cellCoord(this.posZ[i]! + this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+      for (let z = z0; z <= z1; z += 1) {
+        for (let y = y0; y <= y1; y += 1) {
+          const rowBase = (z * ny + y) * nx;
+          for (let x = x0; x <= x1; x += 1) {
+            const c = rowBase + x;
+            this.sorted[this.cursor[c]!++] = i;
+          }
+        }
+      }
     }
   }
 
@@ -754,26 +806,18 @@ export class PhysicsWorld {
   private solve(restitutionPass: boolean, countPass: boolean): void {
     const nx = this.nx;
     const ny = this.ny;
-    const nz = this.nz;
-    const nxny = nx * ny;
-    // A contact may wake a sleeping body mid-pass, appending it to the awake list; re-read the
-    // count each iteration so it is solved this substep too.
     for (let a = 0; a < this.awakeCount; a += 1) {
       const i = this.awakeList[a]!;
-      const c = this.bodyCell[i]!;
-      const cz = (c / nxny) | 0;
-      const cy = ((c - cz * nxny) / nx) | 0;
-      const cx = c - cz * nxny - cy * nx;
-      const z0 = cz > 0 ? cz - 1 : cz;
-      const z1 = cz < nz - 1 ? cz + 1 : cz;
-      const y0 = cy > 0 ? cy - 1 : cy;
-      const y1 = cy < ny - 1 ? cy + 1 : cy;
-      const x0 = cx > 0 ? cx - 1 : cx;
-      const x1 = cx < nx - 1 ? cx + 1 : cx;
-      for (let z = z0; z <= z1; z += 1) {
-        for (let y = y0; y <= y1; y += 1) {
+      const ix0 = cellCoord(this.posX[i]! - this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+      const ix1 = cellCoord(this.posX[i]! + this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+      const iy0 = cellCoord(this.posY[i]! - this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+      const iy1 = cellCoord(this.posY[i]! + this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+      const iz0 = cellCoord(this.posZ[i]! - this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+      const iz1 = cellCoord(this.posZ[i]! + this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+      for (let z = iz0; z <= iz1; z += 1) {
+        for (let y = iy0; y <= iy1; y += 1) {
           const rowBase = (z * ny + y) * nx;
-          for (let x = x0; x <= x1; x += 1) {
+          for (let x = ix0; x <= ix1; x += 1) {
             const cell = rowBase + x;
             const end = this.cellStart[cell + 1]!;
             for (let s = this.cellStart[cell]!; s < end; s += 1) {
@@ -781,6 +825,13 @@ export class PhysicsWorld {
               if (j === i) continue;
               const jSleeping = (this.flags[j]! & FLAG_SLEEPING) !== 0;
               if (!jSleeping && j < i) continue;
+              const jx0 = cellCoord(this.posX[j]! - this.halfX[j]!, this.bounds.min[0], this.cellSize, this.nx);
+              const jy0 = cellCoord(this.posY[j]! - this.halfY[j]!, this.bounds.min[1], this.cellSize, this.ny);
+              const jz0 = cellCoord(this.posZ[j]! - this.halfZ[j]!, this.bounds.min[2], this.cellSize, this.nz);
+              const mx0 = ix0 > jx0 ? ix0 : jx0;
+              const my0 = iy0 > jy0 ? iy0 : jy0;
+              const mz0 = iz0 > jz0 ? iz0 : jz0;
+              if (x !== mx0 || y !== my0 || z !== mz0) continue;
               this.resolve(i, j, restitutionPass, countPass);
             }
           }
@@ -944,6 +995,7 @@ export class PhysicsWorld {
     const slop = this.slop;
     for (let id = 0; id < this.jointHigh; id += 1) {
       if (this.jActive[id] !== 1) continue;
+      const kind = this.jKind[id]!;
       const bA = this.jBodyA[id]!;
       const bB = this.jBodyB[id]!;
       const ax = (bA >= 0 ? this.posX[bA]! : 0) + this.jAnchorAX[id]!;
@@ -952,19 +1004,95 @@ export class PhysicsWorld {
       const bx = bB >= 0 ? this.posX[bB]! + this.jAnchorBX[id]! : this.jAnchorBX[id]!;
       const by = bB >= 0 ? this.posY[bB]! + this.jAnchorBY[id]! : this.jAnchorBY[id]!;
       const bz = bB >= 0 ? this.posZ[bB]! + this.jAnchorBZ[id]! : this.jAnchorBZ[id]!;
-      const dx = bx - ax;
-      const dy = by - ay;
-      const dz = bz - az;
+      let dx = bx - ax;
+      let dy = by - ay;
+      let dz = bz - az;
+      const imA = bA >= 0 ? this.invMass[bA]! : 0;
+      const imB = bB >= 0 ? this.invMass[bB]! : 0;
+      const imSum = imA + imB;
+      if (imSum === 0) continue;
+
+      if (kind === JOINT_HINGE) {
+        const ux = this.jAxisX[id]!;
+        const uy = this.jAxisY[id]!;
+        const uz = this.jAxisZ[id]!;
+        const along = dx * ux + dy * uy + dz * uz;
+        dx -= along * ux;
+        dy -= along * uy;
+        dz -= along * uz;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const vax = bA >= 0 ? this.velX[bA]! : 0;
+        const vay = bA >= 0 ? this.velY[bA]! : 0;
+        const vaz = bA >= 0 ? this.velZ[bA]! : 0;
+        const vbx = bB >= 0 ? this.velX[bB]! : 0;
+        const vby = bB >= 0 ? this.velY[bB]! : 0;
+        const vbz = bB >= 0 ? this.velZ[bB]! : 0;
+        let rvx = vbx - vax;
+        let rvy = vby - vay;
+        let rvz = vbz - vaz;
+        const rvAlong = rvx * ux + rvy * uy + rvz * uz;
+        rvx -= rvAlong * ux;
+        rvy -= rvAlong * uy;
+        rvz -= rvAlong * uz;
+        if (dist > 1e-9) {
+          const nX = dx / dist;
+          const nY = dy / dist;
+          const nZ = dz / dist;
+          if (dist > slop) {
+            if (bA >= 0) this.wake(bA);
+            if (bB >= 0) this.wake(bB);
+          }
+          const rvn = rvx * nX + rvy * nY + rvz * nZ;
+          const jn = -rvn / imSum;
+          if (bA >= 0) {
+            this.velX[bA]! -= jn * imA * nX;
+            this.velY[bA]! -= jn * imA * nY;
+            this.velZ[bA]! -= jn * imA * nZ;
+          }
+          if (bB >= 0) {
+            this.velX[bB]! += jn * imB * nX;
+            this.velY[bB]! += jn * imB * nY;
+            this.velZ[bB]! += jn * imB * nZ;
+          }
+          const corr = (dist * beta) / imSum;
+          if (bA >= 0) {
+            this.posX[bA]! += corr * imA * nX;
+            this.posY[bA]! += corr * imA * nY;
+            this.posZ[bA]! += corr * imA * nZ;
+          }
+          if (bB >= 0) {
+            this.posX[bB]! -= corr * imB * nX;
+            this.posY[bB]! -= corr * imB * nY;
+            this.posZ[bB]! -= corr * imB * nZ;
+          }
+        } else {
+          const rvl = Math.sqrt(rvx * rvx + rvy * rvy + rvz * rvz);
+          if (rvl > 1e-9) {
+            const nX = rvx / rvl;
+            const nY = rvy / rvl;
+            const nZ = rvz / rvl;
+            const jn = -rvl / imSum;
+            if (bA >= 0) {
+              this.velX[bA]! -= jn * imA * nX;
+              this.velY[bA]! -= jn * imA * nY;
+              this.velZ[bA]! -= jn * imA * nZ;
+            }
+            if (bB >= 0) {
+              this.velX[bB]! += jn * imB * nX;
+              this.velY[bB]! += jn * imB * nY;
+              this.velZ[bB]! += jn * imB * nZ;
+            }
+          }
+        }
+        continue;
+      }
+
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
       if (dist < 1e-9) continue;
       const nX = dx / dist;
       const nY = dy / dist;
       const nZ = dz / dist;
       const c = dist - this.jRest[id]!;
-      const imA = bA >= 0 ? this.invMass[bA]! : 0;
-      const imB = bB >= 0 ? this.invMass[bB]! : 0;
-      const imSum = imA + imB;
-      if (imSum === 0) continue;
       const vax = bA >= 0 ? this.velX[bA]! : 0;
       const vay = bA >= 0 ? this.velY[bA]! : 0;
       const vaz = bA >= 0 ? this.velZ[bA]! : 0;
@@ -973,7 +1101,7 @@ export class PhysicsWorld {
       const vbz = bB >= 0 ? this.velZ[bB]! : 0;
       const rvn = (vbx - vax) * nX + (vby - vay) * nY + (vbz - vaz) * nZ;
 
-      if (this.jSpring[id] === 1) {
+      if (kind === JOINT_SPRING) {
         if (Math.abs(c) > slop) {
           if (bA >= 0) this.wake(bA);
           if (bB >= 0) this.wake(bB);
@@ -993,6 +1121,10 @@ export class PhysicsWorld {
           this.velZ[bB]! += jn * imB * nZ;
         }
         continue;
+      }
+
+      if (kind !== JOINT_FIXED && kind !== JOINT_DISTANCE) {
+        throw new Error(`PhysicsWorld: joint kind ${kind} is not implemented`);
       }
 
       if (Math.abs(c) > slop) {
