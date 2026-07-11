@@ -5,35 +5,22 @@ import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";
 import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
-import { worldHealthBarAllowsRole } from "@jgengine/core/game/playableGame";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
-import { useEntityStat, useSceneEntities } from "@jgengine/react/hooks";
+import { useCameraShake } from "../camera/shakeChannel";
 import { resolveFloatTextStyle } from "./floatTextStyle";
+import {
+  collectWorldBarSamples,
+  paintWorldBarSamples,
+  type WorldBarSample,
+} from "./worldBarSamples";
+import { telegraphPulseOpacity } from "./telegraphPulse";
+
+export type { WorldBarSample } from "./worldBarSamples";
+export { collectWorldBarSamples, paintWorldBarSamples } from "./worldBarSamples";
+export { telegraphPulseOpacity } from "./telegraphPulse";
 
 const MUZZLE_HEIGHT = 1.4;
-
-function EntityBar({ entity, statId, height }: { entity: SceneEntity; statId: string; height: number }) {
-  const stat = useEntityStat(entity.id, statId);
-  if (stat === null) return null;
-  const range = stat.max - stat.min;
-  const percent = range <= 0 ? 0 : Math.max(0, Math.min(1, (stat.current - stat.min) / range));
-  return (
-    <Html
-      position={[entity.position[0], entity.position[1] + height, entity.position[2]]}
-      center
-      distanceFactor={12}
-      zIndexRange={[20, 0]}
-    >
-      <div className="h-2.5 w-28 overflow-hidden rounded-sm border border-black/70 bg-black/70 shadow">
-        <div
-          className="h-full bg-gradient-to-r from-rose-600 to-red-400"
-          style={{ width: `${percent * 100}%` }}
-        />
-      </div>
-    </Html>
-  );
-}
 
 export function WorldEntityBars({
   statId,
@@ -47,17 +34,46 @@ export function WorldEntityBars({
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
 }) {
   const ctx = useGameContext();
-  const entities = useSceneEntities();
-  const playerId = ctx.player.userId;
+  const camera = useThree((state) => state.camera);
+  const size = useThree((state) => state.size);
+  const gl = useThree((state) => state.gl);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const samplesRef = useRef<WorldBarSample[]>([]);
+  const projectRef = useRef(new THREE.Vector3());
+
+  useFrame(() => {
+    const canvas = canvasRef.current;
+    if (canvas === null) return;
+    const dpr = Math.min(2, gl.getPixelRatio());
+    const cssW = size.width;
+    const cssH = size.height;
+    const pixelW = Math.max(1, Math.floor(cssW * dpr));
+    const pixelH = Math.max(1, Math.floor(cssH * dpr));
+    if (canvas.width !== pixelW || canvas.height !== pixelH) {
+      canvas.width = pixelW;
+      canvas.height = pixelH;
+    }
+    collectWorldBarSamples(
+      ctx,
+      statId,
+      height,
+      roles,
+      resolveRole,
+      camera,
+      { width: cssW, height: cssH },
+      samplesRef.current,
+      projectRef.current,
+    );
+    paintWorldBarSamples(canvas, samplesRef.current, dpr);
+  });
+
   return (
-    <>
-      {entities
-        .filter((entity) => entity.id !== playerId)
-        .filter((entity) => worldHealthBarAllowsRole(roles, resolveRole?.(entity)))
-        .map((entity) => (
-          <EntityBar key={entity.id} entity={entity} statId={statId} height={height} />
-        ))}
-    </>
+    <Html fullscreen zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", display: "block", pointerEvents: "none" }}
+      />
+    </Html>
   );
 }
 
@@ -144,14 +160,18 @@ function TelegraphGeometry({ shape }: { shape: TelegraphShape }) {
   return <planeGeometry args={[shape.width, shape.length]} />;
 }
 
-function TelegraphDecal({ active, nowMs }: { active: ActiveTelegraph; nowMs: number }) {
-  const progress = Math.max(0, Math.min(1, (nowMs - active.bornMs) / active.event.windupMs));
+function TelegraphDecal({ active }: { active: ActiveTelegraph }) {
+  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
   const [x, y, z] = active.event.position;
   const dir = active.event.dir ?? 0;
   const shape = active.event.shape;
   const forwardOffset = shape.kind === "line" ? shape.length / 2 : 0;
   const color = active.event.kind === "danger" ? "#ef4444" : "#f59e0b";
-  const pulse = 0.45 + 0.5 * progress;
+  useFrame(() => {
+    const material = materialRef.current;
+    if (material === null) return;
+    material.opacity = telegraphPulseOpacity(active.bornMs, active.event.windupMs, performance.now());
+  });
   return (
     <mesh
       position={[x + Math.sin(dir) * forwardOffset, y + 0.06, z + Math.cos(dir) * forwardOffset]}
@@ -160,9 +180,10 @@ function TelegraphDecal({ active, nowMs }: { active: ActiveTelegraph; nowMs: num
     >
       <TelegraphGeometry shape={shape} />
       <meshBasicMaterial
+        ref={materialRef}
         color={color}
         transparent
-        opacity={pulse}
+        opacity={0.45}
         side={THREE.DoubleSide}
         depthWrite={false}
         depthTest={false}
@@ -177,8 +198,6 @@ export function WorldTelegraphs() {
   const [telegraphs, setTelegraphs] = useState<ActiveTelegraph[]>([]);
   const key = useRef(0);
   const timers = useRef(new Set<number>());
-  const [nowMs, setNowMs] = useState(() => performance.now());
-  useFrame(() => setNowMs(performance.now()));
   useEffect(() => {
     const pending = timers.current;
     const off = ctx.game.events.on("combat.telegraph", (event) => {
@@ -203,7 +222,7 @@ export function WorldTelegraphs() {
   return (
     <>
       {telegraphs.map((active) => (
-        <TelegraphDecal key={active.key} active={active} nowMs={nowMs} />
+        <TelegraphDecal key={active.key} active={active} />
       ))}
     </>
   );
@@ -211,32 +230,13 @@ export function WorldTelegraphs() {
 
 export function CombatCameraShake() {
   const ctx = useGameContext();
-  const camera = useThree((state) => state.camera);
-  const trauma = useRef(0);
-  const decay = useRef(4);
-  const offset = useRef({ x: 0, y: 0 });
+  const shake = useCameraShake();
   useEffect(() => {
     return ctx.game.events.on("combat.hitReaction", (event) => {
       if (event.shake === undefined) return;
-      trauma.current = Math.min(1, trauma.current + event.shake.amplitude);
-      decay.current = event.shake.decay;
+      shake.shake(event.shake.amplitude, event.shake.decay);
     });
-  }, [ctx]);
-  useFrame((_state, dt) => {
-    camera.position.x -= offset.current.x;
-    camera.position.y -= offset.current.y;
-    if (trauma.current <= 0.0001) {
-      offset.current.x = 0;
-      offset.current.y = 0;
-      return;
-    }
-    const magnitude = trauma.current * trauma.current;
-    offset.current.x = (Math.random() * 2 - 1) * magnitude * 0.4;
-    offset.current.y = (Math.random() * 2 - 1) * magnitude * 0.4;
-    camera.position.x += offset.current.x;
-    camera.position.y += offset.current.y;
-    trauma.current = Math.max(0, trauma.current - decay.current * dt);
-  });
+  }, [ctx, shake]);
   return null;
 }
 

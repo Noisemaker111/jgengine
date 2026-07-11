@@ -2,10 +2,22 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { applyMaterialOverride } from "../materialOverride";
-import { cloneModelScene, disposeClonedMaterials } from "./modelRender";
+import {
+  cacheStandardMaterials,
+  cloneModelScene,
+  disposeClonedMaterials,
+  standardMaterialsOf,
+} from "./modelRender";
 
 function standardMesh(color = "#ffffff"): THREE.Mesh {
   return new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color }));
+}
+
+function meshWithColor(hex: string): THREE.Object3D {
+  const root = new THREE.Group();
+  const material = new THREE.MeshStandardMaterial({ color: hex });
+  root.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material));
+  return root;
 }
 
 describe("cloneModelScene material lifecycle", () => {
@@ -51,5 +63,28 @@ describe("cloneModelScene material lifecycle", () => {
     }
     disposeClonedMaterials(cloned);
     expect(disposed).toBe(2);
+  });
+});
+
+describe("cacheStandardMaterials", () => {
+  test("walks the scene once and reuses the cache on later calls", () => {
+    const root = meshWithColor("#336699");
+    const first = cacheStandardMaterials(root);
+    expect(first.materials.length).toBe(1);
+    expect(first.seedColor.getHexString()).toBe("336699");
+    const second = cacheStandardMaterials(root, first);
+    expect(second).toBe(first);
+    expect(second.materials).toBe(first.materials);
+    expect(second.seedColor).toBe(first.seedColor);
+  });
+
+  test("seedColor is a stable Color instance across paint versions", () => {
+    const root = meshWithColor("#112233");
+    const cache = cacheStandardMaterials(root);
+    const before = cache.seedColor;
+    const again = cacheStandardMaterials(root, cache);
+    expect(again.seedColor).toBe(before);
+    expect(again.seedColor.getHexString()).toBe("112233");
+    expect(standardMaterialsOf(root).length).toBe(1);
   });
 });

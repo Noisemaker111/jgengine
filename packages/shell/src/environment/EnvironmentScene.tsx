@@ -108,6 +108,7 @@ function Vegetation({ grass, field }: { grass: GrassEnvironmentDescriptor; field
         colorBase={colorBase}
         colorTip={colorTip}
         wind={wind}
+        frustumCulled
       />
     </group>
   );

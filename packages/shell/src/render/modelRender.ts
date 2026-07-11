@@ -47,6 +47,28 @@ export function standardMaterialsOf(root: THREE.Object3D): THREE.MeshStandardMat
   return materials;
 }
 
+export interface MaterialCache {
+  materials: THREE.MeshStandardMaterial[];
+  seedColor: THREE.Color;
+}
+
+export function cacheStandardMaterials(root: THREE.Object3D, into?: MaterialCache | null): MaterialCache {
+  if (into !== null && into !== undefined) return into;
+  const materials = standardMaterialsOf(root);
+  const seedColor = materials[0]?.color.clone() ?? new THREE.Color("#ffffff");
+  return { materials, seedColor };
+}
+
+export function applyPaintTextureToMaterials(
+  materials: readonly THREE.MeshStandardMaterial[],
+  paint: PaintCanvas,
+): void {
+  for (const material of materials) {
+    material.map = paint.texture;
+    material.needsUpdate = true;
+  }
+}
+
 export interface PaintCanvas {
   canvas: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
@@ -88,10 +110,7 @@ export function drawPaintStrokes(paint: PaintCanvas, strokes: readonly PaintStro
 }
 
 export function applyPaintTexture(root: THREE.Object3D, paint: PaintCanvas): void {
-  for (const material of standardMaterialsOf(root)) {
-    material.map = paint.texture;
-    material.needsUpdate = true;
-  }
+  applyPaintTextureToMaterials(standardMaterialsOf(root), paint);
 }
 
 export function syncPaintCanvas(

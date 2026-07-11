@@ -36,7 +36,7 @@ export function resolveGrassBladeGeometryOptions(
   options: GrassBladeGeometryOptions = {},
 ): ResolvedGrassBladeGeometryOptions {
   return {
-    count: Math.max(0, Math.floor(options.count ?? 6000)),
+    count: Math.max(0, Math.floor(options.count ?? 1500)),
     area: options.area ?? 40,
     seed: options.seed ?? 1,
     segments: Math.max(1, Math.floor(options.segments ?? 4)),

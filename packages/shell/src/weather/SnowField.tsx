@@ -3,12 +3,13 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { createWeatherQuadGeometry } from "./weatherGeometry";
-import { resolveWeatherInstanceCount } from "./weatherMath";
+import { DEFAULT_SNOW_COUNT, DEFAULT_SNOW_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms";
 
 export interface SnowFieldProps {
   count?: number;
   density?: number;
+  budget?: number;
   volume?: WeatherVector;
   wind?: WeatherVector;
   origin?: WeatherVector;
@@ -21,6 +22,7 @@ export interface SnowFieldProps {
   timeScale?: number;
   seed?: number;
   renderOrder?: number;
+  frustumCulled?: boolean;
 }
 
 const DEFAULT_VOLUME: WeatherVector = [52, 38, 52];
@@ -28,8 +30,9 @@ const DEFAULT_ORIGIN: WeatherVector = [0, 0, 0];
 const DEFAULT_SNOW_COLOR = "#ffffff";
 
 export function SnowField({
-  count = 6000,
-  density = 0.5,
+  count = DEFAULT_SNOW_COUNT,
+  density = DEFAULT_SNOW_DENSITY,
+  budget,
   volume = DEFAULT_VOLUME,
   wind,
   origin = DEFAULT_ORIGIN,
@@ -42,6 +45,7 @@ export function SnowField({
   timeScale,
   seed = 72931,
   renderOrder = 11,
+  frustumCulled,
 }: SnowFieldProps) {
   const { camera } = useThree();
   const shared = useWeatherUniformSet({ wind, timeScale });
@@ -132,7 +136,7 @@ export function SnowField({
     uniforms.uSway.value = sway;
     uniforms.uOpacity.value = opacity;
     (uniforms.uColor.value as THREE.Color).set(color);
-    geometry.instanceCount = resolveWeatherInstanceCount(count, density);
+    geometry.instanceCount = resolveWeatherInstanceCount(count, density, budget);
   });
 
   useEffect(
@@ -143,5 +147,12 @@ export function SnowField({
     [geometry, material],
   );
 
-  return <mesh geometry={geometry} material={material} frustumCulled={false} renderOrder={renderOrder} />;
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      frustumCulled={frustumCulled ?? !followCamera}
+      renderOrder={renderOrder}
+    />
+  );
 }

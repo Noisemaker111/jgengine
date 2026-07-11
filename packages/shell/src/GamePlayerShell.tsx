@@ -108,12 +108,13 @@ import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { applyMaterialOverride } from "./materialOverride";
 import { PointerProbe } from "./pointer/PointerProbe";
 import {
-  applyPaintTexture,
+  applyPaintTextureToMaterials,
+  cacheStandardMaterials,
   cloneModelScene,
   createPaintCanvas,
   disposeClonedMaterials,
-  standardMaterialsOf,
   syncPaintCanvas,
+  type MaterialCache,
   type PaintCanvas,
 } from "./render/modelRender";
 import { writeEntityPose } from "./world/entityPose";
@@ -444,11 +445,13 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
   const paintVersionRef = useRef(-1);
+  const materialCacheRef = useRef<MaterialCache | null>(null);
 
   useEffect(() => {
     paintCanvasRef.current = null;
     paintDrawnCountRef.current = 0;
     paintVersionRef.current = -1;
+    materialCacheRef.current = null;
   }, [scene]);
 
   useFrame((_state, delta) => {
@@ -459,17 +462,22 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
     if (version === paintVersionRef.current) return;
     paintVersionRef.current = version;
     const strokes = paint.strokes(instanceId);
+    const cache = cacheStandardMaterials(scene, materialCacheRef.current);
+    materialCacheRef.current = cache;
     if (paintCanvasRef.current === null) {
       if (strokes.length === 0) return;
-      const materials = standardMaterialsOf(scene);
-      const seed = materials[0];
+      const seed = cache.materials[0];
       if (seed === undefined) return;
       const paintCanvas = createPaintCanvas(seed);
       paintCanvasRef.current = paintCanvas;
-      applyPaintTexture(scene, paintCanvas);
+      applyPaintTextureToMaterials(cache.materials, paintCanvas);
     }
-    const seedColor = standardMaterialsOf(scene)[0]?.color ?? new THREE.Color("#ffffff");
-    paintDrawnCountRef.current = syncPaintCanvas(paintCanvasRef.current, seedColor, strokes, paintDrawnCountRef.current);
+    paintDrawnCountRef.current = syncPaintCanvas(
+      paintCanvasRef.current,
+      cache.seedColor,
+      strokes,
+      paintDrawnCountRef.current,
+    );
   });
 
   return <primitive object={scene} position={position} scale={[scale, scale, scale]} />;

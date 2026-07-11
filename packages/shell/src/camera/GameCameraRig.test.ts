@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
-import { resolveRigKind } from "./GameCameraRig";
+import { resolveRigKind } from "./rigResolve";
+import { createCameraShakeChannel } from "./shakeChannelMath";
 
 describe("resolveRigKind", () => {
   test("defaults to orbit with no config", () => {
@@ -37,5 +38,19 @@ describe("resolveRigKind", () => {
   test("explicit rig breaks a tie between multiple present blocks", () => {
     const config: GameCameraConfig = { rig: "inspection", rts: {}, chase: {} };
     expect(resolveRigKind(config)).toBe("inspection");
+  });
+});
+
+describe("combat shake channel composition", () => {
+  test("hit reaction feeds the shared channel instead of writing camera pose", () => {
+    const channel = createCameraShakeChannel(4);
+    expect(channel.trauma()).toBe(0);
+    channel.shake(0.5, 4);
+    expect(channel.trauma()).toBeGreaterThan(0);
+    channel.step(0.1);
+    const offset = channel.sample();
+    expect(Number.isFinite(offset.x)).toBe(true);
+    expect(Number.isFinite(offset.y)).toBe(true);
+    expect(Number.isFinite(offset.roll)).toBe(true);
   });
 });

@@ -34,7 +34,6 @@ import {
   seatPose,
   shoulderPose,
   sideScrollFollowBlend,
-  smoothstep,
   smoothYaw,
   speedToFov,
   springArmStep,
@@ -43,6 +42,18 @@ import {
 } from "./rigMath";
 import { usePlayerFov } from "./PlayerFov";
 import { useCameraShake } from "./shakeChannel";
+import {
+  applyCameraBlendStep,
+  captureCameraBlendFrom,
+  createCameraBlendScratch,
+} from "./cameraBlendMath";
+
+export {
+  applyCameraBlendStep,
+  captureCameraBlendFrom,
+  createCameraBlendScratch,
+  type CameraBlendScratch,
+} from "./cameraBlendMath";
 
 export const CAMERA_RIG_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY;
 export const CAMERA_POST_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY + 0.5;
@@ -105,25 +116,21 @@ function useCameraCommit(props: RigProps, followId: string | null) {
   const playerFov = usePlayerFov();
   const shakeConfig = props.config?.shake;
   const transitionSeconds = props.config?.transitionSeconds ?? 0.6;
-  const blendRef = useRef<{
-    position: Vector3;
-    quaternion: Quaternion;
-    fov: number;
-    elapsed: number;
-    duration: number;
-  } | null>(null);
+  const blendScratchRef = useRef(createCameraBlendScratch(Vector3, Quaternion));
+  const blendingRef = useRef(false);
   const lastPoseRef = useRef<CameraPose | null>(null);
   const farWarnedRef = useRef(false);
 
   const beginTransition = () => {
     if (transitionSeconds <= 0) return;
-    blendRef.current = {
-      position: camera.position.clone(),
-      quaternion: camera.quaternion.clone(),
-      fov: currentFov(camera),
-      elapsed: 0,
-      duration: transitionSeconds,
-    };
+    captureCameraBlendFrom(
+      blendScratchRef.current,
+      camera.position,
+      camera.quaternion,
+      currentFov(camera),
+      transitionSeconds,
+    );
+    blendingRef.current = true;
   };
 
   const commit = (pose: CameraPose, dt: number) => {
@@ -146,20 +153,9 @@ function useCameraCommit(props: RigProps, followId: string | null) {
       );
     }
 
-    const blend = blendRef.current;
-    if (blend !== null) {
-      blend.elapsed += dt;
-      const t = blend.duration <= 0 ? 1 : Math.min(blend.elapsed / blend.duration, 1);
-      const eased = smoothstep(t);
-      const targetPos = camera.position.clone();
-      const targetQuat = camera.quaternion.clone();
-      camera.position.lerpVectors(blend.position, targetPos, eased);
-      camera.quaternion.slerpQuaternions(blend.quaternion, targetQuat, eased);
-      if (isPerspective(camera)) {
-        camera.fov = blend.fov + (composed.fov - blend.fov) * eased;
-        camera.updateProjectionMatrix();
-      }
-      if (t >= 1) blendRef.current = null;
+    if (blendingRef.current) {
+      const done = applyCameraBlendStep(blendScratchRef.current, camera, composed.fov, dt);
+      if (done) blendingRef.current = false;
     }
 
     shake.step(dt);
