@@ -152,8 +152,10 @@ import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 import { OrientationHint } from "./touch/OrientationHint";
 import { TouchControlsDock, TouchPlaySurface, touchDockClearance } from "./touch/TouchControlsOverlay";
+import { BUILT_IN_SETTING_CATEGORIES } from "@jgengine/core/settings/settingsModel";
 import { SettingsProvider } from "@jgengine/react/settings";
-import { GameSettings } from "./settings/GameSettings";
+import { SettingsRuntime } from "./settings/SettingsRuntime";
+import { SettingsChrome } from "./settings/SettingsChrome";
 import { AudioSettingsBridge, useGraphicsSettings } from "./settings/appliedSettings";
 
 const DEV_USER_ID = "dev-player";
@@ -1786,15 +1788,14 @@ export function GamePlayerShell({
   };
 
   const controlsActive = playControlsActive(ctx);
-  const settingsEnabled = playable.settings !== false && playable.settings?.surface !== false;
+  const settingsDisabled = playable.settings === false;
   const settingsConfig: GameSettingsConfig =
     playable.settings === false || playable.settings === undefined ? {} : playable.settings;
+  const settingsSurface = settingsDisabled ? false : settingsConfig.surface ?? "menu";
+  const hideCategories = settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? [];
   const fovControlEnabled = !orthographic && playable.camera?.playerFov?.control !== false;
   const settingsHostsFov =
-    settingsEnabled &&
-    (settingsConfig.surface ?? "menu") === "menu" &&
-    !(settingsConfig.hide ?? []).includes("gameplay") &&
-    fovControlEnabled;
+    settingsSurface === "menu" && !hideCategories.includes("gameplay") && fovControlEnabled;
   const touchScale = compact ? 0.88 : 1;
   const dockMounted =
     !poster &&
@@ -1812,6 +1813,19 @@ export function GamePlayerShell({
     <SettingsProvider store={settingsStore}>
     <PlayerFovProvider config={playable.camera} orthographic={orthographic}>
     <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={playable.audio?.buses} />
+    <SettingsRuntime
+      mode={settingsConfig.mode ?? "overlay"}
+      surface={settingsSurface}
+      input={playable.game.input ?? {}}
+      buses={playable.audio?.buses}
+      extra={settingsConfig.extra ?? []}
+      categories={settingsConfig.categories ?? []}
+      hide={hideCategories}
+      fovEnabled={fovControlEnabled}
+      overrides={bindingOverrides}
+      rebind={rebindAction}
+      resetBinding={resetActionBinding}
+    >
     <div
       ref={wrapperRef}
       tabIndex={0}
@@ -2013,18 +2027,9 @@ export function GamePlayerShell({
       ) : null}
       {poster ? null : <DiagnosticOverlay diagnostics={diagnostics} gameName={playable.game.name} />}
       {poster || orthographic || settingsHostsFov ? null : <PlayerFovSlider />}
-      {poster || !settingsEnabled ? null : (
-        <GameSettings
-          input={playable.game.input ?? {}}
-          buses={playable.audio?.buses}
-          config={settingsConfig}
-          fovEnabled={fovControlEnabled}
-          overrides={bindingOverrides}
-          rebind={rebindAction}
-          resetBinding={resetActionBinding}
-        />
-      )}
+      {poster ? null : <SettingsChrome />}
     </div>
+    </SettingsRuntime>
     </PlayerFovProvider>
     </SettingsProvider>
   );

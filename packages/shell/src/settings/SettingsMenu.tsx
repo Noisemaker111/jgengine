@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import {
-  type KeybindRow,
+  type SettingsKeybindRow,
   type SettingsCategoryView,
   type SettingsController,
   type SettingsRow,
@@ -153,7 +153,7 @@ function KeybindRowView({
   capturing,
   onCapture,
 }: {
-  row: KeybindRow;
+  row: SettingsKeybindRow;
   capturing: boolean;
   onCapture: () => void;
 }) {
@@ -195,7 +195,7 @@ function KeybindRowView({
 export function SettingsMenu({ controller, onClose }: { controller: SettingsController; onClose: () => void }) {
   const first = controller.categories[0]?.id ?? "sound";
   const [activeId, setActiveId] = useState<string>(first);
-  const [capturing, setCapturing] = useState<KeybindRow | null>(null);
+  const [capturing, setCapturing] = useState<SettingsKeybindRow | null>(null);
 
   const active =
     controller.categories.find((category) => category.id === activeId) ?? controller.categories[0] ?? null;

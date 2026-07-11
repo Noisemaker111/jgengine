@@ -4,6 +4,7 @@ import { actionLabel, bindingLabel, type ActionCodesMap } from "@jgengine/core/i
 import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
 import {
+  BUILT_IN_SETTING_CATEGORIES,
   busVolumeSettingId,
   DEFAULT_GRAPHICS_QUALITY,
   DEFAULT_GRAPHICS_SHADOWS,
@@ -12,63 +13,35 @@ import {
   SETTING_IDS,
   type GameSettingDef,
   type SettingCategory,
-  type SettingOption,
+  type SettingCategoryDef,
   type SettingValue,
 } from "@jgengine/core/settings/settingsModel";
-import { useSettingsStore } from "@jgengine/react/settings";
+import {
+  useSettingsStore,
+  type SettingsKeybindRow,
+  type SettingsCategoryView,
+  type SettingsController,
+  type SettingsRow,
+} from "@jgengine/react/settings";
 
 import { usePlayerFov } from "../camera/PlayerFov";
 
-export interface SettingsRow {
-  id: string;
-  label: string;
-  kind: "slider" | "toggle" | "select";
-  value: SettingValue;
-  min?: number;
-  max?: number;
-  step?: number;
-  options?: readonly SettingOption[];
-  format?: (value: number) => string;
-  set: (value: SettingValue) => void;
-}
+export type { SettingsKeybindRow, SettingsCategoryView, SettingsController, SettingsRow };
 
-export interface KeybindRow {
-  action: string;
-  label: string;
-  bindingLabel: string;
-  isDefault: boolean;
-  rebind: (code: string) => void;
-  reset: () => void;
-}
-
-export interface SettingsCategoryView {
-  id: SettingCategory;
-  label: string;
-  rows: SettingsRow[];
-  keybinds: KeybindRow[];
-}
-
-export interface SettingsController {
-  mode: "overlay" | "page";
-  categories: SettingsCategoryView[];
-}
-
-const CATEGORY_LABELS: Record<SettingCategory, string> = {
+const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
   sound: "Sound",
   graphics: "Graphics",
   gameplay: "Gameplay",
   controls: "Controls",
 };
 
-const CATEGORY_ORDER: readonly SettingCategory[] = ["sound", "graphics", "gameplay", "controls"];
-
 const percent = (value: number): string => `${Math.round(value * 100)}%`;
 
 export interface SettingsControllerInput {
-  mode: "overlay" | "page";
   input: ActionCodesMap;
   buses: Record<string, AudioBusDef> | undefined;
   extra: readonly GameSettingDef[];
+  categories: readonly SettingCategoryDef[];
   hide: readonly SettingCategory[];
   fovEnabled: boolean;
   overrides: BindingOverrides;
@@ -76,7 +49,7 @@ export interface SettingsControllerInput {
   resetBinding: (action: string) => void;
 }
 
-export function useSettingsController(config: SettingsControllerInput): SettingsController {
+export function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] {
   const store = useSettingsStore();
   const fov = usePlayerFov();
   const [, force] = useReducer((n: number) => n + 1, 0);
@@ -165,7 +138,7 @@ export function useSettingsController(config: SettingsControllerInput): Settings
     ...extrasFor("gameplay"),
   ];
 
-  const keybinds: KeybindRow[] = Object.keys(config.input).map((action) => {
+  const keybinds: SettingsKeybindRow[] = Object.keys(config.input).map((action) => {
     const override = config.overrides[action];
     const effective = override === undefined ? config.input : { ...config.input, [action]: override };
     return {
@@ -178,18 +151,41 @@ export function useSettingsController(config: SettingsControllerInput): Settings
     };
   });
 
-  const built: Record<SettingCategory, SettingsCategoryView> = {
-    sound: { id: "sound", label: CATEGORY_LABELS.sound, rows: soundRows, keybinds: [] },
-    graphics: { id: "graphics", label: CATEGORY_LABELS.graphics, rows: graphicsRows, keybinds: [] },
-    gameplay: { id: "gameplay", label: CATEGORY_LABELS.gameplay, rows: gameplayRows, keybinds: [] },
-    controls: { id: "controls", label: CATEGORY_LABELS.controls, rows: extrasFor("controls"), keybinds },
+  const builtInRows: Record<string, SettingsRow[]> = {
+    sound: soundRows,
+    graphics: graphicsRows,
+    gameplay: gameplayRows,
+    controls: extrasFor("controls"),
   };
+  const builtInKeybinds: Record<string, SettingsKeybindRow[]> = { controls: keybinds };
 
-  const categories = CATEGORY_ORDER.filter((id) => !hidden.has(id))
-    .map((id) => built[id])
+  const declaredLabels = new Map(config.categories.map((c) => [c.id, c.label]));
+  const declaredOrder = new Map(config.categories.map((c, index) => [c.id, c.order ?? 1000 + index]));
+  const order: SettingCategory[] = [];
+  const push = (id: SettingCategory): void => {
+    if (!order.includes(id)) order.push(id);
+  };
+  for (const id of BUILT_IN_SETTING_CATEGORIES) push(id);
+  for (const c of config.categories) push(c.id);
+  for (const def of config.extra) push(def.category);
+
+  const views = order
+    .filter((id) => !hidden.has(id))
+    .map((id): SettingsCategoryView => ({
+      id,
+      label: declaredLabels.get(id) ?? DEFAULT_CATEGORY_LABELS[id] ?? humanizeAction(id),
+      rows: builtInRows[id] ?? extrasFor(id),
+      keybinds: builtInKeybinds[id] ?? [],
+    }))
     .filter((view) => view.rows.length > 0 || view.keybinds.length > 0);
 
-  return { mode: config.mode, categories };
+  views.sort((a, b) => (declaredOrder.get(a.id) ?? indexOrder(order, a.id)) - (declaredOrder.get(b.id) ?? indexOrder(order, b.id)));
+  return views;
+}
+
+function indexOrder(order: readonly SettingCategory[], id: SettingCategory): number {
+  const index = order.indexOf(id);
+  return index === -1 ? 999 : index;
 }
 
 function humanizeAction(action: string): string {

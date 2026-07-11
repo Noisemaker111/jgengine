@@ -3,11 +3,28 @@ import { createObservableKeyedStore } from "../store/observableKeyedStore";
 
 export type SettingValue = number | boolean | string;
 export type SettingKind = "slider" | "toggle" | "select";
-export type SettingCategory = "sound" | "graphics" | "gameplay" | "controls";
+
+export type BuiltInSettingCategory = "sound" | "graphics" | "gameplay" | "controls";
+/** Built-in category ids keep autocomplete; any other string makes a fresh category. */
+export type SettingCategory = BuiltInSettingCategory | (string & {});
+
+export const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] = [
+  "sound",
+  "graphics",
+  "gameplay",
+  "controls",
+];
 
 export interface SettingOption {
   value: string;
   label: string;
+}
+
+/** Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins. */
+export interface SettingCategoryDef {
+  id: SettingCategory;
+  label: string;
+  order?: number;
 }
 
 /** Extra setting a game appends to a built-in category via `defineGame({ settings: { extra } })`. */
@@ -29,12 +46,14 @@ export interface GameSettingDef {
 export type SettingsSurface = "menu" | "quick";
 
 export interface GameSettingsConfig {
-  /** `menu` (default) auto-mounts a gear + full settings menu; `quick` shows compact on-screen volume/graphics buttons; `false` disables the auto UI entirely. */
+  /** `menu` (default) mounts a gear that opens the full menu; `quick` shows compact on-screen volume/graphics buttons; `false` mounts no engine trigger — the menu is still available, open it yourself with `useSettings().open()` and/or render `useSettings().categories` your own way. */
   surface?: SettingsSurface | false;
   /** `overlay` (default) opens over the current screen; `page` is full-screen navigation. */
   mode?: "overlay" | "page";
-  /** Rows appended to the built-in categories. */
+  /** Rows appended to any category — built-in or a brand-new one named by `category`. */
   extra?: readonly GameSettingDef[];
+  /** Declare custom category tabs, or relabel/reorder the built-ins. */
+  categories?: readonly SettingCategoryDef[];
   /** Built-in categories to hide. */
   hide?: readonly SettingCategory[];
 }

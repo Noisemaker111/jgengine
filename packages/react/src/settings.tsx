@@ -2,7 +2,11 @@ import { createContext, useCallback, useContext, useSyncExternalStore, type Reac
 
 import {
   createSettingsStore,
+  type SettingCategory,
+  type SettingKind,
+  type SettingOption,
   type SettingsStore,
+  type SettingsSurface,
   type SettingValue,
 } from "@jgengine/core/settings/settingsModel";
 
@@ -35,3 +39,71 @@ export function useSetting<T extends SettingValue>(id: string, fallback: T): rea
   const set = useCallback((next: SettingValue) => store.set(id, next), [store, id]);
   return [value, set];
 }
+
+export interface SettingsRow {
+  id: string;
+  label: string;
+  kind: SettingKind;
+  value: SettingValue;
+  min?: number;
+  max?: number;
+  step?: number;
+  options?: readonly SettingOption[];
+  format?: (value: number) => string;
+  set: (value: SettingValue) => void;
+}
+
+export interface SettingsKeybindRow {
+  action: string;
+  label: string;
+  bindingLabel: string;
+  isDefault: boolean;
+  rebind: (code: string) => void;
+  reset: () => void;
+}
+
+export interface SettingsCategoryView {
+  id: SettingCategory;
+  label: string;
+  rows: SettingsRow[];
+  keybinds: SettingsKeybindRow[];
+}
+
+/** The live settings controller — every category/row/keybind plus open-state. Render it any way you like or drive the engine menu. */
+export interface SettingsController {
+  categories: SettingsCategoryView[];
+  mode: "overlay" | "page";
+  surface: SettingsSurface | false;
+  isOpen: boolean;
+  open: () => void;
+  close: () => void;
+  setOpen: (open: boolean) => void;
+}
+
+const SettingsControllerContext = createContext<SettingsController | null>(null);
+
+export function SettingsControllerProvider({
+  controller,
+  children,
+}: {
+  controller: SettingsController;
+  children: ReactNode;
+}) {
+  return <SettingsControllerContext.Provider value={controller}>{children}</SettingsControllerContext.Provider>;
+}
+
+/** The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell. */
+export function useSettings(): SettingsController {
+  return useContext(SettingsControllerContext) ?? EMPTY_CONTROLLER;
+}
+
+const noop = () => undefined;
+const EMPTY_CONTROLLER: SettingsController = {
+  categories: [],
+  mode: "overlay",
+  surface: "menu",
+  isOpen: false,
+  open: noop,
+  close: noop,
+  setOpen: noop,
+};
