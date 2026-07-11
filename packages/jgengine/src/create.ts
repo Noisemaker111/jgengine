@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join, relative, resolve, sep } from "node:path";
 
 import { cliVersion, findWorkspaceRoot, flag, hasFlag, isEngineMonorepo } from "./pkg";
+import { installSkills } from "./skills";
 import { gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
 
 export function writeGame(targetDir: string, id: string, name: string, variant: TemplateVariant): void {
@@ -70,7 +71,7 @@ export function runCreate(argv: string[]): number {
   const nameArg = positionalArg(argv);
   if (nameArg === undefined) {
     console.error(
-      'usage: jgengine create "<Game Name>" [--in-repo|--standalone] [--no-install] [--pm bun|npm|pnpm]',
+      'usage: jgengine create "<Game Name>" [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]',
     );
     return 1;
   }
@@ -131,6 +132,7 @@ export function runCreate(argv: string[]): number {
       console.log("\nnext steps:");
       console.log(`  bun install                     # from ${workspaceRoot}`);
       console.log(`  bun run games:${id}             # play it standalone`);
+      console.log(`  # agent: open the project and build ${displayName} (skills live in the monorepo)`);
       return 0;
     }
 
@@ -147,12 +149,19 @@ export function runCreate(argv: string[]): number {
       if (!installed) console.error(`warning: ${pm} install failed — run it manually in ${targetDir}`);
     }
 
+    if (!hasFlag(argv, "no-skills")) {
+      const skillsStatus = installSkills("project", targetDir);
+      if (skillsStatus !== 0) {
+        console.error("warning: skill install failed — agent can still use AGENTS.md; retry: npx jgengine skills -p");
+      }
+    }
+
     const cdHint = relative(process.cwd(), targetDir) || ".";
     console.log("\nnext steps:");
     console.log(`  cd ${cdHint}`);
     if (!installed) console.log("  bun install   # or npm install");
-    console.log("  bun dev                 # or npm run dev — flat world, spawned player, working HUD");
-    console.log("  npx jgengine skills -p  # agent skills in this project (-g for global)");
+    console.log("  bun dev       # playable base (flat world, player, HUD)");
+    console.log(`  # agent: make ${displayName} with jgengine  (skills already in the project)`);
     return 0;
   } catch (error) {
     console.error(`error: ${error instanceof Error ? error.message : String(error)}`);

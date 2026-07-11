@@ -1,10 +1,20 @@
 {
   "name": "jgengine",
-  "version": "0.8.1",
-  "description": "The JGengine command line — scaffold a playable game, diagnose a broken setup, and load engine docs and agent skills into any project. Start with `npx jgengine create \"My Game Name\"`.",
+  "version": "0.8.2",
+  "description": "JGengine CLI — pure-TypeScript game engine entry for humans and agents. Run: npx jgengine create \"My Game Name\" (scaffolds a playable base and installs agent skills). Then build the game. Docs: https://jgengine.com",
+  "keywords": [
+    "game-engine",
+    "typescript",
+    "jgengine",
+    "cli",
+    "three.js",
+    "agent",
+    "scaffold"
+  ],
   "license": "AGPL-3.0-only",
   "type": "module",
   "sideEffects": false,
+  "homepage": "https://jgengine.com",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Noisemaker111/jgengine.git",

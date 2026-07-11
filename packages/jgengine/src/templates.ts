@@ -400,23 +400,32 @@ describe("${id} world", () => {
 });
 `;
 
-const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agent notes
+const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agent briefing
 
-This is a JGengine game (pure-TypeScript engine SDK, \`@jgengine/*\` on npm). Load context before writing code:
+You are in a **JGengine** game project. JGengine is a pure-TypeScript game engine SDK on npm (\`@jgengine/core\`, \`react\`, \`shell\`, …). The CLI is \`npx jgengine\`. Site: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
 
-- Engine API surface: \`npx jgengine llms core\` (any package name works) prints the packaged API docs.
-- Agent skills — API reference, phased game-build workflow, browserless verify gate: \`npx jgengine skills -p\` (this project) or \`-g\` (global).
-- Setup broken or UI unstyled: \`npx jgengine doctor\`.
+## What to do when the user wants this game built
 
-Rules this project follows:
+1. Read skills if present: \`jgengine-newgame\` (workflow), \`jgengine-api\` (API), \`jgengine-verify\` (prove it works). They land under \`.agents/skills/\` or \`.claude/skills/\` when scaffolded via \`npx jgengine create\`.
+2. If skills are missing: \`npx jgengine skills -p\` (or use this file + \`npx jgengine llms core\`).
+3. **User-facing first reply is short** — game name, fantasy in 2–4 lines, POV (1st / 3rd / top-down / HUD-only), world kind, scale vibe. Ask a few tight questions (POV, world, multiplayer, how big). **Do not** dump file trees, catalog ids, keybind tables, or full phase plans to the user.
+4. Keep the full engineering plan (files, systems, budgets) internal. After they answer, scaffold is already here — build in phases, full game not a slice.
 
-- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`index.css\`; every game-specific module, UI component, and test lives under \`src/game/\`.
-- \`game.config.ts\` is the single entry — \`defineGame({...})\` from \`@jgengine/shell/defineGame\`.
-- Scene and world changes are proven with \`summarizeEnvironment\` assertions in \`bun test src\` (see \`src/game/world.world.test.ts\`), never by screenshots as the inner loop.
-- HUD styling is Tailwind v4: the \`@source\` entries in \`src/index.css\` must cover \`@jgengine/react\` and \`@jgengine/shell\`${
-  variant === "in-repo" ? " (engine source dirs in this monorepo)" : " (their dist dirs in node_modules)"
-}, or engine UI classes are silently not generated and the HUD renders unstyled.
-- \`onNewPlayer\` spawns the player entity with \`id === ctx.player.userId\`; \`onTick\`'s \`dt\` is game time, never wall-clock.
+## Engine loaders
+
+- API docs in the tarball: \`npx jgengine llms core\` (any package: react, shell, …)
+- Doctor: \`npx jgengine doctor\`
+- Dev: \`bun dev\` / \`npm run dev\`
+
+## Project rules
+
+- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`index.css\`; everything else under \`src/game/\`.
+- Entry: \`defineGame({...})\` from \`@jgengine/shell/defineGame\` in \`game.config.ts\`.
+- Prove world content with \`summarizeEnvironment\` in \`bun test\` (\`src/game/world.world.test.ts\`), not screenshot loops.
+- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\` and \`@jgengine/shell\`${
+  variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
+}, or the HUD is silently unstyled.
+- Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; \`onTick\` \`dt\` is game time.
 `;
 
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {

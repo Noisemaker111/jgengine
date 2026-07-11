@@ -1,72 +1,76 @@
 ---
 name: jgengine-newgame
-description: Blueprint then phased full build. Invoke whenever asked to build a game.
+description: Concept pitch then phased full build. Invoke whenever asked to build a game.
 ---
 
-# JGengine — Blueprint the whole game, build it in phases
+# JGengine — Concept first, then build the whole game
 
 The deliverable is the **complete idea** — the game the user named, at the scale that makes that game fun. You do not build a cut-down "slice" to show progress, and you never hand over a half version: work is phased, every phase ends whole, and the game is done only when the last phase lands. "Compiles and the hooks are wired" is the failure mode this skill exists to kill.
 
-The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and** first-person mouse-look (pointer-lock + centered reticle + weapon viewmodel), input tracker, hotbar/primary-click plumbing, world-space enemy health bars, floating damage/heal numbers, projectile tracers, `GameUiPreview`, error overlay. Never rebuild these per game — a hand-written reticle, world-space health bar, or floating-damage-number component means you missed a switch the engine already flips (see the archetype recipe below).
+The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and** first-person mouse-look (pointer-lock + centered reticle + weapon viewmodel), input tracker, hotbar/primary-click plumbing, world-space enemy health bars, floating damage/heal numbers, projectile tracers, `GameUiPreview`, error overlay. Never rebuild these per game.
 
-## Entry — `npx jgengine` (any machine, no monorepo)
+## Cold start — "use jgengine" / "make a game with npx jgengine"
 
-This is the whole front door. Outside the engine repo or inside it: scaffold with the CLI, install skills, then build.
+If you only know the **name**, do **not** dig the user's filesystem or invent an API.
 
-```sh
-npx jgengine create "Solitaire"
-cd Solitaire
-npx jgengine skills -p    # this project  ·  or  -g  once for every project/agent session
-bun dev
-# agent: make Solitaire with jgengine  (invokes jgengine-newgame)
-```
+1. Run `npx jgengine help` (or `npx jgengine@latest help`) — that is the product entry.
+2. Scaffold if there is no project yet:
+   ```sh
+   npx jgengine create "Game Name"
+   cd Game-Name
+   ```
+   `create` already installs project agent skills (`jgengine-api`, `jgengine-newgame`, `jgengine-verify`). **Never tell the user to download or install skills as a separate step.**
+3. Read the skills in the project (`.agents/skills/` or `.claude/skills/`) and `AGENTS.md`. Engine API: `npx jgengine llms core`.
+4. Reply with the **concept pitch** below — then build after they answer.
 
-| Flag | Where skills land |
-|------|-------------------|
-| `-p` / `--project` (default) | this project’s agent skills dir |
-| `-g` / `--global` | user-level — every project |
+**Inside this monorepo:** `create "Name"` auto-places under `Games/`; skills already live in the repo — no install. Optional create flags: `--standalone` / `--in-repo`, `--no-install`, `--no-skills`, `--pm bun|npm|pnpm`.
 
-**Inside this monorepo** (under `Games/`, workspace engine packages): same `create "Name"` — auto in-repo → `Games/My-Game-Name` + `bun run games:my-game-name`. Skills already live in `.claude/skills/` here; outside consumers use `skills -p`/`-g`.
-
-Do not hand-roll the harness. Pass the real title, not a bare kebab path. Optional create flags: `--standalone` / `--in-repo`, `--no-install`, `--pm bun|npm|pnpm`. There is no `--name`.
-
-## Read first (both, before the blueprint)
+## Read first (agent, not user)
 
 | What | Why |
 |------|-----|
-| `jgengine-api` | Install + setup, the engine surface, the UI quality bar, asset sourcing |
-| `jgengine-verify` | How to prove it works — browserless scene gate, shoot last |
-| `fan-out` | Cheap workers run verify / shoot / bulk work — not this session |
+| `jgengine-api` | Engine surface, UI quality bar, assets |
+| `jgengine-verify` | Browserless scene gate; shoot last |
+| `fan-out` | Cheap workers for verify / bulk work |
 
-## Take the reading — don't ask
+Mechanical legs follow **`fan-out`**. Research only novel seams — not scaffolding already in the API skill.
 
-Mechanical legs (verify, shoot, bulk reads) follow the **`fan-out`** skill — not this one. Research only novel engine seams; scaffolding already in `jgengine-api` is not research.
+## First user-facing response = concept pitch (short)
 
-A named game **is** the scope answer. "Make Fallout but multiplayer" means the canonical mainline experience — first/third-person wasteland RPG: gunplay plus targeted-shot mode, S.P.E.C.I.A.L.-style stats, XP/perks, loot + caps economy, quests + dialogue, settlements, party play — not a quiz about it. Never ask "isometric or FPS?", "does this scope work?", "want me to cut quests?", or offer a menu of smaller versions. State your reading in one line, then show the master blueprint.
+**Show the user a tight pitch only.** Keep engineering detail (file trees, catalog ids, keybind tables, full phase plans, content budgets, UI zone maps) **internal** — never paste that wall into chat.
 
-A clarifying question is justified only when two readings would change more than half the build **and** the request genuinely doesn't pick one — and even then, name the default you'll take and keep moving unless stopped.
+### What the user sees (aim ~half a page)
 
-## First response = the master blueprint
+- **Name** + one-line fantasy
+- **Core loop** in 2–4 sentences (what you do, what changes, why it is fun)
+- **POV / presentation** — first-person · third-person · top-down / RTS · HUD-only board/card (state your default)
+- **World kind** — open field, board, interior, abstract HUD, island map, etc.
+- **Scale vibe** — party evening · short arcade run · deep RPG · living sim (one phrase, not a spreadsheet)
+- **Multiplayer default** — single / hotseat / online (one line)
+- **3–6 tight questions** that change the build — especially when the request is open-ended
 
-Your first substantive response is the complete plan for the **full game** — every part of it, not a starter scope:
+### Good questions (pick what is actually open)
 
-- **Pillars, in priority order** — 3–5 one-line pillars, **ranked**, naming what the game is for ("legible emergence > zoom is the reward > the chronicle is the product > watchable by default"). Every later trade-off is settled by pillar rank instead of relitigated; a feature that serves no pillar doesn't ship.
-- **Perspective** — first- or third-person, committed **up front** and stated in one line; it drives camera, input, HUD, and combat feel. A first-person shooter only discovered to be first-person three QA passes in is a rebuild, not a fix. Set `camera: { perspective: "first" }` in the `defineGame({...})` call to match (`"first"` mounts mouse-look + reticle + viewmodel; default `"third"` is the orbit camera). If the fantasy is a shooter, say "first-person" and mean it. A board/card/menu game with no 3D camera at all sets `presentation: "hud"` in `defineGame({...})` instead — the shell mounts no canvas/camera rig/pointer, just `GameUI` plus the command/input loop; don't reach for `flat()` + a parked camera to fake it.
-- **System list** — every signature system of the named fantasy, at full depth (weapon mods and damage types, not just "guns"). A cut is a last resort, recorded with its reason.
-- **Coupling map** — for sim-shaped games: each system names the existing systems it feeds and reads, as cause→effect chains a player can reconstruct by watching ("drought → failed harvest → hunger → unrest"). A threat or event system is a *coupling into existing systems*, never a standalone effect — plague travels the trade routes, fire spreads with the wind system's wind. Prefer one legible failure pipeline that many systems feed over five private ones.
-- **Content budget** — numbers per system, sized by what the fantasy needs, not what's easy to type: items, enemy types, quests, zones, vendors, recipes (floors in "Content scale" below).
-- **Asset plan** — which packs (per `jgengine-api`'s Assets section) cover ground, structures, props, characters/enemies, items; pack → catalog-id mapping; one style family.
-- **Art direction** — a *decision*, not an adjective. One named aesthetic phrase ("illuminated-manuscript storybook", "neon brutalist"), a committed palette (4–6 hex values covering ground/sky plus UI panel, ink, and accent), a type voice, and a UI copy register (buttons in the fantasy's own language — "Unleash plague", not "Spawn disease event"). Written in the blueprint so every phase colors inside the same lines; "make it look nice" produces the murk this bullet exists to kill. Land that palette on the real seams, not just the prose: `terrain({ material, colors? })` (`"grass" | "sand" | "snow" | "rock" | "ash" | "highland" | "slate"`, `colors` overrides low/high/waterline), `building({ style, palette? })` (`"generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial"`, `palette` overrides any part color), and a `sky()` — every one distinct from the last game built here. Seven games once shipped on the same defaults and rendered as one identical world; art direction isn't done until it names this game's own material/style/sky, not whatever the last game happened to leave set.
-- **File tree** — one line per file: the skeleton at the top of `src/` (`game.config.ts`, `index.tsx`, `main.tsx`, `loop.ts`, `world.ts`, `index.css`) plus the root `index.html` + `vite.config.ts` that make the game a standalone Vite app, plus every catalog, generator, handler, quest, curve, and UI component under `src/game/`.
-- **Catalog ids** — the archetype entity / item / object / loot-table / quest ids; the generators below produce the breadth.
-- **Keybind table** — lives in `keybinds.ts` (named actions + `hotbarSlotBindings(n)`); action → key, checked: one key, one action — including mode toggles (aim-toggle on `V` plus a V.A.T.S. key on `V` is the classic collision).
-- **UI zone map** — which HUD cluster sits at which `HudCanvas` anchor, its `order` in that region, and its phone behavior (`compact: "keep" | "chip" | "hide"`). Every block is a `HudPanel`; only full-screen overlays (start/results/countdowns) stay raw children. See `jgengine-api`'s Responsive HUD panels + Layout rule.
-- **Multiplayer shape** — adapter + topology (`"shared" | "lobbies" | "private"`) and which systems sync.
-- **Non-goals** — the explicit cut list: what this game deliberately does not do, each with its one-line reason ("battles resolve abstractly — this is a chronicle, not a wargame"). Scope bleeds toward whatever was never ruled out.
-- **Phase plan** — the ordered phases that take an empty project to the complete blueprint, each phase a coherent whole (see below).
-- **Staged screenshot scenario** per phase for `GameUiPreview`, plus each phase's **observable acceptance**: what a player *experiences* in a stated time window, not a feature list — "left at max speed for 10 minutes: visible growth, 15+ log entries, no runaway values", "fly from the far overview to a market stall at 60 fps". A phase whose acceptance can't be phrased as something seen or felt isn't a phase, it's plumbing.
+- POV: 1st, 3rd, top-down, or board/HUD-only?
+- World: open 3D, board with spaces, rooms, abstract UI?
+- Scale: compact (one session) vs big catalog / long progression?
+- Players: solo, local party, online?
+- Tone / art: cute, grim, neon, toy-like…?
+- Any must-have systems or hard non-goals?
 
-The blueprint message ends with one question — "anything you want changed before I build?" — the only checkpoint in the entire build. Fold in whatever the user answers, then execute the phases straight through with no further approval stops. This is not a scope quiz: the blueprint already commits to the full canonical reading of the request; the question invites corrections, it doesn't outsource decisions.
+### Defaults when they already named a known fantasy
+
+State your reading in one line ("Mario Party + goo cast → party board + dice + short minigames, hotseat default") and still ask the open knobs (POV for minigames, board vs free-roam hub, player count). Do **not** quiz them into a smaller game or offer a slice menu.
+
+### After they answer
+
+Fold answers into your **internal** master plan (systems, content budgets, files, phases — use the sections below for yourself). Then build. One optional line: "Building with X POV, Y world, Z scale — stop me if that is wrong." No second blueprint dump unless they ask for detail.
+
+## Internal master plan (not user-facing)
+
+Hold these for yourself before/while building. Expand as needed; **do not dump the list into chat.**
+
+- Pillars ranked; perspective + `camera` / `presentation: "hud"`; full system list; coupling map for sims; content budgets; asset plan; art direction (palette + terrain material + building style + sky); file layout under `src/game/`; catalog ids; keybinds; HUD zones; multiplayer shape; non-goals; phase plan; acceptance as something felt in a time window.
 
 ## Phases: every increment is whole, none of them is "the game"
 

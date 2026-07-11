@@ -1,6 +1,6 @@
 export const SITE_URL = "https://jgengine.com";
 export const REPO_URL = "https://github.com/Noisemaker111/jgengine";
-export const INSTALL_CMD = "npx jgengine skills -g";
+export const INSTALL_CMD = 'npx jgengine create "My Game Name"';
 
 export const SKILL_GUIDE: Record<string, string> = {
   "jgengine-newgame":

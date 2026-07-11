@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseSkillsArgs, skillsInstallArgs, SKILLS_SOURCE } from "./skills";
+import { GAME_SKILLS, parseSkillsArgs, skillsInstallArgs, SKILLS_SOURCE } from "./skills";
 
 describe("parseSkillsArgs", () => {
   test("defaults to project", () => {
@@ -26,8 +26,17 @@ describe("parseSkillsArgs", () => {
 });
 
 describe("skillsInstallArgs", () => {
-  test("project omits -g; global includes it", () => {
-    expect(skillsInstallArgs("project")).toEqual(["--yes", "skills", "add", SKILLS_SOURCE, "-y", "--all"]);
-    expect(skillsInstallArgs("global")).toEqual(["--yes", "skills", "add", SKILLS_SOURCE, "-y", "--all", "-g"]);
+  test("installs only the three game skills, not the whole monorepo skill tree", () => {
+    const project = skillsInstallArgs("project");
+    expect(project).toContain(SKILLS_SOURCE);
+    expect(project).toContain("-y");
+    for (const skill of GAME_SKILLS) {
+      expect(project).toContain(skill);
+    }
+    expect(project).not.toContain("--all");
+    expect(project).not.toContain("-g");
+
+    const global = skillsInstallArgs("global");
+    expect(global).toContain("-g");
   });
 });
