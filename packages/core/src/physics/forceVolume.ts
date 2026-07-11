@@ -81,6 +81,72 @@ export class ForceVolume {
   }
 }
 
+/** One tick's force math for a body outside `PhysicsWorld` — apply the returned velocity in any custom integrator. */
+export function applyVolumeForce(
+  velocity: readonly [number, number, number],
+  force: readonly [number, number, number],
+  mode: ForceMode,
+  dt: number,
+): readonly [number, number, number] {
+  if (mode === "velocity") return force;
+  if (mode === "accelerate") {
+    return [velocity[0] + force[0] * dt, velocity[1] + force[1] * dt, velocity[2] + force[2] * dt];
+  }
+  return [velocity[0] + force[0], velocity[1] + force[1], velocity[2] + force[2]];
+}
+
+export interface VolumeTriggerConfig {
+  bounds: PhysicsBounds;
+}
+
+export interface VolumeTriggerStep<TId> {
+  /** Ids inside this tick that were outside last tick — the boost-pad edge. */
+  entered: readonly TId[];
+  /** Every id inside this tick. */
+  inside: readonly TId[];
+  /** Ids inside last tick that left. */
+  exited: readonly TId[];
+}
+
+/**
+ * The enter-once membership tracking from `ForceVolume`, freed from `PhysicsWorld`'s body indices
+ * (#286.8): feed any integrator's `{ id, position }` list each tick and act on the edges — apply
+ * `applyVolumeForce` on `entered` for a boost pad, on `inside` for a fan.
+ */
+export interface VolumeTrigger<TId> {
+  readonly bounds: PhysicsBounds;
+  step(bodies: Iterable<{ id: TId; position: readonly [number, number, number] }>): VolumeTriggerStep<TId>;
+  reset(): void;
+}
+
+export function createVolumeTrigger<TId = string>(config: VolumeTriggerConfig): VolumeTrigger<TId> {
+  let members = new Set<TId>();
+
+  return {
+    bounds: config.bounds,
+    step(bodies) {
+      const entered: TId[] = [];
+      const insideNow: TId[] = [];
+      const next = new Set<TId>();
+      for (const body of bodies) {
+        if (!inside(config.bounds, body.position[0], body.position[1], body.position[2])) continue;
+        next.add(body.id);
+        insideNow.push(body.id);
+        if (!members.has(body.id)) entered.push(body.id);
+      }
+      const exited: TId[] = [];
+      for (const id of members) {
+        if (!next.has(id)) exited.push(id);
+      }
+      members = next;
+      return { entered, inside: insideNow, exited };
+    },
+    reset() {
+      members = new Set();
+    },
+  };
+}
+
 export interface PlatformCarryConfig {
   /** Vertical gap between a rider's base and the platform top counted as "standing on". Default 0.12. */
   contactTolerance?: number;

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { defineGame } from "../game/defineGame";
 import type { EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
+import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { environment, terrain } from "../world/features";
 import { resolveTerrainField } from "../world/terrain";
@@ -585,5 +586,55 @@ describe("ctx.player.motion", () => {
     ctx.player.motion.setVerticalVelocity(3);
     ctx.player.motion.setY(1);
     expect(ctx.version()).toBe(before);
+  });
+});
+
+describe("ctx.game.race.state", () => {
+  function line(id: string, x: number, z: number): Checkpoint {
+    return { id, center: [x, 0, z], half: [3, 5, 3] };
+  }
+
+  function track() {
+    return raceTrack({
+      checkpoints: [line("start", 0, 0), line("cp1", 20, 0), line("finish", 20, 20)],
+    });
+  }
+
+  test("creates on first call with config and returns the same instance subsequently", () => {
+    const ctx = makeContext();
+    const a = ctx.game.race.state("main", { track: track() });
+    const b = ctx.game.race.state("main");
+    expect(b).toBe(a);
+  });
+
+  test("throws when accessed without a config before creation", () => {
+    const ctx = makeContext();
+    expect(() => ctx.game.race.state("missing")).toThrow();
+  });
+
+  test("addRacer bumps ctx.version", () => {
+    const ctx = makeContext();
+    const race = ctx.game.race.state("main", { track: track() });
+    const before = ctx.version();
+    race.addRacer("p1");
+    expect(ctx.version()).toBeGreaterThan(before);
+  });
+
+  test("update with no events does not bump ctx.version", () => {
+    const ctx = makeContext();
+    const race = ctx.game.race.state("main", { track: track() });
+    race.addRacer("p1");
+    const before = ctx.version();
+    race.update(0, { p1: [-50, 0, -50] });
+    expect(ctx.version()).toBe(before);
+  });
+
+  test("update that hits a checkpoint bumps ctx.version", () => {
+    const ctx = makeContext();
+    const race = ctx.game.race.state("main", { track: track() });
+    race.addRacer("p1");
+    const before = ctx.version();
+    race.update(0, { p1: [0, 0, 0] });
+    expect(ctx.version()).toBeGreaterThan(before);
   });
 });

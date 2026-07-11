@@ -189,6 +189,10 @@ export interface ChaseCameraConfig {
   fov?: { base?: number; max?: number; speedForMax?: number };
   /** Procedural shake amplitude per unit of speed (adds to the trauma channel). Default 0.0. */
   shakePerSpeed?: number;
+  /** Velocity-lead / predictive follow (#286.9): the rig aims `time` seconds ahead of the target along its velocity, clamped to `max` world units (default 4). */
+  lead?: { time: number; max?: number };
+  /** Roll into turns (#286.10): radians of camera roll per rad/s of the target's yaw rate, clamped to `max` (default 0.35), exponentially smoothed by `damping` (default 8). */
+  bank?: { perYawRate: number; max?: number; damping?: number };
   /** Which view to mount. Default "chase". */
   view?: ChaseView;
   /** Local offset for cockpit/hood/rear seats (relative to the vehicle, +z forward). */

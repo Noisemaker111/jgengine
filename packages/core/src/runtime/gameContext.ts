@@ -98,6 +98,7 @@ import { createChangeSignal, notifyAfter } from "../store/changeSignal";
 import { createObservableKeyedStore, type ObservableKeyedStore } from "../store/observableKeyedStore";
 import { createSimClock, type SimClock } from "../time/simClock";
 import { createTurnLoop, type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
+import { RaceState, type RaceEvent, type RaceStateConfig } from "../game/race";
 import { createCameraDirector, type CameraDirector } from "./cameraDirector";
 import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
 import { createMotionIntents, type MotionIntents } from "./motionIntents";
@@ -284,6 +285,11 @@ export interface GameContextTurn {
   loop(id: string, config?: TurnLoopConfig): TurnLoop;
 }
 
+export interface GameContextRace {
+  /** Lazily creates (on first call, `config` required) or returns the existing reactive race for `id` — discrete mutations and eventful `update` calls bump `ctx.version()`, so HUDs stop hand-managing `store.set` (#286.2). */
+  state(id: string, config?: RaceStateConfig): RaceState;
+}
+
 export interface GameContext {
   scene: {
     object: SceneObjectContext;
@@ -308,6 +314,7 @@ export interface GameContext {
     store: ObservableKeyedStore<unknown>;
     cards: GameContextCards;
     turn: GameContextTurn;
+    race: GameContextRace;
   };
   player: {
     userId: string;
@@ -940,7 +947,46 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return wrapped;
   }
 
-  const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic"], signal.notify);
+  class NotifyingRaceState extends RaceState {
+    override addRacer(racerId: string, startTime?: number): void {
+      super.addRacer(racerId, startTime);
+      signal.notify();
+    }
+    override removeRacer(racerId: string): void {
+      super.removeRacer(racerId);
+      signal.notify();
+    }
+    override reset(): void {
+      super.reset();
+      signal.notify();
+    }
+    override eliminate(racerId: string): void {
+      super.eliminate(racerId);
+      signal.notify();
+    }
+    override update(
+      now: number,
+      positions: Record<string, readonly [number, number, number]> | Map<string, readonly [number, number, number]>,
+    ): readonly RaceEvent[] {
+      const raceEvents = super.update(now, positions);
+      if (raceEvents.length > 0) signal.notify();
+      return raceEvents;
+    }
+  }
+
+  const raceStates = new Map<string, RaceState>();
+  function raceState(id: string, config?: RaceStateConfig): RaceState {
+    const existing = raceStates.get(id);
+    if (existing !== undefined) return existing;
+    if (config === undefined) {
+      throw new Error(`race "${id}" has not been created yet; pass a config on first access`);
+    }
+    const created = new NotifyingRaceState(config);
+    raceStates.set(id, created);
+    return created;
+  }
+
+  const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
   const input = createInputSnapshot();
   const motion = createMotionIntents();
 
@@ -1029,6 +1075,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       store,
       cards: { pile },
       turn: { loop },
+      race: { state: raceState },
     },
     player: {
       userId: player.userId,

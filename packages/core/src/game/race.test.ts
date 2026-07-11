@@ -177,3 +177,91 @@ describe("pluggable win conditions", () => {
     expect(race.ranking[0]).toBe("a");
   });
 });
+
+describe("race forks", () => {
+  const forkedTrack = () =>
+    raceTrack({
+      checkpoints: [line("start", 0, 0), line("cp1", 20, 0), line("finish", 40, 0)],
+      forks: [
+        {
+          id: "canyon",
+          afterIndex: 1,
+          routes: [
+            { id: "high", checkpoints: [line("high-a", 30, 10), line("high-b", 35, 10)] },
+            { id: "low", checkpoints: [line("low-a", 30, -10)] },
+          ],
+        },
+      ],
+    });
+
+  test("a racer commits to the route whose first checkpoint it hits and rejoins the mainline", () => {
+    const race = createRaceState({ track: forkedTrack() });
+    race.addRacer("a");
+    race.update(1, { a: [0, 0, 0] });
+    race.update(2, { a: [20, 0, 0] });
+
+    const taken = race.update(3, { a: [30, 0, 10] });
+    expect(eventTypes(taken, "fork.taken")).toEqual([
+      { type: "fork.taken", racerId: "a", forkId: "canyon", routeId: "high", time: 3 },
+    ]);
+    const hit = eventTypes(taken, "checkpoint.hit")[0]!;
+    expect(hit.type === "checkpoint.hit" && hit.fork).toEqual({ forkId: "canyon", routeId: "high", index: 0 });
+    expect(race.progressOf("a")!.activeRoute).toEqual({ forkId: "canyon", routeId: "high" });
+
+    race.update(4, { a: [35, 0, 10] });
+    expect(race.progressOf("a")!.activeRoute).toBeNull();
+    expect(race.progressOf("a")!.routesTaken).toEqual({ canyon: "high" });
+
+    const finish = race.update(5, { a: [40, 0, 0] });
+    expect(eventTypes(finish, "lap.completed")).toHaveLength(1);
+    expect(race.progressOf("a")!.finished).toBe(true);
+  });
+
+  test("any completed route contributes exactly one checkpoint of progress", () => {
+    const race = createRaceState({ track: forkedTrack(), win: everyoneFinishes() });
+    race.addRacer("high");
+    race.addRacer("low");
+    race.update(1, { high: [0, 0, 0], low: [0, 0, 0] });
+    race.update(2, { high: [20, 0, 0], low: [20, 0, 0] });
+    race.update(3, { high: [30, 0, 10], low: [30, 0, -10] });
+    race.update(4, { high: [35, 0, 10], low: [25, 0, -5] });
+    const progressHigh = race.progressOf("high")!.progress;
+    const progressLow = race.progressOf("low")!.progress;
+    expect(progressHigh).toBeCloseTo(3, 5);
+    expect(progressLow).toBeCloseTo(3, 5);
+  });
+
+  test("fork splits land in the racer's split list for route time accounting", () => {
+    const race = createRaceState({ track: forkedTrack() });
+    race.addRacer("a");
+    race.update(1, { a: [0, 0, 0] });
+    race.update(2, { a: [20, 0, 0] });
+    race.update(3, { a: [30, 0, -10] });
+    expect(race.progressOf("a")!.splits).toEqual([1, 2, 3]);
+  });
+
+  test("resetToCheckpoint respawns mid-route at the last route checkpoint", () => {
+    const race = createRaceState({ track: forkedTrack() });
+    race.addRacer("a");
+    race.update(1, { a: [0, 0, 0] });
+    race.update(2, { a: [20, 0, 0] });
+    race.update(3, { a: [30, 0, 10] });
+    const respawn = race.resetToCheckpoint("a")!;
+    expect(respawn.position).toEqual([30, 0, 10]);
+  });
+
+  test("raceTrack validates fork placement and route shape", () => {
+    const checkpoints = [line("start", 0, 0), line("finish", 40, 0)];
+    const route = { id: "r", checkpoints: [line("x", 10, 5)] };
+    expect(() =>
+      raceTrack({ checkpoints, forks: [{ id: "bad", afterIndex: 1, routes: [route, route] }] }),
+    ).toThrow();
+    expect(() => raceTrack({ checkpoints, forks: [{ id: "bad", afterIndex: 0, routes: [route] }] })).toThrow();
+    expect(() =>
+      raceTrack({
+        checkpoints,
+        forks: [{ id: "bad", afterIndex: 0, routes: [route, { id: "empty", checkpoints: [] }] }],
+      }),
+    ).toThrow();
+  });
+});
