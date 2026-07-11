@@ -8,6 +8,7 @@ import { createRequire } from "node:module";
 import { runCreate } from "../create";
 import { runDoctor } from "../doctor";
 import { cliVersion, findUp, readPackageJson } from "../pkg";
+import { runSkills } from "../skills";
 
 const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets"];
 
@@ -19,15 +20,20 @@ usage: jgengine <command> [...args]
   create "<Game Name>"  scaffold a playable base — flat world, spawned player, HUD, verify test.
                         folder becomes My-Game-Name; name lands in game.config / HUD / title.
                         [--in-repo|--standalone] [--no-install] [--pm bun|npm|pnpm]
+  skills -p | -g        install agent skills (api, newgame, verify). -p this project (default), -g global
   doctor [dir]          diagnose a game project: version skew, missing peers, unstyled-UI @source gaps, shape drift
-  skills                install the JGengine agent skills (API reference, game-build workflow, verify gate) into .claude/skills
   llms [package]        print packaged API docs (llms.txt) for an installed @jgengine/* package — agent-ready context
   assets [...]          delegate to the @jgengine/assets CLI: list, search, pull CC0 3D model packs
   versions              show CLI + installed @jgengine/* versions
   help                  this map
 
 docs: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
-new here (human or agent)? run: npx jgengine create "My Game Name" && cd My-Game-Name && npx jgengine skills
+
+entry (any directory, no monorepo needed):
+  npx jgengine create "Solitaire"
+  cd Solitaire
+  npx jgengine skills -p          # or: npx jgengine skills -g  (once, for every project)
+  # then: make Solitaire with jgengine
 `;
 
 function runVersions(): number {
@@ -68,15 +74,6 @@ function runLlms(argv: string[]): number {
   return 0;
 }
 
-function runSkills(): number {
-  console.log("installing JGengine agent skills (jgengine-api, jgengine-newgame, jgengine-verify)…");
-  const result = spawnSync("npx", ["--yes", "skills", "add", "Noisemaker111/jgengine"], {
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-  return result.status ?? 1;
-}
-
 function runAssets(argv: string[]): number {
   const require = createRequire(import.meta.url);
   let cliPath: string;
@@ -100,7 +97,7 @@ switch (command) {
     process.exit(runDoctor(rest));
     break;
   case "skills":
-    process.exit(runSkills());
+    process.exit(runSkills(rest));
     break;
   case "llms":
     process.exit(runLlms(rest));

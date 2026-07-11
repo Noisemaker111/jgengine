@@ -15,8 +15,8 @@ Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, te
 
 ## Skills
 
-- **Skills are installed via `npx skills add Noisemaker111/jgengine`.**
-- **Pushing to `main` does NOT auto-update existing skill installs.** Users must run `npx skills update` to pull descriptor/content changes.
+- **Skills install via `npx jgengine skills -p` (project) or `-g` (global).** Wrapper over `npx skills add Noisemaker111/jgengine`. Outside-repo entry: `create "Name"` → `skills -p` → agent builds with jgengine.
+- **Pushing to `main` does NOT auto-update existing skill installs.** Users must run `npx skills update` (or re-run `jgengine skills -p|-g`) to pull descriptor/content changes.
 
 ## Verification & screenshots
 

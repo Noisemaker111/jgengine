@@ -151,8 +151,8 @@ export function runCreate(argv: string[]): number {
     console.log("\nnext steps:");
     console.log(`  cd ${cdHint}`);
     if (!installed) console.log("  bun install   # or npm install");
-    console.log("  bun dev       # or npm run dev — flat world, spawned player, working HUD");
-    console.log("  npx jgengine skills   # install the JGengine agent skills for AI-assisted building");
+    console.log("  bun dev                 # or npm run dev — flat world, spawned player, working HUD");
+    console.log("  npx jgengine skills -p  # agent skills in this project (-g for global)");
     return 0;
   } catch (error) {
     console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
