@@ -1,9 +1,10 @@
 import { createRecordBook, type RecordStorage } from "@jgengine/core/game/recordBook";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { GLIDER_GHOST_ENTITY, GLIDER_PACER_ENTITY, GLIDER_PLAYER_ENTITY } from "./game/entities/gliders/catalog";
 import { fanSpoolState } from "./game/flight/fanSchedule";
-import { createRaceSession, PACER_RACER_ID, RECORD_BOOK_KEY, RECORD_FIELDS, SESSION_STORE_KEY, type RaceSession } from "./game/race/session";
+import { createRaceSession, PACER_RACER_ID, RECORD_BOOK_KEY, RECORD_FIELDS, SESSION_STORE_KEY, type RaceSession, type RacePhase } from "./game/race/session";
 import { FANS, SPAWN_HEADING, SPAWN_POSITION } from "./game/race/route";
 import { placeCityProps, syncFanRotors } from "./game/world/setup";
 
@@ -14,10 +15,15 @@ function browserStorage(): RecordStorage | null {
   return typeof localStorage === "undefined" ? null : localStorage;
 }
 
+function syncPhase(ctx: GameContext, phase: RacePhase): void {
+  setGamePhase(ctx, phase === "racing" ? "playing" : phase === "finished" ? "ended" : "menu");
+}
+
 export function onInit(ctx: GameContext): void {
   const session = createRaceSession(createRecordBook({ key: RECORD_BOOK_KEY, fields: RECORD_FIELDS, storage: browserStorage() }));
   ctx.game.store.set(SESSION_STORE_KEY, session);
   ctx.game.store.set(GHOST_SPAWNED_KEY, false);
+  syncPhase(ctx, "start");
 
   if (!ctx.game.commands.has("start")) {
     ctx.game.commands.define("start", {

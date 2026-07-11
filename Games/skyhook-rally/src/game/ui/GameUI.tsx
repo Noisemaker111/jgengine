@@ -1,3 +1,5 @@
+import { SettingsTrigger } from "@jgengine/react";
+
 import { archipelago, courses } from "../../world";
 import { AltitudeTick } from "./components/AltitudeTick";
 import { ApexCrosshair } from "./components/ApexCrosshair";

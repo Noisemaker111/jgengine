@@ -27,6 +27,10 @@ export function GameUI() {
 
   return (
     <div className="pointer-events-none fixed inset-0 select-none font-sans">
+      <div className="pointer-events-auto fixed right-3 top-3 z-10">
+        <SettingsTrigger className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#f2b950]/40 bg-[#2b2320]/85 text-[#f2b950] backdrop-blur transition-colors hover:bg-[#f2b950]/15" />
+      </div>
+
       {relay.phase === "menu" ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
           <StartScreen onStart={() => commands.run("start", {})} />
