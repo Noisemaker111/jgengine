@@ -14,9 +14,139 @@ import {
   headingToBearing,
   projectToMinimap,
   relativeBearing,
+  unprojectFromMinimap,
   type Cardinal,
   type WorldXZ,
 } from "@jgengine/core/world/minimap";
+import {
+  mapLayerColor,
+  type MapCellStates,
+  type MapRoute,
+  type MapZone,
+} from "@jgengine/core/world/mapLayers";
+
+type ProjectFn = (x: number, z: number) => { x: number; y: number };
+
+interface LayerScale {
+  x: (worldUnits: number) => number;
+  y: (worldUnits: number) => number;
+}
+
+function routeNodes(routes: readonly MapRoute[] | undefined, project: ProjectFn, keyPrefix: string): ReactNode[] {
+  if (routes === undefined) return [];
+  return routes.map((route) => {
+    const points = route.closed === true && route.points.length > 1 ? [...route.points, route.points[0]!] : route.points;
+    const path = points.map(([x, z]) => {
+      const at = project(x, z);
+      return `${at.x},${at.y}`;
+    });
+    return (
+      <polyline
+        key={`${keyPrefix}-route-${route.id}`}
+        data-map-route={route.id}
+        points={path.join(" ")}
+        fill="none"
+        stroke={mapLayerColor(route.tone)}
+        strokeWidth={route.width ?? 2}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        opacity={0.9}
+        {...(route.forecast === true ? { strokeDasharray: "6 4" } : {})}
+      />
+    );
+  });
+}
+
+function zoneNodes(
+  zones: readonly MapZone[] | undefined,
+  project: ProjectFn,
+  scale: LayerScale,
+  keyPrefix: string,
+): ReactNode[] {
+  if (zones === undefined) return [];
+  return zones.map((zone) => {
+    const color = mapLayerColor(zone.tone);
+    const forecast = zone.forecast === true;
+    const fill = forecast ? "none" : color;
+    const fillOpacity = forecast ? 0 : zone.opacity ?? 0.25;
+    const stroke = { stroke: color, strokeWidth: 1.5, ...(forecast ? { strokeDasharray: "6 4" } : {}) };
+    const shape = zone.shape;
+    let node: ReactNode = null;
+    let labelAt: { x: number; y: number } | null = null;
+    if (shape.kind === "circle") {
+      const at = project(shape.center[0], shape.center[1]);
+      labelAt = at;
+      node = (
+        <ellipse cx={at.x} cy={at.y} rx={scale.x(shape.radius)} ry={scale.y(shape.radius)} fill={fill} fillOpacity={fillOpacity} {...stroke} />
+      );
+    } else {
+      const corners =
+        shape.kind === "rect"
+          ? rectCorners(shape).map(([x, z]) => project(x, z))
+          : shape.points.map(([x, z]) => project(x, z));
+      labelAt = corners[0] ?? null;
+      node = (
+        <polygon
+          points={corners.map((at) => `${at.x},${at.y}`).join(" ")}
+          fill={fill}
+          fillOpacity={fillOpacity}
+          {...stroke}
+        />
+      );
+    }
+    return (
+      <g key={`${keyPrefix}-zone-${zone.id}`} data-map-zone={zone.id} opacity={0.9}>
+        {node}
+        {zone.label !== undefined && labelAt !== null ? (
+          <text x={labelAt.x} y={labelAt.y - 4} textAnchor="middle" fontSize={9} fill={color} style={{ fontWeight: 700 }}>
+            {zone.label}
+          </text>
+        ) : null}
+      </g>
+    );
+  });
+}
+
+function rectCorners(shape: { center: readonly [number, number]; w: number; d: number; rotate?: number }): readonly [number, number][] {
+  const halfW = shape.w / 2;
+  const halfD = shape.d / 2;
+  const rotate = shape.rotate ?? 0;
+  const cos = Math.cos(rotate);
+  const sin = Math.sin(rotate);
+  return ([[-halfW, -halfD], [halfW, -halfD], [halfW, halfD], [-halfW, halfD]] as const).map(([dx, dz]) => [
+    shape.center[0] + dx * cos - dz * sin,
+    shape.center[1] + dx * sin + dz * cos,
+  ]);
+}
+
+function cellStateNodes(
+  layers: readonly MapCellStates[] | undefined,
+  project: ProjectFn,
+  scale: LayerScale,
+  keyPrefix: string,
+): ReactNode[] {
+  if (layers === undefined) return [];
+  const nodes: ReactNode[] = [];
+  for (const layer of layers) {
+    const w = scale.x(layer.cellSize);
+    const h = scale.y(layer.cellSize);
+    for (const cell of layer.cells) {
+      const at = project(layer.origin[0] + cell.col * layer.cellSize, layer.origin[1] + cell.row * layer.cellSize);
+      nodes.push(
+        <rect
+          key={`${keyPrefix}-${layer.id}-${cell.col}-${cell.row}`}
+          x={at.x - w / 2}
+          y={at.y - h / 2}
+          width={w}
+          height={h}
+          fill={mapLayerColor(cell.tone)}
+          opacity={cell.opacity ?? 0.35}
+        />,
+      );
+    }
+  }
+  return nodes;
+}
 
 export function useMarkers(markers: MarkerSet): readonly MapMarker[] {
   return useSyncExternalStore(markers.subscribe, markers.snapshot, markers.snapshot);
@@ -39,6 +169,14 @@ export interface MinimapProps {
   background?: string;
   /** World bounds the `background` image spans, so it pans correctly under a player-centered map. */
   mapBounds?: MapBounds;
+  /** Route/corridor polylines drawn under the markers (#285.2); `forecast` routes dash. */
+  routes?: readonly MapRoute[];
+  /** Zone/hazard overlays with live fills and dashed forecast outlines (#285.1). */
+  zones?: readonly MapZone[];
+  /** Per-cell status heatmaps (#285.1) — pair with `world/cellStates`. */
+  cellStates?: readonly MapCellStates[];
+  /** Click-to-pin seam (#285.6): receives the clicked world XZ via `unprojectFromMinimap`. */
+  onWorldClick?: (world: WorldXZ) => void;
   className?: string;
   title?: string;
   children?: ReactNode;
@@ -67,6 +205,10 @@ export function Minimap({
   kindStyles = DEFAULT_MARKER_KINDS,
   background,
   mapBounds,
+  routes,
+  zones,
+  cellStates,
+  onWorldClick,
   className,
   title = "Map",
   children,
@@ -147,7 +289,23 @@ export function Minimap({
           {bearingToCardinal(bearing)}
         </span>
       </div>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} data-minimap-canvas>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        data-minimap-canvas
+        {...(onWorldClick === undefined
+          ? {}
+          : {
+              onClick: (event: { currentTarget: { getBoundingClientRect(): DOMRect }; clientX: number; clientY: number }) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                const px = ((event.clientX - rect.left) / rect.width) * size;
+                const py = ((event.clientY - rect.top) / rect.height) * size;
+                onWorldClick(unprojectFromMinimap({ x: px, y: py }, view));
+              },
+              style: { cursor: "crosshair" as const },
+            })}
+      >
         <defs>
           <clipPath id={clipId}>
             <circle cx={half} cy={half} r={half - 1} />
@@ -185,6 +343,16 @@ export function Minimap({
               })()
             : null}
           {fogRects}
+          {(() => {
+            const projectXZ: ProjectFn = (x, z) => projectToMinimap([x, z], view);
+            const pxPerWorld = worldRadius === 0 ? 0 : half / worldRadius;
+            const layerScale: LayerScale = { x: (units) => units * pxPerWorld, y: (units) => units * pxPerWorld };
+            return [
+              ...cellStateNodes(cellStates, projectXZ, layerScale, "mm"),
+              ...zoneNodes(zones, projectXZ, layerScale, "mm"),
+              ...routeNodes(routes, projectXZ, "mm"),
+            ];
+          })()}
           <circle cx={half} cy={half} r={half - 1} fill="none" stroke="rgba(148,163,184,0.12)" />
           {sorted.map((marker) => {
             const style = markerKindStyle(marker.kind, kindStyles);
@@ -360,6 +528,14 @@ export interface WorldMapProps {
   width?: number;
   height?: number;
   kindStyles?: Record<string, MarkerKindStyle>;
+  /** Route/corridor polylines drawn under the markers (#285.2); `forecast` routes dash. */
+  routes?: readonly MapRoute[];
+  /** Zone/hazard overlays with live fills and dashed forecast outlines (#285.1). */
+  zones?: readonly MapZone[];
+  /** Per-cell status heatmaps (#285.1) — pair with `world/cellStates`. */
+  cellStates?: readonly MapCellStates[];
+  /** Click-to-pin seam (#285.6): receives the clicked world XZ. */
+  onWorldClick?: (world: WorldXZ) => void;
   className?: string;
   title?: string;
   onClose?: () => void;
@@ -380,6 +556,10 @@ export function WorldMap({
   width = 520,
   height,
   kindStyles = DEFAULT_MARKER_KINDS,
+  routes,
+  zones,
+  cellStates,
+  onWorldClick,
   className,
   title = "World Map",
   onClose,
@@ -432,7 +612,23 @@ export function WorldMap({
           </button>
         ) : null}
       </div>
-      <svg width={width} height={mapH} viewBox={`0 0 ${width} ${mapH}`} data-world-map-canvas style={{ borderRadius: 10 }}>
+      <svg
+        width={width}
+        height={mapH}
+        viewBox={`0 0 ${width} ${mapH}`}
+        data-world-map-canvas
+        style={{ borderRadius: 10, ...(onWorldClick === undefined ? {} : { cursor: "crosshair" as const }) }}
+        {...(onWorldClick === undefined
+          ? {}
+          : {
+              onClick: (event: { currentTarget: { getBoundingClientRect(): DOMRect }; clientX: number; clientY: number }) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                const px = ((event.clientX - rect.left) / rect.width) * width;
+                const py = ((event.clientY - rect.top) / rect.height) * mapH;
+                onWorldClick([bounds.minX + (px / width) * worldW, bounds.minZ + (py / mapH) * worldD]);
+              },
+            })}
+      >
         <rect x={0} y={0} width={width} height={mapH} fill="#16202b" />
         {background !== undefined ? (
           <image href={background} x={0} y={0} width={width} height={mapH} preserveAspectRatio="none" opacity={0.95} />
@@ -465,6 +661,18 @@ export function WorldMap({
               return rects;
             })()
           : null}
+        {(() => {
+          const projectXZ: ProjectFn = (x, z) => project(x, z);
+          const layerScale: LayerScale = {
+            x: (units) => (units / worldW) * width,
+            y: (units) => (units / worldD) * mapH,
+          };
+          return [
+            ...cellStateNodes(cellStates, projectXZ, layerScale, "wm"),
+            ...zoneNodes(zones, projectXZ, layerScale, "wm"),
+            ...routeNodes(routes, projectXZ, "wm"),
+          ];
+        })()}
         {markerList.map((marker) => {
           const at = project(marker.position[0], marker.position[2]);
           const style = markerKindStyle(marker.kind, kindStyles);
