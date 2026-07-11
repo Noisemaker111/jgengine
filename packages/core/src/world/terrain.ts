@@ -436,8 +436,64 @@ function withFlattenMasks(
   };
 }
 
+export interface HeightMapFieldConfig {
+  columns: number;
+  rows: number;
+  samples: ArrayLike<number>;
+  bounds?: WorldBounds;
+  heightScale?: number;
+  baseHeight?: number;
+  waterLevel?: number;
+}
+
+export function heightMapField(config: HeightMapFieldConfig): TerrainField {
+  const { columns, rows, samples } = config;
+  if (columns <= 0 || rows <= 0) throw new Error("heightMapField: columns/rows must be positive");
+  if (samples.length < columns * rows) {
+    throw new Error(`heightMapField: samples length ${samples.length} < columns*rows ${columns * rows}`);
+  }
+  const bounds = config.bounds ?? { w: columns, d: rows };
+  const heightScale = config.heightScale ?? 1;
+  const baseHeight = config.baseHeight ?? 0;
+  const halfW = bounds.w / 2;
+  const halfD = bounds.d / 2;
+
+  const sampleAt = (col: number, row: number): number => {
+    const c = Math.max(0, Math.min(columns - 1, col));
+    const r = Math.max(0, Math.min(rows - 1, row));
+    return samples[r * columns + c]!;
+  };
+
+  return fieldFromHeight(
+    (x, z) => {
+      const u = columns <= 1 ? 0 : ((x + halfW) / bounds.w) * (columns - 1);
+      const v = rows <= 1 ? 0 : ((z + halfD) / bounds.d) * (rows - 1);
+      const c0 = Math.floor(u);
+      const r0 = Math.floor(v);
+      const fu = u - c0;
+      const fv = v - r0;
+      const h00 = sampleAt(c0, r0);
+      const h10 = sampleAt(c0 + 1, r0);
+      const h01 = sampleAt(c0, r0 + 1);
+      const h11 = sampleAt(c0 + 1, r0 + 1);
+      const top = lerp(h00, h10, fu);
+      const bottom = lerp(h01, h11, fu);
+      return baseHeight + heightScale * lerp(top, bottom, fv);
+    },
+    {
+      bounds,
+      ...(config.waterLevel === undefined ? {} : { waterLevel: config.waterLevel }),
+    },
+  );
+}
+
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
   if (descriptor === undefined) return flatField();
+  if (descriptor.heightField === undefined && descriptor.heightMap !== undefined) {
+    throw new Error(
+      `terrain heightMap "${descriptor.heightMap}" is not auto-loaded. Decode elevation samples into heightMapField({ columns, rows, samples }) and pass heightField: field.sampleHeight (or omit heightMap and set heightField directly).`,
+    );
+  }
   const base =
     descriptor.heightField !== undefined
       ? fieldFromHeight(descriptor.heightField, {

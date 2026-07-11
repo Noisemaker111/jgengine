@@ -38,7 +38,10 @@ export interface OceanFoamConfig {
 
 export interface OceanConfig {
   quality?: OceanQualityPreset;
+  /** Ocean plane width in world units (X). When `depth` is omitted, also used for depth (square). */
   size?: number;
+  /** Ocean plane depth in world units (Z). Defaults to `size` for a square sheet. */
+  depth?: number;
   resolution?: number;
   amplitude?: number;
   speed?: number;
@@ -46,6 +49,12 @@ export interface OceanConfig {
   choppiness?: number;
   steepness?: number;
   timeScale?: number;
+  /**
+   * Primary Gerstner wavelength in world units — same unit as `@jgengine/core/world/water` `waveScale`
+   * (default 18). Scales the default wave set so the longest wave matches this value; explicit `waves`
+   * wavelengths are multiplied by `waveScale / 18`.
+   */
+  waveScale?: number;
   color?: OceanColorConfig;
   foam?: OceanFoamConfig;
   waves?: readonly OceanWaveConfig[];
@@ -79,6 +88,7 @@ export interface ResolvedOceanWaveConfig {
 export interface ResolvedOceanConfig {
   quality: OceanQualityPreset;
   size: number;
+  depth: number;
   resolution: number;
   amplitude: number;
   speed: number;
@@ -86,10 +96,14 @@ export interface ResolvedOceanConfig {
   choppiness: number;
   steepness: number;
   timeScale: number;
+  waveScale: number;
   color: ResolvedOceanColorConfig;
   foam: ResolvedOceanFoamConfig;
   waves: readonly ResolvedOceanWaveConfig[];
 }
+
+/** Shared with `@jgengine/core/world/water` — primary wavelength in world units. */
+export const DEFAULT_OCEAN_WAVE_SCALE = 18;
 
 export const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> = {
   low: { size: 220, resolution: 80 },
@@ -101,6 +115,7 @@ export const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; r
 export const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig = {
   quality: "medium",
   size: OCEAN_QUALITY_PRESETS.medium.size,
+  depth: OCEAN_QUALITY_PRESETS.medium.size,
   resolution: OCEAN_QUALITY_PRESETS.medium.resolution,
   amplitude: 1,
   speed: 1,
@@ -108,6 +123,7 @@ export const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig = {
   choppiness: 1,
   steepness: 0.72,
   timeScale: 1,
+  waveScale: DEFAULT_OCEAN_WAVE_SCALE,
   color: {
     shallow: "#2dc5d3",
     deep: "#064468",
@@ -126,14 +142,10 @@ export const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig = {
   waves: [],
 };
 
-const DEFAULT_WAVE_SHAPE: readonly Omit<ResolvedOceanWaveConfig, "direction">[] = [
-  { amplitude: 1.15, wavelength: 44, speed: 1, steepness: 0.68 },
-  { amplitude: 0.72, wavelength: 28, speed: 1.08, steepness: 0.58 },
-  { amplitude: 0.44, wavelength: 17, speed: 1.18, steepness: 0.48 },
-  { amplitude: 0.28, wavelength: 10, speed: 1.34, steepness: 0.38 },
-  { amplitude: 0.18, wavelength: 6.5, speed: 1.52, steepness: 0.28 },
-  { amplitude: 0.11, wavelength: 3.8, speed: 1.75, steepness: 0.18 },
-];
+const WAVE_WAVELENGTH_FALLOFF = 0.65;
+const WAVE_AMPLITUDE_SHAPE = [1.15, 0.72, 0.44, 0.28, 0.18, 0.11] as const;
+const WAVE_SPEED_SHAPE = [1, 1.08, 1.18, 1.34, 1.52, 1.75] as const;
+const WAVE_STEEPNESS_SHAPE = [0.68, 0.58, 0.48, 0.38, 0.28, 0.18] as const;
 
 const DEFAULT_DIRECTION_OFFSETS = [-8, 7, 21, -31, 46, -58] as const;
 
@@ -164,12 +176,12 @@ function normalizeDirection(direction: OceanWaveDirection | undefined, fallback:
 
 function createDefaultWaves(config: Omit<ResolvedOceanConfig, "waves">): readonly ResolvedOceanWaveConfig[] {
   const baseAngle = directionAngle(config.direction);
-  return DEFAULT_WAVE_SHAPE.map((wave, index) => ({
-    amplitude: wave.amplitude,
-    wavelength: wave.wavelength,
-    speed: wave.speed,
+  return WAVE_AMPLITUDE_SHAPE.map((amplitude, index) => ({
+    amplitude,
+    wavelength: Math.max(0.1, config.waveScale * WAVE_WAVELENGTH_FALLOFF ** index),
+    speed: WAVE_SPEED_SHAPE[index]!,
     direction: directionFromAngle(baseAngle + DEFAULT_DIRECTION_OFFSETS[index]!),
-    steepness: wave.steepness,
+    steepness: WAVE_STEEPNESS_SHAPE[index]!,
   }));
 }
 
@@ -177,10 +189,15 @@ function resolveWave(
   wave: OceanWaveConfig | undefined,
   fallback: ResolvedOceanWaveConfig,
   config: Omit<ResolvedOceanConfig, "waves">,
+  customWaves: boolean,
 ): ResolvedOceanWaveConfig {
+  const wavelength =
+    customWaves && wave?.wavelength !== undefined
+      ? wave.wavelength * (config.waveScale / DEFAULT_OCEAN_WAVE_SCALE)
+      : finiteOr(wave?.wavelength, fallback.wavelength);
   return {
     amplitude: Math.max(0, finiteOr(wave?.amplitude, fallback.amplitude) * config.amplitude),
-    wavelength: Math.max(0.1, finiteOr(wave?.wavelength, fallback.wavelength)),
+    wavelength: Math.max(0.1, wavelength),
     speed: finiteOr(wave?.speed, fallback.speed) * config.speed,
     direction: normalizeDirection(wave?.direction, fallback.direction),
     steepness: clamp(finiteOr(wave?.steepness, fallback.steepness) * config.steepness, 0, 1.2),
@@ -190,9 +207,12 @@ function resolveWave(
 export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig {
   const quality = patch.quality ?? DEFAULT_OCEAN_CONFIG.quality;
   const preset = OCEAN_QUALITY_PRESETS[quality];
+  const size = Math.max(1, finiteOr(patch.size, preset.size));
+  const depth = Math.max(1, finiteOr(patch.depth, size));
   const withoutWaves: Omit<ResolvedOceanConfig, "waves"> = {
     quality,
-    size: Math.max(1, Math.floor(finiteOr(patch.size, preset.size))),
+    size,
+    depth,
     resolution: Math.max(1, Math.floor(finiteOr(patch.resolution, preset.resolution))),
     amplitude: Math.max(0, finiteOr(patch.amplitude, DEFAULT_OCEAN_CONFIG.amplitude)),
     speed: finiteOr(patch.speed, DEFAULT_OCEAN_CONFIG.speed),
@@ -200,6 +220,7 @@ export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig 
     choppiness: Math.max(0, finiteOr(patch.choppiness, DEFAULT_OCEAN_CONFIG.choppiness)),
     steepness: Math.max(0, finiteOr(patch.steepness, DEFAULT_OCEAN_CONFIG.steepness)),
     timeScale: finiteOr(patch.timeScale, DEFAULT_OCEAN_CONFIG.timeScale),
+    waveScale: Math.max(0.1, finiteOr(patch.waveScale, DEFAULT_OCEAN_CONFIG.waveScale)),
     color: {
       ...DEFAULT_OCEAN_CONFIG.color,
       ...patch.color,
@@ -221,9 +242,10 @@ export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig 
   };
 
   const defaultWaves = createDefaultWaves(withoutWaves);
+  const customWaves = patch.waves !== undefined;
   const inputWaves = patch.waves ?? defaultWaves;
   const waves = Array.from({ length: MAX_OCEAN_WAVES }, (_, index) =>
-    resolveWave(inputWaves[index], defaultWaves[index]!, withoutWaves),
+    resolveWave(inputWaves[index], defaultWaves[index]!, withoutWaves, customWaves),
   );
   return { ...withoutWaves, waves };
 }

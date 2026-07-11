@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { resolveTerrainPalette, TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/world/terrain";
+import { terrain } from "@jgengine/core/world/features";
+import {
+  heightMapField,
+  resolveTerrainField,
+  resolveTerrainPalette,
+  TERRAIN_MATERIAL_PALETTES,
+} from "@jgengine/core/world/terrain";
 
 import { createGrassBladeGeometry } from "./grassGeometry";
 import { createSeededRandom } from "./random";
@@ -111,5 +117,66 @@ describe("terrain primitives", () => {
       expect(offsets.getY(index)).toBeCloseTo(offsets.getX(index) * 0.25 + offsets.getZ(index) * 0.5);
     }
     geometry.dispose();
+  });
+
+  test("field ground geometry applies flatten masks at center, falloff, and outside", () => {
+    const field = resolveTerrainField(
+      terrain({
+        height: 8,
+        seed: "mesh-flatten",
+        frequency: 0.05,
+        flatten: [{ center: [0, 0], radius: 4, height: 1, falloff: 4 }],
+      }),
+    );
+    const geometry = createFieldGroundGeometry(field, {
+      size: [32, 32],
+      segments: [16, 16],
+      heightRange: [-4, 12],
+    });
+    const positions = geometry.attributes.position;
+    const heightAt = (x: number, z: number): number | null => {
+      let best: number | null = null;
+      let bestDist = Infinity;
+      for (let i = 0; i < positions.count; i += 1) {
+        const dx = positions.getX(i) - x;
+        const dz = positions.getZ(i) - z;
+        const dist = dx * dx + dz * dz;
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = positions.getY(i);
+        }
+      }
+      return best;
+    };
+    expect(heightAt(0, 0)).toBeCloseTo(1, 5);
+    expect(heightAt(2, 0)).toBeCloseTo(1, 5);
+    const ring = heightAt(6, 0)!;
+    expect(ring).not.toBeCloseTo(1, 1);
+    expect(ring).toBeCloseTo(field.sampleHeight(6, 0), 5);
+    expect(heightAt(14, 14)).toBeCloseTo(field.sampleHeight(14, 14), 5);
+    geometry.dispose();
+  });
+
+  test("two height maps produce distinct ground geometries", () => {
+    const a = heightMapField({
+      columns: 2,
+      rows: 2,
+      samples: [0, 0, 0, 0],
+      bounds: { w: 8, d: 8 },
+      heightScale: 1,
+    });
+    const b = heightMapField({
+      columns: 2,
+      rows: 2,
+      samples: [4, 4, 4, 4],
+      bounds: { w: 8, d: 8 },
+      heightScale: 1,
+    });
+    const geoA = createFieldGroundGeometry(a, { size: [8, 8], segments: [2, 2] });
+    const geoB = createFieldGroundGeometry(b, { size: [8, 8], segments: [2, 2] });
+    expect(geoA.attributes.position.getY(0)).not.toBe(geoB.attributes.position.getY(0));
+    expect(geoB.attributes.position.getY(0)).toBeCloseTo(4, 5);
+    geoA.dispose();
+    geoB.dispose();
   });
 });

@@ -82,9 +82,11 @@ export interface DaylightProps {
   fog?: { color?: string; near?: number; far?: number } | false;
   sun?: { position?: readonly [number, number, number]; intensity?: number; color?: string };
   ambient?: { skyColor?: string; groundColor?: string; intensity?: number };
+  /** When false, only the sky dome and fog mount — use with authored `PlayableGame.lighting`. Default true. */
+  lights?: boolean;
 }
 
-export function Daylight({ sky, fog, sun, ambient }: DaylightProps = {}) {
+export function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}) {
   const sunPosition = sun?.position ?? [120, 160, 70];
   return (
     <>
@@ -92,21 +94,30 @@ export function Daylight({ sky, fog, sun, ambient }: DaylightProps = {}) {
       {fog === false ? null : (
         <fog attach="fog" args={[fog?.color ?? FOG_COLOR, fog?.near ?? 70, fog?.far ?? 260]} />
       )}
-      <hemisphereLight
-        args={[ambient?.skyColor ?? HEMI_SKY, ambient?.groundColor ?? HEMI_GROUND, ambient?.intensity ?? 0.55]}
-      />
-      <directionalLight
-        position={[sunPosition[0], sunPosition[1], sunPosition[2]]}
-        intensity={sun?.intensity ?? 0.85}
-        color={sun?.color ?? SUN_COLOR}
-        castShadow
-      />
+      {lights ? (
+        <>
+          <hemisphereLight
+            args={[ambient?.skyColor ?? HEMI_SKY, ambient?.groundColor ?? HEMI_GROUND, ambient?.intensity ?? 0.55]}
+          />
+          <directionalLight
+            position={[sunPosition[0], sunPosition[1], sunPosition[2]]}
+            intensity={sun?.intensity ?? 0.85}
+            color={sun?.color ?? SUN_COLOR}
+            castShadow
+          />
+        </>
+      ) : null}
     </>
   );
 }
 
+export interface SkyDaylightProps {
+  sky: SkyEnvironmentDescriptor;
+  lights?: boolean;
+}
+
 /** Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates. */
-export function SkyDaylight({ sky }: { sky: SkyEnvironmentDescriptor }) {
+export function SkyDaylight({ sky, lights = true }: SkyDaylightProps) {
   const state = useMemo(() => daylightStateAt(SKY_PRESET_DAY_FRACTION[sky.preset], sky), [sky]);
   return (
     <Daylight
@@ -114,6 +125,7 @@ export function SkyDaylight({ sky }: { sky: SkyEnvironmentDescriptor }) {
       fog={{ color: sky.fog?.color ?? state.background, near: sky.fog?.near, far: sky.fog?.far }}
       sun={{ position: state.sunPosition, intensity: state.sunIntensity }}
       ambient={{ intensity: state.ambientIntensity }}
+      lights={lights}
     />
   );
 }
@@ -122,23 +134,27 @@ export interface TimeOfDayDaylightProps {
   sky: SkyEnvironmentDescriptor;
   /** The world's `SimClock` (or a stub exposing `calendar().dayFraction`). Absent means static rendering. */
   clock?: { calendar(): { dayFraction: number } };
+  lights?: boolean;
 }
 
 /**
- * Drives `Daylight`'s sun/sky/fog from the world clock when `sky.timeOfDay` and `clock` are both present,
- * sampling `daylightStateAt` every frame; otherwise renders the static preset look via `SkyDaylight`.
+ * Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock`
+ * are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so
+ * only dome colors and fog track the day fraction.
  */
-export function TimeOfDayDaylight({ sky, clock }: TimeOfDayDaylightProps) {
-  if (!sky.timeOfDay || clock === undefined) return <SkyDaylight sky={sky} />;
-  return <DrivenDaylight sky={sky} clock={clock} />;
+export function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps) {
+  if (!sky.timeOfDay || clock === undefined) return <SkyDaylight sky={sky} lights={lights} />;
+  return <DrivenDaylight sky={sky} clock={clock} lights={lights} />;
 }
 
 function DrivenDaylight({
   sky,
   clock,
+  lights,
 }: {
   sky: SkyEnvironmentDescriptor;
   clock: { calendar(): { dayFraction: number } };
+  lights: boolean;
 }) {
   const initial = useMemo(() => daylightStateAt(clock.calendar().dayFraction, sky), [clock, sky]);
   const sunRef = useRef<THREE.DirectionalLight>(null);
@@ -168,8 +184,12 @@ function DrivenDaylight({
     <>
       <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} />
       <fog attach="fog" ref={fogRef} args={[sky.fog?.color ?? initial.background, sky.fog?.near ?? 70, sky.fog?.far ?? 260]} />
-      <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
-      <directionalLight ref={sunRef} position={initial.sunPosition} intensity={initial.sunIntensity} color={SUN_COLOR} castShadow />
+      {lights ? (
+        <>
+          <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
+          <directionalLight ref={sunRef} position={initial.sunPosition} intensity={initial.sunIntensity} color={SUN_COLOR} castShadow />
+        </>
+      ) : null}
     </>
   );
 }
