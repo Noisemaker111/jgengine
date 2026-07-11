@@ -160,12 +160,16 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
     update(id, patch) {
       const current = store.get(id);
       if (!current) return false;
-      const { position, ...rest } = patch;
-      store.set(id, {
-        ...current,
-        ...rest,
-        ...(position === undefined ? {} : { position: toEntityPosition(position) }),
-      });
+      if (patch.position !== undefined) current.position = toEntityPosition(patch.position);
+      if (patch.name !== undefined) current.name = patch.name;
+      if (patch.rotationY !== undefined) current.rotationY = patch.rotationY;
+      if (patch.rotationX !== undefined) current.rotationX = patch.rotationX;
+      if (patch.rotationZ !== undefined) current.rotationZ = patch.rotationZ;
+      if (patch.role !== undefined) current.role = patch.role;
+      if (patch.movement !== undefined) current.movement = patch.movement;
+      if (patch.behaviors !== undefined) current.behaviors = patch.behaviors;
+      if (patch.meta !== undefined) current.meta = patch.meta;
+      store.set(id, current);
       return true;
     },
     setPoseConstraint(id, constraint) {
@@ -195,14 +199,12 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
               (position[2] - current.position[2]) / pose.dt,
             ] as EntityPosition)
           : current.velocity;
-      store.set(id, {
-        ...current,
-        position,
-        velocity,
-        rotationY: pose.rotationY ?? current.rotationY,
-        rotationX: pose.rotationX ?? current.rotationX,
-        rotationZ: pose.rotationZ ?? current.rotationZ,
-      });
+      current.position = position;
+      current.velocity = velocity;
+      if (pose.rotationY !== undefined) current.rotationY = pose.rotationY;
+      if (pose.rotationX !== undefined) current.rotationX = pose.rotationX;
+      if (pose.rotationZ !== undefined) current.rotationZ = pose.rotationZ;
+      store.set(id, current);
       return true;
     },
     get(id) {
@@ -230,7 +232,10 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
       const pose = spawnPoses.get(id);
       const current = store.get(id);
       if (pose === undefined || current === undefined) return false;
-      store.set(id, { ...current, position: pose.position, rotationY: pose.rotationY, velocity: [0, 0, 0] });
+      current.position = pose.position;
+      current.rotationY = pose.rotationY;
+      current.velocity = [0, 0, 0];
+      store.set(id, current);
       return true;
     },
   };

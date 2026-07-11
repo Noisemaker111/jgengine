@@ -15,9 +15,10 @@ export function createObservableKeyedStore<T>(
   const listeners = new Set<() => void>();
   const EMPTY: readonly T[] = [];
   let arrayCache: readonly T[] = EMPTY;
+  let arrayDirty = false;
 
   function emit(): void {
-    arrayCache = store.size === 0 ? EMPTY : Array.from(store.values());
+    arrayDirty = true;
     for (const listener of listeners) listener();
   }
 
@@ -25,7 +26,7 @@ export function createObservableKeyedStore<T>(
     set(key, value) {
       const previous = store.get(key);
       if (previous !== undefined && areEqual?.(previous, value)) return;
-      store.set(key, value);
+      if (previous !== value) store.set(key, value);
       emit();
     },
     delete(key) {
@@ -47,6 +48,10 @@ export function createObservableKeyedStore<T>(
       return store;
     },
     arraySnapshot() {
+      if (arrayDirty) {
+        arrayCache = store.size === 0 ? EMPTY : Array.from(store.values());
+        arrayDirty = false;
+      }
       return arrayCache;
     },
   };
