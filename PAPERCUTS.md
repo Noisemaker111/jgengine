@@ -202,3 +202,7 @@ adding pad tones to a hud-presentation game → audio is suspended-silent for pr
 2026-07-11T05:07:32.431Z — sonnet — Claude
 
 bun run check-types → bun run --filter "*" check-types silently matches 0 of 66 Games/* workspaces (confirmed via bun pm ls vs --filter '@games/klondike' → 'No packages matched the filter') even though bun.lock/pm ls register them correctly — the root check-types gate has never actually type-checked any Games/* code; had to fall back to bun run --cwd Games/<id> check-types per game
+
+2026-07-11T05:20:10.220Z — fable-5 — Claude
+
+gating after a main merge → check-types/bun test resolve against stale gitignored packages/*/dist built pre-merge, making a consistent tree report missing core exports; always bun run build before gating after moving the base
