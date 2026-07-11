@@ -1,0 +1,28 @@
+name: Deploy Web
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to deploy (default: current main HEAD of this workflow run)"
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-web-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+      - name: Force Vercel production deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          COMMIT_SHA: ${{ inputs.sha != '' && inputs.sha || github.sha }}
+        run: bun scripts/vercel-force-prod.ts

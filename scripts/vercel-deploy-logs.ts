@@ -98,7 +98,7 @@ for (const dep of deployments) {
       `<details><summary>Build log (last 400 lines)</summary>\n\n\`\`\`\n${trimmed}\n\`\`\`\n\n</details>`,
   );
 
-  if (done.readyState === "ERROR") failed = true;
+  if (done.readyState === "ERROR" || done.readyState === "CANCELED") failed = true;
 }
 
 process.exit(failed ? 1 : 0);

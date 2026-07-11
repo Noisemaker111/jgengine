@@ -44,4 +44,6 @@ After the first import, add the **`jgengine.com`** domain to the project (Vercel
 
 CLI alternative: `bunx vercel --cwd apps/web` (preview) / `bunx vercel --prod --cwd apps/web` (production).
 
+If a cancel-storm leaves Production on an old SHA, force a new production deploy from Actions: **Deploy Web** workflow (`workflow_dispatch`) runs `scripts/vercel-force-prod.ts` with `VERCEL_TOKEN`. Do not redeploy an old Ready row in the Vercel UI — that rebuilds the stale snapshot.
+
 > `apps/web` must be committed and pushed to `main` before Vercel can import it. If the domain ever changes, update `SITE_URL` in [`src/lib/site.ts`](src/lib/site.ts) — it drives the social meta tags.
