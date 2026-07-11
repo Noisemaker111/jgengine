@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
-import { CreditCard, CreditTag } from "../components/Credit";
 import { GameFace } from "../components/GameCard";
-import { Header } from "../components/Layout";
 import { GAMES, type Game } from "../content/games";
 
 export const Route = createFileRoute("/games/$gameId")({
@@ -21,19 +19,10 @@ export const Route = createFileRoute("/games/$gameId")({
   component: PlayPage,
 });
 
-function MobileBadge({ hue }: { hue: string }) {
-  return (
-    <span
-      className="shrink-0 rounded-full border px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider"
-      style={{ color: hue, borderColor: `${hue}45`, backgroundColor: `${hue}16` }}
-    >
-      Mobile
-    </span>
-  );
-}
+type GamePhase = "poster" | "loading" | "playing";
 
 function GameStage({ game }: { game: Game }) {
-  const [phase, setPhase] = useState<"poster" | "loading" | "playing">("poster");
+  const [phase, setPhase] = useState<GamePhase>("poster");
   const frameRef = useRef<HTMLIFrameElement | null>(null);
 
   const markPlaying = useCallback(() => {
@@ -51,6 +40,22 @@ function GameStage({ game }: { game: Game }) {
   );
 
   useEffect(() => {
+    const previousOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousOverscroll = document.body.style.overscrollBehavior;
+
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+
+    return () => {
+      document.documentElement.style.overflow = previousOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.overscrollBehavior = previousOverscroll;
+    };
+  }, []);
+
+  useEffect(() => {
     if (phase !== "loading") return;
     const frame = frameRef.current;
     if (frame?.contentDocument?.readyState === "complete") {
@@ -63,106 +68,109 @@ function GameStage({ game }: { game: Game }) {
 
   return (
     <div
-      className="relative h-full w-full"
+      className="fixed inset-0 isolate overflow-hidden bg-black"
       style={{
-        background: `radial-gradient(ellipse 80% 90% at 50% 110%, ${game.hue}38, transparent 70%), linear-gradient(to bottom, #0a0f1c, #04060c)`,
+        paddingTop: "env(safe-area-inset-top)",
+        paddingRight: "env(safe-area-inset-right)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingLeft: "env(safe-area-inset-left)",
       }}
     >
-      {phase !== "playing" && (
-        <div
-          className="pointer-events-none absolute inset-0 opacity-40"
-          style={{
-            backgroundImage: `linear-gradient(to right, ${game.hue}12 1px, transparent 1px), linear-gradient(to bottom, ${game.hue}12 1px, transparent 1px)`,
-            backgroundSize: "36px 36px",
-            maskImage: "radial-gradient(ellipse 80% 90% at 50% 60%, black 30%, transparent 85%)",
-          }}
-        />
-      )}
-      {phase !== "poster" && (
-        <iframe
-          ref={bindFrame}
-          src={`/play/?game=${encodeURIComponent(game.id)}`}
-          title={game.title}
-          allow="fullscreen; gamepad; pointer-lock"
-          className={`h-full w-full border-0 transition-opacity duration-300 ${phase === "playing" ? "opacity-100" : "opacity-0"}`}
-          onLoad={markPlaying}
-        />
-      )}
-      {phase !== "playing" && (
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 opacity-40 blur-[2px]">
-            <GameFace game={game} />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/55 to-black/75" />
-        </div>
-      )}
-      {phase !== "playing" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center">
-          <div className="max-w-md">
-            <div className="flex items-center justify-center gap-2">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-50">{game.title}</h2>
-              {game.platforms?.includes("mobile") === true && <MobileBadge hue={game.hue} />}
+      <div
+        className="relative h-full w-full overflow-hidden"
+        style={{
+          background: `radial-gradient(ellipse 80% 90% at 50% 110%, ${game.hue}38, transparent 70%), linear-gradient(to bottom, #0a0f1c, #04060c)`,
+        }}
+      >
+        {phase !== "poster" && (
+          <iframe
+            ref={bindFrame}
+            src={`/play/?game=${encodeURIComponent(game.id)}`}
+            title={game.title}
+            allow="fullscreen; gamepad; pointer-lock"
+            className={`absolute inset-0 h-full w-full border-0 transition-opacity duration-300 ${phase === "playing" ? "opacity-100" : "opacity-0"}`}
+            onLoad={markPlaying}
+          />
+        )}
+
+        {phase !== "playing" && (
+          <div className="absolute inset-0" aria-hidden>
+            <div className="absolute inset-0 scale-105 opacity-55 blur-[2px]">
+              <GameFace game={game} />
             </div>
-            <p className="mt-2 text-sm font-medium text-slate-300">{game.tagline}</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-400">{game.description}</p>
-            <p className="mt-3 font-mono text-xs text-slate-500">{game.controls}</p>
-            {game.credit !== undefined && (
-              <div className="mt-5">
-                <CreditCard credit={game.credit} hue={game.hue} />
-              </div>
-            )}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,transparent_0%,rgba(0,0,0,.28)_42%,rgba(0,0,0,.86)_100%)]" />
+            <div
+              className="absolute inset-x-0 bottom-0 h-1/2"
+              style={{ background: `linear-gradient(to top, ${game.hue}20, transparent)` }}
+            />
           </div>
-          {phase === "poster" ? (
-            <button
-              type="button"
-              onClick={() => setPhase("loading")}
-              className="inline-flex items-center gap-2.5 rounded-xl px-7 py-3 text-sm font-semibold transition hover:scale-[1.03] hover:brightness-110"
-              style={{ backgroundColor: game.hue, color: "#04060c", boxShadow: `0 0 44px -8px ${game.hue}` }}
-            >
-              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor" aria-hidden>
-                <path d="M3 2.2v7.6L10 6 3 2.2Z" />
-              </svg>
-              Play now
-            </button>
-          ) : (
-            <div className="inline-flex items-center gap-3 text-sm text-slate-300">
-              <span
-                className="h-5 w-5 animate-spin rounded-full border-2 border-white/15"
-                style={{ borderTopColor: game.hue }}
-              />
-              Loading {game.title}…
+        )}
+
+        {phase !== "playing" && (
+          <div className="absolute inset-0 grid place-items-center px-6 py-20 text-center">
+            <div className="relative flex max-w-3xl flex-col items-center">
+              <p className="mb-4 font-mono text-xs uppercase tracking-[0.42em] text-white/55">JGengine presents</p>
+              <h1
+                className="text-balance text-5xl font-black uppercase leading-[0.88] tracking-[-0.045em] text-white sm:text-7xl md:text-8xl"
+                style={{ textShadow: `0 0 48px ${game.hue}66` }}
+              >
+                {game.title}
+              </h1>
+              <p className="mt-5 max-w-xl text-balance text-base font-medium leading-relaxed text-white/75 sm:text-lg">
+                {game.tagline}
+              </p>
+
+              {phase === "poster" ? (
+                <button
+                  type="button"
+                  onClick={() => setPhase("loading")}
+                  className="group relative mt-10 min-h-14 min-w-52 overflow-hidden border border-white/25 px-8 py-4 font-mono text-sm font-bold uppercase tracking-[0.24em] text-white transition duration-150 hover:-translate-y-0.5 hover:border-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 active:translate-y-0 active:scale-[0.98]"
+                  style={{ clipPath: "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)" }}
+                >
+                  <span
+                    className="absolute inset-0 opacity-80 transition group-hover:opacity-100"
+                    style={{ background: `linear-gradient(135deg, ${game.hue}cc, ${game.hue}55)` }}
+                  />
+                  <span className="relative inline-flex items-center gap-3">
+                    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
+                      <path d="M3 2.2v7.6L10 6 3 2.2Z" />
+                    </svg>
+                    Enter game
+                  </span>
+                </button>
+              ) : (
+                <div className="mt-10 flex items-center gap-4 font-mono text-sm uppercase tracking-[0.2em] text-white/70">
+                  <span className="h-5 w-5 animate-spin border-2 border-white/20" style={{ borderTopColor: game.hue }} />
+                  Loading
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex items-start justify-between p-3 sm:p-4">
+          <Link
+            to="/games"
+            aria-label="Exit game"
+            className="pointer-events-auto inline-flex h-11 items-center gap-2 border border-white/15 bg-black/50 px-3 font-mono text-xs uppercase tracking-[0.16em] text-white/70 backdrop-blur-md transition hover:border-white/35 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            style={{ clipPath: "polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px)" }}
+          >
+            <span aria-hidden>←</span>
+            <span className="hidden sm:inline">Exit</span>
+          </Link>
+
+          {phase !== "playing" && (
+            <div className="border border-white/10 bg-black/35 px-3 py-2 font-mono text-[0.65rem] uppercase tracking-[0.18em] text-white/45 backdrop-blur-md">
+              {game.platforms?.includes("mobile") === true ? "Desktop + touch" : "Desktop"}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
 function PlayPage() {
   const { game } = Route.useLoaderData();
-  return (
-    <div className="flex h-dvh flex-col">
-      <Header />
-      <div className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-4 py-2 sm:px-6">
-        <div className="flex min-w-0 items-baseline gap-3">
-          <h1 className="truncate text-sm font-semibold tracking-tight text-slate-100">{game.title}</h1>
-          {game.platforms?.includes("mobile") === true && <MobileBadge hue={game.hue} />}
-          <p className="hidden truncate font-mono text-xs text-slate-500 sm:block">{game.controls}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-3">
-          {game.credit !== undefined && <CreditTag credit={game.credit} hue={game.hue} />}
-          <Link
-            to="/games"
-            className="rounded-md px-2 py-1 text-xs text-slate-400 transition hover:text-emerald-300"
-          >
-            ← All games
-          </Link>
-        </div>
-      </div>
-      <main className="min-h-0 flex-1 bg-black">
-        <GameStage game={game} />
-      </main>
-    </div>
-  );
+  return <GameStage game={game} />;
 }
