@@ -72,6 +72,7 @@ import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/object
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
 import { useDisplayProfile } from "@jgengine/react/display";
+import { HudViewportProvider } from "@jgengine/react/hudViewport";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
@@ -1607,7 +1608,13 @@ export function GamePlayerShell({
         />
         <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
           <GameProvider context={ctx}>
-            <GameUI />
+            <HudViewportProvider
+              platforms={playable.platforms}
+              config={playable.hudFit}
+              userScale={graphics.uiScale}
+            >
+              <GameUI />
+            </HudViewportProvider>
           </GameProvider>
         </GameUiErrorBoundary>
         {devtoolsEnabled ? (
@@ -2013,7 +2020,13 @@ export function GamePlayerShell({
       ) : null}
       <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
         <GameProvider context={ctx}>
-          <GameUI />
+          <HudViewportProvider
+            platforms={playable.platforms}
+            config={playable.hudFit}
+            userScale={graphics.uiScale}
+          >
+            <GameUI />
+          </HudViewportProvider>
         </GameProvider>
       </GameUiErrorBoundary>
       {!poster && showReticle ? <Reticle /> : null}

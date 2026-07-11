@@ -5,8 +5,11 @@ import {
   busVolumeSettingId,
   DEFAULT_GRAPHICS_QUALITY,
   DEFAULT_MASTER_VOLUME,
+  DEFAULT_UI_SCALE,
   GRAPHICS_QUALITY_DPR,
   SETTING_IDS,
+  UI_SCALE_MAX,
+  UI_SCALE_MIN,
   type GraphicsQuality,
   type SettingsStore,
 } from "@jgengine/core/settings/settingsModel";
@@ -19,12 +22,17 @@ export function useSettingsRevision(store: SettingsStore): number {
   return rev;
 }
 
-export function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean): { shadows: boolean; dpr: number } {
+export function useGraphicsSettings(
+  store: SettingsStore,
+  shadowsDefault: boolean,
+): { shadows: boolean; dpr: number; uiScale: number } {
   useSettingsRevision(store);
   const quality = store.get(SETTING_IDS.graphicsQuality, DEFAULT_GRAPHICS_QUALITY) as GraphicsQuality;
+  const rawUiScale = store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE);
   return {
     shadows: store.get(SETTING_IDS.graphicsShadows, shadowsDefault),
     dpr: GRAPHICS_QUALITY_DPR[quality] ?? GRAPHICS_QUALITY_DPR.high,
+    uiScale: Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, rawUiScale)),
   };
 }
 

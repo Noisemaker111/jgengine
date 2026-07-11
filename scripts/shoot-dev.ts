@@ -335,12 +335,21 @@ function targetUrl(args: Args, device: Device): string {
   return url.toString();
 }
 
+async function readHudOverflow(session: CdpSession): Promise<string | null> {
+  const result = await session.send("Runtime.evaluate", {
+    expression: `document.querySelector("[data-hud-overflow]")?.getAttribute("data-hud-overflow") ?? null`,
+    returnByValue: true,
+  });
+  const value = (result.result as { value?: unknown } | undefined)?.value;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
 async function shootOne(
   debugPort: number,
   args: Args,
   device: Device,
   outPath: string,
-): Promise<void> {
+): Promise<boolean> {
   const session = await openPageSession(debugPort);
   try {
     await session.send("Page.enable");
@@ -349,7 +358,8 @@ async function shootOne(
     const url = targetUrl(args, device);
     await session.send("Page.navigate", { url });
     await waitCaptureReady(session, args.timeoutMs);
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 600));
+    const overflow = await readHudOverflow(session);
     const shot = await session.send("Page.captureScreenshot", {
       format: "png",
       fromSurface: true,
@@ -365,6 +375,13 @@ async function shootOne(
     if (existsSync(outPath)) unlinkSync(outPath);
     renameSync(tmpPath, outPath);
     console.log(outPath);
+    if (overflow !== null) {
+      console.error(
+        `HUD OVERFLOW [${device} ${DEVICES[device].width}x${DEVICES[device].height}]: panels escape the viewport — ${overflow}`,
+      );
+      return false;
+    }
+    return true;
   } finally {
     session.close();
   }
@@ -433,7 +450,8 @@ try {
   }
 
   for (const device of targets) {
-    await shootOne(debugPort, args, device, outPathFor(args, device, outDir));
+    const fits = await shootOne(debugPort, args, device, outPathFor(args, device, outDir));
+    if (!fits) exitCode = 1;
   }
 } catch (error) {
   exitCode = 1;

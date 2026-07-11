@@ -19,9 +19,12 @@ import {
   isPanelDraggable,
   type HudAnchor,
   type HudLayoutStore,
+  type HudSize,
 } from "@jgengine/core/ui/hudLayout";
+import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/ui/hudScale";
 import { useDisplayProfile } from "./display";
 import { useEngineState } from "./engineStore";
+import { useHudViewport } from "./hudViewport";
 
 const STORAGE_PREFIX = "jg:hud:";
 const DRAG_THRESHOLD_PX = 4;
@@ -211,6 +214,9 @@ export function HudCanvas({
 }) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const { compact } = useDisplayProfile();
+  const hudViewport = useHudViewport();
+  const fitEnabled = hudViewport?.fitEnabled === true;
+  const [viewport, setViewport] = useState<HudSize | null>(null);
   const [regions, setRegions] = useState<HudRegionElements>({});
   const regionRefs = useMemo(() => {
     const refs = {} as Record<HudAnchor, (el: HTMLDivElement | null) => void>;
@@ -272,7 +278,87 @@ export function HudCanvas({
     };
   }, [layout, chordEnabled, hold, press]);
 
-  const scale = compact ? (compactScale ?? COMPACT_HUD_SCALE) : 1;
+  useEffect(() => {
+    if (!fitEnabled) return;
+    const host = canvasRef.current?.parentElement;
+    if (host === undefined || host === null || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const rect = host.getBoundingClientRect();
+      const next = { width: Math.round(rect.width), height: Math.round(rect.height) };
+      setViewport((prev) =>
+        prev !== null && prev.width === next.width && prev.height === next.height ? prev : next,
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [fitEnabled]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const host = canvas?.parentElement;
+    if (canvas === null || canvas === undefined || host === undefined || host === null) return;
+    if (typeof requestAnimationFrame !== "function") return;
+    let frame = 0;
+    let lastReport = "";
+    const check = () => {
+      frame = 0;
+      const hostRect = host.getBoundingClientRect();
+      if (hostRect.width <= 0 || hostRect.height <= 0) return;
+      const panels: { id: string; rect: { x: number; y: number; width: number; height: number } }[] = [];
+      for (const el of canvas.querySelectorAll("[data-hud-panel]")) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) continue;
+        panels.push({
+          id: el.getAttribute("data-hud-panel") ?? "?",
+          rect: {
+            x: rect.left - hostRect.left,
+            y: rect.top - hostRect.top,
+            width: rect.width,
+            height: rect.height,
+          },
+        });
+      }
+      const offenders = overflowingPanels(panels, { width: hostRect.width, height: hostRect.height });
+      const report = offenders.length === 0 ? "" : JSON.stringify(offenders);
+      if (report === lastReport) return;
+      lastReport = report;
+      if (report === "") {
+        canvas.removeAttribute("data-hud-overflow");
+      } else {
+        canvas.setAttribute("data-hud-overflow", report);
+        console.warn(
+          `[jgengine] HUD panels overflow the ${Math.round(hostRect.width)}x${Math.round(hostRect.height)} viewport: ${report}`,
+        );
+      }
+    };
+    const schedule = () => {
+      if (frame !== 0) return;
+      frame = requestAnimationFrame(check);
+    };
+    const settle = setTimeout(schedule, 400);
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
+    resizeObserver?.observe(host);
+    const mutationObserver =
+      typeof MutationObserver === "undefined" ? null : new MutationObserver(schedule);
+    mutationObserver?.observe(canvas, { childList: true, subtree: true });
+    return () => {
+      clearTimeout(settle);
+      if (frame !== 0) cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+    };
+  }, []);
+
+  const fit = fitEnabled ? resolveHudFit(hudViewport?.config, compact) : null;
+  const baseScale =
+    fit !== null && viewport !== null
+      ? hudScaleForViewport(fit, viewport)
+      : compact
+        ? (compactScale ?? COMPACT_HUD_SCALE)
+        : 1;
+  const scale = baseScale * (hudViewport?.userScale ?? 1);
   const basePad = compact ? 10 : 16;
   const canvasStyle = {
     position: "absolute",

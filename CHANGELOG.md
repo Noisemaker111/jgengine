@@ -11,6 +11,14 @@ Agents building on the published SDK can also read this programmatically:
 same data as typed values, so an updater can diff its installed version against
 the latest and surface the migration steps.
 
+## Unreleased
+
+### Added
+
+- Mobile HUD fit — `PlayableGame.platforms: ["web", "mobile"]` turns on design-resolution UI scaling: `HudCanvas` measures the live viewport and scales the whole HUD from `PlayableGame.hudFit.designSize` (default 1600×900, clamps `minScale`/`maxScale` 0.4–1) so desktop-authored layouts shrink to fit a phone instead of overflowing it; `hudFit.mobile` overrides tune the phone fit separately. Pure math lives in `@jgengine/core/ui/hudScale` (`hudScaleForViewport`, `resolveHudFit`, `rectOverflow`, `overflowingPanels`); the shell mounts `@jgengine/react`'s `HudViewportProvider` around `GameUI` so games need no wiring.
+- Graphics → UI scale — a player-facing `graphics.uiScale` slider (0.5–1.5, default 1) multiplies the computed HUD scale on every platform; the same resolution system drives desktop preference and mobile shrink.
+- HUD overflow gate — `HudCanvas` measures every `HudPanel` against the viewport at runtime and reports offenders on a `data-hud-overflow` attribute (plus a console warning); `bun run shoot <game> --device mobile|both` now exits non-zero naming the panels that escape the viewport.
+
 ## 0.8.0
 
 Transport-agnostic multiplayer (socket.io, WebRTC p2p, LAN/Fly adapters) plus grid/voxel
