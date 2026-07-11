@@ -38,7 +38,7 @@ function GameStage({ game }: { game: Game }) {
 
   const markPlaying = useCallback(() => {
     setPhase((current) => (current === "playing" ? current : "playing"));
-    frameRef.current?.focus();
+    frameRef.current?.focus({ preventScroll: true });
   }, []);
 
   const bindFrame = useCallback(

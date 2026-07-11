@@ -22,10 +22,6 @@
   }
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 html,
 body {
   background-color: var(--color-ink);
@@ -172,9 +168,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
   .orb,
   .terminal-caret::after {
     animation: none;
