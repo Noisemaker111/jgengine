@@ -75,6 +75,16 @@ export interface SpawnPose {
   rotationY: number;
 }
 
+export interface PoseConstraintFrame {
+  entityId: string;
+  current: EntityPosition;
+  next: EntityPosition;
+  dt?: number;
+}
+
+/** Return a replacement position to constrain the step, or nothing to accept it. */
+export type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void;
+
 export type EntityUpdatePatch<TMeta = unknown> = Partial<
   Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "meta">
 > & {
@@ -87,6 +97,8 @@ export interface EntityStore<TMeta = unknown> {
   despawn(id: string): boolean;
   update(id: string, patch: EntityUpdatePatch<TMeta>): boolean;
   setPose(id: string, pose: EntityPose): boolean;
+  /** Register a constraint applied inside every `setPose` for this entity — the self-driven sibling of the shell's `beforeCommit` (#282.9): nav clamps, corridor walls, arena bounds without wrapping every call site. `null` clears; despawn clears automatically. */
+  setPoseConstraint(id: string, constraint: PoseConstraint | null): void;
   get(id: string): SceneEntity<TMeta> | null;
   list(): readonly SceneEntity<TMeta>[];
   clear(): void;
@@ -99,6 +111,7 @@ export interface EntityStore<TMeta = unknown> {
 export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
   const store = createObservableKeyedStore<SceneEntity<TMeta>>();
   const spawnPoses = new Map<string, SpawnPose>();
+  const constraints = new Map<string, PoseConstraint>();
   let nextCounter = 1;
 
   function generateId(): string {
@@ -141,6 +154,7 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
       const existed = store.has(id);
       store.delete(id);
       spawnPoses.delete(id);
+      constraints.delete(id);
       return existed;
     },
     update(id, patch) {
@@ -154,10 +168,25 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
       });
       return true;
     },
+    setPoseConstraint(id, constraint) {
+      if (constraint === null) constraints.delete(id);
+      else constraints.set(id, constraint);
+    },
     setPose(id, pose) {
       const current = store.get(id);
       if (!current) return false;
-      const position = toEntityPosition(pose.position);
+      let position = toEntityPosition(pose.position);
+      const constraint = constraints.get(id);
+      if (constraint !== undefined) {
+        const frame: PoseConstraintFrame = {
+          entityId: id,
+          current: current.position,
+          next: position,
+          ...(pose.dt === undefined ? {} : { dt: pose.dt }),
+        };
+        const replacement = constraint(frame);
+        if (replacement !== undefined) position = toEntityPosition(replacement);
+      }
       const velocity =
         pose.dt !== undefined && pose.dt > 0
           ? ([
@@ -186,6 +215,7 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
       for (const entity of store.arraySnapshot()) {
         store.delete(entity.id);
       }
+      constraints.clear();
     },
     subscribe(listener) {
       return store.subscribe(listener);
