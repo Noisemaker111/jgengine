@@ -92,14 +92,19 @@ export function GameUI() {
         </div>
       </header>
 
-      <main className="mm-stage min-h-0 flex-1 px-3 py-2 sm:px-6 sm:py-3" style={{ containerType: "size" }}>
-        <div className="flex h-full w-full items-center justify-center">
+      <main className="min-h-0 flex-1 px-3 py-2 sm:px-6 sm:py-3">
+        <div
+          className="mm-stage flex h-full min-h-0 w-full items-center justify-center"
+          style={{ containerType: "size" }}
+        >
           <div
             className="grid"
             style={{
               gridTemplateColumns: `repeat(${board.cols}, 1fr)`,
               gap: "clamp(4px, 1.2cqw, 10px)",
               width: `min(100cqw, calc(100cqh * ${boardRatio}))`,
+              maxWidth: "100%",
+              maxHeight: "100cqh",
               aspectRatio: `${board.cols * 3} / ${board.rows * 4}`,
             }}
           >

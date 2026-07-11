@@ -476,25 +476,25 @@ export function GameUI() {
         <BoardView snap={snap} onSelect={onSelect} onSwap={onSwap} />
       </div>
 
-      <HudPanel id="mode" anchor="top-left" inset={{ x: 20, y: 18 }} compact="keep">
+      <HudPanel id="mode" anchor="top-left" inset={{ x: 20, y: 18 }} compact="keep" style={{ zIndex: 20 }}>
         <ModePanel mode={snap.mode} onMode={onMode} onNewGame={onNewGame} newGameKey={newGameKey} />
       </HudPanel>
 
-      <HudPanel id="score" anchor="top-right" inset={{ x: 20, y: 18 }} compact="keep">
+      <HudPanel id="score" anchor="top-right" inset={{ x: 20, y: 18 }} compact="keep" style={{ zIndex: 20 }}>
         <ScorePanel snap={snap} />
       </HudPanel>
 
       {snap.timed && (
-        <HudPanel id="timer" anchor="top" inset={{ x: 0, y: 18 }} compact="keep">
+        <HudPanel id="timer" anchor="top" inset={{ x: 0, y: 18 }} compact="keep" style={{ zIndex: 20 }}>
           <TimerPanel snap={snap} />
         </HudPanel>
       )}
 
-      <HudPanel id="controls" anchor="bottom-left" inset={{ x: 20, y: 44 }} compact="keep">
+      <HudPanel id="controls" anchor="bottom-left" inset={{ x: 20, y: 44 }} compact="keep" style={{ zIndex: 20 }}>
         <ControlsPanel snap={snap} onHint={onHint} hintKey={hintKey} />
       </HudPanel>
 
-      <HudPanel id="credit" anchor="bottom" inset={{ x: 0, y: 12 }} compact="keep" interactive={false}>
+      <HudPanel id="credit" anchor="bottom" inset={{ x: 0, y: 12 }} compact="keep" interactive={false} style={{ zIndex: 20 }}>
         <span className="rounded-full bg-black/45 px-3 py-1 text-center text-[11px] font-medium tracking-wide text-slate-400">
           {CREDIT}
         </span>
