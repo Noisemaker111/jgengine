@@ -90,6 +90,8 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
+import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
+import { collisionDebug } from "./devtools/collisionDebug";
 import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
 import {
   GAME_SIM_FRAME_PRIORITY,
@@ -974,6 +976,17 @@ function FrameDriver({
     }
     const aimOverride = pointerAim ? pointerAimFor(ctx, pointerService) : undefined;
     const commandAim: Aim = aimOverride ?? { yaw: yawRef.current, pitch: pitchRef.current };
+    if (collisionDebug.getState().layers.aimLaser) {
+      const aimFrom = ctx.player.possession.active(playerId) ?? playerId;
+      collisionDebug.setAimProbe({
+        from: aimFrom,
+        aim: commandAim,
+        originPolicy: { kind: "muzzle" },
+        maxDistance: 100,
+      });
+    } else if (collisionDebug.getAimProbe() !== null) {
+      collisionDebug.setAimProbe(null);
+    }
     const nowMs = performance.now();
     for (const action of Object.keys(playable.game.input ?? {})) {
       const pressed = tracker.wasPressed(action);
@@ -1728,6 +1741,7 @@ export function GamePlayerShell({
           <WorldTelegraphs />
           <WorldFloatText />
           <ProjectileTracers />
+          {devtoolsEnabled ? <CollisionDebugWorld /> : null}
           <CombatCameraShake />
           <AudioListener engine={audioEngine} />
           <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
