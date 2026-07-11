@@ -95,6 +95,23 @@ describe("recipe graph", () => {
     }
   });
 
+  test("stationRange without origin fails loud", () => {
+    expect(() =>
+      stationSatisfied(forgeBlade, { stations: [{ catalogId: "forge", position: [0, 0] }] }),
+    ).toThrow(/origin is missing/);
+  });
+
+  test("requires enforce without an unlocked callback", () => {
+    const state = stocked({ ingot: 4, handle: 2 });
+    const stations = [{ catalogId: "forge", position: [1, 0] }];
+    const locked = canCraft(state, layout, traits, forgeBlade, { origin: [0, 0], stations });
+    expect(locked.ok).toBe(false);
+    if (!locked.ok) {
+      expect(locked.reason).toBe("locked");
+      if (locked.reason === "locked") expect(locked.requires).toEqual(["tech_smithing"]);
+    }
+  });
+
   test("rejects when outputs do not fit and does not consume inputs", () => {
     const tight: InventoryLayout = { slots: 1 };
     const twoOut: RecipeDef = {

@@ -51,6 +51,43 @@ describe("decidePoseSync", () => {
     expect(keep.position.y).toBe(0.4);
   });
 
+  test("clamps Y relative to floorY for elevated floors", () => {
+    const elevated = decidePoseSync(
+      { ...CURRENT, position: { x: 0, y: 12, z: 0 } },
+      { position: { x: 0, z: 0, y: 20 } },
+      RULES,
+      2_000,
+      12,
+    );
+    expect(elevated.position.y).toBeCloseTo(13.15);
+    const onFloor = decidePoseSync(
+      { ...CURRENT, position: { x: 0, y: 12, z: 0 } },
+      { position: { x: 0, z: 0, y: 11 } },
+      { ...RULES, floorY: 12 },
+      2_000,
+    );
+    expect(onFloor.position.y).toBe(12);
+  });
+
+  test("clamps Y relative to underground floors", () => {
+    const underground = decidePoseSync(
+      { ...CURRENT, position: { x: 0, y: -40, z: 0 } },
+      { position: { x: 0, z: 0, y: -30 } },
+      RULES,
+      2_000,
+      -40,
+    );
+    expect(underground.position.y).toBeCloseTo(-38.85);
+    const buried = decidePoseSync(
+      { ...CURRENT, position: { x: 0, y: -40, z: 0 } },
+      { position: { x: 0, z: 0, y: -50 } },
+      RULES,
+      2_000,
+      -40,
+    );
+    expect(buried.position.y).toBe(-40);
+  });
+
   test("unchanged pose with fresh keep-alive decides no write", () => {
     const d = decidePoseSync(CURRENT, { position: { x: 0, z: 0 }, rotationY: 0 }, RULES, 2_000);
     expect(d.changed).toBe(false);

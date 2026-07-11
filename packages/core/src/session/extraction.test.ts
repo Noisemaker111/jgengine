@@ -18,7 +18,7 @@ function session(overrides: Partial<RaidSessionConfig> = {}) {
 describe("raid extraction session", () => {
   test("hold-to-extract completes via the contested channel and banks everything carried", () => {
     const raid = session();
-    const start = raid.beginExtract("u1", "north");
+    const start = raid.beginExtract("u1", "north", [0, 0]);
     expect(start?.kind).toBe("start");
     expect(raid.status("u1")).toBe("extracting");
 
@@ -28,8 +28,9 @@ describe("raid extraction session", () => {
     expect(raid.status("u1")).toBe("extracted");
 
     const result = raid.resolveExtraction("u1", containers);
-    expect(result.extractId).toBe("north");
-    expect(result.banked).toEqual([
+    expect(result).not.toBeNull();
+    expect(result!.extractId).toBe("north");
+    expect(result!.banked).toEqual([
       { itemId: "loot_gpu", count: 2 },
       { itemId: "ammo", count: 30 },
       { itemId: "keycard", count: 1 },
@@ -38,7 +39,7 @@ describe("raid extraction session", () => {
 
   test("taking damage interrupts the extract and returns the player to the raid", () => {
     const raid = session();
-    raid.beginExtract("u1", "north");
+    raid.beginExtract("u1", "north", [1, 1]);
     raid.tickExtract("u1", 2, { u1: 1 });
     const interrupt = raid.damage("u1", "sniped");
     expect(interrupt?.kind).toBe("interrupted");
@@ -65,7 +66,7 @@ describe("raid extraction session", () => {
 
   test("player snapshot reports live extraction progress", () => {
     const raid = session();
-    raid.beginExtract("u1", "north");
+    raid.beginExtract("u1", "north", [0, 0]);
     raid.tickExtract("u1", 2, { u1: 1 });
     const snap = raid.playerSnapshot("u1");
     expect(snap.status).toBe("extracting");
@@ -76,7 +77,29 @@ describe("raid extraction session", () => {
 
   test("unknown extract points reject", () => {
     const raid = session();
-    expect(raid.beginExtract("u1", "nowhere")).toBeNull();
+    expect(raid.beginExtract("u1", "nowhere", [0, 0])).toBeNull();
     expect(raid.status("u1")).toBe("in-raid");
+  });
+
+  test("beginExtract rejects positions outside the extract radius", () => {
+    const raid = session();
+    expect(raid.beginExtract("u1", "north", [20, 0])).toBeNull();
+    expect(raid.status("u1")).toBe("in-raid");
+    expect(raid.beginExtract("u1", "north", [3, 3])?.kind).toBe("start");
+  });
+
+  test("resolveExtraction requires a completed channel", () => {
+    const raid = session();
+    expect(raid.resolveExtraction("u1", containers)).toBeNull();
+    raid.beginExtract("u1", "north", [0, 0]);
+    raid.tickExtract("u1", 1, { u1: 1 });
+    expect(raid.status("u1")).toBe("extracting");
+    expect(raid.resolveExtraction("u1", containers)).toBeNull();
+    expect(raid.status("u1")).toBe("extracting");
+    raid.tickExtract("u1", 3, { u1: 1 });
+    expect(raid.status("u1")).toBe("extracted");
+    const result = raid.resolveExtraction("u1", containers);
+    expect(result).not.toBeNull();
+    expect(result!.extractId).toBe("north");
   });
 });

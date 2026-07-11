@@ -61,11 +61,19 @@ export interface RaidPlayerSnapshot {
 }
 
 export interface RaidSession {
-  beginExtract(userId: string, extractId: string, team?: string): ContestedEvent | null;
+  beginExtract(
+    userId: string,
+    extractId: string,
+    position: RingPoint,
+    team?: string,
+  ): ContestedEvent | null;
   tickExtract(userId: string, dt: number, occupants?: Record<string, number>): ContestedEvent[];
   damage(userId: string, reason?: string): ContestedEvent | null;
   cancelExtract(userId: string): void;
-  resolveExtraction(userId: string, containers: readonly ContainerSnapshot[]): ExtractionResult;
+  resolveExtraction(
+    userId: string,
+    containers: readonly ContainerSnapshot[],
+  ): ExtractionResult | null;
   resolveDeath(
     userId: string,
     containers: readonly ContainerSnapshot[],
@@ -78,6 +86,12 @@ export interface RaidSession {
   extractPoint(extractId: string): ExtractPoint | undefined;
   status(userId: string): RaidStatus;
   playerSnapshot(userId: string): RaidPlayerSnapshot;
+}
+
+function inExtractZone(point: ExtractPoint, position: RingPoint): boolean {
+  const dx = position[0] - point.center[0];
+  const dz = position[1] - point.center[1];
+  return dx * dx + dz * dz <= point.radius * point.radius;
 }
 
 function mergeAll(containers: readonly ContainerSnapshot[]): ItemStack[] {
@@ -104,10 +118,11 @@ export function createRaidSession(config: RaidSessionConfig): RaidSession {
   }
 
   return {
-    beginExtract(userId, extractId, team) {
+    beginExtract(userId, extractId, position, team) {
       const point = points.get(extractId);
       if (point === undefined) return null;
       if (statusOf(userId) === "extracted" || statusOf(userId) === "dead") return null;
+      if (!inExtractZone(point, position)) return null;
       const channel = createContestedChannel({
         duration: point.holdSeconds,
         interruptOnDamage: point.interruptOnDamage ?? true,
@@ -138,7 +153,9 @@ export function createRaidSession(config: RaidSessionConfig): RaidSession {
     },
     resolveExtraction(userId, containers) {
       const attempt = attempts.get(userId);
-      const extractId = attempt?.extractId ?? "";
+      if (attempt === undefined) return null;
+      if (attempt.channel.phase() !== "complete" && statusOf(userId) !== "extracted") return null;
+      const extractId = attempt.extractId;
       attempts.delete(userId);
       statuses.set(userId, "extracted");
       return { userId, extractId, banked: mergeAll(containers) };

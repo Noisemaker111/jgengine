@@ -169,4 +169,27 @@ describe("quest journal", () => {
     expect(instance.status).toBe("active");
     expect(instance.objectives.find((objective) => objective.id === "kill_grunts")!.progress).toBe(1);
   });
+
+  test("turnIn fails when inventory cannot accept reward items", () => {
+    const events = createGameEvents();
+    const completedEvents: string[] = [];
+    events.on("quest.completed", (event) => void completedEvents.push(event.questId));
+    const journal = createQuestJournal({
+      events,
+      rewards: {
+        grantXp: () => undefined,
+        grantEconomy: () => undefined,
+        grantItem: () => ({ reason: "inventory full" }),
+        grantUnlock: () => undefined,
+      },
+    });
+    journal.register([clearCamp]);
+    journal.accept("alice", "quest_clear_mobs");
+    journal.progress("alice", "quest_clear_mobs", "kill_grunts", 2);
+    journal.progress("alice", "quest_clear_mobs", "collect_ore", 3);
+
+    expect(journal.turnIn("alice", "quest_clear_mobs")).toEqual({ reason: "inventory full" });
+    expect(journal.list("alice")[0]!.status).toBe("active");
+    expect(completedEvents).toEqual([]);
+  });
 });

@@ -156,17 +156,19 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
     return null;
   }
 
-  function applyRewards(userId: string, rewards: QuestRewards): void {
+  function applyRewards(userId: string, rewards: QuestRewards): { reason: string } | null {
+    for (const entry of rewards.items ?? []) {
+      const fail = deps.rewards.grantItem(userId, entry.inventory, entry.item, entry.count);
+      if (fail !== null) return fail;
+    }
     if (rewards.xp) deps.rewards.grantXp(userId, rewards.xp.amount);
     for (const [currencyId, amount] of Object.entries(rewards.economy ?? {})) {
       deps.rewards.grantEconomy(userId, currencyId, amount);
     }
-    for (const entry of rewards.items ?? []) {
-      deps.rewards.grantItem(userId, entry.inventory, entry.item, entry.count);
-    }
     for (const unlockId of rewards.unlocks ?? []) {
       deps.rewards.grantUnlock(userId, unlockId);
     }
+    return null;
   }
 
   function turnIn(userId: string, questId: string): { reason: string } | null {
@@ -174,8 +176,11 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
     if (denied !== null) return denied;
     const def = catalog.get(questId)!;
     const state = users.get(userId)!.get(questId)!;
+    if (def.rewards) {
+      const fail = applyRewards(userId, def.rewards);
+      if (fail !== null) return fail;
+    }
     state.status = "completed";
-    if (def.rewards) applyRewards(userId, def.rewards);
     deps.events.emit("quest.completed", { userId, questId });
     for (const nextQuestId of def.rewards?.quests ?? []) {
       if (canAccept(userId, nextQuestId) === null) accept(userId, nextQuestId);
@@ -350,20 +355,22 @@ export function applyQuestRewards(
   appliers: {
     grantXp?(amount: number): void;
     grantEconomy?(currencyId: string, amount: number): void;
-    grantItem?(inventoryId: string, itemId: string, count: number): void;
+    grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void;
     grantUnlock?(unlockId: string): void;
   },
-): void {
+): { reason: string } | null {
+  for (const entry of rewards.items ?? []) {
+    const fail = appliers.grantItem?.(entry.inventory, entry.item, entry.count);
+    if (fail != null && typeof fail === "object" && "reason" in fail) return fail;
+  }
   if (rewards.xp) appliers.grantXp?.(rewards.xp.amount);
   for (const [currencyId, amount] of Object.entries(rewards.economy ?? {})) {
     appliers.grantEconomy?.(currencyId, amount);
   }
-  for (const entry of rewards.items ?? []) {
-    appliers.grantItem?.(entry.inventory, entry.item, entry.count);
-  }
   for (const unlockId of rewards.unlocks ?? []) {
     appliers.grantUnlock?.(unlockId);
   }
+  return null;
 }
 
 type WorkingQuests = Map<string, { status: QuestStatus; progress: Map<string, number> }>;

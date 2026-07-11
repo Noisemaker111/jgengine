@@ -54,7 +54,7 @@ describe("spawnDirector budget", () => {
 });
 
 describe("spawnDirector escalation", () => {
-  test("escalation accrues budget that grows with sim-time", () => {
+  test("escalation accrues budget at a linear rate over sim-time", () => {
     const config: SpawnDirectorConfig = {
       waves: [{ budget: 0, entries: [{ id: "grunt", cost: 1000 }] }],
       escalationPerSecond: 1,
@@ -63,8 +63,12 @@ describe("spawnDirector escalation", () => {
     state = advanceSpawnDirector(config, state, 1, { alive: 0 }).state;
     const early = state.budget;
     for (let i = 0; i < 10; i += 1) state = advanceSpawnDirector(config, state, 1, { alive: 0 }).state;
+    const lateBudget = state.budget;
     const perSecondLate = advanceSpawnDirector(config, state, 1, { alive: 0 }).state.budget - state.budget;
-    expect(perSecondLate).toBeGreaterThan(early);
+    expect(early).toBeCloseTo(1);
+    expect(lateBudget).toBeCloseTo(11);
+    expect(perSecondLate).toBeCloseTo(1);
+    expect(perSecondLate).toBeCloseTo(early);
   });
 
   test("alert raises the spawn budget then decays", () => {

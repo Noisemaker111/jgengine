@@ -23,13 +23,16 @@ describe("createDecayMeterSet", () => {
     expect(meters.value("thirst")).toBe(80);
   });
 
-  test("rate modifier is one-shot per tick (cold biome speeds warmth loss)", () => {
+  test("rate modifier persists across ticks until cleared", () => {
     const meters = createDecayMeterSet([{ id: "warmth", max: 100, rate: 1 }]);
     meters.setRateModifier("warmth", 4);
     meters.tick(1);
     expect(meters.value("warmth")).toBe(96);
     meters.tick(1);
-    expect(meters.value("warmth")).toBe(95);
+    expect(meters.value("warmth")).toBe(92);
+    meters.setRateModifier("warmth", 1);
+    meters.tick(1);
+    expect(meters.value("warmth")).toBe(91);
   });
 
   test("setRate overrides the base drain", () => {
