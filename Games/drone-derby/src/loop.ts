@@ -1,4 +1,5 @@
 import { createRaceState, firstPastPost, type RaceState, type RaceTrack } from "@jgengine/core/game/race";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { DecayMeterSet } from "@jgengine/core/survival/decayMeter";
 import type { WindField } from "@jgengine/core/world/wind";
@@ -21,6 +22,8 @@ import {
   createRunStore,
   crashDnf,
   finishRun,
+  type RunPhase,
+  type RunState,
   selectCourse,
   tickCountdown,
   tickFlying,
@@ -33,6 +36,17 @@ const DEFAULT_COURSE: CourseId = "short";
 const LANDING_TOLERANCE = 3;
 
 export const runStore = createRunStore(DEFAULT_COURSE);
+
+function syncPhase(ctx: GameContext, phase: RunPhase): void {
+  setGamePhase(ctx, phase === "menu" ? "menu" : phase === "countdown" || phase === "flying" ? "playing" : "ended");
+}
+
+function setRunState(ctx: GameContext, updater: (state: RunState) => RunState): void {
+  const previousPhase = runStore.getState().phase;
+  runStore.setState(updater);
+  const nextPhase = runStore.getState().phase;
+  if (nextPhase !== previousPhase) syncPhase(ctx, nextPhase);
+}
 
 interface Sim {
   spawn: SpawnPose;
@@ -89,7 +103,7 @@ function holdSpawnPose(ctx: GameContext): void {
 }
 
 function beginRun(ctx: GameContext, courseId: CourseId): void {
-  runStore.setState((state) => beginCountdownForCourse(state, courseId));
+  setRunState(ctx, (state) => beginCountdownForCourse(state, courseId));
   sim = createSim(courseId, ctx);
   placeCourseRings(ctx, courseId, ctx.world.groundHeightAt);
   ctx.scene.entity.setPose(ctx.player.userId, {
@@ -101,7 +115,7 @@ function beginRun(ctx: GameContext, courseId: CourseId): void {
 }
 
 function switchCourse(ctx: GameContext, courseId: CourseId): void {
-  runStore.setState(() => selectCourse(courseId));
+  setRunState(ctx, () => selectCourse(courseId));
   sim = createSim(courseId, ctx);
   placeCourseRings(ctx, courseId, ctx.world.groundHeightAt);
   holdSpawnPose(ctx);
@@ -138,7 +152,8 @@ export function onNewPlayer(ctx: GameContext): void {
   edgeState.c1 = false;
   edgeState.c2 = false;
   edgeState.c3 = false;
-  runStore.setState((state) => selectCourse(state.courseId));
+  setRunState(ctx, (state) => selectCourse(state.courseId));
+  syncPhase(ctx, runStore.getState().phase);
   resolvedPads = placeStaticProps(ctx);
   const courseId = runStore.getState().courseId;
   sim = createSim(courseId, ctx);
@@ -183,7 +198,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   }
 
   if (state.phase === "countdown") {
-    runStore.setState((s) => tickCountdown(s, dt));
+    setRunState(ctx, (s) => tickCountdown(s, dt));
     holdSpawnPose(ctx);
     return;
   }
@@ -290,5 +305,5 @@ export function onTick(ctx: GameContext, dt: number): void {
     nextState = crashDnf(nextState, "time", position, cellsUsed);
   }
 
-  runStore.setState(() => nextState);
+  setRunState(ctx, () => nextState);
 }
