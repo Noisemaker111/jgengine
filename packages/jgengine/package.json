@@ -1,7 +1,7 @@
 {
   "name": "jgengine",
-  "version": "0.8.2",
-  "description": "JGengine CLI — pure-TypeScript game engine entry for humans and agents. Run: npx jgengine create \"My Game Name\" (scaffolds a playable base and installs agent skills). Then build the game. Docs: https://jgengine.com",
+  "version": "0.8.3",
+  "description": "Agent-side CLI for JGengine. People build by telling an agent: Make a game that ... with jgengine. Agents use this CLI (create, skills, doctor, llms). Docs: https://jgengine.com",
   "keywords": [
     "game-engine",
     "typescript",

@@ -12,21 +12,24 @@ import { runSkills } from "../skills";
 
 const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets"];
 
-const HELP = `jgengine ${cliVersion()} — pure-TypeScript game engine SDK + agent entry
+const HELP = `jgengine ${cliVersion()} — agent-side CLI for the JGengine TypeScript game SDK
 Packages: ${ENGINE_PACKAGES.map((name) => `@jgengine/${name}`).join(", ")}.
 docs: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
 
-ENTRY (agents: run this when the user says "use jgengine" / "make a game with npx jgengine"):
-  npx jgengine create "Game Name"
+HUMAN INTERFACE (what people say to you — not a shell they must run):
+  Make a game that ... with jgengine
+
+AGENT RESPONSE (you run these; do not dump this as homework for the user):
+  npx jgengine create "Game Name"   # scaffold + install skills into the project
   cd Game-Name
-  # skills install automatically · AGENTS.md briefs you · then build the game
+  # concept pitch → questions → build (see jgengine-newgame)
 
 usage: jgengine <command> [...args]
 
   create "<Game Name>"  scaffold playable base + install agent skills into the project
                         folder My-Game-Name; name → game.config / HUD / title
                         [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]
-  skills -p | -g        re-install skills only if create was run with --no-skills
+  skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
   llms [package]        print packaged API docs (llms.txt) — agent-ready
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs

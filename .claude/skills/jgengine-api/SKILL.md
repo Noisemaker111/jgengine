@@ -231,7 +231,9 @@ Exact import paths and export names — **do not invent paths**; every row below
 
 ## Getting started (new project)
 
-Fastest path — the `jgengine` CLI scaffolds the entire canonical shape below (harness, skeleton, stub game, verify test, AGENTS.md) as a booting game:
+**People** start with one sentence to an agent: `Make a game that … with jgengine`. They do not need the CLI.
+
+**Agents** scaffold with the CLI — harness, skeleton, stub game, verify test, AGENTS.md, skills:
 
 ```sh
 npx jgengine create "My Game Name"   # folder → My-Game-Name; skills install automatically

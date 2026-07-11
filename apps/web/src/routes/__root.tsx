@@ -7,7 +7,7 @@ import monoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-
 
 const TITLE = "JGengine — build a game by telling your agent";
 const DESCRIPTION =
-  "A genre-agnostic, pure-TypeScript game engine SDK. Install the skills, prompt your AI agent, and it builds the whole game. Point your agent at this site to load the skills.";
+  "A genre-agnostic, pure-TypeScript game engine SDK. Tell your AI agent: Make a game that … with jgengine. That is the whole interface.";
 
 export const Route = createRootRoute({
   head: () => ({
