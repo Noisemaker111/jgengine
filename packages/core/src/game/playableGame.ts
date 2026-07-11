@@ -5,6 +5,7 @@ import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { SkyEnvironmentConfig } from "../world/features";
+import type { VisibilityConfig } from "../visibility/config";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
@@ -592,6 +593,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   devtools?: boolean;
   /** Player settings menu. Auto-mounted for every game (Sound / Graphics / Gameplay / Controls); unset uses the defaults, `false` opts out. Add game-specific rows via `extra`, switch overlay/full-page via `mode`, or swap the gear for compact on-screen buttons via `surface: "quick"`. */
   settings?: GameSettingsConfig | false;
+  /** Automatic camera frustum + distance culling and asset streaming. On by default with conservative margins; unset uses engine defaults, `{ enabled: false }` opts out. Override bounds/distance/pins per entity kind or object catalog id. */
+  visibility?: VisibilityConfig;
 }
 
 export function worldHealthBarAllowsRole(
