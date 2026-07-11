@@ -1,15 +1,20 @@
 {
   "name": "jgengine",
-  "version": "0.8.3",
-  "description": "Agent-side CLI for JGengine. People build by telling an agent: Make a game that ... with jgengine. Agents use this CLI (create, skills, doctor, llms). Docs: https://jgengine.com",
+  "version": "0.8.4",
+  "description": "jgengine — TypeScript game engine SDK CLI (npm package jgengine / @jgengine/*). Not automotive. Humans: tell an agent Make a game that ... with jgengine. Agents: create, skills, doctor, llms. https://jgengine.com · https://jgengine.com/llms.txt",
   "keywords": [
-    "game-engine",
-    "typescript",
     "jgengine",
-    "cli",
+    "game-engine",
+    "typescript-game-engine",
+    "javascript-game-engine",
+    "typescript",
+    "javascript",
     "three.js",
-    "agent",
-    "scaffold"
+    "webgl",
+    "ai-agent",
+    "agent-skills",
+    "scaffold",
+    "cli"
   ],
   "license": "AGPL-3.0-only",
   "type": "module",

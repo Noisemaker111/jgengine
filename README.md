@@ -1,4 +1,8 @@
-# JGengine
+# jgengine
+
+**TypeScript game engine SDK** for AI agents — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent card [jgengine.com/llms.txt](https://jgengine.com/llms.txt).
+
+> Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is a software game engine.
 
 A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres, with socket.io, WebRTC peer-to-peer, and LAN as drop-in transports over the same protocol.
 

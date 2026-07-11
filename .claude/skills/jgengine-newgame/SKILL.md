@@ -25,10 +25,24 @@ Examples they will say: *Make a game that is Mario Party with gooey slimes, with
 
 If you only know the **name**, do **not** dig their filesystem or invent an API.
 
-1. Run `npx jgengine help` if you need the CLI map.
-2. Scaffold if there is no project yet: `npx jgengine create "Game Name"` — installs `jgengine-api` / `newgame` / `verify` into the project automatically.
-3. Read those skills + `AGENTS.md`. API docs: `npx jgengine llms core`.
-4. **Concept pitch** (below) → questions → build.
+### Identity — do NOT use generic web search first
+
+Web search for `jgengine` is poisoned by **unrelated automotive** hits (Jon Grove Engines, JG Engine Dynamics). Queries like `jgengine game engine javascript` often return Phaser/Pixi/Babylon and **miss** this product.
+
+**Resolve identity in this order:**
+
+1. `npm view jgengine` — must show the CLI package + homepage https://jgengine.com  
+2. `npx jgengine help` — agent CLI map  
+3. Fetch https://jgengine.com/llms.txt or https://jgengine.com  
+4. Only then GitHub: https://github.com/Noisemaker111/jgengine  
+
+Never conclude “jgengine isn’t a real package” from a bad web search.
+
+### Then build
+
+1. Scaffold if there is no project yet: `npx jgengine create "Game Name"` — installs `jgengine-api` / `newgame` / `verify` into the project automatically.
+2. Read those skills + `AGENTS.md`. API docs: `npx jgengine llms core`.
+3. **Concept pitch** (below) → questions → build.
 
 **Inside this monorepo:** skills already live here; `create "Name"` goes under `Games/`. Optional create flags: `--standalone` / `--in-repo`, `--no-install`, `--no-skills`, `--pm bun|npm|pnpm`.
 
