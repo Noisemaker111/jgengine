@@ -127,7 +127,7 @@ export function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdo
               (world.posZ[a]! + world.posZ[b]!) / 2,
             ];
       links.push(
-        world.hingeJoint({
+        world.fixedJoint({
           bodyA: a,
           bodyB: b,
           anchorA: [mid[0] - world.posX[a]!, mid[1] - world.posY[a]!, mid[2] - world.posZ[a]!],

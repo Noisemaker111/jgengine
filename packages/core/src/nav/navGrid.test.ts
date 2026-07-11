@@ -79,6 +79,56 @@ describe("navGrid", () => {
     expect(grid.lineOfSight([0.5, 0.5], [4.5, 0.5])).toBe(false);
   });
 
+  test("supercover LoS rejects corner-cutting diagonals", () => {
+    const grid = createNavGrid({ bounds: BOUNDS, cellSize: 1 });
+    grid.setWalkable(1, 0, false);
+    grid.setWalkable(0, 1, false);
+    expect(grid.lineOfSight([0.5, 0.5], [1.5, 1.5])).toBe(false);
+    grid.setWalkable(1, 0, true);
+    grid.setWalkable(0, 1, true);
+    expect(grid.lineOfSight([0.5, 0.5], [1.5, 1.5])).toBe(true);
+  });
+
+  test("smoothPath does not string-pull through a blocked corner", () => {
+    const grid = createNavGrid({ bounds: BOUNDS, cellSize: 1 });
+    grid.setWalkable(1, 0, false);
+    grid.setWalkable(0, 1, false);
+    const stair: NavPoint[] = [
+      [0.5, 0.5],
+      [0.5, 1.5],
+      [1.5, 1.5],
+    ];
+    const smoothed = smoothPath(grid, stair);
+    expect(smoothed.length).toBe(3);
+  });
+
+  test("findPath clearance snaps start/goal only onto pad-clear cells", () => {
+    const grid = createNavGrid({ bounds: { minX: 0, minZ: 0, maxX: 12, maxZ: 12 }, cellSize: 1 });
+    for (let col = 0; col < 12; col += 1) grid.setWalkable(col, 0, false);
+    for (let col = 0; col < 12; col += 1) grid.setWalkable(col, 11, false);
+    const path = findPath(grid, [0.5, 0.5], [11.5, 11.5], { clearance: 2, smooth: false });
+    expect(path).not.toBeNull();
+    const pad = Math.max(0, Math.ceil(2 / grid.cellSize / 2));
+    for (const point of path!) {
+      const cell = grid.cellAt(point);
+      for (let dy = -pad; dy <= pad; dy += 1) {
+        for (let dx = -pad; dx <= pad; dx += 1) {
+          expect(grid.isWalkable(cell.col + dx, cell.row + dy)).toBe(true);
+        }
+      }
+    }
+  });
+
+  test("clearance fallback never seeds a pad-failing cell", () => {
+    const grid = createNavGrid({ bounds: { minX: 0, minZ: 0, maxX: 10, maxZ: 10 }, cellSize: 1 });
+    grid.setWalkable(5, 5, false);
+    const path = findPath(grid, [5.5, 5.5], [0.5, 0.5], { clearance: 2, smooth: false });
+    expect(path).not.toBeNull();
+    const start = grid.cellAt(path![0]!);
+    const chebyshev = Math.max(Math.abs(start.col - 5), Math.abs(start.row - 5));
+    expect(chebyshev).toBeGreaterThan(1);
+  });
+
   test("stepCost penalizes a steep ridge, routing a detour around it", () => {
     const grid = createNavGrid({ bounds: { minX: 0, minZ: 0, maxX: 9, maxZ: 5 }, cellSize: 1, diagonal: false });
     const field = {

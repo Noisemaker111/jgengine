@@ -274,13 +274,46 @@ describe("joints", () => {
     expect(w.jointCount).toBe(1);
   });
 
-  test("a hinge pin holds a body at a world anchor under gravity", () => {
+  test("a fixed pin holds a body at a world anchor under gravity", () => {
     const w = world({ sleepThresholdSteps: 100000 });
     const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
-    w.hingeJoint({ bodyA: a, anchorB: [0, 8, 0] });
+    w.fixedJoint({ bodyA: a, anchorB: [0, 8, 0] });
     frames(w, 400);
     expect(w.posX[a]!).toBeCloseTo(0, 1);
     expect(w.posY[a]!).toBeCloseTo(8, 1);
+  });
+
+  test("hinge free along axis while fixed holds all three", () => {
+    const hingeW = world({ gravity: 0, sleepThresholdSteps: 100000, linearDamping: 0 });
+    const fixedW = world({ gravity: 0, sleepThresholdSteps: 100000, linearDamping: 0 });
+    const h = hingeW.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    const f = fixedW.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    hingeW.hingeJoint({ bodyA: h, anchorB: [0, 5, 0], axis: [0, 1, 0] });
+    fixedW.fixedJoint({ bodyA: f, anchorB: [0, 5, 0] });
+    hingeW.setVelocity(h, 0, 4, 0);
+    fixedW.setVelocity(f, 0, 4, 0);
+    frames(hingeW, 60);
+    frames(fixedW, 60);
+    expect(hingeW.posY[h]!).toBeGreaterThan(5.5);
+    expect(Math.abs(hingeW.posX[h]!)).toBeLessThan(0.15);
+    expect(Math.abs(hingeW.posZ[h]!)).toBeLessThan(0.15);
+    expect(fixedW.posY[f]!).toBeCloseTo(5, 1);
+  });
+
+  test("hinge rejects a zero axis", () => {
+    const w = world({ gravity: 0 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    expect(() => w.hingeJoint({ bodyA: a, anchorB: [0, 5, 0], axis: [0, 0, 0] })).toThrow(/axis/);
+  });
+
+  test("hinge constrains motion perpendicular to its axis", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000, linearDamping: 0 });
+    const a = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
+    w.hingeJoint({ bodyA: a, anchorB: [0, 5, 0], axis: [0, 1, 0] });
+    w.setVelocity(a, 3, 0, 0);
+    frames(w, 120);
+    expect(Math.abs(w.posX[a]!)).toBeLessThan(0.2);
+    expect(w.posY[a]!).toBeCloseTo(5, 1);
   });
 
   test("a distance joint hangs a pendulum at rest length below its anchor", () => {
@@ -314,12 +347,43 @@ describe("joints", () => {
   test("readJointSegments reports live world endpoints", () => {
     const w = world({ gravity: 0 });
     const a = w.addBody({ position: [-1, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
-    w.hingeJoint({ bodyA: a, anchorB: [2, 5, 0] });
+    w.fixedJoint({ bodyA: a, anchorB: [2, 5, 0] });
     const out = new Float32Array(6);
     const n = w.readJointSegments(out);
     expect(n).toBe(1);
     expect(out[0]!).toBeCloseTo(-1, 5);
     expect(out[3]!).toBeCloseTo(2, 5);
+  });
+});
+
+describe("multi-cell broadphase", () => {
+  test("large AABB catches a small body outside the center-cell 3x3", () => {
+    const w = world({ sleepThresholdSteps: 100000, cellSize: 1 });
+    w.addBody({
+      position: [0, 2, 0],
+      halfExtents: [5, 0.5, 0.5],
+      static: true,
+    });
+    const ball = w.addBody({
+      position: [4, 8, 0],
+      halfExtents: [0.4, 0.4, 0.4],
+    });
+    frames(w, 400);
+    expect(w.posY[ball]!).toBeCloseTo(2.9, 0);
+    expect(Math.abs(w.posX[ball]! - 4)).toBeLessThan(0.5);
+  });
+
+  test("two large AABBs that only overlap far from both centers still resolve", () => {
+    const w = world({ gravity: 0, sleepThresholdSteps: 100000, cellSize: 1, linearDamping: 0.5 });
+    const a = w.addBody({ position: [-2, 5, 0], halfExtents: [2.5, 0.5, 0.5] });
+    const b = w.addBody({ position: [2, 5, 0], halfExtents: [2.5, 0.5, 0.5] });
+    let sawContact = false;
+    for (let i = 0; i < 180; i += 1) {
+      const stats = w.step(1 / 60);
+      if (stats.contacts > 0) sawContact = true;
+    }
+    expect(sawContact).toBe(true);
+    expect(w.posX[b]! - w.posX[a]!).toBeGreaterThanOrEqual(5 - 0.2);
   });
 });
 
