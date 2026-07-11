@@ -127,6 +127,7 @@ const standalonePackageJson = (id: string, engineVersion: string) => `${JSON.str
     scripts: {
       dev: "vite",
       build: "vite build",
+      desktop: "jgengine desktop",
       preview: "vite preview",
       "check-types": "tsc --noEmit -p tsconfig.json",
       test: "bun test src",
@@ -164,6 +165,8 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
     type: "module",
     scripts: {
       dev: "vite",
+      build: "vite build",
+      desktop: "jgengine desktop",
       "check-types": "tsgo --noEmit -p tsconfig.json",
       test: "bun test src",
     },
@@ -421,6 +424,7 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 - API docs in the tarball: \`npx jgengine llms core\` (any package: react, shell, …)
 - Doctor: \`npx jgengine doctor\`
 - Dev: \`bun dev\` / \`npm run dev\`
+- Windows installer: \`bun run desktop\` / \`npx jgengine desktop\` (or \`--url https://…\` for a hosted game)
 
 ## Project rules
 

@@ -65,6 +65,14 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(pkg.type).toBe("module");
       expect(pkg.scripts?.dev).toBe("vite");
     });
+
+    test(`${variant}: package.json ships desktop next to dev/build`, () => {
+      const pkg = JSON.parse(fileOf(render(variant), "package.json")) as {
+        scripts?: Record<string, string>;
+      };
+      expect(pkg.scripts?.desktop).toBe("jgengine desktop");
+      expect(pkg.scripts?.build).toBe("vite build");
+    });
   }
 
   test("in-repo: tsconfig paths match the exact map check-game-shape requires", () => {
