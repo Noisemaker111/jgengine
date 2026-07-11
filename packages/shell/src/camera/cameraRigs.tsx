@@ -41,6 +41,7 @@ import {
   topDownPose,
   type CameraPose,
 } from "./rigMath";
+import { usePlayerFov } from "./PlayerFov";
 import { useCameraShake } from "./shakeChannel";
 
 export const CAMERA_RIG_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY;
@@ -51,6 +52,8 @@ export interface RigProps {
   pitchRef: MutableRefObject<number>;
   config?: GameCameraConfig;
   followEntityId?: string | null;
+  /** When true, pose FOV is treated as absolute (cinematic keyframes). */
+  absoluteFov?: boolean;
 }
 
 function isPerspective(camera: Camera): camera is PerspectiveCamera {
@@ -99,6 +102,7 @@ function readFollow(ctx: GameContext, followId: string | null): FollowSample | n
 function useCameraCommit(props: RigProps, followId: string | null) {
   const camera = useThree((state) => state.camera);
   const shake = useCameraShake();
+  const playerFov = usePlayerFov();
   const shakeConfig = props.config?.shake;
   const transitionSeconds = props.config?.transitionSeconds ?? 0.6;
   const blendRef = useRef<{
@@ -123,8 +127,12 @@ function useCameraCommit(props: RigProps, followId: string | null) {
   };
 
   const commit = (pose: CameraPose, dt: number) => {
-    lastPoseRef.current = pose;
-    applyPose(camera, pose);
+    const composed: CameraPose = {
+      ...pose,
+      fov: playerFov.compose(pose.fov, props.absoluteFov === true ? "absolute" : "relative"),
+    };
+    lastPoseRef.current = composed;
+    applyPose(camera, composed);
 
     const lookDistance = Math.hypot(
       pose.position.x - pose.lookAt.x,
@@ -148,7 +156,7 @@ function useCameraCommit(props: RigProps, followId: string | null) {
       camera.position.lerpVectors(blend.position, targetPos, eased);
       camera.quaternion.slerpQuaternions(blend.quaternion, targetQuat, eased);
       if (isPerspective(camera)) {
-        camera.fov = blend.fov + (pose.fov - blend.fov) * eased;
+        camera.fov = blend.fov + (composed.fov - blend.fov) * eased;
         camera.updateProjectionMatrix();
       }
       if (t >= 1) blendRef.current = null;
@@ -164,12 +172,12 @@ function useCameraCommit(props: RigProps, followId: string | null) {
 
     props.config?.onCameraFollow?.({
       entityId: followId ?? "",
-      target: pose.lookAt,
+      target: composed.lookAt,
       camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
       distance: Math.hypot(
-        camera.position.x - pose.lookAt.x,
-        camera.position.y - pose.lookAt.y,
-        camera.position.z - pose.lookAt.z,
+        camera.position.x - composed.lookAt.x,
+        camera.position.y - composed.lookAt.y,
+        camera.position.z - composed.lookAt.z,
       ),
     });
   };

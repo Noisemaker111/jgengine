@@ -3,6 +3,24 @@ export { GameFirstPersonCamera, type GameFirstPersonCameraProps } from "./GameFi
 export { GameInspectionCamera, type GameInspectionCameraProps } from "./GameInspectionCamera";
 export { GameCameraRig, resolveRigKind, type GameCameraRigProps } from "./GameCameraRig";
 export {
+  PlayerFovProvider,
+  PlayerFovSlider,
+  usePlayerFov,
+  type PlayerFovState,
+} from "./PlayerFov";
+export {
+  PLAYER_FOV_DEFAULT,
+  PLAYER_FOV_MAX,
+  PLAYER_FOV_MIN,
+  PLAYER_FOV_STORAGE_KEY,
+  clampPlayerFov,
+  composePlayerFov,
+  loadPlayerFov,
+  resolvePlayerFovBounds,
+  savePlayerFov,
+  type PlayerFovBounds,
+} from "./fovPreference";
+export {
   CAMERA_POST_FRAME_PRIORITY,
   CAMERA_RIG_FRAME_PRIORITY,
   ChaseRig,

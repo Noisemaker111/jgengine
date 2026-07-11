@@ -1,8 +1,9 @@
 import { OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ComponentRef } from "react";
 import { MOUSE } from "three";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+
+type OrbitControlsImpl = NonNullable<ComponentRef<typeof OrbitControls>>;
 
 import {
   resolveInspectionCameraConfig,

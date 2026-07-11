@@ -12,12 +12,15 @@ import { registryCatalog } from "../registry";
 import { componentWiringSnippet, iconWiringSnippet, modelWiringSnippet } from "../snippet";
 import { sourceById } from "../sources";
 import { verifyManifest } from "../verify";
+import { resolveGeneratedDir, resolvePackageRoot, resolvePackageTreeRoot } from "./paths";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const pkgRoot = resolve(here, "..", "..");
-const srcDir = join(pkgRoot, "src");
-const generatedDir = join(srcDir, "generated");
-const singlesJson = join(srcDir, "singles.json");
+const packageTreeRoot = resolvePackageTreeRoot(here);
+const pkgRoot = resolvePackageRoot(here);
+/** Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import. */
+export const generatedDir = resolveGeneratedDir(here);
+export { resolveGeneratedDir } from "./paths";
+const singlesJson = join(packageTreeRoot, "singles.json");
 const localDir = join(pkgRoot, "local");
 const CDN_BASE = "https://cdn.jsdelivr.net/gh/Noisemaker111/jgengine@main/packages/assets/local";
 

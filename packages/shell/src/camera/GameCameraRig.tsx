@@ -70,6 +70,7 @@ export function GameCameraRig({
           pitchRef={pitchRef}
           config={{ ...config, cinematic: directed.cinematic }}
           followEntityId={followEntityId}
+          absoluteFov
         />
       );
     }
