@@ -139,3 +139,15 @@ verifying asset pack URLs for #308 → WebFetch returned 403 on every URL (tool-
 2026-07-10T23:25:53.324Z — sonnet — Claude
 
 ship-motion worker told to sleep 60 in the foreground before the Actions check → worker backgrounded the sleep and its turn ended, leaving the green check unreported (happened on two consecutive ship workers)
+
+2026-07-10T23:45:41.127Z — sonnet — Claude
+
+surveying all 37 games' environments in one scout → worker died on API server error mid-run, resumed via SendMessage and finished fine
+
+2026-07-10T23:51:04.164Z — sonnet — Claude
+
+running repo-root check-types → its --filter '*' pass emitted no Games/* lines, so the repo-wide gate may silently skip all games; per-game tsgo runs were needed for a direct signal
+
+2026-07-11T00:07:26.896Z — sonnet — Claude
+
+shipping via worker chain → three consecutive workers returned garbled/placeholder final messages (survey, remap, ship), each needed manual state inspection and takeover

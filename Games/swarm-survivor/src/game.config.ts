@@ -1,5 +1,5 @@
 import { cartridge, type CartridgeConfig } from "@jgengine/shell/cartridge";
-import { building, environment, grass, rain, terrain } from "@jgengine/core/world/features";
+import { building, environment, grass, rain, sky, terrain } from "@jgengine/core/world/features";
 import { standardCartridgePanels } from "@/components/ui/cartridge-panels";
 
 import { assets, entitySprites } from "./game/assets";
@@ -152,7 +152,9 @@ export const config: CartridgeConfig = {
       octaves: 3,
       ridged: true,
       baseHeight: -0.2,
+      material: "ash",
     }),
+    sky: sky({ preset: "dusk", horizonColor: "#5a3a3f", zenithColor: "#241a24", fog: { color: "#3a2a2e", near: 40, far: 140 } }),
     vegetation: grass({
       area: { w: 90, d: 90 },
       density: 5,

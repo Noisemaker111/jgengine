@@ -233,10 +233,11 @@ export const game = defineGame({
 `;
 
 const worldTs = (id: string) => `import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import { environment, grass, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
+import { environment, grass, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
 export const world: EnvironmentWorldFeature = environment({
-  terrain: terrain({ bounds: { w: 96, d: 96 }, height: 0, material: "grassland" }),
+  terrain: terrain({ bounds: { w: 96, d: 96 }, height: 0, material: "grass" }),
+  sky: sky({ preset: "day" }),
   vegetation: grass({ area: { w: 80, d: 80 }, density: 2, colors: ["#3f7d2d", "#6bbf4a"], seed: "${id}" }),
 });
 

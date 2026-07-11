@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { bootCartridge, cartridgeSmokeTest, tickCartridge } from "@jgengine/core/cartridge/testkit";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
+import { TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/world/terrain";
 
 import { config } from "../game.config";
 
@@ -15,6 +16,12 @@ describe("swarm-survivor world", () => {
     expect(summary.counts.buildings).toBeGreaterThan(0);
     expect(summary.counts.weatherSystems).toBe(1);
     expect(summary.counts.vegetationFields).toBe(1);
+  });
+
+  test("dark moor uses the ash palette and ruin structures", () => {
+    const summary = summarizeEnvironment(config.world!);
+    expect(summary.terrain?.palette).toEqual(TERRAIN_MATERIAL_PALETTES.ash);
+    expect(summary.structures[0]?.style).toBe("ruin");
   });
 
   test("enemies stay grounded to the terrain", () => {

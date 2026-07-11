@@ -13,4 +13,9 @@ describe("grid-tactics battlefield world", () => {
     expect(summary.terrain?.bounds.w).toBeGreaterThan(0);
     expect(summary.counts.vegetationFields).toBeGreaterThan(0);
   });
+
+  test("has a distinct muted tactics-board palette, not the default grass preset", () => {
+    const summary = summarizeEnvironment(world);
+    expect(summary.terrain?.palette).toEqual({ low: "#3d4a3a", high: "#7d8a68", waterline: "#35404a" });
+  });
 });

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 
+import { resolveBuildingPalette } from "@jgengine/core/world/buildings";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
 import type {
   BuildingEnvironmentDescriptor,
@@ -167,8 +168,12 @@ function Structures({ structures, field }: { structures: BuildingEnvironmentDesc
       })),
     [structures, field],
   );
+  const palette = useMemo(
+    () => resolveBuildingPalette(structures.style, structures.palette),
+    [structures.style, structures.palette],
+  );
 
-  return <InstancedBuildings buildings={placements} />;
+  return <InstancedBuildings buildings={placements} palette={palette} />;
 }
 
 export function EnvironmentScene({ feature }: EnvironmentSceneProps) {

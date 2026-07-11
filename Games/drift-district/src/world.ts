@@ -31,7 +31,7 @@ export const world: WorldFeature = environment({
       stories: [3, 8],
       storyHeight: 3.4,
       spacing: 7,
-      style: "harbor",
+      style: "coastal",
       seed: "drift-district-harbor",
     }),
     building({
@@ -41,7 +41,7 @@ export const world: WorldFeature = environment({
       stories: [5, 12],
       storyHeight: 3.6,
       spacing: 6,
-      style: "downtown",
+      style: "neon",
       seed: "drift-district-downtown",
     }),
     building({
@@ -51,7 +51,7 @@ export const world: WorldFeature = environment({
       stories: [2, 6],
       storyHeight: 3.2,
       spacing: 8,
-      style: "heights",
+      style: "industrial",
       seed: "drift-district-heights",
     }),
   ],

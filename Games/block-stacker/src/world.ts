@@ -2,6 +2,7 @@ import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import {
   building,
   environment,
+  sky,
   snow,
   terrain,
   type EnvironmentWorldFeature,
@@ -16,8 +17,16 @@ export const world: EnvironmentWorldFeature = environment({
     octaves: 3,
     material: "slate",
   }),
+  sky: sky({ preset: "day", horizonColor: "#c7dcec", zenithColor: "#4a6f92", ambientIntensity: 0.6 }),
   structures: [
-    building({ count: 6, footprint: { w: 10, d: 10 }, stories: [3, 9], spacing: 6, style: "tower", seed: "stacks" }),
+    building({
+      count: 6,
+      footprint: { w: 10, d: 10 },
+      stories: [3, 9],
+      spacing: 6,
+      style: "industrial",
+      seed: "stacks",
+    }),
   ],
   weather: snow({ density: 0.4, speed: 3 }),
 });

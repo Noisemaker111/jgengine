@@ -1,10 +1,11 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import { environment, grass } from "@jgengine/core/world/features";
+import { environment, grass, sky } from "@jgengine/core/world/features";
 
 import { BOARD_EXTENT, TERRAIN } from "./game/board";
 
 export const world = environment({
   terrain: TERRAIN,
+  sky: sky({ preset: "day", horizonColor: "#b9c4bd", zenithColor: "#7c93a8", ambientIntensity: 0.5 }),
   vegetation: grass({
     area: { w: BOARD_EXTENT, d: BOARD_EXTENT },
     density: 1.4,
