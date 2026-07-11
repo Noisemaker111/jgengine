@@ -1,4 +1,4 @@
-import { createRaceState, firstPastPost, type RaceState } from "@jgengine/core/game/race";
+import { createRaceState, firstPastPost, raceTrack, type RaceState } from "@jgengine/core/game/race";
 import { createRecordBook, type RecordBook, type RecordDirection } from "@jgengine/core/game/recordBook";
 import { createDashState, dashOffset, type DashConfig, type DashState } from "@jgengine/core/movement/dash";
 import { createRecordingBuffer, type RecordingBuffer } from "@jgengine/core/sensor/recordingBuffer";
@@ -180,7 +180,7 @@ export function createRaceSession(records: RecordBook<RecordFieldId> = createRec
   let lastImproved: readonly RecordFieldId[] = [];
 
   function newRaceState(): RaceState {
-    const state = createRaceState({ track: { checkpoints: CHECKPOINTS, laps: LAPS }, win: firstPastPost(2) });
+    const state = createRaceState({ track: raceTrack({ checkpoints: CHECKPOINTS, laps: LAPS }), win: firstPastPost(2) });
     state.addRacer(PLAYER_RACER_ID, 0);
     state.addRacer(PACER_RACER_ID, 0);
     return state;

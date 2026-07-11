@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { ForceVolume, PlatformCarry } from "./forceVolume";
+import { applyVolumeForce, createVolumeTrigger, ForceVolume, PlatformCarry } from "./forceVolume";
 import { PhysicsWorld } from "./physicsWorld";
 
 const BOUNDS = { min: [-20, 0, -20] as const, max: [20, 40, 20] as const };
@@ -84,5 +84,54 @@ describe("PlatformCarry", () => {
     w.posX[platform] = 3;
     carry.step();
     expect(w.posX[off]!).toBeCloseTo(10, 5);
+  });
+});
+
+describe("createVolumeTrigger", () => {
+  const BOUNDS = { min: [-2, 0, -2] as const, max: [2, 10, 2] as const };
+
+  test("entered fires only once, on the tick a body first shows up inside", () => {
+    const trigger = createVolumeTrigger<string>({ bounds: BOUNDS });
+    const first = trigger.step([{ id: "a", position: [0, 5, 0] }]);
+    expect(first.entered).toEqual(["a"]);
+    const second = trigger.step([{ id: "a", position: [0, 5, 0] }]);
+    expect(second.entered).toEqual([]);
+  });
+
+  test("inside reports every body inside on every tick", () => {
+    const trigger = createVolumeTrigger<string>({ bounds: BOUNDS });
+    trigger.step([{ id: "a", position: [0, 5, 0] }]);
+    const step = trigger.step([{ id: "a", position: [0, 5, 0] }, { id: "b", position: [1, 5, 0] }]);
+    expect(step.inside.sort()).toEqual(["a", "b"]);
+  });
+
+  test("exited reports a body that leaves the region", () => {
+    const trigger = createVolumeTrigger<string>({ bounds: BOUNDS });
+    trigger.step([{ id: "a", position: [0, 5, 0] }]);
+    const left = trigger.step([]);
+    expect(left.exited).toEqual(["a"]);
+    expect(left.inside).toEqual([]);
+  });
+
+  test("reset clears membership so a still-present body re-fires entered", () => {
+    const trigger = createVolumeTrigger<string>({ bounds: BOUNDS });
+    trigger.step([{ id: "a", position: [0, 5, 0] }]);
+    trigger.reset();
+    const after = trigger.step([{ id: "a", position: [0, 5, 0] }]);
+    expect(after.entered).toEqual(["a"]);
+  });
+});
+
+describe("applyVolumeForce", () => {
+  test("impulse adds the force to velocity once, independent of dt", () => {
+    expect(applyVolumeForce([1, 0, 0], [5, 0, 0], "impulse", 1 / 60)).toEqual([6, 0, 0]);
+  });
+
+  test("velocity mode replaces velocity outright", () => {
+    expect(applyVolumeForce([1, 0, 0], [5, 0, 0], "velocity", 1 / 60)).toEqual([5, 0, 0]);
+  });
+
+  test("accelerate mode adds force*dt to velocity", () => {
+    expect(applyVolumeForce([1, 0, 0], [5, 0, 0], "accelerate", 2)).toEqual([11, 0, 0]);
   });
 });

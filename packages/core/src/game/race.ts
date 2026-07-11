@@ -4,23 +4,56 @@ export interface Checkpoint {
   half: readonly [number, number, number];
 }
 
+export interface RaceForkRoute {
+  id: string;
+  checkpoints: readonly Checkpoint[];
+}
+
+/**
+ * An alternate-route section (#286.3): after passing mainline checkpoint `afterIndex`, a racer commits
+ * to whichever route's first checkpoint they hit, runs its checkpoints in order, and rejoins at
+ * mainline `afterIndex + 1`. Every completed route contributes exactly one checkpoint of `progress`
+ * regardless of length, and each hit records a split — so route time accounting comes for free.
+ */
+export interface RaceFork {
+  id: string;
+  /** Mainline checkpoint index the fork opens after; must be before the finish line. */
+  afterIndex: number;
+  routes: readonly RaceForkRoute[];
+}
+
 export interface RaceTrackConfig {
   checkpoints: readonly Checkpoint[];
   laps?: number;
+  forks?: readonly RaceFork[];
 }
 
 export interface RaceTrack {
   readonly checkpoints: readonly Checkpoint[];
   readonly laps: number;
+  readonly forks: readonly RaceFork[];
 }
 
 /**
  * A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint
  * is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the
- * last one.
+ * last one. `forks` splice alternate route segments between mainline checkpoints.
  */
 export function raceTrack(config: RaceTrackConfig): RaceTrack {
-  return { checkpoints: config.checkpoints, laps: Math.max(1, Math.floor(config.laps ?? 1)) };
+  const checkpoints = config.checkpoints;
+  const forks = config.forks ?? [];
+  for (const fork of forks) {
+    if (fork.afterIndex < 0 || fork.afterIndex >= checkpoints.length - 1) {
+      throw new Error(`race fork "${fork.id}" afterIndex ${fork.afterIndex} must sit before the finish line`);
+    }
+    if (fork.routes.length < 2) throw new Error(`race fork "${fork.id}" needs at least two routes`);
+    for (const route of fork.routes) {
+      if (route.checkpoints.length === 0) {
+        throw new Error(`race fork "${fork.id}" route "${route.id}" needs at least one checkpoint`);
+      }
+    }
+  }
+  return { checkpoints, laps: Math.max(1, Math.floor(config.laps ?? 1)), forks };
 }
 
 export interface RacerProgress {
@@ -34,10 +67,23 @@ export interface RacerProgress {
   finishTime: number | null;
   eliminated: boolean;
   splits: readonly number[];
+  /** Fork id → route id last taken through it. */
+  routesTaken: Readonly<Record<string, string>>;
+  /** Route the racer is currently inside, or `null` on the mainline. */
+  activeRoute: { forkId: string; routeId: string } | null;
 }
 
 export type RaceEvent =
-  | { type: "checkpoint.hit"; racerId: string; checkpoint: number; lap: number; time: number }
+  | {
+      type: "checkpoint.hit";
+      racerId: string;
+      checkpoint: number;
+      lap: number;
+      time: number;
+      /** Set when the hit is a fork-route checkpoint (`checkpoint` is then the fork's `afterIndex`). */
+      fork?: { forkId: string; routeId: string; index: number };
+    }
+  | { type: "fork.taken"; racerId: string; forkId: string; routeId: string; time: number }
   | { type: "lap.completed"; racerId: string; lap: number; time: number }
   | { type: "position.changed"; racerId: string; position: number; previous: number }
   | { type: "race.finished"; ranking: readonly string[]; time: number };
@@ -77,6 +123,12 @@ export function lastStanding(): RaceWinCondition {
   };
 }
 
+interface ActiveFork {
+  forkIndex: number;
+  routeIndex: number;
+  nextRouteCheckpoint: number;
+}
+
 interface RacerRecord {
   racerId: string;
   lap: number;
@@ -89,6 +141,10 @@ interface RacerRecord {
   eliminated: boolean;
   startTime: number;
   splits: number[];
+  fork: ActiveFork | null;
+  routesTaken: Record<string, string>;
+  forksDone: Record<string, true>;
+  lastHit: Checkpoint | null;
 }
 
 export interface RaceStateConfig {
@@ -145,6 +201,10 @@ export class RaceState {
       eliminated: false,
       startTime,
       splits: [],
+      fork: null,
+      routesTaken: {},
+      forksDone: {},
+      lastHit: null,
     });
     this.order.push(racerId);
   }
@@ -187,6 +247,7 @@ export class RaceState {
   }
 
   private snapshot(r: RacerRecord): RacerProgress {
+    const activeFork = r.fork === null ? null : this.track.forks[r.fork.forkIndex]!;
     return {
       racerId: r.racerId,
       lap: r.lap,
@@ -198,6 +259,11 @@ export class RaceState {
       finishTime: r.finishTime,
       eliminated: r.eliminated,
       splits: [...r.splits],
+      routesTaken: { ...r.routesTaken },
+      activeRoute:
+        activeFork === null || r.fork === null
+          ? null
+          : { forkId: activeFork.id, routeId: activeFork.routes[r.fork.routeIndex]!.id },
     };
   }
 
@@ -209,14 +275,22 @@ export class RaceState {
       .map((r) => this.snapshot(r));
   }
 
+  private expectedCheckpoint(r: RacerRecord): Checkpoint | null {
+    if (r.fork !== null) {
+      const fork = this.track.forks[r.fork.forkIndex]!;
+      const route = fork.routes[r.fork.routeIndex]!;
+      return route.checkpoints[r.fork.nextRouteCheckpoint] ?? this.track.checkpoints[r.nextCheckpoint] ?? null;
+    }
+    return this.track.checkpoints[r.nextCheckpoint] ?? null;
+  }
+
   resetToCheckpoint(racerId: string): { position: [number, number, number]; heading: number } | null {
     const r = this.racers.get(racerId);
     if (r === undefined) return null;
-    const cps = this.track.checkpoints;
-    const idx = r.lastCheckpoint >= 0 ? r.lastCheckpoint : 0;
-    const cp = cps[idx];
+    const cp = r.lastHit ?? this.track.checkpoints[0];
     if (cp === undefined) return null;
-    const next = cps[(idx + 1) % cps.length]!;
+    let next = this.expectedCheckpoint(r) ?? cp;
+    if (next === cp) next = this.track.checkpoints[1 % this.track.checkpoints.length] ?? cp;
     const heading = Math.atan2(next.center[0] - cp.center[0], next.center[2] - cp.center[2]);
     return { position: [cp.center[0], cp.center[1], cp.center[2]], heading };
   }
@@ -229,10 +303,11 @@ export class RaceState {
     if (positions !== null) {
       const pa = positions.get(a.racerId);
       const pb = positions.get(b.racerId);
-      const cps = this.track.checkpoints;
-      if (pa !== undefined && pb !== undefined && cps.length > 0) {
-        const da = distanceToNext(pa, cps[a.nextCheckpoint]!);
-        const db = distanceToNext(pb, cps[b.nextCheckpoint]!);
+      const ca = this.expectedCheckpoint(a);
+      const cb = this.expectedCheckpoint(b);
+      if (pa !== undefined && pb !== undefined && ca !== null && cb !== null) {
+        const da = distanceToNext(pa, ca);
+        const db = distanceToNext(pb, cb);
         if (da !== db) return da - db;
       }
     }
@@ -246,16 +321,66 @@ export class RaceState {
     const count = cps.length;
 
     if (count > 0) {
+      const forks = this.track.forks;
+      const maxSteps =
+        count + forks.reduce((sum, fork) => sum + Math.max(...fork.routes.map((route) => route.checkpoints.length)), 0) + 2;
       for (const id of this.order) {
         const r = this.racers.get(id)!;
         if (r.finished || r.eliminated) continue;
         const pos = posMap.get(id);
         if (pos === undefined) continue;
         let guard = 0;
-        while (guard < count && insideAabb(pos, cps[r.nextCheckpoint]!)) {
+        while (guard < maxSteps) {
           guard += 1;
+
+          if (r.fork !== null) {
+            const fork = forks[r.fork.forkIndex]!;
+            const route = fork.routes[r.fork.routeIndex]!;
+            const cp = route.checkpoints[r.fork.nextRouteCheckpoint]!;
+            if (!insideAabb(pos, cp)) break;
+            r.lastHit = cp;
+            r.progress += 1 / route.checkpoints.length;
+            r.splits.push(now - r.startTime);
+            events.push({
+              type: "checkpoint.hit",
+              racerId: id,
+              checkpoint: fork.afterIndex,
+              lap: r.lap,
+              time: now,
+              fork: { forkId: fork.id, routeId: route.id, index: r.fork.nextRouteCheckpoint },
+            });
+            r.fork.nextRouteCheckpoint += 1;
+            if (r.fork.nextRouteCheckpoint >= route.checkpoints.length) {
+              r.forksDone[fork.id] = true;
+              r.fork = null;
+            }
+            continue;
+          }
+
+          let tookRoute = false;
+          for (let forkIndex = 0; forkIndex < forks.length; forkIndex += 1) {
+            const fork = forks[forkIndex]!;
+            if (fork.afterIndex !== r.lastCheckpoint || r.nextCheckpoint !== fork.afterIndex + 1) continue;
+            if (r.forksDone[fork.id] === true) continue;
+            for (let routeIndex = 0; routeIndex < fork.routes.length; routeIndex += 1) {
+              const route = fork.routes[routeIndex]!;
+              if (!insideAabb(pos, route.checkpoints[0]!)) continue;
+              r.fork = { forkIndex, routeIndex, nextRouteCheckpoint: 0 };
+              r.routesTaken[fork.id] = route.id;
+              events.push({ type: "fork.taken", racerId: id, forkId: fork.id, routeId: route.id, time: now });
+              tookRoute = true;
+              break;
+            }
+            if (tookRoute) break;
+          }
+          if (tookRoute) continue;
+
+          const cp = cps[r.nextCheckpoint]!;
+          if (!insideAabb(pos, cp)) break;
           const hit = r.nextCheckpoint;
           r.lastCheckpoint = hit;
+          r.lastHit = cp;
+          r.forksDone = {};
           r.progress += 1;
           r.splits.push(now - r.startTime);
           events.push({ type: "checkpoint.hit", racerId: id, checkpoint: hit, lap: r.lap, time: now });

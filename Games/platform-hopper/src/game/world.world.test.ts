@@ -19,4 +19,12 @@ describe("platform-hopper world", () => {
   test("terrain resolves to a finite ground plane", () => {
     expect(summary.terrain?.height.finite).toBe(true);
   });
+
+  test("has a brighter meadow palette, not the default grass preset", () => {
+    expect(summary.terrain?.palette).toEqual({ low: "#4d8f2f", high: "#a8e26a", waterline: "#2f6f8f" });
+  });
+
+  test("skyline buildings use the village style", () => {
+    expect(summary.structures[0]?.style).toBe("village");
+  });
 });

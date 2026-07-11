@@ -190,8 +190,12 @@ export function WorldTelegraphs() {
       }, event.windupMs + 120);
       pending.add(timer);
     });
+    const offCancel = ctx.game.events.on("combat.telegraphCancelled", (event) => {
+      setTelegraphs((current) => current.filter((t) => t.event.id !== event.id));
+    });
     return () => {
       off();
+      offCancel();
       for (const timer of pending) window.clearTimeout(timer);
       pending.clear();
     };

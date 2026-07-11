@@ -1,10 +1,15 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
+import type { BuildingPaletteOverrides } from "@jgengine/core/world/buildings";
 import { building, environment, sky, terrain, type WorldFeature } from "@jgengine/core/world/features";
 
-import { ZONES } from "./game/zones/catalog";
+import { ZONES, type ZoneDef } from "./game/zones/catalog";
 
 function zoneMid(start: number, end: number): number {
   return (start + end) / 2;
+}
+
+function zonePalette(zone: ZoneDef): BuildingPaletteOverrides | undefined {
+  return zone.id === "gantry" ? { storeSign: "#f0c419", guardrail: "#f0c419" } : undefined;
 }
 
 export const world: WorldFeature = environment({
@@ -27,6 +32,7 @@ export const world: WorldFeature = environment({
   }),
   structures: ZONES.flatMap((zone) => {
     const midZ = zoneMid(zone.start, zone.end);
+    const palette = zonePalette(zone);
     return [
       building({
         count: 9,
@@ -36,6 +42,7 @@ export const world: WorldFeature = environment({
         storyHeight: 3.2,
         spacing: 4,
         style: zone.buildingStyle,
+        ...(palette === undefined ? {} : { palette }),
         seed: `wreckway-${zone.id}-left`,
       }),
       building({
@@ -46,6 +53,7 @@ export const world: WorldFeature = environment({
         storyHeight: 3.2,
         spacing: 4,
         style: zone.buildingStyle,
+        ...(palette === undefined ? {} : { palette }),
         seed: `wreckway-${zone.id}-right`,
       }),
     ];

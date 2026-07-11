@@ -154,6 +154,180 @@ export const DEFAULT_BUILDING_CONFIG: BuildingConfig = {
   variants: DEFAULT_VARIANTS,
 };
 
+export type BuildingPalette = Record<BuildingPartKind, string>;
+export type BuildingPaletteOverrides = Partial<BuildingPalette>;
+
+export type BuildingStyle =
+  | "generic"
+  | "capital"
+  | "village"
+  | "desert"
+  | "industrial"
+  | "coastal"
+  | "neon"
+  | "ruin"
+  | "frontier"
+  | "aerial";
+
+export const DEFAULT_BUILDING_STYLE: BuildingStyle = "generic";
+
+export const BUILDING_STYLE_PALETTES: Record<BuildingStyle, BuildingPalette> = {
+  generic: {
+    wall: "#83766a",
+    window: "#8ecae6",
+    awning: "#c2410c",
+    airConditioner: "#d4d4d8",
+    clothesline: "#facc15",
+    storefront: "#3f3f46",
+    shutter: "#52525b",
+    storeSign: "#f97316",
+    roof: "#57534e",
+    roofProp: "#14b8a6",
+    guardrail: "#a8a29e",
+    corner: "#6b6258",
+  },
+  capital: {
+    wall: "#cfc5ad",
+    window: "#33506e",
+    awning: "#7a1f2b",
+    airConditioner: "#b9b3a4",
+    clothesline: "#d9cfae",
+    storefront: "#4a3f33",
+    shutter: "#5d5647",
+    storeSign: "#d4af37",
+    roof: "#3b4252",
+    roofProp: "#8c7a4e",
+    guardrail: "#a89f88",
+    corner: "#b3a98d",
+  },
+  village: {
+    wall: "#b59e7a",
+    window: "#e9c46a",
+    awning: "#7f5539",
+    airConditioner: "#a8a29e",
+    clothesline: "#e07a5f",
+    storefront: "#5c4a36",
+    shutter: "#6e5a40",
+    storeSign: "#c8894a",
+    roof: "#8a5a3b",
+    roofProp: "#97724d",
+    guardrail: "#8f8271",
+    corner: "#8d7354",
+  },
+  desert: {
+    wall: "#c9a877",
+    window: "#3f6f6b",
+    awning: "#a3512e",
+    airConditioner: "#c9bfa8",
+    clothesline: "#d9b16f",
+    storefront: "#6e5233",
+    shutter: "#7d6140",
+    storeSign: "#b8742f",
+    roof: "#b5946a",
+    roofProp: "#9a7648",
+    guardrail: "#b09b77",
+    corner: "#a98c5d",
+  },
+  industrial: {
+    wall: "#6b7280",
+    window: "#9fb3c8",
+    awning: "#f97316",
+    airConditioner: "#9ca3af",
+    clothesline: "#eab308",
+    storefront: "#374151",
+    shutter: "#4b5563",
+    storeSign: "#f59e0b",
+    roof: "#374151",
+    roofProp: "#ef4444",
+    guardrail: "#d1d5db",
+    corner: "#52596b",
+  },
+  coastal: {
+    wall: "#e8e2d2",
+    window: "#7cc3d8",
+    awning: "#e76f51",
+    airConditioner: "#cfd8dc",
+    clothesline: "#f2cc8f",
+    storefront: "#35526b",
+    shutter: "#3a7ca5",
+    storeSign: "#ee6c4d",
+    roof: "#4f6d7a",
+    roofProp: "#62b6cb",
+    guardrail: "#c5ccc2",
+    corner: "#cfc5ab",
+  },
+  neon: {
+    wall: "#1b1b26",
+    window: "#22d3ee",
+    awning: "#ff2d95",
+    airConditioner: "#3f3f50",
+    clothesline: "#a78bfa",
+    storefront: "#12121a",
+    shutter: "#2a2a3a",
+    storeSign: "#f0abfc",
+    roof: "#14141d",
+    roofProp: "#34d399",
+    guardrail: "#52525f",
+    corner: "#24242f",
+  },
+  ruin: {
+    wall: "#6b6156",
+    window: "#1c1917",
+    awning: "#4a4238",
+    airConditioner: "#57534e",
+    clothesline: "#6b7f4f",
+    storefront: "#292524",
+    shutter: "#44403c",
+    storeSign: "#78716c",
+    roof: "#4a443e",
+    roofProp: "#6b7f4f",
+    guardrail: "#7c7268",
+    corner: "#57503f",
+  },
+  frontier: {
+    wall: "#7f5539",
+    window: "#d9ae62",
+    awning: "#6e3f1f",
+    airConditioner: "#8d8072",
+    clothesline: "#c98a5e",
+    storefront: "#4a3220",
+    shutter: "#5c3d26",
+    storeSign: "#b3702f",
+    roof: "#9c4a1a",
+    roofProp: "#7d6b52",
+    guardrail: "#937b5f",
+    corner: "#66492f",
+  },
+  aerial: {
+    wall: "#dfe7ec",
+    window: "#67c3cc",
+    awning: "#4d7ea8",
+    airConditioner: "#b8c4cc",
+    clothesline: "#9fd8df",
+    storefront: "#5c7684",
+    shutter: "#7b95a3",
+    storeSign: "#3aa7b8",
+    roof: "#aebcc4",
+    roofProp: "#e0f2f5",
+    guardrail: "#98a8b0",
+    corner: "#c3d0d7",
+  },
+};
+
+export function resolveBuildingPalette(
+  style: BuildingStyle = DEFAULT_BUILDING_STYLE,
+  overrides?: BuildingPaletteOverrides,
+): BuildingPalette {
+  const preset = BUILDING_STYLE_PALETTES[style] as BuildingPalette | undefined;
+  if (preset === undefined) {
+    throw new Error(
+      `Unknown building style "${style}". Valid styles: ${Object.keys(BUILDING_STYLE_PALETTES).join(", ")}. Use palette: { wall, window, ... } for a custom look.`,
+    );
+  }
+  if (overrides === undefined) return preset;
+  return { ...preset, ...overrides };
+}
+
 function hashU32(input: string): number {
   let hash = 2166136261;
   for (let index = 0; index < input.length; index += 1) {
