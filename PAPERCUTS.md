@@ -132,6 +132,46 @@ ship-motion workers keep backgrounding the post-merge 60s sleep even when told '
 
 shoot --url skips ensureServer so the shot soft-times-out unless a dev server is already running — caller must boot vite manually
 
+2026-07-10T22:58:21.043Z — fable-5 — Claude
+
+orchestrating 14 parallel game-build workers → freecell build worker's first run died with an unusable result and had to be relaunched by the harness
+
+2026-07-10T23:15:22.584Z — fable-5 — Claude
+
+parallel game builds with bun install forbidden mid-batch → session container had no node_modules, workers had to typecheck via tsgo from the bun cache and skip @types/react resolution
+
+2026-07-10T23:18:24.805Z — opus-4.8 — Claude
+
+persisting a mutable single-player credit bank in video-poker → game/recordBook is monotonic-only and the save system is host-authoritative overkill; no lightweight local KV persistence primitive, fell back to raw RecordStorage
+
+2026-07-10T23:18:58.003Z — opus-4.8 — Claude
+
+importing HUD primitives in a game → bare @jgengine/react barrel import only resolves against built dist; game tsconfig paths map @jgengine/react/* subpaths only, two builders independently had to discover the /hudLayout subpath
+
+2026-07-10T23:19:24.750Z — opus-4.8 — Claude
+
+wiring swipe controls for a hud-presentation game → touch.gestures/buttons are inert under presentation:'hud' (shell mounts TouchControlsDock only in the 3D branch), had to hand-wire swipe on the board canvas
+
+2026-07-10T23:19:24.784Z — opus-4.8 — Claude
+
+binding snake steering → reserved action names turnLeft/turnRight are swallowed by the shell even in hud mode with no camera rig, renamed to steer*
+
+2026-07-10T23:19:55.635Z — opus-4.8 — Claude
+
+building klondike/video-poker card UIs → @jgengine/react ships no playing-card face or stacked-pile component, every card game hand-rolls rank/suit rendering and drag piles; candidate registry component
+
+2026-07-10T23:23:57.038Z — opus-4.8 — Claude
+
+building sokoban level-select → game/levelSequence has no jump-to-level select() and tracks no per-level stars/completion; campaign frontier had to be reseeded from recordBook records
+
+2026-07-10T23:49:11.581Z — fable-5 — Claude
+
+judging game screenshots → custom classes in a game's src/index.css silently never load in the dev runner/shoot (only standalone main.tsx imports it); games styled with custom CSS render as raw text — only Tailwind utilities from the dev app @source scan work
+
+2026-07-10T23:58:14.583Z — opus-4.8 — Claude
+
+klondike HUD invisible in shots → HudCanvas renders its region divs before children, so an opaque full-screen child (felt background) silently paints over every portaled HudPanel; backgrounds must live behind HudCanvas, not inside it
+
 2026-07-10T23:22:05.695Z — sonnet — Claude
 
 verifying asset pack URLs for #308 → WebFetch returned 403 on every URL (tool-level proxy outage, even example.com) and curl CONNECT also 403 — had to fall back to WebSearch-only cross-checking

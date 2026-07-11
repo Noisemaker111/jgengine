@@ -414,6 +414,154 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "↑/W throttle · ↓/S brake · ←/→ steer · Space hop · Shift plow brace · R restart",
     hue: "#16a34a",
   },
+  klondike: {
+    title: "Klondike Solitaire",
+    tagline: "The classic patience deal",
+    description:
+      "Seven fanned piles, four foundations, draw-1 or draw-3 with unlimited redeals, undo, auto-complete, and a shareable daily deal.",
+    genre: "card/solitaire",
+    category: "Puzzle",
+    controls: "Drag cards to move · click stock to draw · U undo",
+    hue: "#22c55e",
+  },
+  freecell: {
+    title: "FreeCell",
+    tagline: "Every deal winnable, every move visible",
+    description:
+      "Eight open cascades, four free cells, numbered seeded deals with supermoves, safe auto-play, and win-streak stats.",
+    genre: "card/solitaire",
+    category: "Puzzle",
+    controls: "Click a card, then destination · dbl-click auto-play",
+    hue: "#2563eb",
+  },
+  "flag-sweep": {
+    title: "Flag Sweep",
+    tagline: "Read the numbers, trust the flags",
+    description:
+      "Classic minesweeping across beginner-to-expert boards with chording, first-click safety, a daily board, and best times per difficulty.",
+    genre: "logic/puzzle",
+    category: "Puzzle",
+    controls: "Click reveal · right-click flag · double-click chord",
+    hue: "#dc2626",
+  },
+  "slide-2048": {
+    title: "2048",
+    tagline: "Slide, merge, double",
+    description:
+      "The modern classic: merge ember tiles to 2048 and beyond with one-step undo, shareable seeds, and a persistent best score.",
+    genre: "sliding/puzzle",
+    category: "Puzzle",
+    controls: "Arrows/WASD slide tiles · U undo · N new game",
+    hue: "#d97706",
+    credit: {
+      name: "Gabriele Cirulli",
+      label: "Inspired by",
+      handle: "gabrielecirulli",
+      href: "https://github.com/gabrielecirulli",
+      avatar: "https://unavatar.io/github/gabrielecirulli",
+      source: { name: "2048", href: "https://github.com/gabrielecirulli/2048" },
+    },
+  },
+  "fifteen-slide": {
+    title: "15 Puzzle",
+    tagline: "The original sliding puzzle",
+    description:
+      "Walnut-and-brass tiles in 3×3 to 5×5, provably solvable shuffles, segment slides, and per-size records.",
+    genre: "sliding/puzzle",
+    category: "Puzzle",
+    controls: "Click or Arrows/WASD slide tile · N new shuffle",
+    hue: "#f97316",
+  },
+  "crate-keeper": {
+    title: "Crate Keeper",
+    tagline: "Push, never pull",
+    description:
+      "Twenty original warehouse puzzles with par times, three-star ratings, full undo, and a campaign that proves every level solvable.",
+    genre: "logic/puzzle",
+    category: "Puzzle",
+    controls: "Arrows/WASD push crates · Z undo · R restart",
+    hue: "#ca8a04",
+  },
+  "memory-match": {
+    title: "Memory Match",
+    tagline: "Two flips, one pair",
+    description:
+      "Concentration on lacquered navy cards — 4×4 and 6×6 boards, distinct glyph faces, and best moves and time per size.",
+    genre: "card/memory",
+    category: "Puzzle",
+    controls: "Click cards to flip and match · R new deal",
+    hue: "#fde047",
+  },
+  "video-poker": {
+    title: "Video Poker",
+    tagline: "Jacks or Better, 9/6 full pay",
+    description:
+      "The casino cabinet classic: bet, hold, draw against the full paytable with a persistent credit bank and max-bet royal bonus.",
+    genre: "card/casino",
+    category: "Others",
+    controls: "Click cards or 1-5 hold · Space deal/draw",
+    hue: "#f43f5e",
+  },
+  blackjack: {
+    title: "Blackjack",
+    tagline: "Twenty-one against the house",
+    description:
+      "Six-deck shoe with splits, doubles, insurance, dealer stands soft 17, blackjack pays 3:2, and a basic-strategy hint.",
+    genre: "card/casino",
+    category: "Others",
+    controls: "Click chips to bet · H hit · S stand · D double",
+    hue: "#10b981",
+  },
+  snake: {
+    title: "Snake",
+    tagline: "Don't bite yourself",
+    description:
+      "Phosphor-green CRT snake with walls or wrap, buffered turns, ramping speed, and a high score that remembers.",
+    genre: "arcade",
+    category: "Action & Arcade",
+    controls: "Arrows/WASD or swipe steer · tap/Space confirm",
+    hue: "#39ff14",
+  },
+  "gem-cascade": {
+    title: "Gem Cascade",
+    tagline: "Match three, chain the rest",
+    description:
+      "Jewel-toned match-3 with cascading multipliers, hints, endless and timed sprints — every gem readable by shape.",
+    genre: "arcade/puzzle",
+    category: "Puzzle",
+    controls: "Click or drag-swap gems · H hint",
+    hue: "#c026d3",
+  },
+  "brick-breaker": {
+    title: "Brick Breaker",
+    tagline: "Angle the rebound, rake the wall",
+    description:
+      "Twelve neon brick layouts, tiered bricks, multiball and paddle power-ups, and a combo-hungry score chase.",
+    genre: "arcade",
+    category: "Action & Arcade",
+    controls: "Mouse/touch drag paddle · click/Space launch",
+    hue: "#06b6d4",
+  },
+  "paddle-duel": {
+    title: "Paddle Duel",
+    tagline: "First to eleven, win by two",
+    description:
+      "CRT-minimal table tennis against three AI tiers or a friend on one keyboard, with volley speed-ups and deuce rules.",
+    genre: "arcade",
+    category: "Action & Arcade",
+    controls: "Drag paddle or W/S · Arrows P2 · Space serve",
+    hue: "#0284c7",
+  },
+  "pachinko-parlor": {
+    title: "Pachinko Parlor",
+    tagline: "Set the power, ride the pegs",
+    description:
+      "A Shōwa-era pachinko board with 168 brass pegs, deterministic physics, fever mode, and a ball bank to grow or bust.",
+    genre: "arcade/parlor",
+    category: "Others",
+    controls: "Hold to charge · release launch · F auto-fire",
+    hue: "#ea580c",
+  },
 };
 
 const FALLBACK_DETAILS: GameDetails = {
