@@ -3,30 +3,23 @@ import type { WindVector } from "./wind";
 export type WeatherKind = string;
 
 export interface WeatherState {
-  /** Game-defined kind: "clear", "rain", "storm", "snow", "fog", "sandstorm". */
   kind: WeatherKind;
-  /** 0..1 severity — scales every modifier. */
   intensity: number;
   wind?: WindVector;
 }
 
-/** Per-kind gameplay effect values at full intensity. Intensity interpolates from neutral. */
 export interface WeatherModifier {
-  /** Movement traction multiplier at full intensity — <1 = mud/ice slows, 1 = normal. */
   grip?: number;
-  /** View distance multiplier at full intensity — 0..1, 1 = clear. */
   visibility?: number;
-  /** Structure HP lost per game-second at full intensity (hail, storm). */
   structureDamage?: number;
-  /** Temperature delta at full intensity (a blizzard chills). */
   chill?: number;
-  /** Lightning ignition chance per game-second at full intensity. */
   ignition?: number;
-  /** Fire spread-rate multiplier at full intensity — rain suppresses (<1). Default neutral 1. */
   spread?: number;
 }
 
-export type WeatherModifierTable = Record<WeatherKind, WeatherModifier>;
+export type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier>;
+
+export type WeatherKindOf<TTable extends WeatherModifierTable> = Extract<keyof TTable, string>;
 
 export interface ResolvedWeather {
   grip: number;
@@ -37,29 +30,21 @@ export interface ResolvedWeather {
   spread: number;
 }
 
-const NEUTRAL: ResolvedWeather = {
-  grip: 1,
-  visibility: 1,
-  structureDamage: 0,
-  chill: 0,
-  ignition: 0,
-  spread: 1,
-};
-
 function lerp(from: number, to: number, t: number): number {
   return from + (to - from) * t;
 }
 
-/**
- * Resolve a weather state against a game-owned modifier table into concrete gameplay
- * numbers. Multiplier-style effects (grip, visibility, spread) interpolate from the
- * neutral 1 by intensity; rate-style effects (structureDamage, ignition, chill) scale
- * linearly. Games read `grip`/`visibility` in movement and AI, `structureDamage` on a
- * building tick, and `spread`/`ignition` feed the fire grid.
- */
-export function resolveWeather(state: WeatherState, table: WeatherModifierTable): ResolvedWeather {
-  const entry = table[state.kind];
-  if (entry === undefined) return { ...NEUTRAL };
+export function resolveWeather<TTable extends WeatherModifierTable>(
+  state: WeatherState,
+  table: TTable,
+): ResolvedWeather {
+  const entry = table[state.kind as WeatherKindOf<TTable>] as WeatherModifier | undefined;
+  if (entry === undefined) {
+    const known = Object.keys(table).sort().join(", ");
+    throw new Error(
+      `Unknown weather kind "${state.kind}". Known kinds: ${known.length > 0 ? known : "(none)"}.`,
+    );
+  }
   const t = Math.max(0, Math.min(1, state.intensity));
   return {
     grip: lerp(1, entry.grip ?? 1, t),

@@ -5,6 +5,7 @@ export {
   OCEAN_QUALITY_PRESETS,
   buildOceanWaveUniforms,
   createOceanConfig,
+  DEFAULT_OCEAN_WAVE_SCALE,
   type OceanColorConfig,
   type OceanConfig,
   type OceanDirectionVector,

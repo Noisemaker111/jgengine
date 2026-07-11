@@ -22,7 +22,6 @@ import {
   type TerrainField,
 } from "@jgengine/core/world/terrain";
 
-import { SkyDaylight } from "./Daylight";
 import { GroundPad } from "./GroundPad";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
@@ -157,9 +156,11 @@ function Weather({ weather }: { weather: readonly WeatherEnvironmentDescriptor[]
 
 function oceanConfig(ocean: OceanEnvironmentDescriptor) {
   return {
-    size: Math.max(ocean.bounds.w, ocean.bounds.d),
+    size: ocean.bounds.w,
+    depth: ocean.bounds.d,
     amplitude: ocean.waveHeight,
     speed: ocean.waveSpeed,
+    waveScale: ocean.waveScale,
     color: { shallow: ocean.color },
   };
 }
@@ -212,7 +213,6 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const islands = feature.islands ?? [];
   return (
     <>
-      {feature.sky !== undefined && !feature.sky.timeOfDay ? <SkyDaylight sky={feature.sky} /> : null}
       {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} /> : null}
       {islands.map((entry, index) => (
         <TerrainGround key={`island-${index}`} terrain={entry} field={field} center={entry.origin} />

@@ -93,6 +93,7 @@ import { createAudioEngine } from "./audio/audioEngine";
 import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
 import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
+import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { applyMaterialOverride } from "./materialOverride";
 import { PointerProbe } from "./pointer/PointerProbe";
@@ -1681,19 +1682,27 @@ export function GamePlayerShell({
         style={{ touchAction: "none" }}
       >
         {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
-        {effectiveSky === undefined ? (
-          lighting !== undefined ? (
-            <ConfiguredLighting lighting={lighting} />
+        {lighting !== undefined ? (
+          <ConfiguredLighting lighting={lighting} />
+        ) : effectiveSky === undefined ? (
+          <>
+            <ambientLight intensity={0.55} />
+            <directionalLight position={[10, 16, 6]} intensity={1.3} />
+          </>
+        ) : null}
+        {effectiveSky !== undefined ? (
+          effectiveSky.timeOfDay ? (
+            <TimeOfDayDaylight
+              sky={effectiveSky}
+              clock={ctx.time}
+              lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
+            />
           ) : (
-            <>
-              <ambientLight intensity={0.55} />
-              <directionalLight position={[10, 16, 6]} intensity={1.3} />
-            </>
+            <SkyDaylight
+              sky={effectiveSky}
+              lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
+            />
           )
-        ) : effectiveSky.timeOfDay ? (
-          <TimeOfDayDaylight sky={effectiveSky} clock={ctx.time} />
-        ) : backdropSky !== undefined ? (
-          <SkyDaylight sky={backdropSky} />
         ) : null}
         <BackdropFog fog={backdrop?.fog} />
         <GameProvider context={ctx}>

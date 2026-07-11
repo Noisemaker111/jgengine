@@ -4,6 +4,7 @@ export {
   SkyDome,
   TimeOfDayDaylight,
   type DaylightProps,
+  type SkyDaylightProps,
   type SkyDomeProps,
   type TimeOfDayDaylightProps,
 } from "./Daylight";
@@ -15,3 +16,8 @@ export {
   type DaylightCycleConfig,
   type DaylightState,
 } from "./daylightCycle";
+export {
+  resolveSkyLightOwnership,
+  skyEmitsLights,
+  type SkyLightOwnership,
+} from "./skyLightingPolicy";

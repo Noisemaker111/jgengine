@@ -109,6 +109,7 @@ export interface OceanEnvironmentConfig {
    */
   levelAt?: (time: number) => number;
   waveHeight?: number;
+  /** Primary Gerstner wavelength in world units (shared with shell Ocean `waveScale`; default 18). */
   waveScale?: number;
   waveSpeed?: number;
   color?: string;

@@ -8,6 +8,7 @@ import {
   fractalNoise,
   flatField,
   groundFieldFor,
+  heightMapField,
   ISLAND_VOID_HEIGHT,
   noiseField,
   resolveEnvironmentField,
@@ -212,6 +213,53 @@ describe("terrain field", () => {
     expect(field.waterLevel).toBe(1);
     const world = environment({ terrain: banded });
     expect(groundFieldFor(world).sampleHeight(20, 0)).toBe(10);
+  });
+
+  test("heightMapField samples two distinct elevation grids differently", () => {
+    const low = heightMapField({
+      columns: 2,
+      rows: 2,
+      samples: [0, 0, 0, 0],
+      bounds: { w: 10, d: 10 },
+      heightScale: 5,
+    });
+    const high = heightMapField({
+      columns: 2,
+      rows: 2,
+      samples: [1, 1, 1, 1],
+      bounds: { w: 10, d: 10 },
+      heightScale: 5,
+    });
+    expect(low.sampleHeight(0, 0)).toBe(0);
+    expect(high.sampleHeight(0, 0)).toBe(5);
+    expect(low.sampleHeight(0, 0)).not.toBe(high.sampleHeight(0, 0));
+  });
+
+  test("heightMapField bilinear-interpolates and accepts flatten via heightField", () => {
+    const map = heightMapField({
+      columns: 2,
+      rows: 2,
+      samples: [0, 10, 0, 10],
+      bounds: { w: 10, d: 10 },
+    });
+    expect(map.sampleHeight(-5, 0)).toBeCloseTo(0, 5);
+    expect(map.sampleHeight(5, 0)).toBeCloseTo(10, 5);
+    expect(map.sampleHeight(0, 0)).toBeCloseTo(5, 5);
+
+    const field = resolveTerrainField(
+      terrain({
+        heightField: map.sampleHeight,
+        bounds: { w: 10, d: 10 },
+        flatten: [{ center: [0, 0], radius: 1, height: 2 }],
+      }),
+    );
+    expect(field.sampleHeight(0, 0)).toBe(2);
+  });
+
+  test("resolveTerrainField rejects unloadable heightMap URLs loudly", () => {
+    expect(() => resolveTerrainField(terrain({ heightMap: "./height.png" }))).toThrow(
+      /heightMap "\.\/height\.png" is not auto-loaded/,
+    );
   });
 
   test("createTerrainPaletteSampler paints regions inside their radius and blends across falloff", () => {

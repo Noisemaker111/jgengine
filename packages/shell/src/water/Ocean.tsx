@@ -9,7 +9,7 @@ export interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "childr
 }
 
 function createOceanGeometry(config: ResolvedOceanConfig): THREE.PlaneGeometry {
-  const geometry = new THREE.PlaneGeometry(config.size, config.size, config.resolution, config.resolution);
+  const geometry = new THREE.PlaneGeometry(config.size, config.depth, config.resolution, config.resolution);
   geometry.rotateX(-Math.PI / 2);
   geometry.computeBoundingSphere();
   return geometry;

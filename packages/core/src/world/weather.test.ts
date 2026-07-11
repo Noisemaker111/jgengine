@@ -34,9 +34,18 @@ describe("resolveWeather", () => {
     expect(quarter.structureDamage).toBeCloseTo(1.25, 5);
   });
 
-  test("unknown kind falls back to neutral", () => {
-    const out = resolveWeather({ kind: "fog", intensity: 1 }, table);
-    expect(out.grip).toBe(1);
+  test("unknown kind throws with the catalog keys", () => {
+    expect(() => resolveWeather({ kind: "fog", intensity: 1 }, table)).toThrow(
+      /Unknown weather kind "fog".*Known kinds: clear, rain, storm/,
+    );
+  });
+
+  test("table keys are the static weather catalog", () => {
+    const kinds = Object.keys(table).sort();
+    expect(kinds).toEqual(["clear", "rain", "storm"]);
+    for (const kind of kinds) {
+      expect(resolveWeather({ kind, intensity: 0 }, table).grip).toBe(1);
+    }
   });
 });
 
