@@ -3,7 +3,7 @@
 The landing page for JGengine and the front door for agents. TanStack Start (SSR) on **Vercel** via Nitro.
 
 - **Humans** get a rendered landing page (`/`), a skills index (`/skills`), and rendered skill pages (`/skills/<name>`) to explore what each skill does.
-- **Agents** are handed one instruction — `npx skills add Noisemaker111/jgengine` — plus a "which skill for what" guide. The site references the skills; it does not dump their contents or serve an `llms.txt`.
+- **Agents** are handed one instruction — `npx jgengine skills -g` (or `-p` in a project) — plus a "which skill for what" guide. The site references the skills; it does not dump their contents or serve an `llms.txt`.
 
 ## The site is generated from the engine — deploying the engine updates the site
 

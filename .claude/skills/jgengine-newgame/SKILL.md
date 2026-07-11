@@ -9,28 +9,26 @@ The deliverable is the **complete idea** — the game the user named, at the sca
 
 The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and** first-person mouse-look (pointer-lock + centered reticle + weapon viewmodel), input tracker, hotbar/primary-click plumbing, world-space enemy health bars, floating damage/heal numbers, projectile tracers, `GameUiPreview`, error overlay. Never rebuild these per game — a hand-written reticle, world-space health bar, or floating-damage-number component means you missed a switch the engine already flips (see the archetype recipe below).
 
-## Scaffold first — always via the CLI
+## Entry — `npx jgengine` (any machine, no monorepo)
 
-Start every new game from the premade base. The display name is the argument; the folder is derived; the same name supersedes into `game.config.ts`, the HUD title, and `index.html`.
-
-**Outside this monorepo** (standalone npm install of the engine):
+This is the whole front door. Outside the engine repo or inside it: scaffold with the CLI, install skills, then build.
 
 ```sh
-npx jgengine create "My Game Name"
-cd My-Game-Name
-npx jgengine skills
+npx jgengine create "Solitaire"
+cd Solitaire
+npx jgengine skills -p    # this project  ·  or  -g  once for every project/agent session
 bun dev
+# agent: make Solitaire with jgengine  (invokes jgengine-newgame)
 ```
 
-**Inside this monorepo** (under `Games/`, workspace engine packages):
+| Flag | Where skills land |
+|------|-------------------|
+| `-p` / `--project` (default) | this project’s agent skills dir |
+| `-g` / `--global` | user-level — every project |
 
-```sh
-npx jgengine create "My Game Name"   # auto in-repo when run from the engine repo → Games/My-Game-Name
-bun install
-bun run games:my-game-name
-```
+**Inside this monorepo** (under `Games/`, workspace engine packages): same `create "Name"` — auto in-repo → `Games/My-Game-Name` + `bun run games:my-game-name`. Skills already live in `.claude/skills/` here; outside consumers use `skills -p`/`-g`.
 
-Do not hand-roll the harness. Do not use a bare kebab path as the product name (`my-game`); pass the real title. Optional flags: `--standalone` / `--in-repo`, `--no-install`, `--pm bun|npm|pnpm`. There is no `--name`.
+Do not hand-roll the harness. Pass the real title, not a bare kebab path. Optional create flags: `--standalone` / `--in-repo`, `--no-install`, `--pm bun|npm|pnpm`. There is no `--name`.
 
 ## Read first (both, before the blueprint)
 

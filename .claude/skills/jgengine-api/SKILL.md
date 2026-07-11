@@ -235,7 +235,9 @@ Fastest path — the `jgengine` CLI scaffolds the entire canonical shape below (
 
 ```sh
 npx jgengine create "My Game Name"   # folder → My-Game-Name; name lands in game.config / HUD / title
-cd My-Game-Name && bun dev
+cd My-Game-Name
+npx jgengine skills -p               # agent skills here; use -g once for global
+bun dev
 npx jgengine doctor                  # later, if the setup drifts (version skew, unstyled HUD, shape strays)
 ```
 
