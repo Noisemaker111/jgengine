@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameProvider } from "@jgengine/react/provider";
+import { HudViewportProvider } from "@jgengine/react/hudViewport";
 
 import type { PlayableGame } from "./registry";
 
@@ -82,7 +83,9 @@ export function GameUiPreview({
       style={{ background: "linear-gradient(180deg, #2a3d33 0%, #1a2320 55%, #141b18 100%)" }}
     >
       <GameProvider context={ctx}>
-        <GameUI />
+        <HudViewportProvider platforms={playable.platforms} config={playable.hudFit}>
+          <GameUI />
+        </HudViewportProvider>
       </GameProvider>
     </div>
   );

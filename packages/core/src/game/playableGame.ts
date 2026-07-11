@@ -1,6 +1,7 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
+import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
@@ -571,6 +572,10 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   touch?: TouchControlsConfig | false;
   /** Preferred phone orientation. When a coarse-pointer device is held the other way the shell shows a dismissible rotate hint; purely advisory, never blocks play. */
   orientation?: "landscape" | "portrait";
+  /** Where the game is meant to be played. Default `["web"]`. Adding `"mobile"` turns on design-resolution HUD fit: every `HudCanvas` auto-scales from `hudFit.designSize` down to the live viewport, so the desktop layout shrinks to fit a phone instead of overflowing it. */
+  platforms?: readonly HudPlatform[];
+  /** HUD design resolution + scale clamps (default 1600×900, scale 0.4–1). `mobile` overrides tune the phone fit separately — the same resolution system drives desktop UI-scale and phone shrink. */
+  hudFit?: HudViewportConfig;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles. */
   worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[] };
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. */

@@ -84,6 +84,7 @@ export const SETTING_IDS = {
   masterVolume: "sound.master",
   graphicsQuality: "graphics.quality",
   graphicsShadows: "graphics.shadows",
+  graphicsUiScale: "graphics.uiScale",
 } as const;
 
 export type GraphicsQuality = "low" | "medium" | "high";
@@ -97,6 +98,11 @@ export const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] = [
 export const DEFAULT_MASTER_VOLUME = 1;
 export const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality = "high";
 export const DEFAULT_GRAPHICS_SHADOWS = true;
+
+/** Player-controlled multiplier on the HUD's computed fit scale — one lever on desktop and mobile alike. */
+export const DEFAULT_UI_SCALE = 1;
+export const UI_SCALE_MIN = 0.5;
+export const UI_SCALE_MAX = 1.5;
 
 /** Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap. */
 export const GRAPHICS_QUALITY_DPR: Record<GraphicsQuality, number> = {

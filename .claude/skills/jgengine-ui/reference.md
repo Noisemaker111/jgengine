@@ -136,6 +136,12 @@ On mobile:
 
 All viewport anchoring should live in the game’s top-level UI composition file. Child components own their internal layout, not their screen position.
 
+### Design-resolution fit (`platforms` + `hudFit`)
+
+Declare `platforms: ["web", "mobile"]` on the `PlayableGame` to opt the HUD into design-resolution fit: every `HudCanvas` auto-scales from `hudFit.designSize` (default 1600×900) down to the live viewport, clamped by `hudFit.minScale`/`maxScale` (default 0.4–1), so the authored layout shrinks instead of overflowing a phone. `hudFit.mobile` overrides the fit on compact displays only — tune the phone presentation there instead of hand-rolling media queries. The player's Graphics → UI scale setting multiplies the computed scale on every platform. Without `"mobile"` in `platforms`, compact displays keep the legacy fixed 0.85 zoom.
+
+**Overflow is an error, not a style note.** `HudCanvas` measures every `HudPanel` against the viewport at runtime; offenders land in a `data-hud-overflow` attribute (and a console warning), and `bun run shoot <game> --device mobile` (or `both`) exits non-zero naming the escaping panels. A game is not mobile-done while shoot reports HUD OVERFLOW.
+
 ## 5. Change the visual grammar
 
 Avoid making every element the same rounded translucent rectangle.

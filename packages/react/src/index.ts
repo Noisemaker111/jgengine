@@ -10,5 +10,6 @@ export * from "./components";
 export * from "./engineStore";
 export * from "./dragLayer";
 export * from "./hudLayout";
+export * from "./hudViewport";
 export * from "./display";
 export * from "./map";
