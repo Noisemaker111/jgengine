@@ -74,7 +74,7 @@ touch: {
 - **`look` / `lookSensitivity`** — drag-to-look on the play surface; defaults to `true` for `first`-person camera rigs, `0.005` radians/px.
 - **`touch: false`** — opt out entirely when the game's own DOM UI is already touch-native.
 
-`useDisplayProfile()` (`@jgengine/react/display`) reports `{ coarsePointer, compact, portrait }` — live media-query state, SSR-safe — for adaptive HUD layout; see the mobile/touch rules in [`../jgengine-ui/reference.md`](../jgengine-ui/reference.md).
+`useDisplayProfile()` (`@jgengine/react/display`) reports `{ coarsePointer, compact, portrait }` — live media-query state, SSR-safe — for adaptive HUD layout; see the mobile/touch rules in [`../jgengine-ui/reference.md`](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-ui/reference.md).
 
 ## Interaction — `proximityPrompt`
 
@@ -121,7 +121,7 @@ Shell wiring: `@jgengine/shell/vision/RevealVision` (`RevealHighlights` — dept
 
 ## World features
 
-Renderer-free world surface — query primitives, environment fields + weather + realm composition, survival meters/moodles, interactive building & terraform, the optional headless physics world, vehicles/mounts/racing, and spawn placement. Full surface: **[reference.md](reference.md)**.
+Renderer-free world surface — query primitives, environment fields + weather + realm composition, survival meters/moodles, interactive building & terraform, the optional headless physics world, vehicles/mounts/racing, and spawn placement. Full surface: **[reference.md](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-world/reference.md)**.
 
 ## Turn-based & tactics (renderer-free)
 

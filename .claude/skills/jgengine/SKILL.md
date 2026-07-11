@@ -45,13 +45,13 @@ Do not read every domain by default. Build through documented engine surfaces; d
 
 Scaffold with `npx jgengine create game-name --name "Game Name"` when needed. Build the requested game continuously from the intake, keeping systems end-to-end rather than leaving registered-but-unusable pieces. Use real assets and visible feedback early. Verify at completion with `jgengine-verify`.
 
-Cartridge-shaped games (declarative config, engine-owned loop): see [reference-cartridge.md](./reference-cartridge.md).
+Cartridge-shaped games (declarative config, engine-owned loop): see [reference-cartridge.md](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine/reference-cartridge.md).
 
 ---
 
-The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. This skill is that foundation plus intake. Use domain skills only when needed; use `jgengine-verify` afterward. UI guidance lives in [`../jgengine-ui/reference.md`](../jgengine-ui/reference.md); assets live in `jgengine-assets`.
+The engine ships **verbs and primitives**; your game ships **nouns** (catalogs) and thin handlers. This skill is that foundation plus intake. Use domain skills only when needed; use `jgengine-verify` afterward. UI guidance lives in [`../jgengine-ui/reference.md`](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-ui/reference.md); assets live in `jgengine-assets`.
 
-Load detailed references only for the selected domain: [`jgengine-combat`](../jgengine-combat/reference.md), [`jgengine-world`](../jgengine-world/reference.md), [`jgengine-multiplayer`](../jgengine-multiplayer/reference.md), and [`jgengine-ui`](../jgengine-ui/reference.md). Each domain skill explains when its reference is needed.
+Load detailed references only for the selected domain: [`jgengine-combat`](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-combat/reference.md), [`jgengine-world`](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-world/reference.md), [`jgengine-multiplayer`](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-multiplayer/reference.md), and [`jgengine-ui`](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-ui/reference.md). Each domain skill explains when its reference is needed.
 
 ## Packages
 
@@ -752,7 +752,7 @@ This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengi
 - [ ] UI passes the **quality bar** above (contrast, scale, framing, genre fit) — not just hook wiring
 - [ ] Camera tuned via `camera` in `defineGame({...})` — defaults untouched means the feel was never checked
 - [ ] For an `environment()` world: a `<game>.world.test.ts` asserts `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) is non-empty with the expected counts — the browserless scene-correctness gate
-- [ ] HUD screenshotted over a staged `GameUiPreview` scenario and **judged by looking at the image** against the UI quality bar in [`../jgengine-ui/reference.md`](../jgengine-ui/reference.md) — the final human glance, not the verification loop
+- [ ] HUD screenshotted over a staged `GameUiPreview` scenario and **judged by looking at the image** against the UI quality bar in [`../jgengine-ui/reference.md`](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-ui/reference.md) — the final human glance, not the verification loop
 - [ ] Co-located bun tests for pure game math (curves, cooldowns, spawn logic)
 - [ ] Multiplayer via adapter config only; no direct backend calls
 

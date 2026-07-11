@@ -7,7 +7,7 @@ description: Combat API: effects, projectiles, damage, abilities, loot, weapons.
 
 ## Combat — effects, projectiles, death, feel, abilities
 
-Combat primitives — effects & projectiles, death handling, melee/defense/telegraph feel, and abilities/resources/auto-target/resistance/run drafts. Full surface: **[reference.md](reference.md)**.
+Combat primitives — effects & projectiles, death handling, melee/defense/telegraph feel, and abilities/resources/auto-target/resistance/run drafts. Full surface: **[reference.md](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-combat/reference.md)**.
 
 ## Loot
 
