@@ -4,11 +4,15 @@ import type { PointerHit, PointerVec3 } from "@jgengine/core/input/pointer";
 export const POINTER_ENTITY_KEY = "jgEntityId";
 export const POINTER_OBJECT_KEY = "jgObjectId";
 
+export type PointerHitFilter = (object: THREE.Object3D) => boolean;
+
 interface PointerDeps {
   camera: THREE.Camera;
   scene: THREE.Scene;
   width: number;
   height: number;
+  layers?: THREE.Layers;
+  filter?: PointerHitFilter;
 }
 
 export interface PointerService {
@@ -54,9 +58,12 @@ export function createPointerService(): PointerService {
 
   function hitAtNdc(target: THREE.Vector2): PointerHit | null {
     if (deps === null) return null;
+    if (deps.layers !== undefined) raycaster.layers.mask = deps.layers.mask;
+    else raycaster.layers.enableAll();
     raycaster.setFromCamera(target, deps.camera);
     const intersects = raycaster.intersectObjects(deps.scene.children, true);
     for (const hit of intersects) {
+      if (deps.filter !== undefined && !deps.filter(hit.object)) continue;
       const mesh = hit.object as THREE.Mesh;
       if (!mesh.isMesh) continue;
       const point: PointerVec3 = [hit.point.x, hit.point.y, hit.point.z];

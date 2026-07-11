@@ -1,11 +1,34 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 
-/**
- * Drive a DOM/SVG element from a per-frame value without re-rendering React.
- * Runs one requestAnimationFrame loop, reads `get()` each frame, and calls
- * `apply(value, element)` so HUDs bound to live engine state (speed, pose)
- * never re-render and never lag. `get`/`apply` may change without restarting.
- */
+type FrameSubscriber = () => void;
+
+const subscribers = new Set<FrameSubscriber>();
+let sharedRaf = 0;
+
+function sharedTick(): void {
+  for (const subscriber of subscribers) subscriber();
+  if (subscribers.size > 0) sharedRaf = requestAnimationFrame(sharedTick);
+  else sharedRaf = 0;
+}
+
+export function subscribeFrameBind(subscriber: FrameSubscriber): () => void {
+  subscribers.add(subscriber);
+  if (sharedRaf === 0 && typeof requestAnimationFrame !== "undefined") {
+    sharedRaf = requestAnimationFrame(sharedTick);
+  }
+  return () => {
+    subscribers.delete(subscriber);
+    if (subscribers.size === 0 && sharedRaf !== 0 && typeof cancelAnimationFrame !== "undefined") {
+      cancelAnimationFrame(sharedRaf);
+      sharedRaf = 0;
+    }
+  };
+}
+
+export function frameBindSubscriberCount(): number {
+  return subscribers.size;
+}
+
 export function useFrameBind<T, E extends Element = Element>(
   ref: { current: E | null },
   get: () => T,
@@ -16,21 +39,13 @@ export function useFrameBind<T, E extends Element = Element>(
   const applyRef = useRef(apply);
   applyRef.current = apply;
   useEffect(() => {
-    let raf = 0;
-    const tick = () => {
+    return subscribeFrameBind(() => {
       const element = ref.current;
       if (element !== null) applyRef.current(getRef.current(), element);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    });
   }, [ref]);
 }
 
-/**
- * A `<span>` whose text tracks a live value every frame (the 90% case of
- * useFrameBind). `<LiveText get={() => groundSpeed(car) * KMH} format={Math.round} />`.
- */
 export function LiveText({
   get,
   format,

@@ -84,4 +84,36 @@ describe("pointerService worldHitCenter", () => {
     const hit = service.worldHitCenter();
     expect(hit?.instanceId).toBeUndefined();
   });
+
+  test("filter skips meshes that fail the predicate", () => {
+    const { service, mesh, camera, scene } = setup();
+    const withoutFilter = service.worldHitCenter();
+    expect(withoutFilter).not.toBeNull();
+    service.bind({
+      camera,
+      scene,
+      width: 800,
+      height: 600,
+      filter: (object) => object !== mesh,
+    });
+    const hit = service.worldHitCenter();
+    expect(hit?.entity ?? null).toBeNull();
+    expect(hit?.object ?? null).toBeNull();
+    expect(hit?.material ?? null).toBeNull();
+    expect(hit?.point).not.toEqual(withoutFilter?.point);
+  });
+
+  test("filter keeps meshes that pass the predicate", () => {
+    const { service, mesh, camera, scene } = setup();
+    service.bind({
+      camera,
+      scene,
+      width: 800,
+      height: 600,
+      filter: (object) => object === mesh,
+    });
+    const hit = service.worldHitCenter();
+    expect(hit).not.toBeNull();
+    expect(hit?.point[2]).toBeCloseTo(0.5, 1);
+  });
 });

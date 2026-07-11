@@ -1,11 +1,13 @@
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import {
   cellFromPoint,
@@ -37,11 +39,13 @@ export interface DropInfo<T> {
 export interface DragLayer<T> {
   state: DragState<T>;
   dragging: boolean;
+  pointRef: RefObject<{ x: number; y: number }>;
   beginDrag(payload: { id: string; value: T; rotation?: Rotation }, event: ReactPointerEvent): void;
   rotate(quarterTurns?: number): void;
   setTarget(target: string | null, cell?: Cell | null): void;
   endDrag(): DropInfo<T> | null;
   cancel(): void;
+  attachGhost(element: HTMLElement | null): void;
 }
 
 const EMPTY_POINT = { x: 0, y: 0 };
@@ -56,7 +60,11 @@ export function useDragLayer<T>(options?: {
     overTarget: null,
     overCell: null,
   });
+  const pointRef = useRef(EMPTY_POINT);
+  const ghostRef = useRef<HTMLElement | null>(null);
   const moveRef = useRef<((event: PointerEvent) => void) | null>(null);
+  const payloadRef = useRef<DragPayload<T> | null>(null);
+  const overRef = useRef<{ target: string | null; cell: Cell | null }>({ target: null, cell: null });
 
   const detach = useCallback(() => {
     if (moveRef.current !== null) {
@@ -65,50 +73,66 @@ export function useDragLayer<T>(options?: {
     }
   }, []);
 
+  const writeGhost = useCallback((point: { x: number; y: number }, rotation: Rotation) => {
+    const el = ghostRef.current;
+    if (el === null) return;
+    el.style.left = `${point.x}px`;
+    el.style.top = `${point.y}px`;
+    el.style.transform = `translate(-50%, -50%) rotate(${rotation * 90}deg)`;
+  }, []);
+
   const beginDrag = useCallback<DragLayer<T>["beginDrag"]>(
     (payload, event) => {
       const point = { x: event.clientX, y: event.clientY };
+      const nextPayload = { id: payload.id, value: payload.value, rotation: payload.rotation ?? 0 };
+      payloadRef.current = nextPayload;
+      overRef.current = { target: null, cell: null };
+      pointRef.current = point;
       setState({
-        payload: { id: payload.id, value: payload.value, rotation: payload.rotation ?? 0 },
+        payload: nextPayload,
         point,
         origin: point,
         overTarget: null,
         overCell: null,
       });
+      writeGhost(point, nextPayload.rotation);
       const onMove = (moveEvent: PointerEvent) => {
-        setState((prev) =>
-          prev.payload === null
-            ? prev
-            : { ...prev, point: { x: moveEvent.clientX, y: moveEvent.clientY } },
-        );
+        if (payloadRef.current === null) return;
+        const next = { x: moveEvent.clientX, y: moveEvent.clientY };
+        pointRef.current = next;
+        writeGhost(next, payloadRef.current.rotation);
       };
       detach();
       moveRef.current = onMove;
       window.addEventListener("pointermove", onMove);
     },
-    [detach],
+    [detach, writeGhost],
   );
 
-  const rotate = useCallback<DragLayer<T>["rotate"]>((quarterTurns = 1) => {
-    setState((prev) =>
-      prev.payload === null
-        ? prev
-        : {
-            ...prev,
-            payload: {
-              ...prev.payload,
-              rotation: (((prev.payload.rotation + quarterTurns) % 4) + 4) % 4 as Rotation,
-            },
-          },
-    );
-  }, []);
+  const rotate = useCallback<DragLayer<T>["rotate"]>(
+    (quarterTurns = 1) => {
+      setState((prev) => {
+        if (prev.payload === null) return prev;
+        const rotation = (((prev.payload.rotation + quarterTurns) % 4) + 4) % 4 as Rotation;
+        const payload = { ...prev.payload, rotation };
+        payloadRef.current = payload;
+        writeGhost(pointRef.current, rotation);
+        return { ...prev, payload, point: pointRef.current };
+      });
+    },
+    [writeGhost],
+  );
 
   const setTarget = useCallback<DragLayer<T>["setTarget"]>((target, cell = null) => {
-    setState((prev) => ({ ...prev, overTarget: target, overCell: cell }));
+    overRef.current = { target, cell };
+    setState((prev) => ({ ...prev, overTarget: target, overCell: cell, point: pointRef.current }));
   }, []);
 
   const reset = useCallback(() => {
     detach();
+    payloadRef.current = null;
+    overRef.current = { target: null, cell: null };
+    pointRef.current = EMPTY_POINT;
     setState({
       payload: null,
       point: EMPTY_POINT,
@@ -119,31 +143,38 @@ export function useDragLayer<T>(options?: {
   }, [detach]);
 
   const endDrag = useCallback<DragLayer<T>["endDrag"]>(() => {
+    const payload = payloadRef.current;
     let info: DropInfo<T> | null = null;
-    setState((prev) => {
-      if (prev.payload !== null) {
-        info = {
-          payload: prev.payload,
-          target: prev.overTarget,
-          cell: prev.overCell,
-          point: prev.point,
-        };
-      }
-      return prev;
-    });
-    if (info !== null) options?.onDrop?.(info);
+    if (payload !== null) {
+      info = {
+        payload,
+        target: overRef.current.target,
+        cell: overRef.current.cell,
+        point: pointRef.current,
+      };
+      options?.onDrop?.(info);
+    }
     reset();
     return info;
   }, [options, reset]);
 
+  const attachGhost = useCallback((element: HTMLElement | null) => {
+    ghostRef.current = element;
+    if (element !== null && payloadRef.current !== null) {
+      writeGhost(pointRef.current, payloadRef.current.rotation);
+    }
+  }, [writeGhost]);
+
   return {
     state,
     dragging: state.payload !== null,
+    pointRef,
     beginDrag,
     rotate,
     setTarget,
     endDrag,
     cancel: reset,
+    attachGhost,
   };
 }
 
@@ -158,10 +189,17 @@ export function DragGhost<T>({
   style?: CSSProperties;
   children?: (payload: DragPayload<T>) => ReactNode;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    layer.attachGhost(ref.current);
+    return () => layer.attachGhost(null);
+  }, [layer, layer.state.payload]);
+
   if (layer.state.payload === null) return null;
-  const { x, y } = layer.state.point;
+  const { x, y } = layer.pointRef.current;
   return (
     <div
+      ref={ref}
       className={className}
       data-drag-ghost=""
       style={{

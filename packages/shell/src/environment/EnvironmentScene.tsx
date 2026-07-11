@@ -92,18 +92,22 @@ function Vegetation({ grass, field }: { grass: GrassEnvironmentDescriptor; field
         : (x: number, z: number) => field.sampleHeight(x + cx, z + cz),
     [cx, cz, field],
   );
+  const area = useMemo(() => [grass.area.w, grass.area.d] as const, [grass.area.w, grass.area.d]);
+  const wind = useMemo(() => ({ strength: grass.windStrength }), [grass.windStrength]);
+  const colorBase = grass.colors[0];
+  const colorTip = grass.colors[grass.colors.length - 1];
   return (
     <group position={[cx, 0, cz]}>
       <GrassField
-        area={[grass.area.w, grass.area.d]}
+        area={area}
         density={grass.density}
         seed={grass.seed}
         bladeHeight={grass.bladeHeight}
         bladeWidth={grass.bladeWidth}
         heightAt={heightAt}
-        colorBase={grass.colors[0]}
-        colorTip={grass.colors[grass.colors.length - 1]}
-        wind={{ strength: grass.windStrength }}
+        colorBase={colorBase}
+        colorTip={colorTip}
+        wind={wind}
       />
     </group>
   );
@@ -165,26 +169,35 @@ function oceanConfig(ocean: OceanEnvironmentDescriptor) {
   };
 }
 
+function useOceanConfig(ocean: OceanEnvironmentDescriptor) {
+  return useMemo(
+    () => oceanConfig(ocean),
+    [ocean.bounds.w, ocean.bounds.d, ocean.waveHeight, ocean.waveSpeed, ocean.color],
+  );
+}
+
 function DynamicWater({ ocean }: { ocean: OceanEnvironmentDescriptor & { levelAt: (time: number) => number } }) {
   const ctx = useGameContext();
   const groupRef = useRef<Group>(null);
   const [x, z] = ocean.position ?? [0, 0];
+  const config = useOceanConfig(ocean);
   useFrame(() => {
     if (groupRef.current !== null) groupRef.current.position.y = ocean.levelAt(ctx.time.now());
   });
   return (
     <group ref={groupRef} position={[0, ocean.level, 0]}>
-      <Ocean position={[x, 0, z]} config={oceanConfig(ocean)} />
+      <Ocean position={[x, 0, z]} config={config} />
     </group>
   );
 }
 
 function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
   const [x, z] = ocean.position ?? [0, 0];
+  const config = useOceanConfig(ocean);
   if (ocean.levelAt !== undefined) {
     return <DynamicWater ocean={ocean as OceanEnvironmentDescriptor & { levelAt: (time: number) => number }} />;
   }
-  return <Ocean position={[x, ocean.level, z]} config={oceanConfig(ocean)} />;
+  return <Ocean position={[x, ocean.level, z]} config={config} />;
 }
 
 function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {

@@ -9,7 +9,12 @@ export function PointerProbe({ service }: { service: PointerService }) {
   const gl = useThree((state) => state.gl);
   const size = useThree((state) => state.size);
 
-  service.bind({ camera, scene, width: size.width, height: size.height });
+  useEffect(() => {
+    service.bind({ camera, scene, width: size.width, height: size.height });
+    return () => {
+      service.bind(null);
+    };
+  }, [service, camera, scene, size.width, size.height]);
 
   useEffect(() => {
     const el = gl.domElement;
@@ -35,7 +40,6 @@ export function PointerProbe({ service }: { service: PointerService }) {
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerleave", onLeave);
       document.removeEventListener("pointerlockchange", onLockChange);
-      service.bind(null);
     };
   }, [gl, service]);
 
