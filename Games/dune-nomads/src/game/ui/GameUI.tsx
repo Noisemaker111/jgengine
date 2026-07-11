@@ -50,6 +50,9 @@ function PlayingHud({ state }: { state: RunState }) {
           </span>
         </div>
         <div className="pointer-events-auto">
+          <SettingsTrigger className="flex h-9 w-9 items-center justify-center border border-[var(--jg-edge)] bg-[var(--jg-surface)] text-[var(--jg-accent)] transition-colors hover:bg-[var(--jg-surface-deep)]" />
+        </div>
+        <div className="pointer-events-auto">
           <MapPanel
             state={state}
             windVector={wind.vector}

@@ -1,3 +1,5 @@
+import { SettingsTrigger } from "@jgengine/react";
+
 import { HudPanel } from "@/components/ui/hud-panel";
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 import { TitleScreen } from "@/components/ui/title-screen";
@@ -23,6 +25,9 @@ export function StartOverlay({ onStart }: { onStart: () => void }) {
         selectedId="begin"
         onActivate={onStart}
       />
+      <div className="pointer-events-auto absolute right-4 top-4">
+        <SettingsTrigger className="flex h-9 w-9 items-center justify-center border border-[var(--jg-edge)] bg-[var(--jg-surface)] text-[var(--jg-accent)] transition-colors hover:bg-[var(--jg-surface-deep)]" />
+      </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-8 flex justify-center">
         <div className="pointer-events-auto">
           <HudPanel title="The Rules of the Sand" width={420}>
