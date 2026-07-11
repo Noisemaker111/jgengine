@@ -22,6 +22,11 @@ import {
 } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 import { browseSessions, findByJoinCode } from "@jgengine/core/multiplayer/matchmaking";
+import {
+  createFeedWriteGate,
+  validateFeedWrite,
+  type FeedWriteGate,
+} from "@jgengine/core/multiplayer/feedWriteGate";
 import type { GameRuntimeSnapshot, RuntimeChunkRow } from "@jgengine/core/runtime/snapshot";
 import { clearDirtyFlags, createEmptyServerRow, splitProfilePlayer } from "@jgengine/core/runtime/snapshot";
 import type {
@@ -43,6 +48,7 @@ export type GameHostOptions = {
   slotsPerServer?: number;
   now?: () => number;
   createServerId?: () => string;
+  allowedFeedActions?: readonly string[];
 };
 
 export type GameHost = {
@@ -69,6 +75,7 @@ export type GameHost = {
     command: string;
     input: unknown;
   }) => Promise<TransportRunCommandResult>;
+  isMember: (args: { userId: string; serverId: string }) => Promise<boolean>;
   getServerView: (args: { userId: string; serverId: string }) => Promise<GameRuntimeServerView | null>;
   getPlayerView: (args: { userId: string; serverId: string }) => Promise<GameRuntimePlayerView | null>;
   getFeed: (args: { userId: string; serverId: string; action: string }) => Promise<unknown[]>;
@@ -104,6 +111,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
   const defaultSlots = options.slotsPerServer ?? 16;
   const createServerId = options.createServerId ?? (() => `srv-${crypto.randomUUID()}`);
   const persistence = options.persistence;
+  const feedWriteGate: FeedWriteGate = createFeedWriteGate(options.allowedFeedActions ?? []);
 
   const runtimes = new Map<string, GameRuntime>();
   for (const runtime of options.runtimes ?? []) {
@@ -230,7 +238,10 @@ export function createGameHost(options: GameHostOptions): GameHost {
       return { ticked, saved };
     });
 
-  const collectListings = async (gameId: string): Promise<SessionListing[]> => {
+  const collectListings = async (
+    gameId: string,
+    options: { includeJoinCode?: boolean } = {},
+  ): Promise<SessionListing[]> => {
     const byId = new Map<string, GameServerRecord>();
     for (const record of await persistence.listServers(gameId)) {
       byId.set(record.serverId, record);
@@ -248,7 +259,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
       slotsPerServer: record.slotsPerServer,
       label: record.label,
       mode: record.mode,
-      joinCode: record.joinCode,
+      ...(options.includeJoinCode === true && record.joinCode !== undefined
+        ? { joinCode: record.joinCode }
+        : {}),
       tags: record.tags,
       updatedAt: record.updatedAt,
     }));
@@ -324,7 +337,10 @@ export function createGameHost(options: GameHostOptions): GameHost {
       browseSessions(await collectListings(args.gameId), args.filter ?? {}, { limit: args.limit }),
 
     joinByCode: async (args) => {
-      const match = findByJoinCode(await collectListings(args.gameId), args.code);
+      const match = findByJoinCode(
+        await collectListings(args.gameId, { includeJoinCode: true }),
+        args.code,
+      );
       if (match === null) return null;
       return host.joinServer({ userId: args.userId, gameId: args.gameId, serverId: match.serverId });
     },
@@ -382,6 +398,12 @@ export function createGameHost(options: GameHostOptions): GameHost {
         return { ok: true as const };
       }),
 
+    isMember: async (args) => {
+      const entry = await getLive(args.serverId);
+      if (entry === null) return false;
+      return entry.record.memberUserIds.includes(args.userId);
+    },
+
     getServerView: async (args) => {
       const entry = await getLive(args.serverId);
       if (entry === null) return null;
@@ -428,6 +450,10 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
     pushFeedEntry: (args) =>
       enqueue(async () => {
+        const allowed = validateFeedWrite(feedWriteGate, args.action);
+        if (!allowed.ok) {
+          throw new Error(allowed.reason);
+        }
         const entry = await getLive(args.serverId);
         if (entry === null || !entry.record.memberUserIds.includes(args.userId)) {
           throw new Error("Not a member of this server");

@@ -126,7 +126,11 @@ export function createPeerHost(options: PeerHostOptions): PeerHost {
     });
   if (ownsHost) host.start();
 
-  const router = createHostRouter({ ...options.router, host });
+  const router = createHostRouter({
+    allowAnonymous: true,
+    ...options.router,
+    host,
+  });
   const backend = createWsBackend({
     userId: options.userId,
     token: options.token,

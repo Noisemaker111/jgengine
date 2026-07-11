@@ -44,10 +44,14 @@ export function createTestRuntime(gameId = "test-game"): GameRuntime {
     save: { auto: "5ms", scope: "player+chunks" },
     commands: {
       "gold.grant": {
-        validate: (_snapshot: GameRuntimeSnapshot, input: unknown) =>
-          isGoldGrantInput(input) ? null : { reason: "userId and amount required" },
-        apply: (snapshot: GameRuntimeSnapshot, input: unknown) => {
-          const { userId, amount } = input as GoldGrantInput;
+        validate: (_snapshot: GameRuntimeSnapshot, input: unknown, actorUserId: string) => {
+          if (!isGoldGrantInput(input)) return { reason: "userId and amount required" };
+          if (input.userId !== actorUserId) return { reason: "cannot grant gold to another player" };
+          return null;
+        },
+        apply: (snapshot: GameRuntimeSnapshot, input: unknown, actorUserId: string) => {
+          const { amount } = input as GoldGrantInput;
+          const userId = actorUserId;
           const player = snapshot.players[userId];
           if (!player) return snapshot;
           const pending = (snapshot.server.session[LEADERBOARD_PENDING_KEY] as unknown[]) ?? [];

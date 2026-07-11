@@ -36,6 +36,48 @@ test("runCommand updates revision and dirty flags", () => {
   }
 });
 
+test("runCommand passes actor identity into validate and apply", () => {
+  const snapshot = createRuntimeSnapshot({
+    gameId: "demo",
+    serverId: "srv_1",
+    players: {
+      user_a: {
+        userId: "user_a",
+        inventories: {},
+        economy: { gold: 0 },
+        unlocks: [],
+        session: {},
+      },
+      user_b: {
+        userId: "user_b",
+        inventories: {},
+        economy: { gold: 0 },
+        unlocks: [],
+        session: {},
+      },
+    },
+  });
+  let seenActor: string | undefined;
+  const result = runCommand(
+    snapshot,
+    {
+      "gold.grant": {
+        validate: (_state, input: { userId: string }, actorUserId) => {
+          seenActor = actorUserId;
+          if (input.userId !== actorUserId) return { reason: "cannot grant gold to another player" };
+          return null;
+        },
+        apply: (state, _input, actorUserId) => markPlayerDirty(state, actorUserId),
+      },
+    },
+    "gold.grant",
+    { userId: "user_b" },
+    "user_a",
+  );
+  expect(seenActor).toBe("user_a");
+  expect(result).toEqual({ ok: false, reason: "cannot grant gold to another player" });
+});
+
 test("createGameRuntime joinPlayer seeds player row", () => {
   const runtime = createGameRuntime({
     gameId: "demo",

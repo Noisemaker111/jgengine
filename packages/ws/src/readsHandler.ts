@@ -9,10 +9,16 @@ export type ReadsPersistence = Pick<
 
 export type ReadsHandler = (request: Request) => Promise<Response>;
 
+export type ReadsAuthenticate = (
+  request: Request,
+) => Promise<string | null> | string | null;
+
 export type ReadsHandlerOptions = {
   persistence: ReadsPersistence | (() => Promise<ReadsPersistence>);
   basePath?: string;
   listOpenServers?: (args: { gameId: string; limit?: number }) => Promise<ServerListing[]>;
+  authenticate?: ReadsAuthenticate;
+  allowPublicProfiles?: boolean;
 };
 
 function isScope(value: string): value is LeaderboardScope {
@@ -25,6 +31,7 @@ function json(body: unknown, status = 200): Response {
 
 export function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler {
   const basePath = (options.basePath ?? "/api").replace(/\/$/, "");
+  const allowPublicProfiles = options.allowPublicProfiles === true;
   let persistence: Promise<ReadsPersistence> | null = null;
   const getPersistence = (): Promise<ReadsPersistence> => {
     persistence ??=
@@ -59,7 +66,7 @@ export function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler {
         return json(await options.listOpenServers({ gameId, limit }));
       }
       const records = await (await getPersistence()).listServers(gameId);
-      return json(toOpenServerListings(records.map(toServerListing), limit));
+      return json(toOpenServerListings(records.map((record) => toServerListing(record)), limit));
     }
 
     if (head === "leaderboard" && tail !== undefined && segments.length === 2) {
@@ -83,6 +90,15 @@ export function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler {
     }
 
     if (head === "profile" && tail !== undefined && segments.length === 2) {
+      if (!allowPublicProfiles) {
+        if (options.authenticate === undefined) {
+          return json({ error: "unauthorized" }, 401);
+        }
+        const actorUserId = await options.authenticate(request);
+        if (actorUserId === null || actorUserId !== tail) {
+          return json({ error: "unauthorized" }, 401);
+        }
+      }
       const profile = await (await getPersistence()).loadProfile({ userId: tail, gameId });
       return json(
         profile === null

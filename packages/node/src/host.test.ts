@@ -134,7 +134,11 @@ test("leave persists, frees the slot, and hides the server from the browser list
 
 test("feed buffers append, trim, and gate on membership", async () => {
   const persistence = memoryPersistence();
-  const host = createGameHost({ runtimes: [createTestRuntime()], persistence });
+  const host = createGameHost({
+    runtimes: [createTestRuntime()],
+    persistence,
+    allowedFeedActions: ["kill"],
+  });
 
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "test-game" });
   for (let index = 0; index < 25; index += 1) {
@@ -154,7 +158,12 @@ test("filePersistence round-trips every tier and survives a host restart", async
   try {
     let t = 0;
     const persistence = filePersistence(dir, () => t);
-    const host = createGameHost({ runtimes: [createTestRuntime()], persistence, now: () => t });
+    const host = createGameHost({
+      runtimes: [createTestRuntime()],
+      persistence,
+      now: () => t,
+      allowedFeedActions: ["kill"],
+    });
 
     const { serverId } = await host.joinServer({ userId: "alice", gameId: "test-game" });
     await host.runCommand({

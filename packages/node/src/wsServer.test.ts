@@ -35,7 +35,17 @@ function channel<T>() {
   };
 }
 
-async function startStack(): Promise<{
+async function startStack(options: {
+  allowedFeedActions?: readonly string[];
+  now?: () => number;
+  poseRules?: {
+    maxSpeed: number;
+    maxVerticalOffset: number;
+    minElapsedSec: number;
+    maxElapsedSec: number;
+    keepAliveRefreshMs: number;
+  };
+} = {}): Promise<{
   host: GameHost;
   server: GameWsServer;
   url: string;
@@ -43,8 +53,19 @@ async function startStack(): Promise<{
   connect: (userId: string) => WsBackend;
   shutdown: () => Promise<void>;
 }> {
-  const host = createGameHost({ runtimes: [createTestRuntime()], persistence: memoryPersistence() });
-  const server = createGameWsServer({ host, port: 0 });
+  const host = createGameHost({
+    runtimes: [createTestRuntime()],
+    persistence: memoryPersistence(),
+    allowedFeedActions: options.allowedFeedActions ?? ["kill"],
+    now: options.now,
+  });
+  const server = createGameWsServer({
+    host,
+    port: 0,
+    allowAnonymous: true,
+    now: options.now,
+    poseRules: options.poseRules,
+  });
   await new Promise<void>((resolve) => server.wss.once("listening", resolve));
   const url = `ws://127.0.0.1:${server.port()}`;
   const backends: WsBackend[] = [];
@@ -57,6 +78,7 @@ async function startStack(): Promise<{
       const backend = createWsBackend({
         url,
         userId,
+        now: options.now,
         poseTuning: {
           minIntervalMs: 0,
           heartbeatMs: 60_000,
@@ -164,7 +186,7 @@ test("mounts on an existing http server at a path", async () => {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ ok: true }));
   });
-  const wsServer = createGameWsServer({ host, server: httpServer, path: "/ws" });
+  const wsServer = createGameWsServer({ host, server: httpServer, path: "/ws", allowAnonymous: true });
   await new Promise<void>((resolve) => httpServer.listen(0, resolve));
   const address = httpServer.address();
   const port = typeof address === "object" && address !== null ? address.port : 0;
@@ -186,7 +208,17 @@ test("mounts on an existing http server at a path", async () => {
 });
 
 test("presence poses broadcast to subscribers and clamp teleports", async () => {
-  const stack = await startStack();
+  let clock = 1_000;
+  const stack = await startStack({
+    now: () => clock,
+    poseRules: {
+      maxSpeed: 12,
+      maxVerticalOffset: 3,
+      minElapsedSec: 0.05,
+      maxElapsedSec: 0.5,
+      keepAliveRefreshMs: 10_000,
+    },
+  });
   try {
     const alice = stack.connect("alice");
     const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
@@ -197,12 +229,14 @@ test("presence poses broadcast to subscribers and clamp teleports", async () => 
     bob.presenceSync.subscribe(serverId, (rows) => rosters.push(rows));
     expect(await rosters.next()).toEqual([]);
 
+    clock = 1_500;
     alice.presenceSync.syncPose(serverId, { x: 1, y: 0, z: 2, rotationY: 0.4, rotationPitch: 0 });
     const first = await rosters.next();
     expect(first).toHaveLength(1);
     expect(first[0]?.userId).toBe("alice");
     expect(first[0]?.position.x).toBeCloseTo(1);
 
+    clock = 2_000;
     alice.presenceSync.syncPose(serverId, { x: 1_000, y: 0, z: 2, rotationY: 0.4, rotationPitch: 0 });
     const clamped = await rosters.next();
     expect(clamped[0]!.position.x).toBeLessThan(100);
@@ -217,7 +251,17 @@ test("presence poses broadcast to subscribers and clamp teleports", async () => 
 });
 
 test("presence rows include appearance and persist it across appearance-less updates", async () => {
-  const stack = await startStack();
+  let clock = 1_000;
+  const stack = await startStack({
+    now: () => clock,
+    poseRules: {
+      maxSpeed: 12,
+      maxVerticalOffset: 3,
+      minElapsedSec: 0.05,
+      maxElapsedSec: 0.5,
+      keepAliveRefreshMs: 10_000,
+    },
+  });
   try {
     const alice = stack.connect("alice");
     const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
@@ -228,6 +272,7 @@ test("presence rows include appearance and persist it across appearance-less upd
     bob.presenceSync.subscribe(serverId, (rows) => rosters.push(rows));
     expect(await rosters.next()).toEqual([]);
 
+    clock = 1_500;
     alice.presenceSync.syncPose(serverId, {
       x: 1,
       y: 0,
@@ -239,6 +284,7 @@ test("presence rows include appearance and persist it across appearance-less upd
     const first = await rosters.next();
     expect(first[0]?.appearance).toEqual({ skin: "blue" });
 
+    clock = 1_600;
     alice.presenceSync.syncPose(serverId, {
       x: 1,
       y: 0,
@@ -250,6 +296,7 @@ test("presence rows include appearance and persist it across appearance-less upd
     const second = await rosters.next();
     expect(second[0]?.appearance).toEqual({ skin: "red" });
 
+    clock = 2_100;
     alice.presenceSync.syncPose(serverId, { x: 5, y: 0, z: 2, rotationY: 0.4, rotationPitch: 0 });
     const third = await rosters.next();
     expect(third[0]?.appearance).toEqual({ skin: "red" });
@@ -371,6 +418,7 @@ test("lag comp: the ws host retains presence history and rewinds to an interpola
   const server = createGameWsServer({
     host,
     port: 0,
+    allowAnonymous: true,
     now: () => clock,
     poseRules: {
       maxSpeed: 1_000_000,

@@ -143,9 +143,13 @@ async function startStack(): Promise<{
   connect: (userId: string) => WsBackend;
   shutdown: () => Promise<void>;
 }> {
-  const host = createGameHost({ runtimes: [createTestRuntime()], persistence: memoryPersistence() });
+  const host = createGameHost({
+    runtimes: [createTestRuntime()],
+    persistence: memoryPersistence(),
+    allowedFeedActions: ["kill"],
+  });
   const { server: io, connectClient } = createFakeSocketIoServer();
-  const server = attachGameSocketIoServer({ host, io });
+  const server = attachGameSocketIoServer({ host, io, allowAnonymous: true });
   const backends: WsBackend[] = [];
   return {
     host,

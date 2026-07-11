@@ -20,7 +20,7 @@ test("browseServers hides private lobbies but exposes public ones with attribute
   const pub = await host.joinServer({
     userId: "alice",
     gameId: "test-game",
-    attributes: { visibility: "public", mode: "ranked", label: "Ranked US", tags: ["us"] },
+    attributes: { visibility: "public", mode: "ranked", label: "Ranked US", tags: ["us"], joinCode: "PUB001" },
   });
   await host.joinServer({
     userId: "bob",
@@ -32,6 +32,7 @@ test("browseServers hides private lobbies but exposes public ones with attribute
   expect(listings.map((l) => l.serverId)).toEqual([pub.serverId]);
   expect(listings[0]!.mode).toBe("ranked");
   expect(listings[0]!.tags).toEqual(["us"]);
+  expect(listings[0]!.joinCode).toBeUndefined();
 });
 
 test("browseServers filters by mode", async () => {
