@@ -31,4 +31,17 @@ export const game = defineGame({
   renderEntity: renderPulseRunnerEntity,
   renderObject: renderPulseRunnerObject,
   shadows: false,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "start"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Back to the cathedral aisle entrance with a fresh pulse meter.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

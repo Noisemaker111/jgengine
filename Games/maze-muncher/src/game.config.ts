@@ -39,4 +39,17 @@ export const game = defineGame({
     frustum: { fov: 74, far: 60 },
     firstPerson: { eyeHeight: 1.3, sensitivity: 0.0022, reticle: true, viewmodel: false },
   },
+  settings: {
+    variant: "fullscreen",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart maze",
+        kind: "danger",
+        description: "Descend from level one with fresh lives.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

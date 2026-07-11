@@ -21,6 +21,19 @@ export const game = defineGame({
   renderObject: renderCityProp,
   objectStyles: OBJECT_STYLES,
   orientation: "landscape",
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "start"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Send every glider back to the start flag and begin again.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
   camera: {
     rig: "chase",
     frustum: { far: 900 },

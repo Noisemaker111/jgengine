@@ -67,6 +67,7 @@ export const game = defineGame({
   entitySprites,
   prompts,
   objectStyles,
+  settings: { variant: "sidebar" },
   worldHealthBars: true,
   camera: {
     perspective: "third",

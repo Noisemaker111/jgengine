@@ -21,6 +21,19 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "panel",
+    hideBindings: ["restart", "start"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Scatter the flock and start the herd again from the sanctuary gate.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
   camera: {
     rig: "topDown",
     topDown: { height: 30, pitch: 1.3, yaw: 0, followSmoothing: 6 },

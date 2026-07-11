@@ -15,4 +15,16 @@ export const game = defineGame({
   GameUI,
   presentation: "hud",
   touch: false,
+  settings: {
+    variant: "panel",
+    actions: [
+      {
+        id: "newGame",
+        label: "New Game",
+        kind: "danger",
+        description: "Start a fresh scorecard with new dice rolls.",
+        run: (ctx) => ctx.game.commands.run("newGame", {}),
+      },
+    ],
+  },
 });

@@ -12,6 +12,9 @@ export const game = defineGame({
   save: "none",
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "sidebar",
+  },
   environment: CanopyEnvironment,
   shadows: true,
   camera: {

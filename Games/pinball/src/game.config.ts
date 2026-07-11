@@ -15,4 +15,17 @@ export const game = defineGame({
   GameUI,
   orientation: "portrait",
   touch: false,
+  settings: {
+    variant: "panel",
+    hideBindings: ["newGame"],
+    actions: [
+      {
+        id: "newGame",
+        label: "New game",
+        kind: "danger",
+        description: "Reset the table and start a fresh ball.",
+        run: (ctx) => ctx.game.commands.run("newGame", {}),
+      },
+    ],
+  },
 });

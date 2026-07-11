@@ -31,4 +31,17 @@ export const game = defineGame({
       shakePerSpeed: 0.01,
     },
   },
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "confirm"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Run the frozen circuit again from the start line.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

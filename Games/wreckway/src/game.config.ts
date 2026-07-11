@@ -31,4 +31,17 @@ export const game = defineGame({
     },
     frustum: { far: 560 },
   },
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "startRun"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Wreck the corridor run again from the start.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

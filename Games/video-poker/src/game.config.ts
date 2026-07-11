@@ -17,4 +17,7 @@ export const game = defineGame({
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
   touch: false,
+  settings: {
+    variant: "panel",
+  },
 });

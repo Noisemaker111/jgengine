@@ -17,4 +17,17 @@ export const game = defineGame({
   GameUI,
   camera: { followEntityId: null },
   touch: false,
+  settings: {
+    variant: "sidebar",
+    hideBindings: ["startNewRun"],
+    actions: [
+      {
+        id: "startNewRun",
+        label: "New run",
+        kind: "danger",
+        description: "Abandon this run and climb the spire again from the start.",
+        run: (ctx) => ctx.game.commands.run("startNewRun", {}),
+      },
+    ],
+  },
 });

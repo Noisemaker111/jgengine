@@ -33,4 +33,17 @@ export const game = defineGame({
       view: "chase",
     },
   },
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "confirm"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Back to the terminus start, clock and junctions reset.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

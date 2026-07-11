@@ -17,4 +17,16 @@ export const game = defineGame({
   camera: { followEntityId: null },
   orientation: "landscape",
   touch: false,
+  settings: {
+    variant: "panel",
+    actions: [
+      {
+        id: "rematch",
+        label: "Rematch",
+        kind: "danger",
+        description: "Reset the score and serve a fresh match.",
+        run: (ctx) => ctx.game.commands.run("rematch", {}),
+      },
+    ],
+  },
 });

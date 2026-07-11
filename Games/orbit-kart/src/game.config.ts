@@ -26,4 +26,17 @@ export const game = defineGame({
     topDown: { height: 52, pitch: 1.08, yaw: 0, followSmoothing: 7 },
     frustum: { far: 900 },
   },
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "startRace"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Send every kart back to the starting orbit and begin again.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

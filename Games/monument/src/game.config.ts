@@ -41,4 +41,16 @@ export const game = defineGame({
       zoom: { min: 0.3, max: 2.4, speed: 1 },
     },
   },
+  settings: {
+    variant: "sidebar",
+    actions: [
+      {
+        id: "city.template",
+        label: "New city",
+        kind: "danger",
+        description: "Clear the site and start building from open ground.",
+        run: (ctx) => ctx.game.commands.run("city.template", { templateId: "blank" }),
+      },
+    ],
+  },
 });

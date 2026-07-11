@@ -18,4 +18,17 @@ export const game = defineGame({
   GameUI,
   camera: { followEntityId: null },
   touch: false,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart game",
+        kind: "danger",
+        description: "Reset score, lives, and wave back to the start.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

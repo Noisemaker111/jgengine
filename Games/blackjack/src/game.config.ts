@@ -15,4 +15,7 @@ export const game = defineGame({
   GameUI,
   presentation: "hud",
   touch: false,
+  settings: {
+    variant: "panel",
+  },
 });

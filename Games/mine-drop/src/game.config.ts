@@ -41,4 +41,17 @@ export const game = defineGame({
     perspective: "first",
     firstPerson: { eyeHeight: EYE_HEIGHT, sensitivity: 0.0026, reticle: true, viewmodel: false },
   },
+  settings: {
+    variant: "fullscreen",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "New board",
+        kind: "danger",
+        description: "Reset the minefield and start a fresh board.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
 });

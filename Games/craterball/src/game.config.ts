@@ -17,6 +17,19 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart match",
+        kind: "danger",
+        description: "Reset the court and start a fresh match.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
   environment: Environment,
   renderEntity,
   camera: {

@@ -26,4 +26,7 @@ export const game = defineGame({
       fov: 48,
     },
   },
+  settings: {
+    variant: "sheet",
+  },
 });

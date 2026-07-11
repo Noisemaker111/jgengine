@@ -14,4 +14,23 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  settings: {
+    variant: "sidebar",
+    hideBindings: ["newGame", "undo"],
+    actions: [
+      {
+        id: "newGame",
+        label: "New game",
+        kind: "danger",
+        description: "Scramble a fresh board and start over.",
+        run: (ctx) => ctx.game.commands.run("newGame", {}),
+      },
+      {
+        id: "undo",
+        label: "Undo",
+        description: "Step back to the board before your last slide.",
+        run: (ctx) => ctx.game.commands.run("undo", {}),
+      },
+    ],
+  },
 });

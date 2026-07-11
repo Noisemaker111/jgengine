@@ -30,4 +30,7 @@ export const game = defineGame({
     followEntityId: null,
     topDown: { height: 15, pitch: 1.02, yaw: 0, followSmoothing: 8 },
   },
+  settings: {
+    variant: "sidebar",
+  },
 });

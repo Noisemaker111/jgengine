@@ -28,4 +28,7 @@ export const game = defineGame({
       shakePerSpeed: 0.01,
     },
   },
+  settings: {
+    variant: "sheet",
+  },
 });
