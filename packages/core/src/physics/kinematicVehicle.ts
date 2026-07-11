@@ -104,10 +104,11 @@ export function createKinematicVehicle(
       vz = fz * forwardSpeed + fx * keptLateral;
 
       const drag = dragAt(x, z);
+      let dragDamp = 1;
       if (drag > 0) {
-        const damp = Math.max(0, 1 - drag * dt);
-        vx *= damp;
-        vz *= damp;
+        dragDamp = Math.max(0, 1 - drag * dt);
+        vx *= dragDamp;
+        vz *= dragDamp;
       }
 
       x += vx * dt;
@@ -117,7 +118,7 @@ export function createKinematicVehicle(
         position: [x, y, z],
         heading,
         forwardSpeed: vx * fx + vz * fz,
-        lateralSpeed: keptLateral,
+        lateralSpeed: keptLateral * dragDamp,
         slip,
         surface,
       };
