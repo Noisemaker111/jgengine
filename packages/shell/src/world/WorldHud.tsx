@@ -53,6 +53,7 @@ export function WorldEntityBars({
       canvas.width = pixelW;
       canvas.height = pixelH;
     }
+    camera.updateMatrixWorld();
     collectWorldBarSamples(
       ctx,
       statId,

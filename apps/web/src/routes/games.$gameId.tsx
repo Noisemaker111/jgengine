@@ -142,7 +142,7 @@ function GameStage({ game }: { game: Game }) {
 function PlayPage() {
   const { game } = Route.useLoaderData();
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-dvh flex-col">
       <Header />
       <div className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-4 py-2 sm:px-6">
         <div className="flex min-w-0 items-baseline gap-3">

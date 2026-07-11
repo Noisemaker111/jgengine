@@ -6,6 +6,7 @@ import {
   type SpawnDirectorState,
   type WaveManifest,
 } from "@jgengine/core/ai/spawnDirector";
+import { setPlayControlsActive } from "@jgengine/core/game/controlGate";
 import { createRecordBook, type RecordBook } from "@jgengine/core/game/recordBook";
 import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -132,6 +133,7 @@ export function createRunSession(): RunSession {
 
   function publish(ctx: GameContext): void {
     ctx.game.store.set("run", { ...snapshot });
+    setPlayControlsActive(ctx, snapshot.status === "wave" || snapshot.status === "intermission");
   }
 
   function publishRecords(ctx: GameContext): void {

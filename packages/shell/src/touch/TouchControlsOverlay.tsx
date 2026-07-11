@@ -24,11 +24,11 @@ const RING1_ANGLES: readonly (readonly number[])[] = [[], [40], [16, 64], [12, 4
 const DOCK_BASE_PADDING = 20;
 const UTILITY_ROW_HEIGHT = 28;
 
-function polar(radius: number, deg: number): { right: number; bottom: number } {
+function polar(radius: number, deg: number, buttonSize: number): { right: number; bottom: number } {
   const rad = (deg * Math.PI) / 180;
   return {
-    right: radius * Math.cos(rad) - BUTTON_SIZE / 2,
-    bottom: radius * Math.sin(rad) - BUTTON_SIZE / 2,
+    right: radius * Math.cos(rad) - buttonSize / 2,
+    bottom: radius * Math.sin(rad) - buttonSize / 2,
   };
 }
 
@@ -43,23 +43,24 @@ function ringAngles(count: number, from: number, to: number): number[] {
  * up to three on an inner ring, the rest on an outer ring. Null means too
  * many buttons for an arc — the dock falls back to a wrapping grid.
  */
-export function primaryButtonOffsets(count: number): { right: number; bottom: number }[] | null {
+export function primaryButtonOffsets(count: number, scale = 1): { right: number; bottom: number }[] | null {
   if (count === 0) return [];
   if (count > RING1_CAPACITY + RING2_CAPACITY) return null;
+  const button = BUTTON_SIZE * scale;
   const ring1 = RING1_ANGLES[Math.min(count, RING1_CAPACITY)] ?? [];
-  const offsets = ring1.map((angle) => polar(RING1_RADIUS, angle));
+  const offsets = ring1.map((angle) => polar(RING1_RADIUS * scale, angle, button));
   const rest = count - ring1.length;
   if (rest > 0) {
-    for (const angle of ringAngles(rest, 10, 80)) offsets.push(polar(RING2_RADIUS, angle));
+    for (const angle of ringAngles(rest, 10, 80)) offsets.push(polar(RING2_RADIUS * scale, angle, button));
   }
   return offsets;
 }
 
-function primaryClusterExtent(count: number): number {
+function primaryClusterExtent(count: number, scale = 1): number {
   if (count === 0) return 0;
-  if (count <= RING1_CAPACITY) return RING1_RADIUS + BUTTON_SIZE / 2;
-  if (count <= RING1_CAPACITY + RING2_CAPACITY) return RING2_RADIUS + BUTTON_SIZE / 2;
-  return Math.ceil(count / 4) * (BUTTON_SIZE + 12);
+  if (count <= RING1_CAPACITY) return (RING1_RADIUS + BUTTON_SIZE / 2) * scale;
+  if (count <= RING1_CAPACITY + RING2_CAPACITY) return (RING2_RADIUS + BUTTON_SIZE / 2) * scale;
+  return Math.ceil(count / 4) * (BUTTON_SIZE + 12) * scale;
 }
 
 /**
@@ -67,7 +68,7 @@ function primaryClusterExtent(count: number): number {
  * the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so
  * `HudCanvas` regions never collide with touch controls.
  */
-export function touchDockClearance(scheme: TouchScheme | null): number {
+export function touchDockClearance(scheme: TouchScheme | null, scale = 1): number {
   if (scheme === null) return 0;
   let primary = 0;
   let utility = 0;
@@ -76,8 +77,8 @@ export function touchDockClearance(scheme: TouchScheme | null): number {
     else primary += 1;
   }
   const tallest = Math.max(
-    scheme.joystick !== null ? JOYSTICK_SIZE : 0,
-    primaryClusterExtent(primary),
+    scheme.joystick !== null ? JOYSTICK_SIZE * scale : 0,
+    primaryClusterExtent(primary, scale),
     utility > 0 ? UTILITY_ROW_HEIGHT : 0,
   );
   if (tallest === 0) return 0;
@@ -180,11 +181,13 @@ function joystickDirections(joystick: TouchJoystick, nx: number, ny: number): Se
   return active;
 }
 
-function VirtualJoystick({ joystick, sink }: { joystick: TouchJoystick; sink: TouchCodeSink }) {
+function VirtualJoystick({ joystick, sink, scale = 1 }: { joystick: TouchJoystick; sink: TouchCodeSink; scale?: number }) {
   const baseRef = useRef<HTMLDivElement | null>(null);
   const thumbRef = useRef<HTMLDivElement | null>(null);
   const pointerIdRef = useRef<number | null>(null);
   const activeRef = useRef<Set<string>>(new Set());
+  const size = JOYSTICK_SIZE * scale;
+  const thumbSize = JOYSTICK_THUMB * scale;
 
   const applyVector = (clientX: number, clientY: number) => {
     const base = baseRef.current;
@@ -199,7 +202,7 @@ function VirtualJoystick({ joystick, sink }: { joystick: TouchJoystick; sink: To
       nx /= length;
       ny /= length;
     }
-    const travel = radius - JOYSTICK_THUMB / 2;
+    const travel = radius - thumbSize / 2;
     thumb.style.transform = `translate(${nx * travel}px, ${ny * travel}px)`;
     const next = joystickDirections(joystick, nx, ny);
     for (const action of activeRef.current) {
@@ -222,7 +225,7 @@ function VirtualJoystick({ joystick, sink }: { joystick: TouchJoystick; sink: To
     <div
       ref={baseRef}
       className="pointer-events-auto relative flex touch-none select-none items-center justify-center rounded-full border border-white/20 bg-white/10 backdrop-blur-sm"
-      style={{ width: JOYSTICK_SIZE, height: JOYSTICK_SIZE }}
+      style={{ width: size, height: size }}
       onPointerDown={(event) => {
         if (pointerIdRef.current !== null) return;
         pointerIdRef.current = event.pointerId;
@@ -244,7 +247,7 @@ function VirtualJoystick({ joystick, sink }: { joystick: TouchJoystick; sink: To
       <div
         ref={thumbRef}
         className="rounded-full border border-white/30 bg-white/25"
-        style={{ width: JOYSTICK_THUMB, height: JOYSTICK_THUMB }}
+        style={{ width: thumbSize, height: thumbSize }}
       />
     </div>
   );
@@ -256,9 +259,10 @@ function touchButtonIcon(button: TouchButton): GameIconName | null {
   return iconForAction(button.action);
 }
 
-function TouchActionButton({ button, sink }: { button: TouchButton; sink: TouchCodeSink }) {
+function TouchActionButton({ button, sink, scale = 1 }: { button: TouchButton; sink: TouchCodeSink; scale?: number }) {
   const pointerIdRef = useRef<number | null>(null);
   const icon = touchButtonIcon(button);
+  const size = BUTTON_SIZE * scale;
 
   const releaseIfHeld = () => {
     if (pointerIdRef.current === null) return;
@@ -270,7 +274,8 @@ function TouchActionButton({ button, sink }: { button: TouchButton; sink: TouchC
     <button
       type="button"
       aria-label={button.label}
-      className="pointer-events-auto flex h-14 w-14 touch-none select-none items-center justify-center rounded-full border border-white/25 bg-white/10 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-white/90 backdrop-blur-sm active:border-white/50 active:bg-white/30"
+      style={{ width: size, height: size }}
+      className="pointer-events-auto flex touch-none select-none items-center justify-center rounded-full border border-white/25 bg-white/10 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-white/90 backdrop-blur-sm active:border-white/50 active:bg-white/30"
       onPointerDown={(event) => {
         if (pointerIdRef.current !== null) return;
         pointerIdRef.current = event.pointerId;
@@ -284,7 +289,7 @@ function TouchActionButton({ button, sink }: { button: TouchButton; sink: TouchC
       onPointerCancel={() => releaseIfHeld()}
       onContextMenu={(event) => event.preventDefault()}
     >
-      {icon !== null ? <GameIcon name={icon} size={26} /> : <span className="px-1">{button.label}</span>}
+      {icon !== null ? <GameIcon name={icon} size={Math.round(26 * scale)} /> : <span className="px-1">{button.label}</span>}
     </button>
   );
 }
@@ -321,18 +326,18 @@ function TouchUtilityChip({ button, sink }: { button: TouchButton; sink: TouchCo
   );
 }
 
-function PrimaryButtonCluster({ buttons, sink }: { buttons: readonly TouchButton[]; sink: TouchCodeSink }) {
-  const offsets = primaryButtonOffsets(buttons.length);
+function PrimaryButtonCluster({ buttons, sink, scale = 1 }: { buttons: readonly TouchButton[]; sink: TouchCodeSink; scale?: number }) {
+  const offsets = primaryButtonOffsets(buttons.length, scale);
   if (offsets === null) {
     return (
       <div className="flex max-w-[60%] flex-wrap items-end justify-end gap-3">
         {buttons.map((button) => (
-          <TouchActionButton key={button.action} button={button} sink={sink} />
+          <TouchActionButton key={button.action} button={button} sink={sink} scale={scale} />
         ))}
       </div>
     );
   }
-  const extent = primaryClusterExtent(buttons.length);
+  const extent = primaryClusterExtent(buttons.length, scale);
   return (
     <div className="pointer-events-none relative" style={{ width: extent, height: extent }}>
       {buttons.map((button, index) => {
@@ -343,7 +348,7 @@ function PrimaryButtonCluster({ buttons, sink }: { buttons: readonly TouchButton
             className="absolute"
             style={{ right: offset?.right ?? 0, bottom: offset?.bottom ?? 0 }}
           >
-            <TouchActionButton button={button} sink={sink} />
+            <TouchActionButton button={button} sink={sink} scale={scale} />
           </div>
         );
       })}
@@ -351,7 +356,7 @@ function PrimaryButtonCluster({ buttons, sink }: { buttons: readonly TouchButton
   );
 }
 
-export function TouchControlsDock({ scheme, sink }: { scheme: TouchScheme; sink: TouchCodeSink }) {
+export function TouchControlsDock({ scheme, sink, scale = 1 }: { scheme: TouchScheme; sink: TouchCodeSink; scale?: number }) {
   const primary = scheme.buttons.filter((button) => button.kind !== "utility");
   const utility = scheme.buttons.filter((button) => button.kind === "utility");
   return (
@@ -360,8 +365,8 @@ export function TouchControlsDock({ scheme, sink }: { scheme: TouchScheme; sink:
       style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${DOCK_BASE_PADDING}px)` }}
     >
       <div className="flex items-end justify-between gap-4 px-5">
-        <div>{scheme.joystick !== null ? <VirtualJoystick joystick={scheme.joystick} sink={sink} /> : null}</div>
-        <PrimaryButtonCluster buttons={primary} sink={sink} />
+        <div>{scheme.joystick !== null ? <VirtualJoystick joystick={scheme.joystick} sink={sink} scale={scale} /> : null}</div>
+        <PrimaryButtonCluster buttons={primary} sink={sink} scale={scale} />
       </div>
       {utility.length > 0 ? (
         <div
