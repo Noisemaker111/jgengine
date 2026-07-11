@@ -61,7 +61,7 @@ import {
   type VoxelPlayerBody,
 } from "@jgengine/core/movement/voxelController";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import type { MotionIntentBatch } from "@jgengine/core/runtime/motionIntents";
+import { applyHorizontalImpulses, type MotionIntentBatch } from "@jgengine/core/runtime/motionIntents";
 import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
@@ -827,7 +827,7 @@ function FrameDriver({
       keys.s = tracker.isDown("moveBack");
       keys.a = tracker.isDown("moveLeft");
       keys.d = tracker.isDown("moveRight");
-      keys.shift = tracker.isDown("sprint");
+      keys.shift = tracker.isDown("sprint") && (movement?.canSprint?.(ctx) ?? true);
       keys.space = tracker.isDown("jump");
       const intent = resolveMovementIntent(keys, true);
       const motionBatch = ctx.player.motion.takePending();
@@ -846,6 +846,7 @@ function FrameDriver({
         const solids = cache.set;
         const isSolid = (x: number, y: number, z: number) => solids.has(`${x},${y},${z}`);
         body.velocityY = applyMotionImpulses(body.velocityY, motionBatch);
+        [body.velocityX, body.velocityZ] = applyHorizontalImpulses(body.velocityX, body.velocityZ, motionBatch);
         advanceVoxelPlayer(
           body,
           intent,
@@ -869,6 +870,11 @@ function FrameDriver({
       } else {
         const motion = motionRef.current;
         motion.verticalVelocity = applyMotionImpulses(motion.verticalVelocity, motionBatch);
+        [motion.horizontalVelocityX, motion.horizontalVelocityZ] = applyHorizontalImpulses(
+          motion.horizontalVelocityX,
+          motion.horizontalVelocityZ,
+          motionBatch,
+        );
         const step = advancePlayerMotion(
           motion,
           intent,
@@ -909,6 +915,7 @@ function FrameDriver({
             current: player.position,
             next: [nextX, nextY, nextZ],
             dt: rawDt,
+            ctx,
           };
           const replacement = movement.beforeCommit(frame);
           if (replacement !== undefined) {

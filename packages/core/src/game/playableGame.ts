@@ -502,6 +502,8 @@ export interface PlayerMovementConfig {
   collideObjects?: boolean;
   /** Intercepts each frame's resolved position before the pose commits (and before onTick): return a replacement [x,y,z] to constrain or redirect the step, or nothing to accept it. */
   beforeCommit?: (frame: MovementCommitFrame) => readonly [number, number, number] | undefined | void;
+  /** Gates the built-in sprint (`runSpeedMultiplier`) behind live game state — a stamina stat, an encumbrance check (#282.3). Called each frame while sprint is held; `false` walks. */
+  canSprint?: (ctx: GameContext) => boolean;
 }
 
 /** One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`. */
@@ -510,6 +512,8 @@ export interface MovementCommitFrame {
   current: readonly [number, number, number];
   next: readonly [number, number, number];
   dt: number;
+  /** The live game context (#282.2) — movement rules read stores/stats directly instead of module-level bridge objects. */
+  ctx: GameContext;
 }
 
 export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> {
