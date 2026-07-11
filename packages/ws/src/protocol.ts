@@ -107,16 +107,44 @@ function isAppearance(value: unknown): value is WsAppearance {
   );
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function isPose(value: unknown): value is WsPose {
   return (
     isRecord(value) &&
-    typeof value.x === "number" &&
-    typeof value.y === "number" &&
-    typeof value.z === "number" &&
-    typeof value.rotationY === "number" &&
-    typeof value.rotationPitch === "number" &&
+    isFiniteNumber(value.x) &&
+    isFiniteNumber(value.y) &&
+    isFiniteNumber(value.z) &&
+    isFiniteNumber(value.rotationY) &&
+    isFiniteNumber(value.rotationPitch) &&
     (value.appearance === undefined || isAppearance(value.appearance))
   );
+}
+
+export type WsDecodeFailure = {
+  reason: string;
+  id?: number;
+};
+
+export function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure {
+  if (typeof raw !== "string") return { reason: "Invalid message framing" };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { reason: "Invalid JSON" };
+  }
+  if (!isRecord(parsed)) return { reason: "Invalid message" };
+  const id = typeof parsed.id === "number" ? parsed.id : undefined;
+  if (parsed.v !== WS_PROTOCOL_VERSION) {
+    return { reason: "Protocol version mismatch", id };
+  }
+  if (typeof parsed.t !== "string") {
+    return { reason: "Invalid message type", id };
+  }
+  return { reason: "Malformed message", id };
 }
 
 export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {

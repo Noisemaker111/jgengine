@@ -104,3 +104,45 @@ test("hydrate invokes onInit once per boot before any onNewPlayer", () => {
   runtime.hydrate(input);
   expect(calls).toEqual(["init", "newPlayer"]);
 });
+
+test("tick runs onTick once per world step with player id fan-in", () => {
+  const ticks: Array<{ playerIds: string[]; dt: number }> = [];
+  const runtime = createGameRuntime({
+    gameId: "demo",
+    save: "none",
+    commands: {},
+    loop: {
+      onTick(ctx, dtSeconds) {
+        ticks.push({ playerIds: [...ctx.playerIds], dt: dtSeconds });
+        ctx.setSnapshot({
+          ...ctx.snapshot,
+          server: {
+            ...ctx.snapshot.server,
+            session: {
+              ...ctx.snapshot.server.session,
+              ticks: ((ctx.snapshot.server.session.ticks as number | undefined) ?? 0) + 1,
+            },
+          },
+          revision: ctx.snapshot.revision + 1,
+        });
+      },
+    },
+  });
+
+  let snapshot = runtime.hydrate({
+    gameId: "demo",
+    serverId: "srv_1",
+    serverRow: { entities: [], objects: [], session: {} },
+    playersByUserId: {},
+    chunksByKey: {},
+  });
+  snapshot = runtime.joinPlayer(snapshot, "alice", true);
+  snapshot = runtime.joinPlayer(snapshot, "bob", true);
+  snapshot = runtime.tick(snapshot, 0.05);
+
+  expect(ticks).toHaveLength(1);
+  expect(ticks[0]?.playerIds.sort()).toEqual(["alice", "bob"]);
+  expect(ticks[0]?.dt).toBe(0.05);
+  expect(snapshot.server.session.ticks).toBe(1);
+  expect(snapshot.revision).toBe(3);
+});

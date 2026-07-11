@@ -234,3 +234,114 @@ test("loopback: commands are unreachable before the automatic hello completes me
     await stack.shutdown();
   }
 });
+
+test("loopback: unknown serverId on join fails closed", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    await expect(
+      alice.transport.joinServer({ gameId: "test-game", serverId: "srv-does-not-exist" }),
+    ).rejects.toThrow("Server not found");
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("loopback: createSession without serverId still creates a new server", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const created = await alice.createSession({ gameId: "test-game" });
+    expect(created.serverId.length).toBeGreaterThan(0);
+    expect(created.isNew).toBe(true);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("loopback: disconnect leaves the server and reclaims the slot", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game", serverId });
+
+    const serverUpdates = channel<{ memberUserIds: string[] } | null>();
+    bob.feeds?.subscribeServer(serverId, (view) =>
+      serverUpdates.push(view as { memberUserIds: string[] } | null),
+    );
+    expect((await serverUpdates.next())?.memberUserIds.sort()).toEqual(["alice", "bob"]);
+
+    alice.close();
+    const afterDisconnect = await serverUpdates.next();
+    expect(afterDisconnect?.memberUserIds).toEqual(["bob"]);
+
+    const carol = stack.connect("carol");
+    const rejoined = await carol.transport.joinServer({ gameId: "test-game", serverId });
+    expect(rejoined.serverId).toBe(serverId);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("loopback: decode failure with id replies an error instead of hanging", async () => {
+  const host = createGameHost({ persistence: memoryPersistence() });
+  const router = createHostRouter({ host });
+  try {
+    const replies = channel<string>();
+    const connection = router.connect({
+      send: (data) => replies.push(data),
+      close: () => undefined,
+    });
+    connection.handleRaw(JSON.stringify({ v: 2, t: "hello", id: 42, userId: "alice" }));
+    const raw = await replies.next();
+    const message = JSON.parse(raw) as { t: string; id: number; ok: boolean; reason: string };
+    expect(message).toEqual({
+      v: 1,
+      t: "reply",
+      id: 42,
+      ok: false,
+      reason: "Protocol version mismatch",
+    });
+    connection.close();
+  } finally {
+    router.close();
+    await host.stop();
+  }
+});
+
+test("loopback: concurrent frames on one socket are serialized", async () => {
+  let active = 0;
+  let maxActive = 0;
+  const host = createGameHost({ persistence: memoryPersistence() });
+  const router = createHostRouter({
+    host,
+    authenticate: async ({ userId }) => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      active -= 1;
+      return userId;
+    },
+  });
+  try {
+    const replies = channel<string>();
+    const connection = router.connect({
+      send: (data) => replies.push(data),
+      close: () => undefined,
+    });
+    connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 1, userId: "alice" }));
+    connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 2, userId: "alice" }));
+    const first = JSON.parse(await replies.next()) as { id: number; ok: boolean };
+    const second = JSON.parse(await replies.next()) as { id: number; ok: boolean };
+    expect(first).toEqual({ v: 1, t: "reply", id: 1, ok: true, result: { userId: "alice" } });
+    expect(second).toEqual({ v: 1, t: "reply", id: 2, ok: true, result: { userId: "alice" } });
+    expect(maxActive).toBe(1);
+    connection.close();
+  } finally {
+    router.close();
+    await host.stop();
+  }
+});
