@@ -35,8 +35,7 @@ Judge every engine change against three axes â€” extensibility, modularity,
 
   | Skill | Role |
   | --- | --- |
-  | `jgengine` | Identity, compact actionable intake, selective routing |
-  | `jgengine-foundation` | Project shape, runtime, catalogs, context |
+  | `jgengine` | Main skill: intake, foundation (shape, runtime, catalogs), selective domain routing |
   | `jgengine-world` / `jgengine-procedural` | World runtime and generated environments |
   | `jgengine-combat` / `jgengine-gameplay` | Combat and game systems |
   | `jgengine-multiplayer` | Networking, authority, persistence seams |

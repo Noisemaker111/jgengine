@@ -57,7 +57,7 @@ Under the hood the agent uses `npx jgengine` (create, skills, doctor, llms) and 
 
 It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
-Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header dropdown — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally with the runner served for it in dev, so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine-foundation`'s standalone dev harness) launches one game on its own, no host app required.
+Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header dropdown — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally with the runner served for it in dev, so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine`'s standalone dev harness) launches one game on its own, no host app required.
 
 ## Layering
 

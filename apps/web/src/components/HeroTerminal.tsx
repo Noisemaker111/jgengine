@@ -44,7 +44,7 @@ const LINES: TermLine[] = [
     mode: "print",
     prefix: "◆",
     prefixClass: "text-violet-400",
-    text: "foundation + selected domains wired to @jgengine/core",
+    text: "jgengine skill + selected domains → @jgengine/core",
     textClass: "text-slate-500",
     delay: 750,
   },

@@ -14,7 +14,6 @@ if (existsSync(join(root, "skills"))) {
 const skillsRoot = join(root, ".claude", "skills");
 const requiredSkills = [
   "jgengine",
-  "jgengine-foundation",
   "jgengine-world",
   "jgengine-procedural",
   "jgengine-combat",

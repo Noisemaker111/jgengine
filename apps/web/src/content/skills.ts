@@ -5,7 +5,6 @@ const skillDocs = import.meta.glob<string>("../../../../.claude/skills/{jgengine
 
 export const SKILL_SLUGS = [
   "jgengine",
-  "jgengine-foundation",
   "jgengine-world",
   "jgengine-procedural",
   "jgengine-combat",

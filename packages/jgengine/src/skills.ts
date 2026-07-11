@@ -4,7 +4,6 @@ export const SKILLS_SOURCE = "Noisemaker111/jgengine";
 
 export const GAME_SKILLS = [
   "jgengine",
-  "jgengine-foundation",
   "jgengine-world",
   "jgengine-procedural",
   "jgengine-combat",

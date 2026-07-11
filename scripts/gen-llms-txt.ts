@@ -8,19 +8,18 @@ import { extractPackageSurface, type ApiPackage } from "./apiSurface";
 const REPO_URL = "https://github.com/Noisemaker111/jgengine";
 const DOCS_URL = "https://jgengine.com";
 const MAIN_GUIDE = ".claude/skills/jgengine/SKILL.md";
-const FOUNDATION_GUIDE = ".claude/skills/jgengine-foundation/SKILL.md";
 
 const PACKAGE_GUIDES: Record<string, readonly string[]> = {
-  core: [MAIN_GUIDE, FOUNDATION_GUIDE, ".claude/skills/jgengine-gameplay/SKILL.md", ".claude/skills/jgengine-combat/SKILL.md", ".claude/skills/jgengine-combat/reference.md", ".claude/skills/jgengine-world/SKILL.md", ".claude/skills/jgengine-world/reference.md", ".claude/skills/jgengine-procedural/SKILL.md", ".claude/skills/jgengine-procedural/reference.md", ".claude/skills/jgengine-foundation/reference-cartridge.md"],
-  ws: [MAIN_GUIDE, FOUNDATION_GUIDE, ".claude/skills/jgengine-multiplayer/SKILL.md", ".claude/skills/jgengine-multiplayer/reference.md"],
-  sql: [MAIN_GUIDE, FOUNDATION_GUIDE, ".claude/skills/jgengine-multiplayer/SKILL.md", ".claude/skills/jgengine-multiplayer/reference.md"],
-  react: [MAIN_GUIDE, FOUNDATION_GUIDE, ".claude/skills/jgengine-ui/SKILL.md", ".claude/skills/jgengine-ui/reference.md"],
-  convex: [MAIN_GUIDE, FOUNDATION_GUIDE, ".claude/skills/jgengine-multiplayer/SKILL.md", ".claude/skills/jgengine-multiplayer/reference.md"],
-  node: [MAIN_GUIDE, FOUNDATION_GUIDE, ".claude/skills/jgengine-multiplayer/SKILL.md", ".claude/skills/jgengine-multiplayer/reference.md"],
-  shell: [MAIN_GUIDE, FOUNDATION_GUIDE, ".claude/skills/jgengine-ui/SKILL.md", ".claude/skills/jgengine-ui/reference.md", ".claude/skills/jgengine-world/SKILL.md", ".claude/skills/jgengine-world/reference.md", ".claude/skills/jgengine-foundation/reference-cartridge.md"],
-  assets: [MAIN_GUIDE, FOUNDATION_GUIDE, ".claude/skills/jgengine-assets/SKILL.md"],
-  github: [MAIN_GUIDE, FOUNDATION_GUIDE],
-  jgengine: [MAIN_GUIDE, FOUNDATION_GUIDE],
+  core: [MAIN_GUIDE, ".claude/skills/jgengine-gameplay/SKILL.md", ".claude/skills/jgengine-combat/SKILL.md", ".claude/skills/jgengine-combat/reference.md", ".claude/skills/jgengine-world/SKILL.md", ".claude/skills/jgengine-world/reference.md", ".claude/skills/jgengine-procedural/SKILL.md", ".claude/skills/jgengine-procedural/reference.md", ".claude/skills/jgengine/reference-cartridge.md"],
+  ws: [MAIN_GUIDE, ".claude/skills/jgengine-multiplayer/SKILL.md", ".claude/skills/jgengine-multiplayer/reference.md"],
+  sql: [MAIN_GUIDE, ".claude/skills/jgengine-multiplayer/SKILL.md", ".claude/skills/jgengine-multiplayer/reference.md"],
+  react: [MAIN_GUIDE, ".claude/skills/jgengine-ui/SKILL.md", ".claude/skills/jgengine-ui/reference.md"],
+  convex: [MAIN_GUIDE, ".claude/skills/jgengine-multiplayer/SKILL.md", ".claude/skills/jgengine-multiplayer/reference.md"],
+  node: [MAIN_GUIDE, ".claude/skills/jgengine-multiplayer/SKILL.md", ".claude/skills/jgengine-multiplayer/reference.md"],
+  shell: [MAIN_GUIDE, ".claude/skills/jgengine-ui/SKILL.md", ".claude/skills/jgengine-ui/reference.md", ".claude/skills/jgengine-world/SKILL.md", ".claude/skills/jgengine-world/reference.md", ".claude/skills/jgengine/reference-cartridge.md"],
+  assets: [MAIN_GUIDE, ".claude/skills/jgengine-assets/SKILL.md"],
+  github: [MAIN_GUIDE],
+  jgengine: [MAIN_GUIDE],
 };
 const PACKAGES = Object.keys(PACKAGE_GUIDES);
 

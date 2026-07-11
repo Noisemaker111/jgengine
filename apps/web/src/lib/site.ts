@@ -8,8 +8,7 @@ export const ENTRY_PROMPT = "Make a game that ... with jgengine";
 export const INSTALL_CMD = ENTRY_PROMPT;
 
 export const SKILL_GUIDE: Record<string, string> = {
-  jgengine: "The intake and router: a short numbered build blueprint, followed by only the engine domains the work needs.",
-  "jgengine-foundation": "Project shape, defineGame, GameContext, catalogs, lifecycle, state, and input.",
+  jgengine: "Main skill: intake, foundation (defineGame, context, catalogs), and selective domain routing.",
   "jgengine-world": "World construction, scenes, movement, interaction, cameras, maps, and environments.",
   "jgengine-procedural": "Procedural terrain, water, weather, buildings, vegetation, voxels, and generated worlds.",
   "jgengine-combat": "Combat, abilities, targeting, projectiles, health, loot, gear, and action systems.",
