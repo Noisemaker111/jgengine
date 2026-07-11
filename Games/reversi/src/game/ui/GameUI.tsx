@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 
@@ -79,6 +80,12 @@ export function GameUI(): React.ReactElement | null {
       <HudPanel id="records" anchor="top-right" compact="chip" chip="Records">
         <Card>
           <RecordsPanel app={app} />
+        </Card>
+      </HudPanel>
+
+      <HudPanel id="settings" anchor="top-right" order={-1} compact="keep">
+        <Card>
+          <SettingsTrigger className="flex h-6 w-6 items-center justify-center text-[#f3eede]" />
         </Card>
       </HudPanel>
 

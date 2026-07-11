@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 
+import { SettingsTrigger } from "@jgengine/react";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { useGame } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";

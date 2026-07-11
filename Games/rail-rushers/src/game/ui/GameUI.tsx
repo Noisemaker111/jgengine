@@ -36,35 +36,35 @@ export function GameUI() {
   if (controller === undefined) return null;
   const snapshot = controller.snapshot();
 
-  if (snapshot.phase === "start") {
-    return <StartScreen deadlineSeconds={snapshot.session.deadlineSeconds} onStart={() => commands.run("confirm", undefined)} />;
-  }
-
-  if (snapshot.phase === "finished") {
-    return (
-      <EndScreen outcome={snapshot.session.outcome} session={snapshot.session} onRestart={() => commands.run("restart", undefined)} />
-    );
-  }
-
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between gap-3 p-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <JunctionIndicator session={snapshot.session} />
-        <div className="flex flex-col items-end gap-2">
-          <ClockRace session={snapshot.session} />
-          <DispatcherDiagram
-            session={snapshot.session}
-            now={snapshot.now}
-            expanded={expanded}
-            onToggleExpand={() => setExpanded((value) => !value)}
-            onThrowJunction={(nodeId) => commands.run("throwJunction", { nodeId })}
-          />
+    <>
+      <SettingsGear />
+
+      {snapshot.phase === "start" ? (
+        <StartScreen deadlineSeconds={snapshot.session.deadlineSeconds} onStart={() => commands.run("confirm", undefined)} />
+      ) : snapshot.phase === "finished" ? (
+        <EndScreen outcome={snapshot.session.outcome} session={snapshot.session} onRestart={() => commands.run("restart", undefined)} />
+      ) : (
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between gap-3 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <JunctionIndicator session={snapshot.session} />
+            <div className="flex flex-col items-end gap-2">
+              <ClockRace session={snapshot.session} />
+              <DispatcherDiagram
+                session={snapshot.session}
+                now={snapshot.now}
+                expanded={expanded}
+                onToggleExpand={() => setExpanded((value) => !value)}
+                onThrowJunction={(nodeId) => commands.run("throwJunction", { nodeId })}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <TelegraphTicker entries={snapshot.telegraph} />
+            <PumpMeter session={snapshot.session} />
+          </div>
         </div>
-      </div>
-      <div className="flex flex-col items-center gap-2">
-        <TelegraphTicker entries={snapshot.telegraph} />
-        <PumpMeter session={snapshot.session} />
-      </div>
-    </div>
+      )}
+    </>
   );
 }

@@ -1,12 +1,17 @@
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { createRunController, type RunController } from "./game/rail/controller";
+import { createRunController, type RunController, type RunPhase } from "./game/rail/controller";
 import { JUNCTION_NODE_IDS } from "./game/rail/network";
 import { CONTROLLER_STORE_KEY as CONTROLLER_KEY } from "./game/rail/storeKeys";
 import { setupWorld, spawnMovers } from "./game/world/setup";
 
 const NORMAL_LANTERN = "#386641";
 const REVERSE_LANTERN = "#bc4749";
+
+function syncPhase(ctx: GameContext, phase: RunPhase): void {
+  setGamePhase(ctx, phase === "racing" ? "playing" : phase === "start" ? "menu" : "ended");
+}
 
 export function onInit(ctx: GameContext): void {
   const previous = ctx.game.store.get(CONTROLLER_KEY) as RunController | undefined;
@@ -15,6 +20,7 @@ export function onInit(ctx: GameContext): void {
   const controller = createRunController((x, z) => ctx.world.groundHeightAt(x, z));
   controller.attach();
   ctx.game.store.set(CONTROLLER_KEY, controller);
+  syncPhase(ctx, controller.snapshot().phase);
 
   if (!ctx.game.commands.has("confirm")) {
     ctx.game.commands.define<undefined>("confirm", {
@@ -48,6 +54,7 @@ export function onTick(ctx: GameContext, dt: number): void {
 
   controller.tick(dt);
   const snapshot = controller.snapshot();
+  syncPhase(ctx, snapshot.phase);
 
   ctx.scene.entity.setPose(ctx.player.userId, {
     position: snapshot.playerPose.position,
