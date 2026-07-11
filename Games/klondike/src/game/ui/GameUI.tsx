@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
+import { actionLabel } from "@jgengine/core/input/actionBindings";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 
+import { keybinds } from "../keybinds";
 import { SUITS, type Card, type CardSource, type MoveTarget } from "../klondike/engine";
 import { shareUrl } from "../seed";
 import { canAutoComplete, STORE_KEY, type KlondikeSession } from "../session";
@@ -16,6 +18,10 @@ const FELT = "radial-gradient(120% 90% at 50% 0%,#1c7a48 0%,#136437 42%,#0c4a29 
 
 function readSession(ctx: GameContext): KlondikeSession | null {
   return (ctx.game.store.get(STORE_KEY) as KlondikeSession | undefined) ?? null;
+}
+
+function kb(action: string): string | undefined {
+  return actionLabel(keybinds, action) ?? undefined;
 }
 
 function formatTime(ms: number): string {
@@ -270,8 +276,8 @@ export function GameUI(): ReactNode {
   });
 
   return (
+    <div style={{ position: "absolute", inset: 0, background: FELT }}>
     <HudCanvas layout={layout} className="select-none overflow-hidden">
-      <div style={{ position: "absolute", inset: 0, background: FELT }} />
       <div
         style={{
           position: "absolute",
@@ -281,10 +287,10 @@ export function GameUI(): ReactNode {
           paddingBottom: 76,
           display: "flex",
           justifyContent: "center",
-          pointerEvents: "auto",
+          pointerEvents: "none",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: gap * 1.6, padding: `0 ${gap}px`, maxWidth: metrics.w * 7 + gap * 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: gap * 1.6, padding: `0 ${gap}px`, maxWidth: metrics.w * 7 + gap * 8, pointerEvents: "auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: gap * 2, flexWrap: "wrap" }}>
             <div style={{ display: "flex", gap }}>
               {stockPile}
@@ -316,12 +322,12 @@ export function GameUI(): ReactNode {
       </HudPanel>
 
       <HudPanel id="controls" anchor="top-right" compact="chip" chip="Menu">
-        <div style={{ ...panelStyle, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", maxWidth: 340 }}>
-          <Btn onClick={() => commands.run("newDeal", {})}>New</Btn>
-          <Btn onClick={() => commands.run("dailyDeal", {})}>Daily</Btn>
-          <Btn onClick={() => commands.run("restart", {})}>Restart</Btn>
-          <Btn onClick={() => commands.run("toggleDrawMode", {})}>Draw {state.drawMode}</Btn>
-          <Btn onClick={() => commands.run("undo", {})} disabled={session.history.length === 0 || won}>
+        <div style={{ ...panelStyle, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", maxWidth: 360 }}>
+          <Btn badge={kb("newDeal")} onClick={() => commands.run("newDeal", {})}>New</Btn>
+          <Btn badge={kb("dailyDeal")} onClick={() => commands.run("dailyDeal", {})}>Daily</Btn>
+          <Btn badge={kb("restart")} onClick={() => commands.run("restart", {})}>Restart</Btn>
+          <Btn badge={kb("toggleDrawMode")} onClick={() => commands.run("toggleDrawMode", {})}>Draw {state.drawMode}</Btn>
+          <Btn badge={kb("undo")} onClick={() => commands.run("undo", {})} disabled={session.history.length === 0 || won}>
             Undo
           </Btn>
           {showAuto ? (
@@ -351,6 +357,7 @@ export function GameUI(): ReactNode {
 
       {won ? <WinOverlay session={session} onNew={() => commands.run("newDeal", {})} onDaily={() => commands.run("dailyDeal", {})} onShare={share} copied={copied} /> : null}
     </HudCanvas>
+    </div>
   );
 }
 
@@ -373,7 +380,7 @@ function Stat({ label, value, muted }: { label: string; value: string; muted?: b
   );
 }
 
-function Btn({ children, onClick, disabled, tone }: { children: ReactNode; onClick: () => void; disabled?: boolean; tone?: "primary" }): ReactNode {
+function Btn({ children, onClick, disabled, tone, badge }: { children: ReactNode; onClick: () => void; disabled?: boolean; tone?: "primary"; badge?: string }): ReactNode {
   const primary = tone === "primary";
   return (
     <button
@@ -382,6 +389,9 @@ function Btn({ children, onClick, disabled, tone }: { children: ReactNode; onCli
       disabled={disabled}
       style={{
         appearance: "none",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
         border: primary ? "1px solid rgba(255,230,140,0.7)" : "1px solid rgba(230,198,90,0.3)",
         borderRadius: 9,
         padding: "6px 12px",
@@ -396,7 +406,24 @@ function Btn({ children, onClick, disabled, tone }: { children: ReactNode; onCli
         transition: "background 0.15s",
       }}
     >
-      {children}
+      <span>{children}</span>
+      {badge !== undefined ? (
+        <kbd
+          style={{
+            fontSize: 10,
+            fontWeight: 800,
+            lineHeight: 1,
+            padding: "2px 5px",
+            borderRadius: 5,
+            fontFamily: "ui-monospace, SFMono-Regular, monospace",
+            color: primary ? "#241c04" : "rgba(240,235,215,0.85)",
+            background: primary ? "rgba(36,28,4,0.16)" : "rgba(255,255,255,0.09)",
+            border: primary ? "1px solid rgba(36,28,4,0.28)" : "1px solid rgba(230,198,90,0.32)",
+          }}
+        >
+          {badge}
+        </kbd>
+      ) : null}
     </button>
   );
 }

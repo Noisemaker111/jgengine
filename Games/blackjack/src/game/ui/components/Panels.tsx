@@ -20,13 +20,20 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 export function BankPanel({ state }: { state: TableState }) {
+  const staked = state.hands.length > 0 ? state.hands.reduce((sum, hand) => sum + hand.bet, 0) : state.bet;
   return (
     <div className="min-w-[172px] rounded-xl border border-amber-300/20 bg-emerald-950/75 px-4 py-3 shadow-xl backdrop-blur">
-      <div className="flex items-center gap-2.5">
-        <ChipDot />
-        <div className="flex flex-col leading-tight">
-          <span className="text-[10px] uppercase tracking-widest text-emerald-100/60">Chip Bank</span>
-          <span className="text-2xl font-black tabular-nums text-amber-100">{formatChips(state.bank)}</span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <ChipDot />
+          <div className="flex flex-col leading-tight">
+            <span className="text-[10px] uppercase tracking-widest text-emerald-100/60">Chip Bank</span>
+            <span className="text-2xl font-black tabular-nums text-amber-100">{formatChips(state.bank)}</span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end leading-tight">
+          <span className="text-[10px] uppercase tracking-widest text-emerald-100/60">Bet</span>
+          <span className="text-xl font-black tabular-nums text-amber-200">{formatChips(staked)}</span>
         </div>
       </div>
       <div className="mt-2 grid grid-cols-3 gap-2 border-t border-emerald-300/10 pt-2">

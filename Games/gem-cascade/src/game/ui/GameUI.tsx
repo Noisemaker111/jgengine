@@ -12,6 +12,104 @@ import { useGameState } from "./useGameState";
 
 const CREDIT = "Lineage: Shariki (Eugene Alemzhin, 1994) · Bejeweled (PopCap, 2001)";
 
+const GC_STYLES = `
+.gc-board {
+  touch-action: none;
+  user-select: none;
+}
+.gc-gem {
+  position: absolute;
+  transition:
+    left 0.2s ease,
+    top 0.26s cubic-bezier(0.34, 1.12, 0.62, 1),
+    transform 0.12s ease;
+  will-change: left, top;
+}
+.gc-gem.gc-selected {
+  transform: translateY(-7%) scale(1.05);
+  z-index: 6;
+}
+.gc-gem-inner {
+  position: absolute;
+  inset: 6%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.55));
+}
+.gc-gem-inner.gc-drop {
+  animation: gc-drop 0.36s cubic-bezier(0.28, 0.9, 0.45, 1.18);
+}
+.gc-gem-inner.gc-clearing {
+  animation: gc-clear 0.28s ease-in forwards;
+}
+@keyframes gc-drop {
+  0% { transform: translateY(-165%); opacity: 0; }
+  55% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes gc-clear {
+  0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0)); }
+  35% { transform: scale(1.3); filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.9)) brightness(1.7); }
+  100% { transform: scale(0.08); opacity: 0; filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.75)) brightness(2); }
+}
+.gc-cell-hi {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 22%;
+}
+.gc-selected-ring {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.92),
+    inset 0 0 18px rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  z-index: 4;
+}
+.gc-hint-ring {
+  z-index: 4;
+  animation: gc-hint 0.85s ease-in-out infinite;
+}
+@keyframes gc-hint {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 214, 102, 0.45); }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(255, 214, 102, 0.95),
+      0 0 20px rgba(255, 214, 102, 0.7);
+  }
+}
+.gc-float {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  animation: gc-float 0.95s ease-out forwards;
+}
+@keyframes gc-float {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.7); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -165%) scale(1.12); }
+}
+.gc-callout {
+  position: absolute;
+  pointer-events: none;
+  z-index: 11;
+  animation: gc-callout 1s ease-out forwards;
+}
+@keyframes gc-callout {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-6deg); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1.18) rotate(2deg); }
+  70% { opacity: 1; transform: translate(-50%, -78%) scale(1.05); }
+  100% { opacity: 0; transform: translate(-50%, -128%) scale(1); }
+}
+.gc-toast {
+  animation: gc-toast 2.4s ease forwards;
+}
+@keyframes gc-toast {
+  0% { opacity: 0; transform: translateY(-10px); }
+  12%, 78% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+`;
+
 function pct(i: number, size: number): string {
   return `${(i / size) * 100}%`;
 }
@@ -370,6 +468,7 @@ export function GameUI() {
 
   return (
     <HudCanvas layout={layout} className="select-none overflow-hidden text-slate-100">
+      <style>{GC_STYLES}</style>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,#241a3d_0%,#140f24_45%,#07050d_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(168,85,247,0.10),transparent_60%)]" />
 

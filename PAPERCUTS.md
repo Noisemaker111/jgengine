@@ -163,3 +163,11 @@ building klondike/video-poker card UIs → @jgengine/react ships no playing-card
 2026-07-10T23:23:57.038Z — opus-4.8 — Claude
 
 building sokoban level-select → game/levelSequence has no jump-to-level select() and tracks no per-level stars/completion; campaign frontier had to be reseeded from recordBook records
+
+2026-07-10T23:49:11.581Z — fable-5 — Claude
+
+judging game screenshots → custom classes in a game's src/index.css silently never load in the dev runner/shoot (only standalone main.tsx imports it); games styled with custom CSS render as raw text — only Tailwind utilities from the dev app @source scan work
+
+2026-07-10T23:58:14.583Z — opus-4.8 — Claude
+
+klondike HUD invisible in shots → HudCanvas renders its region divs before children, so an opaque full-screen child (felt background) silently paints over every portaled HudPanel; backgrounds must live behind HudCanvas, not inside it

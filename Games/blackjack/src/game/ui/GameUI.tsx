@@ -44,29 +44,30 @@ export function GameUI() {
   };
 
   return (
-    <HudCanvas layout={layout} className="h-full w-full select-none overflow-hidden text-emerald-50">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_36%,#1f7a52_0%,#125537_46%,#082a1e_100%)]" />
-      <div
-        className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-5 px-3 pt-4"
-        style={{ paddingBottom: compact ? 232 : 190 }}
-      >
-        <DealerArea dealer={state.dealer} holeShown={state.dealerHoleShown} size={size} />
-        <CenterBanner state={state} />
-        <PlayerArea hands={state.hands} activeHand={state.activeHand} phase={state.phase} size={size} />
-      </div>
+    <div className="absolute inset-0 overflow-hidden bg-[radial-gradient(ellipse_at_50%_36%,#1f7a52_0%,#125537_46%,#082a1e_100%)]">
+      <HudCanvas layout={layout} className="select-none text-emerald-50">
+        <div
+          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-5 px-3 pt-4"
+          style={{ paddingBottom: compact ? 232 : 190 }}
+        >
+          <DealerArea dealer={state.dealer} holeShown={state.dealerHoleShown} size={size} />
+          <CenterBanner state={state} />
+          <PlayerArea hands={state.hands} activeHand={state.activeHand} phase={state.phase} size={size} />
+        </div>
 
-      <HudPanel id="bank" anchor="top-left" compact="keep">
-        <BankPanel state={state} />
-      </HudPanel>
-      <HudPanel id="shoe" anchor="top-right" compact="keep">
-        <ShoePanel state={state} />
-      </HudPanel>
-      <HudPanel id="history" anchor="right" compact="chip" chip="History">
-        <HistoryPanel state={state} />
-      </HudPanel>
-      <HudPanel id="dock" anchor="bottom" compact="keep" interactive>
-        <Dock state={state} run={run} />
-      </HudPanel>
-    </HudCanvas>
+        <HudPanel id="bank" anchor="top-left" compact="keep">
+          <BankPanel state={state} />
+        </HudPanel>
+        <HudPanel id="shoe" anchor="top-right" compact="keep">
+          <ShoePanel state={state} />
+        </HudPanel>
+        <HudPanel id="history" anchor="right" compact="chip" chip="History">
+          <HistoryPanel state={state} />
+        </HudPanel>
+        <HudPanel id="dock" anchor="bottom" compact="keep" interactive>
+          <Dock state={state} run={run} />
+        </HudPanel>
+      </HudCanvas>
+    </div>
   );
 }
