@@ -147,3 +147,7 @@ surveying all 37 games' environments in one scout → worker died on API server 
 2026-07-10T23:51:04.164Z — sonnet — Claude
 
 running repo-root check-types → its --filter '*' pass emitted no Games/* lines, so the repo-wide gate may silently skip all games; per-game tsgo runs were needed for a direct signal
+
+2026-07-11T00:07:26.896Z — sonnet — Claude
+
+shipping via worker chain → three consecutive workers returned garbled/placeholder final messages (survey, remap, ship), each needed manual state inspection and takeover

@@ -35,7 +35,7 @@ export interface TerrainMaterialRegion {
   center: EnvironmentVec2;
   radius: number;
   /** Named palette preset for this region (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); overridden field-by-field by `colors`. */
-  material?: string;
+  material?: TerrainMaterial;
   colors?: TerrainColors;
   /** Blend-ring width outside `radius` back to the surrounding palette; default `radius * 0.5`. */
   falloff?: number;
