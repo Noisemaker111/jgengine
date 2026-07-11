@@ -42,6 +42,7 @@ export type HydrateInput = {
   serverRow: RuntimeServerRow;
   playersByUserId: Record<string, RuntimePlayerRow>;
   chunksByKey: Record<string, RuntimeChunkRow>;
+  revision?: number;
 };
 
 export type GameRuntime = {
@@ -78,6 +79,7 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
         server: input.serverRow,
         players: input.playersByUserId,
         chunks: input.chunksByKey,
+        revision: input.revision,
       });
       if (loop?.onInit && !initialized) {
         initialized = true;

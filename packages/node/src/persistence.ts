@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import type {
@@ -125,6 +125,19 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
         }),
       );
       await Promise.all(staged.map(({ temp, final }) => rename(temp, final)));
+    },
+    async deleteChunks(serverId, chunkKeys) {
+      await ensureDirs();
+      const serverDir = join(chunksDir, enc(serverId));
+      await Promise.all(
+        chunkKeys.map(async (chunkKey) => {
+          try {
+            await unlink(join(serverDir, `${enc(chunkKey)}.json`));
+          } catch (error) {
+            if (!isMissing(error)) throw error;
+          }
+        }),
+      );
     },
     async loadFeed({ serverId, action }) {
       await ensureDirs();

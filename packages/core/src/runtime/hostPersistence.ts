@@ -261,6 +261,7 @@ export type HostPersistence = {
   saveProfile: (record: PlayerProfileRecord) => Promise<void>;
   loadChunks: (serverId: string) => Promise<WorldChunkRecord[]>;
   saveChunks: (serverId: string, chunks: WorldChunkRecord[]) => Promise<void>;
+  deleteChunks: (serverId: string, chunkKeys: string[]) => Promise<void>;
   loadFeed: (args: { serverId: string; action: string }) => Promise<unknown[]>;
   appendFeed: (args: { serverId: string; action: string; entry: unknown }) => Promise<unknown[]>;
   applyLeaderboardIncrements: (gameId: string, entries: LeaderboardIncrement[]) => Promise<void>;
