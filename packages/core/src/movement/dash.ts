@@ -30,11 +30,34 @@ export function dashEase(t: number): number {
   return 1 - (1 - clamped) * (1 - clamped);
 }
 
-export function dashOffset(config: DashConfig, dir: DashDirection, elapsedMs: number): [number, number, number] {
+export function dashDisplacement(
+  config: DashConfig,
+  dir: DashDirection,
+  elapsedMs: number,
+): [number, number, number] {
   const traveled = dashEase(elapsedMs / config.durationMs) * config.distance;
   const len = Math.hypot(dir.x, dir.z);
   if (len === 0) return [0, 0, 0];
   return [(dir.x / len) * traveled, 0, (dir.z / len) * traveled];
+}
+
+export function dashOffset(
+  config: DashConfig,
+  dir: DashDirection,
+  elapsedMs: number,
+): [number, number, number] {
+  return dashDisplacement(config, dir, elapsedMs);
+}
+
+export function dashFrameDelta(
+  config: DashConfig,
+  dir: DashDirection,
+  previousElapsedMs: number,
+  elapsedMs: number,
+): [number, number, number] {
+  const previous = dashDisplacement(config, dir, previousElapsedMs);
+  const current = dashDisplacement(config, dir, elapsedMs);
+  return [current[0] - previous[0], current[1] - previous[1], current[2] - previous[2]];
 }
 
 export interface DashState {
@@ -44,6 +67,7 @@ export interface DashState {
   staminaFraction(): number;
   isDashing(nowMs: number): boolean;
   isInvulnerable(nowMs: number): boolean;
+  displacement(nowMs: number): [number, number, number];
   offset(nowMs: number): [number, number, number];
 }
 
@@ -57,6 +81,12 @@ export function createDashState(config: DashConfig): DashState {
     if (dashStartMs === null) return null;
     const dt = nowMs - dashStartMs;
     return dt >= 0 && dt < config.durationMs ? dt : null;
+  }
+
+  function displacementAt(nowMs: number): [number, number, number] {
+    const dt = elapsed(nowMs);
+    if (dt === null) return [0, 0, 0];
+    return dashDisplacement(config, dashDir, dt);
   }
 
   return {
@@ -87,10 +117,11 @@ export function createDashState(config: DashConfig): DashState {
       const dt = elapsed(nowMs);
       return dt !== null && iframeActive(config, dt);
     },
+    displacement(nowMs) {
+      return displacementAt(nowMs);
+    },
     offset(nowMs) {
-      const dt = elapsed(nowMs);
-      if (dt === null) return [0, 0, 0];
-      return dashOffset(config, dashDir, dt);
+      return displacementAt(nowMs);
     },
   };
 }

@@ -321,8 +321,18 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       const origin = shotOrigin(input.from, input.aim) ?? [0, 0, 0];
       if (isBallistic(input.via)) {
         const at = ballisticSettlePoint(input);
-        deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: false });
-        return { status: "settled", shotId, at, hits: [] };
+        const splashRadius = itemStat(input.via, "explosion.radius");
+        const radius = splashRadius ?? BASE_HIT_RADIUS;
+        const hits = deps.effects.applyEffect({
+          from: input.from,
+          effect: input.effect,
+          via: input.via,
+          at,
+          radius,
+          falloff: splashRadius === null ? "none" : "linear",
+        });
+        deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: hits.length > 0 });
+        return { status: "settled", shotId, at, hits };
       }
       const { visible } = predictHits(input);
       const entityHits = visible.filter(isEntityHit);

@@ -163,8 +163,11 @@ describe("projectile system", () => {
     });
   });
 
-  test("ballistic settle returns a landing point with no hits", () => {
-    const { projectiles, stats } = createRange({ enemy: target([0, 0, 10]) });
+  test("ballistic settle applies splash damage inside explosion.radius", () => {
+    const { projectiles, stats } = createRange({
+      near: target([0, 0, 10]),
+      far: target([0, 0, 40]),
+    });
     const shotId = projectiles.fireProjectile({
       from: "shooter",
       via: { item: "grenade" },
@@ -174,11 +177,36 @@ describe("projectile system", () => {
     const settle = projectiles.settleProjectile(shotId);
     expect(settle.status).toBe("settled");
     if (settle.status !== "settled") return;
-    expect(settle.hits).toEqual([]);
     expect(settle.at[0]).toBeCloseTo(0);
     expect(settle.at[1]).toBeCloseTo(0);
     expect(settle.at[2]).toBeGreaterThan(5);
-    expect(stats["enemy"]!["health"]!.current).toBe(100);
+    expect(settle.hits.some((hit) => hit.instanceId === "near")).toBe(true);
+    expect(stats["near"]!["health"]!.current).toBeLessThan(100);
+    expect(stats["far"]!["health"]!.current).toBe(100);
+  });
+
+  test("ballistic settle without explosion.radius still hits entities at the landing point", () => {
+    WEAPON_STATS["fuse-orb"] = {
+      damage: 20,
+      "projectile.speed": 10,
+      "projectile.gravity": 0,
+      "projectile.fuseTime": 1,
+    };
+    const landing: [number, number, number] = [0, 0, 10];
+    const { projectiles, stats } = createRange({ enemy: target(landing) });
+    const shotId = projectiles.fireProjectile({
+      from: "shooter",
+      via: { item: "fuse-orb" },
+      aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
+      effect: "damage",
+    });
+    const settle = projectiles.settleProjectile(shotId);
+    expect(settle.status).toBe("settled");
+    if (settle.status !== "settled") return;
+    expect(settle.at[2]).toBeCloseTo(10);
+    expect(settle.hits).toHaveLength(1);
+    expect(settle.hits[0]!.instanceId).toBe("enemy");
+    expect(stats["enemy"]!["health"]!.current).toBe(80);
   });
 });
 

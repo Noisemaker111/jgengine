@@ -61,7 +61,7 @@ export function resolveDefense(input: ResolveDefenseInput): DefenseResolution {
 export interface DefensiveWindow {
   open(nowMs: number): void;
   close(): void;
-  isOpen(): boolean;
+  isOpen(nowMs: number): boolean;
   evaluate(nowMs: number, attack: AttackMeta): DefenseResolution;
   isInvulnerable(nowMs: number): boolean;
 }
@@ -72,7 +72,10 @@ export function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveW
   function elapsed(nowMs: number): number | null {
     if (openedAt === null) return null;
     const dt = nowMs - openedAt;
-    if (dt < 0 || dt >= totalWindowMs(config)) return null;
+    if (dt < 0 || dt >= totalWindowMs(config)) {
+      openedAt = null;
+      return null;
+    }
     return dt;
   }
 
@@ -83,8 +86,8 @@ export function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveW
     close() {
       openedAt = null;
     },
-    isOpen() {
-      return openedAt !== null;
+    isOpen(nowMs) {
+      return elapsed(nowMs) !== null;
     },
     evaluate(nowMs, attack) {
       const dt = elapsed(nowMs);

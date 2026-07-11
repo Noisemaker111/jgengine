@@ -25,6 +25,10 @@ export interface SpatialGridOptions {
 export interface SpatialApiOptions {
   resolvePosition: (instanceId: string) => EntityPosition | undefined;
   candidates: () => string[];
+  /**
+   * When omitted, `hasLineOfSight` always returns true for known entities (open-field bypass).
+   * Wire a wall/collision test here for combat LoS; `true` means the segment is blocked.
+   */
   occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
   /**
    * Opt-in broadphase acceleration for `inRadius`/`queryArc` over large candidate sets. When set,
