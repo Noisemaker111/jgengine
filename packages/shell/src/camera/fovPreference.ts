@@ -2,7 +2,7 @@ import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
 
 export const PLAYER_FOV_DEFAULT = CAMERA_FRUSTUM_DEFAULTS.fov;
 export const PLAYER_FOV_MIN = 40;
-export const PLAYER_FOV_MAX = 100;
+export const PLAYER_FOV_MAX = 120;
 export const PLAYER_FOV_STORAGE_KEY = "jgengine:player-fov";
 
 export interface PlayerFovBounds {

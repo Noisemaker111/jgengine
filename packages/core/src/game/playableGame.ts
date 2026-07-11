@@ -1,5 +1,6 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { TouchControlsConfig } from "../input/touchScheme";
+import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
@@ -313,7 +314,7 @@ export const CAMERA_FRUSTUM_DEFAULTS = { fov: 55, near: 0.1, far: 300, zoom: 50 
 export interface PlayerFovConfig {
   /** Inclusive lower bound for the slider and persisted values. Default 40. */
   min?: number;
-  /** Inclusive upper bound for the slider and persisted values. Default 100. */
+  /** Inclusive upper bound for the slider and persisted values. Default 120. */
   max?: number;
   /** Initial FOV when nothing is persisted. Defaults to `frustum.fov` or 55. */
   default?: number;
@@ -589,6 +590,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   backdrop?: BackdropConfig;
   /** F2 debug overlay (frame/sim timing, logs, backend latency, keybinds, live tunables). On for every game by default; `false` disables the toggle. */
   devtools?: boolean;
+  /** Player settings menu. Auto-mounted for every game (Sound / Graphics / Gameplay / Controls); unset uses the defaults, `false` opts out. Add game-specific rows via `extra`, switch overlay/full-page via `mode`, or swap the gear for compact on-screen buttons via `surface: "quick"`. */
+  settings?: GameSettingsConfig | false;
 }
 
 export function worldHealthBarAllowsRole(
