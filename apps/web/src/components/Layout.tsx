@@ -215,9 +215,9 @@ export function Footer() {
 
 export function Page({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <Header />
-      <main className="-mt-[3.75rem] flex-1 pt-[3.75rem]">{children}</main>
+      <main className="-mt-16 flex-1 pt-16">{children}</main>
       <Footer />
     </div>
   );

@@ -85,6 +85,7 @@ import type {
   PointerConfig,
 } from "@jgengine/core/game/playableGame";
 import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
+import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -1362,7 +1363,7 @@ export function GamePlayerShell({
       }),
     [playable],
   );
-  const { coarsePointer, portrait } = useDisplayProfile();
+  const { coarsePointer, portrait, compact } = useDisplayProfile();
   const touchSink = useMemo(
     () => ({ onCodeDown: (code: string) => tracker.handleDown(code), onCodeUp: (code: string) => tracker.handleUp(code) }),
     [tracker],
@@ -1751,9 +1752,12 @@ export function GamePlayerShell({
     }
   };
 
+  const controlsActive = playControlsActive(ctx);
+  const touchScale = compact ? 0.88 : 1;
   const dockMounted =
     !poster &&
     coarsePointer &&
+    controlsActive &&
     touchScheme !== null &&
     (touchScheme.joystick !== null || touchScheme.buttons.length > 0);
   const orientationMismatch =
@@ -1771,7 +1775,7 @@ export function GamePlayerShell({
       className="relative h-full w-full bg-neutral-950 outline-none"
       style={
         {
-          "--jg-hud-dock-clearance": `${dockMounted ? touchDockClearance(touchScheme) : 0}px`,
+          "--jg-hud-dock-clearance": `${dockMounted ? touchDockClearance(touchScheme, touchScale) : 0}px`,
         } as CSSProperties
       }
       onKeyDown={(event) => {
@@ -1925,7 +1929,7 @@ export function GamePlayerShell({
         />
         <DevtoolsRendererProbe />
       </Canvas>
-      {!poster && coarsePointer && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
+      {!poster && coarsePointer && controlsActive && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
         <TouchPlaySurface
           scheme={touchScheme}
           sink={touchSink}
@@ -1943,7 +1947,9 @@ export function GamePlayerShell({
         </GameProvider>
       </GameUiErrorBoundary>
       {!poster && showReticle ? <Reticle /> : null}
-      {dockMounted && touchScheme !== null ? <TouchControlsDock scheme={touchScheme} sink={touchSink} /> : null}
+      {dockMounted && touchScheme !== null ? (
+        <TouchControlsDock scheme={touchScheme} sink={touchSink} scale={touchScale} />
+      ) : null}
       {orientationMismatch && playable.orientation !== undefined ? (
         <OrientationHint wanted={playable.orientation} />
       ) : null}

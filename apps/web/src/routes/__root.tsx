@@ -67,7 +67,7 @@ function RootComponent() {
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen bg-[#05070d] text-slate-200 antialiased">
+      <body className="min-h-dvh bg-[#05070d] text-slate-200 antialiased">
         <Outlet />
         <Scripts />
       </body>
