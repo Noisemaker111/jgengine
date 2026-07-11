@@ -1,8 +1,7 @@
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, type MutableRefObject } from "react";
-import { MOUSE, type Camera, Vector3 } from "three";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { useEffect, useRef, type ComponentRef, type MutableRefObject } from "react";
+import { MOUSE, PerspectiveCamera, type Camera, Vector3 } from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
@@ -19,6 +18,9 @@ import {
   type OrbitFollowRuntimeState,
   type Vec3,
 } from "./orbitCameraMath";
+import { usePlayerFov } from "./PlayerFov";
+
+type OrbitControlsImpl = NonNullable<ComponentRef<typeof OrbitControls>>;
 
 export type CameraFollowListener = (state: CameraFollowState) => void;
 
@@ -52,6 +54,7 @@ export function GameOrbitCamera({
   const draggingRef = useRef(false);
   const { userId } = usePlayer();
   const ctx = useGameContext();
+  const playerFov = usePlayerFov();
   const camera = useThree((state) => state.camera);
   const followId = followEntityId ?? userId;
 
@@ -111,6 +114,13 @@ export function GameOrbitCamera({
         { x: camera.position.x, y: camera.position.y, z: camera.position.z },
         stepped.target,
       );
+    }
+    if ((camera as PerspectiveCamera).isPerspectiveCamera === true) {
+      const perspective = camera as PerspectiveCamera;
+      if (Math.abs(perspective.fov - playerFov.fov) > 0.001) {
+        perspective.fov = playerFov.fov;
+        perspective.updateProjectionMatrix();
+      }
     }
     onCameraFollow?.({
       entityId: followId,

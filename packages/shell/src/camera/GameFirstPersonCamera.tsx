@@ -4,6 +4,7 @@ import * as THREE from "three";
 import type { FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
+import { usePlayerFov } from "./PlayerFov";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 
 const DEFAULT_EYE_HEIGHT = 1.6;
@@ -28,6 +29,7 @@ export function GameFirstPersonCamera({
   const maxPitch = config?.maxPitch ?? DEFAULT_MAX_PITCH;
   const { userId } = usePlayer();
   const ctx = useGameContext();
+  const playerFov = usePlayerFov();
   const camera = useThree((state) => state.camera);
   const domElement = useThree((state) => state.gl.domElement);
   const followId = followEntityId ?? userId;
@@ -68,6 +70,13 @@ export function GameFirstPersonCamera({
       camera.position.y + Math.sin(pitchRef.current),
       camera.position.z + Math.cos(yawRef.current) * cosPitch,
     );
+    if ((camera as THREE.PerspectiveCamera).isPerspectiveCamera === true) {
+      const perspective = camera as THREE.PerspectiveCamera;
+      if (Math.abs(perspective.fov - playerFov.fov) > 0.001) {
+        perspective.fov = playerFov.fov;
+        perspective.updateProjectionMatrix();
+      }
+    }
   }, ORBIT_CAMERA_FRAME_PRIORITY);
 
   if (config?.viewmodel === false) return null;

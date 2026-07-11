@@ -91,7 +91,15 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
 import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
-import { GAME_SIM_FRAME_PRIORITY, GameCameraRig, resolveRigKind, rtsPanKeysConflict } from "./camera";
+import {
+  GAME_SIM_FRAME_PRIORITY,
+  GameCameraRig,
+  PlayerFovProvider,
+  PlayerFovSlider,
+  resolveRigKind,
+  rtsPanKeysConflict,
+} from "./camera";
+import { resolveModel, tryResolveCatalogModel } from "./render/resolveModel";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { applyMaterialOverride } from "./materialOverride";
@@ -455,17 +463,6 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   return <primitive object={scene} position={position} scale={[scale, scale, scale]} />;
 }
 
-function resolveModel(
-  value: string | ModelConfig | undefined,
-  assets: AssetCatalog,
-): ModelConfig | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value !== "string") return value;
-  const ref = assets.resolve(value);
-  if (ref === null) return undefined;
-  return ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims };
-}
-
 function EntityMarker({
   entity,
   custom,
@@ -676,7 +673,10 @@ function WorldView({
           key={entity.id}
           entity={entity}
           custom={renderEntity?.(entity)}
-          model={resolveModel(entityModels?.[entity.name], assets)}
+          model={resolveModel(entityModels?.[entity.name], assets, {
+            seam: "entityModels",
+            key: entity.name,
+          })}
           sprite={entitySprites?.[entity.name]}
           isLocal={entity.id === controlledId}
           targeted={entity.id === targetId}
@@ -686,8 +686,10 @@ function WorldView({
       ))}
       {objects.map((object) => {
         const model =
-          resolveModel(objectModels?.[object.catalogId], assets) ??
-          resolveModel(object.catalogId, assets);
+          resolveModel(objectModels?.[object.catalogId], assets, {
+            seam: "objectModels",
+            key: object.catalogId,
+          }) ?? tryResolveCatalogModel(object.catalogId, assets);
         return (
           <ObjectMarker
             key={object.instanceId}
@@ -1605,6 +1607,7 @@ export function GamePlayerShell({
     (playable.orientation === "landscape") === portrait;
 
   return (
+    <PlayerFovProvider config={playable.camera} orthographic={orthographic}>
     <div
       ref={wrapperRef}
       tabIndex={0}
@@ -1793,6 +1796,8 @@ export function GamePlayerShell({
         <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
       ) : null}
       {poster ? null : <DiagnosticOverlay diagnostics={diagnostics} />}
+      {poster || orthographic ? null : <PlayerFovSlider />}
     </div>
+    </PlayerFovProvider>
   );
 }

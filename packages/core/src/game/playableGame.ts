@@ -309,6 +309,20 @@ export interface CameraShakeConfig {
 
 export const CAMERA_FRUSTUM_DEFAULTS = { fov: 55, near: 0.1, far: 300, zoom: 50 } as const;
 
+/** Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it. */
+export interface PlayerFovConfig {
+  /** Inclusive lower bound for the slider and persisted values. Default 40. */
+  min?: number;
+  /** Inclusive upper bound for the slider and persisted values. Default 100. */
+  max?: number;
+  /** Initial FOV when nothing is persisted. Defaults to `frustum.fov` or 55. */
+  default?: number;
+  /** Persist the preference in localStorage across reloads. Default true. */
+  persist?: boolean;
+  /** Show the shell FOV slider. Default true for perspective cameras; forced off for orthographic. */
+  control?: boolean;
+}
+
 export interface GameCameraConfig {
   /** Selects the rig. Overrides `perspective`; leave unset to fall back to `perspective`. */
   rig?: CameraRigKind;
@@ -316,6 +330,8 @@ export interface GameCameraConfig {
   projection?: CameraProjection;
   /** Render frustum overrides applied to the canvas camera. `far` defaults to 300 — raise it for worlds whose content spans more than a few hundred units, or distant scenery silently clips. `zoom` is the orthographic zoom in canvas pixels per world unit, read only when `projection` is "orthographic"; default 50. */
   frustum?: { fov?: number; near?: number; far?: number; zoom?: number };
+  /** Universal player FOV preference (slider + persistence) for perspective rigs. Ignored when `projection` is `"orthographic"`. */
+  playerFov?: PlayerFovConfig;
   /** "third" mounts the orbit camera (default); "first" mounts pointer-lock mouse-look. Shorthand for `rig: "orbit" | "first"`. */
   perspective?: "third" | "first";
   /** First-person tuning; only read when the rig resolves to "first". */
