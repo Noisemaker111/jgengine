@@ -1,3 +1,5 @@
+import { classifyBeatAccuracy, nearestBeatDelta } from "@jgengine/core/time/beatClock";
+
 export type TapJudgement = "perfect" | "good" | "miss";
 
 export interface TapWindows {
@@ -7,20 +9,17 @@ export interface TapWindows {
 
 export const DEFAULT_TAP_WINDOWS: TapWindows = { perfectSec: 0.06, goodSec: 0.14 };
 
-export function nearestBeatDelta(nowSec: number, beatDurationSec: number): number {
-  const beatIndex = Math.round(nowSec / beatDurationSec);
-  return nowSec - beatIndex * beatDurationSec;
-}
+export { nearestBeatDelta };
 
 export function classifyTap(
   nowSec: number,
   beatDurationSec: number,
   windows: TapWindows = DEFAULT_TAP_WINDOWS,
 ): TapJudgement {
-  const delta = Math.abs(nearestBeatDelta(nowSec, beatDurationSec));
-  if (delta <= windows.perfectSec) return "perfect";
-  if (delta <= windows.goodSec) return "good";
-  return "miss";
+  return classifyBeatAccuracy(nowSec, beatDurationSec, [
+    { id: "perfect", windowSec: windows.perfectSec },
+    { id: "good", windowSec: windows.goodSec },
+  ]).tier as TapJudgement;
 }
 
 export interface PulseState {

@@ -1,4 +1,4 @@
-import { createRaceState, firstPastPost } from "@jgengine/core/game/race";
+import { createRaceState, firstPastPost, raceTrack } from "@jgengine/core/game/race";
 import { createRecordBook } from "@jgengine/core/game/recordBook";
 import { describe, expect, test } from "bun:test";
 import type { RawSteerInput } from "../flight/glider";
@@ -13,7 +13,7 @@ function tickThroughCountdown(session: RaceSession): void {
 
 describe("ring sequence + lap logic (route data against the engine race state)", () => {
   test("visiting every ring in order completes a lap, two laps finishes the race", () => {
-    const raceState = createRaceState({ track: { checkpoints: CHECKPOINTS, laps: LAPS }, win: firstPastPost(1) });
+    const raceState = createRaceState({ track: raceTrack({ checkpoints: CHECKPOINTS, laps: LAPS }), win: firstPastPost(1) });
     raceState.addRacer("solo", 0);
     let now = 0;
     for (let lap = 0; lap < LAPS; lap += 1) {
@@ -27,7 +27,7 @@ describe("ring sequence + lap logic (route data against the engine race state)",
   });
 
   test("a racer that never reaches the next ring never advances", () => {
-    const raceState = createRaceState({ track: { checkpoints: CHECKPOINTS, laps: LAPS }, win: firstPastPost(1) });
+    const raceState = createRaceState({ track: raceTrack({ checkpoints: CHECKPOINTS, laps: LAPS }), win: firstPastPost(1) });
     raceState.addRacer("solo", 0);
     raceState.update(1, { solo: [10000, 0, 10000] });
     expect(raceState.progressOf("solo")?.nextCheckpoint).toBe(0);

@@ -45,7 +45,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |
 | Behaviour lifecycle | `behaviour/behaviour` | `Behaviour` (`onAwake`→`onEnable`→`onStart`→`onUpdate(dt)`→`onDisable`→`onDestroy`), `BehaviourModule`, `createBehaviourWorld`, `BehaviourWorld`, `JGEngineRegister`, `RegisterField`, `BehaviourModules` — Unity-style lifecycle over an id-keyed node tree (`setActive` cascade, lazy update dispatch); key nodes by entity instance ids. Games augment `JGEngineRegister` via `declare module "@jgengine/core/behaviour/behaviour"` for typed `world.modules`. Three.js binding: `Object3DBehaviour`, `attachObject3D`, `useBehaviourWorld` from `@jgengine/shell/behaviour` |
 | Reactive keyed store | `store/observableKeyedStore` | `createObservableKeyedStore`, `ObservableKeyedStore` — backs `ctx.game.store` |
-| Scene instance role | `scene/entityStore` | `EntityRole`, `SceneEntity`, `SpawnOptions`, `EntityPose` |
+| Scene instance role | `scene/entityStore` | `EntityRole`, `SceneEntity`, `SpawnOptions`, `EntityPose`, `EntityUpdatePatch` — `spawn(name, { meta })` attaches game-defined per-instance data that reaches `renderEntity` and every query (`entity.meta`, typed `unknown`; narrow with a cast); never encode state in id/name strings. `update` takes the friendly `SpawnPositionInput` position forms |
 | Object spatial queries | `scene/objectQuery` | `raycastObjects`, `raycastObjectsAll`, `ObjectRaycastInput`, `ObjectRaycastHit` — backs `ctx.scene.object.raycast`/`raycastAll` |
 | Runtime paint layer | `scene/paintLayer` | `createPaintLayer`, `PaintLayer`, `PaintStroke` — backs `ctx.scene.entity.paint` |
 | Possession | `scene/possession` | `createPossession`, `Possession`, `PossessionDeps`, `PossessionSwappedEvent` |
@@ -162,16 +162,18 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Status moodles | `survival/moodle` | `createMoodleStack`, `stackMoodles`, `MoodleStack`, `Moodle`, `MoodleSeverity`, `TimedMoodleInput` |
 | Multi-region health | `survival/regionHealth` | `createMultiRegionHealth`, `MultiRegionHealth`, `HealthRegionConfig`, `AilmentConfig`, `RegionHealthState`, `AilmentInstance` |
 | Audio contract | `audio/audioFalloff` | `computeFalloffGain`, `resolveEmitterGain`, `distance3`, `AudioFalloffConfig`, `FalloffCurve`, `SoundDef`, `AudioBusDef`, `AudioBusId` |
-| Beat clock | `time/beatClock` | `createBeatClock`, `createBeatInputBuffer`, `nextBeatTime`, `BeatClock`, `BeatClockConfig`, `BeatSnapshot`, `BeatInputBuffer`, `BufferedAction` |
+| Beat clock | `time/beatClock` | `createBeatClock`, `createBeatInputBuffer`, `nextBeatTime`, `BeatClock`, `BeatClockConfig`, `BeatSnapshot`, `BeatInputBuffer`, `BufferedAction`, `nearestBeatDelta`, `classifyBeatAccuracy`, `inBarWindow`, `BeatAccuracyTier`, `BeatJudgement` — signed delta to the nearest beat, tiered perfect/good/miss judgement, and bar-relative open windows; never hand-roll tap classification |
 | State schedule | `time/stateSchedule` | `createStateSchedule`, `StateSchedule`, `SchedulePhase`, `ScheduleSample`, `ScheduleWindow`, `nextClearWindow` — deterministic looping state timeline: `stateAt(t)` live, `nextTransitionAt` countdowns, `windowsOf`/`nextWindow` "when is it safe" forecasts |
 | Spawn director | `ai/spawnDirector` | `createSpawnDirectorState`, `advanceSpawnDirector`, `advanceWave`, `raiseAlert`, `pickSpawnPoint`, `SpawnDirectorConfig`, `WaveManifest`, `SpawnEntry`, `SpawnRequest`, `DirectorContext` |
 | Threat table | `ai/threat` | `createThreatTable`, `ThreatTable`, `ThreatTableConfig`, `ThreatEntry`, `HighestThreatOptions` |
 | Mob combat brain | `ai/mobBrain` | `createMobBrain`, `MobBrain`, `MobBrainConfig`, `MobBrainDeps`, `MobBrainStep`, `MobBrainMode` — the wander → aggro → chase → engage → leash-evade loop over `ai/threat`; the brain returns intent (`moveTo`, `speedScale`, `inAttackRange`, `arrivedHome`), the game executes it and routes damage into `addThreat`. Never hand-roll this loop per mob |
+| Boid flock | `ai/flock` | `flockSteer`, `stepFlock`, `FlockConfig`, `FlockAgent` — per-agent seek/separation/cohesion/alignment with a straggler rescue radius; the agents-to-each-other primitive beside `ai/crowd`'s agents-to-POI flow field |
+| Lane selection | `ai/laneSelect` | `pickLane`, `corridorCost`, `LaneCandidate`, `PickLaneOptions` — live cost-based choice over parallel corridors with stickiness hysteresis and rng tie-breaks (racing lines, merge decisions) |
 | Group-assist aggro | `ai/groupAssist` | `createAssistNetwork`, `AssistNetwork`, `AssistNetworkConfig`, `AssistMember` — propagates one member's threat gains to same-group members (optional radius + `distanceBetween` gating) so a single pull rallies the group |
 | Job board | `ai/jobBoard` | `createJobBoard`, `JobBoard`, `JobDef`, `Job`, `JobPhase`, `WorkerState`, `JobReport`, `JobTickContext` |
 | Crowd flow | `ai/crowd` | `computeFlowField`, `createCrowdField`, `selectPoi`, `FlowField`, `FlowFieldOptions`, `CrowdField`, `Poi`, `SelectPoiOptions` |
 | Factions & reputation | `faction/factions`, `faction/reputation` | `createFactionGraph`, `createFactionRoster`, `FactionRelation`, `FactionDef`, `FactionGraph`, `FactionRoster`, `createReputationLedger`, `DEFAULT_REPUTATION_TIERS`, `tierForStanding`, `effectiveRelation`, `ReputationTier`, `ReputationLedger` |
-| Physics actors | `physics/ragdoll`, `physics/carryable`, `physics/forceVolume`, `physics/spatialGrid` | `createRagdoll`, `Ragdoll`, `Carryable`, `carrySpeedMultiplier`, `ForceVolume`, `PlatformCarry`, `SpatialGrid` |
+| Physics actors | `physics/ragdoll`, `physics/carryable`, `physics/forceVolume`, `physics/spatialGrid` | `createRagdoll`, `Ragdoll`, `Carryable`, `carrySpeedMultiplier`, `ForceVolume`, `PlatformCarry`, `SpatialGrid` — for bodies outside `PhysicsWorld`, `createVolumeTrigger` gives the same enter-once membership over any `{ id, position }` list and `applyVolumeForce` the per-tick force math |
 | Traversal (grapple/glide) | `physics/traversal` | `Grapple`, `GrappleConfig`, `Glide`, `GlideConfig` |
 | Structural destruction | `physics/structure` | `StructureGraph`, `StructureNodeSpec`, `StructureEdgeSpec`, `StructureMaterial`, `StructureMaterialTable`, `CollapseEvent`, `DebrisConfig` |
 | Destructible terrain | `world/carve` | `VoxelVolume`, `VoxelMaterial`, `VoxelMaterialTable`, `CarvableField`, `carvableTerrain`, `CarveOp`, `DepositOp`, `CraterOp`, `MoundOp`, `EMPTY_VOXEL` |
@@ -189,12 +191,14 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Text chat | `game/chat`, `multiplayer/chatContract` | `createChat`, `Chat`, `ChatMessage`, `ChatChannelDef`, `whisperChannelId`, `createChatRateLimiter`, `ChatTransport`, `ChatSync`, `createLocalChatTransport` |
 | Chat filter | `game/chatFilter` | `createChatFilter`, `normalizeChatText`, `ChatFilter`, `ChatFilterConfig`, `ChatFilterResult` — mask/reject blocked words (leet-normalized token match); wire via `ChatDeps.filter` (word lists are game data, the engine ships the mechanism) |
 | Voice seam | `multiplayer/voiceContract` | `VoiceTransport`, `VoiceParticipant`, `VoiceRoute`, `createLocalVoiceTransport`, `createPushToTalk`, `PushToTalkMode` |
-| Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes` |
+| Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes`, `RaceFork`, `RaceForkRoute` — `raceTrack({ forks })` splices alternate route segments (racer commits to the route whose first checkpoint it hits, rejoins the mainline; splits + `routesTaken` give route time accounting). Prefer `ctx.game.race.state(id, config)` over hand-managing a session in `ctx.game.store` — mutations and eventful updates bump `ctx.version()` |
 | Personal-best records | `game/recordBook` | `createRecordBook`, `RecordBook`, `RecordBookConfig`, `RecordStorage`, `RecordDirection`, `RecordSubmission` — named numeric fields racing "lower" (times) or "higher" (scores/streaks) behind a structural key-value storage (pass `localStorage`, a test stub, or `null` for in-memory); corrupt or unavailable storage degrades to an empty book, never throws into a tick |
 | Reveal query | `sensor/revealQuery` | `createRevealQuery`, `RevealQuery`, `RevealQueryOptions`, `RevealHit` |
+| Vision cone | `sensor/visionCone` | `createVisionCone`, `pointInCone`, `hasWallLineOfSight`, `segmentsIntersect`, `VisionCone`, `VisionWall` — 2D angle+range guard sight with wall-segment occlusion (`world/walls` segments fit structurally); never hand-roll segment-intersection LoS |
 | Hidden-state probe | `sensor/hiddenStateProbe` | `probeHiddenState`, `probeHiddenStateAll`, `HiddenStateSource`, `HiddenStateValue`, `SensorProbeOptions`, `SensorReading` |
 | View-frustum sensor | `sensor/frustumSensor` | `createFrustumSensor`, `projectToView`, `framingScore`, `FrustumCamera`, `FrustumTarget`, `FrustumProjection`, `FrustumSample`, `FrustumSensor`, `FramingConfig` |
 | Recording buffer | `sensor/recordingBuffer` | `createRecordingBuffer`, `RecordingBuffer`, `RecordingFrame`, `RecordingPair`, `RecordingBufferOptions` — `seekPair(t)` brackets a time with its floor and next frames for interpolated playback (ghost racers, kill-cams) |
+| Replay loop | `sensor/replayLoop` | `createReplayLoop`, `interpolateRecordedPose`, `syncReplayEntity`, `ReplayLoop` — loop a finished recording as a ghost entity: modulo-time seek, frame interpolation, spawn grace, and entity reconciliation against `ctx.scene.entity` |
 | Concealment scoring | `sensor/concealment` | `colorDistance`, `concealmentScore`, `createConcealmentSensor`, `ColorHex`, `ConcealmentTarget`, `ConcealmentSample`, `ConcealmentSensor` |
 | Freeze violation monitor | `sensor/freezeMonitor` | `createFreezeMonitor`, `FreezeMonitor`, `FreezeSubject`, `FreezeViolation` |
 | Animation SM | `combat/animationState` | `createAnimationState`, `AnimationState`, `AnimationClip`, `FramePhase`, `FrameRange`, `phasesAtFrame`, `activeRangeAtFrame`, `frameAtMs` |
@@ -546,7 +550,7 @@ The shell ships a **rig library**; a game picks and tunes one through `camera` c
 | `rts` | Free-pan / edge-scroll (The Sims, Manor Lords) | `rts: { panSpeed, edgeScroll, rotateSpeed, bounds, start, pan }` — `pan: false` turns it into a static backdrop camera: no WASD/arrow pan, no edge-scroll, no Q/E rotate, no wheel zoom, still re-centers on `followEntityId` if one resolves |
 | `shoulder` | Over-the-shoulder (Helldivers 2, Remnant II) | `shoulder: { shoulderOffset, distance, ads, side }` — ADS + shoulder-swap (V) |
 | `lockOn` | Souls-like strafe (Elden Ring) | `lockOn: { targetEntityId?, distance, framingBias, yawSmoothing }` — yaw binds to player→target; WASD becomes strafe |
-| `chase` | Vehicle chase (Forza, Rocket League) | `chase: { distance, springDamping, fov: { base, max, speedForMax }, shakePerSpeed, view: "chase"|"cockpit"|"hood"|"rear" }` |
+| `chase` | Vehicle chase (Forza, Rocket League) | `chase: { distance, springDamping, fov: { base, max, speedForMax }, shakePerSpeed, lead: { time, max }, bank: { perYawRate, max, damping }, view: "chase"|"cockpit"|"hood"|"rear" }` — `lead` aims ahead of the target along its velocity, `bank` rolls the camera into turns, and `ctx.camera.setChaseTuning(patch)` retunes any of it at runtime |
 | `sideScroll` | Fixed lateral follow — 2.5D platformer/beat-'em-up | `sideScroll: { distance, height, lookHeight, axis: "x"\|"z", followSmoothing, fov }` — reads no player input, follows like the other follow rigs (defaults to the local player) |
 | `observer` | Detached spectator/photo/kill-cam (#120) | `observer: { bind: { kind: "entity", entityId } \| { kind: "point", position }, distance, height, orbitSpeed }` — reads no player input, auto-orbits the bound subject |
 | `inspection` | Model-viewer / data-viz orbit (#207.7) | `inspection: { anchor: "target"\|"cursor"\|"center", target, initialDistance, initialPosition, min/maxDistance, min/maxPolarAngle, pan, rotateSpeed, zoomSpeed, dampingFactor }` — left-drag orbit, middle/right-drag pan (pan defaults on for this rig only), scroll zoom toward the anchor (`cursor` = zoom-to-cursor); orbits a fixed `target`, never reads player/entity state |
@@ -576,6 +580,8 @@ ctx.game.cards      pile(id, config?) — lazily creates (config required on fir
                     the existing notify-wrapped CardPile for id
 ctx.game.turn       loop(id, config?) — lazily creates (config required on first call) or returns
                     the existing notify-wrapped TurnLoop for id
+ctx.game.race       state(id, config?) — lazily creates (config required on first call) or returns
+                    the existing reactive RaceState; mutations and eventful update() calls bump ctx.version()
 ctx.player          userId, isNew, inventory, stats (modifiers), loadout,
                     applyLoadout, movement (pose/aim), motion (impulse/setVerticalVelocity/setY/takePending),
                     possession, cosmetics
@@ -591,6 +597,8 @@ ctx.world           ground (TerrainField), groundHeightAt(x, z) — the canonica
                     Use it for every spawn/placement/waypoint y — never
                     hand-roll a noise sampler or hardcode y = 0 on relief
 ctx.camera          follow(entityId | null), followedEntityId(), setCinematic(config), cinematic(),
+                    setChaseTuning(patch | null) / chaseTuning() — runtime overlay on camera.chase
+                    (distance/height/fov/lead/bank) for boss pull-backs and drift zoom-outs,
                     subscribe — runtime camera-follow/cinematic override; the shell reads
                     followedEntityId() each frame, falling back to the static
                     playable.camera.followEntityId when it returns undefined
