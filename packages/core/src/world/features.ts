@@ -101,6 +101,13 @@ export interface OceanEnvironmentConfig {
   bounds?: WorldBounds;
   position?: EnvironmentVec2;
   level?: number;
+  /**
+   * Scheduled water level as a function of game-time seconds — tides, floods, draining chambers.
+   * Wins over `level` (which stays the initial/static value); `waterSurfaceFromDescriptor` bakes it
+   * into `WaterSurface.height`, and the shell repositions the rendered ocean from it every frame.
+   * A function doesn't serialize; keep it pure and deterministic (compose with `time/stateSchedule`).
+   */
+  levelAt?: (time: number) => number;
   waveHeight?: number;
   waveScale?: number;
   waveSpeed?: number;
@@ -138,8 +145,10 @@ export type PadSize = readonly [number, number] | { radius: number };
 export interface PadEnvironmentConfig {
   center: EnvironmentVec2;
   size: PadSize;
-  /** Surface offset above the terrain height at `center`; default `0.05` — just proud of the ground. */
+  /** Surface offset above the terrain height at `center`; default `0.05` — just proud of the ground. Ignored when `elevation` is set. */
   height?: number;
+  /** Absolute world-space Y for the pad surface — a landing pad on a rooftop, a floating platform. Skips the implicit terrain flatten (there's no ground to flatten toward). */
+  elevation?: number;
   color?: string;
   /** Rotation applied to rectangular pads; ignored for circular pads. */
   rotationY?: number;
@@ -149,6 +158,17 @@ export type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required<
   Pick<TerrainEnvironmentConfig, "bounds" | "height">
 > &
   Omit<TerrainEnvironmentConfig, "bounds" | "height">;
+
+/** A bounded terrain patch floating at its own altitude — sky islands, arena platforms, split landmasses with void between. */
+export interface TerrainIslandConfig extends TerrainEnvironmentConfig {
+  /** World-space center of the island; its `bounds` rect surrounds this point. */
+  origin: EnvironmentVec2;
+}
+
+export type TerrainIslandDescriptor = Omit<TerrainEnvironmentDescriptor, "kind"> & {
+  kind: "island";
+  origin: EnvironmentVec2;
+};
 
 export type RainEnvironmentDescriptor = { kind: "rain" } & Required<
   Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color">
@@ -166,7 +186,7 @@ export type GrassEnvironmentDescriptor = { kind: "grass" } & Required<
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
 > &
-  Pick<OceanEnvironmentConfig, "position">;
+  Pick<OceanEnvironmentConfig, "position" | "levelAt">;
 
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
@@ -176,7 +196,7 @@ export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
 export type PadEnvironmentDescriptor = { kind: "pad" } & Required<
   Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color">
 > &
-  Pick<PadEnvironmentConfig, "rotationY">;
+  Pick<PadEnvironmentConfig, "rotationY" | "elevation">;
 
 export type SkyEnvironmentDescriptor = { kind: "sky" } & Required<
   Pick<SkyEnvironmentConfig, "preset" | "timeOfDay">
@@ -192,6 +212,8 @@ export type EnvironmentDescriptorList<T> = T | readonly T[];
 
 export interface EnvironmentWorldConfig {
   terrain?: TerrainEnvironmentDescriptor;
+  /** Disconnected landmasses at independent altitudes over the base `terrain` (or over void without one) — see `island()`. */
+  islands?: readonly TerrainIslandDescriptor[];
   sky?: SkyEnvironmentDescriptor;
   weather?: EnvironmentDescriptorList<WeatherEnvironmentDescriptor>;
   vegetation?: EnvironmentDescriptorList<VegetationEnvironmentDescriptor>;
@@ -204,6 +226,7 @@ export interface EnvironmentWorldConfig {
 export interface EnvironmentWorldFeature {
   kind: "environment";
   terrain?: TerrainEnvironmentDescriptor;
+  islands?: readonly TerrainIslandDescriptor[];
   sky?: SkyEnvironmentDescriptor;
   weather?: readonly WeatherEnvironmentDescriptor[];
   vegetation?: readonly VegetationEnvironmentDescriptor[];
@@ -275,12 +298,14 @@ function withOptional<TBase extends object, TOptional extends object>(
   return optional === undefined ? base : { ...base, ...optional };
 }
 
-/** Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it. */
+/** Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it. Elevated pads (absolute `elevation`) float free and carve nothing. */
 export function padFlattenMasks(pads: readonly PadEnvironmentDescriptor[]): readonly TerrainFlattenMask[] {
-  return pads.map((padDescriptor) => ({
-    center: padDescriptor.center,
-    radius: padHalfExtent(padDescriptor.size) * 1.2,
-  }));
+  return pads
+    .filter((padDescriptor) => padDescriptor.elevation === undefined)
+    .map((padDescriptor) => ({
+      center: padDescriptor.center,
+      radius: padHalfExtent(padDescriptor.size) * 1.2,
+    }));
 }
 
 function padHalfExtent(size: PadSize): number {
@@ -308,6 +333,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
   return {
     kind: "environment",
     ...(terrainDescriptor === undefined ? {} : { terrain: terrainDescriptor }),
+    ...(config.islands === undefined || config.islands.length === 0 ? {} : { islands: config.islands }),
     ...(config.sky === undefined ? {} : { sky: config.sky }),
     ...(weather === undefined ? {} : { weather }),
     ...(vegetation === undefined ? {} : { vegetation }),
@@ -318,6 +344,16 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
 }
 
 export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor {
+  if (
+    config.baseHeight !== undefined &&
+    config.height === undefined &&
+    config.heightField === undefined &&
+    typeof console !== "undefined"
+  ) {
+    console.warn(
+      "[jgengine:terrain] baseHeight is set but height is not — height is the noise amplitude (defaulting to 0 here), so this terrain is a flat plateau at baseHeight. Set height explicitly (height: 0 for an intentional plateau) to silence this.",
+    );
+  }
   return withOptional(
     {
       kind: "terrain" as const,
@@ -409,7 +445,14 @@ export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDesc
     waveSpeed: config.waveSpeed ?? 0.55,
     color: config.color ?? "#1d7fa3",
     ...(config.position === undefined ? {} : { position: config.position }),
+    ...(config.levelAt === undefined ? {} : { levelAt: config.levelAt }),
   };
+}
+
+export function island(config: TerrainIslandConfig): TerrainIslandDescriptor {
+  const { origin, ...terrainConfig } = config;
+  const { kind: _kind, ...descriptor } = terrain(terrainConfig);
+  return { ...descriptor, kind: "island", origin };
 }
 
 export function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor {
@@ -440,7 +483,10 @@ export function pad(config: PadEnvironmentConfig): PadEnvironmentDescriptor {
       height: config.height ?? 0.05,
       color: config.color ?? "#8b8680",
     },
-    config.rotationY === undefined ? undefined : { rotationY: config.rotationY },
+    {
+      ...(config.rotationY === undefined ? {} : { rotationY: config.rotationY }),
+      ...(config.elevation === undefined ? {} : { elevation: config.elevation }),
+    },
   );
 }
 

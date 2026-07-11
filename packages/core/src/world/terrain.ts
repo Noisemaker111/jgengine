@@ -1,8 +1,10 @@
 import type {
+  EnvironmentWorldFeature,
   TerrainColors,
   TerrainEnvironmentConfig,
   TerrainEnvironmentDescriptor,
   TerrainFlattenMask,
+  TerrainIslandDescriptor,
   TerrainMaterial,
   WorldBounds,
   WorldFeature,
@@ -221,8 +223,98 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
 }
 
 export function groundFieldFor(world?: WorldFeature): TerrainField {
-  if (world !== undefined && world.kind === "environment") return resolveTerrainField(world.terrain);
+  if (world !== undefined && world.kind === "environment") return resolveEnvironmentField(world);
   return flatField();
+}
+
+/** Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane. */
+export const ISLAND_VOID_HEIGHT = -256;
+
+function islandContains(descriptor: TerrainIslandDescriptor, x: number, z: number): boolean {
+  return (
+    Math.abs(x - descriptor.origin[0]) <= descriptor.bounds.w / 2 &&
+    Math.abs(z - descriptor.origin[1]) <= descriptor.bounds.d / 2
+  );
+}
+
+/**
+ * Composes a base terrain and any number of bounded islands into one world field: inside an island's
+ * rect the island's own field (sampled in island-local coordinates) wins, elsewhere the base terrain
+ * answers, and with no base the gap is `ISLAND_VOID_HEIGHT` void. Later islands win overlaps.
+ */
+export function composeIslandFields(
+  base: TerrainField | null,
+  islands: readonly TerrainIslandDescriptor[],
+  voidHeight = ISLAND_VOID_HEIGHT,
+): TerrainField {
+  if (islands.length === 0) return base ?? flatField();
+  const resolved = islands.map((descriptor) => ({
+    descriptor,
+    field: resolveTerrainField({ ...descriptor, kind: "terrain" }),
+  }));
+
+  function islandAt(x: number, z: number): (typeof resolved)[number] | null {
+    for (let index = resolved.length - 1; index >= 0; index -= 1) {
+      if (islandContains(resolved[index]!.descriptor, x, z)) return resolved[index]!;
+    }
+    return null;
+  }
+
+  const sampleHeight = (x: number, z: number): number => {
+    const island = islandAt(x, z);
+    if (island !== null) {
+      return island.field.sampleHeight(x - island.descriptor.origin[0], z - island.descriptor.origin[1]);
+    }
+    return base !== null ? base.sampleHeight(x, z) : voidHeight;
+  };
+
+  return {
+    sampleHeight,
+    sampleNormal(x, z) {
+      const island = islandAt(x, z);
+      if (island !== null) {
+        return island.field.sampleNormal(x - island.descriptor.origin[0], z - island.descriptor.origin[1]);
+      }
+      return base !== null ? base.sampleNormal(x, z) : ([0, 1, 0] as const);
+    },
+    ...(base?.bounds === undefined ? {} : { bounds: base.bounds }),
+    ...(base?.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
+  };
+}
+
+/** The full ground field for an environment world: base `terrain` composed with any `islands`. */
+export function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField {
+  const base = feature.terrain === undefined ? null : resolveTerrainField(feature.terrain);
+  if (feature.islands === undefined || feature.islands.length === 0) return base ?? flatField();
+  return composeIslandFields(base, feature.islands);
+}
+
+export interface TerrainSlopeSample {
+  /** Unit XZ direction pointing downhill; `[0, 0]` on level ground. */
+  downhill: readonly [number, number];
+  /** Rise over run (tan of the slope angle); `0` on level ground. */
+  steepness: number;
+}
+
+/** Local slope from the field's normal — the input for gravity-roll, ski acceleration, and slide checks (#284.6). */
+export function sampleSlope(field: TerrainField, x: number, z: number): TerrainSlopeSample {
+  const [nx, ny, nz] = field.sampleNormal(x, z);
+  const horizontal = Math.hypot(nx, nz);
+  if (horizontal < 1e-9) return { downhill: [0, 0], steepness: 0 };
+  return {
+    downhill: [nx / horizontal, nz / horizontal],
+    steepness: horizontal / Math.max(ny, 1e-9),
+  };
+}
+
+/**
+ * Downhill force/acceleration from the local slope: direction × sin(slope angle) × `scale`.
+ * Add it to any integrator's XZ velocity each tick (`scale` ≈ gravity for a free-rolling body).
+ */
+export function slopeForce(field: TerrainField, x: number, z: number, scale = 9.8): readonly [number, number] {
+  const [nx, , nz] = field.sampleNormal(x, z);
+  if (Math.hypot(nx, nz) < 1e-9) return [0, 0];
+  return [nx * scale, nz * scale];
 }
 
 export interface TerrainPalette {

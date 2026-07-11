@@ -51,6 +51,8 @@ export interface SpawnOptions<TMeta = unknown> {
   movement?: EntityMovement;
   behaviors?: readonly BehaviorDescriptor[];
   meta?: TMeta;
+  /** When `id` is already spawned: `"throw"` (default), `"replace"` (fresh spawn over it — remount-safe world setup, #284.10), or `"keep"` (leave it untouched and return the id). */
+  onExisting?: "throw" | "replace" | "keep";
 }
 
 function toEntityPosition(position: SpawnPositionInput | undefined): EntityPosition {
@@ -112,7 +114,9 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
   return {
     spawn(name, options = {}) {
       if (options.id !== undefined && store.has(options.id)) {
-        throw new Error(`Scene entity id "${options.id}" is already spawned.`);
+        const onExisting = options.onExisting ?? "throw";
+        if (onExisting === "keep") return options.id;
+        if (onExisting === "throw") throw new Error(`Scene entity id "${options.id}" is already spawned.`);
       }
       const id = options.id ?? generateId();
       const position = toEntityPosition(options.position);

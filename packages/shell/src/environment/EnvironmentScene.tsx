@@ -1,4 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import type { Group } from "three";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { resolveBuildingPalette } from "@jgengine/core/world/buildings";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
@@ -14,7 +17,7 @@ import type {
 } from "@jgengine/core/world/features";
 import {
   createTerrainPaletteSampler,
-  resolveTerrainField,
+  resolveEnvironmentField,
   resolveTerrainPalette,
   type TerrainField,
 } from "@jgengine/core/world/terrain";
@@ -33,15 +36,22 @@ export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;
 }
 
-function TerrainGround({ terrain, field }: { terrain: TerrainEnvironmentDescriptor; field: TerrainField }) {
+function TerrainGround({
+  terrain,
+  field,
+  center,
+}: {
+  terrain: Omit<TerrainEnvironmentDescriptor, "kind">;
+  field: TerrainField;
+  center?: readonly [number, number];
+}) {
   const palette = useMemo(() => resolveTerrainPalette(terrain), [terrain]);
-  const paletteAt = useMemo(
-    () =>
-      terrain.materialRegions === undefined || terrain.materialRegions.length === 0
-        ? undefined
-        : createTerrainPaletteSampler(terrain),
-    [terrain],
-  );
+  const paletteAt = useMemo(() => {
+    if (terrain.materialRegions === undefined || terrain.materialRegions.length === 0) return undefined;
+    const sampler = createTerrainPaletteSampler(terrain);
+    if (center === undefined) return sampler;
+    return (x: number, z: number) => sampler(x - center[0], z - center[1]);
+  }, [terrain, center]);
   const colors = useMemo(
     () => ({
       low: palette.low,
@@ -64,6 +74,7 @@ function TerrainGround({ terrain, field }: { terrain: TerrainEnvironmentDescript
       colors={colors}
       heightRange={heightRange}
       paletteAt={paletteAt}
+      center={center}
       roughness={0.94}
     />
   );
@@ -144,19 +155,35 @@ function Weather({ weather }: { weather: readonly WeatherEnvironmentDescriptor[]
   );
 }
 
+function oceanConfig(ocean: OceanEnvironmentDescriptor) {
+  return {
+    size: Math.max(ocean.bounds.w, ocean.bounds.d),
+    amplitude: ocean.waveHeight,
+    speed: ocean.waveSpeed,
+    color: { shallow: ocean.color },
+  };
+}
+
+function DynamicWater({ ocean }: { ocean: OceanEnvironmentDescriptor & { levelAt: (time: number) => number } }) {
+  const ctx = useGameContext();
+  const groupRef = useRef<Group>(null);
+  const [x, z] = ocean.position ?? [0, 0];
+  useFrame(() => {
+    if (groupRef.current !== null) groupRef.current.position.y = ocean.levelAt(ctx.time.now());
+  });
+  return (
+    <group ref={groupRef} position={[0, ocean.level, 0]}>
+      <Ocean position={[x, 0, z]} config={oceanConfig(ocean)} />
+    </group>
+  );
+}
+
 function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
   const [x, z] = ocean.position ?? [0, 0];
-  return (
-    <Ocean
-      position={[x, ocean.level, z]}
-      config={{
-        size: Math.max(ocean.bounds.w, ocean.bounds.d),
-        amplitude: ocean.waveHeight,
-        speed: ocean.waveSpeed,
-        color: { shallow: ocean.color },
-      }}
-    />
-  );
+  if (ocean.levelAt !== undefined) {
+    return <DynamicWater ocean={ocean as OceanEnvironmentDescriptor & { levelAt: (time: number) => number }} />;
+  }
+  return <Ocean position={[x, ocean.level, z]} config={oceanConfig(ocean)} />;
 }
 
 function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {
@@ -177,15 +204,19 @@ function Structures({ structures, field }: { structures: BuildingEnvironmentDesc
 }
 
 export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
-  const field = useMemo(() => resolveTerrainField(feature.terrain), [feature.terrain]);
+  const field = useMemo(() => resolveEnvironmentField(feature), [feature]);
   const vegetation = feature.vegetation ?? [];
   const water = feature.water ?? [];
   const structures = feature.structures ?? [];
   const pads = feature.pads ?? [];
+  const islands = feature.islands ?? [];
   return (
     <>
       {feature.sky !== undefined && !feature.sky.timeOfDay ? <SkyDaylight sky={feature.sky} /> : null}
       {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} /> : null}
+      {islands.map((entry, index) => (
+        <TerrainGround key={`island-${index}`} terrain={entry} field={field} center={entry.origin} />
+      ))}
       {water.map((ocean, index) => (
         <Water key={`ocean-${index}`} ocean={ocean} />
       ))}

@@ -1,16 +1,21 @@
 import { describe, expect, test } from "bun:test";
 
-import { environment, terrain } from "./features";
+import { environment, island, terrain } from "./features";
 import {
   arenaField,
+  composeIslandFields,
   createTerrainPaletteSampler,
   fractalNoise,
   flatField,
   groundFieldFor,
+  ISLAND_VOID_HEIGHT,
   noiseField,
+  resolveEnvironmentField,
   resolveGroundStep,
   resolveTerrainField,
   resolveTerrainPalette,
+  sampleSlope,
+  slopeForce,
   snapEntityToGround,
   snapToGround,
   TERRAIN_MATERIAL_PALETTES,
@@ -228,5 +233,68 @@ describe("terrain field", () => {
     const sampler = createTerrainPaletteSampler({ colors: { low: "#112233", high: "#445566" } });
     expect(sampler(3, 4).low).toBe("#112233");
     expect(sampler(-90, 12).high).toBe("#445566");
+  });
+
+  test("sampleSlope on flatField is level: no downhill, zero steepness", () => {
+    const slope = sampleSlope(flatField(), 5, -5);
+    expect(slope.downhill).toEqual([0, 0]);
+    expect(slope.steepness).toBe(0);
+  });
+
+  test("sampleSlope on a linear ramp points downhill toward -x with steepness ~1", () => {
+    const field = resolveTerrainField(terrain({ heightField: (x) => x }));
+    const slope = sampleSlope(field, 10, 3);
+    expect(slope.downhill[0]).toBeCloseTo(-1, 6);
+    expect(slope.downhill[1]).toBeCloseTo(0, 6);
+    expect(slope.steepness).toBeCloseTo(1, 6);
+  });
+
+  test("slopeForce points downhill and scales linearly with the scale argument", () => {
+    const field = resolveTerrainField(terrain({ heightField: (x) => x }));
+    const slope = sampleSlope(field, 10, 3);
+    const force1 = slopeForce(field, 10, 3, 1);
+    const force2 = slopeForce(field, 10, 3, 2);
+    const magnitude1 = Math.hypot(force1[0], force1[1]);
+    expect(force1[0] / magnitude1).toBeCloseTo(slope.downhill[0], 6);
+    expect(force1[1] / magnitude1).toBeCloseTo(slope.downhill[1], 6);
+    expect(force2[0]).toBeCloseTo(force1[0] * 2, 6);
+    expect(force2[1]).toBeCloseTo(force1[1] * 2, 6);
+  });
+
+  test("composeIslandFields answers each island's local height inside its rect", () => {
+    const islandA = island({ origin: [100, 0], bounds: { w: 40, d: 40 }, heightField: () => 5 });
+    const islandB = island({ origin: [-100, 0], bounds: { w: 40, d: 40 }, heightField: () => 9 });
+    const composed = composeIslandFields(null, [islandA, islandB]);
+    expect(composed.sampleHeight(100, 0)).toBe(5);
+    expect(composed.sampleHeight(-100, 0)).toBe(9);
+  });
+
+  test("composeIslandFields falls back to base terrain outside islands, or the void with no base", () => {
+    const isle = island({ origin: [100, 0], bounds: { w: 20, d: 20 }, heightField: () => 5 });
+    const base = flatField();
+    const withBase = composeIslandFields(base, [isle]);
+    expect(withBase.sampleHeight(0, 0)).toBe(0);
+
+    const withoutBase = composeIslandFields(null, [isle]);
+    expect(withoutBase.sampleHeight(0, 0)).toBe(ISLAND_VOID_HEIGHT);
+  });
+
+  test("composeIslandFields resolves overlaps in favor of the later island", () => {
+    const first = island({ origin: [0, 0], bounds: { w: 40, d: 40 }, heightField: () => 1 });
+    const second = island({ origin: [10, 0], bounds: { w: 40, d: 40 }, heightField: () => 2 });
+    const composed = composeIslandFields(null, [first, second]);
+    expect(composed.sampleHeight(5, 0)).toBe(2);
+  });
+
+  test("resolveEnvironmentField and groundFieldFor agree on a terrain+islands world", () => {
+    const isle = island({ origin: [50, 50], bounds: { w: 30, d: 30 }, heightField: () => 7 });
+    const world = environment({ terrain: terrain({ height: 0 }), islands: [isle] });
+    const resolved = resolveEnvironmentField(world);
+    const ground = groundFieldFor(world);
+    for (const [x, z] of [[0, 0], [50, 50], [60, 55]] as const) {
+      expect(ground.sampleHeight(x, z)).toBe(resolved.sampleHeight(x, z));
+    }
+    expect(resolved.sampleHeight(50, 50)).toBe(7);
+    expect(resolved.sampleHeight(0, 0)).toBe(0);
   });
 });

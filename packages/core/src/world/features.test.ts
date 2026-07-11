@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 
 import {
   biomes,
@@ -6,6 +6,7 @@ import {
   environment,
   flat,
   grass,
+  island,
   ocean,
   pad,
   padFlattenMasks,
@@ -244,5 +245,56 @@ describe("world features", () => {
   test("environment leaves terrain untouched when there are no pads", () => {
     const world = environment({ terrain: terrain({ height: 2 }) });
     expect(world.terrain?.flatten).toBeUndefined();
+  });
+
+  test("island carries its origin plus terrain defaults", () => {
+    expect(island({ origin: [10, 20], height: 5 })).toEqual({
+      kind: "island",
+      origin: [10, 20],
+      bounds: { w: 512, d: 512 },
+      height: 5,
+    });
+  });
+
+  test("pad carries an absolute elevation", () => {
+    const elevated = pad({ center: [0, 0], size: [4, 4], elevation: 12 });
+    expect(elevated.elevation).toBe(12);
+  });
+
+  test("padFlattenMasks skips elevated pads", () => {
+    const grounded = pad({ center: [0, 0], size: [4, 4] });
+    const elevated = pad({ center: [10, 10], size: [4, 4], elevation: 8 });
+    expect(padFlattenMasks([grounded, elevated])).toHaveLength(1);
+  });
+
+  test("environment carries an islands list", () => {
+    const islands = [island({ origin: [0, 0], height: 1 }), island({ origin: [50, 0], height: 2 })];
+    expect(environment({ islands }).islands).toEqual(islands);
+  });
+
+  test("ocean carries a levelAt schedule function", () => {
+    const levelAt = (t: number) => t * 2;
+    expect(ocean({ levelAt }).levelAt).toBe(levelAt);
+  });
+
+  test("terrain warns once when baseHeight is set without height or heightField", () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      terrain({ baseHeight: 5 });
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("terrain does not warn when baseHeight is paired with height or heightField", () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      terrain({ baseHeight: 5, height: 0 });
+      terrain({ baseHeight: 5, heightField: () => 1 });
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

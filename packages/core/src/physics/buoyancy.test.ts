@@ -79,4 +79,23 @@ describe("BuoyantBody", () => {
     const broadside = drift(0);
     expect(broadside).toBeGreaterThan(bowOn * 1.5);
   });
+
+  test("a floating body tracks a rising water level", () => {
+    const w = world();
+    const water = waterSurface({ level: 0, waves: 0 });
+    const body = w.addBody({ position: [0, -3, 0], halfExtents: [1, 0.5, 2] });
+    const boat = createBuoyantBody(w, { body, water });
+    for (let i = 0; i < 600; i += 1) {
+      boat.update(1 / 60, 0);
+      w.step(1 / 60);
+    }
+    water.setLevel(3);
+    for (let i = 0; i < 600; i += 1) {
+      boat.update(1 / 60, 0);
+      w.step(1 / 60);
+    }
+    const [, y] = boat.position;
+    expect(y).toBeGreaterThan(1.5);
+    expect(y).toBeLessThan(4.5);
+  });
 });
