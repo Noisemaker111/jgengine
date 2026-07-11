@@ -223,7 +223,14 @@ export type ServerListing = {
   updatedAt: number;
 };
 
-export function toServerListing(record: GameServerRecord): ServerListing {
+export type ToServerListingOptions = {
+  includeJoinCode?: boolean;
+};
+
+export function toServerListing(
+  record: GameServerRecord,
+  options: ToServerListingOptions = {},
+): ServerListing {
   return {
     serverId: record.serverId,
     status: record.status,
@@ -232,7 +239,9 @@ export function toServerListing(record: GameServerRecord): ServerListing {
     mode: record.mode,
     label: record.label,
     visibility: record.visibility,
-    joinCode: record.joinCode,
+    ...(options.includeJoinCode === true && record.joinCode !== undefined
+      ? { joinCode: record.joinCode }
+      : {}),
     tags: record.tags,
     updatedAt: record.updatedAt,
   };

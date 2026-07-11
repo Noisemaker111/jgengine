@@ -1,5 +1,5 @@
 import type { PoseSyncRules, PresencePoseState } from "@jgengine/core/multiplayer/presenceModel";
-import { decidePoseSync } from "@jgengine/core/multiplayer/presenceModel";
+import { decidePoseSync, spawnPresenceState } from "@jgengine/core/multiplayer/presenceModel";
 import { createPositionHistory, type PositionHistory } from "@jgengine/core/multiplayer/lagCompensation";
 import {
   createChatRateLimiter,
@@ -26,9 +26,16 @@ import {
   type WsVoiceParticipant,
 } from "./protocol";
 
+export type HostRouterAuthenticate = (args: {
+  userId: string;
+  token?: string;
+}) => Promise<string | null> | string | null;
+
 export type HostRouterOptions = {
   host: GameHost;
-  authenticate?: (args: { userId: string; token?: string }) => Promise<string | null> | string | null;
+  authenticate?: HostRouterAuthenticate;
+  allowAnonymous?: boolean;
+  singleSession?: boolean;
   poseRules?: PoseSyncRules;
   positionHistoryMs?: number;
   chatRateLimit?: ChatRateLimit;
@@ -91,9 +98,14 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const host = options.host;
   const now = options.now ?? Date.now;
   const poseRules = options.poseRules ?? DEFAULT_POSE_RULES;
-  const authenticate = options.authenticate ?? (({ userId }: { userId: string }) => userId);
+  const allowAnonymous = options.allowAnonymous === true;
+  const singleSession = options.singleSession !== false;
+  const authenticate: HostRouterAuthenticate | null =
+    options.authenticate ??
+    (allowAnonymous ? ({ userId }: { userId: string }) => userId : null);
 
   const connections = new Set<Connection>();
+  const sessionsByUserId = new Map<string, Connection>();
   const presence = new Map<string, Map<string, PresenceEntry>>();
   const positionHistoryMs = options.positionHistoryMs ?? 1_000;
   const histories = new Map<string, PositionHistory>();
@@ -210,15 +222,29 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }
   };
 
-  const handleChatSend = (
+  const requireMembership = async (
+    connection: Connection,
+    id: number,
+    serverId: string,
+  ): Promise<string | null> => {
+    const userId = connection.userId;
+    if (userId === null) {
+      replyError(connection, id, "Not authenticated");
+      return null;
+    }
+    if (!(await host.isMember({ userId, serverId }))) {
+      replyError(connection, id, "Not a member of this server");
+      return null;
+    }
+    return userId;
+  };
+
+  const handleChatSend = async (
     connection: Connection,
     message: { id: number; serverId: string; channelId: string; body: string },
   ) => {
-    const userId = connection.userId;
-    if (userId === null) {
-      replyError(connection, message.id, "Not authenticated");
-      return;
-    }
+    const userId = await requireMembership(connection, message.id, message.serverId);
+    if (userId === null) return;
     const body = message.body.trim();
     if (body.length === 0) {
       replyError(connection, message.id, "empty message");
@@ -312,32 +338,23 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
   const unsubscribeHost = host.subscribe(onHostEvent);
 
-  const handlePose = (connection: Connection, serverId: string, pose: WsPose) => {
+  const handlePose = async (connection: Connection, serverId: string, pose: WsPose) => {
     if (connection.userId === null) return;
+    if (!(await host.isMember({ userId: connection.userId, serverId }))) return;
     const rows = presence.get(serverId) ?? new Map<string, PresenceEntry>();
     presence.set(serverId, rows);
     const timestamp = now();
-    const current = rows.get(connection.userId);
-    if (current === undefined) {
-      rows.set(connection.userId, {
-        position: { x: pose.x, y: pose.y, z: pose.z },
-        rotationY: pose.rotationY,
-        rotationPitch: pose.rotationPitch,
-        lastSeenAtMs: timestamp,
-        appearance: pose.appearance,
-      });
-      historyFor(serverId).record(connection.userId, timestamp, { x: pose.x, y: pose.y, z: pose.z });
-      broadcastPresence(serverId);
-      return;
-    }
+    const hadRow = rows.has(connection.userId);
+    const current = rows.get(connection.userId) ?? spawnPresenceState(undefined, timestamp, poseRules);
     const decision = decidePoseSync(
       current,
       { position: { x: pose.x, y: pose.y, z: pose.z }, rotationY: pose.rotationY, rotationPitch: pose.rotationPitch },
       poseRules,
       timestamp,
     );
-    const appearanceChanged = pose.appearance !== undefined && !appearanceEqual(pose.appearance, current.appearance);
-    if (decision.changed || decision.refreshKeepAlive || appearanceChanged) {
+    const appearanceChanged =
+      pose.appearance !== undefined && !appearanceEqual(pose.appearance, current.appearance);
+    if (decision.changed || decision.refreshKeepAlive || appearanceChanged || !hadRow) {
       rows.set(connection.userId, {
         position: decision.position,
         rotationY: decision.rotationY,
@@ -347,7 +364,9 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       });
       historyFor(serverId).record(connection.userId, timestamp, decision.position);
     }
-    if (decision.changed || appearanceChanged) broadcastPresence(serverId);
+    if (decision.changed || appearanceChanged || !hadRow) {
+      broadcastPresence(serverId);
+    }
   };
 
   const dropPresence = (connection: Connection) => {
@@ -369,11 +388,29 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const handleMessage = async (connection: Connection, message: WsClientMessage) => {
     if (message.t === "hello") {
+      if (connection.userId !== null) {
+        replyError(connection, message.id, "Already authenticated");
+        return;
+      }
+      if (authenticate === null) {
+        replyError(connection, message.id, "Not authenticated");
+        connection.transport.close();
+        return;
+      }
       const userId = await authenticate({ userId: message.userId, token: message.token });
       if (userId === null) {
         replyError(connection, message.id, "Not authenticated");
         connection.transport.close();
         return;
+      }
+      if (singleSession) {
+        const previous = sessionsByUserId.get(userId);
+        if (previous !== undefined && previous !== connection) {
+          sessionsByUserId.delete(userId);
+          previous.userId = null;
+          previous.transport.close();
+        }
+        sessionsByUserId.set(userId, connection);
       }
       connection.userId = userId;
       reply(connection, message.id, { userId });
@@ -381,7 +418,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }
 
     if (message.t === "pose") {
-      handlePose(connection, message.serverId, message.pose);
+      await handlePose(connection, message.serverId, message.pose);
       return;
     }
 
@@ -452,10 +489,11 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "chatSend": {
-          handleChatSend(connection, message);
+          await handleChatSend(connection, message);
           return;
         }
         case "voiceJoin": {
+          if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const participant: WsVoiceParticipant = { userId };
           if (message.streamId !== undefined) participant.streamId = message.streamId;
           voiceRoster(message.serverId, message.channelId).set(userId, participant);
@@ -464,6 +502,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "voiceLeave": {
+          if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const roster = voiceRoster(message.serverId, message.channelId);
           const removed = roster.delete(userId);
           reply(connection, message.id, null);
@@ -471,6 +510,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "voicePublish": {
+          if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const participant = voiceRoster(message.serverId, message.channelId).get(userId);
           if (participant === undefined) {
             replyError(connection, message.id, "not in this voice channel");
@@ -482,6 +522,15 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "subscribe": {
+          if (
+            (message.channel === "chat" ||
+              message.channel === "voice" ||
+              message.channel === "presence") &&
+            !(await host.isMember({ userId, serverId: message.serverId }))
+          ) {
+            replyError(connection, message.id, "Not a member of this server");
+            return;
+          }
           connection.subscriptions.add(subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
           await pushSubscription(connection, message.channel, message.serverId, message.action);
@@ -538,6 +587,9 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             .catch(() => undefined);
         },
         close: () => {
+          if (connection.userId !== null && sessionsByUserId.get(connection.userId) === connection) {
+            sessionsByUserId.delete(connection.userId);
+          }
           connections.delete(connection);
           leaveJoinedServers(connection);
           dropPresence(connection);

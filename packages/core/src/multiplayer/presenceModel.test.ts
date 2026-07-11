@@ -6,6 +6,7 @@ import {
   pickReusablePresence,
   resolveActivePresence,
   shouldPersistWorldSnapshot,
+  spawnPresenceState,
   type PoseSyncRules,
 } from "./presenceModel";
 
@@ -141,6 +142,29 @@ describe("decidePoseSync", () => {
     const d = decidePoseSync(withAppearance, { position: { x: 0, z: 0 } }, RULES, 2_000);
     expect(d.changed).toBe(false);
     expect(d.appearance).toEqual({ skin: "blue" });
+  });
+
+  test("pose spam does not gain super-speed from minElapsedSec floor", () => {
+    let state = CURRENT;
+    let now = 1_000;
+    for (let i = 0; i < 10; i += 1) {
+      now += 10;
+      const d = decidePoseSync(state, { position: { x: 100, z: 0 } }, RULES, now);
+      state = {
+        position: d.position,
+        rotationY: d.rotationY,
+        rotationPitch: d.rotationPitch,
+        lastSeenAtMs: now,
+      };
+    }
+    expect(state.position.x).toBeCloseTo(1.6, 5);
+    expect(state.position.x).toBeLessThan(2);
+  });
+
+  test("first pose is clamped from spawn origin within maxElapsed budget", () => {
+    const origin = spawnPresenceState({ x: 0, y: 0, z: 0 }, 2_000, RULES);
+    const d = decidePoseSync(origin, { position: { x: 1000, z: 0 } }, RULES, 2_000);
+    expect(d.position.x).toBeCloseTo(RULES.maxSpeed * RULES.maxElapsedSec);
   });
 });
 

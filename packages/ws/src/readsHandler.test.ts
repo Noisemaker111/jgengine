@@ -104,11 +104,52 @@ test("leaderboard route validates scope and forwards params", async () => {
   expect(await response.json()).toEqual([{ userId: "alice", value: 10 }]);
 });
 
-test("profile route projects the record and passes null through", async () => {
+test("profile route rejects unauthenticated reads by default", async () => {
+  const handler = createReadsHandler({
+    persistence: fakePersistence({
+      loadProfile: async () => makeProfile(),
+    }),
+  });
+  const response = await get(handler, "/api/profile/alice?gameId=demo");
+  expect(response.status).toBe(401);
+});
+
+test("profile route allows the authenticated owner only", async () => {
   const handler = createReadsHandler({
     persistence: fakePersistence({
       loadProfile: async (args) => (args.userId === "alice" ? makeProfile() : null),
     }),
+    authenticate: (request) => {
+      const header = request.headers.get("x-user-id");
+      return header;
+    },
+  });
+  const denied = await handler(
+    new Request("http://host/api/profile/alice?gameId=demo", {
+      headers: { "x-user-id": "bob" },
+    }),
+  );
+  expect(denied.status).toBe(401);
+
+  const found = await handler(
+    new Request("http://host/api/profile/alice?gameId=demo", {
+      headers: { "x-user-id": "alice" },
+    }),
+  );
+  expect(await found.json()).toEqual({
+    userId: "alice",
+    gameId: "demo",
+    playerState: { userId: "alice", inventories: {}, economy: {}, unlocks: [] },
+    updatedAt: 42,
+  });
+});
+
+test("profile route projects when public profiles are explicitly enabled", async () => {
+  const handler = createReadsHandler({
+    persistence: fakePersistence({
+      loadProfile: async (args) => (args.userId === "alice" ? makeProfile() : null),
+    }),
+    allowPublicProfiles: true,
   });
   const found = await get(handler, "/api/profile/alice?gameId=demo");
   expect(await found.json()).toEqual({
@@ -155,6 +196,7 @@ test("createHttpReads round-trips against the handler", async () => {
       getLeaderboardProfile: async ({ userId }) => ({ kills: userId === "alice" ? 7 : 0 }),
       loadProfile: async () => makeProfile(),
     }),
+    allowPublicProfiles: true,
   });
   const reads = createHttpReads({
     baseUrl: "http://host",
@@ -166,4 +208,23 @@ test("createHttpReads round-trips against the handler", async () => {
   expect(await reads.getTop({ stat: "kills", scope: "global" })).toEqual([{ userId: "alice", value: 7 }]);
   expect(await reads.getLeaderboardProfile("alice")).toEqual({ kills: 7 });
   expect((await reads.getPlayerProfile("alice"))?.userId).toBe("alice");
+});
+
+test("public server listings omit join codes", async () => {
+  const handler = createReadsHandler({
+    persistence: fakePersistence({
+      listServers: async () => [
+        makeServer({
+          serverId: "private-room",
+          visibility: "private",
+          joinCode: "SECRET1",
+        }),
+      ],
+    }),
+  });
+  const response = await get(handler, "/api/servers?gameId=demo");
+  const listings = (await response.json()) as { serverId: string; joinCode?: string }[];
+  expect(listings).toHaveLength(1);
+  expect(listings[0]?.serverId).toBe("private-room");
+  expect(listings[0]?.joinCode).toBeUndefined();
 });

@@ -1,10 +1,15 @@
 export type CommandValidationError = { reason: string };
 
 export type CommandDef<TInput = unknown> = {
-  validate: (snapshot: import("./snapshot").GameRuntimeSnapshot, input: TInput) => CommandValidationError | null;
+  validate: (
+    snapshot: import("./snapshot").GameRuntimeSnapshot,
+    input: TInput,
+    actorUserId: string,
+  ) => CommandValidationError | null;
   apply: (
     snapshot: import("./snapshot").GameRuntimeSnapshot,
     input: TInput,
+    actorUserId: string,
   ) => import("./snapshot").GameRuntimeSnapshot;
 };
 
@@ -24,12 +29,12 @@ export function runCommand<TInput>(
     return { ok: false, reason: `Unknown command: ${commandName}` };
   }
 
-  const validationError = command.validate(snapshot, input);
+  const validationError = command.validate(snapshot, input, actorUserId);
   if (validationError) {
     return { ok: false, reason: validationError.reason };
   }
 
-  const next = command.apply(snapshot, input);
+  const next = command.apply(snapshot, input, actorUserId);
   return {
     ok: true,
     snapshot: {

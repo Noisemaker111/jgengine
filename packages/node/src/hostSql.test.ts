@@ -15,7 +15,12 @@ test("host runs against sql persistence and survives a restart", async () => {
 
   let t = 0;
   const persistence = sqlPersistence(pool, () => t);
-  const host = createGameHost({ runtimes: [createTestRuntime()], persistence, now: () => t });
+  const host = createGameHost({
+    runtimes: [createTestRuntime()],
+    persistence,
+    now: () => t,
+    allowedFeedActions: ["kill"],
+  });
 
   const { serverId, isNew } = await host.joinServer({ userId: "alice", gameId: "test-game" });
   expect(isNew).toBe(true);
@@ -33,7 +38,12 @@ test("host runs against sql persistence and survives a restart", async () => {
     await persistence.getLeaderboardTop({ gameId: "test-game", stat: "gold", scope: "profile" }),
   ).toEqual([{ userId: "alice", value: 12 }]);
 
-  const restarted = createGameHost({ runtimes: [createTestRuntime()], persistence, now: () => t });
+  const restarted = createGameHost({
+    runtimes: [createTestRuntime()],
+    persistence,
+    now: () => t,
+    allowedFeedActions: ["kill"],
+  });
   const rejoined = await restarted.joinServer({ userId: "alice", gameId: "test-game", serverId });
   expect(rejoined).toEqual({ serverId, isNew: false });
   const view = await restarted.getPlayerView({ userId: "alice", serverId });

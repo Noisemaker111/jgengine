@@ -100,4 +100,12 @@ describe("quickMatch", () => {
     const full = [listing({ serverId: "x", memberCount: 8, slotsPerServer: 8 })];
     expect(quickMatch(full)).toBeNull();
   });
+
+  test("excludes private lobbies from auto-match", () => {
+    const privateOnly = [
+      listing({ serverId: "priv", visibility: "private", joinCode: "ABC", memberCount: 1 }),
+    ];
+    expect(quickMatch(privateOnly)).toBeNull();
+    expect(quickMatch(privateOnly, { includePrivate: true })?.serverId).toBe("priv");
+  });
 });

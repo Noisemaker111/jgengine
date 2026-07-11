@@ -353,12 +353,11 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
           entry.sent = true;
           rawSend(build(entry.id));
         })
-        .catch(() => {
-          if (closed && pending.get(entry.id) === entry) {
-            pending.delete(entry.id);
-            clearRequestTimer(entry);
-            reject(new Error("Backend closed"));
-          }
+        .catch((error: unknown) => {
+          if (pending.get(entry.id) !== entry) return;
+          pending.delete(entry.id);
+          clearRequestTimer(entry);
+          reject(error instanceof Error ? error : new Error(String(error)));
         });
     });
   };

@@ -27,9 +27,9 @@ export type ConvexGameApi = {
       {
         gameId: string;
         serverId?: string;
-        slotsPerServer?: number;
-        save?: unknown;
         mode?: string;
+        visibility?: "public" | "private";
+        joinCode?: string;
         externalId?: string;
       },
       { serverId: string; isNew: boolean }
@@ -57,7 +57,12 @@ export type ConvexGameApi = {
     >;
   };
   presence: {
-    list: FunctionReference<"query", "public", { serverId: string }, PresencePoseRow[]>;
+    list: FunctionReference<
+      "query",
+      "public",
+      { serverId: string; externalId?: string },
+      PresencePoseRow[]
+    >;
     sync: FunctionReference<
       "mutation",
       "public",
@@ -246,7 +251,13 @@ export function createConvexPresenceSync(
   const gate = createPoseSyncGate(tuning ?? DEFAULT_CONVEX_POSE_TUNING);
   return {
     subscribe(serverId, onChange) {
-      return watchConvexQuery(client, api.presence.list, { serverId }, (rows) => rows, onChange);
+      return watchConvexQuery(
+        client,
+        api.presence.list,
+        { serverId, externalId: config.userId },
+        (rows) => rows,
+        onChange,
+      );
     },
 
     syncPose(serverId, pose) {

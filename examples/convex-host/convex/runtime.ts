@@ -12,4 +12,4 @@ export const {
   listOpenServers,
   tickActiveServers,
   flushDirtyServers,
-} = createGameServerFunctions();
+} = createGameServerFunctions({ auth: "anonymous" });

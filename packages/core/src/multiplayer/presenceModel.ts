@@ -50,6 +50,21 @@ function appearanceEqual(
   return aKeys.every((key) => a[key] === b[key]);
 }
 
+export const DEFAULT_SPAWN_ORIGIN = { x: 0, y: 0, z: 0 } as const;
+
+export function spawnPresenceState(
+  origin: { x: number; y: number; z: number } = DEFAULT_SPAWN_ORIGIN,
+  nowMs: number,
+  rules: Pick<PoseSyncRules, "maxElapsedSec">,
+): PresencePoseState {
+  return {
+    position: { x: origin.x, y: origin.y, z: origin.z },
+    rotationY: 0,
+    rotationPitch: 0,
+    lastSeenAtMs: nowMs - rules.maxElapsedSec * 1000,
+  };
+}
+
 export function decidePoseSync(
   current: PresencePoseState,
   incoming: IncomingPose,
@@ -57,10 +72,8 @@ export function decidePoseSync(
   nowMs: number,
   floorY?: number,
 ): PoseSyncDecision {
-  const elapsedSec = Math.max(
-    rules.minElapsedSec,
-    Math.min(rules.maxElapsedSec, (nowMs - (current.lastSeenAtMs ?? nowMs)) / 1000),
-  );
+  const rawElapsedSec = Math.max(0, (nowMs - (current.lastSeenAtMs ?? nowMs)) / 1000);
+  const elapsedSec = Math.min(rules.maxElapsedSec, rawElapsedSec);
   const maxDist = rules.maxSpeed * elapsedSec;
   const maxDistSq = maxDist * maxDist;
 

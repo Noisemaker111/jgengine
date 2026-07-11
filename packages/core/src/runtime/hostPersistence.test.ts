@@ -6,6 +6,7 @@ import {
   LEADERBOARD_PENDING_KEY,
   planServerPersist,
   shouldAutoSave,
+  toServerListing,
   trimFeedEntries,
   type GameServerRecord,
 } from "./hostPersistence";
@@ -47,6 +48,12 @@ test("trimFeedEntries keeps the newest entries", () => {
   const entries = Array.from({ length: 25 }, (_value, index) => index);
   expect(trimFeedEntries(entries)).toEqual(entries.slice(5));
   expect(trimFeedEntries([1, 2], 5)).toEqual([1, 2]);
+});
+
+test("toServerListing omits joinCode unless explicitly included", () => {
+  const record = makeServer({ joinCode: "SECRET1", visibility: "private" });
+  expect(toServerListing(record).joinCode).toBeUndefined();
+  expect(toServerListing(record, { includeJoinCode: true }).joinCode).toBe("SECRET1");
 });
 
 test("shouldAutoSave requires enabled save, dirt, and elapsed interval", () => {
