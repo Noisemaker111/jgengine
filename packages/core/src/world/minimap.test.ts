@@ -6,7 +6,9 @@ import {
   headingToBearing,
   projectToMinimap,
   relativeBearing,
+  unprojectFromMinimap,
   type MinimapView,
+  type WorldXZ,
 } from "./minimap";
 
 const HALF_PI = Math.PI / 2;
@@ -87,5 +89,45 @@ describe("minimap projection", () => {
     const projected = projectToMinimap(aheadOfEntity, { ...view, rotate: headingToBearing(yaw) });
     expect(projected.x).toBeCloseTo(100);
     expect(projected.y).toBeCloseTo(50);
+  });
+});
+
+describe("unprojectFromMinimap", () => {
+  const view: MinimapView = { center: [10, -20], worldRadius: 50, size: 200 };
+  const points: readonly WorldXZ[] = [
+    [10, -20],
+    [35, -5],
+    [-15, -60],
+    [40, 40],
+    [-33.5, 12.25],
+    [10.001, -19.999],
+  ];
+
+  function expectRoundTrip(withRotate: MinimapView): void {
+    for (const point of points) {
+      const projected = projectToMinimap(point, withRotate);
+      const [x, z] = unprojectFromMinimap({ x: projected.x, y: projected.y }, withRotate);
+      expect(x).toBeCloseTo(point[0], 6);
+      expect(z).toBeCloseTo(point[1], 6);
+    }
+  }
+
+  it("round-trips projectToMinimap with rotate unset (north-up)", () => {
+    expectRoundTrip(view);
+  });
+
+  it("round-trips projectToMinimap with rotate = 0.7", () => {
+    expectRoundTrip({ ...view, rotate: 0.7 });
+  });
+
+  it("round-trips projectToMinimap with rotate = -2.1", () => {
+    expectRoundTrip({ ...view, rotate: -2.1 });
+  });
+
+  it("returns the center for a degenerate zero worldRadius", () => {
+    const degenerate = { ...view, worldRadius: 0 };
+    const [x, z] = unprojectFromMinimap({ x: 137, y: 42 }, degenerate);
+    expect(x).toBeCloseTo(view.center[0]);
+    expect(z).toBeCloseTo(view.center[1]);
   });
 });
