@@ -222,3 +222,7 @@ retrofitting settings trigger onto frostbite-circuit → top-right corner alread
 2026-07-11T20:55:48.822Z — claude-opus-4-8 — Claude
 
 Sweep briefs listing N games to a single Sonnet worker → the worker treated it as an orchestration task and spawned N sub-workers (some spawning sub-scouts producing 100k-token digests), deep-nesting the fan-out and inflating cost/latency far beyond N inline edits. A per-item brief needs an explicit 'do these yourself, do not delegate' or it recursively fans out.
+
+2026-07-11T22:32:30.217Z — claude-opus-4-8 — Claude
+
+post-merge 60s green-check worker → Sonnet backgrounded its foreground sleep and returned 'waiting on the 60s sleep' with no Actions result, forcing a relaunch to actually read the merge-commit runs
