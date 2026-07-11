@@ -190,6 +190,22 @@ describe("createGameContext", () => {
     expect(ctx.scene.object.raycast({ origin: [0, 0, 0], direction: [0, 1, 0], maxDistance: 20 })).toBeNull();
   });
 
+  test("spatial grid auto-invalidates after setPose and scene.raycast hits entities", () => {
+    const ctx = makeContext();
+    const id = ctx.scene.entity.spawn("dummy", { position: [100, 0, 100] });
+    expect(ctx.scene.entity.inRadius([0, 0, 0], 5)).toEqual([]);
+    ctx.scene.entity.setPose(id, { position: [1, 0, 1] });
+    expect(ctx.scene.entity.inRadius([0, 0, 0], 5)).toEqual([id]);
+
+    ctx.scene.entity.setColliders(id, {
+      hitboxes: [{ name: "head", purpose: "damage", shape: { kind: "sphere", radius: 0.3, offset: [0, 1.5, 0] } }],
+    });
+    const hit = ctx.scene.raycast({ origin: [1, 1.5, -5], direction: [0, 0, 1], maxDistance: 20 });
+    expect(hit?.instanceId).toBe(id);
+    expect(hit?.colliderName).toBe("head");
+    expect(hit?.damageEligible).toBe(true);
+  });
+
   test("scene.entity.update patches fields, notifies subscribers, and bumps version", () => {
     const ctx = makeContext();
     const id = ctx.scene.entity.spawn("villager", { position: [0, 0, 0] });

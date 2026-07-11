@@ -117,6 +117,15 @@ describe("scene object store", () => {
     expect(ids).not.toContain(outside);
   });
 
+  test("inBox only walks cells overlapping the query range", () => {
+    const store = createObjectStore();
+    store.place("crate", 0, 0, 0, { instanceId: "origin" });
+    store.place("crate", 100, 0, 100, { instanceId: "far" });
+    expect(store.inBox([99, -1, 99], [101, 1, 101]).map((o) => o.instanceId)).toEqual(["far"]);
+    expect(store.inBox([-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]).map((o) => o.instanceId)).toEqual(["origin"]);
+    expect(store.inBox([40, 0, 40], [50, 0, 50])).toEqual([]);
+  });
+
   test("subscribe fires once per mutation and snapshot is referentially stable", () => {
     const store = createObjectStore();
     let notified = 0;

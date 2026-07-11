@@ -87,10 +87,17 @@ import {
 } from "../scene/entityStats";
 import type { EntityPose, EntityPosition, EntityStore, SceneEntity, SpawnOptions, SpawnPose } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
+import type { EntityColliderSet } from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
 import { createRoster, type Roster } from "../scene/roster";
 import { createPossession, type Possession } from "../scene/possession";
+import {
+  createSceneRaycast,
+  type SceneRaycastApi,
+  type SceneRaycastHit,
+  type SceneRaycastInput,
+} from "../scene/sceneRaycast";
 import { createSpatialApi, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
@@ -123,6 +130,8 @@ export interface GameContextEntityEntry {
   role?: CatalogEntityRole;
   /** Right-click context-menu verbs for this entity (#31). */
   verbs?: readonly ContextVerb[];
+  /** Purpose-specific colliders (physical body + named damage hitboxes). */
+  colliders?: EntityColliderSet;
 }
 
 export interface GameContextObjectEntry {
@@ -131,6 +140,8 @@ export interface GameContextObjectEntry {
   slotInventory?: InventoryLayout;
   /** Right-click context-menu verbs for this object (#31). */
   verbs?: readonly ContextVerb[];
+  colliders?: EntityColliderSet;
+  halfExtents?: readonly [number, number, number];
 }
 
 export interface GameContextContent {
@@ -154,6 +165,8 @@ export interface SceneObjectContext extends ObjectStore {
   catalog(instanceId: string): GameContextObjectEntry | null;
   raycast(input: ObjectRaycastInput): ObjectRaycastHit | null;
   raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[];
+  setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
+  collidersOf(instanceId: string): EntityColliderSet | null;
 }
 
 export interface FloatTextInput {
@@ -220,6 +233,9 @@ export interface SceneEntityContext {
   hasLineOfSight: SpatialApi["hasLineOfSight"];
   queryArc: SpatialApi["queryArc"];
   moveToward: SpatialApi["moveToward"];
+  invalidateSpatial: SpatialApi["invalidate"];
+  setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
+  collidersOf(instanceId: string): EntityColliderSet | null;
   form: Forms;
   paint: PaintLayer;
 }
@@ -297,6 +313,8 @@ export interface GameContext {
     object: SceneObjectContext;
     entity: SceneEntityContext;
     worldItem: SceneWorldItemContext;
+    raycast(input: SceneRaycastInput): SceneRaycastHit | null;
+    raycastAll(input: SceneRaycastInput): readonly SceneRaycastHit[];
   };
   world: GameContextWorld;
   game: {
@@ -386,14 +404,50 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return object === null ? undefined : content.objectById?.(object.catalogId);
   }
 
+  let spatialGeneration = 0;
+  const candidateIds: string[] = [];
+  let candidateIdsDirty = true;
+
+  function refreshCandidateIds(): readonly string[] {
+    if (!candidateIdsDirty) return candidateIds;
+    candidateIds.length = 0;
+    for (const entity of entities.list()) candidateIds.push(entity.id);
+    candidateIdsDirty = false;
+    return candidateIds;
+  }
+
   const spatial = createSpatialApi({
     resolvePosition: (instanceId) => entities.get(instanceId)?.position,
-    candidates: () => entities.list().map((entity) => entity.id),
+    candidates: refreshCandidateIds,
+    grid: { cellSize: 8 },
+    getVersion: () => spatialGeneration,
     ...(occluder !== undefined ? { occluder } : {}),
   });
+
+  entities.subscribe(() => {
+    candidateIdsDirty = true;
+    spatialGeneration += 1;
+    spatial.invalidate();
+  });
+
+  const entityColliders = new Map<string, EntityColliderSet>();
+  const objectColliders = new Map<string, EntityColliderSet>();
+
+  function entityCollidersOf(instanceId: string): EntityColliderSet | null {
+    const override = entityColliders.get(instanceId);
+    if (override !== undefined) return override;
+    return catalogEntry(instanceId)?.colliders ?? null;
+  }
+
+  function objectCollidersOf(instanceId: string): EntityColliderSet | null {
+    const override = objectColliders.get(instanceId);
+    if (override !== undefined) return override;
+    return catalogObject(instanceId)?.colliders ?? null;
+  }
+
   const targeting = notifyAfter(
     createTargeting({
-      candidates: () => entities.list().map((entity) => entity.id),
+      candidates: () => [...refreshCandidateIds()],
       classify(_fromId, toId) {
         const role = catalogEntry(toId)?.role;
         return role === "enemy" || role === "hostile" ? "hostile" : "friendly";
@@ -414,6 +468,31 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
     positionOf: (instanceId) => entities.get(instanceId)?.position,
   };
+
+  const sceneRaycast: SceneRaycastApi = createSceneRaycast({
+    entities: {
+      list: () => entities.list().map((entity) => ({
+        id: entity.id,
+        position: entity.position,
+        rotationY: entity.rotationY,
+        name: entity.name,
+      })),
+      collidersOf: entityCollidersOf,
+      inRadius: (center, radius) => spatial.inRadius(center, radius),
+      get: (id) => {
+        const entity = entities.get(id);
+        if (entity === null) return null;
+        return { id: entity.id, position: entity.position, rotationY: entity.rotationY, name: entity.name };
+      },
+    },
+    objects: {
+      list: () => objects.list(),
+      inBox: (min, max) => objects.inBox(min, max),
+      collidersOf: objectCollidersOf,
+      halfExtentsOf: (catalogId) => content.objectById?.(catalogId)?.halfExtents ?? null,
+    },
+    terrain: ground,
+  });
 
   const weapon = createWeaponStats((itemId) => content.itemById?.(itemId));
   const rawEvents = createGameEvents();
@@ -651,6 +730,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     statsByInstance.delete(instanceId);
     targeting.clearAll(instanceId);
     pose.clear(instanceId);
+    entityColliders.delete(instanceId);
     return existed;
   }
 
@@ -874,12 +954,53 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     applyEffect: applyEffectAndFloat,
   };
 
+  const projectileObstacles = definition.physics?.projectileObstacles === true;
+  const projectileSceneRaycast: SceneRaycastApi = {
+    raycast(input) {
+      return sceneRaycast.raycast({
+        ...input,
+        filter: {
+          entities: true,
+          objects: projectileObstacles,
+          terrain: false,
+          walls: projectileObstacles,
+          ...input.filter,
+        },
+      });
+    },
+    raycastAll(input) {
+      return sceneRaycast.raycastAll({
+        ...input,
+        filter: {
+          entities: true,
+          objects: projectileObstacles,
+          terrain: false,
+          walls: projectileObstacles,
+          ...input.filter,
+        },
+      });
+    },
+  };
+
   const projectiles = notifyAfter(
     createProjectileSystem({
       effects: floatingEffects,
       spatial: combatSpatial,
       getStat: weapon.getStat,
-      objects: definition.physics?.projectileObstacles === true ? { list: () => objects.list() } : undefined,
+      sceneRaycast: projectileSceneRaycast,
+      objects: projectileObstacles
+        ? {
+            list: () => objects.list(),
+            inBox: (min, max) => objects.inBox(min, max),
+            halfExtents: (catalogId) => {
+              const half = content.objectById?.(catalogId)?.halfExtents;
+              return half === undefined ? null : [half[0], half[1], half[2]];
+            },
+            collidersOf: objectCollidersOf,
+          }
+        : undefined,
+      entityCollidersOf,
+      rotationYOf: (instanceId) => entities.get(instanceId)?.rotationY,
       now,
       onSettle(report) {
         events.emit("projectile.settled", {
@@ -898,8 +1019,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const sceneObjects: SceneObjectContext = {
     ...objects,
     catalog: (instanceId) => catalogObject(instanceId) ?? null,
-    raycast: (input) => raycastObjects(objects.list(), input),
-    raycastAll: (input) => raycastObjectsAll(objects.list(), input),
+    raycast: (input) => raycastObjects(objects, input),
+    raycastAll: (input) => raycastObjectsAll(objects, input),
+    setColliders(instanceId, colliders) {
+      if (colliders === null) objectColliders.delete(instanceId);
+      else objectColliders.set(instanceId, colliders);
+      signal.notify();
+    },
+    collidersOf: objectCollidersOf,
   };
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete"], signal.notify);
@@ -1031,6 +1158,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         hasLineOfSight: spatial.hasLineOfSight,
         queryArc: spatial.queryArc,
         moveToward: spatial.moveToward,
+        invalidateSpatial: spatial.invalidate,
+        setColliders(instanceId, colliders) {
+          if (colliders === null) entityColliders.delete(instanceId);
+          else entityColliders.set(instanceId, colliders);
+          signal.notify();
+        },
+        collidersOf: entityCollidersOf,
         form: forms,
         paint: paintLayer,
       },
@@ -1042,6 +1176,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         pickup: pickupWorldItem,
         consume: worldItems.remove,
       },
+      raycast: (input) => sceneRaycast.raycast(input),
+      raycastAll: (input) => sceneRaycast.raycastAll(input),
     },
     world: {
       ground,

@@ -17,12 +17,23 @@ export interface ObjectRaycastHit {
   normal: EntityPosition;
 }
 
+/** Optional broadphase for large object sets — typically `ObjectStore.inBox`. */
+export interface ObjectQueryBroadphase {
+  inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
+}
+
+export type ObjectRaycastSource = readonly SceneObject[] | ObjectQueryBroadphase;
+
 const DEFAULT_HALF_EXTENTS: EntityPosition = [0.5, 0.5, 0.5];
 
 function normalize(direction: EntityPosition): EntityPosition {
   const length = Math.hypot(direction[0], direction[1], direction[2]);
   if (length === 0) return [0, 0, 0];
   return [direction[0] / length, direction[1] / length, direction[2] / length];
+}
+
+function isBroadphase(source: ObjectRaycastSource): source is ObjectQueryBroadphase {
+  return !Array.isArray(source) && typeof (source as ObjectQueryBroadphase).inBox === "function";
 }
 
 function intersectAabb(
@@ -111,13 +122,52 @@ function hitFor(
   };
 }
 
+function raySegmentBounds(
+  origin: EntityPosition,
+  direction: EntityPosition,
+  maxDistance: number,
+  halfExtents: EntityPosition,
+): { min: EntityPosition; max: EntityPosition } {
+  const endX = origin[0] + direction[0] * maxDistance;
+  const endY = origin[1] + direction[1] * maxDistance;
+  const endZ = origin[2] + direction[2] * maxDistance;
+  const padX = halfExtents[0];
+  const padY = halfExtents[1];
+  const padZ = halfExtents[2];
+  return {
+    min: [
+      Math.min(origin[0], endX) - padX,
+      Math.min(origin[1], endY) - padY,
+      Math.min(origin[2], endZ) - padZ,
+    ],
+    max: [
+      Math.max(origin[0], endX) + padX,
+      Math.max(origin[1], endY) + padY,
+      Math.max(origin[2], endZ) + padZ,
+    ],
+  };
+}
+
+function resolveCandidates(
+  source: ObjectRaycastSource,
+  origin: EntityPosition,
+  direction: EntityPosition,
+  maxDistance: number,
+  halfExtents: EntityPosition,
+): readonly SceneObject[] {
+  if (!isBroadphase(source)) return source;
+  const bounds = raySegmentBounds(origin, direction, maxDistance, halfExtents);
+  return source.inBox(bounds.min, bounds.max);
+}
+
 export function raycastObjects(
-  objects: readonly SceneObject[],
+  source: ObjectRaycastSource,
   input: ObjectRaycastInput,
 ): ObjectRaycastHit | null {
   const direction = normalize(input.direction);
   if (direction[0] === 0 && direction[1] === 0 && direction[2] === 0) return null;
   const halfExtents = input.halfExtents ?? DEFAULT_HALF_EXTENTS;
+  const objects = resolveCandidates(source, input.origin, direction, input.maxDistance, halfExtents);
 
   let nearest: ObjectRaycastHit | null = null;
   for (const object of objects) {
@@ -130,12 +180,13 @@ export function raycastObjects(
 }
 
 export function raycastObjectsAll(
-  objects: readonly SceneObject[],
+  source: ObjectRaycastSource,
   input: ObjectRaycastInput,
 ): ObjectRaycastHit[] {
   const direction = normalize(input.direction);
   if (direction[0] === 0 && direction[1] === 0 && direction[2] === 0) return [];
   const halfExtents = input.halfExtents ?? DEFAULT_HALF_EXTENTS;
+  const objects = resolveCandidates(source, input.origin, direction, input.maxDistance, halfExtents);
 
   const hits: ObjectRaycastHit[] = [];
   for (const object of objects) {
@@ -146,3 +197,5 @@ export function raycastObjectsAll(
   hits.sort((a, b) => a.distance - b.distance);
   return hits;
 }
+
+export { intersectAabb, normalize as normalizeDirection };

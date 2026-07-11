@@ -1,35 +1,55 @@
 import type { BallisticSweep } from "../physics/ballisticSweep";
 import type { EntityPosition } from "../scene/entityStore";
+import type { EntityColliderSet } from "../scene/colliders";
+import {
+  createSceneRaycast,
+  firstImpact,
+  hitsUntilBlocked,
+  type SceneRaycastApi,
+  type SceneRaycastHit,
+} from "../scene/sceneRaycast";
 import type { Aim } from "../scene/spatial";
 import type { CombatSpatialDeps, EffectResult, EffectSystem, EffectVia } from "./effects";
+import {
+  aimDirection,
+  aimSpreadDeg,
+  resolveShot,
+  type ShotOriginPolicy,
+} from "./shotOrigin";
 
 export interface ProjectileShotInput {
   from: string;
   via: EffectVia;
   aim: Aim;
   effect: string;
+  /** Defaults to `{ kind: "legacy" }` — aim.origin or shooter position. */
+  originPolicy?: ShotOriginPolicy;
 }
 
-/** A raycast hit against a scene entity — the ray reached `instanceId` at `distance` along its length. */
 export interface EntityRaycastHit {
   kind: "entity";
   instanceId: string;
   distance: number;
   at: EntityPosition;
+  colliderName?: string;
+  damageEligible?: boolean;
+  blocks?: boolean;
 }
 
-/** A raycast hit against a placed scene object's bounding box — see `ProjectileObjectsDeps.halfExtents`. */
 export interface ObjectRaycastHit {
   kind: "object";
   instanceId: string;
   catalogId: string;
   distance: number;
   at: EntityPosition;
+  colliderName?: string;
+  damageEligible?: boolean;
+  blocks?: boolean;
 }
 
 export type RaycastHit = EntityRaycastHit | ObjectRaycastHit;
 
-export type Raycast = (from: string, aim: Aim, range: number) => RaycastHit[];
+export type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[];
 
 export interface ProjectileSettleReport {
   from: string;
@@ -39,11 +59,24 @@ export interface ProjectileSettleReport {
   hit: boolean;
 }
 
-/** Read-only scene object access for the default `raycast`; matches `ObjectStore.list()`/a catalog lookup structurally. */
 export interface ProjectileObjectsDeps {
-  list(): readonly { instanceId: string; catalogId: string; position: readonly [number, number, number] }[];
-  /** Half-extents of the object's axis-aligned bounding box; `null`/omitted falls back to `[0.5, 0.5, 0.5]`. */
+  list(): readonly {
+    instanceId: string;
+    catalogId: string;
+    position: readonly [number, number, number];
+    rotationY?: number;
+  }[];
+  inBox?(
+    min: EntityPosition,
+    max: EntityPosition,
+  ): readonly {
+    instanceId: string;
+    catalogId: string;
+    position: readonly [number, number, number];
+    rotationY?: number;
+  }[];
   halfExtents?(catalogId: string): [number, number, number] | null;
+  collidersOf?(instanceId: string): EntityColliderSet | null | undefined;
 }
 
 export interface ProjectileSystemDeps {
@@ -51,29 +84,49 @@ export interface ProjectileSystemDeps {
   spatial: CombatSpatialDeps;
   getStat(itemId: string, stat: string): number | null;
   raycast?: Raycast;
-  /** Optional object awareness for the default `raycast`; when set, placed objects can block or absorb a shot. */
+  sceneRaycast?: SceneRaycastApi;
   objects?: ProjectileObjectsDeps;
-  /**
-   * Optional collision-aware arc test for ballistic shots (see `createBallisticSweep` in
-   * `physics/ballisticSweep`). A hit settles the shot at the impact point; `null` or omission
-   * falls back to the closed-form landing.
-   */
+  entityCollidersOf?(instanceId: string): EntityColliderSet | null | undefined;
+  rotationYOf?(instanceId: string): number | undefined;
   sweepBallistic?: BallisticSweep;
+  defaultOriginPolicy?: ShotOriginPolicy;
   now?: () => number;
   onSettle?(report: ProjectileSettleReport): void;
 }
 
 export type ProjectileHit =
-  | { kind: "entity"; instanceId: string; distance: number }
-  | { kind: "object"; instanceId: string; catalogId: string; distance: number };
+  | {
+      kind: "entity";
+      instanceId: string;
+      distance: number;
+      colliderName?: string;
+      damageEligible?: boolean;
+    }
+  | {
+      kind: "object";
+      instanceId: string;
+      catalogId: string;
+      distance: number;
+      colliderName?: string;
+      damageEligible?: boolean;
+    };
 
 export interface ProjectilePrediction {
   hits: ProjectileHit[];
   blocked?: boolean;
+  origin?: EntityPosition;
+  direction?: EntityPosition;
+  firstImpact?: ProjectileHit | null;
 }
 
 export type SettleResult =
-  | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[] }
+  | {
+      status: "settled";
+      shotId: string;
+      at: [number, number, number];
+      hits: EffectResult[];
+      origin?: [number, number, number];
+    }
   | { status: "rejected"; shotId: string; reason: string };
 
 export interface ProjectileSystem {
@@ -86,7 +139,6 @@ const DEFAULT_RANGE = 100;
 const DEFAULT_PROJECTILE_SPEED = 15;
 const GRAVITY = 9.8;
 const BASE_HIT_RADIUS = 0.5;
-const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition = [0.5, 0.5, 0.5];
 
 function isEntityHit(hit: RaycastHit): hit is EntityRaycastHit {
   return hit.kind === "entity";
@@ -96,62 +148,73 @@ function isObjectHit(hit: RaycastHit): hit is ObjectRaycastHit {
   return hit.kind === "object";
 }
 
-function raySegmentAabbDistance(
-  origin: EntityPosition,
-  direction: EntityPosition,
-  range: number,
-  min: EntityPosition,
-  max: EntityPosition,
-): number | null {
-  let tMin = 0;
-  let tMax = range;
-  for (let axis = 0; axis < 3; axis += 1) {
-    const o = origin[axis]!;
-    const d = direction[axis]!;
-    const lo = min[axis]!;
-    const hi = max[axis]!;
-    if (Math.abs(d) < 1e-9) {
-      if (o < lo || o > hi) return null;
-      continue;
-    }
-    const inv = 1 / d;
-    let t1 = (lo - o) * inv;
-    let t2 = (hi - o) * inv;
-    if (t1 > t2) [t1, t2] = [t2, t1];
-    tMin = Math.max(tMin, t1);
-    tMax = Math.min(tMax, t2);
-    if (tMin > tMax) return null;
+function sceneHitToRaycast(hit: SceneRaycastHit): RaycastHit {
+  if (hit.targetKind === "entity") {
+    return {
+      kind: "entity",
+      instanceId: hit.instanceId,
+      distance: hit.distance,
+      at: hit.point,
+      colliderName: hit.colliderName,
+      damageEligible: hit.damageEligible,
+      blocks: hit.blocks,
+    };
   }
-  return tMin;
+  return {
+    kind: "object",
+    instanceId: hit.instanceId,
+    catalogId: hit.catalogId ?? hit.targetKind,
+    distance: hit.distance,
+    at: hit.point,
+    colliderName: hit.colliderName,
+    damageEligible: hit.damageEligible,
+    blocks: hit.blocks,
+  };
 }
 
-function normalize(vector: EntityPosition): EntityPosition | null {
-  const length = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
-  if (length === 0) return null;
-  return [vector[0] / length, vector[1] / length, vector[2] / length];
+function toProjectileHit(hit: RaycastHit): ProjectileHit {
+  if (isObjectHit(hit)) {
+    return {
+      kind: "object",
+      instanceId: hit.instanceId,
+      catalogId: hit.catalogId,
+      distance: hit.distance,
+      ...(hit.colliderName !== undefined ? { colliderName: hit.colliderName } : {}),
+      ...(hit.damageEligible !== undefined ? { damageEligible: hit.damageEligible } : {}),
+    };
+  }
+  return {
+    kind: "entity",
+    instanceId: hit.instanceId,
+    distance: hit.distance,
+    ...(hit.colliderName !== undefined ? { colliderName: hit.colliderName } : {}),
+    ...(hit.damageEligible !== undefined ? { damageEligible: hit.damageEligible } : {}),
+  };
 }
 
-function aimDirection(aim: Aim): EntityPosition | null {
-  if ("origin" in aim) return normalize(aim.direction);
-  const cosPitch = Math.cos(aim.pitch);
-  return [Math.sin(aim.yaw) * cosPitch, Math.sin(aim.pitch), Math.cos(aim.yaw) * cosPitch];
-}
-
-function aimSpreadDeg(aim: Aim): number {
-  return "origin" in aim ? 0 : aim.spread ?? 0;
+function asSceneHits(hits: readonly RaycastHit[]): SceneRaycastHit[] {
+  return hits.map((hit) => ({
+    targetKind: hit.kind === "entity" ? ("entity" as const) : ("object" as const),
+    instanceId: hit.instanceId,
+    catalogId: hit.kind === "object" ? hit.catalogId : undefined,
+    colliderName: hit.colliderName ?? "body",
+    purpose: hit.damageEligible === false ? ("physical" as const) : ("damage" as const),
+    damageEligible: hit.kind === "entity" ? hit.damageEligible !== false : hit.damageEligible === true,
+    blocks: hit.blocks !== false,
+    distance: hit.distance,
+    point: hit.at,
+    normal: [0, 1, 0] as EntityPosition,
+  }));
 }
 
 export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem {
   const shots = new Map<string, { input: ProjectileShotInput; firedAt: number; settled: boolean }>();
   let shotCounter = 0;
   const now = deps.now ?? (() => Date.now());
+  const defaultPolicy = deps.defaultOriginPolicy ?? { kind: "legacy" as const };
 
   function itemStat(via: EffectVia, stat: string): number | null {
     return via.item === undefined ? null : deps.getStat(via.item, stat);
-  }
-
-  function shotOrigin(from: string, aim: Aim): EntityPosition | undefined {
-    return "origin" in aim ? aim.origin : deps.spatial.positionOf(from);
   }
 
   function withWeaponSpread(via: EffectVia, aim: Aim): Aim {
@@ -160,64 +223,98 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     return spread === null ? aim : { ...aim, spread };
   }
 
+  function resolveShotFor(from: string, aim: Aim, policy?: ShotOriginPolicy) {
+    return resolveShot(
+      {
+        positionOf: deps.spatial.positionOf,
+        rotationYOf: deps.rotationYOf,
+      },
+      from,
+      aim,
+      policy ?? defaultPolicy,
+    );
+  }
+
+  const internalSceneRaycast =
+    deps.sceneRaycast ??
+    createSceneRaycast({
+      entities: {
+        list: () => {
+          const ids = deps.spatial.inRadius([0, 0, 0], 1e9);
+          const out: { id: string; position: EntityPosition; rotationY: number }[] = [];
+          for (const id of ids) {
+            const position = deps.spatial.positionOf(id);
+            if (position === undefined) continue;
+            out.push({ id, position, rotationY: deps.rotationYOf?.(id) ?? 0 });
+          }
+          return out;
+        },
+        collidersOf: deps.entityCollidersOf,
+        inRadius: (center, radius) => deps.spatial.inRadius(center, radius),
+        get: (id) => {
+          const position = deps.spatial.positionOf(id);
+          if (position === undefined) return null;
+          return { id, position, rotationY: deps.rotationYOf?.(id) ?? 0 };
+        },
+      },
+      objects:
+        deps.objects === undefined
+          ? undefined
+          : {
+              list: () =>
+                deps.objects!.list().map((object) => ({
+                  instanceId: object.instanceId,
+                  catalogId: object.catalogId,
+                  position: [object.position[0], object.position[1], object.position[2]] as EntityPosition,
+                  rotationY: object.rotationY ?? 0,
+                })),
+              inBox: deps.objects.inBox
+                ? (min, max) =>
+                    deps.objects!.inBox!(min, max).map((object) => ({
+                      instanceId: object.instanceId,
+                      catalogId: object.catalogId,
+                      position: [object.position[0], object.position[1], object.position[2]] as EntityPosition,
+                      rotationY: object.rotationY ?? 0,
+                    }))
+                : undefined,
+              halfExtentsOf: deps.objects.halfExtents,
+              collidersOf: deps.objects.collidersOf,
+            },
+    });
+
   const raycast: Raycast =
     deps.raycast ??
-    ((from, aim, range) => {
-      const origin = shotOrigin(from, aim);
-      if (origin === undefined) return [];
-      const direction = aimDirection(aim);
-      if (direction === null) return [];
+    ((from, aim, range, originPolicy) => {
+      const resolved = resolveShotFor(from, aim, originPolicy);
+      if (resolved === null) return [];
+      const { origin, direction } = resolved;
+      const all = internalSceneRaycast.raycastAll({
+        origin,
+        direction,
+        maxDistance: range,
+        excludeInstanceIds: [from],
+      });
+      const until = hitsUntilBlocked(all);
       const spreadRad = (aimSpreadDeg(aim) * Math.PI) / 180;
-      const entityHits: EntityRaycastHit[] = [];
-      for (const instanceId of deps.spatial.inRadius(origin, range)) {
-        if (instanceId === from) continue;
-        const position = deps.spatial.positionOf(instanceId);
-        if (position === undefined) continue;
-        const dx = position[0] - origin[0];
-        const dy = position[1] - origin[1];
-        const dz = position[2] - origin[2];
-        const along = dx * direction[0] + dy * direction[1] + dz * direction[2];
-        if (along <= 0 || along > range) continue;
-        const px = dx - direction[0] * along;
-        const py = dy - direction[1] * along;
-        const pz = dz - direction[2] * along;
-        const perpendicular = Math.sqrt(px * px + py * py + pz * pz);
-        if (perpendicular > BASE_HIT_RADIUS + Math.tan(spreadRad) * along) continue;
-        entityHits.push({ kind: "entity", instanceId, distance: along, at: position });
-      }
-      let nearestObject: ObjectRaycastHit | null = null;
-      for (const object of deps.objects?.list() ?? []) {
-        const half = deps.objects?.halfExtents?.(object.catalogId) ?? DEFAULT_OBJECT_HALF_EXTENTS;
-        const min: EntityPosition = [
-          object.position[0] - half[0],
-          object.position[1] - half[1],
-          object.position[2] - half[2],
-        ];
-        const max: EntityPosition = [
-          object.position[0] + half[0],
-          object.position[1] + half[1],
-          object.position[2] + half[2],
-        ];
-        const distance = raySegmentAabbDistance(origin, direction, range, min, max);
-        if (distance === null) continue;
-        if (nearestObject === null || distance < nearestObject.distance) {
-          nearestObject = {
-            kind: "object",
-            instanceId: object.instanceId,
-            catalogId: object.catalogId,
-            distance,
-            at: [
-              origin[0] + direction[0] * distance,
-              origin[1] + direction[1] * distance,
-              origin[2] + direction[2] * distance,
-            ],
-          };
+      const mapped: RaycastHit[] = [];
+      for (const hit of until) {
+        if (hit.targetKind === "entity" && spreadRad > 0) {
+          const position = deps.spatial.positionOf(hit.instanceId);
+          if (position !== undefined) {
+            const dx = position[0] - origin[0];
+            const dy = position[1] - origin[1];
+            const dz = position[2] - origin[2];
+            const along = dx * direction[0] + dy * direction[1] + dz * direction[2];
+            const px = dx - direction[0] * along;
+            const py = dy - direction[1] * along;
+            const pz = dz - direction[2] * along;
+            const perpendicular = Math.sqrt(px * px + py * py + pz * pz);
+            if (perpendicular > 0.5 + Math.tan(spreadRad) * along) continue;
+          }
         }
+        mapped.push(sceneHitToRaycast(hit));
       }
-      const blockDistance = nearestObject?.distance ?? Infinity;
-      const hits: RaycastHit[] = entityHits.filter((hit) => hit.distance <= blockDistance);
-      if (nearestObject !== null) hits.push(nearestObject);
-      return hits.sort((a, b) => a.distance - b.distance);
+      return mapped;
     });
 
   function resolveRange(via: EffectVia): number {
@@ -237,8 +334,9 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   }
 
   function ballisticArc(input: ProjectileShotInput): BallisticArc {
-    const origin = shotOrigin(input.from, input.aim) ?? [0, 0, 0];
-    const direction = aimDirection(input.aim) ?? [0, 0, 1];
+    const resolved = resolveShotFor(input.from, input.aim, input.originPolicy);
+    const origin = resolved?.origin ?? [0, 0, 0];
+    const direction = resolved?.direction ?? aimDirection(input.aim) ?? [0, 0, 1];
     const speed = itemStat(input.via, "projectile.speed") ?? DEFAULT_PROJECTILE_SPEED;
     const gravityScale = itemStat(input.via, "projectile.gravity") ?? 1;
     const fuseTime = itemStat(input.via, "projectile.fuseTime");
@@ -274,36 +372,50 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     return arc.landing;
   }
 
-  function predictHits(input: ProjectileShotInput): { rawHits: RaycastHit[]; visible: RaycastHit[] } {
+  function predictHits(input: ProjectileShotInput): {
+    rawHits: RaycastHit[];
+    visible: RaycastHit[];
+    origin: EntityPosition | undefined;
+    direction: EntityPosition | undefined;
+  } {
     const aim = withWeaponSpread(input.via, input.aim);
-    const rawHits = raycast(input.from, aim, resolveRange(input.via));
+    const resolved = resolveShotFor(input.from, aim, input.originPolicy);
+    const rawHits = raycast(input.from, aim, resolveRange(input.via), input.originPolicy);
     const visible = rawHits.filter(
       (hit) => isObjectHit(hit) || deps.spatial.hasLineOfSight(input.from, hit.instanceId),
     );
-    return { rawHits, visible };
+    return {
+      rawHits,
+      visible,
+      origin: resolved?.origin,
+      direction: resolved?.direction,
+    };
   }
 
-  function settledAt(input: ProjectileShotInput, hits: RaycastHit[]): [number, number, number] {
-    const first = hits[0];
-    if (first !== undefined) return [first.at[0], first.at[1], first.at[2]];
-    const origin = shotOrigin(input.from, input.aim);
-    const direction = origin === undefined ? null : aimDirection(input.aim);
-    if (origin === undefined || direction === null) return [0, 0, 0];
+  function missPoint(input: ProjectileShotInput): [number, number, number] {
+    const resolved = resolveShotFor(input.from, input.aim, input.originPolicy);
+    if (resolved === null) return [0, 0, 0];
     const range = resolveRange(input.via);
-    return [origin[0] + direction[0] * range, origin[1] + direction[1] * range, origin[2] + direction[2] * range];
+    return [
+      resolved.origin[0] + resolved.direction[0] * range,
+      resolved.origin[1] + resolved.direction[1] * range,
+      resolved.origin[2] + resolved.direction[2] * range,
+    ];
   }
 
   return {
     willHitProjectile(input) {
-      const { rawHits, visible } = predictHits(input);
+      const { rawHits, visible, origin, direction } = predictHits(input);
+      const impact = firstImpact(asSceneHits(rawHits));
+      const solidBlock = impact !== null && impact.blocks && !impact.damageEligible;
       const prediction: ProjectilePrediction = {
-        hits: visible.map((hit) =>
-          isObjectHit(hit)
-            ? { kind: "object", instanceId: hit.instanceId, catalogId: hit.catalogId, distance: hit.distance }
-            : { kind: "entity", instanceId: hit.instanceId, distance: hit.distance },
-        ),
+        hits: visible.map(toProjectileHit),
+        ...(origin !== undefined ? { origin } : {}),
+        ...(direction !== undefined ? { direction } : {}),
+        firstImpact: impact === null ? null : toProjectileHit(sceneHitToRaycast(impact)),
       };
       if (rawHits.length > 0 && visible.length === 0) prediction.blocked = true;
+      else if (solidBlock) prediction.blocked = true;
       return prediction;
     },
     fireProjectile(input) {
@@ -318,7 +430,10 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       if (shot.settled) return { status: "rejected", shotId, reason: "already-settled" };
       shot.settled = true;
       const { input } = shot;
-      const origin = shotOrigin(input.from, input.aim) ?? [0, 0, 0];
+      const resolved = resolveShotFor(input.from, input.aim, input.originPolicy);
+      const origin = resolved?.origin ?? [0, 0, 0];
+      const originTuple: [number, number, number] = [origin[0], origin[1], origin[2]];
+
       if (isBallistic(input.via)) {
         const at = ballisticSettlePoint(input);
         const splashRadius = itemStat(input.via, "explosion.radius");
@@ -332,19 +447,28 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
           falloff: splashRadius === null ? "none" : "linear",
         });
         deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: hits.length > 0 });
-        return { status: "settled", shotId, at, hits };
+        return { status: "settled", shotId, at, hits, origin: originTuple };
       }
-      const { visible } = predictHits(input);
-      const entityHits = visible.filter(isEntityHit);
-      const objectHits = visible.filter(isObjectHit);
-      const receivable = entityHits.filter(
-        (hit) => deps.effects.canReceive(hit.instanceId, input.effect) === null,
+
+      const { visible, rawHits } = predictHits(input);
+      const ordered = asSceneHits(rawHits);
+      const untilBlock = hitsUntilBlocked(ordered);
+      const impact = firstImpact(untilBlock);
+
+      const solidBlock = impact !== null && impact.blocks && !impact.damageEligible;
+      const damageEntityHits = visible.filter(
+        (hit): hit is EntityRaycastHit =>
+          isEntityHit(hit) &&
+          hit.damageEligible !== false &&
+          (!solidBlock || hit.distance <= (impact?.distance ?? Infinity) + 1e-9) &&
+          deps.effects.canReceive(hit.instanceId, input.effect) === null,
       );
+
       const pellets = Math.max(1, Math.round(itemStat(input.via, "pellets") ?? 1));
       const hits: EffectResult[] = [];
-      if (receivable.length > 0) {
-        for (let pellet = 0; pellet < pellets; pellet++) {
-          const target = receivable[pellet % receivable.length];
+      if (!solidBlock && damageEntityHits.length > 0) {
+        for (let pellet = 0; pellet < pellets; pellet += 1) {
+          const target = damageEntityHits[pellet % damageEntityHits.length]!;
           hits.push(
             ...deps.effects.applyEffect({
               from: input.from,
@@ -355,9 +479,18 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
           );
         }
       }
-      const at = settledAt(input, receivable.length > 0 ? receivable : objectHits);
-      deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: receivable.length > 0 });
-      return { status: "settled", shotId, at, hits };
+
+      let at: [number, number, number];
+      if (impact !== null) {
+        at = [impact.point[0], impact.point[1], impact.point[2]];
+      } else if (damageEntityHits[0] !== undefined) {
+        at = [damageEntityHits[0].at[0], damageEntityHits[0].at[1], damageEntityHits[0].at[2]];
+      } else {
+        at = missPoint(input);
+      }
+
+      deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: hits.length > 0 });
+      return { status: "settled", shotId, at, hits, origin: originTuple };
     },
   };
 }

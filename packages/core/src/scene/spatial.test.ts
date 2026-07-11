@@ -96,19 +96,23 @@ describe("spatial", () => {
   }
 
   describe("grid acceleration", () => {
-    test("inRadius matches the linear scan for random point sets", () => {
+    test("grid is on by default and matches an explicit linear scan", () => {
       const rng = seededRandom(42);
       const positions = randomPositions(200, rng, 100);
-      const linear = createSpatialApi({ resolvePosition: (id) => positions[id], candidates: () => Object.keys(positions) });
+      const ids = () => Object.keys(positions);
+      const linear = createSpatialApi({
+        resolvePosition: (id) => positions[id],
+        candidates: ids,
+        grid: false,
+      });
       const gridded = createSpatialApi({
         resolvePosition: (id) => positions[id],
-        candidates: () => Object.keys(positions),
-        grid: { cellSize: 5 },
+        candidates: ids,
       });
       for (let trial = 0; trial < 25; trial += 1) {
         const center: EntityPosition = [(rng() - 0.5) * 100, (rng() - 0.5) * 100, (rng() - 0.5) * 100];
         const radius = rng() * 30;
-        expect(gridded.inRadius(center, radius)).toEqual(linear.inRadius(center, radius));
+        expect(gridded.inRadius(center, radius).sort()).toEqual(linear.inRadius(center, radius).sort());
       }
     });
 
@@ -116,17 +120,18 @@ describe("spatial", () => {
       const rng = seededRandom(7);
       const positions = randomPositions(150, rng, 80);
       positions["attacker"] = [0, 0, 0];
-      const linear = createSpatialApi({ resolvePosition: (id) => positions[id], candidates: () => Object.keys(positions) });
+      const ids = () => Object.keys(positions);
+      const linear = createSpatialApi({ resolvePosition: (id) => positions[id], candidates: ids, grid: false });
       const gridded = createSpatialApi({
         resolvePosition: (id) => positions[id],
-        candidates: () => Object.keys(positions),
+        candidates: ids,
         grid: { cellSize: 4 },
       });
       for (let trial = 0; trial < 15; trial += 1) {
         const aim = { yaw: rng() * Math.PI * 2, pitch: 0 };
         const radius = rng() * 40;
         const options = { from: "attacker", aim, radius, halfAngleDeg: 45 };
-        expect(gridded.queryArc(options)).toEqual(linear.queryArc(options));
+        expect(gridded.queryArc(options).sort()).toEqual(linear.queryArc(options).sort());
       }
     });
 
@@ -144,6 +149,21 @@ describe("spatial", () => {
       expect(api.inRadius([50, 50, 50], 10)).toEqual(["b"]);
     });
 
+    test("getVersion auto-rebuilds after a move without invalidate()", () => {
+      const positions: Record<string, EntityPosition> = { a: [0, 0, 0], b: [100, 0, 100] };
+      let version = 0;
+      const api = createSpatialApi({
+        resolvePosition: (id) => positions[id],
+        candidates: () => Object.keys(positions),
+        grid: { cellSize: 5 },
+        getVersion: () => version,
+      });
+      expect(api.inRadius([50, 50, 50], 10)).toEqual([]);
+      positions["b"] = [51, 50, 51];
+      version += 1;
+      expect(api.inRadius([50, 50, 50], 10)).toEqual(["b"]);
+    });
+
     test("a newly added candidate is never missed even without invalidate()", () => {
       const positions: Record<string, EntityPosition> = { a: [0, 0, 0] };
       const api = createSpatialApi({
@@ -154,6 +174,34 @@ describe("spatial", () => {
       expect(api.inRadius([50, 50, 50], 10)).toEqual([]);
       positions["b"] = [51, 50, 51];
       expect(api.inRadius([50, 50, 50], 10)).toEqual(["b"]);
+    });
+
+    test("grid-backed inRadius is faster than a full linear scan at scale", () => {
+      const rng = seededRandom(99);
+      const positions = randomPositions(4000, rng, 400);
+      const ids = Object.keys(positions);
+      const candidates = () => ids;
+      const linear = createSpatialApi({
+        resolvePosition: (id) => positions[id],
+        candidates,
+        grid: false,
+      });
+      const gridded = createSpatialApi({
+        resolvePosition: (id) => positions[id],
+        candidates,
+        grid: { cellSize: 8 },
+      });
+      const center: EntityPosition = [0, 0, 0];
+      const radius = 12;
+      gridded.inRadius(center, radius);
+      const t0 = performance.now();
+      for (let i = 0; i < 40; i += 1) linear.inRadius(center, radius);
+      const linearMs = performance.now() - t0;
+      const t1 = performance.now();
+      for (let i = 0; i < 40; i += 1) gridded.inRadius(center, radius);
+      const gridMs = performance.now() - t1;
+      expect(gridMs).toBeLessThan(linearMs);
+      expect(gridded.inRadius(center, radius).sort()).toEqual(linear.inRadius(center, radius).sort());
     });
   });
 });

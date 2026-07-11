@@ -184,17 +184,29 @@ export function createObjectStore(): ObjectStore {
     },
     inBox(min, max) {
       const hits: SceneObject[] = [];
-      for (const bucket of cellIndex.values()) {
-        for (const instanceId of bucket) {
-          const object = store.get(instanceId);
-          if (object === undefined) continue;
-          const [x, y, z] = object.position;
-          if (
-            x >= min[0] && x <= max[0] &&
-            y >= min[1] && y <= max[1] &&
-            z >= min[2] && z <= max[2]
-          ) {
-            hits.push(object);
+      const minCx = cellIndexOf(min[0]);
+      const maxCx = cellIndexOf(max[0]);
+      const minCy = cellIndexOf(min[1]);
+      const maxCy = cellIndexOf(max[1]);
+      const minCz = cellIndexOf(min[2]);
+      const maxCz = cellIndexOf(max[2]);
+      for (let cx = minCx; cx <= maxCx; cx += 1) {
+        for (let cy = minCy; cy <= maxCy; cy += 1) {
+          for (let cz = minCz; cz <= maxCz; cz += 1) {
+            const bucket = cellIndex.get(cellKey(cx, cy, cz));
+            if (bucket === undefined) continue;
+            for (const instanceId of bucket) {
+              const object = store.get(instanceId);
+              if (object === undefined) continue;
+              const [x, y, z] = object.position;
+              if (
+                x >= min[0] && x <= max[0] &&
+                y >= min[1] && y <= max[1] &&
+                z >= min[2] && z <= max[2]
+              ) {
+                hits.push(object);
+              }
+            }
           }
         }
       }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { raycastObjects, raycastObjectsAll } from "@jgengine/core/scene/objectQuery";
-import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import { createObjectStore, type SceneObject } from "@jgengine/core/scene/objectStore";
 
 function object(instanceId: string, position: readonly [number, number, number]): SceneObject {
   return { instanceId, catalogId: "crate", position, rotationY: 0 };
@@ -72,5 +72,22 @@ describe("raycastObjects", () => {
     expect(hit).not.toBeNull();
     expect(hit?.instanceId).toBe("a");
     expect(hit?.point[0]).toBeCloseTo(hit?.point[2] ?? -1);
+  });
+
+  test("broadphase inBox source finds the near object without scanning the far one", () => {
+    const store = createObjectStore();
+    store.place("crate", 5, 0, 0, { instanceId: "near" });
+    store.place("crate", 200, 0, 0, { instanceId: "far" });
+    let boxes = 0;
+    const source = {
+      inBox(min: readonly [number, number, number], max: readonly [number, number, number]) {
+        boxes += 1;
+        return store.inBox(min, max);
+      },
+    };
+    const hit = raycastObjects(source, { origin: [0, 0, 0], direction: [1, 0, 0], maxDistance: 20 });
+    expect(hit?.instanceId).toBe("near");
+    expect(boxes).toBe(1);
+    expect(store.inBox([-1, -1, -1], [20.5, 1, 1]).map((o) => o.instanceId)).toEqual(["near"]);
   });
 });
