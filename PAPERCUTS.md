@@ -226,3 +226,7 @@ Sweep briefs listing N games to a single Sonnet worker → the worker treated it
 2026-07-11T22:32:30.217Z — claude-opus-4-8 — Claude
 
 post-merge 60s green-check worker → Sonnet backgrounded its foreground sleep and returned 'waiting on the 60s sleep' with no Actions result, forcing a relaunch to actually read the merge-commit runs
+
+2026-07-11T23:06:32.648Z — sonnet — Claude
+
+ship worker spawned a nested background worker and returned 'running in background' as its final result → orchestrator got a status echo instead of the PR/merge/CI report
