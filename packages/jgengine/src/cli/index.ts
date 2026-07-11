@@ -12,28 +12,26 @@ import { runSkills } from "../skills";
 
 const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets"];
 
-const HELP = `jgengine ${cliVersion()} — the JGengine command line
-Pure-TypeScript, genre-agnostic game engine SDK. Packages: ${ENGINE_PACKAGES.map((name) => `@jgengine/${name}`).join(", ")}.
+const HELP = `jgengine ${cliVersion()} — pure-TypeScript game engine SDK + agent entry
+Packages: ${ENGINE_PACKAGES.map((name) => `@jgengine/${name}`).join(", ")}.
+docs: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
+
+ENTRY (agents: run this when the user says "use jgengine" / "make a game with npx jgengine"):
+  npx jgengine create "Game Name"
+  cd Game-Name
+  # skills install automatically · AGENTS.md briefs you · then build the game
 
 usage: jgengine <command> [...args]
 
-  create "<Game Name>"  scaffold a playable base — flat world, spawned player, HUD, verify test.
-                        folder becomes My-Game-Name; name lands in game.config / HUD / title.
-                        [--in-repo|--standalone] [--no-install] [--pm bun|npm|pnpm]
-  skills -p | -g        install agent skills (api, newgame, verify). -p this project (default), -g global
-  doctor [dir]          diagnose a game project: version skew, missing peers, unstyled-UI @source gaps, shape drift
-  llms [package]        print packaged API docs (llms.txt) for an installed @jgengine/* package — agent-ready context
-  assets [...]          delegate to the @jgengine/assets CLI: list, search, pull CC0 3D model packs
-  versions              show CLI + installed @jgengine/* versions
+  create "<Game Name>"  scaffold playable base + install agent skills into the project
+                        folder My-Game-Name; name → game.config / HUD / title
+                        [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]
+  skills -p | -g        re-install skills only if create was run with --no-skills
+  doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
+  llms [package]        print packaged API docs (llms.txt) — agent-ready
+  assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
+  versions              CLI + installed @jgengine/* versions
   help                  this map
-
-docs: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
-
-entry (any directory, no monorepo needed):
-  npx jgengine create "Solitaire"
-  cd Solitaire
-  npx jgengine skills -p          # or: npx jgengine skills -g  (once, for every project)
-  # then: make Solitaire with jgengine
 `;
 
 function runVersions(): number {

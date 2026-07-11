@@ -104,7 +104,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
   test("templates carry the verify gate and agent onboarding", () => {
     const files = render("standalone");
     expect(fileOf(files, "src/game/world.world.test.ts")).toContain("summarizeEnvironment");
-    expect(fileOf(files, "AGENTS.md")).toContain("npx jgengine skills -p");
+    expect(fileOf(files, "AGENTS.md")).toContain("User-facing first reply is short");
+    expect(fileOf(files, "AGENTS.md")).toContain("dump file trees");
   });
 
   test("rejects a non-kebab-case id", () => {

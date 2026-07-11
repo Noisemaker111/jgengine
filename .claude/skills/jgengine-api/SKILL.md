@@ -234,11 +234,9 @@ Exact import paths and export names — **do not invent paths**; every row below
 Fastest path — the `jgengine` CLI scaffolds the entire canonical shape below (harness, skeleton, stub game, verify test, AGENTS.md) as a booting game:
 
 ```sh
-npx jgengine create "My Game Name"   # folder → My-Game-Name; name lands in game.config / HUD / title
-cd My-Game-Name
-npx jgengine skills -p               # agent skills here; use -g once for global
-bun dev
-npx jgengine doctor                  # later, if the setup drifts (version skew, unstyled HUD, shape strays)
+npx jgengine create "My Game Name"   # folder → My-Game-Name; skills install automatically
+cd My-Game-Name && bun dev
+npx jgengine doctor                  # later, if setup drifts (version skew, unstyled HUD, shape)
 ```
 
 Manual equivalent:

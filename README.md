@@ -35,22 +35,21 @@ import { createWsBackend } from "@jgengine/ws/createWsBackend";
 
 ## Agent skills
 
-Building a game with an AI coding agent? Entry is the CLI — scaffold, install skills, build:
+Building a game with an AI coding agent? **One command** — create scaffolds the game **and** installs skills into the project:
 
 ```sh
 npx jgengine create "Solitaire"
 cd Solitaire
-npx jgengine skills -p    # this project  ·  -g for global (every project)
-# then tell your agent: make Solitaire with jgengine
+# tell your agent: make Solitaire with jgengine
 ```
 
-(`npx skills add Noisemaker111/jgengine` still works; `jgengine skills -p|-g` is the preferred wrapper.)
+No separate skills download for the user. Re-install only if needed: `npx jgengine skills -p` or `-g`.
 
 Then prompts like "make a tower defense game with jgengine" pick up the full engine surface and definition of done automatically. The skills live in [`.claude/skills/`](.claude/skills) — the directory Claude Code auto-surfaces in every session, so they get invoked instead of merely existing.
 
 ## Website — [jgengine.com](https://jgengine.com)
 
-[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and a front door for agents. It points agents at `npx jgengine skills -g` and explains which skill to grab for what — the skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
+[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and a front door for agents. It points agents at `npx jgengine create "My Game Name"` and explains which skill to grab for what — the skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
 
 It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
