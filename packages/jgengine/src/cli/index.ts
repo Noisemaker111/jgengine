@@ -13,16 +13,11 @@ import { runSkills } from "../skills";
 const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets"];
 
 const HELP = `jgengine ${cliVersion()} — agent-side CLI for the JGengine TypeScript game SDK
-This is the npm package "jgengine" / scope @jgengine/* — a software game engine, not automotive.
 Packages: ${ENGINE_PACKAGES.map((name) => `@jgengine/${name}`).join(", ")}.
-docs: https://jgengine.com · llms: https://jgengine.com/llms.txt · source: https://github.com/Noisemaker111/jgengine
+docs: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
 
 HUMAN INTERFACE (what people say to you — not a shell they must run):
   Make a game that ... with jgengine
-
-IDENTITY (if you found this CLI, you have the right product):
-  npm view jgengine
-  # skip generic web search — "jgengine" collides with car-engine businesses
 
 AGENT RESPONSE (you run these; do not dump this as homework for the user):
   npx jgengine create "Game Name"   # scaffold + install skills into the project
