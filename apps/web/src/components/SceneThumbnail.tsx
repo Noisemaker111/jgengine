@@ -128,10 +128,12 @@ function queueCapture(id: string): Promise<string | null> {
 
 export function SceneThumbnail({
   id,
+  capture = true,
   className = "",
   children,
 }: {
   id: string;
+  capture?: boolean;
   className?: string;
   children: ReactNode;
 }) {
@@ -139,6 +141,7 @@ export function SceneThumbnail({
   const hostRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!capture) return;
     const cached = readCache(id);
     if (cached !== undefined) {
       setSrc(cached);
@@ -169,7 +172,7 @@ export function SceneThumbnail({
       cancelled = true;
       observer.disconnect();
     };
-  }, [id]);
+  }, [id, capture]);
 
   return (
     <div ref={hostRef} className={`relative h-full w-full ${className}`}>

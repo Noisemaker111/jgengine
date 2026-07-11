@@ -24,7 +24,7 @@ function FacePlaceholder({ game }: { game: Game }) {
         }}
       />
       <div className="absolute inset-0 p-6">
-        <GameArt id={game.id} hue={game.hue} />
+        <GameArt id={game.id} hue={game.hue} genre={game.genre} category={game.category} />
       </div>
     </>
   );
@@ -32,7 +32,7 @@ function FacePlaceholder({ game }: { game: Game }) {
 
 export function GameFace({ game, className = "" }: { game: Game; className?: string }) {
   return (
-    <SceneThumbnail id={game.id} className={className}>
+    <SceneThumbnail id={game.id} capture={game.shot === undefined} className={className}>
       <FacePlaceholder game={game} />
     </SceneThumbnail>
   );

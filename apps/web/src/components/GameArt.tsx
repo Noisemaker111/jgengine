@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 const cell = 18;
 
 function BlockStacker({ hue }: { hue: string }) {
@@ -254,6 +256,134 @@ function TowerGuard({ hue }: { hue: string }) {
   );
 }
 
+function TileArt({ hue }: { hue: string }) {
+  const glyph = (x: number, y: number, o: number) => (
+    <g key={`${x}-${y}`}>
+      <rect x={x} y={y} width="22" height="30" rx="4" fill="#05070d" stroke={hue} strokeWidth="1.6" opacity={o} />
+      <path d={`M${x + 6} ${y + 8} h10 M${x + 6} ${y + 15} h10 M${x + 6} ${y + 22} h6`} stroke={hue} strokeWidth="2" strokeLinecap="round" opacity={o * 0.7} />
+    </g>
+  );
+  return (
+    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
+      {glyph(58, 44, 0.4)}
+      {glyph(84, 40, 0.6)}
+      {glyph(110, 44, 0.4)}
+      {glyph(97, 30, 0.95)}
+    </svg>
+  );
+}
+
+function CardsArt({ hue }: { hue: string }) {
+  return (
+    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
+      {[-16, -5, 6].map((dx, i) => (
+        <g key={dx} transform={`translate(${88 + dx * 3} 30) rotate(${dx})`}>
+          <rect x="0" y="0" width="40" height="58" rx="6" fill="#05070d" stroke={hue} strokeWidth="2" opacity={0.55 + i * 0.18} />
+          <circle cx="20" cy="29" r="8" fill={hue} opacity={0.35 + i * 0.2} />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function DiceArt({ hue }: { hue: string }) {
+  const pip = (x: number, y: number, o = 0.9) => <circle key={`${x}-${y}`} cx={x} cy={y} r="4" fill={hue} opacity={o} />;
+  return (
+    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
+      <rect x="58" y="30" width="52" height="52" rx="10" fill="#05070d" stroke={hue} strokeWidth="2" opacity="0.9" />
+      {pip(72, 44)}{pip(96, 44)}{pip(84, 56)}{pip(72, 68)}{pip(96, 68)}
+      <rect x="118" y="52" width="40" height="40" rx="8" fill="#05070d" stroke={hue} strokeWidth="2" opacity="0.5" />
+      {pip(130, 64, 0.5)}{pip(146, 80, 0.5)}
+    </svg>
+  );
+}
+
+function GridArt({ hue }: { hue: string }) {
+  const cells: ReactNode[] = [];
+  const on = new Set(["0-1", "1-3", "2-0", "2-2", "3-1", "4-3", "1-1", "3-3"]);
+  for (let c = 0; c < 5; c++) {
+    for (let r = 0; r < 4; r++) {
+      const k = `${c}-${r}`;
+      cells.push(
+        <rect key={k} x={54 + c * 20} y={26 + r * 20} width="16" height="16" rx="3" fill={hue} opacity={on.has(k) ? 0.85 : 0.14} />,
+      );
+    }
+  }
+  return (
+    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
+      {cells}
+    </svg>
+  );
+}
+
+function SlideArt({ hue }: { hue: string }) {
+  const tiles: [number, number, number][] = [
+    [0, 0, 0.35], [1, 0, 0.5], [2, 0, 0.7],
+    [0, 1, 0.5], [1, 1, 0.9], [2, 1, 0.6],
+    [0, 2, 0.7], [1, 2, 0.4],
+  ];
+  return (
+    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
+      <rect x="62" y="18" width="76" height="76" rx="8" fill={hue} opacity="0.08" />
+      {tiles.map(([c, r, o]) => (
+        <rect key={`${c}-${r}`} x={68 + c * 24} y={24 + r * 24} width="20" height="20" rx="4" fill={hue} opacity={o} />
+      ))}
+      <path d="M118 84 h18 M130 78 l6 6 -6 6" stroke={hue} strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+    </svg>
+  );
+}
+
+function PinballArt({ hue }: { hue: string }) {
+  return (
+    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
+      <path d="M70 20 h60 a4 4 0 0 1 4 4 v72 a4 4 0 0 1 -4 4 h-60 a4 4 0 0 1 -4 -4 v-72 a4 4 0 0 1 4 -4Z" fill={hue} opacity="0.08" stroke={hue} strokeWidth="1.5" strokeOpacity="0.4" />
+      <circle cx="88" cy="42" r="8" fill={hue} opacity="0.7" />
+      <circle cx="118" cy="54" r="8" fill={hue} opacity="0.45" />
+      <circle cx="100" cy="34" r="4.5" fill={hue} />
+      <path d="M74 92 l16 -8" stroke={hue} strokeWidth="5" strokeLinecap="round" opacity="0.9" />
+      <path d="M126 92 l-16 -8" stroke={hue} strokeWidth="5" strokeLinecap="round" opacity="0.9" />
+    </svg>
+  );
+}
+
+function ArcadeArt({ hue }: { hue: string }) {
+  return (
+    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <g key={i} opacity={0.85 - i * 0.22} transform={`translate(${72 + i * 28} 34)`}>
+          <rect x="0" y="4" width="20" height="12" rx="3" fill={hue} />
+          <rect x="-4" y="0" width="6" height="8" rx="2" fill={hue} />
+          <rect x="18" y="0" width="6" height="8" rx="2" fill={hue} />
+          <rect x="2" y="16" width="4" height="6" fill={hue} />
+          <rect x="14" y="16" width="4" height="6" fill={hue} />
+        </g>
+      ))}
+      <path d="M74 78 h52" stroke={hue} strokeWidth="2" strokeDasharray="3 5" strokeOpacity="0.5" />
+      <rect x="90" y="84" width="20" height="6" rx="3" fill={hue} opacity="0.9" />
+    </svg>
+  );
+}
+
+function BoardArt({ hue }: { hue: string }) {
+  const squares: ReactNode[] = [];
+  for (let c = 0; c < 4; c++) {
+    for (let r = 0; r < 4; r++) {
+      if ((c + r) % 2 === 0) {
+        squares.push(<rect key={`${c}-${r}`} x={64 + c * 18} y={24 + r * 18} width="18" height="18" fill={hue} opacity="0.12" />);
+      }
+    }
+  }
+  return (
+    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
+      <rect x="64" y="24" width="72" height="72" rx="4" fill="none" stroke={hue} strokeWidth="1.5" strokeOpacity="0.4" />
+      {squares}
+      <circle cx="82" cy="42" r="7" fill={hue} opacity="0.85" />
+      <circle cx="118" cy="78" r="7" fill="#05070d" stroke={hue} strokeWidth="2" opacity="0.8" />
+      <circle cx="100" cy="60" r="7" fill={hue} opacity="0.55" />
+    </svg>
+  );
+}
+
 const ART: Record<string, (props: { hue: string }) => ReturnType<typeof BlockStacker>> = {
   annals: Annals,
   "block-stacker": BlockStacker,
@@ -271,7 +401,42 @@ const ART: Record<string, (props: { hue: string }) => ReturnType<typeof BlockSta
   "voxel-mine": VoxelMine,
 };
 
-export function GameArt({ id, hue }: { id: string; hue: string }) {
-  const Art = ART[id] ?? VoxelMine;
+const GENRE_ART: [RegExp, (props: { hue: string }) => ReturnType<typeof BlockStacker>][] = [
+  [/card|solitaire|poker|blackjack|deckbuild|spider/, CardsArt],
+  [/dice|yacht/, DiceArt],
+  [/tile|mahjong/, TileArt],
+  [/slid|2048|fifteen/, SlideArt],
+  [/pinball|pachinko/, PinballArt],
+  [/board|reversi|four|connect|checkers/, BoardArt],
+  [/logic|sudoku|nonogram|minesweep|sweep|picture|deduction|lights|codebreak|peg|memory/, GridArt],
+  [/arcade|shooter|invader|blast|brick|breaker|bubble|snake|paddle|hopper|survival/, ArcadeArt],
+];
+
+const CATEGORY_ART: Record<string, (props: { hue: string }) => ReturnType<typeof BlockStacker>> = {
+  Puzzle: GridArt,
+  "Strategy & Tactics": BoardArt,
+  "Action & Arcade": ArcadeArt,
+  "Sandbox & Simulation": VoxelMine,
+  Others: DiceArt,
+};
+
+function resolveArt(id: string, genre?: string, category?: string): (props: { hue: string }) => ReturnType<typeof BlockStacker> {
+  const custom = ART[id];
+  if (custom !== undefined) return custom;
+  if (genre !== undefined) {
+    const g = genre.toLowerCase();
+    for (const [pattern, art] of GENRE_ART) {
+      if (pattern.test(g)) return art;
+    }
+  }
+  if (category !== undefined) {
+    const byCategory = CATEGORY_ART[category];
+    if (byCategory !== undefined) return byCategory;
+  }
+  return VoxelMine;
+}
+
+export function GameArt({ id, hue, genre, category }: { id: string; hue: string; genre?: string; category?: string }) {
+  const Art = resolveArt(id, genre, category);
   return <Art hue={hue} />;
 }
