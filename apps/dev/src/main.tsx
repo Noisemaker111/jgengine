@@ -138,7 +138,7 @@ function ErrorPanel({ title, detail }: { title: string; detail: string }) {
 function SettingsPreviewApp() {
   useEffect(() => armCaptureReady("ui"), []);
   const variant = (urlParams.get("variant") ?? "panel") as SettingsVariant;
-  return <SettingsPreview variant={variant} />;
+  return <SettingsPreview variant={variant} initialTab={urlParams.get("tab") ?? undefined} />;
 }
 
 function DevApp() {

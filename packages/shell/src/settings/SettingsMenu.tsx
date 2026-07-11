@@ -297,12 +297,22 @@ function stop(event: { stopPropagation: () => void }) {
   event.stopPropagation();
 }
 
-export function SettingsMenu({ controller, onClose }: { controller: SettingsController; onClose: () => void }) {
+export function SettingsMenu({
+  controller,
+  onClose,
+  initialTab,
+}: {
+  controller: SettingsController;
+  onClose: () => void;
+  initialTab?: string;
+}) {
   const tabs: Tab[] = [
     ...(controller.actions.length > 0 ? [{ id: "game", label: "Game", category: null } as Tab] : []),
     ...controller.categories.map((category) => ({ id: category.id, label: category.label, category })),
   ];
-  const [activeId, setActiveId] = useState<string>(tabs[0]?.id ?? "");
+  const [activeId, setActiveId] = useState<string>(
+    initialTab !== undefined && tabs.some((tab) => tab.id === initialTab) ? initialTab : (tabs[0]?.id ?? ""),
+  );
   const [capturing, setCapturing] = useState<SettingsKeybindRow | null>(null);
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? null;
 

@@ -77,7 +77,7 @@ const ACTIONS: SettingsActionView[] = [
   { id: "quit", label: "Quit to menu", kind: "default", description: "Leave the run and return to the title.", run: noop },
 ];
 
-export function SettingsPreview({ variant }: { variant: SettingsVariant }) {
+export function SettingsPreview({ variant, initialTab }: { variant: SettingsVariant; initialTab?: string }) {
   const [controller] = useState<SettingsController>(() => ({
     categories: CATEGORIES,
     actions: ACTIONS,
@@ -97,7 +97,7 @@ export function SettingsPreview({ variant }: { variant: SettingsVariant }) {
       <div className="absolute inset-0 flex items-center justify-center text-6xl font-black tracking-tight text-white/5">
         {variant.toUpperCase()}
       </div>
-      <SettingsMenu controller={controller} onClose={noop} />
+      <SettingsMenu controller={controller} onClose={noop} initialTab={initialTab} />
     </div>
   );
 }
