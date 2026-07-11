@@ -22,6 +22,14 @@ export { telegraphPulseOpacity } from "./telegraphPulse";
 
 const MUZZLE_HEIGHT = 1.4;
 
+function pinOverlayToViewport(
+  _el: THREE.Object3D,
+  _camera: THREE.Camera,
+  size: { width: number; height: number },
+): [number, number] {
+  return [size.width / 2, size.height / 2];
+}
+
 export function WorldEntityBars({
   statId,
   height = 2.2,
@@ -69,7 +77,7 @@ export function WorldEntityBars({
   });
 
   return (
-    <Html fullscreen zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
+    <Html fullscreen calculatePosition={pinOverlayToViewport} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
       <canvas
         ref={canvasRef}
         style={{ width: "100%", height: "100%", display: "block", pointerEvents: "none" }}

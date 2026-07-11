@@ -77,7 +77,7 @@ export function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSam
 export function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }) {
   const sample = useFrustumSensor(props);
   return (
-    <Html fullscreen>
+    <Html fullscreen calculatePosition={(_el, _camera, size) => [size.width / 2, size.height / 2]}>
       <div className={props.wrapperClassName ?? "pointer-events-none absolute bottom-24 right-4"}>
         {sample === null ? (
           <div className={props.className ?? "rounded border border-white/15 bg-black/60 px-3 py-1.5 text-xs text-white/50"}>
