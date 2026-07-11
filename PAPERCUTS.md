@@ -206,3 +206,7 @@ bun run check-types → bun run --filter "*" check-types silently matches 0 of 6
 2026-07-11T07:23:58.444Z — claude-opus-4-8 — Claude
 
 wiring a headless boot smoke gate → picked a DOM-only game (blackjack) whose play-mode capture handshake waits for a <canvas> that never renders, so it timed out; no cheap signal tells you which games are canvas vs pure-HUD before a full boot round
+
+2026-07-11T16:03:47.453Z — sonnet — Claude
+
+delegating the ship motion → Sonnet ship-workers twice returned an announcement ('running in background, will report') and ended their turn without committing/pushing/merging, so the ship silently didn't happen and had to be re-sent with 'execute in THIS turn'; a ship brief needs the worker to actually run the motion, not narrate intent
