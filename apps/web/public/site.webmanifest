@@ -1,0 +1,17 @@
+{
+  "name": "JGengine",
+  "short_name": "JGengine",
+  "description": "A pure-TypeScript game engine and skill system for AI coding agents.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
