@@ -15,7 +15,10 @@ import {
 } from "@jgengine/shell/multiplayer";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
+import type { SettingsVariant } from "@jgengine/core/settings/settingsModel";
+
 import { armCaptureReady, captureArmed, setCaptureStatus } from "./captureReady";
+import { SettingsPreview } from "./settingsPreview";
 import "./index.css";
 
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
@@ -103,6 +106,7 @@ const GAME_ID =
   "demo";
 const MODE = urlParams.get("mode") ?? "play";
 const STAGE = urlParams.get("stage") === "1";
+const SETTINGS_PREVIEW = urlParams.get("preview") === "settings";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
@@ -129,6 +133,12 @@ function ErrorPanel({ title, detail }: { title: string; detail: string }) {
       </pre>
     </div>
   );
+}
+
+function SettingsPreviewApp() {
+  useEffect(() => armCaptureReady("ui"), []);
+  const variant = (urlParams.get("variant") ?? "panel") as SettingsVariant;
+  return <SettingsPreview variant={variant} />;
 }
 
 function DevApp() {
@@ -240,4 +250,4 @@ function DevApp() {
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={stageScenario} />;
 }
 
-createRoot(document.getElementById("root")!).render(<DevApp />);
+createRoot(document.getElementById("root")!).render(SETTINGS_PREVIEW ? <SettingsPreviewApp /> : <DevApp />);
