@@ -1,16 +1,66 @@
 import { createChangeSignal, type ChangeSignal } from "../store/changeSignal";
+import {
+  CONTROL_SCHEMA_VERSION,
+  MAX_SCAN_DEPTH,
+  MAX_SCAN_TARGETS,
+  MAX_TABLE_ENTRIES,
+  OVERRIDES_FORMAT_VERSION,
+  choiceValues,
+  cloneValue,
+  discoverableKind,
+  expandAxisMeta,
+  inferKind,
+  isScannableContainer,
+  joinTunablePath,
+  normalizeColorValue,
+  ownWritableDataKeys,
+  parseOverridesPayload,
+  resolveChoices,
+  sliderBounds,
+  validateControlValue,
+  type AngleUnit,
+  type DevtoolsControlKind,
+  type DevtoolsOverrides,
+  type DiscoverySkip,
+  type OverrideApplyDiagnostic,
+  type ResolvedAxisBounds,
+  type ScanMeta,
+  type TunableChoice,
+  type TunableOptions,
+} from "./tunableSchema";
 
-export type DevtoolsControlKind = "slider" | "toggle" | "color" | "select" | "text";
+export type {
+  AngleUnit,
+  DevtoolsControlKind,
+  DevtoolsOverrides,
+  DiscoverySkip,
+  OverrideApplyDiagnostic,
+  TunableChoice,
+  TunableInterval,
+  TunableOptions,
+  TunableVec2,
+  TunableVec3,
+  TunableVec4,
+  ScanMeta,
+  ScanFieldMeta,
+  NormalizedColor,
+} from "./tunableSchema";
 
-export interface TunableOptions<T> {
-  min?: number;
-  max?: number;
-  step?: number;
-  options?: readonly T[];
-  label?: string;
-  group?: string;
-  onChange?: (value: T) => void;
-}
+export {
+  CONTROL_SCHEMA_VERSION,
+  OVERRIDES_FORMAT_VERSION,
+  convertAngle,
+  escapePathSegment,
+  formatColor,
+  joinTunablePath,
+  normalizeAngle,
+  normalizeColorValue,
+  parseColor,
+  parseOverridesPayload,
+  splitTunablePath,
+  unescapePathSegment,
+  validateControlValue,
+} from "./tunableSchema";
 
 export interface DevtoolsControl {
   readonly name: string;
@@ -22,8 +72,19 @@ export interface DevtoolsControl {
   readonly max?: number;
   readonly step?: number;
   readonly options?: readonly unknown[];
+  readonly choices?: readonly TunableChoice[];
+  readonly unit?: AngleUnit;
+  readonly displayUnit?: AngleUnit;
+  readonly wrap?: boolean;
+  readonly integer?: boolean;
+  readonly axisLabels?: readonly string[];
+  readonly axisMin?: readonly number[];
+  readonly axisMax?: readonly number[];
+  readonly axisStep?: readonly number[];
+  readonly hasAlpha?: boolean;
+  readonly schemaVersion: number;
   read(): unknown;
-  write(value: unknown): void;
+  write(value: unknown): boolean;
   reset(): void;
 }
 
@@ -32,9 +93,15 @@ export interface Tunable<T> {
   readonly kind: DevtoolsControlKind;
   readonly initial: T;
   readonly value: T;
-  set(value: T): void;
+  set(value: T): boolean;
   reset(): void;
   subscribe(listener: (value: T) => void): () => void;
+}
+
+export interface OverrideApplyResult {
+  applied: number;
+  skipped: readonly OverrideApplyDiagnostic[];
+  diagnostics: readonly string[];
 }
 
 export interface FrameStats {
@@ -113,11 +180,6 @@ export interface TunableAccessor {
   set(value: unknown): void;
 }
 
-export interface DevtoolsOverrides {
-  enabled: string[];
-  values: Record<string, unknown>;
-}
-
 export interface DevtoolsSnapshot {
   at: number;
   frame: FrameStats | null;
@@ -128,6 +190,7 @@ export interface DevtoolsSnapshot {
   probes: Record<string, unknown>;
   controls: readonly { name: string; kind: DevtoolsControlKind; value: unknown; initial: unknown }[];
   discovered: readonly { id: string; kind: DevtoolsControlKind; value: unknown; enabled: boolean }[];
+  skipped: readonly DiscoverySkip[];
 }
 
 export interface FrameRecordSample {
@@ -172,17 +235,18 @@ export interface Devtools {
     resetAll(): void;
   };
   discover: {
-    bind(table: string, key: string, accessor: TunableAccessor): void;
-    scanTable(table: string, candidate: unknown): number;
-    scanModule(exports: Record<string, unknown>): number;
+    bind(table: string, key: string, accessor: TunableAccessor, options?: TunableOptions): void;
+    scanTable(table: string, candidate: unknown, meta?: ScanMeta): number;
+    scanModule(exports: Record<string, unknown>, meta?: ScanMeta): number;
     list(): readonly DiscoveredEntry[];
+    skipped(): readonly DiscoverySkip[];
     enable(id: string): void;
     disable(id: string): void;
     clear(): void;
   };
   overrides: {
     export(): DevtoolsOverrides;
-    apply(overrides: DevtoolsOverrides): void;
+    apply(overrides: DevtoolsOverrides | unknown): OverrideApplyResult;
   };
   probes: {
     register(name: string, read: () => unknown): () => void;
@@ -203,29 +267,9 @@ const MAX_PHASES_PER_FRAME = 24;
 const MAX_LONG_FRAME_PHASES = 8;
 const PHASE_HOT_MS = 2;
 
-const COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
-
 function nowMs(): number {
   const perf = (globalThis as { performance?: { now(): number } }).performance;
   return perf !== undefined ? perf.now() : Date.now();
-}
-
-function inferKind(initial: unknown, hasOptions: boolean): DevtoolsControlKind {
-  if (hasOptions) return "select";
-  if (typeof initial === "number") return "slider";
-  if (typeof initial === "boolean") return "toggle";
-  if (typeof initial === "string" && COLOR_PATTERN.test(initial)) return "color";
-  return "text";
-}
-
-function sliderBounds(
-  initial: number,
-  options: { min?: number; max?: number; step?: number } | undefined,
-): { min: number; max: number; step: number } {
-  const min = options?.min ?? (initial < 0 ? initial * 2 : 0);
-  const max = options?.max ?? (initial > 0 ? initial * 2 : initial < 0 ? 0 : 1);
-  const step = options?.step ?? (max - min) / 100;
-  return { min, max, step };
 }
 
 function formatLogArg(arg: unknown): string {
@@ -336,6 +380,14 @@ interface ControlRecord {
   max?: number;
   step?: number;
   options?: readonly unknown[];
+  choices?: readonly TunableChoice[];
+  unit?: AngleUnit;
+  displayUnit?: AngleUnit;
+  wrap?: boolean;
+  integer?: boolean;
+  axisBounds?: ResolvedAxisBounds;
+  hasAlpha?: boolean;
+  schemaVersion: number;
   listeners: Set<(value: unknown) => void>;
 }
 
@@ -347,36 +399,9 @@ interface DiscoveredRecord {
   initial: unknown;
   enabled: boolean;
   source: object | null;
+  options?: TunableOptions;
   get(): unknown;
   set(value: unknown): void;
-}
-
-const MAX_TABLE_ENTRIES = 64;
-const MAX_SCAN_DEPTH = 5;
-const MAX_SCAN_TARGETS = 512;
-
-function discoverableKind(value: unknown): DevtoolsControlKind | null {
-  if (typeof value === "number" && Number.isFinite(value)) return "slider";
-  if (typeof value === "boolean") return "toggle";
-  if (typeof value === "string" && COLOR_PATTERN.test(value)) return "color";
-  return null;
-}
-
-function isScannableContainer(value: unknown): value is Record<string, unknown> {
-  if (value === null || typeof value !== "object") return false;
-  if (Array.isArray(value)) return value.length <= MAX_TABLE_ENTRIES;
-  const proto = Object.getPrototypeOf(value);
-  return proto === Object.prototype || proto === null;
-}
-
-function scalarEntries(candidate: Record<string, unknown>): [string, DevtoolsControlKind][] | null {
-  const entries: [string, DevtoolsControlKind][] = [];
-  for (const [key, value] of Object.entries(candidate)) {
-    const kind = discoverableKind(value);
-    if (kind !== null) entries.push([key, kind]);
-    if (entries.length > MAX_TABLE_ENTRIES) return null;
-  }
-  return entries;
 }
 
 interface ScanTarget {
@@ -384,31 +409,79 @@ interface ScanTarget {
   target: Record<string, unknown>;
   key: string;
   kind: DevtoolsControlKind;
+  options?: TunableOptions;
 }
 
-function collectScanTargets(root: unknown): ScanTarget[] {
-  if (!isScannableContainer(root)) return [];
+interface ScanCollection {
+  targets: ScanTarget[];
+  skipped: DiscoverySkip[];
+}
+
+function collectScanTargets(root: unknown, meta?: ScanMeta): ScanCollection {
+  const skipped: DiscoverySkip[] = [];
+  if (!isScannableContainer(root)) {
+    if (root !== null && typeof root === "object") {
+      skipped.push({ path: "", reason: "not a plain object or array" });
+    }
+    return { targets: [], skipped };
+  }
   const out: ScanTarget[] = [];
   const visited = new Set<object>([root]);
   let frontier: { path: string; target: Record<string, unknown> }[] = [{ path: "", target: root }];
   for (let depth = 0; depth <= MAX_SCAN_DEPTH && frontier.length > 0; depth += 1) {
     const next: typeof frontier = [];
     for (const { path, target } of frontier) {
-      const entries = scalarEntries(target);
-      if (entries === null) continue;
-      for (const [key, kind] of entries) {
-        if (out.length >= MAX_SCAN_TARGETS) return out;
-        out.push({ path: path === "" ? key : `${path}.${key}`, target, key, kind });
+      const keys = ownWritableDataKeys(target);
+      let scalarCount = 0;
+      for (const key of keys) {
+        const value = target[key];
+        const childPath = joinTunablePath(path, key);
+        const fieldMeta = meta?.[childPath];
+        const kind = discoverableKind(value, fieldMeta);
+        if (kind !== null) {
+          scalarCount += 1;
+          if (scalarCount > MAX_TABLE_ENTRIES) {
+            skipped.push({ path: path === "" ? "*" : path, reason: `more than ${MAX_TABLE_ENTRIES} scalar entries` });
+            scalarCount = -1;
+            break;
+          }
+        }
       }
-      for (const [key, value] of Object.entries(target)) {
-        if (!isScannableContainer(value) || visited.has(value)) continue;
-        visited.add(value);
-        next.push({ path: path === "" ? key : `${path}.${key}`, target: value });
+      if (scalarCount < 0) continue;
+      for (const key of keys) {
+        const value = target[key];
+        const childPath = joinTunablePath(path, key);
+        const fieldMeta = meta?.[childPath];
+        const kind = discoverableKind(value, fieldMeta);
+        if (kind !== null) {
+          if (out.length >= MAX_SCAN_TARGETS) {
+            skipped.push({ path: childPath, reason: `scan cap ${MAX_SCAN_TARGETS}` });
+            return { targets: out, skipped };
+          }
+          out.push({ path: childPath, target, key, kind, options: fieldMeta });
+          continue;
+        }
+        if (value !== null && typeof value === "object") {
+          if (!isScannableContainer(value)) {
+            skipped.push({ path: childPath, reason: "unsupported structure" });
+            continue;
+          }
+          if (visited.has(value)) {
+            skipped.push({ path: childPath, reason: "cycle" });
+            continue;
+          }
+          if (depth === MAX_SCAN_DEPTH) {
+            skipped.push({ path: childPath, reason: `depth > ${MAX_SCAN_DEPTH}` });
+            continue;
+          }
+          visited.add(value);
+          next.push({ path: childPath, target: value });
+        }
       }
     }
     frontier = next;
   }
-  return out;
+  return { targets: out, skipped };
 }
 
 export function createDevtools(): Devtools {
@@ -435,6 +508,7 @@ export function createDevtools(): Devtools {
   const discoveredRecords = new Map<string, DiscoveredRecord>();
   const probeReaders = new Map<string, () => unknown>();
   let boundProps = new WeakMap<object, Set<string>>();
+  let discoverySkips: DiscoverySkip[] = [];
 
   const readProbes = (): Record<string, unknown> => {
     const values: Record<string, unknown> = {};
@@ -598,6 +672,19 @@ export function createDevtools(): Devtools {
     };
   };
 
+  const validationContext = (record: ControlRecord) => ({
+    min: record.min,
+    max: record.max,
+    step: record.step,
+    integer: record.integer,
+    unit: record.unit,
+    wrap: record.wrap,
+    choices: record.choices,
+    options: record.options,
+    axisBounds: record.axisBounds,
+    alpha: record.hasAlpha,
+  });
+
   const toControl = (record: ControlRecord): DevtoolsControl => ({
     name: record.name,
     kind: record.kind,
@@ -607,31 +694,104 @@ export function createDevtools(): Devtools {
     min: record.min,
     max: record.max,
     step: record.step,
-    options: record.options,
+    options: record.options ?? choiceValues(record.choices),
+    choices: record.choices,
+    unit: record.unit,
+    displayUnit: record.displayUnit,
+    wrap: record.wrap,
+    integer: record.integer,
+    axisLabels: record.axisBounds?.labels,
+    axisMin: record.axisBounds?.min,
+    axisMax: record.axisBounds?.max,
+    axisStep: record.axisBounds?.step,
+    hasAlpha: record.hasAlpha,
+    schemaVersion: record.schemaVersion,
     read: () => record.value,
     write: (value) => writeControl(record, value),
-    reset: () => writeControl(record, record.initial),
+    reset: () => {
+      writeControl(record, cloneValue(record.initial));
+    },
   });
 
-  const writeControl = (record: ControlRecord, raw: unknown): void => {
-    let next = raw;
-    if (record.kind === "slider" && typeof next === "number") {
-      if (record.min !== undefined) next = Math.max(record.min, next as number);
-      if (record.max !== undefined) next = Math.min(record.max, next as number);
+  const writeControl = (record: ControlRecord, raw: unknown): boolean => {
+    const validated = validateControlValue(record.kind, raw, validationContext(record));
+    if (!validated.ok) return false;
+    const next = validated.value;
+    if (record.kind === "vec2" || record.kind === "vec3" || record.kind === "vec4" || record.kind === "interval") {
+      if (JSON.stringify(record.value) === JSON.stringify(next)) return true;
+      record.value = cloneValue(next);
+    } else {
+      if (Object.is(record.value, next)) return true;
+      record.value = next;
     }
-    if (Object.is(record.value, next)) return;
-    record.value = next;
-    for (const listener of record.listeners) listener(next);
+    for (const listener of record.listeners) listener(record.value);
     signal.notify();
+    return true;
+  };
+
+  const hydrateRecord = (
+    record: ControlRecord,
+    initial: unknown,
+    options: TunableOptions | undefined,
+    kind: DevtoolsControlKind,
+  ): void => {
+    record.kind = kind;
+    record.initial = cloneValue(initial);
+    record.min = undefined;
+    record.max = undefined;
+    record.step = undefined;
+    record.options = options?.options;
+    record.choices = resolveChoices(options?.options, options?.choices);
+    record.unit = options?.unit;
+    record.displayUnit = options?.displayUnit ?? options?.unit;
+    record.wrap = options?.wrap;
+    record.integer = options?.integer;
+    record.axisBounds = undefined;
+    record.hasAlpha = undefined;
+    record.schemaVersion = CONTROL_SCHEMA_VERSION;
+
+    if (kind === "slider" || kind === "angle") {
+      const bounds = sliderBounds(initial as number, options);
+      record.min = bounds.min;
+      record.max = bounds.max;
+      record.step = bounds.step;
+      if (kind === "angle") {
+        record.unit = options?.unit ?? "rad";
+        record.displayUnit = options?.displayUnit ?? "deg";
+      }
+    } else if (kind === "vec2" || kind === "vec3" || kind === "vec4") {
+      const sample = Array.isArray(initial) ? (initial as number[]) : [];
+      record.axisBounds = expandAxisMeta(
+        sample.length,
+        options?.axisLabels,
+        options?.axisMin ?? options?.min,
+        options?.axisMax ?? options?.max,
+        options?.axisStep ?? options?.step,
+        sample,
+      );
+    } else if (kind === "interval") {
+      record.min = options?.min;
+      record.max = options?.max;
+      record.step = options?.step;
+      record.integer = options?.integer;
+    } else if (kind === "color") {
+      const normalized = normalizeColorValue(initial, options?.alpha);
+      if (normalized !== null) {
+        record.initial = normalized;
+        if (Object.is(record.value, initial) || record.value === initial) {
+          record.value = normalized;
+        }
+        record.hasAlpha = options?.alpha === true || normalized.length === 9;
+      }
+    }
   };
 
   const register = <T,>(name: string, initial: T, options?: TunableOptions<T>): Tunable<T> => {
-    const kind = inferKind(initial, options?.options !== undefined);
+    const kind = inferKind(initial, options as TunableOptions | undefined);
     const existing = controlRecords.get(name);
     const slashIndex = name.indexOf("/");
     const derivedGroup = slashIndex > 0 ? name.slice(0, slashIndex) : "general";
     const derivedLabel = slashIndex > 0 ? name.slice(slashIndex + 1) : name;
-    const bounds = kind === "slider" ? sliderBounds(initial as number, options) : undefined;
     const record: ControlRecord =
       existing !== undefined && existing.kind === kind
         ? existing
@@ -640,29 +800,31 @@ export function createDevtools(): Devtools {
             kind,
             label: "",
             group: "",
-            initial,
-            value: initial,
+            initial: cloneValue(initial),
+            value: cloneValue(initial),
+            schemaVersion: CONTROL_SCHEMA_VERSION,
             listeners: new Set(),
           };
+    if (existing === undefined || existing.kind !== kind) {
+      record.value = cloneValue(initial);
+    }
     record.label = options?.label ?? derivedLabel;
     record.group = options?.group ?? derivedGroup;
-    record.initial = initial;
-    record.min = bounds?.min;
-    record.max = bounds?.max;
-    record.step = bounds?.step;
-    record.options = options?.options;
+    hydrateRecord(record, initial, options as TunableOptions | undefined, kind);
     if (options?.onChange !== undefined) record.listeners.add(options.onChange as (value: unknown) => void);
     controlRecords.set(name, record);
     signal.notify();
     return {
       name,
       kind,
-      initial,
+      initial: record.initial as T,
       get value() {
         return record.value as T;
       },
       set: (value: T) => writeControl(record, value),
-      reset: () => writeControl(record, record.initial),
+      reset: () => {
+        writeControl(record, cloneValue(record.initial));
+      },
       subscribe: (listener: (value: T) => void) => {
         record.listeners.add(listener as (value: unknown) => void);
         return () => record.listeners.delete(listener as (value: unknown) => void);
@@ -676,6 +838,7 @@ export function createDevtools(): Devtools {
     kind: DevtoolsControlKind,
     accessor: TunableAccessor,
     source: object | null,
+    options?: TunableOptions,
   ): boolean => {
     const id = `${table}/${key}`;
     const existing = discoveredRecords.get(id);
@@ -685,9 +848,10 @@ export function createDevtools(): Devtools {
         table,
         key,
         kind,
-        initial: accessor.initial,
+        initial: cloneValue(accessor.initial),
         enabled: false,
         source,
+        options,
         get: accessor.get,
         set: accessor.set,
       });
@@ -697,27 +861,36 @@ export function createDevtools(): Devtools {
     existing.source = source;
     existing.get = accessor.get;
     existing.set = accessor.set;
+    existing.kind = kind;
+    existing.options = options ?? existing.options;
     const control = controlRecords.get(id);
-    if (existing.enabled && control !== undefined) accessor.set(control.value);
+    if (existing.enabled && control !== undefined) accessor.set(cloneValue(control.value));
     return true;
   };
 
-  const scanTable = (table: string, candidate: unknown): number => {
-    const targets = collectScanTargets(candidate);
+  const scanTable = (table: string, candidate: unknown, meta?: ScanMeta): number => {
+    const { targets, skipped } = collectScanTargets(candidate, meta);
+    discoverySkips = [
+      ...discoverySkips.filter((entry) => entry.path !== table && !entry.path.startsWith(`${table}/`)),
+      ...skipped.map((entry) => ({
+        path: entry.path === "" ? table : `${table}/${entry.path}`,
+        reason: entry.reason,
+      })),
+    ];
     if (targets.length === 0) return 0;
     let changed = false;
     let bound = 0;
-    for (const { path, target, key, kind } of targets) {
+    for (const { path, target, key, kind, options } of targets) {
       const boundKeys = boundProps.get(target);
       if (boundKeys?.has(key) === true && !discoveredRecords.has(`${table}/${path}`)) continue;
       const accessor: TunableAccessor = {
-        initial: target[key],
+        initial: cloneValue(target[key]),
         get: () => target[key],
         set: (value) => {
           target[key] = value;
         },
       };
-      if (bindDiscovered(table, path, kind, accessor, target)) changed = true;
+      if (bindDiscovered(table, path, kind, accessor, target, options)) changed = true;
       bound += 1;
       if (boundKeys === undefined) boundProps.set(target, new Set([key]));
       else boundKeys.add(key);
@@ -731,9 +904,14 @@ export function createDevtools(): Devtools {
     if (record === undefined || record.enabled) return;
     record.enabled = true;
     const current = record.get();
-    const handle = register<unknown>(id, record.initial, { group: record.table, label: record.key });
-    handle.subscribe((value) => record.set(value));
-    if (!Object.is(current, record.initial)) handle.set(current);
+    const handle = register<unknown>(id, record.initial, {
+      ...(record.options ?? {}),
+      group: record.options?.group ?? record.table,
+      label: record.options?.label ?? record.key,
+      kind: record.kind,
+    });
+    handle.subscribe((value) => record.set(cloneValue(value)));
+    if (JSON.stringify(current) !== JSON.stringify(record.initial)) handle.set(current);
   };
 
   return {
@@ -808,20 +986,20 @@ export function createDevtools(): Devtools {
         if (controlRecords.delete(name)) signal.notify();
       },
       resetAll() {
-        for (const record of controlRecords.values()) writeControl(record, record.initial);
+        for (const record of controlRecords.values()) writeControl(record, cloneValue(record.initial));
       },
     },
     discover: {
-      bind(table, key, accessor) {
-        const kind = discoverableKind(accessor.initial);
+      bind(table, key, accessor, options) {
+        const kind = discoverableKind(accessor.initial, options);
         if (kind === null) return;
-        if (bindDiscovered(table, key, kind, accessor, null)) signal.notify();
+        if (bindDiscovered(table, key, kind, accessor, null, options)) signal.notify();
       },
       scanTable,
-      scanModule(exports) {
+      scanModule(exports, meta) {
         let total = 0;
         for (const [name, value] of Object.entries(exports)) {
-          total += scanTable(name, value);
+          total += scanTable(name, value, meta);
         }
         return total;
       },
@@ -835,6 +1013,7 @@ export function createDevtools(): Devtools {
           enabled: record.enabled,
           read: () => record.get(),
         })),
+      skipped: () => discoverySkips,
       enable(id) {
         enableDiscovered(id);
         signal.notify();
@@ -843,18 +1022,19 @@ export function createDevtools(): Devtools {
         const record = discoveredRecords.get(id);
         if (record === undefined || !record.enabled) return;
         record.enabled = false;
-        record.set(record.initial);
+        record.set(cloneValue(record.initial));
         controlRecords.delete(id);
         signal.notify();
       },
       clear() {
         for (const record of discoveredRecords.values()) {
           if (record.enabled) {
-            record.set(record.initial);
+            record.set(cloneValue(record.initial));
             controlRecords.delete(record.id);
           }
         }
         discoveredRecords.clear();
+        discoverySkips = [];
         boundProps = new WeakMap();
         signal.notify();
       },
@@ -863,18 +1043,61 @@ export function createDevtools(): Devtools {
       export() {
         const enabled = [...discoveredRecords.values()].filter((r) => r.enabled).map((r) => r.id);
         const values: Record<string, unknown> = {};
+        const schemas: NonNullable<DevtoolsOverrides["schemas"]> = {};
         for (const record of controlRecords.values()) {
-          if (!Object.is(record.value, record.initial)) values[record.name] = record.value;
+          schemas[record.name] = { kind: record.kind, schemaVersion: record.schemaVersion };
+          const same =
+            record.kind === "vec2" ||
+            record.kind === "vec3" ||
+            record.kind === "vec4" ||
+            record.kind === "interval"
+              ? JSON.stringify(record.value) === JSON.stringify(record.initial)
+              : Object.is(record.value, record.initial);
+          if (!same) values[record.name] = cloneValue(record.value);
         }
-        return { enabled, values };
+        return {
+          version: OVERRIDES_FORMAT_VERSION,
+          enabled,
+          values,
+          schemas,
+        };
       },
-      apply(overrides) {
-        for (const id of overrides.enabled) enableDiscovered(id);
+      apply(raw) {
+        const parsed = parseOverridesPayload(raw);
+        const diagnostics = [...parsed.diagnostics];
+        const skipped: OverrideApplyDiagnostic[] = [];
+        if (parsed.overrides === null) {
+          return { applied: 0, skipped, diagnostics };
+        }
+        const overrides = parsed.overrides;
+        let applied = 0;
+        for (const id of overrides.enabled) {
+          if (!discoveredRecords.has(id) && !controlRecords.has(id)) {
+            skipped.push({ id, reason: "unknown control id" });
+            continue;
+          }
+          enableDiscovered(id);
+          applied += 1;
+        }
         for (const [name, value] of Object.entries(overrides.values)) {
           const record = controlRecords.get(name);
-          if (record !== undefined) writeControl(record, value);
+          if (record === undefined) {
+            skipped.push({ id: name, reason: "control not registered" });
+            continue;
+          }
+          const schema = overrides.schemas?.[name];
+          if (schema !== undefined && schema.kind !== record.kind) {
+            skipped.push({ id: name, reason: `kind mismatch stored=${schema.kind} current=${record.kind}` });
+            continue;
+          }
+          if (!writeControl(record, value)) {
+            skipped.push({ id: name, reason: "value failed validation" });
+            continue;
+          }
+          applied += 1;
         }
         signal.notify();
+        return { applied, skipped, diagnostics };
       },
     },
     probes: {
@@ -910,6 +1133,7 @@ export function createDevtools(): Devtools {
           value: record.get(),
           enabled: record.enabled,
         })),
+        skipped: [...discoverySkips],
       };
     },
   };
