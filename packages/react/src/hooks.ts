@@ -44,12 +44,15 @@ export function useGameStore<T>(
   selectorRef.current = selector;
   const isEqualRef = useRef(isEqual);
   isEqualRef.current = isEqual;
-  const cacheRef = useRef(createSelectCache<T>());
+  const cacheRef = useRef(createSelectCache<number, T>());
 
   const getSnapshot = useCallback(
     () =>
-      readSelectSnapshot(cacheRef.current, () => selectorRef.current(ctx), (previous, next) =>
-        isEqualRef.current(previous, next),
+      readSelectSnapshot(
+        cacheRef.current,
+        ctx.version(),
+        () => selectorRef.current(ctx),
+        (previous, next) => isEqualRef.current(previous, next),
       ),
     [ctx],
   );

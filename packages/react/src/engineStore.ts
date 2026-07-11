@@ -28,7 +28,7 @@ export function useEngineStore<TState, TSelected>(
   selectorRef.current = selector;
   const isEqualRef = useRef(isEqual);
   isEqualRef.current = isEqual;
-  const cacheRef = useRef(createSelectCache<TSelected>());
+  const cacheRef = useRef(createSelectCache<TState, TSelected>());
 
   const subscribe = useCallback(
     (onChange: () => void) => store.subscribe(() => onChange()),
@@ -37,8 +37,11 @@ export function useEngineStore<TState, TSelected>(
 
   const getSnapshot = useCallback(
     () =>
-      readSelectSnapshot(cacheRef.current, () => selectorRef.current(store.getState()), (previous, next) =>
-        isEqualRef.current(previous, next),
+      readSelectSnapshot(
+        cacheRef.current,
+        store.getState(),
+        (state) => selectorRef.current(state),
+        (previous, next) => isEqualRef.current(previous, next),
       ),
     [store],
   );

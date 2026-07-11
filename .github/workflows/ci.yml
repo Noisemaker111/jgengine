@@ -64,11 +64,31 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run --cwd apps/web build
 
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      # Boots games headless (apps/dev consumes package source) and fails on any
+      # runtime throw — the browser-runtime gap that let every game break in prod.
+      - run: bun run smoke
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+
   ci:
-    needs: [checks, test, web-build]
+    needs: [checks, test, web-build, smoke]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: |
-          test "${{ needs.checks.result }}" = "success" && test "${{ needs.test.result }}" = "success" && test "${{ needs.web-build.result }}" = "success"
+          test "${{ needs.checks.result }}" = "success" && test "${{ needs.test.result }}" = "success" && test "${{ needs.web-build.result }}" = "success" && test "${{ needs.smoke.result }}" = "success"
