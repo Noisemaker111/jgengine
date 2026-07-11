@@ -9,6 +9,29 @@ The deliverable is the **complete idea** — the game the user named, at the sca
 
 The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and** first-person mouse-look (pointer-lock + centered reticle + weapon viewmodel), input tracker, hotbar/primary-click plumbing, world-space enemy health bars, floating damage/heal numbers, projectile tracers, `GameUiPreview`, error overlay. Never rebuild these per game — a hand-written reticle, world-space health bar, or floating-damage-number component means you missed a switch the engine already flips (see the archetype recipe below).
 
+## Scaffold first — always via the CLI
+
+Start every new game from the premade base. The display name is the argument; the folder is derived; the same name supersedes into `game.config.ts`, the HUD title, and `index.html`.
+
+**Outside this monorepo** (standalone npm install of the engine):
+
+```sh
+npx jgengine create "My Game Name"
+cd My-Game-Name
+npx jgengine skills
+bun dev
+```
+
+**Inside this monorepo** (under `Games/`, workspace engine packages):
+
+```sh
+npx jgengine create "My Game Name"   # auto in-repo when run from the engine repo → Games/My-Game-Name
+bun install
+bun run games:my-game-name
+```
+
+Do not hand-roll the harness. Do not use a bare kebab path as the product name (`my-game`); pass the real title. Optional flags: `--standalone` / `--in-repo`, `--no-install`, `--pm bun|npm|pnpm`. There is no `--name`.
+
 ## Read first (both, before the blueprint)
 
 | What | Why |

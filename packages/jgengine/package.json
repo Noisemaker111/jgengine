@@ -1,7 +1,7 @@
 {
   "name": "jgengine",
-  "version": "0.8.0",
-  "description": "The JGengine command line — scaffold a playable game, diagnose a broken setup, and load engine docs and agent skills into any project. Start with `npx jgengine create <dir>`.",
+  "version": "0.8.1",
+  "description": "The JGengine command line — scaffold a playable game, diagnose a broken setup, and load engine docs and agent skills into any project. Start with `npx jgengine create \"My Game Name\"`.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "sideEffects": false,

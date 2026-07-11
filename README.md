@@ -14,7 +14,7 @@ A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no ren
 | [`@jgengine/convex`](packages/convex) | Convex adapters: game transport, presence transport. |
 | [`@jgengine/shell`](packages/shell) | Game player shell: R3F canvas, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
 | [`@jgengine/assets`](packages/assets) | Self-generating, license-verified index of CC0 3D models: ships the typed index + pull CLI, not the GLB bytes. |
-| [`jgengine`](packages/jgengine) | The command line: `npx jgengine create <dir>` scaffolds a playable game; `doctor` diagnoses a setup; `skills`/`llms` load the agent skills and packaged API docs into any project. |
+| [`jgengine`](packages/jgengine) | The command line: `npx jgengine create "My Game Name"` scaffolds a playable base (folder `My-Game-Name`); `doctor` diagnoses a setup; `skills`/`llms` load the agent skills and packaged API docs into any project. |
 
 ## Install
 
