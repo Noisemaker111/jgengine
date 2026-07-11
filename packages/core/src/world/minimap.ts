@@ -95,6 +95,29 @@ export function projectToMinimap(
   };
 }
 
+/**
+ * Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware —
+ * click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
+ */
+export function unprojectFromMinimap(
+  point: { x: number; y: number },
+  view: MinimapView,
+): WorldXZ {
+  const half = view.size / 2;
+  const scale = view.worldRadius === 0 ? 0 : half / view.worldRadius;
+  let dx = scale === 0 ? 0 : (point.x - half) / scale;
+  let dz = scale === 0 ? 0 : (point.y - half) / scale;
+  if (view.rotate !== undefined && view.rotate !== 0) {
+    const cos = Math.cos(view.rotate);
+    const sin = Math.sin(view.rotate);
+    const rx = dx * cos - dz * sin;
+    const rz = dz * cos + dx * sin;
+    dx = rx;
+    dz = rz;
+  }
+  return [view.center[0] + dx, view.center[1] + dz];
+}
+
 /** Clamp a projected point to the minimap edge, preserving direction (edge markers). */
 export function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } {
   const half = size / 2;
