@@ -1,32 +1,4 @@
-import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
-
-const chipStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "baseline",
-  gap: "0.8cqw",
-  borderRadius: "0.8cqw",
-  border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
-  padding: "0.5cqw 1.4cqw",
-};
-
-const chipLabelStyle: CSSProperties = {
-  fontSize: "1.3cqw",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.2em",
-  color: "#94a3b8",
-};
-
-function Chip({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <span style={chipStyle}>
-      <span style={chipLabelStyle}>{label}</span>
-      <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "2cqw", fontWeight: 700, color }}>{value}</span>
-    </span>
-  );
-}
 
 export default function BrickBreakerPreview({ className }: GamePreviewProps) {
   return (
@@ -61,61 +33,55 @@ export default function BrickBreakerPreview({ className }: GamePreviewProps) {
         }}
       />
 
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "auto 1fr auto",
+            display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             gap: "2cqw",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
             borderBottom: "1px solid rgba(167,139,250,0.25)",
-            padding: "1.2cqw 2.4cqw",
+            padding: "1.6cqw 2.4cqw",
           }}
         >
-          <span style={{ fontSize: "1.3cqw", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.35em", color: "rgba(240,171,252,0.75)" }}>
-            JG-76 cabinet
-          </span>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1.6cqw" }}>
-            <span
-              style={{
-                fontSize: "2.6cqw",
-                fontWeight: 900,
-                textTransform: "uppercase",
-                letterSpacing: "0.3em",
-                color: "#67e8f9",
-                textShadow: "0 0 10px rgba(34,211,238,0.5)",
-              }}
-            >
-              Brick Breaker
-            </span>
-            <Chip label="Score" value="0" color="#67e8f9" />
-            <Chip label="Best" value="0" color="#fbbf24" />
-            <Chip label="Level" value="1/12" color="#e879f9" />
-            <span style={chipStyle}>
-              <span style={chipLabelStyle}>Lives</span>
-              <span style={{ fontSize: "1.9cqw", color: "#f472b6" }}>♥ ♥ ♥</span>
-            </span>
-          </div>
           <span
             style={{
-              border: "1px solid rgba(103,232,249,0.45)",
-              background: "rgba(7,20,41,0.8)",
-              padding: "0.9cqw 1.6cqw",
-              fontSize: "1.4cqw",
+              fontSize: "1.6cqw",
               fontWeight: 900,
               textTransform: "uppercase",
-              letterSpacing: "0.2em",
-              color: "#a5f3fc",
+              letterSpacing: "0.3em",
+              color: "rgba(240,171,252,0.75)",
             }}
           >
-            Pause
+            JG-76 cabinet
+          </span>
+          <span
+            style={{
+              fontSize: "3.2cqw",
+              fontWeight: 900,
+              textTransform: "uppercase",
+              letterSpacing: "0.24em",
+              color: "#67e8f9",
+              textShadow: "0 0 10px rgba(34,211,238,0.5)",
+            }}
+          >
+            Brick Breaker
+          </span>
+          <span
+            style={{
+              fontSize: "1.8cqw",
+              fontWeight: 700,
+              fontFamily: "ui-monospace, monospace",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              color: "#94a3b8",
+            }}
+          >
+            <span style={{ color: "#e879f9" }}>LV 1/12</span>
+            {" · "}
+            <span style={{ color: "#f472b6" }}>♥♥♥</span>
           </span>
         </div>
 
@@ -162,44 +128,41 @@ export default function BrickBreakerPreview({ className }: GamePreviewProps) {
             style={{
               position: "absolute",
               left: "50%",
-              top: "52%",
-              transform: "translateX(-50%)",
+              top: "56%",
+              transform: "translate(-50%, -50%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "1.2cqw",
               borderTop: "1px solid rgba(240,171,252,0.45)",
               borderBottom: "1px solid rgba(240,171,252,0.45)",
               background: "rgba(5,4,20,0.88)",
               boxShadow: "0 0 35px rgba(232,121,249,0.18)",
-              padding: "1.4cqw 3cqw",
+              padding: "1.6cqw 3.2cqw",
               whiteSpace: "nowrap",
             }}
           >
             <span
               style={{
-                fontSize: "2.6cqw",
+                fontSize: "2.8cqw",
                 fontWeight: 900,
                 textTransform: "uppercase",
-                letterSpacing: "0.28em",
+                letterSpacing: "0.26em",
                 color: "#f0abfc",
                 textShadow: "0 0 12px rgba(232,121,249,0.65)",
               }}
             >
               Level 1 — First Contact
             </span>
-          </div>
-
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              bottom: "22%",
-              transform: "translateX(-50%)",
-              borderTop: "1px solid rgba(103,232,249,0.35)",
-              borderBottom: "1px solid rgba(103,232,249,0.35)",
-              background: "rgba(5,4,20,0.75)",
-              padding: "0.7cqw 3cqw",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <span style={{ fontSize: "1.4cqw", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.3em", color: "#a5f3fc" }}>
+            <span
+              style={{
+                fontSize: "1.7cqw",
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: "0.3em",
+                color: "#a5f3fc",
+              }}
+            >
               Space / click to launch
             </span>
           </div>
@@ -208,7 +171,7 @@ export default function BrickBreakerPreview({ className }: GamePreviewProps) {
             style={{
               position: "absolute",
               left: "50%",
-              bottom: "9%",
+              bottom: "13%",
               transform: "translate(-50%, 0)",
               height: "1.6cqw",
               width: "1.6cqw",
@@ -221,7 +184,7 @@ export default function BrickBreakerPreview({ className }: GamePreviewProps) {
             style={{
               position: "absolute",
               left: "50%",
-              bottom: "6%",
+              bottom: "9%",
               transform: "translateX(-50%)",
               height: "1.7cqw",
               width: "14cqw",
@@ -230,27 +193,6 @@ export default function BrickBreakerPreview({ className }: GamePreviewProps) {
               boxShadow: "0 0 12px #38bdf8",
             }}
           />
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            margin: "0 2.4cqw",
-            borderLeft: "2px solid rgba(139,92,246,0.55)",
-            borderRight: "2px solid rgba(139,92,246,0.55)",
-            borderBottom: "2px solid rgba(139,92,246,0.55)",
-            background: "#090721",
-            padding: "1cqw 1.6cqw",
-            fontSize: "1.1cqw",
-            textTransform: "uppercase",
-            letterSpacing: "0.22em",
-            color: "#64748b",
-          }}
-        >
-          <span>A / D move · Space launch · P pause</span>
-          <span>Breakout tribute · 1976</span>
         </div>
       </div>
     </div>
