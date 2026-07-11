@@ -230,3 +230,7 @@ post-merge 60s green-check worker → Sonnet backgrounded its foreground sleep a
 2026-07-11T23:06:32.648Z — sonnet — Claude
 
 ship worker spawned a nested background worker and returned 'running in background' as its final result → orchestrator got a status echo instead of the PR/merge/CI report
+
+2026-07-11T23:17:31.334Z — sonnet — Claude
+
+ship briefs → workers repeatedly return 'launched in background' as final result without committing; ship motion stalled three times
