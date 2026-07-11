@@ -1,5 +1,5 @@
 import { useEntityStat, useGame, usePlayer, useSceneEntities } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 
 import { LIVES, SCORE, START_LIVES } from "../catalog";
 import {
@@ -171,8 +171,9 @@ export function GameUI() {
         <ScorePanel userId={player.userId} />
         <LevelPanel />
       </HudPanel>
-      <HudPanel id="lives" anchor="top-right" inset={{ x: 16, y: 16 }}>
+      <HudPanel id="lives" anchor="top-right" inset={{ x: 16, y: 16 }} className="flex items-center gap-2">
         <LivesPanel userId={player.userId} />
+        <SettingsTrigger className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-red-500/40 bg-black/70 text-red-300 shadow-lg transition hover:bg-red-500/10" />
       </HudPanel>
       <HudPanel id="pellets" anchor="top" inset={{ x: 0, y: 16 }}>
         <PelletCounter />

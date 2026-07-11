@@ -2,6 +2,7 @@ import { useDisplayProfile } from "@jgengine/react/display";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { useGame } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { store, type BoardSize } from "../puzzle/store";
 import { Board } from "./components/Board";
@@ -32,6 +33,9 @@ export function GameUI() {
         </HudPanel>
         <HudPanel id="stats" anchor="top" compact="keep" interactive={false}>
           <Stats snapshot={snapshot} />
+        </HudPanel>
+        <HudPanel id="settings" anchor="top-right" order={-1} compact="keep">
+          <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[#3a3024] bg-[#1e1912]/90 text-[#e9c86a] shadow-[0_10px_28px_rgba(0,0,0,0.5)] backdrop-blur-sm transition hover:bg-[#26201790]" />
         </HudPanel>
         <HudPanel id="records" anchor="top-right" compact="chip" chip="Best" interactive={false}>
           <Records snapshot={snapshot} />

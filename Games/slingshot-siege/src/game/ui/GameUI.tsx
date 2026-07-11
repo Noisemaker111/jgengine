@@ -3,7 +3,7 @@ import { ResultsScreen, type ResultLine } from "@/components/ui/results-screen";
 import { ScoreReadout } from "@/components/ui/score-readout";
 import { WaveIndicator } from "@/components/ui/wave-indicator";
 import { useDisplayProfile } from "@jgengine/react/display";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { LEVELS } from "../levels/catalog";
 import { useSlingshotState, useSlingshotStore } from "../state/slingshotStore";
 import { siegeVars } from "./theme";
@@ -58,7 +58,8 @@ function Hud() {
           {state.levelName}
         </span>
       </HudPanel>
-      <HudPanel id="score" anchor="top-right" inset={{ x: 24, y: 24 }}>
+      <HudPanel id="score" anchor="top-right" inset={{ x: 24, y: 24 }} className="flex flex-col items-end gap-2">
+        <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[#5a4326] bg-[#231a10]/70 text-[#ab977a] backdrop-blur transition-colors hover:bg-[#d8973c]/15 hover:text-[#f3e6cf]" />
         <ScoreReadout value={state.totalScore} label="Score" size="lg" />
       </HudPanel>
       <HudPanel id="wave-indicator" anchor="top" inset={{ x: 0, y: 24 }}>

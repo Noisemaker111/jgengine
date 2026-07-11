@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RaceState } from "@jgengine/core/game/race";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { createTruckRaceState, TRUCK_RACER_ID } from "./game/course/track";
 import { advanceRun, applyRaceEvents, initialRunState, startRun, type RunInput, type RunState } from "./game/course/run";
@@ -7,14 +8,20 @@ import { TRUCK_ENTITY_NAME } from "./game/entities/catalog";
 import { placeProps } from "./game/world/setup";
 import { LANE_WORLD_WIDTH, worldZ } from "./world";
 
+function syncPhase(ctx: GameContext, status: RunState["status"]): void {
+  setGamePhase(ctx, status === "playing" ? "playing" : status === "ready" ? "menu" : "ended");
+}
+
 function resetRun(ctx: GameContext): void {
   ctx.game.store.set("run", startRun());
   ctx.game.store.set("raceState", createTruckRaceState());
+  syncPhase(ctx, "playing");
 }
 
 export function onInit(ctx: GameContext): void {
   ctx.game.store.set("run", initialRunState());
   ctx.game.store.set("raceState", createTruckRaceState());
+  syncPhase(ctx, "ready");
   ctx.game.commands.define("confirm", { apply: (state) => resetRun(state) });
   ctx.game.commands.define("restart", { apply: (state) => resetRun(state) });
   placeProps(ctx);
@@ -48,6 +55,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     next = applyRaceEvents(next, raceEvents);
   }
 
+  if (next.status !== run.status) syncPhase(ctx, next.status);
   ctx.game.store.set("run", next);
 
   if (ctx.scene.entity.get(ctx.player.userId) !== null) {

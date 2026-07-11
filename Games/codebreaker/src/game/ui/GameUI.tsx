@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 import { useGame } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { modeKey } from "../codebreaker";
 import { shareUrl } from "../seedShare";
@@ -57,6 +58,10 @@ export function GameUI() {
       <HudCanvas layout={layout} className="select-none text-amber-50">
         <HudPanel id="title" anchor="top-left" compact="hide" interactive={false}>
           <TitleCard />
+        </HudPanel>
+
+        <HudPanel id="settings" anchor="top-right" order={-1} compact="hide">
+          <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-amber-200/15 bg-[#241a12]/85 text-amber-100 shadow-lg backdrop-blur transition hover:bg-amber-100/20" />
         </HudPanel>
 
         <HudPanel id="records" anchor="top-right" compact="chip" chip="Records" interactive={false}>

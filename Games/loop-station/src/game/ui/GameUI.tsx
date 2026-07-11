@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { SettingsTrigger } from "@jgengine/react";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { freshRunState } from "../run/runState";
@@ -48,7 +49,8 @@ export function GameUI() {
             <div className="pointer-events-auto">
               <LapHud run={run} />
             </div>
-            <div className="pointer-events-auto ml-auto">
+            <div className="pointer-events-auto ml-auto flex flex-col items-end gap-2">
+              <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[#6247aa]/50 bg-[#12101f]/80 text-base text-[#f5f2fa]/70 shadow-[0_0_18px_rgba(18,16,31,0.8)] transition hover:bg-[#1c1830]/80 hover:text-[#f5f2fa]" />
               <PhaseDial run={run} />
             </div>
           </div>

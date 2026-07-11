@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useGame } from "@jgengine/react/hooks";
+import { useGame, SettingsTrigger } from "@jgengine/react";
 import { TREASURE_DEFS } from "../../items/treasures";
 import { mansionClockAt, RUN_SECONDS } from "../../schedule/mansionClock";
 
@@ -9,7 +9,8 @@ export function StartScreen(): ReactNode {
 
   return (
     <div className="pointer-events-auto absolute inset-0 flex items-center justify-center bg-[#0b0f1c]/90 p-4">
-      <div className="w-full max-w-2xl rounded-lg border-2 border-[#c9a227]/70 bg-gradient-to-b from-[#1d2b4a] to-[#0b0f1c] p-6 shadow-2xl sm:p-8">
+      <div className="relative w-full max-w-2xl rounded-lg border-2 border-[#c9a227]/70 bg-gradient-to-b from-[#1d2b4a] to-[#0b0f1c] p-6 shadow-2xl sm:p-8">
+        <SettingsTrigger className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-[#c9a227]/60 bg-[#0b0f1c]/85 text-[#c9a227] transition hover:bg-[#1d2b4a]" />
         <p className="font-serif text-xs uppercase tracking-[0.35em] text-[#c9a227]">A Gentleman's Occupation</p>
         <h1 className="mt-2 font-serif text-3xl font-bold text-[#f2e3c2] sm:text-4xl">Clockwork Heist</h1>
         <p className="mt-3 text-sm leading-relaxed text-[#e5d9c3]/90">

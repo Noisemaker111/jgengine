@@ -7,6 +7,7 @@ import {
   type WaveManifest,
 } from "@jgengine/core/ai/spawnDirector";
 import { setPlayControlsActive } from "@jgengine/core/game/controlGate";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createRecordBook, type RecordBook } from "@jgengine/core/game/recordBook";
 import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -131,9 +132,21 @@ export function createRunSession(): RunSession {
     storage: safeStorage(),
   });
 
+  function syncPhase(ctx: GameContext): void {
+    setGamePhase(
+      ctx,
+      snapshot.status === "ready"
+        ? "menu"
+        : snapshot.status === "wave" || snapshot.status === "intermission"
+          ? "playing"
+          : "ended",
+    );
+  }
+
   function publish(ctx: GameContext): void {
     ctx.game.store.set("run", { ...snapshot });
     setPlayControlsActive(ctx, snapshot.status === "wave" || snapshot.status === "intermission");
+    syncPhase(ctx);
   }
 
   function publishRecords(ctx: GameContext): void {

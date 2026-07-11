@@ -5,6 +5,7 @@ import { withSeedParam } from "@jgengine/core/random/seedLink";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { GameIcon } from "@jgengine/react/gameIcons";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { keybinds } from "../keybinds";
 import { BOARD_SIZES, BOARD_SIZE_ORDER, isBoardSizeId, type BoardSizeId } from "../match/catalog";
@@ -92,6 +93,7 @@ export function GameUI() {
   return (
     <div className="mm-felt absolute inset-0 flex select-none flex-col text-[#f4ecd9]">
       <style>{GAME_CSS}</style>
+      <SettingsTrigger className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#c9a557]/35 bg-[#0d1b36]/80 text-[#c9a557] transition hover:bg-[#c9a557]/15 sm:right-5 sm:top-5" />
       <header className="flex flex-col items-center gap-1.5 px-3 pt-3 sm:gap-2.5 sm:pt-5">
         <div className="flex items-baseline gap-3">
           <h1 className="mm-serif text-lg font-bold tracking-[0.08em] text-[#e3c883] sm:text-2xl">Memory Match</h1>

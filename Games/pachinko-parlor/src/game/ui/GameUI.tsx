@@ -1,4 +1,4 @@
-import { HudCanvas, HudPanel, useEngineState, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useEngineState, useHudLayout } from "@jgengine/react";
 import { PALETTE } from "../palette";
 import { pachinkoStore } from "../store";
 import { Board } from "./Board";
@@ -35,7 +35,10 @@ export function GameUI() {
           <Title />
         </HudPanel>
         <HudPanel id="Bank" anchor="top-right" compact="keep" interactive={false}>
-          <StatReadout snap={snap} />
+          <div className="flex flex-col items-end gap-1.5">
+            <SettingsTrigger className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-full border border-[#9c6f22] bg-[#2b180e]/80 text-[#ffcf5c] backdrop-blur transition-colors hover:bg-[#9c6f22]/25" />
+            <StatReadout snap={snap} />
+          </div>
         </HudPanel>
         <HudPanel id="Wins" anchor="left" compact="chip" chip="Wins" interactive={false}>
           <WinsFeed snap={snap} />

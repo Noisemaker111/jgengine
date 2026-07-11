@@ -1,4 +1,4 @@
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { LevelUpFlash, ToastStack } from "@jgengine/react/components";
 import { itemNameById } from "../content";
 import { AmmoPanel } from "./components/AmmoPanel";
@@ -19,6 +19,10 @@ export function GameUI() {
     <HudCanvas layout={layout} className="z-20 font-sans text-slate-100">
       <HudPanel id="wave-status" anchor="top" compact="keep" interactive={false}>
         <WaveStatus />
+      </HudPanel>
+
+      <HudPanel id="settings" anchor="top-right" order={-1} compact="keep" interactive={false}>
+        <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-slate-600/50 bg-slate-950/70 text-base text-slate-300 transition hover:bg-slate-800/80 hover:text-cyan-100" />
       </HudPanel>
 
       <HudPanel id="score" anchor="top-right" order={0} compact="keep" interactive={false}>

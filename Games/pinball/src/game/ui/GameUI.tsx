@@ -1,4 +1,4 @@
-import { HudCanvas, HudPanel, useEngineState, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useEngineState, useHudLayout } from "@jgengine/react";
 import { PALETTE } from "../palette";
 import { pinballStore } from "../store";
 import { Backglass } from "./components/backglass";

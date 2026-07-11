@@ -3,6 +3,7 @@ import { type ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { SettingsTrigger } from "@jgengine/react";
 
 import type { MatchState } from "../match/state";
 import { getMatch, REV_KEY } from "../match/store";
@@ -122,6 +123,7 @@ export function GameUI() {
               <div className="flex gap-2">
                 <HudButton onClick={() => ctx.game.commands.run("pause", {})}>Pause</HudButton>
                 <HudButton onClick={() => ctx.game.commands.run("backToMenu", {})}>Menu</HudButton>
+                <SettingsTrigger className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-sm border border-[rgba(88,255,150,0.42)] text-[#effff2] transition-colors duration-150 hover:bg-[rgba(88,255,150,0.16)]" />
               </div>
               <div
                 className="hidden text-right text-[10px] uppercase leading-relaxed tracking-[0.16em] opacity-55 sm:block"

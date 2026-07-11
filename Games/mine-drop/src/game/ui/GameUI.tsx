@@ -1,6 +1,6 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 
 import { keybinds } from "../keybinds";
 import { COMPANION_IDS, type Phase } from "../tuning";
@@ -183,7 +183,10 @@ export function GameUI() {
         <ObjectivePanel hud={hud} />
       </HudPanel>
       <HudPanel id="crew-panel" anchor="top-right" inset={{ x: 16, y: 16 }}>
-        <CrewPanel />
+        <div className="flex items-start gap-2">
+          <SettingsTrigger className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-amber-300/25 bg-stone-950/80 text-base text-amber-100/70 shadow-xl backdrop-blur-sm transition hover:bg-amber-900/40 hover:text-amber-100" />
+          <CrewPanel />
+        </div>
       </HudPanel>
       <div className="absolute inset-x-0 top-[22%] flex justify-center px-4 text-center">
         <Banner hud={hud} />

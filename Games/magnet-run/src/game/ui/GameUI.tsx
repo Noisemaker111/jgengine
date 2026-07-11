@@ -1,3 +1,5 @@
+import { SettingsTrigger } from "@jgengine/react";
+
 import { LaneIndicator } from "./components/LaneIndicator";
 import { LoseScreen } from "./components/LoseScreen";
 import { PolarityChip } from "./components/PolarityChip";
@@ -16,6 +18,10 @@ export function GameUI() {
 
   return (
     <div className="pointer-events-none fixed inset-0 flex flex-col items-center justify-between gap-3 p-3 font-sans sm:p-5">
+      <div className="pointer-events-none absolute right-3 top-3 sm:right-5 sm:top-5">
+        <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded bg-[#2b2f36]/85 text-base text-[#dfe6ee]/80 shadow-lg transition hover:bg-[#2b2f36] hover:text-[#dfe6ee]" />
+      </div>
+
       {running && (
         <div className="pointer-events-auto flex w-full max-w-3xl justify-center">
           <ProgressStrip />

@@ -1,6 +1,7 @@
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { SettingsTrigger } from "@jgengine/react";
 
 import type { TableState } from "../state/machine";
 import type { CardSize } from "./components/Card";
@@ -59,7 +60,10 @@ export function GameUI() {
           <BankPanel state={state} />
         </HudPanel>
         <HudPanel id="shoe" anchor="top-right" compact="keep">
-          <ShoePanel state={state} />
+          <div className="flex items-start gap-2">
+            <ShoePanel state={state} />
+            <SettingsTrigger className="pointer-events-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-emerald-300/15 bg-emerald-950/75 text-emerald-100/80 shadow-xl backdrop-blur transition-colors hover:bg-emerald-900/75" />
+          </div>
         </HudPanel>
         <HudPanel id="history" anchor="right" compact="chip" chip="History">
           <HistoryPanel state={state} />

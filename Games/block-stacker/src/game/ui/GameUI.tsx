@@ -1,6 +1,7 @@
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useGame } from "@jgengine/react/hooks";
 import { useEngineState } from "@jgengine/react/engineStore";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { blockStackerStore } from "../tetris/store";
 import { Board } from "./components/Board";
@@ -38,9 +39,14 @@ export function GameUI() {
     </div>
   );
 
+  const settingsTrigger = (
+    <SettingsTrigger className="pointer-events-auto absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-slate-900/80 text-cyan-300/80 shadow-lg backdrop-blur transition hover:bg-slate-800" />
+  );
+
   if (compact) {
     return (
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center gap-2 px-3 pb-[180px] pt-3 font-sans text-white select-none">
+        {settingsTrigger}
         <div className="pointer-events-none flex w-full items-start justify-center gap-6">
           <HoldPanel snapshot={snapshot} compact />
           <StatsPanel snapshot={snapshot} compact />
@@ -58,6 +64,7 @@ export function GameUI() {
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-6 p-6 font-sans text-white select-none">
+      {settingsTrigger}
       <div className="pointer-events-auto flex w-40 flex-col gap-4">
         <HoldPanel snapshot={snapshot} />
         <StatsPanel snapshot={snapshot} />

@@ -1,6 +1,7 @@
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { useGame } from "@jgengine/react/hooks";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { brickBreakerStore } from "../breakout/store";
 import { Hud } from "./components/Hud";
@@ -26,6 +27,7 @@ export function GameUI() {
         <div className="min-w-0 flex-1">
           <Hud snapshot={snapshot} compact={compact} />
         </div>
+        <SettingsTrigger className="shrink-0 flex h-8 w-8 items-center justify-center rounded-md border border-white/15 bg-white/5 text-slate-200 transition hover:bg-white/15" />
         <button
           type="button"
           onClick={togglePause}

@@ -1,17 +1,26 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { RIVALS } from "./game/ai/rivals";
 import { CAMERA_ANCHOR_ID, CAMERA_LEAD_SECONDS, PLAYER_ID } from "./game/constants";
 import { PLAYER_KART_ENTITY, RIVAL_KART_ENTITY } from "./game/entities/karts/catalog";
 import { createClusterMarkers, updateKartMarkers } from "./game/race/markers";
 import { MARKERS_STORE_KEY, readMarkers } from "./game/race/markersStore";
 import { RACER_SPAWNS } from "./game/race/track";
-import { createRaceSession, type RaceSession } from "./game/race/session";
+import { createRaceSession, type RacePhase, type RaceSession } from "./game/race/session";
 import { readSession, SESSION_STORE_KEY } from "./game/race/sessionStore";
+
+const RACE_PHASE_STORE_KEY = "orbitKartRacePhase";
+
+function syncPhase(ctx: GameContext, phase: RacePhase): void {
+  ctx.game.store.set(RACE_PHASE_STORE_KEY, phase);
+  setGamePhase(ctx, phase === "start" ? "menu" : phase === "finished" ? "ended" : "playing");
+}
 
 export function onInit(ctx: GameContext): void {
   const session = createRaceSession();
   ctx.game.store.set(SESSION_STORE_KEY, session);
   ctx.game.store.set(MARKERS_STORE_KEY, createClusterMarkers());
+  syncPhase(ctx, "start");
 
   if (!ctx.game.commands.has("startRace")) {
     ctx.game.commands.define("startRace", {
@@ -73,6 +82,9 @@ export function onTick(ctx: GameContext, dt: number): void {
   });
 
   const snapshot = session.snapshot();
+  const previousPhase = ctx.game.store.get(RACE_PHASE_STORE_KEY) as RacePhase | undefined;
+  if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
+
   const playerKart = snapshot.karts[PLAYER_ID];
   if (playerKart !== undefined) {
     ctx.scene.entity.setPose(ctx.player.userId, { position: playerKart.position, rotationY: playerKart.heading, dt });

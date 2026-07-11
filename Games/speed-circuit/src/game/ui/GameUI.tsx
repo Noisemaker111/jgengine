@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { ArcGauge } from "@/components/ui/arc-gauge";
 import { CountdownPips } from "@/components/ui/match-timer";
 import { HudLabel } from "@/components/ui/hud-label";
@@ -37,6 +37,10 @@ function HudLayer() {
 
   return (
     <HudCanvas layout={layout}>
+      <HudPanel id="settings" anchor="top-right" inset={{ x: 20, y: 20 }}>
+        <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[var(--jg-edge-bright)]/50 bg-[var(--jg-surface)]/80 text-[var(--jg-accent)] backdrop-blur transition-colors hover:bg-[var(--jg-accent)]/15" />
+      </HudPanel>
+
       {state.phase !== "finished" && (
         <HudPanel id="speed-gauge" anchor="top-left" inset={{ x: 20, y: 20 }}>
           <ArcGauge

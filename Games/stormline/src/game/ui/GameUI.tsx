@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { CorridorMinimap } from "./components/CorridorMinimap";
 import { GateSplits } from "./components/GateSplits";
 import { LoseScreen } from "./components/LoseScreen";
@@ -20,7 +21,8 @@ export function GameUI() {
         <div className="pointer-events-auto mx-auto">
           <StormLeadBar />
         </div>
-        <div className="pointer-events-auto">
+        <div className="pointer-events-auto flex flex-col items-end gap-1.5">
+          <SettingsTrigger className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#3d4a5c] bg-[#1e2633]/85 text-[#9fb8c8] shadow-lg transition-colors hover:bg-[#3d4a5c]/40" />
           <CorridorMinimap />
         </div>
       </div>

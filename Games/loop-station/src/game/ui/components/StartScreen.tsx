@@ -1,4 +1,5 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { keybinds } from "../../keybinds";
 import { LOOP_TEAL, TAPE_MAGENTA } from "../../track/palette";
@@ -17,7 +18,8 @@ function KeyBadge({ action, children }: { action: string; children: React.ReactN
 
 export function StartScreen({ bestLaps, onStart }: { bestLaps: number; onStart: () => void }) {
   return (
-    <div className="pointer-events-auto flex h-full w-full flex-col items-center justify-center gap-6 bg-[#12101f]/90 px-6 text-center">
+    <div className="pointer-events-auto relative flex h-full w-full flex-col items-center justify-center gap-6 bg-[#12101f]/90 px-6 text-center">
+      <SettingsTrigger className="pointer-events-auto absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-md border border-[#6247aa]/50 bg-[#12101f]/80 text-base text-[#f5f2fa]/70 shadow-[0_0_18px_rgba(18,16,31,0.8)] transition hover:bg-[#1c1830]/80 hover:text-[#f5f2fa]" />
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.5em] text-[#12b3a8]">Synthwave Tape-Loop Speedrunner</p>
         <h1 className="mt-2 text-5xl font-black uppercase tracking-widest text-[#f5f2fa] drop-shadow-[0_0_18px_rgba(232,61,132,0.65)]">

@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame } from "@jgengine/react/hooks";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { SettingsTrigger } from "@jgengine/react";
 
 import type { Cell } from "../board";
 import { keybinds } from "../keybinds";
@@ -481,7 +482,10 @@ export function GameUI() {
       </HudPanel>
 
       <HudPanel id="score" anchor="top-right" inset={{ x: 20, y: 18 }} compact="keep" style={{ zIndex: 20 }}>
-        <ScorePanel snap={snap} />
+        <div className="flex flex-col items-end gap-2">
+          <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-black/55 text-slate-300 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white" />
+          <ScorePanel snap={snap} />
+        </div>
       </HudPanel>
 
       {snap.timed && (
