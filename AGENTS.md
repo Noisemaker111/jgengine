@@ -15,8 +15,8 @@ Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, te
 
 ## Skills
 
-- **Outside-repo entry is only `npx jgengine create "Name"`.** Create scaffolds the game and installs project skills — users never run a separate skills download. `skills -p|-g` is recovery/re-install only.
-- **Pushing to `main` does NOT auto-update existing skill installs.** Re-run `npx jgengine skills -p` (or `-g`) / `npx skills update` to pull descriptor changes.
+- **Human interface outside this monorepo: one sentence** — `Make a game that … with jgengine`. Not “run these CLI steps.” The CLI is for agents (and optional power users); create auto-installs skills when the agent scaffolds.
+- **Pushing to `main` does NOT auto-update existing skill installs.** Agents re-run `npx jgengine skills -p` (or `-g`) / `npx skills update` if needed.
 
 ## Verification & screenshots
 

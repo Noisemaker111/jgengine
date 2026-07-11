@@ -51,13 +51,21 @@ export function CopyButton({
   );
 }
 
-export function CommandBlock({ command }: { command: string }) {
+export function CommandBlock({
+  command,
+  kind = "shell",
+}: {
+  command: string;
+  /** shell = agent CLI; prompt = what a human says to their agent */
+  kind?: "shell" | "prompt";
+}) {
+  const prefix = kind === "prompt" ? "›" : "$";
   return (
     <div className="shine group relative overflow-hidden rounded-2xl border border-emerald-400/25 bg-ink-deep/85 shadow-[0_0_50px_-12px_rgba(16,185,129,0.35),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
       <div className="pointer-events-none absolute -inset-x-8 -top-12 h-16 bg-emerald-400/10 blur-2xl" />
       <div className="relative flex items-center gap-2 p-3 sm:gap-3 sm:px-5 sm:py-4">
-        <span className="select-none font-mono text-sm font-semibold text-emerald-500/80">$</span>
+        <span className="select-none font-mono text-sm font-semibold text-emerald-500/80">{prefix}</span>
         <code className="flex-1 break-all text-left font-mono text-[13px] leading-relaxed text-emerald-300 sm:text-sm">
           {command}
         </code>

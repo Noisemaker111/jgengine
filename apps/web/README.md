@@ -3,7 +3,7 @@
 The landing page for JGengine and the front door for agents. TanStack Start (SSR) on **Vercel** via Nitro.
 
 - **Humans** get a rendered landing page (`/`), a skills index (`/skills`), and rendered skill pages (`/skills/<name>`) to explore what each skill does.
-- **Agents** are handed one instruction — `npx jgengine create "My Game Name"` (skills install with create) — plus a "which skill for what" guide. The site references the skills; it does not dump their contents or serve an `llms.txt`.
+- **Humans** have one interface: `Make a game that … with jgengine` (to any coding agent). The site shows that prompt; the CLI is for agents underneath. Skills guide which skill does what; the site does not dump skill contents or serve an `llms.txt`.
 
 ## The site is generated from the engine — deploying the engine updates the site
 

@@ -58,7 +58,7 @@ export function runSkills(argv: string[]): number {
 
 Installs ${GAME_SKILLS.join(", ")} from ${SKILLS_SOURCE}.
 
-create already installs project skills for you — you usually never need this command.
+People do not run this. Agents use it; create already installs project skills.
 `);
       return 0;
     }

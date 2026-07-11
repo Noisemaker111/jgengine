@@ -3,7 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { CommandBlock } from "../components/Copy";
 import { Page, PageHero } from "../components/Layout";
 import { SKILL_SLUGS } from "../content/skills";
-import { INSTALL_CMD, SKILL_GUIDE } from "../lib/site";
+import { ENTRY_PROMPT, SKILL_GUIDE } from "../lib/site";
 
 export const Route = createFileRoute("/skills/")({
   head: () => ({
@@ -24,10 +24,10 @@ function SkillsIndex() {
       <PageHero
         eyebrow="The spec"
         title="Skills"
-        blurb="Each skill is the spec your agent reads before it builds. Install them all with one command — your agent picks the right one for the job."
+        blurb="Each skill is the spec your agent reads before it builds. You never install them yourself — say the prompt and the agent loads them."
       >
         <div className="max-w-xl">
-          <CommandBlock command={INSTALL_CMD} />
+          <CommandBlock command={ENTRY_PROMPT} kind="prompt" />
         </div>
       </PageHero>
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { INSTALL_CMD } from "../lib/site";
+import { ENTRY_PROMPT } from "../lib/site";
 import { CopyButton } from "./Copy";
 
-const PROMPT = "build me a first-person voxel mining game";
+const EXAMPLE =
+  "Make a game that is Mario Party with gooey slime characters, with jgengine";
 
 type TermLine = {
   mode: "type" | "print";
@@ -17,41 +18,25 @@ type TermLine = {
 const LINES: TermLine[] = [
   {
     mode: "type",
-    prefix: "$",
-    prefixClass: "text-emerald-500/80",
-    text: INSTALL_CMD,
-    textClass: "text-slate-200",
+    prefix: "you",
+    prefixClass: "text-cyan-400",
+    text: EXAMPLE,
+    textClass: "text-slate-100",
     delay: 500,
   },
   {
     mode: "print",
-    prefix: "✓",
-    prefixClass: "text-emerald-400",
-    text: "3 skills installed — newgame · api · verify",
+    prefix: "◆",
+    prefixClass: "text-violet-400",
+    text: "agent reads jgengine · scaffolds · concept pitch",
     textClass: "text-slate-500",
-    delay: 550,
-  },
-  {
-    mode: "type",
-    prefix: "›",
-    prefixClass: "text-cyan-400",
-    text: PROMPT,
-    textClass: "text-slate-100",
-    delay: 800,
+    delay: 700,
   },
   {
     mode: "print",
     prefix: "◆",
     prefixClass: "text-violet-400",
-    text: "jgengine-newgame → blueprint: world, verbs, HUD, content budget",
-    textClass: "text-slate-500",
-    delay: 950,
-  },
-  {
-    mode: "print",
-    prefix: "◆",
-    prefixClass: "text-violet-400",
-    text: "terrain · mining · hotbar · saves — wired to @jgengine/core",
+    text: "POV · world · scale — a few questions, then builds",
     textClass: "text-slate-500",
     delay: 750,
   },
@@ -59,7 +44,7 @@ const LINES: TermLine[] = [
     mode: "print",
     prefix: "✓",
     prefixClass: "text-emerald-400",
-    text: "jgengine-verify — scene assertions pass",
+    text: "full game — not a slice",
     textClass: "text-slate-500",
     delay: 850,
   },
@@ -67,7 +52,7 @@ const LINES: TermLine[] = [
     mode: "print",
     prefix: "▶",
     prefixClass: "text-emerald-300",
-    text: "playable at /games/voxel-mine",
+    text: "playable",
     textClass: "font-semibold text-emerald-300",
     delay: 650,
   },
@@ -112,8 +97,8 @@ export function HeroTerminal() {
         <span className="h-2.5 w-2.5 rounded-full bg-rose-500/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
-        <span className="ml-2 font-mono text-xs text-slate-600">your-agent — session</span>
-        <CopyButton value={PROMPT} label="Copy prompt" className="ml-auto" />
+        <span className="ml-2 font-mono text-xs text-slate-600">your agent — chat</span>
+        <CopyButton value={ENTRY_PROMPT} label="Copy prompt" className="ml-auto" />
       </div>
       <div className="min-h-[15rem] px-5 py-5 text-left font-mono text-[13px] leading-[1.9] sm:text-sm">
         {LINES.slice(0, pos.line).map((line) => (
@@ -130,7 +115,7 @@ export function HeroTerminal() {
             </span>
           </p>
         )}
-        {done && <p className="terminal-caret select-none text-emerald-500/80">$</p>}
+        {done && <p className="terminal-caret select-none text-cyan-400">you</p>}
       </div>
     </div>
   );

@@ -9,21 +9,28 @@ The deliverable is the **complete idea** — the game the user named, at the sca
 
 The shell (`@jgengine/shell`) already gives you: third-person orbit camera **and** first-person mouse-look (pointer-lock + centered reticle + weapon viewmodel), input tracker, hotbar/primary-click plumbing, world-space enemy health bars, floating damage/heal numbers, projectile tracers, `GameUiPreview`, error overlay. Never rebuild these per game.
 
-## Cold start — "use jgengine" / "make a game with npx jgengine"
+## The only human interface (outside this monorepo)
 
-If you only know the **name**, do **not** dig the user's filesystem or invent an API.
+People build with **one sentence**, not a CLI tutorial:
 
-1. Run `npx jgengine help` (or `npx jgengine@latest help`) — that is the product entry.
-2. Scaffold if there is no project yet:
-   ```sh
-   npx jgengine create "Game Name"
-   cd Game-Name
-   ```
-   `create` already installs project agent skills (`jgengine-api`, `jgengine-newgame`, `jgengine-verify`). **Never tell the user to download or install skills as a separate step.**
-3. Read the skills in the project (`.agents/skills/` or `.claude/skills/`) and `AGENTS.md`. Engine API: `npx jgengine llms core`.
-4. Reply with the **concept pitch** below — then build after they answer.
+```text
+Make a game that ... with jgengine
+```
 
-**Inside this monorepo:** `create "Name"` auto-places under `Games/`; skills already live in the repo — no install. Optional create flags: `--standalone` / `--in-repo`, `--no-install`, `--no-skills`, `--pm bun|npm|pnpm`.
+Examples they will say: *Make a game that is Mario Party with gooey slimes, with jgengine* · *Make a tower defense with jgengine* · *use jgengine to make …*.
+
+**Never** tell the user to run `npx`, install skills, or download packages as their first step. That is **your** job.
+
+### What you do (agent-side)
+
+If you only know the **name**, do **not** dig their filesystem or invent an API.
+
+1. Run `npx jgengine help` if you need the CLI map.
+2. Scaffold if there is no project yet: `npx jgengine create "Game Name"` — installs `jgengine-api` / `newgame` / `verify` into the project automatically.
+3. Read those skills + `AGENTS.md`. API docs: `npx jgengine llms core`.
+4. **Concept pitch** (below) → questions → build.
+
+**Inside this monorepo:** skills already live here; `create "Name"` goes under `Games/`. Optional create flags: `--standalone` / `--in-repo`, `--no-install`, `--no-skills`, `--pm bun|npm|pnpm`.
 
 ## Read first (agent, not user)
 

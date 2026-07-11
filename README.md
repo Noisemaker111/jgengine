@@ -14,7 +14,7 @@ A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no ren
 | [`@jgengine/convex`](packages/convex) | Convex adapters: game transport, presence transport. |
 | [`@jgengine/shell`](packages/shell) | Game player shell: R3F canvas, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
 | [`@jgengine/assets`](packages/assets) | Self-generating, license-verified index of CC0 3D models: ships the typed index + pull CLI, not the GLB bytes. |
-| [`jgengine`](packages/jgengine) | The command line: `npx jgengine create "My Game Name"` scaffolds a playable base (folder `My-Game-Name`); `doctor` diagnoses a setup; `skills`/`llms` load the agent skills and packaged API docs into any project. |
+| [`jgengine`](packages/jgengine) | Agent-side CLI (`npx jgengine`) — create, skills, doctor, llms. **People** do not start here; they tell an agent *Make a game that … with jgengine*. |
 
 ## Install
 
@@ -33,23 +33,23 @@ import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
 ```
 
-## Agent skills
+## How people build games (outside this monorepo)
 
-Building a game with an AI coding agent? **One command** — create scaffolds the game **and** installs skills into the project:
+**One interface.** Open any coding agent and say:
 
-```sh
-npx jgengine create "Solitaire"
-cd Solitaire
-# tell your agent: make Solitaire with jgengine
+```text
+Make a game that ... with jgengine
 ```
 
-No separate skills download for the user. Re-install only if needed: `npx jgengine skills -p` or `-g`.
+Examples: *Make a game that is Mario Party with goo characters, with jgengine* · *Make a game that is a first-person voxel miner, with jgengine*.
 
-Then prompts like "make a tower defense game with jgengine" pick up the full engine surface and definition of done automatically. The skills live in [`.claude/skills/`](.claude/skills) — the directory Claude Code auto-surfaces in every session, so they get invoked instead of merely existing.
+That is the whole product surface for humans. No install checklist, no “run skills first,” no required CLI.
+
+Under the hood the agent uses `npx jgengine` (create, skills, doctor, llms) and the skills in [`.claude/skills/`](.claude/skills). Power users may call the CLI themselves; that is optional, not the entry.
 
 ## Website — [jgengine.com](https://jgengine.com)
 
-[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and a front door for agents. It points agents at `npx jgengine create "My Game Name"` and explains which skill to grab for what — the skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
+[`apps/web`](apps/web) is a TanStack Start app: landing for humans (the prompt) and skill/API pages for agents. Skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
 
 It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
