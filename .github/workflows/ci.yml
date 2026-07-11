@@ -45,55 +45,8 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run build
-      # Engine + scripts only. Games/* are gallery demos — not part of the published SDK surface.
+      # Engine surface only. Games/* are gallery demos — opt in with `bun run test:games` / `test:all`.
       - run: bun test packages apps/dev scripts
-
-  test-games:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - id: filter
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            base="${{ github.event.pull_request.base.sha }}"
-          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ] && [ -n "${{ github.event.before }}" ]; then
-            base="${{ github.event.before }}"
-          else
-            base="$(git rev-parse HEAD^ 2>/dev/null || true)"
-          fi
-          if [ -z "${base:-}" ] || ! git cat-file -e "$base" 2>/dev/null; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "no usable base — running Games tests"
-            exit 0
-          fi
-          if git diff --name-only "$base" HEAD | grep -qE '^Games/'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Games/** changed — running Games tests"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Games/** unchanged — skipping Games tests"
-          fi
-      - if: steps.filter.outputs.run == 'true'
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.8
-      - if: steps.filter.outputs.run == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - if: steps.filter.outputs.run == 'true'
-        run: bun install --frozen-lockfile
-      - if: steps.filter.outputs.run == 'true'
-        run: bun run build
-      - if: steps.filter.outputs.run == 'true'
-        run: bun test Games
 
   web-build:
     runs-on: ubuntu-latest
@@ -112,10 +65,10 @@ jobs:
       - run: bun run --cwd apps/web build
 
   ci:
-    needs: [checks, test, test-games, web-build]
+    needs: [checks, test, web-build]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: |
-          test "${{ needs.checks.result }}" = "success" && test "${{ needs.test.result }}" = "success" && test "${{ needs.test-games.result }}" = "success" && test "${{ needs.web-build.result }}" = "success"
+          test "${{ needs.checks.result }}" = "success" && test "${{ needs.test.result }}" = "success" && test "${{ needs.web-build.result }}" = "success"
