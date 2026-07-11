@@ -28,9 +28,9 @@ export function GameCard({ game }: { game: Game }) {
         <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.05]">
           <GameFace game={game} />
         </div>
-        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/55 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/50 to-transparent" />
         <span
-          className="absolute left-4 top-4 rounded-full border px-2.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider backdrop-blur-sm"
+          className="absolute bottom-3 left-3 rounded-full border px-2.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider backdrop-blur-sm"
           style={{ color: game.hue, borderColor: `${game.hue}45`, backgroundColor: `${game.hue}16` }}
         >
           {game.genre}

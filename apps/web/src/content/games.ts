@@ -21,11 +21,6 @@ export type GameCredit = {
   source?: { name: string; href: string };
 };
 
-export type GamePreview = {
-  kind: "menu" | "first-frame";
-  subtitle?: string;
-};
-
 export type Game = {
   id: string;
   title: string;
@@ -36,7 +31,6 @@ export type Game = {
   category: GameCategory;
   controls: string;
   hue: string;
-  preview?: GamePreview;
   credit?: GameCredit;
   platforms?: readonly ("web" | "mobile")[];
 };
@@ -88,7 +82,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Action & Arcade",
     controls: "WASD · mouse fire · E grab/shop · G frag · Q medkit · 1-3 weapons",
     hue: "#f87171",
-    preview: { kind: "first-frame" },
   },
   "block-stacker": {
     tagline: "Falling blocks, rising stakes.",
@@ -601,7 +594,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Strategy & Tactics",
     controls: "Click to place · U undo · R rematch",
     hue: "#15803d",
-    preview: { kind: "first-frame" },
   },
   "four-in-a-row": {
     title: "Four in a Row",
@@ -612,7 +604,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Strategy & Tactics",
     controls: "Click or 1-7 drop column · U undo · R rematch",
     hue: "#1d4ed8",
-    preview: { kind: "first-frame" },
   },
   "echo-lights": {
     title: "Echo Lights",
@@ -643,7 +634,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Puzzle",
     controls: "Click peg, then landing hole · U undo · H hint · R restart",
     hue: "#78350f",
-    preview: { kind: "first-frame" },
   },
   codebreaker: {
     title: "Codebreaker",
