@@ -132,6 +132,14 @@ ship-motion workers keep backgrounding the post-merge 60s sleep even when told '
 
 shoot --url skips ensureServer so the shot soft-times-out unless a dev server is already running — caller must boot vite manually
 
+2026-07-10T23:22:05.695Z — sonnet — Claude
+
+verifying asset pack URLs for #308 → WebFetch returned 403 on every URL (tool-level proxy outage, even example.com) and curl CONNECT also 403 — had to fall back to WebSearch-only cross-checking
+
+2026-07-10T23:25:53.324Z — sonnet — Claude
+
+ship-motion worker told to sleep 60 in the foreground before the Actions check → worker backgrounded the sleep and its turn ended, leaving the green check unreported (happened on two consecutive ship workers)
+
 2026-07-10T23:45:41.127Z — sonnet — Claude
 
 surveying all 37 games' environments in one scout → worker died on API server error mid-run, resumed via SendMessage and finished fine

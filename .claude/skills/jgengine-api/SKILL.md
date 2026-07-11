@@ -51,7 +51,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Possession | `scene/possession` | `createPossession`, `Possession`, `PossessionDeps`, `PossessionSwappedEvent` |
 | Form / shapeshift | `scene/form` | `createForms`, `Forms`, `FormDef`, `FormsDeps`, `FormChangedEvent` |
 | Multiplayer adapters | `runtime/adapter` | `offline`, `ws`, `convex`, `socketIo`, `p2p`, `lan`, `fly`, `servers`, `MultiplayerTopology`, `ServersPoolConfig` |
-| Loot | `game/lootTable` | `lootTable`, `LootTableDef`, `LootEntry`, `Drop` |
+| Loot | `game/lootTable` | `lootTable`, `LootTableDef`, `LootEntry`, `Drop` — `mode: "independent"` gives every entry its own `chance` per roll (classic drop lists, no filler entries); default `"weighted"` picks one entry by `weight` |
 | Dropped-item entity | `game/worldItem` | `WORLD_ITEM_ENTITY_NAME`, `WorldItemRecord`, `WorldItemSpawnInput`, `createWorldItemStore`, `resolveDeathDrops`, `scatterOffset`, `scatterPosition`, `selectNearestWorldItem`, `resolveWorldItemPresentation`, `RarityStyle`, `WorldItemPresentation`, `DEFAULT_RARITY`, `DEFAULT_PICKUP_RADIUS`, `DEFAULT_SCATTER` |
 | Loot filter | `game/lootFilter` | `lootFilter`, `evaluateLootFilter`, `LootFilterRule`, `LootFilterCondition`, `LootFilterItem`, `LootFilterOverride` |
 | Loadout | `game/loadout` | `LoadoutDef`, `LoadoutItemEntry`, `Loadouts` |
@@ -59,12 +59,13 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Quest | `game/quest` | `QuestDef`, `QuestRewards`, `QuestObjective`, `QuestJournal` |
 | World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat`, `environment`, `terrain`, `rain`, `snow`, `grass`, `ocean`, `building` |
 | Voxel field | `world/voxelField` | `createVoxelField`, `VoxelField`, `VoxelCell`, `VoxelHit`, `VoxelBounds`, `VoxelFieldSummary`, `VoxelFace`, `VOXEL_FACES`, `VOXEL_FACE_NORMALS` — a chunked block lattice, distinct from the `voxel()` `WorldFeature` descriptor |
-| Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `rollingField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep`, `snapToGround`, `snapEntityToGround`, `resolveTerrainPalette`, `TERRAIN_MATERIAL_PALETTES` |
+| Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `rollingField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep`, `snapToGround`, `snapEntityToGround`, `resolveTerrainPalette`, `createTerrainPaletteSampler`, `TERRAIN_MATERIAL_PALETTES` — `terrain({ heightField: (x, z) => y })` swaps in a game-authored heightfield (banded biomes, ridge walls, terraces; flatten masks still apply, render + physics both sample it); `terrain({ materialRegions: [{ center, radius, material }] })` paints per-region palettes over one field |
 | Seeded RNG | `random/rng` | `seededRng`, `seededStreams` |
 | Seed share link | `random/seedLink` | `withSeedParam`, `seedFromUrl`, `seedFromSearch`, `dailySeed`, `DEFAULT_SEED_PARAM` — encode/decode a world seed to/from a shareable URL query param; `dailySeed` is the UTC daily-run seed |
 | Name generator | `random/nameGen` | `createNameGenerator`, `pickFrom`, `fillTemplate`, `NameGenerator`, `NameGeneratorOptions`, `SyllableBank` |
 | Regions | `world/regions` | `createRegionField`, `isRegionField`, `RegionDef`, `RegionField`, `RegionSample` |
 | Wind field | `world/wind` | `windField`, `WindField`, `WindFieldConfig`, `WindVector` |
+| Wind zones | `world/windZones` | `createWindZones`, `WindZones`, `WindZoneConfig`, `WindZoneState`, `WindShiftForecast` — named discrete zones over an ambient field, each on a deterministic state schedule; `forecastShift` drives "gale in 12s" countdowns |
 | Water surface | `world/water` | `waterSurface`, `waterSurfaceFromDescriptor`, `synthesizeWaves`, `WaterSurface`, `GerstnerWave` |
 | Scatter | `world/scatter` | `scatter`, `scatterAabb`, `ScatterConfig`, `ScatterPoint` |
 | Content scatter | `world/scatterItems` | `scatterItems`, `pickWeighted`, `ScatterLayer`, `ScatterInstance` |
@@ -125,7 +126,10 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Touch controls | `input/touchScheme` | `deriveTouchScheme`, `touchCode`, `touchActionLabel`, `touchButtonKind`, `withTouchCodes`, `TouchControlsConfig`, `TouchGestureBindings`, `TouchDragBinding`, `TouchButtonSpec`, `TouchButtonKind`, `TouchScheme`, `TouchJoystick`, `TouchButton` |
 | Pointer hit | `input/pointer` | `PointerHit`, `PointerButton`, `aimToPoint`, `moveTargetFromHit`, `groundOf`, `PointerVec3` |
 | Navmesh + A* | `nav/navGrid` | `createNavGrid`, `findPath`, `smoothPath`, `NavGrid`, `NavGridConfig`, `NavPoint`, `FindPathOptions` |
-| Path follow | `nav/pathFollow` | `createPathFollow`, `advancePathFollow`, `pathFromNav`, `PathFollowConfig`, `PathFollowState`, `Waypoint` |
+| Path follow | `nav/pathFollow` | `createPathFollow`, `advancePathFollow`, `pathFromNav`, `PathFollowConfig`, `PathFollowState`, `Waypoint` — dt-incremental; for timetabled movers use `nav/timetable` instead |
+| Route timetable | `nav/timetable` | `createRouteTimetable`, `RouteTimetable`, `RouteTimetableConfig`, `TimetableStop`, `TimetablePose` — position-at-absolute-time over an authored route with dwells; preview === live, so schedule forecasts can't drift |
+| Rail/switch graph | `nav/railGraph` | `createRailGraph`, `createRailRider`, `RailGraph`, `RailRider`, `RailNode`, `RailEdge`, `RailRiderPose` — directed track segments with junction switch-throw semantics; riders take the thrown edge at every junction |
+| Leader trail | `movement/leaderTrail` | `createLeaderTrail`, `LeaderTrail`, `LeaderTrailConfig`, `TrailPose` — live breadcrumb trail from a moving leader, followers placed by arc-length behind (convoys, conga lines, snake bodies) |
 | Nav-grid movement constraint | `nav/navConstrain` | `constrainToNavGrid`, `NavConstrainProposed`, `NavConstrainEntity`, `NavConstrainOptions` — a standalone walkable-pass-through + wall-slide helper; adapt its `(proposed, entity)` shape to `PlayerMovementConfig.beforeCommit`'s `(frame) => [x,y,z]` with a small closure |
 | Selection set | `scene/selection` | `createSelectionSet`, `SelectionSet`, `screenRect`, `selectWithinRect`, `rectContainsPoint`, `isMarquee`, `ScreenRect` |
 | Context menu | `interaction/contextMenu` | `contextVerb`, `buildContextMenu`, `contextVerbInput`, `ContextVerb`, `ContextMenu` |
@@ -159,8 +163,10 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Multi-region health | `survival/regionHealth` | `createMultiRegionHealth`, `MultiRegionHealth`, `HealthRegionConfig`, `AilmentConfig`, `RegionHealthState`, `AilmentInstance` |
 | Audio contract | `audio/audioFalloff` | `computeFalloffGain`, `resolveEmitterGain`, `distance3`, `AudioFalloffConfig`, `FalloffCurve`, `SoundDef`, `AudioBusDef`, `AudioBusId` |
 | Beat clock | `time/beatClock` | `createBeatClock`, `createBeatInputBuffer`, `nextBeatTime`, `BeatClock`, `BeatClockConfig`, `BeatSnapshot`, `BeatInputBuffer`, `BufferedAction` |
+| State schedule | `time/stateSchedule` | `createStateSchedule`, `StateSchedule`, `SchedulePhase`, `ScheduleSample`, `ScheduleWindow`, `nextClearWindow` — deterministic looping state timeline: `stateAt(t)` live, `nextTransitionAt` countdowns, `windowsOf`/`nextWindow` "when is it safe" forecasts |
 | Spawn director | `ai/spawnDirector` | `createSpawnDirectorState`, `advanceSpawnDirector`, `advanceWave`, `raiseAlert`, `pickSpawnPoint`, `SpawnDirectorConfig`, `WaveManifest`, `SpawnEntry`, `SpawnRequest`, `DirectorContext` |
 | Threat table | `ai/threat` | `createThreatTable`, `ThreatTable`, `ThreatTableConfig`, `ThreatEntry`, `HighestThreatOptions` |
+| Mob combat brain | `ai/mobBrain` | `createMobBrain`, `MobBrain`, `MobBrainConfig`, `MobBrainDeps`, `MobBrainStep`, `MobBrainMode` — the wander → aggro → chase → engage → leash-evade loop over `ai/threat`; the brain returns intent (`moveTo`, `speedScale`, `inAttackRange`, `arrivedHome`), the game executes it and routes damage into `addThreat`. Never hand-roll this loop per mob |
 | Group-assist aggro | `ai/groupAssist` | `createAssistNetwork`, `AssistNetwork`, `AssistNetworkConfig`, `AssistMember` — propagates one member's threat gains to same-group members (optional radius + `distanceBetween` gating) so a single pull rallies the group |
 | Job board | `ai/jobBoard` | `createJobBoard`, `JobBoard`, `JobDef`, `Job`, `JobPhase`, `WorkerState`, `JobReport`, `JobTickContext` |
 | Crowd flow | `ai/crowd` | `computeFlowField`, `createCrowdField`, `selectPoi`, `FlowField`, `FlowFieldOptions`, `CrowdField`, `Poi`, `SelectPoiOptions` |
@@ -170,7 +176,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Structural destruction | `physics/structure` | `StructureGraph`, `StructureNodeSpec`, `StructureEdgeSpec`, `StructureMaterial`, `StructureMaterialTable`, `CollapseEvent`, `DebrisConfig` |
 | Destructible terrain | `world/carve` | `VoxelVolume`, `VoxelMaterial`, `VoxelMaterialTable`, `CarvableField`, `carvableTerrain`, `CarveOp`, `DepositOp`, `CraterOp`, `MoundOp`, `EMPTY_VOXEL` |
 | Vehicle body | `physics/vehicleBody` | `createVehicleBody`, `VehicleBody`, `VehicleBodyConfig`, `WheelSpec`, `GripCurve`, `sampleGripCurve`, `DEFAULT_GRIP_CURVE` |
-| Buoyant boat | `physics/buoyancy` | `createBuoyantBody`, `BuoyantBody`, `BuoyantBodyConfig` |
+| Buoyant boat | `physics/buoyancy` | `createBuoyantBody`, `BuoyantBody`, `BuoyantBodyConfig` — `current: (x, z, t) => [vx, vz]` adds a water-current drift while submerged, `currentBroadside` scales it by hull orientation |
+| Flow tube | `physics/flowTube` | `createFlowTube`, `combineFlowVelocity`, `FlowTube`, `FlowTubeConfig` — axial corridor of directional flow with radial core falloff and a spool scalar (fan tunnels, updraft shafts, river narrows); sample `velocityAt` and add to any integrator |
 | Crash damage | `physics/damageZones` | `createDamageModel`, `DamageModel`, `DamageZoneDef`, `DamageTransition` |
 | Mounts / rideables | `scene/mount` | `createMountController`, `MountController`, `MountKit`, `MountSeat`, `RideableConfig` |
 | Shared-vehicle stations | `scene/stationClaim` | `createStationClaim`, `StationClaim`, `Station`, `SharedVehicleConfig`, `ClaimResult` |
@@ -200,7 +207,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Telegraph | `combat/telegraph` | `pointInTelegraph`, `telegraphProgress`, `telegraphFired`, `telegraphTurnProgress`, `telegraphFiredAtTurn`, `telegraphTurnsRemaining`, `TelegraphShape`, `TelegraphConfig` |
 | Dash / dodge | `movement/dash` | `createDashState`, `DashState`, `DashConfig`, `DashBurst`, `iframeActive`, `dashOffset` |
 | Yaw steering | `movement/steering` | `steerYaw`, `yawForward`, `yawRight`, `YawVectorXZ` — steering right decreases yaw in the `forward = (sin yaw, cos yaw)` frame; never hand-write `heading += steer * rate * dt` |
-| Ability kit | `combat/abilityKit` | `createAbilityKit`, `AbilityKit`, `AbilitySlotConfig`, `AbilitySlotSnapshot`, `AbilitySlotState`, `AbilityCastType`, `AbilityCastResult`, `AbilitySlotRetune` |
+| Ability kit | `combat/abilityKit` | `createAbilityKit`, `AbilityKit`, `AbilitySlotConfig`, `AbilitySlotSnapshot`, `AbilitySlotState`, `AbilityCastType`, `AbilityCastResult`, `AbilitySlotRetune`, `AbilityCooldownGroup`, `AbilityKitOptions` — shared cooldown groups via `createAbilityKit(slots, { groups })` + `AbilitySlotConfig.groups`; one group every slot joins is the MMO global cooldown |
+| Cast bar | `combat/castRunner` | `createCastRunner`, `CastRunner`, `CastConfig`, `CastBarSnapshot`, `CastEvent` — begin/tick cast-time state with movement interruption; compose with `abilityKit` (check readiness before `begin`, `cast` on `completed`). Never hand-roll `gcdUntil`/`casting` timers |
 | Resource pool | `combat/resourcePool` | `createResourcePool`, `ResourcePool`, `ResourcePoolConfig` — current/max with per-second regen/decay and spend/gain; `pool.current()` is the ability kit's `resourceAvailable` |
 | Combo points | `combat/comboPoints` | `createComboPoints`, `ComboPoints`, `ComboPointsConfig` — discrete points accrued on action, expiring after a timeout from the last gain, spent in bulk |
 | Event meter | `stats/eventMeter` | `createEventMeter`, `EventMeter`, `EventMeterConfig`, `EventMeterFeedResult` |
@@ -758,6 +766,7 @@ Combat primitives — effects & projectiles, death handling, melee/defense/teleg
 
 ```ts
 lootTable({ id, rolls?, entries: [{ item? | currency?, count: n | [min,max], weight }] })
+lootTable({ id, mode: "independent", entries: [{ item, count, chance }] })  // every entry rolls its own chance — 0..N drops per roll, no filler entries
 ctx.game.loot.register(table)        // in onInit
 ctx.game.loot.has(id) / roll(id, rng?) / grantToPlayer(userId, drops, source?)
 ```

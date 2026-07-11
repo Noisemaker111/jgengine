@@ -20,6 +20,73 @@ export function telegraphProgress(windupMs: number, startedAtMs: number, nowMs: 
   return Math.max(0, Math.min(1, (nowMs - startedAtMs) / windupMs));
 }
 
+export interface HazardCycleConfig {
+  windupMs: number;
+  activeMs: number;
+  /** Rest between one activation's end and the next windup; default `0` (back-to-back). */
+  cooldownMs?: number;
+  /** Shifts the whole cycle — staggers identical hazards. */
+  offsetMs?: number;
+}
+
+export type HazardPhase = "windup" | "active" | "cooldown";
+
+export interface HazardCycleSample {
+  phase: HazardPhase;
+  /** Elapsed fraction of the current phase in `[0, 1]` — the windup fraction is the decal fill. */
+  fraction: number;
+  remainingMs: number;
+  /** How many full cycles have completed before this one. */
+  cycleIndex: number;
+}
+
+/**
+ * Deterministic repeating hazard timing — windup → active → cooldown as a pure function of absolute
+ * time, for recurring flame vents, crushers, lightning rings. Sample `hazardCycleAt` each tick: draw
+ * the telegraph during `windup`, apply the effect during `active`, rest through `cooldown`.
+ */
+export function hazardCycleAt(config: HazardCycleConfig, nowMs: number): HazardCycleSample {
+  const cooldownMs = Math.max(0, config.cooldownMs ?? 0);
+  const cycleMs = config.windupMs + config.activeMs + cooldownMs;
+  if (cycleMs <= 0) return { phase: "active", fraction: 1, remainingMs: 0, cycleIndex: 0 };
+  const shifted = nowMs + (config.offsetMs ?? 0);
+  const local = ((shifted % cycleMs) + cycleMs) % cycleMs;
+  const cycleIndex = Math.floor((shifted - local) / cycleMs);
+  if (local < config.windupMs) {
+    return {
+      phase: "windup",
+      fraction: config.windupMs <= 0 ? 1 : local / config.windupMs,
+      remainingMs: config.windupMs - local,
+      cycleIndex,
+    };
+  }
+  const intoActive = local - config.windupMs;
+  if (intoActive < config.activeMs) {
+    return {
+      phase: "active",
+      fraction: config.activeMs <= 0 ? 1 : intoActive / config.activeMs,
+      remainingMs: config.activeMs - intoActive,
+      cycleIndex,
+    };
+  }
+  const intoCooldown = intoActive - config.activeMs;
+  return {
+    phase: "cooldown",
+    fraction: cooldownMs <= 0 ? 1 : intoCooldown / cooldownMs,
+    remainingMs: cooldownMs - intoCooldown,
+    cycleIndex,
+  };
+}
+
+/** Absolute time the hazard's next `active` phase begins at or after `nowMs` — the countdown seam. */
+export function nextHazardActiveAt(config: HazardCycleConfig, nowMs: number): number {
+  const sample = hazardCycleAt(config, nowMs);
+  if (sample.phase === "windup") return nowMs + sample.remainingMs;
+  const cooldownMs = Math.max(0, config.cooldownMs ?? 0);
+  const restMs = sample.phase === "active" ? sample.remainingMs + cooldownMs : sample.remainingMs;
+  return nowMs + restMs + config.windupMs;
+}
+
 export function telegraphFired(windupMs: number, startedAtMs: number, nowMs: number): boolean {
   return nowMs - startedAtMs >= windupMs;
 }

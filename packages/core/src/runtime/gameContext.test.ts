@@ -81,6 +81,25 @@ describe("createGameContext", () => {
     expect(makeContext().world.groundHeightAt(7.5, -19)).toBe(0);
   });
 
+  test("telegraph cancel removes the visual even with no bound effect", () => {
+    const ctx = makeContext();
+    const cancelled: number[] = [];
+    ctx.game.events.on("combat.telegraphCancelled", (event) => cancelled.push(event.id));
+    let firedId = -1;
+    ctx.game.events.on("combat.telegraph", (event) => {
+      firedId = event.id;
+    });
+    const cancel = ctx.scene.entity.telegraph({
+      from: "user_a",
+      shape: { kind: "circle", radius: 3 },
+      at: [0, 0, 0],
+      windupMs: 500,
+    });
+    expect(firedId).toBeGreaterThanOrEqual(0);
+    cancel();
+    expect(cancelled).toEqual([firedId]);
+  });
+
   test("spawn seeds pool stats from the entity catalog", () => {
     const ctx = makeContext();
     const id = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
