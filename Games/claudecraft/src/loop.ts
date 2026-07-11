@@ -4,9 +4,14 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { mobRuntimeOf, onMobDied, tickMobs } from "./game/ai/mobs";
 import { tickAuras, tickHero } from "./game/combat/engine";
 import { buildLootTables } from "./game/content";
+import { tickDelve } from "./game/delves/systems";
 import { useHandlers } from "./game/items/use-handlers";
 import { loadouts } from "./game/loadouts";
+import { tickMail } from "./game/mail/systems";
+import { tickValeCup } from "./game/minigames/valeCup";
+import { tickProtectYumi } from "./game/minigames/yumi";
 import { CLASS_ENTITY_ID } from "./game/model";
+import { tickPets } from "./game/pets/systems";
 import { killXp, levelTrack } from "./game/progression/curves";
 import { registerCommands } from "./game/session/commands";
 import { applySheet, clearAuras, grantTalentPoint, heroOf, storeKeys } from "./game/session/hero";
@@ -88,8 +93,14 @@ export const loop: GameLoop<GameContext> = {
   },
   onTick(ctx, dt) {
     const clamped = Math.min(dt, 0.25);
-    tickHero(ctx, ctx.player.userId, clamped);
+    const userId = ctx.player.userId;
+    tickHero(ctx, userId, clamped);
     tickMobs(ctx, clamped);
     tickAuras(ctx);
+    tickPets(ctx, userId, clamped);
+    tickDelve(ctx, userId, clamped);
+    tickMail(ctx, userId);
+    tickValeCup(ctx, userId, clamped);
+    tickProtectYumi(ctx, userId, clamped);
   },
 };

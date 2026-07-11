@@ -17,6 +17,7 @@ import {
   QuestTracker,
   ZoneLabel,
 } from "./components/Overlays";
+import { DelveHud, MailPanel, ValeCupHud, YumiHud } from "./components/ContentPanels";
 import { PlayerFrame, TargetFrame } from "./components/UnitFrames";
 
 export function GameUI() {
@@ -27,6 +28,7 @@ export function GameUI() {
   const shopOpen = useGameStore((ctx) => typeof ctx.game.store.get(`shop:${userId}`) === "string");
   const dialogueOpen = useGameStore((ctx) => typeof ctx.game.store.get(`dialogue:${userId}`) === "string");
   const bankOpen = useGameStore((ctx) => ctx.game.store.get(`bank:${userId}`) === true);
+  const mailOpen = useGameStore((ctx) => ctx.game.store.get(`mail:${userId}`) === true);
   if (classId === undefined) return <ClassSelect />;
   return (
     <>
@@ -42,6 +44,13 @@ export function GameUI() {
         </HudPanel>
         <HudPanel id="quests" anchor="top-right" inset={{ x: 16, y: 14 }}>
           <QuestTracker />
+        </HudPanel>
+        <HudPanel id="content-hud" anchor="top-right" inset={{ x: 16, y: 180 }}>
+          <div className="flex flex-col gap-2">
+            <DelveHud />
+            <ValeCupHud />
+            <YumiHud />
+          </div>
         </HudPanel>
         <HudPanel id="feed" anchor="bottom-left" inset={{ x: 16, y: 60 }}>
           <KillLootToasts />
@@ -67,11 +76,13 @@ export function GameUI() {
         panel === "crafting" ||
         shopOpen ||
         dialogueOpen ||
-        bankOpen) && (
+        bankOpen ||
+        mailOpen) && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-4">
           {dialogueOpen && <DialoguePanel />}
           {shopOpen && <VendorPanel />}
           {bankOpen && <BankPanel />}
+          {mailOpen && <MailPanel />}
           {panel === "bags" && <BagsPanel />}
           {panel === "character" && <CharacterPanel />}
           {panel === "quests" && <QuestLogPanel />}

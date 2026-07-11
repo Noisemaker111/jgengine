@@ -1,9 +1,12 @@
 import type { EntitySpriteConfig } from "@jgengine/core/game/playableGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
+import { DELVE_COMPANION_CATALOG } from "./delves/systems";
 import { CLASS_ENTITY_ID } from "./model";
 import { MOBS } from "./entities/enemies/catalog";
 import { NPCS } from "./entities/npcs/catalog";
+import { YUMI_CATALOG } from "./minigames/yumi";
+import { PETS } from "./pets/catalog";
 
 export const assets = createAssetCatalog();
 
@@ -93,5 +96,30 @@ for (const npc of NPCS) {
     width: 1.7,
     height: 1.9,
     y: 1.0,
+  };
+}
+
+entitySprites[DELVE_COMPANION_CATALOG] = {
+  url: billboard(SHAPES.guard, "#7dd3a0", "#2f3d36"),
+  width: 1.6,
+  height: 1.8,
+  y: 0.95,
+};
+
+entitySprites[YUMI_CATALOG] = {
+  url: billboard(SHAPES.rat, "#f4b6c8", "#4a3040"),
+  width: 1.4,
+  height: 1.2,
+  y: 0.7,
+};
+
+for (const pet of PETS) {
+  const shape = pet.family === "demon" ? "boss" : "wolf";
+  const accent = pet.family === "demon" ? "#b07cff" : "#8fd17a";
+  entitySprites[pet.id] = {
+    url: billboard(SHAPES[shape], accent, "#2e3440"),
+    width: pet.role === "tank" ? 2.1 : 1.7,
+    height: pet.role === "tank" ? 2.1 : 1.7,
+    y: pet.role === "tank" ? 1.1 : 0.9,
   };
 }

@@ -16,7 +16,21 @@ import {
   teleportHero,
 } from "./hero";
 import { castFishing, craftRecipe } from "../crafting/systems";
+import { advanceDelve, enterDelve, exitDelve } from "../delves/systems";
+import type { DelveTier } from "../delves/catalog";
 import { dungeonById } from "../dungeons/catalog";
+import {
+  closeMail,
+  codStub,
+  marketBuy,
+  openMail,
+  openMarket,
+  sendCopperToSelf,
+  sendToSelf,
+} from "../mail/systems";
+import { kickValeCup, leaveValeCup, startValeCup } from "../minigames/valeCup";
+import { leaveProtectYumi, startProtectYumi } from "../minigames/yumi";
+import { dismissPet, revivePet, summonPet } from "../pets/systems";
 import { gather } from "../professions/gathering";
 import { graveyardOf } from "../world/setup";
 
@@ -245,6 +259,105 @@ export function registerCommands(ctx: GameContext): void {
       }
       state.game.store.delete(storeKeys.cast(userId));
       applySheet(state, userId, { fill: true });
+    },
+  });
+  commands.define<{ delveId: string; tier?: DelveTier }>("delve.enter", {
+    apply(state, input) {
+      enterDelve(state, state.player.userId, input.delveId, input.tier ?? "normal");
+    },
+  });
+  commands.define("delve.advance", {
+    apply(state) {
+      advanceDelve(state, state.player.userId);
+    },
+  });
+  commands.define("delve.exit", {
+    apply(state) {
+      exitDelve(state, state.player.userId);
+    },
+  });
+  commands.define("mail.open", {
+    apply(state) {
+      openMail(state, state.player.userId);
+    },
+  });
+  commands.define("mail.close", {
+    apply(state) {
+      closeMail(state, state.player.userId);
+    },
+  });
+  commands.define<{ itemId: string; count?: number }>("mail.sendSelf", {
+    apply(state, input) {
+      const reason = sendToSelf(state, state.player.userId, input.itemId, input.count ?? 1);
+      if (reason !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: reason, kind: "info" });
+      }
+    },
+  });
+  commands.define<{ amount: number }>("mail.sendCopper", {
+    apply(state, input) {
+      const reason = sendCopperToSelf(state, state.player.userId, input.amount);
+      if (reason !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: reason, kind: "info" });
+      }
+    },
+  });
+  commands.define("mail.cod", {
+    apply(state) {
+      codStub(state, state.player.userId);
+    },
+  });
+  commands.define("market.open", {
+    apply(state) {
+      openMarket(state, state.player.userId);
+    },
+  });
+  commands.define<{ itemId: string }>("market.buy", {
+    apply(state, input) {
+      const reason = marketBuy(state, state.player.userId, input.itemId);
+      if (reason !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: reason, kind: "info" });
+      }
+    },
+  });
+  commands.define<{ wager?: number }>("valecup.start", {
+    apply(state, input) {
+      startValeCup(state, state.player.userId, input.wager ?? 0);
+    },
+  });
+  commands.define<{ dirX?: number; dirZ?: number }>("valecup.kick", {
+    apply(state, input) {
+      kickValeCup(state, state.player.userId, input.dirX ?? 0, input.dirZ ?? -1);
+    },
+  });
+  commands.define("valecup.leave", {
+    apply(state) {
+      leaveValeCup(state, state.player.userId);
+    },
+  });
+  commands.define("yumi.start", {
+    apply(state) {
+      startProtectYumi(state, state.player.userId);
+    },
+  });
+  commands.define("yumi.leave", {
+    apply(state) {
+      leaveProtectYumi(state, state.player.userId);
+    },
+  });
+  commands.define<{ petId?: string }>("pet.summon", {
+    apply(state, input) {
+      summonPet(state, state.player.userId, input.petId);
+    },
+  });
+  commands.define("pet.dismiss", {
+    apply(state) {
+      dismissPet(state, state.player.userId);
+    },
+  });
+  commands.define("pet.revive", {
+    apply(state) {
+      revivePet(state, state.player.userId);
     },
   });
 }

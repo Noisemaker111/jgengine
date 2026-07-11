@@ -58,6 +58,12 @@ export function PlayerFrame() {
   const health = useEntityStat(userId, "health");
   const resource = useEntityStat(userId, "resource");
   const level = useEntityStat(userId, "level");
+  const pet = useGameStore(
+    (ctx) =>
+      ctx.game.store.get(`pet:${userId}`) as
+        | { name: string; alive: boolean; hp: number; maxHp: number; role: string }
+        | undefined,
+  );
   if (classId === undefined || health === null) return null;
   const cls = classById(classId);
   return (
@@ -89,6 +95,20 @@ export function PlayerFrame() {
         </div>
       </div>
       <AuraRow instanceId={userId} />
+      {pet !== undefined && (
+        <div className="mt-2 rounded border border-stone-700/80 bg-stone-950/70 px-2 py-1.5">
+          <div className="flex items-baseline justify-between text-[11px]">
+            <span className="truncate font-semibold text-lime-200">
+              {pet.name}
+              {!pet.alive ? " (fallen)" : ""}
+            </span>
+            <span className="text-stone-400">{pet.role}</span>
+          </div>
+          <div className="mt-0.5">
+            <Bar value={pet.hp} max={Math.max(1, pet.maxHp)} fill="bg-lime-600" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

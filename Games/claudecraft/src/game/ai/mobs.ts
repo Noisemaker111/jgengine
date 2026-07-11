@@ -27,6 +27,7 @@ interface MobRuntime {
   enraged: boolean;
   nextSummonAt: number;
   summonedIds: string[];
+  noRespawn?: boolean;
 }
 
 const runtimes = new Map<string, MobRuntime>();
@@ -93,7 +94,13 @@ function placementFor(def: MobDef, roll: () => number, index: number): readonly 
   return [zone.hub.x + 40 + index * 3, (zone.zMin + zone.zMax) / 2];
 }
 
-function spawnMob(ctx: GameContext, def: MobDef, position: readonly [number, number], level: number): string {
+export function spawnMobAt(
+  ctx: GameContext,
+  def: MobDef,
+  position: readonly [number, number],
+  level: number,
+  options?: { noRespawn?: boolean },
+): string {
   const y = ctx.world.groundHeightAt(position[0], position[1]);
   const instanceId = ctx.scene.entity.spawn(def.id, { position: [position[0], y, position[1]] });
   ctx.scene.entity.stats.set(instanceId, "level", { current: level });
@@ -116,8 +123,13 @@ function spawnMob(ctx: GameContext, def: MobDef, position: readonly [number, num
     enraged: false,
     nextSummonAt: 0,
     summonedIds: [],
+    noRespawn: options?.noRespawn === true,
   });
   return instanceId;
+}
+
+function spawnMob(ctx: GameContext, def: MobDef, position: readonly [number, number], level: number): string {
+  return spawnMobAt(ctx, def, position, level);
 }
 
 export function applyMobCc(
@@ -159,13 +171,19 @@ export function onMobDied(ctx: GameContext, instanceId: string): { defId: string
   if (runtime === undefined) return null;
   runtimes.delete(instanceId);
   const def = mobById(runtime.defId);
-  if (def !== null && def.rare !== true && def.boss !== true) {
+  if (def !== null && def.rare !== true && def.boss !== true && runtime.noRespawn !== true) {
     const respawnAt: readonly [number, number] = [runtime.spawn[0], runtime.spawn[2]];
     ctx.time.after(RESPAWN_SEC, () => {
       spawnMob(ctx, def, respawnAt, runtime.level);
     });
   }
   return { defId: runtime.defId, level: runtime.level };
+}
+
+export function despawnMob(ctx: GameContext, instanceId: string): void {
+  if (!runtimes.has(instanceId)) return;
+  runtimes.delete(instanceId);
+  if (ctx.scene.entity.get(instanceId) !== null) ctx.scene.entity.despawn(instanceId);
 }
 
 function socialPull(ctx: GameContext, def: MobDef, instanceId: string, targetId: string): void {

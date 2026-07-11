@@ -4,6 +4,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { classById } from "../classes/catalog";
 import { itemDefById } from "../items/catalog";
+import { resolveAbilityMods } from "../talents/abilityMods";
 import { SPECS, TALENT_POINTS_RULE } from "../talents/catalog";
 import { CLASS_ENTITY_ID, type HeroStatId } from "../model";
 import {
@@ -124,8 +125,30 @@ export function allocateTalent(ctx: GameContext, userId: string, nodeId: string)
   const result = hero.talents.allocate(nodeId);
   if (!result.ok) return false;
   syncTalents(ctx, userId);
+  applyAbilityTalentRetunes(ctx, userId);
   applySheet(ctx, userId);
   return true;
+}
+
+export function abilityModsOf(ctx: GameContext, userId: string) {
+  const view = ctx.game.store.get(storeKeys.talents(userId)) as TalentsView | undefined;
+  return resolveAbilityMods(view?.ranks ?? {});
+}
+
+export function applyAbilityTalentRetunes(ctx: GameContext, userId: string): void {
+  const hero = heroes.get(userId);
+  const cls = classOf(ctx, userId);
+  if (hero === undefined || cls === null) return;
+  const mods = abilityModsOf(ctx, userId);
+  for (const ability of cls.abilities) {
+    const mod = mods.byAbility.get(ability.id);
+    const cooldownMs = Math.max(
+      0,
+      ability.cooldown * 1000 * (1 + (mod?.cooldownPct ?? 0)),
+    );
+    const resourceCost = Math.max(0, Math.round(ability.cost * (1 + (mod?.costPct ?? 0))));
+    hero.kit.retuneSlot(ability.id, { cooldownMs, resourceCost });
+  }
 }
 
 export function grantTalentPoint(ctx: GameContext, userId: string, level: number): void {
