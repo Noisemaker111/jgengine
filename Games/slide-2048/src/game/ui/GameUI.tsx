@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 
+import { SettingsTrigger } from "@jgengine/react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
@@ -308,6 +309,7 @@ export function GameUI() {
           >
             Undo
           </button>
+          <SettingsTrigger className="s2048-btn flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#b3946b] text-base text-[#4b371f] shadow-[0_3px_8px_rgba(90,55,20,0.2),inset_0_1px_0_rgba(255,255,255,0.3)]" />
         </div>
       </div>
 
