@@ -194,3 +194,11 @@ shipping via worker chain → three consecutive workers returned garbled/placeho
 2026-07-11T03:32:23.250Z — gpt-5 — unknown
 
 auditing onboarding copy -> PowerShell quoting broke a targeted rg command
+
+2026-07-11T04:35:53.206Z — opus-4.8 — Claude
+
+adding pad tones to a hud-presentation game → audio is suspended-silent for presentation:'hud' games: GamePlayerShell only calls audioEngine.resume() in the 3D branch's onPointerDown, playOneShot doesn't self-resume, and AudioEngine isn't reachable from ctx — shipped visual-only
+
+2026-07-11T05:07:32.431Z — sonnet — Claude
+
+bun run check-types → bun run --filter "*" check-types silently matches 0 of 66 Games/* workspaces (confirmed via bun pm ls vs --filter '@games/klondike' → 'No packages matched the filter') even though bun.lock/pm ls register them correctly — the root check-types gate has never actually type-checked any Games/* code; had to fall back to bun run --cwd Games/<id> check-types per game

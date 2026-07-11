@@ -562,6 +562,166 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "Hold to charge · release launch · F auto-fire",
     hue: "#ea580c",
   },
+  spider: {
+    title: "Spider Solitaire",
+    tagline: "Two decks, ten piles, five deals",
+    description:
+      "The patience epic: build same-suit runs to clear eight foundations at one, two, or four suits.",
+    genre: "card/solitaire",
+    category: "Puzzle",
+    controls: "Drag cards to move · Space deal stock · U undo · N new deal · D daily",
+    hue: "#881337",
+  },
+  sudoku: {
+    title: "Sudoku",
+    tagline: "Nine rows, no guessing",
+    description:
+      "Unique-solution puzzles at four difficulties with pencil marks, conflict highlighting, counted hints, and a daily board.",
+    genre: "logic/puzzle",
+    category: "Puzzle",
+    controls: "Click cell · 1-9 digit · N notes · H hint · U undo · D daily",
+    hue: "#4f46e5",
+  },
+  nonogram: {
+    title: "Nonogram",
+    tagline: "Paint by logic",
+    description:
+      "Twenty original picture puzzles from 5×5 to 15×15, each provably solvable by pure line logic — reveal the pixel art.",
+    genre: "picture/logic",
+    category: "Puzzle",
+    controls: "Click fill · right-click cross · drag paint · Z undo · C clear",
+    hue: "#0d9488",
+  },
+  reversi: {
+    title: "Reversi",
+    tagline: "Corners win games",
+    description:
+      "The disc-flipping duel with three AI strengths, legal-move dots, flip animations, and hotseat play.",
+    genre: "board/strategy",
+    category: "Strategy & Tactics",
+    controls: "Click to place · U undo · R rematch",
+    hue: "#15803d",
+  },
+  "four-in-a-row": {
+    title: "Four in a Row",
+    tagline: "Drop, stack, connect",
+    description:
+      "The vertical connection classic against three AI tiers or a friend — watch the center, count the threats.",
+    genre: "board/strategy",
+    category: "Strategy & Tactics",
+    controls: "Click or 1-7 drop column · U undo · R rematch",
+    hue: "#1d4ed8",
+  },
+  "echo-lights": {
+    title: "Echo Lights",
+    tagline: "Watch, then repeat",
+    description:
+      "The growing-sequence memory console: four jewel pads, ramping speed, one mistake ends the run.",
+    genre: "memory/arcade",
+    category: "Puzzle",
+    controls: "Click pad or 1-4/Arrows · R new game · D daily",
+    hue: "#7c3aed",
+  },
+  "lights-out": {
+    title: "Lights Out",
+    tagline: "Five by five, all dark",
+    description:
+      "A 30-level campaign of solver-verified switch puzzles with honest pars, stars, and optimal hints.",
+    genre: "logic/puzzle",
+    category: "Puzzle",
+    controls: "Click cell to toggle · H hint · U undo · R restart · N new board",
+    hue: "#92400e",
+  },
+  "peg-solitaire": {
+    title: "Peg Solitaire",
+    tagline: "Jump to one",
+    description:
+      "The court classic on English and European boards — land the last peg in the center for brilliance.",
+    genre: "board/logic",
+    category: "Puzzle",
+    controls: "Click peg, then landing hole · U undo · H hint · R restart",
+    hue: "#78350f",
+  },
+  codebreaker: {
+    title: "Codebreaker",
+    tagline: "Crack the code in ten",
+    description:
+      "Deduce the secret pegs from black-and-white key feedback — duplicates, hard mode, and a daily code.",
+    genre: "logic/deduction",
+    category: "Puzzle",
+    controls: "Click or 1-8 pick color · Enter submit · Backspace delete · R new game · D daily",
+    hue: "#be123c",
+  },
+  "star-invaders": {
+    title: "Star Invaders",
+    tagline: "The wall descends",
+    description:
+      "Fifty-five marching aliens, eroding bunkers, a bonus saucer, and one shot on screen — hold the line.",
+    genre: "arcade/shooter",
+    category: "Action & Arcade",
+    controls: "A/D/Arrows or mouse aim · Space/click fire · P pause · R restart",
+    hue: "#00ff41",
+  },
+  "rock-blaster": {
+    title: "Rock Blaster",
+    tagline: "Thrust, drift, split",
+    description:
+      "Vector asteroid blasting with true inertia, splitting rocks, aiming saucers, and risky hyperspace.",
+    genre: "arcade/shooter",
+    category: "Action & Arcade",
+    controls: "A/D rotate · W/↑ thrust · Space fire · Shift hyperspace · R restart",
+    hue: "#cbd5e1",
+  },
+  "road-hopper": {
+    title: "Road Hopper",
+    tagline: "Traffic, river, home",
+    description:
+      "Hop five lanes of traffic and a river of logs and diving turtles to fill five home bays against the clock.",
+    genre: "arcade",
+    category: "Action & Arcade",
+    controls: "WASD/Arrows hop · P pause · R restart",
+    hue: "#4338ca",
+  },
+  "yacht-dice": {
+    title: "Yacht Dice",
+    tagline: "Three rolls, thirteen boxes",
+    description:
+      "The dice-and-scoresheet classic: hold, reroll, and bank categories with live ghost scores.",
+    genre: "dice/casino",
+    category: "Others",
+    controls: "R roll · 1-5 hold dice · click category to bank",
+    hue: "#047857",
+  },
+  "mahjong-solitaire": {
+    title: "Mahjong Solitaire",
+    tagline: "Free the turtle",
+    description:
+      "144 tiles in the classic turtle layout, guaranteed-solvable deals, hints, and hand-drawn glyphs.",
+    genre: "tile/solitaire",
+    category: "Puzzle",
+    controls: "Click matching tiles · H hint · U undo · S reshuffle · N new deal · D daily",
+    hue: "#00a86b",
+  },
+  "bubble-burst": {
+    title: "Bubble Burst",
+    tagline: "Three of a kind pops",
+    description:
+      "Hex-grid bubble shooting with wall bounces, dropping clusters, and a compressor that never stops.",
+    genre: "arcade/puzzle",
+    category: "Puzzle",
+    controls: "Mouse aim & click fire · A/D aim · X swap · R restart",
+    hue: "#db2777",
+  },
+  pinball: {
+    title: "Pinball",
+    tagline: "Flippers up, table live",
+    description:
+      "A golden-age solid-state table with real flipper physics, pop bumpers, drop targets, multipliers, and TILT.",
+    genre: "pinball/arcade",
+    category: "Others",
+    controls: "Z/← left flipper · Slash/→ right flipper · ↓/Enter plunge · Space nudge · N new game",
+    hue: "#fb8500",
+  },
 };
 
 const FALLBACK_DETAILS: GameDetails = {

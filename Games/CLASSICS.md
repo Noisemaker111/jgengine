@@ -13,7 +13,7 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | Video Poker (Jacks or Better) | ✅ | `video-poker` |
 | Blackjack | ✅ | `blackjack` |
 | Memory / Concentration | ✅ | `memory-match` |
-| Spider Solitaire | W2 | |
+| Spider Solitaire | ✅ | `spider` |
 | Pyramid Solitaire | W2 | |
 | TriPeaks | W2 | |
 | Golf Solitaire | W2 | |
@@ -33,15 +33,15 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | 2048 | ✅ | `slide-2048` |
 | 15 Puzzle | ✅ | `fifteen-slide` |
 | Sokoban | ✅ | `crate-keeper` |
-| Sudoku | W2 | |
-| Nonogram / Picross | W2 | |
-| Lights Out | W2 | |
-| Peg Solitaire | W2 | |
-| Mastermind | W2 | |
-| Simon | W2 | |
+| Sudoku | ✅ | `sudoku` |
+| Nonogram / Picross | ✅ | `nonogram` |
+| Lights Out | ✅ | `lights-out` |
+| Peg Solitaire | ✅ | `peg-solitaire` |
+| Mastermind | ✅ | `codebreaker` |
+| Simon | ✅ | `echo-lights` |
 | Tic-Tac-Toe | W2 | |
-| Connect Four | W2 | |
-| Reversi / Othello | W2 | |
+| Connect Four | ✅ | `four-in-a-row` |
+| Reversi / Othello | ✅ | `reversi` |
 | Battleship | W2 | |
 | Dots and Boxes | W2 | |
 | Pipe Mania | W2 | |
@@ -66,10 +66,10 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | Pong | ✅ | `paddle-duel` |
 | Columns | W2 | |
 | Chain-drop (Puyo lineage) | W2 | |
-| Bubble shooter | W2 | |
-| Space Invaders | W2 | |
-| Asteroids | W2 | |
-| Frogger | W2 | |
+| Bubble shooter | ✅ | `bubble-burst` |
+| Space Invaders | ✅ | `star-invaders` |
+| Asteroids | ✅ | `rock-blaster` |
+| Frogger | ✅ | `road-hopper` |
 | Missile Command | W2 | |
 | Lunar Lander | W2 | |
 | Centipede | W3 | |
@@ -82,10 +82,10 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | Game | Status | id |
 | --- | --- | --- |
 | Pachinko | ✅ | `pachinko-parlor` |
-| Pinball | W2 | |
+| Pinball | ✅ | `pinball` |
 | Peg-bounce scorer (Peggle lineage) | W2 | |
-| Mahjong Solitaire | W2 | |
-| Yahtzee | W2 | |
+| Mahjong Solitaire | ✅ | `mahjong-solitaire` |
+| Yahtzee | ✅ | `yacht-dice` |
 | Skee-ball | W3 | |
 | Air hockey | W3 | |
 | Darts | W3 | |

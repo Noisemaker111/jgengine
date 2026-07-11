@@ -129,3 +129,30 @@ applicable) via the `credit` field in
 | **[Blackjack](Games/blackjack)** | `blackjack` | Traditional casino Blackjack / Twenty-One. |
 | **[Memory Match](Games/memory-match)** | `memory-match` | Traditional **Concentration**. |
 | **[Pachinko Parlor](Games/pachinko-parlor)** | `pachinko-parlor` | Traditional Japanese **Pachinko**. |
+
+### Classic games (Wave 2)
+
+Sixteen more genre-anchor classics in `Games/*` are our own builds of decades-old
+game concepts — original code, art, and levels, but the mechanics trace back to
+specific inventors and titles. Credited here and on each game's HUD; all
+lineages this wave are corporate or traditional, so none carry a `credit` field
+in [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
+
+| Game | id | Lineage |
+| --- | --- | --- |
+| **[Spider Solitaire](Games/spider)** | `spider` | Traditional Spider Solitaire patience — genre homage. |
+| **[Sudoku](Games/sudoku)** | `sudoku` | **Howard Garns**'s number-placement puzzle (1979), popularized by **Nikoli**. |
+| **[Nonogram](Games/nonogram)** | `nonogram` | **Non Ishida** and **Tetsuya Nishio**'s independently invented picture-logic puzzle (1987). |
+| **[Reversi](Games/reversi)** | `reversi` | **Lewis Waterman** and **John Mollett**'s **Reversi** (1883); modern Othello rules by **Goro Hasegawa**. |
+| **[Four in a Row](Games/four-in-a-row)** | `four-in-a-row` | **Howard Wexler** and **Ned Strongin**'s **Connect Four** (1974). |
+| **[Echo Lights](Games/echo-lights)** | `echo-lights` | **Ralph Baer** and **Howard Morrison**'s **Simon** (1978), itself after Atari's **Touch Me**. |
+| **[Lights Out](Games/lights-out)** | `lights-out` | **Tiger Electronics**'s **Lights Out** (1995). |
+| **[Peg Solitaire](Games/peg-solitaire)** | `peg-solitaire` | Traditional peg solitaire — genre homage. |
+| **[Codebreaker](Games/codebreaker)** | `codebreaker` | **Mordecai Meirowitz**'s **Mastermind** (1970), itself after the pen-and-paper game **Bulls and Cows**. |
+| **[Star Invaders](Games/star-invaders)** | `star-invaders` | **Tomohiro Nishikado**'s **Space Invaders**, Taito (1978). |
+| **[Rock Blaster](Games/rock-blaster)** | `rock-blaster` | **Lyle Rains** and **Ed Logg**'s **Asteroids**, Atari (1979). |
+| **[Road Hopper](Games/road-hopper)** | `road-hopper` | Konami's **Frogger** (1981). |
+| **[Yacht Dice](Games/yacht-dice)** | `yacht-dice` | Traditional **Yacht**, popularized as **Yahtzee** (E.S. Lowe, 1956). |
+| **[Mahjong Solitaire](Games/mahjong-solitaire)** | `mahjong-solitaire` | **Brodie Lockard**'s Mahjong solitaire (1981). |
+| **[Bubble Burst](Games/bubble-burst)** | `bubble-burst` | Taito's **Puzzle Bobble** (1994). |
+| **[Pinball](Games/pinball)** | `pinball` | Traditional solid-state pinball — genre homage. |
