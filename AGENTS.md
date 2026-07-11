@@ -27,7 +27,7 @@ Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, te
 ## Cloud sessions
 
 - **Every session is an isolated cloud container on its own `claude/...` branch.** No worktrees. Push early — a reclaimed container takes unpushed commits with it.
-- **Never commit on top of a squash-merged branch.** That is where the recurring merge conflicts came from. The session-start hook restarts a clean, already-merged branch from `origin/main` automatically; by hand it's `git reset --hard origin/main` + `git push --force-with-lease`.
+- **Never commit on top of a squash-merged branch.** That is where the recurring merge conflicts came from. The session-start hook restarts a clean, already-merged branch from `origin/main` automatically; by hand: `git checkout main && git pull`, then start the next change on a fresh `claude/...` branch. Don't leave HEAD on a dead session branch that only matches main by reset.
 - **Ship in one motion: push → PR → immediate squash-merge, then stop.** No CI subscriptions, no watching, no auto-merge babysitting; fall back to `enable_pr_auto_merge` only when required checks block the instant merge, and end the turn.
 - **GitHub goes through the MCP tools** (`create_pull_request`, `merge_pull_request`, `enable_pr_auto_merge`, `add_issue_comment`) — there is no `gh` CLI in cloud containers.
 
