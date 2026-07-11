@@ -737,6 +737,62 @@ function formatPreview(value: unknown): string {
   return String(value);
 }
 
+const TUNABLE_ACRONYMS = new Set([
+  "fov",
+  "fps",
+  "ms",
+  "ui",
+  "ai",
+  "id",
+  "uv",
+  "rgb",
+  "rgba",
+  "hp",
+  "mp",
+  "xp",
+  "npc",
+  "pvp",
+  "pve",
+  "rts",
+  "hud",
+  "lod",
+  "gpu",
+  "cpu",
+]);
+
+function humanizeTunableSegment(segment: string): string {
+  if (/^\d+$/.test(segment)) return `#${segment}`;
+  return segment
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .split(/\s+/)
+    .filter((part) => part.length > 0)
+    .map((part) => {
+      const lower = part.toLowerCase();
+      if (TUNABLE_ACRONYMS.has(lower)) return lower.toUpperCase();
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join(" ");
+}
+
+function tunableGroupTitle(table: string, key: string): string {
+  const dot = key.lastIndexOf(".");
+  if (dot < 0) return humanizeTunableSegment(table);
+  const parent = key.slice(0, dot);
+  const parts = parent.split(".").map(humanizeTunableSegment);
+  return `${humanizeTunableSegment(table)} · ${parts.join(" · ")}`;
+}
+
+function tunableRowLabel(key: string): string {
+  const leaf = key.includes(".") ? key.slice(key.lastIndexOf(".") + 1) : key;
+  return humanizeTunableSegment(leaf);
+}
+
+function tunableGroupKey(table: string, key: string): string {
+  const dot = key.lastIndexOf(".");
+  return dot < 0 ? table : `${table}/${key.slice(0, dot)}`;
+}
+
 function deltaSnippet(discovered: readonly DiscoveredEntry[]): string | null {
   const overrides = devtools.overrides.export();
   if (Object.keys(overrides.values).length === 0) return null;
@@ -797,11 +853,15 @@ function TunePanel({ gameName }: { gameName: string }) {
       </div>
     );
   }
-  const tables = new Map<string, DiscoveredEntry[]>();
+  const groups = new Map<string, { title: string; entries: DiscoveredEntry[] }>();
   for (const entry of discovered) {
-    const list = tables.get(entry.table) ?? [];
-    list.push(entry);
-    tables.set(entry.table, list);
+    const groupKey = tunableGroupKey(entry.table, entry.key);
+    const existing = groups.get(groupKey);
+    if (existing !== undefined) {
+      existing.entries.push(entry);
+    } else {
+      groups.set(groupKey, { title: tunableGroupTitle(entry.table, entry.key), entries: [entry] });
+    }
   }
   return (
     <div className="jg-devtools-scroll max-h-72 space-y-3 overflow-auto">
@@ -842,17 +902,17 @@ function TunePanel({ gameName }: { gameName: string }) {
           {explicit.map((control) => (
             <div key={control.name} className="flex items-center justify-between gap-3">
               <span className="text-neutral-300" title={control.name}>
-                {control.label}
+                {control.label.includes(".") ? tunableRowLabel(control.label) : control.label}
               </span>
               <ControlInput control={control} onWrite={persist} />
             </div>
           ))}
         </div>
       ) : null}
-      {[...tables.entries()].map(([table, entries]) => (
-        <div key={table} className="space-y-1.5">
-          <div className="text-[9px] uppercase tracking-wide text-neutral-500">{table}</div>
-          {entries.map((entry) => {
+      {[...groups.entries()].map(([groupKey, group]) => (
+        <div key={groupKey} className="space-y-1.5">
+          <div className="text-[9px] uppercase tracking-wide text-neutral-500">{group.title}</div>
+          {group.entries.map((entry) => {
             const control = entry.enabled ? controlByName.get(entry.id) : undefined;
             return (
               <div key={entry.id} className="flex items-center justify-between gap-3">
@@ -867,7 +927,7 @@ function TunePanel({ gameName }: { gameName: string }) {
                       persist();
                     }}
                   />
-                  <span className="truncate">{entry.key}</span>
+                  <span className="truncate">{tunableRowLabel(entry.key)}</span>
                 </label>
                 {control !== undefined ? (
                   <ControlInput control={control} onWrite={persist} />
