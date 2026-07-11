@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SettingsTrigger } from "@jgengine/react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 
 import type { RunController } from "../rail/controller";
@@ -10,6 +11,14 @@ import { JunctionIndicator } from "./components/JunctionIndicator";
 import { PumpMeter } from "./components/PumpMeter";
 import { StartScreen } from "./components/StartScreen";
 import { TelegraphTicker } from "./components/TelegraphTicker";
+
+function SettingsGear() {
+  return (
+    <div className="pointer-events-auto fixed right-3 top-3 z-10">
+      <SettingsTrigger className="flex h-9 w-9 items-center justify-center rounded-sm border-2 border-[#a98467] bg-[#211d14]/88 text-[#f2e8cf] shadow-[0_4px_0_rgba(0,0,0,0.4)] transition-colors hover:bg-[#a98467]/25" />
+    </div>
+  );
+}
 
 export function GameUI() {
   const [expanded, setExpanded] = useState(false);
