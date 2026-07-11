@@ -111,10 +111,12 @@ import {
   applyPaintTexture,
   cloneModelScene,
   createPaintCanvas,
+  disposeClonedMaterials,
   standardMaterialsOf,
   syncPaintCanvas,
   type PaintCanvas,
 } from "./render/modelRender";
+import { writeEntityPose } from "./world/entityPose";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import {
   createPointerService,
@@ -398,9 +400,16 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
 
   const scene = useMemo(() => {
     const cloned = cloneModelScene(gltf.scene);
-    if (material !== undefined) applyMaterialOverride(cloned, material);
+    if (material !== undefined) applyMaterialOverride(cloned, material, { clone: false });
     return cloned;
   }, [gltf, material]);
+
+  useEffect(
+    () => () => {
+      disposeClonedMaterials(scene);
+    },
+    [scene],
+  );
 
   const animation = model.animation;
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
@@ -485,15 +494,30 @@ function EntityMarker({
   selected: boolean;
   onSelect: (entity: SceneEntity) => void;
 }) {
-  const color = isLocal ? "#4ade80" : entity.role === "npc" ? colorFromId(entity.name) : "#9ca3af";
+  const groupRef = useRef<THREE.Group>(null);
+  const ctx = useGameContext();
+  const entityId = entity.id;
+  const role = entity.role;
+  const name = entity.name;
+  const color = isLocal ? "#4ade80" : role === "npc" ? colorFromId(name) : "#9ca3af";
+
+  useFrame(() => {
+    const group = groupRef.current;
+    if (group === null) return;
+    const live = ctx.scene.entity.get(entityId);
+    if (live === null) return;
+    writeEntityPose(group, live);
+  });
+
   return (
     <group
-      position={[entity.position[0], entity.position[1], entity.position[2]]}
-      rotation-y={entity.rotationY}
-      userData={{ [POINTER_ENTITY_KEY]: entity.id }}
+      ref={groupRef}
+      userData={{ [POINTER_ENTITY_KEY]: entityId }}
       onPointerDown={(event) => {
         event.stopPropagation();
-        if (!isLocal) onSelect(entity);
+        if (isLocal) return;
+        const live = ctx.scene.entity.get(entityId);
+        if (live !== null) onSelect(live);
       }}
     >
       {selected ? (
@@ -505,10 +529,10 @@ function EntityMarker({
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} instanceId={entity.id} />
+        <EntityModel model={model} instanceId={entityId} />
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
-      ) : entity.role === "prop" ? (
+      ) : role === "prop" ? (
         <mesh position-y={0.5}>
           <sphereGeometry args={[0.45, 16, 16]} />
           <meshStandardMaterial color={color} />
@@ -546,19 +570,27 @@ function ObjectMarker({
   model: ModelConfig | undefined;
   style: ObjectStyle | undefined;
 }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const ctx = useGameContext();
+  const instanceId = object.instanceId;
   const [scaleX, scaleY, scaleZ] = objectVisualScale(object.visual);
   const color = object.visual?.color ?? style?.color ?? colorFromId(object.catalogId);
   const opacity = object.visual?.opacity ?? style?.opacity ?? 1;
+
+  useFrame(() => {
+    const group = groupRef.current;
+    if (group === null) return;
+    const live = ctx.scene.object.get(instanceId);
+    if (live === null) return;
+    writeEntityPose(group, live);
+  });
+
   return (
-    <group
-      position={[object.position[0], object.position[1], object.position[2]]}
-      rotation-y={object.rotationY}
-      userData={{ [POINTER_OBJECT_KEY]: object.instanceId }}
-    >
+    <group ref={groupRef} userData={{ [POINTER_OBJECT_KEY]: instanceId }}>
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} instanceId={object.instanceId} />
+        <EntityModel model={model} instanceId={instanceId} />
       ) : style?.hidden === true ? null : (
         <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]}>
           <boxGeometry args={[1, 1, 1]} />
@@ -627,12 +659,22 @@ function RockField() {
   );
 }
 
-function WorldView({
+function WorldEnvironment({ environment: Environment }: { environment: ComponentType | undefined }) {
+  if (Environment !== undefined) return <Environment />;
+  return (
+    <>
+      <GroundPlane />
+      <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
+      <RockField />
+    </>
+  );
+}
+
+function WorldActors({
   entitySprites,
   entityModels,
   objectModels,
   objectStyles,
-  environment: Environment,
   assets,
   renderEntity,
   renderObject,
@@ -642,7 +684,6 @@ function WorldView({
   entityModels: Record<string, string | ModelConfig> | undefined;
   objectModels: Record<string, string | ModelConfig> | undefined;
   objectStyles: Record<string, ObjectStyle> | undefined;
-  environment: ComponentType | undefined;
   assets: AssetCatalog;
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
@@ -660,33 +701,24 @@ function WorldView({
   };
   return (
     <>
-      {Environment !== undefined ? (
-        <Environment />
-      ) : (
-        <>
-          <GroundPlane />
-          <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
-          <RockField />
-        </>
-      )}
       {entities
         .filter((entity) => entity.name !== WORLD_ITEM_ENTITY_NAME)
         .map((entity) => (
-        <EntityMarker
-          key={entity.id}
-          entity={entity}
-          custom={renderEntity?.(entity)}
-          model={resolveModel(entityModels?.[entity.name], assets, {
-            seam: "entityModels",
-            key: entity.name,
-          })}
-          sprite={entitySprites?.[entity.name]}
-          isLocal={entity.id === controlledId}
-          targeted={entity.id === targetId}
-          selected={selectedIds.has(entity.id)}
-          onSelect={handleSelect}
-        />
-      ))}
+          <EntityMarker
+            key={entity.id}
+            entity={entity}
+            custom={renderEntity?.(entity)}
+            model={resolveModel(entityModels?.[entity.name], assets, {
+              seam: "entityModels",
+              key: entity.name,
+            })}
+            sprite={entitySprites?.[entity.name]}
+            isLocal={entity.id === controlledId}
+            targeted={entity.id === targetId}
+            selected={selectedIds.has(entity.id)}
+            onSelect={handleSelect}
+          />
+        ))}
       {objects.map((object) => {
         const model =
           resolveModel(objectModels?.[object.catalogId], assets, {
@@ -703,6 +735,44 @@ function WorldView({
           />
         );
       })}
+    </>
+  );
+}
+
+function WorldView({
+  entitySprites,
+  entityModels,
+  objectModels,
+  objectStyles,
+  environment,
+  assets,
+  renderEntity,
+  renderObject,
+  selectedIds,
+}: {
+  entitySprites: Record<string, EntitySpriteConfig> | undefined;
+  entityModels: Record<string, string | ModelConfig> | undefined;
+  objectModels: Record<string, string | ModelConfig> | undefined;
+  objectStyles: Record<string, ObjectStyle> | undefined;
+  environment: ComponentType | undefined;
+  assets: AssetCatalog;
+  renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
+  renderObject: ((object: SceneObject) => ReactNode) | undefined;
+  selectedIds: ReadonlySet<string>;
+}) {
+  return (
+    <>
+      <WorldEnvironment environment={environment} />
+      <WorldActors
+        entitySprites={entitySprites}
+        entityModels={entityModels}
+        objectModels={objectModels}
+        objectStyles={objectStyles}
+        assets={assets}
+        renderEntity={renderEntity}
+        renderObject={renderObject}
+        selectedIds={selectedIds}
+      />
     </>
   );
 }

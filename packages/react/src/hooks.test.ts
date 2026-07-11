@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
-import { createHeldKeyTracker } from "./hooks";
+import { createAbilityKit } from "@jgengine/core/combat/abilityKit";
+import { createEventMeter } from "@jgengine/core/stats/eventMeter";
+
+import {
+  abilityKitNeedsHeartbeat,
+  createHeldKeyTracker,
+  eventMeterNeedsHeartbeat,
+  type EventMeterView,
+} from "./hooks";
 
 function fakeWindow() {
   const listeners = new Map<string, Set<(event: unknown) => void>>();
@@ -58,5 +66,31 @@ describe("createHeldKeyTracker", () => {
     expect(target.listenerCount("blur")).toBe(0);
     target.dispatch("keydown", { code: "KeyW" });
     expect(tracker.isDown("KeyW")).toBe(false);
+  });
+});
+
+describe("ability/meter heartbeat idle bailout", () => {
+  test("idle ready kit does not need heartbeat ticks", () => {
+    const kit = createAbilityKit([{ id: "bolt", cooldownMs: 1000, flashMs: 0 }]);
+    expect(abilityKitNeedsHeartbeat(kit)).toBe(false);
+  });
+
+  test("kit on cooldown needs heartbeat ticks", () => {
+    const kit = createAbilityKit([{ id: "bolt", cooldownMs: 1000, flashMs: 0 }]);
+    kit.cast("bolt");
+    expect(abilityKitNeedsHeartbeat(kit)).toBe(true);
+  });
+
+  test("event meter heartbeat is idle when values are unchanged", () => {
+    const meter = createEventMeter({ max: 100, gains: { hit: 10 } });
+    const view: EventMeterView = {
+      value: meter.value(),
+      fraction: meter.fraction(),
+      tier: meter.tier(),
+      ready: meter.ready(),
+    };
+    expect(eventMeterNeedsHeartbeat(meter, view)).toBe(false);
+    meter.feed("hit");
+    expect(eventMeterNeedsHeartbeat(meter, view)).toBe(true);
   });
 });

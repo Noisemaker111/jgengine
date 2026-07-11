@@ -249,8 +249,9 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
   const ctx = useGameContext();
   const [tracers, setTracers] = useState<Tracer[]>([]);
   const nextId = useRef(0);
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
   useEffect(() => {
-    return ctx.game.events.on("projectile.settled", (event) => {
+    const unsub = ctx.game.events.on("projectile.settled", (event) => {
       const id = nextId.current++;
       setTracers((current) => [
         ...current,
@@ -262,11 +263,17 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
           ],
         },
       ]);
-      window.setTimeout(
-        () => setTracers((current) => current.filter((tracer) => tracer.id !== id)),
-        lifeMs,
-      );
+      const handle = setTimeout(() => {
+        timers.current.delete(handle);
+        setTracers((current) => current.filter((tracer) => tracer.id !== id));
+      }, lifeMs);
+      timers.current.add(handle);
     });
+    return () => {
+      unsub();
+      for (const handle of timers.current) clearTimeout(handle);
+      timers.current.clear();
+    };
   }, [ctx, lifeMs]);
   return (
     <>

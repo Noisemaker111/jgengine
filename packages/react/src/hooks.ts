@@ -253,13 +253,38 @@ export function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T
   });
 }
 
-function useEngineHeartbeat(intervalMs: number): void {
-  const ctx = useGameContext();
-  useSyncExternalStore(ctx.subscribe, ctx.version, ctx.version);
+export function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: number): boolean {
+  for (const slot of kit.snapshot(resourceAvailable)) {
+    if (slot.cooldownRemainingMs > 0 || slot.justCast || slot.groupRemainingMs > 0) return true;
+  }
+  return false;
+}
+
+export function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean {
+  const next: EventMeterView = {
+    value: meter.value(),
+    fraction: meter.fraction(),
+    tier: meter.tier(),
+    ready: meter.ready(),
+  };
+  if (previous === null) return true;
+  return (
+    previous.value !== next.value ||
+    previous.fraction !== next.fraction ||
+    previous.tier !== next.tier ||
+    previous.ready !== next.ready
+  );
+}
+
+function useEngineHeartbeat(intervalMs: number, shouldTick: () => boolean): void {
   const [, setTick] = useState(0);
+  const shouldTickRef = useRef(shouldTick);
+  shouldTickRef.current = shouldTick;
   useEffect(() => {
     if (intervalMs <= 0 || typeof window === "undefined") return undefined;
-    const id = window.setInterval(() => setTick((current) => current + 1), intervalMs);
+    const id = window.setInterval(() => {
+      if (shouldTickRef.current()) setTick((current) => current + 1);
+    }, intervalMs);
     return () => window.clearInterval(id);
   }, [intervalMs]);
 }
@@ -273,7 +298,7 @@ export function useAbilitySlots(
   resourceAvailable?: number,
   options?: AbilitySlotBindingOptions,
 ): AbilitySlotSnapshot[] {
-  useEngineHeartbeat(options?.intervalMs ?? 80);
+  useEngineHeartbeat(options?.intervalMs ?? 80, () => abilityKitNeedsHeartbeat(kit, resourceAvailable));
   return kit.snapshot(resourceAvailable);
 }
 
@@ -283,7 +308,7 @@ export function useAbilitySlot(
   resourceAvailable?: number,
   options?: AbilitySlotBindingOptions,
 ): AbilitySlotSnapshot | null {
-  useEngineHeartbeat(options?.intervalMs ?? 80);
+  useEngineHeartbeat(options?.intervalMs ?? 80, () => abilityKitNeedsHeartbeat(kit, resourceAvailable));
   return kit.state(slotId, resourceAvailable);
 }
 
@@ -295,8 +320,22 @@ export interface EventMeterView {
 }
 
 export function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView {
-  useEngineHeartbeat(options?.intervalMs ?? 80);
-  return { value: meter.value(), fraction: meter.fraction(), tier: meter.tier(), ready: meter.ready() };
+  const previous = useRef<EventMeterView | null>(null);
+  useEngineHeartbeat(options?.intervalMs ?? 80, () => {
+    const changed = eventMeterNeedsHeartbeat(meter, previous.current);
+    if (changed) {
+      previous.current = {
+        value: meter.value(),
+        fraction: meter.fraction(),
+        tier: meter.tier(),
+        ready: meter.ready(),
+      };
+    }
+    return changed;
+  });
+  const view = { value: meter.value(), fraction: meter.fraction(), tier: meter.tier(), ready: meter.ready() };
+  previous.current = view;
+  return view;
 }
 
 type HeldKeyEventTarget = Pick<Window, "addEventListener" | "removeEventListener">;

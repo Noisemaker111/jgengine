@@ -1,5 +1,5 @@
-import { useSyncExternalStore, type ReactNode } from "react";
-import type { FogField } from "@jgengine/core/world/fog";
+import { useMemo, useSyncExternalStore, type ReactNode } from "react";
+import type { FogCells, FogField } from "@jgengine/core/world/fog";
 import {
   DEFAULT_MARKER_KINDS,
   markerKindStyle,
@@ -24,6 +24,7 @@ import {
   type MapRoute,
   type MapZone,
 } from "@jgengine/core/world/mapLayers";
+import { createFogDataUrl } from "./fogOverlay";
 
 type ProjectFn = (x: number, z: number) => { x: number; y: number };
 
@@ -232,30 +233,22 @@ export function Minimap({
     (a, b) => markerKindStyle(a.kind, kindStyles).priority - markerKindStyle(b.kind, kindStyles).priority,
   );
 
-  const fogRects: ReactNode[] = [];
-  if (fogCells !== null) {
+  const fogImage = useMemo(() => {
+    if (fogCells === null) return null;
     const cellPx = (fogCells.cellSize / worldRadius) * half;
-    for (let row = 0; row < fogCells.rows; row += 1) {
-      for (let col = 0; col < fogCells.cols; col += 1) {
-        if (fogCells.revealed[row * fogCells.cols + col]) continue;
-        const worldX = fogCells.minX + (col + 0.5) * fogCells.cellSize;
-        const worldZ = fogCells.minZ + (row + 0.5) * fogCells.cellSize;
-        const projected = projectToMinimap([worldX, worldZ], view);
-        if (projected.distance > worldRadius + fogCells.cellSize) continue;
-        fogRects.push(
-          <rect
-            key={`fog-${col}-${row}`}
-            x={projected.x - cellPx / 2 - 0.5}
-            y={projected.y - cellPx / 2 - 0.5}
-            width={cellPx + 1}
-            height={cellPx + 1}
-            fill="#0b0f14"
-            opacity={0.82}
-          />,
-        );
-      }
-    }
-  }
+    return createFogDataUrl(fogCells, { width: size, height: size }, (col, row) => {
+      const worldX = fogCells.minX + (col + 0.5) * fogCells.cellSize;
+      const worldZ = fogCells.minZ + (row + 0.5) * fogCells.cellSize;
+      const projected = projectToMinimap([worldX, worldZ], view);
+      if (projected.distance > worldRadius + fogCells.cellSize) return null;
+      return {
+        x: projected.x - cellPx / 2 - 0.5,
+        y: projected.y - cellPx / 2 - 0.5,
+        width: cellPx + 1,
+        height: cellPx + 1,
+      };
+    });
+  }, [fogCells, center[0], center[1], worldRadius, size, rotate, bearing]);
 
   return (
     <div
@@ -342,7 +335,9 @@ export function Minimap({
                 );
               })()
             : null}
-          {fogRects}
+          {fogImage !== null ? (
+            <image href={fogImage} x={0} y={0} width={size} height={size} preserveAspectRatio="none" />
+          ) : null}
           {(() => {
             const projectXZ: ProjectFn = (x, z) => projectToMinimap([x, z], view);
             const pxPerWorld = worldRadius === 0 ? 0 : half / worldRadius;
@@ -517,6 +512,42 @@ export function Compass({
   );
 }
 
+function WorldMapFogImage({
+  fogCells,
+  project,
+  worldW,
+  worldD,
+  width,
+  mapH,
+}: {
+  fogCells: FogCells | null;
+  project: (x: number, z: number) => { x: number; y: number };
+  worldW: number;
+  worldD: number;
+  width: number;
+  mapH: number;
+}): ReactNode {
+  const fogImage = useMemo(() => {
+    if (fogCells === null) return null;
+    const cellW = (fogCells.cellSize / worldW) * width;
+    const cellH = (fogCells.cellSize / worldD) * mapH;
+    return createFogDataUrl(
+      fogCells,
+      { width, height: mapH },
+      (col, row) => {
+        const at = project(
+          fogCells.minX + col * fogCells.cellSize,
+          fogCells.minZ + row * fogCells.cellSize,
+        );
+        return { x: at.x, y: at.y, width: cellW + 0.5, height: cellH + 0.5 };
+      },
+      "rgba(11, 15, 20, 0.86)",
+    );
+  }, [fogCells, project, worldW, worldD, width, mapH]);
+  if (fogImage === null) return null;
+  return <image href={fogImage} x={0} y={0} width={width} height={mapH} preserveAspectRatio="none" />;
+}
+
 export interface WorldMapProps {
   markers: MarkerSet;
   bounds: MapBounds;
@@ -633,34 +664,7 @@ export function WorldMap({
         {background !== undefined ? (
           <image href={background} x={0} y={0} width={width} height={mapH} preserveAspectRatio="none" opacity={0.95} />
         ) : null}
-        {fogCells !== null
-          ? (() => {
-              const cellW = (fogCells.cellSize / worldW) * width;
-              const cellH = (fogCells.cellSize / worldD) * mapH;
-              const rects: ReactNode[] = [];
-              for (let row = 0; row < fogCells.rows; row += 1) {
-                for (let col = 0; col < fogCells.cols; col += 1) {
-                  if (fogCells.revealed[row * fogCells.cols + col]) continue;
-                  const at = project(
-                    fogCells.minX + col * fogCells.cellSize,
-                    fogCells.minZ + row * fogCells.cellSize,
-                  );
-                  rects.push(
-                    <rect
-                      key={`wfog-${col}-${row}`}
-                      x={at.x}
-                      y={at.y}
-                      width={cellW + 0.5}
-                      height={cellH + 0.5}
-                      fill="#0b0f14"
-                      opacity={0.86}
-                    />,
-                  );
-                }
-              }
-              return rects;
-            })()
-          : null}
+        <WorldMapFogImage fogCells={fogCells} project={project} worldW={worldW} worldD={worldD} width={width} mapH={mapH} />
         {(() => {
           const projectXZ: ProjectFn = (x, z) => project(x, z);
           const layerScale: LayerScale = {

@@ -10,6 +10,9 @@ import {
   type FrustumTarget,
 } from "@jgengine/core/sensor/frustumSensor";
 import { useSceneEntities } from "@jgengine/react/hooks";
+import { frustumSampleDisplayEqual } from "./frustumSampleEqual";
+
+export { frustumSampleDisplayEqual } from "./frustumSampleEqual";
 
 function isPerspective(camera: Camera): camera is PerspectiveCamera {
   return (camera as PerspectiveCamera).isPerspectiveCamera === true;
@@ -20,18 +23,13 @@ export interface FrustumSensorProbeOptions extends FramingConfig {
   subjectRadius?: number;
 }
 
-/**
- * View-frustum sensor (#117) driven by the live render camera: which held-camera
- * subjects are in frame, how well framed, and their dwell time on-screen
- * (Content Warning-style "is this monster filmed well" scoring). Returns the
- * best-framed in-view subject each frame for a photo-mode HUD readout.
- */
 export function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSample | null {
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
   const entities = useSceneEntities();
   const sensor = useMemo(() => createFrustumSensor(options), []);
   const [best, setBest] = useState<FrustumSample | null>(null);
+  const bestRef = useRef<FrustumSample | null>(null);
   const forward = useRef(new Vector3());
 
   useFrame((_, dt) => {
@@ -41,30 +39,30 @@ export function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSam
       if (entity === undefined) continue;
       targets.push({ id, position: entity.position, radius: options.subjectRadius });
     }
-    if (targets.length === 0) {
-      setBest(null);
-      return;
-    }
-    camera.getWorldDirection(forward.current);
-    const samples = sensor.tick(
-      {
-        position: [camera.position.x, camera.position.y, camera.position.z],
-        lookAt: [
-          camera.position.x + forward.current.x,
-          camera.position.y + forward.current.y,
-          camera.position.z + forward.current.z,
-        ],
-        fovDeg: isPerspective(camera) ? camera.fov : 55,
-        aspect: size.height === 0 ? 16 / 9 : size.width / size.height,
-      },
-      targets,
-      dt,
-    );
     let leader: FrustumSample | null = null;
-    for (const sample of samples) {
-      if (!sample.inView) continue;
-      if (leader === null || sample.framing > leader.framing) leader = sample;
+    if (targets.length > 0) {
+      camera.getWorldDirection(forward.current);
+      const samples = sensor.tick(
+        {
+          position: [camera.position.x, camera.position.y, camera.position.z],
+          lookAt: [
+            camera.position.x + forward.current.x,
+            camera.position.y + forward.current.y,
+            camera.position.z + forward.current.z,
+          ],
+          fovDeg: isPerspective(camera) ? camera.fov : 55,
+          aspect: size.height === 0 ? 16 / 9 : size.width / size.height,
+        },
+        targets,
+        dt,
+      );
+      for (const sample of samples) {
+        if (!sample.inView) continue;
+        if (leader === null || sample.framing > leader.framing) leader = sample;
+      }
     }
+    if (frustumSampleDisplayEqual(bestRef.current, leader)) return;
+    bestRef.current = leader;
     setBest(leader);
   });
 

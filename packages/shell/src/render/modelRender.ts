@@ -5,8 +5,9 @@ import type { PaintStroke } from "@jgengine/core/scene/paintLayer";
 
 export const PAINT_TEXTURE_SIZE = 512;
 
-export function cloneModelScene(source: THREE.Object3D): THREE.Object3D {
+export function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean }): THREE.Object3D {
   const clone = cloneSkinned(source) as THREE.Object3D;
+  if (options?.cloneMaterials === false) return clone;
   clone.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
@@ -15,6 +16,20 @@ export function cloneModelScene(source: THREE.Object3D): THREE.Object3D {
       : mesh.material.clone();
   });
   return clone;
+}
+
+export function disposeClonedMaterials(root: THREE.Object3D): void {
+  const seen = new Set<THREE.Material>();
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of list) {
+      if (seen.has(material)) continue;
+      seen.add(material);
+      material.dispose();
+    }
+  });
 }
 
 function isMeshStandardMaterial(material: THREE.Material): material is THREE.MeshStandardMaterial {

@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { FireGrid } from "@jgengine/core/world/weather";
+import { setBillboardQuaternion } from "./fireSpreadPose";
 
 export interface FireSpreadLayerProps {
   grid: FireGrid;
@@ -59,6 +60,8 @@ export function FireSpreadLayer({
   const matrix = useMemo(() => new THREE.Matrix4(), []);
   const position = useMemo(() => new THREE.Vector3(), []);
   const quaternion = useMemo(() => new THREE.Quaternion(), []);
+  const identityQuat = useMemo(() => new THREE.Quaternion(), []);
+  const euler = useMemo(() => new THREE.Euler(), []);
   const scale = useMemo(() => new THREE.Vector3(1, 1, 1), []);
 
   useFrame((state) => {
@@ -77,14 +80,16 @@ export function FireSpreadLayer({
         const groundY = heightAt?.(x, z) ?? 0;
         if (cell.state === "burning") {
           position.set(x, groundY + flameHeight * 0.5, z);
-          quaternion.setFromEuler(new THREE.Euler(0, state.camera.rotation.y, 0));
+          setBillboardQuaternion(quaternion, euler, state.camera.rotation.y);
           scale.set(1, flicker, 1);
           matrix.compose(position, quaternion, scale);
           flameMesh.setMatrixAt(flameIndex, matrix);
           flameIndex += 1;
         } else if (cell.state === "burnt") {
           position.set(x, groundY + 0.05, z);
-          scorchMesh.setMatrixAt(scorchIndex, matrix.compose(position, new THREE.Quaternion(), scale.set(1, 1, 1)));
+          scale.set(1, 1, 1);
+          matrix.compose(position, identityQuat, scale);
+          scorchMesh.setMatrixAt(scorchIndex, matrix);
           scorchIndex += 1;
         }
       }
