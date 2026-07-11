@@ -191,3 +191,7 @@ running repo-root check-types → its --filter '*' pass emitted no Games/* lines
 2026-07-11T00:07:26.896Z — sonnet — Claude
 
 shipping via worker chain → three consecutive workers returned garbled/placeholder final messages (survey, remap, ship), each needed manual state inspection and takeover
+
+2026-07-11T04:35:53.206Z — opus-4.8 — Claude
+
+adding pad tones to a hud-presentation game → audio is suspended-silent for presentation:'hud' games: GamePlayerShell only calls audioEngine.resume() in the 3D branch's onPointerDown, playOneShot doesn't self-resume, and AudioEngine isn't reachable from ctx — shipped visual-only
