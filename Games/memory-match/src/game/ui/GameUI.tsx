@@ -31,6 +31,26 @@ function challengeLink(seed: string): string {
   return withSeedParam(window.location.href, seed);
 }
 
+const GAME_CSS = `
+.mm-felt { background: radial-gradient(120% 90% at 50% 30%, #14213a 0%, #0a1120 68%); }
+.mm-serif { font-family: Georgia, "Palatino Linotype", "Times New Roman", serif; }
+.mm-stage { container-type: size; }
+.mm-perspective { perspective: 1100px; }
+.mm-card-inner { transform-style: preserve-3d; transition: transform 420ms cubic-bezier(0.22, 0.85, 0.3, 1.05); will-change: transform; }
+.mm-card-inner.mm-flipped { transform: rotateY(180deg); }
+.mm-card-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 10%/7.5%; overflow: hidden; }
+.mm-card-front { transform: rotateY(180deg); }
+@keyframes mm-pulse { 0% { transform: rotateY(180deg) scale(1); } 45% { transform: rotateY(180deg) scale(1.09); } 100% { transform: rotateY(180deg) scale(1); } }
+.mm-card-inner.mm-matched { animation: mm-pulse 520ms ease-out 1; }
+@keyframes mm-shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-3px); } 40%, 60% { transform: translateX(3px); } }
+.mm-shake { animation: mm-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 1; animation-delay: 240ms; }
+@keyframes mm-pop { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+.mm-pop { animation: mm-pop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.1) 1 both; }
+@keyframes mm-fade { from { opacity: 0; } to { opacity: 1; } }
+.mm-fade { animation: mm-fade 300ms ease-out 1 both; }
+.mm-matched-glow { box-shadow: inset 0 0 0 2px rgba(201, 165, 87, 0.85), 0 0 16px rgba(201, 165, 87, 0.35); }
+`;
+
 export function GameUI() {
   const ctx = useGameContext();
   const round = useGameStore((current) => getRound(current));
@@ -71,6 +91,7 @@ export function GameUI() {
 
   return (
     <div className="mm-felt absolute inset-0 flex select-none flex-col text-[#f4ecd9]">
+      <style>{GAME_CSS}</style>
       <header className="flex flex-col items-center gap-1.5 px-3 pt-3 sm:gap-2.5 sm:pt-5">
         <div className="flex items-baseline gap-3">
           <h1 className="mm-serif text-lg font-bold tracking-[0.08em] text-[#e3c883] sm:text-2xl">Memory Match</h1>
@@ -101,6 +122,7 @@ export function GameUI() {
             className="grid"
             style={{
               gridTemplateColumns: `repeat(${board.cols}, 1fr)`,
+              gridTemplateRows: `repeat(${board.rows}, 1fr)`,
               gap: "clamp(4px, 1.2cqw, 10px)",
               width: `min(100cqw, calc(100cqh * ${boardRatio}))`,
               maxWidth: "100%",
