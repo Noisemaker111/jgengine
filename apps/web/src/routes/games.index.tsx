@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
 import { GameCard } from "../components/GameCard";
 import { Page, PageHero } from "../components/Layout";
@@ -107,9 +108,112 @@ function GamesFilter({
   );
 }
 
+function useColumnCount(): number {
+  const [columns, setColumns] = useState(() => {
+    if (typeof window === "undefined") return 3;
+    if (window.matchMedia("(min-width: 1024px)").matches) return 3;
+    if (window.matchMedia("(min-width: 640px)").matches) return 2;
+    return 1;
+  });
+
+  useEffect(() => {
+    const lg = window.matchMedia("(min-width: 1024px)");
+    const sm = window.matchMedia("(min-width: 640px)");
+    const update = () => setColumns(lg.matches ? 3 : sm.matches ? 2 : 1);
+    update();
+    lg.addEventListener("change", update);
+    sm.addEventListener("change", update);
+    return () => {
+      lg.removeEventListener("change", update);
+      sm.removeEventListener("change", update);
+    };
+  }, []);
+
+  return columns;
+}
+
+type VirtualRow =
+  | { kind: "heading"; key: string; category: string; count: number; first: boolean }
+  | { kind: "filtered-count"; key: string; count: number; category: Filter }
+  | { kind: "cards"; key: string; games: Game[] };
+
+function chunk(games: Game[], size: number): Game[][] {
+  const rows: Game[][] = [];
+  for (let i = 0; i < games.length; i += size) rows.push(games.slice(i, i + size));
+  return rows;
+}
+
+function VirtualGamesList({ rows, columns }: { rows: VirtualRow[]; columns: number }) {
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
+
+  useEffect(() => {
+    const element = listRef.current;
+    if (!element) return;
+    setScrollMargin(element.getBoundingClientRect().top + window.scrollY);
+  }, []);
+
+  const virtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: (index) => (rows[index]?.kind === "cards" ? 340 : 60),
+    overscan: 5,
+    scrollMargin,
+    getItemKey: (index) => rows[index]?.key ?? index,
+  });
+
+  const items = virtualizer.getVirtualItems();
+
+  return (
+    <div ref={listRef} style={{ position: "relative", height: virtualizer.getTotalSize() }}>
+      {items.map((item) => {
+        const row = rows[item.index];
+        if (!row) return null;
+        return (
+          <div
+            key={item.key}
+            ref={virtualizer.measureElement}
+            data-index={item.index}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)`,
+            }}
+          >
+            {row.kind === "heading" ? (
+              <div className={`flex items-baseline gap-3 ${row.first ? "pt-10" : "pt-12"}`}>
+                <h2 className="text-xl font-semibold tracking-tight text-slate-100">{row.category}</h2>
+                <span className="font-mono text-xs text-slate-600">
+                  {row.count} {row.count === 1 ? "game" : "games"}
+                </span>
+              </div>
+            ) : row.kind === "filtered-count" ? (
+              <p className="pt-10 font-mono text-xs text-slate-600">
+                {row.count} {row.count === 1 ? "game" : "games"}
+                {row.category !== "All" && <span className="text-slate-500"> · {row.category}</span>}
+              </p>
+            ) : (
+              <div
+                className="grid gap-5 pt-5"
+                style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+              >
+                {row.games.map((game) => (
+                  <GameCard key={game.id} game={game} />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function GamesPage() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Filter>("All");
+  const columns = useColumnCount();
 
   const counts = useMemo(() => {
     const byQuery = query.length > 0 ? GAMES.filter((game) => matches(game, query)) : GAMES;
@@ -127,6 +231,34 @@ function GamesPage() {
 
   const isDefault = query.length === 0 && active === "All";
 
+  const rows = useMemo<VirtualRow[]>(() => {
+    if (isDefault) {
+      return GAMES_BY_CATEGORY.flatMap(({ category, games }, groupIndex) => [
+        {
+          kind: "heading" as const,
+          key: `heading-${category}`,
+          category,
+          count: games.length,
+          first: groupIndex === 0,
+        },
+        ...chunk(games, columns).map((rowGames, rowIndex) => ({
+          kind: "cards" as const,
+          key: `${category}-row-${rowIndex}-${rowGames[0]?.id ?? rowIndex}`,
+          games: rowGames,
+        })),
+      ]);
+    }
+    if (filtered.length === 0) return [];
+    return [
+      { kind: "filtered-count" as const, key: "filtered-count", count: filtered.length, category: active },
+      ...chunk(filtered, columns).map((rowGames, rowIndex) => ({
+        kind: "cards" as const,
+        key: `filtered-row-${rowIndex}-${rowGames[0]?.id ?? rowIndex}`,
+        games: rowGames,
+      })),
+    ];
+  }, [isDefault, filtered, active, columns]);
+
   return (
     <Page>
       <PageHero
@@ -139,34 +271,8 @@ function GamesPage() {
           <GamesFilter query={query} setQuery={setQuery} active={active} setActive={setActive} counts={counts} />
         </div>
 
-        {isDefault ? (
-          GAMES_BY_CATEGORY.map(({ category, games }) => (
-            <div key={category} className="mt-12 first:mt-10">
-              <div className="flex items-baseline gap-3">
-                <h2 className="text-xl font-semibold tracking-tight text-slate-100">{category}</h2>
-                <span className="font-mono text-xs text-slate-600">
-                  {games.length} {games.length === 1 ? "game" : "games"}
-                </span>
-              </div>
-              <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {games.map((game) => (
-                  <GameCard key={game.id} game={game} />
-                ))}
-              </div>
-            </div>
-          ))
-        ) : filtered.length > 0 ? (
-          <div className="mt-10">
-            <p className="font-mono text-xs text-slate-600">
-              {filtered.length} {filtered.length === 1 ? "game" : "games"}
-              {active !== "All" && <span className="text-slate-500"> · {active}</span>}
-            </p>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((game) => (
-                <GameCard key={game.id} game={game} />
-              ))}
-            </div>
-          </div>
+        {rows.length > 0 ? (
+          <VirtualGamesList rows={rows} columns={columns} />
         ) : (
           <div className="panel mt-10 rounded-2xl px-6 py-14 text-center">
             <p className="text-sm text-slate-300">No games match your search.</p>
