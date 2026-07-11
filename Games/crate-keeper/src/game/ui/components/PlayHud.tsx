@@ -1,3 +1,5 @@
+import { SettingsTrigger } from "@jgengine/react";
+
 import type { ActiveView } from "../../store";
 
 function Stat({
@@ -38,7 +40,7 @@ export function PlayHud({ active, onMenu }: { active: ActiveView; onMenu: () => 
           </div>
           <div className="truncate text-lg font-bold text-amber-50">{active.name}</div>
         </div>
-        <div className="w-[76px]" aria-hidden />
+        <SettingsTrigger className="flex h-9 w-9 items-center justify-center rounded-lg bg-black/25 px-2 py-2 text-amber-100/80 ring-1 ring-amber-900/40 transition hover:bg-black/40" />
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Stat label="Moves" value={String(active.moves)} tone={overPar ? "warn" : "default"} />

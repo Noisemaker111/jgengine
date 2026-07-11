@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import {
   command,
   keybind,
@@ -44,8 +45,14 @@ export function getRun(ctx: GameContext): RunState {
   return (ctx.game.store.get(RUN_KEY) as RunState | undefined) ?? createInitialRun(ISLAND_SEED);
 }
 
+function syncPhase(ctx: GameContext, status: RunState["status"]): void {
+  setGamePhase(ctx, status === "playing" ? "playing" : status === "start" ? "menu" : "ended");
+}
+
 function setRun(ctx: GameContext, run: RunState): void {
+  const previous = ctx.game.store.get(RUN_KEY) as RunState | undefined;
   ctx.game.store.set(RUN_KEY, run);
+  if (previous?.status !== run.status) syncPhase(ctx, run.status);
 }
 
 export function isMapOpen(ctx: GameContext): boolean {

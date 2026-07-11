@@ -1,3 +1,5 @@
+import { SettingsTrigger } from "@jgengine/react";
+
 import type { KeeperSnapshot, LevelCard } from "../../store";
 import { Stars } from "./Stars";
 

@@ -5,6 +5,7 @@ import { withSeedParam } from "@jgengine/core/random/seedLink";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
+import { SettingsTrigger } from "@jgengine/react";
 
 import { keybinds } from "../keybinds";
 import { type EchoMode } from "../echo/catalog";
