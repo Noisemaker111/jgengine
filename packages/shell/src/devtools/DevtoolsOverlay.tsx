@@ -2,9 +2,12 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import {
+  convertAngle,
   devtools,
   instrumentLatency,
   LONG_FRAME_MS,
+  parseColor,
+  parseOverridesPayload,
   type DevtoolsControl,
   type DevtoolsOverrides,
   type DevtoolsSnapshot,
@@ -40,8 +43,13 @@ function readStoredOverrides(gameName: string): DevtoolsOverrides | null {
   try {
     const raw = localStorage.getItem(overridesStorageKey(gameName));
     if (raw === null) return null;
-    const parsed = JSON.parse(raw) as DevtoolsOverrides;
-    return Array.isArray(parsed.enabled) && typeof parsed.values === "object" ? parsed : null;
+    const parsed = parseOverridesPayload(JSON.parse(raw) as unknown);
+    if (parsed.overrides === null) {
+      for (const message of parsed.diagnostics) console.warn(`[jgengine:devtools] ${message}`);
+      return null;
+    }
+    for (const message of parsed.diagnostics) console.info(`[jgengine:devtools] ${message}`);
+    return parsed.overrides;
   } catch {
     return null;
   }
@@ -60,10 +68,15 @@ export function persistDevtoolsOverrides(gameName: string): DevtoolsOverrides {
 export function applyStoredDevtoolsOverrides(gameName: string): void {
   const stored = readStoredOverrides(gameName);
   if (stored === null) return;
-  const applied = stored.enabled.length + Object.keys(stored.values).length;
-  if (applied === 0) return;
-  devtools.overrides.apply(stored);
-  console.info(`[jgengine:devtools] applied ${applied} stored override(s) for ${gameName}`);
+  const result = devtools.overrides.apply(stored);
+  if (result.applied === 0 && result.skipped.length === 0) return;
+  console.info(
+    `[jgengine:devtools] applied ${result.applied} stored override(s) for ${gameName}` +
+      (result.skipped.length > 0 ? ` · skipped ${result.skipped.length}` : ""),
+  );
+  for (const entry of result.skipped) {
+    console.warn(`[jgengine:devtools] skipped override ${entry.id}: ${entry.reason}`);
+  }
 }
 
 export function withDevtoolsLatency(multiplayer: ShellMultiplayer): ShellMultiplayer {
@@ -450,31 +463,56 @@ function KeysPanel({ input }: { input: ActionCodesMap | undefined }) {
 function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite: () => void }) {
   const value = control.read();
   const write = (next: unknown) => {
-    control.write(next);
-    onWrite();
+    if (control.write(next)) onWrite();
   };
-  if (control.kind === "slider") {
+  if (control.kind === "slider" || control.kind === "angle") {
+    const unit = control.unit ?? "rad";
+    const displayUnit = control.displayUnit ?? (control.kind === "angle" ? "deg" : unit);
+    const displayValue =
+      control.kind === "angle" && typeof value === "number"
+        ? convertAngle(value, unit, displayUnit)
+        : Number(value);
+    const displayMin =
+      control.min !== undefined && control.kind === "angle"
+        ? convertAngle(control.min, unit, displayUnit)
+        : control.min;
+    const displayMax =
+      control.max !== undefined && control.kind === "angle"
+        ? convertAngle(control.max, unit, displayUnit)
+        : control.max;
+    const displayStep =
+      control.step !== undefined && control.kind === "angle" && unit !== displayUnit
+        ? convertAngle(control.step, unit, displayUnit)
+        : control.step;
     return (
       <div className="flex items-center gap-2">
         <input
           type="range"
           className="h-1 w-28 accent-emerald-400"
-          min={control.min}
-          max={control.max}
-          step={control.step}
-          value={Number(value)}
-          onChange={(event) => write(Number(event.target.value))}
+          min={displayMin}
+          max={displayMax}
+          step={displayStep}
+          value={displayValue}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            write(control.kind === "angle" ? convertAngle(next, displayUnit, unit) : next);
+          }}
         />
         <input
           type="number"
           className="w-16 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
-          step={control.step}
-          value={Number(value)}
+          step={displayStep}
+          value={Number(displayValue.toFixed(4))}
           onChange={(event) => {
             const next = Number(event.target.value);
-            if (!Number.isNaN(next)) write(next);
+            if (!Number.isNaN(next)) {
+              write(control.kind === "angle" ? convertAngle(next, displayUnit, unit) : next);
+            }
           }}
         />
+        {control.kind === "angle" ? (
+          <span className="text-[10px] text-neutral-500">{displayUnit}</span>
+        ) : null}
       </div>
     );
   }
@@ -489,31 +527,131 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
     );
   }
   if (control.kind === "color") {
+    const parsed = parseColor(value);
+    const rgb = parsed?.rgb ?? "#000000";
+    const alpha = parsed?.alpha ?? 1;
+    const showAlpha = control.hasAlpha === true || parsed?.hasAlpha === true;
     return (
-      <input
-        type="color"
-        className="h-6 w-10 cursor-pointer rounded border border-neutral-600 bg-transparent"
-        value={String(value)}
-        onChange={(event) => write(event.target.value)}
-      />
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          className="h-6 w-10 cursor-pointer rounded border border-neutral-600 bg-transparent"
+          value={rgb}
+          onChange={(event) => {
+            if (showAlpha) {
+              const a = Math.round(alpha * 255)
+                .toString(16)
+                .padStart(2, "0");
+              write(`${event.target.value}${a}`);
+            } else {
+              write(event.target.value);
+            }
+          }}
+        />
+        {showAlpha ? (
+          <input
+            type="range"
+            className="h-1 w-16 accent-emerald-400"
+            min={0}
+            max={1}
+            step={0.01}
+            value={alpha}
+            onChange={(event) => {
+              const nextAlpha = Number(event.target.value);
+              const a = Math.round(nextAlpha * 255)
+                .toString(16)
+                .padStart(2, "0");
+              write(`${rgb}${a}`);
+            }}
+          />
+        ) : null}
+      </div>
     );
   }
-  if (control.kind === "select") {
+  if (control.kind === "select" || control.kind === "enum") {
+    const choices =
+      control.choices ??
+      control.options?.map((option) => ({ value: option, label: String(option) })) ??
+      [];
     return (
       <select
         className="rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 text-neutral-100"
         value={String(value)}
         onChange={(event) => {
-          const match = control.options?.find((option) => String(option) === event.target.value);
-          write(match ?? event.target.value);
+          const match = choices.find((choice) => String(choice.value) === event.target.value);
+          if (match !== undefined) write(match.value);
         }}
       >
-        {control.options?.map((option) => (
-          <option key={String(option)} value={String(option)}>
-            {String(option)}
+        {choices.map((choice) => (
+          <option key={String(choice.value)} value={String(choice.value)}>
+            {choice.label ?? String(choice.value)}
           </option>
         ))}
       </select>
+    );
+  }
+  if (control.kind === "vec2" || control.kind === "vec3" || control.kind === "vec4") {
+    const axes = Array.isArray(value) ? (value as number[]) : [];
+    const labels = control.axisLabels ?? ["x", "y", "z", "w"];
+    return (
+      <div className="flex flex-wrap items-center gap-1">
+        {axes.map((axis, index) => (
+          <label key={labels[index] ?? index} className="flex items-center gap-0.5 text-[10px] text-neutral-400">
+            <span>{labels[index]}</span>
+            <input
+              type="number"
+              className="w-14 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
+              min={control.axisMin?.[index]}
+              max={control.axisMax?.[index]}
+              step={control.axisStep?.[index] ?? control.step}
+              value={axis}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                if (Number.isNaN(next)) return;
+                const copy = axes.slice();
+                copy[index] = next;
+                write(copy);
+              }}
+            />
+          </label>
+        ))}
+      </div>
+    );
+  }
+  if (control.kind === "interval") {
+    const interval =
+      value !== null && typeof value === "object" && !Array.isArray(value)
+        ? (value as { min: number; max: number })
+        : { min: 0, max: 0 };
+    const writeInterval = (min: number, max: number) => write({ min, max });
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          className="w-14 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
+          min={control.min}
+          max={control.max}
+          step={control.step}
+          value={interval.min}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            if (!Number.isNaN(next)) writeInterval(next, interval.max);
+          }}
+        />
+        <span className="text-neutral-500">…</span>
+        <input
+          type="number"
+          className="w-14 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
+          min={control.min}
+          max={control.max}
+          step={control.step}
+          value={interval.max}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            if (!Number.isNaN(next)) writeInterval(interval.min, next);
+          }}
+        />
+      </div>
     );
   }
   return (
@@ -527,7 +665,16 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
 }
 
 function formatPreview(value: unknown): string {
-  return typeof value === "number" ? String(Math.round(value * 1000) / 1000) : String(value);
+  if (typeof value === "number") return String(Math.round(value * 1000) / 1000);
+  if (Array.isArray(value)) return value.map((entry) => formatPreview(entry)).join(", ");
+  if (value !== null && typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
 }
 
 function deltaSnippet(discovered: readonly DiscoveredEntry[]): string | null {
@@ -583,9 +730,9 @@ function TunePanel({ gameName }: { gameName: string }) {
         <div className="font-mono text-[10px] text-neutral-500">
           {"export const TUNING = { gravity: -22, skyColor: \"#87ceeb\" };"}
           <br />
-          {"Exported constants and tables of numbers, booleans, and colors"}
+          {"Nested numbers/booleans/colors auto-discover. Schema kinds:"}
           <br />
-          {"(nested included) appear here — check one to control it live."}
+          {"vec2/3/4 · interval · angle · enum · color+alpha via tunable() or scan meta."}
         </div>
       </div>
     );

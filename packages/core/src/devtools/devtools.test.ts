@@ -293,12 +293,16 @@ describe("devtools discovery", () => {
     dev.discover.enable("MINING/reach");
     dev.controls.get("MINING/reach")!.write(9);
     const saved = dev.overrides.export();
-    expect(saved).toEqual({ enabled: ["MINING/reach"], values: { "MINING/reach": 9 } });
+    expect(saved.version).toBe(1);
+    expect(saved.enabled).toEqual(["MINING/reach"]);
+    expect(saved.values).toEqual({ "MINING/reach": 9 });
+    expect(saved.schemas?.["MINING/reach"]?.kind).toBe("slider");
 
     const fresh = createDevtools();
     const MINING2 = { reach: 6, instaBreak: false };
     fresh.discover.scanTable("MINING", MINING2);
-    fresh.overrides.apply(saved);
+    const result = fresh.overrides.apply(saved);
+    expect(result.applied).toBeGreaterThan(0);
     expect(MINING2.reach).toBe(9);
     expect(fresh.discover.list()[0]!.enabled).toBe(true);
   });
@@ -321,5 +325,225 @@ describe("devtools discovery", () => {
     expect(MINING.reach).toBe(6);
     expect(dev.discover.list()).toHaveLength(0);
     expect(dev.controls.get("MINING/reach")).toBeNull();
+  });
+
+  test("escapes dotted keys and surfaces skipped unsupported structures", () => {
+    const dev = createDevtools();
+    const table = {
+      "spawn.point": 3,
+      nested: { "a.b": 4 },
+      weird: new Map([["x", 1]]),
+    };
+    expect(dev.discover.scanTable("CFG", table)).toBe(2);
+    const ids = dev.discover.list().map((entry) => entry.id);
+    expect(ids).toContain("CFG/spawn\\.point");
+    expect(ids).toContain("CFG/nested.a\\.b");
+    expect(dev.discover.skipped().some((entry) => entry.reason === "unsupported structure")).toBe(true);
+    dev.discover.enable("CFG/nested.a\\.b");
+    dev.controls.get("CFG/nested.a\\.b")!.write(7);
+    expect(table.nested["a.b"]).toBe(7);
+  });
+
+  test("scan meta declares semantic nested fields", () => {
+    const dev = createDevtools();
+    const config = {
+      spawn: { position: [1, 2, 3] as [number, number, number] },
+      zoom: { min: 2, max: 12 },
+    };
+    dev.discover.scanTable("game", config, {
+      "spawn.position": { kind: "vec3" },
+      "zoom": { kind: "interval", min: 0, max: 20 },
+    });
+    const kinds = Object.fromEntries(dev.discover.list().map((entry) => [entry.id, entry.kind]));
+    expect(kinds["game/spawn.position"]).toBe("vec3");
+    expect(kinds["game/zoom"]).toBe("interval");
+  });
+});
+
+describe("devtools structured tunables", () => {
+  test("vec3 atomic write, axis bounds, reset, and export/apply", () => {
+    const dev = createDevtools();
+    const spawn = dev.controls.register("spawn/pos", [0, 1, 0] as [number, number, number], {
+      kind: "vec3",
+      axisMin: [-10, 0, -10],
+      axisMax: [10, 5, 10],
+    });
+    expect(spawn.kind).toBe("vec3");
+    const seen: unknown[] = [];
+    spawn.subscribe((value) => seen.push(value.slice()));
+    expect(spawn.set([100, 2, -100])).toBe(true);
+    expect(spawn.value).toEqual([10, 2, -10]);
+    expect(seen).toEqual([[10, 2, -10]]);
+    expect(spawn.set([1, Number.NaN, 1])).toBe(false);
+    expect(spawn.value).toEqual([10, 2, -10]);
+    spawn.reset();
+    expect(spawn.value).toEqual([0, 1, 0]);
+    spawn.set([3, 4, 5]);
+    const saved = dev.overrides.export();
+    const fresh = createDevtools();
+    const other = fresh.controls.register("spawn/pos", [0, 1, 0] as [number, number, number], {
+      kind: "vec3",
+      axisMin: [-10, 0, -10],
+      axisMax: [10, 5, 10],
+    });
+    expect(fresh.overrides.apply(saved).applied).toBe(1);
+    expect(other.value).toEqual([3, 4, 5]);
+  });
+
+  test("interval enforces order, integer mode, and atomic persistence", () => {
+    const dev = createDevtools();
+    const range = dev.controls.register("camera/zoom", { min: 4, max: 12 }, {
+      kind: "interval",
+      min: 0,
+      max: 20,
+      integer: true,
+    });
+    expect(range.set({ min: 15, max: 8 })).toBe(true);
+    expect(range.value).toEqual({ min: 8, max: 15 });
+    expect(range.set({ min: 1.5, max: 3 })).toBe(false);
+    expect(range.value).toEqual({ min: 8, max: 15 });
+    range.reset();
+    expect(range.value).toEqual({ min: 4, max: 12 });
+    range.set({ min: 1, max: 3 });
+    const saved = dev.overrides.export();
+    const fresh = createDevtools();
+    const other = fresh.controls.register("camera/zoom", { min: 4, max: 12 }, {
+      kind: "interval",
+      min: 0,
+      max: 20,
+      integer: true,
+    });
+    fresh.overrides.apply(saved);
+    expect(other.value).toEqual({ min: 1, max: 3 });
+  });
+
+  test("angle keeps canonical radians and wraps display-domain writes", () => {
+    const dev = createDevtools();
+    const yaw = dev.controls.register("camera/yaw", Math.PI / 2, {
+      kind: "angle",
+      unit: "rad",
+      displayUnit: "deg",
+      wrap: true,
+      min: -Math.PI,
+      max: Math.PI,
+    });
+    expect(yaw.kind).toBe("angle");
+    expect(yaw.set((3 * Math.PI) / 2)).toBe(true);
+    expect(yaw.value).toBeCloseTo(-Math.PI / 2, 10);
+    expect(yaw.set(Number.POSITIVE_INFINITY)).toBe(false);
+    yaw.reset();
+    expect(yaw.value).toBeCloseTo(Math.PI / 2, 10);
+    const control = dev.controls.get("camera/yaw");
+    expect(control?.unit).toBe("rad");
+    expect(control?.displayUnit).toBe("deg");
+  });
+
+  test("color normalizes short hex, preserves alpha, rejects invalid", () => {
+    const dev = createDevtools();
+    const fill = dev.controls.register("ui/fill", "#F80");
+    expect(fill.kind).toBe("color");
+    expect(fill.value).toBe("#ff8800");
+    const tint = dev.controls.register("ui/tint", "#88ff0011");
+    expect(tint.value).toBe("#88ff0011");
+    expect(dev.controls.get("ui/tint")?.hasAlpha).toBe(true);
+    expect(tint.set("#00ff00")).toBe(true);
+    expect(tint.value).toBe("#00ff00ff");
+    expect(tint.set("#00ff0080")).toBe(true);
+    expect(tint.value).toBe("#00ff0080");
+    expect(tint.set("red")).toBe(false);
+    expect(tint.value).toBe("#00ff0080");
+    tint.reset();
+    expect(tint.value).toBe("#88ff0011");
+  });
+
+  test("enum labeled choices validate writes and stale overrides", () => {
+    const dev = createDevtools();
+    const mode = dev.controls.register("game/mode", "easy", {
+      kind: "enum",
+      choices: [
+        { value: "easy", label: "Easy" },
+        { value: "hard", label: "Hard" },
+      ],
+    });
+    expect(mode.kind).toBe("enum");
+    expect(mode.set("hard")).toBe(true);
+    expect(mode.set("nightmare")).toBe(false);
+    expect(mode.value).toBe("hard");
+    const numeric = dev.controls.register("game/tier", 2, {
+      kind: "enum",
+      choices: [
+        { value: 1, label: "I" },
+        { value: 2, label: "II" },
+      ],
+    });
+    expect(numeric.set("2" as unknown as number)).toBe(true);
+    expect(numeric.value).toBe(2);
+    const saved = dev.overrides.export();
+    saved.values["game/mode"] = "legacy";
+    const fresh = createDevtools();
+    fresh.controls.register("game/mode", "easy", {
+      kind: "enum",
+      choices: [
+        { value: "easy", label: "Easy" },
+        { value: "hard", label: "Hard" },
+      ],
+    });
+    const result = fresh.overrides.apply(saved);
+    expect(result.skipped.some((entry) => entry.id === "game/mode")).toBe(true);
+    expect(fresh.controls.get("game/mode")!.read()).toBe("easy");
+  });
+
+  test("versioned overrides migrate legacy payloads and quarantine bad values", () => {
+    const dev = createDevtools();
+    dev.controls.register("physics/gravity", -22);
+    dev.controls.register("spawn/pos", [0, 1, 0] as [number, number, number], { kind: "vec3" });
+    dev.controls.register("ui/tint", "#11223344");
+    dev.controls.register("camera/zoom", { min: 2, max: 8 }, { kind: "interval" });
+    dev.controls.register("game/mode", "easy", {
+      kind: "enum",
+      choices: [
+        { value: "easy", label: "Easy" },
+        { value: "hard", label: "Hard" },
+      ],
+    });
+
+    const legacy = {
+      enabled: [],
+      values: {
+        "physics/gravity": -10,
+        "spawn/pos": "nope",
+        "ui/tint": "#gg0000",
+        "camera/zoom": { min: 9, max: 1 },
+        "game/mode": "missing",
+        "unknown/id": 1,
+      },
+    };
+    const result = dev.overrides.apply(legacy);
+    expect(result.diagnostics.some((message) => message.includes("migrated"))).toBe(true);
+    expect(dev.controls.get("physics/gravity")!.read()).toBe(-10);
+    expect(dev.controls.get("spawn/pos")!.read()).toEqual([0, 1, 0]);
+    expect(dev.controls.get("ui/tint")!.read()).toBe("#11223344");
+    expect(dev.controls.get("camera/zoom")!.read()).toEqual({ min: 1, max: 9 });
+    expect(dev.controls.get("game/mode")!.read()).toBe("easy");
+    expect(result.skipped.map((entry) => entry.id).sort()).toEqual(
+      ["game/mode", "spawn/pos", "ui/tint", "unknown/id"].sort(),
+    );
+
+    const future = dev.overrides.apply({ version: 99, enabled: [], values: {} });
+    expect(future.applied).toBe(0);
+    expect(future.diagnostics[0]).toContain("newer than supported");
+  });
+
+  test("kind mismatch in stored schema is ignored", () => {
+    const dev = createDevtools();
+    dev.controls.register("x", 1);
+    const result = dev.overrides.apply({
+      version: 1,
+      enabled: [],
+      values: { x: true },
+      schemas: { x: { kind: "toggle" } },
+    });
+    expect(result.skipped[0]?.reason).toContain("kind mismatch");
+    expect(dev.controls.get("x")!.read()).toBe(1);
   });
 });
