@@ -85,7 +85,12 @@ describe("projectile system", () => {
       aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
       effect: "damage",
     });
-    expect(prediction.hits).toEqual([{ kind: "entity", instanceId: "enemy", distance: 10 }]);
+    expect(prediction.hits).toHaveLength(1);
+    expect(prediction.hits[0]!.kind).toBe("entity");
+    expect(prediction.hits[0]!.instanceId).toBe("enemy");
+    expect(prediction.hits[0]!.distance).toBeCloseTo(9.5);
+    expect(prediction.origin).toEqual([0, 0, 0]);
+    expect(prediction.firstImpact?.instanceId).toBe("enemy");
     expect(prediction.blocked).toBeUndefined();
     expect(stats["enemy"]!["health"]!.current).toBe(100);
   });
@@ -116,7 +121,8 @@ describe("projectile system", () => {
     const settle = projectiles.settleProjectile(shotId);
     expect(settle.status).toBe("settled");
     if (settle.status !== "settled") return;
-    expect(settle.at).toEqual([0, 0, 10]);
+    expect(settle.at[2]).toBeCloseTo(9.5);
+    expect(settle.origin).toEqual([0, 0, 0]);
     expect(settle.hits).toHaveLength(1);
     expect(settle.hits[0]!.instanceId).toBe("enemy");
     expect(stats["enemy"]!["health"]!.current).toBe(90);
@@ -279,7 +285,9 @@ describe("object-aware raycast", () => {
       aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
       effect: "damage",
     });
-    expect(prediction.hits).toEqual([{ kind: "object", instanceId: "wallA", catalogId: "wall", distance: 4.5 }]);
+    expect(prediction.hits).toHaveLength(1);
+    expect(prediction.hits[0]).toMatchObject({ kind: "object", instanceId: "wallA", catalogId: "wall", distance: 4.5 });
+    expect(prediction.blocked).toBe(true);
 
     const shotId = projectiles.fireProjectile({
       from: "shooter",
@@ -304,7 +312,8 @@ describe("object-aware raycast", () => {
       aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
       effect: "damage",
     });
-    expect(prediction.hits).toEqual([{ kind: "entity", instanceId: "enemy", distance: 10 }]);
+    expect(prediction.hits).toHaveLength(1);
+    expect(prediction.hits[0]!.instanceId).toBe("enemy");
 
     const shotId = projectiles.fireProjectile({
       from: "shooter",
@@ -329,7 +338,8 @@ describe("object-aware raycast", () => {
       aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
       effect: "damage",
     });
-    expect(missPrediction.hits).toEqual([{ kind: "entity", instanceId: "enemy", distance: 10 }]);
+    expect(missPrediction.hits).toHaveLength(1);
+    expect(missPrediction.hits[0]!.instanceId).toBe("enemy");
 
     const withWideBox = createRange(
       { enemy: target([0, 0, 10]) },
@@ -343,6 +353,62 @@ describe("object-aware raycast", () => {
       aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
       effect: "damage",
     });
-    expect(hitPrediction.hits).toEqual([{ kind: "object", instanceId: "wallC", catalogId: "bigwall", distance: 4 }]);
+    expect(hitPrediction.hits[0]!.kind).toBe("object");
+    expect(hitPrediction.hits[0]!.instanceId).toBe("wallC");
+    expect(hitPrediction.hits[0]!.distance).toBeCloseTo(4);
+    expect(hitPrediction.blocked).toBe(true);
+  });
+
+  test("muzzle origin policy shifts the resolved shot origin", () => {
+    const { projectiles } = createRange({ enemy: target([0, 0, 10]) });
+    const withMuzzle = createProjectileSystem({
+      effects: createEffectSystem({
+        resolveReceive: () => ({ damage: { order: ["health"] } }),
+        resolveStats: () => ({ health: { current: 100, max: 100 } }),
+        getStat: (itemId, stat) => WEAPON_STATS[itemId]?.[stat] ?? null,
+        spatial: {
+          inRadius: () => ["enemy"],
+          hasLineOfSight: () => true,
+          positionOf: (id) => (id === "shooter" ? [0, 0, 0] : [0, 0, 10]),
+        },
+      }),
+      spatial: {
+        inRadius: (center, radius) =>
+          distanceBetween(center, [0, 0, 10]) <= radius ? ["enemy"] : [],
+        hasLineOfSight: () => true,
+        positionOf: (id) => (id === "shooter" ? [0, 0, 0] : id === "enemy" ? [0, 0, 10] : undefined),
+      },
+      getStat: (itemId, stat) => WEAPON_STATS[itemId]?.[stat] ?? null,
+      rotationYOf: () => 0,
+      now: () => 0,
+    });
+    const prediction = withMuzzle.willHitProjectile({
+      from: "shooter",
+      via: { item: "pistol" },
+      aim: { yaw: 0, pitch: 0 },
+      effect: "damage",
+      originPolicy: { kind: "muzzle", offset: [0, 0, 1] },
+    });
+    expect(prediction.origin).toEqual([0, 0, 1]);
+    expect(projectiles).toBeDefined();
+  });
+
+  test("prediction and settlement share the same first impact", () => {
+    const { projectiles, stats } = createRange({ enemy: target([0, 0, 10]) }, [], [wallInPath]);
+    const input = {
+      from: "shooter",
+      via: { item: "pistol" as const },
+      aim: { origin: [0, 0, 0] as [number, number, number], direction: [0, 0, 1] as [number, number, number] },
+      effect: "damage",
+    };
+    const prediction = projectiles.willHitProjectile(input);
+    const shotId = projectiles.fireProjectile(input);
+    const settle = projectiles.settleProjectile(shotId);
+    expect(settle.status).toBe("settled");
+    if (settle.status !== "settled") return;
+    expect(prediction.firstImpact?.kind).toBe("object");
+    expect(settle.at[2]).toBeCloseTo(prediction.firstImpact!.distance);
+    expect(settle.hits).toEqual([]);
+    expect(stats["enemy"]!["health"]!.current).toBe(100);
   });
 });

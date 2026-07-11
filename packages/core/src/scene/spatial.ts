@@ -18,26 +18,25 @@ export interface MoveTowardOptions {
 }
 
 export interface SpatialGridOptions {
-  /** Cell edge over the x/z plane; tune to ≈ the typical query radius so a query touches a handful of cells. */
   cellSize: number;
 }
 
 export interface SpatialApiOptions {
   resolvePosition: (instanceId: string) => EntityPosition | undefined;
-  candidates: () => string[];
+  candidates: () => readonly string[];
   /**
    * When omitted, `hasLineOfSight` always returns true for known entities (open-field bypass).
    * Wire a wall/collision test here for combat LoS; `true` means the segment is blocked.
    */
   occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
   /**
-   * Opt-in broadphase acceleration for `inRadius`/`queryArc` over large candidate sets. When set,
-   * a uniform x/z cell index is built lazily from `candidates()` + `resolvePosition()` on first use
-   * and reused across calls until `invalidate()` is called — so many queries against one tick's
-   * frozen positions pay for one rebuild, not one linear scan each. Results are exactly the linear
-   * scan's results (same filtering; see `SpatialApi.invalidate` for the staleness contract).
+   * Broadphase for `inRadius`/`queryArc`. Defaults to `{ cellSize: 8 }`. Pass `false` to force a
+   * linear scan. When enabled, the index rebuilds lazily on first use after `invalidate()` or when
+   * `getVersion()` advances — call `invalidate()` after moves unless a version source is wired.
    */
-  grid?: SpatialGridOptions;
+  grid?: SpatialGridOptions | false;
+  /** When this number changes between queries, the grid rebuilds without an explicit `invalidate()`. */
+  getVersion?: () => number;
 }
 
 export interface SpatialApi {
@@ -46,14 +45,6 @@ export interface SpatialApi {
   hasLineOfSight(fromInstanceId: string, toInstanceId: string): boolean;
   queryArc(options: QueryArcOptions): string[];
   moveToward(instanceId: string, target: EntityPosition | string, options: MoveTowardOptions): EntityPosition | null;
-  /**
-   * Marks the `grid` broadphase index stale so the next `inRadius`/`queryArc` call rebuilds it from
-   * `candidates()` and `resolvePosition()`. Call this after moving, spawning, or despawning a
-   * candidate; a candidate absent from the index at query time is never skipped (it falls back to
-   * an exact check), but a candidate that *moved* since the last rebuild can be missed until you
-   * invalidate — so treat "invalidate after any position change" as the contract, not an
-   * optimization. A no-op when no `grid` config was supplied. Safe to call every tick.
-   */
   invalidate(): void;
 }
 
@@ -78,62 +69,140 @@ function cellCoord(value: number, cellSize: number): number {
   return Math.floor(value / cellSize);
 }
 
-function gridCellKey(cx: number, cz: number): string {
-  return `${cx}:${cz}`;
+const CELL_KEY_OFFSET = 0x8000;
+
+function packCell(cx: number, cz: number): number {
+  return ((cx + CELL_KEY_OFFSET) << 16) | ((cz + CELL_KEY_OFFSET) & 0xffff);
 }
 
 interface GridIndex {
-  cells: Map<string, string[]>;
+  cells: Map<number, string[]>;
   indexed: Set<string>;
+  bucketPool: string[][];
+  poolCursor: number;
 }
 
+const DEFAULT_CELL_SIZE = 8;
+
 export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
-  const { resolvePosition, candidates, occluder, grid } = options;
-  const cellSize = grid?.cellSize;
+  const { resolvePosition, candidates, occluder, getVersion } = options;
+  const gridConfig = options.grid === false ? undefined : (options.grid ?? { cellSize: DEFAULT_CELL_SIZE });
+  const cellSize = gridConfig?.cellSize;
   let gridIndex: GridIndex | null = null;
   let gridDirty = true;
+  let lastVersion: number | undefined;
 
   function resolveTarget(target: EntityPosition | string): EntityPosition | undefined {
     return typeof target === "string" ? resolvePosition(target) : target;
   }
 
+  function takeBucket(index: GridIndex): string[] {
+    if (index.poolCursor < index.bucketPool.length) {
+      const bucket = index.bucketPool[index.poolCursor]!;
+      index.poolCursor += 1;
+      bucket.length = 0;
+      return bucket;
+    }
+    const bucket: string[] = [];
+    index.bucketPool.push(bucket);
+    index.poolCursor += 1;
+    return bucket;
+  }
+
   function ensureGrid(): GridIndex | null {
     if (cellSize === undefined) return null;
+    const version = getVersion?.();
+    if (version !== undefined && version !== lastVersion) {
+      gridDirty = true;
+      lastVersion = version;
+    }
     if (!gridDirty && gridIndex !== null) return gridIndex;
-    const cells = new Map<string, string[]>();
-    const indexed = new Set<string>();
+
+    const previous = gridIndex;
+    const cells = previous?.cells ?? new Map<number, string[]>();
+    cells.clear();
+    const indexed = previous?.indexed ?? new Set<string>();
+    indexed.clear();
+    const index: GridIndex = {
+      cells,
+      indexed,
+      bucketPool: previous?.bucketPool ?? [],
+      poolCursor: 0,
+    };
+
     for (const instanceId of candidates()) {
       const position = resolvePosition(instanceId);
       if (position === undefined) continue;
       indexed.add(instanceId);
-      const key = gridCellKey(cellCoord(position[0], cellSize), cellCoord(position[2], cellSize));
+      const key = packCell(cellCoord(position[0], cellSize), cellCoord(position[2], cellSize));
       let bucket = cells.get(key);
       if (bucket === undefined) {
-        bucket = [];
+        bucket = takeBucket(index);
         cells.set(key, bucket);
       }
       bucket.push(instanceId);
     }
-    gridIndex = { cells, indexed };
+    gridIndex = index;
     gridDirty = false;
-    return gridIndex;
+    return index;
   }
 
-  function inRangeSet(index: GridIndex, centerX: number, centerZ: number, radius: number): Set<string> {
+  function collectNear(
+    index: GridIndex,
+    centerX: number,
+    centerZ: number,
+    radius: number,
+    out: string[],
+  ): void {
     const size = cellSize!;
     const cxMin = cellCoord(centerX - radius, size);
     const cxMax = cellCoord(centerX + radius, size);
     const czMin = cellCoord(centerZ - radius, size);
     const czMax = cellCoord(centerZ + radius, size);
-    const near = new Set<string>();
+    out.length = 0;
+    const seen = collectNearSeen;
+    seen.clear();
     for (let cz = czMin; cz <= czMax; cz += 1) {
       for (let cx = cxMin; cx <= cxMax; cx += 1) {
-        const bucket = index.cells.get(gridCellKey(cx, cz));
+        const bucket = index.cells.get(packCell(cx, cz));
         if (bucket === undefined) continue;
-        for (const id of bucket) near.add(id);
+        for (const id of bucket) {
+          if (seen.has(id)) continue;
+          seen.add(id);
+          out.push(id);
+        }
       }
     }
-    return near;
+  }
+
+  const collectNearSeen = new Set<string>();
+  const nearScratch: string[] = [];
+  const resultScratch: string[] = [];
+
+  function appendUnindexed(index: GridIndex, out: string[]): void {
+    for (const instanceId of candidates()) {
+      if (index.indexed.has(instanceId)) continue;
+      out.push(instanceId);
+    }
+  }
+
+  function filterInRadius(
+    ids: readonly string[],
+    centerId: string | null,
+    centerPosition: EntityPosition,
+    radius: number,
+    filter: ((instanceId: string) => boolean) | undefined,
+  ): string[] {
+    resultScratch.length = 0;
+    for (const instanceId of ids) {
+      if (instanceId === centerId) continue;
+      if (filter !== undefined && !filter(instanceId)) continue;
+      const position = resolvePosition(instanceId);
+      if (position !== undefined && distanceBetween(centerPosition, position) <= radius) {
+        resultScratch.push(instanceId);
+      }
+    }
+    return resultScratch.slice();
   }
 
   return {
@@ -148,14 +217,12 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
       const centerPosition = resolveTarget(center);
       if (centerPosition === undefined) return [];
       const index = ensureGrid();
-      const near = index === null ? null : inRangeSet(index, centerPosition[0], centerPosition[2], radius);
-      return candidates().filter((instanceId) => {
-        if (instanceId === centerId) return false;
-        if (filter !== undefined && !filter(instanceId)) return false;
-        if (near !== null && index!.indexed.has(instanceId) && !near.has(instanceId)) return false;
-        const position = resolvePosition(instanceId);
-        return position !== undefined && distanceBetween(centerPosition, position) <= radius;
-      });
+      if (index === null) {
+        return filterInRadius(candidates(), centerId, centerPosition, radius, filter);
+      }
+      collectNear(index, centerPosition[0], centerPosition[2], radius, nearScratch);
+      appendUnindexed(index, nearScratch);
+      return filterInRadius(nearScratch, centerId, centerPosition, radius, filter);
     },
     hasLineOfSight(fromInstanceId, toInstanceId) {
       const from = resolvePosition(fromInstanceId);
@@ -171,20 +238,29 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
       if (forward === null) return [];
       const minDot = Math.cos((halfAngleDeg * Math.PI) / 180);
       const index = ensureGrid();
-      const near = index === null ? null : inRangeSet(index, origin[0], origin[2], radius);
-      return candidates().filter((instanceId) => {
-        if (instanceId === from) return false;
-        if (near !== null && index!.indexed.has(instanceId) && !near.has(instanceId)) return false;
+      const ids: readonly string[] =
+        index === null
+          ? candidates()
+          : (collectNear(index, origin[0], origin[2], radius, nearScratch),
+            appendUnindexed(index, nearScratch),
+            nearScratch);
+      resultScratch.length = 0;
+      for (const instanceId of ids) {
+        if (instanceId === from) continue;
         const position = resolvePosition(instanceId);
-        if (position === undefined) return false;
+        if (position === undefined) continue;
         const dx = position[0] - origin[0];
         const dz = position[2] - origin[2];
         const planarDistance = Math.sqrt(dx * dx + dz * dz);
-        if (planarDistance > radius) return false;
-        if (planarDistance === 0) return true;
+        if (planarDistance > radius) continue;
+        if (planarDistance === 0) {
+          resultScratch.push(instanceId);
+          continue;
+        }
         const dot = (forward[0] * dx + forward[1] * dz) / planarDistance;
-        return dot >= minDot;
-      });
+        if (dot >= minDot) resultScratch.push(instanceId);
+      }
+      return resultScratch.slice();
     },
     invalidate() {
       gridDirty = true;
