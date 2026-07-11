@@ -14,6 +14,7 @@ import type { TransportPipeFactory } from "./pipe";
 import {
   decodeWsClientMessage,
   encodeWsMessage,
+  inspectWsDecodeFailure,
   subscriptionKey,
   type WsAppearance,
   type WsChannel,
@@ -71,6 +72,8 @@ type Connection = {
   transport: HostRouterTransport;
   userId: string | null;
   subscriptions: Set<string>;
+  joinedServers: Set<string>;
+  queue: Promise<void>;
 };
 
 type PresenceEntry = PresencePoseState & { appearance?: WsAppearance };
@@ -397,6 +400,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             serverId: message.serverId,
             attributes: message.attributes,
           });
+          connection.joinedServers.add(result.serverId);
           reply(connection, message.id, result);
           return;
         }
@@ -406,6 +410,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             gameId: message.gameId,
             code: message.code,
           });
+          if (result !== null) connection.joinedServers.add(result.serverId);
           reply(connection, message.id, result);
           return;
         }
@@ -420,6 +425,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         }
         case "leave": {
           await host.leaveServer({ userId, serverId: message.serverId });
+          connection.joinedServers.delete(message.serverId);
           dropPresenceForServer(userId, message.serverId);
           dropVoiceForServer(userId, message.serverId);
           reply(connection, message.id, null);
@@ -494,18 +500,46 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }
   };
 
+  const leaveJoinedServers = (connection: Connection) => {
+    if (connection.userId === null) return;
+    const userId = connection.userId;
+    const servers = [...connection.joinedServers];
+    connection.joinedServers.clear();
+    for (const serverId of servers) {
+      void host.leaveServer({ userId, serverId }).catch(() => undefined);
+    }
+  };
+
   return {
     connect: (transport) => {
-      const connection: Connection = { transport, userId: null, subscriptions: new Set() };
+      const connection: Connection = {
+        transport,
+        userId: null,
+        subscriptions: new Set(),
+        joinedServers: new Set(),
+        queue: Promise.resolve(),
+      };
       connections.add(connection);
       return {
         handleRaw: (raw) => {
-          const message = decodeWsClientMessage(typeof raw === "string" ? raw : String(raw));
-          if (message === null) return;
-          void handleMessage(connection, message);
+          connection.queue = connection.queue
+            .then(async () => {
+              const text = typeof raw === "string" ? raw : String(raw);
+              const message = decodeWsClientMessage(text);
+              if (message === null) {
+                const failure = inspectWsDecodeFailure(text);
+                if (failure.id !== undefined) {
+                  replyError(connection, failure.id, failure.reason);
+                }
+                return;
+              }
+              await handleMessage(connection, message);
+            })
+            .catch(() => undefined);
         },
         close: () => {
           connections.delete(connection);
+          leaveJoinedServers(connection);
           dropPresence(connection);
           dropVoice(connection);
         },

@@ -13,6 +13,7 @@ import type { VoiceTransport } from "@jgengine/core/multiplayer/voiceContract";
 import {
   decodeWsServerMessage,
   encodeWsMessage,
+  inspectWsDecodeFailure,
   subscriptionKey,
   type WsChannel,
   type WsChatMessage,
@@ -30,8 +31,12 @@ export type WsBackendOptions = {
   token?: string;
   webSocketFactory?: (url: string) => WebSocket;
   reconnectDelayMs?: number;
+  maxReconnectDelayMs?: number;
+  rpcTimeoutMs?: number;
   poseTuning?: PoseSyncTuning;
   now?: () => number;
+  setTimeoutFn?: typeof setTimeout;
+  clearTimeoutFn?: typeof clearTimeout;
 };
 
 export type WsPresenceSync = {
@@ -81,9 +86,18 @@ const DEFAULT_POSE_TUNING: PoseSyncTuning = {
   rotationEpsilon: 0.01,
 };
 
+const DEFAULT_RPC_TIMEOUT_MS = 15_000;
+const DEFAULT_RECONNECT_DELAY_MS = 1_000;
+const DEFAULT_MAX_RECONNECT_DELAY_MS = 30_000;
+
 type PendingRequest = {
+  id: number;
   resolve: (result: unknown) => void;
   reject: (error: Error) => void;
+  build: (id: number) => WsClientMessage;
+  timer: ReturnType<typeof setTimeout> | null;
+  kind: "rpc" | "hello";
+  sent: boolean;
 };
 
 type Subscription = {
@@ -97,7 +111,11 @@ type Subscription = {
 
 export function createWsBackend(options: WsBackendOptions): WsBackend {
   const now = options.now ?? Date.now;
-  const reconnectDelayMs = options.reconnectDelayMs ?? 1_000;
+  const baseReconnectDelayMs = options.reconnectDelayMs ?? DEFAULT_RECONNECT_DELAY_MS;
+  const maxReconnectDelayMs = options.maxReconnectDelayMs ?? DEFAULT_MAX_RECONNECT_DELAY_MS;
+  const rpcTimeoutMs = options.rpcTimeoutMs ?? DEFAULT_RPC_TIMEOUT_MS;
+  const schedule = options.setTimeoutFn ?? setTimeout;
+  const cancel = options.clearTimeoutFn ?? clearTimeout;
   const pipeFactory: TransportPipeFactory =
     options.pipe ??
     (() => {
@@ -110,15 +128,37 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   let open = false;
   let ready: Promise<void> | null = null;
   let closed = false;
+  let wantConnection = false;
   let nextId = 1;
+  let reconnectAttempt = 0;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const pending = new Map<number, PendingRequest>();
   const subscriptions = new Map<string, Subscription>();
 
+  const clearRequestTimer = (request: PendingRequest) => {
+    if (request.timer !== null) {
+      cancel(request.timer);
+      request.timer = null;
+    }
+  };
+
   const failPending = (reason: string) => {
     for (const request of pending.values()) {
+      clearRequestTimer(request);
       request.reject(new Error(reason));
     }
     pending.clear();
+  };
+
+  const armRpcTimeout = (request: PendingRequest) => {
+    if (rpcTimeoutMs <= 0 || request.kind === "hello") return;
+    request.timer = schedule(() => {
+      const current = pending.get(request.id);
+      if (current !== request) return;
+      pending.delete(request.id);
+      request.timer = null;
+      request.reject(new Error("RPC timeout"));
+    }, rpcTimeoutMs);
   };
 
   const rawSend = (message: WsClientMessage) => {
@@ -126,14 +166,55 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     pipe.send(encodeWsMessage(message));
   };
 
+  const resendPendingRpcs = () => {
+    const entries = [...pending.entries()];
+    pending.clear();
+    for (const [, request] of entries) {
+      if (request.kind === "hello") {
+        clearRequestTimer(request);
+        request.reject(new Error("Connection reset"));
+        continue;
+      }
+      request.id = nextId++;
+      request.sent = true;
+      pending.set(request.id, request);
+      rawSend(request.build(request.id));
+    }
+  };
+
+  const resubscribeAll = () => {
+    for (const subscription of subscriptions.values()) {
+      rawSend({
+        v: 1,
+        t: "subscribe",
+        id: nextId++,
+        channel: subscription.channel,
+        serverId: subscription.serverId,
+        action: subscription.action,
+      });
+    }
+  };
+
   const handleMessage = (raw: string) => {
     const message = decodeWsServerMessage(raw);
-    if (message === null) return;
+    if (message === null) {
+      const failure = inspectWsDecodeFailure(raw);
+      if (failure.id !== undefined) {
+        const request = pending.get(failure.id);
+        if (request !== undefined) {
+          pending.delete(failure.id);
+          clearRequestTimer(request);
+          request.reject(new Error(failure.reason));
+        }
+      }
+      return;
+    }
 
     if (message.t === "reply") {
       const request = pending.get(message.id);
       if (request === undefined) return;
       pending.delete(message.id);
+      clearRequestTimer(request);
       if (message.ok) {
         request.resolve(message.result);
       } else {
@@ -157,44 +238,92 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     for (const callback of subscription.callbacks) callback(data);
   };
 
+  const clearReconnectTimer = () => {
+    if (reconnectTimer !== null) {
+      cancel(reconnectTimer);
+      reconnectTimer = null;
+    }
+  };
+
+  const scheduleReconnect = () => {
+    if (closed || !wantConnection || reconnectTimer !== null) return;
+    const delay = Math.min(
+      maxReconnectDelayMs,
+      baseReconnectDelayMs * 2 ** reconnectAttempt,
+    );
+    reconnectAttempt += 1;
+    reconnectTimer = schedule(() => {
+      reconnectTimer = null;
+      if (closed || !wantConnection) return;
+      void connect().catch(() => undefined);
+    }, delay);
+  };
+
   const connect = (): Promise<void> => {
     if (closed) return Promise.reject(new Error("Backend closed"));
+    wantConnection = true;
     if (ready !== null) return ready;
 
+    clearReconnectTimer();
     ready = new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const settleReject = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        reject(error);
+      };
+      const settleResolve = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+
       pipe = pipeFactory({
         onOpen: () => {
           open = true;
           const id = nextId++;
-          pending.set(id, {
-            resolve: () => {
-              for (const subscription of subscriptions.values()) {
-                rawSend({
-                  v: 1,
-                  t: "subscribe",
-                  id: nextId++,
-                  channel: subscription.channel,
-                  serverId: subscription.serverId,
-                  action: subscription.action,
-                });
-              }
-              resolve();
-            },
-            reject,
+          const helloBuild = (requestId: number): WsClientMessage => ({
+            v: 1,
+            t: "hello",
+            id: requestId,
+            userId: options.userId,
+            token: options.token,
           });
-          rawSend({ v: 1, t: "hello", id, userId: options.userId, token: options.token });
+          pending.set(id, {
+            id,
+            resolve: () => {
+              reconnectAttempt = 0;
+              resubscribeAll();
+              resendPendingRpcs();
+              settleResolve();
+            },
+            reject: (error) => {
+              settleReject(error);
+            },
+            build: helloBuild,
+            timer: null,
+            kind: "hello",
+            sent: true,
+          });
+          rawSend(helloBuild(id));
         },
         onMessage: handleMessage,
         onClose: () => {
           open = false;
-          failPending("Connection closed");
           pipe = null;
           ready = null;
-          reject(new Error("Connection closed"));
-          if (!closed && subscriptions.size > 0) {
-            setTimeout(() => {
-              if (!closed) void connect().catch(() => undefined);
-            }, reconnectDelayMs);
+          for (const [id, request] of [...pending.entries()]) {
+            if (request.kind === "hello") {
+              pending.delete(id);
+              clearRequestTimer(request);
+              request.reject(new Error("Connection closed"));
+            } else {
+              request.sent = false;
+            }
+          }
+          settleReject(new Error("Connection closed"));
+          if (!closed && wantConnection) {
+            scheduleReconnect();
           }
         },
       });
@@ -202,12 +331,35 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     return ready;
   };
 
-  const request = async (build: (id: number) => WsClientMessage): Promise<unknown> => {
-    await connect();
+  const request = (build: (id: number) => WsClientMessage): Promise<unknown> => {
+    if (closed) return Promise.reject(new Error("Backend closed"));
+    wantConnection = true;
     const id = nextId++;
     return new Promise((resolve, reject) => {
-      pending.set(id, { resolve, reject });
-      rawSend(build(id));
+      const entry: PendingRequest = {
+        id,
+        resolve,
+        reject,
+        build,
+        timer: null,
+        kind: "rpc",
+        sent: false,
+      };
+      pending.set(id, entry);
+      armRpcTimeout(entry);
+      void connect()
+        .then(() => {
+          if (pending.get(entry.id) !== entry || entry.sent || !open) return;
+          entry.sent = true;
+          rawSend(build(entry.id));
+        })
+        .catch(() => {
+          if (closed && pending.get(entry.id) === entry) {
+            pending.delete(entry.id);
+            clearRequestTimer(entry);
+            reject(new Error("Backend closed"));
+          }
+        });
     });
   };
 
@@ -406,6 +558,8 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     },
     close: () => {
       closed = true;
+      wantConnection = false;
+      clearReconnectTimer();
       failPending("Backend closed");
       pipe?.close();
       pipe = null;

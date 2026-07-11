@@ -4,6 +4,7 @@ import {
   decodeWsClientMessage,
   decodeWsServerMessage,
   encodeWsMessage,
+  inspectWsDecodeFailure,
   subscriptionKey,
   type WsClientMessage,
   type WsServerMessage,
@@ -162,4 +163,37 @@ test("pose validation rejects malformed appearance payloads", () => {
   expect(
     decodeWsClientMessage(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: {} } })),
   ).not.toBeNull();
+});
+
+test("pose validation rejects NaN and Infinity fields", () => {
+  const base = { x: 1, y: 0, z: 2, rotationY: 0, rotationPitch: 0 };
+  for (const field of ["x", "y", "z", "rotationY", "rotationPitch"] as const) {
+    expect(
+      decodeWsClientMessage(
+        JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, [field]: Number.NaN } }),
+      ),
+    ).toBeNull();
+    expect(
+      decodeWsClientMessage(
+        JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, [field]: Number.POSITIVE_INFINITY } }),
+      ),
+    ).toBeNull();
+    expect(
+      decodeWsClientMessage(
+        JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, [field]: Number.NEGATIVE_INFINITY } }),
+      ),
+    ).toBeNull();
+  }
+});
+
+test("inspectWsDecodeFailure reports version mismatch and malformed payloads with ids", () => {
+  expect(inspectWsDecodeFailure("not json")).toEqual({ reason: "Invalid JSON" });
+  expect(inspectWsDecodeFailure(JSON.stringify({ v: 2, t: "hello", id: 9, userId: "a" }))).toEqual({
+    reason: "Protocol version mismatch",
+    id: 9,
+  });
+  expect(inspectWsDecodeFailure(JSON.stringify({ v: 1, t: "hello", id: 3, userId: 1 }))).toEqual({
+    reason: "Malformed message",
+    id: 3,
+  });
 });

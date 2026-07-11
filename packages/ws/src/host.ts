@@ -261,6 +261,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
         const runtime = resolveRuntime(args.gameId);
 
         let entry = args.serverId === undefined ? null : await getLive(args.serverId);
+        if (args.serverId !== undefined && entry === null) {
+          throw new Error("Server not found");
+        }
         if (entry !== null && entry.record.gameId !== args.gameId) {
           throw new Error("Server belongs to a different game");
         }

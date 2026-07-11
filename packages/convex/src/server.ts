@@ -400,6 +400,10 @@ export function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; 
       let server =
         args.serverId !== undefined ? await ctx.db.get("jgGameServers", args.serverId) : null;
 
+      if (args.serverId !== undefined && !server) {
+        throw new ConvexError("Server not found");
+      }
+
       if (server && server.gameId !== args.gameId) {
         throw new ConvexError("Server belongs to a different game");
       }

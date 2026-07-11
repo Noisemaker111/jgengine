@@ -14,7 +14,7 @@ import {
 export type ServerLoopHooks = {
   onInit?: (ctx: RuntimeInitContext) => void;
   onNewPlayer?: (ctx: RuntimeLoopContext) => void;
-  onTick?: (ctx: RuntimeLoopContext, dtSeconds: number) => void;
+  onTick?: (ctx: RuntimeWorldContext, dtSeconds: number) => void;
 };
 
 export type RuntimeInitContext = {
@@ -27,6 +27,10 @@ export type RuntimeLoopContext = RuntimeInitContext & {
     userId: string;
     isNew: boolean;
   };
+};
+
+export type RuntimeWorldContext = RuntimeInitContext & {
+  playerIds: readonly string[];
 };
 
 export type GameRuntimeDefinition = {
@@ -102,18 +106,18 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
     tick(snapshot, dtSeconds) {
       if (!loop?.onTick) return snapshot;
       let current = snapshot;
-      for (const userId of Object.keys(current.players)) {
-        const ctx: RuntimeLoopContext = {
-          get snapshot() {
-            return current;
-          },
-          player: { userId, isNew: false },
-          setSnapshot(next) {
-            current = next;
-          },
-        };
-        loop.onTick(ctx, dtSeconds);
-      }
+      const ctx: RuntimeWorldContext = {
+        get snapshot() {
+          return current;
+        },
+        get playerIds() {
+          return Object.keys(current.players);
+        },
+        setSnapshot(next) {
+          current = next;
+        },
+      };
+      loop.onTick(ctx, dtSeconds);
       return current;
     },
 
