@@ -1,4 +1,5 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
+import type { BuildingPaletteOverrides, BuildingStyle } from "@jgengine/core/world/buildings";
 import { building, environment, grass, pad, rain, sky, terrain, type WorldFeature } from "@jgengine/core/world/features";
 import { COURSE_LENGTH } from "./game/course/catalog";
 
@@ -16,16 +17,45 @@ export interface FarmsteadSite {
   readonly id: string;
   readonly progress: number;
   readonly x: number;
-  readonly style: string;
+  readonly style: BuildingStyle;
+  readonly palette?: BuildingPaletteOverrides;
   readonly count: number;
 }
 
 export const FARMSTEADS: readonly FarmsteadSite[] = [
-  { id: "cutbank-farm", progress: 150, x: 55, style: "homestead", count: 3 },
-  { id: "silo-row-farm", progress: 520, x: 62, style: "grain-co-op", count: 4 },
-  { id: "coulee-farm", progress: 990, x: 50, style: "ranch", count: 3 },
-  { id: "windbreak-farm", progress: 1450, x: 58, style: "barnyard", count: 3 },
-  { id: "shelter-farm", progress: 1900, x: 40, style: "shelter", count: 2 },
+  { id: "cutbank-farm", progress: 150, x: 55, style: "frontier", count: 3 },
+  {
+    id: "silo-row-farm",
+    progress: 520,
+    x: 62,
+    style: "frontier",
+    palette: { wall: "#c9a04a", roof: "#8a5a1a" },
+    count: 4,
+  },
+  {
+    id: "coulee-farm",
+    progress: 990,
+    x: 50,
+    style: "frontier",
+    palette: { wall: "#a67c52", roof: "#5c3a22" },
+    count: 3,
+  },
+  {
+    id: "windbreak-farm",
+    progress: 1450,
+    x: 58,
+    style: "frontier",
+    palette: { wall: "#6e5233", roof: "#3f2c1a" },
+    count: 3,
+  },
+  {
+    id: "shelter-farm",
+    progress: 1900,
+    x: 40,
+    style: "frontier",
+    palette: { wall: "#8d8072", roof: "#57503f" },
+    count: 2,
+  },
 ];
 
 export const world: WorldFeature = environment({
@@ -68,6 +98,7 @@ export const world: WorldFeature = environment({
       storyHeight: 3.2,
       spacing: 4,
       style: farm.style,
+      ...(farm.palette === undefined ? {} : { palette: farm.palette }),
       seed: `stormline-${farm.id}`,
     }),
   ),

@@ -2,6 +2,7 @@ import type { ReadableEngineStore } from "@jgengine/react/engineStore";
 
 import {
   contributions,
+  generateYear,
   summarize,
   type ContributionData,
   type ContributionStats,
@@ -27,9 +28,10 @@ export interface CanopyStore extends ReadableEngineStore<CanopyState> {
 }
 
 export function createCanopyStore(): CanopyStore {
+  const demoCells = generateYear(1);
   let state: CanopyState = {
-    cells: [],
-    stats: summarize([]),
+    cells: demoCells,
+    stats: summarize(demoCells),
     profile: null,
     source: null,
     status: "idle",

@@ -29,7 +29,7 @@ export const world: WorldFeature = environment({
       stories: zone.stories,
       storyHeight: 3.4,
       spacing: 7,
-      style: "aerodrome",
+      style: "aerial",
       seed: zone.seed,
     }),
   ),

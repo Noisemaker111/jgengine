@@ -2,7 +2,26 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "env": {
+    "GIT_TERMINAL_PROMPT": "0",
+    "GIT_EDITOR": "true",
+    "GIT_PAGER": "cat",
+    "PAGER": "cat",
+    "GIT_SSH_COMMAND": "ssh -oBatchMode=yes"
+  },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Monitor",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Monitor is banned in this repo: a monitor dies the moment the turn ends, which has stalled every ship motion that used one. Wait with a foreground sleep and re-check inline, all within the same turn.\"}}'"
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [

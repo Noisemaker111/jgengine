@@ -3,12 +3,14 @@ import { describe, expect, test } from "bun:test";
 import {
   addTrauma,
   angleDelta,
+  bankRollStep,
   blendShoulder,
   chaseDesiredPosition,
   cinematicSample,
   clamp,
   createTrauma,
   crossfadePose,
+  leadFollowPoint,
   lockOnPose,
   observerPose,
   resolveChase,
@@ -170,8 +172,9 @@ describe("lockOnPose", () => {
 describe("shoulder rig", () => {
   test("shoulder swap flips lateral offset sign", () => {
     const shoulder = resolveShoulder({ shoulderOffset: 1, heightOffset: 1.6, distance: 3 }, false);
-    const right = shoulderPose({ x: 0, y: 0, z: 0 }, 0, 0, 1, shoulder);
-    const left = shoulderPose({ x: 0, y: 0, z: 0 }, 0, 0, -1, shoulder);
+    const facingNorth = Math.PI;
+    const right = shoulderPose({ x: 0, y: 0, z: 0 }, facingNorth, 0, 1, shoulder);
+    const left = shoulderPose({ x: 0, y: 0, z: 0 }, facingNorth, 0, -1, shoulder);
     expect(Math.sign(right.position.x)).toBe(1);
     expect(Math.sign(left.position.x)).toBe(-1);
   });
@@ -376,6 +379,73 @@ describe("rtsPanKeysConflict", () => {
 
   test("arrow keys and Q/E never count as a conflict", () => {
     expect(rtsPanKeysConflict({ turn: ["ArrowLeft", "ArrowRight"], lean: ["KeyQ", "KeyE"] })).toBe(false);
+  });
+});
+
+describe("resolveChase defaults for lead/bank", () => {
+  test("leadTime 0, leadMax 4, bankPerYawRate 0, bankMax 0.35, bankDamping 8", () => {
+    const resolved = resolveChase(undefined);
+    expect(resolved.leadTime).toBe(0);
+    expect(resolved.leadMax).toBe(4);
+    expect(resolved.bankPerYawRate).toBe(0);
+    expect(resolved.bankMax).toBeCloseTo(0.35, 5);
+    expect(resolved.bankDamping).toBe(8);
+  });
+});
+
+describe("leadFollowPoint", () => {
+  test("zero lead when leadTime is 0", () => {
+    const resolved = resolveChase(undefined);
+    const follow = { x: 5, y: 0, z: 5 };
+    const previous = { x: 0, y: 0, z: 0 };
+    expect(leadFollowPoint(follow, previous, 1 / 60, resolved)).toEqual(follow);
+  });
+
+  test("leads along the target's frame velocity scaled by leadTime", () => {
+    const resolved = resolveChase({ lead: { time: 0.5, max: 10 } });
+    const follow = { x: 5, y: 0, z: 5 };
+    const previous = { x: 0, y: 0, z: 0 };
+    expect(leadFollowPoint(follow, previous, 1, resolved)).toEqual({ x: 7.5, y: 0, z: 7.5 });
+  });
+
+  test("clamps the lead offset to leadMax", () => {
+    const resolved = resolveChase({ lead: { time: 1, max: 1 } });
+    const follow = { x: 100, y: 0, z: 0 };
+    const previous = { x: 0, y: 0, z: 0 };
+    expect(leadFollowPoint(follow, previous, 1, resolved)).toEqual({ x: 101, y: 0, z: 0 });
+  });
+});
+
+describe("bankRollStep", () => {
+  test("zero when bankPerYawRate is 0", () => {
+    const resolved = resolveChase(undefined);
+    expect(bankRollStep(0, 1.0, 0.5, 1 / 60, resolved)).toBe(0);
+  });
+
+  test("rolls opposite the yaw rate's sign", () => {
+    const resolved = resolveChase({ bank: { perYawRate: 1, max: 0.5, damping: 8 } });
+    expect(bankRollStep(0, 1.0, 0.5, 1, resolved)).toBeLessThan(0);
+    expect(bankRollStep(0, 0.5, 1.0, 1, resolved)).toBeGreaterThan(0);
+  });
+
+  test("clamps the roll target at bankMax", () => {
+    const resolved = resolveChase({ bank: { perYawRate: 1, max: 0.5, damping: 8 } });
+    expect(Math.abs(bankRollStep(0, 100, 0, 1, resolved))).toBeCloseTo(0.5, 5);
+  });
+
+  test("damps toward the target roll over successive steps", () => {
+    const resolved = resolveChase({ bank: { perYawRate: 1, max: 10, damping: 2 } });
+    const dt = 1 / 60;
+    let roll = 0;
+    let previous = 0;
+    for (let i = 0; i < 5; i += 1) {
+      const next = bankRollStep(roll, 1, 0, dt, resolved);
+      expect(Math.abs(next)).toBeGreaterThan(Math.abs(previous));
+      previous = next;
+      roll = next;
+    }
+    for (let i = 0; i < 295; i += 1) roll = bankRollStep(roll, 1, 0, dt, resolved);
+    expect(roll).toBeCloseTo(-10, 1);
   });
 });
 

@@ -25,7 +25,7 @@ export const world: WorldFeature = environment({
       stories: CONTAINER_STORIES,
       storyHeight: 2.3,
       spacing: 3,
-      style: "container-stack",
+      style: "industrial",
       seed: "dd-containers-a",
     }),
     building({
@@ -35,7 +35,7 @@ export const world: WorldFeature = environment({
       stories: CONTAINER_STORIES,
       storyHeight: 2.3,
       spacing: 3,
-      style: "container-stack",
+      style: "industrial",
       seed: "dd-containers-b",
     }),
     building({
@@ -45,7 +45,7 @@ export const world: WorldFeature = environment({
       stories: CONTAINER_STORIES,
       storyHeight: 2.3,
       spacing: 3,
-      style: "container-stack",
+      style: "industrial",
       seed: "dd-containers-c",
     }),
     building({
@@ -55,7 +55,7 @@ export const world: WorldFeature = environment({
       stories: CONTAINER_STORIES,
       storyHeight: 2.3,
       spacing: 3,
-      style: "container-stack",
+      style: "industrial",
       seed: "dd-containers-d",
     }),
     building({
@@ -65,7 +65,8 @@ export const world: WorldFeature = environment({
       stories: WAREHOUSE_STORIES,
       storyHeight: 3.2,
       spacing: 6,
-      style: "warehouse",
+      style: "industrial",
+      palette: { wall: "#3f4652", roof: "#23272f", storeSign: "#eab308" },
       seed: "dd-warehouse-a",
     }),
     building({
@@ -75,7 +76,8 @@ export const world: WorldFeature = environment({
       stories: WAREHOUSE_STORIES,
       storyHeight: 3.2,
       spacing: 6,
-      style: "warehouse",
+      style: "industrial",
+      palette: { wall: "#3f4652", roof: "#23272f", storeSign: "#eab308" },
       seed: "dd-warehouse-b",
     }),
   ],

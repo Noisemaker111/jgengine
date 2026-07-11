@@ -1,5 +1,6 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useEntityStat, useFeed, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 
 import { keybinds } from "../keybinds";
 import { goalProgress } from "../physics";
@@ -97,22 +98,23 @@ function Banner({ userId }: { userId: string }) {
 
 export function GameUI() {
   const { userId } = usePlayer();
+  const layout = useHudLayout({ storageKey: "platform-hopper" });
   return (
-    <div className="pointer-events-none absolute inset-0 font-sans text-white">
-      <div className="absolute left-4 top-4 rounded-lg border border-white/15 bg-black/55 px-3 py-2 shadow-lg">
+    <HudCanvas layout={layout} className="font-sans text-white">
+      <HudPanel id="intro" anchor="top-left" inset={{ x: 16, y: 16 }} className="rounded-lg border border-white/15 bg-black/55 px-3 py-2 shadow-lg">
         <p className="text-xs font-semibold uppercase tracking-widest text-sky-300/80">Platform Hopper</p>
         <p className="mt-0.5 text-sm text-white/85">Run right, stomp the stompers, dodge the spikes, reach the flag.</p>
-      </div>
-      <div className="absolute right-4 top-4 flex flex-col items-end gap-2 rounded-lg border border-white/15 bg-black/55 px-3 py-2 shadow-lg">
+      </HudPanel>
+      <HudPanel id="stats" anchor="top-right" inset={{ x: 16, y: 16 }} className="flex flex-col items-end gap-2 rounded-lg border border-white/15 bg-black/55 px-3 py-2 shadow-lg">
         <Hearts userId={userId} />
         <Score userId={userId} />
-      </div>
-      <div className="absolute inset-x-0 top-4 flex justify-center">
+      </HudPanel>
+      <HudPanel id="goal-progress" anchor="top" inset={{ x: 0, y: 16 }}>
         <GoalProgress userId={userId} />
-      </div>
+      </HudPanel>
       <div className="absolute inset-x-0 top-1/3 flex justify-center">
         <Banner userId={userId} />
       </div>
-    </div>
+    </HudCanvas>
   );
 }

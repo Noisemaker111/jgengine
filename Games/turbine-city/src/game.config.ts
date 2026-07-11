@@ -20,6 +20,7 @@ export const game = defineGame({
   renderEntity: renderGlider,
   renderObject: renderCityProp,
   objectStyles: OBJECT_STYLES,
+  orientation: "landscape",
   camera: {
     rig: "chase",
     frustum: { far: 900 },

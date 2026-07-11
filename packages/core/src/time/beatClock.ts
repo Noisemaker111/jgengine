@@ -66,6 +66,50 @@ export function createBeatClock(config: BeatClockConfig, onBeat?: (beatIndex: nu
   };
 }
 
+/** Signed offset (game-seconds) from `nowSec` to the nearest beat boundary — negative = early, positive = late (#286.12). */
+export function nearestBeatDelta(nowSec: number, beatDurationSec: number): number {
+  const beatIndex = Math.round(nowSec / beatDurationSec);
+  return nowSec - beatIndex * beatDurationSec;
+}
+
+export interface BeatAccuracyTier {
+  id: string;
+  /** Maximum absolute delta (game-seconds) from the beat that still earns this tier. */
+  windowSec: number;
+}
+
+export interface BeatJudgement {
+  /** The matched tier id, or `"miss"` beyond every tier. */
+  tier: string;
+  /** Signed delta to the nearest beat — negative = early, positive = late. */
+  deltaSec: number;
+}
+
+export const DEFAULT_BEAT_TIERS: readonly BeatAccuracyTier[] = [
+  { id: "perfect", windowSec: 0.06 },
+  { id: "good", windowSec: 0.14 },
+];
+
+/** Classify a press against the nearest beat into tiered judgements (perfect/good/miss by default). Tiers must be ordered tightest-first. */
+export function classifyBeatAccuracy(
+  nowSec: number,
+  beatDurationSec: number,
+  tiers: readonly BeatAccuracyTier[] = DEFAULT_BEAT_TIERS,
+): BeatJudgement {
+  const deltaSec = nearestBeatDelta(nowSec, beatDurationSec);
+  const magnitude = Math.abs(deltaSec);
+  for (const tier of tiers) {
+    if (magnitude <= tier.windowSec) return { tier: tier.id, deltaSec };
+  }
+  return { tier: "miss", deltaSec };
+}
+
+/** Whether a snapshot sits inside a bar-relative open window `[fromBeat, toBeat)` — e.g. "act on beats 2-4 of every bar" (#286.12). */
+export function inBarWindow(snapshot: BeatSnapshot, fromBeat: number, toBeat: number): boolean {
+  const barBeat = snapshot.beatInBar + snapshot.phase;
+  return barBeat >= fromBeat && barBeat < toBeat;
+}
+
 const QUANTIZE_EPSILON = 1e-6;
 
 /** The absolute beat-time (game-seconds) that a press at `nowSec` quantizes to: the same instant if it lands on a beat boundary, else the next one. */

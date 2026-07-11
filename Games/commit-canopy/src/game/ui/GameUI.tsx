@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 import { useEngineState } from "@jgengine/react/engineStore";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 
 import type { ContributionStats, GitHubProfile } from "@jgengine/github";
 import creditAvatar from "../credit-avatar.jpg";
@@ -286,6 +287,7 @@ function Sidebar({ children }: { children: ReactNode }) {
 
 function GameUIInner() {
   const state = useEngineState(store);
+  const layout = useHudLayout({ storageKey: "commit-canopy" });
   const { stats } = state;
   const hoveredCell = state.hovered === null ? null : (state.cells[state.hovered] ?? null);
 
@@ -321,10 +323,10 @@ function GameUIInner() {
   };
 
   return (
-    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", fontFamily: FONT }}>
+    <HudCanvas layout={layout} style={{ fontFamily: FONT }}>
       <style>{STYLE}</style>
 
-      <div style={{ position: "absolute", top: 16, left: 16 }}>
+      <HudPanel id="sidebar" anchor="top-left" inset={{ x: 16, y: 16 }}>
         <Sidebar>
           <div>
             <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: "-0.01em", color: EM.title }}>
@@ -408,7 +410,7 @@ function GameUIInner() {
 
           <Credit />
         </Sidebar>
-      </div>
+      </HudPanel>
 
       {hoveredCell !== null && cursor !== null ? (
         <div
@@ -432,7 +434,7 @@ function GameUIInner() {
           <span style={{ color: EM.labelDim }}> · {hoveredCell.label}</span>
         </div>
       ) : null}
-    </div>
+    </HudCanvas>
   );
 }
 

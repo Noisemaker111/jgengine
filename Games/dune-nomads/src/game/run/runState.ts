@@ -115,8 +115,8 @@ export function stepRun(state: RunState, dt: number, input: RunInput, deps: RunD
   }
 
   let heading = state.player.heading;
-  if (input.steerLeft) heading -= STEER_RATE * dt;
-  if (input.steerRight) heading += STEER_RATE * dt;
+  if (input.steerLeft) heading += STEER_RATE * dt;
+  if (input.steerRight) heading -= STEER_RATE * dt;
 
   const slope = slopeAlongHeading(deps.terrainField, state.player.x, state.player.z, heading);
   const pace = computePaceMultiplier({ slope, windVector: wind.vector, headingRad: heading });

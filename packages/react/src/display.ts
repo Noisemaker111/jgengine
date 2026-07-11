@@ -1,7 +1,8 @@
 /**
  * Viewport/input-modality profile for adaptive HUDs: coarse pointer means a
  * touchscreen is the primary input (mount touch controls, enlarge tap
- * targets), compact means phone-width layout (collapse side panels), portrait
+ * targets), compact means phone-scale layout — narrow width or the short
+ * height of a landscape phone (collapse side panels), portrait
  * distinguishes the two phone orientations. Values track live media-query
  * changes and are safe to read during SSR (everything false).
  */
@@ -16,7 +17,7 @@ export interface DisplayProfile {
 
 const QUERIES = {
   coarsePointer: "(pointer: coarse)",
-  compact: "(max-width: 820px)",
+  compact: "(max-width: 820px), (max-height: 500px)",
   portrait: "(orientation: portrait)",
 } as const;
 

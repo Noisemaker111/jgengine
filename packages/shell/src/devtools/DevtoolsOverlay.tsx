@@ -4,19 +4,33 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   devtools,
   instrumentLatency,
+  LONG_FRAME_MS,
   type DevtoolsControl,
   type DevtoolsOverrides,
   type DevtoolsSnapshot,
   type DiscoveredEntry,
+  type LongFrameEvent,
+  type PhaseStats,
 } from "@jgengine/core/devtools/devtools";
 import { bindingLabel, type ActionCodes, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import type { ShellMultiplayer } from "../multiplayer";
 import type { PlayableGame } from "../registry";
 
 const REFRESH_MS = 250;
-const LONG_FRAME_MS = 33.4;
+const PHASE_BAR_BUDGET_MS = 16.7;
+const CULPRIT_HINTS: Record<string, string> = {
+  "outside-sim": "Cost is outside the sim driver — three.js render, React commit, GPU, GC, or tab throttle.",
+  sim: "Sim is slow but no named phase stands out — wrap hot onTick work with measure(\"name\", fn).",
+  onTick: "Game loop.onTick is the hotspot — profile inside it with measure(\"physics\"|\"ai\"|…, fn).",
+  pose: "Shell movement / collision / voxel step is expensive.",
+  actions: "Input → command dispatch / hotbar / interact is expensive.",
+  presence: "Multiplayer pose sync is expensive.",
+  pickup: "Auto-pickup nearest scan is expensive.",
+  "time+input": "Clock advance or input publish is unexpectedly heavy.",
+};
 
 function overridesStorageKey(gameName: string): string {
   return `jg-devtools:${gameName}`;
@@ -139,7 +153,145 @@ function FrameBars({ frames }: { frames: readonly number[] }) {
           key={index}
           className={`w-1 rounded-sm ${frameMs > LONG_FRAME_MS ? "bg-red-500" : "bg-emerald-500/80"}`}
           style={{ height: `${Math.min(100, (frameMs / (LONG_FRAME_MS * 2)) * 100)}%` }}
+          title={`${frameMs.toFixed(1)}ms`}
         />
+      ))}
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: string }) {
+  return <div className="text-[9px] uppercase tracking-wide text-neutral-500">{children}</div>;
+}
+
+function PhaseBars({ phases, avgSimMs }: { phases: readonly PhaseStats[]; avgSimMs: number }) {
+  if (phases.length === 0) {
+    return <div className="text-neutral-500">No phase samples yet.</div>;
+  }
+  const budget = Math.max(PHASE_BAR_BUDGET_MS, avgSimMs, ...phases.map((phase) => phase.avgMs));
+  return (
+    <div className="space-y-1">
+      {phases.slice(0, 8).map((phase) => {
+        const hot = phase.avgMs > 4 || phase.maxMs > 8;
+        return (
+          <div key={phase.name} className="space-y-0.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className={`truncate ${hot ? "text-amber-300" : "text-neutral-300"}`} title={phase.name}>
+                {phase.name}
+              </span>
+              <span className={`shrink-0 font-mono ${hot ? "text-amber-300" : "text-neutral-100"}`}>
+                {ms(phase.avgMs)}
+                <span className="text-neutral-500"> avg</span>
+                <span className="text-neutral-600"> · </span>
+                {ms(phase.maxMs)}
+                <span className="text-neutral-500"> max</span>
+                <span className="text-neutral-600"> · </span>
+                {phase.pctOfSim.toFixed(0)}%
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-neutral-800">
+              <div
+                className={`h-full rounded-full ${hot ? "bg-amber-400" : "bg-emerald-500/80"}`}
+                style={{ width: `${Math.min(100, (phase.avgMs / budget) * 100)}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BudgetSplit({ simMs, outsideMs }: { simMs: number; outsideMs: number }) {
+  const total = Math.max(1e-6, simMs + outsideMs);
+  const simPct = (simMs / total) * 100;
+  const outsideHot = outsideMs > simMs && outsideMs > 4;
+  const simHot = simMs > 8;
+  return (
+    <div className="space-y-1">
+      <div className="flex h-2 overflow-hidden rounded-full bg-neutral-800">
+        <div className={`h-full ${simHot ? "bg-amber-400" : "bg-sky-400"}`} style={{ width: `${simPct}%` }} title={`sim ${ms(simMs)}`} />
+        <div
+          className={`h-full ${outsideHot ? "bg-red-500" : "bg-violet-400/80"}`}
+          style={{ width: `${100 - simPct}%` }}
+          title={`outside sim ${ms(outsideMs)}`}
+        />
+      </div>
+      <div className="flex justify-between gap-2 font-mono text-[10px]">
+        <span className={simHot ? "text-amber-300" : "text-sky-300"}>sim {ms(simMs)}</span>
+        <span className={outsideHot ? "text-red-400" : "text-violet-300"}>outside {ms(outsideMs)}</span>
+      </div>
+      <div className="text-[10px] text-neutral-500">
+        outside = render / React / GPU / GC / missed vsync — not measured inside the sim driver
+      </div>
+    </div>
+  );
+}
+
+function diagnose(frame: NonNullable<ReturnType<typeof devtools.frame.stats>>, longs: readonly LongFrameEvent[]): string | null {
+  if (frame.fps >= 55 && frame.longFrames === 0 && longs.length === 0) return null;
+  const recent = longs.slice(-5);
+  const culpritCounts = new Map<string, number>();
+  for (const event of recent) {
+    culpritCounts.set(event.culprit, (culpritCounts.get(event.culprit) ?? 0) + 1);
+  }
+  let topCulprit: string | null = null;
+  let topCount = 0;
+  for (const [name, count] of culpritCounts) {
+    if (count > topCount) {
+      topCulprit = name;
+      topCount = count;
+    }
+  }
+  if (topCulprit === null && frame.phases[0] !== undefined && frame.avgSimMs > 8) {
+    topCulprit = frame.phases[0].name;
+  }
+  if (topCulprit === null && frame.avgOutsideMs > frame.avgSimMs && frame.avgOutsideMs > 4) {
+    topCulprit = "outside-sim";
+  }
+  if (topCulprit === null) {
+    if (frame.p95FrameMs > LONG_FRAME_MS) return `p95 ${ms(frame.p95FrameMs)} — hitching without a clear phase; check long-frame log as it fills.`;
+    return null;
+  }
+  const hint = CULPRIT_HINTS[topCulprit] ?? `Hotspot “${topCulprit}” — dig into that phase with measure() or reduce its work.`;
+  const countText = topCount > 0 ? ` (${topCount}/${recent.length || topCount} recent long frames)` : "";
+  return `${topCulprit}${countText}: ${hint}`;
+}
+
+function LongFrameList({ events }: { events: readonly LongFrameEvent[] }) {
+  if (events.length === 0) {
+    return <div className="text-neutral-500">No long frames (&gt;{ms(LONG_FRAME_MS)}) captured yet.</div>;
+  }
+  const newest = [...events].reverse().slice(0, 12);
+  return (
+    <div className="jg-devtools-scroll max-h-40 space-y-1.5 overflow-auto">
+      {newest.map((event, index) => (
+        <div key={`${event.at}-${index}`} className="rounded border border-neutral-800 bg-neutral-900/60 px-1.5 py-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="font-mono text-red-400">{ms(event.frameMs)}</span>
+            <span className="truncate text-amber-300" title={event.culprit}>
+              {event.culprit}
+            </span>
+            <span className="shrink-0 text-neutral-500">{new Date(event.at).toLocaleTimeString()}</span>
+          </div>
+          <div className="mt-0.5 text-[10px] leading-snug text-neutral-300">{event.reason}</div>
+          {event.phases.length > 0 ? (
+            <div className="mt-0.5 font-mono text-[9px] text-neutral-500">
+              {event.phases
+                .slice(0, 4)
+                .map((phase) => `${phase.name} ${phase.ms.toFixed(1)}`)
+                .join(" · ")}
+              {event.outsideMs >= 2 ? ` · outside ${event.outsideMs.toFixed(1)}` : ""}
+            </div>
+          ) : event.outsideMs >= 2 ? (
+            <div className="mt-0.5 font-mono text-[9px] text-neutral-500">outside {event.outsideMs.toFixed(1)}</div>
+          ) : null}
+          {event.render !== null ? (
+            <div className="mt-0.5 font-mono text-[9px] text-neutral-600">
+              draws {event.render.drawCalls} · tris {event.render.triangles.toLocaleString()}
+            </div>
+          ) : null}
+        </div>
       ))}
     </div>
   );
@@ -149,6 +301,7 @@ function PerfPanel({ ctx }: { ctx: GameContext }) {
   const rateRef = useRef<{ version: number; at: number; perSecond: number }>({ version: 0, at: 0, perSecond: 0 });
   const frame = devtools.frame.stats();
   const render = devtools.render.latest();
+  const longs = devtools.frame.longFrames();
   const now = performance.now();
   const rate = rateRef.current;
   if (rate.at === 0) {
@@ -157,8 +310,9 @@ function PerfPanel({ ctx }: { ctx: GameContext }) {
     const perSecond = ((ctx.version() - rate.version) / (now - rate.at)) * 1000;
     rateRef.current = { version: ctx.version(), at: now, perSecond };
   }
+  const diagnosis = frame !== null ? diagnose(frame, longs) : null;
   return (
-    <div className="space-y-2">
+    <div className="jg-devtools-scroll max-h-[28rem] space-y-3 overflow-auto">
       {frame === null ? (
         <div className="text-neutral-400">Waiting for frames…</div>
       ) : (
@@ -167,20 +321,59 @@ function PerfPanel({ ctx }: { ctx: GameContext }) {
           <StatRow name="fps" value={frame.fps.toFixed(0)} alert={frame.fps < 50} />
           <StatRow name="frame avg / p95 / max" value={`${ms(frame.avgFrameMs)} / ${ms(frame.p95FrameMs)} / ${ms(frame.maxFrameMs)}`} alert={frame.p95FrameMs > LONG_FRAME_MS} />
           <StatRow name="sim avg / max" value={`${ms(frame.avgSimMs)} / ${ms(frame.maxSimMs)}`} alert={frame.avgSimMs > 8} />
+          <StatRow name="outside avg / max" value={`${ms(frame.avgOutsideMs)} / ${ms(frame.maxOutsideMs)}`} alert={frame.avgOutsideMs > 12} />
           <StatRow name={`long frames (of ${frame.samples})`} value={String(frame.longFrames)} alert={frame.longFrames > 5} />
+          {diagnosis !== null ? (
+            <div className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[10px] leading-snug text-amber-100">
+              <span className="font-semibold text-amber-300">Why slow · </span>
+              {diagnosis}
+            </div>
+          ) : (
+            <div className="text-[10px] text-emerald-400/90">Frame budget healthy — no dominant hitch pattern.</div>
+          )}
+          <div className="space-y-1">
+            <SectionLabel>frame budget</SectionLabel>
+            <BudgetSplit simMs={frame.avgSimMs} outsideMs={frame.avgOutsideMs} />
+          </div>
+          <div className="space-y-1">
+            <SectionLabel>sim phases (avg)</SectionLabel>
+            <PhaseBars phases={frame.phases} avgSimMs={frame.avgSimMs} />
+          </div>
         </>
       )}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <SectionLabel>long frames</SectionLabel>
+          {longs.length > 0 ? (
+            <button
+              type="button"
+              className="rounded border border-neutral-700 px-1.5 py-0.5 text-[9px] text-neutral-400 hover:bg-neutral-800"
+              onClick={() => devtools.frame.clearLongFrames()}
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+        <LongFrameList events={longs} />
+      </div>
       {render !== null ? (
-        <>
+        <div className="space-y-1">
+          <SectionLabel>render sample</SectionLabel>
           <StatRow name="draw calls" value={String(render.drawCalls)} alert={render.drawCalls > 1000} />
           <StatRow name="triangles" value={render.triangles.toLocaleString()} />
           <StatRow name="geometries / textures" value={`${render.geometries} / ${render.textures}`} />
-        </>
+        </div>
       ) : null}
-      <StatRow name="state notifies /s" value={rateRef.current.perSecond.toFixed(0)} alert={rateRef.current.perSecond > 90} />
-      {Object.entries(devtools.probes.read()).map(([name, value]) => (
-        <StatRow key={name} name={name} value={String(value)} />
-      ))}
+      <div className="space-y-1">
+        <SectionLabel>probes</SectionLabel>
+        <StatRow name="state notifies /s" value={rateRef.current.perSecond.toFixed(0)} alert={rateRef.current.perSecond > 90} />
+        {Object.entries(devtools.probes.read()).map(([name, value]) => (
+          <StatRow key={name} name={name} value={String(value)} />
+        ))}
+      </div>
+      <div className="text-[9px] leading-snug text-neutral-600">
+        Game code: measure("physics", () =&gt; …) inside onTick. Agents: snapshot().longFrames + frame.phases
+      </div>
     </div>
   );
 }
@@ -361,13 +554,17 @@ function deltaSnippet(discovered: readonly DiscoveredEntry[]): string | null {
 
 function TunePanel({ gameName }: { gameName: string }) {
   const [deltasCopied, setDeltasCopied] = useState(false);
+  const [query, setQuery] = useState("");
   const controls = devtools.controls.list();
-  const discovered = devtools.discover.list();
+  const allDiscovered = devtools.discover.list();
   const persist = () => persistDevtoolsOverrides(gameName);
-  const discoveredIds = new Set(discovered.map((entry) => entry.id));
-  const explicit = controls.filter((control) => !discoveredIds.has(control.name));
+  const discoveredIds = new Set(allDiscovered.map((entry) => entry.id));
+  const needle = query.trim().toLowerCase();
+  const matches = (id: string) => needle === "" || id.toLowerCase().includes(needle);
+  const discovered = allDiscovered.filter((entry) => entry.enabled || matches(entry.id));
+  const explicit = controls.filter((control) => !discoveredIds.has(control.name) && matches(control.name));
   const controlByName = new Map(controls.map((control) => [control.name, control]));
-  const snippet = deltaSnippet(discovered);
+  const snippet = deltaSnippet(allDiscovered);
   const copyDeltas = () => {
     if (snippet === null) return;
     const clipboard = navigator.clipboard;
@@ -379,16 +576,16 @@ function TunePanel({ gameName }: { gameName: string }) {
     setDeltasCopied(true);
     setTimeout(() => setDeltasCopied(false), 1500);
   };
-  if (explicit.length === 0 && discovered.length === 0) {
+  if (controls.length === 0 && allDiscovered.length === 0) {
     return (
       <div className="space-y-2 text-neutral-400">
         <div>Nothing discovered.</div>
         <div className="font-mono text-[10px] text-neutral-500">
           {"export const TUNING = { gravity: -22, skyColor: \"#87ceeb\" };"}
           <br />
-          {"Exported tables of numbers, booleans, and colors appear here"}
+          {"Exported constants and tables of numbers, booleans, and colors"}
           <br />
-          {"automatically — check one to control it live."}
+          {"(nested included) appear here — check one to control it live."}
         </div>
       </div>
     );
@@ -421,7 +618,17 @@ function TunePanel({ gameName }: { gameName: string }) {
         >
           {deltasCopied ? "Copied" : "Copy deltas"}
         </button>
+        <input
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="filter…"
+          className="min-w-0 flex-1 rounded border border-neutral-600 bg-transparent px-2 py-0.5 text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
+        />
       </div>
+      {explicit.length === 0 && discovered.length === 0 ? (
+        <div className="text-neutral-500">No tunables match “{query}”.</div>
+      ) : null}
       {explicit.length > 0 ? (
         <div className="space-y-1.5">
           <div className="text-[9px] uppercase tracking-wide text-neutral-500">registered</div>
@@ -469,7 +676,105 @@ function TunePanel({ gameName }: { gameName: string }) {
   );
 }
 
-function buildReport(playable: PlayableGame): DevtoolsSnapshot & { game: string } {
+function roundMs(value: number, digits = 1): number {
+  const scale = 10 ** digits;
+  return Math.round(value * scale) / scale;
+}
+
+function compactLongFrame(event: LongFrameEvent) {
+  return {
+    at: event.at,
+    frameMs: roundMs(event.frameMs),
+    simMs: roundMs(event.simMs),
+    outsideMs: roundMs(event.outsideMs),
+    culprit: event.culprit,
+    reason: event.reason,
+    phases: event.phases.slice(0, 4).map((phase) => ({
+      name: phase.name,
+      ms: roundMs(phase.ms),
+    })),
+    probes: event.probes,
+    render: event.render,
+  };
+}
+
+function summarizeLongFrames(events: readonly LongFrameEvent[]) {
+  if (events.length === 0) return null;
+  const byCulprit = new Map<string, number>();
+  let maxFrameMs = 0;
+  let maxDraws = 0;
+  let maxGeometries = 0;
+  for (const event of events) {
+    byCulprit.set(event.culprit, (byCulprit.get(event.culprit) ?? 0) + 1);
+    maxFrameMs = Math.max(maxFrameMs, event.frameMs);
+    if (event.render !== null) {
+      maxDraws = Math.max(maxDraws, event.render.drawCalls);
+      maxGeometries = Math.max(maxGeometries, event.render.geometries);
+    }
+  }
+  const culprits = [...byCulprit.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([culprit, count]) => ({ culprit, count }));
+  return {
+    count: events.length,
+    culprits,
+    maxFrameMs: roundMs(maxFrameMs),
+    maxDrawCalls: maxDraws > 0 ? maxDraws : undefined,
+    maxGeometries: maxGeometries > 0 ? maxGeometries : undefined,
+  };
+}
+
+export function buildLeanReport(playable: PlayableGame) {
+  const snap = devtools.snapshot();
+  const frame = snap.frame;
+  const longs = snap.longFrames;
+  const why = frame !== null ? diagnose(frame, longs) : null;
+  const changedControls = snap.controls
+    .filter((control) => !Object.is(control.value, control.initial))
+    .map((control) => ({ name: control.name, value: control.value, initial: control.initial }));
+  const enabledDiscovered = snap.discovered
+    .filter((entry) => entry.enabled)
+    .map((entry) => ({ id: entry.id, value: entry.value }));
+  const hotLogs = snap.logs.filter((entry) => entry.level === "warn" || entry.level === "error").slice(-20);
+
+  return {
+    game: playable.game.name,
+    at: snap.at,
+    why,
+    frame:
+      frame === null
+        ? null
+        : {
+            fps: roundMs(frame.fps, 1),
+            avgFrameMs: roundMs(frame.avgFrameMs),
+            p95FrameMs: roundMs(frame.p95FrameMs),
+            maxFrameMs: roundMs(frame.maxFrameMs),
+            avgSimMs: roundMs(frame.avgSimMs),
+            maxSimMs: roundMs(frame.maxSimMs),
+            avgOutsideMs: roundMs(frame.avgOutsideMs),
+            maxOutsideMs: roundMs(frame.maxOutsideMs),
+            longFrames: frame.longFrames,
+            samples: frame.samples,
+            phases: frame.phases.slice(0, 8).map((phase) => ({
+              name: phase.name,
+              avgMs: roundMs(phase.avgMs),
+              maxMs: roundMs(phase.maxMs),
+              pctOfSim: Math.round(phase.pctOfSim),
+            })),
+          },
+    render: snap.render,
+    latency: snap.latency,
+    longFrameSummary: summarizeLongFrames(longs),
+    longFrames: longs.slice(-6).map(compactLongFrame),
+    probes: snap.probes,
+    logs: hotLogs.length > 0 ? hotLogs : undefined,
+    controls: changedControls.length > 0 ? changedControls : undefined,
+    discovered: enabledDiscovered.length > 0 ? enabledDiscovered : undefined,
+    discoveredCount: snap.discovered.length,
+  };
+}
+
+export function buildFullReport(playable: PlayableGame): DevtoolsSnapshot & { game: string } {
   return { game: playable.game.name, ...devtools.snapshot() };
 }
 
@@ -492,10 +797,18 @@ export function DevtoolsOverlay({
   useEffect(() => {
     devtools.logs.captureConsole();
     (globalThis as { __JG_DEVTOOLS?: unknown }).__JG_DEVTOOLS = {
-      snapshot: () => buildReport(playable),
+      snapshot: () => buildLeanReport(playable),
+      snapshotFull: () => buildFullReport(playable),
       controls: devtools.controls,
       discover: devtools.discover,
+      frame: devtools.frame,
+      profile: devtools.profile,
     };
+  }, [playable]);
+
+  useEffect(() => {
+    devtools.discover.scanTable("game", playable);
+    devtools.discover.scanTable("engine", { movement: MOVEMENT_TUNING });
   }, [playable]);
 
   useEffect(() => {
@@ -539,7 +852,7 @@ export function DevtoolsOverlay({
   if (!open) return null;
 
   const copyReport = () => {
-    const report = JSON.stringify(buildReport(playable), null, 2);
+    const report = JSON.stringify(buildLeanReport(playable), null, 2);
     const clipboard = navigator.clipboard;
     if (clipboard !== undefined) {
       void clipboard.writeText(report).catch(() => console.log(report));
@@ -551,7 +864,7 @@ export function DevtoolsOverlay({
   };
 
   return (
-    <div className="pointer-events-auto absolute left-4 top-4 z-50 w-80 rounded border border-neutral-700 bg-neutral-950/95 p-3 text-xs text-neutral-100 shadow-2xl">
+    <div className="pointer-events-auto absolute left-4 top-4 z-50 w-[22rem] rounded border border-neutral-700 bg-neutral-950/95 p-3 text-xs text-neutral-100 shadow-2xl">
       <style>{`
         .jg-devtools-scroll {
           scrollbar-width: thin;
@@ -602,7 +915,7 @@ export function DevtoolsOverlay({
       {tab === "keys" ? <KeysPanel input={playable.game.input} /> : null}
       {tab === "tune" ? <TunePanel gameName={playable.game.name} /> : null}
       <div className="mt-2 border-t border-neutral-800 pt-1.5 text-[9px] text-neutral-500">
-        F2 toggles · agents: window.__JG_DEVTOOLS.snapshot()
+        F2 toggles · agents: __JG_DEVTOOLS.snapshot() · full: .snapshotFull()
       </div>
     </div>
   );

@@ -1,5 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import type { Group } from "three";
+import { useGameContext } from "@jgengine/react/provider";
 
+import { resolveBuildingPalette } from "@jgengine/core/world/buildings";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
 import type {
   BuildingEnvironmentDescriptor,
@@ -11,13 +15,18 @@ import type {
   TerrainEnvironmentDescriptor,
   WeatherEnvironmentDescriptor,
 } from "@jgengine/core/world/features";
-import { resolveTerrainField, resolveTerrainPalette, type TerrainField } from "@jgengine/core/world/terrain";
+import {
+  createTerrainPaletteSampler,
+  resolveEnvironmentField,
+  resolveTerrainPalette,
+  type TerrainField,
+} from "@jgengine/core/world/terrain";
 
 import { SkyDaylight } from "./Daylight";
 import { GroundPad } from "./GroundPad";
-import { GeneratedBuilding } from "../structures/GeneratedBuilding";
+import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
-import { ProceduralGround } from "../terrain/ProceduralGround";
+import { CarvedTerrain } from "../terrain/CarvedTerrain";
 import { Ocean } from "../water/Ocean";
 import { RainField } from "../weather/RainField";
 import { SnowField } from "../weather/SnowField";
@@ -27,44 +36,77 @@ export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;
 }
 
-const DEFAULT_TERRAIN_FREQUENCY = 0.03;
-
-function TerrainGround({ terrain }: { terrain: TerrainEnvironmentDescriptor }) {
-  const palette = resolveTerrainPalette(terrain);
+function TerrainGround({
+  terrain,
+  field,
+  center,
+}: {
+  terrain: Omit<TerrainEnvironmentDescriptor, "kind">;
+  field: TerrainField;
+  center?: readonly [number, number];
+}) {
+  const palette = useMemo(() => resolveTerrainPalette(terrain), [terrain]);
+  const paletteAt = useMemo(() => {
+    if (terrain.materialRegions === undefined || terrain.materialRegions.length === 0) return undefined;
+    const sampler = createTerrainPaletteSampler(terrain);
+    if (center === undefined) return sampler;
+    return (x: number, z: number) => sampler(x - center[0], z - center[1]);
+  }, [terrain, center]);
+  const colors = useMemo(
+    () => ({
+      low: palette.low,
+      high: palette.high,
+      ...(terrain.waterLevel === undefined ? {} : { waterline: palette.waterline, waterlineHeight: terrain.waterLevel }),
+    }),
+    [palette, terrain.waterLevel],
+  );
+  const size = useMemo(() => [terrain.bounds.w, terrain.bounds.d] as const, [terrain.bounds]);
+  const heightRange = useMemo(() => {
+    const base = terrain.baseHeight ?? 0;
+    const swing = terrain.height * 1.2;
+    return [base - swing, base + swing] as const;
+  }, [terrain.baseHeight, terrain.height]);
   return (
-    <ProceduralGround
-      terrain={{
-        size: [terrain.bounds.w, terrain.bounds.d],
-        segments: terrain.segments,
-        height: terrain.height,
-        seed: terrain.seed,
-        moundScale: terrain.frequency ?? DEFAULT_TERRAIN_FREQUENCY,
-        octaves: terrain.octaves,
-        ridged: terrain.ridged,
-        baseOffset: terrain.baseHeight,
-      }}
-      colors={{
-        low: palette.low,
-        high: palette.high,
-        ...(terrain.waterLevel === undefined ? {} : { waterline: palette.waterline, waterlineHeight: terrain.waterLevel }),
-      }}
+    <CarvedTerrain
+      field={field}
+      size={size}
+      segments={terrain.segments}
+      colors={colors}
+      heightRange={heightRange}
+      paletteAt={paletteAt}
+      center={center}
+      roughness={0.94}
     />
   );
 }
 
+function areaCenter(area: { position?: readonly [number, number] }): readonly [number, number] {
+  return area.position ?? [0, 0];
+}
+
 function Vegetation({ grass, field }: { grass: GrassEnvironmentDescriptor; field: TerrainField }) {
+  const [cx, cz] = areaCenter(grass.area);
+  const heightAt = useMemo(
+    () =>
+      cx === 0 && cz === 0
+        ? field.sampleHeight
+        : (x: number, z: number) => field.sampleHeight(x + cx, z + cz),
+    [cx, cz, field],
+  );
   return (
-    <GrassField
-      area={[grass.area.w, grass.area.d]}
-      density={grass.density}
-      seed={grass.seed}
-      bladeHeight={grass.bladeHeight}
-      bladeWidth={grass.bladeWidth}
-      heightAt={field.sampleHeight}
-      colorBase={grass.colors[0]}
-      colorTip={grass.colors[grass.colors.length - 1]}
-      wind={{ strength: grass.windStrength }}
-    />
+    <group position={[cx, 0, cz]}>
+      <GrassField
+        area={[grass.area.w, grass.area.d]}
+        density={grass.density}
+        seed={grass.seed}
+        bladeHeight={grass.bladeHeight}
+        bladeWidth={grass.bladeWidth}
+        heightAt={heightAt}
+        colorBase={grass.colors[0]}
+        colorTip={grass.colors[grass.colors.length - 1]}
+        wind={{ strength: grass.windStrength }}
+      />
+    </group>
   );
 }
 
@@ -73,28 +115,33 @@ function weatherVolume(area: { w: number; d: number; h?: number }): readonly [nu
 }
 
 function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowEnvironmentDescriptor; index: number }) {
+  const [cx, cz] = areaCenter(weather.area);
   if (weather.kind === "rain") {
     return (
-      <RainField
+      <group position={[cx, 0, cz]}>
+        <RainField
+          density={weather.density}
+          speed={weather.speed}
+          length={weather.dropLength}
+          color={weather.color}
+          wind={[weather.wind[0], 0, weather.wind[1]]}
+          volume={weatherVolume(weather.area)}
+        />
+      </group>
+    );
+  }
+  return (
+    <group position={[cx, 0, cz]}>
+      <SnowField
         density={weather.density}
         speed={weather.speed}
-        length={weather.dropLength}
+        size={weather.flakeSize}
+        sway={weather.drift}
         color={weather.color}
         wind={[weather.wind[0], 0, weather.wind[1]]}
         volume={weatherVolume(weather.area)}
       />
-    );
-  }
-  return (
-    <SnowField
-      density={weather.density}
-      speed={weather.speed}
-      size={weather.flakeSize}
-      sway={weather.drift}
-      color={weather.color}
-      wind={[weather.wind[0], 0, weather.wind[1]]}
-      volume={weatherVolume(weather.area)}
-    />
+    </group>
   );
 }
 
@@ -108,45 +155,68 @@ function Weather({ weather }: { weather: readonly WeatherEnvironmentDescriptor[]
   );
 }
 
+function oceanConfig(ocean: OceanEnvironmentDescriptor) {
+  return {
+    size: Math.max(ocean.bounds.w, ocean.bounds.d),
+    amplitude: ocean.waveHeight,
+    speed: ocean.waveSpeed,
+    color: { shallow: ocean.color },
+  };
+}
+
+function DynamicWater({ ocean }: { ocean: OceanEnvironmentDescriptor & { levelAt: (time: number) => number } }) {
+  const ctx = useGameContext();
+  const groupRef = useRef<Group>(null);
+  const [x, z] = ocean.position ?? [0, 0];
+  useFrame(() => {
+    if (groupRef.current !== null) groupRef.current.position.y = ocean.levelAt(ctx.time.now());
+  });
+  return (
+    <group ref={groupRef} position={[0, ocean.level, 0]}>
+      <Ocean position={[x, 0, z]} config={oceanConfig(ocean)} />
+    </group>
+  );
+}
+
 function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
   const [x, z] = ocean.position ?? [0, 0];
-  return (
-    <Ocean
-      position={[x, ocean.level, z]}
-      config={{
-        size: Math.max(ocean.bounds.w, ocean.bounds.d),
-        amplitude: ocean.waveHeight,
-        speed: ocean.waveSpeed,
-        color: { shallow: ocean.color },
-      }}
-    />
-  );
+  if (ocean.levelAt !== undefined) {
+    return <DynamicWater ocean={ocean as OceanEnvironmentDescriptor & { levelAt: (time: number) => number }} />;
+  }
+  return <Ocean position={[x, ocean.level, z]} config={oceanConfig(ocean)} />;
 }
 
 function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {
-  const buildings = useMemo(() => resolveStructureBuildings(structures), [structures]);
-
-  return (
-    <>
-      {buildings.map((building) => (
-        <group key={building.id} position-y={field.sampleHeight(building.center[0], building.center[1])}>
-          <GeneratedBuilding building={building} />
-        </group>
-      ))}
-    </>
+  const placements = useMemo<InstancedBuildingPlacement[]>(
+    () =>
+      resolveStructureBuildings(structures).map((building) => ({
+        building,
+        position: [0, field.sampleHeight(building.center[0], building.center[1]), 0],
+      })),
+    [structures, field],
   );
+  const palette = useMemo(
+    () => resolveBuildingPalette(structures.style, structures.palette),
+    [structures.style, structures.palette],
+  );
+
+  return <InstancedBuildings buildings={placements} palette={palette} />;
 }
 
 export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
-  const field = useMemo(() => resolveTerrainField(feature.terrain), [feature.terrain]);
+  const field = useMemo(() => resolveEnvironmentField(feature), [feature]);
   const vegetation = feature.vegetation ?? [];
   const water = feature.water ?? [];
   const structures = feature.structures ?? [];
   const pads = feature.pads ?? [];
+  const islands = feature.islands ?? [];
   return (
     <>
       {feature.sky !== undefined && !feature.sky.timeOfDay ? <SkyDaylight sky={feature.sky} /> : null}
-      {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} /> : null}
+      {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} /> : null}
+      {islands.map((entry, index) => (
+        <TerrainGround key={`island-${index}`} terrain={entry} field={field} center={entry.origin} />
+      ))}
       {water.map((ocean, index) => (
         <Water key={`ocean-${index}`} ocean={ocean} />
       ))}

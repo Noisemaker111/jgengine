@@ -1,4 +1,10 @@
-import { generateBuildingDistrict, type GeneratedBuilding } from "./buildings";
+import {
+  generateBuildingDistrict,
+  resolveBuildingPalette,
+  type BuildingPalette,
+  type BuildingStyle,
+  type GeneratedBuilding,
+} from "./buildings";
 import type {
   BuildingEnvironmentDescriptor,
   EnvironmentWorldFeature,
@@ -6,7 +12,7 @@ import type {
   WorldBounds,
 } from "./features";
 import type { Aabb } from "./geometry";
-import { resolveTerrainField } from "./terrain";
+import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "./terrain";
 
 export function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] {
   const columns = Math.max(1, Math.ceil(Math.sqrt(descriptor.count)));
@@ -39,11 +45,13 @@ export interface TerrainHeightStats {
 export interface TerrainSummary {
   bounds: WorldBounds;
   height: TerrainHeightStats;
+  palette: TerrainPalette;
   waterLevel?: number;
 }
 
 export interface StructureSummary {
-  style: string;
+  style: BuildingStyle;
+  palette: BuildingPalette;
   requested: number;
   buildings: number;
   parts: number;
@@ -67,6 +75,7 @@ export interface WeatherSummary {
 
 export interface EnvironmentCounts {
   terrain: number;
+  islands: number;
   structureGroups: number;
   buildings: number;
   buildingParts: number;
@@ -75,8 +84,13 @@ export interface EnvironmentCounts {
   weatherSystems: number;
 }
 
+export interface IslandSummary extends TerrainSummary {
+  origin: readonly [number, number];
+}
+
 export interface EnvironmentSummary {
   terrain?: TerrainSummary;
+  islands: readonly IslandSummary[];
   structures: readonly StructureSummary[];
   vegetation: readonly VegetationSummary[];
   water: readonly WaterSummary[];
@@ -134,6 +148,7 @@ function summarizeStructures(descriptor: BuildingEnvironmentDescriptor): Structu
   const buildings = resolveStructureBuildings(descriptor);
   return {
     style: descriptor.style,
+    palette: resolveBuildingPalette(descriptor.style, descriptor.palette),
     requested: descriptor.count,
     buildings: buildings.length,
     parts: buildings.reduce((sum, building) => sum + building.parts.length, 0),
@@ -145,12 +160,17 @@ function summarizeTerrain(descriptor: TerrainEnvironmentDescriptor): TerrainSumm
   return {
     bounds: descriptor.bounds,
     height: sampleTerrainHeights(descriptor),
+    palette: resolveTerrainPalette(descriptor),
     ...(descriptor.waterLevel === undefined ? {} : { waterLevel: descriptor.waterLevel }),
   };
 }
 
 export function summarizeEnvironment(feature: EnvironmentWorldFeature): EnvironmentSummary {
   const terrain = feature.terrain === undefined ? undefined : summarizeTerrain(feature.terrain);
+  const islands: IslandSummary[] = (feature.islands ?? []).map((entry) => ({
+    ...summarizeTerrain({ ...entry, kind: "terrain" }),
+    origin: entry.origin,
+  }));
   const structures = (feature.structures ?? []).map(summarizeStructures);
   const vegetation: VegetationSummary[] = (feature.vegetation ?? []).map((entry) => ({
     area: entry.area,
@@ -168,6 +188,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
   const buildings = structures.reduce((sum, entry) => sum + entry.buildings, 0);
   const counts: EnvironmentCounts = {
     terrain: terrain === undefined ? 0 : 1,
+    islands: islands.length,
     structureGroups: structures.length,
     buildings,
     buildingParts: structures.reduce((sum, entry) => sum + entry.parts, 0),
@@ -177,6 +198,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
   };
   const isEmpty =
     counts.terrain === 0 &&
+    counts.islands === 0 &&
     buildings === 0 &&
     counts.vegetationFields === 0 &&
     counts.waterBodies === 0 &&
@@ -184,6 +206,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
 
   return {
     ...(terrain === undefined ? {} : { terrain }),
+    islands,
     structures,
     vegetation,
     water,

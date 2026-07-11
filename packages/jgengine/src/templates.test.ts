@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
-import { displayNameFromId, gameTemplate, IN_REPO_TSCONFIG_PATHS, type TemplateFile } from "./templates";
+import {
+  displayNameFromId,
+  folderNameFromTitle,
+  gameTemplate,
+  IN_REPO_TSCONFIG_PATHS,
+  packageIdFromFolder,
+  parseCreateName,
+  type TemplateFile,
+} from "./templates";
 
 const SKELETON_FILES = new Set(["game.config.ts", "index.tsx", "main.tsx", "loop.ts", "world.ts", "index.css"]);
 
@@ -96,7 +104,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
   test("templates carry the verify gate and agent onboarding", () => {
     const files = render("standalone");
     expect(fileOf(files, "src/game/world.world.test.ts")).toContain("summarizeEnvironment");
-    expect(fileOf(files, "AGENTS.md")).toContain("npx jgengine skills");
+    expect(fileOf(files, "AGENTS.md")).toContain("User-facing first reply is short");
+    expect(fileOf(files, "AGENTS.md")).toContain("dump file trees");
   });
 
   test("rejects a non-kebab-case id", () => {
@@ -105,5 +114,11 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
 
   test("displayNameFromId title-cases", () => {
     expect(displayNameFromId("maze-muncher")).toBe("Maze Muncher");
+  });
+
+  test("folderNameFromTitle dashes spaces and keeps casing", () => {
+    expect(folderNameFromTitle("My Game Name")).toBe("My-Game-Name");
+    expect(packageIdFromFolder("My-Game-Name")).toBe("my-game-name");
+    expect(parseCreateName("My Game Name").displayName).toBe("My Game Name");
   });
 });

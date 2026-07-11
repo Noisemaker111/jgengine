@@ -1,3 +1,4 @@
+import type { BuildingStyle } from "@jgengine/core/world/buildings";
 import { EXIT_Z, ZONE_A_END, ZONE_B_END } from "../run/constants";
 
 export type ZoneId = "canyons" | "flats" | "gantry";
@@ -10,7 +11,7 @@ export interface ZoneDef {
   end: number;
   wallColor: string;
   propIds: readonly [string, string];
-  buildingStyle: string;
+  buildingStyle: BuildingStyle;
 }
 
 export const ZONES: readonly ZoneDef[] = [
@@ -22,7 +23,7 @@ export const ZONES: readonly ZoneDef[] = [
     end: ZONE_A_END,
     wallColor: "#b7410e",
     propIds: ["prop_wreck_pile", "prop_tire_wall"],
-    buildingStyle: "canyon",
+    buildingStyle: "ruin",
   },
   {
     id: "flats",
@@ -32,7 +33,7 @@ export const ZONES: readonly ZoneDef[] = [
     end: ZONE_B_END,
     wallColor: "#8d99a6",
     propIds: ["prop_appliance_stack", "prop_scrap_heap"],
-    buildingStyle: "flats",
+    buildingStyle: "industrial",
   },
   {
     id: "gantry",
@@ -42,7 +43,7 @@ export const ZONES: readonly ZoneDef[] = [
     end: EXIT_Z,
     wallColor: "#f0c419",
     propIds: ["prop_container_stack", "prop_crane_leg"],
-    buildingStyle: "gantry",
+    buildingStyle: "industrial",
   },
 ];
 

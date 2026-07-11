@@ -8,7 +8,7 @@ import { GAMES } from "../content/games";
 import { SKILL_SLUGS } from "../content/skills";
 import {
   ASSETS_PACKAGE_NAME,
-  INSTALL_CMD,
+  ENTRY_PROMPT,
   PACKAGES,
   PACKAGE_LAYERS,
   REPO_URL,
@@ -21,16 +21,16 @@ export const Route = createFileRoute("/")({
 
 const STEPS = [
   {
-    title: "Install the skills",
-    body: "Start from jgengine.com or install the JGengine router and focused API skills with one command.",
+    title: "Open any coding agent",
+    body: "Claude Code, Cursor, Codex, Copilot — whatever you already use. No special install for you.",
   },
   {
-    title: "Prompt your agent",
-    body: "Describe the game you want. The skills teach it the engine's verbs, the plan, the quality bar, and the assets.",
+    title: "Say the line",
+    body: 'Make a game that … with jgengine. That is the whole interface. The agent uses the CLI and skills underneath.',
   },
   {
     title: "Play the result",
-    body: "The agent builds a complete, verified game on the SDK — not a demo slice. Every game below shipped this way.",
+    body: "A complete, verified game on the SDK — not a demo slice. Every game below shipped this way.",
   },
 ];
 
@@ -85,8 +85,9 @@ function Home() {
               className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-base text-slate-400 sm:text-lg"
               style={{ animationDelay: "120ms" }}
             >
-              Tell your agent “make a game with jgengine” or point it at jgengine.com. JGengine
-              Skills route it through the SDK APIs, implementation, and verification it needs.
+              One interface: tell your agent{" "}
+              <span className="font-mono text-emerald-300/90">Make a game that … with jgengine</span>.
+              It scaffolds, plans, and builds the whole game — no CLI for you, no docs to paste.
             </p>
             <div
               className="animate-fade-up mt-9 flex flex-wrap items-center justify-center gap-3"
@@ -293,10 +294,10 @@ function Home() {
             Your next game is <span className="text-gradient">one prompt</span> away.
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-pretty text-slate-400">
-            Point your agent at the skills and describe what you want to play.
+            Paste this into your agent. That is how people build with JGengine outside the monorepo.
           </p>
           <div className="mx-auto mt-9 max-w-xl">
-            <CommandBlock command={INSTALL_CMD} />
+            <CommandBlock command={ENTRY_PROMPT} kind="prompt" />
           </div>
           <a
             href={REPO_URL}

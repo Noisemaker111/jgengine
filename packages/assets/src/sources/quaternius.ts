@@ -14,6 +14,8 @@ const QUATERNIUS_PACKS: readonly QuaterniusPack[] = [
   { id: "quaternius-modular-scifi", slug: "modularscifimegakit", title: "Modular SciFi MegaKit", categories: ["scifi", "environment", "prop"] },
   { id: "quaternius-fantasy-props", slug: "fantasypropsmegakit", title: "Fantasy Props MegaKit", categories: ["fantasy", "prop"] },
   { id: "quaternius-base-characters", slug: "universalbasecharacters", title: "Universal Base Characters", categories: ["character", "rigged"] },
+  { id: "quaternius-animated-animals", slug: "ultimateanimatedanimals", title: "Ultimate Animated Animal Pack", categories: ["animal", "creature", "wildlife", "rigged", "animated"] },
+  { id: "quaternius-monsters", slug: "ultimatemonsters", title: "Ultimate Monsters", categories: ["monster", "creature", "fantasy", "rigged", "animated"] },
 ];
 
 export const quaterniusSources: readonly AssetSource[] = QUATERNIUS_PACKS.map((pack) => ({

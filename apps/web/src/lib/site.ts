@@ -1,6 +1,11 @@
 export const SITE_URL = "https://jgengine.com";
 export const REPO_URL = "https://github.com/Noisemaker111/jgengine";
-export const INSTALL_CMD = "npx jgengine skills";
+
+/** The only human interface outside this monorepo: say this to any coding agent. */
+export const ENTRY_PROMPT = "Make a game that ... with jgengine";
+
+/** @deprecated use ENTRY_PROMPT — kept for older imports */
+export const INSTALL_CMD = ENTRY_PROMPT;
 
 export const SKILL_GUIDE: Record<string, string> = {
   jgengine: "The intake and router: a short numbered build blueprint, followed by only the engine domains the work needs.",

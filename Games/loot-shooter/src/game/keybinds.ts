@@ -1,4 +1,4 @@
-import { hotbarSlotBindings, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
 
 export const keybinds: ActionCodesMap = {
   moveForward: ["KeyW"],
@@ -8,6 +8,10 @@ export const keybinds: ActionCodesMap = {
   jump: ["Space"],
   sprint: ["ShiftLeft"],
   interact: ["KeyE"],
-  useAbility: ["mouse0"],
-  ...hotbarSlotBindings(3),
+  fire: { hold: ["mouse0"], repeatMs: 40 },
+  selectSlot1: ["Digit1"],
+  selectSlot2: ["Digit2"],
+  selectSlot3: ["Digit3"],
+  throwGrenade: ["KeyG"],
+  useMedkit: ["KeyQ"],
 };

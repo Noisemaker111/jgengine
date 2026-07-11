@@ -1,4 +1,4 @@
-const skillDocs = import.meta.glob<string>("../../../../skills/*/SKILL.md", {
+const skillDocs = import.meta.glob<string>("../../../../.claude/skills/{jgengine,jgengine-*}/SKILL.md", {
   query: "?raw",
   import: "default",
 });

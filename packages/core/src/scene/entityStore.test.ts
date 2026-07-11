@@ -246,4 +246,59 @@ describe("scene entity store", () => {
     expect(movedWhileFrozen(store.get(id)!)).toBe(true);
     expect(movedWhileFrozen(store.get(id)!, 10)).toBe(false);
   });
+
+  test("spawn with meta roundtrips through get and list", () => {
+    const store = createEntityStore<{ label: string }>();
+    const id = store.spawn("rack.basic", { position: [0, 0, 0], meta: { label: "a" } });
+    expect(store.get(id)?.meta).toEqual({ label: "a" });
+    expect(store.list().find((entity) => entity.id === id)?.meta).toEqual({ label: "a" });
+  });
+
+  test("update with meta replaces it wholesale", () => {
+    const store = createEntityStore<{ label: string }>();
+    const id = store.spawn("rack.basic", { position: [0, 0, 0], meta: { label: "a" } });
+    expect(store.update(id, { meta: { label: "b" } })).toBe(true);
+    expect(store.get(id)?.meta).toEqual({ label: "b" });
+  });
+
+  test("onExisting keep returns the existing id untouched", () => {
+    const store = createEntityStore();
+    store.spawn("rack", { id: "hero", position: [1, 2, 3] });
+    const id = store.spawn("rack.new", { id: "hero", position: [9, 9, 9], onExisting: "keep" });
+    expect(id).toBe("hero");
+    const entity = store.get("hero");
+    expect(entity?.name).toBe("rack");
+    expect(entity?.position).toEqual([1, 2, 3]);
+  });
+
+  test("onExisting replace respawns fresh, moving position and the recorded spawn pose", () => {
+    const store = createEntityStore();
+    store.spawn("rack", { id: "hero", position: [1, 2, 3], rotationY: 1 });
+    store.setPose("hero", { position: [50, 0, 50], dt: 1 });
+    const id = store.spawn("rack.new", { id: "hero", position: [9, 0, 9], rotationY: 2, onExisting: "replace" });
+    expect(id).toBe("hero");
+    const entity = store.get("hero");
+    expect(entity?.name).toBe("rack.new");
+    expect(entity?.position).toEqual([9, 0, 9]);
+    expect(entity?.rotationY).toBe(2);
+    expect(entity?.velocity).toEqual([0, 0, 0]);
+    expect(store.spawnPoseOf("hero")).toEqual({ position: [9, 0, 9], rotationY: 2 });
+  });
+
+  test("onExisting default still throws on a duplicate id", () => {
+    const store = createEntityStore();
+    store.spawn("rack", { id: "hero" });
+    expect(() => store.spawn("rack.gpu", { id: "hero" })).toThrow();
+  });
+
+  test("update with an object-form position normalizes to a tuple and does not derive velocity", () => {
+    const store = createEntityStore();
+    const id = store.spawn("car", { position: [0, 0, 0] });
+    store.setPose(id, { position: [1, 0, 1], dt: 1 });
+    const velocityBefore = store.get(id)?.velocity;
+    expect(store.update(id, { position: { x: 9, y: 0, z: 9 } })).toBe(true);
+    const updated = store.get(id);
+    expect(updated?.position).toEqual([9, 0, 9]);
+    expect(updated?.velocity).toEqual(velocityBefore);
+  });
 });

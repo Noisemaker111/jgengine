@@ -1,3 +1,5 @@
+import { steerToward } from "@jgengine/core/movement/steering";
+
 import type { FanState } from "../flight/fanSchedule";
 import { NO_FLOW, resolveActiveFlow, type Vec3 } from "../flight/flowTube";
 import { DEFAULT_GLIDER_TUNING, initialGliderState, stepGlider, type GliderInput, type GliderPhysicsState } from "../flight/glider";
@@ -74,11 +76,10 @@ export function advancePacer(
   const desiredPitch = Math.atan2(dy, Math.max(1, flatDist));
 
   const input: GliderInput = {
-    yaw: Math.min(1, Math.max(-1, angleDiff(desiredHeading, runtime.glider.heading) * STEER_GAIN)),
+    yaw: Math.min(1, Math.max(-1, steerToward(runtime.glider.heading, desiredHeading) * STEER_GAIN)),
     pitch: Math.min(1, Math.max(-1, angleDiff(desiredPitch, runtime.glider.pitch) * STEER_GAIN)),
     thrust: 1,
     brake: 0,
-    dodgeRequested: false,
   };
 
   const flow = resolveActiveFlow(FLOW_TUBES, fanPowerOf, runtime.glider.position) ?? NO_FLOW;

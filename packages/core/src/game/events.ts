@@ -113,6 +113,11 @@ export interface CombatTelegraphEvent {
   kind: string;
 }
 
+export interface CombatTelegraphCancelledEvent {
+  /** The `combat.telegraph` event id whose decal should disappear early. */
+  id: number;
+}
+
 export interface CombatHitReactionEvent {
   instanceId?: string;
   position: [number, number, number];
@@ -168,10 +173,16 @@ export interface FormChangedEvent {
   formId: string | null;
 }
 
+export interface AudioPlayEvent {
+  sound: string;
+  at?: readonly [number, number, number];
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
   "combat.telegraph": CombatTelegraphEvent;
+  "combat.telegraphCancelled": CombatTelegraphCancelledEvent;
   "combat.hitReaction": CombatHitReactionEvent;
   "loot.granted": LootGrantedEvent;
   "inventory.added": InventoryAddedEvent;
@@ -192,6 +203,7 @@ export interface GameEventMap {
   "emote.played": EmotePlayedEvent;
   "possession.swapped": PossessionSwappedEvent;
   "form.changed": FormChangedEvent;
+  "audio.play": AudioPlayEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

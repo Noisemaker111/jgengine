@@ -15,6 +15,74 @@ const JOYSTICK_THUMB = 52;
 const JOYSTICK_DEADZONE = 0.28;
 const JOYSTICK_AXIS_THRESHOLD = 0.42;
 const LOOK_TAP_TUNING = { tapMoveThresholdPx: 12, tapMaxMs: 280, longPressMs: 450 };
+const BUTTON_SIZE = 56;
+const RING1_RADIUS = 112;
+const RING2_RADIUS = 178;
+const RING1_CAPACITY = 3;
+const RING2_CAPACITY = 5;
+const RING1_ANGLES: readonly (readonly number[])[] = [[], [40], [16, 64], [12, 44, 76]];
+const DOCK_BASE_PADDING = 20;
+const UTILITY_ROW_HEIGHT = 28;
+
+function polar(radius: number, deg: number): { right: number; bottom: number } {
+  const rad = (deg * Math.PI) / 180;
+  return {
+    right: radius * Math.cos(rad) - BUTTON_SIZE / 2,
+    bottom: radius * Math.sin(rad) - BUTTON_SIZE / 2,
+  };
+}
+
+function ringAngles(count: number, from: number, to: number): number[] {
+  if (count === 1) return [(from + to) / 2];
+  const step = (to - from) / (count - 1);
+  return Array.from({ length: count }, (_, index) => from + index * step);
+}
+
+/**
+ * Thumb-arc placement for primary buttons around the bottom-right corner:
+ * up to three on an inner ring, the rest on an outer ring. Null means too
+ * many buttons for an arc — the dock falls back to a wrapping grid.
+ */
+export function primaryButtonOffsets(count: number): { right: number; bottom: number }[] | null {
+  if (count === 0) return [];
+  if (count > RING1_CAPACITY + RING2_CAPACITY) return null;
+  const ring1 = RING1_ANGLES[Math.min(count, RING1_CAPACITY)] ?? [];
+  const offsets = ring1.map((angle) => polar(RING1_RADIUS, angle));
+  const rest = count - ring1.length;
+  if (rest > 0) {
+    for (const angle of ringAngles(rest, 10, 80)) offsets.push(polar(RING2_RADIUS, angle));
+  }
+  return offsets;
+}
+
+function primaryClusterExtent(count: number): number {
+  if (count === 0) return 0;
+  if (count <= RING1_CAPACITY) return RING1_RADIUS + BUTTON_SIZE / 2;
+  if (count <= RING1_CAPACITY + RING2_CAPACITY) return RING2_RADIUS + BUTTON_SIZE / 2;
+  return Math.ceil(count / 4) * (BUTTON_SIZE + 12);
+}
+
+/**
+ * Vertical space (px, excluding device safe areas) the dock occupies above
+ * the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so
+ * `HudCanvas` regions never collide with touch controls.
+ */
+export function touchDockClearance(scheme: TouchScheme | null): number {
+  if (scheme === null) return 0;
+  let primary = 0;
+  let utility = 0;
+  for (const button of scheme.buttons) {
+    if (button.kind === "utility") utility += 1;
+    else primary += 1;
+  }
+  const tallest = Math.max(
+    scheme.joystick !== null ? JOYSTICK_SIZE : 0,
+    primaryClusterExtent(primary),
+    utility > 0 ? UTILITY_ROW_HEIGHT : 0,
+  );
+  if (tallest === 0) return 0;
+  return tallest + DOCK_BASE_PADDING + 12;
+}
 
 function pressOnce(sink: TouchCodeSink, action: string): void {
   const code = touchCode(action);
@@ -221,18 +289,90 @@ function TouchActionButton({ button, sink }: { button: TouchButton; sink: TouchC
   );
 }
 
-export function TouchControlsDock({ scheme, sink }: { scheme: TouchScheme; sink: TouchCodeSink }) {
+function TouchUtilityChip({ button, sink }: { button: TouchButton; sink: TouchCodeSink }) {
+  const pointerIdRef = useRef<number | null>(null);
+
+  const releaseIfHeld = () => {
+    if (pointerIdRef.current === null) return;
+    pointerIdRef.current = null;
+    sink.onCodeUp(touchCode(button.action));
+  };
+
   return (
-    <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex items-end justify-between gap-4 px-5"
-      style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }}
+    <button
+      type="button"
+      aria-label={button.label}
+      className="pointer-events-auto flex h-7 touch-none select-none items-center rounded-full border border-white/20 bg-black/40 px-3 text-[10px] font-semibold uppercase tracking-wide text-white/80 backdrop-blur-sm active:border-white/50 active:bg-white/25"
+      onPointerDown={(event) => {
+        if (pointerIdRef.current !== null) return;
+        pointerIdRef.current = event.pointerId;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        sink.onCodeDown(touchCode(button.action));
+      }}
+      onPointerUp={(event) => {
+        event.stopPropagation();
+        releaseIfHeld();
+      }}
+      onPointerCancel={() => releaseIfHeld()}
+      onContextMenu={(event) => event.preventDefault()}
     >
-      <div>{scheme.joystick !== null ? <VirtualJoystick joystick={scheme.joystick} sink={sink} /> : null}</div>
+      {button.label}
+    </button>
+  );
+}
+
+function PrimaryButtonCluster({ buttons, sink }: { buttons: readonly TouchButton[]; sink: TouchCodeSink }) {
+  const offsets = primaryButtonOffsets(buttons.length);
+  if (offsets === null) {
+    return (
       <div className="flex max-w-[60%] flex-wrap items-end justify-end gap-3">
-        {scheme.buttons.map((button) => (
+        {buttons.map((button) => (
           <TouchActionButton key={button.action} button={button} sink={sink} />
         ))}
       </div>
+    );
+  }
+  const extent = primaryClusterExtent(buttons.length);
+  return (
+    <div className="pointer-events-none relative" style={{ width: extent, height: extent }}>
+      {buttons.map((button, index) => {
+        const offset = offsets[index];
+        return (
+          <div
+            key={button.action}
+            className="absolute"
+            style={{ right: offset?.right ?? 0, bottom: offset?.bottom ?? 0 }}
+          >
+            <TouchActionButton button={button} sink={sink} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function TouchControlsDock({ scheme, sink }: { scheme: TouchScheme; sink: TouchCodeSink }) {
+  const primary = scheme.buttons.filter((button) => button.kind !== "utility");
+  const utility = scheme.buttons.filter((button) => button.kind === "utility");
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-40"
+      style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${DOCK_BASE_PADDING}px)` }}
+    >
+      <div className="flex items-end justify-between gap-4 px-5">
+        <div>{scheme.joystick !== null ? <VirtualJoystick joystick={scheme.joystick} sink={sink} /> : null}</div>
+        <PrimaryButtonCluster buttons={primary} sink={sink} />
+      </div>
+      {utility.length > 0 ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 flex justify-center gap-2"
+          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}
+        >
+          {utility.map((button) => (
+            <TouchUtilityChip key={button.action} button={button} sink={sink} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

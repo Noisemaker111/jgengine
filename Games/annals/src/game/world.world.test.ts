@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { aabbOverlap } from "@jgengine/core/world/geometry";
+import { TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/world/terrain";
 
 import { settlements } from "./settlements";
 import { world } from "../world";
@@ -19,7 +20,11 @@ describe("annals world", () => {
     expect(summary.terrain?.height.max).toBeGreaterThan(summary.terrain?.height.min ?? 0);
   });
 
-  test("sites one structure cluster per settlement, centered near its position", () => {
+  test("terrain uses the highland palette, not the default grass", () => {
+    expect(summary.terrain?.palette).toEqual(TERRAIN_MATERIAL_PALETTES.highland);
+  });
+
+  test("sites one structure cluster per settlement, centered near its position, styled by rank", () => {
     expect(summary.counts.structureGroups).toBe(3);
     expect(summary.counts.buildings).toBe(14);
     expect(summary.counts.buildingParts).toBeGreaterThan(0);
@@ -30,6 +35,7 @@ describe("annals world", () => {
       const centerZ = (structure.bounds.minZ + structure.bounds.maxZ) / 2;
       expect(Math.abs(centerX - settlement.position.x)).toBeLessThan(40);
       expect(Math.abs(centerZ - settlement.position.z)).toBeLessThan(40);
+      expect(structure.style).toBe(settlement.rank);
     });
   });
 

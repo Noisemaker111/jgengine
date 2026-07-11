@@ -1,28 +1,63 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
-import { drone_grunt } from "../entities/enemies/catalog";
 
 export const PLAYER_SPAWN: EntityPosition = [0, 0, 0];
+export const ARENA_HALF = 38;
 
-export interface MobSpawnPoint {
-  catalogId: string;
-  position: EntityPosition;
+export interface CoverPlacement {
+  id: string;
+  x: number;
+  y?: number;
+  z: number;
 }
 
-// First-person faces +Z at yaw 0; enemies sit directly ahead of spawn.
-export const MOB_SPAWNS: MobSpawnPoint[] = [
-  { catalogId: drone_grunt.id, position: [0, 0, 9] },
-  { catalogId: drone_grunt.id, position: [-3.5, 0, 11] },
-  { catalogId: drone_grunt.id, position: [3.5, 0, 11] },
-  { catalogId: drone_grunt.id, position: [-2, 0, 13] },
-  { catalogId: drone_grunt.id, position: [2, 0, 13] },
-  { catalogId: drone_grunt.id, position: [0, 0, 14] },
+const QUADRANT_TEMPLATE: readonly CoverPlacement[] = [
+  { id: "crate_metal", x: 7, z: 9 },
+  { id: "crate_metal", x: 8, z: 9 },
+  { id: "crate_metal", x: 7, y: 1, z: 9 },
+  { id: "barrier_slab", x: 13, z: 6 },
+  { id: "barrier_slab", x: 14, z: 6 },
+  { id: "barrier_slab", x: 15, z: 6 },
+  { id: "crate_amber", x: 18, z: 14 },
+  { id: "crate_amber", x: 18, z: 15 },
+  { id: "wreck_hull", x: 11, z: 19 },
+  { id: "wreck_hull", x: 12, z: 19 },
+  { id: "pylon_beacon", x: 22, z: 22 },
+  { id: "crate_metal", x: 24, z: 10 },
+  { id: "crate_metal", x: 24, z: 11 },
+  { id: "crate_metal", x: 24, y: 1, z: 10 },
+  { id: "barrier_slab", x: 5, z: 26 },
+  { id: "barrier_slab", x: 6, z: 26 },
+  { id: "crate_amber", x: 28, z: 4 },
+  { id: "wreck_hull", x: 30, z: 28 },
 ];
 
-export function spawnMob(ctx: GameContext, spawn: MobSpawnPoint): void {
-  ctx.scene.entity.spawn(spawn.catalogId, { position: spawn.position, role: "npc" });
-}
+const CENTER_RING: readonly CoverPlacement[] = [
+  { id: "barrier_slab", x: 3, z: 0 },
+  { id: "barrier_slab", x: -3, z: 0 },
+  { id: "barrier_slab", x: 0, z: 3 },
+  { id: "barrier_slab", x: 0, z: -3 },
+];
+
+export const COVER_LAYOUT: readonly CoverPlacement[] = [
+  ...CENTER_RING,
+  ...QUADRANT_TEMPLATE.flatMap((placement) => [
+    placement,
+    { ...placement, x: -placement.x, z: placement.z },
+    { ...placement, x: placement.x, z: -placement.z },
+    { ...placement, x: -placement.x, z: -placement.z },
+  ]),
+];
 
 export function setupWorld(ctx: GameContext): void {
-  for (const spawn of MOB_SPAWNS) spawnMob(ctx, spawn);
+  for (const placement of COVER_LAYOUT) {
+    ctx.scene.object.place(placement.id, placement.x, (placement.y ?? 0) + 0.5, placement.z);
+  }
+  ctx.scene.object.place("station_ammo", 12, 0.5, 0);
+  ctx.scene.object.place("station_gear", -12, 0.5, 0);
+}
+
+export function clampToArena(x: number, z: number): readonly [number, number] {
+  const limit = ARENA_HALF - 1.2;
+  return [Math.max(-limit, Math.min(limit, x)), Math.max(-limit, Math.min(limit, z))];
 }

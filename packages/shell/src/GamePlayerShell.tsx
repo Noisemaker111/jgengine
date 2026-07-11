@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type ComponentType,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
@@ -32,6 +33,7 @@ import {
 } from "@jgengine/core/interaction/contextMenu";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { aimToPoint } from "@jgengine/core/input/pointer";
+import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import {
   createSelectionSet,
@@ -51,6 +53,7 @@ import {
   type CollisionObstacle,
   type MovementTuningOverrides,
 } from "@jgengine/core/movement/movementModel";
+import { steerYaw } from "@jgengine/core/movement/steering";
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import {
   advanceVoxelPlayer,
@@ -120,7 +123,8 @@ import { GridWorldScene } from "./world/GridWorldScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
-import { TouchControlsDock, TouchPlaySurface } from "./touch/TouchControlsOverlay";
+import { OrientationHint } from "./touch/OrientationHint";
+import { TouchControlsDock, TouchPlaySurface, touchDockClearance } from "./touch/TouchControlsOverlay";
 
 const DEV_USER_ID = "dev-player";
 const TURN_SPEED = 2.4;
@@ -295,16 +299,20 @@ export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironment
  * flipped the sign and launched airborne players upward instead.
  */
 export function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined {
-  if (physics?.gravity === undefined && physics?.jumpVelocity === undefined) return undefined;
-  const tuning: MovementTuningOverrides = {};
-  if (physics.gravity !== undefined) tuning.gravityAcceleration = -physics.gravity;
-  if (physics.jumpVelocity !== undefined) tuning.jumpVelocity = physics.jumpVelocity;
-  return tuning;
+  if (physics === undefined) return undefined;
+  return {
+    get gravityAcceleration() {
+      return physics.gravity === undefined ? undefined : -physics.gravity;
+    },
+    get jumpVelocity() {
+      return physics.jumpVelocity;
+    },
+  };
 }
 
 /** True when the world is an environment feature with terrain, so the voxel controller should sample its height. */
 export function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean {
-  return world?.kind === "environment" && world.terrain !== undefined;
+  return world?.kind === "environment" && (world.terrain !== undefined || (world.islands?.length ?? 0) > 0);
 }
 
 function colorFromId(id: string): string {
@@ -724,12 +732,15 @@ function FrameDriver({
   yawRef,
   pitchRef,
   primaryClickRef,
+  pointerAxisRef,
   onRuntimeError,
   multiplayer,
   serverIdRef,
   pointerService,
   pointerAim,
   pingCommand,
+  poster,
+  onPosterSettled,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
@@ -737,13 +748,18 @@ function FrameDriver({
   yawRef: { current: number };
   pitchRef: { current: number };
   primaryClickRef: { current: boolean };
+  pointerAxisRef: { current: PointerAxisState | null };
   onRuntimeError: (error: unknown, phase: string) => void;
   multiplayer: ShellMultiplayer | null;
   serverIdRef: { current: string | null };
   pointerService: PointerService;
   pointerAim: boolean;
   pingCommand: string | undefined;
+  poster: boolean;
+  onPosterSettled: () => void;
 }) {
+  const posterElapsedRef = useRef(0);
+  const posterDoneRef = useRef(false);
   const motionRef = useRef(createPlayerMotionState());
   const voxelBodyRef = useRef<VoxelPlayerBody | null>(null);
   const solidCacheRef = useRef<{ count: number; set: Set<string> }>({ count: -1, set: new Set() });
@@ -755,9 +771,15 @@ function FrameDriver({
   const movement = playable.movement;
   const voxelDims = useMemo(
     () => ({
-      halfWidth: collision?.halfWidth ?? 0.3,
-      height: collision?.height ?? 1.8,
-      stepHeight: collision?.stepHeight ?? 0.6,
+      get halfWidth() {
+        return collision?.halfWidth ?? 0.3;
+      },
+      get height() {
+        return collision?.height ?? 1.8;
+      },
+      get stepHeight() {
+        return collision?.stepHeight ?? 0.6;
+      },
     }),
     [collision],
   );
@@ -774,19 +796,32 @@ function FrameDriver({
   const hasTerrain = useMemo(() => hasEnvironmentTerrain(playable.game.world), [playable]);
 
   useFrame((_state, rawDt) => {
+    if (poster) {
+      if (posterDoneRef.current) return;
+      posterElapsedRef.current += Math.min(rawDt, 0.05);
+      if (posterElapsedRef.current >= POSTER_SETTLE_SECONDS) {
+        posterDoneRef.current = true;
+        onPosterSettled();
+        return;
+      }
+    }
     const simStart = performance.now();
     try {
+    let endPhase = devtools.profile.begin("time+input");
     const dt = Math.min(rawDt, 0.05);
     const gameDt = ctx.time.advance(dt);
     ctx.input.publish(heldActionsFor(tracker, inputActions));
-    if (tracker.isDown("turnLeft")) yawRef.current += TURN_SPEED * dt;
-    if (tracker.isDown("turnRight")) yawRef.current -= TURN_SPEED * dt;
+    ctx.input.publishPointer(pointerAxisRef.current);
+    const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
+    if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
+    endPhase();
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
     const player = ctx.scene.entity.get(playerId);
     const forwardX = Math.sin(yawRef.current);
     const forwardZ = Math.cos(yawRef.current);
     if (player !== null && drivesPose) {
+      endPhase = devtools.profile.begin("pose");
       const keys = createEmptyMovementKeys();
       keys.w = tracker.isDown("moveForward");
       keys.s = tracker.isDown("moveBack");
@@ -890,18 +925,24 @@ function FrameDriver({
           dt: rawDt,
         });
       }
+      endPhase();
     }
 
     if (autoPickupRadius !== null) {
+      endPhase = devtools.profile.begin("pickup");
       const self = ctx.scene.entity.get(playerId);
       if (self !== null) {
         const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
         if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
       }
+      endPhase();
     }
 
-    playable.loop.onTick(ctx, gameDt);
+    devtools.profile.measure("onTick", () => {
+      playable.loop.onTick(ctx, gameDt);
+    });
 
+    endPhase = devtools.profile.begin("actions");
     if (tracker.wasPressed("tabTarget")) {
       if (ctx.game.commands.has("target.cycle")) ctx.game.commands.run("target.cycle", {});
       else ctx.scene.entity.cycleTarget(playerId, { filter: "hostile" });
@@ -966,9 +1007,11 @@ function FrameDriver({
       }
     }
     tracker.endFrame();
+    endPhase();
 
     const serverId = serverIdRef.current;
     if (multiplayer !== null && serverId !== null) {
+      endPhase = devtools.profile.begin("presence");
       const focus = ctx.scene.entity.get(playerId);
       if (focus !== null) {
         multiplayer.backend.presenceSync.syncPose(serverId, {
@@ -979,6 +1022,7 @@ function FrameDriver({
           rotationPitch: pitchRef.current,
         });
       }
+      endPhase();
     }
     } catch (error) {
       if (!hasReportedTickError.current) {
@@ -995,11 +1039,13 @@ function HudOnlyDriver({
   ctx,
   playable,
   tracker,
+  pointerAxisRef,
   onRuntimeError,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
   tracker: ActionStateTracker<string>;
+  pointerAxisRef: { current: PointerAxisState | null };
   onRuntimeError: (error: unknown, phase: string) => void;
 }) {
   const hasReportedTickError = useRef(false);
@@ -1017,10 +1063,16 @@ function HudOnlyDriver({
       const rawDt = (now - last) / 1000;
       const simStart = performance.now();
       try {
+        let endPhase = devtools.profile.begin("time+input");
         const dt = Math.min(rawDt, 0.05);
         const gameDt = ctx.time.advance(dt);
         ctx.input.publish(heldActionsFor(tracker, inputActions));
-        playable.loop.onTick(ctx, gameDt);
+        ctx.input.publishPointer(pointerAxisRef.current);
+        endPhase();
+        devtools.profile.measure("onTick", () => {
+          playable.loop.onTick(ctx, gameDt);
+        });
+        endPhase = devtools.profile.begin("actions");
         const nowMs = performance.now();
         for (const action of inputActions) {
           if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
@@ -1028,6 +1080,7 @@ function HudOnlyDriver({
           dispatchBoundAction(ctx, action, 0, 0, { yaw: 0, pitch: 0 });
         }
         tracker.endFrame();
+        endPhase();
       } catch (error) {
         if (!hasReportedTickError.current) {
           hasReportedTickError.current = true;
@@ -1038,7 +1091,7 @@ function HudOnlyDriver({
     };
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [ctx, playable, tracker, onRuntimeError, inputActions]);
+  }, [ctx, playable, tracker, pointerAxisRef, onRuntimeError, inputActions]);
 
   return null;
 }
@@ -1081,19 +1134,28 @@ function DiagnosticOverlay({ diagnostics }: { diagnostics: RuntimeDiagnostic[] }
   );
 }
 
+const POSTER_SETTLE_SECONDS = 1.6;
+
 export function GamePlayerShell({
   playable,
   multiplayer: rawMultiplayer = null,
+  poster = false,
+  onContextReady,
 }: {
   playable: PlayableGame;
   multiplayer?: ShellMultiplayer | null;
+  poster?: boolean;
+  /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots, tests, analytics. */
+  onContextReady?: (ctx: GameContext) => void;
 }) {
   const multiplayer = useMemo(
     () => (rawMultiplayer === null ? null : withDevtoolsLatency(rawMultiplayer)),
     [rawMultiplayer],
   );
-  const devtoolsEnabled = playable.devtools !== false;
+  const devtoolsEnabled = playable.devtools !== false && !poster;
   const [devtoolsOpen, setDevtoolsOpen] = useState(false);
+  const [posterFrozen, setPosterFrozen] = useState(false);
+  const posterSettledRef = useRef(false);
   const [ctx, setCtx] = useState<GameContext | null>(null);
   const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostic[]>([]);
   const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
@@ -1104,7 +1166,10 @@ export function GamePlayerShell({
   const cameraDraggingRef = useRef(false);
   const primaryClickRef = useRef(false);
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerAxisRef = useRef<PointerAxisState | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const f2HeldRef = useRef(false);
+  const f2ChordedRef = useRef(false);
   const pointerService = useMemo(() => createPointerService(), []);
   const selection = useMemo(() => createSelectionSet(), [playable]);
   const [marquee, setMarquee] = useState<ScreenRect | null>(null);
@@ -1114,6 +1179,15 @@ export function GamePlayerShell({
     () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(playable.game.input))),
     [playable],
   );
+  const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    if (rect === undefined) return;
+    pointerAxisRef.current = normalizePointerToAxis(event.clientX, event.clientY, rect);
+  };
+  const deactivatePointerAxis = () => {
+    const state = pointerAxisRef.current;
+    if (state !== null && state.active) pointerAxisRef.current = { ...state, active: false };
+  };
   const touchScheme = useMemo(
     () =>
       deriveTouchScheme(playable.game.input, {
@@ -1123,7 +1197,7 @@ export function GamePlayerShell({
       }),
     [playable],
   );
-  const { coarsePointer } = useDisplayProfile();
+  const { coarsePointer, portrait } = useDisplayProfile();
   const touchSink = useMemo(
     () => ({ onCodeDown: (code: string) => tracker.handleDown(code), onCodeUp: (code: string) => tracker.handleUp(code) }),
     [tracker],
@@ -1133,6 +1207,12 @@ export function GamePlayerShell({
     [playable],
   );
   useEffect(() => () => audioEngine.dispose(), [audioEngine]);
+  useEffect(() => {
+    if (ctx === null) return;
+    return ctx.game.events.on("audio.play", ({ sound, at }) => {
+      audioEngine.playOneShot(sound, at === undefined ? undefined : { x: at[0], y: at[1], z: at[2] });
+    });
+  }, [ctx, audioEngine]);
   const userId = multiplayer?.userId ?? DEV_USER_ID;
   const reportRuntimeError = (error: unknown, phase: string) => {
     const diagnostic = logRuntimeError(error, phase);
@@ -1150,6 +1230,7 @@ export function GamePlayerShell({
       });
       playable.loop.onInit(context);
       playable.loop.onNewPlayer(context);
+      onContextReady?.(context);
       setCtx(context);
     } catch (error) {
       reportRuntimeError(error, "init");
@@ -1289,16 +1370,40 @@ export function GamePlayerShell({
         onKeyDown={(event) => {
           if (event.code === "F2" && devtoolsEnabled) {
             event.preventDefault();
-            setDevtoolsOpen((current) => !current);
+            f2HeldRef.current = true;
+            f2ChordedRef.current = false;
+            return;
+          }
+          if (f2HeldRef.current) {
+            f2ChordedRef.current = true;
             return;
           }
           if (event.code === "Tab" || event.code === "Space") event.preventDefault();
           tracker.handleDown(event.code);
         }}
-        onKeyUp={(event) => tracker.handleUp(event.code)}
-        onBlur={() => tracker.reset()}
+        onKeyUp={(event) => {
+          if (event.code === "F2" && devtoolsEnabled) {
+            f2HeldRef.current = false;
+            if (!f2ChordedRef.current) setDevtoolsOpen((current) => !current);
+            return;
+          }
+          tracker.handleUp(event.code);
+        }}
+        onBlur={() => {
+          f2HeldRef.current = false;
+          tracker.reset();
+        }}
+        onPointerMove={trackPointerAxis}
+        onPointerLeave={deactivatePointerAxis}
+        onPointerCancel={deactivatePointerAxis}
       >
-        <HudOnlyDriver ctx={ctx} playable={playable} tracker={tracker} onRuntimeError={reportRuntimeError} />
+        <HudOnlyDriver
+          ctx={ctx}
+          playable={playable}
+          tracker={tracker}
+          pointerAxisRef={pointerAxisRef}
+          onRuntimeError={reportRuntimeError}
+        />
         <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
           <GameProvider context={ctx}>
             <GameUI />
@@ -1370,6 +1475,7 @@ export function GamePlayerShell({
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     wrapperRef.current?.focus();
+    trackPointerAxis(event);
     audioEngine.resume();
     if (contextMenu !== null) setContextMenu(null);
     if (event.button === 0) {
@@ -1380,6 +1486,7 @@ export function GamePlayerShell({
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    trackPointerAxis(event);
     if (pointer?.select !== true) return;
     const start = marqueeStartRef.current;
     if (start === null || (event.buttons & 1) === 0) return;
@@ -1479,26 +1586,62 @@ export function GamePlayerShell({
     }
   };
 
+  const dockMounted =
+    !poster &&
+    coarsePointer &&
+    touchScheme !== null &&
+    (touchScheme.joystick !== null || touchScheme.buttons.length > 0);
+  const orientationMismatch =
+    !poster &&
+    coarsePointer &&
+    playable.orientation !== undefined &&
+    (playable.orientation === "landscape") === portrait;
+
   return (
     <div
       ref={wrapperRef}
       tabIndex={0}
+      {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
       className="relative h-full w-full bg-neutral-950 outline-none"
+      style={
+        {
+          "--jg-hud-dock-clearance": `${dockMounted ? touchDockClearance(touchScheme) : 0}px`,
+        } as CSSProperties
+      }
       onKeyDown={(event) => {
         if (event.code === "F2" && devtoolsEnabled) {
           event.preventDefault();
-          document.exitPointerLock?.();
-          setDevtoolsOpen((current) => !current);
+          f2HeldRef.current = true;
+          f2ChordedRef.current = false;
+          return;
+        }
+        if (f2HeldRef.current) {
+          f2ChordedRef.current = true;
           return;
         }
         if (event.code === "Tab" || event.code === "Space") event.preventDefault();
         tracker.handleDown(event.code);
       }}
-      onKeyUp={(event) => tracker.handleUp(event.code)}
-      onBlur={() => tracker.reset()}
+      onKeyUp={(event) => {
+        if (event.code === "F2" && devtoolsEnabled) {
+          f2HeldRef.current = false;
+          if (!f2ChordedRef.current) {
+            document.exitPointerLock?.();
+            setDevtoolsOpen((current) => !current);
+          }
+          return;
+        }
+        tracker.handleUp(event.code);
+      }}
+      onBlur={() => {
+        f2HeldRef.current = false;
+        tracker.reset();
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerLeave={deactivatePointerAxis}
+      onPointerCancel={deactivatePointerAxis}
       onContextMenu={handleContextMenu}
       onWheel={(event) => {
         if (ctx === null || !event.shiftKey) return;
@@ -1511,6 +1654,7 @@ export function GamePlayerShell({
       }}
     >
       <Canvas
+        frameloop={poster && posterFrozen ? "demand" : "always"}
         orthographic={orthographic}
         camera={
           orthographic
@@ -1590,16 +1734,23 @@ export function GamePlayerShell({
           yawRef={yawRef}
           pitchRef={pitchRef}
           primaryClickRef={primaryClickRef}
+          pointerAxisRef={pointerAxisRef}
           onRuntimeError={reportRuntimeError}
           multiplayer={multiplayer}
           serverIdRef={serverIdRef}
           pointerService={pointerService}
           pointerAim={pointer?.aim === true}
           pingCommand={pointer?.pingCommand}
+          poster={poster}
+          onPosterSettled={() => {
+            if (posterSettledRef.current) return;
+            posterSettledRef.current = true;
+            setPosterFrozen(true);
+          }}
         />
         <DevtoolsRendererProbe />
       </Canvas>
-      {coarsePointer && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
+      {!poster && coarsePointer && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
         <TouchPlaySurface
           scheme={touchScheme}
           sink={touchSink}
@@ -1616,9 +1767,10 @@ export function GamePlayerShell({
           <GameUI />
         </GameProvider>
       </GameUiErrorBoundary>
-      {showReticle ? <Reticle /> : null}
-      {coarsePointer && touchScheme !== null && (touchScheme.joystick !== null || touchScheme.buttons.length > 0) ? (
-        <TouchControlsDock scheme={touchScheme} sink={touchSink} />
+      {!poster && showReticle ? <Reticle /> : null}
+      {dockMounted && touchScheme !== null ? <TouchControlsDock scheme={touchScheme} sink={touchSink} /> : null}
+      {orientationMismatch && playable.orientation !== undefined ? (
+        <OrientationHint wanted={playable.orientation} />
       ) : null}
       {marquee !== null ? <MarqueeBox rect={marquee} /> : null}
       {contextMenu !== null ? (
@@ -1633,7 +1785,7 @@ export function GamePlayerShell({
       {devtoolsEnabled ? (
         <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
       ) : null}
-      <DiagnosticOverlay diagnostics={diagnostics} />
+      {poster ? null : <DiagnosticOverlay diagnostics={diagnostics} />}
     </div>
   );
 }

@@ -44,6 +44,15 @@ describe("vehicle controller", () => {
     expect(pose.driftMeter.charge).toBeLessThan(chargedMeter);
   });
 
+  test("steering right turns the car toward screen-right", () => {
+    const vehicle = createVehicleController(SPAWN);
+    for (let i = 0; i < 60; i += 1) vehicle.tick(1 / 60, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }, false);
+    let pose = vehicle.tick(1 / 60, { throttle: 1, brake: 0, steer: 1, handbrake: 0 }, false);
+    for (let i = 0; i < 60; i += 1) pose = vehicle.tick(1 / 60, { throttle: 1, brake: 0, steer: 1, handbrake: 0 }, false);
+    expect(pose.heading).toBeLessThan(0);
+    expect(pose.position[0]).toBeLessThan(0);
+  });
+
   test("resetTo restores position, heading, and clears the drift meter", () => {
     const vehicle = createVehicleController(SPAWN);
     for (let i = 0; i < 60; i += 1) vehicle.tick(1 / 60, { throttle: 1, brake: 0, steer: 1, handbrake: 1 }, false);

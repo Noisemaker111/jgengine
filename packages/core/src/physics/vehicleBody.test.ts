@@ -75,7 +75,7 @@ describe("VehicleBody drive + tire grip response to axis input", () => {
       car.update(1 / 60, axis({ throttle: 1, steer: 1 }));
       w.step(1 / 60);
     }
-    expect(car.heading).not.toBeCloseTo(headingBefore, 2);
+    expect(car.heading).toBeLessThan(headingBefore);
     const [fx, fz] = car.forward;
     const forwardSpeed = w.velX[car.chassis]! * fx + w.velZ[car.chassis]! * fz;
     const lateral = Math.abs(-w.velX[car.chassis]! * fz + w.velZ[car.chassis]! * fx);

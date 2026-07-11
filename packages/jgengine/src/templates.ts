@@ -14,11 +14,66 @@ export interface TemplateFile {
 
 export const GAME_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 
+export const FOLDER_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9-]*$/;
+
 export function displayNameFromId(id: string): string {
   return id
     .split("-")
+    .filter((word) => word.length > 0)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+export function displayNameFromInput(input: string): string {
+  const trimmed = input.trim().replace(/\s+/g, " ");
+  if (trimmed.length === 0) {
+    throw new Error("game name must not be empty");
+  }
+  if (/\s/.test(trimmed)) return trimmed;
+  if (trimmed.includes("-")) return displayNameFromId(trimmed.toLowerCase());
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+export function folderNameFromTitle(input: string): string {
+  const cleaned = input
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "")
+    .replace(/\s+/g, " ");
+  if (cleaned.length === 0) {
+    throw new Error("game name must not be empty");
+  }
+  const folder = cleaned
+    .split(" ")
+    .filter((part) => part.length > 0)
+    .join("-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!FOLDER_NAME_PATTERN.test(folder)) {
+    throw new Error(
+      `folder name "${folder}" must start with a letter and contain only letters, digits, and dashes`,
+    );
+  }
+  return folder;
+}
+
+export function packageIdFromFolder(folder: string): string {
+  const id = folder
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!GAME_ID_PATTERN.test(id)) {
+    throw new Error(
+      `package id "${id}" must be kebab-case: lowercase letters, digits, dashes, starting with a letter`,
+    );
+  }
+  return id;
+}
+
+export function parseCreateName(input: string): { displayName: string; folderName: string; id: string } {
+  const displayName = displayNameFromInput(input);
+  const folderName = folderNameFromTitle(input);
+  const id = packageIdFromFolder(folderName);
+  return { displayName, folderName, id };
 }
 
 const indexHtml = (name: string) => `<!doctype html>
@@ -233,10 +288,11 @@ export const game = defineGame({
 `;
 
 const worldTs = (id: string) => `import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import { environment, grass, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
+import { environment, grass, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
 export const world: EnvironmentWorldFeature = environment({
-  terrain: terrain({ bounds: { w: 96, d: 96 }, height: 0, material: "grassland" }),
+  terrain: terrain({ bounds: { w: 96, d: 96 }, height: 0, material: "grass" }),
+  sky: sky({ preset: "day" }),
   vegetation: grass({ area: { w: 80, d: 80 }, density: 2, colors: ["#3f7d2d", "#6bbf4a"], seed: "${id}" }),
 });
 
@@ -344,23 +400,37 @@ describe("${id} world", () => {
 });
 `;
 
-const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agent notes
+const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agent briefing
 
-This is a JGengine game (pure-TypeScript engine SDK, \`@jgengine/*\` on npm). Load context before writing code:
+You are in a **JGengine** game project. JGengine is a pure-TypeScript game engine SDK on npm (\`@jgengine/core\`, \`react\`, \`shell\`, …). Site: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
 
+**How people use JGengine:** they say *Make a game that … with jgengine* to an agent. They do **not** start from a CLI tutorial. \`npx jgengine\` is for **you** (scaffold, skills, docs).
 - Engine API surface: \`npx jgengine llms core\` (any package name works) prints the packaged API docs.
-- Agent skills — intake router, focused API domains, browserless verify gate: \`npx jgengine skills\` installs them for your coding agent.
+- Agent skills — intake router, focused API domains, browserless verify gate: installed by create; recovery via \`npx jgengine skills -p\`.
 - Setup broken or UI unstyled: \`npx jgengine doctor\`.
 
-Rules this project follows:
+## What to do when the user wants this game built
 
-- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`index.css\`; every game-specific module, UI component, and test lives under \`src/game/\`.
-- \`game.config.ts\` is the single entry — \`defineGame({...})\` from \`@jgengine/shell/defineGame\`.
-- Scene and world changes are proven with \`summarizeEnvironment\` assertions in \`bun test src\` (see \`src/game/world.world.test.ts\`), never by screenshots as the inner loop.
-- HUD styling is Tailwind v4: the \`@source\` entries in \`src/index.css\` must cover \`@jgengine/react\` and \`@jgengine/shell\`${
-  variant === "in-repo" ? " (engine source dirs in this monorepo)" : " (their dist dirs in node_modules)"
-}, or engine UI classes are silently not generated and the HUD renders unstyled.
-- \`onNewPlayer\` spawns the player entity with \`id === ctx.player.userId\`; \`onTick\`'s \`dt\` is game time, never wall-clock.
+1. Read skills if present: \`jgengine\` (intake + routing), domain skills as needed, \`jgengine-verify\` (prove it works). They land under \`.agents/skills/\` or \`.claude/skills/\` when scaffolded via create.
+2. If skills are missing (your problem, not the user's): \`npx jgengine skills -p\` or use this file + \`npx jgengine llms core\`.
+3. **User-facing first reply is short** — game name, fantasy in 2–4 lines, POV (1st / 3rd / top-down / HUD-only), world kind, scale vibe. Ask a few tight questions (POV, world, multiplayer, how big). **Do not** dump file trees, catalog ids, keybind tables, or full phase plans to the user.
+4. Keep the full engineering plan (files, systems, budgets) internal. After they answer, scaffold is already here — build in phases, full game not a slice.
+
+## Engine loaders
+
+- API docs in the tarball: \`npx jgengine llms core\` (any package: react, shell, …)
+- Doctor: \`npx jgengine doctor\`
+- Dev: \`bun dev\` / \`npm run dev\`
+
+## Project rules
+
+- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`index.css\`; everything else under \`src/game/\`.
+- Entry: \`defineGame({...})\` from \`@jgengine/shell/defineGame\` in \`game.config.ts\`.
+- Prove world content with \`summarizeEnvironment\` in \`bun test\` (\`src/game/world.world.test.ts\`), not screenshot loops.
+- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\` and \`@jgengine/shell\`${
+  variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
+}, or the HUD is silently unstyled.
+- Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; \`onTick\` \`dt\` is game time.
 `;
 
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {

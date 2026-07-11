@@ -16,6 +16,10 @@ export interface BuoyantBodyConfig {
   topSpeed?: number;
   turnRate?: number;
   turnSpeedRef?: number;
+  /** Water-current acceleration (units/s²) sampled at the hull each tick and applied while submerged — feed a `windZones`/`flowTube` sample or a fixed vector. */
+  current?: (x: number, z: number, time: number) => readonly [number, number];
+  /** How much more current a broadside hull catches than a bow-on one (`1` = uniform, default; `2` = side-on drifts twice as hard). */
+  currentBroadside?: number;
 }
 
 const DEFAULT_HULL: readonly (readonly [number, number])[] = [
@@ -47,6 +51,8 @@ export class BuoyantBody {
   private readonly topSpeed: number;
   private readonly turnRate: number;
   private readonly turnSpeedRef: number;
+  private readonly current: ((x: number, z: number, time: number) => readonly [number, number]) | null;
+  private readonly currentBroadside: number;
   private submergedFlag = false;
 
   constructor(world: PhysicsWorld, config: BuoyantBodyConfig) {
@@ -64,6 +70,8 @@ export class BuoyantBody {
     this.topSpeed = config.topSpeed ?? 14;
     this.turnRate = config.turnRate ?? 1.2;
     this.turnSpeedRef = config.turnSpeedRef ?? 4;
+    this.current = config.current ?? null;
+    this.currentBroadside = config.currentBroadside ?? 1;
   }
 
   get position(): [number, number, number] {
@@ -110,6 +118,16 @@ export class BuoyantBody {
       const drag = Math.max(0, 1 - this.linearDrag * dt);
       w.velX[b]! *= drag;
       w.velZ[b]! *= drag;
+      if (this.current !== null) {
+        const [cx, cz] = this.current(w.posX[b]!, w.posZ[b]!, time);
+        const magnitude = Math.hypot(cx, cz);
+        if (magnitude > 0) {
+          const alignment = Math.abs((cx * sin + cz * cos) / magnitude);
+          const scale = this.currentBroadside + (1 - this.currentBroadside) * alignment;
+          w.velX[b]! += cx * scale * dt;
+          w.velZ[b]! += cz * scale * dt;
+        }
+      }
       this.submergedFlag = true;
       w.wake(b);
     } else {

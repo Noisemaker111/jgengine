@@ -3,7 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { CommandBlock } from "../components/Copy";
 import { Page, PageHero } from "../components/Layout";
 import { SKILL_SLUGS } from "../content/skills";
-import { INSTALL_CMD, SKILL_GUIDE } from "../lib/site";
+import { ENTRY_PROMPT, SKILL_GUIDE } from "../lib/site";
 
 export const Route = createFileRoute("/skills/")({
   head: () => ({
@@ -24,10 +24,10 @@ function SkillsIndex() {
       <PageHero
         eyebrow="The spec"
         title="Skills"
-        blurb="The main skill captures a short numbered blueprint, then routes the agent to only the API domains the game needs."
+        blurb="The main skill captures a short numbered blueprint, then routes the agent to only the API domains the game needs. You never install them yourself — say the prompt and the agent loads them."
       >
         <div className="max-w-xl">
-          <CommandBlock command={INSTALL_CMD} />
+          <CommandBlock command={ENTRY_PROMPT} kind="prompt" />
         </div>
       </PageHero>
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">

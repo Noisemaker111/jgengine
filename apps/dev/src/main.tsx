@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsOverlay";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
@@ -14,6 +15,7 @@ import {
 } from "@jgengine/shell/multiplayer";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
+import { armCaptureReady, captureArmed, setCaptureStatus } from "./captureReady";
 import "./index.css";
 
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
@@ -47,15 +49,19 @@ const gameSourceModules = import.meta.glob<Record<string, unknown>>([
 async function discoverGameTunables(gameId: string, gameName: string): Promise<void> {
   const prefix = `../../../Games/${gameId}/src/`;
   const loaders = Object.entries(gameSourceModules).filter(([path]) => path.startsWith(prefix));
-  await Promise.all(
+  const loaded = await Promise.all(
     loaders.map(async ([path, loader]) => {
       try {
-        devtools.discover.scanModule(await loader());
+        return await loader();
       } catch (error) {
         console.warn(`[jgengine:devtools] skipped ${path} during tunable discovery`, error);
+        return null;
       }
     }),
   );
+  for (const moduleExports of loaded) {
+    if (moduleExports !== null) devtools.discover.scanModule(moduleExports);
+  }
   applyStoredDevtoolsOverrides(gameName);
 }
 
@@ -96,6 +102,7 @@ const GAME_ID =
   (import.meta.env.VITE_GAME_ID as string | undefined) ??
   "demo";
 const MODE = urlParams.get("mode") ?? "play";
+const STAGE = urlParams.get("stage") === "1";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
@@ -128,6 +135,7 @@ function DevApp() {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
   const [scenario, setScenario] = useState<UiPreviewScenario | undefined>(undefined);
+  const [scenarioPending, setScenarioPending] = useState(STAGE && MODE !== "ui");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   useEffect(() => {
@@ -148,16 +156,24 @@ function DevApp() {
       window.removeEventListener("unhandledrejection", onRejection);
     };
   }, []);
+  useEffect(() => armCaptureReady(MODE), []);
   useEffect(() => {
-    const load = gameRegistry[GAME_ID] ?? gameRegistry.demo;
+    if (!captureArmed()) return;
+    if (loadError !== null) setCaptureStatus("error", loadError);
+    else if (runtimeError !== null) setCaptureStatus("error", runtimeError);
+  }, [loadError, runtimeError]);
+  useEffect(() => {
+    const load = gameRegistry[GAME_ID];
     if (load === undefined) {
-      setLoadError(`Unknown game "${GAME_ID}"`);
+      setLoadError(`Unknown game "${GAME_ID}" — known ids: ${Object.keys(gameRegistry).sort().join(", ")}`);
       return;
     }
     void load()
       .then(async (loaded) => {
         await discoverGameTunables(GAME_ID, loaded.game.name);
-        if (P2P_ROLE === "host" || P2P_ROLE === "join") {
+        if (MODE === "poster") {
+          setMultiplayer(null);
+        } else if (P2P_ROLE === "host" || P2P_ROLE === "join") {
           void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
         } else {
           setMultiplayer(
@@ -183,12 +199,18 @@ function DevApp() {
         setLoadError(message);
       });
     const loadScenario = uiScenarioRegistry[GAME_ID];
-    if (MODE === "ui" && loadScenario !== undefined) {
+    if ((MODE === "ui" || STAGE) && loadScenario !== undefined) {
       void loadScenario()
-        .then((resolved) => setScenario(() => resolved))
+        .then((resolved) => {
+          setScenario(() => resolved);
+          setScenarioPending(false);
+        })
         .catch((error: unknown) => {
           console.error(`[jgengine/play] failed to load ui scenario ${GAME_ID}`, error);
+          setScenarioPending(false);
         });
+    } else {
+      setScenarioPending(false);
     }
   }, []);
   if (loadError !== null) {
@@ -205,7 +227,17 @@ function DevApp() {
     );
   }
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
-  return <GamePlayerShell playable={playable} multiplayer={multiplayer} />;
+  if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
+  if (scenarioPending) {
+    return (
+      <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
+        Staging scenario…
+      </div>
+    );
+  }
+  const stageScenario =
+    STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
+  return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={stageScenario} />;
 }
 
 createRoot(document.getElementById("root")!).render(<DevApp />);

@@ -12,7 +12,7 @@ export type EntityPosition = readonly [number, number, number];
 
 export type SpawnPositionInput = EntityPosition | { x: number; y: number; z: number };
 
-export interface SceneEntity<TMeta = undefined> {
+export interface SceneEntity<TMeta = unknown> {
   id: string;
   name: string;
   position: EntityPosition;
@@ -24,6 +24,7 @@ export interface SceneEntity<TMeta = undefined> {
   role: EntityRole;
   movement: EntityMovement;
   behaviors: readonly BehaviorDescriptor[];
+  /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with a cast or type guard on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
 }
 
@@ -40,7 +41,7 @@ export function movedWhileFrozen(entity: SceneEntity<unknown>, threshold = DEFAU
   return speed > threshold;
 }
 
-export interface SpawnOptions<TMeta = undefined> {
+export interface SpawnOptions<TMeta = unknown> {
   id?: string;
   position?: SpawnPositionInput;
   rotationY?: number;
@@ -50,6 +51,8 @@ export interface SpawnOptions<TMeta = undefined> {
   movement?: EntityMovement;
   behaviors?: readonly BehaviorDescriptor[];
   meta?: TMeta;
+  /** When `id` is already spawned: `"throw"` (default), `"replace"` (fresh spawn over it — remount-safe world setup, #284.10), or `"keep"` (leave it untouched and return the id). */
+  onExisting?: "throw" | "replace" | "keep";
 }
 
 function toEntityPosition(position: SpawnPositionInput | undefined): EntityPosition {
@@ -72,18 +75,17 @@ export interface SpawnPose {
   rotationY: number;
 }
 
-export interface EntityStore<TMeta = undefined> {
+export type EntityUpdatePatch<TMeta = unknown> = Partial<
+  Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "meta">
+> & {
+  /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `setPose` with `dt` for that. */
+  position?: SpawnPositionInput;
+};
+
+export interface EntityStore<TMeta = unknown> {
   spawn(name: string, options?: SpawnOptions<TMeta>): string;
   despawn(id: string): boolean;
-  update(
-    id: string,
-    patch: Partial<
-      Pick<
-        SceneEntity<TMeta>,
-        "name" | "position" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "meta"
-      >
-    >,
-  ): boolean;
+  update(id: string, patch: EntityUpdatePatch<TMeta>): boolean;
   setPose(id: string, pose: EntityPose): boolean;
   get(id: string): SceneEntity<TMeta> | null;
   list(): readonly SceneEntity<TMeta>[];
@@ -94,7 +96,7 @@ export interface EntityStore<TMeta = undefined> {
   resetToSpawn(id: string): boolean;
 }
 
-export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
+export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
   const store = createObservableKeyedStore<SceneEntity<TMeta>>();
   const spawnPoses = new Map<string, SpawnPose>();
   let nextCounter = 1;
@@ -112,7 +114,9 @@ export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
   return {
     spawn(name, options = {}) {
       if (options.id !== undefined && store.has(options.id)) {
-        throw new Error(`Scene entity id "${options.id}" is already spawned.`);
+        const onExisting = options.onExisting ?? "throw";
+        if (onExisting === "keep") return options.id;
+        if (onExisting === "throw") throw new Error(`Scene entity id "${options.id}" is already spawned.`);
       }
       const id = options.id ?? generateId();
       const position = toEntityPosition(options.position);
@@ -142,7 +146,12 @@ export function createEntityStore<TMeta = undefined>(): EntityStore<TMeta> {
     update(id, patch) {
       const current = store.get(id);
       if (!current) return false;
-      store.set(id, { ...current, ...patch });
+      const { position, ...rest } = patch;
+      store.set(id, {
+        ...current,
+        ...rest,
+        ...(position === undefined ? {} : { position: toEntityPosition(position) }),
+      });
       return true;
     },
     setPose(id, pose) {

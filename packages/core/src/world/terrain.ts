@@ -1,8 +1,11 @@
 import type {
+  EnvironmentWorldFeature,
   TerrainColors,
   TerrainEnvironmentConfig,
   TerrainEnvironmentDescriptor,
   TerrainFlattenMask,
+  TerrainIslandDescriptor,
+  TerrainMaterial,
   WorldBounds,
   WorldFeature,
 } from "./features";
@@ -220,8 +223,98 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
 }
 
 export function groundFieldFor(world?: WorldFeature): TerrainField {
-  if (world !== undefined && world.kind === "environment") return resolveTerrainField(world.terrain);
+  if (world !== undefined && world.kind === "environment") return resolveEnvironmentField(world);
   return flatField();
+}
+
+/** Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane. */
+export const ISLAND_VOID_HEIGHT = -256;
+
+function islandContains(descriptor: TerrainIslandDescriptor, x: number, z: number): boolean {
+  return (
+    Math.abs(x - descriptor.origin[0]) <= descriptor.bounds.w / 2 &&
+    Math.abs(z - descriptor.origin[1]) <= descriptor.bounds.d / 2
+  );
+}
+
+/**
+ * Composes a base terrain and any number of bounded islands into one world field: inside an island's
+ * rect the island's own field (sampled in island-local coordinates) wins, elsewhere the base terrain
+ * answers, and with no base the gap is `ISLAND_VOID_HEIGHT` void. Later islands win overlaps.
+ */
+export function composeIslandFields(
+  base: TerrainField | null,
+  islands: readonly TerrainIslandDescriptor[],
+  voidHeight = ISLAND_VOID_HEIGHT,
+): TerrainField {
+  if (islands.length === 0) return base ?? flatField();
+  const resolved = islands.map((descriptor) => ({
+    descriptor,
+    field: resolveTerrainField({ ...descriptor, kind: "terrain" }),
+  }));
+
+  function islandAt(x: number, z: number): (typeof resolved)[number] | null {
+    for (let index = resolved.length - 1; index >= 0; index -= 1) {
+      if (islandContains(resolved[index]!.descriptor, x, z)) return resolved[index]!;
+    }
+    return null;
+  }
+
+  const sampleHeight = (x: number, z: number): number => {
+    const island = islandAt(x, z);
+    if (island !== null) {
+      return island.field.sampleHeight(x - island.descriptor.origin[0], z - island.descriptor.origin[1]);
+    }
+    return base !== null ? base.sampleHeight(x, z) : voidHeight;
+  };
+
+  return {
+    sampleHeight,
+    sampleNormal(x, z) {
+      const island = islandAt(x, z);
+      if (island !== null) {
+        return island.field.sampleNormal(x - island.descriptor.origin[0], z - island.descriptor.origin[1]);
+      }
+      return base !== null ? base.sampleNormal(x, z) : ([0, 1, 0] as const);
+    },
+    ...(base?.bounds === undefined ? {} : { bounds: base.bounds }),
+    ...(base?.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
+  };
+}
+
+/** The full ground field for an environment world: base `terrain` composed with any `islands`. */
+export function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField {
+  const base = feature.terrain === undefined ? null : resolveTerrainField(feature.terrain);
+  if (feature.islands === undefined || feature.islands.length === 0) return base ?? flatField();
+  return composeIslandFields(base, feature.islands);
+}
+
+export interface TerrainSlopeSample {
+  /** Unit XZ direction pointing downhill; `[0, 0]` on level ground. */
+  downhill: readonly [number, number];
+  /** Rise over run (tan of the slope angle); `0` on level ground. */
+  steepness: number;
+}
+
+/** Local slope from the field's normal — the input for gravity-roll, ski acceleration, and slide checks (#284.6). */
+export function sampleSlope(field: TerrainField, x: number, z: number): TerrainSlopeSample {
+  const [nx, ny, nz] = field.sampleNormal(x, z);
+  const horizontal = Math.hypot(nx, nz);
+  if (horizontal < 1e-9) return { downhill: [0, 0], steepness: 0 };
+  return {
+    downhill: [nx / horizontal, nz / horizontal],
+    steepness: horizontal / Math.max(ny, 1e-9),
+  };
+}
+
+/**
+ * Downhill force/acceleration from the local slope: direction × sin(slope angle) × `scale`.
+ * Add it to any integrator's XZ velocity each tick (`scale` ≈ gravity for a free-rolling body).
+ */
+export function slopeForce(field: TerrainField, x: number, z: number, scale = 9.8): readonly [number, number] {
+  const [nx, , nz] = field.sampleNormal(x, z);
+  if (Math.hypot(nx, nz) < 1e-9) return [0, 0];
+  return [nx * scale, nz * scale];
 }
 
 export interface TerrainPalette {
@@ -230,24 +323,90 @@ export interface TerrainPalette {
   waterline: string;
 }
 
-export const DEFAULT_TERRAIN_MATERIAL = "grass";
+export const DEFAULT_TERRAIN_MATERIAL: TerrainMaterial = "grass";
 
-export const TERRAIN_MATERIAL_PALETTES: Record<string, TerrainPalette> = {
+export const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> = {
   grass: { low: "#30402c", high: "#7f8b50", waterline: "#1d4c6e" },
   sand: { low: "#9c8354", high: "#e0c98a", waterline: "#2f6f8f" },
   snow: { low: "#c7d3dc", high: "#ffffff", waterline: "#3a6ea5" },
   rock: { low: "#3a3a3d", high: "#8a8a8d", waterline: "#1d4c6e" },
   ash: { low: "#2b2622", high: "#5c534a", waterline: "#3a3630" },
+  highland: { low: "#414f33", high: "#a3a86b", waterline: "#365f63" },
+  slate: { low: "#2f3540", high: "#7d8896", waterline: "#26404f" },
 };
 
 export function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors"> = {}): TerrainPalette {
-  const preset =
-    TERRAIN_MATERIAL_PALETTES[descriptor.material ?? DEFAULT_TERRAIN_MATERIAL] ?? TERRAIN_MATERIAL_PALETTES[DEFAULT_TERRAIN_MATERIAL];
+  const material = descriptor.material ?? DEFAULT_TERRAIN_MATERIAL;
+  const preset = TERRAIN_MATERIAL_PALETTES[material] as TerrainPalette | undefined;
+  if (preset === undefined) {
+    throw new Error(
+      `Unknown terrain material "${material}". Valid materials: ${Object.keys(TERRAIN_MATERIAL_PALETTES).join(", ")}. Use colors: { low, high, waterline } for a custom look.`,
+    );
+  }
   const colors: TerrainColors = descriptor.colors ?? {};
   return {
     low: colors.low ?? preset.low,
     high: colors.high ?? preset.high,
     waterline: colors.waterline ?? preset.waterline,
+  };
+}
+
+function hexToRgb(hex: string): readonly [number, number, number] {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const value = ((Math.round(r) & 0xff) << 16) | ((Math.round(g) & 0xff) << 8) | (Math.round(b) & 0xff);
+  return `#${value.toString(16).padStart(6, "0")}`;
+}
+
+function mixHex(from: string, to: string, t: number): string {
+  if (t <= 0) return from;
+  if (t >= 1) return to;
+  const [fr, fg, fb] = hexToRgb(from);
+  const [tr, tg, tb] = hexToRgb(to);
+  return rgbToHex(lerp(fr, tr, t), lerp(fg, tg, t), lerp(fb, tb, t));
+}
+
+function mixPalette(from: TerrainPalette, to: TerrainPalette, t: number): TerrainPalette {
+  if (t <= 0) return from;
+  if (t >= 1) return to;
+  return {
+    low: mixHex(from.low, to.low, t),
+    high: mixHex(from.high, to.high, t),
+    waterline: mixHex(from.waterline, to.waterline, t),
+  };
+}
+
+/**
+ * Per-position palette sampler over the descriptor's base `material`/`colors` plus its
+ * `materialRegions` — the multi-biome coloring seam. Regions paint fully inside `radius`
+ * and blend back to the surrounding palette across `falloff`; later regions win overlaps.
+ */
+export function createTerrainPaletteSampler(
+  descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions">,
+): (x: number, z: number) => TerrainPalette {
+  const base = resolveTerrainPalette(descriptor);
+  const regions = (descriptor.materialRegions ?? []).map((region) => ({
+    center: region.center,
+    radius: region.radius,
+    falloff: region.falloff ?? region.radius * 0.5,
+    palette: resolveTerrainPalette(region),
+  }));
+  if (regions.length === 0) return () => base;
+  return (x, z) => {
+    let palette = base;
+    for (const region of regions) {
+      const distance = Math.hypot(x - region.center[0], z - region.center[1]);
+      if (distance <= region.radius) {
+        palette = region.palette;
+      } else if (distance <= region.radius + region.falloff) {
+        const t = smoothstep(region.radius, region.radius + region.falloff, distance);
+        palette = mixPalette(region.palette, palette, t);
+      }
+    }
+    return palette;
   };
 }
 
@@ -279,20 +438,26 @@ function withFlattenMasks(
 
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
   if (descriptor === undefined) return flatField();
-  const noise = noiseField({
-    seed: descriptor.seed,
-    amplitude: descriptor.height,
-    frequency: descriptor.frequency,
-    octaves: descriptor.octaves,
-    ridged: descriptor.ridged,
-    baseHeight: descriptor.baseHeight,
-    waterLevel: descriptor.waterLevel,
-    bounds: descriptor.bounds,
-  });
-  if (descriptor.flatten === undefined || descriptor.flatten.length === 0) return noise;
-  return fieldFromHeight(withFlattenMasks(noise.sampleHeight, descriptor.flatten), {
-    bounds: noise.bounds,
-    waterLevel: noise.waterLevel,
+  const base =
+    descriptor.heightField !== undefined
+      ? fieldFromHeight(descriptor.heightField, {
+          bounds: descriptor.bounds,
+          ...(descriptor.waterLevel === undefined ? {} : { waterLevel: descriptor.waterLevel }),
+        })
+      : noiseField({
+          seed: descriptor.seed,
+          amplitude: descriptor.height,
+          frequency: descriptor.frequency,
+          octaves: descriptor.octaves,
+          ridged: descriptor.ridged,
+          baseHeight: descriptor.baseHeight,
+          waterLevel: descriptor.waterLevel,
+          bounds: descriptor.bounds,
+        });
+  if (descriptor.flatten === undefined || descriptor.flatten.length === 0) return base;
+  return fieldFromHeight(withFlattenMasks(base.sampleHeight, descriptor.flatten), {
+    bounds: base.bounds,
+    waterLevel: base.waterLevel,
   });
 }
 

@@ -1,3 +1,5 @@
+import { steerYaw, yawRight } from "@jgengine/core/movement/steering";
+
 import type { DroneAxes } from "./input";
 
 export interface DroneSpawn {
@@ -68,11 +70,10 @@ export function createDroneController(spawn: DroneSpawn, tuning: DroneTuning = D
 
   return {
     tick(dt, axes, wind) {
-      heading += axes.yaw * tuning.yawRate * dt;
+      heading = steerYaw(heading, axes.yaw, tuning.yawRate, dt);
       const fx = Math.sin(heading);
       const fz = Math.cos(heading);
-      const rx = Math.cos(heading);
-      const rz = -Math.sin(heading);
+      const [rx, rz] = yawRight(heading);
 
       const boostMul = axes.boost ? tuning.boostMultiplier : 1;
       const forwardAccel = axes.pitch * tuning.forwardThrust * boostMul;

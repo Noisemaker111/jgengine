@@ -175,6 +175,34 @@ describe("scene object store", () => {
     expect(object?.parentSpace).toBe("plot:garage");
     expect(object?.visual).toEqual({ scale: [2, 3, 4] });
   });
+
+  test("onExisting keep returns the existing instanceId untouched", () => {
+    const store = createObjectStore();
+    store.place("rack", 1, 0, 2, { instanceId: "r1" });
+    const id = store.place("rack.gpu", 9, 0, 9, { instanceId: "r1", onExisting: "keep" });
+    expect(id).toBe("r1");
+    expect(store.get("r1")?.catalogId).toBe("rack");
+    expect(store.get("r1")?.position).toEqual([1, 0, 2]);
+  });
+
+  test("onExisting replace respawns fresh and keeps the spatial index correct", () => {
+    const store = createObjectStore();
+    store.place("rack", 1, 0, 2, { instanceId: "r1" });
+    expect(store.at(1, 0, 2)).toHaveLength(1);
+
+    const id = store.place("rack.gpu", 9, 0, 9, { instanceId: "r1", onExisting: "replace" });
+    expect(id).toBe("r1");
+    expect(store.get("r1")?.catalogId).toBe("rack.gpu");
+    expect(store.get("r1")?.position).toEqual([9, 0, 9]);
+    expect(store.at(1, 0, 2)).toEqual([]);
+    expect(store.at(9, 0, 9).map((o) => o.instanceId)).toEqual(["r1"]);
+  });
+
+  test("onExisting default still throws on a duplicate id", () => {
+    const store = createObjectStore();
+    store.place("rack", 0, 0, 0, { instanceId: "r1" });
+    expect(() => store.place("rack.gpu", 1, 0, 0, { instanceId: "r1" })).toThrow();
+  });
 });
 
 describe("objectVisualScale", () => {

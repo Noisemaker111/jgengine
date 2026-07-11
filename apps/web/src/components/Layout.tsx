@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { INSTALL_CMD, REPO_URL } from "../lib/site";
+import { ENTRY_PROMPT, REPO_URL } from "../lib/site";
 
 export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -146,7 +146,7 @@ export function Footer() {
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
               A pure-TypeScript game engine SDK. AI coding agents build on it using focused JGengine Skills.
             </p>
-            <code className="mt-4 block font-mono text-xs text-emerald-400/70">$ {INSTALL_CMD}</code>
+            <code className="mt-4 block font-mono text-xs text-emerald-400/70">› {ENTRY_PROMPT}</code>
           </div>
           <div className="flex gap-16 text-sm">
             <div>

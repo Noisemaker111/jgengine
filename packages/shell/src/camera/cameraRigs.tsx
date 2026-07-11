@@ -17,10 +17,12 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { ORBIT_CAMERA_FRAME_PRIORITY, type Vec3 } from "./orbitCameraMath";
 import {
+  bankRollStep,
   chaseDesiredPosition,
   chaseLookAt,
   cinematicSample,
   clamp,
+  leadFollowPoint,
   lockOnPose,
   observerPose,
   resolveChase,
@@ -523,16 +525,20 @@ export function ChaseRig(props: RigProps) {
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
   const config: ChaseCameraConfig | undefined = props.config?.chase;
-  const resolved = useMemo(() => resolveChase(config), [config]);
-  const { commit, beginTransition } = useCameraCommit(props, followId);
+  const staticResolved = useMemo(() => resolveChase(config), [config]);
+  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const shake = useCameraShake();
   const posRef = useRef<Vec3 | null>(null);
   const lastFollowRef = useRef<Vec3 | null>(null);
+  const lastYawRef = useRef<number | null>(null);
+  const rollRef = useRef(0);
   const view = config?.view ?? "chase";
 
   useEffect(beginTransition, [view]);
 
   useFrame((_, dt) => {
+    const tuning = ctx.camera.chaseTuning();
+    const resolved = tuning === null ? staticResolved : resolveChase({ ...config, ...tuning });
     const sample = readFollow(ctx, followId);
     const follow = sample?.pos ?? { x: 0, y: 0, z: 0 };
     const yaw = sample?.yaw ?? 0;
@@ -540,8 +546,11 @@ export function ChaseRig(props: RigProps) {
     const last = lastFollowRef.current ?? follow;
     const speed = dt > 0 ? Math.hypot(follow.x - last.x, follow.z - last.z) / dt : 0;
     lastFollowRef.current = follow;
+    const lastYaw = lastYawRef.current ?? yaw;
+    lastYawRef.current = yaw;
+    rollRef.current = bankRollStep(rollRef.current, yaw, lastYaw, dt, resolved);
 
-    const fov = speedToFov(speed, config?.fov);
+    const fov = speedToFov(speed, tuning?.fov ?? config?.fov);
 
     if (view !== "chase") {
       const seat =
@@ -559,7 +568,8 @@ export function ChaseRig(props: RigProps) {
       return;
     }
 
-    const desired = chaseDesiredPosition(follow, yaw, resolved);
+    const led = leadFollowPoint(follow, last, dt, resolved);
+    const desired = chaseDesiredPosition(led, yaw, resolved);
     const prev = posRef.current ?? desired;
     const smoothed = springArmStep(prev, desired, resolved.springDamping, dt);
     posRef.current = smoothed;
@@ -568,8 +578,9 @@ export function ChaseRig(props: RigProps) {
       shake.shake(Math.min(resolved.shakePerSpeed * speed * dt, 0.1));
     }
 
-    const pose: CameraPose = { position: smoothed, lookAt: chaseLookAt(follow, yaw, resolved), fov };
+    const pose: CameraPose = { position: smoothed, lookAt: chaseLookAt(led, yaw, resolved), fov };
     commit(pose, dt);
+    if (rollRef.current !== 0) camera.rotateZ(rollRef.current);
   }, CAMERA_RIG_FRAME_PRIORITY);
 
   return null;

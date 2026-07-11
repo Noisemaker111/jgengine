@@ -1,16 +1,24 @@
+import { useDisplayProfile } from "@jgengine/react/display";
+
 import type { SessionSnapshot } from "../../race/session";
 import { KeybindBadge } from "./KeybindBadge";
 import { formatRaceTime, PALETTE } from "./theme";
 
 export function ResultsScreen({ snapshot, onRestart }: { snapshot: SessionSnapshot; onRestart: () => void }) {
+  const { coarsePointer } = useDisplayProfile();
   const won = snapshot.outcome === "win";
   const accent = won ? PALETTE.skyTeal : PALETTE.windsockOrange;
-  const headline = won ? "FIRST THROUGH THE FINAL RING" : "THE PACER HELD THE CORE";
+  const headline = won ? "FIRST THROUGH THE FINAL RING" : snapshot.playerFinished ? "THE PACER HELD THE CORE" : "COURSE CLOSED — TIME EXPIRED";
+  const newBestTime = snapshot.records.improved.includes("totalTime");
+  const newBestStreak = snapshot.records.improved.includes("bestStreak");
 
   return (
     <div
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-7 px-6 text-center"
-      style={{ background: `radial-gradient(circle at center, ${accent}22, #0d1b1c 78%)` }}
+      style={{
+        background: `radial-gradient(circle at center, ${accent}22, #0d1b1c 78%)`,
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + var(--jg-hud-dock-clearance, 0px))",
+      }}
     >
       <div className="flex flex-col items-center gap-1">
         <span className="text-xs font-bold uppercase tracking-[0.5em]" style={{ color: accent }}>
@@ -21,15 +29,30 @@ export function ResultsScreen({ snapshot, onRestart }: { snapshot: SessionSnapsh
         </h1>
       </div>
 
+      {newBestTime && (
+        <span
+          className="rounded-full border-2 px-5 py-1 text-sm font-black uppercase tracking-[0.3em]"
+          style={{ borderColor: PALETTE.skyTeal, color: PALETTE.skyTeal, backgroundColor: `${PALETTE.skyTeal}1a` }}
+        >
+          New personal best
+        </span>
+      )}
+
       <div
         className="grid w-full max-w-md grid-cols-2 gap-4 rounded-lg border px-6 py-5"
         style={{ borderColor: `${PALETTE.citySlate}55`, backgroundColor: "#0f1d1e" }}
       >
-        <ResultStat label="Total Time" value={formatRaceTime(snapshot.totalTime)} accent={accent} highlight />
+        <ResultStat label="Total Time" value={formatRaceTime(snapshot.playerFinished ? snapshot.totalTime : null)} accent={accent} highlight />
+        <ResultStat label="Personal Best" value={formatRaceTime(snapshot.records.bestTime)} accent={PALETTE.skyTeal} highlight={newBestTime} />
         <ResultStat label="Laminar %" value={`${Math.round(snapshot.laminar.percent * 100)}%`} accent={accent} />
-        <ResultStat label="Longest Streak" value={String(snapshot.laminar.best)} accent={accent} />
-        <ResultStat label="Verdict" value={won ? "You win" : "You lose"} accent={accent} />
+        <ResultStat label={newBestStreak ? "Longest Streak ★" : "Longest Streak"} value={String(snapshot.laminar.best)} accent={accent} />
       </div>
+
+      {snapshot.ghost.bestTime !== null && (
+        <p className="text-[11px] uppercase tracking-[0.3em]" style={{ color: `${PALETTE.cloudWhite}66` }}>
+          Your best run flies again next race — chase the shadow glider
+        </p>
+      )}
 
       <button
         type="button"
@@ -46,7 +69,7 @@ export function ResultsScreen({ snapshot, onRestart }: { snapshot: SessionSnapsh
         }}
       >
         Fly Again
-        <KeybindBadge action="restart" />
+        {coarsePointer ? null : <KeybindBadge action="restart" />}
       </button>
     </div>
   );

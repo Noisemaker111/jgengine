@@ -19,12 +19,12 @@ describe("advanceCar", () => {
     expect(state.position[0]).toBeCloseTo(0, 5);
   });
 
-  test("steering right increases heading while moving forward", () => {
+  test("steering right turns toward screen-right while moving forward", () => {
     let state = createCarState([0, 0, 0], 0);
     state = advanceCar(state, { ...NEUTRAL_CAR_INPUT, throttle: true }, 1);
     const before = state.heading;
     state = advanceCar(state, { ...NEUTRAL_CAR_INPUT, throttle: true, steerRight: true }, 1 / 60);
-    expect(state.heading).toBeGreaterThan(before);
+    expect(state.heading).toBeLessThan(before);
   });
 
   test("drag decays speed to exactly zero with no input", () => {

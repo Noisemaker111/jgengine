@@ -2,20 +2,58 @@ import type {
   GameContextContent,
   GameContextEntityEntry,
   GameContextItemEntry,
+  GameContextObjectEntry,
 } from "@jgengine/core/runtime/gameContext";
-import { weaponItems } from "./items/weapons/catalog";
+import { enemies, enemyWeapons } from "./entities/enemies/catalog";
 import { players } from "./entities/players/catalog";
-import { enemies } from "./entities/enemies/catalog";
-
-const itemEntries = new Map<string, GameContextItemEntry>();
-const itemNames = new Map<string, string>();
-for (const item of weaponItems) {
-  itemEntries.set(item.id, { use: item.use, weapon: item.weapon });
-  itemNames.set(item.id, item.name);
-}
+import { gearItems } from "./items/gear/catalog";
+import { weapons, type WeaponStats } from "./items/weapons/catalog";
+import { coverObjects } from "./objects/catalog";
 
 const playersById = new Map(players.map((p) => [p.id, p]));
 const enemiesById = new Map(enemies.map((enemy) => [enemy.id, enemy]));
+const weaponsById = new Map(weapons.map((weapon) => [weapon.id, weapon]));
+const gearItemsById = new Map(gearItems.map((item) => [item.id, item]));
+const enemyWeaponsById = new Map(enemyWeapons.map((item) => [item.id, item]));
+const coverById = new Map(coverObjects.map((object) => [object.id, object]));
+
+type WeaponRecord = Record<string, number | Record<string, number>>;
+
+function toWeaponRecord(stats: WeaponStats | { damage: number; range: number; spread: number; projectile?: { speed: number } }): WeaponRecord {
+  const record: WeaponRecord = {};
+  for (const [key, value] of Object.entries(stats)) {
+    if (typeof value === "number") record[key] = value;
+    else if (typeof value === "object" && value !== null) record[key] = { ...value };
+  }
+  return record;
+}
+
+function itemById(itemId: string): GameContextItemEntry | null {
+  const weapon = weaponsById.get(itemId);
+  if (weapon !== undefined) {
+    return {
+      use: weapon.use,
+      weapon: toWeaponRecord(weapon.weapon),
+      rarity: weapon.rarity,
+      baseType: weapon.family,
+    };
+  }
+  const gear = gearItemsById.get(itemId);
+  if (gear !== undefined) {
+    return {
+      use: gear.use,
+      weapon: gear.weapon === undefined ? undefined : toWeaponRecord(gear.weapon),
+      trade: gear.trade,
+      rarity: "common",
+      baseType: gear.kind,
+    };
+  }
+  const bolt = enemyWeaponsById.get(itemId);
+  if (bolt !== undefined) {
+    return { weapon: toWeaponRecord(bolt.weapon) };
+  }
+  return null;
+}
 
 function entityById(catalogId: string): GameContextEntityEntry | null {
   const p = playersById.get(catalogId);
@@ -35,11 +73,12 @@ function entityById(catalogId: string): GameContextEntityEntry | null {
   return null;
 }
 
-export const content: GameContextContent = {
-  itemById: (itemId) => itemEntries.get(itemId) ?? null,
-  entityById,
-};
+function objectById(catalogId: string): GameContextObjectEntry | null {
+  return coverById.has(catalogId) ? {} : null;
+}
+
+export const content: GameContextContent = { itemById, entityById, objectById };
 
 export function itemNameById(itemId: string): string {
-  return itemNames.get(itemId) ?? itemId;
+  return weaponsById.get(itemId)?.name ?? gearItemsById.get(itemId)?.name ?? itemId;
 }

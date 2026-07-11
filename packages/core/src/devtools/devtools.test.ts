@@ -68,10 +68,58 @@ describe("devtools frame stats", () => {
     expect(stats!.maxSimMs).toBe(30);
     expect(stats!.longFrames).toBe(1);
     expect(stats!.samples).toBe(101);
+    expect(stats!.avgOutsideMs).toBeGreaterThan(0);
   });
 
   test("returns null before any sample", () => {
     expect(createDevtools().frame.stats()).toBeNull();
+  });
+
+  test("profile.measure attributes phases and explains long frames", () => {
+    const dev = createDevtools();
+    dev.probes.register("entities", () => 12);
+    dev.profile.add("onTick", 18);
+    dev.profile.add("pose", 3);
+    dev.frame.record({ frameMs: 40, simMs: 22 });
+    const stats = dev.frame.stats();
+    expect(stats).not.toBeNull();
+    expect(stats!.phases.map((phase) => phase.name)).toContain("onTick");
+    expect(stats!.phases.map((phase) => phase.name)).toContain("pose");
+    expect(stats!.phases[0]!.name).toBe("onTick");
+    const longs = dev.frame.longFrames();
+    expect(longs).toHaveLength(1);
+    expect(longs[0]!.culprit).toBe("onTick");
+    expect(longs[0]!.reason).toContain("onTick");
+    expect(longs[0]!.phases[0]!.name).toBe("onTick");
+    expect(longs[0]!.probes["entities"]).toBe(12);
+    expect(longs[0]!.outsideMs).toBeCloseTo(18, 0);
+  });
+
+  test("outside-sim hitch is diagnosed when sim is light", () => {
+    const dev = createDevtools();
+    dev.profile.add("onTick", 1);
+    dev.frame.record({ frameMs: 50, simMs: 2 });
+    const event = dev.frame.longFrames()[0]!;
+    expect(event.culprit).toBe("outside-sim");
+    expect(event.reason).toContain("outside sim");
+  });
+
+  test("explicit phases override the in-flight profile buffer", () => {
+    const dev = createDevtools();
+    dev.profile.add("stale", 99);
+    dev.frame.record({ frameMs: 40, simMs: 25, phases: { physics: 18, ai: 4 } });
+    const event = dev.frame.longFrames()[0]!;
+    expect(event.culprit).toBe("physics");
+    expect(event.phases.map((phase) => phase.name)).toEqual(["physics", "ai"]);
+    expect(dev.profile.current()).toEqual({});
+  });
+
+  test("clearLongFrames empties the log", () => {
+    const dev = createDevtools();
+    dev.frame.record({ frameMs: 40, simMs: 5 });
+    expect(dev.frame.longFrames()).toHaveLength(1);
+    dev.frame.clearLongFrames();
+    expect(dev.frame.longFrames()).toHaveLength(0);
   });
 });
 
@@ -109,14 +157,17 @@ describe("devtools logs and latency", () => {
 });
 
 describe("devtools snapshot", () => {
-  test("bundles frame, controls, probes, and logs", () => {
+  test("bundles frame, controls, probes, logs, and long frames", () => {
     const dev = createDevtools();
-    dev.frame.record({ frameMs: 16, simMs: 1 });
+    dev.profile.add("onTick", 20);
+    dev.frame.record({ frameMs: 40, simMs: 22 });
     dev.controls.register("x", 1).set(2);
     dev.probes.register("entities", () => 42);
     dev.logs.push("warn", "careful");
     const snapshot = dev.snapshot();
     expect(snapshot.frame?.samples).toBe(1);
+    expect(snapshot.frame?.phases[0]?.name).toBe("onTick");
+    expect(snapshot.longFrames).toHaveLength(1);
     expect(snapshot.controls).toEqual([{ name: "x", kind: "slider", value: 2, initial: 1 }]);
     expect(snapshot.probes["entities"]).toBe(42);
     expect(snapshot.logs[0]!.message).toBe("careful");
@@ -132,17 +183,69 @@ describe("devtools snapshot", () => {
 });
 
 describe("devtools discovery", () => {
-  test("scans flat primitive tables and skips everything else", () => {
+  test("scans flat primitive tables and skips non-containers", () => {
     const dev = createDevtools();
     const MINING = { reach: 6, instaBreak: false, highlight: "#ffd166", name: "pick", fn: () => 1 };
     expect(dev.discover.scanTable("MINING", MINING)).toBe(3);
-    expect(dev.discover.scanTable("nope", [1, 2])).toBe(0);
     expect(dev.discover.scanTable("nope", 6)).toBe(0);
     expect(dev.discover.scanTable("nope", new Map())).toBe(0);
     const ids = dev.discover.list().map((entry) => entry.id);
     expect(ids).toEqual(["MINING/reach", "MINING/instaBreak", "MINING/highlight"]);
     expect(dev.discover.list()[0]!.kind).toBe("slider");
     expect(dev.discover.list()[2]!.kind).toBe("color");
+  });
+
+  test("recurses nested tables and arrays into dotted paths that mutate in place", () => {
+    const dev = createDevtools();
+    const playable = {
+      shadows: true,
+      camera: { rig: "chase", chase: { distance: 8 } },
+      game: { physics: { gravity: -24 } },
+      waves: [{ speed: 2.2 }, { speed: 3 }],
+    };
+    dev.discover.scanTable("game", playable);
+    const ids = dev.discover.list().map((entry) => entry.id);
+    expect(ids).toContain("game/shadows");
+    expect(ids).toContain("game/camera.chase.distance");
+    expect(ids).toContain("game/game.physics.gravity");
+    expect(ids).toContain("game/waves.0.speed");
+    dev.discover.enable("game/camera.chase.distance");
+    dev.controls.get("game/camera.chase.distance")!.write(14);
+    expect(playable.camera.chase.distance).toBe(14);
+    dev.discover.enable("game/waves.1.speed");
+    dev.controls.get("game/waves.1.speed")!.write(5);
+    expect(playable.waves[1]!.speed).toBe(5);
+  });
+
+  test("a property already bound under one table is not duplicated by a later scan", () => {
+    const dev = createDevtools();
+    const physics = { gravity: -24 };
+    dev.discover.scanTable("physics", physics);
+    dev.discover.scanTable("game", { game: { physics } });
+    const ids = dev.discover.list().map((entry) => entry.id);
+    expect(ids).toContain("physics/gravity");
+    expect(ids).not.toContain("game/game.physics.gravity");
+  });
+
+  test("skips blob levels with too many scalar entries and survives cycles", () => {
+    const dev = createDevtools();
+    const blob: Record<string, number> = {};
+    for (let i = 0; i < 70; i += 1) blob[`k${i}`] = i;
+    expect(dev.discover.scanTable("blob", blob)).toBe(0);
+    const cyclic: { x: number; self?: unknown } = { x: 1 };
+    cyclic.self = cyclic;
+    expect(dev.discover.scanTable("cyclic", cyclic)).toBe(1);
+  });
+
+  test("caps a single scan at 512 targets", () => {
+    const dev = createDevtools();
+    const root: Record<string, Record<string, number>> = {};
+    for (let group = 0; group < 10; group += 1) {
+      const child: Record<string, number> = {};
+      for (let i = 0; i < 60; i += 1) child[`v${i}`] = i;
+      root[`g${group}`] = child;
+    }
+    expect(dev.discover.scanTable("big", root)).toBe(512);
   });
 
   test("scanModule walks exports", () => {

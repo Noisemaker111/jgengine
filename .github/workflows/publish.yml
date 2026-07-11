@@ -12,14 +12,24 @@ concurrency:
   group: publish
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm install -g npm@latest
       - uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
@@ -36,12 +46,9 @@ jobs:
       - run: bun test packages Games
       - name: Publish unpublished packages in dependency order
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          # TODO: re-add jgengine once the npm token can publish the unscoped
-          # name (E403 — the token cannot claim it; owner action required).
-          for p in core ws sql react convex node shell assets; do
+          for p in core ws sql react convex node shell assets jgengine; do
             name=$(node -p "require('./packages/$p/package.json').name")
             version=$(node -p "require('./packages/$p/package.json').version")
             if npm view "$name@$version" version >/dev/null 2>&1; then

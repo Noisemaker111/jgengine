@@ -71,8 +71,21 @@ describe("minimap projection", () => {
     expect(clamped.y).toBeCloseTo(100);
   });
 
-  it("rotates the map so facing points up", () => {
-    const rotated = projectToMinimap([50, 0], { ...view, rotate: HALF_PI });
-    expect(rotated.y).toBeCloseTo(200);
+  it("rotates the map so the facing bearing points up", () => {
+    const facingEast = { ...view, rotate: HALF_PI };
+    const east = projectToMinimap([50, 0], facingEast);
+    expect(east.x).toBeCloseTo(100);
+    expect(east.y).toBeCloseTo(0);
+    const north = projectToMinimap([0, -50], facingEast);
+    expect(north.x).toBeCloseTo(0);
+    expect(north.y).toBeCloseTo(100);
+  });
+
+  it("keeps a rotating map aligned with headingToBearing of the entity yaw", () => {
+    const yaw = Math.PI / 3;
+    const aheadOfEntity: [number, number] = [Math.sin(yaw) * 25, Math.cos(yaw) * 25];
+    const projected = projectToMinimap(aheadOfEntity, { ...view, rotate: headingToBearing(yaw) });
+    expect(projected.x).toBeCloseTo(100);
+    expect(projected.y).toBeCloseTo(50);
   });
 });

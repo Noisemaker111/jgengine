@@ -91,7 +91,55 @@ describe("waterSurface", () => {
   });
 });
 
+describe("waterSurface level control", () => {
+  test("setLevel raises the base level and height() reflects it immediately", () => {
+    const surface = waterSurface({ level: 0, waves: 0 });
+    expect(surface.level).toBe(0);
+    expect(surface.height(3, -4, 5)).toBe(0);
+    surface.setLevel(3);
+    expect(surface.level).toBe(3);
+    expect(surface.height(3, -4, 5)).toBe(3);
+  });
+
+  test("a levelAt schedule wins over level and setLevel", () => {
+    const surface = waterSurface({ level: 2, waves: 0, levelAt: (t) => 10 + t });
+    expect(surface.height(0, 0, 0)).toBe(10);
+    expect(surface.height(0, 0, 4)).toBe(14);
+    surface.setLevel(99);
+    expect(surface.height(0, 0, 0)).toBe(10);
+    expect(surface.level).toBe(99);
+  });
+
+  test("levelAtTime returns the schedule value at t, or the current level without one", () => {
+    const scheduled = waterSurface({ level: 5, levelAt: (t) => 2 * t });
+    expect(scheduled.levelAtTime(3)).toBe(6);
+    expect(scheduled.levelAtTime(0)).toBe(0);
+
+    const unscheduled = waterSurface({ level: 5 });
+    expect(unscheduled.levelAtTime(3)).toBe(5);
+    unscheduled.setLevel(8);
+    expect(unscheduled.levelAtTime(3)).toBe(8);
+  });
+});
+
 describe("waterSurfaceFromDescriptor", () => {
+  test("passes levelAt through from an ocean({ levelAt }) descriptor", () => {
+    const levelAt = (t: number) => 1 + t;
+    const descriptor: OceanEnvironmentDescriptor = {
+      kind: "ocean",
+      bounds: { w: 1024, d: 1024 },
+      level: 0,
+      waveHeight: 0,
+      waveScale: 18,
+      waveSpeed: 0.55,
+      color: "#1d7fa3",
+      levelAt,
+    };
+    const surface = waterSurfaceFromDescriptor(descriptor, 0);
+    expect(surface.height(0, 0, 2)).toBe(3);
+    expect(surface.levelAtTime(2)).toBe(3);
+  });
+
   test("maps descriptor level and wave height", () => {
     const descriptor: OceanEnvironmentDescriptor = {
       kind: "ocean",

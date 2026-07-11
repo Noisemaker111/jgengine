@@ -1,4 +1,8 @@
-# JGengine
+# jgengine
+
+**TypeScript game engine SDK** for AI agents — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent card [jgengine.com/llms.txt](https://jgengine.com/llms.txt).
+
+> Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is a software game engine.
 
 A genre-agnostic, pure-TypeScript game engine SDK built for AI coding agents. Agents build games on the SDK using JGengine Skills, which provide intake, focused API guidance, and verification. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres, with socket.io, WebRTC peer-to-peer, and LAN as drop-in transports over the same protocol.
 
@@ -14,7 +18,7 @@ A genre-agnostic, pure-TypeScript game engine SDK built for AI coding agents. Ag
 | [`@jgengine/convex`](packages/convex) | Convex adapters: game transport, presence transport. |
 | [`@jgengine/shell`](packages/shell) | Game player shell: R3F canvas, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
 | [`@jgengine/assets`](packages/assets) | Self-generating, license-verified index of CC0 3D models: ships the typed index + pull CLI, not the GLB bytes. |
-| [`jgengine`](packages/jgengine) | The command line: `npx jgengine create <dir>` scaffolds a playable game; `doctor` diagnoses a setup; `skills`/`llms` load the agent skills and packaged API docs into any project. |
+| [`jgengine`](packages/jgengine) | Agent-side CLI (`npx jgengine`) — create, skills, doctor, llms. **People** do not start here; they tell an agent *Make a game that … with jgengine*. |
 
 ## Install
 
@@ -33,21 +37,25 @@ import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
 ```
 
-## Agent skills
+## How people build games (outside this monorepo)
 
-Building a game with an AI coding agent? Install the JGengine skills (API reference, UI quality bar, one-pass workflow):
+**One interface.** Open any coding agent and say:
 
-```sh
-npx jgengine skills
+```text
+Make a game that ... with jgengine
 ```
 
-Then tell your coding agent “make a tower defense game with jgengine,” or point an agent that has not heard of JGengine at [jgengine.com](https://jgengine.com). The small main skill captures a numbered build blueprint and routes the work to only the relevant API-domain skills. The skills live in [`skills/`](skills).
+Examples: *Make a game that is Mario Party with goo characters, with jgengine* · *Make a game that is a first-person voxel miner, with jgengine*.
+
+That is the whole product surface for humans. No install checklist, no “run skills first,” no required CLI.
+
+Under the hood the agent uses `npx jgengine` (create, skills, doctor, llms) and the skills in [`.claude/skills/`](.claude/skills) — an intake router plus focused API domains. Power users may call the CLI themselves; that is optional, not the entry.
 
 ## Website — [jgengine.com](https://jgengine.com)
 
-[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and the intake for agents that are simply told to use JGengine. It identifies the SDK, points agents at `npx jgengine skills`, and exposes the main router plus focused API domains. The skill pages are **rendered from `skills/`**, with no separate content to maintain.
+[`apps/web`](apps/web) is a TanStack Start app: landing for humans (the prompt) and skill/API pages for agents. Skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
 
-It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
+It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
 Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header dropdown — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally with the runner served for it in dev, so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine-foundation`'s standalone dev harness) launches one game on its own, no host app required.
 
@@ -65,6 +73,8 @@ bun run test
 bun dev              # jgengine.com locally, games playable at /play/?game=<id>
 bun run games:<id>   # one game standalone, e.g. bun run games:voxel-mine
 ```
+
+Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.
 
 ## Credits
 

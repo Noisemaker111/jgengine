@@ -5,6 +5,7 @@ import {
   environment,
   grass,
   ocean,
+  sky,
   terrain,
   type EnvironmentWorldFeature,
   type TerrainEnvironmentDescriptor,
@@ -36,11 +37,12 @@ export const terrainDescriptor: TerrainEnvironmentDescriptor = terrain({
   frequency: 0.015 + gen() * 0.01,
   octaves: 4,
   ridged: false,
-  material: "highland-turf",
+  material: "highland",
 });
 
 export const world: EnvironmentWorldFeature = environment({
   terrain: terrainDescriptor,
+  sky: sky({ preset: "day", horizonColor: "#cddcc0", zenithColor: "#7fa8d8", fog: { color: "#cddcc0", near: 260, far: 1400 } }),
   vegetation: grass({
     area: { w: 820, d: 820 },
     density: 3 + gen() * 1.5,

@@ -50,8 +50,9 @@ export function forwardVector(yaw: number): Vec3 {
   return { x: Math.sin(yaw), y: 0, z: Math.cos(yaw) };
 }
 
+/** Screen-right of a yaw: `forward × up` with up = +Y. */
 export function rightVector(yaw: number): Vec3 {
-  return { x: Math.cos(yaw), y: 0, z: -Math.sin(yaw) };
+  return { x: -Math.cos(yaw), y: 0, z: Math.sin(yaw) };
 }
 
 export interface ResolvedTopDown {
@@ -283,6 +284,11 @@ export interface ResolvedChase {
   lookHeight: number;
   springDamping: number;
   shakePerSpeed: number;
+  leadTime: number;
+  leadMax: number;
+  bankPerYawRate: number;
+  bankMax: number;
+  bankDamping: number;
 }
 
 export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedChase {
@@ -292,7 +298,40 @@ export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedCha
     lookHeight: config?.lookHeight ?? 1.2,
     springDamping: config?.springDamping ?? 6,
     shakePerSpeed: config?.shakePerSpeed ?? 0,
+    leadTime: config?.lead?.time ?? 0,
+    leadMax: config?.lead?.max ?? 4,
+    bankPerYawRate: config?.bank?.perYawRate ?? 0,
+    bankMax: config?.bank?.max ?? 0.35,
+    bankDamping: config?.bank?.damping ?? 8,
   };
+}
+
+/** Velocity-lead the follow point (#286.9): aim `leadTime` seconds along the target's frame velocity, clamped to `leadMax`. */
+export function leadFollowPoint(follow: Vec3, previous: Vec3, dt: number, resolved: ResolvedChase): Vec3 {
+  if (resolved.leadTime <= 0 || dt <= 0) return follow;
+  let leadX = ((follow.x - previous.x) / dt) * resolved.leadTime;
+  let leadZ = ((follow.z - previous.z) / dt) * resolved.leadTime;
+  const magnitude = Math.hypot(leadX, leadZ);
+  if (magnitude > resolved.leadMax) {
+    leadX *= resolved.leadMax / magnitude;
+    leadZ *= resolved.leadMax / magnitude;
+  }
+  return { x: follow.x + leadX, y: follow.y, z: follow.z + leadZ };
+}
+
+function wrapAngle(angle: number): number {
+  let wrapped = angle;
+  while (wrapped > Math.PI) wrapped -= Math.PI * 2;
+  while (wrapped < -Math.PI) wrapped += Math.PI * 2;
+  return wrapped;
+}
+
+/** One smoothing step of the chase rig's turn-bank roll (#286.10): roll opposes yaw rate, clamped and exponentially damped. */
+export function bankRollStep(currentRoll: number, yaw: number, previousYaw: number, dt: number, resolved: ResolvedChase): number {
+  if (resolved.bankPerYawRate <= 0) return 0;
+  const yawRate = dt > 0 ? wrapAngle(yaw - previousYaw) / dt : 0;
+  const target = clamp(-yawRate * resolved.bankPerYawRate, -resolved.bankMax, resolved.bankMax);
+  return currentRoll + (target - currentRoll) * Math.min(1, resolved.bankDamping * dt);
 }
 
 export interface ResolvedObserver {

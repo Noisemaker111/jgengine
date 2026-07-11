@@ -25,4 +25,8 @@ describe("slingshot siege world", () => {
     expect(summary.counts.buildings).toBe(0);
     expect(summary.counts.waterBodies).toBe(0);
   });
+
+  test("has a distinct dusty-range palette, not the default grass preset", () => {
+    expect(summary.terrain?.palette).toEqual({ low: "#5c4a2e", high: "#a8874f", waterline: "#1d4c6e" });
+  });
 });

@@ -9,9 +9,12 @@
   "dependencies": {
     "@jgengine/core": "workspace:*",
     "@jgengine/react": "workspace:*",
-    "react": "19.2.3"
+    "@jgengine/shell": "workspace:*",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@types/react": "^19"
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
   }
 }

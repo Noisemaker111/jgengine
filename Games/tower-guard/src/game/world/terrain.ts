@@ -7,4 +7,5 @@ export const TERRAIN: TerrainEnvironmentDescriptor = terrain({
   octaves: 3,
   seed: "tower-guard",
   baseHeight: 0,
+  material: "highland",
 });

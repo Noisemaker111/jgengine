@@ -215,8 +215,8 @@ export function stepKart(
   asteroids: readonly AsteroidObstacle[],
 ): StepResult {
   let heading = state.heading;
-  if (input.rotateLeft) heading -= ROTATE_SPEED * dt;
-  if (input.rotateRight) heading += ROTATE_SPEED * dt;
+  if (input.rotateLeft) heading += ROTATE_SPEED * dt;
+  if (input.rotateRight) heading -= ROTATE_SPEED * dt;
 
   const forwardX = Math.sin(heading);
   const forwardZ = Math.cos(heading);

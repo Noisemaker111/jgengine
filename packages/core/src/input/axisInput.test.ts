@@ -49,4 +49,31 @@ describe("AxisChannel", () => {
     ch.sample(0.1, held("KeyW"));
     expect(ch.value.throttle).toBe(1);
   });
+
+  test("a pointer-bound axis steers from the pointer and falls back to keys without one", () => {
+    const bindings = {
+      ...DRIVE_AXIS_BINDINGS,
+      steer: { ...DRIVE_AXIS_BINDINGS.steer, pointer: { source: "x" as const } },
+    };
+    const ch = new AxisChannel({ bindings, smoothing: 100 });
+    ch.sample(0.1, held(), { x: 0.6, y: 0, active: true });
+    expect(ch.value.steer).toBeCloseTo(0.6, 5);
+    ch.sample(0.1, held("KeyA"), { x: 0.6, y: 0, active: true });
+    expect(ch.value.steer).toBeCloseTo(0.6, 5);
+    ch.sample(0.1, held("KeyA"), null);
+    expect(ch.value.steer).toBe(-1);
+    ch.sample(0.1, held("KeyA"), { x: 0.6, y: 0, active: false });
+    expect(ch.value.steer).toBe(-1);
+  });
+
+  test("setAnalog still outranks a pointer-bound axis", () => {
+    const bindings = {
+      ...DRIVE_AXIS_BINDINGS,
+      steer: { ...DRIVE_AXIS_BINDINGS.steer, pointer: { source: "x" as const } },
+    };
+    const ch = new AxisChannel({ bindings, smoothing: 100 });
+    ch.setAnalog("steer", -0.3);
+    ch.sample(0.1, held(), { x: 0.9, y: 0, active: true });
+    expect(ch.value.steer).toBeCloseTo(-0.3, 5);
+  });
 });

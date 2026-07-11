@@ -189,6 +189,10 @@ export interface ChaseCameraConfig {
   fov?: { base?: number; max?: number; speedForMax?: number };
   /** Procedural shake amplitude per unit of speed (adds to the trauma channel). Default 0.0. */
   shakePerSpeed?: number;
+  /** Velocity-lead / predictive follow (#286.9): the rig aims `time` seconds ahead of the target along its velocity, clamped to `max` world units (default 4). */
+  lead?: { time: number; max?: number };
+  /** Roll into turns (#286.10): radians of camera roll per rad/s of the target's yaw rate, clamped to `max` (default 0.35), exponentially smoothed by `damping` (default 8). */
+  bank?: { perYawRate: number; max?: number; damping?: number };
   /** Which view to mount. Default "chase". */
   view?: ChaseView;
   /** Local offset for cockpit/hood/rear seats (relative to the vehicle, +z forward). */
@@ -543,6 +547,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   pointer?: PointerConfig;
   /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */
   touch?: TouchControlsConfig | false;
+  /** Preferred phone orientation. When a coarse-pointer device is held the other way the shell shows a dismissible rotate hint; purely advisory, never blocks play. */
+  orientation?: "landscape" | "portrait";
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles. */
   worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[] };
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. */

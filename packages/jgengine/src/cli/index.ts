@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -8,25 +8,33 @@ import { createRequire } from "node:module";
 import { runCreate } from "../create";
 import { runDoctor } from "../doctor";
 import { cliVersion, findUp, readPackageJson } from "../pkg";
+import { runSkills } from "../skills";
 
 const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets"];
 
-const HELP = `jgengine ${cliVersion()} — the JGengine command line
-Pure-TypeScript, genre-agnostic game engine SDK. Packages: ${ENGINE_PACKAGES.map((name) => `@jgengine/${name}`).join(", ")}.
+const HELP = `jgengine ${cliVersion()} — agent-side CLI for the JGengine TypeScript game SDK
+Packages: ${ENGINE_PACKAGES.map((name) => `@jgengine/${name}`).join(", ")}.
+docs: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
+
+HUMAN INTERFACE (what people say to you — not a shell they must run):
+  Make a game that ... with jgengine
+
+AGENT RESPONSE (you run these; do not dump this as homework for the user):
+  npx jgengine create "Game Name"   # scaffold + install skills into the project
+  cd Game-Name
+  # intake → foundation + only needed domains → build (see jgengine skill)
 
 usage: jgengine <command> [...args]
 
-  create <dir>     scaffold a playable game — flat world, spawned player, HUD, verify test.
-                   [--name <display name>] [--in-repo|--standalone] [--no-install] [--pm bun|npm|pnpm]
-  doctor [dir]     diagnose a game project: version skew, missing peers, unstyled-UI @source gaps, shape drift
-  skills           install the JGengine intake router, focused API skills, and verify gate
-  llms [package]   print packaged API docs (llms.txt) for an installed @jgengine/* package — agent-ready context
-  assets [...]     delegate to the @jgengine/assets CLI: list, search, pull CC0 3D model packs
-  versions         show CLI + installed @jgengine/* versions
-  help             this map
-
-docs: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
-new here (human or agent)? run: npx jgengine create my-game && cd my-game && npx jgengine skills
+  create "<Game Name>"  scaffold playable base + install agent skills into the project
+                        folder My-Game-Name; name → game.config / HUD / title
+                        [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]
+  skills -p | -g        re-install skills (recovery only — create already installs them)
+  doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
+  llms [package]        print packaged API docs (llms.txt) — agent-ready
+  assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
+  versions              CLI + installed @jgengine/* versions
+  help                  this map
 `;
 
 function runVersions(): number {
@@ -67,15 +75,6 @@ function runLlms(argv: string[]): number {
   return 0;
 }
 
-function runSkills(): number {
-  console.log("installing the JGengine intake router, focused API skills, and verify gate…");
-  const result = spawnSync("npx", ["--yes", "skills", "add", "Noisemaker111/jgengine"], {
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-  return result.status ?? 1;
-}
-
 function runAssets(argv: string[]): number {
   const require = createRequire(import.meta.url);
   let cliPath: string;
@@ -99,7 +98,7 @@ switch (command) {
     process.exit(runDoctor(rest));
     break;
   case "skills":
-    process.exit(runSkills());
+    process.exit(runSkills(rest));
     break;
   case "llms":
     process.exit(runLlms(rest));

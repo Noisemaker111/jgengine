@@ -14,6 +14,7 @@ export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" |
   center?: FieldGroundOptions["center"];
   colors?: FieldGroundOptions["colors"];
   heightRange?: FieldGroundOptions["heightRange"];
+  paletteAt?: FieldGroundOptions["paletteAt"];
   roughness?: number;
   metalness?: number;
   /** Bump after a runtime carve/deposit to re-mesh the deformed surface. */
@@ -32,6 +33,7 @@ export function CarvedTerrain({
   center,
   colors,
   heightRange,
+  paletteAt,
   roughness = 0.95,
   metalness = 0,
   receiveShadow = true,
@@ -39,9 +41,9 @@ export function CarvedTerrain({
   ...meshProps
 }: CarvedTerrainProps) {
   const geometry = useMemo(
-    () => createFieldGroundGeometry(field, { size, segments, center, colors, heightRange }),
+    () => createFieldGroundGeometry(field, { size, segments, center, colors, heightRange, paletteAt }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [field, size, segments, center, colors, heightRange, epoch],
+    [field, size, segments, center, colors, heightRange, paletteAt, epoch],
   );
   const material = useMemo(
     () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness, metalness, vertexColors: true }),
