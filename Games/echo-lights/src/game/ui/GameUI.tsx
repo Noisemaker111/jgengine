@@ -98,6 +98,10 @@ export function GameUI() {
           </div>
         </HudPanel>
 
+        <HudPanel id="settings" anchor="top-right" order={-1}>
+          <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full border border-[#d9a441]/30 bg-[#100a06]/80 text-[#f3dfae] transition hover:bg-[#d9a441]/15" />
+        </HudPanel>
+
         <HudPanel id="console" anchor="center" compact="keep">
           <PadConsole
             run={run}

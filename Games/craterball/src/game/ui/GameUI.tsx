@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useMatchSnapshot } from "../match/hooks";
 import { AnnouncerTicker } from "./components/AnnouncerTicker";
 import { ChargeSlots } from "./components/ChargeSlots";
@@ -26,6 +27,10 @@ export function GameUI() {
 
       <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4">
         <ScarsTicker craterScars={snapshot.craterScars} craterCount={snapshot.craterCount} />
+      </div>
+
+      <div className="pointer-events-auto absolute top-3 right-3 sm:top-4 sm:right-4">
+        <SettingsTrigger className="rounded-lg border border-[#cdb891]/25 bg-[#160f0c]/80 px-3 py-1.5 text-[#ff6b35] shadow-lg shadow-black/40 backdrop-blur-sm transition-colors hover:border-[#cdb891]/40" />
       </div>
 
       <div className="absolute inset-x-0 bottom-24 flex justify-center px-3 sm:bottom-28">

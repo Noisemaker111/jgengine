@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createDashState, type DashState } from "@jgengine/core/movement/dash";
 import { seededStreams } from "@jgengine/core/random/rng";
 import {
@@ -389,6 +390,7 @@ export class MatchSimulation {
     };
     ctx.game.store.set("match", snapshot);
     ctx.game.store.set("craters", this.craters);
+    setGamePhase(ctx, this.match.phase === "fulltime" ? "ended" : "playing");
   }
 
   setSelectedDifficulty(ctx: GameContext, id: DifficultyId): void {

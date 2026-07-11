@@ -1,3 +1,4 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useActivePrompt, useGame, useGameStore } from "@jgengine/react/hooks";
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 

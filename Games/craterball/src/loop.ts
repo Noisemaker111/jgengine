@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { DEFAULT_DIFFICULTY, type DifficultyId } from "./game/match/difficulty";
 import { getSimulation } from "./game/match/simulation";
 import { PLAYER_CYAN } from "./game/entities/catalog";
@@ -20,6 +21,7 @@ export function onInit(ctx: GameContext): void {
   placeArenaDressing(ctx);
   spawnMatchEntities(ctx, 0, 0, 13, 0);
   ctx.game.store.set("selectedDifficulty", DEFAULT_DIFFICULTY);
+  setGamePhase(ctx, "menu");
 
   const sim = getSimulation(ctx);
 
