@@ -93,11 +93,13 @@ function parseTooltipCounts(html: string): Map<string, number> {
 export function parseContributionsHtml(html: string): { date: string; count: number; weekday: number }[] {
   const tooltipCounts = parseTooltipCounts(html);
   const days: { date: string; count: number; weekday: number }[] = [];
-  const cellPattern = /<td[^>]*id="([^"]*)"[^>]*data-date="([^"]+)"[^>]*data-level="(\d+)"[^>]*>/g;
+  const cellPattern = /<td\b[^>]*\bdata-date="(\d{4}-\d{2}-\d{2})"[^>]*>/g;
   let match: RegExpExecArray | null;
   while ((match = cellPattern.exec(html)) !== null) {
-    const [, id, date] = match;
-    days.push({ date: date!, count: tooltipCounts.get(id!) ?? 0, weekday: new Date(`${date}T00:00:00Z`).getUTCDay() });
+    const [tag, date] = match;
+    const id = tag.match(/\bid="([^"]*)"/)?.[1];
+    const count = id !== undefined ? tooltipCounts.get(id) ?? 0 : 0;
+    days.push({ date: date!, count, weekday: new Date(`${date}T00:00:00Z`).getUTCDay() });
   }
   return days;
 }

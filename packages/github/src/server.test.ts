@@ -4,17 +4,17 @@ import { parseContributionsHtml } from "./server";
 
 const HTML = `
   <table>
-    <td id="c1" data-date="2026-07-06" data-level="1"></td>
-    <td id="c2" data-date="2026-07-07" data-level="4"></td>
-    <td id="c3" data-date="2026-07-08" data-level="0"></td>
+    <td tabindex="-1" data-ix="0" class="ContributionCalendar-day" data-date="2026-07-06" data-level="1" role="gridcell" id="c1"></td>
+    <td tabindex="-1" data-ix="1" class="ContributionCalendar-day" data-date="2026-07-07" data-level="4" role="gridcell" id="c2"></td>
+    <td tabindex="-1" data-ix="2" class="ContributionCalendar-day" data-date="2026-07-08" data-level="0" role="gridcell" id="c3"></td>
   </table>
-  <tool-tip for="c1">2 contributions on July 6th.</tool-tip>
-  <tool-tip for="c2">17 contributions on July 7th.</tool-tip>
-  <tool-tip for="c3">No contributions on July 8th.</tool-tip>
+  <tool-tip id="t1" for="c1" popover="manual" class="sr-only position-absolute">2 contributions on July 6th.</tool-tip>
+  <tool-tip id="t2" for="c2" popover="manual" class="sr-only position-absolute">17 contributions on July 7th.</tool-tip>
+  <tool-tip id="t3" for="c3" popover="manual" class="sr-only position-absolute">No contributions on July 8th.</tool-tip>
 `;
 
 describe("parseContributionsHtml", () => {
-  test("pairs each day cell with its tooltip count and computes the weekday", () => {
+  test("pairs each day cell with its tooltip count regardless of attribute order", () => {
     const days = parseContributionsHtml(HTML);
     expect(days).toEqual([
       { date: "2026-07-06", count: 2, weekday: 1 },
