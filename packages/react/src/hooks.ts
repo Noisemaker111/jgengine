@@ -32,6 +32,7 @@ import {
   resolveActivePrompt,
   type PositionedPrompt,
 } from "@jgengine/core/interaction/proximityPrompt";
+import { gamePhase, setGamePhase, type GamePhase } from "@jgengine/core/game/gamePhase";
 import { useGameContext } from "./provider";
 import { createSelectCache, readSelectSnapshot } from "./selectSnapshot";
 
@@ -68,6 +69,14 @@ export function useGame(): { commands: GameContext["game"]["commands"]; events: 
 export function usePlayer(): { userId: string; isNew: boolean } {
   const ctx = useGameContext();
   return useMemo(() => ({ userId: ctx.player.userId, isNew: ctx.player.isNew }), [ctx]);
+}
+
+/** Live run phase + a setter that also gates the shell's touch controls. `menu`/`paused`/`ended` hide the touch dock; `playing` shows it. */
+export function useGamePhase(): { phase: GamePhase; setPhase: (phase: GamePhase) => void } {
+  const ctx = useGameContext();
+  const phase = useGameStore((c) => gamePhase(c));
+  const setPhase = useCallback((next: GamePhase) => setGamePhase(ctx, next), [ctx]);
+  return { phase, setPhase };
 }
 
 export function useSceneEntities(): readonly SceneEntity[] {

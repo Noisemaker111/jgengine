@@ -1,6 +1,7 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import {
   Component,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -85,6 +86,15 @@ import type {
   PointerConfig,
 } from "@jgengine/core/game/playableGame";
 import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
+import type { GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
+import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
+import {
+  applyBindingOverrides,
+  clearBindingOverride,
+  loadBindingOverrides,
+  saveBindingOverride,
+  type BindingOverrides,
+} from "@jgengine/core/input/bindingOverrides";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 
@@ -142,6 +152,9 @@ import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 import { OrientationHint } from "./touch/OrientationHint";
 import { TouchControlsDock, TouchPlaySurface, touchDockClearance } from "./touch/TouchControlsOverlay";
+import { SettingsProvider } from "@jgengine/react/settings";
+import { GameSettings } from "./settings/GameSettings";
+import { AudioSettingsBridge, useGraphicsSettings } from "./settings/appliedSettings";
 
 const DEV_USER_ID = "dev-player";
 const TURN_SPEED = 2.4;
@@ -1341,10 +1354,30 @@ export function GamePlayerShell({
   const [marquee, setMarquee] = useState<ScreenRect | null>(null);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [contextMenu, setContextMenu] = useState<{ menu: ContextMenu; x: number; y: number } | null>(null);
-  const tracker = useMemo(
-    () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(playable.game.input))),
+  const settingsStore = useMemo(() => createSettingsStore(), []);
+  const [bindingOverrides, setBindingOverrides] = useState<BindingOverrides>(() =>
+    loadBindingOverrides(playable.game.name),
+  );
+  useEffect(() => {
+    setBindingOverrides(loadBindingOverrides(playable.game.name));
+  }, [playable]);
+  const effectiveInput = useMemo(
+    () => applyBindingOverrides(playable.game.input ?? {}, bindingOverrides),
+    [playable, bindingOverrides],
+  );
+  const rebindAction = useCallback(
+    (action: string, code: string) => setBindingOverrides(saveBindingOverride(playable.game.name, action, [code])),
     [playable],
   );
+  const resetActionBinding = useCallback(
+    (action: string) => setBindingOverrides(clearBindingOverride(playable.game.name, action)),
+    [playable],
+  );
+  const tracker = useMemo(
+    () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(effectiveInput))),
+    [effectiveInput],
+  );
+  const graphics = useGraphicsSettings(settingsStore, playable.shadows ?? true);
   const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
     if (rect === undefined) return;
@@ -1753,6 +1786,15 @@ export function GamePlayerShell({
   };
 
   const controlsActive = playControlsActive(ctx);
+  const settingsEnabled = playable.settings !== false && playable.settings?.surface !== false;
+  const settingsConfig: GameSettingsConfig =
+    playable.settings === false || playable.settings === undefined ? {} : playable.settings;
+  const fovControlEnabled = !orthographic && playable.camera?.playerFov?.control !== false;
+  const settingsHostsFov =
+    settingsEnabled &&
+    (settingsConfig.surface ?? "menu") === "menu" &&
+    !(settingsConfig.hide ?? []).includes("gameplay") &&
+    fovControlEnabled;
   const touchScale = compact ? 0.88 : 1;
   const dockMounted =
     !poster &&
@@ -1767,7 +1809,9 @@ export function GamePlayerShell({
     (playable.orientation === "landscape") === portrait;
 
   return (
+    <SettingsProvider store={settingsStore}>
     <PlayerFovProvider config={playable.camera} orthographic={orthographic}>
+    <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={playable.audio?.buses} />
     <div
       ref={wrapperRef}
       tabIndex={0}
@@ -1839,7 +1883,8 @@ export function GamePlayerShell({
                 far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
               }
         }
-        shadows={playable.shadows ?? true}
+        shadows={graphics.shadows}
+        dpr={graphics.dpr}
         gl={{ preserveDrawingBuffer: true }}
         style={{ touchAction: "none" }}
       >
@@ -1967,8 +2012,20 @@ export function GamePlayerShell({
         <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
       ) : null}
       {poster ? null : <DiagnosticOverlay diagnostics={diagnostics} gameName={playable.game.name} />}
-      {poster || orthographic ? null : <PlayerFovSlider />}
+      {poster || orthographic || settingsHostsFov ? null : <PlayerFovSlider />}
+      {poster || !settingsEnabled ? null : (
+        <GameSettings
+          input={playable.game.input ?? {}}
+          buses={playable.audio?.buses}
+          config={settingsConfig}
+          fovEnabled={fovControlEnabled}
+          overrides={bindingOverrides}
+          rebind={rebindAction}
+          resetBinding={resetActionBinding}
+        />
+      )}
     </div>
     </PlayerFovProvider>
+    </SettingsProvider>
   );
 }

@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createDecayMeterSet, type DecayMeterSet } from "@jgengine/core/survival/decayMeter";
 import { createRaceState, type RaceState } from "@jgengine/core/game/race";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { PACK_ENTITY_IDS, placeDuneProps, spawnCaravan } from "./game/world/setup";
 import { RIVAL_WAYPOINTS, WIND_SCHEDULE } from "./game/run/deps";
@@ -39,6 +40,7 @@ function getRun(ctx: GameContext): RunState {
 
 function setRun(ctx: GameContext, next: RunState): void {
   ctx.game.store.set("run", next);
+  setGamePhase(ctx, next.phase === "playing" ? "playing" : next.phase === "start" ? "menu" : "ended");
 }
 
 export function onInit(ctx: GameContext): void {

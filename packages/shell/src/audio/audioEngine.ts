@@ -21,6 +21,7 @@ export interface AudioEngine {
   playOneShot(soundId: string, position?: Vec3): void;
   playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null;
   setBusGain(busId: string, gain: number): void;
+  setMasterGain(gain: number): void;
   resume(): void;
   dispose(): void;
 }
@@ -31,6 +32,7 @@ function createNoopEngine(): AudioEngine {
     playOneShot: () => undefined,
     playLoop: () => null,
     setBusGain: () => undefined,
+    setMasterGain: () => undefined,
     resume: () => undefined,
     dispose: () => undefined,
   };
@@ -132,6 +134,9 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     },
     setBusGain(busId, gain) {
       busGainNode(busId).gain.value = gain;
+    },
+    setMasterGain(gain) {
+      masterGain.gain.value = gain;
     },
     resume() {
       void context.resume().catch(() => undefined);
