@@ -21,6 +21,8 @@ export interface PlaceOptions {
   parentSpace?: string;
   rotation?: number;
   visual?: ObjectVisual;
+  /** When `instanceId` is already placed: `"throw"` (default), `"replace"` (fresh placement over it — remount-safe world setup, #284.10), or `"keep"` (leave it untouched and return the id). */
+  onExisting?: "throw" | "replace" | "keep";
 }
 
 export interface ObjectListFilter {
@@ -91,8 +93,12 @@ export function createObjectStore(): ObjectStore {
 
   return {
     place(catalogId, x, y, z, options = {}) {
-      if (options.instanceId !== undefined && store.has(options.instanceId)) {
-        throw new Error(`Scene object id "${options.instanceId}" is already placed.`);
+      const existing = options.instanceId === undefined ? null : store.get(options.instanceId);
+      if (existing !== null && existing !== undefined) {
+        const onExisting = options.onExisting ?? "throw";
+        if (onExisting === "keep") return options.instanceId!;
+        if (onExisting === "throw") throw new Error(`Scene object id "${options.instanceId}" is already placed.`);
+        indexRemove(options.instanceId!, existing.position);
       }
       const instanceId = options.instanceId ?? generateId();
       const position: EntityPosition = [x, y, z];

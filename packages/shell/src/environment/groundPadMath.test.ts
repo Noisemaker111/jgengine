@@ -16,3 +16,12 @@ test("resolvePadMeshY centers the pad slab beneath its surface", () => {
   expect(resolvePadMeshY(2, { height: 0.05 })).toBeCloseTo(2.05 - PAD_THICKNESS / 2);
   expect(resolvePadMeshY(0, { height: 0 })).toBeCloseTo(-PAD_THICKNESS / 2);
 });
+
+test("resolvePadSurfaceY uses an absolute elevation instead of ground height when set", () => {
+  expect(resolvePadSurfaceY(2, { height: 0.05, elevation: 12 })).toBe(12);
+  expect(resolvePadSurfaceY(-50, { height: 0.05, elevation: 12 })).toBe(12);
+});
+
+test("resolvePadMeshY offsets an elevated pad by half its thickness", () => {
+  expect(resolvePadMeshY(2, { height: 0.05, elevation: 12 })).toBeCloseTo(12 - PAD_THICKNESS / 2);
+});

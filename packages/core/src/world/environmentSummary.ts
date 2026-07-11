@@ -75,6 +75,7 @@ export interface WeatherSummary {
 
 export interface EnvironmentCounts {
   terrain: number;
+  islands: number;
   structureGroups: number;
   buildings: number;
   buildingParts: number;
@@ -83,8 +84,13 @@ export interface EnvironmentCounts {
   weatherSystems: number;
 }
 
+export interface IslandSummary extends TerrainSummary {
+  origin: readonly [number, number];
+}
+
 export interface EnvironmentSummary {
   terrain?: TerrainSummary;
+  islands: readonly IslandSummary[];
   structures: readonly StructureSummary[];
   vegetation: readonly VegetationSummary[];
   water: readonly WaterSummary[];
@@ -161,6 +167,10 @@ function summarizeTerrain(descriptor: TerrainEnvironmentDescriptor): TerrainSumm
 
 export function summarizeEnvironment(feature: EnvironmentWorldFeature): EnvironmentSummary {
   const terrain = feature.terrain === undefined ? undefined : summarizeTerrain(feature.terrain);
+  const islands: IslandSummary[] = (feature.islands ?? []).map((entry) => ({
+    ...summarizeTerrain({ ...entry, kind: "terrain" }),
+    origin: entry.origin,
+  }));
   const structures = (feature.structures ?? []).map(summarizeStructures);
   const vegetation: VegetationSummary[] = (feature.vegetation ?? []).map((entry) => ({
     area: entry.area,
@@ -178,6 +188,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
   const buildings = structures.reduce((sum, entry) => sum + entry.buildings, 0);
   const counts: EnvironmentCounts = {
     terrain: terrain === undefined ? 0 : 1,
+    islands: islands.length,
     structureGroups: structures.length,
     buildings,
     buildingParts: structures.reduce((sum, entry) => sum + entry.parts, 0),
@@ -187,6 +198,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
   };
   const isEmpty =
     counts.terrain === 0 &&
+    counts.islands === 0 &&
     buildings === 0 &&
     counts.vegetationFields === 0 &&
     counts.waterBodies === 0 &&
@@ -194,6 +206,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
 
   return {
     ...(terrain === undefined ? {} : { terrain }),
+    islands,
     structures,
     vegetation,
     water,

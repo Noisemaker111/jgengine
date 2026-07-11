@@ -12,6 +12,8 @@ export interface GerstnerWave {
 
 export interface WaterSurfaceConfig {
   level?: number;
+  /** Scheduled base level as a function of time — tides, floods (#284.1). Wins over `level`/`setLevel` whenever set. */
+  levelAt?: (time: number) => number;
   waveHeight?: number;
   waveScale?: number;
   waveSpeed?: number;
@@ -20,11 +22,16 @@ export interface WaterSurfaceConfig {
 }
 
 export interface WaterSurface {
+  /** The current base level — the initial config value until `setLevel` replaces it. With a `levelAt` schedule, use `levelAtTime` instead. */
   readonly level: number;
   readonly waves: readonly GerstnerWave[];
   height(x: number, z: number, time: number): number;
   normal(x: number, z: number, time: number): WaterNormal;
   displace(x: number, z: number, time: number): readonly [number, number, number];
+  /** Raise or drain the water at runtime (#284.1) — every `height`/`displace` consumer (buoyancy included) sees it immediately. Ignored while a `levelAt` schedule is set. */
+  setLevel(level: number): void;
+  /** The effective base level at `time`: the `levelAt` schedule when set, else the current `level`. */
+  levelAtTime(time: number): number;
 }
 
 const GRAVITY = 9.81;
@@ -33,7 +40,7 @@ const AMPLITUDE_FALLOFF = 0.65;
 const WAVELENGTH_FALLOFF = 0.65;
 const DIRECTION_SPREAD = 0.62;
 
-function resolveConfig(config: WaterSurfaceConfig): Required<WaterSurfaceConfig> {
+function resolveConfig(config: WaterSurfaceConfig): Required<Omit<WaterSurfaceConfig, "levelAt">> {
   return {
     level: config.level ?? 0,
     waveHeight: config.waveHeight ?? 1.2,
@@ -79,12 +86,14 @@ export function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[]
 
 export function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface {
   const resolved = resolveConfig(config);
-  const level = resolved.level;
+  let currentLevel = resolved.level;
+  const levelAt = config.levelAt;
+  const levelAtTime = (time: number): number => (levelAt !== undefined ? levelAt(time) : currentLevel);
   const choppiness = resolved.choppiness;
   const waves = synthesizeWaves(config);
 
   const height = (x: number, z: number, time: number): number => {
-    let y = level;
+    let y = levelAtTime(time);
     for (const wave of waves) {
       const k = TWO_PI / wave.wavelength;
       const omega = wave.speed * k;
@@ -97,7 +106,7 @@ export function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface {
   const displace = (x: number, z: number, time: number): readonly [number, number, number] => {
     let dx = x;
     let dz = z;
-    let dy = level;
+    let dy = levelAtTime(time);
     for (const wave of waves) {
       const k = TWO_PI / wave.wavelength;
       const omega = wave.speed * k;
@@ -157,7 +166,19 @@ export function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface {
     return [nx, ny, nz];
   };
 
-  return { level, waves, height, normal, displace };
+  return {
+    get level() {
+      return currentLevel;
+    },
+    waves,
+    height,
+    normal,
+    displace,
+    setLevel(nextLevel) {
+      currentLevel = nextLevel;
+    },
+    levelAtTime,
+  };
 }
 
 export function waterSurfaceFromDescriptor(
@@ -166,6 +187,7 @@ export function waterSurfaceFromDescriptor(
 ): WaterSurface {
   return waterSurface({
     level: descriptor.level,
+    ...(descriptor.levelAt === undefined ? {} : { levelAt: descriptor.levelAt }),
     waveHeight: descriptor.waveHeight,
     waveScale: descriptor.waveScale,
     waveSpeed: descriptor.waveSpeed,

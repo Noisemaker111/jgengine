@@ -8,10 +8,16 @@ export function resolvePadShape(size: PadSize): PadShape {
   return "radius" in size ? { circular: true, radius: size.radius } : { circular: false, width: size[0], depth: size[1] };
 }
 
-export function resolvePadSurfaceY(groundHeight: number, pad: Pick<PadEnvironmentDescriptor, "height">): number {
-  return groundHeight + pad.height;
+export function resolvePadSurfaceY(
+  groundHeight: number,
+  pad: Pick<PadEnvironmentDescriptor, "height" | "elevation">,
+): number {
+  return pad.elevation ?? groundHeight + pad.height;
 }
 
-export function resolvePadMeshY(groundHeight: number, pad: Pick<PadEnvironmentDescriptor, "height">): number {
+export function resolvePadMeshY(
+  groundHeight: number,
+  pad: Pick<PadEnvironmentDescriptor, "height" | "elevation">,
+): number {
   return resolvePadSurfaceY(groundHeight, pad) - PAD_THICKNESS / 2;
 }

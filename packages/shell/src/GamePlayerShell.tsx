@@ -312,7 +312,7 @@ export function resolvePhysicsTuning(physics: PhysicsConfig | undefined): Moveme
 
 /** True when the world is an environment feature with terrain, so the voxel controller should sample its height. */
 export function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean {
-  return world?.kind === "environment" && world.terrain !== undefined;
+  return world?.kind === "environment" && (world.terrain !== undefined || (world.islands?.length ?? 0) > 0);
 }
 
 function colorFromId(id: string): string {

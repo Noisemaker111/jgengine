@@ -75,4 +75,43 @@ describe("CarvableField", () => {
     field.carve({ x: 4, z: 4, radius: 3, depth: 5 });
     expect(field.sampleHeight(4, 4)).toBeCloseTo(before - 5, 4);
   });
+
+  test("carve and deposit return distinct ids", () => {
+    const field = carvableTerrain(flatField());
+    const craterId = field.carve({ x: 0, z: 0, radius: 5, depth: 4 });
+    const moundId = field.deposit({ x: 20, z: 20, radius: 5, height: 3 });
+    expect(craterId).not.toBe(moundId);
+  });
+
+  test("removeEdit restores the base height at that spot while other edits persist", () => {
+    const field = carvableTerrain(flatField());
+    const craterId = field.carve({ x: 0, z: 0, radius: 5, depth: 4 });
+    field.deposit({ x: 20, z: 20, radius: 5, height: 3 });
+    expect(field.editCount).toBe(2);
+
+    expect(field.removeEdit(craterId)).toBe(true);
+    expect(field.sampleHeight(0, 0)).toBe(0);
+    expect(field.sampleHeight(20, 20)).toBeCloseTo(3, 5);
+    expect(field.editCount).toBe(1);
+  });
+
+  test("removeEdit on an already-removed id returns false", () => {
+    const field = carvableTerrain(flatField());
+    const craterId = field.carve({ x: 0, z: 0, radius: 5, depth: 4 });
+    expect(field.removeEdit(craterId)).toBe(true);
+    expect(field.removeEdit(craterId)).toBe(false);
+  });
+
+  test("editCount tracks carve/deposit/removeEdit/clear", () => {
+    const field = carvableTerrain(flatField());
+    expect(field.editCount).toBe(0);
+    const a = field.carve({ x: 0, z: 0, radius: 2, depth: 1 });
+    expect(field.editCount).toBe(1);
+    field.deposit({ x: 10, z: 10, radius: 2, height: 1 });
+    expect(field.editCount).toBe(2);
+    field.removeEdit(a);
+    expect(field.editCount).toBe(1);
+    field.clear();
+    expect(field.editCount).toBe(0);
+  });
 });

@@ -9,6 +9,7 @@ describe("environmentSummary", () => {
     expect(summary.isEmpty).toBe(true);
     expect(summary.counts).toEqual({
       terrain: 0,
+      islands: 0,
       structureGroups: 0,
       buildings: 0,
       buildingParts: 0,

@@ -211,7 +211,8 @@ export class CarvableField implements TerrainField {
   readonly waterLevel?: number;
   readonly sampleNormal: TerrainField["sampleNormal"];
   private readonly base: TerrainField;
-  private readonly edits: HeightEdit[] = [];
+  private readonly edits = new Map<number, HeightEdit>();
+  private nextEditId = 1;
 
   constructor(base: TerrainField) {
     this.base = base;
@@ -221,13 +222,12 @@ export class CarvableField implements TerrainField {
   }
 
   get editCount(): number {
-    return this.edits.length;
+    return this.edits.size;
   }
 
   sampleHeight(x: number, z: number): number {
     let h = this.base.sampleHeight(x, z);
-    for (let i = 0; i < this.edits.length; i += 1) {
-      const e = this.edits[i]!;
+    for (const e of this.edits.values()) {
       const dx = x - e.x;
       const dz = z - e.z;
       const d = Math.sqrt(dx * dx + dz * dz);
@@ -237,16 +237,27 @@ export class CarvableField implements TerrainField {
     return h;
   }
 
-  carve(op: CraterOp): void {
-    this.edits.push({ x: op.x, z: op.z, radius: op.radius, delta: -op.depth });
+  /** Digs a bowl; the returned id undoes just this crater via `removeEdit` (#284.7). */
+  carve(op: CraterOp): number {
+    const id = this.nextEditId++;
+    this.edits.set(id, { x: op.x, z: op.z, radius: op.radius, delta: -op.depth });
+    return id;
   }
 
-  deposit(op: MoundOp): void {
-    this.edits.push({ x: op.x, z: op.z, radius: op.radius, delta: op.height });
+  /** Raises a mound; the returned id undoes just this mound via `removeEdit` (#284.7). */
+  deposit(op: MoundOp): number {
+    const id = this.nextEditId++;
+    this.edits.set(id, { x: op.x, z: op.z, radius: op.radius, delta: op.height });
+    return id;
+  }
+
+  /** Removes one edit by the id `carve`/`deposit` returned — capped-history destructibles evict without rebuilding the field. */
+  removeEdit(editId: number): boolean {
+    return this.edits.delete(editId);
   }
 
   clear(): void {
-    this.edits.length = 0;
+    this.edits.clear();
   }
 }
 
