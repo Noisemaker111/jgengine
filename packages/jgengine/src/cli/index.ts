@@ -19,7 +19,7 @@ usage: jgengine <command> [...args]
   create <dir>     scaffold a playable game — flat world, spawned player, HUD, verify test.
                    [--name <display name>] [--in-repo|--standalone] [--no-install] [--pm bun|npm|pnpm]
   doctor [dir]     diagnose a game project: version skew, missing peers, unstyled-UI @source gaps, shape drift
-  skills           install the JGengine agent skills (API reference, game-build workflow, verify gate) into .claude/skills
+  skills           install the JGengine intake router, focused API skills, and verify gate
   llms [package]   print packaged API docs (llms.txt) for an installed @jgengine/* package — agent-ready context
   assets [...]     delegate to the @jgengine/assets CLI: list, search, pull CC0 3D model packs
   versions         show CLI + installed @jgengine/* versions
@@ -68,7 +68,7 @@ function runLlms(argv: string[]): number {
 }
 
 function runSkills(): number {
-  console.log("installing JGengine agent skills (jgengine-api, jgengine-newgame, jgengine-verify)…");
+  console.log("installing the JGengine intake router, focused API skills, and verify gate…");
   const result = spawnSync("npx", ["--yes", "skills", "add", "Noisemaker111/jgengine"], {
     stdio: "inherit",
     shell: process.platform === "win32",

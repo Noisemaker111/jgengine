@@ -15,7 +15,7 @@ Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, te
 
 ## Skills
 
-- **Skills are installed via `npx skills add Noisemaker111/jgengine`.**
+- **Skills are installed via `npx jgengine skills`.** From this source monorepo, build `packages/jgengine` first or force the published CLI with `npm exec --yes --package=jgengine@latest -- jgengine skills`; npm otherwise prefers the unbuilt local workspace bin on Windows.
 - **Pushing to `main` does NOT auto-update existing skill installs.** Users must run `npx skills update` to pull descriptor/content changes.
 
 ## Verification & screenshots

@@ -89,6 +89,7 @@ export function runCreate(argv: string[]): number {
     console.log("\nnext steps:");
     console.log(`  bun install                     # from ${workspaceRoot}`);
     console.log(`  bun run games:${id}             # play it standalone`);
+    console.log("  continue the numbered JGengine blueprint; scaffolding is not a stopping point");
     return 0;
   }
 
@@ -110,7 +111,8 @@ export function runCreate(argv: string[]): number {
   console.log(`  cd ${cdHint}`);
   if (!installed) console.log("  bun install   # or npm install");
   console.log("  bun dev       # or npm run dev — flat world, spawned player, working HUD");
-  console.log("  npx jgengine skills   # install the JGengine agent skills for AI-assisted building");
+  console.log("  npx jgengine skills   # install the intake router and focused API skills");
+  console.log("  continue the numbered JGengine blueprint; scaffolding is not a stopping point");
   return 0;
 }
 

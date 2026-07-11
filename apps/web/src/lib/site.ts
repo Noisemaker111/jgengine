@@ -1,14 +1,18 @@
 export const SITE_URL = "https://jgengine.com";
 export const REPO_URL = "https://github.com/Noisemaker111/jgengine";
-export const INSTALL_CMD = "npx skills add Noisemaker111/jgengine";
+export const INSTALL_CMD = "npx jgengine skills";
 
 export const SKILL_GUIDE: Record<string, string> = {
-  "jgengine-newgame":
-    "Grab this first for a real build — the master blueprint and phased workflow that takes a named game all the way to done, not a demo slice. This is your plan template.",
-  "jgengine-api":
-    "Grab this before writing any game config or content — the engine's verbs, primitives, and hooks, plus the UI quality bar, asset sourcing, and the definition of done.",
-  "jgengine-verify":
-    "Grab this to check a build works without fighting the browser — assert the scene's content in a test, keep the flaky screenshot as a final glance instead of the loop.",
+  jgengine: "The intake and router: a short numbered build blueprint, followed by only the engine domains the work needs.",
+  "jgengine-foundation": "Project shape, defineGame, GameContext, catalogs, lifecycle, state, and input.",
+  "jgengine-world": "World construction, scenes, movement, interaction, cameras, maps, and environments.",
+  "jgengine-procedural": "Procedural terrain, water, weather, buildings, vegetation, voxels, and generated worlds.",
+  "jgengine-combat": "Combat, abilities, targeting, projectiles, health, loot, gear, and action systems.",
+  "jgengine-gameplay": "Quests, economy, crafting, cards, turns, puzzles, objectives, social systems, and progression.",
+  "jgengine-multiplayer": "Topology, transports, authoritative hosts, persistence, identity, matchmaking, chat, and sync.",
+  "jgengine-ui": "React hooks, HUD composition, responsive controls, accessibility, and UI completion rules.",
+  "jgengine-assets": "Asset discovery, CC0 packs, catalogs, model wiring, art direction, audio, and licensing.",
+  "jgengine-verify": "Browserless scene assertions first; screenshots remain a final visual check.",
 };
 
 export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }[] = [

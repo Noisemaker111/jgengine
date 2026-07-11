@@ -1,6 +1,6 @@
 # JGengine
 
-A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres, with socket.io, WebRTC peer-to-peer, and LAN as drop-in transports over the same protocol.
+A genre-agnostic, pure-TypeScript game engine SDK built for AI coding agents. Agents build games on the SDK using JGengine Skills, which provide intake, focused API guidance, and verification. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres, with socket.io, WebRTC peer-to-peer, and LAN as drop-in transports over the same protocol.
 
 ## Packages
 
@@ -38,18 +38,18 @@ import { createWsBackend } from "@jgengine/ws/createWsBackend";
 Building a game with an AI coding agent? Install the JGengine skills (API reference, UI quality bar, one-pass workflow):
 
 ```sh
-npx skills add Noisemaker111/jgengine
+npx jgengine skills
 ```
 
-Then prompts like "make a tower defense game with jgengine" pick up the full engine surface and definition of done automatically. The skills live in [`skills/`](skills).
+Then tell your coding agent “make a tower defense game with jgengine,” or point an agent that has not heard of JGengine at [jgengine.com](https://jgengine.com). The small main skill captures a numbered build blueprint and routes the work to only the relevant API-domain skills. The skills live in [`skills/`](skills).
 
 ## Website — [jgengine.com](https://jgengine.com)
 
-[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and a front door for agents. It points agents at `npx skills add Noisemaker111/jgengine` and explains which skill to grab for what — the skill pages are **rendered from `skills/`**, with no separate content to maintain.
+[`apps/web`](apps/web) is a TanStack Start app: a landing page for humans and the intake for agents that are simply told to use JGengine. It identifies the SDK, points agents at `npx jgengine skills`, and exposes the main router plus focused API domains. The skill pages are **rendered from `skills/`**, with no separate content to maintain.
 
 It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
-Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header dropdown — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally with the runner served for it in dev, so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine-api`'s standalone dev harness) launches one game on its own, no host app required.
+Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header dropdown — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally with the runner served for it in dev, so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine-foundation`'s standalone dev harness) launches one game on its own, no host app required.
 
 ## Layering
 

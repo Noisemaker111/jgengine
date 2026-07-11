@@ -35,3 +35,7 @@ Batch worker ran a stray 'bun install' mid-parallel-build; interrupted install l
 2026-07-10T00:44:29.170Z — claude-sonnet-5 — Claude
 
 canyon-chase build: assets add / pull kenney-nature and kenney-racing to source real GLB props (rocks, cacti, cars) → blocked, proxy policy-denies kenney.nl/quaternius.com/poly.pizza (403 on CONNECT) in this sandbox with no mirror configured, so this session's games ship with primitive/colored-box props instead of real assets
+
+2026-07-11T03:32:23.250Z — gpt-5 — unknown
+
+auditing onboarding copy -> PowerShell quoting broke a targeted rg command

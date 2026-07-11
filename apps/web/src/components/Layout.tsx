@@ -144,7 +144,7 @@ export function Footer() {
               JGengine
             </div>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
-              A genre-agnostic, pure-TypeScript game engine SDK — built to be driven by AI agents.
+              A pure-TypeScript game engine SDK. AI coding agents build on it using focused JGengine Skills.
             </p>
             <code className="mt-4 block font-mono text-xs text-emerald-400/70">$ {INSTALL_CMD}</code>
           </div>

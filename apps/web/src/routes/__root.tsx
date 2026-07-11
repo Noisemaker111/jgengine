@@ -5,9 +5,9 @@ import appCss from "../styles.css?url";
 import interWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import monoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
 
-const TITLE = "JGengine — build a game by telling your agent";
+const TITLE = "JGengine — a TypeScript game engine for AI coding agents";
 const DESCRIPTION =
-  "A genre-agnostic, pure-TypeScript game engine SDK. Install the skills, prompt your AI agent, and it builds the whole game. Point your agent at this site to load the skills.";
+  "Agents build games on the pure-TypeScript JGengine SDK using focused JGengine Skills for intake, APIs, implementation, and verification. Tell your agent to use JGengine or point it at this site.";
 
 export const Route = createRootRoute({
   head: () => ({

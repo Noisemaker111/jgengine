@@ -3,12 +3,18 @@ const skillDocs = import.meta.glob<string>("../../../../skills/*/SKILL.md", {
   import: "default",
 });
 
-const apiReferenceDocs = import.meta.glob<string>(
-  "../../../../skills/jgengine-api/reference/*.md",
-  { query: "?raw", import: "default" },
-);
-
-export const SKILL_SLUGS = ["jgengine-newgame", "jgengine-api", "jgengine-verify"] as const;
+export const SKILL_SLUGS = [
+  "jgengine",
+  "jgengine-foundation",
+  "jgengine-world",
+  "jgengine-procedural",
+  "jgengine-combat",
+  "jgengine-gameplay",
+  "jgengine-multiplayer",
+  "jgengine-ui",
+  "jgengine-assets",
+  "jgengine-verify",
+] as const;
 
 export type Skill = {
   slug: string;
@@ -37,14 +43,6 @@ function parse(slug: string, raw: string): Skill {
 export async function loadSkill(slug: string): Promise<Skill | undefined> {
   const docPath = Object.keys(skillDocs).find((path) => path.split("/").at(-2) === slug);
   if (docPath === undefined) return undefined;
-  let raw = await skillDocs[docPath]!();
-  if (slug === "jgengine-api") {
-    const references = await Promise.all(
-      Object.keys(apiReferenceDocs)
-        .sort()
-        .map((path) => apiReferenceDocs[path]!()),
-    );
-    raw = [raw, ...references].join("\n\n");
-  }
+  const raw = await skillDocs[docPath]!();
   return parse(slug, raw);
 }

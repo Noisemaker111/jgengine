@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+﻿import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,21 +7,21 @@ import { extractPackageSurface, type ApiPackage } from "./apiSurface";
 
 const REPO_URL = "https://github.com/Noisemaker111/jgengine";
 const DOCS_URL = "https://jgengine.com";
-const SKILL_GUIDE = "skills/jgengine-api/SKILL.md";
+const MAIN_GUIDE = "skills/jgengine/SKILL.md";
+const FOUNDATION_GUIDE = "skills/jgengine-foundation/SKILL.md";
 
 const PACKAGE_GUIDES: Record<string, readonly string[]> = {
-  core: [SKILL_GUIDE, "skills/jgengine-api/reference/combat.md", "skills/jgengine-api/reference/world.md"],
-  ws: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
-  sql: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
-  react: [SKILL_GUIDE, "skills/jgengine-api/reference/ui-react.md"],
-  convex: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
-  node: [SKILL_GUIDE, "skills/jgengine-api/reference/multiplayer.md"],
-  shell: [SKILL_GUIDE, "skills/jgengine-api/reference/ui-react.md", "skills/jgengine-api/reference/world.md"],
-  assets: [SKILL_GUIDE],
-  github: [SKILL_GUIDE],
-  jgengine: [SKILL_GUIDE],
+  core: [MAIN_GUIDE, FOUNDATION_GUIDE, "skills/jgengine-gameplay/SKILL.md", "skills/jgengine-combat/SKILL.md", "skills/jgengine-combat/reference.md", "skills/jgengine-world/SKILL.md", "skills/jgengine-world/reference.md", "skills/jgengine-procedural/SKILL.md", "skills/jgengine-procedural/reference.md"],
+  ws: [MAIN_GUIDE, FOUNDATION_GUIDE, "skills/jgengine-multiplayer/SKILL.md", "skills/jgengine-multiplayer/reference.md"],
+  sql: [MAIN_GUIDE, FOUNDATION_GUIDE, "skills/jgengine-multiplayer/SKILL.md", "skills/jgengine-multiplayer/reference.md"],
+  react: [MAIN_GUIDE, FOUNDATION_GUIDE, "skills/jgengine-ui/SKILL.md", "skills/jgengine-ui/reference.md"],
+  convex: [MAIN_GUIDE, FOUNDATION_GUIDE, "skills/jgengine-multiplayer/SKILL.md", "skills/jgengine-multiplayer/reference.md"],
+  node: [MAIN_GUIDE, FOUNDATION_GUIDE, "skills/jgengine-multiplayer/SKILL.md", "skills/jgengine-multiplayer/reference.md"],
+  shell: [MAIN_GUIDE, FOUNDATION_GUIDE, "skills/jgengine-ui/SKILL.md", "skills/jgengine-ui/reference.md", "skills/jgengine-world/SKILL.md", "skills/jgengine-world/reference.md"],
+  assets: [MAIN_GUIDE, FOUNDATION_GUIDE, "skills/jgengine-assets/SKILL.md"],
+  github: [MAIN_GUIDE, FOUNDATION_GUIDE],
+  jgengine: [MAIN_GUIDE, FOUNDATION_GUIDE],
 };
-
 const PACKAGES = Object.keys(PACKAGE_GUIDES);
 
 function stripFrontmatter(markdown: string): string {
@@ -34,7 +34,7 @@ function exportBullet(e: ApiPackage["modules"][number]["exports"][number]): stri
   const parts = [`${e.name} (${e.kind})`];
   if (e.signature !== "") parts.push(e.signature);
   const head = parts.join(": ");
-  return e.doc !== undefined && e.doc !== "" ? `- ${head} — ${e.doc}` : `- ${head}`;
+  return e.doc !== undefined && e.doc !== "" ? `- ${head} â€” ${e.doc}` : `- ${head}`;
 }
 
 function renderLlmsTxt(root: string, pkg: string, surface: ApiPackage): string {
@@ -101,3 +101,4 @@ function main(): void {
 }
 
 if (import.meta.main) main();
+

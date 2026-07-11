@@ -349,7 +349,7 @@ const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agen
 This is a JGengine game (pure-TypeScript engine SDK, \`@jgengine/*\` on npm). Load context before writing code:
 
 - Engine API surface: \`npx jgengine llms core\` (any package name works) prints the packaged API docs.
-- Agent skills — API reference, phased game-build workflow, browserless verify gate: \`npx jgengine skills\` installs them into \`.claude/skills\`.
+- Agent skills — intake router, focused API domains, browserless verify gate: \`npx jgengine skills\` installs them for your coding agent.
 - Setup broken or UI unstyled: \`npx jgengine doctor\`.
 
 Rules this project follows:

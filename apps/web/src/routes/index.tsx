@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
 const STEPS = [
   {
     title: "Install the skills",
-    body: "One command drops the JGengine skills into any coding agent — Claude Code, Cursor, whatever you run.",
+    body: "Start from jgengine.com or install the JGengine router and focused API skills with one command.",
   },
   {
     title: "Prompt your agent",
@@ -79,15 +79,14 @@ function Home() {
               className="animate-fade-up mt-7 text-balance text-[2.6rem] font-bold leading-[1.05] tracking-tighter text-slate-50 sm:text-7xl"
               style={{ animationDelay: "60ms" }}
             >
-              A game engine your <span className="text-gradient">AI agent</span> already knows how
-              to use.
+              A TypeScript game engine built for <span className="text-gradient">AI coding agents</span>.
             </h1>
             <p
               className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-base text-slate-400 sm:text-lg"
               style={{ animationDelay: "120ms" }}
             >
-              Install the skills, prompt your agent, and it builds the whole game — engine verbs,
-              HUD, assets, and verification included. No docs to paste, no boilerplate to copy.
+              Tell your agent “make a game with jgengine” or point it at jgengine.com. JGengine
+              Skills route it through the SDK APIs, implementation, and verification it needs.
             </p>
             <div
               className="animate-fade-up mt-9 flex flex-wrap items-center justify-center gap-3"
@@ -159,8 +158,8 @@ function Home() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
               eyebrow="The skills"
-              title="Which skill does my agent need?"
-              blurb="Each skill is the spec your agent reads before it builds. Install them all with one command — it picks the right one for the job."
+              title="One intake, focused engine knowledge"
+              blurb="The main skill records a short numbered build blueprint and routes the agent to only the relevant API domains."
             />
             <Link
               to="/skills"

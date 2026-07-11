@@ -5,8 +5,7 @@ You are building **Minecraft 1:1 mechanical parity** on top of the existing JGen
 This is not a polish pass. This is a full product rebuild of the game layer. Keep the game id `voxel-mine` unless the user renames it. Do not fork `@jgengine/shell`. Prefer engine primitives; when a primitive is missing, implement in game code first, then file an engine gap only if two+ systems need the same missing seam.
 
 Read before writing code:
-- `skills/jgengine-api/SKILL.md` (+ `reference/world.md`, `reference/multiplayer.md`)
-- `skills/jgengine-newgame/SKILL.md`
+- `skills/jgengine/SKILL.md`, routed into `jgengine-foundation`, `jgengine-world`, and `jgengine-multiplayer`
 - `skills/jgengine-verify/SKILL.md`
 - Every file under `Games/voxel-mine/src/`
 - `packages/core/src/world/voxelField.ts`
