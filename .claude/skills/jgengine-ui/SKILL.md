@@ -7,7 +7,7 @@ description: React/shell UI API: HUDs, controls, feedback, accessibility, qualit
 
 ## UI — `@jgengine/react`
 
-The React layer — `GameProvider`, the hooks table, headless className-passthrough primitives (incl. map components), the identity/chat/voice/social/drag-layer kits, the shadcn registry install path for visual HUD components (`npx shadcn@latest add https://jgengine.com/r/<name>.json`), the screen-layout rule, and the **UI quality bar** (required, not optional polish). Full surface: **[../jgengine-ui/reference.md](../jgengine-ui/reference.md)**.
+The React layer — `GameProvider`, the hooks table, headless className-passthrough primitives (incl. map components), the identity/chat/voice/social/drag-layer kits, the shadcn registry install path for visual HUD components (`npx shadcn@latest add https://jgengine.com/r/<name>.json`), the screen-layout rule, and the **UI quality bar** (required, not optional polish). Full surface: **[../jgengine-ui/reference.md](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-ui/reference.md)**.
 
 ## Devtools — F2 overlay and tunables
 

@@ -96,7 +96,13 @@ export default defineConfig({
   },
   plugins: [
     tailwindcss(),
-    tanstackStart({ prerender: { enabled: true, crawlLinks: true } }),
+    tanstackStart({
+      prerender: {
+        enabled: true,
+        crawlLinks: true,
+        filter: (page) => !page.path.replace(/[?#].*$/, "").endsWith(".md"),
+      },
+    }),
     nitro({ devServer: { runner: "self" } }),
     viteReact(),
     registryPlugin(),
