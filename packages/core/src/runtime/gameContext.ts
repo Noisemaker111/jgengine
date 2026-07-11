@@ -195,6 +195,7 @@ export interface SceneEntityContext {
   despawn(instanceId: string): boolean;
   update: EntityStore["update"];
   setPose(instanceId: string, pose: EntityPose): boolean;
+  setPoseConstraint: EntityStore["setPoseConstraint"];
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
   spawnPoseOf(instanceId: string): SpawnPose | null;
@@ -998,6 +999,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         despawn: despawnEntity,
         update: entities.update,
         setPose: entities.setPose,
+        setPoseConstraint: entities.setPoseConstraint,
         get: entities.get,
         list: entities.list,
         spawnPoseOf: entities.spawnPoseOf,

@@ -4,7 +4,7 @@
 
 > Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is a software game engine.
 
-A genre-agnostic, pure-TypeScript game engine SDK. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres, with socket.io, WebRTC peer-to-peer, and LAN as drop-in transports over the same protocol.
+A genre-agnostic, pure-TypeScript game engine SDK built for AI coding agents. Agents build games on the SDK using JGengine Skills, which provide intake, focused API guidance, and verification. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres, with socket.io, WebRTC peer-to-peer, and LAN as drop-in transports over the same protocol.
 
 ## Packages
 
@@ -49,7 +49,7 @@ Examples: *Make a game that is Mario Party with goo characters, with jgengine* �
 
 That is the whole product surface for humans. No install checklist, no “run skills first,” no required CLI.
 
-Under the hood the agent uses `npx jgengine` (create, skills, doctor, llms) and the skills in [`.claude/skills/`](.claude/skills). Power users may call the CLI themselves; that is optional, not the entry.
+Under the hood the agent uses `npx jgengine` (create, skills, doctor, llms) and the skills in [`.claude/skills/`](.claude/skills) — an intake router plus focused API domains. Power users may call the CLI themselves; that is optional, not the entry.
 
 ## Website — [jgengine.com](https://jgengine.com)
 
@@ -57,7 +57,7 @@ Under the hood the agent uses `npx jgengine` (create, skills, doctor, llms) and 
 
 It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
-Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header dropdown — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally with the runner served for it in dev, so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine-api`'s standalone dev harness) launches one game on its own, no host app required.
+Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header dropdown — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally with the runner served for it in dev, so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine`'s standalone dev harness) launches one game on its own, no host app required.
 
 ## Layering
 

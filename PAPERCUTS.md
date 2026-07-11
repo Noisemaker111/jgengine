@@ -191,6 +191,9 @@ running repo-root check-types → its --filter '*' pass emitted no Games/* lines
 2026-07-11T00:07:26.896Z — sonnet — Claude
 
 shipping via worker chain → three consecutive workers returned garbled/placeholder final messages (survey, remap, ship), each needed manual state inspection and takeover
+2026-07-11T03:32:23.250Z — gpt-5 — unknown
+
+auditing onboarding copy -> PowerShell quoting broke a targeted rg command
 
 2026-07-11T04:35:53.206Z — opus-4.8 — Claude
 

@@ -32,7 +32,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -45,7 +45,8 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run build
-      - run: bun test packages Games
+      # Engine surface only. Games/* are gallery demos — opt in with `bun run test:games` / `test:all`.
+      - run: bun test packages apps/dev scripts
 
   web-build:
     runs-on: ubuntu-latest

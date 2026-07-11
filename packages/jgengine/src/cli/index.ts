@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -22,7 +22,7 @@ HUMAN INTERFACE (what people say to you — not a shell they must run):
 AGENT RESPONSE (you run these; do not dump this as homework for the user):
   npx jgengine create "Game Name"   # scaffold + install skills into the project
   cd Game-Name
-  # concept pitch → questions → build (see jgengine-newgame)
+  # intake → foundation + only needed domains → build (see jgengine skill)
 
 usage: jgengine <command> [...args]
 

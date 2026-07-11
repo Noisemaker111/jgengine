@@ -26,7 +26,7 @@ describe("parseSkillsArgs", () => {
 });
 
 describe("skillsInstallArgs", () => {
-  test("installs only the three game skills, not the whole monorepo skill tree", () => {
+  test("installs the intake + domain game skills, not the whole monorepo skill tree", () => {
     const project = skillsInstallArgs("project");
     expect(project).toContain(SKILLS_SOURCE);
     expect(project).toContain("-y");

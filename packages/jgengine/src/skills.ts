@@ -1,8 +1,18 @@
-import { spawnSync } from "node:child_process";
+﻿import { spawnSync } from "node:child_process";
 
 export const SKILLS_SOURCE = "Noisemaker111/jgengine";
 
-export const GAME_SKILLS = ["jgengine-api", "jgengine-newgame", "jgengine-verify"] as const;
+export const GAME_SKILLS = [
+  "jgengine",
+  "jgengine-world",
+  "jgengine-procedural",
+  "jgengine-combat",
+  "jgengine-gameplay",
+  "jgengine-multiplayer",
+  "jgengine-ui",
+  "jgengine-assets",
+  "jgengine-verify",
+] as const;
 
 export type SkillsScope = "global" | "project";
 

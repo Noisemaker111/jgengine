@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { AxisChannel, DRIVE_AXIS_BINDINGS, clampAxis, rampToward } from "./axisInput";
+import { AxisChannel, DRIVE_AXIS_BINDINGS, clampAxis, createAxisChannel, rampToward } from "./axisInput";
 
 const held = (...codes: string[]) => (code: string) => codes.includes(code);
 
@@ -75,5 +75,64 @@ describe("AxisChannel", () => {
     ch.setAnalog("steer", -0.3);
     ch.sample(0.1, held(), { x: 0.9, y: 0, active: true });
     expect(ch.value.steer).toBeCloseTo(-0.3, 5);
+  });
+});
+
+const DRONE_BINDINGS = {
+  pitch: { positive: ["KeyW"], negative: ["KeyS"] },
+  lift: { positive: ["Space"] },
+};
+
+describe("createAxisChannel (custom axis schema)", () => {
+  test("digital keys ramp analog values, same pedal feel as AxisChannel", () => {
+    const ch = createAxisChannel({ bindings: DRONE_BINDINGS, ranges: { lift: { min: 0, max: 1 } }, smoothing: 4 });
+    const first = ch.sample(0.1, held("KeyW"));
+    expect(first.pitch).toBeGreaterThan(0);
+    expect(first.pitch).toBeLessThan(1);
+    for (let i = 0; i < 30; i += 1) ch.sample(0.1, held("KeyW"));
+    expect(ch.value.pitch).toBe(1);
+  });
+
+  test("unlisted axes default to a bipolar range; explicit ranges clamp to their own bounds", () => {
+    const ch = createAxisChannel({ bindings: DRONE_BINDINGS, ranges: { lift: { min: 0, max: 1 } }, smoothing: 100 });
+    ch.sample(0.1, held("KeyS"));
+    expect(ch.value.pitch).toBe(-1);
+    ch.setAnalog("lift", 5);
+    ch.sample(0.1, held());
+    expect(ch.value.lift).toBe(1);
+    ch.setAnalog("lift", -5);
+    ch.sample(0.1, held());
+    expect(ch.value.lift).toBe(0);
+  });
+
+  test("setAnalog overrides the digital target", () => {
+    const ch = createAxisChannel({ bindings: DRONE_BINDINGS, ranges: { lift: { min: 0, max: 1 } }, smoothing: 100 });
+    ch.setAnalog("pitch", 0.4);
+    ch.sample(0.1, held("KeyW"));
+    expect(ch.value.pitch).toBeCloseTo(0.4, 5);
+    ch.clearAnalog("pitch");
+    ch.sample(0.1, held("KeyW"));
+    expect(ch.value.pitch).toBe(1);
+  });
+
+  test("a pointer-bound axis steers from the pointer and falls back to keys without one", () => {
+    const bindings = {
+      ...DRONE_BINDINGS,
+      pitch: { ...DRONE_BINDINGS.pitch, pointer: { source: "y" as const } },
+    };
+    const ch = createAxisChannel({ bindings, ranges: { lift: { min: 0, max: 1 } }, smoothing: 100 });
+    ch.sample(0.1, held(), { x: 0, y: 0.5, active: true });
+    expect(ch.value.pitch).toBeCloseTo(0.5, 5);
+    ch.sample(0.1, held(), null);
+    expect(ch.value.pitch).toBe(0);
+  });
+
+  test("reset zeroes every axis", () => {
+    const ch = createAxisChannel({ bindings: DRONE_BINDINGS, ranges: { lift: { min: 0, max: 1 } }, smoothing: 100 });
+    ch.sample(0.1, held("KeyW", "Space"));
+    expect(ch.value.pitch).toBeGreaterThan(0);
+    expect(ch.value.lift).toBeGreaterThan(0);
+    ch.reset();
+    expect(ch.value).toEqual({ pitch: 0, lift: 0 });
   });
 });

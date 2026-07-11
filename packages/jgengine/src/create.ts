@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+﻿import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 
@@ -122,7 +122,7 @@ export function runCreate(argv: string[]): number {
     }
 
     writeGame(targetDir, id, displayName, variant);
-    console.log(`created ${displayName} (${variant}) → ${targetDir}`);
+    console.log(`created ${displayName} (${variant}) ΓåÆ ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
 
     if (variant === "in-repo" && workspaceRoot !== null) {
@@ -139,20 +139,20 @@ export function runCreate(argv: string[]): number {
     let installed = false;
     if (!hasFlag(argv, "no-install")) {
       const pm = pickPackageManager(flag(argv, "pm"));
-      console.log(`installing dependencies with ${pm}…`);
+      console.log(`installing dependencies with ${pm}ΓÇª`);
       const install = spawnSync(pm, ["install"], {
         cwd: targetDir,
         stdio: "inherit",
         shell: process.platform === "win32",
       });
       installed = install.status === 0;
-      if (!installed) console.error(`warning: ${pm} install failed — run it manually in ${targetDir}`);
+      if (!installed) console.error(`warning: ${pm} install failed ΓÇö run it manually in ${targetDir}`);
     }
 
     if (!hasFlag(argv, "no-skills")) {
       const skillsStatus = installSkills("project", targetDir);
       if (skillsStatus !== 0) {
-        console.error("warning: skill install failed — agent can still use AGENTS.md; retry: npx jgengine skills -p");
+        console.error("warning: skill install failed ΓÇö agent can still use AGENTS.md; retry: npx jgengine skills -p");
       }
     }
 

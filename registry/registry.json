@@ -2144,6 +2144,45 @@
           "target": "components/ui/mount.tsx"
         }
       ]
+    },
+    {
+      "name": "schematic-diagram",
+      "type": "registry:ui",
+      "title": "Schematic Diagram",
+      "description": "Fixed-panel node+edge schematic independent of world positions \u2014 circuit layouts, rail networks, heist floor plans, with dashed forecast edges.",
+      "files": [
+        {
+          "path": "jgengine/schematic-diagram.tsx",
+          "target": "components/ui/schematic-diagram.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "progress-strip",
+      "type": "registry:ui",
+      "title": "Progress Strip",
+      "description": "Linear 1D minimap: lanes with moving markers and live/forecast segments \u2014 race standings along a lap, couriers along a line.",
+      "files": [
+        {
+          "path": "jgengine/progress-strip.tsx",
+          "target": "components/ui/progress-strip.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "loop-dial",
+      "type": "registry:ui",
+      "title": "Loop Dial",
+      "description": "Radial position-around-a-loop dial: markers at cycle fractions plus live/forecast arc windows \u2014 laps, patrols, rotation schedules.",
+      "files": [
+        {
+          "path": "jgengine/loop-dial.tsx",
+          "target": "components/ui/loop-dial.tsx",
+          "type": "registry:ui"
+        }
+      ]
     }
   ]
 }
