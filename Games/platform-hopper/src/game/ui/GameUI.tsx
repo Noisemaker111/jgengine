@@ -1,6 +1,6 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useEntityStat, useFeed, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 
 import { keybinds } from "../keybinds";
 import { goalProgress } from "../physics";
@@ -106,7 +106,10 @@ export function GameUI() {
         <p className="mt-0.5 text-sm text-white/85">Run right, stomp the stompers, dodge the spikes, reach the flag.</p>
       </HudPanel>
       <HudPanel id="stats" anchor="top-right" inset={{ x: 16, y: 16 }} className="flex flex-col items-end gap-2 rounded-lg border border-white/15 bg-black/55 px-3 py-2 shadow-lg">
-        <Hearts userId={userId} />
+        <div className="flex items-center gap-2">
+          <Hearts userId={userId} />
+          <SettingsTrigger className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-white/20 text-base text-white/70 transition hover:bg-white/15 hover:text-white" />
+        </div>
         <Score userId={userId} />
       </HudPanel>
       <HudPanel id="goal-progress" anchor="top" inset={{ x: 0, y: 16 }}>

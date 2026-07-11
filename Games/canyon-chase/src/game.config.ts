@@ -27,5 +27,18 @@ export const game = defineGame({
   },
   renderEntity: renderVehicleEntity,
   objectStyles,
+  settings: {
+    variant: "sheet",
+    hideBindings: ["restart", "startRun"],
+    actions: [
+      {
+        id: "restart",
+        label: "Restart run",
+        kind: "danger",
+        description: "Chase the smuggler again from the border checkpoint.",
+        run: (ctx) => ctx.game.commands.run("restart", {}),
+      },
+    ],
+  },
   devtools: true,
 });

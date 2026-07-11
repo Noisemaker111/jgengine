@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useGame } from "@jgengine/react";
+import { useGame, SettingsTrigger } from "@jgengine/react";
 import { KeybindLegend } from "./PursuitHud";
 import { TRUCK_SEEDS } from "../../run/truckSchedule";
 import type { RunResult } from "../../run/runState";
@@ -12,7 +12,8 @@ function formatTime(seconds: number): string {
 
 function PanelShell({ children }: { children: ReactNode }) {
   return (
-    <div className="pointer-events-auto flex w-full max-w-md flex-col gap-5 rounded-3xl border-2 border-[#ffc857]/50 bg-gradient-to-b from-[#241a2c] to-[#1b1220] p-8 text-center shadow-[0_40px_120px_rgba(0,0,0,0.7)]">
+    <div className="pointer-events-auto relative flex w-full max-w-md flex-col gap-5 rounded-3xl border-2 border-[#ffc857]/50 bg-gradient-to-b from-[#241a2c] to-[#1b1220] p-8 text-center shadow-[0_40px_120px_rgba(0,0,0,0.7)]">
+      <SettingsTrigger className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-[#ffc857]/35 text-lg text-[#ffc857] transition-colors hover:bg-[#ffc857]/15" />
       {children}
     </div>
   );

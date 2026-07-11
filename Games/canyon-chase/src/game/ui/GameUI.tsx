@@ -1,4 +1,4 @@
-import { useGameStore } from "@jgengine/react";
+import { useGameStore, SettingsTrigger } from "@jgengine/react";
 import { SELECTED_SEED_STORE_KEY } from "../run/storeKeys";
 import { isSurging } from "../run/surge";
 import { useRunState } from "../run/useRunState";
@@ -17,7 +17,14 @@ export function GameUI() {
   return (
     <div className="pointer-events-none fixed inset-0 flex flex-col justify-between p-3 font-sans sm:p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-2">{run.phase === "playing" ? <BorderCountdown truckMainDistance={run.truck.mainDistance} /> : null}</div>
+        <div className="flex flex-col gap-2">
+          {run.phase === "playing" ? (
+            <>
+              <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[#ffc857]/30 bg-[#241a2c]/70 text-[#ffc857] backdrop-blur transition-colors hover:bg-[#ffc857]/15" />
+              <BorderCountdown truckMainDistance={run.truck.mainDistance} />
+            </>
+          ) : null}
+        </div>
         <div className="flex flex-1 justify-center">
           {run.phase === "playing" ? <DistanceBar gap={run.gap} gapDelta={run.gapDelta} tensionFraction={run.tensionFraction} /> : null}
         </div>

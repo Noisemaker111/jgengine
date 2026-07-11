@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { PLAYER_CAR_ENTITY, SMUGGLER_TRUCK_ENTITY } from "./game/entities/catalog";
 import { type RunState, advanceRun, beginRun, createInitialRunState } from "./game/run/runState";
 import { MAP_SLOW_TIME_SCALE, MARKERS_STORE_KEY, RUN_STORE_KEY, SELECTED_SEED_STORE_KEY, TRUCK_ENTITY_ID } from "./game/run/storeKeys";
@@ -14,11 +15,16 @@ function writeRun(ctx: GameContext, run: RunState): void {
   ctx.game.store.set(RUN_STORE_KEY, run);
 }
 
+function syncPhase(ctx: GameContext, phase: RunState["phase"]): void {
+  setGamePhase(ctx, phase === "playing" ? "playing" : phase === "idle" ? "menu" : "ended");
+}
+
 export function onInit(ctx: GameContext): void {
   setupWorld(ctx);
   ctx.game.store.set(SELECTED_SEED_STORE_KEY, DEFAULT_TRUCK_SEED_ID);
   ctx.game.store.set(MARKERS_STORE_KEY, createCanyonMarkerSet());
   writeRun(ctx, createInitialRunState(DEFAULT_TRUCK_SEED_ID));
+  syncPhase(ctx, "idle");
 
   ctx.game.commands.define("selectSeed", {
     apply(state, input: { seedId: string }) {
@@ -32,6 +38,7 @@ export function onInit(ctx: GameContext): void {
     apply(state) {
       const seedId = (state.game.store.get(SELECTED_SEED_STORE_KEY) as string | undefined) ?? DEFAULT_TRUCK_SEED_ID;
       writeRun(state, beginRun(seedId));
+      syncPhase(state, "playing");
     },
   });
 
@@ -39,6 +46,7 @@ export function onInit(ctx: GameContext): void {
     apply(state) {
       const current = readRun(state);
       writeRun(state, beginRun(current.seedId));
+      syncPhase(state, "playing");
     },
   });
 }
@@ -81,6 +89,7 @@ export function onTick(ctx: GameContext, dt: number): void {
 
   const previousTruckPosition = run.truck.position;
   const next = advanceRun(run, input, dt);
+  if (next.phase !== run.phase) syncPhase(ctx, next.phase);
 
   ctx.time.setSpeed(next.mapSlow.active ? MAP_SLOW_TIME_SCALE : 1);
 

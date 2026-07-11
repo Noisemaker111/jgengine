@@ -43,19 +43,39 @@ export interface GameSettingDef {
   onChange?: (value: SettingValue, ctx: GameContext) => void;
 }
 
-export type SettingsSurface = "menu" | "quick";
+/** `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`. */
+export type SettingsSurface = "quick";
+
+/** The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens. */
+export type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen";
+
+/** A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key. */
+export interface SettingsActionDef {
+  id: string;
+  label: string;
+  /** `danger` styles destructive actions (restart, quit) apart from neutral ones. */
+  kind?: "default" | "danger";
+  /** Optional one-line hint under the label. */
+  description?: string;
+  /** Runs the action; the menu closes right after. */
+  run: (ctx: GameContext) => void;
+}
 
 export interface GameSettingsConfig {
-  /** `menu` (default) mounts a gear that opens the full menu; `quick` shows compact on-screen volume/graphics buttons; `false` mounts no engine trigger — the menu is still available, open it yourself with `useSettings().open()` and/or render `useSettings().categories` your own way. */
+  /** Layout + skin of the menu; all four theme off `--jg-*`. Default `panel`. */
+  variant?: SettingsVariant;
+  /** `quick` shows compact on-screen volume/graphics buttons; omitted mounts no engine trigger — open the menu yourself with `<SettingsTrigger>` / `useSettings().open()`, or render `useSettings().categories` your own way. */
   surface?: SettingsSurface | false;
-  /** `overlay` (default) opens over the current screen; `page` is full-screen navigation. */
-  mode?: "overlay" | "page";
   /** Rows appended to any category — built-in or a brand-new one named by `category`. */
   extra?: readonly GameSettingDef[];
   /** Declare custom category tabs, or relabel/reorder the built-ins. */
   categories?: readonly SettingCategoryDef[];
   /** Built-in categories to hide. */
   hide?: readonly SettingCategory[];
+  /** Game-state actions (Restart, Quit…) — become the first "Game" tab, shown before anything else. */
+  actions?: readonly SettingsActionDef[];
+  /** Input actions to drop from the rebindable Controls list — game-state keys like `restart` that belong in `actions`, not the rebind grid. */
+  hideBindings?: readonly string[];
 }
 
 export const SETTINGS_STORAGE_PREFIX = "jgengine:setting:";
