@@ -6,7 +6,7 @@ import type { RuntimePlayerRow } from "@jgengine/core/runtime/snapshot";
 
 import { createGameHost } from "./host";
 import { clearFilePersistence, filePersistence, memoryPersistence } from "./persistence";
-import { createTestRuntime } from "./testFixtures";
+import { createChunkTestRuntime, createTestRuntime } from "./testFixtures";
 
 test("join, command, flush, and restart round-trip through memory persistence", async () => {
   let t = 0;
@@ -185,4 +185,80 @@ test("filePersistence round-trips every tier and survives a host restart", async
   } finally {
     await clearFilePersistence(dir);
   }
+});
+
+test("memory deleteChunks drops keys permanently", async () => {
+  const persistence = memoryPersistence();
+  await persistence.saveChunks("srv-1", [
+    { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 1 },
+    { serverId: "srv-1", chunkKey: "1,0", snapshot: { chunkKey: "1,0", objects: [], entities: [] }, updatedAt: 1 },
+  ]);
+  await persistence.deleteChunks("srv-1", ["0,0"]);
+  expect((await persistence.loadChunks("srv-1")).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
+});
+
+test("file deleteChunks drops keys permanently across reopen", async () => {
+  const dir = join(tmpdir(), `jg-node-chunks-${process.pid}-${Math.random().toString(36).slice(2)}`);
+  try {
+    const persistence = filePersistence(dir);
+    await persistence.saveChunks("srv-1", [
+      { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 1 },
+      { serverId: "srv-1", chunkKey: "1,0", snapshot: { chunkKey: "1,0", objects: [], entities: [] }, updatedAt: 1 },
+    ]);
+    await persistence.deleteChunks("srv-1", ["0,0"]);
+    expect((await persistence.loadChunks("srv-1")).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
+
+    const reopened = filePersistence(dir);
+    expect((await reopened.loadChunks("srv-1")).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
+  } finally {
+    await clearFilePersistence(dir);
+  }
+});
+
+test("host flush applies deletedChunks through memory persistence", async () => {
+  let t = 0;
+  const persistence = memoryPersistence(() => t);
+  const host = createGameHost({
+    runtimes: [createChunkTestRuntime()],
+    persistence,
+    now: () => t,
+  });
+
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "chunk-game" });
+  await host.runCommand({
+    userId: "alice",
+    serverId,
+    command: "chunk.put",
+    input: { chunkKey: "0,0" },
+  });
+  await host.runCommand({
+    userId: "alice",
+    serverId,
+    command: "chunk.put",
+    input: { chunkKey: "1,0" },
+  });
+  t = 100;
+  expect(await host.flushAll()).toBe(1);
+  expect((await persistence.loadChunks(serverId)).map((chunk) => chunk.chunkKey).sort()).toEqual([
+    "0,0",
+    "1,0",
+  ]);
+
+  await host.runCommand({
+    userId: "alice",
+    serverId,
+    command: "chunk.delete",
+    input: { chunkKey: "0,0" },
+  });
+  t = 200;
+  expect(await host.flushAll()).toBe(1);
+  expect((await persistence.loadChunks(serverId)).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
+
+  const restarted = createGameHost({
+    runtimes: [createChunkTestRuntime()],
+    persistence,
+    now: () => t,
+  });
+  await restarted.joinServer({ userId: "alice", gameId: "chunk-game", serverId });
+  expect((await persistence.loadChunks(serverId)).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
 });

@@ -264,6 +264,14 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
       });
     },
 
+    async deleteChunks(serverId, chunkKeys) {
+      if (chunkKeys.length === 0) return;
+      await pool.query(`DELETE FROM jg_world_chunks WHERE server_id = $1 AND chunk_key = ANY($2::text[])`, [
+        serverId,
+        chunkKeys,
+      ]);
+    },
+
     async loadFeed({ serverId, action }) {
       const result = await pool.query(
         `SELECT entries FROM jg_feed_buffers WHERE server_id = $1 AND action = $2`,

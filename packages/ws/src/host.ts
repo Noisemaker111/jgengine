@@ -147,6 +147,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
       serverRow: record.serverState,
       playersByUserId: buildHydratePlayers(record, profiles),
       chunksByKey,
+      revision: record.revision,
     });
     const existing = live.get(record.serverId);
     if (existing) return existing;
@@ -178,6 +179,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
       }
       if (cleared.chunks.length > 0) {
         await persistence.saveChunks(entry.record.serverId, cleared.chunks);
+      }
+      if (cleared.deletedChunks.length > 0) {
+        await persistence.deleteChunks(entry.record.serverId, cleared.deletedChunks);
       }
       await persistence.saveServer(cleared.server);
     }
@@ -519,6 +523,13 @@ export function memoryPersistence(now: () => number = Date.now): HostPersistence
         byKey.set(record.chunkKey, clone(record));
       }
       chunks.set(serverId, byKey);
+    },
+    async deleteChunks(serverId, chunkKeys) {
+      const byKey = chunks.get(serverId);
+      if (byKey === undefined) return;
+      for (const chunkKey of chunkKeys) {
+        byKey.delete(chunkKey);
+      }
     },
     async loadFeed({ serverId, action }) {
       return clone(feeds.get(`${serverId}|${action}`) ?? []);

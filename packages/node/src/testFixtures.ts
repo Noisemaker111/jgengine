@@ -13,6 +13,31 @@ function isGoldGrantInput(input: unknown): input is GoldGrantInput {
   );
 }
 
+type ChunkKeyInput = { chunkKey: string };
+
+function isChunkKeyInput(input: unknown): input is ChunkKeyInput {
+  return (
+    typeof input === "object" &&
+    input !== null &&
+    typeof (input as ChunkKeyInput).chunkKey === "string"
+  );
+}
+
+function markChunkDirty(snapshot: GameRuntimeSnapshot, chunkKey: string): GameRuntimeSnapshot {
+  const chunks = snapshot.dirty.chunks.includes(chunkKey)
+    ? snapshot.dirty.chunks
+    : [...snapshot.dirty.chunks, chunkKey];
+  return {
+    ...snapshot,
+    revision: snapshot.revision + 1,
+    dirty: {
+      ...snapshot.dirty,
+      server: true,
+      chunks,
+    },
+  };
+}
+
 export function createTestRuntime(gameId = "test-game"): GameRuntime {
   return createGameRuntime({
     gameId,
@@ -62,6 +87,42 @@ export function createTestRuntime(gameId = "test-game"): GameRuntime {
             },
           }),
         );
+      },
+    },
+  });
+}
+
+export function createChunkTestRuntime(gameId = "chunk-game"): GameRuntime {
+  return createGameRuntime({
+    gameId,
+    save: { auto: "5ms", scope: "player+chunks" },
+    commands: {
+      "chunk.put": {
+        validate: (_snapshot: GameRuntimeSnapshot, input: unknown) =>
+          isChunkKeyInput(input) ? null : { reason: "chunkKey required" },
+        apply: (snapshot: GameRuntimeSnapshot, input: unknown) => {
+          const { chunkKey } = input as ChunkKeyInput;
+          return markChunkDirty(
+            {
+              ...snapshot,
+              chunks: {
+                ...snapshot.chunks,
+                [chunkKey]: { chunkKey, objects: [], entities: [] },
+              },
+            },
+            chunkKey,
+          );
+        },
+      },
+      "chunk.delete": {
+        validate: (_snapshot: GameRuntimeSnapshot, input: unknown) =>
+          isChunkKeyInput(input) ? null : { reason: "chunkKey required" },
+        apply: (snapshot: GameRuntimeSnapshot, input: unknown) => {
+          const { chunkKey } = input as ChunkKeyInput;
+          const chunks = { ...snapshot.chunks };
+          delete chunks[chunkKey];
+          return markChunkDirty({ ...snapshot, chunks }, chunkKey);
+        },
       },
     },
   });

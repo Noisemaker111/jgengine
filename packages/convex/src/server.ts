@@ -27,6 +27,7 @@ import { buildHydratePlayers, planServerPersist, shouldAutoSave, trimFeedEntries
 import type { SaveConfig } from "@jgengine/core/runtime/save";
 import type { GameRuntimeSnapshot, RuntimeChunkRow, RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
 import { clearDirtyFlags, createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
+import { applyCommandWithOcc, commitIfRevisionMatch } from "./occ";
 
 const saveConfigValidator = v.union(
   v.literal("none"),
@@ -235,6 +236,7 @@ async function loadServerSnapshot(
     serverRow: server.serverState as RuntimeServerRow,
     playersByUserId,
     chunksByKey,
+    revision: server.revision,
   });
 }
 
@@ -544,14 +546,32 @@ export function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; 
         return { ok: false as const, reason: "Not a member of this server" };
       }
 
+      const loadedRevision = server.revision;
       const runtime = resolveRuntime(registry, server.gameId);
       const snapshot = await loadServerSnapshot(ctx, server, runtime);
-      const result = runtime.runCommand(snapshot, actorUserId, args.command, args.input);
+      const result = applyCommandWithOcc({
+        loadedRevision,
+        currentRevision: server.revision,
+        snapshot,
+        runtime,
+        actorUserId,
+        command: args.command,
+        input: args.input,
+      });
       if (!result.ok) {
         return result;
       }
 
-      await persistServerSnapshot(ctx, server, result.snapshot, server.save as SaveConfig);
+      const latest = await ctx.db.get("jgGameServers", args.serverId);
+      if (!latest) {
+        return { ok: false as const, reason: "Server not found" };
+      }
+      const commit = commitIfRevisionMatch(loadedRevision, latest.revision);
+      if (!commit.ok) {
+        return commit;
+      }
+
+      await persistServerSnapshot(ctx, latest, result.snapshot, latest.save as SaveConfig);
       return { ok: true as const };
     },
   });
