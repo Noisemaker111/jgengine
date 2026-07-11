@@ -115,6 +115,7 @@ import {
   rtsPanKeysConflict,
 } from "./camera";
 import { resolveModel, tryResolveCatalogModel } from "./render/resolveModel";
+import { CullingProvider, useRenderVisibility } from "./visibility/CullingProvider";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
@@ -525,6 +526,7 @@ function EntityMarker({
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const ctx = useGameContext();
+  const visibleRef = useRenderVisibility();
   const entityId = entity.id;
   const role = entity.role;
   const name = entity.name;
@@ -536,6 +538,7 @@ function EntityMarker({
     const live = ctx.scene.entity.get(entityId);
     if (live === null) return;
     writeEntityPose(group, live);
+    group.visible = visibleRef.current(entityId);
   });
 
   return (
@@ -601,6 +604,7 @@ function ObjectMarker({
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const ctx = useGameContext();
+  const visibleRef = useRenderVisibility();
   const instanceId = object.instanceId;
   const [scaleX, scaleY, scaleZ] = objectVisualScale(object.visual);
   const color = object.visual?.color ?? style?.color ?? colorFromId(object.catalogId);
@@ -612,6 +616,7 @@ function ObjectMarker({
     const live = ctx.scene.object.get(instanceId);
     if (live === null) return;
     writeEntityPose(group, live);
+    group.visible = visibleRef.current(instanceId);
   });
 
   return (
@@ -1938,17 +1943,19 @@ export function GamePlayerShell({
         ) : null}
         <BackdropFog fog={backdrop?.fog} />
         <GameProvider context={ctx}>
-          <WorldView
-            entitySprites={playable.entitySprites}
-            entityModels={playable.entityModels}
-            objectModels={playable.objectModels}
-            objectStyles={playable.objectStyles}
-            environment={AutoEnvironment}
-            assets={playable.game.assets}
-            renderEntity={playable.renderEntity}
-            renderObject={playable.renderObject}
-            selectedIds={selectedIds}
-          />
+          <CullingProvider config={playable.visibility}>
+            <WorldView
+              entitySprites={playable.entitySprites}
+              entityModels={playable.entityModels}
+              objectModels={playable.objectModels}
+              objectStyles={playable.objectStyles}
+              environment={AutoEnvironment}
+              assets={playable.game.assets}
+              renderEntity={playable.renderEntity}
+              renderObject={playable.renderObject}
+              selectedIds={selectedIds}
+            />
+          </CullingProvider>
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? (
             <WorldEntityBars statId={barsStatId} roles={barsRoles} resolveRole={resolveEntityRole} />
