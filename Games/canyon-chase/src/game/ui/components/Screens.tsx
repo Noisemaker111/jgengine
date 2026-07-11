@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useGame } from "@jgengine/react";
-import { KeybindLegend } from "./PursuitHud";
 import { TRUCK_SEEDS } from "../../run/truckSchedule";
 import type { RunResult } from "../../run/runState";
 
@@ -10,14 +9,6 @@ function formatTime(seconds: number): string {
   return `${minutes}:${rest.toString().padStart(2, "0")}`;
 }
 
-function PanelShell({ children }: { children: ReactNode }) {
-  return (
-    <div className="pointer-events-auto flex w-full max-w-md flex-col gap-5 rounded-3xl border-2 border-[#ffc857]/50 bg-gradient-to-b from-[#241a2c] to-[#1b1220] p-8 text-center shadow-[0_40px_120px_rgba(0,0,0,0.7)]">
-      {children}
-    </div>
-  );
-}
-
 export interface StartScreenProps {
   readonly selectedSeedId: string;
 }
@@ -25,43 +16,61 @@ export interface StartScreenProps {
 export function StartScreen({ selectedSeedId }: StartScreenProps) {
   const { commands } = useGame();
   return (
-    <PanelShell>
-      <div>
-        <h1 className="text-3xl font-black uppercase tracking-[0.15em] text-[#ffc857]">Canyon Chase</h1>
-        <p className="mt-2 text-sm text-[#e8d7c3]/85">
-          The rock lies. The map doesn't. Chase the smuggler's rig to the border — trust the survey through every
-          shadow wall, and don't get suckered by a mouth that only looks open.
-        </p>
-      </div>
-      <div className="flex flex-col gap-2">
-        <span className="text-[10px] uppercase tracking-[0.3em] text-[#e8d7c3]/60">Select Run</span>
-        <div className="flex justify-center gap-2">
-          {TRUCK_SEEDS.map((seed) => (
+    <div className="relative flex h-full min-h-0 items-end overflow-hidden bg-[#120d12] text-[#f4e6d2] sm:items-center">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_24%,rgba(255,200,87,0.20),transparent_27%),linear-gradient(155deg,#21131d_0%,#090709_58%,#24120c_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-[48%] opacity-50 [clip-path:polygon(0_48%,18%_22%,36%_42%,55%_8%,72%_30%,100%_0,100%_100%,0_100%)] bg-[#5f2b1c]" />
+      <div className="absolute inset-x-0 bottom-0 h-[34%] [clip-path:polygon(0_35%,17%_12%,38%_46%,58%_16%,78%_45%,100%_20%,100%_100%,0_100%)] bg-[#170d0b]" />
+
+      <div className="relative z-10 grid w-full grid-cols-1 gap-8 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-16 sm:px-10 lg:grid-cols-[1fr_26rem] lg:items-center lg:px-16">
+        <section className="max-w-3xl">
+          <p className="text-[10px] uppercase tracking-[0.48em] text-[#ffc857]/75">Border pursuit dispatch</p>
+          <h1 className="mt-3 text-5xl font-black uppercase leading-[0.84] tracking-[-0.04em] text-[#ffc857] sm:text-7xl">
+            Canyon
+            <span className="block pl-[0.6em] text-[#f4e6d2]">Chase</span>
+          </h1>
+          <p className="mt-6 max-w-xl border-l-2 border-[#ffc857] pl-4 text-sm leading-6 text-[#f4e6d2]/72 sm:text-base">
+            The rock lies. The survey does not. Cut the smuggler off before the border arch and trust the route when the canyon tries to fool you.
+          </p>
+          <div className="mt-7 flex flex-wrap items-center gap-4">
             <button
-              key={seed.id}
               type="button"
-              onClick={() => commands.run("selectSeed", { seedId: seed.id })}
-              className={`flex-1 rounded-xl border px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${
-                selectedSeedId === seed.id
-                  ? "border-[#ffc857] bg-[#ffc857]/20 text-[#ffc857]"
-                  : "border-[#e8d7c3]/25 text-[#e8d7c3]/70 hover:border-[#e8d7c3]/50"
-              }`}
+              autoFocus
+              onClick={() => commands.run("startRun", {})}
+              className="group relative min-h-14 overflow-hidden border-2 border-[#ffc857] bg-[#ffc857] px-8 py-3 text-sm font-black uppercase tracking-[0.22em] text-[#21131d] shadow-[0_16px_50px_rgba(0,0,0,0.45)] transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#fff0b8] active:translate-y-0 active:scale-[0.98]"
             >
-              {seed.label}
+              <span className="mr-4 inline-block transition-transform group-hover:translate-x-1">Ignition</span>
+              <span className="font-mono text-[10px] opacity-60">ENTER</span>
             </button>
-          ))}
-        </div>
+            <span className="text-[9px] uppercase tracking-[0.28em] text-[#f4e6d2]/42">Drive · brake · survey · handbrake</span>
+          </div>
+        </section>
+
+        <aside className="border-l border-[#ffc857]/35 pl-6">
+          <p className="text-[10px] uppercase tracking-[0.38em] text-[#ffc857]/65">Select pursuit file</p>
+          <div className="mt-4 space-y-2">
+            {TRUCK_SEEDS.map((seed, index) => {
+              const selected = selectedSeedId === seed.id;
+              return (
+                <button
+                  key={seed.id}
+                  type="button"
+                  onClick={() => commands.run("selectSeed", { seedId: seed.id })}
+                  className={`group grid min-h-14 w-full grid-cols-[2.25rem_1fr_auto] items-center border-b px-0 py-2 text-left transition ${
+                    selected
+                      ? "border-[#ffc857] text-[#ffc857]"
+                      : "border-[#f4e6d2]/15 text-[#f4e6d2]/55 hover:border-[#ffc857]/55 hover:text-[#f4e6d2]"
+                  }`}
+                >
+                  <span className="font-mono text-[10px] opacity-45">0{index + 1}</span>
+                  <span className="text-sm font-black uppercase tracking-[0.16em]">{seed.label}</span>
+                  <span className={`h-2 w-2 rotate-45 border ${selected ? "border-[#ffc857] bg-[#ffc857]" : "border-current"}`} />
+                </button>
+              );
+            })}
+          </div>
+        </aside>
       </div>
-      <KeybindLegend />
-      <button
-        type="button"
-        autoFocus
-        onClick={() => commands.run("startRun", {})}
-        className="rounded-full border-2 border-[#ffc857] bg-[#ffc857] px-8 py-3 text-lg font-black uppercase tracking-[0.15em] text-[#241a2c] transition-transform hover:scale-105"
-      >
-        Start — Enter
-      </button>
-    </PanelShell>
+    </div>
   );
 }
 
@@ -72,23 +81,14 @@ export interface WinScreenProps {
 export function WinScreen({ result }: WinScreenProps) {
   const { commands } = useGame();
   return (
-    <PanelShell>
-      <h2 className="text-3xl font-black uppercase tracking-[0.15em] text-[#4ade80]">Got Him</h2>
-      <p className="text-sm text-[#e8d7c3]/85">Border stays shut tonight. Ring closed in the riverbed straight.</p>
-      <div className="grid grid-cols-3 gap-3 text-center">
+    <ResultScreen tone="success" eyebrow="Pursuit closed" title="Got Him" action={() => commands.run("restart", {})}>
+      <p>Border stays shut tonight. The ring closed in the riverbed straight.</p>
+      <div className="mt-7 grid grid-cols-3 gap-px bg-[#ffc857]/20">
         <Stat label="Time" value={formatTime(result.timeSeconds)} />
-        <Stat label="Shortcuts Trusted" value={`${result.shortcutsTrusted}/6`} />
+        <Stat label="Routes trusted" value={`${result.shortcutsTrusted}/6`} />
         <Stat label="Surges" value={String(result.surgesTriggered)} />
       </div>
-      <button
-        type="button"
-        autoFocus
-        onClick={() => commands.run("restart", {})}
-        className="rounded-full border-2 border-[#4ade80] bg-[#4ade80]/20 px-8 py-3 text-lg font-black uppercase tracking-[0.15em] text-[#4ade80] transition-transform hover:scale-105"
-      >
-        Restart — R
-      </button>
-    </PanelShell>
+    </ResultScreen>
   );
 }
 
@@ -99,31 +99,56 @@ export interface LoseScreenProps {
 export function LoseScreen({ result }: LoseScreenProps) {
   const { commands } = useGame();
   return (
-    <PanelShell>
-      <h2 className="text-3xl font-black uppercase tracking-[0.15em] text-[#e0546b]">He's Through The Arch</h2>
-      <p className="text-sm text-[#e8d7c3]/85">
-        Final gap: {Math.round(result.finalGapMeters)}m.{" "}
-        {result.missedShortcutLabel !== null
-          ? `The survey was screaming about ${result.missedShortcutLabel} — you never trusted it.`
-          : "You trusted every slot the survey gave you."}
+    <ResultScreen tone="failure" eyebrow="Border breach" title="He’s Through" action={() => commands.run("restart", {})}>
+      <p>
+        Final gap: {Math.round(result.finalGapMeters)}m. {result.missedShortcutLabel !== null
+          ? `The survey called ${result.missedShortcutLabel}, but the route was ignored.`
+          : "You trusted every route the survey gave you."}
       </p>
-      <button
-        type="button"
-        autoFocus
-        onClick={() => commands.run("restart", {})}
-        className="rounded-full border-2 border-[#e0546b] bg-[#e0546b]/20 px-8 py-3 text-lg font-black uppercase tracking-[0.15em] text-[#e0546b] transition-transform hover:scale-105"
-      >
-        Restart — R
-      </button>
-    </PanelShell>
+    </ResultScreen>
+  );
+}
+
+function ResultScreen({
+  tone,
+  eyebrow,
+  title,
+  action,
+  children,
+}: {
+  tone: "success" | "failure";
+  eyebrow: string;
+  title: string;
+  action: () => void;
+  children: ReactNode;
+}) {
+  const accent = tone === "success" ? "#73e39b" : "#ff657d";
+  return (
+    <div className="relative flex h-full items-center overflow-hidden bg-[#0d090d] px-6 py-10 text-[#f4e6d2] sm:px-12">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(255,200,87,0.10),transparent_30%),linear-gradient(135deg,#21131d,#080608)]" />
+      <div className="relative z-10 max-w-2xl border-l-2 pl-6" style={{ borderColor: accent }}>
+        <p className="text-[10px] uppercase tracking-[0.42em]" style={{ color: accent }}>{eyebrow}</p>
+        <h2 className="mt-3 text-5xl font-black uppercase leading-none tracking-[-0.04em] sm:text-7xl" style={{ color: accent }}>{title}</h2>
+        <div className="mt-5 max-w-xl text-sm leading-6 text-[#f4e6d2]/70">{children}</div>
+        <button
+          type="button"
+          autoFocus
+          onClick={action}
+          className="mt-8 min-h-12 border px-7 py-3 text-xs font-black uppercase tracking-[0.24em] transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98]"
+          style={{ borderColor: accent, color: accent, backgroundColor: `${accent}18` }}
+        >
+          Run it again · R
+        </button>
+      </div>
+    </div>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-[#e8d7c3]/20 bg-black/25 px-2 py-3">
-      <span className="text-[9px] uppercase tracking-[0.2em] text-[#e8d7c3]/60">{label}</span>
-      <span className="text-lg font-bold text-[#e8d7c3]">{value}</span>
+    <div className="bg-[#100b10] px-3 py-4 text-left">
+      <span className="block text-[8px] uppercase tracking-[0.22em] text-[#f4e6d2]/38">{label}</span>
+      <span className="mt-1 block text-lg font-black text-[#f4e6d2]">{value}</span>
     </div>
   );
 }
