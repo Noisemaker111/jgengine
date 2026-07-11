@@ -1,3 +1,3 @@
 {
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- :/apps/web :/apps/dev :/packages :/Games :/.claude/skills"
+  "ignoreCommand": "root=\"$(git rev-parse --show-toplevel)\" || exit 1; git -C \"$root\" diff --quiet HEAD^ HEAD -- apps/web apps/dev packages Games .claude/skills; status=$?; if [ \"$status\" -eq 0 ]; then exit 0; else exit 1; fi"
 }
