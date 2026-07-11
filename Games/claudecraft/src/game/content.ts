@@ -5,12 +5,15 @@ import type {
   GameContextItemEntry,
 } from "@jgengine/core/runtime/gameContext";
 
+import { DELVE_COMPANION_CATALOG } from "./delves/systems";
 import { MOBS, mobById } from "./entities/enemies/catalog";
 import { NPCS } from "./entities/npcs/catalog";
 import { ITEMS, itemDefById } from "./items/catalog";
 import { registerStackLimit } from "./inventories";
 import { mobHp } from "./math/combat";
+import { YUMI_CATALOG, YUMI_MAX_HP } from "./minigames/yumi";
 import { CLASS_ENTITY_ID, COPPER, type MobDef } from "./model";
+import { PETS } from "./pets/catalog";
 
 for (const item of ITEMS) {
   if (item.stack !== undefined) registerStackLimit(item.id, item.stack);
@@ -54,6 +57,7 @@ function mobEntry(def: MobDef): GameContextEntityEntry {
 }
 
 const npcIds = new Set(NPCS.map((npc) => npc.id));
+const petIds = new Set(PETS.map((pet) => pet.id));
 
 export const content: GameContextContent = {
   itemById: itemEntry,
@@ -69,6 +73,30 @@ export const content: GameContextContent = {
         },
         receive: RECEIVE,
         movement: { walkSpeed: 7 },
+      };
+    }
+    if (catalogId === DELVE_COMPANION_CATALOG) {
+      return {
+        role: "npc",
+        stats: { health: { max: 200, min: 0 }, level: { max: 20, min: 1, current: 1 } },
+        receive: RECEIVE,
+        movement: { walkSpeed: 7 },
+      };
+    }
+    if (catalogId === YUMI_CATALOG) {
+      return {
+        role: "npc",
+        stats: { health: { max: YUMI_MAX_HP, min: 0 }, level: { max: 1, min: 1, current: 1 } },
+        receive: RECEIVE,
+        movement: { walkSpeed: 5 },
+      };
+    }
+    if (petIds.has(catalogId)) {
+      return {
+        role: "npc",
+        stats: { health: { max: 200, min: 0 }, level: { max: 20, min: 1, current: 1 } },
+        receive: RECEIVE,
+        movement: { walkSpeed: 8 },
       };
     }
     const mob = mobById(catalogId);

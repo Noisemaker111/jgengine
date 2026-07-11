@@ -12,6 +12,7 @@ import {
 } from "../math/combat";
 import type { AbilityDef, AttributeId } from "../model";
 import {
+  abilityModsOf,
   auraEntries,
   aurasOf,
   barOf,
@@ -25,6 +26,7 @@ import {
   type HeroSheet,
 } from "../session/hero";
 import { addThreat, applyMobCc, armorOfMob, isMobInstance } from "../ai/mobs";
+import { handlePetAbility, isPetAbility } from "../pets/systems";
 import { ZONES } from "../world/zones";
 
 const rng = seededRng("claudecraft-combat");
@@ -118,18 +120,33 @@ function dealDamage(
 
 function abilityAmount(ctx: GameContext, userId: string, ability: AbilityDef, sheet: HeroSheet): number {
   const level = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
+  const mods = abilityModsOf(ctx, userId);
+  const abilityMod = mods.byAbility.get(ability.id);
+  let castTime = ability.castTime * (1 + (abilityMod?.castPct ?? 0));
+  castTime = Math.max(0, castTime);
+  let amount: number;
   if (ability.school === "physical") {
     const weaponPart = rollWeaponDamage(rng, sheet.weapon, sheet.attackPower);
-    return Math.round(weaponPart + ability.base + ability.perLevel * (level - 1));
+    amount = weaponPart + ability.base + ability.perLevel * (level - 1);
+    amount *= 1 + (mods.global.meleeDmgPct ?? 0);
+  } else {
+    amount = spellAmount(
+      ability.base,
+      ability.perLevel,
+      level,
+      sheet.spellPower,
+      ability.coefficient,
+      castTime,
+    );
+    amount *= 1 + (mods.global.spellDmgPct ?? 0);
   }
-  return spellAmount(
-    ability.base,
-    ability.perLevel,
-    level,
-    sheet.spellPower,
-    ability.coefficient,
-    ability.castTime,
-  );
+  if (ability.kind === "heal" || ability.kind === "hot") {
+    amount *= 1 + (mods.global.healPct ?? 0) + (abilityMod?.healPct ?? 0);
+  } else {
+    amount *= 1 + (abilityMod?.dmgPct ?? 0);
+    amount += abilityMod?.flatDmg ?? 0;
+  }
+  return Math.round(amount);
 }
 
 function applyCc(ctx: GameContext, userId: string, targetId: string, ability: AbilityDef): void {
@@ -333,12 +350,14 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
     }
   }
   if (ability.castTime > 0) {
+    const castMod = abilityModsOf(ctx, userId).byAbility.get(ability.id)?.castPct ?? 0;
+    const castTime = Math.max(0.05, ability.castTime * (1 + castMod));
     hero.casting = {
       abilityId: ability.id,
       name: ability.name,
       targetId: targetOf(ctx, userId),
       startedAt: now,
-      endAt: now + ability.castTime,
+      endAt: now + castTime,
     };
     ctx.game.store.set(storeKeys.cast(userId), { ...hero.casting });
     return;
@@ -352,8 +371,13 @@ function commitCast(ctx: GameContext, userId: string, ability: AbilityDef): void
   const resource = ctx.scene.entity.stats.get(userId, "resource")?.current ?? 0;
   const result = hero.kit.cast(ability.id, resource);
   if (!result.ok) return;
-  if (ability.cost > 0) ctx.scene.entity.stats.delta(userId, "resource", -ability.cost);
+  const tunedCost = hero.kit.config(ability.id)?.resourceCost ?? ability.cost;
+  if (tunedCost > 0) ctx.scene.entity.stats.delta(userId, "resource", -tunedCost);
   hero.gcdUntil = ctx.time.now() + GCD_SEC;
+  if (isPetAbility(ability.id)) {
+    handlePetAbility(ctx, userId, ability.id);
+    return;
+  }
   executeAbility(ctx, userId, ability);
 }
 

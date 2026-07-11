@@ -13,7 +13,7 @@ import { FISHING_CHECK, RECIPES, RECIPE_SKILL } from "./crafting/systems";
 import { DUNGEONS, dungeonById } from "./dungeons/catalog";
 import { mobById } from "./entities/enemies/catalog";
 import { NPCS } from "./entities/npcs/catalog";
-import { grantTalentPoint } from "./session/hero";
+import { applySheet, grantTalentPoint, heroOf, resetHero } from "./session/hero";
 import { SPECS } from "./talents/catalog";
 import { GATHER_NODES } from "./professions/catalog";
 import { gatherNodeCount } from "./professions/gathering";
@@ -39,6 +39,16 @@ function moveNextTo(ctx: GameContext, instanceId: string): void {
   ctx.scene.entity.setPose(USER, {
     position: [target.position[0] + 1.2, target.position[1], target.position[2]],
   });
+}
+
+function ensureHeroPresent(ctx: GameContext): void {
+  if (ctx.scene.entity.get(USER) !== null) return;
+  const [x, z] = [6, -288];
+  ctx.scene.entity.spawn(CLASS_ENTITY_ID, {
+    id: USER,
+    position: [x, ctx.world.groundHeightAt(x, z), z],
+  });
+  applySheet(ctx, USER, { fill: true });
 }
 
 describe("claudecraft gameplay (headless)", () => {
@@ -381,5 +391,113 @@ describe("claudecraft gameplay (headless)", () => {
     expect(bagsAfter.some((count, index) => count > bagsBefore[index])).toBe(true);
     const profsAfter = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
     expect(profsAfter?.fishing).toBe((profsBefore?.fishing ?? 1) + 1);
+  });
+
+  test("delve enter spawns chamber hostiles and a companion, exit returns the hero", () => {
+    const before = ctx.scene.entity.get(USER)?.position;
+    expect(before).toBeDefined();
+    const enter = ctx.game.commands.run("delve.enter", { delveId: "embervein_delve", tier: "normal" });
+    expect(enter.status).toBe("applied");
+    const session = ctx.game.store.get(`delve:${USER}`) as
+      | { remaining: number; companionId: string | null; status: string }
+      | undefined;
+    expect(session?.status).toBe("playing");
+    expect(session?.remaining ?? 0).toBeGreaterThan(0);
+    expect(session?.companionId).not.toBeNull();
+    const exit = ctx.game.commands.run("delve.exit", {});
+    expect(exit.status).toBe("applied");
+    expect(ctx.game.store.get(`delve:${USER}`)).toBeUndefined();
+    expect(ctx.scene.entity.get(USER)).not.toBeNull();
+  });
+
+  test("mail send-to-self delivers after the delay", () => {
+    ctx.player.inventory.put("bags", "baked_bread", 2);
+    const before = ctx.player.inventory.count("bags", "baked_bread");
+    ctx.game.commands.run("mail.open", {});
+    ctx.game.commands.run("mail.sendSelf", { itemId: "baked_bread", count: 1 });
+    expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(before - 1);
+    const view = ctx.game.store.get(`mailView:${USER}`) as { pending: readonly unknown[] } | undefined;
+    expect((view?.pending.length ?? 0)).toBeGreaterThan(0);
+    step(ctx, 9);
+    expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(before);
+    ctx.game.commands.run("mail.close", {});
+  });
+
+  test("market buy purchases against vendor stock", () => {
+    ctx.game.economy.grant(USER, COPPER, 2000);
+    ctx.game.commands.run("market.open", {});
+    const before = ctx.player.inventory.count("bags", "baked_bread");
+    const buy = ctx.game.commands.run("market.buy", { itemId: "baked_bread" });
+    expect(buy.status).toBe("applied");
+    expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(before + 1);
+    ctx.game.commands.run("shop.close", {});
+  });
+
+  test("vale cup match starts and records a kick", () => {
+    ensureHeroPresent(ctx);
+    const start = ctx.game.commands.run("valecup.start", { wager: 0 });
+    expect(start.status).toBe("applied");
+    const match = ctx.game.store.get(`valecup:${USER}`) as { active: boolean; scoreHome: number } | undefined;
+    expect(match?.active).toBe(true);
+    ctx.game.commands.run("valecup.kick", { dirX: 0, dirZ: -1 });
+    step(ctx, 0.5);
+    ctx.game.commands.run("valecup.leave", {});
+    expect(ctx.game.store.get(`valecup:${USER}`)).toBeUndefined();
+  });
+
+  test("protect yumi spawns the cat and leaves cleanly", () => {
+    ensureHeroPresent(ctx);
+    const start = ctx.game.commands.run("yumi.start", {});
+    expect(start.status).toBe("applied");
+    const view = ctx.game.store.get(`yumi:${USER}`) as { yumiHp: number; status: string } | undefined;
+    expect(view?.status).toBe("playing");
+    expect(view?.yumiHp).toBeGreaterThan(0);
+    step(ctx, 1);
+    ctx.game.commands.run("yumi.leave", {});
+    expect(ctx.game.store.get(`yumi:${USER}`)).toBeUndefined();
+  });
+
+  test("hunter call_pet ability summons a living pet frame", () => {
+    ensureHeroPresent(ctx);
+    resetHero(USER);
+    ctx.game.store.delete(`class:${USER}`);
+    ctx.game.store.delete(`spec:${USER}`);
+    ctx.game.store.delete(`talents:${USER}`);
+    ctx.game.store.delete(`bar:${USER}`);
+    ctx.game.store.delete(`equip:${USER}`);
+    const select = ctx.game.commands.run("class.select", { classId: "hunter" });
+    expect(select.status).toBe("applied");
+    const summon = ctx.game.commands.run("pet.summon", { petId: "pet_wolf" });
+    expect(summon.status).toBe("applied");
+    const pet = ctx.game.store.get(`pet:${USER}`) as { alive: boolean; name: string } | undefined;
+    expect(pet?.alive).toBe(true);
+    expect(pet?.name).toBe("Tamed Wolf");
+    ctx.game.commands.run("pet.dismiss", {});
+    const after = ctx.game.store.get(`pet:${USER}`) as { alive: boolean } | undefined;
+    expect(after?.alive).toBe(false);
+  });
+
+  test("talent ability mods retune slot cost for rank-only nodes", () => {
+    resetHero(USER);
+    ctx.game.store.delete(`class:${USER}`);
+    ctx.game.store.delete(`spec:${USER}`);
+    ctx.game.store.delete(`talents:${USER}`);
+    ctx.game.store.delete(`bar:${USER}`);
+    ctx.game.store.delete(`equip:${USER}`);
+    ctx.game.commands.run("class.select", { classId: "warrior" });
+    ctx.game.commands.run("talent.choose", { specId: "warrior_arms" });
+    ctx.scene.entity.stats.set(USER, "level", { current: 15 });
+    for (let i = 0; i < 8; i += 1) grantTalentPoint(ctx, USER, 10 + i);
+    expect(ctx.game.commands.run("talent.allocate", { nodeId: "arms_imp_overpower" }).status).toBe("applied");
+    expect(ctx.game.commands.run("talent.allocate", { nodeId: "arms_imp_overpower" }).status).toBe("applied");
+    const allocate = ctx.game.commands.run("talent.allocate", { nodeId: "arms_imp_slam" });
+    expect(allocate.status).toBe("applied");
+    const hero = heroOf(USER);
+    expect(hero).not.toBeNull();
+    const slam = hero?.kit.config("slam");
+    expect(slam).not.toBeNull();
+    const base = classById("warrior").abilities.find((ability) => ability.id === "slam");
+    expect(base).toBeDefined();
+    expect(slam?.resourceCost ?? 999).toBeLessThan(base?.cost ?? 0);
   });
 });

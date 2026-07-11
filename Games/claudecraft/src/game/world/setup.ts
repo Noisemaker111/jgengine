@@ -3,9 +3,14 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { spawnAllMobs } from "../ai/mobs";
 import { placeCraftingWorld } from "../crafting/systems";
+import { DELVES } from "../delves/catalog";
+import { DELVE_PORTAL, placeDelveWorld } from "../delves/systems";
 import { DUNGEONS } from "../dungeons/catalog";
 import { NPCS } from "../entities/npcs/catalog";
+import { MAILBOX, placeMailboxes } from "../mail/systems";
 import { INTERACT_RANGE } from "../math/combat";
+import { placeValeCup, VALE_CUP_ENTRANCE, VALE_CUP_STADIUM } from "../minigames/valeCup";
+import { placeYumiShrine, YUMI_ENTRANCE, YUMI_SHRINE } from "../minigames/yumi";
 import { placeGatherNodes } from "../professions/gathering";
 import { ZONES } from "./zones";
 
@@ -25,6 +30,10 @@ export function setupWorld(ctx: GameContext): void {
     const z = zone.hub.z - 7;
     ctx.scene.object.place(STRONGBOX, x, ctx.world.groundHeightAt(x, z), z);
   }
+  placeMailboxes(ctx);
+  placeDelveWorld(ctx);
+  placeValeCup(ctx);
+  placeYumiShrine(ctx);
   spawnAllMobs(ctx);
   placeGatherNodes(ctx);
   placeCraftingWorld(ctx);
@@ -68,6 +77,55 @@ export function strongboxPrompts(ctx: GameContext): readonly PositionedPrompt[] 
     }),
   }));
 }
+
+export function contentPrompts(ctx: GameContext): readonly PositionedPrompt[] {
+  void ctx;
+  const prompts: PositionedPrompt[] = [];
+  for (const zone of ZONES) {
+    prompts.push({
+      id: `mail:${zone.id}`,
+      position: { x: zone.hub.x - 7, z: zone.hub.z - 7 },
+      prompt: proximityPrompt({
+        radius: INTERACT_RANGE,
+        display: keybind("interact"),
+        invoke: command("mail.open", {}),
+      }),
+    });
+  }
+  for (const delve of DELVES) {
+    prompts.push({
+      id: `delve:${delve.id}`,
+      position: { x: delve.entrance[0], z: delve.entrance[1] },
+      priority: 2,
+      prompt: proximityPrompt({
+        radius: INTERACT_RANGE,
+        display: keybind("interact"),
+        invoke: command("delve.enter", { delveId: delve.id, tier: "normal" }),
+      }),
+    });
+  }
+  prompts.push({
+    id: "valecup:enter",
+    position: { x: VALE_CUP_ENTRANCE[0], z: VALE_CUP_ENTRANCE[1] },
+    prompt: proximityPrompt({
+      radius: INTERACT_RANGE,
+      display: keybind("interact"),
+      invoke: command("valecup.start", { wager: 0 }),
+    }),
+  });
+  prompts.push({
+    id: "yumi:enter",
+    position: { x: YUMI_ENTRANCE[0], z: YUMI_ENTRANCE[1] },
+    prompt: proximityPrompt({
+      radius: INTERACT_RANGE,
+      display: keybind("interact"),
+      invoke: command("yumi.start", {}),
+    }),
+  });
+  return prompts;
+}
+
+export { DELVE_PORTAL, MAILBOX, VALE_CUP_STADIUM, YUMI_SHRINE };
 
 export function npcPrompts(ctx: GameContext): readonly PositionedPrompt[] {
   const prompts: PositionedPrompt[] = [];
