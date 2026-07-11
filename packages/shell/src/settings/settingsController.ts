@@ -18,6 +18,7 @@ import {
 } from "@jgengine/core/settings/settingsModel";
 import {
   useSettingsStore,
+  type SettingsActionView,
   type SettingsKeybindRow,
   type SettingsCategoryView,
   type SettingsController,
@@ -26,7 +27,7 @@ import {
 
 import { usePlayerFov } from "../camera/PlayerFov";
 
-export type { SettingsKeybindRow, SettingsCategoryView, SettingsController, SettingsRow };
+export type { SettingsActionView, SettingsKeybindRow, SettingsCategoryView, SettingsController, SettingsRow };
 
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
   sound: "Sound",
