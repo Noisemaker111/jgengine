@@ -210,3 +210,7 @@ wiring a headless boot smoke gate → picked a DOM-only game (blackjack) whose p
 2026-07-11T16:03:47.453Z — sonnet — Claude
 
 delegating the ship motion → Sonnet ship-workers twice returned an announcement ('running in background, will report') and ended their turn without committing/pushing/merging, so the ship silently didn't happen and had to be re-sent with 'execute in THIS turn'; a ship brief needs the worker to actually run the motion, not narrate intent
+
+2026-07-11T18:35:57.142Z — opus-4.8 — Claude
+
+authored core settings/keybind persistence by copying shell's fovPreference.ts (the documented house-style for persisted prefs) → it uses the DOM `Storage` type, which core has no lib for, so the build failed; the 'copy fovPreference' guidance doesn't flag that it's shell-only and DOM types don't exist in core
