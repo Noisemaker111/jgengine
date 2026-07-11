@@ -1,40 +1,11 @@
 import type { Game } from "../content/games";
-import { GameArt } from "./GameArt";
-import { SceneThumbnail } from "./SceneThumbnail";
-
-function FacePlaceholder({ game }: { game: Game }) {
-  if (game.shot !== undefined) {
-    return (
-      <img
-        src={game.shot}
-        alt={`${game.title} gameplay`}
-        loading="lazy"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-    );
-  }
-  return (
-    <>
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage: `linear-gradient(to right, ${game.hue}14 1px, transparent 1px), linear-gradient(to bottom, ${game.hue}14 1px, transparent 1px)`,
-          backgroundSize: "28px 28px",
-          maskImage: "radial-gradient(ellipse 90% 100% at 50% 100%, black 30%, transparent 80%)",
-        }}
-      />
-      <div className="absolute inset-0 p-6">
-        <GameArt id={game.id} hue={game.hue} genre={game.genre} category={game.category} />
-      </div>
-    </>
-  );
-}
+import { PreviewFrame } from "./PreviewFrame";
 
 export function GameFace({ game, className = "" }: { game: Game; className?: string }) {
   return (
-    <SceneThumbnail id={game.id} capture={game.shot === undefined} className={className}>
-      <FacePlaceholder game={game} />
-    </SceneThumbnail>
+    <div className={`relative h-full w-full ${className}`}>
+      <PreviewFrame game={game} />
+    </div>
   );
 }
 

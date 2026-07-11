@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
-import { GameFace } from "../components/GameCard";
+import { PreviewFrame } from "../components/PreviewFrame";
 import { GAMES, type Game } from "../content/games";
 
 export const Route = createFileRoute("/games/$gameId")({
@@ -95,8 +95,8 @@ function GameStage({ game }: { game: Game }) {
 
         {phase !== "playing" && (
           <div className="absolute inset-0" aria-hidden>
-            <div className="absolute inset-0 scale-105 opacity-55 blur-[2px]">
-              <GameFace game={game} />
+            <div className="absolute inset-0 opacity-70">
+              <PreviewFrame game={game} variant="backdrop" />
             </div>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,transparent_0%,rgba(0,0,0,.28)_42%,rgba(0,0,0,.86)_100%)]" />
             <div

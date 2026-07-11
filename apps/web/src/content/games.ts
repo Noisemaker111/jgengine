@@ -2,12 +2,6 @@ import radiumcodersAvatar from "../assets/credits/radiumcoders.jpg";
 
 const gamePackages = import.meta.glob("../../../../Games/*/package.json");
 
-const shotUrls = import.meta.glob<string>("../assets/screens/*.png", {
-  eager: true,
-  query: "?url",
-  import: "default",
-});
-
 export const GAME_CATEGORIES = [
   "Action & Arcade",
   "Puzzle",
@@ -27,6 +21,11 @@ export type GameCredit = {
   source?: { name: string; href: string };
 };
 
+export type GamePreview = {
+  kind: "menu" | "first-frame";
+  subtitle?: string;
+};
+
 export type Game = {
   id: string;
   title: string;
@@ -37,12 +36,12 @@ export type Game = {
   category: GameCategory;
   controls: string;
   hue: string;
-  shot?: string;
+  preview?: GamePreview;
   credit?: GameCredit;
   platforms?: readonly ("web" | "mobile")[];
 };
 
-type GameDetails = Omit<Game, "id" | "title" | "href" | "shot"> & { title?: string };
+type GameDetails = Omit<Game, "id" | "title" | "href"> & { title?: string };
 
 const GAME_DETAILS: Record<string, GameDetails> = {
   "maze-muncher": {
@@ -89,6 +88,7 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Action & Arcade",
     controls: "WASD · mouse fire · E grab/shop · G frag · Q medkit · 1-3 weapons",
     hue: "#f87171",
+    preview: { kind: "first-frame" },
   },
   "block-stacker": {
     tagline: "Falling blocks, rising stakes.",
@@ -601,6 +601,7 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Strategy & Tactics",
     controls: "Click to place · U undo · R rematch",
     hue: "#15803d",
+    preview: { kind: "first-frame" },
   },
   "four-in-a-row": {
     title: "Four in a Row",
@@ -611,6 +612,7 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Strategy & Tactics",
     controls: "Click or 1-7 drop column · U undo · R rematch",
     hue: "#1d4ed8",
+    preview: { kind: "first-frame" },
   },
   "echo-lights": {
     title: "Echo Lights",
@@ -641,6 +643,7 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Puzzle",
     controls: "Click peg, then landing hole · U undo · H hint · R restart",
     hue: "#78350f",
+    preview: { kind: "first-frame" },
   },
   codebreaker: {
     title: "Codebreaker",
@@ -748,7 +751,6 @@ export const GAMES: Game[] = Object.keys(gamePackages)
       href: `/games/${id}`,
       ...details,
       title: details.title ?? titleCase(id),
-      shot: shotUrls[`../assets/screens/${id}.png`],
     };
   })
   .sort((a, b) => a.title.localeCompare(b.title));
