@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { worldObjectById } from "../objects/catalog";
 import { terrainField } from "../../world";
-import { NPC_PLACEMENTS, ROAD_FLATTEN_MASKS, ROUTES, roadsidePieces, zoneSetPieces } from "./level";
+import { NPC_PLACEMENTS, ROUTES, roadFlattenMasks, roadsidePieces, zoneSetPieces } from "./level";
 import { ZONES } from "./zones";
 
 describe("roads", () => {
@@ -10,8 +10,10 @@ describe("roads", () => {
     for (const zone of ZONES) expect(touched.has(zone.id)).toBe(true);
   });
 
-  test("road flatten masks trace every route", () => {
-    expect(ROAD_FLATTEN_MASKS.length).toBeGreaterThan(60);
+  test("road flatten masks trace every route with ramped heights", () => {
+    const masks = roadFlattenMasks((x, z) => terrainField.sampleHeight(x, z));
+    expect(masks.length).toBeGreaterThan(60);
+    for (const mask of masks) expect(Number.isFinite(mask.height)).toBe(true);
   });
 
   test("roads are walkable: on-road slope is gentler than raw terrain amplitude", () => {

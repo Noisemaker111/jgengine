@@ -5,6 +5,7 @@ import { ZONES, zoneById, type ZoneDef } from "./zones";
 export interface RoutePoint {
   x: number;
   z: number;
+  t: number;
 }
 
 export interface Route {
@@ -28,16 +29,19 @@ function buildRoute(fromId: string, toId: string): Route {
   const dx = to.center.x - from.center.x;
   const dz = to.center.z - from.center.z;
   const length = Math.hypot(dx, dz);
-  const steps = Math.max(2, Math.round(length / 26));
+  const steps = Math.max(4, Math.round(length / 12));
   const normalX = -dz / length;
   const normalZ = dx / length;
+  const amplitude = 10 + rng() * 10;
+  const phase = rng() * Math.PI;
   const points: RoutePoint[] = [];
   for (let step = 0; step <= steps; step += 1) {
     const t = step / steps;
-    const wobble = Math.sin(t * Math.PI * 2 + rng() * 2) * 18 * (rng() - 0.3);
+    const wobble = Math.sin(t * Math.PI * 2 + phase) * amplitude * Math.sin(t * Math.PI);
     points.push({
       x: from.center.x + dx * t + normalX * wobble,
       z: from.center.z + dz * t + normalZ * wobble,
+      t,
     });
   }
   return { from: fromId, to: toId, points };
@@ -45,8 +49,34 @@ function buildRoute(fromId: string, toId: string): Route {
 
 export const ROUTES: readonly Route[] = ZONE_CHAIN.map(([from, to]) => buildRoute(from, to));
 
-export const ROAD_FLATTEN_MASKS: readonly { center: readonly [number, number]; radius: number }[] =
-  ROUTES.flatMap((route) => route.points.map((point) => ({ center: [point.x, point.z] as const, radius: 13 })));
+export function roadFlattenMasks(
+  heightAt: (x: number, z: number) => number,
+): readonly { center: readonly [number, number]; radius: number; height: number; falloff: number }[] {
+  return ROUTES.flatMap((route) => {
+    const from = zoneById(route.from)!;
+    const to = zoneById(route.to)!;
+    const fromHeight = heightAt(from.center.x, from.center.z);
+    const toHeight = heightAt(to.center.x, to.center.z);
+    const length = Math.hypot(to.center.x - from.center.x, to.center.z - from.center.z);
+    const rampStart = from.flattenRadius;
+    const rampSpan = Math.max(1, length - from.flattenRadius - to.flattenRadius);
+    return route.points
+      .filter((point) => {
+        const fromDistance = Math.hypot(point.x - from.center.x, point.z - from.center.z);
+        const toDistance = Math.hypot(point.x - to.center.x, point.z - to.center.z);
+        return fromDistance > from.flattenRadius - 14 && toDistance > to.flattenRadius - 14;
+      })
+      .map((point) => {
+        const rampT = Math.min(1, Math.max(0, (point.t * length - rampStart) / rampSpan));
+        return {
+          center: [point.x, point.z] as const,
+          radius: 14,
+          height: fromHeight + (toHeight - fromHeight) * rampT,
+          falloff: 8,
+        };
+      });
+  });
+}
 
 export interface PlacedPiece {
   catalogId: string;
