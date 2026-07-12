@@ -72,23 +72,10 @@ export default function FreeCellPreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
-          top: "2.4%",
-          right: "3%",
-          textAlign: "right",
-        }}
-      >
-        <div style={{ fontSize: "2.2cqw", fontWeight: 900, letterSpacing: "0.12em", color: "#f1f5f9" }}>FreeCell</div>
-        <div style={{ fontSize: "1.1cqw", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.28em", color: "#7dd3fc" }}>
-          Solitaire
-        </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
           left: "3%",
           right: "3%",
-          top: "16%",
+          top: "8%",
+          bottom: "6%",
           borderRadius: "1.2cqw",
           border: "1px solid rgba(148,163,184,0.25)",
           background: "linear-gradient(160deg,#123262 0%,#0c2247 55%,#081a38 100%)",
@@ -122,22 +109,6 @@ export default function FreeCellPreview({ className }: GamePreviewProps) {
             </div>
           ))}
         </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: "2%",
-          textAlign: "center",
-          fontSize: "1cqw",
-          fontWeight: 500,
-          letterSpacing: "0.05em",
-          color: "rgba(148,163,184,0.7)",
-        }}
-      >
-        Deal #1 · FreeCell — Paul Alfille (1978)
       </div>
     </div>
   );

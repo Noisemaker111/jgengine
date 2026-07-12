@@ -1,31 +1,71 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const COLORS = {
-  saucer: "#f472b6",
-  squid: "#5ff2ff",
-  crab: "#54ff9f",
-  octopus: "#ffd166",
-};
+const FIELD_W = 224;
+const FIELD_H = 256;
 
-const rowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "1cqw",
-};
+const ROW_COLOR: readonly string[] = ["#5ff2ff", "#84ff6b", "#84ff6b", "#eaf3ff", "#eaf3ff"];
+const CANNON_COLOR = "#54ff9f";
+const BUNKER_COLOR = "#57d986";
 
-function ScoreRow({ color, label, points }: { color: string; label: string; points: string }) {
-  return (
-    <div style={rowStyle}>
-      <span style={{ width: "2cqw", height: "2cqw", background: color, borderRadius: "0.3cqw" }} />
-      <span style={{ color: "#64748b", fontSize: "1.1cqw" }}>=</span>
-      <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "1.1cqw", fontWeight: 800, color }}>{points}</span>
-      <span style={{ fontSize: "1.1cqw", fontWeight: 700, color: "#e2e8f0" }}>{label}</span>
-    </div>
-  );
+const COLS = 11;
+const ROWS = 5;
+const CELL_W = 16;
+const CELL_H = 14;
+const FORMATION_X = 26;
+const FORMATION_Y = 40;
+
+const CANNON_W = 13;
+const CANNON_H = 8;
+const CANNON_Y = 234;
+const CANNON_X = (FIELD_W - CANNON_W) / 2;
+
+const BUNKER_W = 22;
+const BUNKER_H = 16;
+const BUNKER_Y = 188;
+const BUNKER_EDGE = 18;
+const BUNKER_GAP = (FIELD_W - 2 * BUNKER_EDGE - 4 * BUNKER_W) / 3;
+
+function pct(value: number, of: number): string {
+  return `${(value / of) * 100}%`;
+}
+
+function alienStyle(row: number, col: number): CSSProperties {
+  const slotX = FORMATION_X + col * CELL_W;
+  const x = slotX + 3;
+  const y = FORMATION_Y + row * CELL_H;
+  return {
+    position: "absolute",
+    left: pct(x, FIELD_W),
+    top: pct(y, FIELD_H),
+    width: pct(10, FIELD_W),
+    height: pct(8, FIELD_H),
+    borderRadius: "1px",
+    background: ROW_COLOR[row],
+    boxShadow: `0 0 0.6cqw ${ROW_COLOR[row]}88`,
+  };
+}
+
+function bunkerStyle(index: number): CSSProperties {
+  const x = BUNKER_EDGE + index * (BUNKER_W + BUNKER_GAP);
+  return {
+    position: "absolute",
+    left: pct(x, FIELD_W),
+    top: pct(BUNKER_Y, FIELD_H),
+    width: pct(BUNKER_W, FIELD_W),
+    height: pct(BUNKER_H, FIELD_H),
+    borderRadius: "0.4cqw 0.4cqw 0 0",
+    background: BUNKER_COLOR,
+    clipPath: "polygon(0% 100%, 0% 30%, 15% 10%, 85% 10%, 100% 30%, 100% 100%, 65% 100%, 65% 65%, 35% 65%, 35% 100%)",
+  };
 }
 
 export default function StarInvadersPreview({ className }: GamePreviewProps) {
+  const aliens: { row: number; col: number }[] = [];
+  for (let r = 0; r < ROWS; r += 1) {
+    for (let c = 0; c < COLS; c += 1) aliens.push({ row: r, col: c });
+  }
+
   return (
     <div
       className={className}
@@ -37,7 +77,7 @@ export default function StarInvadersPreview({ className }: GamePreviewProps) {
         overflow: "hidden",
         background: "radial-gradient(circle at 50% -20%, #071227 0%, #010208 60%)",
         color: "#fff",
-        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        fontFamily: "ui-monospace, monospace",
         userSelect: "none",
       }}
     >
@@ -51,102 +91,55 @@ export default function StarInvadersPreview({ className }: GamePreviewProps) {
         }}
       />
 
+      {aliens.map((a) => (
+        <div key={`${a.row}-${a.col}`} style={alienStyle(a.row, a.col)} />
+      ))}
+
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} style={bunkerStyle(i)} />
+      ))}
+
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "2.4cqw",
+          left: pct(CANNON_X, FIELD_W),
+          top: pct(CANNON_Y, FIELD_H),
+          width: pct(CANNON_W, FIELD_W),
+          height: pct(CANNON_H, FIELD_H),
+          borderRadius: "1px 1px 0 0",
+          background: CANNON_COLOR,
+          boxShadow: `0 0 1cqw ${CANNON_COLOR}88`,
+        }}
+      />
+
+      <span
+        style={{
+          position: "absolute",
+          top: "2.4cqh",
+          left: "3cqw",
+          fontSize: "2cqw",
+          fontWeight: 800,
+          letterSpacing: "0.15em",
+          color: "#54ff9f",
+          textShadow: "0 0 1.4cqw rgba(84,255,159,0.5)",
         }}
       >
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: "4.4cqw",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.3em",
-              color: "#54ff9f",
-              textShadow: "0 0 1.6cqw rgba(84,255,159,0.6)",
-            }}
-          >
-            Star
-          </div>
-          <div
-            style={{
-              fontSize: "4.4cqw",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.3em",
-              color: "#5ff2ff",
-              textShadow: "0 0 1.6cqw rgba(95,242,255,0.6)",
-            }}
-          >
-            Invaders
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "1cqw",
-            borderRadius: "1cqw",
-            border: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(255,255,255,0.03)",
-            padding: "1.6cqw 2.4cqw",
-          }}
-        >
-          <span
-            style={{
-              marginBottom: "0.4cqw",
-              textAlign: "center",
-              fontSize: "0.9cqw",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.3em",
-              color: "#64748b",
-            }}
-          >
-            Score Advance Table
-          </span>
-          <ScoreRow color={COLORS.saucer} label="Mystery" points="?" />
-          <ScoreRow color={COLORS.squid} label="Squid" points="30" />
-          <ScoreRow color={COLORS.crab} label="Crab" points="20" />
-          <ScoreRow color={COLORS.octopus} label="Octopus" points="10" />
-        </div>
-
-        <span
-          style={{
-            borderRadius: "1cqw",
-            border: "1px solid rgba(84,255,159,0.6)",
-            background: "rgba(84,255,159,0.15)",
-            padding: "1cqw 2.8cqw",
-            fontSize: "1.4cqw",
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.25em",
-            color: "#d1fae5",
-            boxShadow: "0 0 1.6cqw rgba(84,255,159,0.3)",
-          }}
-        >
-          Press Space
-        </span>
-
-        <span
-          style={{
-            fontSize: "1cqw",
-            textTransform: "uppercase",
-            letterSpacing: "0.25em",
-            color: "#64748b",
-          }}
-        >
-          ← → / A D move · Space fire
-        </span>
-      </div>
+        Score 0
+      </span>
+      <span
+        style={{
+          position: "absolute",
+          top: "2.4cqh",
+          right: "3cqw",
+          fontSize: "2cqw",
+          fontWeight: 800,
+          letterSpacing: "0.15em",
+          color: "#f472b6",
+          textShadow: "0 0 1.4cqw rgba(244,114,182,0.5)",
+        }}
+      >
+        {"▲".repeat(3)}
+      </span>
     </div>
   );
 }

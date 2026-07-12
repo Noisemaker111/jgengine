@@ -122,7 +122,7 @@ export default function CodebreakerPreview({ className }: GamePreviewProps) {
         style={{
           position: "absolute",
           left: "50%",
-          top: "17%",
+          top: "6%",
           bottom: "4%",
           transform: "translateX(-50%)",
           width: "44cqw",
@@ -211,21 +211,6 @@ export default function CodebreakerPreview({ className }: GamePreviewProps) {
         ))}
       </div>
 
-      <span
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: "12.5%",
-          transform: "translateX(-50%)",
-          fontSize: "1.6cqw",
-          fontWeight: 900,
-          letterSpacing: "0.15em",
-          color: "#fcd9a0",
-          textShadow: "0 0.1cqw 0.2cqw rgba(0,0,0,0.6)",
-        }}
-      >
-        CODEBREAKER
-      </span>
     </div>
   );
 }

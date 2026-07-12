@@ -1,29 +1,21 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const badgeStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minWidth: "2.2cqw",
-  height: "2.2cqw",
-  padding: "0 0.5cqw",
-  borderRadius: "0.4cqw",
-  border: "1px solid rgba(232,230,240,0.25)",
-  background: "rgba(21,21,29,0.9)",
-  fontSize: "1.1cqw",
-  fontWeight: 700,
-  color: "#e8e6f0",
-};
+const CYAN = "#29d9e0";
+const CAR_PINK = "#ff2d78";
 
-const CONTROLS: readonly { key: string; label: string }[] = [
-  { key: "W", label: "Throttle" },
-  { key: "S", label: "Brake / Reverse" },
-  { key: "A", label: "Steer Left" },
-  { key: "D", label: "Steer Right" },
-  { key: "Space", label: "Handbrake Drift" },
-  { key: "Shift", label: "Boost" },
-];
+function building(leftPct: number, w: number, h: number): CSSProperties {
+  return {
+    position: "absolute",
+    left: `${leftPct}%`,
+    bottom: "22%",
+    width: `${w}cqw`,
+    height: `${h}cqh`,
+    background: "linear-gradient(#1a1a24, #0d0d14)",
+    borderTop: `0.15cqmin solid ${CYAN}`,
+    boxShadow: `0 -0.4cqmin 1.4cqmin ${CYAN}55`,
+  };
+}
 
 export default function DriftDistrictPreview({ className }: GamePreviewProps) {
   return (
@@ -35,86 +27,109 @@ export default function DriftDistrictPreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background:
-          "radial-gradient(circle at 50% 50%, rgba(255,45,120,0.16), rgba(10,10,16,0.94) 70%)",
-        color: "#e8e6f0",
-        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        background: "linear-gradient(180deg, #050208 0%, #0d0a14 55%, #14121c 100%)",
         userSelect: "none",
       }}
     >
+      <div style={building(2, 12, 34)} />
+      <div style={building(16, 9, 22)} />
+      <div style={building(74, 10, 26)} />
+      <div style={building(87, 11, 38)} />
+
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "2cqw",
-          padding: "0 4cqw",
-          textAlign: "center",
+          left: "50%",
+          bottom: 0,
+          transform: "translateX(-50%)",
+          width: 0,
+          height: 0,
+          borderLeft: "3cqw solid transparent",
+          borderRight: "3cqw solid transparent",
+          borderBottom: "60cqh solid #101018",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: "4%",
+          transform: "translateX(-50%)",
+          width: "0.3cqw",
+          height: "40cqh",
+          background: "repeating-linear-gradient(#e8e6f0 0 2.2cqh, transparent 2.2cqh 4.4cqh)",
+          opacity: 0.7,
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "20%",
+          transform: "translate(-50%, 0)",
+          width: "18cqw",
+          height: "16cqh",
+          borderRadius: "3cqmin 3cqmin 0 0",
+          border: `0.35cqmin solid ${CYAN}`,
+          borderBottom: "none",
+          boxShadow: `0 0 2.4cqmin ${CYAN}aa`,
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: "6%",
+          transform: "translate(-50%, 0)",
+          width: "9cqw",
+          height: "13cqh",
+          borderRadius: "2.4cqmin 2.4cqmin 1cqmin 1cqmin",
+          background: `linear-gradient(180deg, ${CAR_PINK}, #3d0a1e)`,
+          boxShadow: `0 0 2.6cqmin ${CAR_PINK}aa`,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6cqw" }}>
-          <span style={{ fontSize: "1.1cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5em", color: "#29d9e0" }}>
-            Neon Noir Arcade Racer
-          </span>
-          <span
-            style={{
-              fontSize: "5.4cqw",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "-0.01em",
-              color: "#e8e6f0",
-              textShadow: "0 0 22px rgba(255,45,120,0.55)",
-            }}
-          >
-            Drift District
-          </span>
-          <span style={{ fontSize: "1.3cqw", color: "rgba(232,230,240,0.7)", maxWidth: "60cqw" }}>
-            Three laps through Harbor, Downtown, and Heights. Drift a gate hard and the district reshuffles the road ahead.
-          </span>
-        </div>
-
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, auto)",
-            gap: "0.8cqw 2.4cqw",
-            borderRadius: "0.6cqw",
-            border: "1px solid rgba(232,230,240,0.15)",
-            background: "rgba(21,21,29,0.9)",
-            padding: "1.4cqw 2.4cqw",
-          }}
-        >
-          {CONTROLS.map((control) => (
-            <div key={control.key} style={{ display: "flex", alignItems: "center", gap: "0.8cqw" }}>
-              <span style={badgeStyle}>{control.key}</span>
-              <span style={{ fontSize: "1.1cqw", color: "rgba(232,230,240,0.8)" }}>{control.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "1cqw",
+            position: "absolute",
+            left: "12%",
+            top: "8%",
+            width: "18%",
+            height: "10%",
             borderRadius: "999px",
-            border: "2px solid #ff2d78",
-            background: "rgba(255,45,120,0.1)",
-            padding: "0.9cqw 3cqw",
-            fontSize: "1.6cqw",
-            fontWeight: 900,
-            textTransform: "uppercase",
-            letterSpacing: "0.2em",
-            color: "#ff2d78",
+            background: "#cfe6ff",
+            boxShadow: "0 0 1cqmin #cfe6ff",
           }}
-        >
-          Send It
-          <span style={badgeStyle}>Enter</span>
-        </span>
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: "12%",
+            top: "8%",
+            width: "18%",
+            height: "10%",
+            borderRadius: "999px",
+            background: "#cfe6ff",
+            boxShadow: "0 0 1cqmin #cfe6ff",
+          }}
+        />
       </div>
+
+      <span
+        style={{
+          position: "absolute",
+          top: "3cqh",
+          left: "3cqw",
+          fontSize: "1.6cqw",
+          fontWeight: 800,
+          letterSpacing: "0.15em",
+          color: "#e8e6f0",
+          textShadow: `0 0 1cqmin ${CAR_PINK}88`,
+        }}
+      >
+        LAP 1/3
+      </span>
     </div>
   );
 }

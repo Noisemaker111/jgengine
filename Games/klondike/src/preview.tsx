@@ -1,7 +1,5 @@
-import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const GOLD = "#e6c65a";
 const IVORY = "linear-gradient(158deg,#fffdf5 0%,#f6efdc 62%,#efe6cd 100%)";
 const RED_INK = "#c22e2e";
 const BLACK_INK = "#1c1c22";
@@ -9,15 +7,6 @@ const CARD_W = 8.4;
 const CARD_H = 11.9;
 const RED_SUITS = ["♥", "♦"];
 const SUITS = ["♠", "♥", "♦", "♣"];
-
-const panelStyle: CSSProperties = {
-  background: "rgba(8,28,18,0.82)",
-  border: "1px solid rgba(230,198,90,0.25)",
-  borderRadius: "0.9cqw",
-  padding: "0.6cqw 1cqw",
-  color: "#f3efdc",
-  boxShadow: "0 0.5cqw 1.4cqw rgba(0,0,0,0.35)",
-};
 
 function CardFace({ rank, suit, faceDown }: { rank: string; suit: string; faceDown?: boolean }) {
   if (faceDown) {
@@ -81,15 +70,6 @@ function EmptySlot({ suit, dashed }: { suit?: string; dashed?: boolean }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "3.4cqw" }}>
-      <div style={{ fontSize: "0.9cqw", letterSpacing: "0.05em", textTransform: "uppercase", color: "rgba(240,235,215,0.55)" }}>{label}</div>
-      <div style={{ fontSize: "1.6cqw", fontWeight: 800, color: "#fff" }}>{value}</div>
-    </div>
-  );
-}
-
 const TABLEAU: { rank: string; suit: string }[][] = [
   [{ rank: "6", suit: "♦" }],
   [{ rank: "", suit: "" }, { rank: "K", suit: "♣" }],
@@ -116,19 +96,19 @@ export default function KlondikePreview({ className }: GamePreviewProps) {
         userSelect: "none",
       }}
     >
-      <div style={{ position: "absolute", top: "3cqw", left: "2cqw" }}>
-        <div style={{ ...panelStyle, display: "flex", flexDirection: "column", gap: "0.2cqw" }}>
-          <div style={{ fontWeight: 800, letterSpacing: "0.05em", color: GOLD, fontSize: "1.5cqw" }}>KLONDIKE</div>
-          <div style={{ fontSize: "1.1cqw", color: "rgba(240,235,215,0.65)" }}>Free play · 3f9c2a1e</div>
-        </div>
-      </div>
-
-      <div style={{ position: "absolute", top: "3cqw", left: "50%", transform: "translateX(-50%)" }}>
-        <div style={{ ...panelStyle, display: "flex", gap: "1.8cqw", alignItems: "center" }}>
-          <Stat label="Score" value="0" />
-          <Stat label="Time" value="0:00" />
-          <Stat label="Moves" value="0" />
-        </div>
+      <div
+        style={{
+          position: "absolute",
+          top: "2.6cqw",
+          left: "2cqw",
+          fontSize: "1.4cqw",
+          fontWeight: 800,
+          letterSpacing: "0.05em",
+          color: "rgba(240,235,215,0.75)",
+          textShadow: "0 0.1cqw 0.3cqw rgba(0,0,0,0.4)",
+        }}
+      >
+        Score 0
       </div>
 
       <div style={{ position: "absolute", top: "17cqw", left: "2cqw", display: "flex", gap: "1.4cqw" }}>

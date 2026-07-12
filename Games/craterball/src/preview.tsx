@@ -1,49 +1,22 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const controlLabelStyle: CSSProperties = {
-  fontSize: "1.1cqw",
-  color: "rgba(205,184,145,0.7)",
-};
+const CYAN = "#3bc7c4";
+const MAGENTA = "#d94a8c";
+const BALL_ORANGE = "#ff6b35";
 
-const controlKeyStyle: CSSProperties = {
-  borderRadius: "0.3cqw",
-  background: "rgba(0,0,0,0.6)",
-  padding: "0.2cqw 0.6cqw",
-  fontSize: "1.1cqw",
-  fontWeight: 700,
-  color: "#ffd7ba",
-};
-
-function ControlCell({ label, keyLabel }: { label: string; keyLabel: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.6cqw" }}>
-      <span style={controlLabelStyle}>{label}</span>
-      <span style={controlKeyStyle}>{keyLabel}</span>
-    </div>
-  );
-}
-
-function DifficultyChip({ label, selected }: { label: string; selected: boolean }) {
-  return (
-    <span
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: "0.8cqw",
-        border: selected ? "2px solid #ff6b35" : "2px solid rgba(205,184,145,0.2)",
-        background: selected ? "#2b1710" : "rgba(0,0,0,0.2)",
-        padding: "0.8cqw",
-        fontSize: "1.1cqw",
-        fontWeight: 700,
-        textTransform: "uppercase",
-        color: selected ? "#ffd7ba" : "rgba(205,184,145,0.7)",
-      }}
-    >
-      {label}
-    </span>
-  );
+function blob(xPct: number, zPct: number, size: number, color: string): CSSProperties {
+  return {
+    position: "absolute",
+    left: `${xPct}%`,
+    top: `${zPct}%`,
+    width: `${size}cqmin`,
+    height: `${size}cqmin`,
+    transform: "translate(-50%, -50%)",
+    borderRadius: "50%",
+    background: color,
+    boxShadow: `0 0 ${size * 0.6}cqmin ${color}99`,
+  };
 }
 
 export default function CraterballPreview({ className }: GamePreviewProps) {
@@ -56,102 +29,79 @@ export default function CraterballPreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "rgba(12,8,6,0.85)",
-        color: "#e8ddca",
+        background: "radial-gradient(circle at 50% 40%, #3a2013, #160f0c 75%)",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
         userSelect: "none",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
       }}
     >
       <div
         style={{
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1.4cqw",
-          width: "70%",
-          borderRadius: "1.4cqw",
-          border: "1px solid rgba(255,107,53,0.3)",
-          background: "rgba(22,15,12,0.95)",
-          padding: "2cqw",
-          boxShadow: "0 0 40px rgba(0,0,0,0.6)",
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "86cqw",
+          height: "62cqh",
+          borderRadius: "50%",
+          background: "radial-gradient(circle at 50% 45%, #cdb891, #6b5a3f 55%, #23201d 100%)",
+          border: "0.3cqmin solid rgba(255,107,53,0.5)",
+          boxShadow: "0 0 4cqmin rgba(0,0,0,0.6) inset",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3cqw", textAlign: "center" }}>
-          <span
-            style={{
-              fontSize: "4cqw",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "#ff6b35",
-              textShadow: "0 0 16px rgba(255,107,53,0.5)",
-            }}
-          >
-            Craterball
-          </span>
-          <span style={{ fontSize: "1.1cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.3em", color: "rgba(205,184,145,0.7)" }}>
-            The pitch remembers every blast
-          </span>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5cqw" }}>
-          <span style={{ display: "flex", gap: "0.6cqw", fontSize: "1.2cqw" }}>
-            <span style={{ color: "#ff6b35" }}>▸</span>
-            <span>Nobody touches the ball — arm a blast charge and detonate it beside the ball to launch it.</span>
-          </span>
-          <span style={{ display: "flex", gap: "0.6cqw", fontSize: "1.2cqw" }}>
-            <span style={{ color: "#ff6b35" }}>▸</span>
-            <span>First to 5 goals, or the higher score at the final horn.</span>
-          </span>
-        </div>
-
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "0.5cqw 1.6cqw",
-            borderRadius: "0.8cqw",
-            border: "1px solid rgba(205,184,145,0.15)",
-            background: "rgba(0,0,0,0.25)",
-            padding: "1cqw",
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "17cqw",
+            height: "31cqh",
+            borderRadius: "50%",
+            border: "0.2cqmin solid rgba(35,32,29,0.55)",
           }}
-        >
-          <ControlCell label="Move" keyLabel="WASD" />
-          <ControlCell label="Aim" keyLabel="Mouse" />
-          <ControlCell label="Arm Charge" keyLabel="LMB" />
-          <ControlCell label="Detonate" keyLabel="Space" />
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5cqw", alignItems: "center" }}>
-          <span style={{ fontSize: "1.1cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(205,184,145,0.6)" }}>
-            AI Difficulty
-          </span>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.8cqw", width: "100%" }}>
-            <DifficultyChip label="Ash Rookie" selected={false} />
-            <DifficultyChip label="Basalt Veteran" selected={true} />
-            <DifficultyChip label="Magma Overlord" selected={false} />
-          </div>
-        </div>
-
-        <span
+        />
+        <div
           style={{
-            alignSelf: "center",
-            borderRadius: "0.8cqw",
-            background: "#ff6b35",
-            padding: "1cqw 3cqw",
-            fontSize: "1.5cqw",
-            fontWeight: 900,
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            color: "#160f0c",
+            position: "absolute",
+            left: 0,
+            top: "37.5%",
+            width: "2.5cqw",
+            height: "25%",
+            background: "rgba(59,199,196,0.35)",
+            boxShadow: "0 0 1.5cqmin rgba(59,199,196,0.7)",
           }}
-        >
-          Start — Enter
-        </span>
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "37.5%",
+            width: "2.5cqw",
+            height: "25%",
+            background: "rgba(217,74,140,0.35)",
+            boxShadow: "0 0 1.5cqmin rgba(217,74,140,0.7)",
+          }}
+        />
+
+        <div style={blob(36.8, 50, 5.5, CYAN)} />
+        <div style={blob(71.5, 50, 5.5, MAGENTA)} />
+        <div style={blob(50, 50, 4.2, BALL_ORANGE)} />
       </div>
+
+      <span
+        style={{
+          position: "absolute",
+          top: "3cqh",
+          left: "3cqw",
+          fontSize: "2cqw",
+          fontWeight: 800,
+          letterSpacing: "0.1em",
+          color: "#ffd7ba",
+          textShadow: "0 0 1.2cqmin rgba(255,107,53,0.5)",
+        }}
+      >
+        0 – 0
+      </span>
     </div>
   );
 }

@@ -1,20 +1,82 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const runners: { name: string; leg: string; jersey: string; flavor: string }[] = [
-  { name: "Zoe Chen", leg: "Leg 1", jersey: "#b3573f", flavor: "Fastest off the mark — burns hot on the warehouse flats." },
-  { name: "Mika Torres", leg: "Leg 2", jersey: "#f2b950", flavor: "Steadiest hands — never fumbles a clean snap." },
-  { name: "Jonah Okafor", leg: "Leg 3", jersey: "#b8a9d9", flavor: "Longest stride — clears the widest tower gaps." },
+const GOLD = "#f2b950";
+const LILAC = "#b8a9d9";
+const FOG = "#e8c79a";
+const INK = "#2b2320";
+const CONCRETE = "#c9c4b8";
+const JERSEY = "#b3573f";
+const TAR = "#3c3a3a";
+const TAR_LIGHT = "#55514f";
+const WALL = "#8f4a35";
+
+interface PlatformVis {
+  x: number;
+  z: number;
+  roofY: number;
+  w: number;
+  d: number;
+}
+
+const LEG1_PLATFORMS: readonly PlatformVis[] = [
+  { x: 0, z: 3, roofY: 4, w: 7, d: 7 },
+  { x: 1, z: 11, roofY: 4, w: 5, d: 5 },
+  { x: 0, z: 19, roofY: 5, w: 5, d: 5 },
+  { x: 1, z: 26, roofY: 4, w: 5, d: 5 },
+  { x: 1, z: 35, roofY: 5, w: 7, d: 7 },
 ];
 
-const keys: [string, string][] = [
-  ["WASD", "Move"],
-  ["Space", "Jump"],
-  ["Shift", "Sprint"],
-  ["E", "Handoff in zone"],
+const Z_MAX = 42;
+
+function scaleFor(z: number): number {
+  return 1 - (z / Z_MAX) * 0.62;
+}
+
+function centerYFor(z: number): number {
+  const t = z / Z_MAX;
+  return 90 - t * 64;
+}
+
+function centerXFor(x: number, scale: number): number {
+  return 50 + x * 6 * scale;
+}
+
+function platformStyle(p: PlatformVis): CSSProperties {
+  const scale = scaleFor(p.z);
+  const cx = centerXFor(p.x, scale);
+  const cy = centerYFor(p.z);
+  const lift = (p.roofY - 4) * scale * 1.6;
+  const width = p.w * scale * 3.4;
+  const height = p.d * scale * 1.5;
+  return {
+    position: "absolute",
+    left: `${cx}cqw`,
+    top: `${cy - lift}cqh`,
+    width: `${width}cqw`,
+    height: `${height}cqh`,
+    transform: "translate(-50%, -50%)",
+    borderRadius: `${Math.max(0.3, scale * 0.6)}cqw`,
+    background: `linear-gradient(180deg, ${TAR_LIGHT} 0%, ${TAR} 100%)`,
+    border: "1px solid rgba(0,0,0,0.45)",
+    boxShadow: `0 ${height * 0.35}cqh 0 rgba(0,0,0,0.35)`,
+  };
+}
+
+const BUILDINGS: readonly { left: number; width: number; height: number }[] = [
+  { left: 6, width: 10, height: 14 },
+  { left: 18, width: 7, height: 20 },
+  { left: 62, width: 9, height: 17 },
+  { left: 76, width: 12, height: 23 },
+  { left: 90, width: 8, height: 15 },
 ];
 
 export default function RooftopRelayPreview({ className }: GamePreviewProps) {
+  const start = LEG1_PLATFORMS[0]!;
+  const startScale = scaleFor(start.z);
+  const startCx = centerXFor(start.x, startScale);
+  const startTopY = centerYFor(start.z) - (start.d * startScale * 1.5) / 2;
+
   return (
     <div
       className={className}
@@ -24,145 +86,129 @@ export default function RooftopRelayPreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "radial-gradient(120% 90% at 50% 8%, #4a3a2a 0%, #2b2320 60%, #1a1512 100%)",
-        color: "#f4efe6",
+        background: `linear-gradient(180deg, ${LILAC} 0%, ${GOLD} 50%, ${FOG} 72%, ${INK} 100%)`,
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
         userSelect: "none",
       }}
     >
+      {BUILDINGS.map((b) => (
+        <div
+          key={b.left}
+          style={{
+            position: "absolute",
+            left: `${b.left}cqw`,
+            top: `${28 - b.height * 0.55}cqh`,
+            width: `${b.width}cqw`,
+            height: `${b.height}cqh`,
+            background: WALL,
+            opacity: 0.35,
+            borderRadius: "0.2cqw",
+          }}
+        />
+      ))}
+
+      {LEG1_PLATFORMS.map((p) => (
+        <div key={`${p.x}-${p.z}`} style={platformStyle(p)} />
+      ))}
+
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "2cqw",
+          left: `${startCx}cqw`,
+          top: `${startTopY}cqh`,
+          width: "3cqw",
+          height: "9cqh",
+          transform: "translate(-50%, -100%)",
         }}
       >
         <div
           style={{
-            width: "58cqw",
-            maxWidth: "70cqw",
-            borderRadius: "1.6cqw",
-            border: "1px solid rgba(242,185,80,0.4)",
-            background: "rgba(43,35,32,0.92)",
-            boxShadow: "0 1.2cqw 3cqw rgba(0,0,0,0.5)",
-            padding: "3.2cqw",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.8cqw",
+            position: "absolute",
+            bottom: "2.4cqh",
+            left: "50%",
+            width: "3cqw",
+            height: "6.4cqh",
+            transform: "translateX(-50%)",
+            borderRadius: "1.5cqw",
+            background: JERSEY,
+            border: "1px solid rgba(0,0,0,0.4)",
           }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: "4cqw",
-                fontWeight: 900,
-                letterSpacing: "-0.01em",
-                color: "#f2b950",
-                lineHeight: 1,
-              }}
-            >
-              ROOFTOP RELAY
-            </div>
-            <div style={{ marginTop: "0.8cqw", fontSize: "1.5cqw", color: "#c9c4b8", lineHeight: 1.4 }}>
-              Dawn courier crew, five legs, one baton. Run the roofs, trust the jump, snap it clean.
-            </div>
-          </div>
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: "7.6cqh",
+            left: "50%",
+            width: "2.2cqw",
+            height: "2.2cqh",
+            transform: "translateX(-50%)",
+            borderRadius: "50%",
+            background: CONCRETE,
+            border: "1px solid rgba(0,0,0,0.4)",
+          }}
+        />
+      </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.9cqw" }}>
-            {runners.map((runner) => (
-              <div
-                key={runner.name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1.2cqw",
-                  borderRadius: "0.8cqw",
-                  background: "rgba(0,0,0,0.3)",
-                  padding: "1cqw 1.2cqw",
-                }}
-              >
-                <span
-                  style={{
-                    height: "2.6cqw",
-                    width: "2.6cqw",
-                    borderRadius: "50%",
-                    border: "2px solid rgba(255,255,255,0.4)",
-                    background: runner.jersey,
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: "1.5cqw", fontWeight: 700, color: "#f2b950" }}>
-                    {runner.leg} — {runner.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "1.2cqw",
-                      color: "#c9c4b8",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {runner.flavor}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div
+        style={{
+          position: "absolute",
+          top: "3cqh",
+          left: "3cqw",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.3cqh",
+          borderRadius: "0.6cqw",
+          border: `1px solid ${GOLD}80`,
+          background: "rgba(43,35,32,0.7)",
+          padding: "0.8cqh 1.2cqw",
+        }}
+      >
+        <span style={{ fontSize: "1.3cqw", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: CONCRETE }}>
+          Runner 1/5 — Zoe Chen
+        </span>
+        <span style={{ fontSize: "1.1cqw", color: `${CONCRETE}cc` }}>Warehouse Flats</span>
+      </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "1cqw",
-              borderRadius: "0.8cqw",
-              border: "1px solid rgba(201,196,184,0.2)",
-              background: "rgba(0,0,0,0.25)",
-              padding: "1cqw",
-            }}
-          >
-            {keys.map(([key, label]) => (
-              <div key={key} style={{ textAlign: "center" }}>
-                <div
-                  style={{
-                    display: "inline-block",
-                    borderRadius: "0.4cqw",
-                    border: "1px solid rgba(201,196,184,0.4)",
-                    background: "rgba(0,0,0,0.4)",
-                    padding: "0.3cqw 0.8cqw",
-                    fontSize: "1.2cqw",
-                    fontWeight: 700,
-                    color: "#f2b950",
-                    fontFamily: "ui-monospace, monospace",
-                  }}
-                >
-                  {key}
-                </div>
-                <div style={{ marginTop: "0.4cqw", fontSize: "1cqw", color: "#c9c4b8" }}>{label}</div>
-              </div>
-            ))}
-          </div>
+      <div
+        style={{
+          position: "absolute",
+          top: "3cqh",
+          left: "50%",
+          transform: "translateX(-50%)",
+          borderRadius: "0.6cqw",
+          border: `1px solid ${GOLD}80`,
+          background: "rgba(43,35,32,0.7)",
+          padding: "0.6cqh 1.4cqw",
+          fontFamily: "ui-monospace, monospace",
+          fontSize: "2cqw",
+          fontWeight: 800,
+          color: GOLD,
+        }}
+      >
+        0:00.0
+      </div>
 
-          <span
-            style={{
-              alignSelf: "flex-start",
-              borderRadius: "0.8cqw",
-              background: "#b3573f",
-              padding: "1cqw 2.4cqw",
-              fontSize: "1.6cqw",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              color: "#fff",
-              boxShadow: "0 0.4cqw 1cqw rgba(179,87,63,0.4)",
-            }}
-          >
-            Go go go — Start (Enter)
-          </span>
+      <div
+        style={{
+          position: "absolute",
+          bottom: "3cqh",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "40cqw",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.4cqh",
+          borderRadius: "0.5cqw",
+          border: `1px solid ${CONCRETE}60`,
+          background: "rgba(0,0,0,0.5)",
+          padding: "0.7cqh 1cqw",
+        }}
+      >
+        <span style={{ fontSize: "1cqw", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: CONCRETE }}>
+          Stamina
+        </span>
+        <div style={{ height: "1cqh", width: "100%", borderRadius: "0.5cqh", background: "rgba(255,255,255,0.15)" }}>
+          <div style={{ height: "100%", width: "100%", borderRadius: "0.5cqh", background: GOLD }} />
         </div>
       </div>
     </div>

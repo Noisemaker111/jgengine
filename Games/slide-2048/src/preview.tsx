@@ -50,7 +50,7 @@ export default function Slide2048Preview({ className }: GamePreviewProps) {
         >
           <div
             style={{
-              fontSize: "5cqw",
+              fontSize: "2.4cqw",
               fontWeight: 900,
               lineHeight: 1,
               background: "linear-gradient(160deg, #e79c2a 0%, #d8552a 48%, #b31d47 100%)",
@@ -145,10 +145,6 @@ export default function Slide2048Preview({ className }: GamePreviewProps) {
               </div>
             ))}
           </div>
-        </div>
-
-        <div style={{ fontSize: "1.2cqw", fontWeight: 600, color: "#97764c", textAlign: "center" }}>
-          Arrow keys / WASD to slide · U to undo · N for a new game.
         </div>
       </div>
     </div>

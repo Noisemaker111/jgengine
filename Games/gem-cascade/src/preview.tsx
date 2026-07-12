@@ -19,16 +19,6 @@ const panelLabelStyle: CSSProperties = {
   color: "#94a3b8",
 };
 
-const chipStyle: CSSProperties = {
-  borderRadius: "0.7cqw",
-  border: "1px solid rgba(255,255,255,0.15)",
-  background: "rgba(255,255,255,0.05)",
-  padding: "0.5cqw 1.2cqw",
-  fontSize: "1.1cqw",
-  fontWeight: 700,
-  color: "#e2e8f0",
-};
-
 const BOARD_SIZE = 8;
 
 function gemKindAt(x: number, y: number): number {
@@ -62,43 +52,8 @@ export default function GemCascadePreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
-          left: "2.5%",
-          top: "18%",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.8cqw",
-          borderRadius: "1cqw",
-          border: "1px solid rgba(255,255,255,0.1)",
-          background: "rgba(0,0,0,0.55)",
-          padding: "1cqw 1.4cqw",
-        }}
-      >
-        <span style={{ fontSize: "1.6cqw", fontWeight: 900, letterSpacing: "-0.01em", color: "#f0abfc" }}>
-          Gem Cascade
-        </span>
-        <div style={{ display: "flex", gap: "0.7cqw" }}>
-          <span
-            style={{
-              ...chipStyle,
-              borderColor: "rgba(240,171,252,0.7)",
-              background: "rgba(192,38,211,0.8)",
-              color: "#fff",
-            }}
-          >
-            Endless
-          </span>
-          <span style={chipStyle}>Timed</span>
-          <span style={{ ...chipStyle, borderColor: "rgba(252,211,77,0.5)", background: "rgba(245,158,11,0.85)", color: "#0f172a" }}>
-            New
-          </span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
           right: "2.5%",
-          top: "18%",
+          top: "5%",
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-end",
@@ -117,10 +72,29 @@ export default function GemCascadePreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
+          left: "2.5%",
+          top: "5%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: "0.3cqw",
+          borderRadius: "1cqw",
+          border: "1px solid rgba(255,255,255,0.1)",
+          background: "rgba(0,0,0,0.55)",
+          padding: "1cqw 1.6cqw",
+        }}
+      >
+        <span style={panelLabelStyle}>Moves</span>
+        <span style={{ fontSize: "2.6cqw", fontWeight: 900, lineHeight: 1, color: "#e2e8f0" }}>0</span>
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
           left: "50%",
-          top: "56%",
+          top: "54%",
           transform: "translate(-50%, -50%)",
-          width: "min(56cqw, 62cqh)",
+          width: "min(64cqw, 70cqh)",
           aspectRatio: "1 / 1",
           borderRadius: "1.4cqw",
           border: "1px solid rgba(255,255,255,0.1)",
@@ -155,55 +129,6 @@ export default function GemCascadePreview({ className }: GamePreviewProps) {
             );
           })}
         </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          left: "2.5%",
-          bottom: "9%",
-          display: "flex",
-          alignItems: "center",
-          gap: "1cqw",
-          borderRadius: "1cqw",
-          border: "1px solid rgba(255,255,255,0.1)",
-          background: "rgba(0,0,0,0.55)",
-          padding: "0.8cqw 1.2cqw",
-        }}
-      >
-        <span
-          style={{
-            ...chipStyle,
-            borderColor: "rgba(52,211,153,0.6)",
-            background: "rgba(5,150,105,0.85)",
-            color: "#fff",
-          }}
-        >
-          Hint
-        </span>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <span style={panelLabelStyle}>Moves</span>
-          <span style={{ fontSize: "1.4cqw", fontWeight: 900, color: "#e2e8f0" }}>0</span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          bottom: "2.5%",
-          transform: "translateX(-50%)",
-          borderRadius: "999px",
-          background: "rgba(0,0,0,0.45)",
-          padding: "0.5cqw 1.4cqw",
-          fontSize: "0.85cqw",
-          fontWeight: 500,
-          letterSpacing: "0.02em",
-          color: "#94a3b8",
-          whiteSpace: "nowrap",
-        }}
-      >
-        Lineage: Shariki (Eugene Alemzhin, 1994) · Bejeweled (PopCap, 2001)
       </div>
     </div>
   );

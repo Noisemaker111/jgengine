@@ -18,14 +18,13 @@ function Card() {
         width: "6.4cqw",
         aspectRatio: "0.68",
         borderRadius: "0.5cqw",
-        background: "linear-gradient(160deg, #1a3d2c, #0c1f16)",
-        border: "1px solid rgba(251,191,36,0.35)",
-        display: "grid",
-        placeItems: "center",
+        backgroundColor: "#7a1717",
+        backgroundImage:
+          "repeating-linear-gradient(45deg, rgba(201,162,39,0.35) 0, rgba(201,162,39,0.35) 0.3cqw, transparent 0.3cqw, transparent 0.9cqw)",
+        boxShadow: "inset 0 0 0 0.15cqw rgba(201,162,39,0.55)",
+        border: "1px solid rgba(214,211,209,0.5)",
       }}
-    >
-      <span style={{ fontSize: "2.4cqw", color: "rgba(251,191,36,0.35)", fontWeight: 900 }}>?</span>
-    </div>
+    />
   );
 }
 

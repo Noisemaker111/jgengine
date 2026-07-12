@@ -47,8 +47,12 @@ function Bubble({ color, size, left, top }: { color: number; size: string; left:
   );
 }
 
-const GRID_ROW_1 = [0, 1, 2, 3, 4, 5, 0, 1];
-const GRID_ROW_2 = [2, 3, 4, 5, 0, 1, 2];
+const OPENING_ROWS = [
+  { color: 0, count: 8, top: "6%", left: "6%", right: "6%" },
+  { color: 1, count: 7, top: "15%", left: "11%", right: "11%" },
+  { color: 2, count: 8, top: "24%", left: "6%", right: "6%" },
+  { color: 3, count: 7, top: "33%", left: "11%", right: "11%" },
+];
 
 export default function BubbleBurstPreview({ className }: GamePreviewProps) {
   return (
@@ -78,43 +82,31 @@ export default function BubbleBurstPreview({ className }: GamePreviewProps) {
           boxShadow: "0 0 4.6cqw rgba(10,70,60,0.55), inset 0 0 0 0.1cqw rgba(233,196,106,0.12)",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            left: "6%",
-            right: "6%",
-            top: "6%",
-            display: "grid",
-            gridTemplateColumns: "repeat(8, 1fr)",
-            gap: "1.4cqw",
-          }}
-        >
-          {GRID_ROW_1.map((color, i) => (
-            <Bubble key={`r1-${i}`} color={color} size="4.6cqw" left="0" top="0" />
-          ))}
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            left: "11%",
-            right: "11%",
-            top: "16%",
-            display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            gap: "1.4cqw",
-          }}
-        >
-          {GRID_ROW_2.map((color, i) => (
-            <Bubble key={`r2-${i}`} color={color} size="4.6cqw" left="0" top="0" />
-          ))}
-        </div>
+        {OPENING_ROWS.map((row, rowIndex) => (
+          <div
+            key={rowIndex}
+            style={{
+              position: "absolute",
+              left: row.left,
+              right: row.right,
+              top: row.top,
+              display: "grid",
+              gridTemplateColumns: `repeat(${row.count}, 1fr)`,
+              gap: "1.4cqw",
+            }}
+          >
+            {Array.from({ length: row.count }, (_, i) => (
+              <Bubble key={`r${rowIndex}-${i}`} color={row.color} size="4.6cqw" left="0" top="0" />
+            ))}
+          </div>
+        ))}
 
         <div
           style={{
             position: "absolute",
             left: "8%",
             right: "8%",
-            top: "27%",
+            top: "45%",
             borderTop: "0.15cqw dashed rgba(255,180,120,0.35)",
           }}
         />

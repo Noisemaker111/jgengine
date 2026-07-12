@@ -95,6 +95,34 @@ function Card({
   );
 }
 
+function PileCount({ label, count }: { label: string; count: number }) {
+  return (
+    <div
+      style={{
+        width: "3.4cqw",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        borderRadius: "0.6cqw",
+        border: "1px solid rgba(120,113,108,0.4)",
+        background: "rgba(12,10,9,0.6)",
+        padding: "0.3cqw 0",
+      }}
+    >
+      <span style={{ fontSize: "1.2cqw", fontWeight: 800, color: "#f5f5f4" }}>{count}</span>
+      <span style={{ fontSize: "0.65cqw", textTransform: "uppercase", letterSpacing: "0.1em", color: "#a8a29e" }}>{label}</span>
+    </div>
+  );
+}
+
+const HAND = [
+  { cost: 1, name: "Strike", text: "Deal 6 damage.", ring: "#fb7185", gem: "#f43f5e" },
+  { cost: 1, name: "Strike", text: "Deal 6 damage.", ring: "#fb7185", gem: "#f43f5e" },
+  { cost: 1, name: "Defend", text: "Gain 5 Block.", ring: "#38bdf8", gem: "#0ea5e9" },
+  { cost: 2, name: "Bash", text: "Deal 10 damage.", ring: "#fb7185", gem: "#f43f5e" },
+  { cost: 1, name: "Iron Wave", text: "Deal 5 damage. Gain 5 Block.", ring: "#fb7185", gem: "#f43f5e" },
+];
+
 export default function SpireCardsPreview({ className }: GamePreviewProps) {
   return (
     <div
@@ -121,7 +149,21 @@ export default function SpireCardsPreview({ className }: GamePreviewProps) {
         <span style={{ fontSize: "1cqw", color: "#78716c" }}>/ 5</span>
       </div>
 
-      <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8cqw" }}>
+      <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6cqw" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.6cqw",
+            padding: "0.4cqw 0.9cqw",
+            borderRadius: "0.6cqw",
+            border: "1px solid rgba(252,211,77,0.5)",
+            background: "rgba(12,10,9,0.8)",
+          }}
+        >
+          <span style={{ fontSize: "1.1cqw", color: "#fca5a5" }}>⚔</span>
+          <span style={{ fontSize: "0.95cqw", fontWeight: 700, color: "#fef3c7" }}>Attacks for 9</span>
+        </div>
         <div
           style={{
             width: "13cqw",
@@ -155,42 +197,36 @@ export default function SpireCardsPreview({ className }: GamePreviewProps) {
         <HealthBar hp={72} maxHp={72} width={18} />
       </div>
 
-      <div style={{ position: "absolute", bottom: "3%", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "1.2cqw" }}>
-        <Card cost={1} name="Strike" text="Deal 6 damage." ring="#fb7185" gem="#f43f5e" />
-        <Card cost={1} name="Defend" text="Gain 5 Block." ring="#38bdf8" gem="#0ea5e9" />
-        <Card cost={2} name="Bash" text="Deal 10 damage." ring="#fb7185" gem="#f43f5e" />
+      <div style={{ position: "absolute", bottom: "3%", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "1cqw" }}>
+        {HAND.map((card, i) => (
+          <Card key={i} cost={card.cost} name={card.name} text={card.text} ring={card.ring} gem={card.gem} />
+        ))}
       </div>
 
-      <div style={{ position: "absolute", bottom: "3%", right: "3%", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8cqw" }}>
-        <div
-          style={{
-            width: "5.4cqw",
-            height: "5.4cqw",
-            borderRadius: "50%",
-            border: "2px solid rgba(252,211,77,0.7)",
-            background: "linear-gradient(180deg,#fbbf24,#ea580c)",
-            display: "grid",
-            placeItems: "center",
-            fontSize: "1.8cqw",
-            fontWeight: 900,
-            color: "#1c1917",
-          }}
-        >
-          3<span style={{ fontSize: "1.1cqw", opacity: 0.7 }}>/3</span>
+      <div style={{ position: "absolute", bottom: "3%", right: "3%", display: "flex", alignItems: "flex-end", gap: "1cqw" }}>
+        <div style={{ display: "flex", gap: "0.6cqw" }}>
+          <PileCount label="Draw" count={8} />
+          <PileCount label="Discard" count={0} />
+          <PileCount label="Exhaust" count={0} />
         </div>
-        <span
-          style={{
-            fontSize: "1.2cqw",
-            fontWeight: 800,
-            padding: "0.5cqw 1.4cqw",
-            borderRadius: "0.8cqw",
-            border: "1px solid rgba(252,211,77,0.6)",
-            background: "rgba(217,119,6,0.85)",
-            color: "#1c1917",
-          }}
-        >
-          End Turn
-        </span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6cqw" }}>
+          <div
+            style={{
+              width: "5.4cqw",
+              height: "5.4cqw",
+              borderRadius: "50%",
+              border: "2px solid rgba(252,211,77,0.7)",
+              background: "linear-gradient(180deg,#fbbf24,#ea580c)",
+              display: "grid",
+              placeItems: "center",
+              fontSize: "1.8cqw",
+              fontWeight: 900,
+              color: "#1c1917",
+            }}
+          >
+            3<span style={{ fontSize: "1.1cqw", opacity: 0.7 }}>/3</span>
+          </div>
+        </div>
       </div>
     </div>
   );

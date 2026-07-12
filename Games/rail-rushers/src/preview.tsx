@@ -6,34 +6,33 @@ const PALETTE = {
   forestGreen: "#386641",
   signalRed: "#bc4749",
   brass: "#a98467",
+  coalSmoke: "#6b705c",
   ink: "#211d14",
 } as const;
 
-const rowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "1.4cqw",
-  fontFamily: "ui-monospace, monospace",
-  fontSize: "1.3cqw",
-  color: "rgba(242,232,207,0.85)",
-};
+const HORIZON_Y = 42;
 
-const keyStyle: CSSProperties = {
-  borderRadius: "0.3cqw",
-  border: "1px solid #a98467",
-  background: "#1a160f",
-  padding: "0.3cqw 0.9cqw",
-  fontSize: "1.1cqw",
-  textTransform: "uppercase",
-  color: PALETTE.cream,
-};
+function pineStyle(xCqw: number, yCqh: number, sizeCqw: number): CSSProperties {
+  return {
+    position: "absolute",
+    left: `${xCqw - sizeCqw / 2}cqw`,
+    top: `${yCqh - sizeCqw * 1.3}cqh`,
+    width: `${sizeCqw}cqw`,
+    height: `${sizeCqw * 1.3}cqw`,
+    clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+    background: PALETTE.forestGreen,
+  };
+}
 
-const CONTROLS = [
-  { help: "Pump / hold speed", key: "Space" },
-  { help: "Brake", key: "Shift" },
-  { help: "Throw next junction", key: "E" },
-  { help: "Expand dispatcher board", key: "Tab" },
+const PINES: readonly [number, number, number][] = [
+  [10, 46, 4.5],
+  [20, 52, 6],
+  [6, 62, 8],
+  [90, 46, 4.5],
+  [80, 51, 6],
+  [94, 63, 8.5],
+  [16, 74, 10],
+  [86, 76, 10],
 ];
 
 export default function RailRushersPreview({ className }: GamePreviewProps) {
@@ -46,8 +45,7 @@ export default function RailRushersPreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "#1a160f",
-        color: PALETTE.cream,
+        background: PALETTE.ink,
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
         userSelect: "none",
       }}
@@ -56,80 +54,187 @@ export default function RailRushersPreview({ className }: GamePreviewProps) {
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(circle at 50% 20%, rgba(56,102,65,0.22), transparent 40%), linear-gradient(#211d14, #14110c)",
+          background: `linear-gradient(180deg, #4f6b63 0%, ${PALETTE.cream} ${HORIZON_Y}%, ${PALETTE.cream} ${HORIZON_Y}%)`,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: `${HORIZON_Y - 10}%`,
+          width: "60cqw",
+          height: "20cqh",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(255,250,235,0.55), transparent 68%)",
         }}
       />
 
-      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: "4cqw" }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          clipPath:
+            "polygon(0% 58%, 12% 46%, 24% 52%, 38% 40%, 50% 50%, 64% 42%, 78% 50%, 90% 44%, 100% 56%, 100% 100%, 0% 100%)",
+          background: PALETTE.coalSmoke,
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          clipPath:
+            "polygon(0% 66%, 10% 50%, 22% 60%, 34% 44%, 48% 58%, 60% 42%, 74% 58%, 86% 48%, 100% 64%, 100% 100%, 0% 100%)",
+          background: PALETTE.forestGreen,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          clipPath: `polygon(0% ${HORIZON_Y}%, 100% ${HORIZON_Y}%, 100% 100%, 0% 100%)`,
+          background: "linear-gradient(180deg, #386641 0%, #24401f 55%, #182a18 100%)",
+        }}
+      />
+
+      {PINES.slice(0, 3).map(([x, y, size], i) => (
+        <div key={`back-pine-${i}`} style={pineStyle(x, y, size)} />
+      ))}
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          clipPath: `polygon(50% ${HORIZON_Y}%, 63% 100%, 37% 100%)`,
+          background: "#4a3a28",
+          backgroundImage:
+            "repeating-linear-gradient(0deg, rgba(20,16,10,0.4) 0%, rgba(20,16,10,0.4) 3%, transparent 3%, transparent 10%)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          clipPath: `polygon(50% ${HORIZON_Y}%, 50.5% ${HORIZON_Y}%, 39% 100%, 37.4% 100%)`,
+          background: PALETTE.brass,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          clipPath: `polygon(50% ${HORIZON_Y}%, 49.5% ${HORIZON_Y}%, 62.6% 100%, 61% 100%)`,
+          background: PALETTE.brass,
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          left: "50cqw",
+          top: `${HORIZON_Y}cqh`,
+          width: "0.5cqw",
+          height: "9cqh",
+          transform: "translate(-50%, -100%)",
+          background: PALETTE.coalSmoke,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: "50.9cqw",
+          top: `${HORIZON_Y - 8}cqh`,
+          width: "1.6cqw",
+          height: "1.6cqw",
+          borderRadius: "50%",
+          background: PALETTE.forestGreen,
+          boxShadow: `0 0 1.4cqw ${PALETTE.forestGreen}`,
+        }}
+      />
+
+      <div style={{ position: "absolute", left: "60cqw", top: `${HORIZON_Y - 5}cqh`, width: "11cqw", height: "9cqh" }}>
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.8cqw",
-            width: "70cqw",
-            borderRadius: "0.5cqw",
-            border: "2px solid #a98467",
-            background: "#211d14",
-            boxShadow: "0 1cqw 0 rgba(0,0,0,0.5)",
-            padding: "2.6cqw",
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "100%",
+            height: "45%",
+            clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+            background: PALETTE.forestGreen,
           }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "0.5cqw",
-              borderBottom: "2px solid #a98467",
-              paddingBottom: "1.6cqw",
-              textAlign: "center",
-            }}
-          >
-            <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "1.2cqw", textTransform: "uppercase", letterSpacing: "0.3em", color: PALETTE.brass }}>
-              Mountain Rail Network
-            </span>
-            <span style={{ fontSize: "3.6cqw", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: PALETTE.cream }}>
-              Rail Rushers
-            </span>
-            <span style={{ maxWidth: "56cqw", fontFamily: "ui-monospace, monospace", fontSize: "1.3cqw", lineHeight: 1.5, color: "rgba(242,232,207,0.8)" }}>
-              Pump the handcar from Depot to Summit Terminus before the Evening Express arrives — throw junctions ahead of
-              you, dodge freights on the spurs, and squeeze the single-track tunnel and trestle clean.
-            </span>
-            <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "1.2cqw", textTransform: "uppercase", letterSpacing: "0.14em", color: PALETTE.signalRed }}>
-              Express due at Terminus — 240 seconds
-            </span>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1cqw 3cqw" }}>
-            {CONTROLS.map((c) => (
-              <div key={c.help} style={rowStyle}>
-                <span>{c.help}</span>
-                <span style={keyStyle}>{c.key}</span>
-              </div>
-            ))}
-          </div>
-
-          <span
-            style={{
-              alignSelf: "stretch",
-              textAlign: "center",
-              borderRadius: "0.3cqw",
-              border: `2px solid ${PALETTE.cream}`,
-              background: PALETTE.forestGreen,
-              boxShadow: "0 0.5cqw 0 rgba(0,0,0,0.4)",
-              padding: "1.2cqw",
-              fontSize: "1.6cqw",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.16em",
-              color: PALETTE.cream,
-            }}
-          >
-            Depart — Clear Running
-          </span>
-        </div>
+        />
+        <div style={{ position: "absolute", left: 0, bottom: 0, width: "100%", height: "62%", background: PALETTE.cream }} />
       </div>
+
+      {PINES.slice(3).map(([x, y, size], i) => (
+        <div key={`front-pine-${i}`} style={pineStyle(x, y, size)} />
+      ))}
+
+      <div
+        style={{
+          position: "absolute",
+          left: "-3cqw",
+          bottom: "6cqh",
+          width: "13cqw",
+          height: "13cqh",
+        }}
+      >
+        <div style={{ position: "absolute", left: "18%", bottom: "48%", width: "64%", height: "38%", background: PALETTE.signalRed, borderRadius: "0.4cqw" }} />
+        <div style={{ position: "absolute", left: "0%", bottom: "0%", width: "100%", height: "52%", background: "#8f3335", borderRadius: "0.4cqw" }} />
+        <div style={{ position: "absolute", left: "26%", bottom: "58%", width: "26%", height: "20%", background: PALETTE.cream, opacity: 0.85 }} />
+        <div
+          style={{
+            position: "absolute",
+            right: "8%",
+            bottom: "40%",
+            width: "1.4cqw",
+            height: "1.4cqw",
+            borderRadius: "50%",
+            background: PALETTE.cream,
+            boxShadow: `0 0 1cqw ${PALETTE.cream}`,
+          }}
+        />
+      </div>
+
+      <div style={{ position: "absolute", left: "50%", bottom: "2cqh", width: "30cqw", height: "24cqh", transform: "translateX(-50%)" }}>
+        <div style={{ position: "absolute", left: "6%", bottom: "0%", width: "16%", height: "34%", borderRadius: "50%", background: PALETTE.coalSmoke }} />
+        <div style={{ position: "absolute", right: "6%", bottom: "0%", width: "16%", height: "34%", borderRadius: "50%", background: PALETTE.coalSmoke }} />
+        <div
+          style={{
+            position: "absolute",
+            left: "8%",
+            bottom: "24%",
+            width: "84%",
+            height: "20%",
+            background: PALETTE.brass,
+            borderRadius: "0.5cqw",
+            boxShadow: "0 0.4cqw 0 rgba(0,0,0,0.35)",
+          }}
+        />
+        <div style={{ position: "absolute", left: "22%", bottom: "40%", width: "6%", height: "42%", background: PALETTE.coalSmoke }} />
+        <div style={{ position: "absolute", right: "22%", bottom: "40%", width: "6%", height: "42%", background: PALETTE.coalSmoke }} />
+        <div style={{ position: "absolute", left: "18%", bottom: "80%", width: "64%", height: "9%", background: PALETTE.signalRed, borderRadius: "0.3cqw" }} />
+        <div style={{ position: "absolute", left: "30%", bottom: "44%", width: "40%", height: "26%", background: PALETTE.cream, opacity: 0.9 }} />
+      </div>
+
+      <span
+        style={{
+          position: "absolute",
+          top: "3cqh",
+          left: "3cqw",
+          fontFamily: "ui-monospace, monospace",
+          fontSize: "1.7cqw",
+          fontWeight: 800,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: PALETTE.signalRed,
+          textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+        }}
+      >
+        Express due 4:00
+      </span>
     </div>
   );
 }

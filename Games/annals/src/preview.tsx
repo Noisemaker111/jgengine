@@ -1,14 +1,6 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const chipLabelStyle: CSSProperties = {
-  fontSize: "1cqw",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.18em",
-  color: "#c9a875",
-};
-
 const dividerStyle: CSSProperties = {
   height: "2.4cqw",
   width: "1px",
@@ -115,88 +107,21 @@ export default function AnnalsPreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
-          left: "50%",
+          left: "3%",
           top: "3%",
-          transform: "translateX(-50%)",
           display: "flex",
           alignItems: "center",
-          gap: "1.4cqw",
+          gap: "1.2cqw",
           borderRadius: "0.7cqw",
           border: "1px solid rgba(253,230,138,0.2)",
           background: "rgba(28,20,10,0.72)",
-          padding: "0.9cqw 1.8cqw",
+          padding: "0.7cqw 1.4cqw",
           boxShadow: "0 0.4cqw 1cqw rgba(0,0,0,0.4)",
         }}
       >
-        <span style={{ fontSize: "1.7cqw", letterSpacing: "0.05em", color: "#fde68a" }}>The Annals</span>
-        <span style={dividerStyle} />
         <span style={{ fontSize: "1.2cqw", color: "#fef3c7", opacity: 0.9 }}>Year 1, day 1 · Spring</span>
         <span style={dividerStyle} />
-        <span style={{ fontSize: "1.2cqw", color: "#fef3c7", opacity: 0.8 }}>Realm 5,460</span>
-        <span style={dividerStyle} />
-        <span style={{ fontSize: "1.2cqw", color: "#fef3c7", opacity: 0.8 }}>Aldric, the Steadfast</span>
-        <span
-          style={{
-            borderRadius: "0.4cqw",
-            border: "1px solid rgba(253,230,138,0.3)",
-            padding: "0.3cqw 0.9cqw",
-            fontSize: "1.1cqw",
-            color: "#fef3c7",
-          }}
-        >
-          Pause
-        </span>
-        <div style={{ display: "flex", gap: "0.4cqw" }}>
-          {["1x", "2x", "4x", "8x"].map((speed) => (
-            <span
-              key={speed}
-              style={{
-                borderRadius: "0.4cqw",
-                border: speed === "1x" ? "1px solid #fcd34d" : "1px solid rgba(253,230,138,0.2)",
-                background: speed === "1x" ? "rgba(252,211,77,0.2)" : "transparent",
-                padding: "0.25cqw 0.7cqw",
-                fontSize: "1.1cqw",
-                color: speed === "1x" ? "#fef3c7" : "rgba(254,243,199,0.6)",
-              }}
-            >
-              {speed}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          right: "3%",
-          top: "16%",
-          bottom: "4%",
-          width: "22cqw",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          borderRadius: "0.7cqw",
-          border: "1px solid rgba(253,230,138,0.2)",
-          background: "rgba(28,20,10,0.72)",
-          boxShadow: "0 0.4cqw 1cqw rgba(0,0,0,0.4)",
-        }}
-      >
-        <div
-          style={{
-            borderBottom: "1px solid rgba(253,230,138,0.2)",
-            padding: "0.9cqw 1.2cqw",
-            fontSize: "1.1cqw",
-            textTransform: "uppercase",
-            letterSpacing: "0.2em",
-            color: "#fde68a",
-            opacity: 0.85,
-          }}
-        >
-          Chronicle
-        </div>
-        <div style={{ padding: "1.2cqw", fontSize: "1.2cqw", lineHeight: 1.5, color: "rgba(254,243,199,0.4)" }}>
-          The realm awaits its first tale.
-        </div>
+        <span style={{ fontSize: "1.2cqw", color: "#fef3c7", opacity: 0.8 }}>Vaelmere · pop. 4,200</span>
       </div>
 
       <div

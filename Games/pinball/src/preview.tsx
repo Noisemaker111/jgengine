@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
 const PALETTE = {
@@ -26,13 +25,6 @@ const PALETTE = {
   lampOn: "#ffd15a",
   lampOff: "#4a3320",
 } as const;
-
-const cardStyle: CSSProperties = {
-  background: `linear-gradient(160deg, rgba(42,28,20,0.94), rgba(21,13,9,0.94))`,
-  border: `1px solid ${PALETTE.brassDark}`,
-  color: PALETTE.cream,
-  boxShadow: "0 0.4cqw 1.4cqw rgba(0,0,0,0.4)",
-};
 
 function Bumper({ left, top }: { left: string; top: string }) {
   return (
@@ -99,12 +91,6 @@ export default function PinballPreview({ className }: GamePreviewProps) {
         userSelect: "none",
       }}
     >
-      <div style={{ position: "absolute", top: "14%", left: "2.5%", padding: "0.9cqw 1.4cqw", borderRadius: "1cqw", ...cardStyle }}>
-        <div style={{ fontSize: "1.5cqw", fontWeight: 900, letterSpacing: "0.14em", lineHeight: 1, color: PALETTE.orangeLight }}>SOLID STATE</div>
-        <div style={{ fontSize: "1.9cqw", fontWeight: 900, letterSpacing: "0.12em", lineHeight: 1.2, color: PALETTE.tealLight }}>PINBALL</div>
-        <div style={{ marginTop: "0.3cqw", fontSize: "1cqw", letterSpacing: "0.24em", color: PALETTE.brassLight, opacity: 0.8 }}>1978 · TABLE No.1</div>
-      </div>
-
       <div
         style={{
           position: "absolute",
@@ -260,46 +246,6 @@ export default function PinballPreview({ className }: GamePreviewProps) {
         </div>
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          bottom: "3%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          gap: "0.9cqw 1.6cqw",
-          padding: "0.9cqw 1.6cqw",
-          borderRadius: "1cqw",
-          minWidth: "40%",
-          ...cardStyle,
-        }}
-      >
-        {[
-          ["Z / ←", "Left Flip"],
-          ["/ / →", "Right Flip"],
-          ["↓", "Plunger"],
-          ["Space", "Nudge"],
-          ["N", "New Game"],
-        ].map(([label, hint]) => (
-          <span key={label} style={{ display: "flex", alignItems: "center", gap: "0.4cqw", fontSize: "0.95cqw" }}>
-            <span
-              style={{
-                padding: "0.3cqw 0.6cqw",
-                borderRadius: "0.3cqw",
-                fontWeight: 800,
-                background: "rgba(0,0,0,0.4)",
-                border: `1px solid ${PALETTE.brassLight}`,
-                color: PALETTE.brassLight,
-              }}
-            >
-              {label}
-            </span>
-            <span style={{ opacity: 0.75 }}>{hint}</span>
-          </span>
-        ))}
-      </div>
     </div>
   );
 }

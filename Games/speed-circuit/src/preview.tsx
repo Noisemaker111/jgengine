@@ -13,28 +13,6 @@ const labelStyle: CSSProperties = {
   color: TEXT_DIM,
 };
 
-function KeybindBadge({ label }: { label: string }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minWidth: "2.4cqw",
-        padding: "0.4cqw 0.8cqw",
-        borderRadius: "0.6cqw",
-        border: "1px solid rgba(106,93,170,0.6)",
-        background: "rgba(18,16,31,0.85)",
-        color: ACCENT,
-        fontSize: "1.3cqw",
-        fontWeight: 800,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
 export default function SpeedCircuitPreview({ className }: GamePreviewProps) {
   return (
     <div
@@ -145,47 +123,56 @@ export default function SpeedCircuitPreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "3cqw",
+          left: "50%",
+          bottom: "10%",
+          width: "6.4cqw",
+          transform: "translateX(-50%)",
         }}
       >
-        <div style={{ display: "flex", gap: "2cqw" }}>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              style={{
-                width: "5cqw",
-                height: "5cqw",
-                borderRadius: "50%",
-                border: `0.3cqw solid ${i === 0 ? ACCENT : "rgba(141,139,179,0.4)"}`,
-                background: i === 0 ? "rgba(65,230,240,0.15)" : "transparent",
-                display: "grid",
-                placeItems: "center",
-                fontSize: "2.6cqw",
-                fontWeight: 900,
-                color: i === 0 ? ACCENT : TEXT_DIM,
-              }}
-            >
-              {3 - i}
-            </span>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: "1.6cqw", flexWrap: "wrap", justifyContent: "center" }}>
-          {[
-            ["W", "Accelerate"],
-            ["S", "Brake"],
-            ["A/D", "Steer"],
-            ["Space", "Handbrake"],
-          ].map(([key, label]) => (
-            <span key={key} style={{ display: "flex", gap: "0.5cqw", alignItems: "center" }}>
-              <KeybindBadge label={key!} />
-              <span style={{ fontSize: "1.2cqw", color: TEXT_DIM }}>{label}</span>
-            </span>
-          ))}
+        <div
+          style={{
+            position: "absolute",
+            top: "-1.4cqw",
+            left: "-1.6cqw",
+            right: "-1.6cqw",
+            height: "0.55cqw",
+            backgroundImage:
+              "repeating-linear-gradient(90deg, #f2f2f2 0 0.55cqw, #12101f 0.55cqw 1.1cqw)",
+          }}
+        />
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "11cqw",
+            borderRadius: "1.2cqw",
+            background: "linear-gradient(#e8392a, #a02418)",
+            boxShadow: "0 0 1.4cqw rgba(232,57,42,0.5)",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              left: "12%",
+              right: "12%",
+              top: "26%",
+              height: "34%",
+              borderRadius: "0.6cqw",
+              background: "#1c2636",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              left: "16%",
+              right: "16%",
+              bottom: "6%",
+              height: "0.6cqw",
+              borderRadius: "0.3cqw",
+              background: "#fffaf0",
+              boxShadow: "0 0 0.8cqw rgba(255,242,176,0.8)",
+            }}
+          />
         </div>
       </div>
     </div>

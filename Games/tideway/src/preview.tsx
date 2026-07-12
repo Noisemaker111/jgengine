@@ -1,33 +1,34 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const CONTROL_ROWS: readonly { label: string; key: string }[] = [
-  { label: "throttle up", key: "W" },
-  { label: "throttle astern", key: "S" },
-  { label: "rudder to port", key: "A" },
-  { label: "rudder to starboard", key: "D" },
-  { label: "brace turn", key: "Space" },
-  { label: "restart", key: "R" },
+const WATER_A = "#14505c";
+const WATER_B = "#0a2126";
+const GOLD = "#f2c14e";
+const FOAM = "#e6f2ef";
+
+interface BoatSpec {
+  x: number;
+  hull: string;
+  sail: string;
+  label: string;
+}
+
+const BOATS: readonly BoatSpec[] = [
+  { x: 32, hull: "#0e2a30", sail: FOAM, label: "Brigand's Wake" },
+  { x: 50, hull: "#c74a34", sail: GOLD, label: "Skipper" },
+  { x: 68, hull: GOLD, sail: "#c74a34", label: "Halyard's Due" },
 ];
 
-const rowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  fontSize: "1.4cqw",
-};
-
-const keyStyle: CSSProperties = {
-  minWidth: "3.6cqw",
-  textAlign: "center",
-  borderRadius: "0.3cqw",
-  border: "1px solid rgba(242,193,78,0.5)",
-  background: "#0e2a30",
-  padding: "0.2cqw 0.7cqw",
-  fontSize: "1.2cqw",
-  fontWeight: 700,
-  color: "#f2c14e",
-};
+function boatStyle(x: number): CSSProperties {
+  return {
+    position: "absolute",
+    left: `${x}%`,
+    bottom: "18cqh",
+    transform: "translateX(-50%)",
+    width: "6cqw",
+    height: "11cqh",
+  };
+}
 
 export default function TidewayPreview({ className }: GamePreviewProps) {
   return (
@@ -39,7 +40,7 @@ export default function TidewayPreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "linear-gradient(#0e2a30, #0a2126)",
+        background: `linear-gradient(${WATER_A}, ${WATER_B})`,
         color: "#e6f2ef",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
         userSelect: "none",
@@ -49,94 +50,104 @@ export default function TidewayPreview({ className }: GamePreviewProps) {
         style={{
           position: "absolute",
           inset: 0,
+          backgroundImage:
+            "repeating-linear-gradient(100deg, rgba(230,242,239,0.05) 0 2px, transparent 2px 22px)",
+          backgroundSize: "100% 100%",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "14cqh",
+          transform: "translateX(-50%)",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
-          padding: "3cqw",
+          gap: "0.4cqw",
         }}
       >
-        <div
-          style={{
-            position: "relative",
-            width: "58cqw",
-            borderRadius: "0.3cqw",
-            border: "1px solid rgba(242,193,78,0.4)",
-            background: "#14505c",
-            boxShadow: "0 0 60px rgba(0,0,0,0.5)",
-            padding: "3cqw",
-          }}
-        >
-          <span
+        <div style={{ display: "flex", gap: "10cqw" }}>
+          <span style={{ width: "1cqw", height: "8cqh", background: GOLD, borderRadius: "0.2cqw", boxShadow: `0 0 1cqw ${GOLD}88` }} />
+          <span style={{ width: "1cqw", height: "8cqh", background: GOLD, borderRadius: "0.2cqw", boxShadow: `0 0 1cqw ${GOLD}88` }} />
+        </div>
+        <span style={{ fontSize: "0.95cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: GOLD }}>
+          Gate 1
+        </span>
+      </div>
+
+      {BOATS.map((boat) => (
+        <div key={boat.label} style={boatStyle(boat.x)}>
+          <div
             style={{
               position: "absolute",
-              right: "2.4cqw",
-              top: "2.4cqw",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "3.2cqw",
-              width: "3.2cqw",
-              borderRadius: "0.3cqw",
-              border: "1px solid rgba(242,193,78,0.3)",
-              background: "rgba(14,42,48,0.75)",
-              color: "#f2c14e",
-              fontSize: "1.6cqw",
+              left: "50%",
+              bottom: 0,
+              transform: "translateX(-50%)",
+              width: "100%",
+              height: "45%",
+              background: boat.hull,
+              clipPath: "polygon(50% 0%, 100% 40%, 85% 100%, 15% 100%, 0% 40%)",
+              boxShadow: "0 0.4cqh 0.8cqh rgba(0,0,0,0.4)",
             }}
-          >
-            ⚙
-          </span>
-
-          <span style={{ fontSize: "1.2cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.35em", color: "#f2c14e" }}>
-            Race Committee
-          </span>
-          <div style={{ marginTop: "0.6cqw", fontSize: "5cqw", fontWeight: 900, letterSpacing: "-0.01em", color: "#e6f2ef" }}>
-            TIDEWAY
-          </div>
-          <div style={{ marginTop: "0.8cqw", fontSize: "1.5cqw", color: "rgba(230,242,239,0.8)" }}>
-            Harbor Regatta &middot; seed <span style={{ color: "#f2c14e" }}>tideway-harbor-7</span> &middot; 8 gates &middot; 2 laps
-          </div>
-
-          <p style={{ marginTop: "1.8cqw", fontSize: "1.5cqw", lineHeight: 1.55, color: "rgba(230,242,239,0.9)" }}>
-            Read the water, ride the push. The current swings on a schedule — the wide channel that's fast this lap
-            can turn to sludge the next.
-          </p>
-
+          />
           <div
             style={{
-              marginTop: "2cqw",
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.7cqw",
-              borderTop: "1px solid rgba(230,242,239,0.15)",
-              paddingTop: "1.8cqw",
+              position: "absolute",
+              left: "50%",
+              bottom: "40%",
+              transform: "translateX(-50%)",
+              width: "0",
+              height: "0",
+              borderLeft: "2.6cqw solid transparent",
+              borderRight: "2.6cqw solid transparent",
+              borderBottom: `9cqh solid ${boat.sail}`,
+              opacity: 0.92,
             }}
-          >
-            {CONTROL_ROWS.map((row) => (
-              <div key={row.label} style={rowStyle}>
-                <span style={{ color: "rgba(230,242,239,0.8)" }}>{row.label}</span>
-                <span style={keyStyle}>{row.key}</span>
-              </div>
-            ))}
-          </div>
+          />
+        </div>
+      ))}
 
-          <div
-            style={{
-              marginTop: "2.4cqw",
-              borderRadius: "0.3cqw",
-              background: "#c74a34",
-              color: "#e6f2ef",
-              textAlign: "center",
-              fontSize: "1.8cqw",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              padding: "1.3cqw",
-            }}
-          >
-            Start Race &middot; Enter
-          </div>
+      <div
+        style={{
+          position: "absolute",
+          bottom: "3cqh",
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "0.4cqw",
+          borderRadius: "0.3cqw",
+          border: `1px solid ${GOLD}4d`,
+          background: "rgba(14,42,48,0.8)",
+          padding: "0.8cqw 2cqw",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "baseline", gap: "0.4cqw" }}>
+          <span style={{ fontSize: "2.2cqw", fontWeight: 900, color: "#e6f2ef" }}>0.0</span>
+          <span style={{ fontSize: "0.9cqw", textTransform: "uppercase", letterSpacing: "0.2em", color: "#e6f2ef99" }}>knots</span>
+        </div>
+        <div style={{ height: "0.5cqh", width: "12cqw", borderRadius: "999px", background: WATER_A, overflow: "hidden" }}>
+          <div style={{ width: "0%", height: "100%", background: "#e6f2ef" }} />
         </div>
       </div>
+
+      <span
+        style={{
+          position: "absolute",
+          top: "2.4cqh",
+          left: "2.4cqw",
+          fontSize: "1cqw",
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.25em",
+          color: GOLD,
+        }}
+      >
+        Lap 1 / 2
+      </span>
     </div>
   );
 }

@@ -28,32 +28,6 @@ const cardStyle: CSSProperties = {
   padding: "1.4cqw",
 };
 
-const chipLabel: CSSProperties = {
-  fontSize: "1cqw",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.12em",
-  color: INDIGO,
-};
-
-function DifficultyChip({ label, active }: { label: string; active: boolean }) {
-  return (
-    <span
-      style={{
-        borderRadius: "0.5cqw",
-        border: `1px solid ${active ? INDIGO : THIN_LINE}`,
-        background: active ? INDIGO : "#fff",
-        color: active ? "#fff" : INK,
-        fontSize: "1.2cqw",
-        fontWeight: 700,
-        padding: "0.5cqw 1cqw",
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
 export default function SudokuPreview({ className }: GamePreviewProps) {
   return (
     <div
@@ -70,49 +44,12 @@ export default function SudokuPreview({ className }: GamePreviewProps) {
         userSelect: "none",
       }}
     >
-      <div style={{ position: "absolute", top: "3cqw", left: "3cqw", width: "18cqw", ...cardStyle }}>
-        <div style={{ fontSize: "2.2cqw", fontWeight: 900 }}>Sudoku</div>
-        <div style={{ marginTop: "0.2cqw", ...chipLabel }}>Number Place</div>
-        <div style={{ marginTop: "1.2cqw", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6cqw" }}>
-          <DifficultyChip label="Easy" active />
-          <DifficultyChip label="Medium" active={false} />
-          <DifficultyChip label="Hard" active={false} />
-          <DifficultyChip label="Expert" active={false} />
-        </div>
-        <div
-          style={{
-            marginTop: "1.2cqw",
-            borderRadius: "0.5cqw",
-            background: INK,
-            color: "#fff",
-            fontSize: "1.2cqw",
-            fontWeight: 800,
-            textAlign: "center",
-            padding: "0.7cqw",
-          }}
-        >
-          New puzzle
-        </div>
-      </div>
-
-      <div style={{ position: "absolute", top: "3cqw", right: "3cqw", width: "15cqw", ...cardStyle }}>
-        <div style={chipLabel}>Best times</div>
-        <div style={{ marginTop: "0.6cqw", display: "flex", flexDirection: "column", gap: "0.4cqw", fontSize: "1.2cqw" }}>
-          {["Easy", "Medium", "Hard", "Expert"].map((d) => (
-            <div key={d} style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>{d}</span>
-              <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700, color: "#94897a" }}>—</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       <div
         style={{
           position: "absolute",
           left: "50%",
           top: "50%",
-          transform: "translate(-50%, -46%)",
+          transform: "translate(-50%, -50%)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -124,7 +61,6 @@ export default function SudokuPreview({ className }: GamePreviewProps) {
         <div style={{ display: "flex", width: "100%", justifyContent: "space-between", fontSize: "1.4cqw", fontWeight: 700 }}>
           <span>Easy</span>
           <span style={{ fontFamily: "ui-monospace, monospace", color: INDIGO, fontSize: "1.8cqw" }}>00:00</span>
-          <span style={{ fontSize: "1cqw", textTransform: "uppercase", letterSpacing: "0.1em", color: "#64748b" }}>Enter</span>
         </div>
 
         <div
@@ -177,24 +113,6 @@ export default function SudokuPreview({ className }: GamePreviewProps) {
             </div>
           ))}
         </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "2.4cqw",
-          left: "50%",
-          transform: "translateX(-50%)",
-          borderRadius: "999px",
-          background: "rgba(251,248,240,0.8)",
-          boxShadow: `0 0 0 1px ${THIN_LINE}`,
-          padding: "0.5cqw 1.4cqw",
-          fontSize: "1.1cqw",
-          fontWeight: 500,
-          color: "#64748b",
-        }}
-      >
-        Number Place — Howard Garns (1979); popularized as Sudoku by Nikoli
       </div>
     </div>
   );
