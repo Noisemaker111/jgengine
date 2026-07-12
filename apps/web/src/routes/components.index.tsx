@@ -447,7 +447,11 @@ interface SystemDef {
   name: string;
   headline: string;
   builds: readonly string[];
-  code: string;
+  usage: string;
+  handRoll: string;
+  handRollLoc: number;
+  fileCount: number;
+  files: string;
 }
 
 const SYSTEMS: readonly SystemDef[] = [
@@ -463,13 +467,35 @@ const SYSTEMS: readonly SystemDef[] = [
       "An authoritative tick loop broadcasting state diffs to subscribers",
       "Save flushing wired to the tick without blocking it",
     ],
-    code: `import { createGameHost, createGameWsServer, filePersistence } from "@jgengine/node";
+    usage: `import { createGameHost, createGameWsServer, filePersistence } from "@jgengine/node";
 import { createGameRuntime } from "@jgengine/core";
 
 const runtime = createGameRuntime({ gameId: "arena", save: { auto: "5s", scope: "player" }, commands });
 const host = createGameHost({ runtimes: [runtime], persistence: filePersistence("./saves"), tickMs: 100 });
 createGameWsServer({ host, port: 8080, path: "/play" });
 // client: createWsBackend({ url, userId }) — reconnect + live server/player/feed channels`,
+    handRoll: `// the authoritative tick + autosave loop you'd own — excerpt from host.ts
+for (const entry of live.values()) {
+  if (entry.record.status !== "running") continue;
+  if (entry.record.memberUserIds.length === 0) continue;
+  const elapsedMs = timestamp - entry.record.tickAnchorMs;
+  if (elapsedMs < tickMs) continue;
+
+  const runtime = resolveRuntime(entry.record.gameId);
+  const before = entry.snapshot.revision;
+  entry.snapshot = runtime.tick(entry.snapshot, elapsedMs / 1_000);
+  entry.record = { ...entry.record, tickAnchorMs: timestamp, updatedAt: timestamp };
+  if (entry.snapshot.revision !== before) {
+    markMutated(entry);
+    emit({ type: "server", serverId: entry.record.serverId });
+  }
+  if (shouldAutoSave(entry.record.save, entry.record.dirtyAt, entry.record.lastSavedAt, timestamp)) {
+    await flushServer(entry);
+  }
+}`,
+    handRollLoc: 760,
+    fileCount: 3,
+    files: "host.ts · wsServer.ts · persistence.ts",
   },
   {
     id: "runtime",
@@ -483,7 +509,7 @@ createGameWsServer({ host, port: 8080, path: "/play" });
       "A revision / OCC scheme that rejects stale writes",
       "A fixed-step server tick that composes with commands",
     ],
-    code: `import { createGameRuntime, type CommandDef } from "@jgengine/core";
+    usage: `import { createGameRuntime, type CommandDef } from "@jgengine/core";
 
 const move: CommandDef<{ x: number; z: number }> = {
   validate: (snap, input, uid) => (input.x > 100 ? { reason: "out-of-bounds" } : null),
@@ -491,6 +517,31 @@ const move: CommandDef<{ x: number; z: number }> = {
 };
 const runtime = createGameRuntime({ gameId: "arena", commands: { move },
   loop: { onTick: (ctx, dt) => stepEnemies(ctx.snapshot, dt) } });`,
+    handRoll: `// validate → apply → bump revision → track dirty players — excerpt from commandRunner.ts
+const command = commands[commandName];
+if (!command) return { ok: false, reason: \`Unknown command: \${commandName}\` };
+
+const validationError = command.validate(snapshot, input, actorUserId);
+if (validationError) return { ok: false, reason: validationError.reason };
+
+const next = command.apply(snapshot, input, actorUserId);
+return {
+  ok: true,
+  snapshot: {
+    ...next,
+    revision: snapshot.revision + 1,
+    dirty: {
+      server: true,
+      players: next.dirty.players.includes(actorUserId)
+        ? next.dirty.players
+        : [...next.dirty.players, actorUserId],
+      chunks: next.dirty.chunks,
+    },
+  },
+};`,
+    handRollLoc: 352,
+    fileCount: 3,
+    files: "gameRuntime.ts · commandRunner.ts · snapshot.ts",
   },
   {
     id: "spatial",
@@ -504,7 +555,7 @@ const runtime = createGameRuntime({ gameId: "arena", commands: { move },
       "O(n²) neighbor loops replaced by grid-bucketed pair iteration",
       "A change-subscription layer for renderers",
     ],
-    code: `import { createEntityStore } from "@jgengine/core/scene/entityStore";
+    usage: `import { createEntityStore } from "@jgengine/core/scene/entityStore";
 import { createSpatialApi } from "@jgengine/core/scene/spatial";
 
 const entities = createEntityStore();
@@ -516,6 +567,30 @@ const spatial = createSpatialApi({
 });
 const nearby = spatial.inRadius([0, 0, 0], 12);
 const inCone = spatial.queryArc({ from: "player", aim, radius: 10, halfAngleDeg: 45 });`,
+    handRoll: `// counting-sort grid rebuild you'd write for a broadphase — excerpt from spatialGrid.ts
+rebuild(count: number, xs: Float32Array, zs: Float32Array): void {
+  this.entityCount = count;
+  this.xs = xs;
+  this.zs = zs;
+  const start = this.cellStart;
+  start.fill(0);
+  for (let i = 0; i < count; i += 1) {
+    const c = this.cellZ(zs[i]!) * this.nx + this.cellX(xs[i]!);
+    this.cellOfBody[i] = c;
+    start[c + 1]! += 1;
+  }
+  for (let c = 0; c < this.numCells; c += 1) {
+    start[c + 1]! += start[c]!;
+    this.cursor[c] = start[c]!;
+  }
+  for (let i = 0; i < count; i += 1) {
+    const c = this.cellOfBody[i]!;
+    this.sorted[this.cursor[c]!++] = i;
+  }
+}`,
+    handRollLoc: 631,
+    fileCount: 3,
+    files: "entityStore.ts · spatial.ts · spatialGrid.ts",
   },
   {
     id: "combat",
@@ -529,13 +604,36 @@ const inCone = spatial.queryArc({ from: "player", aim, radius: 10, halfAngleDeg:
       "Death → loot-table rolls → drop grants / world drops → respawn",
       "Consistent hit results feeding HUD and feed events",
     ],
-    code: `import { createEffectSystem } from "@jgengine/core/combat/effects";
+    usage: `import { createEffectSystem } from "@jgengine/core/combat/effects";
 import { createProjectileSystem } from "@jgengine/core/combat/projectiles";
 
 const effects = createEffectSystem({ resolveReceive, resolveStats, getStat, spatial });
 const projectiles = createProjectileSystem({ effects, spatial, getStat, sceneRaycast });
 const shot = projectiles.fireProjectile({ from: "player", item: "bow", aim });
 const result = projectiles.settleProjectile(shot); // { status, hits: EffectResult[] }`,
+    handRoll: `// drain an ordered stack of pools, flag lethality — excerpt from effects.ts
+function drainPools(instanceId, effect, rule, stats, drainMagnitude): EffectResult {
+  const applied: AppliedPoolDelta[] = [];
+  const lastStatId = rule.order[rule.order.length - 1];
+  let remaining = drainMagnitude;
+  let lethal = false;
+  for (const statId of rule.order) {
+    if (remaining === 0) break;
+    const before = stats[statId];
+    if (before === undefined) continue;
+    const result = applyPoolDelta(stats, statId, -remaining);
+    if (result.status === "rejected") continue;
+    stats[statId] = result.stat;
+    const delta = result.stat.current - before.current;
+    if (delta !== 0) applied.push({ statId, delta });
+    remaining += delta;
+    if (statId === lastStatId && drainMagnitude > 0 && result.hitMin) lethal = true;
+  }
+  return { instanceId, effect, applied, lethal };
+}`,
+    handRollLoc: 863,
+    fileCount: 4,
+    files: "effects.ts · projectiles.ts · resistance.ts · death.ts",
   },
   {
     id: "persistence",
@@ -549,13 +647,39 @@ const result = projectiles.settleProjectile(shot); // { status, hits: EffectResu
       "Autosave cadence + debounce tied to the tick loop",
       "A swappable backend: dev memory → file → SQL behind one interface",
     ],
-    code: `import { sqlPersistence, ensureSchema } from "@jgengine/sql";
+    usage: `import { sqlPersistence, ensureSchema } from "@jgengine/sql";
 import { createGameHost } from "@jgengine/node";
 
 await ensureSchema(pool);
 createGameHost({ runtimes, persistence: sqlPersistence(pool) });
 // or filePersistence(dir) / memoryPersistence() — same contract
 createGameRuntime({ gameId, save: { auto: "10s", scope: "player+chunks" }, commands });`,
+    handRoll: `// persist-plan: drain increments, split each player, emit only dirty profiles — excerpt from hostPersistence.ts
+const drained = drainPendingLeaderboardIncrements(snapshot.server.session);
+const leaderboard = drained.increments.map((entry) =>
+  entry.scope === "server" && entry.serverId === undefined
+    ? { ...entry, serverId: server.serverId }
+    : entry,
+);
+
+const sessionPlayers: Record<string, RuntimePlayerRow> = {};
+const profiles: PlayerProfileRecord[] = [];
+for (const userId of Object.keys(snapshot.players)) {
+  const player = snapshot.players[userId];
+  if (!player) continue;
+  const { persistent, session } = splitProfilePlayer(player);
+  sessionPlayers[userId] = { ...persistent, session };
+  if (
+    isSaveEnabled(save) &&
+    saveScopeIncludesPlayer(save.scope) &&
+    snapshot.dirty.players.includes(userId)
+  ) {
+    profiles.push(/* … serialized profile row … */);
+  }
+}`,
+    handRollLoc: 982,
+    fileCount: 4,
+    files: "hostPersistence.ts · snapshot.ts · sqlPersistence.ts · persistence.ts",
   },
   {
     id: "leaderboards",
@@ -569,7 +693,7 @@ createGameRuntime({ gameId, save: { auto: "10s", scope: "player+chunks" }, comma
       "Realtime subscriptions so the board updates live",
       "Per-profile stat rollups for a player's own standing",
     ],
-    code: `// Convex backend module:
+    usage: `// Convex backend module:
 import { createLeaderboardFunctions } from "@jgengine/convex";
 export const { getTop } = createLeaderboardFunctions({ auth: "anonymous" });
 
@@ -577,11 +701,36 @@ export const { getTop } = createLeaderboardFunctions({ auth: "anonymous" });
 import { createConvexLeaderboardReads } from "@jgengine/convex";
 const reads = createConvexLeaderboardReads(api, { gameId: "arena" });
 const { query, args } = reads.getTop({ stat: "kills", scope: "global", limit: 20 });`,
+    handRoll: `// find-or-insert a board row and increment it, per scope — excerpt from convex/server.ts
+for (const entry of entries) {
+  const serverId = entry.serverId as GenericId<"jgGameServers"> | undefined;
+  const candidates = await ctx.db
+    .query("jgLeaderboardRows")
+    .withIndex("by_user_scope_stat", (q) =>
+      q.eq("userId", entry.userId).eq("scope", entry.scope).eq("stat", entry.stat),
+    )
+    .collect();
+
+  const existing = candidates.find((row) => row.gameId === gameId && row.serverId === serverId);
+  if (existing) {
+    await ctx.db.patch(existing._id, { value: existing.value + entry.by, updatedAt: now });
+  } else {
+    await ctx.db.insert("jgLeaderboardRows", {
+      gameId, stat: entry.stat, scope: entry.scope,
+      serverId, userId: entry.userId, value: entry.by, updatedAt: now,
+    });
+  }
+}`,
+    handRollLoc: 201,
+    fileCount: 2,
+    files: "leaderboard.ts · convex/server.ts",
   },
 ];
 
 function SystemCard({ sys }: { sys: SystemDef }) {
-  const lines = nonEmpty(sys.code);
+  const usageLoc = nonEmpty(sys.usage);
+  const [jg, setJg] = useState(true);
+  const code = jg ? sys.usage : sys.handRoll;
   return (
     <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
       <div className="flex flex-col gap-2 border-b border-white/[0.08] p-4 sm:p-5">
@@ -603,16 +752,37 @@ function SystemCard({ sys }: { sys: SystemDef }) {
             ))}
           </ul>
         </div>
-        <div className="flex min-w-0 flex-col bg-[linear-gradient(180deg,rgba(227,176,84,0.05),transparent_45%)]">
-          <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-[#e3b054]">With JGengine · ~{lines} lines</span>
-            <CopyButton value={sys.code} />
+        <div className={`flex min-w-0 flex-col transition ${jg ? "bg-[linear-gradient(180deg,rgba(227,176,84,0.05),transparent_45%)] shadow-[inset_3px_0_0_#e3b054]" : ""}`}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
+            <div className="flex min-w-0 items-baseline gap-2 font-mono">
+              <span className={`text-xl font-extrabold tabular-nums transition-colors ${jg ? "text-white [text-shadow:0_0_15px_rgba(227,176,84,0.6)]" : "text-slate-300"}`}>{jg ? usageLoc : `~${sys.handRollLoc}`}</span>
+              <span className={`text-xs transition-colors ${jg ? "text-[#e3b054]" : "text-slate-600"}`}>{jg ? "lines with JGengine" : `lines to hand-roll · ${sys.fileCount} files`}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={jg}
+                onClick={() => setJg((v) => !v)}
+                className="relative inline-flex h-[30px] items-center overflow-hidden rounded-full border border-white/15 bg-black/40 font-mono text-[11px]"
+              >
+                <span className={`relative z-10 px-3 leading-[30px] transition-colors ${jg ? "text-slate-400" : "text-slate-100"}`}>Hand-roll</span>
+                <span className={`relative z-10 px-3 leading-[30px] transition-colors ${jg ? "font-bold text-[#17120b]" : "text-slate-400"}`}>JGengine</span>
+                <span className={`absolute inset-y-0.5 z-0 w-[calc(50%-2px)] rounded-full transition-all duration-300 ${jg ? "left-1/2 bg-gradient-to-b from-[#e3b054] to-[#8a6425] shadow-[0_0_12px_rgba(227,176,84,0.55)]" : "left-0.5 bg-gradient-to-b from-[#3a2f1d] to-[#241d12]"}`} />
+              </button>
+              <CopyButton value={code} />
+            </div>
           </div>
           <div className="min-w-0 overflow-x-auto">
-            <pre className="p-4 font-mono text-[11.5px] leading-relaxed text-slate-300">
-              <code>{sys.code}</code>
+            <pre className="max-h-[340px] overflow-y-auto p-4 font-mono text-[11.5px] leading-relaxed text-slate-300">
+              <code>{code}</code>
             </pre>
           </div>
+          {!jg && (
+            <div className="border-t border-white/[0.06] px-4 py-2 font-mono text-[10px] leading-relaxed text-slate-600">
+              excerpt · the full implementation is ≈{sys.handRollLoc} lines across {sys.files}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -675,7 +845,7 @@ function ComponentsIndex() {
         <SectionHeading
           eyebrow="The real leverage"
           title="Systems, not just widgets"
-          blurb="A gauge saves you an afternoon. These save you the subsystem. Each is a deep engine primitive where a few real lines stand in for an entire thing you'd otherwise build, host, and maintain — the 10× that actually compounds across games."
+          blurb="A gauge saves you an afternoon. These save you the subsystem. Flip any card to Hand-roll to see the real implementation — the hundreds of lines, across the actual files, that a few JGengine calls stand in for. This is the 10× that compounds across games."
         />
         <div className="mt-8 flex flex-col gap-6">
           {SYSTEMS.map((sys) => (
