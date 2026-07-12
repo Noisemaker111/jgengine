@@ -1,7 +1,10 @@
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { activeCharacter, talentTree } from "./game/characters";
 import { registerCommands } from "./game/commands";
+import { noteEquipped, noteGameNow, noteLevelUp } from "./game/feel";
 import { tickEnemies } from "./game/entities/enemies/ai";
 import { enemyById, levelXpFor } from "./game/entities/enemies/catalog";
 import { lootTables } from "./game/entities/enemies/loot-tables";
@@ -19,7 +22,7 @@ import {
 } from "./game/handroll";
 import { itemUseHandlers } from "./game/items/use-handlers";
 import { loadouts } from "./game/loadouts";
-import { grantXp, REGEN_PER_QUICKCHARGE_POINT } from "./game/progression/curves";
+import { grantXp } from "./game/progression/curves";
 import { MAIN_QUEST_IDS, QUEST_IDS, quests } from "./game/quests/catalog";
 import { session } from "./game/session";
 import { TRAVEL_STATIONS, zoneAt, zoneLevelAt } from "./game/world/sites";
@@ -100,7 +103,14 @@ function onLevelUp(ctx: GameContext, userId: string): void {
     ctx.scene.entity.stats.set(userId, "health", { max: health.max + 8 });
     ctx.scene.entity.stats.delta(userId, "health", health.max + 8);
   }
-  ctx.scene.entity.stats.delta(userId, "skillPoints", 1);
+  const tree = talentTree();
+  if (tree !== null) {
+    tree.grantPoints(1);
+    ctx.scene.entity.stats.set(userId, "skillPoints", { current: tree.pointsAvailable() });
+  } else {
+    ctx.scene.entity.stats.delta(userId, "skillPoints", 1);
+  }
+  noteLevelUp(ctx.time.now() * 1000);
   ctx.scene.entity.floatText({ instanceId: userId, text: "LEVEL UP! +1 SKILL POINT", kind: "pickup" });
 }
 
@@ -222,13 +232,16 @@ function onNewPlayer(ctx: GameContext): void {
   ctx.game.quest.accept(ctx.player.userId, QUEST_IDS.mongHunt);
   ctx.game.quest.accept(ctx.player.userId, QUEST_IDS.skagDogDays);
   session.reset(ctx);
+  noteEquipped(ctx.player.inventory.state("hotbar").slots[0]?.itemId ?? null);
+  if (activeCharacter() === null) setGamePhase(ctx, "menu");
 }
 
 function onTick(ctx: GameContext, dt: number): void {
   const nowMs = ctx.time.now() * 1000;
-  const quickcharge = ctx.scene.entity.stats.get(ctx.player.userId, "skill_quickcharge")?.current ?? 0;
+  noteGameNow(nowMs);
+  if (activeCharacter() === null) return;
   tickEnemies(ctx, dt);
-  tickShields(ctx, nowMs, dt, 1 + quickcharge * REGEN_PER_QUICKCHARGE_POINT);
+  tickShields(ctx, nowMs, dt);
   tickDots(ctx, nowMs);
   finishReloads(ctx, nowMs);
   tickFfyl(ctx, nowMs);

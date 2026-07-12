@@ -1,8 +1,10 @@
 import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
-import { LevelUpFlash, ToastStack } from "@jgengine/react/components";
+import { ToastStack } from "@jgengine/react/components";
 import { itemNameById } from "../content";
+import { DamageVignette, HitMarker, LevelUpBurst } from "./components/Feedback";
 import { CashPlate, CreditBadge, MissionTracker } from "./components/Mission";
-import { FfylOverlay, SkillsPanel, VendorPanel } from "./components/Overlays";
+import { FfylOverlay, VendorPanel } from "./components/Overlays";
+import { CharacterSelect, TalentsPanel } from "./components/Talents";
 import { VitalsPlate } from "./components/Vitals";
 import { AmmoPlate, Hotbar, ItemCard } from "./components/Weapon";
 import { BlackMarketPanel, EchoBox, EridiumPlate, TravelPanel, VaultEnding, ZoneBanner } from "./components/World";
@@ -35,7 +37,7 @@ export function GameUI() {
         <EchoBox />
       </HudPanel>
 
-      <HudPanel id="loot-toasts" anchor="top-right" order={1} compact="hide" interactive={false}>
+      <HudPanel id="loot-toasts" anchor="top-right" order={3} compact="hide" interactive={false}>
         <ToastStack
           action="loot.granted"
           className="flex flex-col items-end gap-1.5"
@@ -46,7 +48,7 @@ export function GameUI() {
               .join("   ");
             if (text === "") return null;
             return (
-              <div className="bg-black/60 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-amber-200">
+              <div className="bl2-plate bg-black/70 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-amber-200">
                 {text}
               </div>
             );
@@ -54,7 +56,7 @@ export function GameUI() {
         />
       </HudPanel>
 
-      <HudPanel id="credit" anchor="top" compact="hide" interactive={false}>
+      <HudPanel id="credit" anchor="top" order={0} compact="hide" interactive={false}>
         <CreditBadge />
       </HudPanel>
 
@@ -74,18 +76,16 @@ export function GameUI() {
         <AmmoPlate />
       </HudPanel>
 
+      <HitMarker />
+      <DamageVignette />
       <FfylOverlay />
       <VendorPanel />
-      <SkillsPanel />
+      <TalentsPanel />
       <TravelPanel />
       <BlackMarketPanel />
       <VaultEnding />
-
-      <LevelUpFlash className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-        <span className="text-3xl font-black uppercase tracking-[0.3em] text-amber-300 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
-          Level up
-        </span>
-      </LevelUpFlash>
+      <LevelUpBurst />
+      <CharacterSelect />
     </HudCanvas>
   );
 }

@@ -43,23 +43,3 @@ export function grantXp(ctx: GameContext, userId: string, amount: number): void 
   }
 }
 
-export interface SkillDef {
-  id: string;
-  statId: string;
-  name: string;
-  blurb: string;
-}
-
-export const SKILLS: readonly SkillDef[] = [
-  { id: "brawn", statId: "skill_brawn", name: "Brawn", blurb: "+8% max health per point" },
-  { id: "gunlust", statId: "skill_gunlust", name: "Gun Lust", blurb: "+4% gun damage per point" },
-  { id: "quickcharge", statId: "skill_quickcharge", name: "Quick Charge", blurb: "+15% shield recharge per point" },
-];
-
-export function skillByIdOrNull(id: string): SkillDef | null {
-  return SKILLS.find((skill) => skill.id === id) ?? null;
-}
-
-export const XP_PER_LEVEL_KILL_SCALE = 1;
-export const HEALTH_PER_BRAWN_POINT = 0.08;
-export const REGEN_PER_QUICKCHARGE_POINT = 0.15;

@@ -115,6 +115,19 @@ export function setupWorld(ctx: GameContext): void {
   RED_CHESTS.forEach((chest, index) => place("red_chest", chest.x, chest.z, `red_chest_${index}`));
   AMMO_CHESTS.forEach((chest, index) => place("ammo_chest", chest.x, chest.z, `ammo_chest_${index}`));
 
+  const propRng = seededRng("bl2-props");
+  const PROP_KINDS = ["rock_spire", "rock_spire", "dead_tree", "wreck"] as const;
+  for (let index = 0; index < 90; index += 1) {
+    const x = (propRng() - 0.5) * 1300;
+    const z = (propRng() - 0.5) * 1300;
+    const nearZone = ZONES.some(
+      (zone) => Math.hypot(x - zone.center.x, z - zone.center.z) < zone.flattenRadius * 0.8,
+    );
+    if (nearZone) continue;
+    const kind = PROP_KINDS[Math.floor(propRng() * PROP_KINDS.length)]!;
+    place(kind, x, z, `prop_${index}`);
+  }
+
   const barrelRng = seededRng("bl2-barrels");
   ZONES.forEach((zone, zoneIndex) => {
     for (let index = 0; index < 4; index += 1) {

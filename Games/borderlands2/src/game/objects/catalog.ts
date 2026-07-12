@@ -14,6 +14,9 @@ export const worldObjects: readonly WorldObjectDef[] = [
   { id: "bandit_barrel", name: "Explosive Barrel", color: "#b3452a", height: 0.9 },
   { id: "fast_travel", name: "Fast Travel Station", color: "#38e1ff", height: 2.8 },
   { id: "black_market", name: "Crazy Earl's Black Market", color: "#8a2be2", height: 2.2 },
+  { id: "rock_spire", name: "Rock Spire", color: "#8a5a38", height: 3 },
+  { id: "dead_tree", name: "Dead Tree", color: "#4a3a2c", height: 2.4 },
+  { id: "wreck", name: "Bandit Wreck", color: "#5e564a", height: 1.2 },
 ];
 
 const byId = new Map(worldObjects.map((object) => [object.id, object]));
