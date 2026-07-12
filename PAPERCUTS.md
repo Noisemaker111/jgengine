@@ -91,3 +91,7 @@ ship worker replied 'running in background, will report' and its TaskOutput id 4
 2026-07-12T04:59:14.718Z — fable-5 — Claude
 
 delegated verify/screenshot workers twice re-delegated to sub-workers and returned 'waiting on the worker' as their result → had to re-dispatch with explicit 'do not spawn sub-agents' briefs
+
+2026-07-12T05:26:39.405Z — fable-5 — Claude
+
+PR #563 squash-merge was a no-op: fix branch's net diff for generated/index.ts canceled against merge-base since branch already contained the clobbering commit landed separately via #550 → main stayed red after 'merge'; had to re-cut a fresh branch off main as #566
