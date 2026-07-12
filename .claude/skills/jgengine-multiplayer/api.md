@@ -335,6 +335,8 @@
 - `VoicePosition` (interface): interface VoicePosition — ⚠ undocumented
 - `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
 - `WS_PROTOCOL_VERSION` (const): const WS_PROTOCOL_VERSION: 1 — ⚠ undocumented
+- `WorldGameHost` (interface): interface WorldGameHost extends GameHost — A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change.
+- `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.
 - `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
 - `WsBackend` (type): type WsBackend = GameBackend & { pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { gameId: string; code: string }) => Promise<JoinSe… — ⚠ undocumented
 - `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutFn?: typeof s… — ⚠ undocumented
@@ -365,6 +367,7 @@
 - `createReadsHandler` (function): function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler — ⚠ undocumented
 - `createSocketIoBackend` (function): function createSocketIoBackend(options: SocketIoBackendOptions): WsBackend — ⚠ undocumented
 - `createVoiceChannelRouter` (function): function createVoiceChannelRouter(channels?: readonly VoiceChannelDef[]): VoiceChannelRouter — ⚠ undocumented
+- `createWorldGameHost` (function): function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost — The GameContext-loop counterpart of the reducer `createGameHost`: a structural {@link GameHost} that serves each world's full `WorldSnapshot` as `serverState`, so the existing ws router, `createWsBackend`, and the shell's `attachWorldSync` carry host-authoritative GameContext worlds with zero changes to any of them. The harness owns the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.
 - `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
 - `decodePeerSignal` (function): function decodePeerSignal(code: string): PeerSignalPayload | null — ⚠ undocumented
 - `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
@@ -486,3 +489,9 @@
 - `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
 - `computeVoiceGain` (function): function computeVoiceGain(def: VoiceChannelDef, distance: number | null): number — ⚠ undocumented
 - `createVoiceChannelRouter` (function): function createVoiceChannelRouter(channels?: readonly VoiceChannelDef[]): VoiceChannelRouter — ⚠ undocumented
+
+## @jgengine/ws/worldHost
+
+- `WorldGameHost` (interface): interface WorldGameHost extends GameHost — A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change.
+- `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.
+- `createWorldGameHost` (function): function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost — The GameContext-loop counterpart of the reducer `createGameHost`: a structural {@link GameHost} that serves each world's full `WorldSnapshot` as `serverState`, so the existing ws router, `createWsBackend`, and the shell's `attachWorldSync` carry host-authoritative GameContext worlds with zero changes to any of them. The harness owns the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.
