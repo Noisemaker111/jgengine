@@ -54,6 +54,17 @@ export interface SpawnRequest {
   laneId?: number;
 }
 
+export type SpawnPointDistanceBias = "near" | "far" | "none";
+
+/** Semantic options for selecting a spawn point without exposing weighting internals. */
+export interface SpawnPointSelectionOptions {
+  candidates: readonly NavPoint[];
+  avoid?: readonly NavPoint[];
+  random: () => number;
+  distanceBias?: SpawnPointDistanceBias;
+  biasStrength?: number;
+}
+
 export interface DirectorStep {
   state: SpawnDirectorState;
   spawns: SpawnRequest[];
@@ -193,7 +204,14 @@ export function advanceSpawnDirector(
     if (spawnPoints !== undefined && spawnPoints.length > 0) {
       const [roll, nextRng] = nextRandom(rng);
       rng = nextRng;
-      const point = pickSpawnPoint(spawnPoints, playerPositions, { roll, bias: config.spawnPointBias });
+      const bias = config.spawnPointBias ?? 1;
+      const point = pickSpawnPoint({
+        candidates: spawnPoints,
+        avoid: playerPositions,
+        random: () => roll,
+        distanceBias: bias < 0 ? "far" : bias > 0 ? "near" : "none",
+        biasStrength: Math.abs(bias),
+      });
       if (point !== null) {
         spawn.point = point;
         spawn.laneId = spawnPoints.indexOf(point);
@@ -211,30 +229,32 @@ export function advanceSpawnDirector(
   };
 }
 
-export function pickSpawnPoint(
-  points: readonly NavPoint[],
-  players: readonly NavPoint[],
-  options: { roll: number; bias?: number },
-): NavPoint | null {
-  if (points.length === 0) return null;
-  const bias = options.bias ?? 1;
+/** Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness. */
+export function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null {
+  const { candidates, avoid = [], random, distanceBias = "near", biasStrength = 1 } = options;
+  if (candidates.length === 0) return null;
+  if (distanceBias === "none" || avoid.length === 0 || biasStrength === 0) {
+    return candidates[Math.min(candidates.length - 1, Math.floor(clamp01(random()) * candidates.length))]!;
+  }
+
+  const exponent = distanceBias === "far" ? biasStrength : -biasStrength;
   const weights: number[] = [];
   let total = 0;
-  for (const point of points) {
+  for (const point of candidates) {
     let nearest = Number.POSITIVE_INFINITY;
-    for (const player of players) {
-      const d = Math.hypot(point[0] - player[0], point[1] - player[1]);
-      if (d < nearest) nearest = d;
+    for (const avoidedPoint of avoid) {
+      const distance = Math.hypot(point[0] - avoidedPoint[0], point[1] - avoidedPoint[1]);
+      if (distance < nearest) nearest = distance;
     }
-    const distance = nearest === Number.POSITIVE_INFINITY ? 0 : nearest;
-    const weight = Math.max(1e-6, (1 + distance) ** -bias);
+    const weight = Math.max(1e-6, (1 + nearest) ** exponent);
     weights.push(weight);
     total += weight;
   }
-  let cursor = clamp01(options.roll) * total;
-  for (let i = 0; i < points.length; i += 1) {
-    cursor -= weights[i]!;
-    if (cursor <= 0) return points[i]!;
+
+  let cursor = clamp01(random()) * total;
+  for (let index = 0; index < candidates.length; index += 1) {
+    cursor -= weights[index]!;
+    if (cursor <= 0) return candidates[index]!;
   }
-  return points[points.length - 1]!;
+  return candidates[candidates.length - 1]!;
 }
