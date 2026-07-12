@@ -10,7 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@games/block-stacker": "workspace:*",
+    "@games/nonogram": "workspace:*",
     "@jgengine/core": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/sql": "workspace:*",
