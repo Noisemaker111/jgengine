@@ -2,6 +2,7 @@ import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
 import { building, environment, sky, terrain, type WorldFeature } from "@jgengine/core/world/features";
 import { PANDORA } from "./game/palette";
+import { ROAD_FLATTEN_MASKS } from "./game/world/level";
 import { WORLD_BOUNDS, ZONES } from "./game/world/zones";
 
 export const PANDORA_SEED = "pandora-arid-badlands-2026";
@@ -15,10 +16,13 @@ const terrainDescriptor = terrain({
   octaves: 5,
   ridged: true,
   colors: { low: PANDORA.rockLow, high: PANDORA.rockHigh },
-  flatten: ZONES.map((zone) => ({
-    center: [zone.center.x, zone.center.z] as const,
-    radius: zone.flattenRadius,
-  })),
+  flatten: [
+    ...ZONES.map((zone) => ({
+      center: [zone.center.x, zone.center.z] as const,
+      radius: zone.flattenRadius,
+    })),
+    ...ROAD_FLATTEN_MASKS,
+  ],
 });
 
 export const world: WorldFeature = environment({

@@ -17,6 +17,18 @@ export const worldObjects: readonly WorldObjectDef[] = [
   { id: "rock_spire", name: "Rock Spire", color: "#8a5a38", height: 3 },
   { id: "dead_tree", name: "Dead Tree", color: "#4a3a2c", height: 2.4 },
   { id: "wreck", name: "Bandit Wreck", color: "#5e564a", height: 1.2 },
+  { id: "barricade", name: "Scrap Barricade", color: "#6b5a44", height: 1.6 },
+  { id: "watchtower", name: "Bandit Watchtower", color: "#5a4a36", height: 5 },
+  { id: "tent", name: "Bandit Tent", color: "#7a4432", height: 1.8 },
+  { id: "signpost", name: "Signpost", color: "#8a6a3c", height: 2.4 },
+  { id: "street_lamp", name: "Street Lamp", color: "#3a4450", height: 3.4 },
+  { id: "road_marker", name: "Road Marker", color: "#a06a3c", height: 1 },
+  { id: "bus_wreck", name: "Crashed Bus", color: "#c9a23a", height: 2.6 },
+  { id: "water_tower", name: "Fyrestone Water Tower", color: "#a06a3c", height: 7 },
+  { id: "bone_arch", name: "Skag Bone Arch", color: "#e0d6c2", height: 2.6 },
+  { id: "vault_gate", name: "Vault Gate", color: "#3a2c4a", height: 8 },
+  { id: "cover_crate", name: "Cover Crate", color: "#6b5a44", height: 1.1 },
+  { id: "banner_pole", name: "Bandit Banner", color: "#7a2c1e", height: 3.2 },
 ];
 
 const byId = new Map(worldObjects.map((object) => [object.id, object]));

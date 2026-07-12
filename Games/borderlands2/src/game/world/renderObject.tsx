@@ -191,6 +191,260 @@ function Wreck({ seedIndex }: { seedIndex: number }) {
   );
 }
 
+function Barricade({ seedIndex }: { seedIndex: number }) {
+  const lean = ((seedIndex % 5) - 2) * 0.05;
+  return (
+    <group position={[0, -0.5, 0]} rotation={[0, seedIndex * 0.7, lean]}>
+      <mesh position={[0, 0.7, 0]} castShadow>
+        <boxGeometry args={[3.2, 1.4, 0.35]} />
+        <meshStandardMaterial color="#6b5a44" flatShading />
+      </mesh>
+      <mesh position={[-0.8, 1.5, 0]} rotation={[0, 0, 0.3]} castShadow>
+        <boxGeometry args={[0.5, 0.9, 0.2]} />
+        <meshStandardMaterial color="#8a7a5c" flatShading />
+      </mesh>
+      <mesh position={[0.9, 1.4, 0.05]} rotation={[0, 0, -0.2]} castShadow>
+        <boxGeometry args={[0.4, 0.7, 0.2]} />
+        <meshStandardMaterial color="#5a4a36" flatShading />
+      </mesh>
+      <mesh position={[0, 0.35, 0.25]} rotation={[0.5, 0, 0]}>
+        <boxGeometry args={[2.6, 0.18, 0.18]} />
+        <meshStandardMaterial color="#3a332c" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function Watchtower() {
+  return (
+    <group position={[0, -0.5, 0]}>
+      {[
+        [-0.9, -0.9],
+        [0.9, -0.9],
+        [-0.9, 0.9],
+        [0.9, 0.9],
+      ].map(([x, z], index) => (
+        <mesh key={index} position={[x!, 1.8, z!]} castShadow>
+          <boxGeometry args={[0.22, 3.6, 0.22]} />
+          <meshStandardMaterial color="#5a4a36" flatShading />
+        </mesh>
+      ))}
+      <mesh position={[0, 3.7, 0]} castShadow>
+        <boxGeometry args={[2.6, 0.2, 2.6]} />
+        <meshStandardMaterial color="#6b5a44" flatShading />
+      </mesh>
+      <mesh position={[0, 4.2, 0]} castShadow>
+        <boxGeometry args={[2.7, 0.8, 0.18]} />
+        <meshStandardMaterial color="#4a3e30" flatShading />
+      </mesh>
+      <mesh position={[0, 4.9, 0]} castShadow>
+        <boxGeometry args={[1.4, 0.14, 1.4]} />
+        <meshStandardMaterial color="#3a332c" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function Tent({ seedIndex }: { seedIndex: number }) {
+  return (
+    <group position={[0, -0.5, 0]} rotation={[0, seedIndex * 1.1, 0]}>
+      <mesh position={[0, 0.8, 0]} rotation={[0, 0, Math.PI / 4]} castShadow>
+        <boxGeometry args={[1.6, 1.6, 2.2]} />
+        <meshStandardMaterial color="#7a4432" flatShading />
+      </mesh>
+      <mesh position={[0, 0.2, 1.05]}>
+        <boxGeometry args={[1.4, 0.4, 0.1]} />
+        <meshStandardMaterial color="#2a1c14" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function Signpost({ seedIndex }: { seedIndex: number }) {
+  return (
+    <group position={[0, -0.5, 0]} rotation={[0, seedIndex, 0]}>
+      <mesh position={[0, 1.1, 0]} castShadow>
+        <boxGeometry args={[0.14, 2.2, 0.14]} />
+        <meshStandardMaterial color="#5a4a36" flatShading />
+      </mesh>
+      <mesh position={[0.35, 1.9, 0]} rotation={[0, 0, 0.06]} castShadow>
+        <boxGeometry args={[1.2, 0.28, 0.06]} />
+        <meshStandardMaterial color="#c9a23a" flatShading />
+      </mesh>
+      <mesh position={[-0.3, 1.55, 0]} rotation={[0, 0.4, -0.08]} castShadow>
+        <boxGeometry args={[1, 0.26, 0.06]} />
+        <meshStandardMaterial color="#a06a3c" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function StreetLamp() {
+  return (
+    <group position={[0, -0.5, 0]}>
+      <mesh position={[0, 1.6, 0]} castShadow>
+        <cylinderGeometry args={[0.07, 0.1, 3.2, 6]} />
+        <meshStandardMaterial color="#3a4450" flatShading />
+      </mesh>
+      <mesh position={[0.3, 3.2, 0]}>
+        <boxGeometry args={[0.8, 0.12, 0.2]} />
+        <meshStandardMaterial color="#3a4450" flatShading />
+      </mesh>
+      <mesh position={[0.65, 3.08, 0]}>
+        <boxGeometry args={[0.26, 0.14, 0.26]} />
+        <meshStandardMaterial color="#ffd98a" emissive="#ffd98a" emissiveIntensity={1.4} />
+      </mesh>
+    </group>
+  );
+}
+
+function RoadMarker({ seedIndex }: { seedIndex: number }) {
+  return (
+    <group position={[0, -0.5, 0]} rotation={[0, seedIndex * 2.1, 0]}>
+      <mesh position={[0, 0.5, 0]} castShadow>
+        <cylinderGeometry args={[0.16, 0.28, 1, 5]} />
+        <meshStandardMaterial color="#8a5a38" flatShading />
+      </mesh>
+      <mesh position={[0, 0.95, 0]}>
+        <boxGeometry args={[0.3, 0.14, 0.3]} />
+        <meshStandardMaterial color="#ffb400" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function BusWreck() {
+  return (
+    <group position={[0, -0.5, 0]} rotation={[0, 0.6, 0.1]}>
+      <mesh position={[0, 1.2, 0]} castShadow>
+        <boxGeometry args={[6.5, 2.2, 2.2]} />
+        <meshStandardMaterial color="#c9a23a" flatShading />
+      </mesh>
+      <mesh position={[0, 1.7, 0]} castShadow>
+        <boxGeometry args={[6.6, 0.6, 2.24]} />
+        <meshStandardMaterial color="#8a6a1e" flatShading />
+      </mesh>
+      {[-2.4, -0.8, 0.8, 2.4].map((x, index) => (
+        <mesh key={index} position={[x, 1.35, 1.12]}>
+          <boxGeometry args={[1, 0.7, 0.04]} />
+          <meshStandardMaterial color="#1c2228" flatShading />
+        </mesh>
+      ))}
+      <mesh position={[-2.2, 0.2, 1.1]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.5, 0.5, 0.3, 10]} />
+        <meshStandardMaterial color="#26221e" flatShading />
+      </mesh>
+      <mesh position={[2.2, 0.15, -1.1]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.5, 0.5, 0.3, 10]} />
+        <meshStandardMaterial color="#26221e" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function WaterTower() {
+  return (
+    <group position={[0, -0.5, 0]}>
+      {[
+        [-1, -1],
+        [1, -1],
+        [-1, 1],
+        [1, 1],
+      ].map(([x, z], index) => (
+        <mesh key={index} position={[x! * 0.9, 2.2, z! * 0.9]} rotation={[0, 0, x! * 0.08]} castShadow>
+          <boxGeometry args={[0.2, 4.4, 0.2]} />
+          <meshStandardMaterial color="#5a4a36" flatShading />
+        </mesh>
+      ))}
+      <mesh position={[0, 5.2, 0]} castShadow>
+        <cylinderGeometry args={[1.7, 1.9, 2.2, 10]} />
+        <meshStandardMaterial color="#a06a3c" flatShading />
+      </mesh>
+      <mesh position={[0, 6.5, 0]} castShadow>
+        <coneGeometry args={[1.9, 0.9, 10]} />
+        <meshStandardMaterial color="#7a4a28" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function BoneArch({ seedIndex }: { seedIndex: number }) {
+  return (
+    <group position={[0, -0.5, 0]} rotation={[0, seedIndex * 1.7, 0]}>
+      <mesh position={[-0.9, 1, 0]} rotation={[0, 0, 0.5]} castShadow>
+        <cylinderGeometry args={[0.12, 0.22, 2.6, 6]} />
+        <meshStandardMaterial color="#e0d6c2" flatShading />
+      </mesh>
+      <mesh position={[0.9, 1, 0]} rotation={[0, 0, -0.5]} castShadow>
+        <cylinderGeometry args={[0.12, 0.22, 2.6, 6]} />
+        <meshStandardMaterial color="#d4c8b0" flatShading />
+      </mesh>
+      <mesh position={[0, 0.35, 0.4]} rotation={[0.3, 0, 1.2]}>
+        <cylinderGeometry args={[0.08, 0.14, 1.2, 5]} />
+        <meshStandardMaterial color="#cfc2a8" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function VaultGate() {
+  return (
+    <group position={[0, -0.5, 0]}>
+      <mesh position={[-2.6, 3, 0]} castShadow>
+        <boxGeometry args={[1.2, 6, 1.2]} />
+        <meshStandardMaterial color="#3a2c4a" flatShading />
+      </mesh>
+      <mesh position={[2.6, 3, 0]} castShadow>
+        <boxGeometry args={[1.2, 6, 1.2]} />
+        <meshStandardMaterial color="#3a2c4a" flatShading />
+      </mesh>
+      <mesh position={[0, 6.4, 0]} castShadow>
+        <boxGeometry args={[6.8, 1.4, 1]} />
+        <meshStandardMaterial color="#4a3a5e" flatShading />
+      </mesh>
+      <mesh position={[0, 3.4, 0]}>
+        <boxGeometry args={[4, 4.4, 0.2]} />
+        <meshStandardMaterial color="#c05cff" emissive="#8a2be2" emissiveIntensity={0.9} transparent opacity={0.4} />
+      </mesh>
+      <pointLight position={[0, 4, 1.5]} color="#c05cff" intensity={10} distance={16} />
+    </group>
+  );
+}
+
+function CoverCrate({ seedIndex }: { seedIndex: number }) {
+  return (
+    <group position={[0, -0.5, 0]} rotation={[0, seedIndex * 0.9, 0]}>
+      <mesh position={[0, 0.55, 0]} castShadow>
+        <boxGeometry args={[1.1, 1.1, 1.1]} />
+        <meshStandardMaterial color={seedIndex % 2 === 0 ? "#6b5a44" : "#5e6455"} flatShading />
+      </mesh>
+      <mesh position={[0, 0.55, 0.56]}>
+        <boxGeometry args={[0.7, 0.7, 0.02]} />
+        <meshStandardMaterial color="#c9a23a" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function BannerPole({ seedIndex }: { seedIndex: number }) {
+  return (
+    <group position={[0, -0.5, 0]} rotation={[0, seedIndex * 1.3, 0]}>
+      <mesh position={[0, 1.6, 0]} castShadow>
+        <cylinderGeometry args={[0.06, 0.1, 3.2, 6]} />
+        <meshStandardMaterial color="#3a332c" flatShading />
+      </mesh>
+      <mesh position={[0.45, 2.5, 0]}>
+        <boxGeometry args={[0.9, 1.2, 0.05]} />
+        <meshStandardMaterial color="#7a2c1e" flatShading />
+      </mesh>
+      <mesh position={[0.45, 2.5, 0.03]}>
+        <boxGeometry args={[0.5, 0.6, 0.02]} />
+        <meshStandardMaterial color="#e8e4da" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
 function seedFromInstance(instanceId: string): number {
   let hash = 0;
   for (let index = 0; index < instanceId.length; index += 1) hash = (hash * 31 + instanceId.charCodeAt(index)) | 0;
@@ -222,6 +476,30 @@ export function renderPandoraObject(object: SceneObject): ReactNode {
       return <DeadTree seedIndex={seedIndex} />;
     case "wreck":
       return <Wreck seedIndex={seedIndex} />;
+    case "barricade":
+      return <Barricade seedIndex={seedIndex} />;
+    case "watchtower":
+      return <Watchtower />;
+    case "tent":
+      return <Tent seedIndex={seedIndex} />;
+    case "signpost":
+      return <Signpost seedIndex={seedIndex} />;
+    case "street_lamp":
+      return <StreetLamp />;
+    case "road_marker":
+      return <RoadMarker seedIndex={seedIndex} />;
+    case "bus_wreck":
+      return <BusWreck />;
+    case "water_tower":
+      return <WaterTower />;
+    case "bone_arch":
+      return <BoneArch seedIndex={seedIndex} />;
+    case "vault_gate":
+      return <VaultGate />;
+    case "cover_crate":
+      return <CoverCrate seedIndex={seedIndex} />;
+    case "banner_pole":
+      return <BannerPole seedIndex={seedIndex} />;
     default:
       return undefined;
   }

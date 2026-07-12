@@ -3,6 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { rememberHome } from "../entities/enemies/ai";
 import { enemyById, levelHealthMult } from "../entities/enemies/catalog";
+import { placeLevel } from "./level";
 import {
   BLACK_MARKET_POS,
   CLAPTRAP_POS,
@@ -138,6 +139,7 @@ export function setupWorld(ctx: GameContext): void {
   });
 
   ctx.scene.entity.spawn("claptrap", { id: "claptrap_1", position: grounded(ctx, CLAPTRAP_POS[0], CLAPTRAP_POS[2]) });
+  placeLevel(ctx);
 
   planClusters(ctx);
   for (const member of clusterMembers) spawnMember(ctx, member);

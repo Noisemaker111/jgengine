@@ -358,8 +358,61 @@ export function ClaptrapRig({ entity }: { entity: SceneEntity }) {
   );
 }
 
+const NPC_STYLES: Record<string, { coat: string; skin: string; hat: string }> = {
+  dr_zed: { coat: "#d8d4c8", skin: "#c99a72", hat: "#e8e4da" },
+  marcus: { coat: "#8a6a1e", skin: "#b8865a", hat: "#4a3a2c" },
+  hammerlock: { coat: "#3a4a5e", skin: "#8a6a4a", hat: "#26303c" },
+};
+
+export function NpcRig({ entity }: { entity: SceneEntity }) {
+  const { root, phase } = useGait(entity.id);
+  const torso = useRef<Group>(null);
+  const style = NPC_STYLES[entity.name] ?? NPC_STYLES.dr_zed!;
+  useFrame((state) => {
+    if (torso.current) torso.current.position.y = 0.66 + Math.sin(state.clock.elapsedTime * 1.8 + phase) * 0.015;
+    if (root.current) root.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5 + phase) * 0.25;
+  });
+  return (
+    <group ref={root}>
+      <group ref={torso} position={[0, 0.66, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.52, 0.66, 0.3]} />
+          <meshStandardMaterial color={style.coat} flatShading />
+        </mesh>
+        <group position={[0, 0.52, 0]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.3, 0.3, 0.28]} />
+            <meshStandardMaterial color={style.skin} flatShading />
+          </mesh>
+          <mesh position={[0, 0.2, 0]}>
+            <boxGeometry args={[0.34, 0.1, 0.32]} />
+            <meshStandardMaterial color={style.hat} flatShading />
+          </mesh>
+        </group>
+        <mesh position={[-0.33, -0.05, 0]} castShadow>
+          <boxGeometry args={[0.13, 0.5, 0.13]} />
+          <meshStandardMaterial color={style.coat} flatShading />
+        </mesh>
+        <mesh position={[0.33, -0.05, 0]} castShadow>
+          <boxGeometry args={[0.13, 0.5, 0.13]} />
+          <meshStandardMaterial color={style.coat} flatShading />
+        </mesh>
+      </group>
+      <mesh position={[-0.14, 0.18, 0]} castShadow>
+        <boxGeometry args={[0.15, 0.36, 0.15]} />
+        <meshStandardMaterial color="#2c2620" flatShading />
+      </mesh>
+      <mesh position={[0.14, 0.18, 0]} castShadow>
+        <boxGeometry args={[0.15, 0.36, 0.15]} />
+        <meshStandardMaterial color="#2c2620" flatShading />
+      </mesh>
+    </group>
+  );
+}
+
 export function renderPandoraEntity(entity: SceneEntity): ReactNode {
   if (entity.name === "claptrap") return <ClaptrapRig entity={entity} />;
+  if (NPC_STYLES[entity.name] !== undefined) return <NpcRig entity={entity} />;
   const def = enemyById(entity.name);
   if (def === undefined) return undefined;
   const scale = def.scale;
