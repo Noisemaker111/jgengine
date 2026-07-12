@@ -6,7 +6,7 @@ import { useRecords, useRun } from "./useRun";
 function ScreenShell({ children }: { children: ReactNode }) {
   return (
     <div
-      className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center justify-center bg-gradient-to-b from-black/65 via-black/25 to-black/70"
+      className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center justify-center bg-gradient-to-b from-black/65 via-black/25 to-black/70 px-6 text-center"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + var(--jg-hud-dock-clearance, 0px))" }}
     >
       {children}
@@ -29,7 +29,7 @@ function ActionButton({ label, onClick }: { label: string; onClick: () => void }
 function StatLine({ run }: { run: ReturnType<typeof useRun> }) {
   const accuracy = run.shotsFired === 0 ? 0 : Math.round((run.shotsHit / run.shotsFired) * 100);
   return (
-    <div className="mt-4 flex gap-6 text-sm font-semibold uppercase tracking-wider text-slate-300">
+    <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold uppercase tracking-wider text-slate-300">
       <span>
         Score <span className="text-cyan-200">{run.score}</span>
       </span>
@@ -78,7 +78,7 @@ export function RunScreens() {
     return (
       <ScreenShell>
         <span className="text-xs font-bold uppercase tracking-[0.5em] text-amber-400">The salvage yard</span>
-        <h1 className="mt-2 text-6xl font-black uppercase tracking-[0.15em] text-slate-100 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+        <h1 className="mt-2 text-4xl font-black uppercase tracking-[0.1em] text-slate-100 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] sm:text-6xl sm:tracking-[0.15em]">
           Loot Shooter
         </h1>
         <p className="mt-4 max-w-md text-center text-sm font-medium leading-relaxed text-slate-300">
@@ -94,7 +94,7 @@ export function RunScreens() {
   if (run.status === "victory") {
     return (
       <ScreenShell>
-        <span className="text-5xl font-black uppercase tracking-[0.2em] text-amber-300 drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
+        <span className="text-3xl font-black uppercase tracking-[0.15em] text-amber-300 drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)] sm:text-5xl sm:tracking-[0.2em]">
           Yard secured
         </span>
         <span className="mt-2 text-sm font-semibold uppercase tracking-widest text-slate-300">
@@ -102,7 +102,7 @@ export function RunScreens() {
         </span>
         <StatLine run={run} />
         <RecordsLine />
-        <div className="flex gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           <ActionButton label="Endless mode" onClick={endless} />
           <ActionButton label="Run it back" onClick={start} />
         </div>
@@ -113,7 +113,7 @@ export function RunScreens() {
   if (run.status === "defeat") {
     return (
       <ScreenShell>
-        <span className="text-5xl font-black uppercase tracking-[0.2em] text-rose-500 drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
+        <span className="text-3xl font-black uppercase tracking-[0.15em] text-rose-500 drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)] sm:text-5xl sm:tracking-[0.2em]">
           Operative down
         </span>
         <span className="mt-2 text-sm font-semibold uppercase tracking-widest text-slate-300">
