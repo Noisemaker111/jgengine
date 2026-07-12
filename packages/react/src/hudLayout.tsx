@@ -397,6 +397,7 @@ export function HudCanvas({
               flexDirection: "column",
               gap: REGION_GAP,
               pointerEvents: "none",
+              zIndex: 1,
               ...REGION_LAYOUT[anchor],
             }}
           />

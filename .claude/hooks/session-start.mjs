@@ -134,7 +134,9 @@ emit(
       `already ran (queue auto-merge (squash) if required checks block the instant merge). The ` +
       `session ends only when the PR is merged AND the Actions run on its merge commit on ` +
       `${defaultBranch} is green. Nothing in this repo's Actions takes longer than ~1 minute: ` +
-      `after the merge, have a cheap worker sleep ~60s then read the merge commit's runs. ` +
+      `after the merge, have a cheap worker wait ~60s with one foreground Bash call — ` +
+      `bun -e 'await Bun.sleep(60000)' (bare sleep is harness-blocked, backgrounded waits die ` +
+      `with the turn) — then read the merge commit's runs in the same turn. ` +
       `Green → unsubscribe + stop. Red → fix forward from origin/${defaultBranch}. Still ` +
       `pending on a second look → treat as broken and investigate. Never arm send_later ` +
       `check-ins or scheduled remote sessions for CI. No worktrees — every session is its ` +

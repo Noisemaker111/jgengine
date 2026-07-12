@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const HEADER = `# Papercuts
@@ -32,9 +32,7 @@ export function appendPapercut(
     writeFileSync(file, `${header}\n---\n\n${entry}`);
     return;
   }
-  const existing = readFileSync(file, "utf8");
-  const sep = existing.endsWith("\n\n") ? "" : existing.endsWith("\n") ? "\n" : "\n\n";
-  appendFileSync(file, `${sep}${entry}`);
+  appendFileSync(file, `\n${entry}`);
 }
 
 function gitUser(): string {

@@ -25,6 +25,12 @@ if (!branch || branch === "HEAD") process.exit(0);
 const count = Number(git("rev-list", "--count", "HEAD", "--not", "--remotes"));
 if (!Number.isFinite(count) || count <= 0) process.exit(0);
 
+const defaultBranch =
+  (git("symbolic-ref", "--quiet", "refs/remotes/origin/HEAD") ?? "").split("/").pop() || "main";
+const remoteMain = `origin/${defaultBranch}`;
+if (git("merge-base", "--is-ancestor", "HEAD", remoteMain) !== null) process.exit(0);
+if (git("diff", "--quiet", `${remoteMain}...HEAD`) !== null) process.exit(0);
+
 const reason =
   `⚠️ ${count} commit${count === 1 ? "" : "s"} on branch "${branch}" ` +
   `are not on any remote. This is an ephemeral cloud container — if it is reclaimed, that work is lost.\n\n` +

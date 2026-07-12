@@ -104,7 +104,7 @@ outerRetry: for (const [command, positions] of commandPositions) {
 // one's and explicitly corrects it (e.g. "run synchronously", "don't
 // background") — the shape of a relaunch after an unusable first result.
 const RELAUNCH_HINTS =
-  /\b(synchronous(ly)?|don'?t background|do not background|explicit(ly)?|re-?launch|redo|instead of backgrounding|actual results?|real (report|answer|result))\b/i;
+  /(don'?t background|do not background|never background|instead of backgrounding|re-?launch|unusable (first )?result|execute (it |this )?in this turn)/i;
 
 function wordSet(text) {
   return new Set((text ?? "").toLowerCase().match(/[a-z]{4,}/g) ?? []);
@@ -122,7 +122,11 @@ outer: for (let i = 0; i < agentCalls.length; i += 1) {
   for (let j = i + 1; j < agentCalls.length; j += 1) {
     const promptA = agentCalls[i].input?.prompt ?? "";
     const promptB = agentCalls[j].input?.prompt ?? "";
-    if (overlapRatio(wordSet(promptA), wordSet(promptB)) > 0.4 && RELAUNCH_HINTS.test(promptB)) {
+    if (
+      overlapRatio(wordSet(promptA), wordSet(promptB)) > 0.5 &&
+      RELAUNCH_HINTS.test(promptB) &&
+      !RELAUNCH_HINTS.test(promptA)
+    ) {
       relaunchedAgent = agentCalls[j].input?.description ?? "a subagent";
       break outer;
     }
