@@ -118,3 +118,7 @@ drag-and-drop ActionBar edit → ActionBar() drop handler referenced commands wi
 2026-07-12T17:33:16.570Z — opus — Claude
 
 gen:skill-api run before node_modules finished installing silently mis-parsed several packages and overwrote scripts/api-doc-baseline.json with corrupted (dropped) entries, then surfaced only downstream as a bogus check-types 'new debt' failure — no error at gen time
+
+2026-07-12T19:17:09.749Z — opus-4.8 — Claude
+
+phase-7a ship worker pushed the branch onto pre-#595-merge history, so PR #596 showed mergeable_state=dirty; local HEAD was actually clean one-commit-on-main, fix was a force-with-lease push, not a rebase — a merge worker should verify origin/main's real tip before diagnosing a PR conflict
