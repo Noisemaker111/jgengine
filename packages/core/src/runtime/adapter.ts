@@ -1,43 +1,58 @@
 export type MultiplayerTopology = "shared" | "lobbies" | "private";
 
+/**
+ * Where the world simulation is authoritative. `"client"` (default) keeps the historical model — each client runs
+ * its own `onTick` and syncs only presence/feeds/chat. `"server"` opts into host-authoritative replication: the
+ * host runs the loop, and the shell mirrors the server's world into the local `ctx` instead of simulating locally.
+ */
+export type MultiplayerAuthority = "server" | "client";
+
 export type MultiplayerAdapterConfig =
-  | { kind: "convex"; topology?: MultiplayerTopology }
-  | { kind: "ws"; topology?: MultiplayerTopology; url?: string }
-  | { kind: "socketio"; topology?: MultiplayerTopology; url?: string }
-  | { kind: "p2p"; topology?: MultiplayerTopology; room?: string }
-  | { kind: "lan"; topology?: MultiplayerTopology; port?: number; path?: string }
+  | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority }
+  | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }
+  | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }
+  | { kind: "p2p"; topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }
+  | { kind: "lan"; topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority }
   | { kind: "offline" };
 
-export function convex(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig {
-  return { kind: "convex", topology: config?.topology ?? "shared" };
+export function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
+  return { kind: "convex", topology: config?.topology ?? "shared", authority: config?.authority };
 }
 
-export function ws(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig {
-  return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url };
+export function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
+  return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url, authority: config?.authority };
 }
 
-export function fly(config: { app: string; topology?: MultiplayerTopology; path?: string }): MultiplayerAdapterConfig {
+export function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return {
     kind: "ws",
     topology: config.topology ?? "shared",
     url: `wss://${config.app}.fly.dev${config.path ?? "/ws"}`,
+    authority: config.authority,
   };
 }
 
-export function socketIo(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig {
-  return { kind: "socketio", topology: config?.topology ?? "shared", url: config?.url };
+export function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
+  return { kind: "socketio", topology: config?.topology ?? "shared", url: config?.url, authority: config?.authority };
 }
 
-export function p2p(config?: { topology?: MultiplayerTopology; room?: string }): MultiplayerAdapterConfig {
-  return { kind: "p2p", topology: config?.topology ?? "private", room: config?.room };
+export function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
+  return { kind: "p2p", topology: config?.topology ?? "private", room: config?.room, authority: config?.authority };
 }
 
 export function lan(config?: {
   topology?: MultiplayerTopology;
   port?: number;
   path?: string;
+  authority?: MultiplayerAuthority;
 }): MultiplayerAdapterConfig {
-  return { kind: "lan", topology: config?.topology ?? "shared", port: config?.port, path: config?.path };
+  return { kind: "lan", topology: config?.topology ?? "shared", port: config?.port, path: config?.path, authority: config?.authority };
+}
+
+/** True when the adapter opts into host-authoritative world replication (`authority: "server"`). */
+export function isServerAuthoritative(multiplayer: unknown): boolean {
+  const adapter = adapterOf(multiplayer);
+  return adapter !== null && "authority" in adapter && adapter.authority === "server";
 }
 
 export function offline(): MultiplayerAdapterConfig {

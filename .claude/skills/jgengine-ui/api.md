@@ -1623,3 +1623,7 @@
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
 - `collectWorldBarSamples` (function): function collectWorldBarSamples(ctx: GameContext, statId: string, height: number, roles: readonly CatalogEntityRole[] | undefined, resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined, camera: { matrixWorldInverse: unknown; projectionMatrix: unknown }, viewport: { width:… — ⚠ undocumented
 - `paintWorldBarSamples` (function): function paintWorldBarSamples(canvas: { width: number; height: number; getContext(kind: "2d"): CanvasRenderingContext2D | null }, samples: readonly WorldBarSample[], dpr: number, barWidthPx = 112, barHeightPx = 10): void — ⚠ undocumented
+
+## @jgengine/shell/worldSync
+
+- `attachWorldSync` (function): function attachWorldSync(feeds: Pick<GameRuntimeFeeds, "subscribeServer">, serverId: string, ctx: Pick<GameContext, "hydrate">): () => void — Client half of host-authoritative play: subscribe to the server-state channel and mirror each authoritative `WorldSnapshot` (carried in `serverState`) into the local `ctx`, so the game renders the host's world instead of a locally-simulated one. Pure and transport-agnostic — the backend's `feeds.subscribeServer` is the only dependency; returns the unsubscribe. The shell attaches this (and gates its local sim) when the game's adapter opts into `authority: "server"`.
