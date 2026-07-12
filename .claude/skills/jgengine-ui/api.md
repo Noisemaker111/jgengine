@@ -1569,7 +1569,7 @@
 - `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
-- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; }): React.JSX.Element — ⚠ undocumented
+- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from the player (world… — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
 - `collectWorldBarSamples` (function): function collectWorldBarSamples(ctx: GameContext, statId: string, height: number, roles: readonly CatalogEntityRole[] | undefined, resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined, camera: { matrixWorldInverse: unknown; projectionMatrix: unknown }, viewport: { width:… — ⚠ undocumented

@@ -13,7 +13,7 @@ import { ITEMS, itemDefById } from "./items/catalog";
 import { registerStackLimit } from "./inventories";
 import { mobHp } from "./math/combat";
 import { YUMI_CATALOG, YUMI_MAX_HP } from "./minigames/yumi";
-import { CLASS_ENTITY_ID, COPPER, type MobDef } from "./model";
+import { COPPER, isPlayerEntityId, type MobDef } from "./model";
 import { PETS } from "./pets/catalog";
 
 for (const item of ITEMS) {
@@ -63,7 +63,7 @@ const petIds = new Set(PETS.map((pet) => pet.id));
 export const content: GameContextContent = {
   itemById: itemEntry,
   entityById(catalogId): GameContextEntityEntry | null {
-    if (catalogId === CLASS_ENTITY_ID) {
+    if (isPlayerEntityId(catalogId)) {
       return {
         role: "player",
         stats: {

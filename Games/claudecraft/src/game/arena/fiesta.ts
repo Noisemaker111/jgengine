@@ -2,9 +2,10 @@ import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { addThreat, despawnMob, spawnMobAt } from "../ai/mobs";
-import { CLASS_ENTITY_ID } from "../model";
+
 import {
   applySheet,
+  heroEntityId,
   aurasOf,
   classOf,
   clearAuras,
@@ -499,7 +500,7 @@ function cleanupAndReturn(ctx: GameContext, userId: string, session: FiestaSessi
   const alive = ctx.scene.entity.get(userId) !== null;
   if (!alive) {
     const [x, z] = session.returnPos;
-    ctx.scene.entity.spawn(CLASS_ENTITY_ID, {
+    ctx.scene.entity.spawn(heroEntityId(ctx, userId), {
       id: userId,
       position: [x, ctx.world.groundHeightAt(x, z), z],
     });
@@ -519,7 +520,7 @@ function cleanupAndReturn(ctx: GameContext, userId: string, session: FiestaSessi
 function respawnPlayer(ctx: GameContext, userId: string, session: FiestaSession): void {
   const fighter = session.fighters[0];
   const [x, z] = fighter.spawn;
-  ctx.scene.entity.spawn(CLASS_ENTITY_ID, {
+  ctx.scene.entity.spawn(heroEntityId(ctx, userId), {
     id: userId,
     position: [x, ctx.world.groundHeightAt(x, z), z],
   });

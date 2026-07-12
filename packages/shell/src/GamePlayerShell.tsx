@@ -1,6 +1,7 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import {
   Component,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -16,6 +17,7 @@ import {
 } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import {
   actionRepeatMs,
@@ -410,23 +412,73 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   );
 }
 
+class ModelFallbackBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  override state = { failed: false };
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+  override render(): ReactNode {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function IsolatedEntityModel({
+  model,
+  instanceId,
+  fallback,
+}: {
+  model: ModelConfig;
+  instanceId?: string;
+  fallback?: ReactNode;
+}) {
+  return (
+    <ModelFallbackBoundary fallback={fallback ?? null}>
+      <Suspense fallback={null}>
+        <EntityModel model={model} instanceId={instanceId} />
+      </Suspense>
+    </ModelFallbackBoundary>
+  );
+}
+
 function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
-  const gltf = useLoader(GLTFLoader, model.url);
+  const gltf = useLoader(GLTFLoader, model.url, (loader) => {
+    loader.setMeshoptDecoder(MeshoptDecoder);
+  });
   const ctx = useGameContext();
   const material = model.material;
-  const scale = model.scale ?? 1;
   const baseY = model.y ?? 0;
   const dims = model.dims;
-  const centered = (model.anchor ?? "center") === "center" && dims !== undefined;
-  const position: [number, number, number] = centered
-    ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
-    : [0, baseY, 0];
 
   const scene = useMemo(() => {
     const cloned = cloneModelScene(gltf.scene);
     if (material !== undefined) applyMaterialOverride(cloned, material, { clone: false });
     return cloned;
   }, [gltf, material]);
+
+  const measured = useMemo(() => {
+    if (model.targetHeight === undefined) return null;
+    const box = new THREE.Box3().setFromObject(scene);
+    const height = box.max.y - box.min.y;
+    if (!Number.isFinite(height) || height <= 0) return null;
+    return {
+      normalize: model.targetHeight / height,
+      minY: box.min.y,
+      centerX: (box.min.x + box.max.x) / 2,
+      centerZ: (box.min.z + box.max.z) / 2,
+    };
+  }, [scene, model.targetHeight]);
+
+  const scale = (model.scale ?? 1) * (measured?.normalize ?? 1);
+  const centered = (model.anchor ?? "center") === "center" && dims !== undefined;
+  const position: [number, number, number] =
+    measured !== null
+      ? [-scale * measured.centerX, baseY - scale * measured.minY, -scale * measured.centerZ]
+      : centered
+        ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
+        : [0, baseY, 0];
 
   useEffect(
     () => () => {
@@ -438,13 +490,45 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   const animation = model.animation;
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const animationPausedRef = useRef(false);
+  const stateActionsRef = useRef<{
+    actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>>;
+    active: "idle" | "walk" | "run";
+    lastPos: [number, number, number] | null;
+    smoothedSpeed: number;
+  } | null>(null);
+  const states = animation?.states;
 
   useEffect(() => {
     if (animation === undefined || gltf.animations.length === 0) {
       mixerRef.current = null;
+      stateActionsRef.current = null;
       return;
     }
     const mixer = new THREE.AnimationMixer(scene);
+    if (states !== undefined) {
+      const clipFor = (name: string) =>
+        THREE.AnimationClip.findByName(gltf.animations, name) ?? gltf.animations[0]!;
+      const actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>> = {
+        idle: mixer.clipAction(clipFor(states.idle)),
+        walk: mixer.clipAction(clipFor(states.walk)),
+        ...(states.run === undefined ? {} : { run: mixer.clipAction(clipFor(states.run)) }),
+      };
+      for (const action of Object.values(actions)) {
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.timeScale = animation.timeScale ?? 1;
+        action.enabled = true;
+      }
+      actions.idle!.play();
+      mixer.update(0);
+      mixerRef.current = mixer;
+      stateActionsRef.current = { actions, active: "idle", lastPos: null, smoothedSpeed: 0 };
+      animationPausedRef.current = false;
+      return () => {
+        mixer.stopAllAction();
+        mixerRef.current = null;
+        stateActionsRef.current = null;
+      };
+    }
     const clip =
       (animation.clip !== undefined ? THREE.AnimationClip.findByName(gltf.animations, animation.clip) : undefined) ??
       gltf.animations[0]!;
@@ -463,7 +547,16 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [scene, gltf, animation?.clip, animation?.loop, animation?.timeScale, animation?.paused, animation?.time]);
+  }, [
+    scene,
+    gltf,
+    animation?.clip,
+    animation?.loop,
+    animation?.timeScale,
+    animation?.paused,
+    animation?.time,
+    states,
+  ]);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
@@ -478,6 +571,38 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   }, [scene]);
 
   useFrame((_state, delta) => {
+    const stateMachine = stateActionsRef.current;
+    if (stateMachine !== null && states !== undefined && instanceId !== undefined && delta > 0) {
+      const entity = ctx.scene.entity.get(instanceId);
+      if (entity !== null) {
+        const [x, , z] = entity.position;
+        if (stateMachine.lastPos !== null) {
+          const instantSpeed =
+            Math.hypot(x - stateMachine.lastPos[0], z - stateMachine.lastPos[2]) / delta;
+          stateMachine.smoothedSpeed +=
+            (instantSpeed - stateMachine.smoothedSpeed) * Math.min(1, delta * 12);
+        }
+        stateMachine.lastPos = [x, entity.position[1], z];
+        const walkSpeed = states.walkSpeed ?? 0.5;
+        const runSpeed = states.runSpeed ?? 6;
+        const next: "idle" | "walk" | "run" =
+          stateMachine.smoothedSpeed < walkSpeed
+            ? "idle"
+            : stateMachine.actions.run !== undefined && stateMachine.smoothedSpeed >= runSpeed
+              ? "run"
+              : "walk";
+        if (next !== stateMachine.active) {
+          const fade = states.fadeSec ?? 0.2;
+          const from = stateMachine.actions[stateMachine.active];
+          const to = stateMachine.actions[next];
+          if (from !== undefined && to !== undefined) {
+            to.reset().fadeIn(fade).play();
+            from.fadeOut(fade);
+          }
+          stateMachine.active = next;
+        }
+      }
+    }
     if (mixerRef.current !== null && !animationPausedRef.current) mixerRef.current.update(delta);
     if (instanceId === undefined) return;
     const paint = ctx.scene.entity.paint;
@@ -562,7 +687,11 @@ function EntityMarker({
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} instanceId={entityId} />
+        <IsolatedEntityModel
+          model={model}
+          instanceId={entityId}
+          fallback={sprite !== undefined ? <EntitySprite sprite={sprite} /> : undefined}
+        />
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
       ) : role === "prop" ? (
@@ -625,7 +754,7 @@ function ObjectMarker({
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} instanceId={instanceId} />
+        <IsolatedEntityModel model={model} instanceId={instanceId} />
       ) : style?.hidden === true ? null : (
         <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]}>
           <boxGeometry args={[1, 1, 1]} />
@@ -1643,6 +1772,10 @@ export function GamePlayerShell({
         : worldBars.statId ?? "health";
   const barsRoles =
     worldBars === undefined || worldBars === true || worldBars === false ? undefined : worldBars.roles;
+  const barsMaxDistance =
+    worldBars === undefined || worldBars === true || worldBars === false
+      ? undefined
+      : worldBars.maxDistance;
   const resolveEntityRole = (entity: SceneEntity) => playable.content.entityById?.(entity.name)?.role;
 
   const pointer: PointerConfig | undefined = playable.pointer;
@@ -1965,7 +2098,12 @@ export function GamePlayerShell({
           </CullingProvider>
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? (
-            <WorldEntityBars statId={barsStatId} roles={barsRoles} resolveRole={resolveEntityRole} />
+            <WorldEntityBars
+              statId={barsStatId}
+              roles={barsRoles}
+              resolveRole={resolveEntityRole}
+              {...(barsMaxDistance === undefined ? {} : { maxDistance: barsMaxDistance })}
+            />
           ) : null}
           <WorldItems config={playable.worldItem} />
           <WorldTelegraphs />

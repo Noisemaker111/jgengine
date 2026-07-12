@@ -10,6 +10,7 @@ import {
   chooseSpec,
   classOf,
   clearAuras,
+  heroEntityId,
   heroOf,
   selectClass,
   storeKeys,
@@ -242,7 +243,7 @@ export function registerCommands(ctx: GameContext): void {
         | undefined;
       const corpse = state.game.store.get(`corpse:${userId}`) as readonly [number, number] | undefined;
       const [gx, gz] = graveyardOf(corpse?.[0] ?? 0, corpse?.[1] ?? 0);
-      state.scene.entity.spawn(CLASS_ENTITY_ID, {
+      state.scene.entity.spawn(heroEntityId(state, userId), {
         id: userId,
         position: [gx, state.world.groundHeightAt(gx, gz), gz],
       });

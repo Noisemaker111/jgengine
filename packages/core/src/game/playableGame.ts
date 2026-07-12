@@ -426,6 +426,22 @@ export interface VoxelCollisionConfig {
   stepHeight?: number;
 }
 
+/** Movement-state clip set for `ModelAnimationConfig.states`: the shell reads the entity's live speed each frame and crossfades between these clips, so a walking mob animates without any game-side driver. */
+export interface ModelAnimationStates {
+  /** Clip name while the entity is stationary. */
+  idle: string;
+  /** Clip name while the entity is moving. */
+  walk: string;
+  /** Clip name above `runSpeed`; omit to keep `walk` at any speed. */
+  run?: string;
+  /** Speed (world units/sec) above which the entity counts as moving. Default 0.5. */
+  walkSpeed?: number;
+  /** Speed above which `run` plays when provided. Default 6. */
+  runSpeed?: number;
+  /** Crossfade duration in seconds when the state changes. Default 0.2. */
+  fadeSec?: number;
+}
+
 /** Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses. */
 export interface ModelAnimationConfig {
   /** Clip name to play; defaults to the GLB's first clip. */
@@ -438,6 +454,8 @@ export interface ModelAnimationConfig {
   paused?: boolean;
   /** Seek the clip to this time in seconds; combine with `paused: true` to hold a specific pose ("pose library" usage). */
   time?: number;
+  /** Speed-driven idle/walk/run clip switching, crossfaded by the shell from the entity's live movement; overrides `clip` while set. */
+  states?: ModelAnimationStates;
 }
 
 /** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */
@@ -452,6 +470,8 @@ export interface ModelMaterialOverride {
 export interface ModelConfig {
   url: string;
   scale?: number;
+  /** Normalize the rendered model to this world-unit height: the shell measures the loaded scene's bounding box, scales it so its height matches, and grounds its lowest point at the placement Y. Composes with `scale` as a multiplier. */
+  targetHeight?: number;
   y?: number;
   /** How the model registers on its placement point. `"center"` (default) horizontally centers the measured footprint on the point and ground-snaps its lowest vertex to the point's Y — the correct behavior for corner-pivot modular kits. `"origin"` renders at the raw GLB origin (legacy). */
   anchor?: "center" | "origin";
@@ -576,8 +596,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   platforms?: readonly HudPlatform[];
   /** HUD design resolution + scale clamps (default 1600×900, scale 0.4–1). `mobile` overrides tune the phone fit separately — the same resolution system drives desktop UI-scale and phone shrink. */
   hudFit?: HudViewportConfig;
-  /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles. */
-  worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[] };
+  /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the player (default 60). */
+  worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. */
   audio?: { sounds: Record<string, SoundDef>; buses?: Record<string, AudioBusDef> };
   /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */

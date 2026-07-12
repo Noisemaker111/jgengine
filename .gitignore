@@ -4,7 +4,8 @@ dist/
 .DS_Store
 shots/
 .turbo/
-**/public/models/
+**/public/models/*
+!apps/dev/public/models/claudecraft/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
 

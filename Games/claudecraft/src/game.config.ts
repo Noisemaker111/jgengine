@@ -3,6 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { assets, entitySprites } from "./game/assets";
+import { entityModels } from "./game/models";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
@@ -65,10 +66,11 @@ export const game = defineGame({
   loop,
   GameUI,
   entitySprites,
+  entityModels,
   prompts,
   objectStyles,
   settings: { variant: "sidebar" },
-  worldHealthBars: true,
+  worldHealthBars: { roles: ["enemy", "hostile"], maxDistance: 60 },
   camera: {
     perspective: "third",
     minDistance: 3.5,
