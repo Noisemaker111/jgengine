@@ -57,10 +57,11 @@ Run in-repo with `bun run --cwd packages/assets src/cli/pull.ts <verb> …`. (`a
 `pull` never has just one path to the bytes. For a given `source-id` it tries, in order, until one succeeds:
 
 1. **Mirror base override** — `--mirror <baseUrl>` (or the `JGENGINE_ASSETS_MIRROR` env var if `--mirror` is not passed) — the archive is expected at `<baseUrl>/<provider>/<source-id>.zip`, e.g. `https://my-mirror.example.com/kenney/kenney-nature.zip`.
-2. **The primary provider path** — the source's pinned `{ url, sha256? }` or, for providers that rotate URLs (Kenney), a scrape of the asset page.
-3. **The pack's own `mirror`** — an optional direct archive URL set on the `AssetSource` entry itself (`src/sources/*.ts`), tried as a last resort.
+2. **The default GitHub-release mirror** — `https://github.com/Noisemaker111/jgengine/releases/download/packs/<provider>-<source-id>.zip`, on this repo's own rolling `packs` release (no separate assets repo). github.com is reachable from every cloud sandbox with no network-policy change, so zero-setup sessions still pull. `.github/workflows/mirror-assets.yml` (weekly cron + manual dispatch) keeps the release in sync with `src/sources/*.ts` automatically — adding a catalog entry is the whole publishing step, no manual upload. Skip this hop with `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
+3. **The primary provider path** — the source's pinned `{ url, sha256? }` or, for providers that rotate URLs (Kenney), a scrape of the asset page.
+4. **The pack's own `mirror`** — an optional direct archive URL set on the `AssetSource` entry itself (`src/sources/*.ts`), tried as a last resort.
 
-If every attempt fails, `pull` throws one aggregated error naming every URL it tried and why each one failed. Whenever the source's `download` is pinned with a `sha256`, the downloaded bytes are hashed and checked against it **no matter which of the three paths supplied them** — a mirror serving stale or tampered bytes is rejected and the next source in the chain is tried instead.
+If every attempt fails, `pull` throws one aggregated error naming every URL it tried and why each one failed. Whenever the source's `download` is pinned with a `sha256`, the downloaded bytes are hashed and checked against it **no matter which path supplied them** — a mirror serving stale or tampered bytes is rejected and the next source in the chain is tried instead.
 
 `--offline` skips the network entirely: it succeeds immediately if `<dir>/models/<source-id>/` already has files in it, and otherwise fails fast with a message telling you to pull once on a connected machine or point `--mirror`/`JGENGINE_ASSETS_MIRROR` at a reachable archive — useful for CI scripts that should error in seconds instead of hanging on a blocked fetch.
 

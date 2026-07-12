@@ -37,6 +37,7 @@ function fetchFrom(table: Record<string, () => Response>, calls: string[] = []):
 afterEach(() => {
   globalThis.fetch = originalFetch;
   delete process.env.JGENGINE_ASSETS_MIRROR;
+  delete process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR;
 });
 
 describe("cmdPull --offline", () => {
@@ -107,6 +108,7 @@ describe("cmdPull mirror resolution", () => {
   });
 
   test("falls through to the primary provider path when no mirror is configured", async () => {
+    process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR = "1";
     const dir = makeTmpDir();
     const calls: string[] = [];
     globalThis.fetch = fetchFrom(

@@ -20,9 +20,29 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 
 papercut sweep itself → papercut-reminder Stop hook false-positived again: 'do not background' is standard brief boilerplate, not relaunch evidence; hints now require explicit relaunch/failed-attempt language
 
+2026-07-12T00:28:50.375Z — sonnet — Claude
+
+batch preview-authoring workers stalled silently after partial completion → had to diff disk vs briefs and re-ping two coordinators
+
+2026-07-12T00:28:50.429Z — sonnet — Claude
+
+workers repeatedly backgrounded foreground briefs (ship motion, screenshot sweep) and ended turn with 'running in background' → each needed a resume nudge
+
+2026-07-12T00:28:50.474Z — fable — Claude
+
+check-game-shape gate rejected new cross-game contract file preview.tsx at src root → whitelist edit needed mid-ship
+
+2026-07-12T00:33:41.028Z — fable-5 — Claude
+
+briefed a Sonnet worker to run gates+ship → it recursively spawned background sub-workers and returned 'will report later' twice, nearly triple-running the ship motion
+
 2026-07-12T00:39:22.703Z — opus — Claude
 
 gate worker backgrounded build/check-types/test and returned 'still running' with no results → had to re-run; backgrounded verify dies with the worker turn, wasted a round
+
+2026-07-12T00:59:12.493Z — claude-fable-5 — Claude
+
+ship worker for the self-hosted mirror returned 'I'll wait for the background agent notification' as its final result despite an explicit do-not-delegate, execute-in-this-turn brief — the enforcement gap is in worker behavior, not brief wording; needed a SendMessage resume
 
 2026-07-12T01:02:27.112Z — opus — Claude
 
