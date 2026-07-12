@@ -777,3 +777,64 @@ describe("ctx.game.race.state", () => {
     expect(ctx.version()).toBeGreaterThan(before);
   });
 });
+
+describe("ctx.snapshot / ctx.hydrate", () => {
+  function fullContext(userId: string) {
+    return createGameContext({
+      definition: defineGame({
+        name: "Replicated",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+        features: { leaderboard: true, social: true, chat: true },
+      }),
+      content: CONTENT,
+      player: { userId, isNew: true },
+    });
+  }
+
+  test("snapshot only carries opted-in modules plus always-on live state", () => {
+    const slim = createGameContext({
+      definition: defineGame({ name: "Slim", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+    });
+    const snap = slim.snapshot();
+    expect(Object.keys(snap).sort()).toEqual(["entities", "feed", "stats", "store"]);
+    expect(snap["leaderboard"]).toBeUndefined();
+    expect(snap["chat"]).toBeUndefined();
+  });
+
+  test("roundtrips entities, stats, store, leaderboard and chat into a fresh context", () => {
+    const host = fullContext("user_a");
+    const id = host.scene.entity.spawn("dummy", { position: [1, 0, 2] });
+    host.scene.entity.stats.set(id, "health", { current: 12, max: 30, min: 0 });
+    host.game.store.set("phase", "combat");
+    host.game.leaderboard!.track({ stat: "kills", scope: "global" });
+    host.game.leaderboard!.increment("user_a", "kills", { scope: "global", by: 3 });
+    host.game.chat!.send("user_a", "global", "gg");
+
+    const snap = host.snapshot();
+
+    const client = fullContext("user_b");
+    const before = client.version();
+    client.hydrate(snap);
+
+    expect(client.version()).toBeGreaterThan(before);
+    expect(client.scene.entity.get(id)?.position).toEqual([1, 0, 2]);
+    expect(client.scene.entity.stats.get(id, "health")).toEqual({ current: 12, max: 30, min: 0 });
+    expect(client.game.store.get("phase")).toBe("combat");
+    expect(client.game.leaderboard!.getTop("kills", { scope: "global" })).toEqual([
+      { userId: "user_a", value: 3 },
+    ]);
+    expect(client.game.chat!.history("global").map((m) => m.body)).toEqual(["gg"]);
+  });
+
+  test("hydrate leaves modules whose key is absent from the snapshot untouched", () => {
+    const client = fullContext("user_b");
+    client.game.store.set("keep", 1);
+    client.hydrate({ store: [["replaced", 2]] });
+    expect(client.game.store.get("keep")).toBeUndefined();
+    expect(client.game.store.get("replaced")).toBe(2);
+    expect(client.game.chat!.channels().length).toBeGreaterThan(0);
+  });
+});

@@ -39,8 +39,8 @@ import { createCosmetics, type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
-import { createGameFeed, type GameFeed } from "../game/feed";
-import { createLeaderboard, type Leaderboard } from "../game/leaderboard";
+import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
+import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
 import { createQuestJournal, type QuestJournal } from "../game/quest";
@@ -52,7 +52,7 @@ import {
   type WorldItemRecord,
   type WorldItemSpawnInput,
 } from "../game/worldItem";
-import { createChat, type Chat } from "../game/chat";
+import { createChat, type Chat, type ChatSnapshot } from "../game/chat";
 import { createSocial, type Social } from "../game/social";
 import { createTradeSystem, type TradeField, type TradeSystem } from "../game/trade";
 import { createUnlocks, type Unlocks } from "../game/unlocks";
@@ -79,8 +79,10 @@ import type { ModelAssetRef } from "../scene/assetCatalog";
 import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
 import {
   createEntityStatsApi,
+  hydrateEntityStats,
   seedStatValues,
   setStatValue,
+  snapshotEntityStats,
   type EntityStatsApi,
   type StatCatalog,
   type StatValueMap,
@@ -111,6 +113,12 @@ import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
 import { createChangeSignal, notifyAfter } from "../store/changeSignal";
 import { createObservableKeyedStore, type ObservableKeyedStore } from "../store/observableKeyedStore";
+import {
+  applyWorldSnapshot,
+  composeWorldSnapshot,
+  type SnapshotModule,
+  type WorldSnapshot,
+} from "./worldSnapshot";
 import { createSimClock, type SimClock } from "../time/simClock";
 import { createTurnLoop, type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
 import { RaceState, type RaceEvent, type RaceStateConfig } from "../game/race";
@@ -385,6 +393,14 @@ export interface GameContext {
   input: InputSnapshot;
   subscribe(listener: () => void): () => void;
   version(): number;
+  /**
+   * Gather every opted-in live subsystem into one {@link WorldSnapshot} — entities, entity stats, the
+   * keyed store, the action feed, plus leaderboard/chat when those features are on. The full-world
+   * baseline a host sends a joining client; {@link hydrate} is its inverse.
+   */
+  snapshot(): WorldSnapshot;
+  /** Apply a {@link WorldSnapshot} from an authoritative host, hydrating each subsystem key present in it. */
+  hydrate(snapshot: WorldSnapshot): void;
 }
 
 export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(
@@ -1064,7 +1080,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     collidersOf: objectCollidersOf,
   };
 
-  const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete"], signal.notify);
+  const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
 
   const cardPiles = new Map<string, CardPile>();
   function pile(id: string, config?: CardPileConfig): CardPile {
@@ -1160,6 +1176,35 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
   const input = createInputSnapshot();
   const motion = createMotionIntents();
+
+  const snapshotModules: SnapshotModule[] = [
+    { key: "entities", snapshot: () => entities.snapshot(), hydrate: (data) => entities.hydrate(data as SceneEntity[]) },
+    {
+      key: "stats",
+      snapshot: () => snapshotEntityStats(statsByInstance),
+      hydrate: (data) => hydrateEntityStats(statsByInstance, data as Record<string, StatValueMap>),
+    },
+    {
+      key: "store",
+      snapshot: () => store.snapshot(),
+      hydrate: (data) => store.hydrate(data as readonly (readonly [string, unknown])[]),
+    },
+    { key: "feed", snapshot: () => feed.snapshot(), hydrate: (data) => feed.hydrate(data as Record<string, FeedEntry[]>) },
+  ];
+  if (leaderboard) {
+    snapshotModules.push({
+      key: "leaderboard",
+      snapshot: () => leaderboard.snapshot(),
+      hydrate: (data) => leaderboard.hydrate(data as LeaderboardRow[]),
+    });
+  }
+  if (chat) {
+    snapshotModules.push({
+      key: "chat",
+      snapshot: () => chat.snapshot(),
+      hydrate: (data) => chat.hydrate(data as ChatSnapshot),
+    });
+  }
 
   const ctx: GameContext = {
     scene: {
@@ -1294,6 +1339,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     input,
     subscribe: signal.subscribe,
     version: signal.version,
+    snapshot: () => composeWorldSnapshot(snapshotModules),
+    hydrate(snapshot) {
+      applyWorldSnapshot(snapshotModules, snapshot);
+      signal.notify();
+    },
   };
 
   return ctx;

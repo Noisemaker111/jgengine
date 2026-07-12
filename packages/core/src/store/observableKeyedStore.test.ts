@@ -72,4 +72,25 @@ describe("observable keyed store", () => {
     expect(store.get("a")).toBe(value);
     expect(store.get("a")?.n).toBe(2);
   });
+
+  test("snapshot/hydrate roundtrips entries, clearing keys absent from the snapshot", () => {
+    const source = createObservableKeyedStore<{ n: number }>();
+    source.set("a", { n: 1 });
+    source.set("b", { n: 2 });
+
+    const target = createObservableKeyedStore<{ n: number }>();
+    target.set("a", { n: 99 });
+    target.set("stale", { n: 0 });
+    let notified = 0;
+    target.subscribe(() => {
+      notified += 1;
+    });
+    target.hydrate(source.snapshot());
+
+    expect(notified).toBe(1);
+    expect(target.get("a")).toEqual({ n: 1 });
+    expect(target.get("b")).toEqual({ n: 2 });
+    expect(target.has("stale")).toBe(false);
+    expect(new Map(target.snapshot())).toEqual(new Map(source.snapshot()));
+  });
 });
