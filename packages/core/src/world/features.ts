@@ -70,6 +70,8 @@ export interface TerrainEnvironmentConfig {
 
 export interface RainEnvironmentConfig {
   area?: EnvironmentArea;
+  /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own weather away from the origin. */
+  position?: EnvironmentVec2;
   density?: number;
   speed?: number;
   dropLength?: number;
@@ -79,6 +81,8 @@ export interface RainEnvironmentConfig {
 
 export interface SnowEnvironmentConfig {
   area?: EnvironmentArea;
+  /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own weather away from the origin. */
+  position?: EnvironmentVec2;
   density?: number;
   speed?: number;
   flakeSize?: number;
@@ -89,6 +93,8 @@ export interface SnowEnvironmentConfig {
 
 export interface GrassEnvironmentConfig {
   area?: EnvironmentArea;
+  /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own vegetation away from the origin. */
+  position?: EnvironmentVec2;
   density?: number;
   bladeHeight?: readonly [number, number];
   bladeWidth?: number;
@@ -427,10 +433,14 @@ export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor
   );
 }
 
+function withAreaPosition(area: EnvironmentArea, position: EnvironmentVec2 | undefined): EnvironmentArea {
+  return position !== undefined && area.position === undefined ? { ...area, position } : area;
+}
+
 export function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor {
   return {
     kind: "rain",
-    area: config.area ?? { w: 256, d: 256, h: 80 },
+    area: withAreaPosition(config.area ?? { w: 256, d: 256, h: 80 }, config.position),
     density: config.density ?? 0.65,
     speed: config.speed ?? 18,
     dropLength: config.dropLength ?? 0.8,
@@ -442,7 +452,7 @@ export function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescrip
 export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor {
   return {
     kind: "snow",
-    area: config.area ?? { w: 256, d: 256, h: 80 },
+    area: withAreaPosition(config.area ?? { w: 256, d: 256, h: 80 }, config.position),
     density: config.density ?? 0.35,
     speed: config.speed ?? 2.4,
     flakeSize: config.flakeSize ?? 0.08,
@@ -456,7 +466,7 @@ export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDesc
   return withOptional(
     {
       kind: "grass" as const,
-      area: config.area ?? { w: 128, d: 128 },
+      area: withAreaPosition(config.area ?? { w: 128, d: 128 }, config.position),
       density: config.density ?? 4,
       bladeHeight: config.bladeHeight ?? [0.25, 0.9],
       bladeWidth: config.bladeWidth ?? 0.035,
