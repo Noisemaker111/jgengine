@@ -3,6 +3,7 @@ export * from "./runtime/snapshot";
 export * from "./runtime/worldSnapshot";
 export * from "./runtime/worldReplication";
 export * from "./runtime/hostedGameRunner";
+export * from "./runtime/hostedWorldSession";
 export * from "./runtime/commandRunner";
 export * from "./runtime/gameRuntime";
 export * from "./runtime/adapter";
