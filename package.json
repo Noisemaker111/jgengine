@@ -27,6 +27,8 @@
     "dev": "bun run --cwd apps/web dev",
     "dev:runner": "bun run --cwd apps/dev dev",
     "shoot": "bun scripts/guard.ts 300 'bun scripts/shoot-dev.ts'",
+    "drive": "bun scripts/guard.ts 300 'bun scripts/drive-dev.ts'",
+    "new:game": "bun scripts/new-game.ts",
     "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
     "papercut": "bun scripts/papercut.ts",
     "games:annals": "bun run --cwd Games/annals dev",
