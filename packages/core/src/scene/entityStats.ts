@@ -60,6 +60,32 @@ export function seedStatValues(catalogStats: StatCatalog): StatValueMap {
   return map;
 }
 
+/** Deep-copy the per-entity stat maps into a serializable record — the transport counterpart of {@link hydrateEntityStats}. */
+export function snapshotEntityStats(
+  store: ReadonlyMap<string, StatValueMap>,
+): Record<string, StatValueMap> {
+  const out: Record<string, StatValueMap> = {};
+  for (const [instanceId, map] of store) {
+    const copy: StatValueMap = {};
+    for (const [statId, value] of Object.entries(map)) copy[statId] = { ...value };
+    out[instanceId] = copy;
+  }
+  return out;
+}
+
+/** Replace a live stat store with deep copies of a snapshot, clearing entities absent from it. */
+export function hydrateEntityStats(
+  store: Map<string, StatValueMap>,
+  data: Record<string, StatValueMap>,
+): void {
+  store.clear();
+  for (const [instanceId, map] of Object.entries(data)) {
+    const copy: StatValueMap = {};
+    for (const [statId, value] of Object.entries(map)) copy[statId] = { ...value };
+    store.set(instanceId, copy);
+  }
+}
+
 export interface EntityStatsApi {
   get(instanceId: string, statId: string): StatValue | null;
   set(instanceId: string, statId: string, patch: StatValuePatch): boolean;

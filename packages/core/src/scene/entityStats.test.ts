@@ -3,8 +3,10 @@ import {
   applyPoolDelta,
   createEntityStatsApi,
   getStatValue,
+  hydrateEntityStats,
   seedStatValues,
   setStatValue,
+  snapshotEntityStats,
   type StatValueMap,
 } from "@jgengine/core/scene/entityStats";
 
@@ -90,5 +92,28 @@ describe("pool stats", () => {
     expect(api.get("mob-1", "health")?.current).toBe(15);
     expect(api.delta("mob-1", "mana", -5)).not.toBeNull();
     expect(api.delta("missing", "health", -5)).not.toBeNull();
+  });
+
+  test("snapshotEntityStats deep-copies so later mutation cannot alias the snapshot", () => {
+    const store = new Map<string, StatValueMap>([
+      ["mob-1", seedStatValues({ health: { max: 30 } })],
+    ]);
+    const snap = snapshotEntityStats(store);
+    store.get("mob-1")!["health"] = { current: 1, max: 30, min: 0 };
+    expect(snap["mob-1"]?.["health"]).toEqual({ current: 30, max: 30, min: 0 });
+  });
+
+  test("hydrateEntityStats replaces the whole store from a snapshot", () => {
+    const source = new Map<string, StatValueMap>([
+      ["mob-1", seedStatValues({ health: { max: 30 } })],
+    ]);
+    const target = new Map<string, StatValueMap>([
+      ["stale", seedStatValues({ health: { max: 5 } })],
+    ]);
+    hydrateEntityStats(target, snapshotEntityStats(source));
+    expect(target.has("stale")).toBe(false);
+    expect(target.get("mob-1")?.["health"]).toEqual({ current: 30, max: 30, min: 0 });
+    target.get("mob-1")!["health"]!.current = 10;
+    expect(source.get("mob-1")?.["health"]?.current).toBe(30);
   });
 });

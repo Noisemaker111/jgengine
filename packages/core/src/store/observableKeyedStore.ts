@@ -6,6 +6,10 @@ export interface ObservableKeyedStore<T> {
   subscribe(listener: () => void): () => void;
   mapSnapshot(): ReadonlyMap<string, T>;
   arraySnapshot(): readonly T[];
+  /** Serializable `[key, value]` entries — the transport counterpart of {@link hydrate} for host→client mirroring. */
+  snapshot(): readonly (readonly [string, T])[];
+  /** Replace all entries with `data` (clears keys absent from it), emitting once. */
+  hydrate(data: readonly (readonly [string, T])[]): void;
 }
 
 export function createObservableKeyedStore<T>(
@@ -53,6 +57,14 @@ export function createObservableKeyedStore<T>(
         arrayDirty = false;
       }
       return arrayCache;
+    },
+    snapshot() {
+      return Array.from(store.entries());
+    },
+    hydrate(data) {
+      store.clear();
+      for (const [key, value] of data) store.set(key, value);
+      emit();
     },
   };
 }

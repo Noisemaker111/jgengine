@@ -43,6 +43,7 @@
 - `SaveScope` (type): type SaveScope = "player" | "chunks" | "player+chunks" — ⚠ undocumented
 - `ServerLoopHooks` (type): type ServerLoopHooks = { onInit?: (ctx: RuntimeInitContext) => void; onNewPlayer?: (ctx: RuntimeLoopContext) => void; onTick?: (ctx: RuntimeWorldContext, dtSeconds: number) => void; } — ⚠ undocumented
 - `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
+- `SnapshotModule` (interface): interface SnapshotModule<T = unknown> — The replication seam for host-authoritative shared worlds: the opt-in feature manifest *is* the replication schema. Each live subsystem a game opts into registers a {@link SnapshotModule} keyed by name; the host serializes exactly the registered set into a {@link WorldSnapshot} and a client hydrates the same keys back. Adding a replicated subsystem is a registration, never a new branch.
 - `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
 - `VisibilityBounds` (interface): interface VisibilityBounds — Sphere bounds used for visibility/streaming distance checks.
 - `VisibilityDecision` (interface): interface VisibilityDecision — Result of evaluating one object against the active cameras this tick.
@@ -52,8 +53,11 @@
 - `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
 - `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
 - `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
+- `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
+- `applyWorldSnapshot` (function): function applyWorldSnapshot(modules: readonly SnapshotModule[], snapshot: WorldSnapshot): void — Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
 - `clearDirtyFlags` (function): function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
+- `composeWorldSnapshot` (function): function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot — Serialize every registered module into one keyed baseline — the host→client full-world send.
 - `convex` (function): function convex(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig — ⚠ undocumented
 - `createEmptyPlayerRow` (function): function createEmptyPlayerRow(userId: string): RuntimePlayerRow — ⚠ undocumented
 - `createEmptyServerRow` (function): function createEmptyServerRow(): RuntimeServerRow — ⚠ undocumented
@@ -430,6 +434,13 @@
 - `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
 - `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
 - `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
+
+## @jgengine/core/runtime/worldSnapshot
+
+- `SnapshotModule` (interface): interface SnapshotModule<T = unknown> — The replication seam for host-authoritative shared worlds: the opt-in feature manifest *is* the replication schema. Each live subsystem a game opts into registers a {@link SnapshotModule} keyed by name; the host serializes exactly the registered set into a {@link WorldSnapshot} and a client hydrates the same keys back. Adding a replicated subsystem is a registration, never a new branch.
+- `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
+- `applyWorldSnapshot` (function): function applyWorldSnapshot(modules: readonly SnapshotModule[], snapshot: WorldSnapshot): void — Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
+- `composeWorldSnapshot` (function): function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot — Serialize every registered module into one keyed baseline — the host→client full-world send.
 
 ## @jgengine/github
 

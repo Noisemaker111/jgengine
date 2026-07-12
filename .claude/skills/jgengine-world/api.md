@@ -539,8 +539,10 @@
 - `applyPoolDelta` (function): function applyPoolDelta(map: StatValueMap, statId: string, amount: number): PoolDeltaResult — ⚠ undocumented
 - `createEntityStatsApi` (function): function createEntityStatsApi(resolve: (instanceId: string) => StatValueMap | undefined): EntityStatsApi — ⚠ undocumented
 - `getStatValue` (function): function getStatValue(map: StatValueMap, statId: string): StatValue | null — ⚠ undocumented
+- `hydrateEntityStats` (function): function hydrateEntityStats(store: Map<string, StatValueMap>, data: Record<string, StatValueMap>): void — Replace a live stat store with deep copies of a snapshot, clearing entities absent from it.
 - `seedStatValues` (function): function seedStatValues(catalogStats: StatCatalog): StatValueMap — ⚠ undocumented
 - `setStatValue` (function): function setStatValue(map: StatValueMap, statId: string, patch: StatValuePatch): StatValueMap — ⚠ undocumented
+- `snapshotEntityStats` (function): function snapshotEntityStats(store: ReadonlyMap<string, StatValueMap>): Record<string, StatValueMap> — Deep-copy the per-entity stat maps into a serializable record — the transport counterpart of {@link hydrateEntityStats}.
 
 ## @jgengine/core/scene/entityStore
 
