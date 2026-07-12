@@ -95,6 +95,10 @@ delegated verify/screenshot workers twice re-delegated to sub-workers and return
 
 probe-testing new:game → bun's lenient package.json parser masked a dangling comma my cleanup left; strict python json caught it — validate root package.json with a strict parser after scripted edits
 
+2026-07-12T05:26:39.405Z — fable-5 — Claude
+
+PR #563 squash-merge was a no-op: fix branch's net diff for generated/index.ts canceled against merge-base since branch already contained the clobbering commit landed separately via #550 → main stayed red after 'merge'; had to re-cut a fresh branch off main as #566
+
 2026-07-12T05:33:03.754Z — fable-5 — Claude
 
 waited on merge-commit CI → CLAUDE.md claims no Actions job exceeds ~1 min, but apps/web build now runs ~6 min; the stale claim caused a false hung-job investigation
@@ -106,3 +110,7 @@ backgrounded ship worker stalled after its gate sub-workers passed but before co
 2026-07-12T15:41:20.537Z — claude-opus-4-8 — Claude
 
 local check-types failed spuriously on stale node_modules symlinks in examples/next-host + tanstack-host (missing @games/nonogram link) → needed rm -rf node_modules + bun install; main was already green
+
+2026-07-12T15:47:53.182Z — sonnet-5 — Claude
+
+drag-and-drop ActionBar edit → ActionBar() drop handler referenced commands without calling useGame() there, check-types caught it
