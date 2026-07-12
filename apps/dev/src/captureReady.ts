@@ -115,6 +115,9 @@ export function armCaptureReady(mode: string): () => void {
       } else if (mode === "poster") {
         await waitForSelector("[data-poster-ready]", 25_000);
         await delay(200);
+      } else if (mode === "editor") {
+        await waitForSelector("[data-jg-editor], canvas", 30_000);
+        await waitPlayFrames(readCaptureQuery().settle ?? 3_500);
       } else {
         await waitPlayFrames(readCaptureQuery().settle ?? 2_500);
       }

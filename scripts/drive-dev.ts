@@ -30,7 +30,8 @@ type Step =
   | { kind: "click"; text: string }
   | { kind: "key"; code: string; holdMs: number }
   | { kind: "wait"; ms: number }
-  | { kind: "shot"; name: string };
+  | { kind: "shot"; name: string }
+  | { kind: "rpc"; json: string };
 
 type Args = {
   game: string;
@@ -54,10 +55,13 @@ function parseArgs(argv: string[]): Args {
       const holdMs = colon > 0 ? Number(spec.slice(colon + 1)) : 1000;
       args.steps.push({ kind: "key", code, holdMs });
     } else if (value === "--shot") args.steps.push({ kind: "shot", name: argv[++index] ?? "drive" });
+    else if (value === "--rpc") args.steps.push({ kind: "rpc", json: argv[++index] ?? "{}" });
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
   if (args.game === "") throw new Error("drive: pass a game id, e.g. bun run drive borderlands2 --click START");
-  if (!args.steps.some((step) => step.kind === "shot")) args.steps.push({ kind: "shot", name: "drive" });
+  if (!args.steps.some((step) => step.kind === "shot" || step.kind === "rpc")) {
+    args.steps.push({ kind: "shot", name: "drive" });
+  }
   return args;
 }
 
@@ -104,6 +108,16 @@ async function holdKey(session: CdpSession, code: string, holdMs: number): Promi
   await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
   await new Promise((r) => setTimeout(r, holdMs));
   await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
+}
+
+async function rpc(session: CdpSession, json: string): Promise<void> {
+  JSON.parse(json);
+  const result = await session.send("Runtime.evaluate", {
+    expression: `JSON.stringify(globalThis.__jgengineEditorHost?.handle(${json}) ?? { ok: false, error: "no editor host on this page (use --mode editor)" })`,
+    returnByValue: true,
+  });
+  const value = (result.result as { value?: string } | undefined)?.value;
+  console.log(value ?? JSON.stringify({ ok: false, error: "rpc evaluation returned nothing" }));
 }
 
 async function screenshot(session: CdpSession, outPath: string): Promise<void> {
@@ -175,6 +189,7 @@ try {
       if (step.kind === "click") await click(session, step.text);
       else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
       else if (step.kind === "wait") await new Promise((r) => setTimeout(r, step.ms));
+      else if (step.kind === "rpc") await rpc(session, step.json);
       else await screenshot(session, join(outDir, `${args.game}-${step.name}.png`));
     }
   } finally {

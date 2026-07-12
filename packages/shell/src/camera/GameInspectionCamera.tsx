@@ -33,9 +33,20 @@ export function GameInspectionCamera({ config: configPatch }: GameInspectionCame
     seededRef.current = true;
   }, [camera, config]);
 
+  useEffect(() => {
+    if (!seededRef.current) return;
+    const controls = controlsRef.current;
+    if (controls === null) return;
+    const previous = controls.target.clone();
+    controls.target.set(config.target.x, config.target.y, config.target.z);
+    camera.position.add(controls.target.clone().sub(previous));
+    controls.update();
+  }, [camera, config.target.x, config.target.y, config.target.z]);
+
   return (
     <OrbitControls
       ref={controlsRef}
+      makeDefault
       enableDamping
       dampingFactor={config.dampingFactor}
       rotateSpeed={config.rotateSpeed}

@@ -1,0 +1,104 @@
+import { describe, expect, test } from "bun:test";
+
+import { createEditorHost } from "./session";
+
+describe("editor host RPC", () => {
+  test("scene_summary and set_transform", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [{ id: "boss_warrior", kind: "boss", position: { x: -80, y: 0, z: -660 } }],
+        volumes: [
+          {
+            id: "zone_a",
+            kind: "zone",
+            shape: "cylinder",
+            center: { x: 0, y: 0, z: 0 },
+            radius: 100,
+            height: 20,
+          },
+        ],
+      },
+    });
+
+    const summary = api.handle({ method: "scene_summary" });
+    expect(summary.ok).toBe(true);
+    expect((summary.result as { markers: number }).markers).toBe(1);
+
+    const moved = api.handle({ method: "set_transform", id: "boss_warrior", x: -100, z: -700 });
+    expect(moved.ok).toBe(true);
+
+    const marker = api.handle({ method: "get_marker", id: "boss_warrior" });
+    expect(marker.ok).toBe(true);
+    expect((marker.result as { position: { x: number } }).position.x).toBe(-100);
+
+    const exported = api.handle({ method: "export_document" });
+    expect(exported.ok).toBe(true);
+    expect((exported.result as { json: string }).json).toContain("boss_warrior");
+
+    dispose();
+  });
+
+  test("place_asset and list_assets", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {},
+      assets: [{ id: "rock_01", label: "Rock", kind: "model", url: "/models/rock.glb" }],
+    });
+    api.setFocusTarget({ x: 10, y: 0, z: 20 });
+    const listed = api.handle({ method: "list_assets" });
+    expect(listed.ok).toBe(true);
+    expect((listed.result as { assets: { id: string }[] }).assets[0]?.id).toBe("rock_01");
+
+    const placed = api.handle({ method: "place_asset", id: "rock_01" });
+    expect(placed.ok).toBe(true);
+    const id = (placed.result as { id: string }).id;
+    const marker = api.getSession().getState().document.markers.find((item) => item.id === id);
+    expect(marker?.position.x).toBe(10);
+    expect(marker?.position.z).toBe(20);
+    expect(marker?.meta?.assetId).toBe("rock_01");
+    dispose();
+  });
+
+  test("set_mode switches modes, notifies subscribers, and rejects junk", () => {
+    const { api, dispose } = createEditorHost({ gameId: "test", layers: {} });
+    expect(api.getMode()).toBe("edit");
+
+    let seen: string | null = null;
+    const unsub = api.subscribeMode((mode) => {
+      seen = mode;
+    });
+
+    const played = api.handle({ method: "set_mode", mode: "play" });
+    expect(played.ok).toBe(true);
+    expect(api.getMode()).toBe("play");
+    expect(seen).toBe("play");
+
+    const status = api.handle({ method: "editor_status" });
+    expect((status.result as { mode: string }).mode).toBe("play");
+
+    const junk = api.handle({ method: "set_mode", mode: "flycam" as never });
+    expect(junk.ok).toBe(false);
+    expect(api.getMode()).toBe("play");
+
+    unsub();
+    dispose();
+  });
+
+  test("subscribeFocus fires on camera_goto", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [{ id: "a", kind: "poi", position: { x: 5, y: 1, z: 7 } }],
+      },
+    });
+    let seen: { x: number; y: number; z: number } | null = null;
+    const unsub = api.subscribeFocus((target) => {
+      seen = target;
+    });
+    api.handle({ method: "camera_goto", id: "a" });
+    expect(seen).toEqual({ x: 5, y: 1, z: 7 });
+    unsub();
+    dispose();
+  });
+});

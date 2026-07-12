@@ -764,6 +764,7 @@
       "dependencies": {
         "@jgengine/convex": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@react-three/drei": "^10.7.7",
         "@react-three/fiber": "^9.5.0",
         "convex": "^1.31.2",
         "react": "19.2.3",
@@ -771,6 +772,7 @@
         "three": "^0.182.0",
       },
       "devDependencies": {
+        "@jgengine/editor": "workspace:*",
         "@tailwindcss/vite": "^4.0.15",
         "@types/react": "^19",
         "@types/react-dom": "19.2.3",
@@ -904,7 +906,7 @@
       "name": "@jgengine/convex",
       "version": "0.9.0",
       "dependencies": {
-        "@jgengine/core": "^0.7.0",
+        "@jgengine/core": "^0.9.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -919,6 +921,32 @@
     "packages/core": {
       "name": "@jgengine/core",
       "version": "0.9.0",
+    },
+    "packages/editor": {
+      "name": "@jgengine/editor",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "^0.9.0",
+        "@jgengine/react": "^0.9.0",
+        "@jgengine/shell": "^0.9.0",
+      },
+      "devDependencies": {
+        "@react-three/drei": "^10.7.7",
+        "@react-three/fiber": "^9.5.0",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "peerDependencies": {
+        "@react-three/drei": "^10.0.0",
+        "@react-three/fiber": "^9.0.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "three": ">=0.170.0",
+      },
     },
     "packages/github": {
       "name": "@jgengine/github",
@@ -1262,6 +1290,8 @@
     "@jgengine/convex": ["@jgengine/convex@workspace:packages/convex"],
 
     "@jgengine/core": ["@jgengine/core@workspace:packages/core"],
+
+    "@jgengine/editor": ["@jgengine/editor@workspace:packages/editor"],
 
     "@jgengine/github": ["@jgengine/github@workspace:packages/github"],
 

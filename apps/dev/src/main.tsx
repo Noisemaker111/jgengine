@@ -36,9 +36,11 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   side2d: { rig: "sideScroll", projection: "orthographic" },
 };
 
-const gameModules = import.meta.glob<{ game: PlayableGame; uiScenario?: UiPreviewScenario }>(
-  "../../../Games/*/src/index.tsx",
-);
+const gameModules = import.meta.glob<{
+  game: PlayableGame;
+  uiScenario?: UiPreviewScenario;
+  editorLayers?: import("@jgengine/core/editor/index").EditorLayersInput;
+}>("../../../Games/*/src/index.tsx");
 
 const gameStyleModules = import.meta.glob<Record<string, unknown>>("../../../Games/*/src/index.css");
 
@@ -75,6 +77,12 @@ const gameEntries = Object.fromEntries(
   gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.game)]),
 );
 
+const editorLayerRegistry: Partial<
+  Record<string, () => Promise<import("@jgengine/core/editor/index").EditorLayersInput | undefined>>
+> = Object.fromEntries(
+  gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.editorLayers)]),
+);
+
 const gameRegistry: GameRegistry = {
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "pointer-commander": () =>
@@ -99,10 +107,8 @@ const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario
   );
 
 const urlParams = new URLSearchParams(window.location.search);
-const GAME_ID =
-  urlParams.get("game") ??
-  (import.meta.env.VITE_GAME_ID as string | undefined) ??
-  "demo";
+/** Explicit game only — bare `/` shows the picker so demo is never a silent surprise. */
+const GAME_ID = urlParams.get("game") ?? (import.meta.env.VITE_GAME_ID as string | undefined) ?? null;
 const MODE = urlParams.get("mode") ?? "play";
 const PREVIEW = urlParams.get("preview");
 const STAGE = urlParams.get("stage") === "1";
@@ -114,6 +120,68 @@ const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 const P2P_ROLE = urlParams.get("p2p");
+
+const FEATURED_GAMES = ["borderlands2", "canyon-chase", "claudecraft", "loot-shooter"] as const;
+
+function GamePicker() {
+  const ids = Object.keys(gameRegistry).sort();
+  const featured = FEATURED_GAMES.filter((id) => ids.includes(id));
+  const rest = ids.filter((id) => !FEATURED_GAMES.includes(id as (typeof FEATURED_GAMES)[number]));
+  const href = (id: string, mode?: string) => {
+    const params = new URLSearchParams({ game: id });
+    if (mode !== undefined) params.set("mode", mode);
+    return `?${params.toString()}`;
+  };
+  return (
+    <div className="flex h-full flex-col overflow-auto bg-neutral-950 px-6 py-8 text-neutral-100">
+      <div className="mx-auto w-full max-w-3xl">
+        <h1 className="text-xl font-semibold text-cyan-300">JGengine dev runner</h1>
+        <p className="mt-1 text-sm text-neutral-400">
+          Pick a game. Bare <code className="text-neutral-300">/</code> no longer auto-loads the capsule demo.
+        </p>
+        <div className="mt-6">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Featured</div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {featured.map((id) => (
+              <div key={id} className="rounded border border-white/10 bg-neutral-900/80 p-3">
+                <div className="font-medium text-neutral-100">{id}</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <a className="rounded bg-cyan-700/80 px-2 py-1 text-xs hover:bg-cyan-600" href={href(id)}>
+                    Play
+                  </a>
+                  <a
+                    className="rounded bg-white/10 px-2 py-1 text-xs hover:bg-white/20"
+                    href={href(id, "editor")}
+                  >
+                    Editor
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-8">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">All games</div>
+          <div className="flex flex-wrap gap-1.5">
+            {rest.map((id) => (
+              <a
+                key={id}
+                className="rounded border border-white/10 bg-black/40 px-2 py-1 text-xs text-neutral-300 hover:border-cyan-700/50 hover:text-cyan-200"
+                href={href(id)}
+              >
+                {id}
+              </a>
+            ))}
+          </div>
+        </div>
+        <p className="mt-8 text-[11px] text-neutral-500">
+          Direct URLs: <code className="text-neutral-400">?game=borderlands2</code> ·{" "}
+          <code className="text-neutral-400">?game=borderlands2&amp;mode=editor</code>
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function withCameraPreset(game: PlayableGame): PlayableGame {
   if (CAM === null) return game;
@@ -208,13 +276,69 @@ function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: string }) 
   );
 }
 
-function DevApp() {
+function EditorModeApp({ gameId, playable }: { gameId: string; playable: PlayableGame }) {
+  const [EditorApp, setEditorApp] = useState<ComponentType<{
+    gameId: string;
+    playable: PlayableGame;
+    layers?: import("@jgengine/core/editor/index").EditorLayersInput;
+  }> | null>(null);
+  const [layers, setLayers] = useState<import("@jgengine/core/editor/index").EditorLayersInput | undefined>(
+    undefined,
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      setError("Editor mode is only available in the dev runner (not production /play builds).");
+      return;
+    }
+    // Dynamic import is behind import.meta.env.DEV so production build:site never ships the editor.
+    void Promise.all([
+      import("@jgengine/editor"),
+      editorLayerRegistry[gameId]?.() ?? Promise.resolve(undefined),
+    ])
+      .then(([mod, resolvedLayers]) => {
+        setEditorApp(() => mod.EditorApp);
+        setLayers(() => resolvedLayers);
+      })
+      .catch((err: unknown) => setError(formatLoadError(err)));
+  }, [gameId]);
+
+  useEffect(() => {
+    if (error !== null && captureArmed()) setCaptureStatus("error", error);
+  }, [error]);
+
+  if (error !== null) return <ErrorPanel title="Editor failed to load" detail={error} />;
+  if (EditorApp === null) {
+    return (
+      <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
+        Loading editor…
+      </div>
+    );
+  }
+  return <EditorApp gameId={gameId} playable={playable} layers={layers} />;
+}
+
+function DevApp({ gameId }: { gameId: string }) {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
   const [scenario, setScenario] = useState<UiPreviewScenario | undefined>(undefined);
-  const [scenarioPending, setScenarioPending] = useState(STAGE && MODE !== "ui");
+  const [scenarioPending, setScenarioPending] = useState(STAGE && MODE !== "ui" && MODE !== "editor");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
+  const [editorSummoned, setEditorSummoned] = useState(false);
+  useEffect(() => {
+    if (!import.meta.env.DEV || MODE !== "play") return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "F8" || editorSummoned) return;
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+      event.preventDefault();
+      setEditorSummoned(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editorSummoned]);
   useEffect(() => {
     const onError = (event: ErrorEvent) => {
       const detail = event.error instanceof Error ? (event.error.stack ?? event.error.message) : event.message;
@@ -240,30 +364,30 @@ function DevApp() {
     else if (runtimeError !== null) setCaptureStatus("error", runtimeError);
   }, [loadError, runtimeError]);
   useEffect(() => {
-    const load = gameRegistry[GAME_ID];
+    const load = gameRegistry[gameId];
     if (load === undefined) {
-      setLoadError(`Unknown game "${GAME_ID}" — known ids: ${Object.keys(gameRegistry).sort().join(", ")}`);
+      setLoadError(`Unknown game "${gameId}" — known ids: ${Object.keys(gameRegistry).sort().join(", ")}`);
       return;
     }
     void load()
       .then(async (loaded) => {
-        await gameStyleModules[`../../../Games/${GAME_ID}/src/index.css`]?.();
-        await discoverGameTunables(GAME_ID, loaded.game.name);
-        if (MODE === "poster") {
+        await gameStyleModules[`../../../Games/${gameId}/src/index.css`]?.();
+        await discoverGameTunables(gameId, loaded.game.name);
+        if (MODE === "poster" || MODE === "editor") {
           setMultiplayer(null);
         } else if (P2P_ROLE === "host" || P2P_ROLE === "join") {
-          void resolvePeerShellMultiplayer({ gameId: GAME_ID, role: P2P_ROLE }).then(setMultiplayer);
+          void resolvePeerShellMultiplayer({ gameId, role: P2P_ROLE }).then(setMultiplayer);
         } else {
           setMultiplayer(
             resolveConvexMultiplayer({
               game: loaded.game,
-              gameId: GAME_ID,
+              gameId,
               url: CONVEX_URL,
               force: CONVEX_URL !== undefined,
             }) ??
               resolveShellMultiplayer({
                 game: loaded.game,
-                gameId: GAME_ID,
+                gameId,
                 url: WS_URL,
                 force: WS_URL !== undefined,
               }),
@@ -273,10 +397,10 @@ function DevApp() {
       })
       .catch((error: unknown) => {
         const message = formatLoadError(error);
-        console.error(`[jgengine/play] failed to load ${GAME_ID}`, error);
+        console.error(`[jgengine/play] failed to load ${gameId}`, error);
         setLoadError(message);
       });
-    const loadScenario = uiScenarioRegistry[GAME_ID];
+    const loadScenario = uiScenarioRegistry[gameId];
     if ((MODE === "ui" || STAGE) && loadScenario !== undefined) {
       void loadScenario()
         .then((resolved) => {
@@ -284,18 +408,18 @@ function DevApp() {
           setScenarioPending(false);
         })
         .catch((error: unknown) => {
-          console.error(`[jgengine/play] failed to load ui scenario ${GAME_ID}`, error);
+          console.error(`[jgengine/play] failed to load ui scenario ${gameId}`, error);
           setScenarioPending(false);
         });
     } else {
       setScenarioPending(false);
     }
-  }, []);
+  }, [gameId]);
   if (loadError !== null) {
-    return <ErrorPanel title={`Failed to load ${GAME_ID}`} detail={loadError} />;
+    return <ErrorPanel title={`Failed to load ${gameId}`} detail={loadError} />;
   }
   if (runtimeError !== null) {
-    return <ErrorPanel title={`Runtime error in ${GAME_ID}`} detail={runtimeError} />;
+    return <ErrorPanel title={`Runtime error in ${gameId}`} detail={runtimeError} />;
   }
   if (playable === null) {
     return (
@@ -306,6 +430,7 @@ function DevApp() {
   }
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
   if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
+  if (MODE === "editor" || editorSummoned) return <EditorModeApp gameId={gameId} playable={playable} />;
   if (scenarioPending) {
     return (
       <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
@@ -328,5 +453,11 @@ function DevApp() {
 }
 
 createRoot(document.getElementById("root")!).render(
-  PREVIEW !== null ? <PreviewApp gameId={GAME_ID} stateKey={PREVIEW} /> : <DevApp />,
+  PREVIEW !== null && GAME_ID !== null ? (
+    <PreviewApp gameId={GAME_ID} stateKey={PREVIEW} />
+  ) : GAME_ID === null ? (
+    <GamePicker />
+  ) : (
+    <DevApp gameId={GAME_ID} />
+  ),
 );

@@ -13,6 +13,7 @@
   "dependencies": {
     "@jgengine/convex": "workspace:*",
     "@jgengine/shell": "workspace:*",
+    "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "convex": "^1.31.2",
     "react": "19.2.3",
@@ -20,6 +21,7 @@
     "three": "^0.182.0"
   },
   "devDependencies": {
+    "@jgengine/editor": "workspace:*",
     "@tailwindcss/vite": "^4.0.15",
     "@types/react": "^19",
     "@types/react-dom": "19.2.3",

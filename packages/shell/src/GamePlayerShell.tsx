@@ -1963,12 +1963,16 @@ export function GamePlayerShell({
     commitSelection(selectWithinRect(candidates, rect));
   };
 
+  /** DOM UI (menus, HUD buttons) sits in the same wrapper as the canvas — only canvas-targeted clicks are world input. */
+  const isWorldPointerTarget = (event: { target: EventTarget | null }) =>
+    event.target instanceof HTMLCanvasElement;
+
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     wrapperRef.current?.focus();
     trackPointerAxis(event);
     audioEngine.resume();
     if (contextMenu !== null) setContextMenu(null);
-    if (event.button === 0) {
+    if (event.button === 0 && isWorldPointerTarget(event)) {
       const point = localXY(event);
       pointerDownRef.current = point;
       if (pointer?.select === true) marqueeStartRef.current = point;
@@ -2042,6 +2046,7 @@ export function GamePlayerShell({
 
   const handleContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (pointer === undefined) return;
+    if (!isWorldPointerTarget(event)) return;
     event.preventDefault();
     const hit = pointerService.worldHit();
     if (hit === null) return;

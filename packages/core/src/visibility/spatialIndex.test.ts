@@ -119,4 +119,39 @@ describe("spatialIndex", () => {
     idx.queryBox(-20, -20, -20, 20, 20, 20, out);
     expect(out.filter((id) => id === "wide").length).toBe(1);
   });
+
+  test("a query range far larger than the populated world walks occupied cells, not the range", () => {
+    const idx = createSpatialIndex({ cellSize: 16 });
+    for (let i = 0; i < 200; i += 1) {
+      idx.insert(`obj-${i}`, boxAt((i % 20) * 30, 0, Math.floor(i / 20) * 30));
+    }
+    const out: string[] = [];
+    const start = performance.now();
+    idx.queryBox(-1e6, -1e6, -1e6, 1e6, 1e6, 1e6, out);
+    const elapsed = performance.now() - start;
+    expect(out.length).toBe(200);
+    expect(elapsed).toBeLessThan(250);
+  });
+
+  test("giant-far-plane frustum query returns the same set as a matching box query", () => {
+    const idx = createSpatialIndex({ cellSize: 16 });
+    for (let i = 0; i < 50; i += 1) {
+      idx.insert(`obj-${i}`, boxAt(i * 40, 0, i * 40));
+    }
+    const wideView: CameraView = {
+      kind: "perspective",
+      position: [1000, 2000, -1000],
+      target: [1000, 0, 1000],
+      fovDeg: 55,
+      aspect: 1.8,
+      near: 0.5,
+      far: 8000,
+    };
+    const f = updateFrustum(createFrustum(), wideView);
+    const frustumOut: string[] = [];
+    idx.queryFrustum(f, frustumOut);
+    const boxOut: string[] = [];
+    idx.queryBox(f.minX, f.minY, f.minZ, f.maxX, f.maxY, f.maxZ, boxOut);
+    for (const id of frustumOut) expect(boxOut).toContain(id);
+  });
 });

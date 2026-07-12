@@ -138,3 +138,11 @@ ship worker returned 'running in background, will report when done' after 1 tool
 2026-07-12T22:23:41.543Z — sonnet — Claude
 
 gate worker briefed to run gen:skill-api/check-types/test twice returned 'waiting on background work' instead of results — had to resume with explicit foreground-only instruction
+
+2026-07-12T23:02:02.714Z — fable — NoisemakerJon
+
+measuring editor fps via claude-in-chrome → backgrounded tab starves rAF so CDP evals time out at 45s looking like a hard page freeze; had to pivot to headless drive + in-editor PerfProbe
+
+2026-07-12T23:02:02.831Z — fable — NoisemakerJon
+
+check-types → 445 stray compiled .js/.d.ts sitting beside src (tsgo run outside dist) blocked the artifact gate; sibling-match rm before anything could run

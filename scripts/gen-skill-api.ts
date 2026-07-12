@@ -21,6 +21,7 @@ const CORE_DOMAIN_SKILLS: Record<string, string> = {
   data: "jgengine-gameplay",
   devtools: MAIN,
   economy: "jgengine-gameplay",
+  editor: "jgengine-editor",
   faction: "jgengine-world",
   game: "jgengine-gameplay",
   input: "jgengine-gameplay",
@@ -53,6 +54,7 @@ const CORE_DOMAIN_SKILLS: Record<string, string> = {
 const CORE_INTERNAL_DOMAINS = new Set(["assets", "store"]);
 
 const PACKAGE_SKILLS: Record<string, string> = {
+  editor: "jgengine-editor",
   ws: "jgengine-multiplayer",
   sql: "jgengine-multiplayer",
   convex: "jgengine-multiplayer",
@@ -73,6 +75,7 @@ const SKILL_DIRS = [
   "jgengine-multiplayer",
   "jgengine-ui",
   "jgengine-assets",
+  "jgengine-editor",
 ] as const;
 
 const BASELINE_PATH = "scripts/api-doc-baseline.json";

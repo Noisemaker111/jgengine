@@ -11,7 +11,7 @@ import { runDoctor } from "../doctor";
 import { cliVersion, findUp, readPackageJson } from "../pkg";
 import { runSkills } from "../skills";
 
-const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets"];
+const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets", "editor"];
 
 const HELP = `jgengine ${cliVersion()} — agent-side CLI for the JGengine TypeScript game SDK
 Packages: ${ENGINE_PACKAGES.map((name) => `@jgengine/${name}`).join(", ")}.
@@ -36,6 +36,7 @@ usage: jgengine <command> [...args]
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
   llms [package]        print packaged API docs (llms.txt) — agent-ready
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
+  editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
   versions              CLI + installed @jgengine/* versions
   help                  this map
 `;
@@ -91,6 +92,17 @@ function runAssets(argv: string[]): number {
   return result.status ?? 1;
 }
 
+function runEditorMcp(argv: string[]): number {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const monorepoCli = join(here, "..", "..", "..", "editor", "src", "mcp", "cli.ts");
+  if (existsSync(monorepoCli)) {
+    const result = spawnSync("bun", [monorepoCli, ...argv], { stdio: "inherit" });
+    return result.status ?? 1;
+  }
+  console.error("error: editor-mcp CLI not found — run from the jgengine monorepo or install @jgengine/editor");
+  return 1;
+}
+
 const [command, ...rest] = process.argv.slice(2);
 
 switch (command) {
@@ -111,6 +123,10 @@ switch (command) {
     break;
   case "assets":
     process.exit(runAssets(rest));
+    break;
+  case "editor-mcp":
+  case "editor":
+    process.exit(runEditorMcp(rest));
     break;
   case "versions":
     process.exit(runVersions());
