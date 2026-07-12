@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const SKELETON_FILES = new Set(["game.config.ts", "index.tsx", "main.tsx", "loop.ts", "world.ts", "index.css"]);
+const SKELETON_FILES = new Set(["game.config.ts", "index.tsx", "preview.tsx", "main.tsx", "loop.ts", "world.ts", "index.css"]);
 const SKELETON_DIRS = new Set(["game"]);
 
 const REQUIRED_TSCONFIG_PATHS: Record<string, string> = {
