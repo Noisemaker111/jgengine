@@ -115,6 +115,15 @@
 - `resolveMobileOrientationRule` (function): function resolveMobileOrientationRule(orientation: GameOrientation | undefined): MobileOrientationRule — Normalize the `orientation` field (legacy string or object) to a single mobile rule.
 - `resolveOrientationRequirement` (function): function resolveOrientationRequirement(orientation: GameOrientation | undefined, platform: "mobile" | "desktop"): OrientationRequirement — Resolve the game's orientation declaration into a concrete requirement for a platform. Desktop is always unconstrained.
 
+## @jgengine/core/ui/swingTimer
+
+- `SWING_EDGE_EPSILON` (const): const SWING_EDGE_EPSILON: 0.0001 — Threshold above which a timer jump is treated as a fresh swing (period reset).
+- `SwingLabelKind` (type): type SwingLabelKind = "ready" | "seconds" — Whether the bar shows a "ready" label or the seconds-remaining countdown.
+- `SwingPlayerInput` (interface): interface SwingPlayerInput — The local player's auto-attack state for one frame. `swingTimer` counts DOWN in seconds to 0 (= a swing lands).
+- `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
+- `SwingTimerState` (interface): interface SwingTimerState — One frame of swing-bar state plus the cursor (`nextPeriod`/`nextTimer`) the caller carries back into the next call.
+- `swingTimerState` (function): function swingTimerState(player: SwingPlayerInput, target: SwingTargetInput | null, prevPeriod: number, prevTimer: number): SwingTimerState — Pure swing-timer bar state — no hidden state, no clock, no DOM. The caller threads `prevPeriod`/`prevTimer` back each frame. The period is recovered on the reset edge (when `swingTimer` jumps up = a new swing began) as `max(swingTimer, weapon.speed)`, so the fill is correct even without knowing the weapon's exact cadence. Hidden unless auto-attacking a live, non-object target.
+
 ## @jgengine/react
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
