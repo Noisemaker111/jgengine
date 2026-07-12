@@ -15,6 +15,7 @@ import { mobHp } from "./math/combat";
 import { YUMI_CATALOG, YUMI_MAX_HP } from "./minigames/yumi";
 import { COPPER, isPlayerEntityId, type MobDef } from "./model";
 import { PETS } from "./pets/catalog";
+import { WORLD_BOSS_MOB_ID } from "./world/worldBoss";
 
 for (const item of ITEMS) {
   if (item.stack !== undefined) registerStackLimit(item.id, item.stack);
@@ -52,7 +53,9 @@ function mobEntry(def: MobDef): GameContextEntityEntry {
       level: { max: 60, min: 1, current: def.minLevel },
     },
     receive: RECEIVE,
-    onDeath: { drops: [{ table: `coins:${def.id}` }, { table: `drops:${def.id}` }] },
+    ...(def.id === WORLD_BOSS_MOB_ID
+      ? {}
+      : { onDeath: { drops: [{ table: `coins:${def.id}` }, { table: `drops:${def.id}` }] } }),
     movement: { walkSpeed: def.moveSpeed },
   };
 }

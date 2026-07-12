@@ -17,6 +17,7 @@ import { applySheet, grantTalentPoint, heroOf, heroSheet, resetHero } from "./se
 import { SPECS } from "./talents/catalog";
 import { GATHER_NODES } from "./professions/catalog";
 import { gatherNodeCount } from "./professions/gathering";
+import { onWorldBossKilled, WORLD_BOSS_MOB_ID, worldBossLockedOut } from "./world/worldBoss";
 
 const USER = "hero-test";
 
@@ -525,5 +526,17 @@ describe("claudecraft gameplay (headless)", () => {
     expect(geared!.hastePct).toBeCloseTo(0.15);
     expect(geared!.setProcs.map((proc) => proc.id)).toContain("set_bonesplinter");
     expect(geared!.attackPower).toBeGreaterThan(bare!.attackPower);
+  });
+
+  test("Thunzharr spawns from the world-boss scheduler and grants lockout-gated loot", () => {
+    step(ctx, 0.3);
+    const bossId = firstMobOf(ctx, WORLD_BOSS_MOB_ID);
+    expect(ctx.scene.entity.get(bossId)).not.toBeNull();
+    expect(ctx.scene.entity.stats.get(bossId, "health")?.max).toBe(40000);
+    const before = ctx.player.inventory.count("bags", "inert_storm_shard");
+    expect(worldBossLockedOut(ctx, USER)).toBe(false);
+    onWorldBossKilled(ctx, bossId, USER);
+    expect(ctx.player.inventory.count("bags", "inert_storm_shard")).toBe(before + 1);
+    expect(worldBossLockedOut(ctx, USER)).toBe(true);
   });
 });
