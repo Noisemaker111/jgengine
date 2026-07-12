@@ -54,6 +54,7 @@ export type HostRouterConnection = {
   close: () => void;
 };
 
+/** A player's interpolated position sampled from history at a past timestamp. */
 export type RewoundPosition = {
   userId: string;
   x: number;

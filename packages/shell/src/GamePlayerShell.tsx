@@ -977,6 +977,7 @@ function WorldActors({
   renderEntity,
   renderObject,
   selectedIds,
+  hideLocalActor,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
@@ -986,6 +987,7 @@ function WorldActors({
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
   selectedIds: ReadonlySet<string>;
+  hideLocalActor: boolean;
 }) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
@@ -1001,6 +1003,7 @@ function WorldActors({
     <>
       {entities
         .filter((entity) => entity.name !== WORLD_ITEM_ENTITY_NAME)
+        .filter((entity) => !(hideLocalActor && entity.id === controlledId))
         .map((entity) => (
           <EntityMarker
             key={entity.id}
@@ -1044,6 +1047,7 @@ function WorldView({
   renderEntity,
   renderObject,
   selectedIds,
+  hideLocalActor,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
@@ -1054,6 +1058,7 @@ function WorldView({
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
   selectedIds: ReadonlySet<string>;
+  hideLocalActor: boolean;
 }) {
   return (
     <>
@@ -1067,6 +1072,7 @@ function WorldView({
         renderEntity={renderEntity}
         renderObject={renderObject}
         selectedIds={selectedIds}
+        hideLocalActor={hideLocalActor}
       />
     </>
   );
@@ -1271,7 +1277,7 @@ function FrameDriver({
       collisionDebug.setAimProbe({
         from: aimFrom,
         aim: commandAim,
-        originPolicy: { kind: "muzzle" },
+        originPolicy: { kind: "eye" },
         maxDistance: 100,
       });
     } else if (collisionDebug.getAimProbe() !== null) {
@@ -2229,6 +2235,7 @@ export function GamePlayerShell({
               renderEntity={playable.renderEntity}
               renderObject={playable.renderObject}
               selectedIds={selectedIds}
+              hideLocalActor={firstPerson}
             />
           </CullingProvider>
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}

@@ -183,6 +183,7 @@ const CODE_LABELS: Record<string, string> = {
   ArrowRight: "→",
 };
 
+/** Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`). */
 export function bindingLabel(code: string): string {
   const direct = CODE_LABELS[code];
   if (direct !== undefined) return direct;

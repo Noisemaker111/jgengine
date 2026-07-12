@@ -2,12 +2,12 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
+import { DEFAULT_EYE_HEIGHT } from "@jgengine/core/combat/shotOrigin";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
 import { usePlayerFov } from "./PlayerFov";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 
-const DEFAULT_EYE_HEIGHT = 1.6;
 const DEFAULT_SENSITIVITY = 0.0025;
 const DEFAULT_MAX_PITCH = 1.45;
 

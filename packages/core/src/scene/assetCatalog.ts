@@ -1,3 +1,4 @@
+/** Measured horizontal footprint, footprint center, and lowest Y of a model in model space. */
 export interface ModelDims {
   footprint: { w: number; d: number };
   center: { x: number; z: number };

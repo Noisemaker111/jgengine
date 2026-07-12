@@ -14,8 +14,10 @@ import type {
 } from "./features";
 import { nearestOnPath } from "./roads";
 
+/** A surface normal vector at a terrain sample point. */
 export type TerrainNormal = readonly [number, number, number];
 
+/** A sampleable ground surface: height and normal at any x/z, with optional bounds and water level. */
 export interface TerrainField {
   sampleHeight(x: number, z: number): number;
   sampleNormal(x: number, z: number): TerrainNormal;
@@ -41,6 +43,7 @@ function hash2(ix: number, iz: number, seed: number): number {
   return (h >>> 0) / 4294967295;
 }
 
+/** Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed. */
 export function valueNoise(x: number, z: number, seed: number): number {
   const x0 = Math.floor(x);
   const z0 = Math.floor(z);
@@ -57,6 +60,7 @@ export function valueNoise(x: number, z: number, seed: number): number {
   return lerp(top, bottom, sz) * 2 - 1;
 }
 
+/** Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping. */
 export interface FractalNoiseConfig {
   seed: number;
   frequency: number;
@@ -66,6 +70,7 @@ export interface FractalNoiseConfig {
   ridged: boolean;
 }
 
+/** Layers `valueNoise` octaves per `config` into a single normalized noise sample. */
 export function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number {
   let amplitude = 1;
   let frequency = config.frequency;
@@ -95,6 +100,7 @@ export function seedFrom(value: string | number | undefined, fallback: number): 
   return fallback;
 }
 
+/** Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients. */
 export function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] {
   const epsilon = 0.75;
   return (x, z) => {
@@ -125,10 +131,12 @@ export const FLAT_FIELD: TerrainField = {
   sampleNormal: () => [0, 1, 0] as const,
 };
 
+/** A flat, zero-height `TerrainField` for arenas with no elevation. */
 export function flatField(): TerrainField {
   return FLAT_FIELD;
 }
 
+/** Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping. */
 export interface NoiseFieldConfig {
   seed?: string | number;
   amplitude?: number;
@@ -142,6 +150,7 @@ export interface NoiseFieldConfig {
   waterLevel?: number;
 }
 
+/** Builds a `TerrainField` whose height is fractal noise shaped by `config`. */
 export function noiseField(config: NoiseFieldConfig = {}): TerrainField {
   const fractal: FractalNoiseConfig = {
     seed: seedFrom(config.seed, 1337),
@@ -193,6 +202,7 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
   return t * t * (3 - 2 * t);
 }
 
+/** Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas. */
 export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
   const seed = seedFrom(config.seed ?? "arena", 7);
   const rolling: FractalNoiseConfig = {
@@ -603,6 +613,7 @@ export function heightMapField(config: HeightMapFieldConfig): TerrainField {
   );
 }
 
+/** Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks. */
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
   if (descriptor === undefined) return flatField();
   if (descriptor.heightField === undefined && descriptor.heightMap !== undefined) {
@@ -666,6 +677,7 @@ export function snapEntityToGround(
 
 export const DEFAULT_MAX_WALK_SLOPE = 0.6;
 
+/** Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`. */
 export function resolveGroundStep(
   field: TerrainField,
   x: number,

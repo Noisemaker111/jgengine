@@ -41,6 +41,7 @@ export function useSetting<T extends SettingValue>(id: string, fallback: T): rea
   return [value, set];
 }
 
+/** One editable setting rendered in a settings menu category. */
 export interface SettingsRow {
   id: string;
   label: string;
@@ -54,6 +55,7 @@ export interface SettingsRow {
   set: (value: SettingValue) => void;
 }
 
+/** One rebindable action row rendered in the controls settings category. */
 export interface SettingsKeybindRow {
   action: string;
   label: string;
@@ -63,6 +65,7 @@ export interface SettingsKeybindRow {
   reset: () => void;
 }
 
+/** A settings menu category with its rows and keybinds, ready to render. */
 export interface SettingsCategoryView {
   id: SettingCategory;
   label: string;

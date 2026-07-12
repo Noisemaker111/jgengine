@@ -25,7 +25,7 @@ fireProjectile({ from, via, aim, effect })      // â†’ shotId (pending)
 settleProjectile(shotId)                        // authoritative â†’ { at, hits } | rejection
 ```
 
-`Aim = { origin, direction } | { yaw, pitch, spread? }`. Hitscan settles into per-hit effects; ballistic shots (`weapon.projectile` with `fuseTime`/`settleOn`) settle to a landing point â€” the handler then calls `effect({ at: settle.at, radius })`. Settling twice rejects. Prediction is never authority.
+`Aim = { origin, direction } | { yaw, pitch, spread? }`. Shot origin resolves via `ShotOriginPolicy` (default `eye`: `aim.origin` when given, else shooter position raised to eye height â€” shots trace the sightline so the crosshair is truth; `muzzle`/`camera`/`world` for custom rigs, `legacy` = raw entity position). Default entity hitbox is a body-covering AABB (feet to ~1.8m). Hitscan settles into per-hit effects; ballistic shots (`weapon.projectile` with `fuseTime`/`settleOn`) settle to a landing point â€” the handler then calls `effect({ at: settle.at, radius })`. Settling twice rejects. Prediction is never authority.
 
 Raycasts are **object-aware**: the default raycast checks placed scene objects as well as entities, discriminated by `RaycastHit.kind` (`"entity" | "object"` â€” an `ObjectRaycastHit` also carries `catalogId`). A crate or wall between shooter and target blocks or absorbs the shot instead of every projectile passing through scenery; supply `ProjectileSystemDeps.objects` (`{ list(), halfExtents?(catalogId) }`, matching `ObjectStore.list()` structurally) to opt in, with a `[0.5, 0.5, 0.5]` half-extent default per object.
 

@@ -4,13 +4,16 @@ import type { Aim } from "../scene/spatial";
 
 /**
  * How a shot's world-space origin (and optional direction) is resolved before prediction/settlement.
- * - `legacy` — `aim.origin` when present, else the shooter's entity position (pre-#431 default).
+ * - `eye` — `aim.origin` when present, else the shooter's entity position raised to eye height; the
+ *   shot traces the shooter's sightline, so what the crosshair covers is what gets hit (the default).
+ * - `legacy` — `aim.origin` when present, else the shooter's raw entity position (feet).
  * - `entity` — always the shooter's entity position.
  * - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model).
  * - `camera` — explicit camera/reticle world origin (and optional direction override).
  * - `world` — absolute world origin.
  */
 export type ShotOriginPolicy =
+  | { kind: "eye"; height?: number }
   | { kind: "legacy" }
   | { kind: "entity" }
   | { kind: "entityOffset"; offset: EntityPosition }
@@ -29,6 +32,9 @@ export interface ShotOriginDeps {
 }
 
 const DEFAULT_MUZZLE_OFFSET: EntityPosition = [0, 1.4, 0.35];
+
+/** Shot-origin and first-person camera eye height above an entity's position, in meters. */
+export const DEFAULT_EYE_HEIGHT = 1.6;
 
 function normalize(vector: EntityPosition): EntityPosition | null {
   const length = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
@@ -50,12 +56,22 @@ export function resolveShot(
   deps: ShotOriginDeps,
   from: string,
   aim: Aim,
-  policy: ShotOriginPolicy = { kind: "legacy" },
+  policy: ShotOriginPolicy = { kind: "eye" },
 ): ResolvedShot | null {
   const aimDir = aimDirection(aim);
   if (aimDir === null && policy.kind !== "camera" && policy.kind !== "world") return null;
 
   switch (policy.kind) {
+    case "eye": {
+      if ("origin" in aim) {
+        if (aimDir === null) return null;
+        return { origin: aim.origin, direction: aimDir };
+      }
+      const position = deps.positionOf(from);
+      if (position === undefined || aimDir === null) return null;
+      const height = policy.height ?? DEFAULT_EYE_HEIGHT;
+      return { origin: [position[0], position[1] + height, position[2]], direction: aimDir };
+    }
     case "legacy": {
       const origin = "origin" in aim ? aim.origin : deps.positionOf(from);
       if (origin === undefined || aimDir === null) return null;

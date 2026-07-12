@@ -200,12 +200,12 @@
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — ⚠ undocumented
+- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
 - `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
 - `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — ⚠ undocumented
+- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
 - `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): React.JSX.Element — ⚠ undocumented
-- `SettingsRow` (interface): interface SettingsRow — ⚠ undocumented
+- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
 - `SettingsTrigger` (function): function SettingsTrigger({ className, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): React.JSX.Element | null — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` for placement/skin and `children` to replace the default gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
 - `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
@@ -511,12 +511,12 @@
 ## @jgengine/react/settings
 
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — ⚠ undocumented
+- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
 - `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
 - `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — ⚠ undocumented
+- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
 - `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): React.JSX.Element — ⚠ undocumented
-- `SettingsRow` (interface): interface SettingsRow — ⚠ undocumented
+- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
 - `SettingsTrigger` (function): function SettingsTrigger({ className, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): React.JSX.Element | null — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` for placement/skin and `children` to replace the default gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
@@ -1217,12 +1217,12 @@
 ## @jgengine/shell/settings/settingsController
 
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — ⚠ undocumented
+- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
 - `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
 - `SettingsControllerInput` (interface): interface SettingsControllerInput — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — ⚠ undocumented
-- `SettingsRow` (interface): interface SettingsRow — ⚠ undocumented
-- `bindingLabel` (function): function bindingLabel(code: string): string — ⚠ undocumented
+- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
+- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
+- `bindingLabel` (function): function bindingLabel(code: string): string — Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
 - `useSettingsCategories` (function): function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] — ⚠ undocumented
 
 ## @jgengine/shell/structures
@@ -1278,7 +1278,7 @@
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
-- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — ⚠ undocumented
+- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1287,7 +1287,7 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — ⚠ undocumented
+- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
@@ -1297,34 +1297,34 @@
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
-- `TerrainField` (interface): interface TerrainField — ⚠ undocumented
+- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
-- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — ⚠ undocumented
+- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
-- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — ⚠ undocumented
+- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
 - `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
 - `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
 - `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
 - `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
 - `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
 - `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
-- `flatField` (function): function flatField(): TerrainField — ⚠ undocumented
-- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — ⚠ undocumented
+- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
+- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
 - `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
-- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — ⚠ undocumented
+- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
 - `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
 - `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 - `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
 - `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
-- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — ⚠ undocumented
-- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — ⚠ undocumented
+- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
+- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
 - `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
 - `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
 - `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
 - `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
-- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — ⚠ undocumented
-- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — ⚠ undocumented
+- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
+- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/shell/terrain
 
@@ -1334,7 +1334,7 @@
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
-- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — ⚠ undocumented
+- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1343,7 +1343,7 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — ⚠ undocumented
+- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
@@ -1353,34 +1353,34 @@
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
-- `TerrainField` (interface): interface TerrainField — ⚠ undocumented
+- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
-- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — ⚠ undocumented
+- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
-- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — ⚠ undocumented
+- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
 - `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
 - `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
 - `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
 - `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
 - `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
 - `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
-- `flatField` (function): function flatField(): TerrainField — ⚠ undocumented
-- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — ⚠ undocumented
+- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
+- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
 - `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
-- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — ⚠ undocumented
+- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
 - `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
 - `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 - `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
 - `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
-- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — ⚠ undocumented
-- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — ⚠ undocumented
+- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
+- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
 - `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
 - `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
 - `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
 - `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
-- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — ⚠ undocumented
-- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — ⚠ undocumented
+- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
+- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/shell/terrain/CarvedTerrain
 
