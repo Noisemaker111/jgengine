@@ -31,3 +31,7 @@ workers repeatedly backgrounded foreground briefs (ship motion, screenshot sweep
 2026-07-12T00:28:50.474Z — fable — Claude
 
 check-game-shape gate rejected new cross-game contract file preview.tsx at src root → whitelist edit needed mid-ship
+
+2026-07-12T00:33:41.028Z — fable-5 — Claude
+
+briefed a Sonnet worker to run gates+ship → it recursively spawned background sub-workers and returned 'will report later' twice, nearly triple-running the ship motion
