@@ -7,9 +7,11 @@ const SHADOW_FILTER = "drop-shadow(0 1px 1px rgba(0,0,0,0.9))";
 const clampFraction = (value: number) =>
   Number.isNaN(value) ? 0 : Math.min(1, Math.max(0, value));
 
+const roundCoord = (value: number) => Math.round(value * 1000) / 1000;
+
 function radial(cx: number, cy: number, radius: number, angleDeg: number): { x: number; y: number } {
   const rad = (angleDeg * Math.PI) / 180;
-  return { x: cx + Math.cos(rad) * radius, y: cy + Math.sin(rad) * radius };
+  return { x: roundCoord(cx + Math.cos(rad) * radius), y: roundCoord(cy + Math.sin(rad) * radius) };
 }
 
 export function Reticle({

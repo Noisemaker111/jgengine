@@ -91,10 +91,17 @@ ship worker replied 'running in background, will report' and its TaskOutput id 4
 2026-07-12T04:59:14.718Z — fable-5 — Claude
 
 delegated verify/screenshot workers twice re-delegated to sub-workers and returned 'waiting on the worker' as their result → had to re-dispatch with explicit 'do not spawn sub-agents' briefs
+2026-07-12T05:19:28.342Z — fable-5 — Claude
+
+probe-testing new:game → bun's lenient package.json parser masked a dangling comma my cleanup left; strict python json caught it — validate root package.json with a strict parser after scripted edits
 
 2026-07-12T05:26:39.405Z — fable-5 — Claude
 
 PR #563 squash-merge was a no-op: fix branch's net diff for generated/index.ts canceled against merge-base since branch already contained the clobbering commit landed separately via #550 → main stayed red after 'merge'; had to re-cut a fresh branch off main as #566
+
+2026-07-12T05:33:03.754Z — fable-5 — Claude
+
+waited on merge-commit CI → CLAUDE.md claims no Actions job exceeds ~1 min, but apps/web build now runs ~6 min; the stale claim caused a false hung-job investigation
 
 2026-07-12T15:47:53.182Z — sonnet-5 — Claude
 

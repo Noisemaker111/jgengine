@@ -92,6 +92,30 @@ describe("environmentSummary", () => {
     expect(sited.buildings).toBe(centered.buildings);
   });
 
+  test("grass position surfaces on the vegetation summary as area.position", () => {
+    const centered = summarizeEnvironment(environment({ vegetation: grass({ density: 3 }) })).vegetation[0];
+    const sited = summarizeEnvironment(
+      environment({ vegetation: grass({ density: 3, position: [200, -150] }) }),
+    ).vegetation[0];
+    expect(centered.area.position).toBeUndefined();
+    expect(sited.area.position).toEqual([200, -150]);
+    expect(sited.density).toBe(centered.density);
+  });
+
+  test("top-level weather position is sugar for area.position and surfaces on the summary", () => {
+    const [rainSummary] = summarizeEnvironment(environment({ weather: rain({ position: [40, 90] }) })).weather;
+    const [snowSummary] = summarizeEnvironment(environment({ weather: snow({ position: [-30, 12] }) })).weather;
+    expect(rainSummary.area.position).toEqual([40, 90]);
+    expect(snowSummary.area.position).toEqual([-30, 12]);
+  });
+
+  test("an explicit area.position wins over the top-level position sugar", () => {
+    const [summary] = summarizeEnvironment(
+      environment({ weather: rain({ position: [40, 90], area: { w: 100, d: 100, position: [1, 2] } }) }),
+    ).weather;
+    expect(summary.area.position).toEqual([1, 2]);
+  });
+
   test("distinct sited clusters do not overlap", () => {
     const summary = summarizeEnvironment(
       environment({

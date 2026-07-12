@@ -23,7 +23,8 @@ A JGengine scene is derived deterministically from an `environment()` descriptor
 - **First shoot must pass the first-shot art recipe** (`jgengine-world`): `sky` preset `day` when brightness matters (dusk/night ignore `sunIntensity` overrides), a forward (+Z) landmark in frame, readable play-surface colors, props scaled as figures. Fix world/sky/placement *before* the first `shoot` — do not discover murk and bad framing across four screenshot loops.
 - **Once `shoot` hangs, do not re-run it in the foreground.** Chrome/CDP on heavy WebGL scenes can hang, crash the GPU/tab, or emit corrupt output. Re-running the identical command is the rake this repo steps on repeatedly. If a shot hangs once: report it, fall back to the world test to prove the scene resolved, and only retry the screenshot if the user asks.
 - **Don't invent in-browser verification the user didn't ask for.** If you've been told not to open the browser, `summarizeEnvironment` + git archaeology is how you confirm behavior — not a screenshot.
-- **Run this ladder via the `fan-out` skill** — never `check-types` / `bun test` / `shoot` on the frontier model. You only judge the PNG and failing assertions.
+- **Menu-gated games: `bun run drive`, never hand-rolled Playwright.** A game behind a title/character-select screen (or any state `--mode play` can't reach) is driven with `bun run drive <game> --click "TEXT" --wait 1500 --shot picked --key KeyW:2500 --shot walked` — ordered steps, screenshots to `shots/<game>-<name>.png`. It reuses shoot's dev-server + CDP plumbing; clicks resolve visible text to coordinates and dispatch raw mouse events, so hover overlays never intercept and nothing times out on actionability; `--key CODE:MS` holds a key (`keydown`/`keyup` with the real `e.code`). Pointer-lock mouse-look can't be synthesized — pick shots that don't need turning, or set the spawn to face the subject.
+- **Run this ladder via the `fan-out` skill** — never `check-types` / `bun test` / `shoot` / `drive` on the frontier model. You only judge the PNG and failing assertions.
 
 ## Adding the scene gate to a game
 
@@ -73,6 +74,10 @@ describe("<game> voxel world", () => {
 Every game ships `src/preview.tsx`: the default export is a static default frame (the website card), and an optional `states` named export (`GamePreviewStates` from `@jgengine/react/preview`) maps state keys — `stage_1`, `game_over`, `normal_chest:opened` — to components. State components SHOULD compose the game's **real UI components** (`Hud`, `Overlays`, result screens) fed with canned fixture snapshots, not a hand-drawn facsimile: a facsimile only tests the drawing, while real components with fixture state make each key a genuine render test of the UI the player sees.
 
 Capture is `bun run shoot <game> --preview <stateKey>` (bare `--preview` or `--mode preview` = default frame), which drives `/?game=<id>&preview=<stateKey>` in the dev runner. That URL mounts only the resolved preview component — no sim, no three.js, no `GamePlayerShell` — so it renders in milliseconds, never hangs on WebGL, and fires the same `data-jg-capture` handshake. Output lands at `shots/<game>-preview-<state>.png`. An unknown state key fails fast with the list of available keys. Reach for `--preview` before `--mode ui`/`--mode play` whenever the question is "does this UI state render right" — the full-shell modes remain only for live-scene look and integration.
+
+## SSR'd widgets must be hydration-stable
+
+Hosts prerender registry widgets (jgengine.com does this for `/components`), so any widget that emits a computed float straight into an SVG attribute must round at the boundary — server and client stringify a raw trig result to different last digits and React throws a hydration mismatch. Round coordinate output to a fixed precision (≈3 decimals) inside the shared arc/point helper (`polarToCartesian`, `pointAt`, `radial`) so both renders agree; new SVG widgets round by default.
 
 ## Definition of done references this
 

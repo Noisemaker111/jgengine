@@ -8,12 +8,12 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 
 | Game | Status | id |
 | --- | --- | --- |
-| Klondike Solitaire | ✅ | `klondike` |
-| FreeCell | ✅ | `freecell` |
-| Video Poker (Jacks or Better) | ✅ | `video-poker` |
-| Blackjack | ✅ | `blackjack` |
-| Memory / Concentration | ✅ | `memory-match` |
-| Spider Solitaire | ✅ | `spider` |
+| Klondike Solitaire | ❌ | |
+| FreeCell | ❌ | |
+| Video Poker (Jacks or Better) | ❌ | |
+| Blackjack | ❌ | |
+| Memory / Concentration | ❌ | |
+| Spider Solitaire | ❌ | |
 | Pyramid Solitaire | W2 | |
 | TriPeaks | W2 | |
 | Golf Solitaire | W2 | |
@@ -28,20 +28,20 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 
 | Game | Status | id |
 | --- | --- | --- |
-| Minesweeper (classic 2D) | ✅ | `flag-sweep` |
-| Minesweeper (co-op 3D) | ✅ | `mine-drop` |
-| 2048 | ✅ | `slide-2048` |
-| 15 Puzzle | ✅ | `fifteen-slide` |
-| Sokoban | ✅ | `crate-keeper` |
-| Sudoku | ✅ | `sudoku` |
+| Minesweeper (classic 2D) | ❌ | |
+| Minesweeper (co-op 3D) | ❌ | |
+| 2048 | ❌ | |
+| 15 Puzzle | ❌ | |
+| Sokoban | ❌ | |
+| Sudoku | ❌ | |
 | Nonogram / Picross | ✅ | `nonogram` |
-| Lights Out | ✅ | `lights-out` |
-| Peg Solitaire | ✅ | `peg-solitaire` |
-| Mastermind | ✅ | `codebreaker` |
-| Simon | ✅ | `echo-lights` |
+| Lights Out | ❌ | |
+| Peg Solitaire | ❌ | |
+| Mastermind | ❌ | |
+| Simon | ❌ | |
 | Tic-Tac-Toe | W2 | |
-| Connect Four | ✅ | `four-in-a-row` |
-| Reversi / Othello | ✅ | `reversi` |
+| Connect Four | ❌ | |
+| Reversi / Othello | ❌ | |
 | Battleship | W2 | |
 | Dots and Boxes | W2 | |
 | Pipe Mania | W2 | |
@@ -58,17 +58,17 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 
 | Game | Status | id |
 | --- | --- | --- |
-| Falling blocks (Tetris lineage) | ✅ | `block-stacker` |
-| Maze chase (Pac-Man lineage) | ✅ | `maze-muncher` |
-| Match-3 | ✅ | `gem-cascade` |
-| Snake | ✅ | `snake` |
-| Breakout | ✅ | `brick-breaker` |
-| Pong | ✅ | `paddle-duel` |
+| Falling blocks (Tetris lineage) | ❌ | |
+| Maze chase (Pac-Man lineage) | ❌ | |
+| Match-3 | ❌ | |
+| Snake | ❌ | |
+| Breakout | ❌ | |
+| Pong | ❌ | |
 | Columns | W2 | |
 | Chain-drop (Puyo lineage) | W2 | |
-| Bubble shooter | ✅ | `bubble-burst` |
+| Bubble shooter | ❌ | |
 | Space Invaders | ✅ | `star-invaders` |
-| Asteroids | ✅ | `rock-blaster` |
+| Asteroids | ❌ | |
 | Frogger | ✅ | `road-hopper` |
 | Missile Command | W2 | |
 | Lunar Lander | W2 | |
@@ -81,11 +81,11 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 
 | Game | Status | id |
 | --- | --- | --- |
-| Pachinko | ✅ | `pachinko-parlor` |
+| Pachinko | ❌ | |
 | Pinball | ✅ | `pinball` |
 | Peg-bounce scorer (Peggle lineage) | W2 | |
-| Mahjong Solitaire | ✅ | `mahjong-solitaire` |
-| Yahtzee | ✅ | `yacht-dice` |
+| Mahjong Solitaire | ❌ | |
+| Yahtzee | ❌ | |
 | Skee-ball | W3 | |
 | Air hockey | W3 | |
 | Darts | W3 | |

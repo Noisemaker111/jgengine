@@ -291,6 +291,7 @@
 ## @jgengine/core/game/events
 
 - `AudioPlayEvent` (interface): interface AudioPlayEvent — ⚠ undocumented
+- `AudioResumeEvent` (type): type AudioResumeEvent = Record<string, never> — Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload.
 - `ChatMessageEvent` (interface): interface ChatMessageEvent — ⚠ undocumented
 - `CombatHitReactionEvent` (interface): interface CombatHitReactionEvent — ⚠ undocumented
 - `CombatTelegraphCancelledEvent` (interface): interface CombatTelegraphCancelledEvent — ⚠ undocumented
@@ -338,6 +339,14 @@
 - `isPlaying` (function): function isPlaying(ctx: GameContext): boolean — ⚠ undocumented
 - `setGamePhase` (function): function setGamePhase(ctx: GameContext, phase: GamePhase): void — Set the current phase. Publishes it to `ctx.game.store` (React reads it via `useGamePhase`) and gates the shell's on-screen touch controls in one call — `playing` shows them, every other phase hides them. This is the whole "main menu shouldn't show touch controls" wiring: call it once per phase transition and the dock follows.
 
+## @jgengine/core/game/keyValueStore
+
+- `KeyValueStorage` (interface): interface KeyValueStorage — Structural, DOM-free storage backend: the browser `localStorage` satisfies it, as does a test stub or `null`. The one storage seam core primitives target so persistence code never needs the DOM `Storage` lib.
+- `KeyValueStore` (interface): interface KeyValueStore<T> — A single persisted, mutable cell: read the current value, overwrite it, or read-modify-write with {@link KeyValueStore.update}. Unlike a record book it has no monotonic guard — the value goes wherever you set it.
+- `KeyValueStoreConfig` (interface): interface KeyValueStoreConfig<T> — Config for {@link createKeyValueStore}: the storage `key`, the `initial` value used before anything is saved, an optional `storage` backend (defaults to `localStorage`, pass `null` for memory-only), and optional custom `serialize`/`deserialize` (default JSON).
+- `createKeyValueStore` (function): function createKeyValueStore<T>(config: KeyValueStoreConfig<T>): KeyValueStore<T> — A lightweight mutable local save cell for single-player state (a credit bank, a settings blob, level progress) — the read-modify-write counterpart to the monotonic `recordBook`. Persists through a {@link KeyValueStorage} (browser `localStorage` by default); corrupt or unavailable storage degrades to in-memory and never throws into a game tick.
+- `defaultKeyValueStorage` (function): function defaultKeyValueStorage(): KeyValueStorage | null — The ambient `localStorage` as a {@link KeyValueStorage} when one exists (browser), otherwise `null` (server/tests) — never references the DOM `Storage` type, so it is safe in core.
+
 ## @jgengine/core/game/leaderboard
 
 - `IncrementResult` (type): type IncrementResult = { status: "ok"; value: number } | { status: "rejected"; reason: "not-tracked" } — ⚠ undocumented
@@ -351,10 +360,12 @@
 
 - `CurrentLevel` (interface): interface CurrentLevel<TLevelConfig> — ⚠ undocumented
 - `LevelDescriptor` (interface): interface LevelDescriptor<TLevelConfig> — ⚠ undocumented
+- `LevelRecord` (interface): interface LevelRecord — Persisted per-level outcome: whether it has ever been cleared and the best star rating achieved.
 - `LevelSequence` (interface): interface LevelSequence<TLevelConfig> — ⚠ undocumented
 - `LevelSequenceConfig` (interface): interface LevelSequenceConfig<TLevelConfig> — ⚠ undocumented
 - `LevelSequenceProgress` (interface): interface LevelSequenceProgress — ⚠ undocumented
 - `LevelSequenceStatus` (type): type LevelSequenceStatus = "idle" | "playing" | "cleared" | "failed" | "complete" — ⚠ undocumented
+- `LevelStars` (type): type LevelStars = 0 | 1 | 2 | 3 — A level's star rating, 0 (cleared, no stars) to 3.
 - `createLevelSequence` (function): function createLevelSequence<TLevelConfig>(config: LevelSequenceConfig<TLevelConfig>): LevelSequence<TLevelConfig> — A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just state transitions driven by the caller.
 
 ## @jgengine/core/game/loadout
@@ -499,7 +510,7 @@
 - `RecordBook` (interface): interface RecordBook<K extends string> — ⚠ undocumented
 - `RecordBookConfig` (interface): interface RecordBookConfig<K extends string> — ⚠ undocumented
 - `RecordDirection` (type): type RecordDirection = "lower" | "higher" — ⚠ undocumented
-- `RecordStorage` (interface): interface RecordStorage — ⚠ undocumented
+- `RecordStorage` (type): type RecordStorage = KeyValueStorage — The structural storage backend a record book persists through — an alias of the shared {@link KeyValueStorage} seam (browser `localStorage`, a test stub, or `null`).
 - `RecordSubmission` (interface): interface RecordSubmission<K extends string> — ⚠ undocumented
 - `createRecordBook` (function): function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> — A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a structural key-value storage (pass `localStorage` in a browser, a stub in tests, or `null` for in-memory only). Corrupt or unavailable storage degrades to an empty book — a record write never throws into a game tick.
 

@@ -123,4 +123,65 @@ describe("createLevelSequence", () => {
     expect(sequence.fail()).toBe("failed");
     expect(sequence.status()).toBe("cleared");
   });
+
+  test("only the first level is unlocked until its predecessor is cleared", () => {
+    const sequence = createLevelSequence({ levels: levels() });
+    expect(sequence.isUnlocked("l1")).toBe(true);
+    expect(sequence.isUnlocked("l2")).toBe(false);
+    expect(sequence.isUnlocked("nope")).toBe(false);
+    sequence.start();
+    sequence.clear();
+    expect(sequence.isUnlocked("l2")).toBe(true);
+    expect(sequence.isUnlocked("l3")).toBe(false);
+  });
+
+  test("select jumps to an unlocked level and refuses a locked one", () => {
+    const sequence = createLevelSequence({ levels: levels() });
+    expect(sequence.select("l2")).toBe(false);
+    sequence.start();
+    sequence.clear();
+    sequence.advance();
+    sequence.clear();
+    expect(sequence.select("l1")).toBe(true);
+    expect(sequence.current()).toEqual({ id: "l1", index: 0, config: { name: "Level 1" }, attempt: 1 });
+    expect(sequence.status()).toBe("playing");
+    expect(sequence.select("missing")).toBe(false);
+  });
+
+  test("clear records the best star rating, never regressing", () => {
+    const sequence = createLevelSequence({ levels: levels() });
+    sequence.start();
+    sequence.clear(2);
+    expect(sequence.record("l1")).toEqual({ cleared: true, stars: 2 });
+    sequence.select("l1");
+    sequence.clear(1);
+    expect(sequence.record("l1")).toEqual({ cleared: true, stars: 2 });
+    sequence.select("l1");
+    sequence.clear(3);
+    expect(sequence.record("l1")).toEqual({ cleared: true, stars: 3 });
+    expect(sequence.record("l2")).toBeNull();
+  });
+
+  test("records persist across instances through a shared storage backend", () => {
+    const data: Record<string, string> = {};
+    const storage = {
+      getItem: (key: string) => data[key] ?? null,
+      setItem: (key: string, value: string) => {
+        data[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete data[key];
+      },
+    };
+    const first = createLevelSequence({ levels: levels(), key: "campaign", storage });
+    first.start();
+    first.clear(3);
+    const second = createLevelSequence({ levels: levels(), key: "campaign", storage });
+    expect(second.record("l1")).toEqual({ cleared: true, stars: 3 });
+    expect(second.isUnlocked("l2")).toBe(true);
+    second.clearRecords();
+    const third = createLevelSequence({ levels: levels(), key: "campaign", storage });
+    expect(third.record("l1")).toBeNull();
+    expect(third.isUnlocked("l2")).toBe(false);
+  });
 });

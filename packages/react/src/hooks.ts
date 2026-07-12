@@ -33,7 +33,9 @@ import {
   type PositionedPrompt,
 } from "@jgengine/core/interaction/proximityPrompt";
 import { gamePhase, setGamePhase, type GamePhase } from "@jgengine/core/game/gamePhase";
-import { useGameContext } from "./provider";
+import { useGameContext, useOptionalGameContext } from "./provider";
+
+const noopSubscribe = (): (() => void) => () => undefined;
 import { createSelectCache, readSelectSnapshot } from "./selectSnapshot";
 
 export function useGameStore<T>(
@@ -77,6 +79,13 @@ export function useGamePhase(): { phase: GamePhase; setPhase: (phase: GamePhase)
   const phase = useGameStore((c) => gamePhase(c));
   const setPhase = useCallback((next: GamePhase) => setGamePhase(ctx, next), [ctx]);
   return { phase, setPhase };
+}
+
+/** Live run phase that degrades to `"playing"` when rendered outside a `GameProvider` (component showcases, previews), so phase-gated chrome never throws. */
+export function useOptionalGamePhase(): GamePhase {
+  const ctx = useOptionalGameContext();
+  const getSnapshot = useCallback(() => (ctx === null ? "playing" : gamePhase(ctx)), [ctx]);
+  return useSyncExternalStore(ctx?.subscribe ?? noopSubscribe, getSnapshot, getSnapshot);
 }
 
 export function useSceneEntities(): readonly SceneEntity[] {

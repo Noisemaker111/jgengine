@@ -40,14 +40,14 @@ export function TitleScreen({
   className?: string;
 }) {
   return (
-    <div className={`pointer-events-auto absolute inset-0 overflow-hidden ${className ?? ""}`} data-jg="title-screen">
+    <div className={`pointer-events-auto absolute inset-0 z-50 overflow-hidden ${className ?? ""}`} data-jg="title-screen">
       {backdrop !== undefined && <div className="absolute inset-0">{backdrop}</div>}
       <div aria-hidden className="absolute inset-0" style={{ background: OVERLAY_BACKGROUND }} />
       <div className="relative h-full w-full">
         <div className="absolute inset-x-0 top-[14%] flex flex-col items-center gap-10">
           <div className="flex flex-col items-center gap-4">
             <h1
-              className="m-0 text-[clamp(32px,6vw,52px)] font-extrabold uppercase tracking-[0.18em]"
+              className="m-0 max-w-[90vw] px-4 text-center text-[clamp(24px,6vw,52px)] font-extrabold uppercase tracking-[0.18em] [overflow-wrap:anywhere]"
               style={{
                 fontFamily: "var(--jg-font-display)",
                 color: "var(--jg-text)",

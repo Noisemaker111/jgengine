@@ -22,9 +22,16 @@ import {
   type HudSize,
 } from "@jgengine/core/ui/hudLayout";
 import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/ui/hudScale";
+import type { GamePhase } from "@jgengine/core/game/gamePhase";
 import { useDisplayProfile } from "./display";
 import { useEngineState } from "./engineStore";
+import { useOptionalGamePhase } from "./hooks";
 import { useHudViewport } from "./hudViewport";
+
+/** Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default). */
+export function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean {
+  return showDuring === undefined || showDuring.includes(phase);
+}
 
 const STORAGE_PREFIX = "jg:hud:";
 const DRAG_THRESHOLD_PX = 4;
@@ -200,6 +207,7 @@ export function HudCanvas({
   layout,
   editChord,
   compactScale,
+  showDuring,
   className,
   style,
   children,
@@ -208,11 +216,14 @@ export function HudCanvas({
   editChord?: HudEditChord | false;
   /** Zoom applied to the whole HUD on compact displays. Default 0.85. */
   compactScale?: number;
+  /** Opt-in play-phase gate: render the HUD only during these phases (e.g. `["playing"]`). Omit for always-visible (default). */
+  showDuring?: readonly GamePhase[];
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
 }) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const phase = useOptionalGamePhase();
   const { compact } = useDisplayProfile();
   const hudViewport = useHudViewport();
   const fitEnabled = hudViewport?.fitEnabled === true;
@@ -377,6 +388,8 @@ export function HudCanvas({
     ...style,
   } as CSSProperties;
 
+  if (!hudVisibleInPhase(showDuring, phase)) return null;
+
   return (
     <HudCanvasContext.Provider value={value}>
       <div
@@ -490,6 +503,7 @@ export function HudPanel({
   interactive,
   inset,
   locked,
+  showDuring,
   className,
   style,
   children,
@@ -507,11 +521,14 @@ export function HudPanel({
   /** Legacy pixel inset from the anchor; only used as the reset placement for dragged panels. */
   inset?: { x: number; y: number };
   locked?: boolean;
+  /** Opt-in play-phase gate: render this panel only during these phases. Omit for always-visible (default). */
+  showDuring?: readonly GamePhase[];
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
 }) {
   const ctx = useContext(HudCanvasContext);
+  const phase = useOptionalGamePhase();
   if (ctx === null) throw new Error("HudPanel must be rendered inside a HudCanvas");
   const { layout, canvasRef, regions, compact } = ctx;
   const registeredOnRef = useRef<HudLayoutStore | null>(null);
@@ -627,6 +644,7 @@ export function HudPanel({
 
   if (panel === undefined) return null;
   if (compact && compactMode === "hide") return null;
+  if (!hudVisibleInPhase(showDuring, phase)) return null;
 
   const flow = compact || !panel.moved;
   if (flow) {

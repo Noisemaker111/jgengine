@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@jgengine/shell",
-    "@games/block-stacker",
+    "@games/nonogram",
     "@jgengine/core",
     "@jgengine/react",
     "@jgengine/ws",

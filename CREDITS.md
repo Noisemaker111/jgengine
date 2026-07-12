@@ -68,17 +68,6 @@ vocabulary, re-implemented from scratch on the engine with no Gearbox assets or
 code. Borderlands is a trademark of Gearbox Enterprises; this demake is
 unaffiliated fan work.
 
-### Ethan Mollick — *The Annals*
-
-**[The Annals](Games/annals)** grows from a prompt by
-**[Ethan Mollick](https://x.com/emollick)** (@emollick), Associate Professor at
-The Wharton School — his
-**[annals-kingdom](https://github.com/emollick/annals-kingdom)**, a living
-medieval kingdom that writes its own chronicle in a single HTML file. Our
-version reimagines the same idea on the engine: monarchs reign and die,
-caravans thread between settlements, and every event lands in a running
-chronicle you can pause and speed through.
-
 ### Ethan Mollick — *Monument*
 
 **[Monument](Games/monument)** is a full port of
@@ -91,16 +80,6 @@ rebuilds it on the engine and promotes its parametric massing grammar (nine
 compositions × six profiles) into `@jgengine/core/world/massing`, where every
 future city game can reach it. The design, catalogs, formulas, and the
 data-not-meshes architecture are his.
-
-### Jay Sharma (radiumcoders) — *Commit Canopy*
-
-**[Commit Canopy](Games/commit-canopy)** is inspired by
-**[Isometric GitHub Contributions](https://github.com/radiumcoders/Isometric-Github-Contributions)**
-([live](https://isometric-github-contributions.vercel.app)) by
-**[Jay Sharma / radiumcoders](https://github.com/radiumcoders)** — a Three.js
-web app that turns any GitHub profile into an interactive 3D isometric terrain.
-Our take renders the contribution year as an orbitable block landscape you can
-export as a shareable image, and mirrors the reference app's panel layout.
 
 ### Levy Street — *World of ClaudeCraft*
 
@@ -116,34 +95,9 @@ movement, armor, and XP formulas, the class kits, the three zone bands
 tables, and the Gravecaller storyline down to Morthen in the Hollow Crypt —
 credited on the game's HUD and on its page at jgengine.com/games/claudecraft.
 
-### Classic games (Wave 1)
-
-Fourteen genre-anchor classics in `Games/*` are our own builds of decades-old
-game concepts — original code, art, and levels, but the mechanics trace back
-to specific inventors and titles. Credited here, on each game's HUD, and (where
-applicable) via the `credit` field in
-[`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
-
-| Game | id | Lineage |
-| --- | --- | --- |
-| **[2048](Games/slide-2048)** | `slide-2048` | **[Gabriele Cirulli](https://github.com/gabrielecirulli)**'s MIT-licensed **[2048](https://github.com/gabrielecirulli/2048)**, itself inspired by **Threes!** (Asher Vollmer) and **1024!**. |
-| **[Brick Breaker](Games/brick-breaker)** | `brick-breaker` | Atari's **Breakout** (1976). |
-| **[Paddle Duel](Games/paddle-duel)** | `paddle-duel` | Atari's **Pong** (1972), designed by Allan Alcorn. |
-| **[Gem Cascade](Games/gem-cascade)** | `gem-cascade` | The match-3 genre: **Shariki** (Eugene Alemzhin, 1994) and **Bejeweled** (PopCap). |
-| **[Crate Keeper](Games/crate-keeper)** | `crate-keeper` | **Sokoban** (Hiroyuki Imabayashi, Thinking Rabbit, 1982) — mechanics homage; levels are original. |
-| **[Flag Sweep](Games/flag-sweep)** | `flag-sweep` | **Minesweeper** (Robert Donner & Curt Johnson, Microsoft, 1990). |
-| **[Snake](Games/snake)** | `snake` | **Blockade** (Gremlin, 1976) and **Nokia Snake** (Taneli Armanto, 1997). |
-| **[Klondike Solitaire](Games/klondike)** | `klondike` | Traditional Klondike patience, popularized by **Microsoft Solitaire** (Wes Cherry, 1990). |
-| **[FreeCell](Games/freecell)** | `freecell` | **Paul Alfille**'s FreeCell (1978), popularized in digital form by **Jim Horne**. |
-| **[Video Poker](Games/video-poker)** | `video-poker` | **Draw Poker** video cabinets (SIRCOMA/IGT, 1979). |
-| **[15 Puzzle](Games/fifteen-slide)** | `fifteen-slide` | The **15 Puzzle**, popularized in the 1870s and long attributed to **Noyes Chapman**. |
-| **[Blackjack](Games/blackjack)** | `blackjack` | Traditional casino Blackjack / Twenty-One. |
-| **[Memory Match](Games/memory-match)** | `memory-match` | Traditional **Concentration**. |
-| **[Pachinko Parlor](Games/pachinko-parlor)** | `pachinko-parlor` | Traditional Japanese **Pachinko**. |
-
 ### Classic games (Wave 2)
 
-Sixteen more genre-anchor classics in `Games/*` are our own builds of decades-old
+A handful of genre-anchor classics in `Games/*` are our own builds of decades-old
 game concepts — original code, art, and levels, but the mechanics trace back to
 specific inventors and titles. Credited here and on each game's HUD; all
 lineages this wave are corporate or traditional, so none carry a `credit` field
@@ -151,20 +105,8 @@ in [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
 
 | Game | id | Lineage |
 | --- | --- | --- |
-| **[Spider Solitaire](Games/spider)** | `spider` | Traditional Spider Solitaire patience — genre homage. |
-| **[Sudoku](Games/sudoku)** | `sudoku` | **Howard Garns**'s number-placement puzzle (1979), popularized by **Nikoli**. |
 | **[Nonogram](Games/nonogram)** | `nonogram` | **Non Ishida** and **Tetsuya Nishio**'s independently invented picture-logic puzzle (1987). |
-| **[Reversi](Games/reversi)** | `reversi` | **Lewis Waterman** and **John Mollett**'s **Reversi** (1883); modern Othello rules by **Goro Hasegawa**. |
-| **[Four in a Row](Games/four-in-a-row)** | `four-in-a-row` | **Howard Wexler** and **Ned Strongin**'s **Connect Four** (1974). |
-| **[Echo Lights](Games/echo-lights)** | `echo-lights` | **Ralph Baer** and **Howard Morrison**'s **Simon** (1978), itself after Atari's **Touch Me**. |
-| **[Lights Out](Games/lights-out)** | `lights-out` | **Tiger Electronics**'s **Lights Out** (1995). |
-| **[Peg Solitaire](Games/peg-solitaire)** | `peg-solitaire` | Traditional peg solitaire — genre homage. |
-| **[Codebreaker](Games/codebreaker)** | `codebreaker` | **Mordecai Meirowitz**'s **Mastermind** (1970), itself after the pen-and-paper game **Bulls and Cows**. |
 | **[Star Invaders](Games/star-invaders)** | `star-invaders` | **Tomohiro Nishikado**'s **Space Invaders**, Taito (1978). |
-| **[Rock Blaster](Games/rock-blaster)** | `rock-blaster` | **Lyle Rains** and **Ed Logg**'s **Asteroids**, Atari (1979). |
 | **[Road Hopper](Games/road-hopper)** | `road-hopper` | Konami's **Frogger** (1981). |
-| **[Yacht Dice](Games/yacht-dice)** | `yacht-dice` | Traditional **Yacht**, popularized as **Yahtzee** (E.S. Lowe, 1956). |
-| **[Mahjong Solitaire](Games/mahjong-solitaire)** | `mahjong-solitaire` | **Brodie Lockard**'s Mahjong solitaire (1981). |
-| **[Bubble Burst](Games/bubble-burst)** | `bubble-burst` | Taito's **Puzzle Bobble** (1994). |
 | **[Pinball](Games/pinball)** | `pinball` | Traditional solid-state pinball — genre homage. |
 | **[Vice Isle](Games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |

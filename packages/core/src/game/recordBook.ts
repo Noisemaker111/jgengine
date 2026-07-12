@@ -1,8 +1,7 @@
-export interface RecordStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-}
+import type { KeyValueStorage } from "./keyValueStore";
+
+/** The structural storage backend a record book persists through — an alias of the shared {@link KeyValueStorage} seam (browser `localStorage`, a test stub, or `null`). */
+export type RecordStorage = KeyValueStorage;
 
 export type RecordDirection = "lower" | "higher";
 

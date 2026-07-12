@@ -65,4 +65,4 @@ import { bootCartridge, cartridgeSmokeTest, tickCartridge } from "@jgengine/core
 cartridgeSmokeTest(config);   // validate + world summary + headless run/spawn/kill/gem smoke
 ```
 
-`bootCartridge`/`tickCartridge` build a headless `GameContext` and drive the loop (auto-choosing drafts) for custom assertions — see `Games/swarm-survivor/src/game/cartridge.test.ts`. The testkit imports `bun:test`; import it from test files only.
+`bootCartridge`/`tickCartridge` build a headless `GameContext` and drive the loop (auto-choosing drafts) for custom assertions — see `@jgengine/core/cartridge/testkit`. The testkit imports `bun:test`; import it from test files only.
