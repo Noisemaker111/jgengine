@@ -24,7 +24,6 @@ export {
 } from "./game/lootTable";
 
 export {
-  world,
   biomes,
   voxel,
   plots,
@@ -49,11 +48,6 @@ export {
   type SpawnPointDistanceBias,
 } from "./ai/spawnDirector";
 
-export {
-  contextVerb,
-  type ContextVerb,
-} from "./interaction/contextMenu";
+export { contextVerb } from "./interaction/contextMenu";
 
-export {
-  type ActionCodesMap,
-} from "./input/actionBindings";
+export { type ActionCodesMap } from "./input/actionBindings";
