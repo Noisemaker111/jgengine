@@ -91,3 +91,7 @@ ship worker replied 'running in background, will report' and its TaskOutput id 4
 2026-07-12T04:59:14.718Z — fable-5 — Claude
 
 delegated verify/screenshot workers twice re-delegated to sub-workers and returned 'waiting on the worker' as their result → had to re-dispatch with explicit 'do not spawn sub-agents' briefs
+
+2026-07-12T05:17:28.383Z — fable-5 — Claude
+
+ship worker opened+merged PR #563 from the remote head before pushing the local fix commit → merged PR carried the wrong tree, main stayed red; take-2 PR needed
