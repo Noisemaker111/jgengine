@@ -230,7 +230,28 @@ export function advanceSpawnDirector(
 }
 
 /** Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness. */
-export function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null {
+export function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null;
+/** @deprecated Pass one SpawnPointSelectionOptions object instead. */
+export function pickSpawnPoint(
+  points: readonly NavPoint[],
+  players: readonly NavPoint[],
+  options: { roll: number; bias?: number },
+): NavPoint | null;
+export function pickSpawnPoint(
+  optionsOrPoints: SpawnPointSelectionOptions | readonly NavPoint[],
+  legacyPlayers: readonly NavPoint[] = [],
+  legacyOptions: { roll: number; bias?: number } = { roll: 0 },
+): NavPoint | null {
+  const legacyBias = legacyOptions.bias ?? 1;
+  const options: SpawnPointSelectionOptions = Array.isArray(optionsOrPoints)
+    ? {
+        candidates: optionsOrPoints,
+        avoid: legacyPlayers,
+        random: () => legacyOptions.roll,
+        distanceBias: legacyBias < 0 ? "far" : legacyBias > 0 ? "near" : "none",
+        biasStrength: Math.abs(legacyBias),
+      }
+    : optionsOrPoints;
   const { candidates, avoid = [], random, distanceBias = "near", biasStrength = 1 } = options;
   if (candidates.length === 0) return null;
   if (distanceBias === "none" || avoid.length === 0 || biasStrength === 0) {
