@@ -62,6 +62,7 @@
 - `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
 - `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
 - `WorldDiff` (interface): interface WorldDiff — A revision-stamped delta over a {@link WorldSnapshot}. The host sends one per tick to each client, carrying only what changed since that client's last acknowledged revision — entity/stat/store deltas plus whole snapshots of any other opted-in module (feed, leaderboard, chat, …) that changed. Fold it onto a prior baseline with {@link applyWorldDiff}.
+- `WorldMirror` (interface): interface WorldMirror — The client end of host-authoritative replication: folds a host's baseline + {@link WorldDiff} stream onto a local {@link GameContext}. It keeps the last full {@link WorldSnapshot}, advances it with each diff, and pushes the result through `ctx.hydrate` — so the client mirrors exactly the subsystems its own game opted into and silently ignores host modules it lacks. This is the inverse of a {@link HostedWorldSession}; the transport in between (loopback, ws, Convex) is irrelevant.
 - `WorldReplicator` (type): type WorldReplicator = ReturnType<typeof createWorldReplicator> — The stateful diff tracker returned by {@link createWorldReplicator}: `commit()`, `diff(sinceRevision)`, `revision()`.
 - `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
@@ -76,6 +77,7 @@
 - `createHostedGameRunner` (function): function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>): HostedGameRunner — Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
 - `createHostedWorldSession` (function): function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedWorldSessionOptions<TAssetRef, TMultiplayer>): HostedWorldSession — Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick.
 - `createRuntimeSnapshot` (function): function createRuntimeSnapshot(args: { gameId: string; serverId: string; server?: RuntimeServerRow; players?: Record<string, RuntimePlayerRow>; chunks?: Record<string, RuntimeChunkRow>; revision?: number; }): GameRuntimeSnapshot — ⚠ undocumented
+- `createWorldMirror` (function): function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirror — Build a {@link WorldMirror} that replicates a host's baseline + diff stream onto `ctx` via `ctx.hydrate`.
 - `createWorldReplicator` (function): function createWorldReplicator(takeSnapshot: () => WorldSnapshot): { commit: () => number; diff: (sinceRevision: number) => WorldDiff; revision: () => number; } — Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)` then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per commit; dirty-hint acceleration is a later optimization behind the same seam.
 - `diffSnapshots` (function): function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff — Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
 - `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string }): MultiplayerAdapterConfig — ⚠ undocumented
@@ -88,6 +90,7 @@
 - `offline` (function): function offline(): MultiplayerAdapterConfig — ⚠ undocumented
 - `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string }): MultiplayerAdapterConfig — ⚠ undocumented
 - `parseSaveAutoMs` (function): function parseSaveAutoMs(auto: string): number — ⚠ undocumented
+- `pullWorld` (function): function pullWorld(session: HostedWorldSession, mirror: WorldMirror): void — Pull one replication step from a co-located {@link HostedWorldSession} into a {@link WorldMirror} — the no-network local path (host and client in one process). A fresh mirror pulls a baseline; thereafter it pulls a diff since its own revision. The same `sync(sinceRevision)` call is what a networked transport marshals.
 - `runCommand` (function): function runCommand<TInput>(snapshot: GameRuntimeSnapshot, commands: Record<string, CommandDef<TInput>>, commandName: string, input: TInput, actorUserId: string): RunCommandResult — ⚠ undocumented
 - `saveScopeIncludesChunks` (function): function saveScopeIncludesChunks(scope: SaveScope): boolean — ⚠ undocumented
 - `saveScopeIncludesPlayer` (function): function saveScopeIncludesPlayer(scope: SaveScope): boolean — ⚠ undocumented
@@ -467,6 +470,12 @@
 - `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
 - `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
 - `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
+
+## @jgengine/core/runtime/worldMirror
+
+- `WorldMirror` (interface): interface WorldMirror — The client end of host-authoritative replication: folds a host's baseline + {@link WorldDiff} stream onto a local {@link GameContext}. It keeps the last full {@link WorldSnapshot}, advances it with each diff, and pushes the result through `ctx.hydrate` — so the client mirrors exactly the subsystems its own game opted into and silently ignores host modules it lacks. This is the inverse of a {@link HostedWorldSession}; the transport in between (loopback, ws, Convex) is irrelevant.
+- `createWorldMirror` (function): function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirror — Build a {@link WorldMirror} that replicates a host's baseline + diff stream onto `ctx` via `ctx.hydrate`.
+- `pullWorld` (function): function pullWorld(session: HostedWorldSession, mirror: WorldMirror): void — Pull one replication step from a co-located {@link HostedWorldSession} into a {@link WorldMirror} — the no-network local path (host and client in one process). A fresh mirror pulls a baseline; thereafter it pulls a diff since its own revision. The same `sync(sinceRevision)` call is what a networked transport marshals.
 
 ## @jgengine/core/runtime/worldReplication
 
