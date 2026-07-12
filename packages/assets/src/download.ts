@@ -70,6 +70,22 @@ export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string 
   return `${base}/${source.provider}/${source.id}.zip`;
 }
 
+/**
+ * Default asset mirror: GitHub Releases on the jgengine-assets repo, reachable
+ * from every cloud sandbox without network-policy changes (github.com is on the
+ * default allowlist). Assets live on the rolling `packs` release, one flat zip
+ * per pack named `<provider>-<packId>.zip`; publishing a new pack is just
+ * uploading a correctly named zip — no code change. Override the whole chain
+ * with `--mirror` / `JGENGINE_ASSETS_MIRROR`, or disable this hop with
+ * `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
+ */
+export const DEFAULT_RELEASE_BASE =
+  "https://github.com/Noisemaker111/jgengine-assets/releases/download/packs";
+
+export function defaultReleaseUrl(source: AssetSource): string {
+  return `${DEFAULT_RELEASE_BASE}/${source.provider}-${source.id}.zip`;
+}
+
 async function verifyPinnedSha(source: AssetSource, archive: Uint8Array): Promise<void> {
   const download = source.download;
   if (isScrapeDownload(download) || download.sha256 === undefined) return;
@@ -95,8 +111,10 @@ export interface DownloadPackResult {
 /**
  * Resolves and downloads a pack's archive, trying sources in order until one
  * succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the
- * primary provider path (`resolveArchiveUrl`: scrape or pinned URL), (3) the
- * pack's own `mirror` URL. A pinned `sha256` is verified against whichever
+ * default GitHub-release mirror at `defaultReleaseUrl` (skipped when
+ * `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`), (3) the primary provider path
+ * (`resolveArchiveUrl`: scrape or pinned URL), (4) the pack's own `mirror`
+ * URL. A pinned `sha256` is verified against whichever
  * source supplied the bytes; a mismatch is treated as a failed attempt so the
  * next source in the chain is tried. Throws with every attempted URL and its
  * failure reason when all sources fail.
@@ -123,6 +141,11 @@ export async function downloadPackArchive(
 
   if (options.mirrorBase !== undefined) {
     const result = await tryUrl(mirrorOverrideUrl(options.mirrorBase, source));
+    if (result !== undefined) return result;
+  }
+
+  if (process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR !== "1") {
+    const result = await tryUrl(defaultReleaseUrl(source));
     if (result !== undefined) return result;
   }
 
