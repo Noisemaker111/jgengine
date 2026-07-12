@@ -224,15 +224,19 @@
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
 - `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
 - `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — ⚠ undocumented
+- `HostedGameDefinition` (interface): interface HostedGameDefinition — A game the world server can host — its authoritative {@link GameDefinition} and the content lookup a `GameContext` reads.
 - `NodeHandler` (type): type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void — ⚠ undocumented
 - `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
 - `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
 - `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
+- `WorldGameServer` (interface): interface WorldGameServer — A runnable ws host for GameContext worlds: {@link createWorldGameHost} + {@link createGameWsServer} + a tick loop, with a manual `tick(dt)` seam so a fake clock can drive it in tests.
+- `WorldGameServerOptions` (interface): interface WorldGameServerOptions extends Omit<GameWsServerOptions, "host"> — Config for {@link createWorldGameServer}: how to resolve a game by id, the tick cadence, and the underlying ws-server/router options (minus `host`, which the server builds).
 - `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
 - `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
 - `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
+- `createWorldGameServer` (function): function createWorldGameServer(options: WorldGameServerOptions): WorldGameServer — Build a {@link WorldGameServer} — one process hosting authoritative GameContext worlds over ws, ready for two-client play once {@link WorldGameServer.start} runs.
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 - `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
 - `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
@@ -272,6 +276,13 @@
 - `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
 - `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
+
+## @jgengine/node/worldServer
+
+- `HostedGameDefinition` (interface): interface HostedGameDefinition — A game the world server can host — its authoritative {@link GameDefinition} and the content lookup a `GameContext` reads.
+- `WorldGameServer` (interface): interface WorldGameServer — A runnable ws host for GameContext worlds: {@link createWorldGameHost} + {@link createGameWsServer} + a tick loop, with a manual `tick(dt)` seam so a fake clock can drive it in tests.
+- `WorldGameServerOptions` (interface): interface WorldGameServerOptions extends Omit<GameWsServerOptions, "host"> — Config for {@link createWorldGameServer}: how to resolve a game by id, the tick cadence, and the underlying ws-server/router options (minus `host`, which the server builds).
+- `createWorldGameServer` (function): function createWorldGameServer(options: WorldGameServerOptions): WorldGameServer — Build a {@link WorldGameServer} — one process hosting authoritative GameContext worlds over ws, ready for two-client play once {@link WorldGameServer.start} runs.
 
 ## @jgengine/node/wsServer
 
