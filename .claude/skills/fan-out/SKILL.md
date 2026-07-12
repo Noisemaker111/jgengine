@@ -20,7 +20,7 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
 **The expensive parent gets at most two user-visible messages for delegated work:** one optional launch line and one terminal result. After launch, absolute silence until the assigned leg is complete or has one actionable failure. No phase recaps, ownership explanations, progress estimates, or promises to report later.
 
-**One delegation means one parent wake-up.** The parent must not consume or answer intermediate worker messages. Tool cards, task-state changes, GitHub subscription events, PR creation, merge events, and individual CI completions are not conversational milestones. They remain inside the cheap worker's leg. Ignore them until the worker returns its single terminal result.
+**One delegation means one parent wake-up.** The parent must not consume or answer intermediate worker messages. Tool cards, task-state changes, GitHub subscription events, PR creation, merge events, and individual CI completions are not conversational milestones. They remain inside the cheap worker's leg. If the platform wakes the parent anyway, the parent emits no prose and performs no new work unless the event is the worker's terminal `PASS`/`FAIL`.
 
 **A ship motion is one worker and one return.** Commit → push → PR → merge → post-merge CI is one serial mechanical leg, never multiple tasks. PR-open and PR-merged are partial states, not reportable results when CI is part of the assignment. Do not launch a second wait/check worker because an event arrived; the original worker owns the full motion.
 
