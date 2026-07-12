@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills.index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
@@ -20,6 +21,11 @@ import { Route as ApiGithubProxyRouteImport } from './routes/api/github-proxy'
 import { Route as ApiGithubContributionsRouteImport } from './routes/api/github-contributions'
 import { Route as ApiPkgRouteImport } from './routes/api.$pkg'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -73,6 +79,7 @@ const ApiPkgRoute = ApiPkgRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/$pkg': typeof ApiPkgRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/$pkg': typeof ApiPkgRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
@@ -98,6 +106,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/$pkg': typeof ApiPkgRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/sitemap.xml'
     | '/api/$pkg'
     | '/api/github-contributions'
     | '/api/github-proxy'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/sitemap.xml'
     | '/api/$pkg'
     | '/api/github-contributions'
     | '/api/github-proxy'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/sitemap.xml'
     | '/api/$pkg'
     | '/api/github-contributions'
     | '/api/github-proxy'
@@ -149,6 +161,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPkgRoute: typeof ApiPkgRoute
   ApiGithubContributionsRoute: typeof ApiGithubContributionsRoute
   ApiGithubProxyRoute: typeof ApiGithubProxyRoute
@@ -162,6 +175,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -237,6 +257,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPkgRoute: ApiPkgRoute,
   ApiGithubContributionsRoute: ApiGithubContributionsRoute,
   ApiGithubProxyRoute: ApiGithubProxyRoute,

@@ -6,16 +6,20 @@ import { HeroTerminal } from "../components/HeroTerminal";
 import { Backdrop, GitHubIcon, Page, SectionHeading } from "../components/Layout";
 import { GAMES } from "../content/games";
 import { SKILL_SLUGS } from "../content/skills";
+import { seo } from "../lib/seo";
 import {
   ASSETS_PACKAGE_NAME,
   ENTRY_PROMPT,
   PACKAGES,
   PACKAGE_LAYERS,
   REPO_URL,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
   SKILL_GUIDE,
 } from "../lib/site";
 
 export const Route = createFileRoute("/")({
+  head: () => seo({ title: SITE_TITLE, description: SITE_DESCRIPTION, path: "/" }),
   component: Home,
 });
 
