@@ -12,3 +12,8 @@ export function useGameContext(): GameContext {
   if (ctx === null) throw new Error("useGameContext must be used within <GameProvider>");
   return ctx;
 }
+
+/** The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews). */
+export function useOptionalGameContext(): GameContext | null {
+  return useContext(GameReactContext);
+}

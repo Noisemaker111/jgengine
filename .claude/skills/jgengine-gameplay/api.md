@@ -360,10 +360,12 @@
 
 - `CurrentLevel` (interface): interface CurrentLevel<TLevelConfig> — ⚠ undocumented
 - `LevelDescriptor` (interface): interface LevelDescriptor<TLevelConfig> — ⚠ undocumented
+- `LevelRecord` (interface): interface LevelRecord — Persisted per-level outcome: whether it has ever been cleared and the best star rating achieved.
 - `LevelSequence` (interface): interface LevelSequence<TLevelConfig> — ⚠ undocumented
 - `LevelSequenceConfig` (interface): interface LevelSequenceConfig<TLevelConfig> — ⚠ undocumented
 - `LevelSequenceProgress` (interface): interface LevelSequenceProgress — ⚠ undocumented
 - `LevelSequenceStatus` (type): type LevelSequenceStatus = "idle" | "playing" | "cleared" | "failed" | "complete" — ⚠ undocumented
+- `LevelStars` (type): type LevelStars = 0 | 1 | 2 | 3 — A level's star rating, 0 (cleared, no stars) to 3.
 - `createLevelSequence` (function): function createLevelSequence<TLevelConfig>(config: LevelSequenceConfig<TLevelConfig>): LevelSequence<TLevelConfig> — A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just state transitions driven by the caller.
 
 ## @jgengine/core/game/loadout
