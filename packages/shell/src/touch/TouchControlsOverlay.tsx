@@ -4,6 +4,11 @@ import { createGestureSurfaceTracker } from "@jgengine/core/input/gestureSurface
 import { createTouchGestureTracker } from "@jgengine/core/input/touchGestures";
 import { touchCode, type TouchButton, type TouchJoystick, type TouchScheme } from "@jgengine/core/input/touchScheme";
 import { GameIcon, iconForAction, isGameIconName, type GameIconName } from "@jgengine/react/gameIcons";
+import { useRegisterLayoutRegion } from "@jgengine/react/gameViewport";
+
+const MOVEMENT_ZONE = { id: "control:movement", kind: "control", collisionPolicy: "forbid", collisionGroup: "touch-dock" } as const;
+const ACTIONS_ZONE = { id: "control:actions", kind: "control", collisionPolicy: "forbid", collisionGroup: "touch-dock" } as const;
+const UTILITY_ZONE = { id: "control:utility", kind: "control", collisionPolicy: "warn", collisionGroup: "touch-dock" } as const;
 
 export interface TouchCodeSink {
   onCodeDown(code: string): void;
@@ -359,23 +364,35 @@ function PrimaryButtonCluster({ buttons, sink, scale = 1 }: { buttons: readonly 
 export function TouchControlsDock({ scheme, sink, scale = 1 }: { scheme: TouchScheme; sink: TouchCodeSink; scale?: number }) {
   const primary = scheme.buttons.filter((button) => button.kind !== "utility");
   const utility = scheme.buttons.filter((button) => button.kind === "utility");
+  const joystickRef = useRef<HTMLDivElement | null>(null);
+  const actionsRef = useRef<HTMLDivElement | null>(null);
+  const utilityRef = useRef<HTMLDivElement | null>(null);
+  useRegisterLayoutRegion(MOVEMENT_ZONE, joystickRef, scheme.joystick !== null);
+  useRegisterLayoutRegion(ACTIONS_ZONE, actionsRef, primary.length > 0);
+  useRegisterLayoutRegion(UTILITY_ZONE, utilityRef, utility.length > 0);
   return (
     <div
       className="pointer-events-none absolute inset-x-0 bottom-0 z-40"
       style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${DOCK_BASE_PADDING}px)` }}
     >
       <div className="flex items-end justify-between gap-4 px-5">
-        <div>{scheme.joystick !== null ? <VirtualJoystick joystick={scheme.joystick} sink={sink} scale={scale} /> : null}</div>
-        <PrimaryButtonCluster buttons={primary} sink={sink} scale={scale} />
+        <div ref={joystickRef}>
+          {scheme.joystick !== null ? <VirtualJoystick joystick={scheme.joystick} sink={sink} scale={scale} /> : null}
+        </div>
+        <div ref={actionsRef}>
+          <PrimaryButtonCluster buttons={primary} sink={sink} scale={scale} />
+        </div>
       </div>
       {utility.length > 0 ? (
         <div
-          className="pointer-events-none absolute inset-x-0 flex justify-center gap-2"
+          className="pointer-events-none absolute inset-x-0 flex justify-center"
           style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}
         >
-          {utility.map((button) => (
-            <TouchUtilityChip key={button.action} button={button} sink={sink} />
-          ))}
+          <div ref={utilityRef} className="flex gap-2">
+            {utility.map((button) => (
+              <TouchUtilityChip key={button.action} button={button} sink={sink} />
+            ))}
+          </div>
         </div>
       ) : null}
     </div>

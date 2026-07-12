@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 type Mode = "ui" | "play" | "poster" | "preview";
-type Device = "desktop" | "mobile";
+type Device = "desktop" | "mobile" | "mobile-landscape";
 type DeviceArg = Device | "both";
 
 type Args = {
@@ -45,6 +45,7 @@ type DeviceProfile = {
 const DEVICES: Record<Device, DeviceProfile> = {
   desktop: { width: 1600, height: 900, deviceScaleFactor: 1, mobile: false },
   mobile: { width: 390, height: 844, deviceScaleFactor: 2, mobile: true },
+  "mobile-landscape": { width: 844, height: 390, deviceScaleFactor: 2, mobile: true },
 };
 
 const PORT = 4517;
@@ -60,8 +61,8 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--mode") args.mode = (argv[++index] as Mode) ?? args.mode;
     else if (value === "--device") {
       const device = argv[++index] as DeviceArg | undefined;
-      if (device !== "desktop" && device !== "mobile" && device !== "both") {
-        throw new Error(`--device must be desktop, mobile, or both (got ${device ?? "nothing"})`);
+      if (device !== "desktop" && device !== "mobile" && device !== "mobile-landscape" && device !== "both") {
+        throw new Error(`--device must be desktop, mobile, mobile-landscape, or both (got ${device ?? "nothing"})`);
       }
       args.device = device;
     } else if (value === "--stage") args.stage = true;
@@ -346,13 +347,13 @@ function targetUrl(args: Args, device: Device): string {
   if (args.url !== undefined) {
     const url = new URL(args.url);
     url.searchParams.set("capture", "1");
-    url.searchParams.set("device", device);
+    url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
     return url.toString();
   }
   const url = new URL(BASE);
   url.searchParams.set("game", args.game);
   url.searchParams.set("mode", args.mode);
-  url.searchParams.set("device", device);
+  url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
   url.searchParams.set("capture", "1");
   if (args.stage === true) url.searchParams.set("stage", "1");
   if (args.preview !== undefined) url.searchParams.set("preview", args.preview);
@@ -368,6 +369,24 @@ async function readHudOverflow(session: CdpSession): Promise<string | null> {
   });
   const value = (result.result as { value?: unknown } | undefined)?.value;
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+async function readLayoutCollision(session: CdpSession): Promise<string | null> {
+  const result = await session.send("Runtime.evaluate", {
+    expression: `document.querySelector("[data-jg-layout-collision]")?.getAttribute("data-jg-layout-collision") ?? null`,
+    returnByValue: true,
+  });
+  const value = (result.result as { value?: unknown } | undefined)?.value;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function formatCollisionReport(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw) as { a: string; b: string; area: number }[];
+    return parsed.map((c) => `${c.a} ∩ ${c.b} (${c.area}px²)`).join(", ");
+  } catch {
+    return raw;
+  }
 }
 
 async function shootOne(
@@ -386,6 +405,7 @@ async function shootOne(
     await waitCaptureReady(session, args.timeoutMs);
     await new Promise((r) => setTimeout(r, 600));
     const overflow = await readHudOverflow(session);
+    const collision = await readLayoutCollision(session);
     const shot = await session.send("Page.captureScreenshot", {
       format: "png",
       fromSurface: true,
@@ -401,13 +421,17 @@ async function shootOne(
     if (existsSync(outPath)) unlinkSync(outPath);
     renameSync(tmpPath, outPath);
     console.log(outPath);
+    const label = `${device} ${DEVICES[device].width}x${DEVICES[device].height}`;
+    let ok = true;
     if (overflow !== null) {
-      console.error(
-        `HUD OVERFLOW [${device} ${DEVICES[device].width}x${DEVICES[device].height}]: panels escape the viewport — ${overflow}`,
-      );
-      return false;
+      console.error(`HUD OVERFLOW [${label}]: panels escape the viewport — ${overflow}`);
+      ok = false;
     }
-    return true;
+    if (collision !== null) {
+      console.error(`MOBILE LAYOUT COLLISION [${label}]: ${formatCollisionReport(collision)}`);
+      ok = false;
+    }
+    return ok;
   } finally {
     session.close();
   }

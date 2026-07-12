@@ -27,6 +27,8 @@ export const game = defineGame({
   },
   renderEntity: renderVehicleEntity,
   objectStyles,
+  orientation: { mobile: "landscape-required" },
+  touch: { buttons: ["handbrake", "surveyMap"] },
   settings: {
     variant: "sheet",
     hideBindings: ["restart", "startRun"],
