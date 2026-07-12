@@ -1,5 +1,5 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
-import { adapterOf, type MultiplayerAdapterConfig } from "@jgengine/core/runtime/adapter";
+import { adapterOf, isServerAuthoritative, type MultiplayerAdapterConfig } from "@jgengine/core/runtime/adapter";
 import type { MultiplayerSession } from "@jgengine/core/runtime/transport";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
 import {
@@ -63,7 +63,11 @@ export function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): Shel
   const adapter = adapterOf(args.game.multiplayer);
   if (adapter === null) return null;
 
-  if (adapter.kind === "ws") return build(args.url ?? adapter.url ?? DEFAULT_WS_URL);
+  if (adapter.kind === "ws") {
+    const url = args.url ?? adapter.url;
+    if (url === undefined && isServerAuthoritative(args.game.multiplayer)) return null;
+    return build(url ?? DEFAULT_WS_URL);
+  }
   if (adapter.kind === "lan") return build(args.url ?? lanUrl(adapter));
 
   return null;

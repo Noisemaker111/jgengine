@@ -1158,7 +1158,10 @@ function FrameDriver({
     return cfg === true ? fallback : cfg.radius ?? fallback;
   }, [playable]);
   const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
-  const serverAuthoritative = useMemo(() => isServerAuthoritative(playable.game.multiplayer), [playable]);
+  const serverAuthoritative = useMemo(
+    () => isServerAuthoritative(playable.game.multiplayer) && multiplayer !== null,
+    [playable, multiplayer],
+  );
   const commandSink = useMemo<CommandSink>(
     () => ({
       run: (name, input) =>
