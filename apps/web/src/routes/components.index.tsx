@@ -474,17 +474,15 @@ const runtime = createGameRuntime({ gameId: "arena", save: { auto: "5s", scope: 
 const host = createGameHost({ runtimes: [runtime], persistence: filePersistence("./saves"), tickMs: 100 });
 createGameWsServer({ host, port: 8080, path: "/play" });
 // client: createWsBackend({ url, userId }) — reconnect + live server/player/feed channels`,
-    handRoll: `// the authoritative tick + autosave loop you'd own — excerpt from host.ts
+    handRoll: `// ─── host.ts — the authoritative tick + autosave loop ───
 for (const entry of live.values()) {
   if (entry.record.status !== "running") continue;
   if (entry.record.memberUserIds.length === 0) continue;
   const elapsedMs = timestamp - entry.record.tickAnchorMs;
   if (elapsedMs < tickMs) continue;
 
-  const runtime = resolveRuntime(entry.record.gameId);
   const before = entry.snapshot.revision;
-  entry.snapshot = runtime.tick(entry.snapshot, elapsedMs / 1_000);
-  entry.record = { ...entry.record, tickAnchorMs: timestamp, updatedAt: timestamp };
+  entry.snapshot = resolveRuntime(entry.record.gameId).tick(entry.snapshot, elapsedMs / 1_000);
   if (entry.snapshot.revision !== before) {
     markMutated(entry);
     emit({ type: "server", serverId: entry.record.serverId });
@@ -492,6 +490,13 @@ for (const entry of live.values()) {
   if (shouldAutoSave(entry.record.save, entry.record.dirtyAt, entry.record.lastSavedAt, timestamp)) {
     await flushServer(entry);
   }
+}
+
+// ─── persistence.ts — crash-safe save: stage to a temp file, then rename ───
+async function writeJson(path: string, value: unknown): Promise<void> {
+  const temp = \`\${path}.\${randomUUID()}.tmp\`;
+  await writeFile(temp, JSON.stringify(value), "utf8");
+  await rename(temp, path);
 }`,
     handRollLoc: 760,
     fileCount: 3,
@@ -517,28 +522,32 @@ const move: CommandDef<{ x: number; z: number }> = {
 };
 const runtime = createGameRuntime({ gameId: "arena", commands: { move },
   loop: { onTick: (ctx, dt) => stepEnemies(ctx.snapshot, dt) } });`,
-    handRoll: `// validate → apply → bump revision → track dirty players — excerpt from commandRunner.ts
+    handRoll: `// ─── commandRunner.ts — validate → apply → bump revision → track dirty ───
 const command = commands[commandName];
 if (!command) return { ok: false, reason: \`Unknown command: \${commandName}\` };
-
 const validationError = command.validate(snapshot, input, actorUserId);
 if (validationError) return { ok: false, reason: validationError.reason };
-
 const next = command.apply(snapshot, input, actorUserId);
 return {
   ok: true,
-  snapshot: {
-    ...next,
+  snapshot: { ...next, revision: snapshot.revision + 1, dirty: {
+    server: true,
+    players: next.dirty.players.includes(actorUserId)
+      ? next.dirty.players
+      : [...next.dirty.players, actorUserId],
+    chunks: next.dirty.chunks,
+  } },
+};
+
+// ─── snapshot.ts — mark one player dirty so only they get persisted/synced ───
+export function markPlayerDirty(snapshot: GameRuntimeSnapshot, userId: string) {
+  if (snapshot.dirty.players.includes(userId)) return markServerDirty(snapshot);
+  return {
+    ...snapshot,
     revision: snapshot.revision + 1,
-    dirty: {
-      server: true,
-      players: next.dirty.players.includes(actorUserId)
-        ? next.dirty.players
-        : [...next.dirty.players, actorUserId],
-      chunks: next.dirty.chunks,
-    },
-  },
-};`,
+    dirty: { ...snapshot.dirty, server: true, players: [...snapshot.dirty.players, userId] },
+  };
+}`,
     handRollLoc: 352,
     fileCount: 3,
     files: "gameRuntime.ts · commandRunner.ts · snapshot.ts",
@@ -567,11 +576,8 @@ const spatial = createSpatialApi({
 });
 const nearby = spatial.inRadius([0, 0, 0], 12);
 const inCone = spatial.queryArc({ from: "player", aim, radius: 10, halfAngleDeg: 45 });`,
-    handRoll: `// counting-sort grid rebuild you'd write for a broadphase — excerpt from spatialGrid.ts
+    handRoll: `// ─── spatialGrid.ts — counting-sort rebuild of the uniform grid ───
 rebuild(count: number, xs: Float32Array, zs: Float32Array): void {
-  this.entityCount = count;
-  this.xs = xs;
-  this.zs = zs;
   const start = this.cellStart;
   start.fill(0);
   for (let i = 0; i < count; i += 1) {
@@ -583,9 +589,21 @@ rebuild(count: number, xs: Float32Array, zs: Float32Array): void {
     start[c + 1]! += start[c]!;
     this.cursor[c] = start[c]!;
   }
-  for (let i = 0; i < count; i += 1) {
-    const c = this.cellOfBody[i]!;
-    this.sorted[this.cursor[c]!++] = i;
+  for (let i = 0; i < count; i += 1) this.sorted[this.cursor[this.cellOfBody[i]!]!++] = i;
+}
+
+// ─── spatial.ts — gather candidate ids from the cells a radius overlaps ───
+function collectNear(index, centerX, centerZ, radius, out): void {
+  const size = cellSize!;
+  out.length = 0;
+  const seen = collectNearSeen;
+  seen.clear();
+  for (let cz = cellCoord(centerZ - radius, size); cz <= cellCoord(centerZ + radius, size); cz += 1) {
+    for (let cx = cellCoord(centerX - radius, size); cx <= cellCoord(centerX + radius, size); cx += 1) {
+      const bucket = index.cells.get(packCell(cx, cz));
+      if (bucket === undefined) continue;
+      for (const id of bucket) if (!seen.has(id)) { seen.add(id); out.push(id); }
+    }
   }
 }`,
     handRollLoc: 631,
@@ -611,12 +629,11 @@ const effects = createEffectSystem({ resolveReceive, resolveStats, getStat, spat
 const projectiles = createProjectileSystem({ effects, spatial, getStat, sceneRaycast });
 const shot = projectiles.fireProjectile({ from: "player", item: "bow", aim });
 const result = projectiles.settleProjectile(shot); // { status, hits: EffectResult[] }`,
-    handRoll: `// drain an ordered stack of pools, flag lethality — excerpt from effects.ts
+    handRoll: `// ─── effects.ts — drain an ordered stack of pools, flag lethality ───
 function drainPools(instanceId, effect, rule, stats, drainMagnitude): EffectResult {
   const applied: AppliedPoolDelta[] = [];
   const lastStatId = rule.order[rule.order.length - 1];
-  let remaining = drainMagnitude;
-  let lethal = false;
+  let remaining = drainMagnitude, lethal = false;
   for (const statId of rule.order) {
     if (remaining === 0) break;
     const before = stats[statId];
@@ -630,7 +647,16 @@ function drainPools(instanceId, effect, rule, stats, drainMagnitude): EffectResu
     if (statId === lastStatId && drainMagnitude > 0 && result.hitMin) lethal = true;
   }
   return { instanceId, effect, applied, lethal };
-}`,
+}
+
+// ─── projectiles.ts — settle a shot: raycast, then keep only valid hits ───
+const { visible, rawHits } = predictHits(input);
+const impact = firstImpact(hitsUntilBlocked(asSceneHits(rawHits)));
+const solidBlock = impact !== null && impact.blocks && !impact.damageEligible;
+const damageHits = visible.filter((hit): hit is EntityRaycastHit =>
+  isEntityHit(hit) && hit.damageEligible !== false &&
+  (!solidBlock || hit.distance <= (impact?.distance ?? Infinity) + 1e-9) &&
+  deps.effects.canReceive(hit.instanceId, input.effect) === null);`,
     handRollLoc: 863,
     fileCount: 4,
     files: "effects.ts · projectiles.ts · resistance.ts · death.ts",
@@ -654,14 +680,7 @@ await ensureSchema(pool);
 createGameHost({ runtimes, persistence: sqlPersistence(pool) });
 // or filePersistence(dir) / memoryPersistence() — same contract
 createGameRuntime({ gameId, save: { auto: "10s", scope: "player+chunks" }, commands });`,
-    handRoll: `// persist-plan: drain increments, split each player, emit only dirty profiles — excerpt from hostPersistence.ts
-const drained = drainPendingLeaderboardIncrements(snapshot.server.session);
-const leaderboard = drained.increments.map((entry) =>
-  entry.scope === "server" && entry.serverId === undefined
-    ? { ...entry, serverId: server.serverId }
-    : entry,
-);
-
+    handRoll: `// ─── hostPersistence.ts — split each player, emit only dirty profiles ───
 const sessionPlayers: Record<string, RuntimePlayerRow> = {};
 const profiles: PlayerProfileRecord[] = [];
 for (const userId of Object.keys(snapshot.players)) {
@@ -676,6 +695,17 @@ for (const userId of Object.keys(snapshot.players)) {
   ) {
     profiles.push(/* … serialized profile row … */);
   }
+}
+
+// ─── sqlPersistence.ts — one of the backends behind that one interface ───
+async function upsertProfile(db: SqlQueryable, record: PlayerProfileRecord): Promise<void> {
+  await db.query(
+    \`INSERT INTO jg_player_profiles (game_id, user_id, updated_at, record)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (game_id, user_id) DO UPDATE SET
+       updated_at = EXCLUDED.updated_at, record = EXCLUDED.record\`,
+    [record.gameId, record.userId, record.updatedAt, JSON.stringify(record)],
+  );
 }`,
     handRollLoc: 982,
     fileCount: 4,
@@ -701,16 +731,13 @@ export const { getTop } = createLeaderboardFunctions({ auth: "anonymous" });
 import { createConvexLeaderboardReads } from "@jgengine/convex";
 const reads = createConvexLeaderboardReads(api, { gameId: "arena" });
 const { query, args } = reads.getTop({ stat: "kills", scope: "global", limit: 20 });`,
-    handRoll: `// find-or-insert a board row and increment it, per scope — excerpt from convex/server.ts
+    handRoll: `// ─── convex/server.ts — find-or-insert a board row, per scope ───
 for (const entry of entries) {
   const serverId = entry.serverId as GenericId<"jgGameServers"> | undefined;
-  const candidates = await ctx.db
-    .query("jgLeaderboardRows")
+  const candidates = await ctx.db.query("jgLeaderboardRows")
     .withIndex("by_user_scope_stat", (q) =>
-      q.eq("userId", entry.userId).eq("scope", entry.scope).eq("stat", entry.stat),
-    )
+      q.eq("userId", entry.userId).eq("scope", entry.scope).eq("stat", entry.stat))
     .collect();
-
   const existing = candidates.find((row) => row.gameId === gameId && row.serverId === serverId);
   if (existing) {
     await ctx.db.patch(existing._id, { value: existing.value + entry.by, updatedAt: now });
@@ -720,6 +747,15 @@ for (const entry of entries) {
       serverId, userId: entry.userId, value: entry.by, updatedAt: now,
     });
   }
+}
+
+// ─── leaderboard.ts — the ranked top-N read (sort + slice) ───
+getTop(stat, options) {
+  return Array.from(rows.values())
+    .filter((row) => row.stat === stat && row.scope === options.scope && row.serverId === options.serverId)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, options.limit ?? 10)
+    .map((row) => ({ userId: row.userId, value: row.value }));
 }`,
     handRollLoc: 201,
     fileCount: 2,
@@ -774,15 +810,10 @@ function SystemCard({ sys }: { sys: SystemDef }) {
             </div>
           </div>
           <div className="min-w-0 overflow-x-auto">
-            <pre className="max-h-[340px] overflow-y-auto p-4 font-mono text-[11.5px] leading-relaxed text-slate-300">
+            <pre className="max-h-[360px] overflow-y-auto p-4 font-mono text-[11.5px] leading-relaxed text-slate-300">
               <code>{code}</code>
             </pre>
           </div>
-          {!jg && (
-            <div className="border-t border-white/[0.06] px-4 py-2 font-mono text-[10px] leading-relaxed text-slate-600">
-              excerpt · the full implementation is ≈{sys.handRollLoc} lines across {sys.files}
-            </div>
-          )}
         </div>
       </div>
     </div>
