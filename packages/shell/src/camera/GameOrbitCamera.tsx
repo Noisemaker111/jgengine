@@ -1,7 +1,7 @@
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type ComponentRef, type MutableRefObject } from "react";
-import { MOUSE, PerspectiveCamera, type Camera, Vector3 } from "three";
+import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
@@ -56,6 +56,10 @@ export function GameOrbitCamera({
   const ctx = useGameContext();
   const playerFov = usePlayerFov();
   const camera = useThree((state) => state.camera);
+  const scene = useThree((state) => state.scene);
+  const raycasterRef = useRef(new Raycaster());
+  const collisionDirRef = useRef(new Vector3());
+  const collisionOriginRef = useRef(new Vector3());
   const followId = followEntityId ?? userId;
 
   useEffect(() => {
@@ -100,6 +104,34 @@ export function GameOrbitCamera({
     }
 
     controls.update();
+
+    if (config.collision.enabled) {
+      const t = stepped.target;
+      const dx = camera.position.x - t.x;
+      const dy = camera.position.y - t.y;
+      const dz = camera.position.z - t.z;
+      const dist = Math.hypot(dx, dy, dz);
+      if (dist > config.collision.minTargetDistance) {
+        const dir = collisionDirRef.current.set(dx / dist, dy / dist, dz / dist);
+        const ray = raycasterRef.current;
+        ray.set(collisionOriginRef.current.set(t.x, t.y, t.z), dir);
+        ray.near = config.collision.minTargetDistance;
+        ray.far = dist;
+        let blocked = 0;
+        for (const hit of ray.intersectObjects(scene.children, true)) {
+          const obj = hit.object;
+          if (!obj.visible) continue;
+          if ((obj as { isSprite?: boolean }).isSprite === true) continue;
+          if (obj.userData.jgCameraTransparent === true) continue;
+          blocked = hit.distance;
+          break;
+        }
+        if (blocked > 0) {
+          const pulled = Math.max(config.collision.minTargetDistance, blocked - config.collision.padding);
+          camera.position.set(t.x + dir.x * pulled, t.y + dir.y * pulled, t.z + dir.z * pulled);
+        }
+      }
+    }
 
     runtimeRef.current = {
       target: stepped.target,

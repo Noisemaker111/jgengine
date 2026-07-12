@@ -55,6 +55,25 @@ export interface OrbitCameraConfig {
   /** Vertical clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below the target. Widen to allow top-down or vertical aim; leave unset for the standard chase feel. */
   minPolarAngle?: number;
   maxPolarAngle?: number;
+  /** Spring-arm collision: raycast target→camera each frame and pull the boom in past occluders (walls, terrain) so the camera never clips inside geometry. */
+  collision?: OrbitCollisionConfig;
+}
+
+/** Spring-arm occlusion config for the orbit rig. */
+export interface OrbitCollisionConfig {
+  /** Enable the pull-in raycast. Default false (unchanged chase camera). */
+  enabled?: boolean;
+  /** Gap kept between the camera and the hit surface, world units. Default 0.35. */
+  padding?: number;
+  /** Ignore hits closer than this to the target — the player's own body. Default 1.2. */
+  minTargetDistance?: number;
+}
+
+/** An {@link OrbitCollisionConfig} with every field resolved to a concrete value. */
+export interface ResolvedOrbitCollision {
+  enabled: boolean;
+  padding: number;
+  minTargetDistance: number;
 }
 
 /** Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA. */
@@ -75,6 +94,7 @@ export interface ResolvedOrbitCameraConfig {
   distanceSmoothing: number;
   minPolarAngle: number;
   maxPolarAngle: number;
+  collision: ResolvedOrbitCollision;
 }
 
 export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
@@ -93,6 +113,7 @@ export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
   distanceSmoothing: 5,
   minPolarAngle: 0.12,
   maxPolarAngle: Math.PI / 2.05,
+  collision: { enabled: false, padding: 0.35, minTargetDistance: 1.2 },
 };
 
 /** Run simulation/movement before orbit follow so poses are current. */
@@ -112,7 +133,11 @@ export function smoothBlend(deltaSeconds: number, speed: number): number {
 }
 
 export function resolveOrbitCameraConfig(patch?: OrbitCameraConfig): ResolvedOrbitCameraConfig {
-  return { ...DEFAULT_ORBIT_CAMERA, ...patch };
+  return {
+    ...DEFAULT_ORBIT_CAMERA,
+    ...patch,
+    collision: { ...DEFAULT_ORBIT_CAMERA.collision, ...patch?.collision },
+  };
 }
 
 export function resolveTargetSmoothing(config: ResolvedOrbitCameraConfig, dragging: boolean): number {

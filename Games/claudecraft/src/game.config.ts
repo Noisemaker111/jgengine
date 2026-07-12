@@ -84,6 +84,8 @@ export const game = defineGame({
     minDistance: 3.5,
     maxDistance: 16,
     targetHeight: 1.8,
+    rotateSpeed: 0.3,
+    collision: { enabled: true, padding: 0.4 },
     frustum: { far: 720 },
   },
 });
