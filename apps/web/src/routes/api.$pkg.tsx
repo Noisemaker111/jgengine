@@ -2,18 +2,19 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { Page } from "../components/Layout";
 import { loadApiPackage } from "../content/api";
+import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/api/$pkg")({
   loader: async ({ params }) => {
     const pkg = await loadApiPackage(params.pkg);
     return { slug: params.pkg, pkg };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `@jgengine/${loaderData?.slug ?? "api"} — JGengine` },
-      { name: "description", content: loaderData?.pkg?.description ?? "" },
-    ],
-  }),
+  head: ({ loaderData, params }) =>
+    seo({
+      title: `@jgengine/${loaderData?.slug ?? "api"} — JGengine`,
+      description: loaderData?.pkg?.description ?? "",
+      path: `/api/${params.pkg}`,
+    }),
   component: ApiPackagePage,
 });
 

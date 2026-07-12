@@ -3,6 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { Page, PageHero } from "../components/Layout";
 import { API_PACKAGE_SLUGS, loadApiPackage } from "../content/api";
 import type { ApiPackage } from "../content/api";
+import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/api/")({
   loader: async () => {
@@ -14,15 +15,12 @@ export const Route = createFileRoute("/api/")({
     );
     return { packages };
   },
-  head: () => ({
-    meta: [
-      { title: "API Reference — JGengine" },
-      {
-        name: "description",
-        content: "Generated export surface for every @jgengine/* package.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "API Reference — JGengine",
+      description: "Generated export surface for every @jgengine/* package.",
+      path: "/api",
+    }),
   component: ApiIndex,
 });
 

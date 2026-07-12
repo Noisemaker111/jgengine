@@ -11,18 +11,16 @@ import { VitalBar } from "../../../../registry/jgengine/vital-bar";
 import type { VitalTone } from "../../../../registry/jgengine/vital-bar";
 import { HudPanel } from "../../../../registry/jgengine/hud-panel";
 import { emberVars } from "../../../../registry/jgengine/jg-theme";
+import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/components/")({
-  head: () => ({
-    meta: [
-      { title: "Components · JGengine" },
-      {
-        name: "description",
-        content:
-          "Standalone HUD widgets you can drop into any React project — recolor each one, flip hand-roll vs JGengine, and see the boilerplate you skip. No game.config required.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Components · JGengine",
+      description:
+        "Standalone HUD widgets you can drop into any React project — recolor each one, flip hand-roll vs JGengine, and see the boilerplate you skip. No game.config required.",
+      path: "/components",
+    }),
   component: ComponentsIndex,
 });
 

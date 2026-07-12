@@ -5,18 +5,16 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { GameCard } from "../components/GameCard";
 import { Page, PageHero } from "../components/Layout";
 import { GAME_CATEGORIES, GAMES, GAMES_BY_CATEGORY, type Game, type GameCategory } from "../content/games";
+import { seo } from "../lib/seo";
 import { REPO_URL } from "../lib/site";
 
 export const Route = createFileRoute("/games/")({
-  head: () => ({
-    meta: [
-      { title: "Games — JGengine" },
-      {
-        name: "description",
-        content: "Games built by AI agents on the JGengine SDK — playable in the browser.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Games — JGengine",
+      description: "Games built by AI agents on the JGengine SDK — playable in the browser.",
+      path: "/games",
+    }),
   component: GamesPage,
 });
 

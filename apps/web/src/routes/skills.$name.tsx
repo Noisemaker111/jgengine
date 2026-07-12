@@ -3,6 +3,7 @@ import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { CopyButton } from "../components/Copy";
 import { Page } from "../components/Layout";
 import { loadSkill } from "../content/skills";
+import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/skills/$name")({
   loader: async ({ params }) => {
@@ -15,12 +16,12 @@ export const Route = createFileRoute("/skills/$name")({
       html: marked.parse(skill.body, { async: false }),
     };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `${loaderData?.name ?? "Skill"} — JGengine` },
-      { name: "description", content: loaderData?.description ?? "" },
-    ],
-  }),
+  head: ({ loaderData, params }) =>
+    seo({
+      title: `${loaderData?.name ?? "Skill"} — JGengine`,
+      description: loaderData?.description ?? "",
+      path: `/skills/${params.name}`,
+    }),
   component: SkillPage,
 });
 

@@ -1,13 +1,13 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 
-import { SITE_URL } from "../lib/site";
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "../lib/site";
 import appCss from "../styles.css?url";
 import interWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import monoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
 
-const TITLE = "jgengine — TypeScript game engine SDK for AI agents";
-const DESCRIPTION =
-  "jgengine is a pure-TypeScript game engine SDK on npm (@jgengine/core, jgengine CLI). Not automotive. Tell your agent: Make a game that … with jgengine. Site: jgengine.com · GitHub: Noisemaker111/jgengine.";
+const TITLE = SITE_TITLE;
+const DESCRIPTION = SITE_DESCRIPTION;
+const OG_IMAGE = `${SITE_URL}/og.png`;
 
 const JSON_LD = {
   "@context": "https://schema.org",
@@ -38,9 +38,11 @@ export const Route = createRootRoute({
       { property: "og:type", content: "website" },
       { property: "og:url", content: SITE_URL },
       { property: "og:site_name", content: "jgengine" },
+      { property: "og:image", content: OG_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
+      { name: "twitter:image", content: OG_IMAGE },
       { name: "theme-color", content: "#05070d" },
     ],
     links: [
@@ -48,7 +50,6 @@ export const Route = createRootRoute({
       { rel: "preload", href: monoWoff2, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "canonical", href: SITE_URL },
       { rel: "alternate", type: "text/plain", href: `${SITE_URL}/llms.txt`, title: "llms.txt" },
     ],
     scripts: [

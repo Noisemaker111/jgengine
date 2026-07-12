@@ -3,6 +3,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
 import { PreviewFrame } from "../components/PreviewFrame";
 import { GAMES, type Game } from "../content/games";
+import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/games/$gameId")({
   loader: ({ params }) => {
@@ -10,12 +11,12 @@ export const Route = createFileRoute("/games/$gameId")({
     if (game === undefined) throw notFound();
     return { game };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `${loaderData?.game.title ?? "Play"} — JGengine` },
-      { name: "description", content: loaderData?.game.tagline ?? "Play a JGengine game in the browser." },
-    ],
-  }),
+  head: ({ loaderData }) =>
+    seo({
+      title: `${loaderData?.game.title ?? "Play"} — JGengine`,
+      description: loaderData?.game.tagline ?? "Play a JGengine game in the browser.",
+      path: loaderData ? `/games/${loaderData.game.id}` : "/games",
+    }),
   component: PlayPage,
 });
 

@@ -3,18 +3,17 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { CommandBlock } from "../components/Copy";
 import { Page, PageHero } from "../components/Layout";
 import { SKILL_SLUGS } from "../content/skills";
+import { seo } from "../lib/seo";
 import { ENTRY_PROMPT, SKILL_GUIDE } from "../lib/site";
 
 export const Route = createFileRoute("/skills/")({
-  head: () => ({
-    meta: [
-      { title: "Skills — JGengine" },
-      {
-        name: "description",
-        content: "One JGengine intake router plus focused API domains for AI coding agents building on the TypeScript SDK.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Skills — JGengine",
+      description:
+        "One JGengine intake router plus focused API domains for AI coding agents building on the TypeScript SDK.",
+      path: "/skills",
+    }),
   component: SkillsIndex,
 });
 
