@@ -342,8 +342,10 @@ export interface GameContext {
     loot: GameContextLoot;
     trade: TradeSystem;
     quest: QuestJournal;
-    social: Social;
-    chat: Chat;
+    /** Friends/party/presence/emotes/world-invites — present only when `features.social` is set. */
+    social?: Social;
+    /** Channels + messages — present only when `features.chat` is set (implies `social`). */
+    chat?: Chat;
     unlocks: Unlocks;
     economy: GameContextEconomy;
     /** Competitive score tracking — present only when `features.leaderboard` is set. */
@@ -530,48 +532,57 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry();
   const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify);
-  const rawSocial = createSocial({
-    events,
-    now,
-    emotes: {
-      entities: { get: (id) => entities.get(id) },
-      spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
-    },
-  });
-  const social: Social = {
-    friends: notifyAfter(
-      rawSocial.friends,
-      ["request", "accept", "decline", "remove", "block", "hydrate"],
-      signal.notify,
-    ),
-    party: notifyAfter(
-      rawSocial.party,
-      ["invite", "accept", "decline", "kick", "leave", "promote"],
-      signal.notify,
-    ),
-    presence: rawSocial.presence,
-    emotes: rawSocial.emotes,
-    worldInvites: notifyAfter(
-      rawSocial.worldInvites,
-      ["invite", "accept", "decline"],
-      signal.notify,
-    ),
-  };
-  const chat = notifyAfter(
-    createChat({
-      events,
-      now,
-      party: rawSocial.party,
-      proximity: {
-        entities: { get: (id) => entities.get(id) },
-        spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
-      },
-      blockedBy: (userId) => rawSocial.friends.snapshot(userId).blocked,
-    }),
-    ["register", "send", "whisper", "hydrate"],
-    signal.notify,
-  );
   const features = definition.features ?? {};
+  const rawSocial =
+    features.social || features.chat
+      ? createSocial({
+          events,
+          now,
+          emotes: {
+            entities: { get: (id) => entities.get(id) },
+            spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
+          },
+        })
+      : null;
+  let social: Social | undefined;
+  if (features.social && rawSocial !== null) {
+    social = {
+      friends: notifyAfter(
+        rawSocial.friends,
+        ["request", "accept", "decline", "remove", "block", "hydrate"],
+        signal.notify,
+      ),
+      party: notifyAfter(
+        rawSocial.party,
+        ["invite", "accept", "decline", "kick", "leave", "promote"],
+        signal.notify,
+      ),
+      presence: rawSocial.presence,
+      emotes: rawSocial.emotes,
+      worldInvites: notifyAfter(
+        rawSocial.worldInvites,
+        ["invite", "accept", "decline"],
+        signal.notify,
+      ),
+    };
+  }
+  let chat: Chat | undefined;
+  if (features.chat && rawSocial !== null) {
+    chat = notifyAfter(
+      createChat({
+        events,
+        now,
+        party: rawSocial.party,
+        proximity: {
+          entities: { get: (id) => entities.get(id) },
+          spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
+        },
+        blockedBy: (userId) => rawSocial.friends.snapshot(userId).blocked,
+      }),
+      ["register", "send", "whisper", "hydrate"],
+      signal.notify,
+    );
+  }
   const leaderboard = features.leaderboard
     ? notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify)
     : undefined;
