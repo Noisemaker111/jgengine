@@ -11,14 +11,6 @@ export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-export function LogoMark({ className = "h-8 w-8 rounded-xl" }: { className?: string }) {
-  return (
-    <span className={`grid shrink-0 place-items-center bg-white/[0.05] ring-1 ring-white/[0.06] ${className}`}>
-      <img src="/logo-mark.png" alt="" aria-hidden className="h-[82%] w-[82%]" />
-    </span>
-  );
-}
-
 export function Backdrop({ variant = "page" }: { variant?: "hero" | "page" }) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -91,11 +83,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-20 px-3 pt-3 sm:px-4">
       <div className="mx-auto flex max-w-6xl items-center justify-between rounded-2xl border border-white/[0.08] bg-ink/75 py-2.5 pl-4 pr-3 shadow-[0_8px_32px_-12px_rgba(2,3,8,0.9)] backdrop-blur-xl sm:pl-5">
-        <Link to="/" className="flex shrink-0 items-center gap-2.5 font-semibold tracking-tight text-slate-100">
-          <LogoMark />
+        <Link to="/" className="shrink-0 text-lg font-semibold tracking-tight text-white">
           JGengine
         </Link>
-        <nav className="flex min-w-0 items-center gap-0.5 overflow-x-auto text-sm text-slate-400 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0 [scrollbar-width:none] sm:gap-1">
+        <nav className="flex min-w-0 flex-wrap items-center justify-end gap-0.5 text-sm text-slate-400 sm:gap-1">
           <Link
             to="/skills"
             className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
@@ -144,10 +135,7 @@ export function Footer() {
       <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-14 sm:px-6">
         <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
           <div className="max-w-xs">
-            <div className="flex items-center gap-2.5 font-semibold text-slate-100">
-              <LogoMark className="h-7 w-7 rounded-lg" />
-              JGengine
-            </div>
+            <div className="text-lg font-semibold text-white">JGengine</div>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
               A pure-TypeScript game engine SDK. AI coding agents build on it using focused JGengine Skills.
             </p>
