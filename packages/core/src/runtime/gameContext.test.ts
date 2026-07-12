@@ -78,8 +78,10 @@ describe("opt-in features", () => {
     expect(ctx.game.leaderboard).toBeUndefined();
     expect(ctx.game.social).toBeUndefined();
     expect(ctx.game.chat).toBeUndefined();
+    expect(ctx.game.players).toBeUndefined();
     expect(ctx.game.commands).toBeDefined();
     expect(ctx.game.store).toBeDefined();
+    expect(ctx.game.commands.actor()).toBeNull();
   });
 
   test("opted-in features are built", () => {

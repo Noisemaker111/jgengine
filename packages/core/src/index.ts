@@ -2,6 +2,7 @@ export * from "./runtime/save";
 export * from "./runtime/snapshot";
 export * from "./runtime/worldSnapshot";
 export * from "./runtime/worldReplication";
+export * from "./game/connectedPlayers";
 export * from "./runtime/hostedGameRunner";
 export * from "./runtime/hostedWorldSession";
 export * from "./runtime/worldMirror";

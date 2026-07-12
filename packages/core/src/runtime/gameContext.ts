@@ -101,6 +101,7 @@ import type { EntityColliderSet } from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, type ObjectStore } from "../scene/objectStore";
 import { createRoster, type Roster } from "../scene/roster";
+import { createConnectedPlayers, type ConnectedPlayers } from "../game/connectedPlayers";
 import { createPossession, type Possession } from "../scene/possession";
 import {
   createSceneRaycast,
@@ -279,6 +280,10 @@ export interface GameContextCommands {
   has(name: string): boolean;
   names(): string[];
   run(name: string, input: unknown): CommandResult<GameContext>;
+  /** Run a command attributed to `actorUserId` — a shared-world host routes each client's command through this so the handler can read {@link actor}. */
+  runAs(actorUserId: string, name: string, input: unknown): CommandResult<GameContext>;
+  /** The user a command is running on behalf of, or `null` outside a {@link runAs} call — commands default to `ctx.player.userId` when this is `null`. */
+  actor(): string | null;
 }
 
 export interface GameContextFeed extends Omit<GameFeed, "bind"> {
@@ -370,6 +375,8 @@ export interface GameContext {
     turn?: GameContextTurn;
     /** Lap/checkpoint race state — present only when `features.race` is set. */
     race?: GameContextRace;
+    /** Connected-player set for a shared world — present only when `features.players` is set. */
+    players?: ConnectedPlayers;
   };
   player: {
     userId: string;
@@ -1084,6 +1091,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
 
+  let actingUserId: string | null = null;
+  const players = features.players
+    ? notifyAfter(createConnectedPlayers(), ["join", "leave"], signal.notify)
+    : undefined;
+
   const cardPiles = new Map<string, CardPile>();
   function pile(id: string, config?: CardPileConfig): CardPile {
     const existing = cardPiles.get(id);
@@ -1276,6 +1288,18 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           signal.notify();
           return result;
         },
+        runAs(actorUserId, name, input) {
+          const previous = actingUserId;
+          actingUserId = actorUserId;
+          try {
+            const result = commandRegistry.run(ctx, name, input);
+            signal.notify();
+            return result;
+          } finally {
+            actingUserId = previous;
+          }
+        },
+        actor: () => actingUserId,
       },
       events,
       playEntityAnimation: (instanceId, event) => events.emit("entity.animation", { instanceId, event }),
@@ -1312,6 +1336,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       cards: features.cards ? { pile } : undefined,
       turn: features.turn ? { loop } : undefined,
       race: features.race ? { state: raceState } : undefined,
+      players,
     },
     player: {
       userId: player.userId,

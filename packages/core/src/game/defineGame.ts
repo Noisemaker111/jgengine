@@ -62,6 +62,8 @@ export interface GameFeatures {
   social?: boolean;
   /** Channels + messages (`ctx.game.chat`) — implies `social`; multiplayer/social games. */
   chat?: boolean;
+  /** Connected-player set (`ctx.game.players`) — shared-world hosts whose loop ticks every player, not just `ctx.player`. */
+  players?: boolean;
 }
 
 export interface GameDefinition<

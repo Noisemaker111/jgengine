@@ -72,6 +72,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     join(userId, isNew) {
       const player: LoopPlayer = { userId, isNew };
       members.set(userId, player);
+      ctx.game.players?.join(userId, isNew);
       loop.onNewPlayer?.(ctx, player);
     },
     leave(userId) {
@@ -80,6 +81,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       members.delete(userId);
       inputs.delete(userId);
       loop.onPlayerLeave?.(ctx, player);
+      ctx.game.players?.leave(userId);
     },
     input(userId, frame) {
       inputs.set(userId, frame);
@@ -87,8 +89,8 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     heldInput(userId) {
       return inputs.get(userId) ?? null;
     },
-    command(_userId, name, input) {
-      return ctx.game.commands.run(name, input);
+    command(userId, name, input) {
+      return ctx.game.commands.runAs(userId, name, input);
     },
     tick(dt) {
       loop.onTick?.(ctx, dt);

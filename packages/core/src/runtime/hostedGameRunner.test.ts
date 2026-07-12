@@ -22,6 +22,7 @@ function runner(restore?: WorldSnapshot): HostedGameRunner {
       name: "Hosted",
       assets: createAssetCatalog(),
       multiplayer: "off",
+      features: { players: true },
       loop: {
         onInit(ctx: GameContext) {
           ctx.scene.entity.spawn("mover", { id: "mover", position: [0, 0, 0] });
@@ -30,6 +31,11 @@ function runner(restore?: WorldSnapshot): HostedGameRunner {
             apply(state, input) {
               const prev = (state.game.store.get("bumped") as number | undefined) ?? 0;
               state.game.store.set("bumped", prev + input.by);
+            },
+          });
+          ctx.game.commands.define<Record<string, never>>("claim", {
+            apply(state) {
+              state.game.store.set(`owner:${state.game.commands.actor() ?? "none"}`, true);
             },
           });
         },
@@ -121,6 +127,24 @@ describe("hosted game runner", () => {
     host.input("alice", { held: ["moveForward"], pointer: null });
     expect(host.heldInput("alice")).toEqual({ held: ["moveForward"], pointer: null });
     expect(host.heldInput("bob")).toBeNull();
+  });
+
+  test("join/leave drive the connected-players registry the loop can read", () => {
+    const host = runner();
+    host.join("alice", true);
+    host.join("bob", false);
+    expect(host.context().game.players?.ids()).toEqual(["alice", "bob"]);
+    expect(host.context().game.players?.get("bob")).toEqual({ userId: "bob", isNew: false });
+    host.leave("alice");
+    expect(host.context().game.players?.ids()).toEqual(["bob"]);
+  });
+
+  test("command routes actor identity to the handler", () => {
+    const host = runner();
+    host.join("alice", true);
+    host.command("alice", "claim", {});
+    expect(host.context().game.store.get("owner:alice")).toBe(true);
+    expect(host.context().game.commands.actor()).toBeNull();
   });
 
   test("restore rehydrates a persisted world without re-seeding, and onInit-registered commands still work", () => {
