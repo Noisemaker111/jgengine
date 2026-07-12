@@ -57,11 +57,45 @@ function makeContext() {
       assets: createAssetCatalog(),
       multiplayer: "off",
       inventories: { backpack: { slots: 9 } },
+      features: { roster: true, cards: true, turn: true, race: true },
     }),
     content: CONTENT,
     player: { userId: "user_a", isNew: true },
   });
 }
+
+describe("opt-in features", () => {
+  test("omitted features leave their ctx.game slots undefined", () => {
+    const ctx = createGameContext({
+      definition: defineGame({ name: "Slim", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+    });
+    expect(ctx.game.roster).toBeUndefined();
+    expect(ctx.game.cards).toBeUndefined();
+    expect(ctx.game.turn).toBeUndefined();
+    expect(ctx.game.race).toBeUndefined();
+    expect(ctx.game.commands).toBeDefined();
+    expect(ctx.game.store).toBeDefined();
+  });
+
+  test("opted-in features are built", () => {
+    const ctx = createGameContext({
+      definition: defineGame({
+        name: "Full",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+        features: { roster: true, cards: true, turn: true, race: true },
+      }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+    });
+    expect(ctx.game.roster).toBeDefined();
+    expect(ctx.game.cards).toBeDefined();
+    expect(ctx.game.turn).toBeDefined();
+    expect(ctx.game.race).toBeDefined();
+  });
+});
 
 describe("createGameContext", () => {
   test("world.groundHeightAt samples the declared environment terrain and is flat without one", () => {
@@ -541,19 +575,19 @@ describe("game.store", () => {
 describe("game.cards.pile", () => {
   test("returns the same instance for the same id, requires config only on first access", () => {
     const ctx = makeContext();
-    const a = ctx.game.cards.pile("deck", { zones: ["draw", "hand", "discard"] });
-    const b = ctx.game.cards.pile("deck");
+    const a = ctx.game.cards!.pile("deck", { zones: ["draw", "hand", "discard"] });
+    const b = ctx.game.cards!.pile("deck");
     expect(b).toBe(a);
   });
 
   test("throws when a pile has not been created yet and no config is given", () => {
     const ctx = makeContext();
-    expect(() => ctx.game.cards.pile("missing")).toThrow();
+    expect(() => ctx.game.cards!.pile("missing")).toThrow();
   });
 
   test("mutating a pile bumps ctx.version", () => {
     const ctx = makeContext();
-    const deck = ctx.game.cards.pile("deck", {
+    const deck = ctx.game.cards!.pile("deck", {
       zones: ["draw", "hand", "discard"],
       drawFrom: "draw",
       handZone: "hand",
@@ -570,19 +604,19 @@ describe("game.cards.pile", () => {
 describe("game.turn.loop", () => {
   test("returns the same instance for the same id, requires config only on first access", () => {
     const ctx = makeContext();
-    const a = ctx.game.turn.loop("combat", { order: ["hero", "slime"] });
-    const b = ctx.game.turn.loop("combat");
+    const a = ctx.game.turn!.loop("combat", { order: ["hero", "slime"] });
+    const b = ctx.game.turn!.loop("combat");
     expect(b).toBe(a);
   });
 
   test("throws when a loop has not been created yet and no config is given", () => {
     const ctx = makeContext();
-    expect(() => ctx.game.turn.loop("missing")).toThrow();
+    expect(() => ctx.game.turn!.loop("missing")).toThrow();
   });
 
   test("advanceTurn bumps ctx.version", () => {
     const ctx = makeContext();
-    const loop = ctx.game.turn.loop("combat", { order: ["hero", "slime"] });
+    const loop = ctx.game.turn!.loop("combat", { order: ["hero", "slime"] });
     const before = ctx.version();
     loop.advanceTurn();
     expect(ctx.version()).toBeGreaterThan(before);
@@ -591,7 +625,7 @@ describe("game.turn.loop", () => {
 
   test("commit.submit on the sub-controller also bumps ctx.version", () => {
     const ctx = makeContext();
-    const loop = ctx.game.turn.loop("simul", {
+    const loop = ctx.game.turn!.loop("simul", {
       order: ["hero", "slime"],
       commit: { mode: "simultaneous" },
     });
@@ -690,19 +724,19 @@ describe("ctx.game.race.state", () => {
 
   test("creates on first call with config and returns the same instance subsequently", () => {
     const ctx = makeContext();
-    const a = ctx.game.race.state("main", { track: track() });
-    const b = ctx.game.race.state("main");
+    const a = ctx.game.race!.state("main", { track: track() });
+    const b = ctx.game.race!.state("main");
     expect(b).toBe(a);
   });
 
   test("throws when accessed without a config before creation", () => {
     const ctx = makeContext();
-    expect(() => ctx.game.race.state("missing")).toThrow();
+    expect(() => ctx.game.race!.state("missing")).toThrow();
   });
 
   test("addRacer bumps ctx.version", () => {
     const ctx = makeContext();
-    const race = ctx.game.race.state("main", { track: track() });
+    const race = ctx.game.race!.state("main", { track: track() });
     const before = ctx.version();
     race.addRacer("p1");
     expect(ctx.version()).toBeGreaterThan(before);
@@ -710,7 +744,7 @@ describe("ctx.game.race.state", () => {
 
   test("update with no events does not bump ctx.version", () => {
     const ctx = makeContext();
-    const race = ctx.game.race.state("main", { track: track() });
+    const race = ctx.game.race!.state("main", { track: track() });
     race.addRacer("p1");
     const before = ctx.version();
     race.update(0, { p1: [-50, 0, -50] });
@@ -719,7 +753,7 @@ describe("ctx.game.race.state", () => {
 
   test("update that hits a checkpoint bumps ctx.version", () => {
     const ctx = makeContext();
-    const race = ctx.game.race.state("main", { track: track() });
+    const race = ctx.game.race!.state("main", { track: track() });
     race.addRacer("p1");
     const before = ctx.version();
     race.update(0, { p1: [0, 0, 0] });
