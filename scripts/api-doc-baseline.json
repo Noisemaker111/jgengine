@@ -943,7 +943,6 @@
   "@jgengine/core/game/recordBook#RecordBook",
   "@jgengine/core/game/recordBook#RecordBookConfig",
   "@jgengine/core/game/recordBook#RecordDirection",
-  "@jgengine/core/game/recordBook#RecordStorage",
   "@jgengine/core/game/recordBook#RecordSubmission",
   "@jgengine/core/game/runDraft#RunDraft",
   "@jgengine/core/game/runDraft#RunDraftConfig",
