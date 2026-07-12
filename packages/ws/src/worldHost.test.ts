@@ -9,6 +9,7 @@ import {
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { GameRuntimeServerView } from "@jgengine/core/runtime/transport";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
+import { INPUT_COMMAND } from "@jgengine/core/runtime/hostedGameRunner";
 import { createHostRouter, loopbackPipe } from "./hostRouter";
 import { createWsBackend } from "./createWsBackend";
 import { createWorldGameHost } from "./worldHost";
@@ -110,6 +111,22 @@ describe("createWorldGameHost", () => {
       const afterTick = await views.next();
       const entities = (afterTick!.serverState as WorldSnapshot)["entities"] as { id: string; position: number[] }[];
       expect(entities.find((e) => e.id === "alice")?.position[0]).toBeCloseTo(1);
+    } finally {
+      alice.close();
+      router.close();
+    }
+  });
+
+  test("loopback: a client's input frame reaches ctx.game.players over the ws stack", async () => {
+    const { host, session } = sharedHost();
+    const router = createHostRouter({ host, allowAnonymous: true });
+    const alice = createWsBackend({ userId: "alice", pipe: loopbackPipe(router) });
+    try {
+      const { serverId } = await alice.transport.joinServer({ gameId: "shared" });
+      const frame = { held: ["moveForward"], pointer: { x: 0, y: 1, active: true } };
+      const result = await alice.transport.runCommand({ serverId, command: INPUT_COMMAND, input: frame });
+      expect(result.ok).toBe(true);
+      expect(session.runner().context().game.players?.input("alice")).toEqual(frame);
     } finally {
       alice.close();
       router.close();

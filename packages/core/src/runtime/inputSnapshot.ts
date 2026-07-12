@@ -1,6 +1,12 @@
 import type { PointerAxisState } from "../input/pointerAxis";
 import { type AxisBinding, type AxisRange, sampleAxisBindings } from "../input/axisInput";
 
+/** One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player. */
+export interface InputFrame {
+  held: readonly string[];
+  pointer: PointerAxisState | null;
+}
+
 export interface InputSnapshot {
   /** Replaces the held-action set for this frame. Called by the shell before `onTick` each frame; does not bump `ctx.version()` or notify `ctx.subscribe` listeners — per-frame publishes would storm subscribers. */
   publish(held: readonly string[]): void;

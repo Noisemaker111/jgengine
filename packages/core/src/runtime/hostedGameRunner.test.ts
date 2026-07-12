@@ -134,7 +134,7 @@ describe("hosted game runner", () => {
     host.join("alice", true);
     host.join("bob", false);
     expect(host.context().game.players?.ids()).toEqual(["alice", "bob"]);
-    expect(host.context().game.players?.get("bob")).toEqual({ userId: "bob", isNew: false });
+    expect(host.context().game.players?.get("bob")).toEqual({ userId: "bob", isNew: false, input: null });
     host.leave("alice");
     expect(host.context().game.players?.ids()).toEqual(["bob"]);
   });

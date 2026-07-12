@@ -68,6 +68,8 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import { attachWorldSync } from "./worldSync";
 import { localCommandSink, resolveCommandSink, type CommandSink } from "./commandSink";
+import { inputFramesEqual, resolveInputSink, type InputSink } from "./inputSink";
+import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import { applyHorizontalImpulses, type MotionIntentBatch } from "@jgengine/core/runtime/motionIntents";
 import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
@@ -1240,6 +1242,18 @@ function FrameDriver({
     }),
     [ctx, multiplayer, serverAuthoritative, serverIdRef],
   );
+  const inputSink = useMemo<InputSink>(
+    () => ({
+      send: (frame) =>
+        resolveInputSink({
+          serverAuthoritative,
+          backend: multiplayer?.backend ?? null,
+          serverId: serverIdRef.current,
+        }).send(frame),
+    }),
+    [multiplayer, serverAuthoritative, serverIdRef],
+  );
+  const lastSentInputRef = useRef<InputFrame | null>(null);
   const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
   const hasTerrain = useMemo(() => hasEnvironmentTerrain(playable.game.world), [playable]);
 
@@ -1253,8 +1267,17 @@ function FrameDriver({
         return;
       }
     }
+    const sendInput = () => {
+      if (!serverAuthoritative) return;
+      const frame: InputFrame = { held: ctx.input.held(), pointer: ctx.input.pointer() };
+      const last = lastSentInputRef.current;
+      if (last !== null && inputFramesEqual(last, frame)) return;
+      lastSentInputRef.current = frame;
+      inputSink.send(frame);
+    };
     if (gateRef.current) {
       ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
+      sendInput();
       return;
     }
     const simStart = performance.now();
@@ -1264,6 +1287,7 @@ function FrameDriver({
     const gameDt = ctx.time.advance(dt);
     ctx.input.publish(heldActionsFor(tracker, inputActions));
     ctx.input.publishPointer(pointerAxisRef.current);
+    sendInput();
     const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
     if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
     endPhase();
