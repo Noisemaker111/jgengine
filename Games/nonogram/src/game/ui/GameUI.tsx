@@ -1,6 +1,5 @@
 import { useGame } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
-import { SettingsTrigger } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import type { CSSProperties } from "react";
 import { puzzleById } from "../puzzles/catalog";
 import { Board } from "./components/Board";

@@ -3,8 +3,7 @@ import type { ReactNode } from "react";
 
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
-import { SettingsTrigger } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 
 import {
   activeCharter,

@@ -1,6 +1,5 @@
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { useGameStore, usePlayer } from "@jgengine/react/hooks";
-import { SettingsTrigger } from "@jgengine/react";
 
 import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
 import { ClassSelect } from "./components/ClassSelect";

@@ -79,6 +79,7 @@ const files: Record<string, string> = {
         types: ["vite/client"],
         paths: {
           "@jgengine/core/*": ["../../packages/core/src/*"],
+          "@jgengine/react": ["../../packages/react/src/index.ts"],
           "@jgengine/react/*": ["../../packages/react/src/*"],
           "@jgengine/ws/*": ["../../packages/ws/src/*"],
           "@jgengine/shell/*": ["../../packages/shell/src/*"],
