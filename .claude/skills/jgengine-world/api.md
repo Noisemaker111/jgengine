@@ -153,7 +153,7 @@
 - `ProximityPromptDisplay` (type): type ProximityPromptDisplay = KeybindPromptDisplay | GaugePromptDisplay | LabelPromptDisplay — ⚠ undocumented
 - `command` (function): function command(name: string, input?: unknown): PromptCommand — ⚠ undocumented
 - `gauge` (function): function gauge(gaugeId: string): GaugePromptDisplay — ⚠ undocumented
-- `keybind` (function): function keybind(actionId: string): KeybindPromptDisplay — ⚠ undocumented
+- `keybind` (function): function keybind(actionId: string, label?: string): KeybindPromptDisplay — ⚠ undocumented
 - `label` (function): function label(text: string): LabelPromptDisplay — ⚠ undocumented
 - `positionedPromptsEqual` (function): function positionedPromptsEqual(a: PositionedPrompt, b: PositionedPrompt): boolean — ⚠ undocumented
 - `promptCommandsEqual` (function): function promptCommandsEqual(a: PromptCommand | null, b: PromptCommand | null): boolean — ⚠ undocumented

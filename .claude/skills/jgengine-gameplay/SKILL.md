@@ -16,7 +16,7 @@ description: Gameplay systems: items, quests, economy, crafting, turns, objectiv
 | `snap` | `"grid"` \| `"free"` \| `"wall"` |
 | `solid` | Blocks movement |
 | `breakable` | `false` or `{ baseBreakTime, harvest, drops, dropsWhenUnmet }` |
-| `proximityPrompt` | Float UI + optional command invoke |
+| `proximityPrompt` | Float UI + optional command invoke; `keybind(action, label?)` shows what the interaction does beside the key (`[E] Open Chest`) |
 | `slotInventory` | Attached container `{ slots, accepts }` created at place time (`object:<instanceId>`) |
 
 Break resolution: `duration = baseBreakTime / (tool?.breakSpeed ?? 1)`; drops per `when` (`always` / `harvestMet` / `silkTouch` / `playerKill`); then `inventory.put` + `object.remove`.
