@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills.index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
+import { Route as ComponentsIndexRouteImport } from './routes/components.index'
 import { Route as ApiIndexRouteImport } from './routes/api.index'
 import { Route as SkillsNameRouteImport } from './routes/skills.$name'
 import { Route as GamesGameIdRouteImport } from './routes/games.$gameId'
@@ -32,6 +33,11 @@ const SkillsIndexRoute = SkillsIndexRouteImport.update({
 const GamesIndexRoute = GamesIndexRouteImport.update({
   id: '/games/',
   path: '/games/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComponentsIndexRoute = ComponentsIndexRouteImport.update({
+  id: '/components/',
+  path: '/components/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIndexRoute = ApiIndexRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
   '/api/': typeof ApiIndexRoute
+  '/components/': typeof ComponentsIndexRoute
   '/games/': typeof GamesIndexRoute
   '/skills/': typeof SkillsIndexRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
   '/api': typeof ApiIndexRoute
+  '/components': typeof ComponentsIndexRoute
   '/games': typeof GamesIndexRoute
   '/skills': typeof SkillsIndexRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/games/$gameId': typeof GamesGameIdRoute
   '/skills/$name': typeof SkillsNameRoute
   '/api/': typeof ApiIndexRoute
+  '/components/': typeof ComponentsIndexRoute
   '/games/': typeof GamesIndexRoute
   '/skills/': typeof SkillsIndexRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/games/$gameId'
     | '/skills/$name'
     | '/api/'
+    | '/components/'
     | '/games/'
     | '/skills/'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/games/$gameId'
     | '/skills/$name'
     | '/api'
+    | '/components'
     | '/games'
     | '/skills'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/games/$gameId'
     | '/skills/$name'
     | '/api/'
+    | '/components/'
     | '/games/'
     | '/skills/'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   GamesGameIdRoute: typeof GamesGameIdRoute
   SkillsNameRoute: typeof SkillsNameRoute
   ApiIndexRoute: typeof ApiIndexRoute
+  ComponentsIndexRoute: typeof ComponentsIndexRoute
   GamesIndexRoute: typeof GamesIndexRoute
   SkillsIndexRoute: typeof SkillsIndexRoute
 }
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/games'
       fullPath: '/games/'
       preLoaderRoute: typeof GamesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/components/': {
+      id: '/components/'
+      path: '/components'
+      fullPath: '/components/'
+      preLoaderRoute: typeof ComponentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/': {
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   GamesGameIdRoute: GamesGameIdRoute,
   SkillsNameRoute: SkillsNameRoute,
   ApiIndexRoute: ApiIndexRoute,
+  ComponentsIndexRoute: ComponentsIndexRoute,
   GamesIndexRoute: GamesIndexRoute,
   SkillsIndexRoute: SkillsIndexRoute,
 }
