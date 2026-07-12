@@ -175,6 +175,12 @@ describe("resolveActionCommand", () => {
   test("returns null when neither the action nor ui.<action> command exists", () => {
     expect(resolveActionCommand("openParty", () => false, reserved)).toBeNull();
   });
+
+  test("an empty reserved set (no camera rig) lets a game bind a camera-reserved name", () => {
+    const empty = new Set<string>();
+    expect(resolveActionCommand("turnLeft", () => true, empty)).toBe("turnLeft");
+    expect(resolveActionCommand("interact", () => true, empty)).toBe("interact");
+  });
 });
 
 describe("actionRepeatMs", () => {

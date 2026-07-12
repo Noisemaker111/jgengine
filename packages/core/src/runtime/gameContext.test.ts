@@ -82,6 +82,21 @@ describe("createGameContext", () => {
     expect(makeContext().world.groundHeightAt(7.5, -19)).toBe(0);
   });
 
+  test("game.audio routes play and resume through the audio events", () => {
+    const ctx = makeContext();
+    const played: { sound: string; at?: readonly [number, number, number] }[] = [];
+    let resumed = 0;
+    ctx.game.events.on("audio.play", (event) => played.push(event));
+    ctx.game.events.on("audio.resume", () => {
+      resumed += 1;
+    });
+    ctx.game.audio.play("chime");
+    ctx.game.audio.play("boom", [1, 2, 3]);
+    ctx.game.audio.resume();
+    expect(played).toEqual([{ sound: "chime" }, { sound: "boom", at: [1, 2, 3] }]);
+    expect(resumed).toBe(1);
+  });
+
   test("telegraph cancel removes the visual even with no bound effect", () => {
     const ctx = makeContext();
     const cancelled: number[] = [];
