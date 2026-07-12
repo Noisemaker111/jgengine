@@ -19,7 +19,7 @@
 - `applyCommandWithOcc` (function): function applyCommandWithOcc(args: { loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; runtime: GameRuntime; actorUserId: string; command: string; input: unknown; }): | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
 - `applyLeaderboardIncrements` (function): function applyLeaderboardIncrements(ctx: JGMutationCtx, gameId: string, entries: LeaderboardIncrement[]): Promise<void> — ⚠ undocumented
 - `commitIfRevisionMatch` (function): function commitIfRevisionMatch(loadedRevision: number, currentRevision: number): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
-- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; channelId: string; }, Promise<ChatMessage[]>>; sendMessage: RegisteredMuta… — ⚠ undocumented
+- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: any; sendMessage: any; } — ⚠ undocumented
 - `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
 - `createConvexChatSync` (function): function createConvexChatSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
 - `createConvexChatTransport` (function): function createConvexChatTransport<TRawRow = ChatMessage>(functions: ConvexChatFunctions, options?: { mapRow?: (row: TRawRow) => ChatMessage; extraArgs?: Record<string, unknown>; }): ChatTransport — Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent history, newest last) and one send mutation. mapRow converts backend rows into ChatMessage (defaults to structural passthrough); extraArgs is spread into both calls for games that scope chat by server or world.
@@ -29,12 +29,12 @@
 - `createConvexLeaderboardReads` (function): function createConvexLeaderboardReads(api: ConvexGameApi, config: ConvexGameTransportConfig): { getTop(args: { stat: string; scope: LeaderboardScope; serverId?: string | undefined; limit?: number | undefined; }): { query: FunctionReference<"query", "public", { gameId: string; stat: string; scope: Le… — ⚠ undocumented
 - `createConvexPresenceSync` (function): function createConvexPresenceSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, tuning?: PoseSyncTuning): PresenceSync — ⚠ undocumented
 - `createConvexPresenceTransport` (function): function createConvexPresenceTransport<TRawRow extends RawPresenceActor, TRow, TLocation, TGameId extends string = string>(functions: ConvexPresenceFunctions, mapRow: (row: TRawRow) => TRow): PresenceTransport<TRow, TLocation, TGameId> — Wires a game's Convex presence functions into the engine's PresenceTransport contract: one snapshot subscription (my location + online players), one residents subscription (dormant candidates, decoupled from pose writes), and one tick mutation for pose upload + keep-alive. Dormant rows are derived client-side by subtracting the snapshot's online actors, so pose ticks never re-execute the residents query. mapRow converts backend rows into the game's row type (e.g. branding positions into its coordinate space).
-- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: RegisteredMutation<"public", { mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; jo… — ⚠ undocumented
-- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: RegisteredQuery<"public", { serverId?: Id<"jgGameServers"> | undefined; externalId?: string | undefined; limit?: number | undefined; gameId: string; scope: "global" | "server" | "profile"; stat: string; }, Promise<{ user… — ⚠ undocumented
-- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; }, Promise<{ userId: string; position: { x: number; y: number; z: number; }; rotationY: number… — ⚠ undocumented
+- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: any; leaveServer: any; runCommand: any; flushSave: any; getServer: any; getPlayerProfile: any; getFeed: any; pushFeedEntry: a… — ⚠ undocumented
+- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: any; getProfile: any; incrementMany: any; } — ⚠ undocumented
+- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: any; sync: any; leave: any; } — ⚠ undocumented
 - `defaultConvexGameApi` (function): function defaultConvexGameApi(): ConvexGameApi — ⚠ undocumented
 - `jgengineCronSpecs` (function): function jgengineCronSpecs(): readonly JgCronSpec[] — ⚠ undocumented
-- `jgengineTables` (function): function jgengineTables(): { jgGameServers: TableDefinition<VObject<{ mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; joinCode?: string | undefined; lastSavedAt?: number | undefined; dirtyAt?: number | undefined; save: "none" | { auto: string; scope: "play… — ⚠ undocumented
+- `jgengineTables` (function): function jgengineTables(): { jgGameServers: any; jgPlayerProfiles: any; jgWorldChunks: any; jgLeaderboardRows: any; jgFeedBuffers: any; jgPoses: any; jgChatMessages: any; } — ⚠ undocumented
 - `randomConvexPlayerId` (function): function randomConvexPlayerId(): string — ⚠ undocumented
 - `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
 - `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexReactClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
@@ -87,12 +87,12 @@
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
 - `applyLeaderboardIncrements` (function): function applyLeaderboardIncrements(ctx: JGMutationCtx, gameId: string, entries: LeaderboardIncrement[]): Promise<void> — ⚠ undocumented
-- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; channelId: string; }, Promise<ChatMessage[]>>; sendMessage: RegisteredMuta… — ⚠ undocumented
-- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: RegisteredMutation<"public", { mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; jo… — ⚠ undocumented
-- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: RegisteredQuery<"public", { serverId?: Id<"jgGameServers"> | undefined; externalId?: string | undefined; limit?: number | undefined; gameId: string; scope: "global" | "server" | "profile"; stat: string; }, Promise<{ user… — ⚠ undocumented
-- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; }, Promise<{ userId: string; position: { x: number; y: number; z: number; }; rotationY: number… — ⚠ undocumented
+- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: any; sendMessage: any; } — ⚠ undocumented
+- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: any; leaveServer: any; runCommand: any; flushSave: any; getServer: any; getPlayerProfile: any; getFeed: any; pushFeedEntry: a… — ⚠ undocumented
+- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: any; getProfile: any; incrementMany: any; } — ⚠ undocumented
+- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: any; sync: any; leave: any; } — ⚠ undocumented
 - `jgengineCronSpecs` (function): function jgengineCronSpecs(): readonly JgCronSpec[] — ⚠ undocumented
-- `jgengineTables` (function): function jgengineTables(): { jgGameServers: TableDefinition<VObject<{ mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; joinCode?: string | undefined; lastSavedAt?: number | undefined; dirtyAt?: number | undefined; save: "none" | { auto: string; scope: "play… — ⚠ undocumented
+- `jgengineTables` (function): function jgengineTables(): { jgGameServers: any; jgPlayerProfiles: any; jgWorldChunks: any; jgLeaderboardRows: any; jgFeedBuffers: any; jgPoses: any; jgChatMessages: any; } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/chatContract
 
@@ -217,46 +217,30 @@
 
 ## @jgengine/node
 
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
-- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
 - `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — ⚠ undocumented
 - `NodeHandler` (type): type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
 - `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
 - `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
 - `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
 - `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
 - `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
-
-## @jgengine/node/host
-
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
-- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — ⚠ undocumented
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
 
 ## @jgengine/node/persistence
 
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
 
 ## @jgengine/node/socketIoServer
 
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
 - `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
 - `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
@@ -277,7 +261,6 @@
 
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
 - `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
 - `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
 
 ## @jgengine/sql

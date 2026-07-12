@@ -537,6 +537,8 @@
 - `ColliderDef` (interface): interface ColliderDef — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
 - `ColliderShape` (type): type ColliderShape = | { kind: "sphere"; radius: number; offset?: EntityPosition } | { kind: "aabb"; halfExtents: EntityPosition; offset?: EntityPosition } — ⚠ undocumented
+- `DEFAULT_ENTITY_BODY_HALF_EXTENTS` (const): const DEFAULT_ENTITY_BODY_HALF_EXTENTS: EntityPosition — Matches the shell's fallback actor capsule (~0.7m wide, feet at y=0 to head at ~1.8m).
+- `DEFAULT_ENTITY_BODY_OFFSET` (const): const DEFAULT_ENTITY_BODY_OFFSET: EntityPosition — ⚠ undocumented
 - `DEFAULT_ENTITY_HIT_RADIUS` (const): const DEFAULT_ENTITY_HIT_RADIUS: 0.5 — ⚠ undocumented
 - `DEFAULT_OBJECT_HALF_EXTENTS` (const): const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition — ⚠ undocumented
 - `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented

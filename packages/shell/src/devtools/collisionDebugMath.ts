@@ -209,7 +209,7 @@ export function computeAimLaser(input: ComputeAimLaserInput): AimLaserDebug | nu
     },
     input.from,
     input.aim,
-    input.originPolicy ?? { kind: "legacy" },
+    input.originPolicy ?? { kind: "eye" },
   );
   if (resolved === null) return null;
   input.counters !== undefined && (input.counters.queries += 1);
