@@ -1,4 +1,8 @@
 import { distance3, resolveEmitterGain, type AudioBusDef, type SoundDef } from "@jgengine/core/audio/audioFalloff";
+import type { MusicTheme } from "@jgengine/core/audio/music";
+
+import { MusicDirector, type CrossfadeOptions } from "./musicDirector";
+import { createNoiseBuffer, realizeSynthPatch } from "./synthEngine";
 
 export interface Vec3 {
   x: number;
@@ -9,6 +13,10 @@ export interface Vec3 {
 export interface AudioSceneConfig {
   sounds?: Record<string, SoundDef>;
   buses?: Record<string, AudioBusDef>;
+  /** Procedural music themes, crossfaded by {@link AudioEngine.playMusic}. Mixed through the `musicBus` (default "music") so the settings volume applies. */
+  music?: Record<string, MusicTheme>;
+  /** Bus id the procedural music director mixes through. Default "music". */
+  musicBus?: string;
 }
 
 export interface AudioEmitterHandle {
@@ -20,6 +28,8 @@ export interface AudioEngine {
   setListenerPose(position: Vec3): void;
   playOneShot(soundId: string, position?: Vec3): void;
   playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null;
+  /** Crossfade the procedural soundtrack to `themeId` (null fades out). No-op when no `music` catalog is configured. */
+  playMusic(themeId: string | null, options?: CrossfadeOptions): void;
   setBusGain(busId: string, gain: number): void;
   setMasterGain(gain: number): void;
   resume(): void;
@@ -31,6 +41,7 @@ function createNoopEngine(): AudioEngine {
     setListenerPose: () => undefined,
     playOneShot: () => undefined,
     playLoop: () => null,
+    playMusic: () => undefined,
     setBusGain: () => undefined,
     setMasterGain: () => undefined,
     resume: () => undefined,
@@ -74,6 +85,21 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return node;
   }
 
+  let noiseBuffer: AudioBuffer | null = null;
+  function sharedNoiseBuffer(): AudioBuffer {
+    if (noiseBuffer === null) noiseBuffer = createNoiseBuffer(context);
+    return noiseBuffer;
+  }
+
+  let director: MusicDirector | null = null;
+  function musicDirector(): MusicDirector | null {
+    if (config.music === undefined) return null;
+    if (director === null) {
+      director = new MusicDirector(context, busGainNode(config.musicBus ?? "music"), config.music);
+    }
+    return director;
+  }
+
   const bufferCache = new Map<string, Promise<AudioBuffer | null>>();
   function loadBuffer(url: string): Promise<AudioBuffer | null> {
     let pending = bufferCache.get(url);
@@ -94,6 +120,16 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     if (sound === undefined) return null;
     const bus = busGainNode(sound.bus);
     let currentPosition = position ?? listenerPosition;
+
+    if (sound.synth !== undefined) {
+      const cueGain = context.createGain();
+      cueGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
+      cueGain.connect(bus);
+      realizeSynthPatch(context, cueGain, sharedNoiseBuffer(), sound.synth);
+      return { setPosition: () => undefined, stop: () => undefined };
+    }
+    if (sound.url === undefined) return null;
+
     let gainNode: GainNode | null = null;
     let stopped = false;
 
@@ -133,6 +169,10 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     playLoop(soundId, position) {
       return playInternal(soundId, position, true);
     },
+    playMusic(themeId, options) {
+      void context.resume().catch(() => undefined);
+      musicDirector()?.crossfadeTo(themeId, options);
+    },
     setBusGain(busId, gain) {
       busGainNode(busId).gain.value = gain;
     },
@@ -143,6 +183,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       void context.resume().catch(() => undefined);
     },
     dispose() {
+      director?.dispose();
       void context.close().catch(() => undefined);
     },
   };

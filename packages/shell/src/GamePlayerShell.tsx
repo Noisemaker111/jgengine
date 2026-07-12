@@ -1704,7 +1704,13 @@ export function GamePlayerShell({
     [tracker],
   );
   const audioEngine = useMemo(
-    () => createAudioEngine({ sounds: playable.audio?.sounds, buses: playable.audio?.buses }),
+    () =>
+      createAudioEngine({
+        sounds: playable.audio?.sounds,
+        buses: playable.audio?.buses,
+        music: playable.audio?.music,
+        musicBus: playable.audio?.musicBus,
+      }),
     [playable],
   );
   useEffect(() => () => audioEngine.dispose(), [audioEngine]);
@@ -1713,9 +1719,13 @@ export function GamePlayerShell({
     const offPlay = ctx.game.events.on("audio.play", ({ sound, at }) => {
       audioEngine.playOneShot(sound, at === undefined ? undefined : { x: at[0], y: at[1], z: at[2] });
     });
+    const offMusic = ctx.game.events.on("audio.music", ({ theme, transpose }) => {
+      audioEngine.playMusic(theme, transpose === undefined ? undefined : { transpose });
+    });
     const offResume = ctx.game.events.on("audio.resume", () => audioEngine.resume());
     return () => {
       offPlay();
+      offMusic();
       offResume();
     };
   }, [ctx, audioEngine]);

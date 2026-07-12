@@ -1,4 +1,5 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
+import type { MusicTheme } from "../audio/music";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
@@ -621,8 +622,13 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   hudFit?: HudViewportConfig;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the player (default 60). */
   worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
-  /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. */
-  audio?: { sounds: Record<string, SoundDef>; buses?: Record<string, AudioBusDef> };
+  /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. `sounds` may be sample (`url`) or procedural (`synth`); `music` holds procedural themes crossfaded via `ctx.game.audio.music(id)`. */
+  audio?: {
+    sounds: Record<string, SoundDef>;
+    buses?: Record<string, AudioBusDef>;
+    music?: Record<string, MusicTheme>;
+    musicBus?: string;
+  };
   /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */
   entitySounds?: Record<string, string>;
   /** Same as `entitySounds` but keyed by placed-object catalog id (torches, machinery). */

@@ -292,6 +292,7 @@
 
 ## @jgengine/core/game/events
 
+- `AudioMusicEvent` (interface): interface AudioMusicEvent — Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones.
 - `AudioPlayEvent` (interface): interface AudioPlayEvent — ⚠ undocumented
 - `AudioResumeEvent` (type): type AudioResumeEvent = Record<string, never> — Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload.
 - `ChatMessageEvent` (interface): interface ChatMessageEvent — ⚠ undocumented

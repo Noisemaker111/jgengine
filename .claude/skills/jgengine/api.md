@@ -302,7 +302,7 @@
 
 - `CatalogEntityRole` (type): type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle" — ⚠ undocumented
 - `FloatTextInput` (interface): interface FloatTextInput — ⚠ undocumented
-- `GameAudio` (interface): interface GameAudio — Reachable audio seam on `ctx.game`: `play` and `resume` route through the `audio.play`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell.
+- `GameAudio` (interface): interface GameAudio — Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell.
 - `GameContext` (interface): interface GameContext — ⚠ undocumented
 - `GameContextCards` (interface): interface GameContextCards — ⚠ undocumented
 - `GameContextCommands` (interface): interface GameContextCommands — ⚠ undocumented

@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 
+import { cue, schoolCue } from "../audio/cues";
 import { classById } from "../classes/catalog";
 import {
   GCD_SEC,
@@ -377,6 +378,7 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
       endAt: now + castTime,
     };
     ctx.game.store.set(storeKeys.cast(userId), { ...hero.casting });
+    cue(ctx, "cast_start");
     return;
   }
   commitCast(ctx, userId, ability);
@@ -398,6 +400,7 @@ function commitCast(ctx: GameContext, userId: string, ability: AbilityDef): void
     return;
   }
   executeAbility(ctx, userId, ability);
+  cue(ctx, schoolCue(ability.school));
   if (isSpell) {
     const sheet = heroSheet(ctx, userId);
     if (sheet !== null) fireSpellCastProcs(ctx, userId, sheet);
@@ -442,6 +445,7 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
         const meleePct = externalCombatModsOf(userId)?.meleeDmgPct ?? 0;
         const raw = rollWeaponDamage(rng, sheet.weapon, sheet.attackPower) * (1 + meleePct);
         dealDamage(ctx, userId, targetId, crit ? raw * 2 : raw, false);
+        cue(ctx, crit ? "melee_crit" : "melee_hit");
         if (crit) fireWeaponCritProcs(ctx, userId, sheet, targetId);
         gainRage(ctx, userId, SWING_RAGE);
         hero.nextSwingAt = now + sheet.weapon.speed / (1 + sheet.hastePct);

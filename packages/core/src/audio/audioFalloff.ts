@@ -1,3 +1,5 @@
+import type { SynthPatch } from "./synth";
+
 export type AudioBusId = string;
 
 export type FalloffCurve = "linear" | "inverse" | "none";
@@ -19,8 +21,10 @@ export interface AudioBusDef {
 
 export interface SoundDef {
   id: string;
-  /** Playable source — a URL/data URI the shell's Web Audio glue fetches and decodes. */
-  url: string;
+  /** Sample source — a URL/data URI the shell's Web Audio glue fetches and decodes. Provide exactly one of `url` or `synth`. */
+  url?: string;
+  /** Procedural source — a pure synth patch the shell realises on Web Audio, no file fetch. Provide exactly one of `url` or `synth`. */
+  synth?: SynthPatch;
   bus: AudioBusId;
   /** Base gain before bus/falloff multipliers. Default 1. */
   gain?: number;

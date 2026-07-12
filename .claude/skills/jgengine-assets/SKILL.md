@@ -44,5 +44,13 @@ Squares as enemies, colored boxes as buildings, and a flat grid floor read as *b
 6. **Item and ability icons are assets too.** Every hotbar/inventory/ability slot renders a real, distinct icon — the registry `game-icon` catalog (`iconForItemId`/`iconForAction`) or a Game-Icons/Kenney silhouette — per the UI quality bar's real-icons rule. `assets add <name>` finds the glyph (or a whole HUD component) and prints the usage.
 7. **Weapons/props ride the rig via `attachments`.** An `entityModels` `ModelConfig` takes `attachments: [{ slot, model, position?, rotation?, scale? }]` — `slot` is a bone/node name on the rig (e.g. `"handslot.r"`), `model` a catalog id or inline `ModelConfig`. The shell parents the attached model to that bone, so a sword or spellbook follows the hand through every animation clip; dual-wield is two attachments (`handslot.r`/`handslot.l`). A missing slot name warns and skips (the rest of the rig still renders). Pairs with `animation.oneShots` for held-weapon combat.
 
+## Audio — samples or procedural synth
+
+Wire sound through `defineGame({ audio: { sounds, buses?, music?, musicBus? } })`; trigger it from game code with `ctx.game.audio.play(id, at?)` (one-shot) and `ctx.game.audio.music(themeId | null, transpose?)` (crossfade the soundtrack). No per-game Web Audio glue — the shell owns the `AudioContext`, listener, and mix buses.
+
+A `SoundDef` (`@jgengine/core/audio/audioFalloff`) is either a **sample** (`url`) or **procedural** (`synth`) — exactly one. A `SynthPatch` (`@jgengine/core/audio/synth`) is pure data: a list of `ToneVoice` (oscillator + 12ms-attack/exp-decay envelope, optional pitch `slideTo`) and `NoiseVoice` (filtered white-noise burst) voices, each with its own `delay`, summed into one cue — so a whole SFX bank is file-free, zero-weight, and unit-testable headless. Reach for procedural over samples when the cue is a synth blip/impact/zap (UI, spells, hits); use samples for recorded ambience/voice.
+
+`audio.music` is a `Record<id, MusicTheme>` (`@jgengine/core/audio/music`): a `MusicTheme` is `{ bpm, bars, events, trim? }` where each `NoteEvent` is `{ beat, midi, dur, vel, inst }` and `inst` names a built-in instrument voice (strings/flute/harp/horn/choir/bell/piano/warDrum/…). The shell's `MusicDirector` runs the themes as crossfadeable layers on one reverb-fed graph with a lookahead scheduler; `ctx.game.audio.music(id)` fades between them (per-zone loops, a combat theme, silence on `null`). Compose loops as note data — never transplant another engine's audio nodes. Themes mix through the `music` bus (settings volume applies); one-shots through `sfx` (or any bus you declare). Set a bus `gain` to master a whole group (e.g. `sfx` at 0.32).
+
 ## Genre cheat sheet
 

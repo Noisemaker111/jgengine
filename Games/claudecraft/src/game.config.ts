@@ -3,6 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { assets, entitySprites } from "./game/assets";
+import { audio } from "./game/audio/catalog";
 import { entityModels } from "./game/models";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
@@ -67,6 +68,7 @@ export const game = defineGame({
   GameUI,
   entitySprites,
   entityModels,
+  audio,
   prompts,
   objectStyles,
   settings: { variant: "sidebar" },
