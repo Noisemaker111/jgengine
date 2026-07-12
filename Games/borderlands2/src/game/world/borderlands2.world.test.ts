@@ -17,9 +17,9 @@ describe("borderlands2 world", () => {
 
   test("terrain resolves finite heights with real relief", () => {
     const heights = [
-      terrainField.heightAt(0, 0),
-      terrainField.heightAt(120, -120),
-      terrainField.heightAt(-150, 140),
+      terrainField.sampleHeight(0, 0),
+      terrainField.sampleHeight(120, -120),
+      terrainField.sampleHeight(-150, 140),
     ];
     for (const height of heights) expect(Number.isFinite(height)).toBe(true);
     const spread = Math.max(...heights) - Math.min(...heights);
@@ -27,10 +27,10 @@ describe("borderlands2 world", () => {
   });
 
   test("settlement sites are flattened near ground level", () => {
-    const fyrestone = terrainField.heightAt(FYRESTONE.x, FYRESTONE.z);
-    const camp = terrainField.heightAt(BANDIT_CAMP.x, BANDIT_CAMP.z);
+    const fyrestone = terrainField.sampleHeight(FYRESTONE.x, FYRESTONE.z);
+    const camp = terrainField.sampleHeight(BANDIT_CAMP.x, BANDIT_CAMP.z);
     expect(Math.abs(fyrestone)).toBeLessThan(1.5);
     expect(Math.abs(camp)).toBeLessThan(1.5);
-    expect(Number.isFinite(terrainField.heightAt(PLAYER_SPAWN[0], PLAYER_SPAWN[2]))).toBe(true);
+    expect(Number.isFinite(terrainField.sampleHeight(PLAYER_SPAWN[0], PLAYER_SPAWN[2]))).toBe(true);
   });
 });
