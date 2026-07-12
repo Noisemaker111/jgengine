@@ -454,6 +454,72 @@ function IsolatedEntityModel({
   );
 }
 
+function BoneAttachment({
+  rig,
+  model,
+  slot,
+  position,
+  rotation,
+  scale,
+}: {
+  rig: THREE.Object3D;
+  model: ModelConfig;
+  slot: string;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: number;
+}) {
+  const gltf = useLoader(GLTFLoader, model.url, (loader) => {
+    loader.setMeshoptDecoder(MeshoptDecoder);
+  });
+  const weaponScene = useMemo(() => cloneModelScene(gltf.scene), [gltf]);
+  const px = position?.[0] ?? 0;
+  const py = position?.[1] ?? 0;
+  const pz = position?.[2] ?? 0;
+  const rx = rotation?.[0] ?? 0;
+  const ry = rotation?.[1] ?? 0;
+  const rz = rotation?.[2] ?? 0;
+  const s = scale ?? 1;
+
+  useEffect(() => {
+    const bone = rig.getObjectByName(slot);
+    if (bone === undefined) {
+      if (typeof console !== "undefined") {
+        console.warn(`[jgengine] entityModels attachment: bone/slot "${slot}" not found on the rig`);
+      }
+      return;
+    }
+    weaponScene.position.set(px, py, pz);
+    weaponScene.rotation.set(rx, ry, rz);
+    weaponScene.scale.setScalar(s);
+    bone.add(weaponScene);
+    return () => {
+      bone.remove(weaponScene);
+    };
+  }, [rig, weaponScene, slot, px, py, pz, rx, ry, rz, s]);
+
+  useEffect(() => () => disposeClonedMaterials(weaponScene), [weaponScene]);
+
+  return null;
+}
+
+/** Resolves an entity model plus any bone attachments' models through the asset catalog, so `EntityModel` receives fully-resolved `ModelConfig`s. */
+function resolveEntityModel(
+  value: string | ModelConfig | undefined,
+  assets: AssetCatalog,
+  key: string,
+): ModelConfig | undefined {
+  const model = resolveModel(value, assets, { seam: "entityModels", key });
+  if (model?.attachments === undefined) return model;
+  return {
+    ...model,
+    attachments: model.attachments.map((attachment) => ({
+      ...attachment,
+      model: resolveModel(attachment.model, assets) ?? attachment.model,
+    })),
+  };
+}
+
 function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
   const gltf = useLoader(GLTFLoader, model.url, (loader) => {
     loader.setMeshoptDecoder(MeshoptDecoder);
@@ -710,7 +776,24 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
     );
   });
 
-  return <primitive object={scene} position={position} scale={[scale, scale, scale]} />;
+  return (
+    <>
+      <primitive object={scene} position={position} scale={[scale, scale, scale]} />
+      {(model.attachments ?? []).map((attachment, index) =>
+        typeof attachment.model === "string" ? null : (
+          <BoneAttachment
+            key={`${attachment.slot}-${index}`}
+            rig={scene}
+            model={attachment.model}
+            slot={attachment.slot}
+            position={attachment.position}
+            rotation={attachment.rotation}
+            scale={attachment.scale}
+          />
+        ),
+      )}
+    </>
+  );
 }
 
 function EntityMarker({
@@ -954,10 +1037,7 @@ function WorldActors({
             key={entity.id}
             entity={entity}
             custom={renderEntity?.(entity)}
-            model={resolveModel(entityModels?.[entity.name], assets, {
-              seam: "entityModels",
-              key: entity.name,
-            })}
+            model={resolveEntityModel(entityModels?.[entity.name], assets, entity.name)}
             sprite={entitySprites?.[entity.name]}
             isLocal={entity.id === controlledId}
             targeted={entity.id === targetId}
