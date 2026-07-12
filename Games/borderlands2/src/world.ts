@@ -11,12 +11,14 @@ const TERRAIN_BASE = {
   bounds: WORLD_BOUNDS,
   seed: PANDORA_SEED,
   material: "rock",
-  height: 30,
-  frequency: 0.004,
+  height: 52,
+  frequency: 0.0035,
   octaves: 5,
   ridged: true,
   colors: { low: PANDORA.rockLow, high: PANDORA.rockHigh },
 } as const;
+
+export const CLIMB_SLOPE_LIMIT = 0.85;
 
 const rawField = resolveTerrainField(terrain(TERRAIN_BASE));
 

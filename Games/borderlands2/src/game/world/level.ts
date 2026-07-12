@@ -22,6 +22,50 @@ const ZONE_CHAIN: readonly (readonly [string, string])[] = [
   ["arid_badlands", "eridium_blight"],
 ];
 
+export interface SidePoi {
+  id: string;
+  name: string;
+  x: number;
+  z: number;
+  radius: number;
+  anchorZoneId: string;
+  dressing: "skag_den" | "cache" | "wreck_field";
+  spawns: readonly { catalogId: string; count: number }[];
+}
+
+export const SIDE_POIS: readonly SidePoi[] = [
+  {
+    id: "poi_monglet_den",
+    name: "Monglet Den",
+    x: -640,
+    z: 430,
+    radius: 26,
+    anchorZoneId: "windshear_waste",
+    dressing: "skag_den",
+    spawns: [{ catalogId: "bullymong_brat", count: 4 }, { catalogId: "bullymong", count: 2 }],
+  },
+  {
+    id: "poi_lost_cache",
+    name: "Lost Hyperion Cache",
+    x: 180,
+    z: 210,
+    radius: 22,
+    anchorZoneId: "arid_badlands",
+    dressing: "cache",
+    spawns: [{ catalogId: "loader", count: 3 }],
+  },
+  {
+    id: "poi_wreck_field",
+    name: "Buzzard Wreck Field",
+    x: 640,
+    z: 40,
+    radius: 28,
+    anchorZoneId: "the_dust",
+    dressing: "wreck_field",
+    spawns: [{ catalogId: "marauder", count: 3 }, { catalogId: "psycho", count: 3 }],
+  },
+];
+
 function buildRoute(fromId: string, toId: string): Route {
   const from = zoneById(fromId)!;
   const to = zoneById(toId)!;
@@ -49,22 +93,52 @@ function buildRoute(fromId: string, toId: string): Route {
 
 export const ROUTES: readonly Route[] = ZONE_CHAIN.map(([from, to]) => buildRoute(from, to));
 
+function buildSpur(poi: SidePoi): Route {
+  const from = zoneById(poi.anchorZoneId)!;
+  const rng = seededRng(`bl2-spur-${poi.id}`);
+  const dx = poi.x - from.center.x;
+  const dz = poi.z - from.center.z;
+  const length = Math.hypot(dx, dz);
+  const steps = Math.max(4, Math.round(length / 12));
+  const normalX = -dz / length;
+  const normalZ = dx / length;
+  const amplitude = 6 + rng() * 8;
+  const phase = rng() * Math.PI;
+  const points: RoutePoint[] = [];
+  for (let step = 0; step <= steps; step += 1) {
+    const t = step / steps;
+    const wobble = Math.sin(t * Math.PI * 2 + phase) * amplitude * Math.sin(t * Math.PI);
+    points.push({
+      x: from.center.x + dx * t + normalX * wobble,
+      z: from.center.z + dz * t + normalZ * wobble,
+      t,
+    });
+  }
+  return { from: poi.anchorZoneId, to: poi.id, points };
+}
+
+export const SPUR_ROUTES: readonly Route[] = SIDE_POIS.map((poi) => buildSpur(poi));
+
 export function roadFlattenMasks(
   heightAt: (x: number, z: number) => number,
 ): readonly { center: readonly [number, number]; radius: number; height: number; falloff: number }[] {
-  return ROUTES.flatMap((route) => {
-    const from = zoneById(route.from)!;
-    const to = zoneById(route.to)!;
-    const fromHeight = heightAt(from.center.x, from.center.z);
-    const toHeight = heightAt(to.center.x, to.center.z);
-    const length = Math.hypot(to.center.x - from.center.x, to.center.z - from.center.z);
-    const rampStart = from.flattenRadius;
-    const rampSpan = Math.max(1, length - from.flattenRadius - to.flattenRadius);
-    return route.points
+  const corridorMasks = (
+    points: readonly RoutePoint[],
+    fromCenter: { x: number; z: number },
+    fromRadius: number,
+    toCenter: { x: number; z: number },
+    toRadius: number,
+  ) => {
+    const fromHeight = heightAt(fromCenter.x, fromCenter.z);
+    const toHeight = heightAt(toCenter.x, toCenter.z);
+    const length = Math.hypot(toCenter.x - fromCenter.x, toCenter.z - fromCenter.z);
+    const rampStart = fromRadius;
+    const rampSpan = Math.max(1, length - fromRadius - toRadius);
+    return points
       .filter((point) => {
-        const fromDistance = Math.hypot(point.x - from.center.x, point.z - from.center.z);
-        const toDistance = Math.hypot(point.x - to.center.x, point.z - to.center.z);
-        return fromDistance > from.flattenRadius - 14 && toDistance > to.flattenRadius - 14;
+        const fromDistance = Math.hypot(point.x - fromCenter.x, point.z - fromCenter.z);
+        const toDistance = Math.hypot(point.x - toCenter.x, point.z - toCenter.z);
+        return fromDistance > fromRadius - 14 && toDistance > toRadius - 14;
       })
       .map((point) => {
         const rampT = Math.min(1, Math.max(0, (point.t * length - rampStart) / rampSpan));
@@ -75,7 +149,65 @@ export function roadFlattenMasks(
           falloff: 8,
         };
       });
+  };
+
+  const mainMasks = ROUTES.flatMap((route) => {
+    const from = zoneById(route.from)!;
+    const to = zoneById(route.to)!;
+    return corridorMasks(route.points, from.center, from.flattenRadius, to.center, to.flattenRadius);
   });
+
+  const spurMasks = SPUR_ROUTES.flatMap((route) => {
+    const from = zoneById(route.from)!;
+    const poi = SIDE_POIS.find((candidate) => candidate.id === route.to)!;
+    return corridorMasks(route.points, from.center, from.flattenRadius, { x: poi.x, z: poi.z }, poi.radius);
+  });
+
+  const poiMasks = SIDE_POIS.map((poi) => {
+    const anchor = zoneById(poi.anchorZoneId)!;
+    return {
+      center: [poi.x, poi.z] as const,
+      radius: poi.radius,
+      height: heightAt(anchor.center.x, anchor.center.z),
+      falloff: 12,
+    };
+  });
+
+  const wallMasks = [...ROUTES, ...SPUR_ROUTES].flatMap((route) => {
+    const from = zoneById(route.from)!;
+    const toZone = zoneById(route.to);
+    const poi = SIDE_POIS.find((candidate) => candidate.id === route.to);
+    const toCenter = toZone?.center ?? { x: poi!.x, z: poi!.z };
+    const toRadius = toZone?.flattenRadius ?? poi!.radius;
+    const fromHeight = heightAt(from.center.x, from.center.z);
+    const toHeight = heightAt(toCenter.x, toCenter.z);
+    const length = Math.hypot(toCenter.x - from.center.x, toCenter.z - from.center.z);
+    const rampSpan = Math.max(1, length - from.flattenRadius - toRadius);
+    const walls: { center: readonly [number, number]; radius: number; height: number; falloff: number }[] = [];
+    for (let index = 0; index < route.points.length - 1; index += 2) {
+      const point = route.points[index]!;
+      const next = route.points[index + 1]!;
+      const fromDistance = Math.hypot(point.x - from.center.x, point.z - from.center.z);
+      const toDistance = Math.hypot(point.x - toCenter.x, point.z - toCenter.z);
+      if (fromDistance < from.flattenRadius + 10 || toDistance < toRadius + 10) continue;
+      const dx = next.x - point.x;
+      const dz = next.z - point.z;
+      const segment = Math.hypot(dx, dz) || 1;
+      const rampT = Math.min(1, Math.max(0, (point.t * length - from.flattenRadius) / rampSpan));
+      const roadHeight = fromHeight + (toHeight - fromHeight) * rampT;
+      for (const side of [-1, 1]) {
+        walls.push({
+          center: [point.x + (-dz / segment) * 40 * side, point.z + (dx / segment) * 40 * side] as const,
+          radius: 26,
+          height: roadHeight + 22,
+          falloff: 14,
+        });
+      }
+    }
+    return walls;
+  });
+
+  return [...wallMasks, ...poiMasks, ...mainMasks, ...spurMasks];
 }
 
 export interface PlacedPiece {
@@ -226,9 +358,25 @@ export function zoneSetPieces(zone: ZoneDef): PlacedPiece[] {
   return pieces;
 }
 
+export function poiSetPieces(): PlacedPiece[] {
+  const pieces: PlacedPiece[] = [];
+  SIDE_POIS.forEach((poi, poiIndex) => {
+    pieces.push({ catalogId: "red_chest", x: poi.x + 4, z: poi.z - 3, instanceId: `poi_chest_${poiIndex}` });
+    pieces.push({ catalogId: "signpost", x: poi.x - poi.radius * 0.7, z: poi.z, instanceId: `poi_sign_${poiIndex}` });
+    if (poi.dressing === "skag_den") {
+      pieces.push(...ringPieces("bone_arch", `poi_bones_${poiIndex}`, poi, poi.radius * 0.6, 5, null));
+    } else if (poi.dressing === "cache") {
+      pieces.push(...scatterPieces("cover_crate", `poi_crates_${poiIndex}`, poi, poi.radius * 0.6, 6, `bl2-poi-${poi.id}`));
+    } else {
+      pieces.push(...scatterPieces("wreck", `poi_wrecks_${poiIndex}`, poi, poi.radius * 0.7, 5, `bl2-poi-${poi.id}`));
+    }
+  });
+  return pieces;
+}
+
 export function roadsidePieces(): PlacedPiece[] {
   const pieces: PlacedPiece[] = [];
-  ROUTES.forEach((route, routeIndex) => {
+  [...ROUTES, ...SPUR_ROUTES].forEach((route, routeIndex) => {
     const rng = seededRng(`bl2-roadside-${routeIndex}`);
     for (let index = 2; index < route.points.length - 2; index += 3) {
       const point = route.points[index]!;
@@ -264,6 +412,7 @@ export function placeLevel(ctx: GameContext): void {
     ctx.scene.object.place(piece.catalogId, piece.x, y + 0.5, piece.z, { instanceId: piece.instanceId });
   };
   for (const zone of ZONES) for (const piece of zoneSetPieces(zone)) place(piece);
+  for (const piece of poiSetPieces()) place(piece);
   for (const piece of roadsidePieces()) place(piece);
   for (const npc of NPC_PLACEMENTS) {
     ctx.scene.entity.spawn(npc.name, {

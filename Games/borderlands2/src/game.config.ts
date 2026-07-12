@@ -24,7 +24,7 @@ import {
   ZED_VENDOR_POS,
 } from "./game/world/sites";
 import { loop } from "./loop";
-import { physics, world } from "./world";
+import { CLIMB_SLOPE_LIMIT, physics, terrainField, world } from "./world";
 
 const rarityStyle: Record<string, RarityStyle> = {
   common: { color: RARITY_COLORS.common, label: "Common" },
@@ -167,7 +167,21 @@ export const game = defineGame({
       { color: "#d9915c", intensity: 0.8, position: [-30, 30, -25] },
     ],
   },
-  movement: { collideObjects: true },
+  movement: {
+    collideObjects: true,
+    beforeCommit: (frame) => {
+      const currentGround = terrainField.sampleHeight(frame.current[0], frame.current[2]);
+      const tooSteep = (x: number, z: number) => {
+        const distance = Math.hypot(x - frame.current[0], z - frame.current[2]);
+        if (distance < 0.0001) return false;
+        return (terrainField.sampleHeight(x, z) - currentGround) / distance > CLIMB_SLOPE_LIMIT;
+      };
+      if (!tooSteep(frame.next[0], frame.next[2])) return undefined;
+      if (!tooSteep(frame.next[0], frame.current[2])) return [frame.next[0], frame.next[1], frame.current[2]];
+      if (!tooSteep(frame.current[0], frame.next[2])) return [frame.current[0], frame.next[1], frame.next[2]];
+      return [frame.current[0], frame.next[1], frame.current[2]];
+    },
+  },
   camera: {
     perspective: "first",
     firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
