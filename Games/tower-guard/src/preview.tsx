@@ -66,11 +66,46 @@ export default function TowerGuardPreview({ className }: GamePreviewProps) {
         }}
       />
 
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        style={{ position: "absolute", top: "16%", bottom: "24%", left: 0, width: "100%", height: "68%" }}
+      >
+        <polyline
+          points="3,0 3,33 41,33 41,67 78,67 78,100 97,100"
+          fill="none"
+          stroke="#4a5a35"
+          strokeWidth={7}
+        />
+        <polyline
+          points="3,0 3,33 41,33 41,67 78,67 78,100 97,100"
+          fill="none"
+          stroke="#7fb84a"
+          strokeWidth={1}
+          strokeDasharray="3 3"
+          opacity={0.6}
+        />
+      </svg>
+
       <div
         style={{
           position: "absolute",
-          left: "50%",
-          top: "44%",
+          left: "3%",
+          top: "16%",
+          transform: "translate(-50%, -50%)",
+          height: "2.4cqw",
+          width: "2.4cqw",
+          borderRadius: "50%",
+          background: "#d84f35",
+          boxShadow: "0 0 12px rgba(216,79,53,0.6)",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          left: "97%",
+          top: "84%",
           transform: "translate(-50%, -50%)",
           height: "10cqw",
           width: "10cqw",
@@ -80,6 +115,27 @@ export default function TowerGuardPreview({ className }: GamePreviewProps) {
           boxShadow: "0 0 30px rgba(127,184,74,0.25)",
         }}
       />
+
+      {[
+        { left: "12%", top: "26%" },
+        { left: "50%", top: "50%" },
+        { left: "68%", top: "72%" },
+      ].map((pos) => (
+        <div
+          key={`${pos.left}-${pos.top}`}
+          style={{
+            position: "absolute",
+            left: pos.left,
+            top: pos.top,
+            transform: "translate(-50%, -50%)",
+            height: "3.4cqw",
+            width: "3.4cqw",
+            borderRadius: "0.4cqw",
+            border: "1px dashed #454a35",
+            background: "rgba(127,184,74,0.06)",
+          }}
+        />
+      ))}
 
       <div style={{ position: "absolute", top: "3%", left: "3%", display: "flex", flexDirection: "column", gap: "0.9cqw" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.3cqw" }}>

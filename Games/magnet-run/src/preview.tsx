@@ -1,30 +1,67 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const controlRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.8cqw",
+const PALETTE = {
+  gunmetal: "#2b2f36",
+  gunmetalDark: "#20242a",
+  positiveRed: "#ff4b3e",
+  negativeBlue: "#3e7bff",
+  cautionStripe: "#ffd23f",
+  steelWhite: "#dfe6ee",
+} as const;
+
+const NEAR_LEFT = 10;
+const NEAR_RIGHT = 90;
+const FAR_LEFT = 44;
+const FAR_RIGHT = 56;
+const FAR_Y = 32;
+
+const LANE_NEAR_WIDTH = (NEAR_RIGHT - NEAR_LEFT) / 3;
+const LANE_FAR_WIDTH = (FAR_RIGHT - FAR_LEFT) / 3;
+
+function laneCenterNear(lane: 0 | 1 | 2): number {
+  return NEAR_LEFT + LANE_NEAR_WIDTH * (lane + 0.5);
+}
+
+function dividerPolygon(laneEdge: 1 | 2): string {
+  const nearX = NEAR_LEFT + LANE_NEAR_WIDTH * laneEdge;
+  const farX = FAR_LEFT + LANE_FAR_WIDTH * laneEdge;
+  return `polygon(${nearX - 0.5}% 100%, ${nearX + 0.5}% 100%, ${farX + 0.12}% ${FAR_Y}%, ${farX - 0.12}% ${FAR_Y}%)`;
+}
+
+const floorStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  clipPath: `polygon(${NEAR_LEFT}% 100%, ${NEAR_RIGHT}% 100%, ${FAR_RIGHT}% ${FAR_Y}%, ${FAR_LEFT}% ${FAR_Y}%)`,
+  background: `linear-gradient(0deg, rgba(62,123,255,0.6) 0%, rgba(62,123,255,0.28) 35%, ${PALETTE.gunmetalDark} 78%)`,
 };
 
-const keyStyle: CSSProperties = {
-  borderRadius: "0.4cqw",
-  border: "1px solid rgba(223,230,238,0.4)",
-  background: "#2b2f36",
-  padding: "0.2cqw 0.6cqw",
-  fontFamily: "ui-monospace, monospace",
-  fontSize: "1.1cqw",
-  color: "#dfe6ee",
+const leftWallStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  clipPath: `polygon(0% 100%, ${NEAR_LEFT}% 100%, ${FAR_LEFT}% ${FAR_Y}%, 0% ${FAR_Y}%)`,
+  background: `linear-gradient(90deg, ${PALETTE.gunmetalDark}, ${PALETTE.gunmetal})`,
 };
 
-const CONTROLS: { key: string; label: string }[] = [
-  { key: "A/D", label: "LANE LEFT/RIGHT" },
-  { key: "F", label: "FLIP POLARITY" },
-  { key: "SHIFT", label: "BOOST" },
-  { key: "SPACE", label: "START" },
-];
+const rightWallStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  clipPath: `polygon(${NEAR_RIGHT}% 100%, 100% 100%, 100% ${FAR_Y}%, ${FAR_RIGHT}% ${FAR_Y}%)`,
+  background: `linear-gradient(270deg, ${PALETTE.gunmetalDark}, ${PALETTE.gunmetal})`,
+};
+
+const ceilingStyle: CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  top: 0,
+  height: `${FAR_Y}%`,
+  background: `linear-gradient(180deg, ${PALETTE.gunmetalDark}, #16191d)`,
+};
 
 export default function MagnetRunPreview({ className }: GamePreviewProps) {
+  const botX = laneCenterNear(1);
+
   return (
     <div
       className={className}
@@ -34,107 +71,159 @@ export default function MagnetRunPreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "linear-gradient(180deg, #1a1d22, #16191d)",
-        color: "#dfe6ee",
+        background: "#16191d",
+        color: PALETTE.steelWhite,
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
         userSelect: "none",
       }}
     >
+      <div style={ceilingStyle} />
+      <div style={leftWallStyle} />
+      <div style={rightWallStyle} />
+      <div style={floorStyle} />
+      <div style={{ position: "absolute", inset: 0, clipPath: dividerPolygon(1), background: `${PALETTE.cautionStripe}55` }} />
+      <div style={{ position: "absolute", inset: 0, clipPath: dividerPolygon(2), background: `${PALETTE.cautionStripe}55` }} />
+
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          opacity: 0.5,
-          backgroundImage:
-            "repeating-linear-gradient(90deg, rgba(255,210,63,0.08) 0 3cqw, transparent 3cqw 6cqw)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(circle at 50% 50%, rgba(62,123,255,0.1), transparent 55%)",
+          left: `${FAR_LEFT}%`,
+          top: `${FAR_Y - 2}%`,
+          width: `${FAR_RIGHT - FAR_LEFT}%`,
+          height: "1.2cqh",
+          background: PALETTE.gunmetalDark,
+          boxShadow: "0 0 1.5cqh rgba(0,0,0,0.6)",
         }}
       />
 
-      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: "2cqw" }}>
+      <div
+        style={{
+          position: "absolute",
+          left: `${botX}%`,
+          bottom: "13cqh",
+          transform: "translate(-50%, 50%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "0.6cqh",
+        }}
+      >
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "1.4cqw",
-            borderRadius: "1cqw",
-            border: "1px solid rgba(223,230,238,0.15)",
-            background: "rgba(32,36,42,0.95)",
-            padding: "2.4cqw 3.2cqw",
-            textAlign: "center",
-            maxWidth: "70%",
+            height: "9cqh",
+            width: "9cqh",
+            borderRadius: "50%",
+            background: PALETTE.positiveRed,
+            border: `0.3cqh solid ${PALETTE.positiveRed}aa`,
+            boxShadow: `0 0 3cqh ${PALETTE.positiveRed}88, 0 1cqh 2cqh rgba(0,0,0,0.5)`,
+            display: "grid",
+            placeItems: "center",
+            fontSize: "4.2cqh",
+            fontWeight: 900,
+            color: "#fff",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.3cqw" }}>
-            <span style={{ fontSize: "3.4cqw", fontWeight: 900, letterSpacing: "0.05em", color: "#dfe6ee" }}>
-              MAGNET RUN
-            </span>
-            <span style={{ fontSize: "1.1cqw", fontWeight: 700, letterSpacing: "0.2em", color: "#ffd23f" }}>
-              SECTOR 3 CLEAR OR BUST — TELEMETRY LIVE
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "1.6cqw",
-              width: "100%",
-              borderRadius: "0.6cqw",
-              background: "rgba(43,47,54,0.7)",
-              padding: "0.9cqw 1.4cqw",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6cqw", fontSize: "1.2cqw", fontWeight: 700 }}>
-              <span style={{ height: "1.1cqw", width: "1.1cqw", borderRadius: "50%", background: "#ff4b3e" }} />
-              RED BOT
-            </div>
-            <span style={{ fontSize: "1.1cqw", color: "rgba(223,230,238,0.4)" }}>sticks to</span>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6cqw", fontSize: "1.2cqw", fontWeight: 700 }}>
-              <span style={{ height: "1.1cqw", width: "1.1cqw", borderRadius: "50%", background: "#3e7bff" }} />
-              BLUE STRIP
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, auto)",
-              gap: "0.6cqw 2cqw",
-            }}
-          >
-            {CONTROLS.map((entry) => (
-              <div key={entry.key} style={controlRowStyle}>
-                <span style={keyStyle}>{entry.key}</span>
-                <span style={{ fontSize: "1.1cqw", color: "rgba(223,230,238,0.8)" }}>{entry.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <span
-            style={{
-              width: "100%",
-              borderRadius: "0.6cqw",
-              background: "#ff4b3e",
-              padding: "1cqw 0",
-              fontSize: "1.6cqw",
-              fontWeight: 900,
-              letterSpacing: "0.2em",
-              color: "#fff",
-            }}
-          >
-            START — SPACE
-          </span>
+          +
         </div>
+        <div
+          style={{
+            height: "0.9cqh",
+            width: "5.5cqw",
+            borderRadius: "50%",
+            background: "rgba(0,0,0,0.45)",
+            filter: "blur(1px)",
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          bottom: "6cqh",
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          gap: "1.4cqw",
+        }}
+      >
+        {([0, 1, 2] as const).map((lane) => (
+          <span
+            key={lane}
+            style={{
+              height: "1.4cqh",
+              width: "1.4cqh",
+              borderRadius: "50%",
+              background: lane === 1 ? PALETTE.steelWhite : "#4a4f58",
+            }}
+          />
+        ))}
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          top: "3cqh",
+          left: "3cqw",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.3cqh",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "2cqw",
+            fontWeight: 900,
+            letterSpacing: "0.16em",
+            color: PALETTE.cautionStripe,
+          }}
+        >
+          SECTOR 1
+        </span>
+        <span
+          style={{
+            fontFamily: "ui-monospace, monospace",
+            fontSize: "1.3cqw",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            color: "rgba(223,230,238,0.75)",
+          }}
+        >
+          SPEED 0
+        </span>
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          top: "3cqh",
+          right: "3cqw",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.6cqw",
+          borderRadius: "0.6cqw",
+          background: "rgba(43,47,54,0.75)",
+          padding: "0.6cqh 1cqw",
+        }}
+      >
+        <span
+          style={{
+            height: "1.4cqh",
+            width: "1.4cqh",
+            borderRadius: "50%",
+            background: PALETTE.positiveRed,
+          }}
+        />
+        <span
+          style={{
+            fontFamily: "ui-monospace, monospace",
+            fontSize: "1.1cqw",
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            color: "rgba(223,230,238,0.85)",
+          }}
+        >
+          POLARITY +
+        </span>
       </div>
     </div>
   );

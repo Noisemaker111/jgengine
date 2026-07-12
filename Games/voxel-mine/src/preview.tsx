@@ -1,7 +1,10 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const BLOCK_COLORS: readonly string[] = ["#5a8a3c", "#7a5a3a", "#8a8a8a", "#a06b3a", "#3a6b2a", "#d9c58a"];
+const GRASS_SHADES: readonly string[] = ["#d79b42", "#c98f3a", "#e2ab55", "#cf9640", "#db9f48", "#c48a35"];
+
+const HOTBAR_COLORS: readonly string[] = ["#d79b42", "#42d7a8", "#42b2d7", "#42d7b7", "#82d742", "#d74247"];
+const HOTBAR_LABELS: readonly string[] = ["Grass", "Dirt", "Stone", "Wood", "Leaves", "Sand"];
 
 const hudLabelStyle: CSSProperties = {
   fontSize: "1.1cqw",
@@ -21,7 +24,7 @@ export default function VoxelMinePreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "linear-gradient(#7ec8e3 0%, #bfe3f0 42%, #6a9e4a 42.5%, #4a7a34 100%)",
+        background: "linear-gradient(#7ec8e3 0%, #bfe3f0 42%, #d79b42 42.5%, #b17c2f 100%)",
         color: "#fff",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
         userSelect: "none",
@@ -45,7 +48,7 @@ export default function VoxelMinePreview({ className }: GamePreviewProps) {
             key={i}
             style={{
               aspectRatio: "1",
-              background: BLOCK_COLORS[(i * 7 + Math.floor(i / 14)) % BLOCK_COLORS.length],
+              background: GRASS_SHADES[(i * 7 + Math.floor(i / 14)) % GRASS_SHADES.length],
               boxShadow: "inset -0.15cqw -0.15cqw 0 rgba(0,0,0,0.18), inset 0.1cqw 0.1cqw 0 rgba(255,255,255,0.12)",
             }}
           />
@@ -62,7 +65,7 @@ export default function VoxelMinePreview({ className }: GamePreviewProps) {
       </div>
 
       <div style={{ position: "absolute", top: "16%", left: "3%", display: "flex", flexDirection: "column", gap: "0.5cqw" }}>
-        <div style={{ ...hudLabelStyle, color: "#fde68a" }}>Mining Basics</div>
+        <div style={{ ...hudLabelStyle, color: "#fde68a" }}>Prospecting 101</div>
         <div style={{ fontSize: "1cqw", color: "#6ee7b7" }}>● Coal 0/5</div>
         <div style={{ fontSize: "1cqw", color: "rgba(255,255,255,0.85)" }}>● Iron 0/3</div>
       </div>
@@ -109,9 +112,9 @@ export default function VoxelMinePreview({ className }: GamePreviewProps) {
           Pickaxe <span style={{ color: "rgba(255,255,255,0.55)" }}>Mine</span>
         </div>
         <div style={{ display: "flex", gap: "0.5cqw" }}>
-          {["Pickaxe", ...BLOCK_COLORS].map((entry, index) => (
+          {["Pickaxe", ...HOTBAR_LABELS].map((entry, index) => (
             <span
-              key={index}
+              key={entry}
               style={{
                 position: "relative",
                 width: "3.4cqw",
@@ -124,7 +127,7 @@ export default function VoxelMinePreview({ className }: GamePreviewProps) {
               }}
             >
               {index > 0 ? (
-                <span style={{ width: "1.7cqw", height: "1.7cqw", borderRadius: "0.25cqw", background: BLOCK_COLORS[index - 1] }} />
+                <span style={{ width: "1.7cqw", height: "1.7cqw", borderRadius: "0.25cqw", background: HOTBAR_COLORS[index - 1] }} />
               ) : (
                 <span style={{ fontSize: "1.4cqw" }}>⛏</span>
               )}

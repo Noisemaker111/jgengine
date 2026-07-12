@@ -1,40 +1,12 @@
-import type { CSSProperties } from "react";
+import { Fragment } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const thumbStyle: CSSProperties = {
-  width: "6cqw",
-  height: "6cqw",
-  borderRadius: "0.8cqw",
-  background: "#f6f1e3",
-  backgroundImage:
-    "repeating-linear-gradient(0deg, #d8ccb0 0 1px, transparent 1px 1.2cqw), repeating-linear-gradient(90deg, #d8ccb0 0 1px, transparent 1px 1.2cqw)",
-  border: "1px solid #d8ccb0",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "#b9ab86",
-  fontSize: "2.5cqw",
-  fontWeight: 800,
-};
+const ROW_CLUES: readonly number[][] = [[1, 1], [5], [5], [3], [1]];
+const COL_CLUES: readonly number[][] = [[2], [4], [4], [4], [2]];
 
-function PuzzleTile() {
+function ClueText({ clue }: { clue: readonly number[] }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "0.8cqw",
-        padding: "1.2cqw 1cqw 1cqw",
-        borderRadius: "1.4cqw",
-        border: "1px solid rgba(148,163,184,0.16)",
-        background: "rgba(30,41,59,0.5)",
-      }}
-    >
-      <div style={thumbStyle}>?</div>
-      <span style={{ fontSize: "1.4cqw", fontWeight: 700, color: "#e2e8f0" }}>? ? ?</span>
-      <span style={{ fontSize: "1.2cqw", color: "#64748b" }}>unsolved</span>
-    </div>
+    <span style={{ fontSize: "1.5cqw", fontWeight: 700, color: "#94a3b8", lineHeight: 1.2 }}>{clue.join(" ")}</span>
   );
 }
 
@@ -59,89 +31,53 @@ export default function NonogramPreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
+          top: "5%",
           left: "50%",
-          top: "15%",
-          bottom: 0,
           transform: "translateX(-50%)",
-          width: "88cqw",
           display: "flex",
-          flexDirection: "column",
-          gap: "2cqw",
-          padding: "2.6cqw 2.4cqw",
-          borderRadius: "2cqw 2cqw 0 0",
-          background: "rgba(11, 15, 21, 0.9)",
-          border: "1px solid rgba(148,163,184,0.16)",
-          borderBottom: "none",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+          alignItems: "center",
+          gap: "1.6cqw",
         }}
       >
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1.2cqw" }}>
-          <div>
-            <div style={{ fontSize: "3.4cqw", fontWeight: 800, letterSpacing: "-0.02em", color: "#f1f5f9" }}>
-              Nonogram
+        <span style={{ fontSize: "1.8cqw", fontWeight: 800, color: "#f1f5f9" }}>Heart</span>
+        <span style={{ fontSize: "1.4cqw", color: "#64748b" }}>0:00</span>
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "52%",
+          transform: "translate(-50%, -50%)",
+          display: "grid",
+          gridTemplateColumns: "6cqw repeat(5, 8cqw)",
+          gridTemplateRows: "6cqw repeat(5, 8cqw)",
+          gap: "0.3cqw",
+        }}
+      >
+        <div />
+        {COL_CLUES.map((clue, c) => (
+          <div key={`c${c}`} style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: "0.4cqw" }}>
+            <ClueText clue={clue} />
+          </div>
+        ))}
+        {ROW_CLUES.map((clue, r) => (
+          <Fragment key={r}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "0.6cqw" }}>
+              <ClueText clue={clue} />
             </div>
-            <div style={{ marginTop: "0.4cqw", fontSize: "1.5cqw", color: "#94a3b8" }}>
-              Fill the grid from the row and column clues to reveal a hidden picture.
-            </div>
-          </div>
-          <div style={{ textAlign: "right", color: "#cbd5e1", fontSize: "1.4cqw" }}>
-            <div style={{ fontSize: "2.9cqw", fontWeight: 800, color: "#22c55e" }}>0/20</div>
-            <div>solved</div>
-          </div>
-        </div>
-
-        <span
-          style={{
-            alignSelf: "flex-start",
-            padding: "0.9cqw 1.6cqw",
-            borderRadius: "99cqw",
-            border: "1px solid rgba(148,163,184,0.28)",
-            background: "rgba(148,163,184,0.12)",
-            color: "#cbd5e1",
-            fontSize: "1.4cqw",
-            fontWeight: 600,
-          }}
-        >
-          Mistakes mode: Off — free play
-        </span>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "1cqw" }}>
-          <span
-            style={{
-              fontSize: "1.6cqw",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "#7c8aa0",
-            }}
-          >
-            5×5
-          </span>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "1.3cqw" }}>
-            {Array.from({ length: 6 }, (_, i) => (
-              <PuzzleTile key={i} />
+            {Array.from({ length: 5 }, (_, c) => (
+              <div
+                key={c}
+                style={{
+                  background: "#f6f1e3",
+                  border: "1px solid #d8ccb0",
+                  borderRadius: "0.3cqw",
+                }}
+              />
             ))}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "1cqw", flex: 1, overflow: "hidden" }}>
-          <span
-            style={{
-              fontSize: "1.6cqw",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "#7c8aa0",
-            }}
-          >
-            10×10
-          </span>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "1.3cqw" }}>
-            {Array.from({ length: 6 }, (_, i) => (
-              <PuzzleTile key={i} />
-            ))}
-          </div>
-        </div>
+          </Fragment>
+        ))}
       </div>
     </div>
   );

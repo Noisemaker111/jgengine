@@ -80,15 +80,6 @@ export default function BlackjackPreview({ className }: GamePreviewProps) {
         </div>
       </div>
 
-      <div style={{ position: "absolute", top: "42%", left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
-        <div style={{ fontSize: "1.1cqw", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.16em", color: "rgba(252,211,77,0.35)" }}>
-          Blackjack pays 3 to 2 · Insurance pays 2 to 1
-        </div>
-        <div style={{ marginTop: "0.3cqw", fontSize: "1.1cqw", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.16em", color: "rgba(252,211,77,0.35)" }}>
-          Dealer must stand on 17 and draw to 16
-        </div>
-      </div>
-
       <div style={{ position: "absolute", top: "56%", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.7cqw" }}>
         <span style={{ fontSize: "1.2cqw", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.25em", color: "rgba(209,250,229,0.7)" }}>
           You
@@ -97,7 +88,6 @@ export default function BlackjackPreview({ className }: GamePreviewProps) {
           <CardSlot />
           <CardSlot />
         </div>
-        <span style={{ fontSize: "1.1cqw", color: "rgba(209,250,229,0.5)" }}>Place a bet to deal</span>
       </div>
 
       <div style={{ position: "absolute", top: "16%", left: "2.5%", ...panelStyle }}>
@@ -212,11 +202,7 @@ export default function BlackjackPreview({ className }: GamePreviewProps) {
           >
             Deal
           </span>
-          <span style={{ fontSize: "1cqw", color: "rgba(209,250,229,0.5)" }}>Min 5 · Max 500</span>
         </div>
-        <span style={{ fontSize: "0.95cqw", textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(209,250,229,0.4)" }}>
-          Traditional Twenty-One
-        </span>
       </div>
     </div>
   );

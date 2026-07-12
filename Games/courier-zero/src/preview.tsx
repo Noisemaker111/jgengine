@@ -1,33 +1,27 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
-const rowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  borderRadius: "0.8cqw",
-  border: "1px solid rgba(232,213,163,0.2)",
-  background: "rgba(15,31,28,0.6)",
-  padding: "0.6cqw 1.2cqw",
-};
+type Village = { id: string; name: string; nx: number; nz: number; size: number };
 
-const keyStyle: CSSProperties = {
-  borderRadius: "0.4cqw",
-  border: "1px solid rgba(232,213,163,0.4)",
-  background: "#26413c",
-  padding: "0.2cqw 0.8cqw",
-  fontSize: "1.1cqw",
-  fontWeight: 700,
-  color: "#e8d5a3",
-};
+const VILLAGES: Village[] = [
+  { id: "ridgehome", name: "Ridgehome", nx: 50, nz: 50, size: 5.2 },
+  { id: "northpoint", name: "Northpoint", nx: 75, nz: 66.7, size: 4 },
+  { id: "saltmarsh", name: "Saltmarsh", nx: 27.1, nz: 70.8, size: 4 },
+  { id: "highstead", name: "Highstead", nx: 29.2, nz: 27.1, size: 4 },
+];
 
-function ControlRow({ label, keyLabel }: { label: string; keyLabel: string }) {
-  return (
-    <div style={rowStyle}>
-      <span style={{ fontSize: "1.2cqw", color: "rgba(232,213,163,0.8)" }}>{label}</span>
-      <span style={keyStyle}>{keyLabel}</span>
-    </div>
-  );
+const ROUTES: [Village, Village][] = [
+  [VILLAGES[0]!, VILLAGES[1]!],
+  [VILLAGES[0]!, VILLAGES[3]!],
+];
+
+function villageStyle(v: Village): CSSProperties {
+  return {
+    position: "absolute",
+    left: `${v.nx}%`,
+    top: `${v.nz}%`,
+    transform: "translate(-50%, -50%)",
+  };
 }
 
 export default function CourierZeroPreview({ className }: GamePreviewProps) {
@@ -40,67 +34,108 @@ export default function CourierZeroPreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "rgba(15,31,28,0.85)",
-        color: "#e8d5a3",
+        background: "linear-gradient(180deg, #8fd0c9 0%, #cfe7c2 38%, #e9d9a8 60%, #2a9d8f 100%)",
+        color: "#26413c",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
         userSelect: "none",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
       }}
     >
+      <svg
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+      >
+        {ROUTES.map(([a, b]) => (
+          <line
+            key={`${a.id}-${b.id}`}
+            x1={a.nx}
+            y1={a.nz}
+            x2={b.nx}
+            y2={b.nz}
+            stroke="#c9a878"
+            strokeWidth={0.6}
+            strokeDasharray="1.5 1.2"
+          />
+        ))}
+      </svg>
+
+      {VILLAGES.map((v) => (
+        <div key={v.id} style={villageStyle(v)}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: "0.4cqw",
+            }}
+          >
+            {Array.from({ length: 4 }, (_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: `${v.size}cqw`,
+                  height: `${v.size * 1.2}cqw`,
+                  background: "linear-gradient(180deg, #e8d5a3, #c9a878)",
+                  border: "0.08cqw solid #26413c",
+                }}
+              />
+            ))}
+          </div>
+          <span
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              marginTop: "0.4cqw",
+              fontSize: "1cqw",
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              color: "#26413c",
+              textShadow: "0 0 0.4cqw rgba(255,255,255,0.8)",
+            }}
+          >
+            {v.name}
+          </span>
+        </div>
+      ))}
+
+      <div style={{ ...villageStyle(VILLAGES[0]!), zIndex: 2 }}>
+        <div
+          style={{
+            width: "2.4cqw",
+            height: "2.4cqw",
+            borderRadius: "50%",
+            background: "#e76f51",
+            border: "0.15cqw solid #26413c",
+            boxShadow: "0 0 1cqw rgba(231,111,81,0.7)",
+          }}
+        />
+      </div>
+
       <div
         style={{
-          position: "relative",
+          position: "absolute",
+          top: "3cqh",
+          left: "3cqw",
           display: "flex",
           flexDirection: "column",
-          gap: "1.6cqw",
-          width: "68%",
-          borderRadius: "1.4cqw",
-          border: "1px solid rgba(42,157,143,0.5)",
-          background: "rgba(38,65,60,0.95)",
-          padding: "2.2cqw",
-          textAlign: "center",
-          boxShadow: "0 0 40px rgba(0,0,0,0.5)",
+          gap: "0.6cqw",
+          borderRadius: "0.8cqw",
+          background: "rgba(38,65,60,0.85)",
+          padding: "1cqw 1.4cqw",
+          color: "#e8d5a3",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.3cqw" }}>
-          <span style={{ fontSize: "1.3cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.3em", color: "#2a9d8f" }}>
-            Island Dispatch Radio
-          </span>
-          <span style={{ fontSize: "3.4cqw", fontWeight: 900, letterSpacing: "-0.02em", color: "#e8d5a3" }}>
-            Courier Zero
-          </span>
-          <span style={{ fontSize: "1.3cqw", color: "rgba(232,213,163,0.75)" }}>
-            The island's last courier. Deliver parcels between the four villages before the tide swallows every road.
-          </span>
-        </div>
-
-        <span style={{ fontSize: "1.2cqw", fontStyle: "italic", color: "#e76f51" }}>
-          "Tide's at your heels, Zero. Get moving."
+        <span style={{ fontSize: "1cqw", textTransform: "uppercase", letterSpacing: "0.2em", color: "#2a9d8f" }}>
+          The Shallows
         </span>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.6cqw" }}>
-          <ControlRow label="Move" keyLabel="WASD" />
-          <ControlRow label="Sprint (stamina)" keyLabel="Shift" />
-          <ControlRow label="Pick up / deliver" keyLabel="E" />
-          <ControlRow label="Toggle flood chart" keyLabel="M" />
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6cqw" }}>
+          <span style={{ fontSize: "1cqw" }}>Stamina</span>
+          <div style={{ width: "8cqw", height: "0.8cqw", borderRadius: "0.4cqw", background: "rgba(0,0,0,0.4)" }}>
+            <div style={{ width: "100%", height: "100%", borderRadius: "0.4cqw", background: "#2a9d8f" }} />
+          </div>
         </div>
-
-        <span
-          style={{
-            borderRadius: "0.8cqw",
-            background: "#e76f51",
-            padding: "1cqw 2cqw",
-            fontSize: "1.4cqw",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "#26413c",
-          }}
-        >
-          Start Run (Enter)
-        </span>
+        <span style={{ fontSize: "1cqw" }}>Delivered 0 / 8</span>
       </div>
     </div>
   );

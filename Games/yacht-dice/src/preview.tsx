@@ -27,18 +27,6 @@ const boardStyle: CSSProperties = {
   padding: "2cqw 2.4cqw",
 };
 
-const pillStyle: CSSProperties = {
-  fontSize: "0.9cqw",
-  fontWeight: 700,
-  letterSpacing: "0.06em",
-  textTransform: "uppercase",
-  padding: "0.7cqw 1.1cqw",
-  borderRadius: "999px",
-  color: C.text,
-  background: "rgba(255,255,255,0.06)",
-  border: `1px solid rgba(240,222,176,0.28)`,
-};
-
 const UPPER_ROWS: readonly string[] = ["Ones", "Twos", "Threes", "Fours", "Fives", "Sixes"];
 const LOWER_ROWS: readonly string[] = [
   "Three of a Kind",
@@ -91,9 +79,6 @@ export default function YachtDicePreview({ className }: GamePreviewProps) {
               <div style={{ fontSize: "2.6cqw", fontWeight: 800, fontFamily: SERIF, color: C.text }}>
                 Yacht <span style={{ color: C.gold }}>Dice</span>
               </div>
-              <div style={{ fontSize: "1cqw", fontWeight: 600, letterSpacing: "0.06em", color: C.textDim, marginTop: "0.4cqw" }}>
-                Roll five · up to three throws · bank all thirteen boxes
-              </div>
             </div>
             <div style={{ textAlign: "right", lineHeight: 1 }}>
               <div style={{ fontSize: "3.4cqw", fontWeight: 800, fontFamily: SERIF, color: C.goldSoft }}>0</div>
@@ -111,12 +96,6 @@ export default function YachtDicePreview({ className }: GamePreviewProps) {
             <div style={{ height: "0.7cqw", borderRadius: "999px", background: "rgba(0,0,0,0.35)" }} />
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.8cqw" }}>
-            <span style={pillStyle}>New Game</span>
-            <span style={pillStyle}>Daily Run</span>
-            <span style={pillStyle}>Share seed</span>
-          </div>
-
           <div style={{ borderTop: `1px solid ${C.line}` }} />
 
           <div style={{ display: "flex", gap: "2.8cqw", alignItems: "flex-start", justifyContent: "center" }}>
@@ -129,9 +108,10 @@ export default function YachtDicePreview({ className }: GamePreviewProps) {
                       width: "5.6cqw",
                       height: "5.6cqw",
                       borderRadius: "1cqw",
-                      background: "linear-gradient(180deg,#fefefe,#e5e0d5)",
-                      border: "1px solid rgba(0,0,0,0.2)",
+                      background: "linear-gradient(180deg,#fbf5e6,#efe6cf)",
+                      border: "1px solid #d9caa4",
                       boxShadow: "0 0.4cqw 0.8cqw rgba(0,0,0,0.35)",
+                      opacity: 0.42,
                     }}
                   />
                 ))}

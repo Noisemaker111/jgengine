@@ -196,15 +196,6 @@ export default function PlatformHopperPreview({ className }: GamePreviewProps) {
         />
       </div>
 
-      <div style={{ ...panelStyle, top: "14%", left: "2%" }}>
-        <p style={{ margin: 0, fontSize: "1.2cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "#7dd3fc" }}>
-          Platform Hopper
-        </p>
-        <p style={{ margin: "0.4cqw 0 0", fontSize: "1.3cqw", color: "rgba(255,255,255,0.85)" }}>
-          Run right, stomp the stompers, dodge the spikes, reach the flag.
-        </p>
-      </div>
-
       <div style={{ ...panelStyle, top: "14%", right: "2%", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.5cqw" }}>
         <span style={{ fontSize: "1.8cqw", letterSpacing: "0.2em", color: "#fb7185" }}>♥ ♥ ♥</span>
         <span style={{ display: "flex", alignItems: "baseline", gap: "0.6cqw" }}>

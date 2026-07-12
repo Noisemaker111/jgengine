@@ -82,37 +82,56 @@ export default function SlingshotSiegePreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
-          right: "16%",
+          right: "20%",
           bottom: "12%",
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "0.4cqw",
+          display: "flex",
+          flexDirection: "column-reverse",
+          gap: "0.3cqw",
         }}
       >
-        {Array.from({ length: 9 }, (_, i) => (
+        {[0, 1].map((i) => (
           <span
             key={i}
             style={{
-              width: "3.2cqw",
-              height: "3.2cqw",
+              width: "5.4cqw",
+              height: "4.4cqw",
               background: "linear-gradient(#a9773f, #6b4c23)",
               border: "1px solid rgba(0,0,0,0.25)",
             }}
           />
         ))}
       </div>
-      <span
+      <div
         style={{
           position: "absolute",
-          right: "20.5%",
-          bottom: "31%",
+          right: "21.2%",
+          bottom: "21.6%",
           width: "3cqw",
-          height: "5.5cqw",
-          background: "linear-gradient(#c8442f, #8a2c1c)",
-          borderRadius: "0.5cqw",
-          boxShadow: "0 0 1.4cqw rgba(200,68,47,0.5)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "0.2cqw",
         }}
-      />
+      >
+        <span
+          style={{
+            width: "1.6cqw",
+            height: "1.6cqw",
+            borderRadius: "50%",
+            background: "#e8c07a",
+            border: "1px solid rgba(0,0,0,0.3)",
+          }}
+        />
+        <span
+          style={{
+            width: "2.6cqw",
+            height: "3.4cqw",
+            borderRadius: "0.6cqw 0.6cqw 0.3cqw 0.3cqw",
+            background: "linear-gradient(#c8442f, #8a2c1c)",
+            boxShadow: "0 0 1.4cqw rgba(200,68,47,0.5)",
+          }}
+        />
+      </div>
 
       <div
         style={{
@@ -175,22 +194,6 @@ export default function SlingshotSiegePreview({ className }: GamePreviewProps) {
             />
           ))}
         </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "3%",
-          left: "3%",
-          maxWidth: "26cqw",
-          fontSize: "1.1cqw",
-          lineHeight: 1.5,
-          textTransform: "uppercase",
-          letterSpacing: "0.15em",
-          color: "#ab977a",
-        }}
-      >
-        Drag back from the sling pouch to aim, release to fire.
       </div>
     </div>
   );

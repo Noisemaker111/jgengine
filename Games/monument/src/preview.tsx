@@ -3,27 +3,72 @@ import type { GamePreviewProps } from "@jgengine/react/preview";
 
 const ACID = "#d7ff43";
 
-const eyebrowStyle: CSSProperties = {
-  fontSize: "1.1cqw",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.28em",
-  color: "#666961",
-};
+interface Block {
+  gx: number;
+  gz: number;
+  w: number;
+  d: number;
+  h: number;
+  color: string;
+}
 
-function Building({ left, bottom, width, height, color }: { left: string; bottom: string; width: string; height: string; color: string }) {
+const BLOCKS: readonly Block[] = [
+  { gx: -2, gz: -2, w: 9, d: 6, h: 5, color: "#8fbf8a" },
+  { gx: 0, gz: -2, w: 9, d: 9, h: 4, color: "#c9b382" },
+  { gx: 2, gz: -2, w: 11, d: 5, h: 6, color: "#8a93a0" },
+  { gx: -2, gz: 0, w: 8, d: 6, h: 4, color: "#7fbf7a" },
+  { gx: 0, gz: 0, w: 9, d: 9, h: 3, color: "#d8c393" },
+  { gx: 2, gz: 0, w: 7, d: 7, h: 8, color: "#e9e4d8" },
+  { gx: -2, gz: 2, w: 7, d: 7, h: 6, color: "#5a5d55" },
+  { gx: 2, gz: 2, w: 8, d: 6, h: 4, color: "#7fbf7a" },
+  { gx: -4, gz: 0, w: 11, d: 5, h: 5, color: "#8a93a0" },
+  { gx: 4, gz: 0, w: 6, d: 6, h: 13, color: "#4c4f48" },
+];
+
+function gxToLeft(gx: number): number {
+  return 50 + gx * 6.5;
+}
+function gzToTop(gz: number): number {
+  return 52 + gz * 6.5;
+}
+
+function CityBlock({ block }: { block: Block }) {
+  const left = gxToLeft(block.gx);
+  const top = gzToTop(block.gz);
   return (
-    <span
+    <div
       style={{
         position: "absolute",
-        left,
-        bottom,
-        width,
-        height,
-        background: color,
-        boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)",
+        left: `${left}%`,
+        top: `${top}%`,
+        transform: "translate(-50%, -50%)",
       }}
-    />
+    >
+      <span
+        style={{
+          position: "absolute",
+          left: `${-block.w / 2}cqw`,
+          top: `${-block.d / 2 + block.h * 0.35}cqw`,
+          width: `${block.w}cqw`,
+          height: `${block.d}cqw`,
+          borderRadius: "0.3cqw",
+          background: "rgba(10,12,10,0.35)",
+          filter: "blur(0.3cqw)",
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          left: `${-block.w / 2}cqw`,
+          top: `${-block.d / 2 - block.h * 0.55}cqw`,
+          width: `${block.w}cqw`,
+          height: `${block.d + block.h * 0.55}cqw`,
+          borderRadius: "0.25cqw",
+          background: `linear-gradient(${block.color}, ${block.color}dd 60%, rgba(0,0,0,0.35))`,
+          boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.18)",
+        }}
+      />
+    </div>
   );
 }
 
@@ -43,94 +88,35 @@ export default function MonumentPreview({ className }: GamePreviewProps) {
         userSelect: "none",
       }}
     >
-      <div style={{ position: "absolute", left: 0, right: 0, top: "55%", bottom: 0, background: "#5a5d53" }} />
-      <Building left="6%" bottom="46%" width="10cqw" height="16cqw" color="#8a8d80" />
-      <Building left="17%" bottom="46%" width="7cqw" height="10cqw" color="#9a9d8f" />
-      <Building left="76%" bottom="46%" width="9cqw" height="13cqw" color="#82857a" />
-      <Building left="87%" bottom="46%" width="8cqw" height="8cqw" color="#95988a" />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage:
+            "linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)",
+          backgroundSize: "6.5cqw 6.5cqh",
+        }}
+      />
 
-      <div style={{ position: "absolute", inset: 0, background: "rgba(12,15,13,0.55)", backdropFilter: "blur(6px)" }} />
+      {BLOCKS.map((block, i) => (
+        <CityBlock key={i} block={block} />
+      ))}
 
       <div
         style={{
           position: "absolute",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
+          top: "4%",
+          left: "3%",
           display: "flex",
-          width: "78%",
-          maxWidth: "92cqw",
-          height: "72%",
-          borderRadius: "1.4cqw",
-          overflow: "hidden",
-          boxShadow: "0 2cqw 6cqw rgba(0,0,0,0.5)",
+          alignItems: "center",
+          gap: "0.6cqw",
+          borderRadius: "0.6cqw",
+          background: "rgba(23,25,22,0.7)",
+          padding: "0.6cqw 1.1cqw",
         }}
       >
-        <div
-          style={{
-            flex: "1.2",
-            background: "#171916",
-            color: "#eeeae0",
-            padding: "3cqw 3cqw",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
-          <span style={{ fontSize: "1.1cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.3em", color: ACID }}>
-            Form · light · life
-          </span>
-          <span style={{ fontSize: "4.2cqw", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.02em", marginTop: "0.8cqw" }}>
-            Monument
-          </span>
-          <span style={{ fontSize: "1.6cqw", fontWeight: 600, color: "rgba(238,234,224,0.8)", marginTop: "0.6cqw" }}>
-            Brutalist city playground
-          </span>
-          <p style={{ fontSize: "1.2cqw", color: "rgba(238,234,224,0.6)", marginTop: "1.4cqw", lineHeight: 1.5, maxWidth: "34cqw" }}>
-            Pull, repeat, branch, and carve each structure — then guide its use, atmosphere,
-            public spaces, and the life that gathers around it.
-          </p>
-        </div>
-        <div
-          style={{
-            flex: "1",
-            background: "#e9e4d8",
-            color: "#171916",
-            padding: "3cqw 2.6cqw",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            gap: "1.2cqw",
-          }}
-        >
-          <span style={eyebrowStyle}>Start a city</span>
-          <div
-            style={{
-              borderRadius: "0.8cqw",
-              border: "1px solid rgba(20,22,18,0.19)",
-              background: "rgba(255,255,255,0.5)",
-              padding: "1.2cqw 1.6cqw",
-            }}
-          >
-            <div style={{ fontSize: "1.5cqw", fontWeight: 800 }}>Riverside Plot</div>
-            <div style={{ fontSize: "1.1cqw", color: "#666961", marginTop: "0.3cqw" }}>
-              A quiet grid on the water, ready for its first spine.
-            </div>
-          </div>
-          <span
-            style={{
-              alignSelf: "flex-start",
-              borderRadius: "0.8cqw",
-              background: ACID,
-              color: "#171916",
-              fontWeight: 800,
-              fontSize: "1.3cqw",
-              padding: "0.8cqw 1.8cqw",
-            }}
-          >
-            Continue →
-          </span>
-        </div>
+        <span style={{ width: "0.6cqw", height: "0.6cqw", borderRadius: "50%", background: ACID }} />
+        <span style={{ fontSize: "1.1cqw", fontWeight: 700, letterSpacing: "0.12em", color: "#eeeae0" }}>Day 1</span>
       </div>
     </div>
   );

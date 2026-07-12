@@ -1,42 +1,121 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
+const VOID_COLOR = "#12101f";
 const TAPE_MAGENTA = "#e83d84";
 const LOOP_TEAL = "#12b3a8";
+const GRID_VIOLET = "#6247aa";
+const PAPER_WHITE = "#f5f2fa";
 
-const keyBadgeStyle: CSSProperties = {
-  display: "inline-flex",
-  minWidth: "2.6cqw",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "0.4cqw",
-  border: "1px solid rgba(98,71,170,0.7)",
-  background: "#12101f",
-  padding: "0.4cqw 0.8cqw",
-  fontSize: "1.1cqw",
-  fontWeight: 700,
-  letterSpacing: "0.05em",
-  color: "#f5f2fa",
-};
+const BASE_LEFT = 12;
+const BASE_RIGHT = 90;
+const BASE_TOP = 97;
+const VANISH_LEFT = 40;
+const VANISH_TOP = 37;
+const ROAD_TOP_HALF_WIDTH = 3;
 
-const keyRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.8cqw",
-  fontSize: "1.2cqw",
-  color: "rgba(245,242,250,0.8)",
-};
-
-function KeyBadge({ label, children }: { label: string; children: string }) {
-  return (
-    <span style={keyRowStyle}>
-      <span style={keyBadgeStyle}>{label}</span>
-      {children}
-    </span>
-  );
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
 }
 
+function ease(u: number): number {
+  return u ** 1.6;
+}
+
+function roadCenterX(t: number): number {
+  return lerp((BASE_LEFT + BASE_RIGHT) / 2, VANISH_LEFT, t);
+}
+
+function roadHalfWidth(t: number): number {
+  return lerp((BASE_RIGHT - BASE_LEFT) / 2, ROAD_TOP_HALF_WIDTH, t);
+}
+
+function roadY(t: number): number {
+  return lerp(BASE_TOP, VANISH_TOP, t);
+}
+
+interface PylonSpot {
+  left: number;
+  top: number;
+  size: number;
+  color: string;
+}
+
+const PYLON_STEPS = [0.12, 0.26, 0.41, 0.57, 0.74, 0.9];
+
+function pylonSpots(side: -1 | 1): PylonSpot[] {
+  return PYLON_STEPS.map((u, i) => {
+    const t = ease(u);
+    const half = roadHalfWidth(t);
+    return {
+      left: roadCenterX(t) + side * (half * 1.18 + 1),
+      top: roadY(t),
+      size: lerp(3.2, 0.5, t),
+      color: i % 2 === 0 ? TAPE_MAGENTA : LOOP_TEAL,
+    };
+  });
+}
+
+interface DashSpot {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  opacity: number;
+}
+
+const DASH_STEPS = [0.08, 0.22, 0.38, 0.55, 0.73, 0.9];
+
+function dashSpots(): DashSpot[] {
+  return DASH_STEPS.map((u) => {
+    const t = ease(u);
+    return {
+      left: roadCenterX(t),
+      top: roadY(t),
+      width: lerp(2.2, 0.35, t),
+      height: lerp(1.1, 0.2, t),
+      opacity: lerp(0.9, 0.35, t),
+    };
+  });
+}
+
+function pylonStyle(spot: PylonSpot): CSSProperties {
+  return {
+    position: "absolute",
+    left: `${spot.left}cqw`,
+    top: `${spot.top}cqh`,
+    width: `${spot.size * 0.35}cqw`,
+    height: `${spot.size * 2.2}cqh`,
+    transform: "translate(-50%, -100%)",
+    borderRadius: "0.2cqw",
+    background: spot.color,
+    boxShadow: `0 0 ${spot.size * 0.9}cqw ${spot.color}99`,
+  };
+}
+
+function dashStyle(spot: DashSpot): CSSProperties {
+  return {
+    position: "absolute",
+    left: `${spot.left}cqw`,
+    top: `${spot.top}cqh`,
+    width: `${spot.width}cqw`,
+    height: `${spot.height}cqh`,
+    transform: "translate(-50%, -50%)",
+    borderRadius: "0.3cqw",
+    background: PAPER_WHITE,
+    opacity: spot.opacity,
+  };
+}
+
+const GATE_T = ease(0.52);
+
 export default function LoopStationPreview({ className }: GamePreviewProps) {
+  const roadPolygon = `polygon(${BASE_LEFT}cqw ${BASE_TOP}cqh, ${BASE_RIGHT}cqw ${BASE_TOP}cqh, ${VANISH_LEFT + ROAD_TOP_HALF_WIDTH}cqw ${VANISH_TOP}cqh, ${VANISH_LEFT - ROAD_TOP_HALF_WIDTH}cqw ${VANISH_TOP}cqh)`;
+  const gateHalf = roadHalfWidth(GATE_T);
+  const gateCenter = roadCenterX(GATE_T);
+  const gateY = roadY(GATE_T);
+  const startX = roadCenterX(0);
+
   return (
     <div
       className={className}
@@ -46,8 +125,7 @@ export default function LoopStationPreview({ className }: GamePreviewProps) {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "rgba(18,16,31,0.92)",
-        color: "#f5f2fa",
+        background: `linear-gradient(180deg, #1d1832 0%, ${VOID_COLOR} 42%, #08060f 100%)`,
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
         userSelect: "none",
       }}
@@ -55,103 +133,132 @@ export default function LoopStationPreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
+          left: `${VANISH_LEFT}cqw`,
+          top: `${VANISH_TOP - 4}cqh`,
+          width: "34cqw",
+          height: "34cqw",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          border: `0.25cqw solid ${GRID_VIOLET}`,
+          opacity: 0.4,
+          boxShadow: `0 0 4cqw ${LOOP_TEAL}55`,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: `${VANISH_TOP - 2}cqh`,
+          height: "10cqh",
+          background: `radial-gradient(ellipse at 50% 0%, ${TAPE_MAGENTA}33, transparent 70%)`,
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
           inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "1.6cqw",
-          padding: "3cqw",
+          clipPath: roadPolygon,
+          background: "linear-gradient(180deg, #241f38 0%, #2c2544 60%, #33294f 100%)",
+        }}
+      />
+
+      {dashSpots().map((spot, i) => (
+        <div key={i} style={dashStyle(spot)} />
+      ))}
+
+      <div
+        style={{
+          position: "absolute",
+          left: `${gateCenter - gateHalf - 0.6}cqw`,
+          top: `${gateY}cqh`,
+          width: `${(gateHalf + 0.6) * 2}cqw`,
+          height: "0.5cqh",
+          transform: "translateY(-1.6cqh)",
+          background: LOOP_TEAL,
+          boxShadow: `0 0 1.2cqw ${LOOP_TEAL}aa`,
+        }}
+      />
+
+      {pylonSpots(-1).map((spot, i) => (
+        <div key={`l${i}`} style={pylonStyle(spot)} />
+      ))}
+      {pylonSpots(1).map((spot, i) => (
+        <div key={`r${i}`} style={pylonStyle(spot)} />
+      ))}
+
+      <div
+        style={{
+          position: "absolute",
+          left: `${startX}cqw`,
+          top: "78cqh",
+          width: "9cqw",
+          height: "13cqh",
+          transform: "translate(-50%, 0)",
         }}
       >
-        <div style={{ textAlign: "center" }}>
-          <p
-            style={{
-              fontSize: "1.3cqw",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.4em",
-              color: LOOP_TEAL,
-            }}
-          >
-            Synthwave Tape-Loop Speedrunner
-          </p>
-          <h1
-            style={{
-              marginTop: "0.6cqw",
-              fontSize: "6cqw",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.25em",
-              color: "#f5f2fa",
-              textShadow: `0 0 3cqw ${TAPE_MAGENTA}a6`,
-            }}
-          >
-            Loop Station
-          </h1>
-        </div>
-
         <div
           style={{
-            maxWidth: "60cqw",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.3cqw",
-            fontSize: "1.5cqw",
-            lineHeight: 1.5,
-            textAlign: "center",
-            color: "rgba(245,242,250,0.85)",
+            position: "absolute",
+            left: "50%",
+            top: 0,
+            width: 0,
+            height: 0,
+            transform: "translateX(-50%)",
+            borderLeft: "4.5cqw solid transparent",
+            borderRight: "4.5cqw solid transparent",
+            borderBottom: `7cqh solid ${PAPER_WHITE}`,
+            filter: `drop-shadow(0 0 1.6cqw ${PAPER_WHITE}cc)`,
           }}
-        >
-          <p>Run the circuit. Every clean lap is recorded and replays forever as a solid ghost.</p>
-          <p>Touch a ghost — or miss the over/under jump — and the tape ends.</p>
-        </div>
-
+        />
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            columnGap: "3cqw",
-            rowGap: "0.9cqw",
-            borderRadius: "1cqw",
-            border: "1px solid rgba(98,71,170,0.5)",
-            background: "rgba(28,24,48,0.7)",
-            padding: "1.6cqw 2.4cqw",
+            position: "absolute",
+            left: "50%",
+            top: "6cqh",
+            width: "6cqw",
+            height: "5.5cqh",
+            transform: "translateX(-50%)",
+            borderRadius: "0.6cqw",
+            background: PAPER_WHITE,
+            boxShadow: `0 0 1.4cqw ${PAPER_WHITE}aa`,
           }}
-        >
-          <KeyBadge label="W">Pace up</KeyBadge>
-          <KeyBadge label="S">Pace down</KeyBadge>
-          <KeyBadge label="A">Steer / branch left</KeyBadge>
-          <KeyBadge label="D">Steer right</KeyBadge>
-          <KeyBadge label="Shift">Brake-drift</KeyBadge>
-          <KeyBadge label="Space">Jump-hop</KeyBadge>
-        </div>
+        />
+      </div>
 
-        <p
-          style={{
-            fontSize: "1.2cqw",
-            textTransform: "uppercase",
-            letterSpacing: "0.3em",
-            color: "rgba(245,242,250,0.6)",
-          }}
-        >
-          Best tape: <span style={{ color: TAPE_MAGENTA }}>0</span> laps survived
-        </p>
-
+      <div
+        style={{
+          position: "absolute",
+          top: "4cqh",
+          left: "4cqw",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.3cqh",
+        }}
+      >
         <span
           style={{
-            borderRadius: "0.6cqw",
-            padding: "1cqw 3.2cqw",
-            fontSize: "1.8cqw",
-            fontWeight: 900,
+            fontSize: "1.6cqw",
+            fontWeight: 800,
+            letterSpacing: "0.3em",
             textTransform: "uppercase",
-            letterSpacing: "0.2em",
-            color: "#12101f",
-            background: `linear-gradient(90deg, ${TAPE_MAGENTA}, ${LOOP_TEAL})`,
-            boxShadow: `0 0 2cqw ${LOOP_TEAL}8c`,
+            color: TAPE_MAGENTA,
+            textShadow: `0 0 1cqw ${TAPE_MAGENTA}80`,
           }}
         >
-          Press Enter — Start
+          Lap 1
+        </span>
+        <span
+          style={{
+            fontSize: "1cqw",
+            fontWeight: 700,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: LOOP_TEAL,
+          }}
+        >
+          Pace 1.00×
         </span>
       </div>
     </div>

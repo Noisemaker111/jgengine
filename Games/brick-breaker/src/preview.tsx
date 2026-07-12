@@ -163,26 +163,13 @@ export default function BrickBreakerPreview({ className }: GamePreviewProps) {
         >
           <span
             style={{
-              fontSize: "1.6cqw",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.3em",
-              color: "rgba(240,171,252,0.75)",
+              fontSize: "1.8cqw",
+              fontWeight: 700,
+              fontFamily: "ui-monospace, monospace",
+              color: "#94a3b8",
             }}
           >
-            JG-76 cabinet
-          </span>
-          <span
-            style={{
-              fontSize: "3.2cqw",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.24em",
-              color: "#67e8f9",
-              textShadow: "0 0 10px rgba(34,211,238,0.5)",
-            }}
-          >
-            Brick Breaker
+            Score <span style={{ color: "#e2e8f0" }}>0</span>
           </span>
           <span
             style={{
@@ -248,7 +235,6 @@ export default function BrickBreakerPreview({ className }: GamePreviewProps) {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "1.2cqw",
               borderTop: "1px solid rgba(240,171,252,0.45)",
               borderBottom: "1px solid rgba(240,171,252,0.45)",
               background: "rgba(5,4,20,0.88)",
@@ -268,17 +254,6 @@ export default function BrickBreakerPreview({ className }: GamePreviewProps) {
               }}
             >
               Level 1 — First Contact
-            </span>
-            <span
-              style={{
-                fontSize: "1.7cqw",
-                fontWeight: 900,
-                textTransform: "uppercase",
-                letterSpacing: "0.3em",
-                color: "#a5f3fc",
-              }}
-            >
-              Space / click to launch
             </span>
           </div>
 

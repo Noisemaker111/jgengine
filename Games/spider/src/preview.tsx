@@ -3,9 +3,7 @@ import type { GamePreviewProps } from "@jgengine/react/preview";
 
 const FELT = "radial-gradient(120% 90% at 50% 0%,#7a2138 0%,#5e1729 42%,#40101d 78%,#2a0a14 100%)";
 const IVORY = "linear-gradient(158deg,#fffdf6 0%,#f5eede 60%,#ece2cd 100%)";
-const RED_INK = "#b3222f";
 const BLACK_INK = "#20222b";
-const SILVER = "#cfd3dc";
 
 const chipStyle: CSSProperties = {
   display: "flex",
@@ -54,7 +52,7 @@ function backStyle(w: number): CSSProperties {
   };
 }
 
-function Corner({ label, glyph, ink, w }: { label: string; glyph: string; ink: string; w: number }) {
+function Corner({ label, w }: { label: string; w: number }) {
   return (
     <span
       style={{
@@ -65,23 +63,22 @@ function Corner({ label, glyph, ink, w }: { label: string; glyph: string; ink: s
         fontWeight: 800,
         fontSize: `${w * 0.3}cqw`,
         lineHeight: 1,
-        color: ink,
+        color: BLACK_INK,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
       }}
     >
       <span>{label}</span>
-      <span>{glyph}</span>
+      <span>♠</span>
     </span>
   );
 }
 
-function FaceCard({ rank, glyph, red, w }: { rank: string; glyph: string; red: boolean; w: number }) {
-  const ink = red ? RED_INK : BLACK_INK;
+function FaceCard({ rank, w }: { rank: string; w: number }) {
   return (
     <div style={cardStyle(w)}>
-      <Corner label={rank} glyph={glyph} ink={ink} w={w} />
+      <Corner label={rank} w={w} />
       <div
         style={{
           position: "absolute",
@@ -90,27 +87,27 @@ function FaceCard({ rank, glyph, red, w }: { rank: string; glyph: string; red: b
           placeItems: "center",
           fontFamily: "'Georgia','Times New Roman',serif",
           fontSize: `${w * 0.6}cqw`,
-          color: ink,
+          color: BLACK_INK,
           opacity: 0.8,
         }}
       >
-        {glyph}
+        ♠
       </div>
     </div>
   );
 }
 
-const TABLEAU: { faceDown: number; rank: string; glyph: string; red: boolean }[] = [
-  { faceDown: 5, rank: "8", glyph: "♣", red: false },
-  { faceDown: 5, rank: "K", glyph: "♥", red: true },
-  { faceDown: 5, rank: "3", glyph: "♠", red: false },
-  { faceDown: 5, rank: "Q", glyph: "♦", red: true },
-  { faceDown: 4, rank: "6", glyph: "♣", red: false },
-  { faceDown: 4, rank: "10", glyph: "♠", red: false },
-  { faceDown: 4, rank: "2", glyph: "♥", red: true },
-  { faceDown: 4, rank: "J", glyph: "♦", red: true },
-  { faceDown: 4, rank: "4", glyph: "♠", red: false },
-  { faceDown: 4, rank: "7", glyph: "♣", red: false },
+const TABLEAU: { faceDown: number; rank: string }[] = [
+  { faceDown: 5, rank: "8" },
+  { faceDown: 5, rank: "K" },
+  { faceDown: 5, rank: "3" },
+  { faceDown: 5, rank: "Q" },
+  { faceDown: 4, rank: "6" },
+  { faceDown: 4, rank: "10" },
+  { faceDown: 4, rank: "2" },
+  { faceDown: 4, rank: "J" },
+  { faceDown: 4, rank: "4" },
+  { faceDown: 4, rank: "7" },
 ];
 
 export default function SpiderPreview({ className }: GamePreviewProps) {
@@ -140,21 +137,17 @@ export default function SpiderPreview({ className }: GamePreviewProps) {
           right: 0,
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           padding: "1.4cqw 2.4cqw",
           background: "rgba(30,9,15,0.5)",
           borderBottom: "1px solid rgba(207,211,220,0.2)",
         }}
       >
-        <span style={{ fontSize: "1.8cqw", fontWeight: 800, letterSpacing: "0.08em", color: SILVER }}>SPIDER ♠</span>
         <div style={{ display: "flex", gap: "2.4cqw" }}>
           <Chip label="Score" value="500" />
-          <Chip label="Time" value="0:00" />
           <Chip label="Moves" value="0" />
+          <Chip label="Stock" value="5" />
         </div>
-        <span style={{ fontSize: "1.1cqw", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(236,228,232,0.7)" }}>
-          2-Suit · Free play
-        </span>
       </div>
 
       <div
@@ -217,26 +210,10 @@ export default function SpiderPreview({ className }: GamePreviewProps) {
               </div>
             ))}
             <div style={{ position: "absolute", top: `${pile.faceDown * faceDownGap}cqw`, left: 0 }}>
-              <FaceCard rank={pile.rank} glyph={pile.glyph} red={pile.red} w={w} />
+              <FaceCard rank={pile.rank} w={w} />
             </div>
           </div>
         ))}
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "1%",
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          fontSize: "1cqw",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "rgba(236,228,232,0.5)",
-        }}
-      >
-        Spider — traditional patience
       </div>
     </div>
   );

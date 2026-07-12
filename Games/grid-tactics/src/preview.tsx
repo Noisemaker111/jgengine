@@ -33,7 +33,7 @@ function Tile({ left, top, color, opacity }: { left: string; top: string; color:
   );
 }
 
-function Unit({ left, top, hull, trim, hp, maxHp, selected }: { left: string; top: string; hull: string; trim: string; hp: number; maxHp: number; selected?: boolean }) {
+function Unit({ left, top, hull, trim, hp, maxHp }: { left: string; top: string; hull: string; trim: string; hp: number; maxHp: number }) {
   return (
     <div style={{ position: "absolute", left, top, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5cqw" }}>
       <span
@@ -42,8 +42,7 @@ function Unit({ left, top, hull, trim, hp, maxHp, selected }: { left: string; to
           height: "4.6cqw",
           borderRadius: "0.6cqw",
           background: `linear-gradient(160deg, ${trim}, ${hull})`,
-          border: selected ? "2px solid #ffffff" : "1px solid rgba(255,255,255,0.25)",
-          boxShadow: selected ? "0 0 14px rgba(255,255,255,0.6)" : "none",
+          border: "1px solid rgba(255,255,255,0.25)",
         }}
       />
       <span style={{ fontSize: "1cqw", fontFamily: "Consolas, monospace", color: "#e6e8d8" }}>
@@ -79,17 +78,19 @@ export default function GridTacticsPreview({ className }: GamePreviewProps) {
         }}
       />
 
-      <Tile left="30%" top="48%" color="#57a8b8" opacity={0.32} />
-      <Tile left="38%" top="55%" color="#57a8b8" opacity={0.32} />
-      <Tile left="46%" top="46%" color="#57a8b8" opacity={0.32} />
-      <Tile left="58%" top="60%" color="#d84f35" opacity={0.24} />
-      <Tile left="66%" top="52%" color="#d84f35" opacity={0.24} />
+      {/* Obstacles — inner tiles of the outpost breach layout */}
+      <Tile left="46%" top="46%" color="#57a8b8" opacity={0.24} />
+      <Tile left="54%" top="60%" color="#57a8b8" opacity={0.24} />
 
-      <Unit left="20%" top="42%" hull="#3b5b8c" trim="#a9c4ec" hp={16} maxHp={16} selected />
-      <Unit left="22%" top="68%" hull="#2f8f7c" trim="#a9f0e0" hp={10} maxHp={10} />
-      <Unit left="30%" top="78%" hull="#b98a2e" trim="#ffe4a3" hp={20} maxHp={20} />
-      <Unit left="80%" top="40%" hull="#6b6f5a" trim="#c8cdb4" hp={6} maxHp={6} />
-      <Unit left="82%" top="66%" hull="#6b6f5a" trim="#c8cdb4" hp={6} maxHp={6} />
+      {/* Player squad — spawn column, full health */}
+      <Unit left="18%" top="42%" hull="#3b5b8c" trim="#a9c4ec" hp={16} maxHp={16} />
+      <Unit left="20%" top="68%" hull="#2f8f7c" trim="#a9f0e0" hp={10} maxHp={10} />
+      <Unit left="26%" top="56%" hull="#b98a2e" trim="#ffe4a3" hp={20} maxHp={20} />
+
+      {/* Breach enemies — wave 1: two crawlers, one spitter */}
+      <Unit left="80%" top="36%" hull="#8c2f3b" trim="#f2a3ac" hp={6} maxHp={6} />
+      <Unit left="80%" top="70%" hull="#8c2f3b" trim="#f2a3ac" hp={6} maxHp={6} />
+      <Unit left="72%" top="52%" hull="#5b3b8c" trim="#c8a9f0" hp={5} maxHp={5} />
 
       <div style={{ position: "absolute", top: "16%", left: "3%", ...panelStyle, display: "flex", flexDirection: "column", gap: "0.4cqw", width: "24cqw" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -100,24 +101,11 @@ export default function GridTacticsPreview({ className }: GamePreviewProps) {
         <span style={{ fontSize: "1.3cqw", letterSpacing: "0.12em", color: "#95997f", textTransform: "uppercase" }}>Your Turn</span>
       </div>
 
-      <div style={{ position: "absolute", bottom: "8%", left: "3%", ...panelStyle, display: "flex", flexDirection: "column", gap: "0.6cqw", width: "20cqw" }}>
-        <span style={labelStyle}>Selected Unit</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.8cqw" }}>
-          <span style={{ width: "3cqw", height: "3cqw", borderRadius: "0.5cqw", background: "linear-gradient(160deg, #a9c4ec, #3b5b8c)" }} />
-          <span style={{ fontSize: "1.5cqw", fontWeight: 700, color: "#e6e8d8" }}>Bulwark</span>
-        </div>
-        <div style={{ display: "flex", gap: "1cqw", fontSize: "1.1cqw", fontFamily: "Consolas, monospace", color: "#95997f" }}>
-          <span>MOVE 3</span>
-          <span>RNG 1</span>
-          <span>DMG 5</span>
-        </div>
-      </div>
-
       <div style={{ position: "absolute", bottom: "8%", right: "3%", display: "flex", gap: "0.8cqw" }}>
         {[
-          { hp: 16, maxHp: 16, selected: true },
-          { hp: 10, maxHp: 10, selected: false },
-          { hp: 20, maxHp: 20, selected: false },
+          { hp: 16, maxHp: 16 },
+          { hp: 10, maxHp: 10 },
+          { hp: 20, maxHp: 20 },
         ].map((u, i) => (
           <span
             key={i}
@@ -126,8 +114,8 @@ export default function GridTacticsPreview({ className }: GamePreviewProps) {
               alignItems: "center",
               gap: "0.5cqw",
               padding: "0.6cqw 0.9cqw",
-              background: u.selected ? "#6e6230" : "#14160f",
-              border: `1px solid ${u.selected ? "#d8c169" : "#454a35"}`,
+              background: "#14160f",
+              border: "1px solid #454a35",
               fontSize: "1.1cqw",
               fontFamily: "Consolas, monospace",
               color: "#e6e8d8",

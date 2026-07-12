@@ -159,18 +159,6 @@ export default function PachinkoParlorPreview({ className }: GamePreviewProps) {
         </div>
       </div>
 
-      <div style={{ position: "absolute", left: "2%", top: "14%", padding: "0.9cqw 1.4cqw", ...cardStyle }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: "0.9cqw" }}>
-          <span style={{ fontSize: "1.3cqw", fontWeight: 900, letterSpacing: "0.28em", color: "#ffcf5c" }}>
-            PACHINKO
-          </span>
-          <span style={{ fontSize: "1.7cqw", fontWeight: 700, color: "#e0492f" }}>パチンコ</span>
-        </div>
-        <div style={{ fontSize: "1.1cqw", letterSpacing: "0.05em", color: "#f6d888", opacity: 0.85 }}>
-          Shōwa Parlor
-        </div>
-      </div>
-
       <div style={{ position: "absolute", right: "2%", top: "14%", padding: "1.1cqw 1.5cqw", ...cardStyle }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1cqw" }}>
           <span
@@ -222,96 +210,38 @@ export default function PachinkoParlorPreview({ className }: GamePreviewProps) {
           left: "50%",
           bottom: "3%",
           transform: "translateX(-50%)",
-          width: "42cqw",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.8cqw",
-          padding: "1.3cqw 1.8cqw",
+          width: "30cqw",
+          padding: "1cqw 1.6cqw",
           ...cardStyle,
           borderRadius: "1.8cqw",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "1.3cqw" }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4cqw", ...statLabelStyle }}>
-              <span>Power</span>
-              <span>0%</span>
-            </div>
-            <div
-              style={{
-                position: "relative",
-                height: "1.7cqw",
-                overflow: "hidden",
-                borderRadius: "99cqw",
-                background: "rgba(0,0,0,0.45)",
-                border: "1px solid #9c6f22",
-              }}
-            >
-              <span
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  bottom: 0,
-                  left: "60%",
-                  width: "12%",
-                  background: "rgba(255,207,92,0.25)",
-                  borderLeft: "1px solid #ffcf5c",
-                  borderRight: "1px solid #ffcf5c",
-                }}
-              />
-              <span
-                style={{
-                  position: "absolute",
-                  left: "66%",
-                  top: "50%",
-                  transform: "translate(-50%,-50%)",
-                  fontSize: "0.8cqw",
-                  fontWeight: 700,
-                  color: "#3a2416",
-                }}
-              >
-                GATE
-              </span>
-            </div>
-          </div>
-          <span
-            style={{
-              borderRadius: "1.2cqw",
-              padding: "1cqw 1.9cqw",
-              textAlign: "center",
-              fontSize: "1.5cqw",
-              fontWeight: 900,
-              letterSpacing: "0.08em",
-              background: "linear-gradient(160deg, #b8281a, #7d1a10)",
-              border: "1px solid #ffd98a",
-              color: "#ffd98a",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
-            }}
-          >
-            HOLD
-            <div style={{ fontSize: "0.8cqw", fontWeight: 400, letterSpacing: "0.14em", opacity: 0.8 }}>
-              LAUNCH · SPACE
-            </div>
-          </span>
-          <span
-            style={{
-              borderRadius: "1.2cqw",
-              padding: "1cqw 1.3cqw",
-              textAlign: "center",
-              fontSize: "1.2cqw",
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              background: "rgba(0,0,0,0.35)",
-              border: "1px solid #9c6f22",
-              color: "#f4e7c9",
-            }}
-          >
-            AUTO
-            <div style={{ fontSize: "0.8cqw", fontWeight: 400, letterSpacing: "0.14em", opacity: 0.8 }}>OFF · F</div>
-          </span>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4cqw", ...statLabelStyle }}>
+          <span>Power</span>
+          <span>0%</span>
         </div>
-        <div style={{ textAlign: "center", fontSize: "0.9cqw", letterSpacing: "0.24em", color: "#f6d888", opacity: 0.7 }}>
-          TRADITIONAL JAPANESE PACHINKO
+        <div
+          style={{
+            position: "relative",
+            height: "1.7cqw",
+            overflow: "hidden",
+            borderRadius: "99cqw",
+            background: "rgba(0,0,0,0.45)",
+            border: "1px solid #9c6f22",
+          }}
+        >
+          <span
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: "60%",
+              width: "12%",
+              background: "rgba(255,207,92,0.25)",
+              borderLeft: "1px solid #ffcf5c",
+              borderRight: "1px solid #ffcf5c",
+            }}
+          />
         </div>
       </div>
     </div>

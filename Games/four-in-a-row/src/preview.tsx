@@ -16,20 +16,6 @@ const emptyHoleStyle: CSSProperties = {
   boxShadow: "inset 0.3cqw 0.4cqw 0.7cqw rgba(3,8,24,0.85), inset -0.15cqw -0.15cqw 0.3cqw rgba(120,150,220,0.25)",
 };
 
-function Disc({ fill, edge }: { fill: string; edge: string }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        borderRadius: "50%",
-        background: `radial-gradient(circle at 36% 30%, #ffffff55 0%, ${fill} 42%, ${edge} 100%)`,
-        boxShadow: "inset 0.3cqw 0.4cqw 0.6cqw rgba(255,255,255,0.35), inset -0.3cqw -0.4cqw 0.8cqw rgba(0,0,0,0.35)",
-      }}
-    />
-  );
-}
-
 function PlayerChip({ label, color, edge, active }: { label: string; color: string; edge: string; active: boolean }) {
   return (
     <div
@@ -83,50 +69,19 @@ export default function FourInARowPreview({ className }: GamePreviewProps) {
         }}
       />
 
-      <div style={{ position: "absolute", top: "3%", left: "3%", display: "flex", flexDirection: "column", gap: "0.5cqw" }}>
-        <span style={{ fontSize: "1.7cqw", fontWeight: 900, color: "#0f172a" }}>Four in a Row</span>
-        <span style={{ fontSize: "1.1cqw", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#3b5998" }}>
-          Drop · connect · win
-        </span>
-      </div>
-
       <div style={{ position: "absolute", top: "3%", right: "3%", display: "flex", flexDirection: "column", gap: "0.7cqw" }}>
         <PlayerChip label="Sunflower · You" color="#fbbf24" edge="#d97706" active />
-        <PlayerChip label="Crimson · AI · Easy" color="#ef4444" edge="#991b1b" active={false} />
+        <PlayerChip label="Crimson · AI" color="#ef4444" edge="#991b1b" active={false} />
       </div>
 
       <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
         <div style={{ ...boardFrameStyle, borderRadius: "1.4cqw", padding: "1.6cqw" }}>
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 5cqw)`, gap: "0.9cqw" }}>
-            {cells.map((i) => {
-              const isGhost = i === 3;
-              return (
-                <div key={i} style={{ position: "relative", width: "5cqw", height: "5cqw", borderRadius: "50%", ...emptyHoleStyle }}>
-                  {isGhost ? (
-                    <div style={{ position: "absolute", inset: 0, opacity: 0.4 }}>
-                      <Disc fill="#fbbf24" edge="#d97706" />
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
+            {cells.map((i) => (
+              <div key={i} style={{ position: "relative", width: "5cqw", height: "5cqw", borderRadius: "50%", ...emptyHoleStyle }} />
+            ))}
           </div>
         </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "3%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          fontSize: "1.1cqw",
-          fontWeight: 600,
-          color: "#3b5998",
-          textAlign: "center",
-        }}
-      >
-        The Captain&apos;s Mistress — popularized as Connect Four, 1974
       </div>
     </div>
   );

@@ -49,24 +49,6 @@ function Pip({ dark, count, label, active }: { dark: boolean; count: number; lab
   );
 }
 
-function Btn({ children, active }: { children: string; active?: boolean }) {
-  return (
-    <span
-      style={{
-        padding: "0.6cqw 1.1cqw",
-        borderRadius: "0.7cqw",
-        border: active ? `1px solid ${COLORS.brass}` : "1px solid rgba(255,255,255,0.1)",
-        background: active ? "rgba(198,154,67,0.2)" : "rgba(255,255,255,0.04)",
-        color: active ? COLORS.text : COLORS.subtext,
-        fontSize: "1cqw",
-        fontWeight: 600,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
 const START_DISCS = [
   { row: 3, col: 3, dark: false },
   { row: 3, col: 4, dark: true },
@@ -93,31 +75,7 @@ export default function ReversiPreview({ className }: GamePreviewProps) {
       <div
         style={{
           position: "absolute",
-          top: "16%",
-          left: "3cqw",
-          padding: "1cqw 1.2cqw",
-          borderRadius: "1cqw",
-          background: COLORS.panelBg,
-          boxShadow: `inset 0 0 0 1px ${COLORS.panelBorder}`,
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.6cqw",
-        }}
-      >
-        <div style={{ display: "flex", gap: "0.6cqw" }}>
-          <Btn active>vs Computer</Btn>
-          <Btn>2 Players</Btn>
-        </div>
-        <div style={{ display: "flex", gap: "0.6cqw" }}>
-          <Btn>New Game</Btn>
-          <Btn>Undo</Btn>
-        </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          top: "16%",
+          top: "6%",
           left: "50%",
           transform: "translateX(-50%)",
           display: "flex",

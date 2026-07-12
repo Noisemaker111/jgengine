@@ -77,12 +77,13 @@ const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 const CELL = "1.9cqw";
 
+const SPAWN_COLUMN = 3;
 const boardCells = Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, () => null as string | null);
 const activeT: readonly (readonly [number, number])[] = [
-  [1, 0],
-  [0, 1],
-  [1, 1],
-  [2, 1],
+  [1 + SPAWN_COLUMN, 0],
+  [0 + SPAWN_COLUMN, 1],
+  [1 + SPAWN_COLUMN, 1],
+  [2 + SPAWN_COLUMN, 1],
 ];
 const activeColor = "#a855f7";
 const activeSet = new Set(activeT.map(([x, y]) => y * BOARD_WIDTH + x));
@@ -151,19 +152,6 @@ export default function BlockStackerPreview({ className }: GamePreviewProps) {
       </div>
 
       <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div
-          style={{
-            marginBottom: "1cqw",
-            fontSize: "2.2cqw",
-            fontWeight: 900,
-            textTransform: "uppercase",
-            letterSpacing: "0.3em",
-            color: "#67e8f9",
-            textShadow: "0 0 1cqw rgba(34,211,238,0.5)",
-          }}
-        >
-          Block Stacker
-        </div>
         <div
           style={{
             position: "relative",

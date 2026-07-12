@@ -3,7 +3,6 @@ import type { GamePreviewProps } from "@jgengine/react/preview";
 
 const SERIF = "'Iowan Old Style', 'Palatino Linotype', 'Georgia', serif";
 
-const BRASS = "#c69a46";
 const BRASS_BRIGHT = "#efd489";
 const IVORY = "#efe6d2";
 const MUTED = "#b39a76";
@@ -48,44 +47,6 @@ function StatTile({ label, value, accent }: { label: string; value: string; acce
   );
 }
 
-function PillButton({ label, badge, primary }: { label: string; badge: string; primary?: boolean }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "0.6cqw",
-        borderRadius: "0.8cqw",
-        padding: "0.7cqw 1.4cqw",
-        fontSize: "1.1cqw",
-        fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
-        background: primary ? BRASS : "rgba(38,32,23,0.56)",
-        color: primary ? "#241704" : IVORY,
-        border: `1px solid ${primary ? BRASS_BRIGHT : "#4a3620"}`,
-      }}
-    >
-      <span>{label}</span>
-      <span
-        style={{
-          minWidth: "1.4cqw",
-          borderRadius: "0.3cqw",
-          padding: "0.1cqw 0.4cqw",
-          fontSize: "0.85cqw",
-          fontWeight: 800,
-          textAlign: "center",
-          background: primary ? "#efd48922" : "transparent",
-          border: primary ? "none" : "1px solid #6a4f2c",
-          color: primary ? "#241704" : BRASS_BRIGHT,
-        }}
-      >
-        {badge}
-      </span>
-    </span>
-  );
-}
-
 export default function PegSolitairePreview({ className }: GamePreviewProps) {
   return (
     <div
@@ -103,15 +64,6 @@ export default function PegSolitairePreview({ className }: GamePreviewProps) {
         userSelect: "none",
       }}
     >
-      <div style={{ position: "absolute", left: "2.4cqw", top: "13%", ...panelStyle, padding: "1cqw 1.6cqw" }}>
-        <div style={{ fontSize: "1.5cqw", fontWeight: 900, fontFamily: SERIF, textTransform: "uppercase", letterSpacing: "0.2em", color: BRASS_BRIGHT }}>
-          Peg Solitaire
-        </div>
-        <div style={{ fontSize: "0.85cqw", textTransform: "uppercase", letterSpacing: "0.16em", color: MUTED }}>
-          English cross · 33 holes
-        </div>
-      </div>
-
       <div
         style={{
           position: "absolute",
@@ -126,24 +78,6 @@ export default function PegSolitairePreview({ className }: GamePreviewProps) {
       >
         <StatTile label="Pegs left" value="32" />
         <StatTile label="Moves" value="0" />
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 1.4cqw" }}>
-          <span style={labelStyle}>State</span>
-          <span style={{ fontSize: "1.1cqw", fontWeight: 700, color: IVORY }}>Ready</span>
-        </div>
-      </div>
-
-      <div style={{ position: "absolute", right: "2.4cqw", top: "13%", ...panelStyle, padding: "1cqw 1.6cqw", minWidth: "11cqw" }}>
-        <div style={{ marginBottom: "0.5cqw", fontSize: "0.9cqw", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: BRASS_BRIGHT }}>
-          Best · English cross
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "1.4cqw" }}>
-          <span style={labelStyle}>Fewest pegs</span>
-          <span style={{ fontSize: "1.1cqw", fontWeight: 700, fontFamily: SERIF, color: IVORY }}>—</span>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "1.4cqw" }}>
-          <span style={labelStyle}>In moves</span>
-          <span style={{ fontSize: "1.1cqw", fontWeight: 700, fontFamily: SERIF, color: IVORY }}>—</span>
-        </div>
       </div>
 
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "16% 4% 15%" }}>
@@ -214,32 +148,6 @@ export default function PegSolitairePreview({ className }: GamePreviewProps) {
             })}
           </div>
         </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          bottom: "3%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "0.6cqw",
-          ...panelStyle,
-          padding: "1cqw 1.6cqw",
-        }}
-      >
-        <div style={{ display: "flex", gap: "0.8cqw" }}>
-          <PillButton label="Hint" badge="H" primary />
-          <PillButton label="Undo" badge="Z" />
-          <PillButton label="Restart" badge="R" />
-        </div>
-        <div style={{ fontSize: "0.85cqw", color: MUTED }}>Click a peg to see its jumps, then click a glowing hole — or drag it across.</div>
-      </div>
-
-      <div style={{ position: "absolute", right: "2.4cqw", bottom: "3%", maxWidth: "16cqw", textAlign: "right", fontSize: "0.85cqw", lineHeight: 1.4, color: MUTED }}>
-        Peg solitaire — traditional, first recorded at the court of Louis XIV (1697)
       </div>
 
       <div
