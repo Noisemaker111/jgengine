@@ -425,6 +425,7 @@
 - `LightingConfig` (interface): interface LightingConfig — Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied.
 - `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
 - `ModelAnimationConfig` (interface): interface ModelAnimationConfig — Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses.
+- `ModelAnimationStates` (interface): interface ModelAnimationStates — Movement-state clip set for `ModelAnimationConfig.states`: the shell reads the entity's live speed each frame and crossfades between these clips, so a walking mob animates without any game-side driver.
 - `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph.
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.

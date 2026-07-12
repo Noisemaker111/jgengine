@@ -181,3 +181,11 @@ export interface NpcDef {
 
 export const CLASS_ENTITY_ID = "player_hero";
 export const COPPER = "copper";
+
+export function classEntityId(classId: string): string {
+  return `${CLASS_ENTITY_ID}_${classId}`;
+}
+
+export function isPlayerEntityId(catalogId: string): boolean {
+  return catalogId === CLASS_ENTITY_ID || catalogId.startsWith(`${CLASS_ENTITY_ID}_`);
+}

@@ -4,6 +4,7 @@ import { createTalentTree, type TalentTree } from "@jgengine/core/game/talents";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { classById } from "../classes/catalog";
+import { classEntityId } from "../model";
 import { itemDefById } from "../items/catalog";
 import { resolveAbilityMods } from "../talents/abilityMods";
 import { SPECS, TALENT_POINTS_RULE } from "../talents/catalog";
@@ -321,9 +322,34 @@ export function applySheet(ctx: GameContext, userId: string, options?: { fill?: 
   }
 }
 
+export function heroEntityId(ctx: GameContext, userId: string): string {
+  const classId = ctx.game.store.get(storeKeys.class(userId));
+  return typeof classId === "string" ? classEntityId(classId) : CLASS_ENTITY_ID;
+}
+
+function respawnAsClassEntity(ctx: GameContext, userId: string): void {
+  const existing = ctx.scene.entity.get(userId);
+  if (existing === null) return;
+  const position: [number, number, number] = [
+    existing.position[0],
+    existing.position[1],
+    existing.position[2],
+  ];
+  const stats = ctx.scene.entity.stats;
+  const held = (["health", "resource", "xp", "level"] as const).map(
+    (statId) => [statId, stats.get(userId, statId)] as const,
+  );
+  ctx.scene.entity.despawn(userId);
+  ctx.scene.entity.spawn(heroEntityId(ctx, userId), { id: userId, position });
+  for (const [statId, value] of held) {
+    if (value !== null) stats.set(userId, statId, { max: value.max, current: value.current });
+  }
+}
+
 export function selectClass(ctx: GameContext, userId: string, classId: string): void {
   const cls = classById(classId);
   ctx.game.store.set(storeKeys.class(userId), cls.id);
+  respawnAsClassEntity(ctx, userId);
   setGamePhase(ctx, "playing");
   const hero: HeroRuntime = {
     classId: cls.id,
@@ -386,7 +412,7 @@ export function teleportHero(ctx: GameContext, userId: string, x: number, z: num
   );
   if (ctx.scene.entity.get(userId) === null) return false;
   ctx.scene.entity.despawn(userId);
-  ctx.scene.entity.spawn(CLASS_ENTITY_ID, {
+  ctx.scene.entity.spawn(heroEntityId(ctx, userId), {
     id: userId,
     position: [x, ctx.world.groundHeightAt(x, z), z],
   });

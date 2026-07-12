@@ -414,19 +414,36 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   const gltf = useLoader(GLTFLoader, model.url);
   const ctx = useGameContext();
   const material = model.material;
-  const scale = model.scale ?? 1;
   const baseY = model.y ?? 0;
   const dims = model.dims;
-  const centered = (model.anchor ?? "center") === "center" && dims !== undefined;
-  const position: [number, number, number] = centered
-    ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
-    : [0, baseY, 0];
 
   const scene = useMemo(() => {
     const cloned = cloneModelScene(gltf.scene);
     if (material !== undefined) applyMaterialOverride(cloned, material, { clone: false });
     return cloned;
   }, [gltf, material]);
+
+  const measured = useMemo(() => {
+    if (model.targetHeight === undefined) return null;
+    const box = new THREE.Box3().setFromObject(scene);
+    const height = box.max.y - box.min.y;
+    if (!Number.isFinite(height) || height <= 0) return null;
+    return {
+      normalize: model.targetHeight / height,
+      minY: box.min.y,
+      centerX: (box.min.x + box.max.x) / 2,
+      centerZ: (box.min.z + box.max.z) / 2,
+    };
+  }, [scene, model.targetHeight]);
+
+  const scale = (model.scale ?? 1) * (measured?.normalize ?? 1);
+  const centered = (model.anchor ?? "center") === "center" && dims !== undefined;
+  const position: [number, number, number] =
+    measured !== null
+      ? [-scale * measured.centerX, baseY - scale * measured.minY, -scale * measured.centerZ]
+      : centered
+        ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
+        : [0, baseY, 0];
 
   useEffect(
     () => () => {
@@ -438,13 +455,45 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   const animation = model.animation;
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const animationPausedRef = useRef(false);
+  const stateActionsRef = useRef<{
+    actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>>;
+    active: "idle" | "walk" | "run";
+    lastPos: [number, number, number] | null;
+    smoothedSpeed: number;
+  } | null>(null);
+  const states = animation?.states;
 
   useEffect(() => {
     if (animation === undefined || gltf.animations.length === 0) {
       mixerRef.current = null;
+      stateActionsRef.current = null;
       return;
     }
     const mixer = new THREE.AnimationMixer(scene);
+    if (states !== undefined) {
+      const clipFor = (name: string) =>
+        THREE.AnimationClip.findByName(gltf.animations, name) ?? gltf.animations[0]!;
+      const actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>> = {
+        idle: mixer.clipAction(clipFor(states.idle)),
+        walk: mixer.clipAction(clipFor(states.walk)),
+        ...(states.run === undefined ? {} : { run: mixer.clipAction(clipFor(states.run)) }),
+      };
+      for (const action of Object.values(actions)) {
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.timeScale = animation.timeScale ?? 1;
+        action.enabled = true;
+      }
+      actions.idle!.play();
+      mixer.update(0);
+      mixerRef.current = mixer;
+      stateActionsRef.current = { actions, active: "idle", lastPos: null, smoothedSpeed: 0 };
+      animationPausedRef.current = false;
+      return () => {
+        mixer.stopAllAction();
+        mixerRef.current = null;
+        stateActionsRef.current = null;
+      };
+    }
     const clip =
       (animation.clip !== undefined ? THREE.AnimationClip.findByName(gltf.animations, animation.clip) : undefined) ??
       gltf.animations[0]!;
@@ -463,7 +512,16 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [scene, gltf, animation?.clip, animation?.loop, animation?.timeScale, animation?.paused, animation?.time]);
+  }, [
+    scene,
+    gltf,
+    animation?.clip,
+    animation?.loop,
+    animation?.timeScale,
+    animation?.paused,
+    animation?.time,
+    states,
+  ]);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
@@ -478,6 +536,38 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   }, [scene]);
 
   useFrame((_state, delta) => {
+    const stateMachine = stateActionsRef.current;
+    if (stateMachine !== null && states !== undefined && instanceId !== undefined && delta > 0) {
+      const entity = ctx.scene.entity.get(instanceId);
+      if (entity !== null) {
+        const [x, , z] = entity.position;
+        if (stateMachine.lastPos !== null) {
+          const instantSpeed =
+            Math.hypot(x - stateMachine.lastPos[0], z - stateMachine.lastPos[2]) / delta;
+          stateMachine.smoothedSpeed +=
+            (instantSpeed - stateMachine.smoothedSpeed) * Math.min(1, delta * 12);
+        }
+        stateMachine.lastPos = [x, entity.position[1], z];
+        const walkSpeed = states.walkSpeed ?? 0.5;
+        const runSpeed = states.runSpeed ?? 6;
+        const next: "idle" | "walk" | "run" =
+          stateMachine.smoothedSpeed < walkSpeed
+            ? "idle"
+            : stateMachine.actions.run !== undefined && stateMachine.smoothedSpeed >= runSpeed
+              ? "run"
+              : "walk";
+        if (next !== stateMachine.active) {
+          const fade = states.fadeSec ?? 0.2;
+          const from = stateMachine.actions[stateMachine.active];
+          const to = stateMachine.actions[next];
+          if (from !== undefined && to !== undefined) {
+            to.reset().fadeIn(fade).play();
+            from.fadeOut(fade);
+          }
+          stateMachine.active = next;
+        }
+      }
+    }
     if (mixerRef.current !== null && !animationPausedRef.current) mixerRef.current.update(delta);
     if (instanceId === undefined) return;
     const paint = ctx.scene.entity.paint;
