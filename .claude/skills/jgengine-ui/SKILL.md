@@ -39,6 +39,10 @@ Read [reference.md](reference.md) when building or reviewing a game interface. I
 - Themes change geometry, composition, typography roles, icons, motion, materials, sound, and density—not only colors.
 - Ordinary rounded cards, pill buttons, generic dark modals, and dashboard grids are fallback failures, not defaults.
 
+## Preview states ship with the UI
+
+Every game ships `src/preview.tsx`: a static default frame (default export, used by the website card) plus a `states` named export (`GamePreviewStates` from `@jgengine/react/preview`) keying named UI states — `stage_1`, `game_over`, `boss_intro` — to components. Build state entries from the game's **real UI components** with fixture snapshots (canned props/state), not redrawn lookalikes; that turns every key into a capturable render test. Capture any state instantly with `bun run shoot <game> --preview <stateKey>` — no sim, no three.js, no hang risk — and use it as the screenshot-critique loop for HUD/menu/overlay work before any full-shell `--mode ui`/`play` glance.
+
 ## Rejection test
 
 Reject and revise the UI when it could be mistaken for a SaaS dashboard, landing page, admin panel, documentation page, or generic emulator overlay.

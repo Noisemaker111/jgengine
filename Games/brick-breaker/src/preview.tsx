@@ -1,4 +1,119 @@
-import type { GamePreviewProps } from "@jgengine/react/preview";
+import type { ReactNode } from "react";
+import type { GamePreviewProps, GamePreviewStates } from "@jgengine/react/preview";
+
+import type { BrickBreakerSnapshot } from "./game/breakout/store";
+import { Hud } from "./game/ui/components/Hud";
+import { Overlays } from "./game/ui/components/Overlays";
+
+const serveSnapshot: BrickBreakerSnapshot = {
+  status: "serve",
+  paused: false,
+  bricks: [],
+  balls: [],
+  powerups: [],
+  paddle: { cx: 0.5, y: 0.94, w: 0.16, h: 0.02, wide: false },
+  score: 0,
+  best: 4820,
+  lives: 3,
+  level: 1,
+  levelName: "First Contact",
+  totalLevels: 12,
+  bricksLeft: 48,
+  combo: 0,
+  maxCombo: 0,
+  wideMs: 0,
+  slowMs: 0,
+  ballSpeed: 0,
+  bannerText: "Level 1 — First Contact",
+  bannerMs: 1,
+  message: null,
+  newBest: false,
+};
+
+const gameOverSnapshot: BrickBreakerSnapshot = {
+  ...serveSnapshot,
+  status: "gameover",
+  score: 12750,
+  best: 18200,
+  lives: 0,
+  level: 7,
+  levelName: "Glyph A",
+  bricksLeft: 21,
+  maxCombo: 9,
+  bannerText: null,
+  bannerMs: 0,
+};
+
+function BrickWall() {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: "6%",
+        right: "6%",
+        top: "8%",
+        display: "grid",
+        gridTemplateColumns: "repeat(12, 1fr)",
+        gap: "0.7cqw",
+      }}
+    >
+      {Array.from({ length: 48 }, (_, i) => (
+        <span
+          key={i}
+          style={{
+            height: "2.6cqw",
+            borderRadius: "0.4cqw",
+            background: "linear-gradient(#7be9fb, #0b8fb0)",
+            boxShadow: "inset 0 0 0 1px #c8f7ff33",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Cabinet({ snapshot, children }: { snapshot: BrickBreakerSnapshot; children?: ReactNode }) {
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden bg-[#040313] font-sans text-white select-none"
+      style={{ containerType: "size" }}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(91,76,255,0.24),transparent_34%),linear-gradient(#07051e,#02020b)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:repeating-linear-gradient(to_bottom,transparent_0,transparent_3px,white_4px)]" />
+      <div className="relative mx-auto flex h-full w-full max-w-5xl flex-col px-2 py-2 sm:px-5 sm:py-4">
+        <header className="grid shrink-0 grid-cols-[auto_1fr] items-center gap-3 border-b border-violet-400/25 px-1 pb-2">
+          <div className="hidden text-[9px] font-black uppercase tracking-[0.35em] text-fuchsia-300/75 sm:block">
+            JG-76 cabinet
+          </div>
+          <div className="min-w-0">
+            <Hud snapshot={snapshot} compact={false} />
+          </div>
+        </header>
+        <div className="relative mt-2 min-h-0 flex-1 border-x-2 border-t-2 border-violet-500/55 bg-[#06051b] shadow-[0_0_40px_rgba(76,29,149,0.38),inset_0_0_38px_rgba(34,211,238,0.04)]">
+          <div className="pointer-events-none absolute left-0 top-0 z-10 h-5 w-5 border-l-4 border-t-4 border-cyan-300/70" />
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-5 w-5 border-r-4 border-t-4 border-cyan-300/70" />
+          {children}
+          <Overlays snapshot={snapshot} onRestart={() => undefined} coarsePointer={false} />
+        </div>
+        <div className="shrink-0 border-x-2 border-b-2 border-violet-500/55 bg-[#090721] px-3 py-2">
+          <div className="flex items-center justify-between gap-3 text-[8px] uppercase tracking-[0.22em] text-slate-500">
+            <span>A / D move · Space launch · P pause</span>
+            <span className="hidden sm:inline">Breakout tribute · 1976</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const states: GamePreviewStates = {
+  stage_1: () => (
+    <Cabinet snapshot={serveSnapshot}>
+      <BrickWall />
+    </Cabinet>
+  ),
+  game_over: () => <Cabinet snapshot={gameOverSnapshot} />,
+};
 
 export default function BrickBreakerPreview({ className }: GamePreviewProps) {
   return (

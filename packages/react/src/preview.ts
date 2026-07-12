@@ -5,3 +5,5 @@ export type GamePreviewProps = {
 };
 
 export type GamePreviewComponent = ComponentType<GamePreviewProps>;
+
+export type GamePreviewStates = Record<string, GamePreviewComponent>;
