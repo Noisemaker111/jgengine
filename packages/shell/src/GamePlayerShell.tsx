@@ -46,29 +46,14 @@ import {
   selectWithinRect,
   type ScreenRect,
 } from "@jgengine/core/scene/selection";
-import {
-  advancePlayerMotion,
-  constrainStepToAxis,
-  createEmptyMovementKeys,
-  createPlayerMotionState,
-  resolveMovementIntent,
-  resolveObstacleStep,
-  snapPositionToGrid,
-  type CollisionObstacle,
-  type MovementTuningOverrides,
-} from "@jgengine/core/movement/movementModel";
 import { steerYaw } from "@jgengine/core/movement/steering";
-import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import {
-  advanceVoxelPlayer,
-  createVoxelPlayerBody,
-  type VoxelPlayerBody,
-} from "@jgengine/core/movement/voxelController";
+import { stepPlayerMovement, resolvePlayerMovementTuning } from "@jgengine/core/movement/playerMovement";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import { attachWorldSync } from "./worldSync";
-import { applyHorizontalImpulses, type MotionIntentBatch } from "@jgengine/core/runtime/motionIntents";
-import { groundFieldFor } from "@jgengine/core/world/terrain";
+import { localCommandSink, resolveCommandSink, type CommandSink } from "./commandSink";
+import { inputFramesEqual, resolveInputSink, type InputSink } from "./inputSink";
+import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -85,10 +70,10 @@ import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
 import type {
   BackdropConfig,
+  DirectionalLightingConfig,
   EntitySpriteConfig,
   LightingConfig,
   ModelConfig,
-  MovementCommitFrame,
   ObjectStyle,
   PointerConfig,
 } from "@jgengine/core/game/playableGame";
@@ -117,6 +102,7 @@ import { VERSION } from "@jgengine/core/meta/changelog";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
+import { PostProcessing } from "./postfx/PostProcessing";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { collisionDebug } from "./devtools/collisionDebug";
 import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
@@ -316,72 +302,48 @@ export function dispatchBoundAction(
   pitch: number,
   aim: Aim,
   reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS,
+  sink: CommandSink = localCommandSink(ctx),
 ): void {
   const command = resolveActionCommand(action, (name) => ctx.game.commands.has(name), reserved);
-  if (command !== null) ctx.game.commands.run(command, { yaw, pitch, aim });
+  if (command !== null) sink.run(command, { yaw, pitch, aim });
 }
 
-const OBSTACLE_GATHER_RADIUS = 3;
-
-/** Placed scene objects within `radius` of `center`, as `CollisionObstacle`s for `resolveObstacleStep` (#162.1). */
-export function nearbyObstacles(
-  objects: readonly SceneObject[],
-  center: readonly [number, number, number],
-  radius: number = OBSTACLE_GATHER_RADIUS,
-): CollisionObstacle[] {
-  const radiusSq = radius * radius;
-  const result: CollisionObstacle[] = [];
-  for (const object of objects) {
-    const dx = object.position[0] - center[0];
-    const dz = object.position[2] - center[2];
-    if (dx * dx + dz * dz <= radiusSq) result.push({ position: object.position });
-  }
-  return result;
-}
-
-/** Applies a pending `MotionIntentBatch` to a vertical velocity: impulses add, then `verticalVelocity` replaces the result outright (#162.4). */
-export function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number {
-  if (batch === null) return currentVelocity;
-  let velocity = currentVelocity;
-  for (const impulse of batch.impulses) velocity += impulse;
-  return batch.verticalVelocity ?? velocity;
-}
+export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
+export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
+export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
+export { hasEnvironmentTerrain } from "@jgengine/core/world/terrain";
 
 /** The world's declared sky, when its world feature is an environment with one (#196.1). */
 export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironmentDescriptor | undefined {
   return world?.kind === "environment" ? world.sky : undefined;
 }
 
-/**
- * Maps the game's declared `physics` onto the movement controllers' tuning
- * overrides. `PhysicsConfig.gravity` is a signed world acceleration (negative
- * points down, matching every game's config and the Y-up convention), but the
- * controllers integrate `velocityY -= gravityAcceleration * dt` and so expect a
- * positive downward magnitude. Negating here is what keeps a down-pointing
- * gravity pulling the player *down*; passing the signed value straight through
- * flipped the sign and launched airborne players upward instead.
- */
-export function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined {
-  if (physics === undefined) return undefined;
-  return {
-    get gravityAcceleration() {
-      return physics.gravity === undefined ? undefined : -physics.gravity;
-    },
-    get jumpVelocity() {
-      return physics.jumpVelocity;
-    },
-  };
-}
-
-/** True when the world is an environment feature with terrain, so the voxel controller should sample its height. */
-export function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean {
-  return world?.kind === "environment" && (world.terrain !== undefined || (world.islands?.length ?? 0) > 0);
-}
-
 function colorFromId(id: string): string {
   let hash = 0;
   for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
   return `hsl(${hash % 360}, 65%, 55%)`;
+}
+
+function DirectionalShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
+  const size = entry.shadowCameraSize ?? 40;
+  return (
+    <directionalLight
+      position={[entry.position[0], entry.position[1], entry.position[2]]}
+      intensity={entry.intensity ?? 1.3}
+      color={entry.color}
+      castShadow={entry.castShadow ?? false}
+      shadow-mapSize-width={entry.shadowMapSize ?? 1024}
+      shadow-mapSize-height={entry.shadowMapSize ?? 1024}
+      shadow-camera-left={-size}
+      shadow-camera-right={size}
+      shadow-camera-top={size}
+      shadow-camera-bottom={-size}
+      shadow-camera-near={0.5}
+      shadow-camera-far={Math.max(200, size * 6)}
+      shadow-bias={entry.shadowBias ?? -0.0004}
+      shadow-normalBias={entry.shadowNormalBias ?? 0.02}
+    />
+  );
 }
 
 function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
@@ -400,13 +362,7 @@ function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
         />
       ) : null}
       {(lighting.directional ?? []).map((entry, index) => (
-        <directionalLight
-          key={index}
-          position={[entry.position[0], entry.position[1], entry.position[2]]}
-          intensity={entry.intensity ?? 1.3}
-          color={entry.color}
-          castShadow={entry.castShadow ?? false}
-        />
+        <DirectionalShadowLight key={index} entry={entry} />
       ))}
     </>
   );
@@ -1021,6 +977,7 @@ function WorldActors({
   renderEntity,
   renderObject,
   selectedIds,
+  hideLocalActor,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
@@ -1030,6 +987,7 @@ function WorldActors({
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
   selectedIds: ReadonlySet<string>;
+  hideLocalActor: boolean;
 }) {
   const ctx = useGameContext();
   const entities = useSceneEntities();
@@ -1045,6 +1003,7 @@ function WorldActors({
     <>
       {entities
         .filter((entity) => entity.name !== WORLD_ITEM_ENTITY_NAME)
+        .filter((entity) => !(hideLocalActor && entity.id === controlledId))
         .map((entity) => (
           <EntityMarker
             key={entity.id}
@@ -1088,6 +1047,7 @@ function WorldView({
   renderEntity,
   renderObject,
   selectedIds,
+  hideLocalActor,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
@@ -1098,6 +1058,7 @@ function WorldView({
   renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
   selectedIds: ReadonlySet<string>;
+  hideLocalActor: boolean;
 }) {
   return (
     <>
@@ -1111,6 +1072,7 @@ function WorldView({
         renderEntity={renderEntity}
         renderObject={renderObject}
         selectedIds={selectedIds}
+        hideLocalActor={hideLocalActor}
       />
     </>
   );
@@ -1176,41 +1138,51 @@ function FrameDriver({
 }) {
   const posterElapsedRef = useRef(0);
   const posterDoneRef = useRef(false);
-  const motionRef = useRef(createPlayerMotionState());
-  const voxelBodyRef = useRef<VoxelPlayerBody | null>(null);
-  const solidCacheRef = useRef<{ count: number; set: Set<string> }>({ count: -1, set: new Set() });
   const hasReportedTickError = useRef(false);
   const repeatFiredAtRef = useRef<Map<string, number>>(new Map());
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
-  const collision = playable.collision;
-  const movement = playable.movement;
-  const voxelDims = useMemo(
-    () => ({
-      get halfWidth() {
-        return collision?.halfWidth ?? 0.3;
-      },
-      get height() {
-        return collision?.height ?? 1.8;
-      },
-      get stepHeight() {
-        return collision?.stepHeight ?? 0.6;
-      },
+  const movementTuning = useMemo(
+    () => resolvePlayerMovementTuning({
+      collision: playable.collision,
+      movement: playable.movement,
+      physics: playable.game.physics,
+      world: playable.game.world,
     }),
-    [collision],
+    [playable],
   );
-  const movementTuning = useMemo(() => resolvePhysicsTuning(playable.game.physics), [playable]);
   const autoPickupRadius = useMemo(() => {
     const cfg = playable.worldItem?.autoPickup;
     if (cfg === undefined || cfg === false) return null;
     const fallback = playable.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
     return cfg === true ? fallback : cfg.radius ?? fallback;
   }, [playable]);
-  const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
   const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
   const serverAuthoritative = useMemo(() => isServerAuthoritative(playable.game.multiplayer), [playable]);
+  const commandSink = useMemo<CommandSink>(
+    () => ({
+      run: (name, input) =>
+        resolveCommandSink(ctx, {
+          serverAuthoritative,
+          backend: multiplayer?.backend ?? null,
+          serverId: serverIdRef.current,
+        }).run(name, input),
+    }),
+    [ctx, multiplayer, serverAuthoritative, serverIdRef],
+  );
+  const inputSink = useMemo<InputSink>(
+    () => ({
+      send: (frame) =>
+        resolveInputSink({
+          serverAuthoritative,
+          backend: multiplayer?.backend ?? null,
+          serverId: serverIdRef.current,
+        }).send(frame),
+    }),
+    [multiplayer, serverAuthoritative, serverIdRef],
+  );
+  const lastSentInputRef = useRef<InputFrame | null>(null);
   const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
-  const hasTerrain = useMemo(() => hasEnvironmentTerrain(playable.game.world), [playable]);
 
   useFrame((_state, rawDt) => {
     if (poster) {
@@ -1222,8 +1194,17 @@ function FrameDriver({
         return;
       }
     }
+    const sendInput = () => {
+      if (!serverAuthoritative) return;
+      const frame: InputFrame = { held: ctx.input.held(), pointer: ctx.input.pointer() };
+      const last = lastSentInputRef.current;
+      if (last !== null && inputFramesEqual(last, frame)) return;
+      lastSentInputRef.current = frame;
+      inputSink.send(frame);
+    };
     if (gateRef.current) {
       ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
+      sendInput();
       return;
     }
     const simStart = performance.now();
@@ -1233,126 +1214,23 @@ function FrameDriver({
     const gameDt = ctx.time.advance(dt);
     ctx.input.publish(heldActionsFor(tracker, inputActions));
     ctx.input.publishPointer(pointerAxisRef.current);
+    sendInput();
     const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
     if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
     endPhase();
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
     const player = ctx.scene.entity.get(playerId);
-    const forwardX = Math.sin(yawRef.current);
-    const forwardZ = Math.cos(yawRef.current);
     if (player !== null && drivesPose && !serverAuthoritative) {
       endPhase = devtools.profile.begin("pose");
-      const keys = createEmptyMovementKeys();
-      keys.w = tracker.isDown("moveForward");
-      keys.s = tracker.isDown("moveBack");
-      keys.a = tracker.isDown("moveLeft");
-      keys.d = tracker.isDown("moveRight");
-      keys.shift = tracker.isDown("sprint") && (movement?.canSprint?.(ctx) ?? true);
-      keys.space = tracker.isDown("jump");
-      const intent = resolveMovementIntent(keys, true);
-      const motionBatch = ctx.player.motion.takePending();
-      if (collision?.voxel) {
-        let body = voxelBodyRef.current;
-        if (body === null) {
-          body = createVoxelPlayerBody(player.position[0], player.position[1], player.position[2]);
-          voxelBodyRef.current = body;
-        }
-        const objects = ctx.scene.object.list();
-        const cache = solidCacheRef.current;
-        if (cache.count !== objects.length) {
-          cache.set = new Set(objects.map((o) => `${o.position[0]},${o.position[1]},${o.position[2]}`));
-          cache.count = objects.length;
-        }
-        const solids = cache.set;
-        const isSolid = (x: number, y: number, z: number) => solids.has(`${x},${y},${z}`);
-        body.velocityY = applyMotionImpulses(body.velocityY, motionBatch);
-        [body.velocityX, body.velocityZ] = applyHorizontalImpulses(body.velocityX, body.velocityZ, motionBatch);
-        advanceVoxelPlayer(
-          body,
-          intent,
-          forwardX,
-          forwardZ,
-          player.movement.walkSpeed ?? 2,
-          rawDt,
-          isSolid,
-          voxelDims,
-          movementTuning,
-          hasTerrain ? (x, z) => ground.sampleHeight(x, z) : undefined,
-        );
-        if (motionBatch !== null && motionBatch.y !== null) body.y = motionBatch.y;
-        ctx.scene.entity.setPose(playerId, {
-          position: [body.x, body.y, body.z],
-          rotationY: intent.moving
-            ? Math.atan2(body.velocityX, body.velocityZ)
-            : player.rotationY,
-          dt: rawDt,
-        });
-      } else {
-        const motion = motionRef.current;
-        motion.verticalVelocity = applyMotionImpulses(motion.verticalVelocity, motionBatch);
-        [motion.horizontalVelocityX, motion.horizontalVelocityZ] = applyHorizontalImpulses(
-          motion.horizontalVelocityX,
-          motion.horizontalVelocityZ,
-          motionBatch,
-        );
-        const step = advancePlayerMotion(
-          motion,
-          intent,
-          forwardX,
-          forwardZ,
-          player.movement.walkSpeed ?? 2,
-          rawDt,
-          movementTuning,
-        );
-        let stepX = step.stepX;
-        let stepZ = step.stepZ;
-        if (movement?.mode === "axis") {
-          const constrained = constrainStepToAxis(stepX, stepZ, movement.axis ?? "x");
-          stepX = constrained.stepX;
-          stepZ = constrained.stepZ;
-        }
-        if (movement?.collideObjects === true) {
-          const obstacles = nearbyObstacles(ctx.scene.object.list(), player.position);
-          const resolved = resolveObstacleStep(player.position, stepX, stepZ, obstacles);
-          stepX = resolved.stepX;
-          stepZ = resolved.stepZ;
-        }
-        let nextX = player.position[0] + stepX;
-        let nextZ = player.position[2] + stepZ;
-        if (movement?.mode === "grid") {
-          const snapped = snapPositionToGrid(nextX, nextZ, movement.cellSize ?? 1);
-          nextX = snapped[0];
-          nextZ = snapped[1];
-        }
-        let nextY = ground.sampleHeight(nextX, nextZ) + motion.jumpOffset;
-        if (motionBatch !== null && motionBatch.y !== null) {
-          nextY = motionBatch.y;
-          motion.jumpOffset = motionBatch.y - ground.sampleHeight(nextX, nextZ);
-        }
-        if (movement?.beforeCommit !== undefined) {
-          const frame: MovementCommitFrame = {
-            entityId: playerId,
-            current: player.position,
-            next: [nextX, nextY, nextZ],
-            dt: rawDt,
-            ctx,
-          };
-          const replacement = movement.beforeCommit(frame);
-          if (replacement !== undefined) {
-            nextX = replacement[0];
-            nextY = replacement[1];
-            nextZ = replacement[2];
-          }
-        }
-        ctx.scene.entity.setPose(playerId, {
-          position: [nextX, nextY, nextZ],
-          rotationY: intent.moving
-            ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ)
-            : player.rotationY,
-          dt: rawDt,
-        });
-      }
+      stepPlayerMovement(
+        ctx,
+        ctx.player.userId,
+        { held: ctx.input.held(), pointer: ctx.input.pointer() },
+        rawDt,
+        movementTuning,
+        yawRef.current,
+      );
       endPhase();
     }
 
@@ -1384,7 +1262,7 @@ function FrameDriver({
     if (pingCommand !== undefined && tracker.wasPressed("ping")) {
       const hit = pointerService.worldHit();
       if (hit !== null && ctx.game.commands.has(pingCommand)) {
-        ctx.game.commands.run(pingCommand, {
+        commandSink.run(pingCommand, {
           point: hit.point,
           entity: hit.entity,
           object: hit.object,
@@ -1399,7 +1277,7 @@ function FrameDriver({
       collisionDebug.setAimProbe({
         from: aimFrom,
         aim: commandAim,
-        originPolicy: { kind: "muzzle" },
+        originPolicy: { kind: "eye" },
         maxDistance: 100,
       });
     } else if (collisionDebug.getAimProbe() !== null) {
@@ -1416,14 +1294,14 @@ function FrameDriver({
         if (prompts !== undefined && focus !== null) {
           const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
           if (active !== null && active.prompt.invoke !== null) {
-            ctx.game.commands.run(active.prompt.invoke.name, active.prompt.invoke.input);
+            commandSink.run(active.prompt.invoke.name, active.prompt.invoke.input);
           }
         }
         continue;
       }
       if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
       repeatFiredAtRef.current.set(action, nowMs);
-      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAim);
+      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAim, RESERVED_INPUT_ACTIONS, commandSink);
     }
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {
@@ -2362,6 +2240,7 @@ export function GamePlayerShell({
               renderEntity={playable.renderEntity}
               renderObject={playable.renderObject}
               selectedIds={selectedIds}
+              hideLocalActor={firstPerson}
             />
           </CullingProvider>
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
@@ -2419,6 +2298,9 @@ export function GamePlayerShell({
           }}
         />
         <DevtoolsRendererProbe />
+        {playable.postProcessing !== undefined && playable.postProcessing.enabled !== false ? (
+          <PostProcessing config={playable.postProcessing} />
+        ) : null}
       </Canvas>
       {!poster && !orientationGate && coarsePointer && controlsActive && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
         <TouchPlaySurface

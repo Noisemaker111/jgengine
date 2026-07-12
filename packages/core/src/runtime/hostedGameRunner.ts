@@ -1,16 +1,15 @@
 import type { CommandResult } from "../commands/commandRegistry";
 import type { GameDefinition, LoopPlayer } from "../game/defineGame";
-import type { PointerAxisState } from "../input/pointerAxis";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
+import { type InputFrame } from "./inputSnapshot";
 import { createWorldReplicator, type WorldDiff } from "./worldReplication";
 import type { WorldSnapshot } from "./worldSnapshot";
 
-/** One client's input for a tick — the semantic held-action set plus pointer state, mirroring `ctx.input`. */
-export interface InputFrame {
-  held: readonly string[];
-  pointer: PointerAxisState | null;
-}
+export type { InputFrame };
+
+/** Reserved command name the authoritative host intercepts on the existing `runCommand` transport to route a client's {@link InputFrame} to `session.input`, so per-tick input needs no separate wire. */
+export const INPUT_COMMAND = "engine.input";
 
 /** Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity. */
 export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> {
@@ -37,7 +36,7 @@ export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMulti
 export interface HostedGameRunner {
   join(userId: string, isNew: boolean): void;
   leave(userId: string): void;
-  /** Stash a client's latest input frame. Exposed via {@link heldInput} for the movement seam; not yet applied to the shared `ctx.input`. */
+  /** Record a client's latest input frame — stashed for {@link heldInput} and mirrored onto `ctx.game.players` so the movement seam reads each player's intent in `onTick`. */
   input(userId: string, frame: InputFrame): void;
   heldInput(userId: string): InputFrame | null;
   command(userId: string, name: string, input: unknown): CommandResult<GameContext>;
@@ -85,6 +84,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     },
     input(userId, frame) {
       inputs.set(userId, frame);
+      ctx.game.players?.setInput(userId, frame);
     },
     heldInput(userId) {
       return inputs.get(userId) ?? null;

@@ -318,6 +318,24 @@ export function resolveObstacleStep(
   return { stepX: resultX, stepZ: resultZ };
 }
 
+const OBSTACLE_GATHER_RADIUS = 3;
+
+/** Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}. */
+export function nearbyObstacles(
+  objects: readonly { position: readonly [number, number, number] }[],
+  center: readonly [number, number, number],
+  radius: number = OBSTACLE_GATHER_RADIUS,
+): CollisionObstacle[] {
+  const radiusSq = radius * radius;
+  const result: CollisionObstacle[] = [];
+  for (const object of objects) {
+    const dx = object.position[0] - center[0];
+    const dz = object.position[2] - center[2];
+    if (dx * dx + dz * dz <= radiusSq) result.push({ position: object.position });
+  }
+  return result;
+}
+
 /** Zeroes the off-axis component so travel is locked to a single world axis (`PlayerMovementConfig.mode: "axis"`). */
 export function constrainStepToAxis(stepX: number, stepZ: number, axis: "x" | "z"): MovementFrameStep {
   return axis === "x" ? { stepX, stepZ: 0 } : { stepX: 0, stepZ };

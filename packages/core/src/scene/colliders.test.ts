@@ -4,17 +4,20 @@ import {
   defaultEntityColliders,
   defaultObjectColliders,
   resolveColliders,
+  scaledObjectColliders,
   worldOffset,
 } from "@jgengine/core/scene/colliders";
 
 describe("colliders", () => {
-  test("default entity set is a non-blocking damage sphere", () => {
+  test("default entity set is a non-blocking body-covering damage box", () => {
     const resolved = resolveColliders(defaultEntityColliders());
     expect(resolved).toHaveLength(1);
     expect(resolved[0]!.purpose).toBe("damage");
     expect(resolved[0]!.damageEligible).toBe(true);
     expect(resolved[0]!.blocks).toBe(false);
-    expect(resolved[0]!.shape.kind).toBe("sphere");
+    const bounds = colliderBounds(resolved[0]!, [0, 0, 0], 0);
+    expect(bounds.min[1]).toBeCloseTo(0);
+    expect(bounds.max[1]).toBeCloseTo(1.8);
   });
 
   test("default object set is a blocking physical AABB", () => {
@@ -39,6 +42,15 @@ describe("colliders", () => {
     expect(resolved[1]!.blocks).toBe(false);
     expect(resolved[1]!.damageEligible).toBe(true);
     expect(resolved[2]!.blocks).toBe(true);
+  });
+
+  test("scaledObjectColliders wraps the rendered box, grounded at y=0", () => {
+    const resolved = resolveColliders(scaledObjectColliders([2, 4, 2]));
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]!.blocks).toBe(true);
+    const bounds = colliderBounds(resolved[0]!, [10, 0, 10], 0);
+    expect(bounds.min).toEqual([9, 0, 9]);
+    expect(bounds.max).toEqual([11, 4, 11]);
   });
 
   test("worldOffset rotates local offsets by yaw", () => {

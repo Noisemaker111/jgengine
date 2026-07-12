@@ -21,6 +21,35 @@ export interface TerrainColors {
   waterline?: string;
 }
 
+/**
+ * Procedural detail-surface layer for terrain: a noise-driven shader that keeps the
+ * biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock,
+ * sand, and snow over it by slope, height, and waterline — turning a flat
+ * vertex-colour surface into varied, textured-reading ground with no image assets.
+ */
+export interface TerrainDetailConfig {
+  /** Steep-slope rock colour. Default "#6f7175". */
+  rockColor?: string;
+  /** Waterline/beach sand colour. Default "#c2b283". */
+  sandColor?: string;
+  /** High-altitude snow colour. Default "#eef3f7". */
+  snowColor?: string;
+  /** Slope (0 flat … 1 vertical) at which rock starts taking over. Default 0.42. */
+  rockSlopeStart?: number;
+  /** World height above which snow appears. Default 26. */
+  snowHeight?: number;
+  /** Water level for the sand band; defaults to the terrain's `waterLevel`. */
+  waterLevel?: number;
+  /** Fine detail noise wavelength in world units. Default 5. */
+  detailScale?: number;
+  /** Large-scale colour-variation wavelength in world units. Default 45. */
+  macroScale?: number;
+  /** Surface roughness of the detail material. Default 0.9. */
+  roughness?: number;
+  /** Overall detail intensity 0..1. Default 1. */
+  strength?: number;
+}
+
 export interface TerrainFlattenMask {
   center: EnvironmentVec2;
   radius: number;
@@ -116,6 +145,8 @@ export interface TerrainEnvironmentConfig {
   waterLevel?: number;
   /** Flat pads carved into the noise field, e.g. for building pads or spawn circles. */
   flatten?: readonly TerrainFlattenMask[];
+  /** Procedural detail surface (noise-driven rock/sand/snow over the biome base). Omit for the flat vertex-colour ground. */
+  detail?: TerrainDetailConfig;
 }
 
 export interface RainEnvironmentConfig {
@@ -463,6 +494,7 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
       ...(config.baseHeight === undefined ? {} : { baseHeight: config.baseHeight }),
       ...(config.waterLevel === undefined ? {} : { waterLevel: config.waterLevel }),
       ...(config.flatten === undefined ? {} : { flatten: config.flatten }),
+      ...(config.detail === undefined ? {} : { detail: config.detail }),
     },
   );
 }

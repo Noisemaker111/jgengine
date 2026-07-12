@@ -1,5 +1,6 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
+import type { PostProcessingConfig } from "../render/postProcessing";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GameOrientation } from "../ui/orientation";
@@ -389,6 +390,8 @@ export interface GameCameraConfig {
   /** Vertical look clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below. Widen for top-down or vertical aim; unset keeps the standard chase feel. */
   minPolarAngle?: number;
   maxPolarAngle?: number;
+  /** Spring-arm occlusion for the orbit rig: pull the camera in past walls/terrain so it never clips inside geometry. Off unless `enabled`. */
+  collision?: { enabled?: boolean; padding?: number; minTargetDistance?: number };
 }
 
 export interface EntitySpriteConfig {
@@ -524,6 +527,14 @@ export interface DirectionalLightingConfig {
   intensity?: number;
   position: readonly [number, number, number];
   castShadow?: boolean;
+  /** Shadow map resolution in px (square) when `castShadow`. Higher = crisper, costlier. Default 1024. */
+  shadowMapSize?: number;
+  /** Half-extent of the orthographic shadow camera in world units — sized to the shadowed area. Default 40. */
+  shadowCameraSize?: number;
+  /** Shadow depth bias to fight acne. Default -0.0004. */
+  shadowBias?: number;
+  /** Shadow normal bias to fight peter-panning. Default 0.02. */
+  shadowNormalBias?: number;
 }
 
 export interface HemisphereLightingConfig {
@@ -644,6 +655,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   lighting?: LightingConfig;
   /** Generic background/sky/fog (#207.6), applied for any world kind including a custom `environment` component. */
   backdrop?: BackdropConfig;
+  /** Declarative post-processing chain (AO/bloom/tone-map/grade). When set, the shell mounts an EffectComposer and owns the render; absent leaves the renderer drawing directly (unchanged). */
+  postProcessing?: PostProcessingConfig;
   /** F2 debug overlay (frame/sim timing, logs, backend latency, keybinds, live tunables). On for every game by default; `false` disables the toggle. */
   devtools?: boolean;
   /** Player settings menu. Auto-mounted for every game (Sound / Graphics / Gameplay / Controls); unset uses the defaults, `false` opts out. Add game-specific rows via `extra`, switch overlay/full-page via `mode`, or swap the gear for compact on-screen buttons via `surface: "quick"`. */

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
 import { useGameContext } from "@jgengine/react/provider";
@@ -18,6 +18,7 @@ import type {
 import {
   createTerrainPaletteSampler,
   resolveEnvironmentField,
+  resolveTerrainDetail,
   resolveTerrainPalette,
   type TerrainField,
 } from "@jgengine/core/world/terrain";
@@ -27,6 +28,7 @@ import { RoadRibbons } from "./RoadRibbons";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
 import { CarvedTerrain } from "../terrain/CarvedTerrain";
+import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { Ocean } from "../water/Ocean";
 import { RainField } from "../weather/RainField";
 import { SnowField } from "../weather/SnowField";
@@ -68,6 +70,14 @@ function TerrainGround({
     const swing = terrain.height * 1.2;
     return [base - swing, base + swing] as const;
   }, [terrain.baseHeight, terrain.height]);
+  const detailMaterial = useMemo(
+    () =>
+      terrain.detail === undefined
+        ? undefined
+        : createTerrainDetailMaterial(resolveTerrainDetail(terrain.detail, terrain.waterLevel)).material,
+    [terrain.detail, terrain.waterLevel],
+  );
+  useEffect(() => () => detailMaterial?.dispose(), [detailMaterial]);
   return (
     <CarvedTerrain
       field={field}
@@ -78,6 +88,7 @@ function TerrainGround({
       paletteAt={paletteAt}
       center={center}
       roughness={0.94}
+      surfaceMaterial={detailMaterial}
     />
   );
 }

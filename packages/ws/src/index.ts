@@ -8,3 +8,4 @@ export * from "./protocol";
 export * from "./readsHandler";
 export * from "./socketIoPipe";
 export * from "./voiceChannel";
+export * from "./worldHost";

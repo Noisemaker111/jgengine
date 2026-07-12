@@ -20,8 +20,6 @@ export type { WorldBarSample } from "./worldBarSamples";
 export { collectWorldBarSamples, paintWorldBarSamples } from "./worldBarSamples";
 export { telegraphPulseOpacity } from "./telegraphPulse";
 
-const MUZZLE_HEIGHT = 1.4;
-
 function pinOverlayToViewport(
   _el: THREE.Object3D,
   _camera: THREE.Camera,
@@ -271,7 +269,7 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
         {
           id,
           points: [
-            new THREE.Vector3(event.origin[0], event.origin[1] + MUZZLE_HEIGHT, event.origin[2]),
+            new THREE.Vector3(event.origin[0], event.origin[1], event.origin[2]),
             new THREE.Vector3(event.at[0], event.at[1], event.at[2]),
           ],
         },

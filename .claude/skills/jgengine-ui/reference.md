@@ -220,6 +220,8 @@ Prefer small headless or lightly styled primitives over a giant universal design
 
 A primitive should expose game-oriented choices such as shape, material, urgency, placement, hierarchy, entry motion, icon treatment, compactness, and diegetic-versus-overlay presentation.
 
+**Minimap** is already shipped, not hand-rolled: `Minimap` / `WorldMap` / `Compass` from `@jgengine/react/map` render a framed SVG minimap over a `MarkerSet` (`createMarkerSet`, `@jgengine/core/world/markers`) and optional `FogField`, projecting via `@jgengine/core/world/minimap` (`projectToMinimap`, `headingToBearing`, edge-clamp). A game feeds flat props (`markers`, `center: [x,z]`, `worldRadius`, `size`, `facingYaw`, `rotate`) and repopulates the marker set each HUD tick from live entities — no custom canvas painter. **Swing timer**: `swingTimerState(player, target, prevPeriod, prevTimer)` (`@jgengine/core/ui/swingTimer`) is the pure, parameter-in/next-state-out core for a melee swing bar (recovers period on the reset edge; hidden unless auto-attacking a live non-object target) — thread the returned `nextPeriod`/`nextTimer` back via refs, render a thin `Meter`.
+
 Do not create a primitive whose only value is wrapping a `div` with border radius.
 
 ## 7. Complete interaction states
@@ -250,6 +252,19 @@ Do not communicate all states with background-color changes alone. Use appropria
 - controlled shake only when appropriate
 
 Focus must look authored while remaining accessible. Menus should support keyboard/controller-style focus navigation when practical.
+
+## Rendering — post-processing, lighting, shadows
+
+A cinematic look is opt-in engine config, never hand-wired render passes. Set `defineGame({ postProcessing })` (`PostProcessingConfig` from `@jgengine/core/render/postProcessing`) and the shell mounts an `EffectComposer` and owns the render: RenderPass → AO → Bloom → tone-map output → Grade. Absent means the renderer draws directly (unchanged), so it never imposes a look on games that don't ask. Each stage is a config object, `false` to skip, or omitted for its tuned default:
+
+- `toneMapping: "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none"` (default `aces`) + `exposure`.
+- `bloom: { strength, radius, threshold }` — HDR glow around bright pixels (defaults 0.32 / 0.55 / 0.85).
+- `grade: { lift, gain, gamma, saturation, vignette, grain }` — display-space colour grade: cool-shadow/warm-highlight split, vignette, animated film grain.
+- `ao: { radius, intensity, distanceFalloff, blend }` — ground-truth ambient occlusion; heavier than the rest, omit or `false` on low-end targets.
+
+**Orbit camera occlusion:** the third-person orbit rig takes `camera: { collision: { enabled, padding?, minTargetDistance? } }` — a spring-arm that raycasts target→camera each frame and pulls the boom in past walls/terrain so the camera never clips inside geometry. Off by default (unchanged chase feel); enable it for any world with interiors or dense structures.
+
+Lighting is `defineGame({ lighting })` (`LightingConfig`): ambient / hemisphere / directional, replacing the shell's default lights when set. A `DirectionalLightingConfig` with `castShadow` takes `shadowMapSize`, `shadowCameraSize`, `shadowBias`, `shadowNormalBias` for crisp contact shadows. Sky-lit worlds (a `sky()` world feature) get a high-res sun whose shadow camera follows the view each frame, so grounded shadows stay sharp under the player anywhere in a large world.
 
 ## Settings menu
 

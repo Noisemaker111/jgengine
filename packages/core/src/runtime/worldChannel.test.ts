@@ -96,4 +96,20 @@ describe("world channel (multi-client host↔client over an in-process loopback)
     expect(ctxB.scene.entity.get("bob")).not.toBeNull();
     expect(linkB.revision()).toBe(host.session().revision());
   });
+
+  test("a client's input frame routes upstream and lands on the host's ctx.game.players", () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldHost(session);
+    const ctxA = clientContext("alice");
+    let linkA!: WorldClientLink;
+    const connA = host.connect("alice", (frame) => linkA.receive(frame));
+    linkA = createWorldClientLink(ctxA, (frame) => connA.receive(frame));
+
+    linkA.join(true);
+    const frame = { held: ["moveForward", "sprint"], pointer: { x: 0.5, y: -0.25, active: true } };
+    linkA.input(frame);
+
+    expect(session.runner().context().game.players?.input("alice")).toEqual(frame);
+    expect(session.runner().heldInput("alice")).toEqual(frame);
+  });
 });

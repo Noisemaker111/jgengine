@@ -1,6 +1,6 @@
 import type { BallisticSweep } from "../physics/ballisticSweep";
 import type { EntityPosition } from "../scene/entityStore";
-import type { EntityColliderSet } from "../scene/colliders";
+import { defaultEntityColliders, resolveColliders, type EntityColliderSet } from "../scene/colliders";
 import {
   createSceneRaycast,
   firstImpact,
@@ -22,7 +22,7 @@ export interface ProjectileShotInput {
   via: EffectVia;
   aim: Aim;
   effect: string;
-  /** Defaults to `{ kind: "legacy" }` — aim.origin or shooter position. */
+  /** Defaults to `{ kind: "eye" }` — aim.origin when given, else shooter position at eye height. */
   originPolicy?: ShotOriginPolicy;
 }
 
@@ -211,7 +211,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   const shots = new Map<string, { input: ProjectileShotInput; firedAt: number; settled: boolean }>();
   let shotCounter = 0;
   const now = deps.now ?? (() => Date.now());
-  const defaultPolicy = deps.defaultOriginPolicy ?? { kind: "legacy" as const };
+  const defaultPolicy = deps.defaultOriginPolicy ?? { kind: "eye" as const };
 
   function itemStat(via: EffectVia, stat: string): number | null {
     return via.item === undefined ? null : deps.getStat(via.item, stat);
@@ -228,6 +228,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       {
         positionOf: deps.spatial.positionOf,
         rotationYOf: deps.rotationYOf,
+        collidersOf: deps.entityCollidersOf,
       },
       from,
       aim,
@@ -301,15 +302,30 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         if (hit.targetKind === "entity" && spreadRad > 0) {
           const position = deps.spatial.positionOf(hit.instanceId);
           if (position !== undefined) {
-            const dx = position[0] - origin[0];
-            const dy = position[1] - origin[1];
-            const dz = position[2] - origin[2];
+            const colliders = resolveColliders(
+              deps.entityCollidersOf?.(hit.instanceId) ?? defaultEntityColliders(),
+            );
+            const collider =
+              colliders.find((candidate) => candidate.name === hit.colliderName) ?? colliders[0];
+            const localOffset = collider?.shape.offset ?? [0, 0, 0];
+            const slack =
+              collider === undefined
+                ? BASE_HIT_RADIUS
+                : collider.shape.kind === "sphere"
+                  ? collider.shape.radius
+                  : Math.hypot(...collider.shape.halfExtents);
+            const rotationY = deps.rotationYOf?.(hit.instanceId) ?? 0;
+            const cos = Math.cos(rotationY);
+            const sin = Math.sin(rotationY);
+            const dx = position[0] + localOffset[0] * cos + localOffset[2] * sin - origin[0];
+            const dy = position[1] + localOffset[1] - origin[1];
+            const dz = position[2] - localOffset[0] * sin + localOffset[2] * cos - origin[2];
             const along = dx * direction[0] + dy * direction[1] + dz * direction[2];
             const px = dx - direction[0] * along;
             const py = dy - direction[1] * along;
             const pz = dz - direction[2] * along;
             const perpendicular = Math.sqrt(px * px + py * py + pz * pz);
-            if (perpendicular > 0.5 + Math.tan(spreadRad) * along) continue;
+            if (perpendicular > slack + Math.tan(spreadRad) * along) continue;
           }
         }
         mapped.push(sceneHitToRaycast(hit));

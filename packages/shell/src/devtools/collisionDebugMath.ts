@@ -187,6 +187,7 @@ export interface ComputeAimLaserInput {
   sceneRaycast: SceneRaycastApi;
   positionOf(instanceId: string): EntityPosition | undefined;
   rotationYOf?(instanceId: string): number | undefined;
+  collidersOf?(instanceId: string): EntityColliderSet | null | undefined;
   from: string;
   aim: Aim;
   originPolicy?: ShotOriginPolicy;
@@ -206,10 +207,11 @@ export function computeAimLaser(input: ComputeAimLaserInput): AimLaserDebug | nu
     {
       positionOf: input.positionOf,
       rotationYOf: input.rotationYOf,
+      collidersOf: input.collidersOf,
     },
     input.from,
     input.aim,
-    input.originPolicy ?? { kind: "legacy" },
+    input.originPolicy ?? { kind: "eye" },
   );
   if (resolved === null) return null;
   input.counters !== undefined && (input.counters.queries += 1);

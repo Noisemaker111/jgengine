@@ -6,8 +6,10 @@ import { ClassSelect } from "./components/ClassSelect";
 import { DialoguePanel } from "./components/Dialogue";
 import { BankPanel } from "./components/Bank";
 import { CraftingPanel, FishingOverlay } from "./components/Crafting";
+import { Minimap } from "./components/Minimap";
 import { BagsPanel, CharacterPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
 import { SpellbookPanel } from "./components/Spellbook";
+import { SwingTimer } from "./components/SwingTimer";
 import { TalentPanel } from "./components/Talents";
 import {
   CreditLine,
@@ -46,6 +48,9 @@ export function GameUI() {
         <HudPanel id="settings" anchor="top-right" inset={{ x: 16, y: 14 }} order={-1}>
           <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-stone-700 bg-stone-950/80 text-amber-300 transition hover:border-amber-500 hover:bg-stone-800" />
         </HudPanel>
+        <HudPanel id="minimap" anchor="top-right" inset={{ x: 14, y: 60 }}>
+          <Minimap />
+        </HudPanel>
         <HudPanel id="quests" anchor="top-right" inset={{ x: 14, y: 60 }}>
           <QuestTracker />
         </HudPanel>
@@ -63,6 +68,7 @@ export function GameUI() {
         <HudPanel id="bottom-bar" anchor="bottom" inset={{ x: 0, y: 10 }}>
           <div className="flex flex-col items-center gap-1.5">
             <CastBar />
+            <SwingTimer />
             <PlayerFrame />
             <XpBar />
             <ActionBar />

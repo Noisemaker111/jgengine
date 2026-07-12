@@ -73,11 +73,19 @@ export const game = defineGame({
   objectStyles,
   settings: { variant: "sidebar" },
   worldHealthBars: { roles: ["enemy", "hostile"], maxDistance: 60 },
+  postProcessing: {
+    toneMapping: "aces",
+    ao: { radius: 2, intensity: 1.2, distanceFalloff: 3.6, blend: 0.85 },
+    bloom: { strength: 0.32, radius: 0.55, threshold: 0.85 },
+    grade: {},
+  },
   camera: {
     perspective: "third",
     minDistance: 3.5,
     maxDistance: 16,
     targetHeight: 1.8,
+    rotateSpeed: 0.3,
+    collision: { enabled: true, padding: 0.4 },
     frustum: { far: 720 },
   },
 });

@@ -1,11 +1,41 @@
 import { describe, expect, test } from "bun:test";
-import { resolveShot } from "@jgengine/core/combat/shotOrigin";
+import { DEFAULT_EYE_HEIGHT, resolveShot } from "@jgengine/core/combat/shotOrigin";
 
 describe("resolveShot", () => {
   const deps = {
     positionOf: (id: string) => (id === "hero" ? ([1, 0, 2] as const) : undefined),
     rotationYOf: (id: string) => (id === "hero" ? Math.PI / 2 : undefined),
   };
+
+  test("default eye policy raises yaw/pitch aim to eye height", () => {
+    const shot = resolveShot(deps, "hero", { yaw: 0, pitch: 0 });
+    expect(shot?.origin).toEqual([1, DEFAULT_EYE_HEIGHT, 2]);
+    expect(shot?.direction[2]).toBeCloseTo(1);
+  });
+
+  test("eye policy honors explicit aim.origin and custom height", () => {
+    const explicit = resolveShot(deps, "hero", { origin: [0, 1, 0], direction: [0, 0, 1] }, { kind: "eye" });
+    expect(explicit?.origin).toEqual([0, 1, 0]);
+    const short = resolveShot(deps, "hero", { yaw: 0, pitch: 0 }, { kind: "eye", height: 0.8 });
+    expect(short?.origin).toEqual([1, 0.8, 2]);
+  });
+
+  test("eye policy sizes height from the shooter's hitbox when colliders are known", () => {
+    const withColliders = {
+      ...deps,
+      collidersOf: () => ({
+        hitboxes: [
+          {
+            name: "body",
+            purpose: "damage" as const,
+            shape: { kind: "aabb" as const, halfExtents: [1, 2, 1] as const, offset: [0, 2, 0] as const },
+          },
+        ],
+      }),
+    };
+    const shot = resolveShot(withColliders, "hero", { yaw: 0, pitch: 0 });
+    expect(shot?.origin[1]).toBeCloseTo(4 * 0.9);
+  });
 
   test("legacy uses aim.origin when present", () => {
     const shot = resolveShot(deps, "hero", { origin: [0, 1, 0], direction: [0, 0, 1] }, { kind: "legacy" });

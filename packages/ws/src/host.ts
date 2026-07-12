@@ -36,11 +36,13 @@ import type {
   TransportRunCommandResult,
 } from "@jgengine/core/runtime/transport";
 
+/** A change notification emitted by a `GameHost` for a server, player, or feed mutation. */
 export type HostChangeEvent =
   | { type: "server"; serverId: string }
   | { type: "player"; serverId: string; userId: string }
   | { type: "feed"; serverId: string; action: string };
 
+/** Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes. */
 export type GameHostOptions = {
   runtimes?: GameRuntime[];
   persistence: HostPersistence;
@@ -51,6 +53,7 @@ export type GameHostOptions = {
   allowedFeedActions?: readonly string[];
 };
 
+/** A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence. */
 export type GameHost = {
   joinServer: (args: {
     userId: string;
@@ -105,6 +108,7 @@ const builtinCommands = {
   },
 };
 
+/** Creates a `GameHost` that runs game servers over the given persistence and runtimes. */
 export function createGameHost(options: GameHostOptions): GameHost {
   const now = options.now ?? Date.now;
   const tickMs = options.tickMs ?? 1_000;
@@ -516,6 +520,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
   return host;
 }
 
+/** Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts. */
 export function memoryPersistence(now: () => number = Date.now): HostPersistence {
   const servers = new Map<string, GameServerRecord>();
   const profiles = new Map<string, PlayerProfileRecord>();

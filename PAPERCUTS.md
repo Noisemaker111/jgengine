@@ -127,6 +127,18 @@ phase-7a ship worker pushed the branch onto pre-#595-merge history, so PR #596 s
 
 briefed a gate worker with literal 'bun test' → it scanned the whole tree unbounded (incl Games/) and hung 10min with zero output before the guard killed it; the repo gate is 'bun run test' (guarded, scoped to packages apps/dev scripts). Bare 'bun test' is a footgun in briefs.
 
+2026-07-12T21:03:16.266Z — opus-4.8 — Claude
+
+drive tool: guessed '--keys "s s s"' to walk the camera; that flag doesn't exist — it's '--key <Code>:<holdMs>' (singular, one per flag, e.g. --key KeyS:2500). CLAUDE.md's drive example only shows --click/--shot, so the movement flag is undiscoverable without --help.
+
+2026-07-12T21:06:24.915Z — sonnet-5 — Claude
+
+ship worker returned 'running in background, will report when done' after 1 tool-use/26s without running the gate or committing anything — a no-op that looked like success; had to verify git state manually and re-dispatch. Ship-motion workers should be told explicitly to perform every step synchronously in-run, not defer.
+
+2026-07-12T22:23:41.543Z — sonnet — Claude
+
+gate worker briefed to run gen:skill-api/check-types/test twice returned 'waiting on background work' instead of results — had to resume with explicit foreground-only instruction
+
 2026-07-12T23:02:02.714Z — fable — NoisemakerJon
 
 measuring editor fps via claude-in-chrome → backgrounded tab starves rAF so CDP evals time out at 45s looking like a hard page freeze; had to pivot to headless drive + in-editor PerfProbe

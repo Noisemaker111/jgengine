@@ -275,9 +275,19 @@
 - `constrainStepToAxis` (function): function constrainStepToAxis(stepX: number, stepZ: number, axis: "x" | "z"): MovementFrameStep — Zeroes the off-axis component so travel is locked to a single world axis (`PlayerMovementConfig.mode: "axis"`).
 - `createEmptyMovementKeys` (function): function createEmptyMovementKeys(): MovementKeysState — ⚠ undocumented
 - `createPlayerMotionState` (function): function createPlayerMotionState(): PlayerMotionState — ⚠ undocumented
+- `nearbyObstacles` (function): function nearbyObstacles(objects: readonly { position: readonly [number, number, number] }[], center: readonly [number, number, number], radius: number = OBSTACLE_GATHER_RADIUS): CollisionObstacle[] — Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}.
 - `resolveMovementIntent` (function): function resolveMovementIntent(keys: MovementKeysState, canMove: boolean): MovementIntent — Translate the set of held keys into an intent. When `canMove` is false (a menu is open, the world is paused) the avatar is fully idle so it never drifts behind an overlay.
 - `resolveObstacleStep` (function): function resolveObstacleStep(current: readonly [number, number, number], stepX: number, stepZ: number, obstacles: readonly CollisionObstacle[], playerRadius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): MovementFrameStep — Resolve a horizontal step against nearby placed objects with classic axis-separated sliding (try X, then Z against the post-X position) so walking into a wall stops the blocked axis but keeps sliding along the other. Obstacles are treated as circle-vs-AABB in the X/Z plane, inflated by `playerRadius`; an obstacle whose vertical span misses the player's feet-to-head span is skipped entirely. Callers should pre-filter to nearby objects — this also early-exits per obstacle on horizontal distance.
 - `snapPositionToGrid` (function): function snapPositionToGrid(x: number, z: number, cellSize: number): [number, number] — Snap a world position to its containing cell's center, matching the bounds-free form of `navGrid`'s and `tacticalGrid`'s `floor` + half-cell convention (`PlayerMovementConfig.mode: "grid"`).
+
+## @jgengine/core/movement/playerMovement
+
+- `PlayerMovementTuning` (interface): interface PlayerMovementTuning — The resolved, per-world movement configuration {@link stepPlayerMovement} integrates against — the same inputs the shell FrameDriver used to read piecemeal, gathered into one struct so single-player and host movement run identical math.
+- `forgetPlayerMovement` (function): function forgetPlayerMovement(ctx: GameContext, userId: string): void — Drop a player's retained movement state (heading + kinematic body) — call on leave so a rejoin starts fresh instead of resuming stale velocity.
+- `playerMovementHeading` (function): function playerMovementHeading(ctx: GameContext, userId: string): number — One player's current heading (radians), integrated by {@link stepPlayerMovement} — the shell reads it back into its camera/aim yaw.
+- `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
+- `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig; movement?: PlayerMovementConfig; physics?: PhysicsConfig; world?: WorldFeature; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
+- `stepPlayerMovement` (function): function stepPlayerMovement(ctx: GameContext, userId: string, input: InputFrame, dt: number, tuning: PlayerMovementTuning, heading?: number): void — Integrate one player's movement for a tick from their held-input frame and commit the pose — the single genre-agnostic controller both the shell (its local player) and a host (each connected player in `onTick`) call, so single-player and server-authoritative movement are identical. Reads the player's controlled entity, terrain, scene solids, and pending motion impulses; writes the entity pose via `setPose`. Retains heading + kinematic body per `userId` on the `ctx`. Pass `heading` to override the internally-integrated yaw (the shell owns yaw for its camera); omit it and the controller turns from the frame's `turnLeft`/`turnRight` actions.
 
 ## @jgengine/core/movement/poseState
 
@@ -497,7 +507,7 @@
 
 - `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
 - `ModelAssetRef` (interface): interface ModelAssetRef — ⚠ undocumented
-- `ModelDims` (interface): interface ModelDims — ⚠ undocumented
+- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 
 ## @jgengine/core/scene/assetPreload
@@ -537,6 +547,8 @@
 - `ColliderDef` (interface): interface ColliderDef — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
 - `ColliderShape` (type): type ColliderShape = | { kind: "sphere"; radius: number; offset?: EntityPosition } | { kind: "aabb"; halfExtents: EntityPosition; offset?: EntityPosition } — ⚠ undocumented
+- `DEFAULT_ENTITY_BODY_HALF_EXTENTS` (const): const DEFAULT_ENTITY_BODY_HALF_EXTENTS: EntityPosition — Matches the shell's fallback actor capsule (~0.7m wide, feet at y=0 to head at ~1.8m).
+- `DEFAULT_ENTITY_BODY_OFFSET` (const): const DEFAULT_ENTITY_BODY_OFFSET: EntityPosition — Entity-local center of the default body hitbox (half its height above the feet).
 - `DEFAULT_ENTITY_HIT_RADIUS` (const): const DEFAULT_ENTITY_HIT_RADIUS: 0.5 — ⚠ undocumented
 - `DEFAULT_OBJECT_HALF_EXTENTS` (const): const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition — ⚠ undocumented
 - `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
@@ -546,6 +558,7 @@
 - `defaultEntityColliders` (function): function defaultEntityColliders(): EntityColliderSet — ⚠ undocumented
 - `defaultObjectColliders` (function): function defaultObjectColliders(halfExtents: EntityPosition = DEFAULT_OBJECT_HALF_EXTENTS): EntityColliderSet — ⚠ undocumented
 - `resolveColliders` (function): function resolveColliders(set: EntityColliderSet | null | undefined): ResolvedCollider[] — ⚠ undocumented
+- `scaledObjectColliders` (function): function scaledObjectColliders(scale: readonly [number, number, number]): EntityColliderSet — Blocking physical body derived from an object's rendered scale: a grounded box spanning the visual (base at y=0, matching the shell's fallback mesh).
 - `worldOffset` (function): function worldOffset(local: EntityPosition | undefined, position: EntityPosition, rotationY: number): EntityPosition — ⚠ undocumented
 
 ## @jgengine/core/scene/entityStats
@@ -1106,6 +1119,7 @@
 - `StructureEnvironmentDescriptor` (type): type StructureEnvironmentDescriptor = BuildingEnvironmentDescriptor — ⚠ undocumented
 - `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
 - `TerrainColors` (interface): interface TerrainColors — ⚠ undocumented
+- `TerrainDetailConfig` (interface): interface TerrainDetailConfig — Procedural detail-surface layer for terrain: a noise-driven shader that keeps the biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock, sand, and snow over it by slope, height, and waterline — turning a flat vertex-colour surface into varied, textured-reading ground with no image assets.
 - `TerrainEnvironmentConfig` (interface): interface TerrainEnvironmentConfig — ⚠ undocumented
 - `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented
 - `TerrainFlattenMask` (interface): interface TerrainFlattenMask — ⚠ undocumented
@@ -1369,30 +1383,33 @@
 - `DEFAULT_MAX_WALK_SLOPE` (const): const DEFAULT_MAX_WALK_SLOPE: 0.6 — ⚠ undocumented
 - `DEFAULT_TERRAIN_MATERIAL` (const): const DEFAULT_TERRAIN_MATERIAL: TerrainMaterial — ⚠ undocumented
 - `FLAT_FIELD` (const): const FLAT_FIELD: TerrainField — ⚠ undocumented
-- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — ⚠ undocumented
+- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GroundSnapEntityStore` (interface): interface GroundSnapEntityStore — ⚠ undocumented
 - `GroundSnapTarget` (interface): interface GroundSnapTarget — ⚠ undocumented
 - `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — ⚠ undocumented
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
-- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — ⚠ undocumented
+- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel">> & { waterLevel: number } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `RollingFieldConfig` (interface): interface RollingFieldConfig — ⚠ undocumented
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
-- `TerrainField` (interface): interface TerrainField — ⚠ undocumented
-- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — ⚠ undocumented
+- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
+- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainPalette` (interface): interface TerrainPalette — ⚠ undocumented
 - `TerrainSlopeSample` (interface): interface TerrainSlopeSample — ⚠ undocumented
-- `arenaField` (function): function arenaField(config: ArenaFieldConfig = {}): TerrainField — ⚠ undocumented
+- `arenaField` (function): function arenaField(config: ArenaFieldConfig = {}): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
 - `composeIslandFields` (function): function composeIslandFields(base: TerrainField | null, islands: readonly TerrainIslandDescriptor[], voidHeight = ISLAND_VOID_HEIGHT): TerrainField — Composes a base terrain and any number of bounded islands into one world field: inside an island's rect the island's own field (sampled in island-local coordinates) wins, elsewhere the base terrain answers, and with no base the gap is `ISLAND_VOID_HEIGHT` void. Later islands win overlaps.
 - `createBiomeBandSampler` (function): function createBiomeBandSampler(bands: readonly BiomeBand[], fallback: TerrainPalette): (z: number) => TerrainPalette — Per-z palette sampler over a descriptor's `biomeBands` — ordered zones that cross-fade their ground palette across a `fade`-wide window centered on the midpoint z between adjacent centers. Below the first / above the last band clamps to that band's palette. Returns `fallback` when no bands are declared. Pure math, unit-testable independent of rendering.
 - `createTerrainPaletteSampler` (function): function createTerrainPaletteSampler(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions" | "biomeBands">): (x: number, z: number) => TerrainPalette — Per-position palette sampler over the descriptor's base `material`/`colors` plus its z-ordered `biomeBands` (painted first) and radial `materialRegions` (painted over) — the multi-biome coloring seam. Regions paint fully inside `radius` and blend back across `falloff`; later regions win overlaps.
-- `flatField` (function): function flatField(): TerrainField — ⚠ undocumented
-- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — ⚠ undocumented
+- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
+- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
 - `groundFieldFor` (function): function groundFieldFor(world?: WorldFeature): TerrainField — ⚠ undocumented
+- `hasEnvironmentTerrain` (function): function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean — Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
 - `heightMapField` (function): function heightMapField(config: HeightMapFieldConfig): TerrainField — ⚠ undocumented
-- `noiseField` (function): function noiseField(config: NoiseFieldConfig = {}): TerrainField — ⚠ undocumented
+- `noiseField` (function): function noiseField(config: NoiseFieldConfig = {}): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
 - `resolveEnvironmentField` (function): function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField — The full ground field for an environment world: base `terrain` composed with any `islands`.
-- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope = DEFAULT_MAX_WALK_SLOPE): { stepX: number; stepZ: number } — ⚠ undocumented
-- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — ⚠ undocumented
+- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope = DEFAULT_MAX_WALK_SLOPE): { stepX: number; stepZ: number } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
+- `resolveTerrainDetail` (function): function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail — Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level.
+- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
 - `resolveTerrainPalette` (function): function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors"> = {}): TerrainPalette — ⚠ undocumented
 - `rollingField` (function): function rollingField(config: RollingFieldConfig = {}): TerrainField — ⚠ undocumented
 - `sampleSlope` (function): function sampleSlope(field: TerrainField, x: number, z: number): TerrainSlopeSample — Local slope from the field's normal — the input for gravity-roll, ski acceleration, and slide checks (#284.6).
@@ -1400,8 +1417,8 @@
 - `slopeForce` (function): function slopeForce(field: TerrainField, x: number, z: number, scale = 9.8): readonly [number, number] — Downhill force/acceleration from the local slope: direction × sin(slope angle) × `scale`. Add it to any integrator's XZ velocity each tick (`scale` ≈ gravity for a free-rolling body).
 - `snapEntityToGround` (function): function snapEntityToGround(entities: GroundSnapEntityStore, id: string, field: TerrainField, offset = 0): boolean — Ground-snaps an already-spawned entity in place; returns false when `id` is unknown.
 - `snapToGround` (function): function snapToGround(field: TerrainField, position: readonly [number, number, number], offset = 0): [number, number, number] — Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`.
-- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — ⚠ undocumented
-- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — ⚠ undocumented
+- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
+- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/core/world/voxelField
 

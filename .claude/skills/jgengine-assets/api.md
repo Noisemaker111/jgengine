@@ -13,7 +13,7 @@
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
-- `ModelDims` (interface): interface ModelDims — ⚠ undocumented
+- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
@@ -76,7 +76,7 @@
 
 ## @jgengine/assets/dims
 
-- `ModelDims` (interface): interface ModelDims — ⚠ undocumented
+- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 
 ## @jgengine/assets/download
@@ -126,7 +126,7 @@
 - `AssetProvider` (type): type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
-- `ModelDims` (interface): interface ModelDims — ⚠ undocumented
+- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented

@@ -63,6 +63,15 @@ export function createMotionIntents(): MotionIntents {
   };
 }
 
+/** Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}. */
+export function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number {
+  if (batch === null) return currentVelocity;
+  let velocity = currentVelocity;
+  for (const impulse of batch.impulses) velocity += impulse;
+  if (batch.verticalVelocity !== null) velocity = batch.verticalVelocity;
+  return velocity;
+}
+
 /** Fold a batch's horizontal pushes into a controller's velocity pair — shared by the walk and voxel drivers. */
 export function applyHorizontalImpulses(
   velocityX: number,

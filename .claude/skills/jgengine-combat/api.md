@@ -196,12 +196,14 @@
 
 ## @jgengine/core/combat/shotOrigin
 
+- `DEFAULT_EYE_HEIGHT` (const): const DEFAULT_EYE_HEIGHT: number — Shot-origin and first-person camera eye height above an entity's position: 90% of the default 1.8m hitbox top.
 - `ResolvedShot` (interface): interface ResolvedShot — ⚠ undocumented
 - `ShotOriginDeps` (interface): interface ShotOriginDeps — ⚠ undocumented
-- `ShotOriginPolicy` (type): type ShotOriginPolicy = | { kind: "legacy" } | { kind: "entity" } | { kind: "entityOffset"; offset: EntityPosition } | { kind: "muzzle"; offset?: EntityPosition } | { kind: "camera"; origin: EntityPosition; direction?: EntityPosition } | { kind: "world"; origin: EntityPosition; direction?: EntityPos… — How a shot's world-space origin (and optional direction) is resolved before prediction/settlement. - `legacy` — `aim.origin` when present, else the shooter's entity position (pre-#431 default). - `entity` — always the shooter's entity position. - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model). - `camera` — explicit camera/reticle world origin (and optional direction override). - `world` — absolute world origin.
+- `ShotOriginPolicy` (type): type ShotOriginPolicy = | { kind: "eye"; height?: number } | { kind: "legacy" } | { kind: "entity" } | { kind: "entityOffset"; offset: EntityPosition } | { kind: "muzzle"; offset?: EntityPosition } | { kind: "camera"; origin: EntityPosition; direction?: EntityPosition } | { kind: "world"; origin: En… — How a shot's world-space origin (and optional direction) is resolved before prediction/settlement. - `eye` — `aim.origin` when present, else the shooter's entity position raised to eye height; the shot traces the shooter's sightline, so what the crosshair covers is what gets hit (the default). - `legacy` — `aim.origin` when present, else the shooter's raw entity position (feet). - `entity` — always the shooter's entity position. - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model). - `camera` — explicit camera/reticle world origin (and optional direction override). - `world` — absolute world origin.
 - `aimDirection` (function): function aimDirection(aim: Aim): EntityPosition | null — ⚠ undocumented
 - `aimSpreadDeg` (function): function aimSpreadDeg(aim: Aim): number — ⚠ undocumented
-- `resolveShot` (function): function resolveShot(deps: ShotOriginDeps, from: string, aim: Aim, policy: ShotOriginPolicy = { kind: "legacy" }): ResolvedShot | null — ⚠ undocumented
+- `eyeHeightFromColliders` (function): function eyeHeightFromColliders(set: EntityColliderSet | null | undefined): number — Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown.
+- `resolveShot` (function): function resolveShot(deps: ShotOriginDeps, from: string, aim: Aim, policy: ShotOriginPolicy = { kind: "eye" }): ResolvedShot | null — ⚠ undocumented
 
 ## @jgengine/core/combat/telegraph
 

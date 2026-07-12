@@ -4,6 +4,7 @@ import { seededRng } from "@jgengine/core/random/rng";
 import { cue, schoolCue } from "../audio/cues";
 import { classById } from "../classes/catalog";
 import {
+  CRIT_MULTIPLIER,
   GCD_SEC,
   MELEE_RANGE,
   mitigate,
@@ -113,13 +114,21 @@ function dealDamage(
   rawAmount: number,
   crit: boolean,
   physical = true,
+  school?: string,
 ): number {
   const attackerLevel = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
-  const critted = crit ? rawAmount * 2 : rawAmount;
+  const critted = crit ? rawAmount * CRIT_MULTIPLIER : rawAmount;
   const amount = physical
     ? mitigate(critted, armorOfMob(targetId), attackerLevel)
     : Math.max(1, Math.round(critted));
   ctx.scene.entity.effect({ from: userId, to: targetId, effect: "damage", via: { amount } });
+  ctx.scene.entity.floatText({
+    instanceId: targetId,
+    amount,
+    kind: "damage",
+    crit,
+    ...(school !== undefined && school !== "physical" ? { element: school } : {}),
+  });
   addThreat(targetId, userId, amount);
   enterCombat(ctx, userId);
   const lifesteal = externalCombatModsOf(userId)?.lifestealPct ?? 0;
@@ -212,6 +221,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
         abilityAmount(ctx, userId, ability, sheet),
         crit,
         ability.school === "physical",
+        ability.school,
       );
       if (crit && ability.school === "physical") fireWeaponCritProcs(ctx, userId, sheet, targetId);
       hero.autoAttack = true;
@@ -221,13 +231,14 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
     case "heal": {
       const targetId = targetOf(ctx, userId);
       const to = targetId !== null && !isMobInstance(targetId) ? targetId : userId;
-      const amount = abilityAmount(ctx, userId, ability, sheet) * (crit ? 1.5 : 1);
+      const amount = abilityAmount(ctx, userId, ability, sheet) * (crit ? CRIT_MULTIPLIER : 1);
       ctx.scene.entity.effect({
         from: userId,
         to,
         effect: "heal",
         via: { amount: -Math.round(amount) },
       });
+      ctx.scene.entity.floatText({ instanceId: to, amount: Math.round(amount), kind: "heal", crit });
       break;
     }
     case "dot": {
@@ -236,7 +247,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
       const total = abilityAmount(ctx, userId, ability, sheet);
       const ticks = Math.max(1, Math.floor((ability.duration ?? 12) / (ability.tickInterval ?? 3)));
       applyAura(ctx, targetId, userId, ability, Math.max(1, Math.round(total / ticks)), {});
-      dealDamage(ctx, userId, targetId, Math.max(1, Math.round(total / ticks)), false);
+      dealDamage(ctx, userId, targetId, Math.max(1, Math.round(total / ticks)), false, true, ability.school);
       break;
     }
     case "hot": {
@@ -444,7 +455,7 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
         const crit = rollCrit(rng, sheet.critPct);
         const meleePct = externalCombatModsOf(userId)?.meleeDmgPct ?? 0;
         const raw = rollWeaponDamage(rng, sheet.weapon, sheet.attackPower) * (1 + meleePct);
-        dealDamage(ctx, userId, targetId, crit ? raw * 2 : raw, false);
+        dealDamage(ctx, userId, targetId, raw, crit);
         cue(ctx, crit ? "melee_crit" : "melee_hit");
         if (crit) fireWeaponCritProcs(ctx, userId, sheet, targetId);
         gainRage(ctx, userId, SWING_RAGE);
