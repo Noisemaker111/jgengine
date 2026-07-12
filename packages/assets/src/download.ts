@@ -82,6 +82,7 @@ export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string 
 export const DEFAULT_RELEASE_BASE =
   "https://github.com/Noisemaker111/jgengine-assets/releases/download/packs";
 
+/** URL of `source`'s archive on the default GitHub-release mirror. */
 export function defaultReleaseUrl(source: AssetSource): string {
   return `${DEFAULT_RELEASE_BASE}/${source.provider}-${source.id}.zip`;
 }
