@@ -379,10 +379,17 @@ export interface GameContext {
     players?: ConnectedPlayers;
   };
   player: {
+    /** The acting player's id — the command actor inside `runAs`, the local player everywhere else. */
     userId: string;
     isNew: boolean;
+    /** The acting player's inventory set — the command actor's bags inside `runAs`, the local player's everywhere else. */
     inventory: InventorySet<string>;
+    /** A specific player's inventory set — how a host reads or grants into any connected player's bags. */
+    inventoryFor(userId: string): InventorySet<string>;
+    /** The acting player's stat modifiers — the command actor's inside `runAs`, the local player's everywhere else. */
     stats: Stats<string>;
+    /** A specific player's stat modifiers — how a host reads or buffs any connected player's stats. */
+    statsFor(userId: string): Stats<string>;
     loadout: Loadouts;
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
@@ -422,6 +429,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const occluder = options.occluder;
 
   const signal = createChangeSignal();
+  let actingUserId: string | null = null;
+  const activeUserId = () => actingUserId ?? player.userId;
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
   const ground = groundFieldFor(definition.world);
 
@@ -621,7 +630,15 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const roster = features.roster
     ? notifyAfter(createRoster({ now }), ["capture", "release", "setEquipped", "hydrate"], signal.notify)
     : undefined;
-  const playerStats = createStats<string>({});
+  const playerStatsByUser = new Map<string, Stats<string>>();
+  function playerStatsFor(userId: string): Stats<string> {
+    let stats = playerStatsByUser.get(userId);
+    if (stats === undefined) {
+      stats = createStats<string>({});
+      playerStatsByUser.set(userId, stats);
+    }
+    return stats;
+  }
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
   const commandRegistry = createCommandRegistry<GameContext>();
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
@@ -639,11 +656,15 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const traits: ItemTraits = Object.values(inventoryDeclarations).find(
     (declaration) => declaration.traits !== undefined,
   )?.traits ?? { stackLimit: () => Number.POSITIVE_INFINITY };
-  const inventory = notifyAfter(
-    createInventorySet(layouts, traits),
-    ["put", "take", "move", "replaceState"],
-    signal.notify,
-  );
+  const inventoryByUser = new Map<string, InventorySet<string>>();
+  function inventoryFor(userId: string): InventorySet<string> {
+    let set = inventoryByUser.get(userId);
+    if (set === undefined) {
+      set = notifyAfter(createInventorySet(layouts, traits), ["put", "take", "move", "replaceState"], signal.notify);
+      inventoryByUser.set(userId, set);
+    }
+    return set;
+  }
 
   const wallets = new Map<string, WalletState>();
   const walletOf = (userId: string) => wallets.get(userId) ?? createEmptyWallet();
@@ -662,7 +683,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
   };
 
-  function putIntoAnyInventory(itemId: string, count: number): void {
+  function putIntoAnyInventory(userId: string, itemId: string, count: number): void {
+    const inventory = inventoryFor(userId);
     for (const inventoryId of inventoryIds) {
       if (inventory.put(inventoryId, itemId, count).status === "ok") return;
     }
@@ -674,7 +696,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     roll: lootRegistry.roll,
     grantToPlayer(userId, drops, source) {
       grantDrops(drops, {
-        putItem: (itemId, count) => putIntoAnyInventory(itemId, count),
+        putItem: (itemId, count) => putIntoAnyInventory(userId, itemId, count),
         grantCurrency: (currencyId, amount) => economy.grant(userId, currencyId, amount),
       });
       const event: GameEventMap["loot.granted"] = { userId, drops };
@@ -686,32 +708,32 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const trade = createTradeSystem({
     resolveTrade: (itemId) => content.itemById?.(itemId)?.trade,
     wallet: {
-      canAfford: (costs) => (walletCanAfford(walletOf(player.userId), costs) ? null : "insufficient-funds"),
+      canAfford: (costs) => (walletCanAfford(walletOf(activeUserId()), costs) ? null : "insufficient-funds"),
       charge(costs) {
-        const result = walletChargeAll(walletOf(player.userId), costs);
+        const result = walletChargeAll(walletOf(activeUserId()), costs);
         if (result.status === "ok") {
-          wallets.set(player.userId, result.state);
+          wallets.set(activeUserId(), result.state);
           signal.notify();
         }
       },
       grant(gains) {
         for (const [currencyId, amount] of Object.entries(gains)) {
-          economy.grant(player.userId, currencyId, amount);
+          economy.grant(activeUserId(), currencyId, amount);
         }
       },
     },
     inventory: {
       put(inventoryId, itemId, count) {
         if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventory.put(inventoryId, itemId, count);
+        const result = inventoryFor(activeUserId()).put(inventoryId, itemId, count);
         return result.status === "ok" ? null : { reason: result.reason };
       },
       take(inventoryId, itemId, count) {
         if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventory.take(inventoryId, itemId, count);
+        const result = inventoryFor(activeUserId()).take(inventoryId, itemId, count);
         return result.status === "ok" ? null : { reason: result.reason };
       },
-      count: (inventoryId, itemId) => inventory.count(inventoryId, itemId),
+      count: (inventoryId, itemId) => inventoryFor(activeUserId()).count(inventoryId, itemId),
     },
   });
 
@@ -735,9 +757,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       },
       grantEconomy: (userId, currencyId, amount) => economy.grant(userId, currencyId, amount),
       grantItem(userId, inventoryId, itemId, count) {
-        if (userId !== player.userId) return { reason: `unknown user "${userId}"` };
         if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventory.put(inventoryId, itemId, count);
+        const result = inventoryFor(userId).put(inventoryId, itemId, count);
         return result.status === "ok" ? null : { reason: result.reason };
       },
       grantUnlock: (userId, unlockId) => unlocks.grant(userId, unlockId),
@@ -753,7 +774,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const loadouts = notifyAfter(
     createLoadouts({
     inventory: {
-      begin() {
+      begin(userId) {
+        const inventory = inventoryFor(userId);
         const staged = new Map<string, InventoryState>();
         return {
           put(inventoryId, itemId, count, slot) {
@@ -1098,7 +1120,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
 
-  let actingUserId: string | null = null;
   const players = features.players
     ? notifyAfter(createConnectedPlayers(), ["join", "leave"], signal.notify)
     : undefined;
@@ -1219,6 +1240,24 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       hydrate: (data) => store.hydrate(data as readonly (readonly [string, unknown])[]),
     },
     { key: "feed", snapshot: () => feed.snapshot(), hydrate: (data) => feed.hydrate(data as Record<string, FeedEntry[]>) },
+    {
+      key: "inventory",
+      snapshot: () => {
+        const byUser: Record<string, Record<string, InventoryState>> = {};
+        for (const [userId, set] of inventoryByUser) {
+          const states: Record<string, InventoryState> = {};
+          for (const inventoryId of inventoryIds) states[inventoryId] = set.state(inventoryId);
+          byUser[userId] = states;
+        }
+        return byUser;
+      },
+      hydrate: (data) => {
+        for (const [userId, states] of Object.entries(data as Record<string, Record<string, InventoryState>>)) {
+          const set = inventoryFor(userId);
+          for (const [inventoryId, state] of Object.entries(states)) set.replaceState(inventoryId, state);
+        }
+      },
+    },
   ];
   if (leaderboard) {
     snapshotModules.push({
@@ -1354,17 +1393,25 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       players,
     },
     player: {
-      userId: player.userId,
+      get userId() {
+        return activeUserId();
+      },
       isNew: player.isNew,
-      inventory,
-      stats: playerStats,
+      get inventory() {
+        return inventoryFor(activeUserId());
+      },
+      inventoryFor,
+      get stats() {
+        return playerStatsFor(activeUserId());
+      },
+      statsFor: playerStatsFor,
       loadout: loadouts,
       applyLoadout: loadouts.applyLoadout,
       movement: pose,
       possession,
       cosmetics,
       get motion() {
-        return motionFor(actingUserId ?? player.userId);
+        return motionFor(activeUserId());
       },
       motionFor,
     },

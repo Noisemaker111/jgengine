@@ -139,6 +139,10 @@ ship worker returned 'running in background, will report when done' after 1 tool
 
 gate worker briefed to run gen:skill-api/check-types/test twice returned 'waiting on background work' instead of results — had to resume with explicit foreground-only instruction
 
+2026-07-12T22:57:25.162Z — sonnet — Claude
+
+merging main into a branch → gen:skill-api falsely flagged 45 documented exports as new undocumented debt because packages/*/dist was stale (gitignored, JSDoc-stripped build not rebuilt) — bun run build before gen:skill-api fixed it, but the error message pointed at doc-writing, not a stale build
+
 2026-07-12T23:02:02.714Z — fable — NoisemakerJon
 
 measuring editor fps via claude-in-chrome → backgrounded tab starves rAF so CDP evals time out at 45s looking like a hard page freeze; had to pivot to headless drive + in-editor PerfProbe
