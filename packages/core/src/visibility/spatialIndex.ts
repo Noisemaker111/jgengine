@@ -53,10 +53,17 @@ function packCell(x: number, y: number, z: number): string {
   return `${x}:${y}:${z}`;
 }
 
+interface CellBucket {
+  x: number;
+  y: number;
+  z: number;
+  ids: Set<string>;
+}
+
 export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex {
   const size = options.cellSize ?? 16;
   const maxSpan = options.maxCellSpan ?? 6;
-  const cells = new Map<string, Set<string>>();
+  const cells = new Map<string, CellBucket>();
   const oversized = new Set<string>();
   const entries = new Map<string, Entry>();
 
@@ -86,10 +93,10 @@ export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIn
           const key = packCell(x, y, z);
           let bucket = cells.get(key);
           if (bucket === undefined) {
-            bucket = new Set();
+            bucket = { x, y, z, ids: new Set() };
             cells.set(key, bucket);
           }
-          bucket.add(id);
+          bucket.ids.add(id);
         }
       }
     }
@@ -102,8 +109,8 @@ export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIn
           const key = packCell(x, y, z);
           const bucket = cells.get(key);
           if (bucket === undefined) continue;
-          bucket.delete(id);
-          if (bucket.size === 0) cells.delete(key);
+          bucket.ids.delete(id);
+          if (bucket.ids.size === 0) cells.delete(key);
         }
       }
     }
@@ -124,14 +131,18 @@ export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIn
     entries.set(id, { range, dynamic });
   }
 
-  function collectCell(key: string, out: string[]): void {
-    const bucket = cells.get(key);
-    if (bucket === undefined) return;
-    for (const id of bucket) {
+  function collectBucket(bucket: CellBucket, out: string[]): void {
+    for (const id of bucket.ids) {
       if (stamps.get(id) === queryStamp) continue;
       stamps.set(id, queryStamp);
       out.push(id);
     }
+  }
+
+  function collectCell(key: string, out: string[]): void {
+    const bucket = cells.get(key);
+    if (bucket === undefined) return;
+    collectBucket(bucket, out);
   }
 
   function collectOversized(out: string[]): void {
@@ -152,11 +163,22 @@ export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIn
     out.length = 0;
     const x0 = cellOf(minX, size), y0 = cellOf(minY, size), z0 = cellOf(minZ, size);
     const x1 = cellOf(maxX, size), y1 = cellOf(maxY, size), z1 = cellOf(maxZ, size);
-    for (let x = x0; x <= x1; x += 1) {
-      for (let y = y0; y <= y1; y += 1) {
-        for (let z = z0; z <= z1; z += 1) {
-          if (cellFilter !== undefined && !cellFilter(x, y, z)) continue;
-          collectCell(packCell(x, y, z), out);
+    const rangeCellCount = (x1 - x0 + 1) * (y1 - y0 + 1) * (z1 - z0 + 1);
+    if (rangeCellCount > cells.size) {
+      for (const bucket of cells.values()) {
+        if (bucket.x < x0 || bucket.x > x1 || bucket.y < y0 || bucket.y > y1 || bucket.z < z0 || bucket.z > z1) {
+          continue;
+        }
+        if (cellFilter !== undefined && !cellFilter(bucket.x, bucket.y, bucket.z)) continue;
+        collectBucket(bucket, out);
+      }
+    } else {
+      for (let x = x0; x <= x1; x += 1) {
+        for (let y = y0; y <= y1; y += 1) {
+          for (let z = z0; z <= z1; z += 1) {
+            if (cellFilter !== undefined && !cellFilter(x, y, z)) continue;
+            collectCell(packCell(x, y, z), out);
+          }
         }
       }
     }
@@ -235,13 +257,11 @@ export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIn
     cells() {
       const result: { key: string; count: number; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number }[] = [];
       for (const [key, bucket] of cells) {
-        const parts = key.split(":");
-        const x = Number(parts[0]), y = Number(parts[1]), z = Number(parts[2]);
         result.push({
           key,
-          count: bucket.size,
-          minX: x * size, minY: y * size, minZ: z * size,
-          maxX: (x + 1) * size, maxY: (y + 1) * size, maxZ: (z + 1) * size,
+          count: bucket.ids.size,
+          minX: bucket.x * size, minY: bucket.y * size, minZ: bucket.z * size,
+          maxX: (bucket.x + 1) * size, maxY: (bucket.y + 1) * size, maxZ: (bucket.z + 1) * size,
         });
       }
       return result;

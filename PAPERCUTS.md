@@ -126,3 +126,11 @@ phase-7a ship worker pushed the branch onto pre-#595-merge history, so PR #596 s
 2026-07-12T20:30:18.174Z — opus-4.8 — Claude
 
 briefed a gate worker with literal 'bun test' → it scanned the whole tree unbounded (incl Games/) and hung 10min with zero output before the guard killed it; the repo gate is 'bun run test' (guarded, scoped to packages apps/dev scripts). Bare 'bun test' is a footgun in briefs.
+
+2026-07-12T23:02:02.714Z — fable — NoisemakerJon
+
+measuring editor fps via claude-in-chrome → backgrounded tab starves rAF so CDP evals time out at 45s looking like a hard page freeze; had to pivot to headless drive + in-editor PerfProbe
+
+2026-07-12T23:02:02.831Z — fable — NoisemakerJon
+
+check-types → 445 stray compiled .js/.d.ts sitting beside src (tsgo run outside dist) blocked the artifact gate; sibling-match rm before anything could run

@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@jgengine/editor/*": ["./src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/mcp/cli.ts",
+    "src/mcp/bridgeServer.node.ts",
+    "src/mcp/stdioServer.ts",
+    "src/mcp/loadGameLayers.ts"
+  ]
+}

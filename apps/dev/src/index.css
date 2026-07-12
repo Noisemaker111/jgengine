@@ -2,6 +2,7 @@
 @source "../../../Games/*/src/**/*.{ts,tsx}";
 @source "../../../packages/react/src/**/*.{ts,tsx}";
 @source "../../../packages/shell/src/**/*.{ts,tsx}";
+@source "../../../packages/editor/src/**/*.{ts,tsx}";
 @source "../../../registry/jgengine/**/*.{ts,tsx}";
 
 html,

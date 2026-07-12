@@ -22,7 +22,9 @@
       "@jgengine/core/*": ["../../packages/core/src/*"],
       "@jgengine/react/*": ["../../packages/react/src/*"],
       "@jgengine/ws/*": ["../../packages/ws/src/*"],
-      "@jgengine/convex/*": ["../../packages/convex/src/*"]
+      "@jgengine/convex/*": ["../../packages/convex/src/*"],
+      "@jgengine/editor": ["../../packages/editor/src/index.ts"],
+      "@jgengine/editor/*": ["../../packages/editor/src/*"]
     }
   },
   "include": ["src"],

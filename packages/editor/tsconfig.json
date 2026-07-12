@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@jgengine/core/*": ["../core/src/*"],
+      "@jgengine/react": ["../react/src/index.ts"],
+      "@jgengine/react/*": ["../react/src/*"],
+      "@jgengine/shell/*": ["../shell/src/*"],
+      "@jgengine/ws/*": ["../ws/src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/mcp/cli.ts",
+    "src/mcp/bridgeServer.node.ts",
+    "src/mcp/stdioServer.ts",
+    "src/mcp/loadGameLayers.ts"
+  ]
+}

@@ -75,6 +75,8 @@ export default defineConfig({
       { find: /^@jgengine\/github\/(.*)$/, replacement: `${src("github")}/$1` },
       { find: /^@jgengine\/assets$/, replacement: `${src("assets")}/index.ts` },
       { find: /^@jgengine\/assets\/(.*)$/, replacement: `${src("assets")}/$1` },
+      { find: /^@jgengine\/editor$/, replacement: `${src("editor")}/index.ts` },
+      { find: /^@jgengine\/editor\/(.*)$/, replacement: `${src("editor")}/$1` },
       ...gameAliases,
     ],
   },

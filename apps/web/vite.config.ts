@@ -100,9 +100,9 @@ export default defineConfig({
       prerender: {
         enabled: true,
         crawlLinks: true,
-        filter: (page) => !page.path.replace(/[?#].*$/, "").endsWith(".md"),
+        filter: (page: { path: string }) => !page.path.replace(/[?#].*$/, "").endsWith(".md"),
       },
-    }),
+    } as Parameters<typeof tanstackStart>[0]),
     nitro({ devServer: { runner: "self" } }),
     viteReact(),
     registryPlugin(),
