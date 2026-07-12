@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "17 6 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - "packages/assets/src/sources/**"
+      - "scripts/mirror-assets.ts"
+      - ".github/workflows/mirror-assets.yml"
 
 permissions:
   contents: write
