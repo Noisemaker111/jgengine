@@ -2,6 +2,7 @@ import type {
   BiomeBand,
   EnvironmentWorldFeature,
   TerrainColors,
+  TerrainDetailConfig,
   TerrainEnvironmentConfig,
   TerrainEnvironmentDescriptor,
   TerrainFlattenMask,
@@ -337,6 +338,37 @@ export const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> 
   highland: { low: "#414f33", high: "#a3a86b", waterline: "#365f63" },
   slate: { low: "#2f3540", high: "#7d8896", waterline: "#26404f" },
 };
+
+/** A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes. */
+export type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel">> & { waterLevel: number };
+
+const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
+  rockColor: "#6f7175",
+  sandColor: "#c2b283",
+  snowColor: "#eef3f7",
+  rockSlopeStart: 0.42,
+  snowHeight: 26,
+  detailScale: 5,
+  macroScale: 45,
+  roughness: 0.9,
+  strength: 1,
+};
+
+/** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level. */
+export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail {
+  return {
+    rockColor: config.rockColor ?? DEFAULT_TERRAIN_DETAIL.rockColor,
+    sandColor: config.sandColor ?? DEFAULT_TERRAIN_DETAIL.sandColor,
+    snowColor: config.snowColor ?? DEFAULT_TERRAIN_DETAIL.snowColor,
+    rockSlopeStart: config.rockSlopeStart ?? DEFAULT_TERRAIN_DETAIL.rockSlopeStart,
+    snowHeight: config.snowHeight ?? DEFAULT_TERRAIN_DETAIL.snowHeight,
+    detailScale: config.detailScale ?? DEFAULT_TERRAIN_DETAIL.detailScale,
+    macroScale: config.macroScale ?? DEFAULT_TERRAIN_DETAIL.macroScale,
+    roughness: config.roughness ?? DEFAULT_TERRAIN_DETAIL.roughness,
+    strength: config.strength ?? DEFAULT_TERRAIN_DETAIL.strength,
+    waterLevel: config.waterLevel ?? terrainWaterLevel,
+  };
+}
 
 export function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors"> = {}): TerrainPalette {
   const material = descriptor.material ?? DEFAULT_TERRAIN_MATERIAL;

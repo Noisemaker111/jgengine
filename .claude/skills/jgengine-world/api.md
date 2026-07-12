@@ -1106,6 +1106,7 @@
 - `StructureEnvironmentDescriptor` (type): type StructureEnvironmentDescriptor = BuildingEnvironmentDescriptor — ⚠ undocumented
 - `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
 - `TerrainColors` (interface): interface TerrainColors — ⚠ undocumented
+- `TerrainDetailConfig` (interface): interface TerrainDetailConfig — Procedural detail-surface layer for terrain: a noise-driven shader that keeps the biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock, sand, and snow over it by slope, height, and waterline — turning a flat vertex-colour surface into varied, textured-reading ground with no image assets.
 - `TerrainEnvironmentConfig` (interface): interface TerrainEnvironmentConfig — ⚠ undocumented
 - `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented
 - `TerrainFlattenMask` (interface): interface TerrainFlattenMask — ⚠ undocumented
@@ -1375,6 +1376,7 @@
 - `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — ⚠ undocumented
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — ⚠ undocumented
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel">> & { waterLevel: number } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `RollingFieldConfig` (interface): interface RollingFieldConfig — ⚠ undocumented
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
 - `TerrainField` (interface): interface TerrainField — ⚠ undocumented
@@ -1392,6 +1394,7 @@
 - `noiseField` (function): function noiseField(config: NoiseFieldConfig = {}): TerrainField — ⚠ undocumented
 - `resolveEnvironmentField` (function): function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField — The full ground field for an environment world: base `terrain` composed with any `islands`.
 - `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope = DEFAULT_MAX_WALK_SLOPE): { stepX: number; stepZ: number } — ⚠ undocumented
+- `resolveTerrainDetail` (function): function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail — Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level.
 - `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — ⚠ undocumented
 - `resolveTerrainPalette` (function): function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors"> = {}): TerrainPalette — ⚠ undocumented
 - `rollingField` (function): function rollingField(config: RollingFieldConfig = {}): TerrainField — ⚠ undocumented

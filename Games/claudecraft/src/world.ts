@@ -28,6 +28,16 @@ export const world: EnvironmentWorldFeature = environment({
     baseHeight: 9,
     waterLevel: -1.5,
     segments: 220,
+    detail: {
+      rockColor: "#6b6d66",
+      sandColor: "#c2b283",
+      snowColor: "#eef3f7",
+      rockSlopeStart: 0.28,
+      snowHeight: 17,
+      detailScale: 5.5,
+      macroScale: 48,
+      roughness: 0.92,
+    },
     flatten: [
       { center: [vale.hub.x, vale.hub.z], radius: vale.hub.radius, falloff: 18 },
       { center: [marsh.hub.x, marsh.hub.z], radius: marsh.hub.radius, falloff: 16 },

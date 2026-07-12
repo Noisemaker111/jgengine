@@ -17,6 +17,8 @@ export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" |
   paletteAt?: FieldGroundOptions["paletteAt"];
   roughness?: number;
   metalness?: number;
+  /** Override the default vertex-colour material (e.g. a procedural detail material). The caller owns its lifecycle; it is not disposed here. */
+  surfaceMaterial?: THREE.Material;
   /** Bump after a runtime carve/deposit to re-mesh the deformed surface. */
   epoch?: number;
 }
@@ -36,6 +38,7 @@ export function CarvedTerrain({
   paletteAt,
   roughness = 0.95,
   metalness = 0,
+  surfaceMaterial,
   receiveShadow = true,
   epoch = 0,
   ...meshProps
@@ -45,13 +48,14 @@ export function CarvedTerrain({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [field, size, segments, center, colors, heightRange, paletteAt, epoch],
   );
-  const material = useMemo(
+  const defaultMaterial = useMemo(
     () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness, metalness, vertexColors: true }),
     [metalness, roughness],
   );
+  const material = surfaceMaterial ?? defaultMaterial;
 
   useEffect(() => () => geometry.dispose(), [geometry]);
-  useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => defaultMaterial.dispose(), [defaultMaterial]);
 
   return <mesh {...meshProps} geometry={geometry} material={material} receiveShadow={receiveShadow} />;
 }

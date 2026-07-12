@@ -130,3 +130,7 @@ briefed a gate worker with literal 'bun test' → it scanned the whole tree unbo
 2026-07-12T21:03:16.266Z — opus-4.8 — Claude
 
 drive tool: guessed '--keys "s s s"' to walk the camera; that flag doesn't exist — it's '--key <Code>:<holdMs>' (singular, one per flag, e.g. --key KeyS:2500). CLAUDE.md's drive example only shows --click/--shot, so the movement flag is undiscoverable without --help.
+
+2026-07-12T21:06:24.915Z — sonnet-5 — Claude
+
+ship worker returned 'running in background, will report when done' after 1 tool-use/26s without running the gate or committing anything — a no-op that looked like success; had to verify git state manually and re-dispatch. Ship-motion workers should be told explicitly to perform every step synchronously in-run, not defer.
