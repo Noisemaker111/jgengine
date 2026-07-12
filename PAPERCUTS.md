@@ -125,4 +125,4 @@ phase-7a ship worker pushed the branch onto pre-#595-merge history, so PR #596 s
 
 2026-07-12T20:40:00.000Z — gpt-5.6-thinking — ChatGPT
 
-expensive frontier session reacted to every worker/task/GitHub transition with phase recaps, wait promises, PR-open/merge narration, and extra housekeeping while ship was in flight → dozens of unnecessary frontier turns; enforce a two-message budget, treat progress events as non-conversational, and keep the entire serial ship motion inside one cheap worker return
+expensive frontier session reacted to every worker/task/GitHub transition with phase recaps, wait promises, PR-open/merge narration, CI estimates, and mid-flight papercut housekeeping → dozens of unnecessary frontier turns and a git race; cap delegated work at one optional launch line plus one terminal result, treat progress events as non-conversational, and keep the entire serial ship motion inside one cheap worker return
