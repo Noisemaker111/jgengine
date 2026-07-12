@@ -47,7 +47,9 @@ function TerrainGround({
 }) {
   const palette = useMemo(() => resolveTerrainPalette(terrain), [terrain]);
   const paletteAt = useMemo(() => {
-    if (terrain.materialRegions === undefined || terrain.materialRegions.length === 0) return undefined;
+    const hasRegions = terrain.materialRegions !== undefined && terrain.materialRegions.length > 0;
+    const hasBands = terrain.biomeBands !== undefined && terrain.biomeBands.length > 0;
+    if (!hasRegions && !hasBands) return undefined;
     const sampler = createTerrainPaletteSampler(terrain);
     if (center === undefined) return sampler;
     return (x: number, z: number) => sampler(x - center[0], z - center[1]);
