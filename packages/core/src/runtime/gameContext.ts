@@ -327,6 +327,8 @@ export interface GameContext {
     commands: GameContextCommands;
     events: GameEvents;
     audio: GameAudio;
+    /** Play a model's one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an attack swing) — emits `entity.animation` for the shell to pick up. */
+    playEntityAnimation(instanceId: string, event: string): void;
     feed: GameContextFeed;
     loot: GameContextLoot;
     trade: TradeSystem;
@@ -1202,6 +1204,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         },
       },
       events,
+      playEntityAnimation: (instanceId, event) => events.emit("entity.animation", { instanceId, event }),
       audio: {
         play: (sound, at) => events.emit("audio.play", at === undefined ? { sound } : { sound, at }),
         resume: () => events.emit("audio.resume", {}),

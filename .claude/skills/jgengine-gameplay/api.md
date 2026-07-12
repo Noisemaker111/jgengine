@@ -299,6 +299,7 @@
 - `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — ⚠ undocumented
 - `EmotePlayedEvent` (interface): interface EmotePlayedEvent — ⚠ undocumented
+- `EntityAnimationEvent` (interface): interface EntityAnimationEvent — Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state.
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `FormChangedEvent` (interface): interface FormChangedEvent — ⚠ undocumented
@@ -395,6 +396,11 @@
 - `createLootRegistry` (function): function createLootRegistry(): LootRegistry — ⚠ undocumented
 - `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — ⚠ undocumented
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — ⚠ undocumented
+
+## @jgengine/core/game/modelAnimation
+
+- `AUTO_ONE_SHOT_EVENTS` (const): const AUTO_ONE_SHOT_EVENTS: readonly ["hit", "death"] — The two one-shot events the shell fires automatically for an entity, from `combat.hitReaction` and `entity.died`.
+- `resolveOneShotClip` (function): function resolveOneShotClip(oneShots: Record<string, string | readonly string[]> | undefined, event: string, roll: number): string | null — Resolves the clip name a one-shot `event` should play from a model's `animation.oneShots` map, or `null` if the event isn't bound. A `string[]` binding picks a variant by `roll` (a value in `[0, 1)`), so combat can vary attack swings. Pure and deterministic given `roll` — the shell supplies the randomness.
 
 ## @jgengine/core/game/ping
 
