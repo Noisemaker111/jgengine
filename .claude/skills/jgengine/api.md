@@ -18,7 +18,10 @@
 - `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown; updatedAt: number; } — ⚠ undocumented
 - `GameRuntimeSnapshot` (type): type GameRuntimeSnapshot = { version: number; gameId: string; serverId: string; server: RuntimeServerRow; players: Record<string, RuntimePlayerRow>; chunks: Record<string, RuntimeChunkRow>; revision: number; dirty: { server: boolean; players: string[]; chunks: string[]; }; } — ⚠ undocumented
 - `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string }) => Promise<JoinServerResult>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented
+- `HostedGameRunner` (interface): interface HostedGameRunner — The GameContext-loop equivalent of the pure-reducer `createGameHost`: one authoritative `createGameContext` per world, driven server-side. `onInit` runs once at construction; `onNewPlayer`/`onPlayerLeave` fire per join/leave; `tick` advances `onTick` then commits a revision. Clients pull a full {@link WorldSnapshot} baseline once, then per-tick {@link WorldDiff}s from their last revision. Games ship only normal GameContext code — the runner adds no per-game surface.
+- `HostedGameRunnerOptions` (interface): interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity.
 - `HydrateInput` (type): type HydrateInput = { gameId: string; serverId: string; serverRow: RuntimeServerRow; playersByUserId: Record<string, RuntimePlayerRow>; chunksByKey: Record<string, RuntimeChunkRow>; revision?: number; } — ⚠ undocumented
+- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, mirroring `ctx.input`.
 - `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; } — ⚠ undocumented
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
 - `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology } | { kind: "ws"; topology?: MultiplayerTopology; url?: string } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string } | { kind: "p2p"; topology?: MultiplayerTopology; room?: string } | { kind: "lan"; t… — ⚠ undocumented
@@ -53,8 +56,11 @@
 - `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
 - `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
 - `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
+- `WorldDiff` (interface): interface WorldDiff — A revision-stamped delta over a {@link WorldSnapshot}. The host sends one per tick to each client, carrying only what changed since that client's last acknowledged revision — entity/stat/store deltas plus whole snapshots of any other opted-in module (feed, leaderboard, chat, …) that changed. Fold it onto a prior baseline with {@link applyWorldDiff}.
+- `WorldReplicator` (type): type WorldReplicator = ReturnType<typeof createWorldReplicator> — The stateful diff tracker returned by {@link createWorldReplicator}: `commit()`, `diff(sinceRevision)`, `revision()`.
 - `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
+- `applyWorldDiff` (function): function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldSnapshot — Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities, stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.
 - `applyWorldSnapshot` (function): function applyWorldSnapshot(modules: readonly SnapshotModule[], snapshot: WorldSnapshot): void — Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
 - `clearDirtyFlags` (function): function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
 - `composeWorldSnapshot` (function): function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot — Serialize every registered module into one keyed baseline — the host→client full-world send.
@@ -62,7 +68,9 @@
 - `createEmptyPlayerRow` (function): function createEmptyPlayerRow(userId: string): RuntimePlayerRow — ⚠ undocumented
 - `createEmptyServerRow` (function): function createEmptyServerRow(): RuntimeServerRow — ⚠ undocumented
 - `createGameRuntime` (function): function createGameRuntime(definition: GameRuntimeDefinition): GameRuntime — ⚠ undocumented
+- `createHostedGameRunner` (function): function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>): HostedGameRunner — Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
 - `createRuntimeSnapshot` (function): function createRuntimeSnapshot(args: { gameId: string; serverId: string; server?: RuntimeServerRow; players?: Record<string, RuntimePlayerRow>; chunks?: Record<string, RuntimeChunkRow>; revision?: number; }): GameRuntimeSnapshot — ⚠ undocumented
+- `createWorldReplicator` (function): function createWorldReplicator(takeSnapshot: () => WorldSnapshot): { commit: () => number; diff: (sinceRevision: number) => WorldDiff; revision: () => number; } — Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)` then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per commit; dirty-hint acceleration is a later optimization behind the same seam.
 - `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string }): MultiplayerAdapterConfig — ⚠ undocumented
 - `isSaveEnabled` (function): function isSaveEnabled(config: SaveConfig): config is Exclude<SaveConfig, "none"> — ⚠ undocumented
 - `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; }): MultiplayerAdapterConfig — ⚠ undocumented
@@ -351,6 +359,13 @@
 - `topLeaderboardRows` (function): function topLeaderboardRows(rows: Iterable<LeaderboardRow>, args: { gameId: string; stat: string; scope: LeaderboardScope; serverId?: string; limit?: number; }): LeaderboardEntry[] — ⚠ undocumented
 - `trimFeedEntries` (function): function trimFeedEntries<T>(entries: T[], limit = FEED_RING_LIMIT): T[] — ⚠ undocumented
 
+## @jgengine/core/runtime/hostedGameRunner
+
+- `HostedGameRunner` (interface): interface HostedGameRunner — The GameContext-loop equivalent of the pure-reducer `createGameHost`: one authoritative `createGameContext` per world, driven server-side. `onInit` runs once at construction; `onNewPlayer`/`onPlayerLeave` fire per join/leave; `tick` advances `onTick` then commits a revision. Clients pull a full {@link WorldSnapshot} baseline once, then per-tick {@link WorldDiff}s from their last revision. Games ship only normal GameContext code — the runner adds no per-game surface.
+- `HostedGameRunnerOptions` (interface): interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity.
+- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, mirroring `ctx.input`.
+- `createHostedGameRunner` (function): function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>): HostedGameRunner — Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
+
 ## @jgengine/core/runtime/inputSnapshot
 
 - `InputSnapshot` (interface): interface InputSnapshot — ⚠ undocumented
@@ -434,6 +449,13 @@
 - `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
 - `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
 - `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
+
+## @jgengine/core/runtime/worldReplication
+
+- `WorldDiff` (interface): interface WorldDiff — A revision-stamped delta over a {@link WorldSnapshot}. The host sends one per tick to each client, carrying only what changed since that client's last acknowledged revision — entity/stat/store deltas plus whole snapshots of any other opted-in module (feed, leaderboard, chat, …) that changed. Fold it onto a prior baseline with {@link applyWorldDiff}.
+- `WorldReplicator` (type): type WorldReplicator = ReturnType<typeof createWorldReplicator> — The stateful diff tracker returned by {@link createWorldReplicator}: `commit()`, `diff(sinceRevision)`, `revision()`.
+- `applyWorldDiff` (function): function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldSnapshot — Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities, stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.
+- `createWorldReplicator` (function): function createWorldReplicator(takeSnapshot: () => WorldSnapshot): { commit: () => number; diff: (sinceRevision: number) => WorldDiff; revision: () => number; } — Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)` then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per commit; dirty-hint acceleration is a later optimization behind the same seam.
 
 ## @jgengine/core/runtime/worldSnapshot
 

@@ -83,6 +83,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
       onInit: loop?.onInit ?? noop,
       onNewPlayer: loop?.onNewPlayer ?? noop,
       onTick: loop?.onTick ?? noop,
+      onPlayerLeave: loop?.onPlayerLeave ?? noop,
     },
     GameUI: GameUI ?? emptyUi,
     environment:

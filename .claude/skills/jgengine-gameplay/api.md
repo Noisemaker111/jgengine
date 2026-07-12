@@ -286,6 +286,7 @@
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — ⚠ undocumented
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — ⚠ undocumented
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — ⚠ undocumented
+- `LoopPlayer` (interface): interface LoopPlayer — Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks.
 - `PhysicsConfig` (interface): interface PhysicsConfig — ⚠ undocumented
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — ⚠ undocumented
 

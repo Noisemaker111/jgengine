@@ -26,10 +26,19 @@ export interface InventoryDeclaration {
 
 export type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown };
 
+/** Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks. */
+export interface LoopPlayer {
+  userId: string;
+  isNew: boolean;
+}
+
 export interface GameLoop<TContext = unknown> {
   onInit?(ctx: TContext): void;
-  onNewPlayer?(ctx: TContext): void;
+  /** Once per join. `player` identifies the joiner in a hosted world; single-player callers may omit it. */
+  onNewPlayer?(ctx: TContext, player?: LoopPlayer): void;
   onTick?(ctx: TContext, dt: number): void;
+  /** Once per leave in a hosted world (never fired single-player). Despawn the player's entities / release their slots here. */
+  onPlayerLeave?(ctx: TContext, player: LoopPlayer): void;
 }
 
 /**
