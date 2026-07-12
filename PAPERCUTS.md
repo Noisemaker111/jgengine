@@ -84,6 +84,10 @@ multi-round verify loop → stop-hook demanded a commit+push after every single 
 
 briefed a Sonnet worker to run gates → it spawned its own background child and returned 'launched in background' instead of results; had to re-run with explicit foreground instruction
 
+2026-07-12T04:20:45.614Z — fable-5 — Claude
+
+ship worker replied 'running in background, will report' and its TaskOutput id 404'd → dispatched a duplicate worker; the original had actually finished under a different task id with the commit already pushed
+
 2026-07-12T04:59:14.718Z — fable-5 — Claude
 
 delegated verify/screenshot workers twice re-delegated to sub-workers and returned 'waiting on the worker' as their result → had to re-dispatch with explicit 'do not spawn sub-agents' briefs

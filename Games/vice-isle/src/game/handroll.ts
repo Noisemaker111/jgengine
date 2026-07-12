@@ -1,10 +1,11 @@
+import { cameraShake } from "@jgengine/shell/camera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { steerYaw } from "@jgengine/core/movement/steering";
 import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "@jgengine/core/physics/vehicleBody";
 import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { seededRng } from "@jgengine/core/random/rng";
 import { createRaceState, firstPastPost, raceTrack, type RaceState } from "@jgengine/core/game/race";
-import { RACE_CHECKPOINTS, TRAFFIC_LOOPS } from "./world/districts";
+import { RACE_CHECKPOINTS } from "./world/districts";
 
 export interface CarTuning {
   engineAccel: number;
@@ -137,7 +138,7 @@ export interface Handroll {
   addHeat(ctx: GameContext, amount: number): void;
   clearWanted(ctx: GameContext): void;
   wanted(): WantedSnapshot;
-  registerTrafficCar(entityId: string, loopIndex: number, startT: number): void;
+  registerRoute(entityId: string, waypoints: readonly (readonly [number, number])[], speed: number, startT: number): void;
   startRace(ctx: GameContext): boolean;
   raceActive(): boolean;
   explodeVehicle(ctx: GameContext, vehicleId: string, at: readonly [number, number, number]): void;
@@ -373,8 +374,10 @@ export function createHandroll(): Handroll {
   }
 
   function tickTraffic(ctx: GameContext, dt: number): void {
+    const panicking = stars() > 0;
     for (const car of traffic) {
       if (car.entityId === driving) continue;
+      if (panicking && car.entityId.startsWith("ped_")) continue;
       car.state = advancePathFollow(car.config, car.state, dt);
       const [x, , z] = car.state.position;
       ctx.scene.entity.setPose(car.entityId, {
@@ -462,6 +465,7 @@ export function createHandroll(): Handroll {
     },
     raceActive: () => race !== null,
     explodeVehicle(ctx, vehicleId, at) {
+      cameraShake(0.7);
       ctx.scene.entity.effect({ from: vehicleId, at, radius: 6, effect: "damage", via: { amount: 55 } });
       if (driving === vehicleId) {
         driving = null;
@@ -474,11 +478,13 @@ export function createHandroll(): Handroll {
       carStates.delete(vehicleId);
       cruiserStates.delete(vehicleId);
     },
-    registerTrafficCar(entityId, loopIndex, startT) {
-      const loop = TRAFFIC_LOOPS[loopIndex % TRAFFIC_LOOPS.length];
-      if (loop === undefined) return;
-      const waypoints = loop.map(([x, z]) => [x, 0, z] as const);
-      const config: PathFollowConfig = { waypoints, speed: 7, loop: true };
+    registerRoute(entityId, waypoints, speed, startT) {
+      if (waypoints.length < 2) return;
+      const config: PathFollowConfig = {
+        waypoints: waypoints.map(([x, z]) => [x, 0, z] as const),
+        speed,
+        loop: true,
+      };
       let state = createPathFollow(config);
       state = advancePathFollow(config, state, startT);
       traffic.push({ entityId, config, state });

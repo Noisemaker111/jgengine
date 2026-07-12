@@ -204,6 +204,32 @@ export type SkyEnvironmentDescriptor = { kind: "sky" } & Required<
 > &
   Omit<SkyEnvironmentConfig, "preset" | "timeOfDay">;
 
+/** Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline. */
+export interface RoadEnvironmentConfig {
+  /** Centerline vertices in world XZ; at least two points. */
+  path: readonly (readonly [number, number])[];
+  /** Ribbon width in world units. Default 8. */
+  width?: number;
+  /** Asphalt color. Default "#3b3e47". */
+  color?: string;
+  /** Paint a dashed centerline. Default true. */
+  markings?: boolean;
+  /** Centerline dash color. Default "#e8c74a". */
+  markingColor?: string;
+  /** Lift above the terrain to avoid z-fighting; stagger overlapping roads. Default 0.08. */
+  elevation?: number;
+  /** Sidewalk bands on both edges; `false` for none. Default `{ width: 2.6, color: "#a7adb8" }`. */
+  sidewalk?: { width?: number; color?: string } | false;
+}
+
+/** Resolved road descriptor produced by {@link road} and rendered by the shell environment scene. */
+export type RoadEnvironmentDescriptor = { kind: "road" } & Required<
+  Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation">
+> & {
+  /** Resolved sidewalk band, or `false` when the road has none. */
+  sidewalk: { width: number; color: string } | false;
+};
+
 export type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor;
 export type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor;
 export type WaterEnvironmentDescriptor = OceanEnvironmentDescriptor;
@@ -220,6 +246,8 @@ export interface EnvironmentWorldConfig {
   vegetation?: EnvironmentDescriptorList<VegetationEnvironmentDescriptor>;
   water?: EnvironmentDescriptorList<WaterEnvironmentDescriptor>;
   structures?: EnvironmentDescriptorList<StructureEnvironmentDescriptor>;
+  /** Road ribbons draped over the terrain — see `road()`. */
+  roads?: EnvironmentDescriptorList<RoadEnvironmentDescriptor>;
   /** Ground pads, e.g. platforms or paved patches; each implicitly flattens the terrain beneath it. */
   pads?: readonly PadEnvironmentDescriptor[];
 }
@@ -233,6 +261,7 @@ export interface EnvironmentWorldFeature {
   vegetation?: readonly VegetationEnvironmentDescriptor[];
   water?: readonly WaterEnvironmentDescriptor[];
   structures?: readonly StructureEnvironmentDescriptor[];
+  roads?: readonly RoadEnvironmentDescriptor[];
   pads?: readonly PadEnvironmentDescriptor[];
 }
 
@@ -329,6 +358,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
   const vegetation = list(config.vegetation);
   const water = list(config.water);
   const structures = list(config.structures);
+  const roads = list(config.roads);
   const terrainDescriptor = withPadFlatten(config.terrain, config.pads);
 
   return {
@@ -340,6 +370,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
     ...(vegetation === undefined ? {} : { vegetation }),
     ...(water === undefined ? {} : { water }),
     ...(structures === undefined ? {} : { structures }),
+    ...(roads === undefined ? {} : { roads }),
     ...(config.pads === undefined ? {} : { pads: config.pads }),
   };
 }
@@ -447,6 +478,26 @@ export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDesc
     color: config.color ?? "#1d7fa3",
     ...(config.position === undefined ? {} : { position: config.position }),
     ...(config.levelAt === undefined ? {} : { levelAt: config.levelAt }),
+  };
+}
+
+/** Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain. */
+export function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor {
+  if (config.path.length < 2) {
+    throw new Error("road: path needs at least two points");
+  }
+  return {
+    kind: "road",
+    path: config.path,
+    width: config.width ?? 8,
+    color: config.color ?? "#3b3e47",
+    markings: config.markings ?? true,
+    markingColor: config.markingColor ?? "#e8c74a",
+    elevation: config.elevation ?? 0.08,
+    sidewalk:
+      config.sidewalk === false
+        ? false
+        : { width: config.sidewalk?.width ?? 2.6, color: config.sidewalk?.color ?? "#a7adb8" },
   };
 }
 

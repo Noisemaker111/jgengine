@@ -12,6 +12,7 @@ import { MissionTracker } from "./components/MissionTracker";
 import { ShopPanel } from "./components/ShopPanel";
 import { Speedo } from "./components/Speedo";
 import { StatusPanel } from "./components/StatusPanel";
+import { TitleScreen, useGameStarted } from "./components/TitleScreen";
 import { WantedStars } from "./components/WantedStars";
 
 function PromptHint() {
@@ -36,6 +37,14 @@ function PromptHint() {
 
 export function GameUI() {
   const layout = useHudLayout({ storageKey: "vice-isle" });
+  const started = useGameStarted();
+  if (!started) {
+    return (
+      <div className="pointer-events-none absolute inset-0 z-20 font-sans">
+        <TitleScreen />
+      </div>
+    );
+  }
   return (
     <HudCanvas layout={layout} className="z-20 font-sans">
       <HudPanel id="wanted" anchor="top" compact="keep" interactive={false}>

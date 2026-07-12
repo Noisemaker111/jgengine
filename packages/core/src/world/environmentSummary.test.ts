@@ -16,6 +16,7 @@ describe("environmentSummary", () => {
       vegetationFields: 0,
       waterBodies: 0,
       weatherSystems: 0,
+      roads: 0,
     });
   });
 

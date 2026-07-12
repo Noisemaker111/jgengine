@@ -1,8 +1,7 @@
 import { useEffect } from "react";
-import { useCurrency, useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useCurrency, useGame, useGameStore } from "@jgengine/react/hooks";
 import { AMMO_LABELS, AMMO_POOLS } from "../../ammo";
 import { gearItems, AMMO_PRICES } from "../../items/gear/catalog";
-import { SKILLS } from "../../progression/curves";
 import { PANDORA } from "../../palette";
 
 export function FfylOverlay() {
@@ -142,54 +141,6 @@ export function VendorPanel() {
         />
       </div>
       <p className="mt-3 text-[11px] uppercase tracking-wider text-stone-500">No refunds.</p>
-    </PanelFrame>
-  );
-}
-
-export function SkillsPanel() {
-  const { commands } = useGame();
-  const { userId } = usePlayer();
-  const open = useGameStore((ctx) => ctx.game.store.get("skillsOpen") === true);
-  const points = useEntityStat(userId, "skillPoints");
-  const brawn = useEntityStat(userId, "skill_brawn");
-  const gunlust = useEntityStat(userId, "skill_gunlust");
-  const quickcharge = useEntityStat(userId, "skill_quickcharge");
-  useCloseOnOpen(open);
-  if (!open) return null;
-  const ranks: Record<string, number> = {
-    brawn: brawn?.current ?? 0,
-    gunlust: gunlust?.current ?? 0,
-    quickcharge: quickcharge?.current ?? 0,
-  };
-  const available = points?.current ?? 0;
-  return (
-    <PanelFrame title={`Skills — ${Math.round(available)} points`} onClose={() => commands.run("ui.openSkills", {})}>
-      <div className="flex flex-col gap-1.5">
-        {SKILLS.map((skill) => {
-          const rank = Math.round(ranks[skill.id] ?? 0);
-          const maxed = rank >= 5;
-          const affordable = available >= 1 && !maxed;
-          return (
-            <button
-              key={skill.id}
-              type="button"
-              disabled={!affordable}
-              onClick={() => commands.run("skill.spend", { skill: skill.id })}
-              className={`flex w-full items-center gap-3 border px-3 py-2 text-left ${
-                affordable
-                  ? "border-stone-700 bg-stone-900/80 hover:border-lime-400/70 hover:bg-stone-800"
-                  : "cursor-not-allowed border-stone-800 bg-stone-950/60 opacity-60"
-              }`}
-            >
-              <span className="flex-1">
-                <span className="block text-sm font-bold uppercase tracking-wider text-stone-100">{skill.name}</span>
-                <span className="block text-[11px] text-stone-400">{skill.blurb}</span>
-              </span>
-              <span className="text-sm font-black tabular-nums text-lime-300">{rank} / 5</span>
-            </button>
-          );
-        })}
-      </div>
     </PanelFrame>
   );
 }

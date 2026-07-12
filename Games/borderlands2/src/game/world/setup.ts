@@ -3,6 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { rememberHome } from "../entities/enemies/ai";
 import { enemyById, levelHealthMult } from "../entities/enemies/catalog";
+import { placeLevel, SIDE_POIS } from "./level";
 import {
   BLACK_MARKET_POS,
   CLAPTRAP_POS,
@@ -75,6 +76,22 @@ function planClusters(ctx: GameContext): void {
       });
     }
   }
+  const poiRng = seededRng("bl2-poi-spawns");
+  for (const poi of SIDE_POIS) {
+    const anchor = ZONES.find((zone) => zone.id === poi.anchorZoneId);
+    poi.spawns.forEach((entry, entryIndex) => {
+      for (let index = 0; index < entry.count; index += 1) {
+        const angle = poiRng() * Math.PI * 2;
+        const distance = 3 + poiRng() * poi.radius * 0.7;
+        clusterMembers.push({
+          id: `spawn_${poi.id}_${entryIndex}_${index}`,
+          catalogId: entry.catalogId,
+          position: grounded(ctx, poi.x + Math.cos(angle) * distance, poi.z + Math.sin(angle) * distance),
+          level: anchor?.level ?? 1,
+        });
+      }
+    });
+  }
 }
 
 export function respawnClusters(ctx: GameContext): void {
@@ -115,6 +132,19 @@ export function setupWorld(ctx: GameContext): void {
   RED_CHESTS.forEach((chest, index) => place("red_chest", chest.x, chest.z, `red_chest_${index}`));
   AMMO_CHESTS.forEach((chest, index) => place("ammo_chest", chest.x, chest.z, `ammo_chest_${index}`));
 
+  const propRng = seededRng("bl2-props");
+  const PROP_KINDS = ["rock_spire", "rock_spire", "dead_tree", "wreck"] as const;
+  for (let index = 0; index < 90; index += 1) {
+    const x = (propRng() - 0.5) * 1300;
+    const z = (propRng() - 0.5) * 1300;
+    const nearZone = ZONES.some(
+      (zone) => Math.hypot(x - zone.center.x, z - zone.center.z) < zone.flattenRadius * 0.8,
+    );
+    if (nearZone) continue;
+    const kind = PROP_KINDS[Math.floor(propRng() * PROP_KINDS.length)]!;
+    place(kind, x, z, `prop_${index}`);
+  }
+
   const barrelRng = seededRng("bl2-barrels");
   ZONES.forEach((zone, zoneIndex) => {
     for (let index = 0; index < 4; index += 1) {
@@ -125,6 +155,7 @@ export function setupWorld(ctx: GameContext): void {
   });
 
   ctx.scene.entity.spawn("claptrap", { id: "claptrap_1", position: grounded(ctx, CLAPTRAP_POS[0], CLAPTRAP_POS[2]) });
+  placeLevel(ctx);
 
   planClusters(ctx);
   for (const member of clusterMembers) spawnMember(ctx, member);

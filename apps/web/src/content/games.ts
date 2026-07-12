@@ -87,7 +87,7 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     title: "Borderlands 2 Demake",
     tagline: "Bazillions of procedurally generated guns, one dusty demake of Pandora.",
     description:
-      "A fan demake homage to Gearbox's Borderlands 2. Take missions from Claptrap in Fyrestone, clear the bandit camp, thin the skag gully, and bring down Captain Flynt. Every gun is procedurally rolled — manufacturer, rarity, and element included — shields recharge, elements burn, shock, and corrode, and going down starts Fight For Your Life: get a kill for a Second Wind or pay the New-U station its cut.",
+      "A fan demake homage to Gearbox's Borderlands 2. Pick one of three Vault Hunters — Salvador, Maya, or Zer0, each with a unique three-branch skill tree — and follow the campaign across six zones of Pandora, from Windshear Waste to The Warrior at Hero's Pass. Every gun is procedurally rolled (manufacturer, rarity, element), shields recharge, elements burn, shock, and corrode, and going down starts Fight For Your Life: get a kill for a Second Wind or pay the New-U station its cut.",
     genre: "First-person looter-shooter",
     category: "Action & Arcade",
     controls: "WASD · mouse fire · R reload · E interact · G grenade · Q heal · K skills · 1-4 weapons",

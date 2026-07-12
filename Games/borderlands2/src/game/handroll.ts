@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_STAT_IDS, type AmmoPool } from "./ammo";
+import { bonus } from "./characters";
 
 export type GunFamily = "pistol" | "smg" | "shotgun" | "rifle" | "sniper" | "launcher";
 export type GunElement = "none" | "incendiary" | "shock" | "corrosive" | "explosive" | "slag";
@@ -294,10 +295,18 @@ interface MagState {
 
 const magazines = new Map<string, MagState>();
 
+export function effectiveMagSize(gun: GunDef): number {
+  return Math.max(1, Math.round(gun.magSize * (1 + bonus("magSize"))));
+}
+
+export function effectiveReloadMs(gun: GunDef): number {
+  return Math.round(gun.reloadMs / (1 + bonus("reloadSpeed")));
+}
+
 export function magState(gun: GunDef): MagState {
   let state = magazines.get(gun.id);
   if (state === undefined) {
-    state = { inMag: gun.magSize, reloadingUntilMs: 0 };
+    state = { inMag: effectiveMagSize(gun), reloadingUntilMs: 0 };
     magazines.set(gun.id, state);
   }
   return state;
@@ -311,8 +320,8 @@ export function startReload(ctx: GameContext, gun: GunDef, nowMs: number): boole
   const state = magState(gun);
   if (state.reloadingUntilMs > nowMs) return false;
   const reserve = ctx.scene.entity.stats.get(ctx.player.userId, AMMO_STAT_IDS[gun.ammo]);
-  if (state.inMag >= gun.magSize || reserve === null || reserve.current <= 0) return false;
-  state.reloadingUntilMs = nowMs + gun.reloadMs;
+  if (state.inMag >= effectiveMagSize(gun) || reserve === null || reserve.current <= 0) return false;
+  state.reloadingUntilMs = nowMs + effectiveReloadMs(gun);
   return true;
 }
 
@@ -324,7 +333,7 @@ export function finishReloads(ctx: GameContext, nowMs: number): void {
     const statId = AMMO_STAT_IDS[gun.ammo];
     const reserve = ctx.scene.entity.stats.get(ctx.player.userId, statId);
     if (reserve === null) continue;
-    const wanted = gun.magSize - state.inMag;
+    const wanted = effectiveMagSize(gun) - state.inMag;
     const taken = Math.min(wanted, reserve.current);
     if (taken > 0) {
       ctx.scene.entity.stats.delta(ctx.player.userId, statId, -taken);
@@ -362,12 +371,19 @@ export function tickShields(ctx: GameContext, nowMs: number, dt: number, regenBo
       shieldWatch.set(entity.id, watch);
     }
     const currentHealth = health?.current ?? 0;
-    if (shield.current < watch.lastShield || currentHealth < watch.lastHealth) watch.lastHitAtMs = nowMs;
+    if (shield.current < watch.lastShield || currentHealth < watch.lastHealth) {
+      watch.lastHitAtMs = nowMs;
+      if (entity.id === ctx.player.userId) notePlayerHurt(nowMs);
+    }
     watch.lastShield = shield.current;
     watch.lastHealth = currentHealth;
     if (shield.current >= shield.max) continue;
-    if (nowMs - watch.lastHitAtMs < SHIELD_REGEN_DELAY_MS) continue;
-    const rate = Math.max(6, shield.max * 0.12) * regenBonus;
+    const isLocalPlayer = entity.id === ctx.player.userId;
+    const delay = isLocalPlayer
+      ? SHIELD_REGEN_DELAY_MS * (1 - Math.min(0.6, bonus("shieldDelay")))
+      : SHIELD_REGEN_DELAY_MS;
+    if (nowMs - watch.lastHitAtMs < delay) continue;
+    const rate = Math.max(6, shield.max * 0.12) * regenBonus * (isLocalPlayer ? 1 + bonus("shieldRegen") : 1);
     ctx.scene.entity.stats.delta(entity.id, "shield", rate * dt);
     watch.lastShield = ctx.scene.entity.stats.get(entity.id, "shield")?.current ?? shield.current;
   }
@@ -420,7 +436,7 @@ export function applyElementalProc(
   nowMs: number,
 ): void {
   if (gun.element === "none" || gun.element === "explosive") return;
-  if (rng() >= gun.elementChance) return;
+  if (rng() >= gun.elementChance + bonus("elementChance")) return;
   if (gun.element === "slag") {
     slaggedUntil.set(targetId, nowMs + SLAG_DURATION_MS);
     return;
@@ -429,10 +445,20 @@ export function applyElementalProc(
     targetId,
     fromId,
     element: gun.element,
-    dps: gun.elementDps,
+    dps: Math.round(gun.elementDps * (1 + bonus("dotDamage"))),
     untilMs: nowMs + DOT_DURATION_MS,
     nextTickMs: nowMs + 500,
   });
+}
+
+let playerHurtAtMs = 0;
+
+function notePlayerHurt(nowMs: number): void {
+  playerHurtAtMs = nowMs;
+}
+
+export function playerLastHurtAtMs(): number {
+  return playerHurtAtMs;
 }
 
 export function tickDots(ctx: GameContext, nowMs: number): void {
@@ -473,7 +499,7 @@ export function ffylPhase(): FfylPhase {
 
 export function enterDowned(ctx: GameContext, nowMs: number): void {
   ffyl.phase = "downed";
-  ffyl.downedUntilMs = nowMs + FFYL_WINDOW_MS;
+  ffyl.downedUntilMs = nowMs + FFYL_WINDOW_MS * (1 + bonus("ffylTime"));
   ctx.game.store.set(FFYL_STORE_KEY, { phase: "downed", untilMs: ffyl.downedUntilMs });
 }
 
@@ -482,8 +508,11 @@ export function secondWind(ctx: GameContext): void {
   ffyl.phase = "up";
   const health = ctx.scene.entity.stats.get(userId, "health");
   if (health !== null) {
-    ctx.scene.entity.stats.delta(userId, "health", Math.round(health.max * SECOND_WIND_HEALTH_FRACTION));
+    const fraction = SECOND_WIND_HEALTH_FRACTION * (1 + bonus("secondWindHeal"));
+    ctx.scene.entity.stats.delta(userId, "health", Math.round(health.max * fraction));
   }
+  const shield = ctx.scene.entity.stats.get(userId, "shield");
+  if (shield !== null) ctx.scene.entity.stats.delta(userId, "shield", Math.round(shield.max * 0.5));
   ctx.game.store.set(FFYL_STORE_KEY, { phase: "up", untilMs: 0 });
 }
 

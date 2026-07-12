@@ -377,4 +377,7 @@ export interface NpcDef {
 
 export const npcs: readonly NpcDef[] = [
   { id: NPC_IDS.claptrap, name: "CL4P-TP", stats: { health: { max: 100, min: 1 } } },
+  { id: "dr_zed", name: "Dr. Zed", stats: { health: { max: 100, min: 1 } } },
+  { id: "marcus", name: "Marcus Kincaid", stats: { health: { max: 100, min: 1 } } },
+  { id: "hammerlock", name: "Sir Hammerlock", stats: { health: { max: 100, min: 1 } } },
 ];

@@ -11,6 +11,10 @@ import { keybinds } from "./game/keybinds";
 import { PANDORA, RARITY_COLORS } from "./game/palette";
 import { session } from "./game/session";
 import { GameUI } from "./game/ui/GameUI";
+import { renderPandoraEntity } from "./game/world/renderEntity";
+import { renderPandoraObject } from "./game/world/renderObject";
+import { PandoraViewmodel } from "./game/world/Viewmodel";
+import { NPC_PLACEMENTS } from "./game/world/level";
 import { AMMO_CHESTS, RED_CHESTS } from "./game/world/setup";
 import {
   BLACK_MARKET_POS,
@@ -20,7 +24,7 @@ import {
   ZED_VENDOR_POS,
 } from "./game/world/sites";
 import { loop } from "./loop";
-import { physics, world } from "./world";
+import { CLIMB_SLOPE_LIMIT, physics, terrainField, world } from "./world";
 
 const rarityStyle: Record<string, RarityStyle> = {
   common: { color: RARITY_COLORS.common, label: "Common" },
@@ -58,6 +62,18 @@ const staticPrompts: readonly PositionedPrompt[] = [
       invoke: { name: "vendor.open", input: { vendor: "claptrap" } },
     },
   },
+  ...NPC_PLACEMENTS.map((npc) => ({
+    id: `npc:${npc.name}`,
+    position: { x: npc.x, z: npc.z },
+    prompt: {
+      radius: 3,
+      display: { kind: "keybind", actionId: "interact" } as const,
+      invoke:
+        npc.name === "hammerlock"
+          ? { name: "npc.hammerlock", input: undefined }
+          : { name: "vendor.open", input: { vendor: npc.name === "dr_zed" ? "zed" : "marcus" } },
+    },
+  })),
   {
     id: "vendor:blackmarket",
     position: { x: BLACK_MARKET_POS[0], z: BLACK_MARKET_POS[2] },
@@ -132,6 +148,9 @@ export const game = defineGame({
   loop,
   GameUI,
   entitySprites,
+  renderEntity: renderPandoraEntity,
+  renderObject: renderPandoraObject,
+  WorldOverlay: PandoraViewmodel,
   worldHealthBars: { roles: ["enemy"] },
   worldItem: { rarityStyle, pickupRadius: 2.8 },
   prompts,
@@ -148,10 +167,24 @@ export const game = defineGame({
       { color: "#d9915c", intensity: 0.8, position: [-30, 30, -25] },
     ],
   },
-  movement: { collideObjects: true },
+  movement: {
+    collideObjects: true,
+    beforeCommit: (frame) => {
+      const currentGround = terrainField.sampleHeight(frame.current[0], frame.current[2]);
+      const tooSteep = (x: number, z: number) => {
+        const distance = Math.hypot(x - frame.current[0], z - frame.current[2]);
+        if (distance < 0.0001) return false;
+        return (terrainField.sampleHeight(x, z) - currentGround) / distance > CLIMB_SLOPE_LIMIT;
+      };
+      if (!tooSteep(frame.next[0], frame.next[2])) return undefined;
+      if (!tooSteep(frame.next[0], frame.current[2])) return [frame.next[0], frame.next[1], frame.current[2]];
+      if (!tooSteep(frame.current[0], frame.next[2])) return [frame.current[0], frame.next[1], frame.next[2]];
+      return [frame.current[0], frame.next[1], frame.current[2]];
+    },
+  },
   camera: {
     perspective: "first",
-    firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: true },
+    firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
     frustum: { far: 800 },
   },
   orientation: "landscape",

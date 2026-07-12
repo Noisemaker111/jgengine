@@ -6,6 +6,7 @@ import { GARAGE_POS } from "./world/districts";
 export const DIALOGUE_STORE_KEY = "vice.dialogue";
 export const SHOP_STORE_KEY = "vice.shop";
 export const GARAGE_STORE_KEY = "vice.garage";
+export const STARTED_STORE_KEY = "vice.started";
 
 function selectedHotbarItem(ctx: GameContext): string | null {
   const slots = ctx.player.inventory.state("hotbar").slots;
@@ -34,6 +35,27 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("useMedkit", {
     apply(state) {
       state.item.use.use({ from: state.player.userId, itemId: "medkit_street" });
+    },
+  });
+
+  ctx.game.commands.define("game.start", {
+    apply(state) {
+      if ((state.game.store.get(STARTED_STORE_KEY) as boolean | undefined) === true) return;
+      state.game.store.set(STARTED_STORE_KEY, true);
+      const player = state.scene.entity.get(state.player.userId);
+      const px = player?.position[0] ?? -176;
+      const pz = player?.position[2] ?? 24;
+      const py = player?.position[1] ?? 0;
+      state.camera.setCinematic({
+        keyframes: [
+          { position: { x: 60, y: 160, z: -180 }, lookAt: { x: 40, y: 10, z: -60 }, duration: 0.01 },
+          { position: { x: -40, y: 90, z: 60 }, lookAt: { x: -60, y: 4, z: 40 }, duration: 3, ease: "smooth" },
+          { position: { x: px + 6, y: py + 4, z: pz + 10 }, lookAt: { x: px, y: py + 1.5, z: pz }, duration: 3, ease: "smooth" },
+        ],
+      });
+      state.time.after(6.4, () => {
+        state.camera.setCinematic(null);
+      });
     },
   });
 
