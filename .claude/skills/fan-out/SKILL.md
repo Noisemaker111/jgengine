@@ -16,9 +16,16 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
 **Don't delegate the trivial.** If the leg is a couple of quick calls or the prompt would outweigh the work, do it inline — spawning a worker has a cost too.
 
+**Frontier models never consume intermediate worker updates.** The expensive parent plans once, delegates one complete mechanical leg, and receives one compact terminal result. Workers must not stream partial gate results, announce individual command completion, send "waiting" or "holding" updates, or wake the parent after each subcommand. Build, typecheck, test, git, PR, merge, and assigned CI polling stay inside the cheap worker turn.
+
 **Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "running in background / will report back" returns nothing — background children die with the turn. That final message must report the completed result, never intent. Nested delegation obeys the same rule: a worker does the assigned leg itself and never hands it to a child. For the green-check wait, bare `sleep` is blocked by the harness — use one foreground Bash call that embeds the wait, then read Actions in the same turn. No worker in a parallel batch runs `bun install`; install once before the batch.
 
-**Mechanical return shape is mandatory.** Return `status`, the exact command or operation completed, and evidence: gate exit code, commit SHA, PR link, merge state, or CI verdict. A response containing only intent, a task id, or a background handoff is a failed leg and must not trigger a duplicate dispatch until branch, worktree, and remote state have been inspected.
+**Mechanical return shape is mandatory and single-shot.** Return exactly once:
+
+- `PASS` — concise terminal evidence: command set, exit status, commit SHA, PR link, merge state, CI verdict as applicable.
+- `FAIL` — first actionable failure plus only the diagnostics needed to fix it.
+
+A response containing intent, partial progress, a task id, raw successful logs, or a background handoff is a failed leg. Do not redispatch until branch, worktree, remote, and CI state have been inspected; the original worker may already have completed.
 
 **Use the repo commands, never reconstruct the ladder.** Before generators or verification, run `bun run agent:preflight`. For the full local verdict, run only `bun run gate`. Immediately before commit/push/PR, run `bun run ship:preflight`; it rejects dirty trees, stale-main ancestry, and no-op branches.
 
@@ -34,7 +41,7 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 - GitHub ceremony after the decision is made; the whole ship motion is one worker brief
 - bulk file reads · codebase scouting · research sweeps · renames · doc sweeps · log triage
 
-Announce workers on a 🤖 line, job-named. Judge their output; never dump raw worker text to the user.
+Announce workers on one 🤖 line before launch. After that, silence until the combined terminal result or first actionable failure. Judge their output; never dump raw worker text to the user.
 
 ## Never fan these
 
@@ -50,4 +57,4 @@ The one research *don't*: rediscovering scaffolding, HUD idioms, or anything alr
 
 ## Done when
 
-Mechanical work ran on cheap workers; each leg returned terminal evidence; this session only planned and judged.
+Mechanical work ran on cheap workers; each leg returned once with terminal evidence; the frontier model consumed no intermediate updates and only planned and judged.
