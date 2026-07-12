@@ -1,5 +1,5 @@
 import type { EntityPosition } from "../scene/entityStore";
-import { worldOffset } from "../scene/colliders";
+import { resolveColliders, worldOffset, type EntityColliderSet } from "../scene/colliders";
 import type { Aim } from "../scene/spatial";
 
 /**
@@ -29,12 +29,29 @@ export interface ResolvedShot {
 export interface ShotOriginDeps {
   positionOf(instanceId: string): EntityPosition | undefined;
   rotationYOf?(instanceId: string): number | undefined;
+  /** When provided, the `eye` policy sizes its height from the shooter's own hitbox instead of the humanoid default. */
+  collidersOf?(instanceId: string): EntityColliderSet | null | undefined;
 }
 
 const DEFAULT_MUZZLE_OFFSET: EntityPosition = [0, 1.4, 0.35];
 
-/** Shot-origin and first-person camera eye height above an entity's position, in meters. */
-export const DEFAULT_EYE_HEIGHT = 1.6;
+const EYE_HEIGHT_RATIO = 0.9;
+
+/** Shot-origin and first-person camera eye height above an entity's position: 90% of the default 1.8m hitbox top. */
+export const DEFAULT_EYE_HEIGHT = EYE_HEIGHT_RATIO * 1.8;
+
+/** Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown. */
+export function eyeHeightFromColliders(set: EntityColliderSet | null | undefined): number {
+  const colliders = resolveColliders(set);
+  let top = 0;
+  for (const collider of colliders) {
+    const offsetY = collider.shape.offset?.[1] ?? 0;
+    const halfHeight =
+      collider.shape.kind === "sphere" ? collider.shape.radius : collider.shape.halfExtents[1];
+    top = Math.max(top, offsetY + halfHeight);
+  }
+  return top > 0 ? top * EYE_HEIGHT_RATIO : DEFAULT_EYE_HEIGHT;
+}
 
 function normalize(vector: EntityPosition): EntityPosition | null {
   const length = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
@@ -69,7 +86,11 @@ export function resolveShot(
       }
       const position = deps.positionOf(from);
       if (position === undefined || aimDir === null) return null;
-      const height = policy.height ?? DEFAULT_EYE_HEIGHT;
+      const height =
+        policy.height ??
+        (deps.collidersOf !== undefined
+          ? eyeHeightFromColliders(deps.collidersOf(from))
+          : DEFAULT_EYE_HEIGHT);
       return { origin: [position[0], position[1] + height, position[2]], direction: aimDir };
     }
     case "legacy": {

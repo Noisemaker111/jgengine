@@ -20,6 +20,23 @@ describe("resolveShot", () => {
     expect(short?.origin).toEqual([1, 0.8, 2]);
   });
 
+  test("eye policy sizes height from the shooter's hitbox when colliders are known", () => {
+    const withColliders = {
+      ...deps,
+      collidersOf: () => ({
+        hitboxes: [
+          {
+            name: "body",
+            purpose: "damage" as const,
+            shape: { kind: "aabb" as const, halfExtents: [1, 2, 1] as const, offset: [0, 2, 0] as const },
+          },
+        ],
+      }),
+    };
+    const shot = resolveShot(withColliders, "hero", { yaw: 0, pitch: 0 });
+    expect(shot?.origin[1]).toBeCloseTo(4 * 0.9);
+  });
+
   test("legacy uses aim.origin when present", () => {
     const shot = resolveShot(deps, "hero", { origin: [0, 1, 0], direction: [0, 0, 1] }, { kind: "legacy" });
     expect(shot?.origin).toEqual([0, 1, 0]);

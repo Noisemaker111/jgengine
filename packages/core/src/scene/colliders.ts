@@ -68,6 +68,23 @@ export function defaultObjectColliders(halfExtents: EntityPosition = DEFAULT_OBJ
   };
 }
 
+/** Blocking physical body derived from an object's rendered scale: a grounded box spanning the visual (base at y=0, matching the shell's fallback mesh). */
+export function scaledObjectColliders(scale: readonly [number, number, number]): EntityColliderSet {
+  return {
+    body: {
+      name: "body",
+      purpose: "physical",
+      shape: {
+        kind: "aabb",
+        halfExtents: [scale[0] / 2, scale[1] / 2, scale[2] / 2],
+        offset: [0, scale[1] / 2, 0],
+      },
+      damageEligible: false,
+      blocks: true,
+    },
+  };
+}
+
 export function resolveColliders(set: EntityColliderSet | null | undefined): ResolvedCollider[] {
   if (set === null || set === undefined) return [];
   const out: ResolvedCollider[] = [];
