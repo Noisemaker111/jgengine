@@ -70,7 +70,7 @@ export const game = defineGame({
   prompts,
   objectStyles,
   settings: { variant: "sidebar" },
-  worldHealthBars: true,
+  worldHealthBars: { roles: ["enemy", "hostile"], maxDistance: 60 },
   camera: {
     perspective: "third",
     minDistance: 3.5,

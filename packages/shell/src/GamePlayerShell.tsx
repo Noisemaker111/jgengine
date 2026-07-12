@@ -1772,6 +1772,10 @@ export function GamePlayerShell({
         : worldBars.statId ?? "health";
   const barsRoles =
     worldBars === undefined || worldBars === true || worldBars === false ? undefined : worldBars.roles;
+  const barsMaxDistance =
+    worldBars === undefined || worldBars === true || worldBars === false
+      ? undefined
+      : worldBars.maxDistance;
   const resolveEntityRole = (entity: SceneEntity) => playable.content.entityById?.(entity.name)?.role;
 
   const pointer: PointerConfig | undefined = playable.pointer;
@@ -2094,7 +2098,12 @@ export function GamePlayerShell({
           </CullingProvider>
           {WorldOverlay !== undefined ? <WorldOverlay /> : null}
           {barsStatId !== null ? (
-            <WorldEntityBars statId={barsStatId} roles={barsRoles} resolveRole={resolveEntityRole} />
+            <WorldEntityBars
+              statId={barsStatId}
+              roles={barsRoles}
+              resolveRole={resolveEntityRole}
+              {...(barsMaxDistance === undefined ? {} : { maxDistance: barsMaxDistance })}
+            />
           ) : null}
           <WorldItems config={playable.worldItem} />
           <WorldTelegraphs />

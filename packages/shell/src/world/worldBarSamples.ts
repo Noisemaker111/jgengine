@@ -27,12 +27,21 @@ export function collectWorldBarSamples(
   viewport: { width: number; height: number },
   into: WorldBarSample[],
   project: Projectable,
+  maxDistance = 60,
 ): number {
   into.length = 0;
   const playerId = ctx.player.userId;
+  const player = ctx.scene.entity.get(playerId);
   for (const entity of ctx.scene.entity.list()) {
     if (entity.id === playerId) continue;
     if (!worldHealthBarAllowsRole(roles, resolveRole?.(entity))) continue;
+    if (
+      player !== null &&
+      Math.hypot(entity.position[0] - player.position[0], entity.position[2] - player.position[2]) >
+        maxDistance
+    ) {
+      continue;
+    }
     const stat = ctx.scene.entity.stats.get(entity.id, statId);
     if (stat === null) continue;
     const range = stat.max - stat.min;

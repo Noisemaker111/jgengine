@@ -35,11 +35,14 @@ export function WorldEntityBars({
   height = 2.2,
   roles,
   resolveRole,
+  maxDistance = 60,
 }: {
   statId: string;
   height?: number;
   roles?: readonly CatalogEntityRole[];
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
+  /** Hide bars for entities farther than this from the player (world units). Default 60. */
+  maxDistance?: number;
 }) {
   const ctx = useGameContext();
   const camera = useThree((state) => state.camera);
@@ -72,6 +75,7 @@ export function WorldEntityBars({
       { width: cssW, height: cssH },
       samplesRef.current,
       projectRef.current,
+      maxDistance,
     );
     paintWorldBarSamples(canvas, samplesRef.current, dpr);
   });

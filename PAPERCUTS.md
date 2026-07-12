@@ -83,3 +83,7 @@ multi-round verify loop → stop-hook demanded a commit+push after every single 
 2026-07-12T02:55:51.647Z — fable-5 — Claude
 
 briefed a Sonnet worker to run gates → it spawned its own background child and returned 'launched in background' instead of results; had to re-run with explicit foreground instruction
+
+2026-07-12T04:59:14.718Z — fable-5 — Claude
+
+delegated verify/screenshot workers twice re-delegated to sub-workers and returned 'waiting on the worker' as their result → had to re-dispatch with explicit 'do not spawn sub-agents' briefs
