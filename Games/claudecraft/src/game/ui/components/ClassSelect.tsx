@@ -5,11 +5,16 @@ import { useState } from "react";
 
 import { CLASSES } from "../../classes/catalog";
 
+const SUGGESTED_NAMES = ["Aldric", "Brynn", "Cael", "Dara", "Eirik", "Faye", "Gorm", "Isolde", "Kael", "Rowan", "Sable", "Thane"];
+
 export function ClassSelect() {
   const { commands } = useGame();
   const { userId } = usePlayer();
   void userId;
   const [selected, setSelected] = useState<string | null>(null);
+  const [name, setName] = useState(() => SUGGESTED_NAMES[Math.floor(Math.random() * SUGGESTED_NAMES.length)] ?? "Adventurer");
+  const nameValid = /^[A-Za-z][A-Za-z' -]{1,15}$/.test(name.trim());
+  const ready = selected !== null && nameValid;
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center"
@@ -27,7 +32,16 @@ export function ClassSelect() {
         <p className="mt-2 text-sm text-[#998d6a]">
           Nine callings, three zones, one road to the Hollow Crypt.
         </p>
-        <div className="mt-8 grid grid-cols-3 gap-3">
+        <input
+          type="text"
+          value={name}
+          maxLength={16}
+          placeholder="Name your hero"
+          onChange={(event) => setName(event.target.value)}
+          className="wcc-panel mx-auto mt-6 block w-72 rounded-md px-4 py-2.5 text-center text-white placeholder:text-[#6b6350] focus:border-[#ffd100] focus:outline-none"
+          style={{ fontSize: 16, fontFamily: "var(--wcc-font-display)", letterSpacing: "0.05em" }}
+        />
+        <div className="mt-6 grid grid-cols-3 gap-3">
           {CLASSES.map((cls) => {
             const sel = selected === cls.id;
             return (
@@ -66,9 +80,11 @@ export function ClassSelect() {
         </div>
         <button
           type="button"
-          disabled={selected === null}
+          disabled={!ready}
           onClick={() => {
-            if (selected !== null) commands.run("class.select", { classId: selected });
+            if (selected !== null && nameValid) {
+              commands.run("class.select", { classId: selected, name: name.trim() });
+            }
           }}
           className="mt-8 rounded-lg px-14 py-3 text-2xl font-bold uppercase tracking-[3px] transition disabled:cursor-not-allowed disabled:opacity-40"
           style={{

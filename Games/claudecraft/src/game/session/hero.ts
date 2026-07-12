@@ -98,7 +98,13 @@ export const storeKeys = {
   rested: (userId: string) => `rested:${userId}`,
   bank: (userId: string) => `bank:${userId}`,
   professions: (userId: string) => `profs:${userId}`,
+  name: (userId: string) => `name:${userId}`,
+  cinematic: (userId: string) => `cinematic:${userId}`,
 } as const;
+
+const NAME_PATTERN = /^[A-Za-z][A-Za-z' -]{1,15}$/;
+
+const cinematicTimers = new Map<string, () => void>();
 
 export function talentPointsForLevel(level: number): number {
   if (level < TALENT_POINTS_RULE.firstLevel) return 0;
@@ -367,11 +373,45 @@ function respawnAsClassEntity(ctx: GameContext, userId: string): void {
   }
 }
 
-export function selectClass(ctx: GameContext, userId: string, classId: string): void {
+export function endSpawnCinematic(ctx: GameContext, userId: string): void {
+  ctx.camera.setCinematic(null);
+  ctx.game.store.delete(storeKeys.cinematic(userId));
+  const cancel = cinematicTimers.get(userId);
+  if (cancel !== undefined) {
+    cancel();
+    cinematicTimers.delete(userId);
+  }
+}
+
+function startSpawnCinematic(ctx: GameContext, userId: string): void {
+  const spawn = ctx.scene.entity.get(userId)?.position;
+  if (spawn === undefined) return;
+  const [sx, sy, sz] = spawn;
+  const lookAt = { x: sx, y: sy + 1.8, z: sz };
+  ctx.camera.setCinematic({
+    keyframes: [
+      { position: { x: sx, y: sy + 48, z: sz - 42 }, lookAt },
+      { position: { x: sx, y: sy + 5.5, z: sz - 9 }, lookAt, duration: 9, ease: "smooth" },
+    ],
+  });
+  ctx.game.store.set(storeKeys.cinematic(userId), true);
+  cinematicTimers.set(userId, ctx.time.after(9, () => endSpawnCinematic(ctx, userId)));
+}
+
+export function selectClass(
+  ctx: GameContext,
+  userId: string,
+  classId: string,
+  name?: string,
+): void {
   const cls = classById(classId);
   ctx.game.store.set(storeKeys.class(userId), cls.id);
+  if (name !== undefined && NAME_PATTERN.test(name.trim())) {
+    ctx.game.store.set(storeKeys.name(userId), name.trim());
+  }
   respawnAsClassEntity(ctx, userId);
   setGamePhase(ctx, "playing");
+  startSpawnCinematic(ctx, userId);
   const hero: HeroRuntime = {
     classId: cls.id,
     kit: createAbilityKit(

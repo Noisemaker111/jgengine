@@ -1,5 +1,6 @@
 import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
-import { useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useEffect } from "react";
 
 import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
 import { ClassSelect } from "./components/ClassSelect";
@@ -22,6 +23,35 @@ import {
 import { ArenaPanel, FiestaBanner, FiestaHud } from "./components/Arena";
 import { DelveHud, MailPanel, ValeCupHud, YumiHud } from "./components/ContentPanels";
 import { PlayerFrame, TargetFrame } from "./components/UnitFrames";
+
+function SkipIntro() {
+  const { commands } = useGame();
+  const { userId } = usePlayer();
+  const active = useGameStore((ctx) => ctx.game.store.get(`cinematic:${userId}`) === true);
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") commands.run("cinematic.skip", {});
+    };
+    window.addEventListener("keydown", onKey);
+    const timeout = window.setTimeout(() => commands.run("cinematic.skip", {}), 9000);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.clearTimeout(timeout);
+    };
+  }, [active, commands]);
+  if (!active) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => commands.run("cinematic.skip", {})}
+      className="wcc-panel pointer-events-auto absolute bottom-8 left-1/2 z-40 -translate-x-1/2 rounded-md px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#c8a838] transition hover:border-[#ffd100] hover:text-[#ffd100]"
+      style={{ fontFamily: "var(--wcc-font-display)" }}
+    >
+      Skip Intro (Esc)
+    </button>
+  );
+}
 
 export function GameUI() {
   const { userId } = usePlayer();
@@ -103,6 +133,7 @@ export function GameUI() {
           {panel === "arena" && <ArenaPanel />}
         </div>
       )}
+      <SkipIntro />
       <FishingOverlay />
       <LevelUpOverlay />
       <DeathOverlay />
