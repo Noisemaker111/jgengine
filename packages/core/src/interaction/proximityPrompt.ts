@@ -6,6 +6,8 @@ export interface PromptPoint {
 export interface KeybindPromptDisplay {
   kind: "keybind";
   actionId: string;
+  /** What the interaction does, shown beside the key glyph (e.g. `"Open Chest"`, `"Talk"`); omit for key-only. */
+  label?: string;
 }
 
 export interface GaugePromptDisplay {
@@ -20,8 +22,8 @@ export interface LabelPromptDisplay {
 
 export type ProximityPromptDisplay = KeybindPromptDisplay | GaugePromptDisplay | LabelPromptDisplay;
 
-export function keybind(actionId: string): KeybindPromptDisplay {
-  return { kind: "keybind", actionId };
+export function keybind(actionId: string, label?: string): KeybindPromptDisplay {
+  return label === undefined ? { kind: "keybind", actionId } : { kind: "keybind", actionId, label };
 }
 
 export function gauge(gaugeId: string): GaugePromptDisplay {
@@ -94,7 +96,7 @@ export function resolveActivePrompt<T extends PositionedPrompt>(
 
 export function promptDisplaysEqual(a: ProximityPromptDisplay, b: ProximityPromptDisplay): boolean {
   if (a === b) return true;
-  if (a.kind === "keybind") return b.kind === "keybind" && a.actionId === b.actionId;
+  if (a.kind === "keybind") return b.kind === "keybind" && a.actionId === b.actionId && a.label === b.label;
   if (a.kind === "gauge") return b.kind === "gauge" && a.gaugeId === b.gaugeId;
   return b.kind === "label" && a.text === b.text;
 }

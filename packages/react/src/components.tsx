@@ -91,6 +91,7 @@ export function ProximityPrompt({
     return (
       <span className={className} data-prompt="keybind" data-action={display.actionId}>
         <kbd>{display.actionId}</kbd>
+        {display.label !== undefined ? <span data-prompt-label>{display.label}</span> : null}
       </span>
     );
   }

@@ -94,6 +94,14 @@ describe("prompt equality", () => {
     expect(promptDisplaysEqual(label("Panel"), label("Panel"))).toBe(true);
   });
 
+  test("keybind label is carried and distinguishes equality", () => {
+    expect(keybind("interact", "Open Chest")).toEqual({ kind: "keybind", actionId: "interact", label: "Open Chest" });
+    expect(keybind("interact")).toEqual({ kind: "keybind", actionId: "interact" });
+    expect(promptDisplaysEqual(keybind("interact", "Open"), keybind("interact", "Open"))).toBe(true);
+    expect(promptDisplaysEqual(keybind("interact", "Open"), keybind("interact", "Talk"))).toBe(false);
+    expect(promptDisplaysEqual(keybind("interact", "Open"), keybind("interact"))).toBe(false);
+  });
+
   test("compares commands by name and shallow input", () => {
     expect(promptCommandsEqual(command("a", { id: "1" }), command("a", { id: "1" }))).toBe(true);
     expect(promptCommandsEqual(command("a", { id: "1" }), command("a", { id: "2" }))).toBe(false);
