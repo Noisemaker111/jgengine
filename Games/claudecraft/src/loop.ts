@@ -22,9 +22,28 @@ import { QUESTS } from "./game/quests/catalog";
 import { setupWorld } from "./game/world/setup";
 import { isWorldBoss, onWorldBossKilled, tickWorldBoss } from "./game/world/worldBoss";
 import { PLAYER_SPAWN } from "./game/world/zones";
+import { resolvePlayerMovementTuning, stepPlayerMovement } from "@jgengine/core/movement/playerMovement";
+import { physics, world } from "./world";
 
-function onPlayerDied(ctx: GameContext, position: readonly [number, number, number]): void {
-  const userId = ctx.player.userId;
+const movementTuning = resolvePlayerMovementTuning({ physics, world });
+const EMPTY_INPUT = { held: [] as readonly string[], pointer: null };
+
+function tickPlayerSystems(ctx: GameContext, userId: string, dt: number): void {
+  tickHero(ctx, userId, dt);
+  tickPets(ctx, userId, dt);
+  tickDelve(ctx, userId, dt);
+  tickMail(ctx, userId);
+  tickValeCup(ctx, userId, dt);
+  tickProtectYumi(ctx, userId, dt);
+  tickFiesta(ctx, userId, dt);
+  tickMusic(ctx, userId);
+}
+
+function onPlayerDied(
+  ctx: GameContext,
+  userId: string,
+  position: readonly [number, number, number],
+): void {
   const level = ctx.scene.entity.stats.get(userId, "level");
   const xp = ctx.scene.entity.stats.get(userId, "xp");
   ctx.game.store.set(`deathstats:${userId}`, {
@@ -42,11 +61,11 @@ function onPlayerDied(ctx: GameContext, position: readonly [number, number, numb
   ctx.game.store.delete(storeKeys.cast(userId));
 }
 
-function onKill(ctx: GameContext, victimInstanceId: string): void {
+function onKill(ctx: GameContext, killerUserId: string, victimInstanceId: string): void {
   const runtime = mobRuntimeOf(victimInstanceId);
   onMobDied(ctx, victimInstanceId);
   if (runtime === null) return;
-  const userId = ctx.player.userId;
+  const userId = killerUserId;
   const playerLevel = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
   const baseAmount = killXp(playerLevel, runtime.level);
   if (baseAmount <= 0) return;
@@ -84,38 +103,40 @@ export const loop: GameLoop<GameContext> = {
         onMobDied(ctx, evt.instanceId);
         return;
       }
-      if (evt.instanceId === ctx.player.userId) {
-        onPlayerDied(ctx, evt.position);
+      if ((ctx.game.players?.has(evt.instanceId) ?? false) || evt.instanceId === ctx.player.userId) {
+        onPlayerDied(ctx, evt.instanceId, evt.position);
         return;
       }
       clearAuras(ctx, evt.instanceId);
       const wasWorldBoss = isWorldBoss(evt.instanceId);
-      if (evt.reason.kind === "player_kill") onKill(ctx, evt.instanceId);
+      const killerUserId = evt.reason.kind === "player_kill" ? evt.reason.killerUserId : ctx.player.userId;
+      if (evt.reason.kind === "player_kill") onKill(ctx, killerUserId, evt.instanceId);
       else onMobDied(ctx, evt.instanceId);
-      if (wasWorldBoss) onWorldBossKilled(ctx, evt.instanceId, ctx.player.userId);
+      if (wasWorldBoss) onWorldBossKilled(ctx, evt.instanceId, killerUserId);
     });
     setupWorld(ctx);
   },
-  onNewPlayer(ctx) {
+  onNewPlayer(ctx, player) {
+    const userId = player?.userId ?? ctx.player.userId;
     const [x, z] = PLAYER_SPAWN;
     ctx.scene.entity.spawn(CLASS_ENTITY_ID, {
-      id: ctx.player.userId,
+      id: userId,
       position: [x, ctx.world.groundHeightAt(x, z), z],
     });
   },
   onTick(ctx, dt) {
     const clamped = Math.min(dt, 0.25);
-    const userId = ctx.player.userId;
-    tickHero(ctx, userId, clamped);
     tickWorldBoss(ctx);
     tickMobs(ctx, clamped);
     tickAuras(ctx);
-    tickPets(ctx, userId, clamped);
-    tickDelve(ctx, userId, clamped);
-    tickMail(ctx, userId);
-    tickValeCup(ctx, userId, clamped);
-    tickProtectYumi(ctx, userId, clamped);
-    tickFiesta(ctx, userId, clamped);
-    tickMusic(ctx, userId);
+    const members = ctx.game.players?.list() ?? [];
+    if (members.length === 0) {
+      tickPlayerSystems(ctx, ctx.player.userId, clamped);
+      return;
+    }
+    for (const member of members) {
+      stepPlayerMovement(ctx, member.userId, member.input ?? EMPTY_INPUT, dt, movementTuning);
+      tickPlayerSystems(ctx, member.userId, clamped);
+    }
   },
 };

@@ -1,3 +1,4 @@
+import { ws } from "@jgengine/core/runtime/adapter";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineGame } from "@jgengine/shell/defineGame";
@@ -58,6 +59,8 @@ const objectStyles = {
 
 export const game = defineGame({
   name: "World of ClaudeCraft",
+  features: { players: true },
+  multiplayer: ws({ authority: "server" }),
   assets,
   world,
   physics,
