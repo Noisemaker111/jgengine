@@ -7,7 +7,7 @@ export const BANDIT_CAMP = { x: 85, z: 60 } as const;
 export const SKAG_GULLY = { x: -30, z: 110 } as const;
 export const FLYNT_PERCH = { x: 150, z: -95 } as const;
 
-export const PLAYER_SPAWN: EntityPosition = [FYRESTONE.x + 10, 0, FYRESTONE.z + 14];
+export const PLAYER_SPAWN: EntityPosition = [FYRESTONE.x + 24, 0, FYRESTONE.z + 32];
 export const NEW_U_STATION: EntityPosition = [FYRESTONE.x + 6, 0, FYRESTONE.z + 8];
 
 export const CLAPTRAP_POS: EntityPosition = [FYRESTONE.x + 4, 0, FYRESTONE.z + 2];

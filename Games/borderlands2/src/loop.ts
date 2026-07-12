@@ -139,6 +139,7 @@ function onNewPlayer(ctx: GameContext): void {
     role: "player",
   });
   if (ctx.player.isNew) ctx.player.applyLoadout(ctx.player.userId, "starterKit");
+  for (const quest of quests) ctx.game.quest.accept(ctx.player.userId, quest.id);
   session.reset(ctx);
 }
 
