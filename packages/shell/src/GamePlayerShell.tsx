@@ -1,6 +1,7 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import {
   Component,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -411,6 +412,37 @@ function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   );
 }
 
+class ModelFallbackBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  override state = { failed: false };
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+  override render(): ReactNode {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function IsolatedEntityModel({
+  model,
+  instanceId,
+  fallback,
+}: {
+  model: ModelConfig;
+  instanceId?: string;
+  fallback?: ReactNode;
+}) {
+  return (
+    <ModelFallbackBoundary fallback={fallback ?? null}>
+      <Suspense fallback={null}>
+        <EntityModel model={model} instanceId={instanceId} />
+      </Suspense>
+    </ModelFallbackBoundary>
+  );
+}
+
 function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
   const gltf = useLoader(GLTFLoader, model.url, (loader) => {
     loader.setMeshoptDecoder(MeshoptDecoder);
@@ -655,7 +687,11 @@ function EntityMarker({
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} instanceId={entityId} />
+        <IsolatedEntityModel
+          model={model}
+          instanceId={entityId}
+          fallback={sprite !== undefined ? <EntitySprite sprite={sprite} /> : undefined}
+        />
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
       ) : role === "prop" ? (
@@ -718,7 +754,7 @@ function ObjectMarker({
       {custom !== undefined && custom !== null ? (
         custom
       ) : model !== undefined ? (
-        <EntityModel model={model} instanceId={instanceId} />
+        <IsolatedEntityModel model={model} instanceId={instanceId} />
       ) : style?.hidden === true ? null : (
         <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]}>
           <boxGeometry args={[1, 1, 1]} />
