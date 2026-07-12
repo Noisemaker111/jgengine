@@ -1,3 +1,4 @@
+import { INPUT_COMMAND, type InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import type { HostedWorldSession } from "@jgengine/core/runtime/hostedWorldSession";
 import type {
   GameRuntimeServerView,
@@ -75,6 +76,10 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
     async runCommand({ userId, serverId, command, input }): Promise<TransportRunCommandResult> {
       const entry = live.get(serverId);
       if (entry === undefined) return { ok: false, reason: "no-server" };
+      if (command === INPUT_COMMAND) {
+        entry.session.input(userId, input as InputFrame);
+        return { ok: true };
+      }
       const before = entry.session.revision();
       const result = entry.session.command(userId, command, input);
       if (result.status === "rejected") return { ok: false, reason: result.reason };

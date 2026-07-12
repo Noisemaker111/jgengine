@@ -8,7 +8,7 @@
 - `CommandDef` (type): type CommandDef<TInput = unknown> = { validate: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => CommandValidationError | null; apply: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => GameRuntimeSnapshot; } — ⚠ undocumented
 - `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
 - `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`.
-- `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`; game code reads `list`/`ids`/`has`/`count`.
+- `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`/`setInput`; game code reads `list`/`ids`/`has`/`count`/`input`.
 - `DEFAULT_VISIBILITY_SETTINGS` (const): const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> — Default `VisibilityDefaults` a `VisibilitySystem` falls back to when unspecified.
 - `FeedUnsubscribe` (type): type FeedUnsubscribe = () => void — ⚠ undocumented
 - `GameBackend` (type): type GameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = { transport: GameRuntimeTransport; feeds?: GameRuntimeFeeds; presence?: PresenceTransport<TPresenceRow, TPresenceLocation, TGameId>; } — ⚠ undocumented
@@ -28,7 +28,8 @@
 - `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
 - `HostedWorldSync` (type): type HostedWorldSync = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; diff: WorldDiff } — A client replication pull: a full baseline (first sync / fell behind) or a diff since the client's cursor.
 - `HydrateInput` (type): type HydrateInput = { gameId: string; serverId: string; serverRow: RuntimeServerRow; playersByUserId: Record<string, RuntimePlayerRow>; chunksByKey: Record<string, RuntimeChunkRow>; revision?: number; } — ⚠ undocumented
-- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, mirroring `ctx.input`.
+- `INPUT_COMMAND` (const): const INPUT_COMMAND: "engine.input" — Reserved command name the authoritative host intercepts on the existing `runCommand` transport to route a client's {@link InputFrame} to `session.input`, so per-tick input needs no separate wire.
+- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
 - `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; } — ⚠ undocumented
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
 - `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
@@ -388,7 +389,8 @@
 
 - `HostedGameRunner` (interface): interface HostedGameRunner — The GameContext-loop equivalent of the pure-reducer `createGameHost`: one authoritative `createGameContext` per world, driven server-side. `onInit` runs once at construction; `onNewPlayer`/`onPlayerLeave` fire per join/leave; `tick` advances `onTick` then commits a revision. Clients pull a full {@link WorldSnapshot} baseline once, then per-tick {@link WorldDiff}s from their last revision. Games ship only normal GameContext code — the runner adds no per-game surface.
 - `HostedGameRunnerOptions` (interface): interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity.
-- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, mirroring `ctx.input`.
+- `INPUT_COMMAND` (const): const INPUT_COMMAND: "engine.input" — Reserved command name the authoritative host intercepts on the existing `runCommand` transport to route a client's {@link InputFrame} to `session.input`, so per-tick input needs no separate wire.
+- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
 - `createHostedGameRunner` (function): function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>): HostedGameRunner — Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
 
 ## @jgengine/core/runtime/hostedWorldSession
@@ -403,6 +405,7 @@
 
 ## @jgengine/core/runtime/inputSnapshot
 
+- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
 - `InputSnapshot` (interface): interface InputSnapshot — ⚠ undocumented
 - `createInputSnapshot` (function): function createInputSnapshot(): InputSnapshot — ⚠ undocumented
 

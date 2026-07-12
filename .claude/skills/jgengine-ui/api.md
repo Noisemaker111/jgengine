@@ -1080,6 +1080,14 @@
 - `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
 
+## @jgengine/shell/inputSink
+
+- `InputSink` (interface): interface InputSink — Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`.
+- `inputFramesEqual` (function): function inputFramesEqual(a: InputFrame, b: InputFrame): boolean — Whether two input frames carry identical intent — the shell skips resending unchanged frames so a still player floods the host with nothing.
+- `noopInputSink` (function): function noopInputSink(): InputSink — Discards input — the single-player / client-authoritative default, where the client integrates movement itself.
+- `remoteInputSink` (function): function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): InputSink — Sends each frame's input to the authoritative host over the transport, reusing the `runCommand` path via {@link INPUT_COMMAND}.
+- `resolveInputSink` (function): function resolveInputSink(opts: { serverAuthoritative: boolean; backend: Pick<LiveGameBackend, "transport"> | null; serverId: string | null; }): InputSink — The sink a server-authoritative shell sends its per-frame input through: remote when `authority: "server"` and a server is joined, a no-op otherwise.
+
 ## @jgengine/shell/map
 
 - `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions — ⚠ undocumented

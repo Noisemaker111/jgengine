@@ -266,7 +266,7 @@
 ## @jgengine/core/game/connectedPlayers
 
 - `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`.
-- `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`; game code reads `list`/`ids`/`has`/`count`.
+- `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`/`setInput`; game code reads `list`/`ids`/`has`/`count`/`input`.
 - `createConnectedPlayers` (function): function createConnectedPlayers(): ConnectedPlayers — Build an empty {@link ConnectedPlayers} registry — the host joins/leaves players; the game loop reads them.
 
 ## @jgengine/core/game/controlGate
