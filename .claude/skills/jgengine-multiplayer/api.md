@@ -217,46 +217,46 @@
 
 ## @jgengine/node
 
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
-- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
 - `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — ⚠ undocumented
+- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
 - `NodeHandler` (type): type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
 - `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
 - `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — Creates a `GameHost` that runs game servers over the given persistence and runtimes.
 - `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
 - `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
 
 ## @jgengine/node/host
 
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
-- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — ⚠ undocumented
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
+- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — Creates a `GameHost` that runs game servers over the given persistence and runtimes.
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 
 ## @jgengine/node/persistence
 
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 
 ## @jgengine/node/socketIoServer
 
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
 - `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
 - `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
@@ -277,7 +277,7 @@
 
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
 - `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
 
 ## @jgengine/sql
@@ -301,9 +301,9 @@
 ## @jgengine/ws
 
 - `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
-- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — ⚠ undocumented
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
+- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
 - `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `HostRouterAuthenticate` (type): type HostRouterAuthenticate = (args: { userId: string; token?: string; }) => Promise<string | null> | string | null — ⚠ undocumented
 - `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
@@ -322,7 +322,7 @@
 - `ReadsHandler` (type): type ReadsHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `ReadsHandlerOptions` (type): type ReadsHandlerOptions = { persistence: ReadsPersistence | (() => Promise<ReadsPersistence>); basePath?: string; listOpenServers?: (args: { gameId: string; limit?: number }) => Promise<ServerListing[]>; authenticate?: ReadsAuthenticate; allowPublicProfiles?: boolean; } — ⚠ undocumented
 - `ReadsPersistence` (type): type ReadsPersistence = Pick< HostPersistence, "listServers" | "loadProfile" | "getLeaderboardTop" | "getLeaderboardProfile" > — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `SocketIoBackendOptions` (type): type SocketIoBackendOptions = Omit<WsBackendOptions, "url" | "pipe" | "webSocketFactory"> & { socket: SocketIoLikeSocket; } — ⚠ undocumented
 - `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string) => void) => unknown; off: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: () => unknown; } — ⚠ undocumented
 - `TransportPipe` (type): type TransportPipe = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
@@ -359,7 +359,7 @@
 - `announcePeerHost` (function): function announcePeerHost(host: PeerHost, signaling: PeerSignaling): () => void — ⚠ undocumented
 - `broadcastChannelSignaling` (function): function broadcastChannelSignaling(room: string): PeerSignaling — ⚠ undocumented
 - `computeVoiceGain` (function): function computeVoiceGain(def: VoiceChannelDef, distance: number | null): number — ⚠ undocumented
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — Creates a `GameHost` that runs game servers over the given persistence and runtimes.
 - `createHostRouter` (function): function createHostRouter(options: HostRouterOptions): HostRouter — ⚠ undocumented
 - `createHttpReads` (function): function createHttpReads(options: HttpReadsOptions): HttpReads — ⚠ undocumented
 - `createPeerGuest` (function): function createPeerGuest(options: PeerGuestOptions): PeerGuest — ⚠ undocumented
@@ -377,7 +377,7 @@
 - `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
 - `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
 - `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `socketIoPipe` (function): function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory — ⚠ undocumented
 - `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
 - `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
@@ -393,11 +393,11 @@
 
 ## @jgengine/ws/host
 
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
-- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — ⚠ undocumented
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
+- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — Creates a `GameHost` that runs game servers over the given persistence and runtimes.
+- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 
 ## @jgengine/ws/hostRouter
 
@@ -407,7 +407,7 @@
 - `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
 - `HostRouterOptions` (type): type HostRouterOptions = { host: GameHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; now?: () => number; } — ⚠ undocumented
 - `HostRouterTransport` (type): type HostRouterTransport = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `createHostRouter` (function): function createHostRouter(options: HostRouterOptions): HostRouter — ⚠ undocumented
 - `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
 

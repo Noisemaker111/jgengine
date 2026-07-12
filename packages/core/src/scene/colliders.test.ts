@@ -8,13 +8,15 @@ import {
 } from "@jgengine/core/scene/colliders";
 
 describe("colliders", () => {
-  test("default entity set is a non-blocking damage sphere", () => {
+  test("default entity set is a non-blocking body-covering damage box", () => {
     const resolved = resolveColliders(defaultEntityColliders());
     expect(resolved).toHaveLength(1);
     expect(resolved[0]!.purpose).toBe("damage");
     expect(resolved[0]!.damageEligible).toBe(true);
     expect(resolved[0]!.blocks).toBe(false);
-    expect(resolved[0]!.shape.kind).toBe("sphere");
+    const bounds = colliderBounds(resolved[0]!, [0, 0, 0], 0);
+    expect(bounds.min[1]).toBeCloseTo(0);
+    expect(bounds.max[1]).toBeCloseTo(1.8);
   });
 
   test("default object set is a blocking physical AABB", () => {

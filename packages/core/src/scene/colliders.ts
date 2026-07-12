@@ -33,6 +33,10 @@ export interface ResolvedCollider {
 
 export const DEFAULT_ENTITY_HIT_RADIUS = 0.5;
 export const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition = [0.5, 0.5, 0.5];
+/** Matches the shell's fallback actor capsule (~0.7m wide, feet at y=0 to head at ~1.8m). */
+export const DEFAULT_ENTITY_BODY_HALF_EXTENTS: EntityPosition = [0.35, 0.9, 0.35];
+/** Entity-local center of the default body hitbox (half its height above the feet). */
+export const DEFAULT_ENTITY_BODY_OFFSET: EntityPosition = [0, 0.9, 0];
 
 export function defaultEntityColliders(): EntityColliderSet {
   return {
@@ -40,7 +44,11 @@ export function defaultEntityColliders(): EntityColliderSet {
       {
         name: "body",
         purpose: "damage",
-        shape: { kind: "sphere", radius: DEFAULT_ENTITY_HIT_RADIUS },
+        shape: {
+          kind: "aabb",
+          halfExtents: DEFAULT_ENTITY_BODY_HALF_EXTENTS,
+          offset: DEFAULT_ENTITY_BODY_OFFSET,
+        },
         damageEligible: true,
         blocks: false,
       },

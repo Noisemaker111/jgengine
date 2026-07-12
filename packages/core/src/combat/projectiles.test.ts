@@ -88,7 +88,7 @@ describe("projectile system", () => {
     expect(prediction.hits).toHaveLength(1);
     expect(prediction.hits[0]!.kind).toBe("entity");
     expect(prediction.hits[0]!.instanceId).toBe("enemy");
-    expect(prediction.hits[0]!.distance).toBeCloseTo(9.5);
+    expect(prediction.hits[0]!.distance).toBeCloseTo(9.65);
     expect(prediction.origin).toEqual([0, 0, 0]);
     expect(prediction.firstImpact?.instanceId).toBe("enemy");
     expect(prediction.blocked).toBeUndefined();
@@ -121,7 +121,7 @@ describe("projectile system", () => {
     const settle = projectiles.settleProjectile(shotId);
     expect(settle.status).toBe("settled");
     if (settle.status !== "settled") return;
-    expect(settle.at[2]).toBeCloseTo(9.5);
+    expect(settle.at[2]).toBeCloseTo(9.65);
     expect(settle.origin).toEqual([0, 0, 0]);
     expect(settle.hits).toHaveLength(1);
     expect(settle.hits[0]!.instanceId).toBe("enemy");

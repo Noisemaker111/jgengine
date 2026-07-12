@@ -134,3 +134,7 @@ drive tool: guessed '--keys "s s s"' to walk the camera; that flag doesn't exist
 2026-07-12T21:06:24.915Z — sonnet-5 — Claude
 
 ship worker returned 'running in background, will report when done' after 1 tool-use/26s without running the gate or committing anything — a no-op that looked like success; had to verify git state manually and re-dispatch. Ship-motion workers should be told explicitly to perform every step synchronously in-run, not defer.
+
+2026-07-12T22:23:41.543Z — sonnet — Claude
+
+gate worker briefed to run gen:skill-api/check-types/test twice returned 'waiting on background work' instead of results — had to resume with explicit foreground-only instruction

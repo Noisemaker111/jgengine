@@ -535,7 +535,7 @@ describe("float text and projectile events", () => {
     expect(shots).toHaveLength(1);
     expect(shots[0]!.from).toBe(attacker);
     expect(shots[0]!.hit).toBe(true);
-    expect(shots[0]!.origin).toEqual([0, 0, 0]);
+    expect(shots[0]!.origin).toEqual([0, 1.6, 0]);
   });
 
   test("scene.entity.resetToSpawn restores the recorded spawn pose and resetAllToSpawn counts matches", () => {
