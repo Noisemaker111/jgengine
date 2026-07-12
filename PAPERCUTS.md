@@ -94,3 +94,7 @@ delegated verify/screenshot workers twice re-delegated to sub-workers and return
 2026-07-12T05:19:28.342Z — fable-5 — Claude
 
 probe-testing new:game → bun's lenient package.json parser masked a dangling comma my cleanup left; strict python json caught it — validate root package.json with a strict parser after scripted edits
+
+2026-07-12T05:33:03.754Z — fable-5 — Claude
+
+waited on merge-commit CI → CLAUDE.md claims no Actions job exceeds ~1 min, but apps/web build now runs ~6 min; the stale claim caused a false hung-job investigation
