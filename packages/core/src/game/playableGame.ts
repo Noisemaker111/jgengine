@@ -390,6 +390,8 @@ export interface GameCameraConfig {
   /** Vertical look clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below. Widen for top-down or vertical aim; unset keeps the standard chase feel. */
   minPolarAngle?: number;
   maxPolarAngle?: number;
+  /** Spring-arm occlusion for the orbit rig: pull the camera in past walls/terrain so it never clips inside geometry. Off unless `enabled`. */
+  collision?: { enabled?: boolean; padding?: number; minTargetDistance?: number };
 }
 
 export interface EntitySpriteConfig {

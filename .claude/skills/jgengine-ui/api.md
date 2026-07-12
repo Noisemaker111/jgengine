@@ -829,8 +829,10 @@
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `ORBIT_CAMERA_FRAME_PRIORITY` (const): const ORBIT_CAMERA_FRAME_PRIORITY: -1 — Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY.
 - `OrbitCameraConfig` (interface): interface OrbitCameraConfig — ⚠ undocumented
+- `OrbitCollisionConfig` (interface): interface OrbitCollisionConfig — Spring-arm occlusion config for the orbit rig.
 - `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState — ⚠ undocumented
 - `ResolvedOrbitCameraConfig` (interface): interface ResolvedOrbitCameraConfig — Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA.
+- `ResolvedOrbitCollision` (interface): interface ResolvedOrbitCollision — An {@link OrbitCollisionConfig} with every field resolved to a concrete value.
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
 - `cameraFollowStep` (function): function cameraFollowStep(input: { camera: Vec3; target: Vec3; previousTarget: Vec3 | null; lockedDistance: number | null; }): CameraFollowState — ⚠ undocumented
 - `cameraLookPitch` (function): function cameraLookPitch(camera: Vec3, target: Vec3): number — Elevation the camera looks along (radians): negative = aiming down, positive = aiming up, 0 = level. Feeds aim.pitch so vertical aim tracks the camera.

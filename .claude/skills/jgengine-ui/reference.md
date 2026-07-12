@@ -262,6 +262,8 @@ A cinematic look is opt-in engine config, never hand-wired render passes. Set `d
 - `grade: { lift, gain, gamma, saturation, vignette, grain }` — display-space colour grade: cool-shadow/warm-highlight split, vignette, animated film grain.
 - `ao: { radius, intensity, distanceFalloff, blend }` — ground-truth ambient occlusion; heavier than the rest, omit or `false` on low-end targets.
 
+**Orbit camera occlusion:** the third-person orbit rig takes `camera: { collision: { enabled, padding?, minTargetDistance? } }` — a spring-arm that raycasts target→camera each frame and pulls the boom in past walls/terrain so the camera never clips inside geometry. Off by default (unchanged chase feel); enable it for any world with interiors or dense structures.
+
 Lighting is `defineGame({ lighting })` (`LightingConfig`): ambient / hemisphere / directional, replacing the shell's default lights when set. A `DirectionalLightingConfig` with `castShadow` takes `shadowMapSize`, `shadowCameraSize`, `shadowBias`, `shadowNormalBias` for crisp contact shadows. Sky-lit worlds (a `sky()` world feature) get a high-res sun whose shadow camera follows the view each frame, so grounded shadows stay sharp under the player anywhere in a large world.
 
 ## Settings menu
