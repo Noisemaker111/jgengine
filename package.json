@@ -10,6 +10,9 @@
     "registry"
   ],
   "scripts": {
+    "agent:preflight": "bun scripts/agent-preflight.ts",
+    "ship:preflight": "bun scripts/agent-preflight.ts --ship",
+    "gate": "bun scripts/guard.ts 1800 'bun run agent:preflight && bun run check-types && bun run test:all && bun run build'",
     "build": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts --install-only && bun run --cwd packages/core build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build && bun run --cwd packages/assets build && bun run --cwd packages/github build && bun run --cwd packages/jgengine build && bun run build:registry'",
     "check-artifacts": "bun scripts/check-no-src-artifacts.ts",
     "check-skills": "bun scripts/check-skill-sync.ts",
