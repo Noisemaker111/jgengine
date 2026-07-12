@@ -51,3 +51,11 @@ ship worker for the self-hosted mirror returned 'I'll wait for the background ag
 2026-07-12T01:02:27.112Z — opus — Claude
 
 screenshot worker: fade-up entrance anim + post-hydration layout shift drifts coordinate taps onto wrong element for ~2s after content appears; need DOM .click() + settle wait, not synthetic CDP tap
+
+2026-07-12T01:35:08.028Z — opus-4-8 — Claude
+
+v0.9.0 release bumped 8 package.json versions but left bun.lock unsynced → every CI job died at 'bun install --frozen-lockfile: lockfile had changes'. The local release gate (check-types + build) doesn't run a frozen install, so it passed locally and the break only showed in CI. A version bump must run 'bun install' and commit bun.lock, and/or the release gate should run 'bun install --frozen-lockfile'.
+
+2026-07-12T01:35:11.239Z — opus-4-8 — Claude
+
+speed-circuit smoke job intermittently fails with 'Chrome debugger not ready on :<port> within 30000ms' (other games boot fine, no app error) — a pure infra/launch-timing flake. It red-flagged a healthy main and blocked a release precondition, and the GitHub App can't rerun-failed-jobs (403), so recovery needs a fresh push. Consider bumping the smoke debugger-connect timeout or adding one retry.
