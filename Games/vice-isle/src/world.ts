@@ -12,7 +12,7 @@ import {
 } from "@jgengine/core/world/features";
 import { DISTRICTS, ROADS, SHORE_X, WORLD_D, WORLD_W } from "./game/world/districts";
 
-const streetRibbons = ROADS.map((segment) =>
+export const streets = ROADS.map((segment) =>
   road({
     path: [segment.from, segment.to],
     width: 9,
@@ -55,7 +55,7 @@ export const world: EnvironmentWorldFeature = environment({
     flatten: cityFlatten,
   }),
   sky: sky({ preset: "day", timeOfDay: true }),
-  roads: streetRibbons,
+  roads: streets,
   water: [
     ocean({
       bounds: { w: 400, d: 700 },

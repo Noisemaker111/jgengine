@@ -1,50 +1,29 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
+import { furnitureSpots, laneCenters, parkingSpots, sidewalkPoint } from "@jgengine/core/world/streets";
+import { streets } from "../../world";
 import { handroll } from "../handroll";
 import {
   BRIEFCASE_POS,
   DOCK_FIGHT_CENTER,
-  GARAGE_POS,
   GUNSHOP_POS,
   MARCO_POS,
-  PALM_SPOTS,
-  roadPoints,
 } from "./districts";
 
 function ground(ctx: GameContext, x: number, z: number): readonly [number, number, number] {
   return [x, ctx.world.groundHeightAt(x, z), z];
 }
 
-const PARKED_CARS: readonly { kind: string; x: number; z: number; heading: number }[] = [
-  { kind: "car_compact", x: -172, z: 30, heading: 0 },
-  { kind: "car_compact", x: -64, z: -18, heading: Math.PI / 2 },
-  { kind: "car_muscle", x: -170, z: -8, heading: Math.PI },
-  { kind: "car_muscle", x: 66, z: -66, heading: 0 },
-  { kind: "car_sport", x: -64, z: 112, heading: Math.PI / 2 },
-  { kind: "car_compact", x: 176, z: 116, heading: Math.PI },
-  { kind: "car_muscle", x: 124, z: 184, heading: 0 },
-  { kind: "car_sport", x: 74, z: -236, heading: Math.PI / 2 },
-];
-
-const PED_SPOTS: readonly { kind: string; x: number; z: number }[] = [
-  { kind: "ped_beach", x: -182, z: 44 },
-  { kind: "ped_beach", x: -168, z: -36 },
-  { kind: "ped_beach", x: -188, z: 90 },
-  { kind: "ped_city", x: 34, z: -48 },
-  { kind: "ped_city", x: 52, z: -80 },
-  { kind: "ped_city", x: 18, z: -30 },
-  { kind: "ped_city", x: -50, z: 14 },
-  { kind: "ped_docks", x: 116, z: 176 },
-  { kind: "ped_docks", x: 150, z: 202 },
-  { kind: "ped_city", x: 66, z: -228 },
-  { kind: "ped_beach", x: -160, z: 120 },
-  { kind: "ped_beach", x: -186, z: 160 },
-  { kind: "ped_city", x: 62, z: -104 },
-  { kind: "ped_city", x: 28, z: -84 },
-  { kind: "ped_city", x: -46, z: -30 },
-  { kind: "ped_docks", x: 104, z: 214 },
-  { kind: "ped_docks", x: 138, z: 168 },
-  { kind: "ped_city", x: 84, z: -252 },
+const PED_KIND_BY_ROAD: readonly string[] = [
+  "ped_beach",
+  "ped_city",
+  "ped_city",
+  "ped_docks",
+  "ped_city",
+  "ped_city",
+  "ped_city",
+  "ped_docks",
+  "ped_beach",
 ];
 
 export function setupWorld(ctx: GameContext): void {
@@ -52,28 +31,57 @@ export function setupWorld(ctx: GameContext): void {
 
   ctx.scene.entity.spawn("contact_marco", { id: "npc_marco", position: ground(ctx, MARCO_POS[0], MARCO_POS[2]), role: "npc" });
 
-  PED_SPOTS.forEach((spot, i) => {
-    ctx.scene.entity.spawn(spot.kind, { id: `ped_${i}`, position: ground(ctx, spot.x, spot.z), role: "npc" });
+  let pedCount = 0;
+  streets.forEach((street, roadIndex) => {
+    const kind = PED_KIND_BY_ROAD[roadIndex] ?? "ped_city";
+    for (let i = 0; i < 2; i += 1) {
+      const side = rng() < 0.5 ? "left" : "right";
+      const fraction = 0.15 + rng() * 0.7;
+      const point = sidewalkPoint(street, side, fraction);
+      if (point === null) continue;
+      pedCount += 1;
+      const id = `ped_${pedCount}`;
+      ctx.scene.entity.spawn(kind, { id, position: ground(ctx, point[0], point[1]), role: "npc" });
+      const walk = sidewalkPoint(street, side, Math.min(1, fraction + 0.25));
+      if (walk !== null) {
+        handroll.registerRoute(id, [point, walk, point], 1.5, rng() * 40);
+      }
+    }
   });
 
-  PARKED_CARS.forEach((car, i) => {
-    ctx.scene.entity.spawn(car.kind, {
-      id: `veh_${i}`,
-      position: ground(ctx, car.x, car.z),
-      rotationY: car.heading,
-      role: "prop",
-    });
+  const parkedKinds = ["car_compact", "car_muscle", "car_compact", "car_sport", "car_muscle", "car_compact", "car_muscle", "car_sport"];
+  let parkedCount = 0;
+  for (const street of streets) {
+    if (parkedCount >= parkedKinds.length) break;
+    const spots = parkingSpots(street, { spacing: 120, sides: "right" });
+    for (const spot of spots) {
+      if (parkedCount >= parkedKinds.length) break;
+      if (rng() < 0.45) continue;
+      const kind = parkedKinds[parkedCount]!;
+      parkedCount += 1;
+      ctx.scene.entity.spawn(kind, {
+        id: `veh_${parkedCount}`,
+        position: ground(ctx, spot.position[0], spot.position[1]),
+        rotationY: spot.heading,
+        role: "prop",
+      });
+    }
+  }
+
+  const trafficRoads = [1, 2, 5, 6, 7];
+  trafficRoads.forEach((roadIndex, i) => {
+    const street = streets[roadIndex];
+    if (street === undefined) return;
+    const [forward, reverse] = laneCenters(street);
+    const loop = [...forward.path, ...reverse.path];
+    for (let lap = 0; lap < 2; lap += 1) {
+      const id = `traffic_${i}_${lap}`;
+      const kind = (i + lap) % 3 === 2 ? "car_muscle" : "car_compact";
+      const start = loop[0]!;
+      ctx.scene.entity.spawn(kind, { id, position: ground(ctx, start[0], start[1]), role: "prop" });
+      handroll.registerRoute(id, loop, 8, rng() * 200 + lap * 90);
+    }
   });
-
-  for (let i = 0; i < 9; i += 1) {
-    const id = `traffic_${i}`;
-    ctx.scene.entity.spawn(i % 3 === 2 ? "car_muscle" : "car_compact", { id, position: ground(ctx, -60, 0), role: "prop" });
-    handroll.registerTrafficCar(id, i % 3, rng() * 140);
-  }
-
-  for (const [x, z] of PALM_SPOTS) {
-    ctx.scene.object.place("obj_palm_planter", Math.round(x), Math.round(ctx.world.groundHeightAt(x, z) + 0.5), Math.round(z));
-  }
 
   const gangSpots: readonly (readonly [number, number])[] = [
     [DOCK_FIGHT_CENTER[0] - 12, DOCK_FIGHT_CENTER[2] - 8],
@@ -97,16 +105,32 @@ export function setupWorld(ctx: GameContext): void {
     const z = DOCK_FIGHT_CENTER[2] - 20 + rng() * 40;
     ctx.scene.object.place("obj_crate_dock", Math.round(x), Math.round(ctx.world.groundHeightAt(x, z) + 0.5), Math.round(z));
   }
-  for (const [x, z] of roadPoints(60)) {
-    if (Math.abs(x) > 190 || Math.abs(z) > 250) continue;
-    ctx.scene.object.place("obj_streetlight", Math.round(x + 4), Math.round(ctx.world.groundHeightAt(x, z) + 2), Math.round(z + 4));
-  }
+
+  streets.forEach((street, roadIndex) => {
+    for (const spot of furnitureSpots(street, { spacing: 72, outset: 0.9 })) {
+      ctx.scene.object.place(
+        "obj_streetlight",
+        spot.position[0],
+        ctx.world.groundHeightAt(spot.position[0], spot.position[1]) + 2,
+        spot.position[1],
+        { rotation: spot.heading },
+      );
+    }
+    if (roadIndex === 0) {
+      for (const spot of furnitureSpots(street, { spacing: 40, sides: "left", outset: 3.4 })) {
+        ctx.scene.object.place(
+          "obj_palm_planter",
+          spot.position[0],
+          ctx.world.groundHeightAt(spot.position[0], spot.position[1]) + 0.5,
+          spot.position[1],
+        );
+      }
+    }
+  });
 
   ctx.scene.worldItem.spawn({
     itemId: "briefcase_carmine",
     position: [BRIEFCASE_POS[0], ctx.world.groundHeightAt(BRIEFCASE_POS[0], BRIEFCASE_POS[2]) + 0.4, BRIEFCASE_POS[2]],
     rarity: "legendary",
   });
-
-  void GARAGE_POS;
 }

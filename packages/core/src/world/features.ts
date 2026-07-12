@@ -218,12 +218,17 @@ export interface RoadEnvironmentConfig {
   markingColor?: string;
   /** Lift above the terrain to avoid z-fighting; stagger overlapping roads. Default 0.08. */
   elevation?: number;
+  /** Sidewalk bands on both edges; `false` for none. Default `{ width: 2.6, color: "#a7adb8" }`. */
+  sidewalk?: { width?: number; color?: string } | false;
 }
 
 /** Resolved road descriptor produced by {@link road} and rendered by the shell environment scene. */
 export type RoadEnvironmentDescriptor = { kind: "road" } & Required<
   Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation">
->;
+> & {
+  /** Resolved sidewalk band, or `false` when the road has none. */
+  sidewalk: { width: number; color: string } | false;
+};
 
 export type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor;
 export type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor;
@@ -489,6 +494,10 @@ export function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor {
     markings: config.markings ?? true,
     markingColor: config.markingColor ?? "#e8c74a",
     elevation: config.elevation ?? 0.08,
+    sidewalk:
+      config.sidewalk === false
+        ? false
+        : { width: config.sidewalk?.width ?? 2.6, color: config.sidewalk?.color ?? "#a7adb8" },
   };
 }
 

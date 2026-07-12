@@ -1074,7 +1074,7 @@
 - `RainEnvironmentConfig` (interface): interface RainEnvironmentConfig — ⚠ undocumented
 - `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color"> > — ⚠ undocumented
 - `RoadEnvironmentConfig` (interface): interface RoadEnvironmentConfig — Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline.
-- `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
+- `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. */ sidewalk: { width: number; color: string } | false; } — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
 - `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig — ⚠ undocumented
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented
 - `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig — ⚠ undocumented
@@ -1294,6 +1294,21 @@
 - `ScatterLayer` (interface): interface ScatterLayer — One placeable class. `item` is an opaque id the caller maps to a mesh/entity.
 - `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `scatterItems` (function): function scatterItems<T>(field: RegionField<T>, area: Aabb, layersFor: (sample: RegionSample<T>) => readonly ScatterLayer[], options: { cell?: number; max?: number; saltKey?: number } = {}): ScatterInstance[] — Deterministically place opaque items across `area`, grounded on a region field. For each grid cell it asks `layersFor` which items may appear in that region and rolls one against their densities. The engine never interprets `item` — a game maps it to a mesh or entity. Content scatter (region-driven density) as opposed to `scatter` in `./scatter`, which is renderer-free geometric point distribution.
+
+## @jgengine/core/world/streets
+
+- `FurnitureSpot` (interface): interface FurnitureSpot — A placement anchor on the curb line: position, outward-facing heading, and which side it sits on.
+- `FurnitureSpotOptions` (interface): interface FurnitureSpotOptions — Options for {@link furnitureSpots}.
+- `ParkingSpot` (interface): interface ParkingSpot — A curbside parking anchor: position at the road edge and a heading parallel to the street.
+- `ParkingSpotOptions` (interface): interface ParkingSpotOptions — Options for {@link parkingSpots}.
+- `StreetLane` (interface): interface StreetLane — A directed lane derived from a road: an offset centerline plus its direction of travel.
+- `furnitureSpots` (function): function furnitureSpots(road: RoadEnvironmentDescriptor, options: FurnitureSpotOptions = {}): readonly FurnitureSpot[] — Evenly spaced street-furniture anchors along a road's curb lines — streetlights, palms, signs, hydrants, benches. Each spot sits just outside the asphalt (plus `outset`), faces away from the street, and alternates sides by default so lights stagger like a real avenue. This is the answer to "where do I put it": furniture is an asset of the street, never a hand-typed coordinate.
+- `laneCenters` (function): function laneCenters(road: RoadEnvironmentDescriptor): readonly [StreetLane, StreetLane] — Two right-hand-traffic lane centerlines for a road — each offset a quarter of the drivable width from the center and ordered in its direction of travel. Feed a lane's `path` straight into `nav/pathFollow` for traffic AI, or use its endpoints as directed car spawn points.
+- `offsetPath` (function): function offsetPath(path: readonly RoadPoint[], offset: number): readonly RoadPoint[] — Offset a centerline sideways by a signed distance along its local perpendicular — the building block for lanes, curb lines, and sidewalk paths. Positive offsets fall on the left of the direction of travel, negative on the right.
+- `parkingSpots` (function): function parkingSpots(road: RoadEnvironmentDescriptor, options: ParkingSpotOptions = {}): readonly ParkingSpot[] — Curbside parking anchors along a road: hugging the edge of the asphalt, headed parallel to the street in that side's direction of travel. Spawn parked vehicles here instead of eyeballing coordinates in the middle of the carriageway.
+- `sidewalkPaths` (function): function sidewalkPaths(road: RoadEnvironmentDescriptor): readonly (readonly RoadPoint[])[] — The two sidewalk walking paths of a road — offset polylines running down the middle of each sidewalk band. Pedestrians spawn and route along these instead of the asphalt.
+- `sidewalkPoint` (function): function sidewalkPoint(road: RoadEnvironmentDescriptor, side: "left" | "right", fraction: number): RoadPoint | null — A deterministic point on one of a road's sidewalks at a normalized position — `side` picks the band, `fraction` (0..1) picks how far along. The canonical pedestrian spawn helper.
+- `sidewalkWidthOf` (function): function sidewalkWidthOf(road: RoadEnvironmentDescriptor): number — Resolved sidewalk band widths for a road; zero when the road declares no sidewalk.
 
 ## @jgengine/core/world/support
 

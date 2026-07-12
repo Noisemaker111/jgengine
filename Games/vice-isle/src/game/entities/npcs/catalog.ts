@@ -7,9 +7,9 @@ export interface NpcDef {
 }
 
 export const NPCS: readonly NpcDef[] = [
-  { id: "ped_beach", role: "npc", walkSpeed: 1.6, health: 20, wander: { radius: 14 } },
-  { id: "ped_city", role: "npc", walkSpeed: 1.9, health: 20, wander: { radius: 12 } },
-  { id: "ped_docks", role: "npc", walkSpeed: 1.5, health: 20, wander: { radius: 10 } },
+  { id: "ped_beach", role: "npc", walkSpeed: 1.6, health: 20 },
+  { id: "ped_city", role: "npc", walkSpeed: 1.9, health: 20 },
+  { id: "ped_docks", role: "npc", walkSpeed: 1.5, health: 20 },
   { id: "contact_marco", role: "npc", walkSpeed: 0, health: 200 },
 ];
 
