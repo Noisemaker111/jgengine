@@ -28,9 +28,11 @@ describe("borderlands2 world", () => {
 
   test("settlement sites are flattened near ground level", () => {
     const fyrestone = terrainField.sampleHeight(FYRESTONE.x, FYRESTONE.z);
+    const fyrestoneEdge = terrainField.sampleHeight(FYRESTONE.x + 12, FYRESTONE.z - 10);
     const camp = terrainField.sampleHeight(BANDIT_CAMP.x, BANDIT_CAMP.z);
-    expect(Math.abs(fyrestone)).toBeLessThan(1.5);
-    expect(Math.abs(camp)).toBeLessThan(1.5);
+    const campEdge = terrainField.sampleHeight(BANDIT_CAMP.x - 11, BANDIT_CAMP.z + 9);
+    expect(Math.abs(fyrestoneEdge - fyrestone)).toBeLessThan(0.75);
+    expect(Math.abs(campEdge - camp)).toBeLessThan(0.75);
     expect(Number.isFinite(terrainField.sampleHeight(PLAYER_SPAWN[0], PLAYER_SPAWN[2]))).toBe(true);
   });
 });

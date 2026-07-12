@@ -30,7 +30,7 @@ const staticPrompts: readonly PositionedPrompt[] = [
     position: { x: MARCUS_VENDOR_POS[0], z: MARCUS_VENDOR_POS[2] },
     prompt: {
       radius: 3.2,
-      display: { kind: "keybind", actionId: "interact", label: "Marcus Munitions" },
+      display: { kind: "keybind", actionId: "interact"},
       invoke: { name: "vendor.open", input: { vendor: "marcus" } },
     },
   },
@@ -39,7 +39,7 @@ const staticPrompts: readonly PositionedPrompt[] = [
     position: { x: ZED_VENDOR_POS[0], z: ZED_VENDOR_POS[2] },
     prompt: {
       radius: 3.2,
-      display: { kind: "keybind", actionId: "interact", label: "Dr. Zed's Meds" },
+      display: { kind: "keybind", actionId: "interact"},
       invoke: { name: "vendor.open", input: { vendor: "zed" } },
     },
   },
@@ -48,7 +48,7 @@ const staticPrompts: readonly PositionedPrompt[] = [
     position: { x: CLAPTRAP_POS[0], z: CLAPTRAP_POS[2] },
     prompt: {
       radius: 3,
-      display: { kind: "keybind", actionId: "interact", label: "CL4P-TP" },
+      display: { kind: "keybind", actionId: "interact"},
       invoke: { name: "vendor.open", input: { vendor: "claptrap" } },
     },
   },
@@ -57,7 +57,7 @@ const staticPrompts: readonly PositionedPrompt[] = [
     position: { x: chest.x, z: chest.z },
     prompt: {
       radius: 2.8,
-      display: { kind: "keybind", actionId: "interact", label: "Weapon Chest" } as const,
+      display: { kind: "keybind", actionId: "interact"} as const,
       invoke: { name: "chest.openRed", input: { instanceId: `red_chest_${index}` } },
     },
   })),
@@ -66,7 +66,7 @@ const staticPrompts: readonly PositionedPrompt[] = [
     position: { x: chest.x, z: chest.z },
     prompt: {
       radius: 2.8,
-      display: { kind: "keybind", actionId: "interact", label: "Ammo Chest" } as const,
+      display: { kind: "keybind", actionId: "interact"} as const,
       invoke: { name: "chest.openAmmo", input: { instanceId: `ammo_chest_${index}` } },
     },
   })),
