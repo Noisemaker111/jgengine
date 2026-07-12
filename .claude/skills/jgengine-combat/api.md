@@ -4,295 +4,295 @@
 
 ## @jgengine/core/combat/abilityKit
 
-- `createAbilityKit` (function): function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit — ⚠ undocumented
-- `AbilityCastType` (type): type AbilityCastType = "instant" | "projectile" | "channel" | "targeted" — ⚠ undocumented
-- `AbilitySlotState` (type): type AbilitySlotState = "ready" | "cooldown" | "no-resource" | "just-cast" — ⚠ undocumented
-- `AbilitySlotConfig` (interface): interface AbilitySlotConfig — ⚠ undocumented
-- `AbilityCooldownGroup` (interface): interface AbilityCooldownGroup — A cooldown shared across every member slot: casting any member starts it, and no member can cast while it runs. One group that every slot joins is an MMO global cooldown.
-- `AbilityKitOptions` (interface): interface AbilityKitOptions — ⚠ undocumented
-- `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot — ⚠ undocumented
 - `AbilityCastReason` (type): type AbilityCastReason = "unknown-slot" | "cooldown" | "group-cooldown" | "no-resource" — ⚠ undocumented
-- `AbilitySlotRetune` (interface): interface AbilitySlotRetune — ⚠ undocumented
 - `AbilityCastResult` (type): type AbilityCastResult = | { ok: true; slot: AbilitySlotSnapshot } | { ok: false; reason: AbilityCastReason; slot: AbilitySlotSnapshot | null } — ⚠ undocumented
+- `AbilityCastType` (type): type AbilityCastType = "instant" | "projectile" | "channel" | "targeted" — ⚠ undocumented
+- `AbilityCooldownGroup` (interface): interface AbilityCooldownGroup — A cooldown shared across every member slot: casting any member starts it, and no member can cast while it runs. One group that every slot joins is an MMO global cooldown.
 - `AbilityKit` (interface): interface AbilityKit — ⚠ undocumented
+- `AbilityKitOptions` (interface): interface AbilityKitOptions — ⚠ undocumented
+- `AbilitySlotConfig` (interface): interface AbilitySlotConfig — ⚠ undocumented
+- `AbilitySlotRetune` (interface): interface AbilitySlotRetune — ⚠ undocumented
+- `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot — ⚠ undocumented
+- `AbilitySlotState` (type): type AbilitySlotState = "ready" | "cooldown" | "no-resource" | "just-cast" — ⚠ undocumented
+- `createAbilityKit` (function): function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit — ⚠ undocumented
 
 ## @jgengine/core/combat/animationState
 
-- `clipDurationMs` (function): function clipDurationMs(clip: AnimationClip): number — ⚠ undocumented
-- `frameAtMs` (function): function frameAtMs(clip: AnimationClip, elapsedMs: number): number — ⚠ undocumented
-- `phasesAtFrame` (function): function phasesAtFrame(clip: AnimationClip, frame: number): FramePhase[] — ⚠ undocumented
-- `activeRangeAtFrame` (function): function activeRangeAtFrame(clip: AnimationClip, frame: number): FrameRange | null — ⚠ undocumented
-- `createAnimationState` (function): function createAnimationState(config: AnimationStateConfig): AnimationState — ⚠ undocumented
-- `FramePhase` (type): type FramePhase = "windup" | "active" | "recovery" | "cancel" — ⚠ undocumented
-- `FrameRange` (interface): interface FrameRange — ⚠ undocumented
 - `AnimationClip` (interface): interface AnimationClip — ⚠ undocumented
 - `AnimationSnapshot` (interface): interface AnimationSnapshot — ⚠ undocumented
-- `AnimationTickResult` (interface): interface AnimationTickResult — ⚠ undocumented
 - `AnimationState` (interface): interface AnimationState — ⚠ undocumented
 - `AnimationStateConfig` (interface): interface AnimationStateConfig — ⚠ undocumented
+- `AnimationTickResult` (interface): interface AnimationTickResult — ⚠ undocumented
+- `FramePhase` (type): type FramePhase = "windup" | "active" | "recovery" | "cancel" — ⚠ undocumented
+- `FrameRange` (interface): interface FrameRange — ⚠ undocumented
+- `activeRangeAtFrame` (function): function activeRangeAtFrame(clip: AnimationClip, frame: number): FrameRange | null — ⚠ undocumented
+- `clipDurationMs` (function): function clipDurationMs(clip: AnimationClip): number — ⚠ undocumented
+- `createAnimationState` (function): function createAnimationState(config: AnimationStateConfig): AnimationState — ⚠ undocumented
+- `frameAtMs` (function): function frameAtMs(clip: AnimationClip, elapsedMs: number): number — ⚠ undocumented
+- `phasesAtFrame` (function): function phasesAtFrame(clip: AnimationClip, frame: number): FramePhase[] — ⚠ undocumented
 
 ## @jgengine/core/combat/attackTags
 
-- `attackMeta` (function): function attackMeta(tags: readonly AttackTag[], extra?: Omit<AttackMeta, "tags">): AttackMeta — ⚠ undocumented
-- `hasTag` (function): function hasTag(meta: AttackMeta, tag: AttackTag): boolean — ⚠ undocumented
-- `hasAnyTag` (function): function hasAnyTag(meta: AttackMeta, tags: readonly AttackTag[]): boolean — ⚠ undocumented
-- `isBlockable` (function): function isBlockable(meta: AttackMeta): boolean — ⚠ undocumented
-- `isParryable` (function): function isParryable(meta: AttackMeta): boolean — ⚠ undocumented
-- `isDodgeable` (function): function isDodgeable(meta: AttackMeta): boolean — ⚠ undocumented
-- `counters` (function): function counters(meta: AttackMeta, move: CounterMove): boolean — ⚠ undocumented
-- `AttackTag` (type): type AttackTag = | "unblockable" | "thrust" | "sweep" | "grab" | "overhead" | "ranged" | "aerial" — ⚠ undocumented
 - `AttackMeta` (interface): interface AttackMeta — ⚠ undocumented
+- `AttackTag` (type): type AttackTag = | "unblockable" | "thrust" | "sweep" | "grab" | "overhead" | "ranged" | "aerial" — ⚠ undocumented
 - `CounterMove` (type): type CounterMove = "mikiri" | "deflect" | "sidestep" — ⚠ undocumented
+- `attackMeta` (function): function attackMeta(tags: readonly AttackTag[], extra?: Omit<AttackMeta, "tags">): AttackMeta — ⚠ undocumented
+- `counters` (function): function counters(meta: AttackMeta, move: CounterMove): boolean — ⚠ undocumented
+- `hasAnyTag` (function): function hasAnyTag(meta: AttackMeta, tags: readonly AttackTag[]): boolean — ⚠ undocumented
+- `hasTag` (function): function hasTag(meta: AttackMeta, tag: AttackTag): boolean — ⚠ undocumented
+- `isBlockable` (function): function isBlockable(meta: AttackMeta): boolean — ⚠ undocumented
+- `isDodgeable` (function): function isDodgeable(meta: AttackMeta): boolean — ⚠ undocumented
+- `isParryable` (function): function isParryable(meta: AttackMeta): boolean — ⚠ undocumented
 
 ## @jgengine/core/combat/breakMeters
 
-- `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — ⚠ undocumented
-- `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — ⚠ undocumented
-- `StaggerMeterConfig` (interface): interface StaggerMeterConfig — ⚠ undocumented
-- `StaggerMeter` (interface): interface StaggerMeter — ⚠ undocumented
+- `BuildupMeter` (interface): interface BuildupMeter — ⚠ undocumented
 - `BuildupMeterConfig` (interface): interface BuildupMeterConfig — ⚠ undocumented
 - `BuildupProc` (interface): interface BuildupProc — ⚠ undocumented
-- `BuildupMeter` (interface): interface BuildupMeter — ⚠ undocumented
+- `StaggerMeter` (interface): interface StaggerMeter — ⚠ undocumented
+- `StaggerMeterConfig` (interface): interface StaggerMeterConfig — ⚠ undocumented
+- `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — ⚠ undocumented
+- `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — ⚠ undocumented
 
 ## @jgengine/core/combat/castRunner
 
-- `createCastRunner` (function): function createCastRunner(): CastRunner — ⚠ undocumented
-- `CastConfig` (interface): interface CastConfig — ⚠ undocumented
 - `CastBarSnapshot` (interface): interface CastBarSnapshot — ⚠ undocumented
-- `CastInterruptReason` (type): type CastInterruptReason = "moved" | "cancelled" | "replaced" — ⚠ undocumented
+- `CastConfig` (interface): interface CastConfig — ⚠ undocumented
 - `CastEvent` (type): type CastEvent = | { kind: "completed"; abilityId: string } | { kind: "interrupted"; abilityId: string; reason: CastInterruptReason } — ⚠ undocumented
+- `CastInterruptReason` (type): type CastInterruptReason = "moved" | "cancelled" | "replaced" — ⚠ undocumented
 - `CastRunner` (interface): interface CastRunner — Per-entity cast-time state machine — begin, tick with game-time `dt` plus how far the caster moved, and act on the returned event. The runner owns timing and move-interruption only; the caller spends resources, starts cooldowns, and executes the ability when `completed` fires (compose with `abilityKit` — check readiness before `begin`, `cast` on completion).
+- `createCastRunner` (function): function createCastRunner(): CastRunner — ⚠ undocumented
 
 ## @jgengine/core/combat/comboPoints
 
-- `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — ⚠ undocumented
-- `ComboPointsConfig` (interface): interface ComboPointsConfig — ⚠ undocumented
 - `ComboPoints` (interface): interface ComboPoints — ⚠ undocumented
+- `ComboPointsConfig` (interface): interface ComboPointsConfig — ⚠ undocumented
+- `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — ⚠ undocumented
 
 ## @jgengine/core/combat/comboString
 
-- `stepById` (function): function stepById(combo: ComboString, stepId: string): ComboStep | null — ⚠ undocumented
-- `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
-- `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — ⚠ undocumented
-- `ComboStep` (interface): interface ComboStep — ⚠ undocumented
-- `ComboString` (interface): interface ComboString — ⚠ undocumented
 - `AdvanceComboInput` (interface): interface AdvanceComboInput — ⚠ undocumented
 - `AdvanceComboResult` (type): type AdvanceComboResult = | { accepted: true; step: ComboStep } | { accepted: false; reason: "unknown-step" | "not-chainable" | "wrong-stance" | "window-closed" } — ⚠ undocumented
 - `ComboRunner` (interface): interface ComboRunner — ⚠ undocumented
+- `ComboStep` (interface): interface ComboStep — ⚠ undocumented
+- `ComboString` (interface): interface ComboString — ⚠ undocumented
+- `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
+- `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — ⚠ undocumented
+- `stepById` (function): function stepById(combo: ComboString, stepId: string): ComboStep | null — ⚠ undocumented
 
 ## @jgengine/core/combat/death
 
-- `normalizeOnDeath` (function): function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath — ⚠ undocumented
-- `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — ⚠ undocumented
-- `deathReasonFromEffect` (function): function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason — ⚠ undocumented
-- `DeathReasonKind` (type): type DeathReasonKind = DeathReason["kind"] — ⚠ undocumented
-- `OnDeathDropRule` (interface): interface OnDeathDropRule — ⚠ undocumented
-- `OnDeathCommandRule` (interface): interface OnDeathCommandRule — ⚠ undocumented
-- `DropMode` (type): type DropMode = "grant" | "world" — ⚠ undocumented
-- `OnDeathSpec` (interface): interface OnDeathSpec — ⚠ undocumented
-- `NormalizedOnDeath` (interface): interface NormalizedOnDeath — ⚠ undocumented
 - `DeathIdentity` (interface): interface DeathIdentity — ⚠ undocumented
-- `DeathSystemDeps` (interface): interface DeathSystemDeps — ⚠ undocumented
+- `DeathReasonKind` (type): type DeathReasonKind = DeathReason["kind"] — ⚠ undocumented
 - `DeathResolution` (type): type DeathResolution = | { status: "resolved"; drops: Drop[]; ranCommand: string | null } | { status: "rejected"; reason: string } — ⚠ undocumented
 - `DeathSystem` (interface): interface DeathSystem — ⚠ undocumented
+- `DeathSystemDeps` (interface): interface DeathSystemDeps — ⚠ undocumented
+- `DropMode` (type): type DropMode = "grant" | "world" — ⚠ undocumented
 - `EffectDeathContext` (interface): interface EffectDeathContext — ⚠ undocumented
+- `NormalizedOnDeath` (interface): interface NormalizedOnDeath — ⚠ undocumented
+- `OnDeathCommandRule` (interface): interface OnDeathCommandRule — ⚠ undocumented
+- `OnDeathDropRule` (interface): interface OnDeathDropRule — ⚠ undocumented
+- `OnDeathSpec` (interface): interface OnDeathSpec — ⚠ undocumented
+- `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — ⚠ undocumented
+- `deathReasonFromEffect` (function): function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason — ⚠ undocumented
+- `normalizeOnDeath` (function): function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath — ⚠ undocumented
 
 ## @jgengine/core/combat/defensiveWindow
 
-- `windowActiveAt` (function): function windowActiveAt(config: DefensiveWindowConfig, elapsedMs: number): boolean — ⚠ undocumented
-- `iframeActiveAt` (function): function iframeActiveAt(config: DefensiveWindowConfig, elapsedMs: number): boolean — ⚠ undocumented
-- `totalWindowMs` (function): function totalWindowMs(config: DefensiveWindowConfig): number — ⚠ undocumented
-- `resolveDefense` (function): function resolveDefense(input: ResolveDefenseInput): DefenseResolution — ⚠ undocumented
-- `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — ⚠ undocumented
 - `DefenseKind` (type): type DefenseKind = "parry" | "block" | "dodge" — ⚠ undocumented
-- `DefensiveWindowConfig` (interface): interface DefensiveWindowConfig — ⚠ undocumented
 - `DefenseOutcome` (type): type DefenseOutcome = "parry" | "block" | "iframe" | "hit" — ⚠ undocumented
 - `DefenseResolution` (interface): interface DefenseResolution — ⚠ undocumented
-- `ResolveDefenseInput` (interface): interface ResolveDefenseInput — ⚠ undocumented
 - `DefensiveWindow` (interface): interface DefensiveWindow — ⚠ undocumented
+- `DefensiveWindowConfig` (interface): interface DefensiveWindowConfig — ⚠ undocumented
+- `ResolveDefenseInput` (interface): interface ResolveDefenseInput — ⚠ undocumented
+- `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — ⚠ undocumented
+- `iframeActiveAt` (function): function iframeActiveAt(config: DefensiveWindowConfig, elapsedMs: number): boolean — ⚠ undocumented
+- `resolveDefense` (function): function resolveDefense(input: ResolveDefenseInput): DefenseResolution — ⚠ undocumented
+- `totalWindowMs` (function): function totalWindowMs(config: DefensiveWindowConfig): number — ⚠ undocumented
+- `windowActiveAt` (function): function windowActiveAt(config: DefensiveWindowConfig, elapsedMs: number): boolean — ⚠ undocumented
 
 ## @jgengine/core/combat/downed
 
-- `createDownedState` (function): function createDownedState(config: DownedConfig): DownedState — ⚠ undocumented
-- `DownedPhase` (type): type DownedPhase = "alive" | "downed" | "dead" — ⚠ undocumented
 - `DownedConfig` (interface): interface DownedConfig — ⚠ undocumented
 - `DownedEntry` (interface): interface DownedEntry — ⚠ undocumented
-- `DownedEventKind` (type): type DownedEventKind = | "downed" | "revived" | "reviving" | "died" | "banner.created" | "banner.expired" | "respawned" — ⚠ undocumented
 - `DownedEvent` (interface): interface DownedEvent — ⚠ undocumented
+- `DownedEventKind` (type): type DownedEventKind = | "downed" | "revived" | "reviving" | "died" | "banner.created" | "banner.expired" | "respawned" — ⚠ undocumented
+- `DownedPhase` (type): type DownedPhase = "alive" | "downed" | "dead" — ⚠ undocumented
 - `DownedState` (interface): interface DownedState — ⚠ undocumented
+- `createDownedState` (function): function createDownedState(config: DownedConfig): DownedState — ⚠ undocumented
 
 ## @jgengine/core/combat/effects
 
-- `resolveAreaTargets` (function): function resolveAreaTargets(spatial: CombatSpatialDeps, input: AreaTargetInput, accept?: (instanceId: string) => boolean): AreaTarget[] — ⚠ undocumented
-- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — ⚠ undocumented
-- `ReceiveRule` (interface): interface ReceiveRule — ⚠ undocumented
-- `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
-- `EffectVia` (interface): interface EffectVia — ⚠ undocumented
-- `SingleTargetEffectInput` (interface): interface SingleTargetEffectInput — ⚠ undocumented
-- `AreaEffectInput` (interface): interface AreaEffectInput — ⚠ undocumented
-- `EffectInput` (type): type EffectInput = SingleTargetEffectInput | AreaEffectInput — ⚠ undocumented
 - `AppliedPoolDelta` (interface): interface AppliedPoolDelta — ⚠ undocumented
-- `EffectResult` (interface): interface EffectResult — ⚠ undocumented
-- `LethalContext` (interface): interface LethalContext — ⚠ undocumented
-- `CombatSpatialDeps` (interface): interface CombatSpatialDeps — ⚠ undocumented
-- `AreaTargetInput` (interface): interface AreaTargetInput — ⚠ undocumented
+- `AreaEffectInput` (interface): interface AreaEffectInput — ⚠ undocumented
 - `AreaTarget` (interface): interface AreaTarget — ⚠ undocumented
-- `EffectSystemDeps` (interface): interface EffectSystemDeps — ⚠ undocumented
+- `AreaTargetInput` (interface): interface AreaTargetInput — ⚠ undocumented
+- `CombatSpatialDeps` (interface): interface CombatSpatialDeps — ⚠ undocumented
+- `EffectInput` (type): type EffectInput = SingleTargetEffectInput | AreaEffectInput — ⚠ undocumented
+- `EffectResult` (interface): interface EffectResult — ⚠ undocumented
 - `EffectSystem` (interface): interface EffectSystem — ⚠ undocumented
+- `EffectSystemDeps` (interface): interface EffectSystemDeps — ⚠ undocumented
+- `EffectVia` (interface): interface EffectVia — ⚠ undocumented
+- `LethalContext` (interface): interface LethalContext — ⚠ undocumented
+- `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
+- `ReceiveRule` (interface): interface ReceiveRule — ⚠ undocumented
+- `SingleTargetEffectInput` (interface): interface SingleTargetEffectInput — ⚠ undocumented
+- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — ⚠ undocumented
+- `resolveAreaTargets` (function): function resolveAreaTargets(spatial: CombatSpatialDeps, input: AreaTargetInput, accept?: (instanceId: string) => boolean): AreaTarget[] — ⚠ undocumented
 
 ## @jgengine/core/combat/hitReaction
 
-- `resolveHitReaction` (function): function resolveHitReaction(config: HitReactionConfig, input: HitReactionInput): HitReaction — ⚠ undocumented
-- `applyImpulse` (function): function applyImpulse(position: EntityPosition, impulse: [number, number, number]): EntityPosition — ⚠ undocumented
 - `CameraShake` (interface): interface CameraShake — ⚠ undocumented
+- `HitReaction` (interface): interface HitReaction — ⚠ undocumented
 - `HitReactionConfig` (interface): interface HitReactionConfig — ⚠ undocumented
 - `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented
-- `HitReaction` (interface): interface HitReaction — ⚠ undocumented
+- `applyImpulse` (function): function applyImpulse(position: EntityPosition, impulse: [number, number, number]): EntityPosition — ⚠ undocumented
+- `resolveHitReaction` (function): function resolveHitReaction(config: HitReactionConfig, input: HitReactionInput): HitReaction — ⚠ undocumented
 
 ## @jgengine/core/combat/projectiles
 
-- `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — ⚠ undocumented
-- `ProjectileShotInput` (interface): interface ProjectileShotInput — ⚠ undocumented
 - `EntityRaycastHit` (interface): interface EntityRaycastHit — ⚠ undocumented
 - `ObjectRaycastHit` (interface): interface ObjectRaycastHit — ⚠ undocumented
-- `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
-- `Raycast` (type): type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[] — ⚠ undocumented
-- `ProjectileSettleReport` (interface): interface ProjectileSettleReport — ⚠ undocumented
-- `ProjectileObjectsDeps` (interface): interface ProjectileObjectsDeps — ⚠ undocumented
-- `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps — ⚠ undocumented
 - `ProjectileHit` (type): type ProjectileHit = | { kind: "entity"; instanceId: string; distance: number; colliderName?: string; damageEligible?: boolean; } | { kind: "object"; instanceId: string; catalogId: string; distance: number; colliderName?: string; damageEligible?: boolean; } — ⚠ undocumented
+- `ProjectileObjectsDeps` (interface): interface ProjectileObjectsDeps — ⚠ undocumented
 - `ProjectilePrediction` (interface): interface ProjectilePrediction — ⚠ undocumented
-- `SettleResult` (type): type SettleResult = | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[]; origin?: [number, number, number]; } | { status: "rejected"; shotId: string; reason: string } — ⚠ undocumented
+- `ProjectileSettleReport` (interface): interface ProjectileSettleReport — ⚠ undocumented
+- `ProjectileShotInput` (interface): interface ProjectileShotInput — ⚠ undocumented
 - `ProjectileSystem` (interface): interface ProjectileSystem — ⚠ undocumented
+- `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps — ⚠ undocumented
+- `Raycast` (type): type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[] — ⚠ undocumented
+- `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
+- `SettleResult` (type): type SettleResult = | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[]; origin?: [number, number, number]; } | { status: "rejected"; shotId: string; reason: string } — ⚠ undocumented
+- `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — ⚠ undocumented
 
 ## @jgengine/core/combat/resistance
 
-- `resolveResistance` (function): function resolveResistance<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): ResistanceResult — ⚠ undocumented
-- `resistanceScale` (function): function resistanceScale<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): number — ⚠ undocumented
 - `ResistVerdict` (type): type ResistVerdict = "immune" | "resist" | "normal" | "vulnerable" — ⚠ undocumented
-- `UnknownResistanceCategoryError` (class): class UnknownResistanceCategoryError extends Error — ⚠ undocumented
-- `UnknownResistancePropertyError` (class): class UnknownResistancePropertyError extends Error — ⚠ undocumented
 - `ResistanceMatrix` (interface): interface ResistanceMatrix<TCategory extends string = string, TProperty extends string = string> — ⚠ undocumented
 - `ResistanceResult` (interface): interface ResistanceResult — ⚠ undocumented
+- `UnknownResistanceCategoryError` (class): class UnknownResistanceCategoryError extends Error — ⚠ undocumented
+- `UnknownResistancePropertyError` (class): class UnknownResistancePropertyError extends Error — ⚠ undocumented
+- `resistanceScale` (function): function resistanceScale<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): number — ⚠ undocumented
+- `resolveResistance` (function): function resolveResistance<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): ResistanceResult — ⚠ undocumented
 
 ## @jgengine/core/combat/resourcePool
 
-- `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — ⚠ undocumented
-- `ResourcePoolConfig` (interface): interface ResourcePoolConfig — ⚠ undocumented
 - `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
+- `ResourcePoolConfig` (interface): interface ResourcePoolConfig — ⚠ undocumented
+- `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — ⚠ undocumented
 
 ## @jgengine/core/combat/shotOrigin
 
+- `ResolvedShot` (interface): interface ResolvedShot — ⚠ undocumented
+- `ShotOriginDeps` (interface): interface ShotOriginDeps — ⚠ undocumented
+- `ShotOriginPolicy` (type): type ShotOriginPolicy = | { kind: "legacy" } | { kind: "entity" } | { kind: "entityOffset"; offset: EntityPosition } | { kind: "muzzle"; offset?: EntityPosition } | { kind: "camera"; origin: EntityPosition; direction?: EntityPosition } | { kind: "world"; origin: EntityPosition; direction?: EntityPos… — How a shot's world-space origin (and optional direction) is resolved before prediction/settlement. - `legacy` — `aim.origin` when present, else the shooter's entity position (pre-#431 default). - `entity` — always the shooter's entity position. - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model). - `camera` — explicit camera/reticle world origin (and optional direction override). - `world` — absolute world origin.
 - `aimDirection` (function): function aimDirection(aim: Aim): EntityPosition | null — ⚠ undocumented
 - `aimSpreadDeg` (function): function aimSpreadDeg(aim: Aim): number — ⚠ undocumented
 - `resolveShot` (function): function resolveShot(deps: ShotOriginDeps, from: string, aim: Aim, policy: ShotOriginPolicy = { kind: "legacy" }): ResolvedShot | null — ⚠ undocumented
-- `ShotOriginPolicy` (type): type ShotOriginPolicy = | { kind: "legacy" } | { kind: "entity" } | { kind: "entityOffset"; offset: EntityPosition } | { kind: "muzzle"; offset?: EntityPosition } | { kind: "camera"; origin: EntityPosition; direction?: EntityPosition } | { kind: "world"; origin: EntityPosition; direction?: EntityPos… — How a shot's world-space origin (and optional direction) is resolved before prediction/settlement. - `legacy` — `aim.origin` when present, else the shooter's entity position (pre-#431 default). - `entity` — always the shooter's entity position. - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model). - `camera` — explicit camera/reticle world origin (and optional direction override). - `world` — absolute world origin.
-- `ResolvedShot` (interface): interface ResolvedShot — ⚠ undocumented
-- `ShotOriginDeps` (interface): interface ShotOriginDeps — ⚠ undocumented
 
 ## @jgengine/core/combat/telegraph
 
-- `telegraphProgress` (function): function telegraphProgress(windupMs: number, startedAtMs: number, nowMs: number): number — ⚠ undocumented
+- `HazardCycleConfig` (interface): interface HazardCycleConfig — ⚠ undocumented
+- `HazardCycleSample` (interface): interface HazardCycleSample — ⚠ undocumented
+- `HazardPhase` (type): type HazardPhase = "windup" | "active" | "cooldown" — ⚠ undocumented
+- `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
+- `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
 - `hazardCycleAt` (function): function hazardCycleAt(config: HazardCycleConfig, nowMs: number): HazardCycleSample — Deterministic repeating hazard timing — windup → active → cooldown as a pure function of absolute time, for recurring flame vents, crushers, lightning rings. Sample `hazardCycleAt` each tick: draw the telegraph during `windup`, apply the effect during `active`, rest through `cooldown`.
 - `nextHazardActiveAt` (function): function nextHazardActiveAt(config: HazardCycleConfig, nowMs: number): number — Absolute time the hazard's next `active` phase begins at or after `nowMs` — the countdown seam.
-- `telegraphFired` (function): function telegraphFired(windupMs: number, startedAtMs: number, nowMs: number): boolean — ⚠ undocumented
-- `telegraphTurnProgress` (function): function telegraphTurnProgress(config: TelegraphConfig, startedTurn: number, currentTurn: number): number — ⚠ undocumented
-- `telegraphFiredAtTurn` (function): function telegraphFiredAtTurn(config: TelegraphConfig, startedTurn: number, currentTurn: number): boolean — ⚠ undocumented
-- `telegraphTurnsRemaining` (function): function telegraphTurnsRemaining(config: TelegraphConfig, startedTurn: number, currentTurn: number): number — ⚠ undocumented
 - `pointInTelegraph` (function): function pointInTelegraph(config: TelegraphConfig, point: EntityPosition): boolean — ⚠ undocumented
-- `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
-- `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
-- `HazardCycleConfig` (interface): interface HazardCycleConfig — ⚠ undocumented
-- `HazardPhase` (type): type HazardPhase = "windup" | "active" | "cooldown" — ⚠ undocumented
-- `HazardCycleSample` (interface): interface HazardCycleSample — ⚠ undocumented
+- `telegraphFired` (function): function telegraphFired(windupMs: number, startedAtMs: number, nowMs: number): boolean — ⚠ undocumented
+- `telegraphFiredAtTurn` (function): function telegraphFiredAtTurn(config: TelegraphConfig, startedTurn: number, currentTurn: number): boolean — ⚠ undocumented
+- `telegraphProgress` (function): function telegraphProgress(windupMs: number, startedAtMs: number, nowMs: number): number — ⚠ undocumented
+- `telegraphTurnProgress` (function): function telegraphTurnProgress(config: TelegraphConfig, startedTurn: number, currentTurn: number): number — ⚠ undocumented
+- `telegraphTurnsRemaining` (function): function telegraphTurnsRemaining(config: TelegraphConfig, startedTurn: number, currentTurn: number): number — ⚠ undocumented
 
 ## @jgengine/core/stats/accumulatorMeter
 
-- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — ⚠ undocumented
-- `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — ⚠ undocumented
-- `MeterTier` (interface): interface MeterTier — ⚠ undocumented
-- `MeterMode` (type): type MeterMode = "hold" | "reset" — ⚠ undocumented
+- `AccumulatorMeter` (interface): interface AccumulatorMeter — ⚠ undocumented
 - `AccumulatorMeterConfig` (interface): interface AccumulatorMeterConfig — ⚠ undocumented
 - `MeterAddResult` (interface): interface MeterAddResult — ⚠ undocumented
-- `AccumulatorMeter` (interface): interface AccumulatorMeter — ⚠ undocumented
+- `MeterMode` (type): type MeterMode = "hold" | "reset" — ⚠ undocumented
+- `MeterTier` (interface): interface MeterTier — ⚠ undocumented
+- `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — ⚠ undocumented
+- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — ⚠ undocumented
 
 ## @jgengine/core/stats/eventMeter
 
-- `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — ⚠ undocumented
+- `EventMeter` (interface): interface EventMeter — ⚠ undocumented
 - `EventMeterConfig` (interface): interface EventMeterConfig — ⚠ undocumented
 - `EventMeterFeedResult` (interface): interface EventMeterFeedResult — ⚠ undocumented
-- `EventMeter` (interface): interface EventMeter — ⚠ undocumented
+- `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — ⚠ undocumented
 
 ## @jgengine/core/stats/rollCheck
 
-- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — ⚠ undocumented
 - `CheckAdvantage` (type): type CheckAdvantage = "advantage" | "disadvantage" | "normal" — ⚠ undocumented
 - `CheckInput` (interface): interface CheckInput — ⚠ undocumented
 - `CheckResult` (interface): interface CheckResult — ⚠ undocumented
+- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — ⚠ undocumented
 
 ## @jgengine/core/stats/statModifiers
 
-- `createStats` (function): function createStats<TStat extends string>(base: Record<TStat, number>, options?: CreateStatsOptions): Stats<TStat> — ⚠ undocumented
+- `CreateStatsOptions` (interface): interface CreateStatsOptions — ⚠ undocumented
 - `StatModifier` (interface): interface StatModifier — ⚠ undocumented
 - `StatModifierSet` (type): type StatModifierSet<TStat extends string> = Partial<Record<TStat, StatModifier>> — ⚠ undocumented
-- `CreateStatsOptions` (interface): interface CreateStatsOptions — ⚠ undocumented
 - `Stats` (interface): interface Stats<TStat extends string> — ⚠ undocumented
+- `createStats` (function): function createStats<TStat extends string>(base: Record<TStat, number>, options?: CreateStatsOptions): Stats<TStat> — ⚠ undocumented
 
 ## @jgengine/core/tactics/fallingGrid
 
-- `gravityIntervalMs` (function): function gravityIntervalMs(level: number, config: GravityIntervalConfig = {}): number — Gravity tick interval for a given level: linear speed-up with a floor, generalizing `Games/block-stacker`'s `gravityInterval` (`max(0.05, 0.8 - level * 0.07)` seconds) to milliseconds with configurable base/step/floor.
-- `createFallingGrid` (function): function createFallingGrid<TCell>(config: FallingGridConfig): FallingGrid<TCell> — A game-agnostic cell grid for gravity-driven falling-block mechanics: bounded occupancy, footprint placement/collision, line-clear collapse, column-gravity settle (for match-3/sand style cascades), and a pure lock-delay helper. Extracted from `Games/block-stacker`'s tetris logic so any falling-block game can adopt it instead of reimplementing the grid.
+- `FallingGrid` (interface): interface FallingGrid<TCell> — ⚠ undocumented
 - `FallingGridCell` (type): type FallingGridCell = readonly [number, number] — ⚠ undocumented
 - `FallingGridConfig` (interface): interface FallingGridConfig — ⚠ undocumented
-- `LockState` (interface): interface LockState — Elapsed grounded time for the lock-delay state machine. `null` means airborne / not timing.
 - `FallingGridSnapshot` (interface): interface FallingGridSnapshot<TCell> — ⚠ undocumented
-- `FallingGrid` (interface): interface FallingGrid<TCell> — ⚠ undocumented
 - `GravityIntervalConfig` (interface): interface GravityIntervalConfig — ⚠ undocumented
+- `LockState` (interface): interface LockState — Elapsed grounded time for the lock-delay state machine. `null` means airborne / not timing.
+- `createFallingGrid` (function): function createFallingGrid<TCell>(config: FallingGridConfig): FallingGrid<TCell> — A game-agnostic cell grid for gravity-driven falling-block mechanics: bounded occupancy, footprint placement/collision, line-clear collapse, column-gravity settle (for match-3/sand style cascades), and a pure lock-delay helper. Extracted from `Games/block-stacker`'s tetris logic so any falling-block game can adopt it instead of reimplementing the grid.
+- `gravityIntervalMs` (function): function gravityIntervalMs(level: number, config: GravityIntervalConfig = {}): number — Gravity tick interval for a given level: linear speed-up with a floor, generalizing `Games/block-stacker`'s `gravityInterval` (`max(0.05, 0.8 - level * 0.07)` seconds) to milliseconds with configurable base/step/floor.
 
 ## @jgengine/core/tactics/predictiveQuery
 
-- `predictAreaEffect` (function): function predictAreaEffect(deps: PredictiveDeps, input: AreaPredictInput): PredictedTarget[] — ⚠ undocumented
-- `predictArcEffect` (function): function predictArcEffect(deps: PredictiveDeps, input: ArcPredictInput): PredictedTarget[] — ⚠ undocumented
-- `predictTiles` (function): function predictTiles(input: TilePredictInput): Tile[] — ⚠ undocumented
-- `PredictiveDeps` (interface): interface PredictiveDeps — ⚠ undocumented
-- `PredictedTarget` (interface): interface PredictedTarget — ⚠ undocumented
-- `AreaPredictInput` (interface): interface AreaPredictInput extends AreaTargetInput — ⚠ undocumented
 - `ArcPredictInput` (interface): interface ArcPredictInput — ⚠ undocumented
+- `AreaPredictInput` (interface): interface AreaPredictInput extends AreaTargetInput — ⚠ undocumented
+- `PredictedTarget` (interface): interface PredictedTarget — ⚠ undocumented
+- `PredictiveDeps` (interface): interface PredictiveDeps — ⚠ undocumented
 - `TilePredictInput` (interface): interface TilePredictInput — ⚠ undocumented
+- `predictArcEffect` (function): function predictArcEffect(deps: PredictiveDeps, input: ArcPredictInput): PredictedTarget[] — ⚠ undocumented
+- `predictAreaEffect` (function): function predictAreaEffect(deps: PredictiveDeps, input: AreaPredictInput): PredictedTarget[] — ⚠ undocumented
+- `predictTiles` (function): function predictTiles(input: TilePredictInput): Tile[] — ⚠ undocumented
 
 ## @jgengine/core/tactics/snapshot
 
-- `deepClone` (function): function deepClone<T>(value: T): T — ⚠ undocumented
-- `createSnapshotStore` (function): function createSnapshotStore(): SnapshotStore — ⚠ undocumented
-- `SnapshotSlice` (interface): interface SnapshotSlice<T = unknown> — ⚠ undocumented
 - `Snapshot` (type): type Snapshot = Record<string, unknown> — ⚠ undocumented
+- `SnapshotSlice` (interface): interface SnapshotSlice<T = unknown> — ⚠ undocumented
 - `SnapshotStore` (interface): interface SnapshotStore — ⚠ undocumented
+- `createSnapshotStore` (function): function createSnapshotStore(): SnapshotStore — ⚠ undocumented
+- `deepClone` (function): function deepClone<T>(value: T): T — ⚠ undocumented
 
 ## @jgengine/core/tactics/surface
 
-- `createSurfaceLayer` (function): function createSurfaceLayer(config: SurfaceLayerConfig): SurfaceLayer — ⚠ undocumented
-- `SurfaceKindDef` (interface): interface SurfaceKindDef — ⚠ undocumented
-- `SurfaceReaction` (interface): interface SurfaceReaction — ⚠ undocumented
-- `SurfaceLayerConfig` (interface): interface SurfaceLayerConfig — ⚠ undocumented
-- `SurfacePatch` (interface): interface SurfacePatch — ⚠ undocumented
-- `SurfaceEvent` (type): type SurfaceEvent = | { kind: "apply"; tile: Tile; surface: string } | { kind: "react"; tile: Tile; consumed: readonly [string, string]; produced: string | null } | { kind: "expire"; tile: Tile; surface: string } — ⚠ undocumented
-- `SurfaceCellKind` (interface): interface SurfaceCellKind — ⚠ undocumented
 - `SurfaceCell` (interface): interface SurfaceCell — ⚠ undocumented
-- `SurfaceLayerSnapshot` (type): type SurfaceLayerSnapshot = Record<string, Record<string, number | null>> — ⚠ undocumented
+- `SurfaceCellKind` (interface): interface SurfaceCellKind — ⚠ undocumented
+- `SurfaceEvent` (type): type SurfaceEvent = | { kind: "apply"; tile: Tile; surface: string } | { kind: "react"; tile: Tile; consumed: readonly [string, string]; produced: string | null } | { kind: "expire"; tile: Tile; surface: string } — ⚠ undocumented
+- `SurfaceKindDef` (interface): interface SurfaceKindDef — ⚠ undocumented
 - `SurfaceLayer` (interface): interface SurfaceLayer — ⚠ undocumented
+- `SurfaceLayerConfig` (interface): interface SurfaceLayerConfig — ⚠ undocumented
+- `SurfaceLayerSnapshot` (type): type SurfaceLayerSnapshot = Record<string, Record<string, number | null>> — ⚠ undocumented
+- `SurfacePatch` (interface): interface SurfacePatch — ⚠ undocumented
+- `SurfaceReaction` (interface): interface SurfaceReaction — ⚠ undocumented
+- `createSurfaceLayer` (function): function createSurfaceLayer(config: SurfaceLayerConfig): SurfaceLayer — ⚠ undocumented
 
 ## @jgengine/core/tactics/tacticalGrid
 
-- `createTacticalGrid` (function): function createTacticalGrid(config: TacticalGridConfig): TacticalGrid — ⚠ undocumented
-- `Tile` (type): type Tile = readonly [number, number] — ⚠ undocumented
-- `TacticalGridWorldConfig` (interface): interface TacticalGridWorldConfig — Maps abstract `[col, row]` tiles onto world-space `[x, z]`, mirroring `navGrid`'s bounds+cellSize convention.
-- `TacticalGridConfig` (interface): interface TacticalGridConfig — ⚠ undocumented
-- `ReachableOptions` (interface): interface ReachableOptions — ⚠ undocumented
-- `ReachableTile` (interface): interface ReachableTile — ⚠ undocumented
-- `PushObstacle` (type): type PushObstacle = "wall" | "edge" — ⚠ undocumented
 - `PushCollision` (interface): interface PushCollision — ⚠ undocumented
 - `PushMove` (interface): interface PushMove — ⚠ undocumented
-- `PushResult` (interface): interface PushResult — ⚠ undocumented
+- `PushObstacle` (type): type PushObstacle = "wall" | "edge" — ⚠ undocumented
 - `PushOptions` (interface): interface PushOptions — ⚠ undocumented
-- `TacticalGridSnapshot` (interface): interface TacticalGridSnapshot — ⚠ undocumented
+- `PushResult` (interface): interface PushResult — ⚠ undocumented
+- `ReachableOptions` (interface): interface ReachableOptions — ⚠ undocumented
+- `ReachableTile` (interface): interface ReachableTile — ⚠ undocumented
 - `TacticalGrid` (interface): interface TacticalGrid — ⚠ undocumented
+- `TacticalGridConfig` (interface): interface TacticalGridConfig — ⚠ undocumented
+- `TacticalGridSnapshot` (interface): interface TacticalGridSnapshot — ⚠ undocumented
+- `TacticalGridWorldConfig` (interface): interface TacticalGridWorldConfig — Maps abstract `[col, row]` tiles onto world-space `[x, z]`, mirroring `navGrid`'s bounds+cellSize convention.
+- `Tile` (type): type Tile = readonly [number, number] — ⚠ undocumented
+- `createTacticalGrid` (function): function createTacticalGrid(config: TacticalGridConfig): TacticalGrid — ⚠ undocumented

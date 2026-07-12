@@ -4,31 +4,31 @@
 
 ## @jgengine/core/survival/decayMeter
 
-- `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
-- `MeterThreshold` (interface): interface MeterThreshold — ⚠ undocumented
 - `DecayMeterConfig` (interface): interface DecayMeterConfig — ⚠ undocumented
-- `DecayMeterState` (interface): interface DecayMeterState — ⚠ undocumented
 - `DecayMeterSet` (interface): interface DecayMeterSet — ⚠ undocumented
+- `DecayMeterState` (interface): interface DecayMeterState — ⚠ undocumented
+- `MeterThreshold` (interface): interface MeterThreshold — ⚠ undocumented
+- `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
 
 ## @jgengine/core/survival/moodle
 
-- `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
-- `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
+- `MOODLE_SEVERITY_ORDER` (const): const MOODLE_SEVERITY_ORDER: Record<MoodleSeverity, number> — ⚠ undocumented
+- `Moodle` (interface): interface Moodle — ⚠ undocumented
 - `MoodleSeverity` (type): type MoodleSeverity = "good" | "neutral" | "warning" | "critical" — ⚠ undocumented
 - `MoodleSource` (type): type MoodleSource = "meter" | "ailment" | "buff" — ⚠ undocumented
-- `Moodle` (interface): interface Moodle — ⚠ undocumented
-- `MOODLE_SEVERITY_ORDER` (const): const MOODLE_SEVERITY_ORDER: Record<MoodleSeverity, number> — ⚠ undocumented
-- `TimedMoodleInput` (interface): interface TimedMoodleInput — ⚠ undocumented
 - `MoodleStack` (interface): interface MoodleStack — ⚠ undocumented
+- `TimedMoodleInput` (interface): interface TimedMoodleInput — ⚠ undocumented
+- `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
+- `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
 
 ## @jgengine/core/survival/regionHealth
 
-- `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — ⚠ undocumented
-- `HealthRegionConfig` (interface): interface HealthRegionConfig — ⚠ undocumented
 - `AilmentConfig` (interface): interface AilmentConfig — ⚠ undocumented
-- `MultiRegionHealthConfig` (interface): interface MultiRegionHealthConfig — ⚠ undocumented
-- `RegionHealthState` (interface): interface RegionHealthState — ⚠ undocumented
 - `AilmentInstance` (interface): interface AilmentInstance — ⚠ undocumented
 - `DamageResult` (interface): interface DamageResult — ⚠ undocumented
-- `TreatResult` (interface): interface TreatResult — ⚠ undocumented
+- `HealthRegionConfig` (interface): interface HealthRegionConfig — ⚠ undocumented
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — ⚠ undocumented
+- `MultiRegionHealthConfig` (interface): interface MultiRegionHealthConfig — ⚠ undocumented
+- `RegionHealthState` (interface): interface RegionHealthState — ⚠ undocumented
+- `TreatResult` (interface): interface TreatResult — ⚠ undocumented
+- `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — ⚠ undocumented

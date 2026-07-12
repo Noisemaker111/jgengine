@@ -27,8 +27,12 @@ function collapseWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
+function stripImportQualifiers(text: string): string {
+  return text.replace(/import\("[^"]+"\)\./g, "");
+}
+
 function truncate(text: string): string {
-  const collapsed = collapseWhitespace(text);
+  const collapsed = collapseWhitespace(stripImportQualifiers(text));
   return collapsed.length > MAX_SIGNATURE_LENGTH ? `${collapsed.slice(0, MAX_SIGNATURE_LENGTH)}…` : collapsed;
 }
 
@@ -126,6 +130,7 @@ function moduleExports(sourceFile: SourceFile): ApiExport[] {
       });
     }
   }
+  exports.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   return exports;
 }
 
@@ -163,7 +168,7 @@ export function extractPackageSurface(packageDir: string): ApiPackage {
     const path = rel.replace(/\.tsx?$/, "");
     modules.push({ path, exports });
   }
-  modules.sort((a, b) => a.path.localeCompare(b.path));
+  modules.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
   return {
     name: packageJson.name,

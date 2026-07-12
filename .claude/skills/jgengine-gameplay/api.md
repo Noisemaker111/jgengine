@@ -4,906 +4,906 @@
 
 ## @jgengine/core/behaviour/behaviour
 
-- `createBehaviourWorld` (function): function createBehaviourWorld(): BehaviourWorld — ⚠ undocumented
-- `JGEngineRegister` (interface): interface JGEngineRegister — Unity-style behaviour lifecycle over a headless id-keyed node tree, ported from vladkrutenyuk/three-start (MIT) and adapted to run without three.js: nodes are plain string ids (use entity instance ids to pair with `entityStore`), and the shell binds render-side hooks separately.
-- `RegisterField` (type): type RegisterField<TKey extends string, TFallback = unknown> = TKey extends keyof JGEngineRegister ? JGEngineRegister[TKey] : TFallback — ⚠ undocumented
-- `BehaviourModules` (type): type BehaviourModules = RegisterField<"modules", Record<string, BehaviourModule>> — Resolves to the augmented module map when `JGEngineRegister` declares one.
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
 - `BehaviourModule` (class): class BehaviourModule — A world-lifetime service with typed sibling access via `this.modules`. Modules awake and start before any behaviour during `world.start()`, subscribe to update dispatch first (their `onUpdate` fires before every behaviour's), and have no disable/destroy — they live as long as the world.
+- `BehaviourModules` (type): type BehaviourModules = RegisterField<"modules", Record<string, BehaviourModule>> — Resolves to the augmented module map when `JGEngineRegister` declares one.
 - `BehaviourWorld` (interface): interface BehaviourWorld — ⚠ undocumented
+- `JGEngineRegister` (interface): interface JGEngineRegister — Unity-style behaviour lifecycle over a headless id-keyed node tree, ported from vladkrutenyuk/three-start (MIT) and adapted to run without three.js: nodes are plain string ids (use entity instance ids to pair with `entityStore`), and the shell binds render-side hooks separately.
+- `RegisterField` (type): type RegisterField<TKey extends string, TFallback = unknown> = TKey extends keyof JGEngineRegister ? JGEngineRegister[TKey] : TFallback — ⚠ undocumented
+- `createBehaviourWorld` (function): function createBehaviourWorld(): BehaviourWorld — ⚠ undocumented
 
 ## @jgengine/core/board/laneBoard
 
+- `LaneAggregate` (interface): interface LaneAggregate — ⚠ undocumented
+- `LaneBoard` (interface): interface LaneBoard<C> — ⚠ undocumented
+- `LaneBoardConfig` (interface): interface LaneBoardConfig<C> — ⚠ undocumented
+- `LaneBoardState` (interface): interface LaneBoardState<C> — ⚠ undocumented
+- `LaneCells` (interface): interface LaneCells<C> — ⚠ undocumented
+- `LaneOutcome` (interface): interface LaneOutcome — ⚠ undocumented
+- `LanePlaceRejected` (interface): interface LanePlaceRejected — ⚠ undocumented
+- `LanePlaceResult` (interface): interface LanePlaceResult<C> — ⚠ undocumented
+- `LaneRejection` (type): type LaneRejection = "invalid-lane" | "invalid-side" — ⚠ undocumented
+- `LaneResult` (type): type LaneResult<C> = LanePlaceResult<C> | LanePlaceRejected — ⚠ undocumented
+- `LaneRule` (interface): interface LaneRule<C> — ⚠ undocumented
+- `LaneRuleInput` (interface): interface LaneRuleInput<C> — ⚠ undocumented
+- `Side` (type): type Side = string — ⚠ undocumented
+- `boardTotals` (function): function boardTotals<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>): Readonly<Record<Side, number>> — ⚠ undocumented
+- `createLaneBoard` (function): function createLaneBoard<C>(config: LaneBoardConfig<C>): LaneBoard<C> — ⚠ undocumented
 - `createLaneBoardState` (function): function createLaneBoardState<C>(config: LaneBoardConfig<C>): LaneBoardState<C> — ⚠ undocumented
-- `placeCard` (function): function placeCard<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number, side: Side, card: C): LaneResult<C> — ⚠ undocumented
-- `removeCard` (function): function removeCard<C>(state: LaneBoardState<C>, lane: number, side: Side, predicate: (card: C, index: number) => boolean): LaneResult<C> — ⚠ undocumented
 - `laneAggregate` (function): function laneAggregate<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number, side: Side): LaneAggregate — ⚠ undocumented
 - `laneOutcome` (function): function laneOutcome<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number): LaneOutcome — ⚠ undocumented
-- `boardTotals` (function): function boardTotals<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>): Readonly<Record<Side, number>> — ⚠ undocumented
 - `lanesWon` (function): function lanesWon<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>): Readonly<Record<Side, number>> — ⚠ undocumented
-- `createLaneBoard` (function): function createLaneBoard<C>(config: LaneBoardConfig<C>): LaneBoard<C> — ⚠ undocumented
-- `Side` (type): type Side = string — ⚠ undocumented
-- `LaneRuleInput` (interface): interface LaneRuleInput<C> — ⚠ undocumented
-- `LaneRule` (interface): interface LaneRule<C> — ⚠ undocumented
-- `LaneBoardConfig` (interface): interface LaneBoardConfig<C> — ⚠ undocumented
-- `LaneCells` (interface): interface LaneCells<C> — ⚠ undocumented
-- `LaneBoardState` (interface): interface LaneBoardState<C> — ⚠ undocumented
-- `LaneAggregate` (interface): interface LaneAggregate — ⚠ undocumented
-- `LaneOutcome` (interface): interface LaneOutcome — ⚠ undocumented
-- `LaneRejection` (type): type LaneRejection = "invalid-lane" | "invalid-side" — ⚠ undocumented
-- `LanePlaceResult` (interface): interface LanePlaceResult<C> — ⚠ undocumented
-- `LanePlaceRejected` (interface): interface LanePlaceRejected — ⚠ undocumented
-- `LaneResult` (type): type LaneResult<C> = LanePlaceResult<C> | LanePlaceRejected — ⚠ undocumented
-- `LaneBoard` (interface): interface LaneBoard<C> — ⚠ undocumented
+- `placeCard` (function): function placeCard<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number, side: Side, card: C): LaneResult<C> — ⚠ undocumented
+- `removeCard` (function): function removeCard<C>(state: LaneBoardState<C>, lane: number, side: Side, predicate: (card: C, index: number) => boolean): LaneResult<C> — ⚠ undocumented
 
 ## @jgengine/core/board/timelineBoard
 
-- `createTimelineBoardState` (function): function createTimelineBoardState(slots: readonly TimelineSlotConfig[]): TimelineBoardState — ⚠ undocumented
-- `tickTimeline` (function): function tickTimeline(state: TimelineBoardState, dtMs: number): TimelineTickResult — ⚠ undocumented
-- `setSlotEnabled` (function): function setSlotEnabled(state: TimelineBoardState, slotId: string, enabled: boolean): TimelineBoardState — ⚠ undocumented
-- `resetSlot` (function): function resetSlot(state: TimelineBoardState, slotId: string, remainingMs?: number): TimelineBoardState — ⚠ undocumented
-- `createTimelineBoard` (function): function createTimelineBoard(slots: readonly TimelineSlotConfig[]): TimelineBoard — ⚠ undocumented
-- `TimelineSlotConfig` (interface): interface TimelineSlotConfig — ⚠ undocumented
-- `TimelineSlot` (interface): interface TimelineSlot — ⚠ undocumented
+- `TimelineBoard` (interface): interface TimelineBoard — ⚠ undocumented
 - `TimelineBoardState` (interface): interface TimelineBoardState — ⚠ undocumented
 - `TimelineFire` (interface): interface TimelineFire — ⚠ undocumented
+- `TimelineSlot` (interface): interface TimelineSlot — ⚠ undocumented
+- `TimelineSlotConfig` (interface): interface TimelineSlotConfig — ⚠ undocumented
 - `TimelineTickResult` (interface): interface TimelineTickResult — ⚠ undocumented
-- `TimelineBoard` (interface): interface TimelineBoard — ⚠ undocumented
+- `createTimelineBoard` (function): function createTimelineBoard(slots: readonly TimelineSlotConfig[]): TimelineBoard — ⚠ undocumented
+- `createTimelineBoardState` (function): function createTimelineBoardState(slots: readonly TimelineSlotConfig[]): TimelineBoardState — ⚠ undocumented
+- `resetSlot` (function): function resetSlot(state: TimelineBoardState, slotId: string, remainingMs?: number): TimelineBoardState — ⚠ undocumented
+- `setSlotEnabled` (function): function setSlotEnabled(state: TimelineBoardState, slotId: string, enabled: boolean): TimelineBoardState — ⚠ undocumented
+- `tickTimeline` (function): function tickTimeline(state: TimelineBoardState, dtMs: number): TimelineTickResult — ⚠ undocumented
 
 ## @jgengine/core/cards/cardPile
 
-- `pileRng` (function): function pileRng(seed: string | number): () => number — ⚠ undocumented
-- `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — ⚠ undocumented
-- `createCardPileState` (function): function createCardPileState(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPileState — ⚠ undocumented
-- `zoneOf` (function): function zoneOf(state: CardPileState, cardId: string): ZoneName | null — ⚠ undocumented
-- `countIn` (function): function countIn(state: CardPileState, zone: ZoneName): number — ⚠ undocumented
-- `peek` (function): function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] — ⚠ undocumented
-- `shuffleZone` (function): function shuffleZone(state: CardPileState, zone: ZoneName, seed: string | number): CardPileState — ⚠ undocumented
-- `moveCards` (function): function moveCards(state: CardPileState, ids: readonly string[], from: ZoneName, to: ZoneName, position: "top" | "bottom" = "top"): PileResult — ⚠ undocumented
-- `draw` (function): function draw(state: CardPileState, n: number, options: { from: ZoneName; to: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; seed?: string | number; }): DrawResult — ⚠ undocumented
-- `createCardPile` (function): function createCardPile(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPile — ⚠ undocumented
-- `ZoneName` (type): type ZoneName = string — ⚠ undocumented
+- `CardPile` (interface): interface CardPile — ⚠ undocumented
 - `CardPileConfig` (interface): interface CardPileConfig — ⚠ undocumented
 - `CardPileState` (interface): interface CardPileState — ⚠ undocumented
 - `DrawResult` (interface): interface DrawResult — ⚠ undocumented
-- `PileRejection` (type): type PileRejection = | "unknown-zone" | "card-not-in-zone" | "hand-limit" | "empty-source" — ⚠ undocumented
-- `PileMoveResult` (interface): interface PileMoveResult — ⚠ undocumented
 - `PileMoveRejected` (interface): interface PileMoveRejected — ⚠ undocumented
+- `PileMoveResult` (interface): interface PileMoveResult — ⚠ undocumented
+- `PileRejection` (type): type PileRejection = | "unknown-zone" | "card-not-in-zone" | "hand-limit" | "empty-source" — ⚠ undocumented
 - `PileResult` (type): type PileResult = PileMoveResult | PileMoveRejected — ⚠ undocumented
-- `CardPile` (interface): interface CardPile — ⚠ undocumented
+- `ZoneName` (type): type ZoneName = string — ⚠ undocumented
+- `countIn` (function): function countIn(state: CardPileState, zone: ZoneName): number — ⚠ undocumented
+- `createCardPile` (function): function createCardPile(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPile — ⚠ undocumented
+- `createCardPileState` (function): function createCardPileState(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPileState — ⚠ undocumented
+- `draw` (function): function draw(state: CardPileState, n: number, options: { from: ZoneName; to: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; seed?: string | number; }): DrawResult — ⚠ undocumented
+- `moveCards` (function): function moveCards(state: CardPileState, ids: readonly string[], from: ZoneName, to: ZoneName, position: "top" | "bottom" = "top"): PileResult — ⚠ undocumented
+- `peek` (function): function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] — ⚠ undocumented
+- `pileRng` (function): function pileRng(seed: string | number): () => number — ⚠ undocumented
+- `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — ⚠ undocumented
+- `shuffleZone` (function): function shuffleZone(state: CardPileState, zone: ZoneName, seed: string | number): CardPileState — ⚠ undocumented
+- `zoneOf` (function): function zoneOf(state: CardPileState, cardId: string): ZoneName | null — ⚠ undocumented
 
 ## @jgengine/core/cards/modifierPipeline
 
-- `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
-- `createModifierPipeline` (function): function createModifierPipeline<V>(initial: readonly Modifier<V>[] = [], equals: (a: V, b: V) => boolean = Object.is): ModifierPipeline<V> — ⚠ undocumented
 - `Modifier` (interface): interface Modifier<V> — ⚠ undocumented
-- `PipelineContext` (interface): interface PipelineContext<V> — ⚠ undocumented
-- `TraceStep` (interface): interface TraceStep<V> — ⚠ undocumented
-- `PipelineResult` (interface): interface PipelineResult<V> — ⚠ undocumented
 - `ModifierPipeline` (interface): interface ModifierPipeline<V> — ⚠ undocumented
+- `PipelineContext` (interface): interface PipelineContext<V> — ⚠ undocumented
+- `PipelineResult` (interface): interface PipelineResult<V> — ⚠ undocumented
+- `TraceStep` (interface): interface TraceStep<V> — ⚠ undocumented
+- `createModifierPipeline` (function): function createModifierPipeline<V>(initial: readonly Modifier<V>[] = [], equals: (a: V, b: V) => boolean = Object.is): ModifierPipeline<V> — ⚠ undocumented
+- `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 
 ## @jgengine/core/crafting/crop
 
-- `emptyTile` (function): function emptyTile(): CropTileState — ⚠ undocumented
-- `canTill` (function): function canTill(state: CropTileState): boolean — ⚠ undocumented
-- `tillTile` (function): function tillTile(state: CropTileState): CropTileState — ⚠ undocumented
-- `canPlant` (function): function canPlant(state: CropTileState): boolean — ⚠ undocumented
-- `plantCrop` (function): function plantCrop(state: CropTileState, cropId: string): CropTileState — ⚠ undocumented
-- `waterTile` (function): function waterTile(state: CropTileState): CropTileState — ⚠ undocumented
-- `maturityDays` (function): function maturityDays(def: CropDef): number — ⚠ undocumented
-- `advanceCropDay` (function): function advanceCropDay(def: CropDef, state: CropTileState): CropTileState — ⚠ undocumented
-- `harvestCrop` (function): function harvestCrop(def: CropDef, state: CropTileState): HarvestResult — ⚠ undocumented
-- `tileKey` (function): function tileKey(coord: TileCoord): string — ⚠ undocumented
-- `singleTile` (function): function singleTile(): TilePattern — ⚠ undocumented
-- `squarePattern` (function): function squarePattern(radius: number): TilePattern — ⚠ undocumented
-- `diamondPattern` (function): function diamondPattern(radius: number): TilePattern — ⚠ undocumented
-- `rectPattern` (function): function rectPattern(width: number, depth: number): TilePattern — ⚠ undocumented
-- `patternAt` (function): function patternAt(center: TileCoord, pattern: TilePattern): TileCoord[] — ⚠ undocumented
-- `applyToolToTiles` (function): function applyToolToTiles(tiles: ReadonlyMap<string, CropTileState>, center: TileCoord, pattern: TilePattern, apply: (state: CropTileState, coord: TileCoord) => CropTileState, fill: () => CropTileState = emptyTile): ApplyToolResult — ⚠ undocumented
-- `createDayTicker` (function): function createDayTicker(startDay = 0): DayTicker — ⚠ undocumented
-- `createCropField` (function): function createCropField(catalog: CropCatalog = () => null): CropField — ⚠ undocumented
-- `SoilState` (type): type SoilState = "untilled" | "tilled" — ⚠ undocumented
-- `CropDef` (interface): interface CropDef — ⚠ undocumented
-- `CropTileState` (interface): interface CropTileState — ⚠ undocumented
+- `ApplyToolResult` (interface): interface ApplyToolResult — ⚠ undocumented
 - `CropCatalog` (type): type CropCatalog = (cropId: string) => CropDef | null — ⚠ undocumented
+- `CropDef` (interface): interface CropDef — ⚠ undocumented
+- `CropField` (interface): interface CropField — ⚠ undocumented
+- `CropTileState` (interface): interface CropTileState — ⚠ undocumented
+- `DayTicker` (interface): interface DayTicker — ⚠ undocumented
 - `HarvestResult` (interface): interface HarvestResult — ⚠ undocumented
+- `SoilState` (type): type SoilState = "untilled" | "tilled" — ⚠ undocumented
 - `TileCoord` (type): type TileCoord = readonly [number, number] — ⚠ undocumented
 - `TilePattern` (type): type TilePattern = readonly TileCoord[] — ⚠ undocumented
-- `ApplyToolResult` (interface): interface ApplyToolResult — ⚠ undocumented
-- `DayTicker` (interface): interface DayTicker — ⚠ undocumented
-- `CropField` (interface): interface CropField — ⚠ undocumented
+- `advanceCropDay` (function): function advanceCropDay(def: CropDef, state: CropTileState): CropTileState — ⚠ undocumented
+- `applyToolToTiles` (function): function applyToolToTiles(tiles: ReadonlyMap<string, CropTileState>, center: TileCoord, pattern: TilePattern, apply: (state: CropTileState, coord: TileCoord) => CropTileState, fill: () => CropTileState = emptyTile): ApplyToolResult — ⚠ undocumented
+- `canPlant` (function): function canPlant(state: CropTileState): boolean — ⚠ undocumented
+- `canTill` (function): function canTill(state: CropTileState): boolean — ⚠ undocumented
+- `createCropField` (function): function createCropField(catalog: CropCatalog = () => null): CropField — ⚠ undocumented
+- `createDayTicker` (function): function createDayTicker(startDay = 0): DayTicker — ⚠ undocumented
+- `diamondPattern` (function): function diamondPattern(radius: number): TilePattern — ⚠ undocumented
+- `emptyTile` (function): function emptyTile(): CropTileState — ⚠ undocumented
+- `harvestCrop` (function): function harvestCrop(def: CropDef, state: CropTileState): HarvestResult — ⚠ undocumented
+- `maturityDays` (function): function maturityDays(def: CropDef): number — ⚠ undocumented
+- `patternAt` (function): function patternAt(center: TileCoord, pattern: TilePattern): TileCoord[] — ⚠ undocumented
+- `plantCrop` (function): function plantCrop(state: CropTileState, cropId: string): CropTileState — ⚠ undocumented
+- `rectPattern` (function): function rectPattern(width: number, depth: number): TilePattern — ⚠ undocumented
+- `singleTile` (function): function singleTile(): TilePattern — ⚠ undocumented
+- `squarePattern` (function): function squarePattern(radius: number): TilePattern — ⚠ undocumented
+- `tileKey` (function): function tileKey(coord: TileCoord): string — ⚠ undocumented
+- `tillTile` (function): function tillTile(state: CropTileState): CropTileState — ⚠ undocumented
+- `waterTile` (function): function waterTile(state: CropTileState): CropTileState — ⚠ undocumented
 
 ## @jgengine/core/crafting/production
 
-- `productionBuilding` (function): function productionBuilding(config: ProductionBuildingConfig): ProductionBuildingDef — ⚠ undocumented
-- `createProductionState` (function): function createProductionState(): ProductionState — ⚠ undocumented
-- `acceptsInput` (function): function acceptsInput(def: ProductionBuildingDef, state: ProductionState, itemId: string): boolean — ⚠ undocumented
-- `feedProduction` (function): function feedProduction(def: ProductionBuildingDef, state: ProductionState, itemId: string, count: number): { state: ProductionState; accepted: number } — ⚠ undocumented
-- `drainOutput` (function): function drainOutput(state: ProductionState, itemId: string, count?: number): { state: ProductionState; taken: number } — ⚠ undocumented
-- `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
-- `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
-- `resolvePowerGrid` (function): function resolvePowerGrid(supply: number, consumers: readonly PowerConsumer[]): PowerGridResult — ⚠ undocumented
-- `ProductionBuildingDef` (interface): interface ProductionBuildingDef — ⚠ undocumented
-- `ProductionBuildingConfig` (interface): interface ProductionBuildingConfig — ⚠ undocumented
 - `ItemCounts` (type): type ItemCounts = Readonly<Record<string, number>> — ⚠ undocumented
+- `PowerConsumer` (interface): interface PowerConsumer — ⚠ undocumented
+- `PowerGridResult` (interface): interface PowerGridResult — ⚠ undocumented
+- `ProductionBuildingConfig` (interface): interface ProductionBuildingConfig — ⚠ undocumented
+- `ProductionBuildingDef` (interface): interface ProductionBuildingDef — ⚠ undocumented
 - `ProductionState` (interface): interface ProductionState — ⚠ undocumented
 - `ProductionTickInput` (interface): interface ProductionTickInput — ⚠ undocumented
 - `TransportItem` (interface): interface TransportItem — ⚠ undocumented
 - `TransportPath` (interface): interface TransportPath — ⚠ undocumented
-- `PowerConsumer` (interface): interface PowerConsumer — ⚠ undocumented
-- `PowerGridResult` (interface): interface PowerGridResult — ⚠ undocumented
+- `acceptsInput` (function): function acceptsInput(def: ProductionBuildingDef, state: ProductionState, itemId: string): boolean — ⚠ undocumented
+- `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
+- `createProductionState` (function): function createProductionState(): ProductionState — ⚠ undocumented
+- `drainOutput` (function): function drainOutput(state: ProductionState, itemId: string, count?: number): { state: ProductionState; taken: number } — ⚠ undocumented
+- `feedProduction` (function): function feedProduction(def: ProductionBuildingDef, state: ProductionState, itemId: string, count: number): { state: ProductionState; accepted: number } — ⚠ undocumented
+- `productionBuilding` (function): function productionBuilding(config: ProductionBuildingConfig): ProductionBuildingDef — ⚠ undocumented
+- `resolvePowerGrid` (function): function resolvePowerGrid(supply: number, consumers: readonly PowerConsumer[]): PowerGridResult — ⚠ undocumented
+- `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
 
 ## @jgengine/core/crafting/recipe
 
-- `craftSeconds` (function): function craftSeconds(recipe: RecipeDef): number — ⚠ undocumented
-- `missingInputs` (function): function missingInputs(state: InventoryState, recipe: RecipeDef): RecipeItem[] — ⚠ undocumented
-- `hasRecipeInputs` (function): function hasRecipeInputs(state: InventoryState, recipe: RecipeDef): boolean — ⚠ undocumented
-- `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
-- `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
-- `craft` (function): function craft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftResult — ⚠ undocumented
-- `createRecipeGraph` (function): function createRecipeGraph(defs: readonly RecipeDef[] = []): RecipeGraph — ⚠ undocumented
-- `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
-- `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
-- `StationInstance` (interface): interface StationInstance — ⚠ undocumented
+- `CraftCheck` (type): type CraftCheck = { ok: true } | ({ ok: false } & CraftRejection) — ⚠ undocumented
 - `CraftContext` (interface): interface CraftContext — ⚠ undocumented
 - `CraftRejection` (type): type CraftRejection = | { reason: "missing-inputs"; missing: readonly RecipeItem[] } | { reason: "no-station"; station: string } | { reason: "locked"; requires: readonly string[] } | { reason: "no-output-space" } — ⚠ undocumented
-- `CraftCheck` (type): type CraftCheck = { ok: true } | ({ ok: false } & CraftRejection) — ⚠ undocumented
 - `CraftResult` (type): type CraftResult = { status: "ok"; state: InventoryState } | ({ status: "rejected" } & CraftRejection) — ⚠ undocumented
+- `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
 - `RecipeGraph` (interface): interface RecipeGraph — ⚠ undocumented
+- `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
+- `StationInstance` (interface): interface StationInstance — ⚠ undocumented
+- `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
+- `craft` (function): function craft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftResult — ⚠ undocumented
+- `craftSeconds` (function): function craftSeconds(recipe: RecipeDef): number — ⚠ undocumented
+- `createRecipeGraph` (function): function createRecipeGraph(defs: readonly RecipeDef[] = []): RecipeGraph — ⚠ undocumented
+- `hasRecipeInputs` (function): function hasRecipeInputs(state: InventoryState, recipe: RecipeDef): boolean — ⚠ undocumented
+- `missingInputs` (function): function missingInputs(state: InventoryState, recipe: RecipeDef): RecipeItem[] — ⚠ undocumented
+- `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
 
 ## @jgengine/core/data/dataSource
 
-- `createDataSource` (function): function createDataSource<T>(load: (signal: AbortSignal) => Promise<T>, options: DataSourceOptions = {}): DataSource<T> — ⚠ undocumented
-- `DataSourceStatus` (type): type DataSourceStatus = "idle" | "loading" | "ready" | "error" — ⚠ undocumented
-- `DataSourceState` (interface): interface DataSourceState<T> — ⚠ undocumented
+- `DataSource` (interface): interface DataSource<T> — ⚠ undocumented
 - `DataSourceClock` (interface): interface DataSourceClock — ⚠ undocumented
 - `DataSourceOptions` (interface): interface DataSourceOptions — ⚠ undocumented
+- `DataSourceState` (interface): interface DataSourceState<T> — ⚠ undocumented
+- `DataSourceStatus` (type): type DataSourceStatus = "idle" | "loading" | "ready" | "error" — ⚠ undocumented
 - `RefreshOptions` (interface): interface RefreshOptions — ⚠ undocumented
-- `DataSource` (interface): interface DataSource<T> — ⚠ undocumented
+- `createDataSource` (function): function createDataSource<T>(load: (signal: AbortSignal) => Promise<T>, options: DataSourceOptions = {}): DataSource<T> — ⚠ undocumented
 
 ## @jgengine/core/data/devProxy
 
-- `parseDevProxyTable` (function): function parseDevProxyTable(raw: string | undefined): DevProxyTable — ⚠ undocumented
-- `proxiedUrl` (function): function proxiedUrl(target: string, options: ProxiedUrlOptions = {}): string — ⚠ undocumented
+- `DEFAULT_DEV_PROXY_PREFIX` (const): const DEFAULT_DEV_PROXY_PREFIX: "/proxy" — ⚠ undocumented
 - `DevProxyTable` (interface): interface DevProxyTable — ⚠ undocumented
 - `ProxiedUrlOptions` (interface): interface ProxiedUrlOptions — ⚠ undocumented
-- `DEFAULT_DEV_PROXY_PREFIX` (const): const DEFAULT_DEV_PROXY_PREFIX: "/proxy" — ⚠ undocumented
+- `parseDevProxyTable` (function): function parseDevProxyTable(raw: string | undefined): DevProxyTable — ⚠ undocumented
+- `proxiedUrl` (function): function proxiedUrl(target: string, options: ProxiedUrlOptions = {}): string — ⚠ undocumented
 
 ## @jgengine/core/data/fetchJson
 
-- `fetchJson` (function): function fetchJson<T>(url: string, options: FetchJsonOptions = {}): Promise<T> — ⚠ undocumented
 - `FetchImpl` (type): type FetchImpl = typeof fetch — ⚠ undocumented
 - `FetchJsonOptions` (interface): interface FetchJsonOptions — ⚠ undocumented
 - `HttpStatusError` (class): class HttpStatusError extends Error — ⚠ undocumented
 - `JsonParseError` (class): class JsonParseError extends Error — ⚠ undocumented
+- `fetchJson` (function): function fetchJson<T>(url: string, options: FetchJsonOptions = {}): Promise<T> — ⚠ undocumented
 
 ## @jgengine/core/data/jsonDataSource
 
-- `createJsonDataSource` (function): function createJsonDataSource<T>(url: string, options: JsonDataSourceOptions = {}): DataSource<T> — ⚠ undocumented
 - `JsonDataSourceOptions` (type): type JsonDataSourceOptions = DataSourceOptions & Omit<FetchJsonOptions, "signal"> — ⚠ undocumented
+- `createJsonDataSource` (function): function createJsonDataSource<T>(url: string, options: JsonDataSourceOptions = {}): DataSource<T> — ⚠ undocumented
 
 ## @jgengine/core/economy/currency
 
-- `sanitizeCurrencyAmount` (function): function sanitizeCurrencyAmount(amount: number): number — ⚠ undocumented
-- `formatCurrencyAmount` (function): function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string — ⚠ undocumented
-- `insufficientCurrencyReason` (function): function insufficientCurrencyReason(currency: CurrencyDefinition, needed: number, current: number): string — ⚠ undocumented
-- `applyCurrencyOperation` (function): function applyCurrencyOperation(currency: CurrencyDefinition, current: number, operation: CurrencyOperation, amount: number): CurrencyAdjustment — ⚠ undocumented
-- `resolveCurrencyDelta` (function): function resolveCurrencyDelta(current: number, delta: number): { operation: CurrencyOperation; amount: number } — Deducts clamp to the available balance (a delta can never overdraw); adds apply in full.
+- `CurrencyAdjustment` (type): type CurrencyAdjustment = | { success: true; newBalance: number; appliedDelta: number } | { success: false; reason: string } — ⚠ undocumented
 - `CurrencyDefinition` (interface): interface CurrencyDefinition<TCurrencyId extends string = string> — ⚠ undocumented
 - `CurrencyOperation` (type): type CurrencyOperation = "add" | "deduct" — ⚠ undocumented
-- `CurrencyAdjustment` (type): type CurrencyAdjustment = | { success: true; newBalance: number; appliedDelta: number } | { success: false; reason: string } — ⚠ undocumented
+- `applyCurrencyOperation` (function): function applyCurrencyOperation(currency: CurrencyDefinition, current: number, operation: CurrencyOperation, amount: number): CurrencyAdjustment — ⚠ undocumented
+- `formatCurrencyAmount` (function): function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string — ⚠ undocumented
+- `insufficientCurrencyReason` (function): function insufficientCurrencyReason(currency: CurrencyDefinition, needed: number, current: number): string — ⚠ undocumented
+- `resolveCurrencyDelta` (function): function resolveCurrencyDelta(current: number, delta: number): { operation: CurrencyOperation; amount: number } — Deducts clamp to the available balance (a delta can never overdraw); adds apply in full.
+- `sanitizeCurrencyAmount` (function): function sanitizeCurrencyAmount(amount: number): number — ⚠ undocumented
 
 ## @jgengine/core/economy/sharedWallet
 
-- `scopeKey` (function): function scopeKey(scope: WalletScope): string — ⚠ undocumented
-- `userScope` (function): function userScope(userId: string): WalletScope — ⚠ undocumented
-- `groupScope` (function): function groupScope(groupId: string): WalletScope — ⚠ undocumented
-- `createWalletBook` (function): function createWalletBook(): WalletBook — ⚠ undocumented
+- `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
+- `WalletBook` (interface): interface WalletBook — ⚠ undocumented
+- `WalletScope` (type): type WalletScope = | { kind: "user"; userId: string } | { kind: "group"; groupId: string } — ⚠ undocumented
 - `balanceIn` (function): function balanceIn(book: WalletBook, scope: WalletScope, currency: string): number — ⚠ undocumented
-- `grantTo` (function): function grantTo(book: WalletBook, scope: WalletScope, currency: string, amount: number, by?: string): WalletBook — ⚠ undocumented
 - `chargeFrom` (function): function chargeFrom(book: WalletBook, scope: WalletScope, currency: string, amount: number, by?: string): BookChargeResult — ⚠ undocumented
 - `contributionOf` (function): function contributionOf(book: WalletBook, groupId: string, userId: string): Readonly<Record<string, number>> — ⚠ undocumented
 - `contributorsOf` (function): function contributorsOf(book: WalletBook, groupId: string): string[] — ⚠ undocumented
-- `WalletScope` (type): type WalletScope = | { kind: "user"; userId: string } | { kind: "group"; groupId: string } — ⚠ undocumented
-- `WalletBook` (interface): interface WalletBook — ⚠ undocumented
-- `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
+- `createWalletBook` (function): function createWalletBook(): WalletBook — ⚠ undocumented
+- `grantTo` (function): function grantTo(book: WalletBook, scope: WalletScope, currency: string, amount: number, by?: string): WalletBook — ⚠ undocumented
+- `groupScope` (function): function groupScope(groupId: string): WalletScope — ⚠ undocumented
+- `scopeKey` (function): function scopeKey(scope: WalletScope): string — ⚠ undocumented
+- `userScope` (function): function userScope(userId: string): WalletScope — ⚠ undocumented
 
 ## @jgengine/core/economy/techTree
 
-- `techPrerequisitesMet` (function): function techPrerequisitesMet(state: TechState, node: TechNodeDef): boolean — ⚠ undocumented
-- `missingPrerequisites` (function): function missingPrerequisites(state: TechState, node: TechNodeDef): string[] — ⚠ undocumented
-- `canUnlockTech` (function): function canUnlockTech(defs: readonly TechNodeDef[], state: TechState, id: string): TechCheck — ⚠ undocumented
-- `grantTech` (function): function grantTech(state: TechState, node: TechNodeDef): string[] — ⚠ undocumented
-- `availableTech` (function): function availableTech(defs: readonly TechNodeDef[], state: TechState): TechNodeDef[] — ⚠ undocumented
-- `unlockedRecipes` (function): function unlockedRecipes(defs: readonly TechNodeDef[], state: TechState): string[] — ⚠ undocumented
-- `createTechTree` (function): function createTechTree(defs: readonly TechNodeDef[] = []): TechTree — ⚠ undocumented
-- `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
-- `TechState` (type): type TechState = UnlockState — ⚠ undocumented
-- `TechRejection` (type): type TechRejection = | { reason: "unknown-node" } | { reason: "already-unlocked" } | { reason: "missing-prerequisites"; missing: readonly string[] } — ⚠ undocumented
 - `TechCheck` (type): type TechCheck = { ok: true } | ({ ok: false } & TechRejection) — ⚠ undocumented
+- `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
+- `TechRejection` (type): type TechRejection = | { reason: "unknown-node" } | { reason: "already-unlocked" } | { reason: "missing-prerequisites"; missing: readonly string[] } — ⚠ undocumented
+- `TechState` (type): type TechState = UnlockState — ⚠ undocumented
 - `TechTree` (interface): interface TechTree — ⚠ undocumented
+- `availableTech` (function): function availableTech(defs: readonly TechNodeDef[], state: TechState): TechNodeDef[] — ⚠ undocumented
+- `canUnlockTech` (function): function canUnlockTech(defs: readonly TechNodeDef[], state: TechState, id: string): TechCheck — ⚠ undocumented
+- `createTechTree` (function): function createTechTree(defs: readonly TechNodeDef[] = []): TechTree — ⚠ undocumented
+- `grantTech` (function): function grantTech(state: TechState, node: TechNodeDef): string[] — ⚠ undocumented
+- `missingPrerequisites` (function): function missingPrerequisites(state: TechState, node: TechNodeDef): string[] — ⚠ undocumented
+- `techPrerequisitesMet` (function): function techPrerequisitesMet(state: TechState, node: TechNodeDef): boolean — ⚠ undocumented
+- `unlockedRecipes` (function): function unlockedRecipes(defs: readonly TechNodeDef[], state: TechState): string[] — ⚠ undocumented
 
 ## @jgengine/core/economy/wallet
 
-- `createEmptyWallet` (function): function createEmptyWallet(): WalletState — ⚠ undocumented
-- `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
-- `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
-- `charge` (function): function charge(state: WalletState, currency: string, amount: number): ChargeResult — ⚠ undocumented
-- `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — ⚠ undocumented
-- `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>): ChargeResult — ⚠ undocumented
-- `WalletState` (interface): interface WalletState — ⚠ undocumented
 - `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
+- `WalletState` (interface): interface WalletState — ⚠ undocumented
+- `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
+- `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — ⚠ undocumented
+- `charge` (function): function charge(state: WalletState, currency: string, amount: number): ChargeResult — ⚠ undocumented
+- `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>): ChargeResult — ⚠ undocumented
+- `createEmptyWallet` (function): function createEmptyWallet(): WalletState — ⚠ undocumented
+- `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
 
 ## @jgengine/core/game/chat
 
-- `whisperChannelId` (function): function whisperChannelId(a: string, b: string): string — ⚠ undocumented
-- `createChatRateLimiter` (function): function createChatRateLimiter(limit: ChatRateLimit): ChatRateLimiter — ⚠ undocumented
-- `createChat` (function): function createChat(deps: ChatDeps): Chat — ⚠ undocumented
-- `ChatChannelKind` (type): type ChatChannelKind = "global" | "party" | "proximity" — ⚠ undocumented
-- `ChatRateLimit` (interface): interface ChatRateLimit — ⚠ undocumented
+- `Chat` (interface): interface Chat — ⚠ undocumented
 - `ChatChannelDef` (interface): interface ChatChannelDef — ⚠ undocumented
+- `ChatChannelKind` (type): type ChatChannelKind = "global" | "party" | "proximity" — ⚠ undocumented
+- `ChatDeps` (interface): interface ChatDeps — ⚠ undocumented
 - `ChatMessage` (interface): interface ChatMessage — ⚠ undocumented
+- `ChatRateLimit` (interface): interface ChatRateLimit — ⚠ undocumented
+- `ChatRateLimiter` (interface): interface ChatRateLimiter — ⚠ undocumented
 - `ChatRecipients` (type): type ChatRecipients = readonly string[] | "all" — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
 - `ChatSnapshot` (interface): interface ChatSnapshot — ⚠ undocumented
-- `Chat` (interface): interface Chat — ⚠ undocumented
-- `ChatDeps` (interface): interface ChatDeps — ⚠ undocumented
-- `DEFAULT_CHAT_RATE_LIMIT` (const): const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit — ⚠ undocumented
-- `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
 - `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 500 — ⚠ undocumented
+- `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
+- `DEFAULT_CHAT_RATE_LIMIT` (const): const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit — ⚠ undocumented
 - `DEFAULT_PROXIMITY_CHAT_RADIUS` (const): const DEFAULT_PROXIMITY_CHAT_RADIUS: 20 — ⚠ undocumented
 - `WHISPER_CHANNEL_PREFIX` (const): const WHISPER_CHANNEL_PREFIX: "whisper:" — ⚠ undocumented
-- `ChatRateLimiter` (interface): interface ChatRateLimiter — ⚠ undocumented
+- `createChat` (function): function createChat(deps: ChatDeps): Chat — ⚠ undocumented
+- `createChatRateLimiter` (function): function createChatRateLimiter(limit: ChatRateLimit): ChatRateLimiter — ⚠ undocumented
+- `whisperChannelId` (function): function whisperChannelId(a: string, b: string): string — ⚠ undocumented
 
 ## @jgengine/core/game/chatFilter
 
-- `normalizeChatText` (function): function normalizeChatText(text: string): string — ⚠ undocumented
-- `createChatFilter` (function): function createChatFilter(config: ChatFilterConfig): ChatFilter — ⚠ undocumented
+- `ChatFilter` (interface): interface ChatFilter — ⚠ undocumented
 - `ChatFilterConfig` (interface): interface ChatFilterConfig — ⚠ undocumented
 - `ChatFilterResult` (interface): interface ChatFilterResult — ⚠ undocumented
-- `ChatFilter` (interface): interface ChatFilter — ⚠ undocumented
+- `createChatFilter` (function): function createChatFilter(config: ChatFilterConfig): ChatFilter — ⚠ undocumented
+- `normalizeChatText` (function): function normalizeChatText(text: string): string — ⚠ undocumented
 
 ## @jgengine/core/game/controlGate
 
-- `setPlayControlsActive` (function): function setPlayControlsActive(ctx: GameContext, active: boolean): void — ⚠ undocumented
-- `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
 - `PLAY_CONTROLS_STORE_KEY` (const): const PLAY_CONTROLS_STORE_KEY: "jg.playControls" — ⚠ undocumented
+- `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
+- `setPlayControlsActive` (function): function setPlayControlsActive(ctx: GameContext, active: boolean): void — ⚠ undocumented
 
 ## @jgengine/core/game/cosmetics
 
-- `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — ⚠ undocumented
 - `CosmeticLoadoutDef` (interface): interface CosmeticLoadoutDef — ⚠ undocumented
-- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
-- `CosmeticsEvents` (interface): interface CosmeticsEvents — ⚠ undocumented
-- `CosmeticsDeps` (interface): interface CosmeticsDeps — ⚠ undocumented
 - `Cosmetics` (interface): interface Cosmetics — ⚠ undocumented
+- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
+- `CosmeticsDeps` (interface): interface CosmeticsDeps — ⚠ undocumented
+- `CosmeticsEvents` (interface): interface CosmeticsEvents — ⚠ undocumented
+- `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — ⚠ undocumented
 
 ## @jgengine/core/game/defineGame
 
-- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — ⚠ undocumented
-- `PhysicsConfig` (interface): interface PhysicsConfig — ⚠ undocumented
-- `InventoryDeclaration` (interface): interface InventoryDeclaration — ⚠ undocumented
-- `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — ⚠ undocumented
-- `GameLoop` (interface): interface GameLoop<TContext = unknown> — ⚠ undocumented
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — ⚠ undocumented
 - `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — ⚠ undocumented
+- `GameLoop` (interface): interface GameLoop<TContext = unknown> — ⚠ undocumented
+- `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — ⚠ undocumented
+- `InventoryDeclaration` (interface): interface InventoryDeclaration — ⚠ undocumented
+- `PhysicsConfig` (interface): interface PhysicsConfig — ⚠ undocumented
+- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — ⚠ undocumented
 
 ## @jgengine/core/game/events
 
-- `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — ⚠ undocumented
+- `AudioPlayEvent` (interface): interface AudioPlayEvent — ⚠ undocumented
+- `ChatMessageEvent` (interface): interface ChatMessageEvent — ⚠ undocumented
+- `CombatHitReactionEvent` (interface): interface CombatHitReactionEvent — ⚠ undocumented
+- `CombatTelegraphCancelledEvent` (interface): interface CombatTelegraphCancelledEvent — ⚠ undocumented
+- `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
+- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — ⚠ undocumented
+- `EmotePlayedEvent` (interface): interface EmotePlayedEvent — ⚠ undocumented
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
-- `LootGrantedEvent` (interface): interface LootGrantedEvent — ⚠ undocumented
+- `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
+- `FormChangedEvent` (interface): interface FormChangedEvent — ⚠ undocumented
+- `GameEventHandler` (type): type GameEventHandler<TPayload> = (payload: TPayload) => void — ⚠ undocumented
+- `GameEventMap` (interface): interface GameEventMap — ⚠ undocumented
+- `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
 - `InventoryAddedEvent` (interface): interface InventoryAddedEvent — ⚠ undocumented
+- `LootGrantedEvent` (interface): interface LootGrantedEvent — ⚠ undocumented
+- `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent — ⚠ undocumented
+- `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent — ⚠ undocumented
 - `QuestAcceptedEvent` (interface): interface QuestAcceptedEvent — ⚠ undocumented
-- `QuestUpdatedEvent` (interface): interface QuestUpdatedEvent — ⚠ undocumented
 - `QuestCompletedEvent` (interface): interface QuestCompletedEvent — ⚠ undocumented
+- `QuestUpdatedEvent` (interface): interface QuestUpdatedEvent — ⚠ undocumented
 - `SocialFriendAddedEvent` (interface): interface SocialFriendAddedEvent — ⚠ undocumented
 - `SocialPartyJoinedEvent` (interface): interface SocialPartyJoinedEvent — ⚠ undocumented
 - `SocialPartyLeftEvent` (interface): interface SocialPartyLeftEvent — ⚠ undocumented
-- `SocialWorldInvitedEvent` (interface): interface SocialWorldInvitedEvent — ⚠ undocumented
 - `SocialWorldAcceptedEvent` (interface): interface SocialWorldAcceptedEvent — ⚠ undocumented
-- `ChatMessageEvent` (interface): interface ChatMessageEvent — ⚠ undocumented
+- `SocialWorldInvitedEvent` (interface): interface SocialWorldInvitedEvent — ⚠ undocumented
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
-- `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
-- `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
-- `CombatTelegraphCancelledEvent` (interface): interface CombatTelegraphCancelledEvent — ⚠ undocumented
-- `CombatHitReactionEvent` (interface): interface CombatHitReactionEvent — ⚠ undocumented
-- `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent — ⚠ undocumented
 - `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent — ⚠ undocumented
 - `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent — ⚠ undocumented
-- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
-- `EmotePlayedEvent` (interface): interface EmotePlayedEvent — ⚠ undocumented
-- `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent — ⚠ undocumented
-- `FormChangedEvent` (interface): interface FormChangedEvent — ⚠ undocumented
-- `AudioPlayEvent` (interface): interface AudioPlayEvent — ⚠ undocumented
-- `GameEventMap` (interface): interface GameEventMap — ⚠ undocumented
-- `GameEventHandler` (type): type GameEventHandler<TPayload> = (payload: TPayload) => void — ⚠ undocumented
-- `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
+- `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — ⚠ undocumented
 
 ## @jgengine/core/game/feed
 
-- `appendFeedEntry` (function): function appendFeedEntry<T>(buffer: readonly FeedEntry<T>[], entry: FeedEntry<T>, limit: number): FeedEntry<T>[] — ⚠ undocumented
-- `recentFeedEntries` (function): function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] — ⚠ undocumented
-- `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — ⚠ undocumented
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
-- `GameFeedOptions` (interface): interface GameFeedOptions — ⚠ undocumented
 - `GameFeed` (interface): interface GameFeed — ⚠ undocumented
+- `GameFeedOptions` (interface): interface GameFeedOptions — ⚠ undocumented
+- `appendFeedEntry` (function): function appendFeedEntry<T>(buffer: readonly FeedEntry<T>[], entry: FeedEntry<T>, limit: number): FeedEntry<T>[] — ⚠ undocumented
+- `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — ⚠ undocumented
+- `recentFeedEntries` (function): function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] — ⚠ undocumented
 
 ## @jgengine/core/game/gamePhase
 
-- `setGamePhase` (function): function setGamePhase(ctx: GameContext, phase: GamePhase): void — Set the current phase. Publishes it to `ctx.game.store` (React reads it via `useGamePhase`) and gates the shell's on-screen touch controls in one call — `playing` shows them, every other phase hides them. This is the whole "main menu shouldn't show touch controls" wiring: call it once per phase transition and the dock follows.
+- `GAME_PHASE_STORE_KEY` (const): const GAME_PHASE_STORE_KEY: "jg.phase" — ⚠ undocumented
+- `GamePhase` (type): type GamePhase = "menu" | "playing" | "paused" | "ended" — Canonical run phase every game moves through. `menu` (title/main menu), `playing` (live), `paused` (mid-run pause), `ended` (win/lose/results). Touch controls are shown only while `playing`; menus and results never paint the touch dock over themselves.
 - `gamePhase` (function): function gamePhase(ctx: GameContext): GamePhase — Current phase; defaults to `playing` when unset so always-live games need no wiring.
 - `isPlaying` (function): function isPlaying(ctx: GameContext): boolean — ⚠ undocumented
-- `GamePhase` (type): type GamePhase = "menu" | "playing" | "paused" | "ended" — Canonical run phase every game moves through. `menu` (title/main menu), `playing` (live), `paused` (mid-run pause), `ended` (win/lose/results). Touch controls are shown only while `playing`; menus and results never paint the touch dock over themselves.
-- `GAME_PHASE_STORE_KEY` (const): const GAME_PHASE_STORE_KEY: "jg.phase" — ⚠ undocumented
+- `setGamePhase` (function): function setGamePhase(ctx: GameContext, phase: GamePhase): void — Set the current phase. Publishes it to `ctx.game.store` (React reads it via `useGamePhase`) and gates the shell's on-screen touch controls in one call — `playing` shows them, every other phase hides them. This is the whole "main menu shouldn't show touch controls" wiring: call it once per phase transition and the dock follows.
 
 ## @jgengine/core/game/leaderboard
 
-- `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — ⚠ undocumented
-- `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
-- `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef — ⚠ undocumented
-- `LeaderboardRow` (interface): interface LeaderboardRow — ⚠ undocumented
 - `IncrementResult` (type): type IncrementResult = { status: "ok"; value: number } | { status: "rejected"; reason: "not-tracked" } — ⚠ undocumented
 - `Leaderboard` (interface): interface Leaderboard — ⚠ undocumented
+- `LeaderboardRow` (interface): interface LeaderboardRow — ⚠ undocumented
+- `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
+- `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef — ⚠ undocumented
+- `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — ⚠ undocumented
 
 ## @jgengine/core/game/levelSequence
 
-- `createLevelSequence` (function): function createLevelSequence<TLevelConfig>(config: LevelSequenceConfig<TLevelConfig>): LevelSequence<TLevelConfig> — A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just state transitions driven by the caller.
-- `LevelDescriptor` (interface): interface LevelDescriptor<TLevelConfig> — ⚠ undocumented
-- `LevelSequenceConfig` (interface): interface LevelSequenceConfig<TLevelConfig> — ⚠ undocumented
-- `LevelSequenceStatus` (type): type LevelSequenceStatus = "idle" | "playing" | "cleared" | "failed" | "complete" — ⚠ undocumented
 - `CurrentLevel` (interface): interface CurrentLevel<TLevelConfig> — ⚠ undocumented
-- `LevelSequenceProgress` (interface): interface LevelSequenceProgress — ⚠ undocumented
+- `LevelDescriptor` (interface): interface LevelDescriptor<TLevelConfig> — ⚠ undocumented
 - `LevelSequence` (interface): interface LevelSequence<TLevelConfig> — ⚠ undocumented
+- `LevelSequenceConfig` (interface): interface LevelSequenceConfig<TLevelConfig> — ⚠ undocumented
+- `LevelSequenceProgress` (interface): interface LevelSequenceProgress — ⚠ undocumented
+- `LevelSequenceStatus` (type): type LevelSequenceStatus = "idle" | "playing" | "cleared" | "failed" | "complete" — ⚠ undocumented
+- `createLevelSequence` (function): function createLevelSequence<TLevelConfig>(config: LevelSequenceConfig<TLevelConfig>): LevelSequence<TLevelConfig> — A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just state transitions driven by the caller.
 
 ## @jgengine/core/game/loadout
 
-- `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — ⚠ undocumented
-- `LoadoutItemEntry` (interface): interface LoadoutItemEntry — ⚠ undocumented
 - `LoadoutDef` (interface): interface LoadoutDef — ⚠ undocumented
-- `LoadoutInventoryTransaction` (interface): interface LoadoutInventoryTransaction — ⚠ undocumented
 - `LoadoutDeps` (interface): interface LoadoutDeps — ⚠ undocumented
+- `LoadoutInventoryTransaction` (interface): interface LoadoutInventoryTransaction — ⚠ undocumented
+- `LoadoutItemEntry` (interface): interface LoadoutItemEntry — ⚠ undocumented
 - `Loadouts` (interface): interface Loadouts — ⚠ undocumented
+- `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — ⚠ undocumented
 
 ## @jgengine/core/game/lootFilter
 
+- `LootFilterCondition` (interface): interface LootFilterCondition — ⚠ undocumented
+- `LootFilterItem` (interface): interface LootFilterItem — ⚠ undocumented
+- `LootFilterOverride` (interface): interface LootFilterOverride — ⚠ undocumented
+- `LootFilterRule` (interface): interface LootFilterRule — ⚠ undocumented
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
-- `LootFilterItem` (interface): interface LootFilterItem — ⚠ undocumented
-- `LootFilterCondition` (interface): interface LootFilterCondition — ⚠ undocumented
-- `LootFilterRule` (interface): interface LootFilterRule — ⚠ undocumented
-- `LootFilterOverride` (interface): interface LootFilterOverride — ⚠ undocumented
 
 ## @jgengine/core/game/lootTable
 
-- `createLootRegistry` (function): function createLootRegistry(): LootRegistry — ⚠ undocumented
-- `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — ⚠ undocumented
-- `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — ⚠ undocumented
-- `LootEntry` (interface): interface LootEntry — ⚠ undocumented
-- `LootTableDef` (interface): interface LootTableDef — ⚠ undocumented
 - `Drop` (interface): interface Drop — ⚠ undocumented
+- `LootEntry` (interface): interface LootEntry — ⚠ undocumented
 - `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
+- `LootTableDef` (interface): interface LootTableDef — ⚠ undocumented
+- `createLootRegistry` (function): function createLootRegistry(): LootRegistry — ⚠ undocumented
+- `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — ⚠ undocumented
+- `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — ⚠ undocumented
 
 ## @jgengine/core/game/ping
 
-- `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
-- `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — ⚠ undocumented
-- `PingCategory` (type): type PingCategory = string — ⚠ undocumented
-- `PingCategoryDef` (interface): interface PingCategoryDef — ⚠ undocumented
 - `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
 - `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
+- `PingCategory` (type): type PingCategory = string — ⚠ undocumented
+- `PingCategoryDef` (interface): interface PingCategoryDef — ⚠ undocumented
 - `PingClassifyDeps` (interface): interface PingClassifyDeps — ⚠ undocumented
 - `PingClassifyOptions` (interface): interface PingClassifyOptions — ⚠ undocumented
-- `PingPayload` (interface): interface PingPayload — ⚠ undocumented
 - `PingFeedSink` (interface): interface PingFeedSink — ⚠ undocumented
 - `PingParty` (interface): interface PingParty — ⚠ undocumented
-- `PingSystemDeps` (interface): interface PingSystemDeps — ⚠ undocumented
+- `PingPayload` (interface): interface PingPayload — ⚠ undocumented
 - `PingSystem` (interface): interface PingSystem — ⚠ undocumented
+- `PingSystemDeps` (interface): interface PingSystemDeps — ⚠ undocumented
+- `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
+- `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — ⚠ undocumented
 
 ## @jgengine/core/game/playableGame
 
-- `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
-- `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
+- `AmbientLightingConfig` (interface): interface AmbientLightingConfig — ⚠ undocumented
+- `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
+- `BackdropFogConfig` (interface): interface BackdropFogConfig — ⚠ undocumented
+- `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
 - `CameraFollowState` (interface): interface CameraFollowState — ⚠ undocumented
-- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
-- `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
+- `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraProjection` (type): type CameraProjection = "perspective" | "orthographic" — Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective".
-- `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
-- `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
+- `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
+- `CameraShakeConfig` (interface): interface CameraShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
+- `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
+- `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
+- `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
+- `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
+- `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
+- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
+- `GameCameraConfig` (interface): interface GameCameraConfig — ⚠ undocumented
+- `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig — ⚠ undocumented
+- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
+- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
+- `LightingConfig` (interface): interface LightingConfig — Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied.
+- `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
+- `ModelAnimationConfig` (interface): interface ModelAnimationConfig — Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses.
+- `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
+- `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph.
+- `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
+- `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
+- `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
+- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> — ⚠ undocumented
+- `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
+- `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
+- `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
-- `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
-- `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
-- `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
-- `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
+- `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
+- `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TurntableCameraConfig` (interface): interface TurntableCameraConfig — Turntable / showcase rig — slowly auto-orbits a fixed world point (no player input), the way a museum turntable rotates an object on display. A flat, self-describing spelling of `observer`'s point-orbit mode: `target` names the point directly instead of `bind: { kind: "point", position }`. Set `camera.turntable` and the rig is inferred — you don't also write `rig`.
-- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
-- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
-- `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
-- `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
-- `CameraShakeConfig` (interface): interface CameraShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
-- `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
-- `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
-- `GameCameraConfig` (interface): interface GameCameraConfig — ⚠ undocumented
-- `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
-- `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
 - `VoxelCollisionConfig` (interface): interface VoxelCollisionConfig — Player-vs-world collision for the first-person controller. Without this the shell keeps the player on flat ground at y=0. With `voxel: true` the shell resolves the player as a box against placed scene objects (each treated as a solid unit cell), so they stand on blocks, fall into holes, and are stopped by walls — the controller a block-building/mining game needs.
-- `ModelAnimationConfig` (interface): interface ModelAnimationConfig — Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses.
-- `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph.
-- `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
-- `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
-- `AmbientLightingConfig` (interface): interface AmbientLightingConfig — ⚠ undocumented
-- `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
-- `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig — ⚠ undocumented
-- `LightingConfig` (interface): interface LightingConfig — Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied.
-- `BackdropFogConfig` (interface): interface BackdropFogConfig — ⚠ undocumented
-- `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
-- `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
-- `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
-- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> — ⚠ undocumented
+- `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
+- `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
 
 ## @jgengine/core/game/progression
 
-- `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
-- `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
-- `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
+- `Curve` (type): type Curve = CurveDef & CurveShape — ⚠ undocumented
 - `CurveDef` (type): type CurveDef = | { kind: "const"; value: number } | { kind: "linear"; base: number; per: number } | { kind: "power"; base: number; exponent: number } | { kind: "geometric"; base: number; ratio: number } | { kind: "steps"; values: number[] } | { kind: "piecewise"; points: [number, number][] } — ⚠ undocumented
 - `CurveShape` (interface): interface CurveShape — ⚠ undocumented
-- `Curve` (type): type Curve = CurveDef & CurveShape — ⚠ undocumented
 - `LevelProgress` (interface): interface LevelProgress — ⚠ undocumented
 - `LevelingConfig` (interface): interface LevelingConfig — ⚠ undocumented
 - `LevelingStatAccess` (interface): interface LevelingStatAccess — ⚠ undocumented
 - `LevelingTrack` (interface): interface LevelingTrack — ⚠ undocumented
+- `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
+- `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
+- `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
 
 ## @jgengine/core/game/quest
 
-- `createQuestJournal` (function): function createQuestJournal(deps: QuestJournalDeps): QuestJournal — ⚠ undocumented
+- `QuestAcceptOptions` (interface): interface QuestAcceptOptions — ⚠ undocumented
+- `QuestDef` (interface): interface QuestDef — ⚠ undocumented
+- `QuestEvaluator` (interface): interface QuestEvaluator — ⚠ undocumented
+- `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
+- `QuestJournal` (interface): interface QuestJournal — ⚠ undocumented
+- `QuestJournalDeps` (interface): interface QuestJournalDeps — ⚠ undocumented
+- `QuestObjective` (interface): interface QuestObjective — ⚠ undocumented
+- `QuestObjectiveProgress` (interface): interface QuestObjectiveProgress — ⚠ undocumented
+- `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
+- `QuestSnapshotEntry` (type): type QuestSnapshotEntry = { questId: string; status: QuestStatus; progress: Record<string, number>; } — ⚠ undocumented
+- `QuestStatus` (type): type QuestStatus = "active" | "completed" — ⚠ undocumented
+- `QuestTurnIn` (interface): interface QuestTurnIn — ⚠ undocumented
 - `applyQuestRewards` (function): function applyQuestRewards(rewards: QuestRewards, appliers: { grantXp?(amount: number): void; grantEconomy?(currencyId: string, amount: number): void; grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void; grantUnlock?(unlockId: string): void; }): { reason:… — ⚠ undocumented
 - `createQuestEvaluator` (function): function createQuestEvaluator(defs: QuestDef[] | Record<string, QuestDef>): QuestEvaluator — ⚠ undocumented
-- `QuestObjective` (interface): interface QuestObjective — ⚠ undocumented
-- `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
-- `QuestDef` (interface): interface QuestDef — ⚠ undocumented
-- `QuestStatus` (type): type QuestStatus = "active" | "completed" — ⚠ undocumented
-- `QuestObjectiveProgress` (interface): interface QuestObjectiveProgress — ⚠ undocumented
-- `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
-- `QuestSnapshotEntry` (type): type QuestSnapshotEntry = { questId: string; status: QuestStatus; progress: Record<string, number>; } — ⚠ undocumented
-- `QuestJournalDeps` (interface): interface QuestJournalDeps — ⚠ undocumented
-- `QuestJournal` (interface): interface QuestJournal — ⚠ undocumented
-- `QuestAcceptOptions` (interface): interface QuestAcceptOptions — ⚠ undocumented
-- `QuestTurnIn` (interface): interface QuestTurnIn — ⚠ undocumented
-- `QuestEvaluator` (interface): interface QuestEvaluator — ⚠ undocumented
+- `createQuestJournal` (function): function createQuestJournal(deps: QuestJournalDeps): QuestJournal — ⚠ undocumented
 
 ## @jgengine/core/game/race
 
-- `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
-- `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
-- `topK` (function): function topK(k: number): RaceWinCondition — Round-cut (Fall Guys): the first `k` finishers qualify; race resolves the moment `k` cross.
-- `everyoneFinishes` (function): function everyoneFinishes(): RaceWinCondition — Every non-eliminated racer must finish.
-- `lastStanding` (function): function lastStanding(): RaceWinCondition — Destruction-derby last-man-standing: ends when at most one racer is left un-eliminated.
-- `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — ⚠ undocumented
 - `Checkpoint` (interface): interface Checkpoint — ⚠ undocumented
-- `RaceForkRoute` (interface): interface RaceForkRoute — ⚠ undocumented
-- `RaceFork` (interface): interface RaceFork — An alternate-route section (#286.3): after passing mainline checkpoint `afterIndex`, a racer commits to whichever route's first checkpoint they hit, runs its checkpoints in order, and rejoins at mainline `afterIndex + 1`. Every completed route contributes exactly one checkpoint of `progress` regardless of length, and each hit records a split — so route time accounting comes for free.
-- `RaceTrackConfig` (interface): interface RaceTrackConfig — ⚠ undocumented
-- `RaceTrack` (interface): interface RaceTrack — ⚠ undocumented
-- `RacerProgress` (interface): interface RacerProgress — ⚠ undocumented
 - `RaceEvent` (type): type RaceEvent = | { type: "checkpoint.hit"; racerId: string; checkpoint: number; lap: number; time: number; /** Set when the hit is a fork-route checkpoint (`checkpoint` is then the fork's `afterIndex`). */ fork?: { forkId: string; routeId: string; index: number }; } | { type: "fork.taken"; racerId… — ⚠ undocumented
-- `RaceWinCondition` (type): type RaceWinCondition = (standings: readonly RacerProgress[], track: RaceTrack) => readonly string[] | null — ⚠ undocumented
-- `RaceStateConfig` (interface): interface RaceStateConfig — ⚠ undocumented
+- `RaceFork` (interface): interface RaceFork — An alternate-route section (#286.3): after passing mainline checkpoint `afterIndex`, a racer commits to whichever route's first checkpoint they hit, runs its checkpoints in order, and rejoins at mainline `afterIndex + 1`. Every completed route contributes exactly one checkpoint of `progress` regardless of length, and each hit records a split — so route time accounting comes for free.
+- `RaceForkRoute` (interface): interface RaceForkRoute — ⚠ undocumented
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
+- `RaceStateConfig` (interface): interface RaceStateConfig — ⚠ undocumented
+- `RaceTrack` (interface): interface RaceTrack — ⚠ undocumented
+- `RaceTrackConfig` (interface): interface RaceTrackConfig — ⚠ undocumented
+- `RaceWinCondition` (type): type RaceWinCondition = (standings: readonly RacerProgress[], track: RaceTrack) => readonly string[] | null — ⚠ undocumented
+- `RacerProgress` (interface): interface RacerProgress — ⚠ undocumented
+- `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — ⚠ undocumented
+- `everyoneFinishes` (function): function everyoneFinishes(): RaceWinCondition — Every non-eliminated racer must finish.
+- `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
+- `lastStanding` (function): function lastStanding(): RaceWinCondition — Destruction-derby last-man-standing: ends when at most one racer is left un-eliminated.
+- `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
+- `topK` (function): function topK(k: number): RaceWinCondition — Round-cut (Fall Guys): the first `k` finishers qualify; race resolves the moment `k` cross.
 
 ## @jgengine/core/game/recordBook
 
-- `createRecordBook` (function): function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> — A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a structural key-value storage (pass `localStorage` in a browser, a stub in tests, or `null` for in-memory only). Corrupt or unavailable storage degrades to an empty book — a record write never throws into a game tick.
-- `RecordStorage` (interface): interface RecordStorage — ⚠ undocumented
-- `RecordDirection` (type): type RecordDirection = "lower" | "higher" — ⚠ undocumented
-- `RecordBookConfig` (interface): interface RecordBookConfig<K extends string> — ⚠ undocumented
-- `RecordSubmission` (interface): interface RecordSubmission<K extends string> — ⚠ undocumented
 - `RecordBook` (interface): interface RecordBook<K extends string> — ⚠ undocumented
+- `RecordBookConfig` (interface): interface RecordBookConfig<K extends string> — ⚠ undocumented
+- `RecordDirection` (type): type RecordDirection = "lower" | "higher" — ⚠ undocumented
+- `RecordStorage` (interface): interface RecordStorage — ⚠ undocumented
+- `RecordSubmission` (interface): interface RecordSubmission<K extends string> — ⚠ undocumented
+- `createRecordBook` (function): function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> — A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a structural key-value storage (pass `localStorage` in a browser, a stub in tests, or `null` for in-memory only). Corrupt or unavailable storage degrades to an empty book — a record write never throws into a game tick.
 
 ## @jgengine/core/game/runDraft
 
-- `createRunModifierStack` (function): function createRunModifierStack<TStat extends string = string, TData = unknown>(offers: readonly RunModifierOffer<TStat, TData>[]): RunModifierStack<TStat, TData> — ⚠ undocumented
-- `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — ⚠ undocumented
+- `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
+- `RunDraftConfig` (interface): interface RunDraftConfig<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `RunModifierPick` (interface): interface RunModifierPick — ⚠ undocumented
 - `RunModifierStack` (interface): interface RunModifierStack<TStat extends string = string, TData = unknown> — ⚠ undocumented
-- `RunDraftConfig` (interface): interface RunDraftConfig<TStat extends string = string, TData = unknown> — ⚠ undocumented
-- `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
+- `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — ⚠ undocumented
+- `createRunModifierStack` (function): function createRunModifierStack<TStat extends string = string, TData = unknown>(offers: readonly RunModifierOffer<TStat, TData>[]): RunModifierStack<TStat, TData> — ⚠ undocumented
 
 ## @jgengine/core/game/social
 
-- `createSocial` (function): function createSocial(deps: SocialDeps): Social — ⚠ undocumented
-- `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
-- `EmoteEntityLookup` (interface): interface EmoteEntityLookup — ⚠ undocumented
-- `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup — ⚠ undocumented
-- `EmotesDeps` (interface): interface EmotesDeps — ⚠ undocumented
-- `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
-- `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
-- `FriendsSnapshot` (interface): interface FriendsSnapshot — ⚠ undocumented
-- `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
-- `Friends` (interface): interface Friends — ⚠ undocumented
-- `PartyRole` (type): type PartyRole = "leader" | "member" — ⚠ undocumented
-- `PartyMemberEntry` (interface): interface PartyMemberEntry — ⚠ undocumented
-- `PartyConfig` (interface): interface PartyConfig — ⚠ undocumented
-- `PartyInviteEntry` (interface): interface PartyInviteEntry — ⚠ undocumented
-- `Party` (interface): interface Party — ⚠ undocumented
 - `DEFAULT_EMOTE_RADIUS` (const): const DEFAULT_EMOTE_RADIUS: 20 — ⚠ undocumented
 - `EmoteBroadcastResult` (interface): interface EmoteBroadcastResult — ⚠ undocumented
+- `EmoteEntityLookup` (interface): interface EmoteEntityLookup — ⚠ undocumented
+- `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup — ⚠ undocumented
 - `Emotes` (interface): interface Emotes — ⚠ undocumented
-- `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
-- `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
-- `WorldInvites` (interface): interface WorldInvites — ⚠ undocumented
+- `EmotesDeps` (interface): interface EmotesDeps — ⚠ undocumented
+- `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
+- `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
+- `Friends` (interface): interface Friends — ⚠ undocumented
+- `FriendsSnapshot` (interface): interface FriendsSnapshot — ⚠ undocumented
+- `Party` (interface): interface Party — ⚠ undocumented
+- `PartyConfig` (interface): interface PartyConfig — ⚠ undocumented
+- `PartyInviteEntry` (interface): interface PartyInviteEntry — ⚠ undocumented
+- `PartyMemberEntry` (interface): interface PartyMemberEntry — ⚠ undocumented
+- `PartyRole` (type): type PartyRole = "leader" | "member" — ⚠ undocumented
+- `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
 - `Social` (interface): interface Social — ⚠ undocumented
+- `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
+- `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
+- `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
+- `WorldInvites` (interface): interface WorldInvites — ⚠ undocumented
+- `createSocial` (function): function createSocial(deps: SocialDeps): Social — ⚠ undocumented
 
 ## @jgengine/core/game/spawnPoints
 
-- `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — ⚠ undocumented
-- `SpawnPointPose` (interface): interface SpawnPointPose — ⚠ undocumented
 - `RespawnTarget` (interface): interface RespawnTarget — ⚠ undocumented
+- `SpawnPointPose` (interface): interface SpawnPointPose — ⚠ undocumented
 - `SpawnPoints` (interface): interface SpawnPoints — ⚠ undocumented
+- `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — ⚠ undocumented
 
 ## @jgengine/core/game/talents
 
-- `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
-- `TalentRequirement` (type): type TalentRequirement = string | { nodeId: string; rank: number } — ⚠ undocumented
-- `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
+- `ResolvedTalents` (interface): interface ResolvedTalents<TStat extends string = string> — ⚠ undocumented
 - `TalentAllocateReason` (type): type TalentAllocateReason = "unknown-node" | "max-rank" | "no-points" | "requires" | "branch-points" — ⚠ undocumented
 - `TalentAllocateResult` (type): type TalentAllocateResult = { ok: true } | { ok: false; reason: TalentAllocateReason } — ⚠ undocumented
-- `ResolvedTalents` (interface): interface ResolvedTalents<TStat extends string = string> — ⚠ undocumented
+- `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
+- `TalentRequirement` (type): type TalentRequirement = string | { nodeId: string; rank: number } — ⚠ undocumented
 - `TalentSnapshot` (interface): interface TalentSnapshot — ⚠ undocumented
-- `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> — ⚠ undocumented
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
+- `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> — ⚠ undocumented
+- `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 
 ## @jgengine/core/game/trade
 
+- `TradeField` (interface): interface TradeField — ⚠ undocumented
+- `TradeInventory` (interface): interface TradeInventory — ⚠ undocumented
+- `TradeOutcome` (interface): interface TradeOutcome — ⚠ undocumented
+- `TradeParty` (interface): interface TradeParty — ⚠ undocumented
+- `TradeRejection` (interface): interface TradeRejection — ⚠ undocumented
+- `TradeResolution` (type): type TradeResolution = | { status: "ok"; outcome: TradeOutcome } | { status: "rejected"; reason: string } — ⚠ undocumented
+- `TradeSystem` (interface): interface TradeSystem — ⚠ undocumented
+- `TradeSystemDeps` (interface): interface TradeSystemDeps — ⚠ undocumented
+- `TradeWallet` (interface): interface TradeWallet — ⚠ undocumented
+- `applyTradeOutcome` (function): function applyTradeOutcome(outcome: TradeOutcome, appliers: { adjustItem(itemId: string, count: number): { reason: string } | null; adjustCurrency(delta: Record<string, number>): void; }): { reason: string } | null — ⚠ undocumented
 - `canAffordCosts` (function): function canAffordCosts(balances: Record<string, number>, costs: Record<string, number>): string | null — ⚠ undocumented
+- `createTradeSystem` (function): function createTradeSystem(deps: TradeSystemDeps): TradeSystem — ⚠ undocumented
 - `resolveBuy` (function): function resolveBuy(itemId: string, trade: TradeField | null | undefined, shopId: string, count: number, balances: Record<string, number>): TradeResolution — ⚠ undocumented
 - `resolveSell` (function): function resolveSell(itemId: string, trade: TradeField | null | undefined, count: number): TradeResolution — ⚠ undocumented
-- `applyTradeOutcome` (function): function applyTradeOutcome(outcome: TradeOutcome, appliers: { adjustItem(itemId: string, count: number): { reason: string } | null; adjustCurrency(delta: Record<string, number>): void; }): { reason: string } | null — ⚠ undocumented
-- `createTradeSystem` (function): function createTradeSystem(deps: TradeSystemDeps): TradeSystem — ⚠ undocumented
-- `TradeField` (interface): interface TradeField — ⚠ undocumented
-- `TradeRejection` (interface): interface TradeRejection — ⚠ undocumented
-- `TradeWallet` (interface): interface TradeWallet — ⚠ undocumented
-- `TradeInventory` (interface): interface TradeInventory — ⚠ undocumented
-- `TradeSystemDeps` (interface): interface TradeSystemDeps — ⚠ undocumented
-- `TradeParty` (interface): interface TradeParty — ⚠ undocumented
-- `TradeSystem` (interface): interface TradeSystem — ⚠ undocumented
-- `TradeOutcome` (interface): interface TradeOutcome — ⚠ undocumented
-- `TradeResolution` (type): type TradeResolution = | { status: "ok"; outcome: TradeOutcome } | { status: "rejected"; reason: string } — ⚠ undocumented
 
 ## @jgengine/core/game/unlocks
 
-- `hasUnlock` (function): function hasUnlock(granted: UnlockState, unlockId: string): boolean — ⚠ undocumented
-- `grantUnlock` (function): function grantUnlock(granted: UnlockState, unlockId: string): string[] — ⚠ undocumented
-- `unlockTree` (function): function unlockTree(defs: readonly UnlockDef[], categoryId: string): UnlockDef[] — ⚠ undocumented
-- `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — ⚠ undocumented
-- `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
+- `UnlockCatalog` (interface): interface UnlockCatalog — ⚠ undocumented
 - `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
 - `UnlockState` (type): type UnlockState = readonly string[] — ⚠ undocumented
-- `UnlockCatalog` (interface): interface UnlockCatalog — ⚠ undocumented
 - `Unlocks` (interface): interface Unlocks — ⚠ undocumented
+- `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — ⚠ undocumented
+- `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
+- `grantUnlock` (function): function grantUnlock(granted: UnlockState, unlockId: string): string[] — ⚠ undocumented
+- `hasUnlock` (function): function hasUnlock(granted: UnlockState, unlockId: string): boolean — ⚠ undocumented
+- `unlockTree` (function): function unlockTree(defs: readonly UnlockDef[], categoryId: string): UnlockDef[] — ⚠ undocumented
 
 ## @jgengine/core/game/worldItem
 
-- `scatterOffset` (function): function scatterOffset(rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — Random offset within an annulus `[minRadius, radius]` around the origin — the on-death scatter impulse.
-- `scatterPosition` (function): function scatterPosition(origin: EntityPosition, rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — ⚠ undocumented
-- `selectNearestWorldItem` (function): function selectNearestWorldItem(candidates: readonly { instanceId: string; position: EntityPosition }[], from: EntityPosition, radius: number): string | null — Pure pickup-radius + nearest-item selection, usable without a live store (click-to-grab, proximity prompts).
+- `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
+- `DEFAULT_RARITY` (const): const DEFAULT_RARITY: "common" — ⚠ undocumented
+- `DEFAULT_SCATTER` (const): const DEFAULT_SCATTER: ScatterOptions — ⚠ undocumented
+- `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
+- `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions — ⚠ undocumented
+- `ResolvedDeathDrops` (interface): interface ResolvedDeathDrops — ⚠ undocumented
+- `ScatterOptions` (interface): interface ScatterOptions — ⚠ undocumented
+- `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
+- `WorldItemPresentation` (interface): interface WorldItemPresentation — ⚠ undocumented
+- `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
+- `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput — ⚠ undocumented
+- `WorldItemStore` (interface): interface WorldItemStore — ⚠ undocumented
+- `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps — ⚠ undocumented
 - `createWorldItemStore` (function): function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore — ⚠ undocumented
 - `resolveDeathDrops` (function): function resolveDeathDrops(drops: readonly Drop[], options: ResolveDeathDropsOptions): ResolvedDeathDrops — Splits rolled death drops between direct grants and scattered ground items. `mode: "grant"` is the legacy behavior (loot straight to inventory); `mode: "world"` routes item drops through a scatter impulse and leaves currency drops granting directly (coins fly to the killer, gear hits the ground).
 - `resolveWorldItemPresentation` (function): function resolveWorldItemPresentation(item: LootFilterItem, rarityStyle: Record<string, RarityStyle> | undefined, rules: readonly LootFilterRule[] | undefined): WorldItemPresentation — Composes the baseline rarity→beam/color/label render binding (#32, catalog data the game supplies) with the loot-filter rule overrides (#33). A matching rule wins field-by-field; unmatched fields fall back to the rarity's baseline style.
-- `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
-- `DEFAULT_RARITY` (const): const DEFAULT_RARITY: "common" — ⚠ undocumented
-- `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
-- `ScatterOptions` (interface): interface ScatterOptions — ⚠ undocumented
-- `DEFAULT_SCATTER` (const): const DEFAULT_SCATTER: ScatterOptions — ⚠ undocumented
-- `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
-- `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput — ⚠ undocumented
-- `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps — ⚠ undocumented
-- `WorldItemStore` (interface): interface WorldItemStore — ⚠ undocumented
-- `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions — ⚠ undocumented
-- `ResolvedDeathDrops` (interface): interface ResolvedDeathDrops — ⚠ undocumented
-- `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
-- `WorldItemPresentation` (interface): interface WorldItemPresentation — ⚠ undocumented
+- `scatterOffset` (function): function scatterOffset(rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — Random offset within an annulus `[minRadius, radius]` around the origin — the on-death scatter impulse.
+- `scatterPosition` (function): function scatterPosition(origin: EntityPosition, rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — ⚠ undocumented
+- `selectNearestWorldItem` (function): function selectNearestWorldItem(candidates: readonly { instanceId: string; position: EntityPosition }[], from: EntityPosition, radius: number): string | null — Pure pickup-radius + nearest-item selection, usable without a live store (click-to-grab, proximity prompts).
 
 ## @jgengine/core/input/actionBindings
 
-- `bindingMatches` (function): function bindingMatches<TCode extends string>(code: TCode, binding: ActionBinding<TCode>): boolean — ⚠ undocumented
-- `resolveBoundAction` (function): function resolveBoundAction<TAction extends string, TCode extends string>(code: TCode, bindings: ActionBindingMap<TAction, TCode>): TAction | null — First action (in the map's key order) bound to the given control code, or null.
-- `normalizeKeyCode` (function): function normalizeKeyCode(code: string): string — Collapse left/right modifier variants of a KeyboardEvent.code so bindings store one logical key.
-- `actionRepeatMs` (function): function actionRepeatMs(codes: ActionCodes | undefined): number | undefined — ⚠ undocumented
-- `shouldDispatchAction` (function): function shouldDispatchAction({ pressed, down, repeatMs, lastFiredAt, now }: ShouldDispatchActionInput): boolean — ⚠ undocumented
-- `toActionStateBindingMap` (function): function toActionStateBindingMap<TAction extends string, TCode extends string>(map: ActionCodesMap<TAction, TCode>): ActionStateBindingMap<TAction, TCode> — ⚠ undocumented
-- `hotbarSlotBindings` (function): function hotbarSlotBindings(count: number, options?: { action?: (slot: number) => string }): ActionCodesMap — ⚠ undocumented
-- `hotbarSlotActionIndex` (function): function hotbarSlotActionIndex(action: string): number | null — 0-based slot index for a hotbar-slot action name (`slot1`, `hotbarSlot1`), or null.
-- `isHotbarSlotAction` (function): function isHotbarSlotAction(action: string): boolean — ⚠ undocumented
-- `resolveActionCommand` (function): function resolveActionCommand(action: string, has: (command: string) => boolean, reserved: ReadonlySet<string>): string | null — Convention mapping a bound input action to the command it fires: the action's own name when a command by that name exists, otherwise a `ui.<action>` fallback. Reserved actions (consumed natively by the shell) and hotbar slots yield null so the shell can handle them itself.
-- `bindingLabel` (function): function bindingLabel(code: string): string — ⚠ undocumented
-- `actionLabel` (function): function actionLabel(map: ActionCodesMap, action: string): string | null — Short display label for an action's first bound code, or null when unbound.
-- `createActionStateTracker` (function): function createActionStateTracker<TAction extends string, TCode extends string = string>(map: ActionStateBindingMap<TAction, TCode>): ActionStateTracker<TAction> — ⚠ undocumented
 - `ActionBinding` (interface): interface ActionBinding<TCode extends string = string> — Action-binding model: games bind semantic actions ("jump", "interact") to physical control codes; capture layers resolve raw events through this map so gameplay code never sees keycodes. Control codes are plain strings, so the same model serves keyboard codes, mouse buttons, touch controls, or gamepad inputs.
+- `ActionBindingConfig` (type): type ActionBindingConfig<TCode extends string = string> = ActionBinding<TCode>[] | ActionBindingModes<TCode> — ⚠ undocumented
 - `ActionBindingMap` (type): type ActionBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBinding<TCode> > — ⚠ undocumented
 - `ActionBindingModes` (interface): interface ActionBindingModes<TCode extends string = string> — ⚠ undocumented
-- `ActionBindingConfig` (type): type ActionBindingConfig<TCode extends string = string> = ActionBinding<TCode>[] | ActionBindingModes<TCode> — ⚠ undocumented
-- `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — ⚠ undocumented
-- `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
+- `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
+- `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
+- `actionLabel` (function): function actionLabel(map: ActionCodesMap, action: string): string | null — Short display label for an action's first bound code, or null when unbound.
+- `actionRepeatMs` (function): function actionRepeatMs(codes: ActionCodes | undefined): number | undefined — ⚠ undocumented
+- `bindingLabel` (function): function bindingLabel(code: string): string — ⚠ undocumented
+- `bindingMatches` (function): function bindingMatches<TCode extends string>(code: TCode, binding: ActionBinding<TCode>): boolean — ⚠ undocumented
+- `createActionStateTracker` (function): function createActionStateTracker<TAction extends string, TCode extends string = string>(map: ActionStateBindingMap<TAction, TCode>): ActionStateTracker<TAction> — ⚠ undocumented
+- `hotbarSlotActionIndex` (function): function hotbarSlotActionIndex(action: string): number | null — 0-based slot index for a hotbar-slot action name (`slot1`, `hotbarSlot1`), or null.
+- `hotbarSlotBindings` (function): function hotbarSlotBindings(count: number, options?: { action?: (slot: number) => string }): ActionCodesMap — ⚠ undocumented
+- `isHotbarSlotAction` (function): function isHotbarSlotAction(action: string): boolean — ⚠ undocumented
+- `normalizeKeyCode` (function): function normalizeKeyCode(code: string): string — Collapse left/right modifier variants of a KeyboardEvent.code so bindings store one logical key.
+- `resolveActionCommand` (function): function resolveActionCommand(action: string, has: (command: string) => boolean, reserved: ReadonlySet<string>): string | null — Convention mapping a bound input action to the command it fires: the action's own name when a command by that name exists, otherwise a `ui.<action>` fallback. Reserved actions (consumed natively by the shell) and hotbar slots yield null so the shell can handle them itself.
+- `resolveBoundAction` (function): function resolveBoundAction<TAction extends string, TCode extends string>(code: TCode, bindings: ActionBindingMap<TAction, TCode>): TAction | null — First action (in the map's key order) bound to the given control code, or null.
+- `shouldDispatchAction` (function): function shouldDispatchAction({ pressed, down, repeatMs, lastFiredAt, now }: ShouldDispatchActionInput): boolean — ⚠ undocumented
+- `toActionStateBindingMap` (function): function toActionStateBindingMap<TAction extends string, TCode extends string>(map: ActionCodesMap<TAction, TCode>): ActionStateBindingMap<TAction, TCode> — ⚠ undocumented
 
 ## @jgengine/core/input/axisInput
 
-- `clampAxis` (function): function clampAxis(value: number, range: AxisRange): number — ⚠ undocumented
-- `rampToward` (function): function rampToward(current: number, target: number, rate: number, dt: number): number — ⚠ undocumented
-- `createAxisChannel` (function): function createAxisChannel<TAxes extends string>(config: GenericAxisConfig<TAxes>): GenericAxisChannel<TAxes> — ⚠ undocumented
-- `AxisInput` (interface): interface AxisInput — ⚠ undocumented
-- `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
-- `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
+- `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
 - `AxisBinding` (interface): interface AxisBinding — ⚠ undocumented
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
-- `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
-- `AxisRange` (interface): interface AxisRange — ⚠ undocumented
-- `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
 - `AxisChannel` (class): class AxisChannel — Analog control channel — distinct from the digital action bindings. Throttle/brake/steer/handbrake are continuous values ramped from held keys (a keyboard feels like a pedal) or driven directly from a gamepad axis via `setAnalog`. `sample(dt, isDown, pointer?)` folds the current held-key state into the smoothed value; a binding's `pointer` source takes over from its keys while a pointer is active, and a `setAnalog` override replaces both for that axis until cleared.
+- `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
+- `AxisInput` (interface): interface AxisInput — ⚠ undocumented
+- `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
+- `AxisRange` (interface): interface AxisRange — ⚠ undocumented
 - `DRIVE_AXIS_BINDINGS` (const): const DRIVE_AXIS_BINDINGS: AxisBindingMap — ⚠ undocumented
-- `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> — ⚠ undocumented
 - `GenericAxisChannel` (interface): interface GenericAxisChannel<TAxes extends string> — The held-key-ramping analog channel for any axis schema (#282.7) — drones (pitch/roll/strafe), boats, mechs — not just the four car axes `AxisChannel` hardcodes. Same semantics: keys ramp, `setAnalog` overrides, a binding's `pointer` source takes over while a pointer is active.
+- `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> — ⚠ undocumented
+- `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
+- `clampAxis` (function): function clampAxis(value: number, range: AxisRange): number — ⚠ undocumented
+- `createAxisChannel` (function): function createAxisChannel<TAxes extends string>(config: GenericAxisConfig<TAxes>): GenericAxisChannel<TAxes> — ⚠ undocumented
+- `rampToward` (function): function rampToward(current: number, target: number, rate: number, dt: number): number — ⚠ undocumented
 
 ## @jgengine/core/input/bindingOverrides
 
+- `BINDING_OVERRIDES_STORAGE_PREFIX` (const): const BINDING_OVERRIDES_STORAGE_PREFIX: "jgengine:keybinds:" — ⚠ undocumented
+- `BindingOverrides` (type): type BindingOverrides = Record<string, ActionCodes> — Player-rebound keys, keyed by action name. Values mirror an `ActionCodes` entry so hold/toggle/repeat semantics survive a rebind — the settings menu only swaps which physical codes drive the action.
+- `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
 - `bindingOverridesStorageKey` (function): function bindingOverridesStorageKey(gameId: string): string — ⚠ undocumented
+- `clearAllBindingOverrides` (function): function clearAllBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "removeItem"> | null | undefined = defaultStorage()): void — ⚠ undocumented
+- `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
-- `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
-- `clearAllBindingOverrides` (function): function clearAllBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "removeItem"> | null | undefined = defaultStorage()): void — ⚠ undocumented
-- `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
-- `BindingOverrides` (type): type BindingOverrides = Record<string, ActionCodes> — Player-rebound keys, keyed by action name. Values mirror an `ActionCodes` entry so hold/toggle/repeat semantics survive a rebind — the settings menu only swaps which physical codes drive the action.
-- `BINDING_OVERRIDES_STORAGE_PREFIX` (const): const BINDING_OVERRIDES_STORAGE_PREFIX: "jgengine:keybinds:" — ⚠ undocumented
 
 ## @jgengine/core/input/gestureSurface
 
-- `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
-- `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning — ⚠ undocumented
 - `DEFAULT_GESTURE_TUNING` (const): const DEFAULT_GESTURE_TUNING: GestureSurfaceTuning — ⚠ undocumented
 - `GestureSurfaceTracker` (interface): interface GestureSurfaceTracker — ⚠ undocumented
+- `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning — ⚠ undocumented
+- `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
 
 ## @jgengine/core/input/lookChannel
 
-- `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
-- `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
 - `LookChannel` (interface): interface LookChannel — ⚠ undocumented
 - `LookChannelOptions` (interface): interface LookChannelOptions — ⚠ undocumented
+- `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
+- `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
 
 ## @jgengine/core/input/pointer
 
-- `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
-- `moveTargetFromHit` (function): function moveTargetFromHit(hit: PointerHit): PointerVec3 — The move-to target of a pointer hit — sugar over `hit.point`.
-- `groundOf` (function): function groundOf(hit: PointerHit): readonly [number, number] — Project a pointer hit onto the XZ plane for navmesh routing (`findPath` takes `[x, z]`).
-- `createDragCapture` (function): function createDragCapture(config: DragCaptureConfig = {}): DragCapture — ⚠ undocumented
-- `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
-- `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
-- `PointerButton` (type): type PointerButton = "primary" | "secondary" | "middle" — ⚠ undocumented
-- `DragState` (interface): interface DragState — Snapshot of an in-progress or just-released drag: origin/current cursor points plus the clamped pull vector.
-- `DragResult` (type): type DragResult = DragState — ⚠ undocumented
-- `DragCaptureConfig` (interface): interface DragCaptureConfig — ⚠ undocumented
 - `DragCapture` (interface): interface DragCapture — Renderer-agnostic drag-capture / pull-vector state machine for slingshot-style aiming, drawback abilities, and similar gestures.
+- `DragCaptureConfig` (interface): interface DragCaptureConfig — ⚠ undocumented
+- `DragResult` (type): type DragResult = DragState — ⚠ undocumented
+- `DragState` (interface): interface DragState — Snapshot of an in-progress or just-released drag: origin/current cursor points plus the clamped pull vector.
+- `PointerButton` (type): type PointerButton = "primary" | "secondary" | "middle" — ⚠ undocumented
+- `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
+- `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
+- `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `createDragCapture` (function): function createDragCapture(config: DragCaptureConfig = {}): DragCapture — ⚠ undocumented
+- `groundOf` (function): function groundOf(hit: PointerHit): readonly [number, number] — Project a pointer hit onto the XZ plane for navmesh routing (`findPath` takes `[x, z]`).
+- `moveTargetFromHit` (function): function moveTargetFromHit(hit: PointerHit): PointerVec3 — The move-to target of a pointer hit — sugar over `hit.point`.
 
 ## @jgengine/core/input/pointerAxis
 
+- `PointerAxisBinding` (interface): interface PointerAxisBinding — Maps one pointer axis onto an analog axis target — the pointer-backed counterpart of an `AxisBinding`'s key lists.
+- `PointerAxisState` (interface): interface PointerAxisState — ⚠ undocumented
+- `PointerSurfaceRect` (interface): interface PointerSurfaceRect — ⚠ undocumented
 - `normalizePointerToAxis` (function): function normalizePointerToAxis(clientX: number, clientY: number, rect: PointerSurfaceRect): PointerAxisState — Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `pointerAxisValue` (function): function pointerAxisValue(binding: PointerAxisBinding, state: PointerAxisState | null | undefined): number | null — Resolve a pointer binding against the current pointer state: `null` when no pointer is active (callers fall back to their digital target), otherwise the deadzone/curve-shaped value in `[-1, 1]`.
-- `PointerAxisState` (interface): interface PointerAxisState — ⚠ undocumented
-- `PointerAxisBinding` (interface): interface PointerAxisBinding — Maps one pointer axis onto an analog axis target — the pointer-backed counterpart of an `AxisBinding`'s key lists.
-- `PointerSurfaceRect` (interface): interface PointerSurfaceRect — ⚠ undocumented
 
 ## @jgengine/core/input/touchGestures
 
-- `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
-- `TouchGestureTuning` (interface): interface TouchGestureTuning — Single-finger gesture disambiguation for touch look controls: one touch stream drives look-drag, tap, and long-press-hold without fighting. Movement past the tap threshold commits the gesture to "look" and cancels tap/hold; a still finger that lifts quickly is a tap; a still finger held past the long-press delay is a hold. Timestamps are injected so the state machine stays pure; the capture layer owns timers and touch identifiers.
 - `TouchGestureEnd` (type): type TouchGestureEnd = "tap" | "hold-end" | null — ⚠ undocumented
 - `TouchGestureTracker` (interface): interface TouchGestureTracker — ⚠ undocumented
+- `TouchGestureTuning` (interface): interface TouchGestureTuning — Single-finger gesture disambiguation for touch look controls: one touch stream drives look-drag, tap, and long-press-hold without fighting. Movement past the tap threshold commits the gesture to "look" and cancels tap/hold; a still finger that lifts quickly is a tap; a still finger held past the long-press delay is a hold. Timestamps are injected so the state machine stays pure; the capture layer owns timers and touch identifiers.
+- `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
 
 ## @jgengine/core/input/touchScheme
 
-- `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
-- `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
-- `touchButtonKind` (function): function touchButtonKind(action: string): TouchButtonKind — ⚠ undocumented
-- `touchActionLabel` (function): function touchActionLabel(action: string): string — ⚠ undocumented
-- `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
+- `DeriveTouchSchemeOptions` (interface): interface DeriveTouchSchemeOptions — ⚠ undocumented
 - `TOUCH_CODE_PREFIX` (const): const TOUCH_CODE_PREFIX: "touch:" — ⚠ undocumented
-- `TouchDragBinding` (interface): interface TouchDragBinding — ⚠ undocumented
-- `TouchGestureBindings` (interface): interface TouchGestureBindings — ⚠ undocumented
+- `TouchButton` (interface): interface TouchButton — ⚠ undocumented
+- `TouchButtonKind` (type): type TouchButtonKind = "primary" | "utility" — ⚠ undocumented
 - `TouchButtonSpec` (interface): interface TouchButtonSpec — ⚠ undocumented
 - `TouchControlsConfig` (interface): interface TouchControlsConfig — ⚠ undocumented
+- `TouchDragBinding` (interface): interface TouchDragBinding — ⚠ undocumented
+- `TouchGestureBindings` (interface): interface TouchGestureBindings — ⚠ undocumented
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
-- `TouchButtonKind` (type): type TouchButtonKind = "primary" | "utility" — ⚠ undocumented
-- `TouchButton` (interface): interface TouchButton — ⚠ undocumented
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
-- `DeriveTouchSchemeOptions` (interface): interface DeriveTouchSchemeOptions — ⚠ undocumented
+- `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
+- `touchActionLabel` (function): function touchActionLabel(action: string): string — ⚠ undocumented
+- `touchButtonKind` (function): function touchButtonKind(action: string): TouchButtonKind — ⚠ undocumented
+- `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
+- `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 
 ## @jgengine/core/inventory/inventoryModel
 
-- `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — ⚠ undocumented
-- `putItem` (function): function putItem(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, itemId: string, count: number, options?: { slot?: number }): PutResult — ⚠ undocumented
-- `takeItem` (function): function takeItem(state: InventoryState, itemId: string, count: number): TakeResult — ⚠ undocumented
-- `countItem` (function): function countItem(state: InventoryState, itemId: string): number — ⚠ undocumented
-- `hasItem` (function): function hasItem(state: InventoryState, itemId: string, count: number): boolean — ⚠ undocumented
-- `moveItem` (function): function moveItem(from: InventoryState, fromSlot: number, to: InventoryState, toLayout: InventoryLayout, traits: ItemTraits, toSlot?: number): MoveResult — ⚠ undocumented
-- `createInventorySet` (function): function createInventorySet<TId extends string>(layouts: Record<TId, InventoryLayout>, traits: ItemTraits): InventorySet<TId> — ⚠ undocumented
-- `ItemTraits` (interface): interface ItemTraits — ⚠ undocumented
 - `InventoryLayout` (interface): interface InventoryLayout — ⚠ undocumented
+- `InventorySet` (interface): interface InventorySet<TId extends string> — ⚠ undocumented
 - `InventorySlot` (type): type InventorySlot = { itemId: string; count: number } | null — ⚠ undocumented
 - `InventoryState` (interface): interface InventoryState — ⚠ undocumented
+- `ItemTraits` (interface): interface ItemTraits — ⚠ undocumented
+- `MoveResult` (type): type MoveResult = | { status: "ok"; from: InventoryState; to: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" } — ⚠ undocumented
 - `PutResult` (type): type PutResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" } — ⚠ undocumented
 - `TakeResult` (type): type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" } — ⚠ undocumented
-- `MoveResult` (type): type MoveResult = | { status: "ok"; from: InventoryState; to: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" } — ⚠ undocumented
-- `InventorySet` (interface): interface InventorySet<TId extends string> — ⚠ undocumented
+- `countItem` (function): function countItem(state: InventoryState, itemId: string): number — ⚠ undocumented
+- `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — ⚠ undocumented
+- `createInventorySet` (function): function createInventorySet<TId extends string>(layouts: Record<TId, InventoryLayout>, traits: ItemTraits): InventorySet<TId> — ⚠ undocumented
+- `hasItem` (function): function hasItem(state: InventoryState, itemId: string, count: number): boolean — ⚠ undocumented
+- `moveItem` (function): function moveItem(from: InventoryState, fromSlot: number, to: InventoryState, toLayout: InventoryLayout, traits: ItemTraits, toSlot?: number): MoveResult — ⚠ undocumented
+- `putItem` (function): function putItem(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, itemId: string, count: number, options?: { slot?: number }): PutResult — ⚠ undocumented
+- `takeItem` (function): function takeItem(state: InventoryState, itemId: string, count: number): TakeResult — ⚠ undocumented
 
 ## @jgengine/core/inventory/shapedGrid
 
-- `normalizeFootprint` (function): function normalizeFootprint(footprint: Footprint): Footprint — ⚠ undocumented
-- `rotateFootprint` (function): function rotateFootprint(footprint: Footprint, rotation: Rotation): Footprint — ⚠ undocumented
-- `occupiedCells` (function): function occupiedCells(footprint: Footprint, origin: Cell, rotation: Rotation): Cell[] — ⚠ undocumented
-- `createShapedGrid` (function): function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> — ⚠ undocumented
-- `canPlace` (function): function canPlace<T>(grid: ShapedGrid<T>, footprint: Footprint, origin: Cell, rotation: Rotation, ignoreId?: string): ShapedRejection | null — ⚠ undocumented
-- `placeShaped` (function): function placeShaped<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, origin: Cell, rotation: Rotation = 0): ShapedResult<T> — ⚠ undocumented
-- `removeShaped` (function): function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> — ⚠ undocumented
-- `moveShaped` (function): function moveShaped<T>(grid: ShapedGrid<T>, id: string, origin: Cell, rotation?: Rotation): ShapedResult<T> — ⚠ undocumented
-- `cellOccupant` (function): function cellOccupant<T>(grid: ShapedGrid<T>, cell: Cell): string | null — ⚠ undocumented
-- `gridAdjacencyQuery` (function): function gridAdjacencyQuery<T>(grid: ShapedGrid<T>, options: { diagonal?: boolean } = {}): GridAdjacencyQuery — ⚠ undocumented
-- `cellFromPoint` (function): function cellFromPoint(point: { x: number; y: number }, cellSize: number, gridOrigin: { x: number; y: number } = { x: 0, y: 0 }): Cell — ⚠ undocumented
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
 - `Footprint` (type): type Footprint = readonly Cell[] — ⚠ undocumented
-- `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented
-- `ShapedItem` (interface): interface ShapedItem<T> — ⚠ undocumented
+- `GridAdjacencyQuery` (interface): interface GridAdjacencyQuery — ⚠ undocumented
 - `Placement` (interface): interface Placement<T> — ⚠ undocumented
+- `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented
 - `ShapedGrid` (interface): interface ShapedGrid<T> — ⚠ undocumented
-- `ShapedRejection` (type): type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id" — ⚠ undocumented
+- `ShapedItem` (interface): interface ShapedItem<T> — ⚠ undocumented
 - `ShapedPlaceResult` (interface): interface ShapedPlaceResult<T> — ⚠ undocumented
 - `ShapedRejected` (interface): interface ShapedRejected — ⚠ undocumented
+- `ShapedRejection` (type): type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id" — ⚠ undocumented
 - `ShapedResult` (type): type ShapedResult<T> = ShapedPlaceResult<T> | ShapedRejected — ⚠ undocumented
-- `GridAdjacencyQuery` (interface): interface GridAdjacencyQuery — ⚠ undocumented
+- `canPlace` (function): function canPlace<T>(grid: ShapedGrid<T>, footprint: Footprint, origin: Cell, rotation: Rotation, ignoreId?: string): ShapedRejection | null — ⚠ undocumented
+- `cellFromPoint` (function): function cellFromPoint(point: { x: number; y: number }, cellSize: number, gridOrigin: { x: number; y: number } = { x: 0, y: 0 }): Cell — ⚠ undocumented
+- `cellOccupant` (function): function cellOccupant<T>(grid: ShapedGrid<T>, cell: Cell): string | null — ⚠ undocumented
+- `createShapedGrid` (function): function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> — ⚠ undocumented
+- `gridAdjacencyQuery` (function): function gridAdjacencyQuery<T>(grid: ShapedGrid<T>, options: { diagonal?: boolean } = {}): GridAdjacencyQuery — ⚠ undocumented
+- `moveShaped` (function): function moveShaped<T>(grid: ShapedGrid<T>, id: string, origin: Cell, rotation?: Rotation): ShapedResult<T> — ⚠ undocumented
+- `normalizeFootprint` (function): function normalizeFootprint(footprint: Footprint): Footprint — ⚠ undocumented
+- `occupiedCells` (function): function occupiedCells(footprint: Footprint, origin: Cell, rotation: Rotation): Cell[] — ⚠ undocumented
+- `placeShaped` (function): function placeShaped<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, origin: Cell, rotation: Rotation = 0): ShapedResult<T> — ⚠ undocumented
+- `removeShaped` (function): function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> — ⚠ undocumented
+- `rotateFootprint` (function): function rotateFootprint(footprint: Footprint, rotation: Rotation): Footprint — ⚠ undocumented
 
 ## @jgengine/core/inventory/slotModel
 
-- `createSlots` (function): function createSlots<T>(size: number): Slot<T>[] — ⚠ undocumented
-- `normalizeSlots` (function): function normalizeSlots<T>(values: SlotGrid<T>, size: number): Slot<T>[] — ⚠ undocumented
-- `placeAt` (function): function placeAt<T>(grid: SlotGrid<T>, index: number, value: T): SlotResult<T> — ⚠ undocumented
-- `removeAt` (function): function removeAt<T>(grid: SlotGrid<T>, index: number): SlotResult<T> — ⚠ undocumented
-- `moveSlot` (function): function moveSlot<T>(grid: SlotGrid<T>, from: number, to: number): SlotResult<T> — ⚠ undocumented
-- `firstEmpty` (function): function firstEmpty<T>(grid: SlotGrid<T>): number | null — ⚠ undocumented
-- `insertFirst` (function): function insertFirst<T>(grid: SlotGrid<T>, value: T): SlotResult<T> — ⚠ undocumented
-- `compactSlots` (function): function compactSlots<T>(grid: SlotGrid<T>): Slot<T>[] — ⚠ undocumented
-- `countFilled` (function): function countFilled<T>(grid: SlotGrid<T>): number — ⚠ undocumented
-- `indexOfSlot` (function): function indexOfSlot<T>(grid: SlotGrid<T>, match: (value: T, index: number) => boolean): number | null — ⚠ undocumented
 - `Slot` (type): type Slot<T> = T | null — ⚠ undocumented
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
 - `SlotResult` (type): type SlotResult<T> = | { status: "ok"; grid: Slot<T>[] } | { status: "rejected"; reason: "invalid-slot" | "slot-occupied" | "empty-slot" } — ⚠ undocumented
+- `compactSlots` (function): function compactSlots<T>(grid: SlotGrid<T>): Slot<T>[] — ⚠ undocumented
+- `countFilled` (function): function countFilled<T>(grid: SlotGrid<T>): number — ⚠ undocumented
+- `createSlots` (function): function createSlots<T>(size: number): Slot<T>[] — ⚠ undocumented
+- `firstEmpty` (function): function firstEmpty<T>(grid: SlotGrid<T>): number | null — ⚠ undocumented
+- `indexOfSlot` (function): function indexOfSlot<T>(grid: SlotGrid<T>, match: (value: T, index: number) => boolean): number | null — ⚠ undocumented
+- `insertFirst` (function): function insertFirst<T>(grid: SlotGrid<T>, value: T): SlotResult<T> — ⚠ undocumented
+- `moveSlot` (function): function moveSlot<T>(grid: SlotGrid<T>, from: number, to: number): SlotResult<T> — ⚠ undocumented
+- `normalizeSlots` (function): function normalizeSlots<T>(values: SlotGrid<T>, size: number): Slot<T>[] — ⚠ undocumented
+- `placeAt` (function): function placeAt<T>(grid: SlotGrid<T>, index: number, value: T): SlotResult<T> — ⚠ undocumented
+- `removeAt` (function): function removeAt<T>(grid: SlotGrid<T>, index: number): SlotResult<T> — ⚠ undocumented
 
 ## @jgengine/core/inventory/storageTier
 
-- `tierOf` (function): function tierOf(tiers: Record<string, StorageTier>, inventoryId: string): StorageTier — ⚠ undocumented
-- `partitionOnDeath` (function): function partitionOnDeath(containers: readonly ContainerSnapshot[]): DeathPartition — ⚠ undocumented
-- `createDeliveryQueue` (function): function createDeliveryQueue(): DeliveryQueue — ⚠ undocumented
-- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
-- `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
-- `StorageTier` (type): type StorageTier = "carried" | "banked" — ⚠ undocumented
-- `ItemStack` (interface): interface ItemStack — ⚠ undocumented
+- `ConsolationPolicy` (interface): interface ConsolationPolicy — ⚠ undocumented
 - `ContainerSnapshot` (interface): interface ContainerSnapshot — ⚠ undocumented
 - `DeathPartition` (interface): interface DeathPartition — ⚠ undocumented
 - `DeliveryEntry` (interface): interface DeliveryEntry — ⚠ undocumented
-- `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
 - `DeliveryQueue` (interface): interface DeliveryQueue — ⚠ undocumented
 - `InsurancePolicy` (interface): interface InsurancePolicy — ⚠ undocumented
-- `ConsolationPolicy` (interface): interface ConsolationPolicy — ⚠ undocumented
+- `ItemStack` (interface): interface ItemStack — ⚠ undocumented
+- `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
+- `StorageTier` (type): type StorageTier = "carried" | "banked" — ⚠ undocumented
+- `createDeliveryQueue` (function): function createDeliveryQueue(): DeliveryQueue — ⚠ undocumented
+- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
+- `partitionOnDeath` (function): function partitionOnDeath(containers: readonly ContainerSnapshot[]): DeathPartition — ⚠ undocumented
+- `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
+- `tierOf` (function): function tierOf(tiers: Record<string, StorageTier>, inventoryId: string): StorageTier — ⚠ undocumented
 
 ## @jgengine/core/item/affix
 
-- `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
-- `AffixOp` (type): type AffixOp = "add" | "mul" — ⚠ undocumented
 - `AffixDef` (interface): interface AffixDef — ⚠ undocumented
+- `AffixOp` (type): type AffixOp = "add" | "mul" — ⚠ undocumented
 - `AffixPool` (interface): interface AffixPool — ⚠ undocumented
-- `RarityTier` (interface): interface RarityTier — ⚠ undocumented
+- `AffixRoller` (interface): interface AffixRoller — ⚠ undocumented
 - `ItemBaseDef` (interface): interface ItemBaseDef — ⚠ undocumented
-- `RollerConfig` (interface): interface RollerConfig — ⚠ undocumented
+- `RarityTier` (interface): interface RarityTier — ⚠ undocumented
 - `RolledAffix` (interface): interface RolledAffix — ⚠ undocumented
 - `RolledItem` (interface): interface RolledItem — ⚠ undocumented
+- `RollerConfig` (interface): interface RollerConfig — ⚠ undocumented
+- `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
 - `seededRng` (function): function seededRng(seed: string | number): () => number — ⚠ undocumented
-- `AffixRoller` (interface): interface AffixRoller — ⚠ undocumented
 
 ## @jgengine/core/item/durability
 
+- `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
+- `DurabilityState` (interface): interface DurabilityState — ⚠ undocumented
+- `DurabilityTracker` (interface): interface DurabilityTracker — ⚠ undocumented
+- `RepairCost` (interface): interface RepairCost — ⚠ undocumented
+- `RepairMaterial` (interface): interface RepairMaterial — ⚠ undocumented
+- `RepairQuote` (interface): interface RepairQuote — ⚠ undocumented
+- `RepairSpec` (interface): interface RepairSpec — ⚠ undocumented
+- `WearKind` (type): type WearKind = "use" | "hit" — ⚠ undocumented
+- `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — ⚠ undocumented
+- `canRepairAt` (function): function canRepairAt(spec: DurabilitySpec, stationId?: string): boolean — ⚠ undocumented
 - `createDurability` (function): function createDurability(spec: DurabilitySpec): DurabilityState — ⚠ undocumented
+- `createDurabilityTracker` (function): function createDurabilityTracker(): DurabilityTracker — ⚠ undocumented
 - `durabilityFraction` (function): function durabilityFraction(state: DurabilityState): number — ⚠ undocumented
 - `isBroken` (function): function isBroken(state: DurabilityState): boolean — ⚠ undocumented
 - `isDisabled` (function): function isDisabled(spec: DurabilitySpec, state: DurabilityState): boolean — ⚠ undocumented
-- `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
-- `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — ⚠ undocumented
-- `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
-- `canRepairAt` (function): function canRepairAt(spec: DurabilitySpec, stationId?: string): boolean — ⚠ undocumented
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
-- `createDurabilityTracker` (function): function createDurabilityTracker(): DurabilityTracker — ⚠ undocumented
-- `RepairMaterial` (interface): interface RepairMaterial — ⚠ undocumented
-- `RepairSpec` (interface): interface RepairSpec — ⚠ undocumented
-- `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
-- `DurabilityState` (interface): interface DurabilityState — ⚠ undocumented
-- `WearKind` (type): type WearKind = "use" | "hit" — ⚠ undocumented
-- `RepairCost` (interface): interface RepairCost — ⚠ undocumented
-- `RepairQuote` (interface): interface RepairQuote — ⚠ undocumented
-- `DurabilityTracker` (interface): interface DurabilityTracker — ⚠ undocumented
+- `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
+- `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
 
 ## @jgengine/core/item/modularItem
 
-- `slotById` (function): function slotById(def: ModularItemDef, slotId: string): MountSlotDef | null — ⚠ undocumented
-- `slotAccepts` (function): function slotAccepts(slot: MountSlotDef, category: string): boolean — ⚠ undocumented
-- `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
-- `uninstall` (function): function uninstall(installed: readonly InstalledPart[], slotId: string): readonly InstalledPart[] — ⚠ undocumented
-- `partInSlot` (function): function partInSlot(installed: readonly InstalledPart[], slotId: string): PartDef | null — ⚠ undocumented
-- `computeEffectiveStats` (function): function computeEffectiveStats(def: ModularItemDef, installed: readonly InstalledPart[]): Record<string, number> — ⚠ undocumented
-- `missingRequiredSlots` (function): function missingRequiredSlots(def: ModularItemDef, installed: readonly InstalledPart[]): string[] — ⚠ undocumented
-- `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
-- `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
-- `MountSlotDef` (interface): interface MountSlotDef — ⚠ undocumented
-- `ModularItemDef` (interface): interface ModularItemDef — ⚠ undocumented
-- `PartDef` (interface): interface PartDef — ⚠ undocumented
-- `InstalledPart` (interface): interface InstalledPart — ⚠ undocumented
 - `InstallResult` (type): type InstallResult = | { status: "ok"; installed: readonly InstalledPart[] } | { status: "rejected"; reason: "unknown-slot" | "wrong-category" | "slot-occupied" } — ⚠ undocumented
+- `InstalledPart` (interface): interface InstalledPart — ⚠ undocumented
 - `ModularItem` (interface): interface ModularItem — ⚠ undocumented
+- `ModularItemDef` (interface): interface ModularItemDef — ⚠ undocumented
+- `MountSlotDef` (interface): interface MountSlotDef — ⚠ undocumented
+- `PartDef` (interface): interface PartDef — ⚠ undocumented
+- `computeEffectiveStats` (function): function computeEffectiveStats(def: ModularItemDef, installed: readonly InstalledPart[]): Record<string, number> — ⚠ undocumented
+- `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
+- `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
+- `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
+- `missingRequiredSlots` (function): function missingRequiredSlots(def: ModularItemDef, installed: readonly InstalledPart[]): string[] — ⚠ undocumented
+- `partInSlot` (function): function partInSlot(installed: readonly InstalledPart[], slotId: string): PartDef | null — ⚠ undocumented
+- `slotAccepts` (function): function slotAccepts(slot: MountSlotDef, category: string): boolean — ⚠ undocumented
+- `slotById` (function): function slotById(def: ModularItemDef, slotId: string): MountSlotDef | null — ⚠ undocumented
+- `uninstall` (function): function uninstall(installed: readonly InstalledPart[], slotId: string): readonly InstalledPart[] — ⚠ undocumented
 
 ## @jgengine/core/item/use
 
-- `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — ⚠ undocumented
+- `ItemUse` (interface): interface ItemUse<TState> — ⚠ undocumented
+- `ItemUseHandler` (interface): interface ItemUseHandler<TState> — ⚠ undocumented
 - `ItemUseInput` (interface): interface ItemUseInput — ⚠ undocumented
 - `ItemUseRejection` (interface): interface ItemUseRejection — ⚠ undocumented
 - `ItemUseResult` (interface): interface ItemUseResult<TState> — ⚠ undocumented
-- `ItemUseHandler` (interface): interface ItemUseHandler<TState> — ⚠ undocumented
-- `ItemUse` (interface): interface ItemUse<TState> — ⚠ undocumented
+- `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — ⚠ undocumented
 
 ## @jgengine/core/item/weapon
 
-- `getWeaponStat` (function): function getWeaponStat(entry: WeaponEntry | null | undefined, stat: string): number | null — ⚠ undocumented
-- `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — ⚠ undocumented
 - `WeaponEntry` (interface): interface WeaponEntry — ⚠ undocumented
 - `WeaponStats` (interface): interface WeaponStats — ⚠ undocumented
+- `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — ⚠ undocumented
+- `getWeaponStat` (function): function getWeaponStat(entry: WeaponEntry | null | undefined, stat: string): number | null — ⚠ undocumented
 
 ## @jgengine/core/puzzle/cellGrid
 
-- `createCellGrid` (function): function createCellGrid<T>(width: number, height: number): CellGrid<T> — ⚠ undocumented
-- `inGridBounds` (function): function inGridBounds<T>(grid: CellGrid<T>, x: number, y: number): boolean — ⚠ undocumented
-- `cellAt` (function): function cellAt<T>(grid: CellGrid<T>, x: number, y: number): T | null — ⚠ undocumented
-- `withCell` (function): function withCell<T>(grid: CellGrid<T>, x: number, y: number, value: T | null): CellGrid<T> — ⚠ undocumented
-- `withCells` (function): function withCells<T>(grid: CellGrid<T>, entries: readonly { readonly x: number; readonly y: number; readonly value: T | null }[]): CellGrid<T> — ⚠ undocumented
-- `fullRows` (function): function fullRows<T>(grid: CellGrid<T>): number[] — ⚠ undocumented
-- `clearRows` (function): function clearRows<T>(grid: CellGrid<T>, rows: readonly number[]): CellGrid<T> — ⚠ undocumented
-- `collapseColumns` (function): function collapseColumns<T>(grid: CellGrid<T>): CellGrid<T> — ⚠ undocumented
-- `findRuns` (function): function findRuns<T>(grid: CellGrid<T>, minLength: number, matches: (a: T, b: T) => boolean = (a, b) => a === b): CellRun<T>[] — ⚠ undocumented
 - `CellGrid` (interface): interface CellGrid<T> — ⚠ undocumented
 - `CellRun` (interface): interface CellRun<T> — ⚠ undocumented
+- `cellAt` (function): function cellAt<T>(grid: CellGrid<T>, x: number, y: number): T | null — ⚠ undocumented
+- `clearRows` (function): function clearRows<T>(grid: CellGrid<T>, rows: readonly number[]): CellGrid<T> — ⚠ undocumented
+- `collapseColumns` (function): function collapseColumns<T>(grid: CellGrid<T>): CellGrid<T> — ⚠ undocumented
+- `createCellGrid` (function): function createCellGrid<T>(width: number, height: number): CellGrid<T> — ⚠ undocumented
+- `findRuns` (function): function findRuns<T>(grid: CellGrid<T>, minLength: number, matches: (a: T, b: T) => boolean = (a, b) => a === b): CellRun<T>[] — ⚠ undocumented
+- `fullRows` (function): function fullRows<T>(grid: CellGrid<T>): number[] — ⚠ undocumented
+- `inGridBounds` (function): function inGridBounds<T>(grid: CellGrid<T>, x: number, y: number): boolean — ⚠ undocumented
+- `withCell` (function): function withCell<T>(grid: CellGrid<T>, x: number, y: number, value: T | null): CellGrid<T> — ⚠ undocumented
+- `withCells` (function): function withCells<T>(grid: CellGrid<T>, entries: readonly { readonly x: number; readonly y: number; readonly value: T | null }[]): CellGrid<T> — ⚠ undocumented
 
 ## @jgengine/core/puzzle/fallingPiece
 
-- `pieceCells` (function): function pieceCells<TShape extends string>(table: ShapeTable<TShape>, piece: FallingPiece<TShape>): readonly (readonly [number, number])[] — ⚠ undocumented
-- `pieceCollides` (function): function pieceCollides<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>): boolean — ⚠ undocumented
-- `mergePiece` (function): function mergePiece<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>, value: T): CellGrid<T> — ⚠ undocumented
+- `FallingPiece` (interface): interface FallingPiece<TShape extends string = string> — ⚠ undocumented
+- `LockDelayState` (interface): interface LockDelayState — ⚠ undocumented
+- `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
+- `createLockDelay` (function): function createLockDelay(delaySeconds: number): LockDelayState — ⚠ undocumented
 - `dropDistance` (function): function dropDistance<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>): number — ⚠ undocumented
 - `gravityInterval` (function): function gravityInterval(level: number, base = 0.8, perLevel = 0.07, min = 0.05): number — ⚠ undocumented
 - `levelForLines` (function): function levelForLines(lines: number, linesPerLevel = 10): number — ⚠ undocumented
 - `lineScore` (function): function lineScore(cleared: number, level: number, table: readonly number[] = CLASSIC_LINE_SCORE): number — ⚠ undocumented
-- `createLockDelay` (function): function createLockDelay(delaySeconds: number): LockDelayState — ⚠ undocumented
+- `mergePiece` (function): function mergePiece<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>, value: T): CellGrid<T> — ⚠ undocumented
+- `pieceCells` (function): function pieceCells<TShape extends string>(table: ShapeTable<TShape>, piece: FallingPiece<TShape>): readonly (readonly [number, number])[] — ⚠ undocumented
+- `pieceCollides` (function): function pieceCollides<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>): boolean — ⚠ undocumented
 - `stepLockDelay` (function): function stepLockDelay(state: LockDelayState, grounded: boolean, dt: number): { state: LockDelayState; locked: boolean } — ⚠ undocumented
-- `FallingPiece` (interface): interface FallingPiece<TShape extends string = string> — ⚠ undocumented
-- `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
-- `LockDelayState` (interface): interface LockDelayState — ⚠ undocumented
 
 ## @jgengine/core/random/nameGen
 
-- `pickFrom` (function): function pickFrom(rng: () => number, bank: readonly string[]): string — ⚠ undocumented
+- `NameGenerator` (interface): interface NameGenerator — ⚠ undocumented
+- `NameGeneratorOptions` (interface): interface NameGeneratorOptions — ⚠ undocumented
+- `SyllableBank` (interface): interface SyllableBank — ⚠ undocumented
 - `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — ⚠ undocumented
 - `fillTemplate` (function): function fillTemplate(template: string, vars: Record<string, () => string> | Record<string, string>): string — ⚠ undocumented
-- `SyllableBank` (interface): interface SyllableBank — ⚠ undocumented
-- `NameGeneratorOptions` (interface): interface NameGeneratorOptions — ⚠ undocumented
-- `NameGenerator` (interface): interface NameGenerator — ⚠ undocumented
+- `pickFrom` (function): function pickFrom(rng: () => number, bank: readonly string[]): string — ⚠ undocumented
 
 ## @jgengine/core/random/rng
 
@@ -912,90 +912,90 @@
 
 ## @jgengine/core/random/seedLink
 
-- `withSeedParam` (function): function withSeedParam(url: string, seed: string | number, param = DEFAULT_SEED_PARAM): string — ⚠ undocumented
+- `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
+- `dailySeed` (function): function dailySeed(nowMs: number, salt?: string): string — ⚠ undocumented
 - `seedFromSearch` (function): function seedFromSearch(search: string, param = DEFAULT_SEED_PARAM): string | null — ⚠ undocumented
 - `seedFromUrl` (function): function seedFromUrl(url: string, param = DEFAULT_SEED_PARAM): string | null — ⚠ undocumented
-- `dailySeed` (function): function dailySeed(nowMs: number, salt?: string): string — ⚠ undocumented
-- `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
+- `withSeedParam` (function): function withSeedParam(url: string, seed: string | number, param = DEFAULT_SEED_PARAM): string — ⚠ undocumented
 
 ## @jgengine/core/session/contestedChannel
 
-- `createContestedChannel` (function): function createContestedChannel(config: ContestedChannelConfig): ContestedChannel — ⚠ undocumented
-- `ContestedPhase` (type): type ContestedPhase = "idle" | "active" | "paused" | "contested" | "complete" | "interrupted" — ⚠ undocumented
 - `ContestReaction` (type): type ContestReaction = "pause" | "decay" — ⚠ undocumented
-- `ContestedChannelConfig` (interface): interface ContestedChannelConfig — ⚠ undocumented
-- `ContestedEventKind` (type): type ContestedEventKind = "start" | "tick" | "contested" | "paused" | "complete" | "interrupted" — ⚠ undocumented
-- `ContestedEvent` (interface): interface ContestedEvent — ⚠ undocumented
-- `ContestedSnapshot` (interface): interface ContestedSnapshot — ⚠ undocumented
 - `ContestedChannel` (interface): interface ContestedChannel — ⚠ undocumented
+- `ContestedChannelConfig` (interface): interface ContestedChannelConfig — ⚠ undocumented
+- `ContestedEvent` (interface): interface ContestedEvent — ⚠ undocumented
+- `ContestedEventKind` (type): type ContestedEventKind = "start" | "tick" | "contested" | "paused" | "complete" | "interrupted" — ⚠ undocumented
+- `ContestedPhase` (type): type ContestedPhase = "idle" | "active" | "paused" | "contested" | "complete" | "interrupted" — ⚠ undocumented
+- `ContestedSnapshot` (interface): interface ContestedSnapshot — ⚠ undocumented
+- `createContestedChannel` (function): function createContestedChannel(config: ContestedChannelConfig): ContestedChannel — ⚠ undocumented
 
 ## @jgengine/core/session/extraction
 
-- `createRaidSession` (function): function createRaidSession(config: RaidSessionConfig): RaidSession — ⚠ undocumented
+- `DeathResult` (interface): interface DeathResult — ⚠ undocumented
 - `ExtractPoint` (interface): interface ExtractPoint — ⚠ undocumented
-- `RaidSessionConfig` (interface): interface RaidSessionConfig — ⚠ undocumented
-- `RaidStatus` (type): type RaidStatus = "in-raid" | "extracting" | "extracted" | "dead" — ⚠ undocumented
 - `ExtractionAttempt` (interface): interface ExtractionAttempt — ⚠ undocumented
 - `ExtractionResult` (interface): interface ExtractionResult — ⚠ undocumented
-- `DeathResult` (interface): interface DeathResult — ⚠ undocumented
 - `RaidPlayerSnapshot` (interface): interface RaidPlayerSnapshot — ⚠ undocumented
 - `RaidSession` (interface): interface RaidSession — ⚠ undocumented
+- `RaidSessionConfig` (interface): interface RaidSessionConfig — ⚠ undocumented
+- `RaidStatus` (type): type RaidStatus = "in-raid" | "extracting" | "extracted" | "dead" — ⚠ undocumented
+- `createRaidSession` (function): function createRaidSession(config: RaidSessionConfig): RaidSession — ⚠ undocumented
 
 ## @jgengine/core/session/ring
 
-- `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
-- `createRing` (function): function createRing(config: RingConfig): Ring — ⚠ undocumented
-- `RingPoint` (type): type RingPoint = [number, number] — ⚠ undocumented
-- `RingPhase` (interface): interface RingPhase — ⚠ undocumented
-- `RingConfig` (interface): interface RingConfig — ⚠ undocumented
-- `RingSample` (interface): interface RingSample — ⚠ undocumented
-- `RingHit` (interface): interface RingHit — ⚠ undocumented
 - `Ring` (interface): interface Ring — ⚠ undocumented
+- `RingConfig` (interface): interface RingConfig — ⚠ undocumented
+- `RingHit` (interface): interface RingHit — ⚠ undocumented
+- `RingPhase` (interface): interface RingPhase — ⚠ undocumented
+- `RingPoint` (type): type RingPoint = [number, number] — ⚠ undocumented
+- `RingSample` (interface): interface RingSample — ⚠ undocumented
+- `createRing` (function): function createRing(config: RingConfig): Ring — ⚠ undocumented
+- `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 
 ## @jgengine/core/session/roles
 
-- `assignRoles` (function): function assignRoles(userIds: readonly string[], roles: readonly RoleSpec[], rng: () => number = Math.random): Record<string, string> — ⚠ undocumented
 - `RoleSpec` (interface): interface RoleSpec — ⚠ undocumented
+- `assignRoles` (function): function assignRoles(userIds: readonly string[], roles: readonly RoleSpec[], rng: () => number = Math.random): Record<string, string> — ⚠ undocumented
 
 ## @jgengine/core/session/roundState
 
-- `lossBonusFor` (function): function lossBonusFor(rule: LossBonusRule | undefined, streak: number): number — ⚠ undocumented
-- `createRoundState` (function): function createRoundState(config: RoundConfig<RoundPhase>): RoundState<RoundPhase> — ⚠ undocumented
-- `RoundPhase` (type): type RoundPhase = string — ⚠ undocumented
-- `RoundPhaseDurations` (interface): interface RoundPhaseDurations — Default phase-duration shape for the built-in buy/live/end cycle; pass a wider `Record<string, number>` when using a custom `phaseOrder`.
 - `LossBonusRule` (interface): interface LossBonusRule — ⚠ undocumented
-- `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
+- `PhaseEndHook` (type): type PhaseEndHook<TPhase extends string = RoundPhase> = ( endingPhase: TPhase, nextPhase: TPhase, round: number, ) => void — ⚠ undocumented
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> — ⚠ undocumented
-- `RoundEventKind` (type): type RoundEventKind = | "phase.start" | "phase.end" | "round.win" | "round.economy" | "match.end" — ⚠ undocumented
 - `RoundEconomy` (interface): interface RoundEconomy — ⚠ undocumented
 - `RoundEvent` (interface): interface RoundEvent<TPhase extends string = RoundPhase> — ⚠ undocumented
-- `PhaseEndHook` (type): type PhaseEndHook<TPhase extends string = RoundPhase> = ( endingPhase: TPhase, nextPhase: TPhase, round: number, ) => void — ⚠ undocumented
+- `RoundEventKind` (type): type RoundEventKind = | "phase.start" | "phase.end" | "round.win" | "round.economy" | "match.end" — ⚠ undocumented
+- `RoundPhase` (type): type RoundPhase = string — ⚠ undocumented
+- `RoundPhaseDurations` (interface): interface RoundPhaseDurations — Default phase-duration shape for the built-in buy/live/end cycle; pass a wider `Record<string, number>` when using a custom `phaseOrder`.
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> — ⚠ undocumented
+- `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
+- `createRoundState` (function): function createRoundState(config: RoundConfig<RoundPhase>): RoundState<RoundPhase> — ⚠ undocumented
+- `lossBonusFor` (function): function lossBonusFor(rule: LossBonusRule | undefined, streak: number): number — ⚠ undocumented
 
 ## @jgengine/core/turn/commit
 
-- `createCommitController` (function): function createCommitController<TAction>(config: CommitControllerConfig): CommitController<TAction> — ⚠ undocumented
-- `CommitMode` (type): type CommitMode = "immediate" | "simultaneous" | "resealable" — ⚠ undocumented
-- `SubmittedAction` (interface): interface SubmittedAction<TAction> — ⚠ undocumented
-- `CommitOutcome` (interface): interface CommitOutcome<TAction> — ⚠ undocumented
-- `CommitControllerConfig` (interface): interface CommitControllerConfig — ⚠ undocumented
 - `CommitController` (interface): interface CommitController<TAction> — ⚠ undocumented
+- `CommitControllerConfig` (interface): interface CommitControllerConfig — ⚠ undocumented
+- `CommitMode` (type): type CommitMode = "immediate" | "simultaneous" | "resealable" — ⚠ undocumented
+- `CommitOutcome` (interface): interface CommitOutcome<TAction> — ⚠ undocumented
+- `SubmittedAction` (interface): interface SubmittedAction<TAction> — ⚠ undocumented
+- `createCommitController` (function): function createCommitController<TAction>(config: CommitControllerConfig): CommitController<TAction> — ⚠ undocumented
 
 ## @jgengine/core/turn/intent
 
-- `createIntentBoard` (function): function createIntentBoard<TKind extends string = string>(): IntentBoard<TKind> — ⚠ undocumented
 - `DeclaredIntent` (interface): interface DeclaredIntent<TKind extends string = string> — ⚠ undocumented
 - `IntentBoard` (interface): interface IntentBoard<TKind extends string = string> — ⚠ undocumented
+- `createIntentBoard` (function): function createIntentBoard<TKind extends string = string>(): IntentBoard<TKind> — ⚠ undocumented
 
 ## @jgengine/core/turn/turnLoop
 
-- `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
-- `CommitMode` (type): type CommitMode = "immediate" | "simultaneous" | "resealable" — ⚠ undocumented
 - `CommitController` (interface): interface CommitController<TAction> — ⚠ undocumented
+- `CommitMode` (type): type CommitMode = "immediate" | "simultaneous" | "resealable" — ⚠ undocumented
 - `PoolConfig` (interface): interface PoolConfig — ⚠ undocumented
-- `TurnLoopConfig` (interface): interface TurnLoopConfig — ⚠ undocumented
 - `PoolState` (interface): interface PoolState — ⚠ undocumented
-- `TurnState` (interface): interface TurnState — ⚠ undocumented
-- `TurnLoopSnapshot` (interface): interface TurnLoopSnapshot — ⚠ undocumented
 - `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
+- `TurnLoopConfig` (interface): interface TurnLoopConfig — ⚠ undocumented
+- `TurnLoopSnapshot` (interface): interface TurnLoopSnapshot — ⚠ undocumented
+- `TurnState` (interface): interface TurnState — ⚠ undocumented
+- `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
