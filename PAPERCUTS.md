@@ -19,3 +19,15 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 2026-07-12T00:02:14.895Z — claude-fable-5 — Claude
 
 papercut sweep itself → papercut-reminder Stop hook false-positived again: 'do not background' is standard brief boilerplate, not relaunch evidence; hints now require explicit relaunch/failed-attempt language
+
+2026-07-12T00:28:50.375Z — sonnet — Claude
+
+batch preview-authoring workers stalled silently after partial completion → had to diff disk vs briefs and re-ping two coordinators
+
+2026-07-12T00:28:50.429Z — sonnet — Claude
+
+workers repeatedly backgrounded foreground briefs (ship motion, screenshot sweep) and ended turn with 'running in background' → each needed a resume nudge
+
+2026-07-12T00:28:50.474Z — fable — Claude
+
+check-game-shape gate rejected new cross-game contract file preview.tsx at src root → whitelist edit needed mid-ship
