@@ -94,6 +94,7 @@
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
 - `PerfProbe` (function): function PerfProbe({ api }: { api: EditorHostApi }): null — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
 - `SelectionGizmo` (function): function SelectionGizmo({ session, mode, groundSnap, }: { session: EditorSession; mode: GizmoMode; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release.
+- `ViewportSelect` (function): function ViewportSelect({ api }: { api: EditorHostApi }): null — Canvas click-to-select: editor gizmos hit directly, world geometry snaps to the nearest document object.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
 - `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
@@ -130,6 +131,7 @@
 
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
 - `SelectionGizmo` (function): function SelectionGizmo({ session, mode, groundSnap, }: { session: EditorSession; mode: GizmoMode; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release.
+- `ViewportSelect` (function): function ViewportSelect({ api }: { api: EditorHostApi }): null — Canvas click-to-select: editor gizmos hit directly, world geometry snaps to the nearest document object.
 
 ## @jgengine/editor/mcp/bridgeServer
 
