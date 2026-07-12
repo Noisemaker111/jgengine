@@ -122,3 +122,7 @@ gen:skill-api run before node_modules finished installing silently mis-parsed se
 2026-07-12T19:17:09.749Z — opus-4.8 — Claude
 
 phase-7a ship worker pushed the branch onto pre-#595-merge history, so PR #596 showed mergeable_state=dirty; local HEAD was actually clean one-commit-on-main, fix was a force-with-lease push, not a rebase — a merge worker should verify origin/main's real tip before diagnosing a PR conflict
+
+2026-07-12T20:30:18.174Z — opus-4.8 — Claude
+
+briefed a gate worker with literal 'bun test' → it scanned the whole tree unbounded (incl Games/) and hung 10min with zero output before the guard killed it; the repo gate is 'bun run test' (guarded, scoped to packages apps/dev scripts). Bare 'bun test' is a footgun in briefs.

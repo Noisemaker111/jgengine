@@ -325,9 +325,11 @@ export interface GameContextRace {
   state(id: string, config?: RaceStateConfig): RaceState;
 }
 
-/** Reachable audio seam on `ctx.game`: `play` and `resume` route through the `audio.play`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. */
+/** Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. */
 export interface GameAudio {
   play(sound: string, at?: readonly [number, number, number]): void;
+  /** Crossfade the procedural soundtrack to `theme` (null fades out); `transpose` shifts the incoming theme's key in semitones. */
+  music(theme: string | null, transpose?: number): void;
   resume(): void;
 }
 
@@ -1279,6 +1281,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       playEntityAnimation: (instanceId, event) => events.emit("entity.animation", { instanceId, event }),
       audio: {
         play: (sound, at) => events.emit("audio.play", at === undefined ? { sound } : { sound, at }),
+        music: (theme, transpose) =>
+          events.emit("audio.music", transpose === undefined ? { theme } : { theme, transpose }),
         resume: () => events.emit("audio.resume", {}),
       },
       feed: {

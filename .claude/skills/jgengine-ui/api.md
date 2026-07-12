@@ -512,6 +512,20 @@
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
 - `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — ⚠ undocumented
 
+## @jgengine/shell/audio/musicDirector
+
+- `CrossfadeOptions` (interface): interface CrossfadeOptions — Options for a music crossfade.
+- `MusicDirector` (class): class MusicDirector — Runs a set of looping {@link MusicTheme}s as crossfadeable layers on one shared Web Audio graph: master → compressor → destination, with a fixed convolution reverb send. `crossfadeTo` swaps the audible theme; a 110ms lookahead scheduler keeps each active layer's notes queued ahead of the clock so loops are seamless.
+
+## @jgengine/shell/audio/musicVoices
+
+- `playMusicNote` (function): function playMusicNote(ctx: Ctx, event: NoteEvent, when: number, spb: number, out: GainNode, transpose = 0): void — Play one theme note through its instrument voice into `out` (a per-layer gain node the director wires to master + reverb). `spb` is seconds-per-beat and `transpose` shifts the note in semitones for per-zone key changes. This is the engine's reusable instrument library; unknown instruments fall back to a sine.
+
+## @jgengine/shell/audio/synthEngine
+
+- `createNoiseBuffer` (function): function createNoiseBuffer(ctx: BaseAudioContext): AudioBuffer — Build the shared 1-second mono white-noise buffer every noise voice samples from.
+- `realizeSynthPatch` (function): function realizeSynthPatch(ctx: BaseAudioContext, out: AudioNode, noiseBuf: AudioBuffer, patch: SynthPatch): void — Realise a procedural cue on Web Audio: every voice is scheduled at `ctx.currentTime + delay` into `out`, summed into one one-shot. `noiseBuf` is the shared buffer from {@link createNoiseBuffer}.
+
 ## @jgengine/shell/behaviour
 
 - `Object3DBehaviour` (class): class Object3DBehaviour extends Behaviour — ⚠ undocumented

@@ -187,6 +187,12 @@ export interface AudioPlayEvent {
 /** Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload. */
 export type AudioResumeEvent = Record<string, never>;
 
+/** Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones. */
+export interface AudioMusicEvent {
+  theme: string | null;
+  transpose?: number;
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
@@ -213,6 +219,7 @@ export interface GameEventMap {
   "possession.swapped": PossessionSwappedEvent;
   "form.changed": FormChangedEvent;
   "audio.play": AudioPlayEvent;
+  "audio.music": AudioMusicEvent;
   "audio.resume": AudioResumeEvent;
   "entity.animation": EntityAnimationEvent;
 }
