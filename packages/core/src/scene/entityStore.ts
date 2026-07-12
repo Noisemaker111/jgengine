@@ -92,6 +92,29 @@ export type EntityUpdatePatch<TMeta = unknown> = Partial<
   position?: SpawnPositionInput;
 };
 
+/**
+ * Per-entity scratch and cooldown timers, auto-cleared on despawn (#533.8) — the home for AI state
+ * (next-shot-at, alert level) that would otherwise be smuggled through the serializable `meta` or a
+ * hand-pruned module-level map. Keys share one namespace per entity: `arm`/`ready`/`remaining` store a
+ * deadline under a key, `get`/`set` store arbitrary scratch.
+ */
+export interface EntityBlackboard {
+  /** Read a scratch value; `undefined` if unset or the entity has despawned. */
+  get<T>(id: string, key: string): T | undefined;
+  /** Write a scratch value; does not notify subscribers, and clears when the entity despawns. */
+  set(id: string, key: string, value: unknown): void;
+  has(id: string, key: string): boolean;
+  delete(id: string, key: string): void;
+  /** Drop all scratch and timers for one entity. */
+  clear(id: string): void;
+  /** Arm a cooldown for `key` that stays busy until absolute time `untilMs`. */
+  arm(id: string, key: string, untilMs: number): void;
+  /** True when no cooldown is armed for `key`, or its deadline has passed. */
+  ready(id: string, key: string, nowMs: number): boolean;
+  /** Milliseconds until the armed cooldown elapses; 0 when ready. */
+  remaining(id: string, key: string, nowMs: number): number;
+}
+
 export interface EntityStore<TMeta = unknown> {
   spawn(name: string, options?: SpawnOptions<TMeta>): string;
   despawn(id: string): boolean;
@@ -106,13 +129,42 @@ export interface EntityStore<TMeta = unknown> {
   snapshot(): readonly SceneEntity<TMeta>[];
   spawnPoseOf(id: string): SpawnPose | null;
   resetToSpawn(id: string): boolean;
+  blackboard: EntityBlackboard;
 }
 
 export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
   const store = createObservableKeyedStore<SceneEntity<TMeta>>();
   const spawnPoses = new Map<string, SpawnPose>();
   const constraints = new Map<string, PoseConstraint>();
+  const blackboards = new Map<string, Map<string, unknown>>();
   let nextCounter = 1;
+
+  const blackboard: EntityBlackboard = {
+    get: <T>(id: string, key: string): T | undefined => blackboards.get(id)?.get(key) as T | undefined,
+    set(id, key, value) {
+      const board = blackboards.get(id) ?? new Map<string, unknown>();
+      board.set(key, value);
+      blackboards.set(id, board);
+    },
+    has: (id, key) => blackboards.get(id)?.has(key) ?? false,
+    delete(id, key) {
+      blackboards.get(id)?.delete(key);
+    },
+    clear(id) {
+      blackboards.delete(id);
+    },
+    arm(id, key, untilMs) {
+      this.set(id, key, untilMs);
+    },
+    ready(id, key, nowMs) {
+      const until = blackboards.get(id)?.get(key);
+      return typeof until !== "number" || nowMs >= until;
+    },
+    remaining(id, key, nowMs) {
+      const until = blackboards.get(id)?.get(key);
+      return typeof until === "number" ? Math.max(0, until - nowMs) : 0;
+    },
+  };
 
   function generateId(): string {
     let id = `entity-${nextCounter}`;
@@ -130,6 +182,7 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
         const onExisting = options.onExisting ?? "throw";
         if (onExisting === "keep") return options.id;
         if (onExisting === "throw") throw new Error(`Scene entity id "${options.id}" is already spawned.`);
+        blackboards.delete(options.id);
       }
       const id = options.id ?? generateId();
       const position = toEntityPosition(options.position);
@@ -155,6 +208,7 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
       store.delete(id);
       spawnPoses.delete(id);
       constraints.delete(id);
+      blackboards.delete(id);
       return existed;
     },
     update(id, patch) {
@@ -218,6 +272,7 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
         store.delete(entity.id);
       }
       constraints.clear();
+      blackboards.clear();
     },
     subscribe(listener) {
       return store.subscribe(listener);
@@ -238,5 +293,6 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
       store.set(id, current);
       return true;
     },
+    blackboard,
   };
 }

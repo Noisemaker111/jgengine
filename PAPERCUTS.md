@@ -114,3 +114,7 @@ local check-types failed spuriously on stale node_modules symlinks in examples/n
 2026-07-12T15:47:53.182Z — sonnet-5 — Claude
 
 drag-and-drop ActionBar edit → ActionBar() drop handler referenced commands without calling useGame() there, check-types caught it
+
+2026-07-12T17:33:16.570Z — opus — Claude
+
+gen:skill-api run before node_modules finished installing silently mis-parsed several packages and overwrote scripts/api-doc-baseline.json with corrupted (dropped) entries, then surfaced only downstream as a bogus check-types 'new debt' failure — no error at gen time

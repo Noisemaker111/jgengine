@@ -85,7 +85,15 @@ import {
   type StatCatalog,
   type StatValueMap,
 } from "../scene/entityStats";
-import type { EntityPose, EntityPosition, EntityStore, SceneEntity, SpawnOptions, SpawnPose } from "../scene/entityStore";
+import type {
+  EntityBlackboard,
+  EntityPose,
+  EntityPosition,
+  EntityStore,
+  SceneEntity,
+  SpawnOptions,
+  SpawnPose,
+} from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
 import type { EntityColliderSet } from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
@@ -215,6 +223,7 @@ export interface SceneEntityContext {
   spawnPoseOf(instanceId: string): SpawnPose | null;
   resetToSpawn(instanceId: string): boolean;
   resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number;
+  blackboard: EntityBlackboard;
   stats: EntityStatsApi;
   floatText(input: FloatTextInput): void;
   telegraph(input: TelegraphInput): () => void;
@@ -1149,6 +1158,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         spawnPoseOf: entities.spawnPoseOf,
         resetToSpawn: entities.resetToSpawn,
         resetAllToSpawn,
+        blackboard: entities.blackboard,
         stats: entityStats,
         floatText: emitFloatText,
         telegraph: fireTelegraph,

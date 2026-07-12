@@ -278,6 +278,55 @@ describe("terrain field", () => {
     expect(sampler(125, 0)).toEqual(base);
   });
 
+  test("createTerrainPaletteSampler paints a polyline ribbon along its centerline", () => {
+    const sampler = createTerrainPaletteSampler({
+      material: "grass",
+      materialRegions: [
+        {
+          shape: "polyline",
+          points: [
+            [0, 0],
+            [100, 0],
+          ],
+          width: 20,
+          material: "slate",
+          falloff: 10,
+        },
+      ],
+    });
+    const base = resolveTerrainPalette({ material: "grass" });
+    const slate = resolveTerrainPalette({ material: "slate" });
+    expect(sampler(50, 0)).toEqual(slate);
+    expect(sampler(50, 9)).toEqual(slate);
+    expect(sampler(50, 40)).toEqual(base);
+    const blended = sampler(50, 15);
+    expect(blended.low).not.toBe(base.low);
+    expect(blended.low).not.toBe(slate.low);
+  });
+
+  test("createTerrainPaletteSampler paints a rect district and blends outside it", () => {
+    const sampler = createTerrainPaletteSampler({
+      material: "grass",
+      materialRegions: [{ shape: "rect", center: [0, 0], halfExtents: [30, 10], material: "sand", falloff: 5 }],
+    });
+    const base = resolveTerrainPalette({ material: "grass" });
+    const sand = resolveTerrainPalette({ material: "sand" });
+    expect(sampler(0, 0)).toEqual(sand);
+    expect(sampler(29, 9)).toEqual(sand);
+    expect(sampler(100, 0)).toEqual(base);
+  });
+
+  test("a rotated rect covers along its local axis", () => {
+    const sampler = createTerrainPaletteSampler({
+      material: "grass",
+      materialRegions: [
+        { shape: "rect", center: [0, 0], halfExtents: [30, 5], rotationY: Math.PI / 2, material: "sand" },
+      ],
+    });
+    const sand = resolveTerrainPalette({ material: "sand" });
+    expect(sampler(0, 25)).toEqual(sand);
+  });
+
   test("createBiomeBandSampler clamps outside the band range and cross-fades across boundaries", () => {
     const vale = resolveTerrainPalette({ colors: { low: "#204010", high: "#3a6020" } });
     const peaks = resolveTerrainPalette({ colors: { low: "#7a8878", high: "#aab4a0" } });

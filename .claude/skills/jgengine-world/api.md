@@ -544,6 +544,7 @@
 
 ## @jgengine/core/scene/entityStore
 
+- `EntityBlackboard` (interface): interface EntityBlackboard — Per-entity scratch and cooldown timers, auto-cleared on despawn (#533.8) — the home for AI state (next-shot-at, alert level) that would otherwise be smuggled through the serializable `meta` or a hand-pruned module-level map. Keys share one namespace per entity: `arm`/`ready`/`remaining` store a deadline under a key, `get`/`set` store arbitrary scratch.
 - `EntityMovement` (interface): interface EntityMovement — ⚠ undocumented
 - `EntityPose` (interface): interface EntityPose — ⚠ undocumented
 - `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented
@@ -1081,6 +1082,7 @@
 - `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color"> > — ⚠ undocumented
 - `StructureEnvironmentDescriptor` (type): type StructureEnvironmentDescriptor = BuildingEnvironmentDescriptor — ⚠ undocumented
+- `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
 - `TerrainColors` (interface): interface TerrainColors — ⚠ undocumented
 - `TerrainEnvironmentConfig` (interface): interface TerrainEnvironmentConfig — ⚠ undocumented
 - `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented
@@ -1088,7 +1090,10 @@
 - `TerrainIslandConfig` (interface): interface TerrainIslandConfig extends TerrainEnvironmentConfig — A bounded terrain patch floating at its own altitude — sky islands, arena platforms, split landmasses with void between.
 - `TerrainIslandDescriptor` (type): type TerrainIslandDescriptor = Omit<TerrainEnvironmentDescriptor, "kind"> & { kind: "island"; origin: EnvironmentVec2; } — ⚠ undocumented
 - `TerrainMaterial` (type): type TerrainMaterial = "grass" | "sand" | "snow" | "rock" | "ash" | "highland" | "slate" — ⚠ undocumented
-- `TerrainMaterialRegion` (interface): interface TerrainMaterialRegion — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, sand shores on one heightfield.
+- `TerrainMaterialRegion` (type): type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion — A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given), `polyline` ribbons for roads/rivers, and rotatable `rect` districts all paint fully inside their core and blend back across `falloff`; later regions in the list win overlaps.
+- `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
+- `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
+- `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
 - `TilemapWorldConfig` (interface): interface TilemapWorldConfig extends WorldGridConfig — ⚠ undocumented
 - `VegetationEnvironmentDescriptor` (type): type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor — ⚠ undocumented
 - `VoxelWorldConfig` (interface): interface VoxelWorldConfig extends WorldGridConfig — ⚠ undocumented

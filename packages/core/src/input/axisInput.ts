@@ -137,6 +137,28 @@ export interface GenericAxisChannel<TAxes extends string> {
 
 const BIPOLAR_RANGE: AxisRange = { min: -1, max: 1 };
 
+/**
+ * Instantaneous (unsmoothed) analog sample of an axis binding map — the per-frame target an
+ * `AxisChannel` ramps toward, exposed as a pure read for `ctx.input.axis` and headless sampling.
+ * Each axis is its binding's positive-minus-negative held state (or its pointer source while a pointer
+ * is active), clamped to the axis range; axes without a listed range default to bipolar `[-1, 1]`.
+ */
+export function sampleAxisBindings<TAxes extends string>(
+  bindings: Record<TAxes, AxisBinding>,
+  isDown: (code: string) => boolean,
+  pointer?: PointerAxisState | null,
+  ranges?: Partial<Record<TAxes, AxisRange>>,
+): Record<TAxes, number> {
+  const out = {} as Record<TAxes, number>;
+  for (const axis of Object.keys(bindings) as TAxes[]) {
+    const binding = bindings[axis];
+    const range = ranges?.[axis] ?? BIPOLAR_RANGE;
+    const fromPointer = binding.pointer === undefined ? null : pointerAxisValue(binding.pointer, pointer ?? null);
+    out[axis] = clampAxis(fromPointer ?? digitalTarget(binding, isDown), range);
+  }
+  return out;
+}
+
 export function createAxisChannel<TAxes extends string>(config: GenericAxisConfig<TAxes>): GenericAxisChannel<TAxes> {
   const axes = Object.keys(config.bindings) as TAxes[];
   const smoothing = config.smoothing ?? 6;

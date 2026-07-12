@@ -7,9 +7,11 @@ import type {
   TerrainFlattenMask,
   TerrainIslandDescriptor,
   TerrainMaterial,
+  TerrainMaterialRegion,
   WorldBounds,
   WorldFeature,
 } from "./features";
+import { nearestOnPath } from "./roads";
 
 export type TerrainNormal = readonly [number, number, number];
 
@@ -427,24 +429,63 @@ export function createTerrainPaletteSampler(
       ? null
       : createBiomeBandSampler(descriptor.biomeBands, base);
   const regions = (descriptor.materialRegions ?? []).map((region) => ({
-    center: region.center,
-    radius: region.radius,
-    falloff: region.falloff ?? region.radius * 0.5,
+    ...resolveRegionShape(region),
     palette: resolveTerrainPalette(region),
   }));
   if (regions.length === 0 && bandSampler === null) return () => base;
   return (x, z) => {
     let palette = bandSampler === null ? base : bandSampler(z);
     for (const region of regions) {
-      const distance = Math.hypot(x - region.center[0], z - region.center[1]);
-      if (distance <= region.radius) {
+      const distance = region.coreDistance(x, z);
+      if (distance <= 0) {
         palette = region.palette;
-      } else if (distance <= region.radius + region.falloff) {
-        const t = smoothstep(region.radius, region.radius + region.falloff, distance);
+      } else if (distance <= region.falloff) {
+        const t = smoothstep(0, region.falloff, distance);
         palette = mixPalette(region.palette, palette, t);
       }
     }
     return palette;
+  };
+}
+
+/**
+ * Resolves a `TerrainMaterialRegion` of any shape to a `coreDistance(x, z)` — 0 inside the painted
+ * core, growing positive outward — plus its blend-ring `falloff`, so the palette sampler blends every
+ * shape through one shape-agnostic loop.
+ */
+function resolveRegionShape(region: TerrainMaterialRegion): {
+  coreDistance: (x: number, z: number) => number;
+  falloff: number;
+} {
+  if (region.shape === "polyline") {
+    const half = region.width * 0.5;
+    return {
+      falloff: region.falloff ?? half,
+      coreDistance: (x, z) => {
+        const sample = nearestOnPath(region.points, x, z);
+        return sample === null ? Number.POSITIVE_INFINITY : Math.max(0, sample.distance - half);
+      },
+    };
+  }
+  if (region.shape === "rect") {
+    const [hx, hz] = region.halfExtents;
+    const angle = region.rotationY ?? 0;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return {
+      falloff: region.falloff ?? Math.min(hx, hz) * 0.5,
+      coreDistance: (x, z) => {
+        const dx = x - region.center[0];
+        const dz = z - region.center[1];
+        const lx = dx * cos + dz * sin;
+        const lz = -dx * sin + dz * cos;
+        return Math.hypot(Math.max(0, Math.abs(lx) - hx), Math.max(0, Math.abs(lz) - hz));
+      },
+    };
+  }
+  return {
+    falloff: region.falloff ?? region.radius * 0.5,
+    coreDistance: (x, z) => Math.max(0, Math.hypot(x - region.center[0], z - region.center[1]) - region.radius),
   };
 }
 
