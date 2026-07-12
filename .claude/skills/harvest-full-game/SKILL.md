@@ -11,7 +11,7 @@ Same harvest as `harvest-game` â€” build a game, harvest the engine gaps it
 Take the invocation argument and resolve a target game:
 
 - **A specific game named** â†’ that's the target. Research it.
-- **A link (repo or game page)** â†’ that's the target, and the link is its spec. Read it for mechanics, every signature system, camera, controls, and content breadth â€” it is a research source, never a port source. Build fresh from the engine surface; translating its code line-by-line faithfully recreates its workarounds and hides exactly the gaps this loop exists to expose.
+- **A link (repo or game page)** â†’ that's the target, and the link is its spec. Read it for mechanics, every signature system, camera, controls, and content breadth â€” it is a research source, never a port source. Build fresh from the engine surface; translating its code line-by-line faithfully recreates its workarounds and hides exactly the gaps this loop exists to expose. Even when the user explicitly asks for a 1:1 port of an open-source game, the same rule holds: copy its behavior and data (numbers, tables, layouts, palettes, formulas, feel) and, where the license allows, its assets — never its functions, custom renderers, or workaround systems; rebuild on engine seams, and file the gap when a seam is missing.
 - **A genre** â†’ pick a well-known game in that genre whose full-scope mechanics stress engine areas no existing `Games/*` game already covers.
 - **Nothing / "find one"** â†’ web-research currently popular or recently viral games and pick one the engine can't obviously do yet. Prefer games whose defining mechanic looks missing from the engine surface.
 
