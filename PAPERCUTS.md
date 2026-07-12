@@ -63,3 +63,11 @@ speed-circuit smoke job intermittently fails with 'Chrome debugger not ready on 
 2026-07-12T01:38:10.944Z — opus — Claude
 
 screenshot workers: playwright-core expects chromium rev 1228 but /opt/pw-browsers only caches 1194 → default chromium.launch() fails; must pin executablePath to /opt/pw-browsers/chromium-1194/chrome-linux/chrome
+
+2026-07-12T01:47:51.487Z — sonnet — Claude
+
+ship worker re-delegated instead of executing → returned 'launched a worker and returning' non-answer, nearly caused a duplicate PR on already-merged history; briefs should say 'you are the worker, do not spawn sub-agents'
+
+2026-07-12T01:47:51.521Z — sonnet — Claude
+
+gate worker ran per-package 'bun run check-types' without 'bun scripts/ensure-ready.ts' first → false RED with TS2307 on @jgengine/github (exports point at unbuilt dist/); wasted a round diagnosing a non-bug
