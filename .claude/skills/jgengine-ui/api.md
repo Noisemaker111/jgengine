@@ -561,7 +561,7 @@
 
 - `GamePlayerShell` (function): function GamePlayerShell({ playable, multiplayer: rawMultiplayer = null, poster = false, onContextReady, }: { playable: PlayableGame; multiplayer?: ShellMultiplayer | null; poster?: boolean; /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots,… — ⚠ undocumented
 - `applyMotionImpulses` (function): function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number — Applies a pending `MotionIntentBatch` to a vertical velocity: impulses add, then `verticalVelocity` replaces the result outright (#162.4).
-- `dispatchBoundAction` (function): function dispatchBoundAction(ctx: GameContext, action: string, yaw: number, pitch: number, aim: Aim, reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS): void — Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`).
+- `dispatchBoundAction` (function): function dispatchBoundAction(ctx: GameContext, action: string, yaw: number, pitch: number, aim: Aim, reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS, sink: CommandSink = localCommandSink(ctx)): void — Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`).
 - `hasEnvironmentTerrain` (function): function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean — True when the world is an environment feature with terrain, so the voxel controller should sample its height.
 - `heldActionsFor` (function): function heldActionsFor(tracker: Pick<ActionStateTracker<string>, "isDown">, actions: readonly string[]): string[] — Actions from `input` currently held down, for `ctx.input.publish` (#164.1); includes reserved movement/jump actions.
 - `nearbyObstacles` (function): function nearbyObstacles(objects: readonly SceneObject[], center: readonly [number, number, number], radius: number = OBSTACLE_GATHER_RADIUS): CollisionObstacle[] — Placed scene objects within `radius` of `center`, as `CollisionObstacle`s for `resolveObstacleStep` (#162.1).
@@ -914,6 +914,13 @@
 - `CartridgeResultLine` (type): type CartridgeResultLine = { label: string; accent?: boolean } & ( | { source: "kills" | "level" } | { value: string | number } ) — ⚠ undocumented
 - `CartridgeScreens` (interface): interface CartridgeScreens — ⚠ undocumented
 - `cartridge` (function): function cartridge(config: CartridgeConfig): PlayableGame — ⚠ undocumented
+
+## @jgengine/shell/commandSink
+
+- `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
+- `localCommandSink` (function): function localCommandSink(ctx: GameContext): CommandSink — Runs commands on the local `ctx` — the default, client-authoritative path.
+- `remoteCommandSink` (function): function remoteCommandSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): CommandSink — Sends commands to the authoritative host over the transport; the result replicates back through world sync.
+- `resolveCommandSink` (function): function resolveCommandSink(ctx: GameContext, opts: { serverAuthoritative: boolean; backend: Pick<LiveGameBackend, "transport"> | null; serverId: string | null; }): CommandSink — The sink a server-authoritative shell should dispatch gameplay commands through: remote when the game opts into `authority: "server"` and a server is joined, local otherwise. Client-only UI commands (targeting, hotbar scroll) keep calling `ctx.game.commands.run` directly — only authoritative gameplay verbs route to the host.
 
 ## @jgengine/shell/defineGame
 
