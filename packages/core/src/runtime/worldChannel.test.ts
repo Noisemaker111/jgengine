@@ -1,0 +1,99 @@
+import { describe, expect, test } from "bun:test";
+
+import { defineGame } from "../game/defineGame";
+import { createAssetCatalog } from "../scene/assetCatalog";
+import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
+import { createHostedWorldSession } from "./hostedWorldSession";
+import { createWorldClientLink, createWorldHost, type WorldClientLink } from "./worldChannel";
+
+const CONTENT: GameContextContent = {
+  entityById: (catalogId) => (catalogId === "hero" ? { stats: { health: { max: 10 } } } : null),
+};
+
+function definition() {
+  return defineGame({
+    name: "Shared",
+    assets: createAssetCatalog(),
+    multiplayer: "off",
+    features: { players: true },
+    loop: {
+      onInit(ctx: GameContext) {
+        ctx.game.commands.define<Record<string, never>>("wave", {
+          apply(state) {
+            state.game.store.set(`waved:${state.game.commands.actor() ?? "none"}`, true);
+          },
+        });
+      },
+      onNewPlayer(ctx: GameContext, player) {
+        ctx.scene.entity.spawn("hero", { id: player!.userId, position: [0, 0, 0] });
+      },
+      onTick(ctx: GameContext, dt) {
+        for (const player of ctx.game.players?.list() ?? []) {
+          const hero = ctx.scene.entity.get(player.userId);
+          if (hero) ctx.scene.entity.setPose(player.userId, { position: [hero.position[0] + dt, 0, 0] });
+        }
+      },
+    },
+  });
+}
+
+function clientContext(userId: string): GameContext {
+  return createGameContext({ definition: definition(), content: CONTENT, player: { userId, isNew: true } });
+}
+
+describe("world channel (multi-client host↔client over an in-process loopback)", () => {
+  test("two clients share one authoritative world; each sees everyone, ticks and commands replicate", () => {
+    const host = createWorldHost(createHostedWorldSession({ definition: definition(), content: CONTENT }));
+
+    const ctxA = clientContext("alice");
+    const ctxB = clientContext("bob");
+    let linkA!: WorldClientLink;
+    let linkB!: WorldClientLink;
+    const connA = host.connect("alice", (frame) => linkA.receive(frame));
+    const connB = host.connect("bob", (frame) => linkB.receive(frame));
+    linkA = createWorldClientLink(ctxA, (frame) => connA.receive(frame));
+    linkB = createWorldClientLink(ctxB, (frame) => connB.receive(frame));
+
+    // Both join the shared world.
+    linkA.join(true);
+    linkB.join(true);
+    host.session().tick(1);
+    host.broadcast();
+
+    // Alice's client mirrors the whole world — her hero AND bob's, both advanced by the host tick.
+    expect(ctxA.scene.entity.get("alice")?.position[0]).toBeCloseTo(1);
+    expect(ctxA.scene.entity.get("bob")).not.toBeNull();
+    expect(ctxB.scene.entity.get("alice")).not.toBeNull();
+    expect(ctxA.scene.entity.stats.get("bob", "health")).toEqual({ current: 10, max: 10, min: 0 });
+
+    // Alice acts; her command is attributed to her host-side and the result replicates to bob's client.
+    linkA.command("wave", {});
+    host.session().tick(0);
+    host.broadcast();
+    expect(ctxB.game.store.get("waved:alice")).toBe(true);
+    expect(ctxA.game.store.get("waved:bob")).toBeUndefined();
+  });
+
+  test("a late joiner gets a full baseline, not an empty diff", () => {
+    const host = createWorldHost(createHostedWorldSession({ definition: definition(), content: CONTENT }));
+    // Alice plays for a while first.
+    const connA = host.connect("alice", () => {});
+    connA.receive({ t: "join", isNew: true });
+    host.session().tick(1);
+    host.broadcast();
+
+    // Bob connects late.
+    const ctxB = clientContext("bob");
+    let linkB!: WorldClientLink;
+    const connB = host.connect("bob", (frame) => linkB.receive(frame));
+    linkB = createWorldClientLink(ctxB, (frame) => connB.receive(frame));
+    linkB.join(true);
+    host.session().tick(0);
+    host.broadcast();
+
+    // Bob's first frame is a baseline carrying alice, already present before he joined.
+    expect(ctxB.scene.entity.get("alice")).not.toBeNull();
+    expect(ctxB.scene.entity.get("bob")).not.toBeNull();
+    expect(linkB.revision()).toBe(host.session().revision());
+  });
+});

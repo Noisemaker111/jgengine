@@ -6,6 +6,7 @@ export * from "./game/connectedPlayers";
 export * from "./runtime/hostedGameRunner";
 export * from "./runtime/hostedWorldSession";
 export * from "./runtime/worldMirror";
+export * from "./runtime/worldChannel";
 export * from "./runtime/commandRunner";
 export * from "./runtime/gameRuntime";
 export * from "./runtime/adapter";
