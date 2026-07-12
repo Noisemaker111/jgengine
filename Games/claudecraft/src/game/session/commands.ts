@@ -28,13 +28,14 @@ import {
   sendCopperToSelf,
   sendToSelf,
 } from "../mail/systems";
+import { leaveFiesta, pickAugment, startFiesta } from "../arena/fiesta";
 import { kickValeCup, leaveValeCup, startValeCup } from "../minigames/valeCup";
 import { leaveProtectYumi, startProtectYumi } from "../minigames/yumi";
 import { dismissPet, revivePet, summonPet } from "../pets/systems";
 import { gather } from "../professions/gathering";
 import { graveyardOf } from "../world/setup";
 
-type Panel = "bags" | "character" | "quests" | "spellbook" | "talents" | "crafting";
+type Panel = "bags" | "character" | "quests" | "spellbook" | "talents" | "crafting" | "arena";
 
 function togglePanel(ctx: GameContext, panel: Panel): void {
   const key = storeKeys.panel(ctx.player.userId);
@@ -333,6 +334,22 @@ export function registerCommands(ctx: GameContext): void {
   commands.define("valecup.leave", {
     apply(state) {
       leaveValeCup(state, state.player.userId);
+    },
+  });
+  commands.define("openArena", { apply: (state) => togglePanel(state, "arena") });
+  commands.define("fiesta.start", {
+    apply(state) {
+      startFiesta(state, state.player.userId);
+    },
+  });
+  commands.define<{ augmentId: string }>("fiesta.pick", {
+    apply(state, input) {
+      pickAugment(state, state.player.userId, input.augmentId);
+    },
+  });
+  commands.define("fiesta.leave", {
+    apply(state) {
+      leaveFiesta(state, state.player.userId);
     },
   });
   commands.define("yumi.start", {

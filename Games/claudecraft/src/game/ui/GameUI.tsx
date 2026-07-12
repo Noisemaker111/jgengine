@@ -18,6 +18,7 @@ import {
   QuestTracker,
   ZoneLabel,
 } from "./components/Overlays";
+import { ArenaPanel, FiestaBanner, FiestaHud } from "./components/Arena";
 import { DelveHud, MailPanel, ValeCupHud, YumiHud } from "./components/ContentPanels";
 import { PlayerFrame, TargetFrame } from "./components/UnitFrames";
 
@@ -43,6 +44,9 @@ export function GameUI() {
         <HudPanel id="zone" anchor="top" inset={{ x: 0, y: 12 }}>
           <ZoneLabel />
         </HudPanel>
+        <HudPanel id="fiesta-banner" anchor="top" inset={{ x: 0, y: 56 }}>
+          <FiestaBanner />
+        </HudPanel>
         <HudPanel id="settings" anchor="top-right" inset={{ x: 16, y: 14 }} order={-1}>
           <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-stone-700 bg-stone-950/80 text-amber-300 transition hover:border-amber-500 hover:bg-stone-800" />
         </HudPanel>
@@ -54,6 +58,7 @@ export function GameUI() {
             <DelveHud />
             <ValeCupHud />
             <YumiHud />
+            <FiestaHud />
           </div>
         </HudPanel>
         <HudPanel id="feed" anchor="bottom-left" inset={{ x: 16, y: 60 }}>
@@ -78,6 +83,7 @@ export function GameUI() {
         panel === "spellbook" ||
         panel === "talents" ||
         panel === "crafting" ||
+        panel === "arena" ||
         shopOpen ||
         dialogueOpen ||
         bankOpen ||
@@ -93,6 +99,7 @@ export function GameUI() {
           {panel === "spellbook" && <SpellbookPanel />}
           {panel === "talents" && <TalentPanel />}
           {panel === "crafting" && <CraftingPanel />}
+          {panel === "arena" && <ArenaPanel />}
         </div>
       )}
       <FishingOverlay />
