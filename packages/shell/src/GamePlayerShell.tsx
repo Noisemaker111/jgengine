@@ -1821,9 +1821,10 @@ export function GamePlayerShell({
         }
 
         const chatSync = multiplayer.backend.chatSyncFor?.(joined.serverId);
-        if (chatSync !== undefined) {
+        if (chatSync !== undefined && ctx.game.chat !== undefined) {
+          const chat = ctx.game.chat;
           const globalChannelIds = new Set(
-            ctx.game.chat
+            chat
               .channels()
               .filter((channel) => channel.kind === "global")
               .map((channel) => channel.id),
@@ -1843,7 +1844,7 @@ export function GamePlayerShell({
                   if (message.fromUserId === multiplayer.userId) continue;
                   if (seenRemoteChat.has(message.id)) continue;
                   seenRemoteChat.add(message.id);
-                  ctx.game.chat.send(message.fromUserId, message.channelId, message.body);
+                  chat.send(message.fromUserId, message.channelId, message.body);
                 }
               }),
             );

@@ -136,35 +136,50 @@ export function useQuestJournal(): QuestInstance[] {
   return useGameStore((ctx) => ctx.game.quest.list(ctx.player.userId));
 }
 
+const EMPTY_FRIENDS: FriendEntry[] = [];
+const EMPTY_PARTY: PartyMemberEntry[] = [];
+const EMPTY_WORLD_INVITES: WorldInvite[] = [];
+const EMPTY_CHAT: ChatMessage[] = [];
+const EMPTY_FRIEND_REQUESTS: FriendRequestEntry[] = [];
+const EMPTY_PARTY_INVITES: PartyInviteEntry[] = [];
+const OFFLINE_PRESENCE: PresenceInfo = { online: false };
+
 export function useFriends(): FriendEntry[] {
-  return useGameStore((ctx) => ctx.game.social.friends.list(ctx.player.userId));
+  return useGameStore((ctx) => ctx.game.social?.friends.list(ctx.player.userId) ?? EMPTY_FRIENDS);
 }
 
 export function useParty(): PartyMemberEntry[] {
-  return useGameStore((ctx) => ctx.game.social.party.list(ctx.player.userId));
+  return useGameStore((ctx) => ctx.game.social?.party.list(ctx.player.userId) ?? EMPTY_PARTY);
 }
 
 export function usePresence(userId: string): PresenceInfo {
-  return useGameStore((ctx) => ctx.game.social.presence.get(userId));
+  return useGameStore((ctx) => ctx.game.social?.presence.get(userId) ?? OFFLINE_PRESENCE);
 }
 
 export function useWorldInvites(): WorldInvite[] {
-  return useGameStore((ctx) => ctx.game.social.worldInvites.listFor(ctx.player.userId));
+  return useGameStore(
+    (ctx) => ctx.game.social?.worldInvites.listFor(ctx.player.userId) ?? EMPTY_WORLD_INVITES,
+  );
 }
 
 export function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] {
   const limit = options?.limit ?? 50;
-  return useGameStore((ctx) =>
-    ctx.game.chat.history(channelId, { limit, viewerUserId: ctx.player.userId }),
+  return useGameStore(
+    (ctx) =>
+      ctx.game.chat?.history(channelId, { limit, viewerUserId: ctx.player.userId }) ?? EMPTY_CHAT,
   );
 }
 
 export function useFriendRequests(): FriendRequestEntry[] {
-  return useGameStore((ctx) => ctx.game.social.friends.requestsFor(ctx.player.userId));
+  return useGameStore(
+    (ctx) => ctx.game.social?.friends.requestsFor(ctx.player.userId) ?? EMPTY_FRIEND_REQUESTS,
+  );
 }
 
 export function usePartyInvites(): PartyInviteEntry[] {
-  return useGameStore((ctx) => ctx.game.social.party.invitesFor(ctx.player.userId));
+  return useGameStore(
+    (ctx) => ctx.game.social?.party.invitesFor(ctx.player.userId) ?? EMPTY_PARTY_INVITES,
+  );
 }
 
 export interface WorldBrowserState {

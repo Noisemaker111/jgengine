@@ -75,6 +75,9 @@ describe("opt-in features", () => {
     expect(ctx.game.cards).toBeUndefined();
     expect(ctx.game.turn).toBeUndefined();
     expect(ctx.game.race).toBeUndefined();
+    expect(ctx.game.leaderboard).toBeUndefined();
+    expect(ctx.game.social).toBeUndefined();
+    expect(ctx.game.chat).toBeUndefined();
     expect(ctx.game.commands).toBeDefined();
     expect(ctx.game.store).toBeDefined();
   });
@@ -85,7 +88,7 @@ describe("opt-in features", () => {
         name: "Full",
         assets: createAssetCatalog(),
         multiplayer: "off",
-        features: { roster: true, cards: true, turn: true, race: true },
+        features: { roster: true, cards: true, turn: true, race: true, leaderboard: true, social: true, chat: true },
       }),
       content: CONTENT,
       player: { userId: "user_a", isNew: true },
@@ -94,6 +97,20 @@ describe("opt-in features", () => {
     expect(ctx.game.cards).toBeDefined();
     expect(ctx.game.turn).toBeDefined();
     expect(ctx.game.race).toBeDefined();
+    expect(ctx.game.leaderboard).toBeDefined();
+    expect(ctx.game.social).toBeDefined();
+    expect(ctx.game.chat).toBeDefined();
+  });
+
+  test("chat opts in social implicitly (chat depends on it)", () => {
+    const ctx = createGameContext({
+      definition: defineGame({ name: "ChatOnly", assets: createAssetCatalog(), multiplayer: "off", features: { chat: true } }),
+      content: CONTENT,
+      player: { userId: "user_a", isNew: true },
+    });
+    expect(ctx.game.chat).toBeDefined();
+    // chat builds its own social backing, but ctx.game.social stays off unless explicitly requested
+    expect(ctx.game.social).toBeUndefined();
   });
 });
 

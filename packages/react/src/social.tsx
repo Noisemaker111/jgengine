@@ -104,7 +104,9 @@ export function AddFriendButton({
   onRejected?: (reason: string) => void;
 }) {
   const ctx = useGameContext();
-  const denied = ctx.game.social.friends.canRequest(ctx.player.userId, toUserId);
+  const social = ctx.game.social;
+  if (social === undefined) return null;
+  const denied = social.friends.canRequest(ctx.player.userId, toUserId);
   return (
     <button
       type="button"
@@ -113,7 +115,7 @@ export function AddFriendButton({
       disabled={denied !== null}
       title={denied?.reason}
       onClick={() => {
-        const result = ctx.game.social.friends.request(ctx.player.userId, toUserId);
+        const result = social.friends.request(ctx.player.userId, toUserId);
         if ("reason" in result) onRejected?.(result.reason);
         else onRequested?.(result.requestId);
       }}
@@ -140,6 +142,8 @@ export function FriendRequestsList({
 }) {
   const ctx = useGameContext();
   const requests = useFriendRequests();
+  const social = ctx.game.social;
+  if (social === undefined) return null;
   return (
     <div className={className} data-friend-requests>
       {requests.length === 0
@@ -154,7 +158,7 @@ export function FriendRequestsList({
                   type="button"
                   className={acceptClassName}
                   data-accept
-                  onClick={() => ctx.game.social.friends.accept(ctx.player.userId, request.requestId)}
+                  onClick={() => social.friends.accept(ctx.player.userId, request.requestId)}
                 >
                   Accept
                 </button>
@@ -162,7 +166,7 @@ export function FriendRequestsList({
                   type="button"
                   className={declineClassName}
                   data-decline
-                  onClick={() => ctx.game.social.friends.decline(ctx.player.userId, request.requestId)}
+                  onClick={() => social.friends.decline(ctx.player.userId, request.requestId)}
                 >
                   Decline
                 </button>
@@ -240,6 +244,8 @@ export function PartyInviteToast({
 }) {
   const ctx = useGameContext();
   const invites = usePartyInvites();
+  const social = ctx.game.social;
+  if (social === undefined) return null;
   if (invites.length === 0) return null;
   return (
     <div className={className} data-party-invites>
@@ -253,7 +259,7 @@ export function PartyInviteToast({
               type="button"
               className={acceptClassName}
               data-accept
-              onClick={() => ctx.game.social.party.accept(ctx.player.userId, invite.inviteId)}
+              onClick={() => social.party.accept(ctx.player.userId, invite.inviteId)}
             >
               Join
             </button>
@@ -261,7 +267,7 @@ export function PartyInviteToast({
               type="button"
               className={declineClassName}
               data-decline
-              onClick={() => ctx.game.social.party.decline(ctx.player.userId, invite.inviteId)}
+              onClick={() => social.party.decline(ctx.player.userId, invite.inviteId)}
             >
               Decline
             </button>
@@ -281,13 +287,15 @@ export function LeavePartyButton({
 }) {
   const ctx = useGameContext();
   const members = useParty();
+  const social = ctx.game.social;
+  if (social === undefined) return null;
   if (members.length === 0) return null;
   return (
     <button
       type="button"
       className={className}
       data-leave-party
-      onClick={() => ctx.game.social.party.leave(ctx.player.userId)}
+      onClick={() => social.party.leave(ctx.player.userId)}
     >
       {children ?? "Leave party"}
     </button>
@@ -309,6 +317,8 @@ export function WorldInviteToast({
 }) {
   const ctx = useGameContext();
   const invites = useWorldInvites();
+  const social = ctx.game.social;
+  if (social === undefined) return null;
   if (invites.length === 0) return null;
   return (
     <div className={className} data-world-invites>
@@ -324,7 +334,7 @@ export function WorldInviteToast({
               className={acceptClassName}
               data-accept
               onClick={() => {
-                const result = ctx.game.social.worldInvites.accept(ctx.player.userId, invite.id);
+                const result = social.worldInvites.accept(ctx.player.userId, invite.id);
                 if ("target" in result) onAccepted(result.target);
               }}
             >
@@ -334,7 +344,7 @@ export function WorldInviteToast({
               type="button"
               className={declineClassName}
               data-decline
-              onClick={() => ctx.game.social.worldInvites.decline(ctx.player.userId, invite.id)}
+              onClick={() => social.worldInvites.decline(ctx.player.userId, invite.id)}
             >
               Decline
             </button>
@@ -361,7 +371,9 @@ export function InviteToWorldButton({
   onRejected?: (reason: string) => void;
 }) {
   const ctx = useGameContext();
-  const denied = ctx.game.social.worldInvites.canInvite(ctx.player.userId, toUserId);
+  const social = ctx.game.social;
+  if (social === undefined) return null;
+  const denied = social.worldInvites.canInvite(ctx.player.userId, toUserId);
   return (
     <button
       type="button"
@@ -370,7 +382,7 @@ export function InviteToWorldButton({
       disabled={denied !== null}
       title={denied?.reason}
       onClick={() => {
-        const result = ctx.game.social.worldInvites.invite(ctx.player.userId, toUserId, target);
+        const result = social.worldInvites.invite(ctx.player.userId, toUserId, target);
         if ("reason" in result) onRejected?.(result.reason);
         else onInvited?.(result.inviteId);
       }}
@@ -522,6 +534,8 @@ export function EmoteWheel({
   renderEmote?: (emoteId: string) => ReactNode;
 }) {
   const ctx = useGameContext();
+  const social = ctx.game.social;
+  if (social === undefined) return null;
   if (!open) return null;
   return (
     <div className={className} role="menu" data-emote-wheel data-emote-count={emotes.length}>
@@ -534,7 +548,7 @@ export function EmoteWheel({
           data-emote={emoteId}
           data-emote-index={index}
           onClick={() => {
-            const result = ctx.game.social.emotes.play(ctx.player.userId, emoteId, radius);
+            const result = social.emotes.play(ctx.player.userId, emoteId, radius);
             if ("reason" in result) onRejected?.(result.reason);
             else onPlayed?.(emoteId);
           }}

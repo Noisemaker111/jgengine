@@ -49,6 +49,7 @@ const game = defineGame({
   name: "gameplayer-demo",
   assets: createAssetCatalog(),
   multiplayer: null,
+  features: { social: true, chat: true },
   inventories: { [HOTBAR]: { slots: 4, hud: "hotbar" } },
   time: { start: 8 * 3600, speeds: [1, 2, 3, 4] },
   input: {

@@ -87,6 +87,7 @@ const game = defineGame({
   name: "extraction-map",
   assets: createAssetCatalog(),
   multiplayer: null,
+  features: { social: true },
   inventories: {},
   input: {
     moveForward: ["KeyW"],
@@ -125,7 +126,7 @@ function onInit(ctx: GameContext): void {
   pingSystem = createPingSystem({
     markers: markerSet,
     feed: { push: (action, entry) => ctx.game.feed.push(action, entry) },
-    party: ctx.game.social.party,
+    party: ctx.game.social!.party,
     ttlMs: 45_000,
     categories: DEFAULT_PING_CATEGORIES,
     classify: {

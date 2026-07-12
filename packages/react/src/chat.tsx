@@ -92,9 +92,11 @@ export function ChatInput({
 }) {
   const ctx = useGameContext();
   const [value, setValue] = useState("");
-  function submit(event: FormEvent<HTMLFormElement>) {
+  const chat = ctx.game.chat;
+  if (chat === undefined) return null;
+  const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result: ChatSendResult = ctx.game.chat.send(ctx.player.userId, channelId, value);
+    const result: ChatSendResult = chat.send(ctx.player.userId, channelId, value);
     if ("reason" in result) {
       onRejected?.(result.reason);
       return;
@@ -136,7 +138,9 @@ export function ChannelTabs({
   renderTab?: (channelId: string, isActive: boolean) => ReactNode;
 }) {
   const ctx = useGameContext();
-  const ids = channels ?? ctx.game.chat.channels().map((def) => def.id);
+  const chat = ctx.game.chat;
+  if (chat === undefined) return null;
+  const ids = channels ?? chat.channels().map((def) => def.id);
   return (
     <div className={className} role="tablist" data-chat-tabs>
       {ids.map((channelId) => {
@@ -196,8 +200,10 @@ export function ChatPanel({
   onRejected?: (reason: string) => void;
 }) {
   const ctx = useGameContext();
-  const ids = channels ?? ctx.game.chat.channels().map((def) => def.id);
+  const chat = ctx.game.chat;
+  const ids = channels ?? chat?.channels().map((def) => def.id) ?? [];
   const [active, setActive] = useState(initialChannel ?? ids[0] ?? "global");
+  if (chat === undefined) return null;
   return (
     <section className={className} data-chat-panel>
       <ChannelTabs

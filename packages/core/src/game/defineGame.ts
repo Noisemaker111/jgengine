@@ -49,6 +49,10 @@ export interface GameFeatures {
   race?: boolean;
   /** Competitive score tracking (`ctx.game.leaderboard`) — ranked/arcade games. */
   leaderboard?: boolean;
+  /** Friends/party/presence/emotes/world-invites (`ctx.game.social`) — social/MMO games. */
+  social?: boolean;
+  /** Channels + messages (`ctx.game.chat`) — implies `social`; multiplayer/social games. */
+  chat?: boolean;
 }
 
 export interface GameDefinition<

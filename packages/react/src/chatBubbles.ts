@@ -19,6 +19,7 @@ const DEFAULT_CHAT_BUBBLE_CHANNEL = "proximity";
 const DEFAULT_CHAT_BUBBLE_TTL_MS = 4000;
 const DEFAULT_CHAT_BUBBLE_LIMIT = 8;
 const CHAT_BUBBLE_TICK_MS = 500;
+const EMPTY_CHAT_MESSAGES: readonly ChatMessage[] = [];
 
 export function latestChatBubbles(
   messages: readonly ChatMessage[],
@@ -48,7 +49,9 @@ export function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubbl
   const channelId = options?.channelId ?? DEFAULT_CHAT_BUBBLE_CHANNEL;
   const ttlMs = options?.ttlMs ?? DEFAULT_CHAT_BUBBLE_TTL_MS;
   const limit = options?.limit ?? DEFAULT_CHAT_BUBBLE_LIMIT;
-  const messages = useGameStore((ctx) => ctx.game.chat.history(channelId, { limit }));
+  const messages = useGameStore(
+    (ctx) => ctx.game.chat?.history(channelId, { limit }) ?? EMPTY_CHAT_MESSAGES,
+  );
   const [now, setNow] = useState(() => Date.now());
   const hasLiveMessage = messages.some((message) => message.at > now - ttlMs);
 

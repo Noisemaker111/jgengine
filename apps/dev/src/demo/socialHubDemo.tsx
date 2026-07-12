@@ -69,34 +69,38 @@ export const DEMO_WORLD_LISTINGS: SessionListing[] = [
 ];
 
 function acceptFriend(ctx: GameContext, fromUserId: string): void {
-  const result = ctx.game.social.friends.request(fromUserId, ctx.player.userId);
-  if ("requestId" in result) ctx.game.social.friends.accept(ctx.player.userId, result.requestId);
+  const social = ctx.game.social!;
+  const result = social.friends.request(fromUserId, ctx.player.userId);
+  if ("requestId" in result) social.friends.accept(ctx.player.userId, result.requestId);
 }
 
 function joinParty(ctx: GameContext, memberUserId: string): void {
-  const result = ctx.game.social.party.invite(ctx.player.userId, memberUserId);
-  if ("inviteId" in result) ctx.game.social.party.accept(memberUserId, result.inviteId);
+  const social = ctx.game.social!;
+  const result = social.party.invite(ctx.player.userId, memberUserId);
+  if ("inviteId" in result) social.party.accept(memberUserId, result.inviteId);
 }
 
 export function stageSocialHub(ctx: GameContext): void {
   const me = ctx.player.userId;
+  const social = ctx.game.social!;
+  const chat = ctx.game.chat!;
   ctx.scene.entity.spawn("hero", { id: FRIEND_RIN, position: [2, 0, 1], role: "player" });
   ctx.scene.entity.spawn("hero", { id: FRIEND_KIRA, position: [-2, 0, 2], role: "player" });
 
   acceptFriend(ctx, FRIEND_RIN);
   acceptFriend(ctx, FRIEND_KIRA);
-  ctx.game.social.friends.request(STRANGER, me);
+  social.friends.request(STRANGER, me);
 
-  ctx.game.social.party.register({ maxMembers: 4 });
+  social.party.register({ maxMembers: 4 });
   joinParty(ctx, FRIEND_RIN);
   joinParty(ctx, FRIEND_KIRA);
 
-  ctx.game.social.worldInvites.invite(FRIEND_RIN, me, { serverId: "srv_mesa", joinCode: "MESA42" });
+  social.worldInvites.invite(FRIEND_RIN, me, { serverId: "srv_mesa", joinCode: "MESA42" });
 
-  ctx.game.chat.send(FRIEND_RIN, "global", "anyone up for the mesa run?");
-  ctx.game.chat.send(FRIEND_KIRA, "global", "gearing up, two minutes");
-  ctx.game.chat.send(FRIEND_KIRA, "party", "pull the slimes toward the rocks");
-  ctx.game.chat.send(FRIEND_RIN, "proximity", "psst, over here");
+  chat.send(FRIEND_RIN, "global", "anyone up for the mesa run?");
+  chat.send(FRIEND_KIRA, "global", "gearing up, two minutes");
+  chat.send(FRIEND_KIRA, "party", "pull the slimes toward the rocks");
+  chat.send(FRIEND_RIN, "proximity", "psst, over here");
 
   ctx.game.feed.bind("emote.played");
 }
