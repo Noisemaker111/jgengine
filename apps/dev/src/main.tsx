@@ -329,15 +329,31 @@ function DevApp({ gameId }: { gameId: string }) {
   const [editorSummoned, setEditorSummoned] = useState(false);
   useEffect(() => {
     if (!import.meta.env.DEV || MODE !== "play") return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "F8" || editorSummoned) return;
-      const target = event.target;
-      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
-      event.preventDefault();
-      setEditorSummoned(true);
+    let f2Held = false;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code === "F2") {
+        f2Held = true;
+        return;
+      }
+      if (event.code === "KeyE" && f2Held && !editorSummoned) {
+        event.preventDefault();
+        setEditorSummoned(true);
+      }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code === "F2") f2Held = false;
+    };
+    const onBlur = () => {
+      f2Held = false;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
   }, [editorSummoned]);
   useEffect(() => {
     const onError = (event: ErrorEvent) => {
