@@ -95,3 +95,7 @@ delegated verify/screenshot workers twice re-delegated to sub-workers and return
 2026-07-12T05:26:39.405Z — fable-5 — Claude
 
 PR #563 squash-merge was a no-op: fix branch's net diff for generated/index.ts canceled against merge-base since branch already contained the clobbering commit landed separately via #550 → main stayed red after 'merge'; had to re-cut a fresh branch off main as #566
+
+2026-07-12T15:47:53.182Z — sonnet-5 — Claude
+
+drag-and-drop ActionBar edit → ActionBar() drop handler referenced commands without calling useGame() there, check-types caught it
