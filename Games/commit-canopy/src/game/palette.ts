@@ -12,6 +12,13 @@ export function levelColor(level: number): string {
   return CANOPY_PALETTE.levels[clamped]!;
 }
 
+const HEIGHT_FLOOR = 0.1;
+const HEIGHT_STEP = 0.13;
+const HEIGHT_KNEE = 15;
+const HEIGHT_SOFT = 0.37;
+
 export function heightForCount(count: number): number {
-  return 0.1 + Math.min(count, 15) * 0.13;
+  const c = Math.max(0, count);
+  if (c <= HEIGHT_KNEE) return HEIGHT_FLOOR + c * HEIGHT_STEP;
+  return HEIGHT_FLOOR + HEIGHT_KNEE * HEIGHT_STEP + Math.log1p(c - HEIGHT_KNEE) * HEIGHT_SOFT;
 }
