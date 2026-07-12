@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
@@ -20,13 +20,22 @@ export const Route = createFileRoute("/games/")({
 
 type Filter = GameCategory | "All";
 
-function matches(game: Game, query: string): boolean {
-  const haystack = `${game.title} ${game.tagline} ${game.description} ${game.genre} ${game.controls}`.toLowerCase();
-  return query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((term) => term.length > 0)
-    .every((term) => haystack.includes(term));
+type SearchableGame = {
+  game: Game;
+  haystack: string;
+};
+
+const SEARCHABLE_GAMES: SearchableGame[] = GAMES.map((game) => ({
+  game,
+  haystack: `${game.title} ${game.tagline} ${game.description} ${game.genre} ${game.controls}`.toLowerCase(),
+}));
+
+function getSearchTerms(query: string): string[] {
+  return query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+}
+
+function matches(haystack: string, terms: string[]): boolean {
+  return terms.every((term) => haystack.includes(term));
 }
 
 function SearchIcon() {
@@ -44,12 +53,14 @@ function GamesFilter({
   active,
   setActive,
   counts,
+  isSearching,
 }: {
   query: string;
   setQuery: (value: string) => void;
   active: Filter;
   setActive: (value: Filter) => void;
   counts: Record<Filter, number>;
+  isSearching: boolean;
 }) {
   const chips: Filter[] = ["All", ...GAME_CATEGORIES];
   return (
@@ -59,11 +70,13 @@ function GamesFilter({
           <SearchIcon />
         </span>
         <input
-          type="text"
+          type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search games…"
           aria-label="Search games"
+          aria-busy={isSearching}
+          autoComplete="off"
           className="panel w-full rounded-xl py-2.5 pl-10 pr-9 text-sm text-slate-100 placeholder:text-slate-500 transition focus:border-emerald-400/40 focus:outline-none focus:ring-1 focus:ring-emerald-400/30"
         />
         {query.length > 0 && (
@@ -210,24 +223,30 @@ function VirtualGamesList({ rows, columns }: { rows: VirtualRow[]; columns: numb
 
 function GamesPage() {
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [active, setActive] = useState<Filter>("All");
   const columns = useColumnCount();
+  const searchTerms = useMemo(() => getSearchTerms(deferredQuery), [deferredQuery]);
+  const isSearching = query !== deferredQuery;
+
+  const queryMatches = useMemo(() => {
+    if (searchTerms.length === 0) return GAMES;
+    return SEARCHABLE_GAMES.filter(({ haystack }) => matches(haystack, searchTerms)).map(({ game }) => game);
+  }, [searchTerms]);
 
   const counts = useMemo(() => {
-    const byQuery = query.length > 0 ? GAMES.filter((game) => matches(game, query)) : GAMES;
-    const result = { All: byQuery.length } as Record<Filter, number>;
-    for (const category of GAME_CATEGORIES) {
-      result[category] = byQuery.filter((game) => game.category === category).length;
-    }
+    const result = { All: queryMatches.length } as Record<Filter, number>;
+    for (const category of GAME_CATEGORIES) result[category] = 0;
+    for (const game of queryMatches) result[game.category] += 1;
     return result;
-  }, [query]);
+  }, [queryMatches]);
 
   const filtered = useMemo(
-    () => GAMES.filter((game) => (active === "All" || game.category === active) && matches(game, query)),
-    [query, active],
+    () => (active === "All" ? queryMatches : queryMatches.filter((game) => game.category === active)),
+    [queryMatches, active],
   );
 
-  const isDefault = query.length === 0 && active === "All";
+  const isDefault = deferredQuery.length === 0 && active === "All";
 
   const rows = useMemo<VirtualRow[]>(() => {
     if (isDefault) {
@@ -266,26 +285,35 @@ function GamesPage() {
       />
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
         <div className="mt-8">
-          <GamesFilter query={query} setQuery={setQuery} active={active} setActive={setActive} counts={counts} />
+          <GamesFilter
+            query={query}
+            setQuery={setQuery}
+            active={active}
+            setActive={setActive}
+            counts={counts}
+            isSearching={isSearching}
+          />
         </div>
 
-        {rows.length > 0 ? (
-          <VirtualGamesList rows={rows} columns={columns} />
-        ) : (
-          <div className="panel mt-10 rounded-2xl px-6 py-14 text-center">
-            <p className="text-sm text-slate-300">No games match your search.</p>
-            <button
-              type="button"
-              onClick={() => {
-                setQuery("");
-                setActive("All");
-              }}
-              className="mt-3 text-xs font-medium text-emerald-300 underline decoration-emerald-300/40 underline-offset-2 transition hover:decoration-emerald-300"
-            >
-              Clear filters
-            </button>
-          </div>
-        )}
+        <div aria-live="polite" aria-busy={isSearching}>
+          {rows.length > 0 ? (
+            <VirtualGamesList rows={rows} columns={columns} />
+          ) : (
+            <div className="panel mt-10 rounded-2xl px-6 py-14 text-center">
+              <p className="text-sm text-slate-300">No games match your search.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setActive("All");
+                }}
+                className="mt-3 text-xs font-medium text-emerald-300 underline decoration-emerald-300/40 underline-offset-2 transition hover:decoration-emerald-300"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="panel panel-top-glow mt-14 rounded-2xl p-6 sm:p-8">
           <h2 className="font-semibold tracking-tight text-slate-100">How a game gets on this page</h2>
