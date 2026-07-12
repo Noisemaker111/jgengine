@@ -7,6 +7,7 @@ import {
 } from "./buildings";
 import type {
   BuildingEnvironmentDescriptor,
+  EnvironmentArea,
   EnvironmentWorldFeature,
   TerrainEnvironmentDescriptor,
   WorldBounds,
@@ -60,7 +61,7 @@ export interface StructureSummary {
 }
 
 export interface VegetationSummary {
-  area: WorldBounds;
+  area: EnvironmentArea;
   density: number;
 }
 
@@ -71,6 +72,7 @@ export interface WaterSummary {
 
 export interface WeatherSummary {
   kind: "rain" | "snow";
+  area: EnvironmentArea;
   density: number;
 }
 
@@ -192,6 +194,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
   }));
   const weather: WeatherSummary[] = (feature.weather ?? []).map((entry) => ({
     kind: entry.kind,
+    area: entry.area,
     density: entry.density,
   }));
   const roads: RoadSummary[] = (feature.roads ?? []).map((entry) => ({
