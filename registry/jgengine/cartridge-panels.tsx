@@ -124,7 +124,7 @@ export const standardCartridgePanels: CartridgePanels = {
       <span
         style={{
           fontFamily: "var(--jg-font-display)",
-          fontSize: 120,
+          fontSize: "clamp(64px, 22vw, 120px)",
           fontWeight: 800,
           color: "var(--jg-accent)",
           textShadow: "0 0 24px var(--jg-accent-glow), 0 2px 4px rgba(0,0,0,0.8)",

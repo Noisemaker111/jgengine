@@ -26,9 +26,11 @@ function toneColor(tone: DialTone | undefined): string {
   return "var(--jg-accent, #e3b054)";
 }
 
+const roundCoord = (value: number) => Math.round(value * 1000) / 1000;
+
 function pointAt(cx: number, cy: number, radius: number, at: number): { x: number; y: number } {
   const angle = at * Math.PI * 2 - Math.PI / 2;
-  return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+  return { x: roundCoord(cx + radius * Math.cos(angle)), y: roundCoord(cy + radius * Math.sin(angle)) };
 }
 
 function arcPath(cx: number, cy: number, radius: number, from: number, to: number): string {
