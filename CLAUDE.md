@@ -58,7 +58,7 @@ Cheap workers: lint · `check-types` · `bun test` · `build` · `shoot` · scre
 
 **Hard rule:** never run the verify ladder, shoot, git ceremony, or GitHub ceremony on the frontier model. The whole serial ship motion — commit → push → PR → merge → post-merge CI — is one cheap worker brief and one terminal return. The frontier model decides the diff and messages, then remains silent. Standing authorization; do not ask first.
 
-**Frontier cost firewall:** delegated work has a two-message maximum: one optional launch line and one terminal result. The parent does not answer worker progress, tool cards, task-state transitions, GitHub events, PR-open, merge, or individual CI updates. Those are internal state for the cheap worker. One delegation means one parent wake-up.
+**Frontier cost firewall:** delegated work has a two-message maximum: one optional launch line and one terminal result. The parent does not answer worker progress, tool cards, task-state transitions, GitHub events, PR-open, merge, or individual CI updates. Those are internal state for the cheap worker. If the platform wakes the parent anyway, it emits no prose and starts no new work unless the event is the worker's terminal `PASS`/`FAIL`. One delegation means one parent wake-up.
 
 **Orientation is a scout job.** The frontier model never reads its way into unfamiliar territory — a frontier turn that opens 35 files costs more than a fleet of Sonnet scouts. When a task lands in code you haven't mapped, spawn 1–3 Sonnet scouts, each briefed on one angle and returning a scoped digest (relevant files with `file:line` pointers, key APIs and types, constraints, surprises), then read deeply only the files the diff will touch.
 
