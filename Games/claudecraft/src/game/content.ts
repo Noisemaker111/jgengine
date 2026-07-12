@@ -5,6 +5,7 @@ import type {
   GameContextItemEntry,
 } from "@jgengine/core/runtime/gameContext";
 
+import { FIESTA_ALLY_CATALOG, fiestaEnemyById } from "./arena/catalog";
 import { DELVE_COMPANION_CATALOG } from "./delves/systems";
 import { MOBS, mobById } from "./entities/enemies/catalog";
 import { NPCS } from "./entities/npcs/catalog";
@@ -97,6 +98,26 @@ export const content: GameContextContent = {
         stats: { health: { max: 200, min: 0 }, level: { max: 20, min: 1, current: 1 } },
         receive: RECEIVE,
         movement: { walkSpeed: 8 },
+      };
+    }
+    if (catalogId === FIESTA_ALLY_CATALOG) {
+      return {
+        role: "npc",
+        stats: { health: { max: 480, min: 0 }, level: { max: 20, min: 1, current: 20 } },
+        receive: RECEIVE,
+        movement: { walkSpeed: 7 },
+      };
+    }
+    const fiestaBot = fiestaEnemyById(catalogId);
+    if (fiestaBot !== null) {
+      return {
+        role: "enemy",
+        stats: {
+          health: { max: mobHp(fiestaBot.hpBase, fiestaBot.hpPerLevel, 20), min: 0 },
+          level: { max: 20, min: 1, current: 20 },
+        },
+        receive: RECEIVE,
+        movement: { walkSpeed: fiestaBot.moveSpeed },
       };
     }
     const mob = mobById(catalogId);

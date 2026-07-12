@@ -3,6 +3,7 @@ import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { mobRuntimeOf, onMobDied, tickMobs } from "./game/ai/mobs";
+import { onFiestaEntityDied, tickFiesta } from "./game/arena/fiesta";
 import { tickAuras, tickHero } from "./game/combat/engine";
 import { buildLootTables } from "./game/content";
 import { tickDelve } from "./game/delves/systems";
@@ -76,6 +77,10 @@ export const loop: GameLoop<GameContext> = {
     registerCommands(ctx);
     setGamePhase(ctx, "menu");
     ctx.game.events.on("entity.died", (evt) => {
+      if (onFiestaEntityDied(ctx, evt)) {
+        onMobDied(ctx, evt.instanceId);
+        return;
+      }
       if (evt.instanceId === ctx.player.userId) {
         onPlayerDied(ctx, evt.position);
         return;
@@ -104,5 +109,6 @@ export const loop: GameLoop<GameContext> = {
     tickMail(ctx, userId);
     tickValeCup(ctx, userId, clamped);
     tickProtectYumi(ctx, userId, clamped);
+    tickFiesta(ctx, userId, clamped);
   },
 };

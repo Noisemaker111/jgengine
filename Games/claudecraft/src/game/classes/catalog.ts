@@ -1814,7 +1814,7 @@ export const CLASSES: readonly ClassDef[] = [
       },
       {
         id: "summon_imp",
-        name: "Summon Imp",
+        name: "Summon Emberkin",
         icon: "fire",
         school: "shadow",
         kind: "buff",
@@ -1829,7 +1829,7 @@ export const CLASSES: readonly ClassDef[] = [
       },
       {
         id: "summon_voidwalker",
-        name: "Summon Voidwalker",
+        name: "Summon Gloomshade",
         icon: "skull",
         school: "shadow",
         kind: "buff",
@@ -1844,7 +1844,7 @@ export const CLASSES: readonly ClassDef[] = [
       },
       {
         id: "summon_felhunter",
-        name: "Summon Felhunter",
+        name: "Summon Spellhound",
         icon: "poison",
         school: "shadow",
         kind: "buff",
@@ -1859,7 +1859,7 @@ export const CLASSES: readonly ClassDef[] = [
       },
       {
         id: "summon_succubus",
-        name: "Summon Succubus",
+        name: "Summon Duskborn",
         icon: "heart",
         school: "shadow",
         kind: "buff",

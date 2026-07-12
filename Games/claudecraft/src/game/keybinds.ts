@@ -23,4 +23,5 @@ export const keybinds: ActionCodesMap = {
   openQuestLog: ["KeyL"],
   openSpellbook: ["KeyP"],
   openTalents: ["KeyN"],
+  openArena: ["KeyG"],
 };
