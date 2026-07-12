@@ -59,3 +59,7 @@ v0.9.0 release bumped 8 package.json versions but left bun.lock unsynced → eve
 2026-07-12T01:35:11.239Z — opus-4-8 — Claude
 
 speed-circuit smoke job intermittently fails with 'Chrome debugger not ready on :<port> within 30000ms' (other games boot fine, no app error) — a pure infra/launch-timing flake. It red-flagged a healthy main and blocked a release precondition, and the GitHub App can't rerun-failed-jobs (403), so recovery needs a fresh push. Consider bumping the smoke debugger-connect timeout or adding one retry.
+
+2026-07-12T01:38:10.944Z — opus — Claude
+
+screenshot workers: playwright-core expects chromium rev 1228 but /opt/pw-browsers only caches 1194 → default chromium.launch() fails; must pin executablePath to /opt/pw-browsers/chromium-1194/chrome-linux/chrome

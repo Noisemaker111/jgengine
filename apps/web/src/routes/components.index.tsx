@@ -443,6 +443,184 @@ const STEPS: readonly { n: string; title: string; body: string }[] = [
   { n: "03 — Skip the rest", title: "Already written", body: "SVG math, clamps, tick marks, animation, ARIA roles — in our file, not yours." },
 ];
 
+interface SystemDef {
+  id: string;
+  pkg: string;
+  name: string;
+  headline: string;
+  builds: readonly string[];
+  code: string;
+}
+
+const SYSTEMS: readonly SystemDef[] = [
+  {
+    id: "server",
+    pkg: "@jgengine/node · ws",
+    name: "Authoritative multiplayer server",
+    headline: "A whole authoritative game server — socket, rooms, tick, reconnection, persistence — in three constructor calls.",
+    builds: [
+      "A WebSocket server: auth handshake, RPC framing, per-channel fan-out",
+      "Client reconnection, exponential backoff, RPC timeout + retry",
+      "Room routing, slot capacity, join-by-code / browse matchmaking",
+      "An authoritative tick loop broadcasting state diffs to subscribers",
+      "Save flushing wired to the tick without blocking it",
+    ],
+    code: `import { createGameHost, createGameWsServer, filePersistence } from "@jgengine/node";
+import { createGameRuntime } from "@jgengine/core";
+
+const runtime = createGameRuntime({ gameId: "arena", save: { auto: "5s", scope: "player" }, commands });
+const host = createGameHost({ runtimes: [runtime], persistence: filePersistence("./saves"), tickMs: 100 });
+createGameWsServer({ host, port: 8080, path: "/play" });
+// client: createWsBackend({ url, userId }) — reconnect + live server/player/feed channels`,
+  },
+  {
+    id: "runtime",
+    pkg: "@jgengine/core",
+    name: "Authoritative command runtime",
+    headline: "Server-authoritative logic becomes a plain object of pure validate-then-apply functions — no dispatcher, no concurrency plumbing.",
+    builds: [
+      "A command / intent validation layer with structured rejections",
+      "A deterministic reducer dispatch over authoritative state",
+      "Dirty-tracking so persistence and sync only touch what changed",
+      "A revision / OCC scheme that rejects stale writes",
+      "A fixed-step server tick that composes with commands",
+    ],
+    code: `import { createGameRuntime, type CommandDef } from "@jgengine/core";
+
+const move: CommandDef<{ x: number; z: number }> = {
+  validate: (snap, input, uid) => (input.x > 100 ? { reason: "out-of-bounds" } : null),
+  apply: (snap, input, uid) => markPlayerDirty(placePlayer(snap, uid, input), uid),
+};
+const runtime = createGameRuntime({ gameId: "arena", commands: { move },
+  loop: { onTick: (ctx, dt) => stepEnemies(ctx.snapshot, dt) } });`,
+  },
+  {
+    id: "spatial",
+    pkg: "@jgengine/core",
+    name: "Entity store + spatial queries",
+    headline: "“What's near X” — registry, grid broadphase, radius / cone / line-of-sight — is two factory calls, not a spatial-partitioning library.",
+    builds: [
+      "An entity registry: stable IDs, lifecycle, pose + velocity derivation",
+      "A uniform-grid broadphase that rebuilds each tick",
+      "Radius, cone, and line-of-sight queries with fallbacks",
+      "O(n²) neighbor loops replaced by grid-bucketed pair iteration",
+      "A change-subscription layer for renderers",
+    ],
+    code: `import { createEntityStore } from "@jgengine/core/scene/entityStore";
+import { createSpatialApi } from "@jgengine/core/scene/spatial";
+
+const entities = createEntityStore();
+entities.spawn("goblin", { position: [3, 0, 5], role: "npc" });
+const spatial = createSpatialApi({
+  resolvePosition: (id) => entities.get(id)?.position,
+  candidates: () => entities.list().map((e) => e.id),
+  grid: { cellSize: 8 },
+});
+const nearby = spatial.inRadius([0, 0, 0], 12);
+const inCone = spatial.queryArc({ from: "player", aim, radius: 10, halfAngleDeg: 45 });`,
+  },
+  {
+    id: "combat",
+    pkg: "@jgengine/core · combat",
+    name: "Combat resolution pipeline",
+    headline: "Hitreg, resistances, AoE gather, projectile settlement, death-to-loot — four composed systems, not a bespoke combat engine.",
+    builds: [
+      "A damage pipeline: magnitude → resistances / immunities → clamp → lethal check",
+      "AoE target gathering against a spatial index (cone / circle / line)",
+      "Projectile prediction + raycast settlement against colliders",
+      "Death → loot-table rolls → drop grants / world drops → respawn",
+      "Consistent hit results feeding HUD and feed events",
+    ],
+    code: `import { createEffectSystem } from "@jgengine/core/combat/effects";
+import { createProjectileSystem } from "@jgengine/core/combat/projectiles";
+
+const effects = createEffectSystem({ resolveReceive, resolveStats, getStat, spatial });
+const projectiles = createProjectileSystem({ effects, spatial, getStat, sceneRaycast });
+const shot = projectiles.fireProjectile({ from: "player", item: "bow", aim });
+const result = projectiles.settleProjectile(shot); // { status, hits: EffectResult[] }`,
+  },
+  {
+    id: "persistence",
+    pkg: "@jgengine/core · sql",
+    name: "Persistence, autosave & snapshots",
+    headline: "How your world gets saved — schema, serialization, dirty-tracking, autosave, pluggable Postgres/file/memory — is one persistence: argument.",
+    builds: [
+      "A DB schema + migrations: servers, player profiles, world chunks, boards",
+      "Serialize / hydrate authoritative state on save and load",
+      "Dirty-tracking so you don't rewrite the whole world each tick",
+      "Autosave cadence + debounce tied to the tick loop",
+      "A swappable backend: dev memory → file → SQL behind one interface",
+    ],
+    code: `import { sqlPersistence, ensureSchema } from "@jgengine/sql";
+import { createGameHost } from "@jgengine/node";
+
+await ensureSchema(pool);
+createGameHost({ runtimes, persistence: sqlPersistence(pool) });
+// or filePersistence(dir) / memoryPersistence() — same contract
+createGameRuntime({ gameId, save: { auto: "10s", scope: "player+chunks" }, commands });`,
+  },
+  {
+    id: "leaderboards",
+    pkg: "@jgengine/convex",
+    name: "Hosted leaderboards",
+    headline: "Global / server / personal ranked boards with live updates — one exported Convex module plus a client read helper.",
+    builds: [
+      "A board table keyed by (game, stat, scope, server), upsert-on-increment",
+      "Ranked top-N queries with limit + scope filtering",
+      "Increment aggregation batched off the game tick",
+      "Realtime subscriptions so the board updates live",
+      "Per-profile stat rollups for a player's own standing",
+    ],
+    code: `// Convex backend module:
+import { createLeaderboardFunctions } from "@jgengine/convex";
+export const { getTop } = createLeaderboardFunctions({ auth: "anonymous" });
+
+// Client — reactive top-N:
+import { createConvexLeaderboardReads } from "@jgengine/convex";
+const reads = createConvexLeaderboardReads(api, { gameId: "arena" });
+const { query, args } = reads.getTop({ stat: "kills", scope: "global", limit: 20 });`,
+  },
+];
+
+function SystemCard({ sys }: { sys: SystemDef }) {
+  const lines = nonEmpty(sys.code);
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+      <div className="flex flex-col gap-2 border-b border-white/[0.08] p-4 sm:p-5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="rounded-full border border-[#e3b054]/30 bg-[#e3b054]/[0.06] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[#e3b054]">{sys.pkg}</span>
+          <h3 className="font-mono text-lg text-slate-100">{sys.name}</h3>
+        </div>
+        <p className="text-sm text-slate-300">{sys.headline}</p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2">
+        <div className="min-w-0 border-b border-white/[0.08] bg-[#0c0a08] p-4 sm:p-5 lg:border-b-0 lg:border-r">
+          <p className="mb-3 font-mono text-[10px] uppercase tracking-wider text-slate-600">The subsystem you skip</p>
+          <ul className="flex flex-col gap-2.5">
+            {sys.builds.map((item) => (
+              <li key={item} className="flex gap-2.5 text-[13px] leading-snug text-slate-400">
+                <span className="mt-px text-slate-600">—</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex min-w-0 flex-col bg-[linear-gradient(180deg,rgba(227,176,84,0.05),transparent_45%)]">
+          <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[#e3b054]">With JGengine · ~{lines} lines</span>
+            <CopyButton value={sys.code} />
+          </div>
+          <div className="min-w-0 overflow-x-auto">
+            <pre className="p-4 font-mono text-[11.5px] leading-relaxed text-slate-300">
+              <code>{sys.code}</code>
+            </pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ComponentsIndex() {
   const [seen, setSeen] = useState(false);
   useEffect(() => {
@@ -492,6 +670,19 @@ function ComponentsIndex() {
               <span className="text-slate-600">✗</span> No <code className="font-mono text-slate-300">@jgengine/core</code>, no <code className="font-mono text-slate-300">defineGame()</code>, no <code className="font-mono text-slate-300">GameProvider</code>.
             </li>
           </ul>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+        <SectionHeading
+          eyebrow="The real leverage"
+          title="Systems, not just widgets"
+          blurb="A gauge saves you an afternoon. These save you the subsystem. Each is a deep engine primitive where a few real lines stand in for an entire thing you'd otherwise build, host, and maintain — the 10× that actually compounds across games."
+        />
+        <div className="mt-8 flex flex-col gap-6">
+          {SYSTEMS.map((sys) => (
+            <SystemCard key={sys.id} sys={sys} />
+          ))}
         </div>
       </section>
     </Page>
