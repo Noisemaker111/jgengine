@@ -224,6 +224,17 @@ Do not communicate all states with background-color changes alone. Use appropria
 
 Focus must look authored while remaining accessible. Menus should support keyboard/controller-style focus navigation when practical.
 
+## Rendering — post-processing, lighting, shadows
+
+A cinematic look is opt-in engine config, never hand-wired render passes. Set `defineGame({ postProcessing })` (`PostProcessingConfig` from `@jgengine/core/render/postProcessing`) and the shell mounts an `EffectComposer` and owns the render: RenderPass → AO → Bloom → tone-map output → Grade. Absent means the renderer draws directly (unchanged), so it never imposes a look on games that don't ask. Each stage is a config object, `false` to skip, or omitted for its tuned default:
+
+- `toneMapping: "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none"` (default `aces`) + `exposure`.
+- `bloom: { strength, radius, threshold }` — HDR glow around bright pixels (defaults 0.32 / 0.55 / 0.85).
+- `grade: { lift, gain, gamma, saturation, vignette, grain }` — display-space colour grade: cool-shadow/warm-highlight split, vignette, animated film grain.
+- `ao: { radius, intensity, distanceFalloff, blend }` — ground-truth ambient occlusion; heavier than the rest, omit or `false` on low-end targets.
+
+Lighting is `defineGame({ lighting })` (`LightingConfig`): ambient / hemisphere / directional, replacing the shell's default lights when set. A `DirectionalLightingConfig` with `castShadow` takes `shadowMapSize`, `shadowCameraSize`, `shadowBias`, `shadowNormalBias` for crisp contact shadows. Sky-lit worlds (a `sky()` world feature) get a high-res sun whose shadow camera follows the view each frame, so grounded shadows stay sharp under the player anywhere in a large world.
+
 ## Settings menu
 
 **Settings menu (themed, four layouts, no forced chrome).** The engine builds the whole menu for free — Sound (master + per-bus volume), Graphics (quality/dpr + shadows), Gameplay (FOV slider, default 40–120), Controls (per-action key rebinding, inline click-to-rebind, persisted) — from the game's `audio.buses` and `input` map. What it does **not** do is bolt a fixed gear onto every game: **there is no auto trigger.** You place the entry yourself so it lives *inline with your game's own UI*, never a stray corner overlay. Drop `<SettingsTrigger className=…>` (from `@jgengine/react`) anywhere in your HUD or menu — headless button, `className` for skin/placement, optional `children` to replace the default gear glyph, renders nothing when there's nothing to show. Or call `useSettings().open()` from your own control. Tune the menu via `defineGame({ settings })` (`GameSettingsConfig` from `@jgengine/core/settings/settingsModel`):
