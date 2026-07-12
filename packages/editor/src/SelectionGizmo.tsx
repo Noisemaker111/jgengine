@@ -12,9 +12,14 @@ import type { EditorHostApi } from "./session";
 export type GizmoMode = "translate" | "rotate" | "scale";
 
 const CLICK_SLOP_PX = 5;
-const MARKER_SNAP_DISTANCE = 12;
+const SCREEN_PICK_RADIUS_PX = 22;
+const SELECT_TAGS = ["jgEditorId", "jgEntityId", "jgObjectId"] as const;
 
-/** Canvas click-to-select: editor gizmos hit directly, world geometry snaps to the nearest document object. */
+/**
+ * Canvas click-to-select. Document markers/volumes pick by screen proximity (registration always
+ * matches what you see); everything else picks by occlusion-ordered raycast against the tagged
+ * scene graph, so live entities and objects are clickable exactly like editor gizmos.
+ */
 export function ViewportSelect({ api }: { api: EditorHostApi }) {
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
@@ -24,10 +29,29 @@ export function ViewportSelect({ api }: { api: EditorHostApi }) {
     const canvas = gl.domElement;
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
+    const projected = new THREE.Vector3();
     let down: { x: number; y: number } | null = null;
 
     const select = (id: string) => {
       api.getSession().dispatch({ type: "select", ids: [id] });
+    };
+    const clear = () => {
+      const session = api.getSession();
+      if (session.getState().selection.length > 0) session.dispatch({ type: "clearSelection" });
+    };
+    const screenDistance = (
+      x: number,
+      y: number,
+      z: number,
+      clickX: number,
+      clickY: number,
+      rect: DOMRect,
+    ): number | null => {
+      projected.set(x, y, z).project(camera);
+      if (projected.z < -1 || projected.z > 1) return null;
+      const px = (projected.x * 0.5 + 0.5) * rect.width;
+      const py = (-projected.y * 0.5 + 0.5) * rect.height;
+      return Math.hypot(px - clickX, py - clickY);
     };
 
     const onDown = (event: PointerEvent) => {
@@ -39,43 +63,24 @@ export function ViewportSelect({ api }: { api: EditorHostApi }) {
       down = null;
       if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > CLICK_SLOP_PX) return;
       const rect = canvas.getBoundingClientRect();
-      ndc.set(
-        ((event.clientX - rect.left) / rect.width) * 2 - 1,
-        -((event.clientY - rect.top) / rect.height) * 2 + 1,
-      );
-      raycaster.setFromCamera(ndc, camera);
-      const hits = raycaster.intersectObjects(scene.children, true);
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
 
-      for (const hit of hits) {
-        let node: THREE.Object3D | null = hit.object;
-        while (node !== null) {
-          const id = node.userData.jgEditorId as string | undefined;
-          if (id !== undefined) {
-            select(id);
-            return;
-          }
-          node = node.parent;
-        }
-      }
-
-      const session = api.getSession();
-      const point = hits[0]?.point;
-      if (point === undefined) {
-        if (session.getState().selection.length > 0) session.dispatch({ type: "clearSelection" });
-        return;
-      }
-      const { document } = session.getState();
+      const { document } = api.getSession().getState();
       const visibility = api.getVisibility();
       let bestId: string | null = null;
-      let bestDistance = MARKER_SNAP_DISTANCE;
+      let bestDistance = SCREEN_PICK_RADIUS_PX;
       for (const marker of document.markers) {
         if (visibility[marker.kind] === false) continue;
-        const distance = Math.hypot(
-          marker.position.x - point.x,
-          marker.position.y - point.y,
-          marker.position.z - point.z,
+        const distance = screenDistance(
+          marker.position.x,
+          marker.position.y + 1.2,
+          marker.position.z,
+          clickX,
+          clickY,
+          rect,
         );
-        if (distance < bestDistance) {
+        if (distance !== null && distance < bestDistance) {
           bestDistance = distance;
           bestId = marker.id;
         }
@@ -83,16 +88,45 @@ export function ViewportSelect({ api }: { api: EditorHostApi }) {
       if (bestId === null) {
         for (const volume of document.volumes) {
           if (visibility[volume.kind] === false) continue;
-          const flat = Math.hypot(volume.center.x - point.x, volume.center.z - point.z);
-          const radius = volume.radius ?? 5;
-          if (Math.abs(flat - radius) < 4 || flat < 6) {
+          const distance = screenDistance(volume.center.x, volume.center.y, volume.center.z, clickX, clickY, rect);
+          if (distance !== null && distance < bestDistance) {
+            bestDistance = distance;
             bestId = volume.id;
-            break;
           }
         }
       }
-      if (bestId !== null) select(bestId);
-      else if (session.getState().selection.length > 0) session.dispatch({ type: "clearSelection" });
+      if (bestId !== null) {
+        select(bestId);
+        return;
+      }
+
+      ndc.set((clickX / rect.width) * 2 - 1, -(clickY / rect.height) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      for (const hit of raycaster.intersectObjects(scene.children, true)) {
+        if (!(hit.object as THREE.Mesh).isMesh || hit.object.visible === false) continue;
+        let node: THREE.Object3D | null = hit.object;
+        let gizmoHit = false;
+        let taggedId: string | null = null;
+        while (node !== null && taggedId === null && !gizmoHit) {
+          if (node.type.startsWith("TransformControls")) gizmoHit = true;
+          for (const tag of SELECT_TAGS) {
+            const id = node.userData[tag];
+            if (typeof id === "string") {
+              taggedId = id;
+              break;
+            }
+          }
+          node = node.parent;
+        }
+        if (gizmoHit) continue;
+        if (taggedId !== null) {
+          select(taggedId);
+          return;
+        }
+        clear();
+        return;
+      }
+      clear();
     };
 
     canvas.addEventListener("pointerdown", onDown);

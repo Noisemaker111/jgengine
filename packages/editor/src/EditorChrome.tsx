@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { listEditorKinds, type EditorSession } from "@jgengine/core/editor/index";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
 import type { GizmoMode } from "./SelectionGizmo";
 import type { EditorHostApi, EditorPerfSample } from "./session";
+import { useF2Chord } from "./useF2Chord";
 
 const PERF_POLL_MS = 500;
 
@@ -104,9 +106,12 @@ export function EditorChrome({
     api.handle({ method: "camera_goto", id });
   };
 
+  useF2Chord("KeyE", () => api.setMode("play"));
+
   useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         session.dispatch({ type: event.shiftKey ? "redo" : "undo" });
@@ -135,19 +140,19 @@ export function EditorChrome({
         session.dispatch({ type: "select", ids: [next] });
         api.handle({ method: "camera_goto", id: next });
       }
-      if (event.key === "F8") {
-        event.preventDefault();
-        api.setMode("play");
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [session, setGizmoMode, api]);
 
+  const ctx = useGameContext();
   const kinds = useMemo(() => listEditorKinds(state.document), [state.document, tick]);
   const selectedId = state.selection[0];
   const selectedMarker = state.document.markers.find((marker) => marker.id === selectedId);
   const selectedVolume = state.document.volumes.find((volume) => volume.id === selectedId);
+  const documentMiss = selectedId !== undefined && selectedMarker === undefined && selectedVolume === undefined;
+  const liveEntity = documentMiss ? ctx.scene.entity.get(selectedId) : null;
+  const liveObject = documentMiss && liveEntity === null ? ctx.scene.object.get(selectedId) : null;
 
   const allKinds = useMemo(
     () => [...new Set([...kinds.markers, ...kinds.volumes, ...kinds.paths])].sort(),
@@ -214,7 +219,7 @@ export function EditorChrome({
             className="rounded bg-emerald-700/80 px-2 py-1 hover:bg-emerald-600"
             onClick={() => api.setMode("play")}
           >
-            ▶ Play F8
+            ▶ Play F2+E
           </button>
           <button
             type="button"
@@ -343,7 +348,7 @@ export function EditorChrome({
       <div className="pointer-events-none flex flex-1 flex-col">
         <div className="pointer-events-none flex justify-center p-2">
           <div className="flex items-center gap-3 rounded border border-white/10 bg-black/50 px-3 py-1 text-[11px] text-neutral-300 backdrop-blur">
-            <span>Orbit cam · gizmo W/E/R · click select · Ctrl+Z · F2 devtools · F8 play</span>
+            <span>Orbit cam · gizmo W/E/R · click select · Ctrl+Z · F2 devtools · F2+E play</span>
             {perf !== null ? (
               <span className={perf.fps < 30 ? "text-rose-400" : "text-emerald-400"}>
                 {perf.fps.toFixed(0)} fps · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris
@@ -428,8 +433,38 @@ export function EditorChrome({
             ) : null}
           </div>
         ) : null}
-        {selectedMarker === undefined && selectedVolume === undefined ? (
-          <div className="mt-3 text-neutral-500">Select a marker or volume. Drag the gizmo to move.</div>
+        {liveEntity !== null ? (
+          <div className="mt-2 space-y-1">
+            <div className="text-cyan-200">{liveEntity.name}</div>
+            <div className="text-neutral-500">
+              live entity · {liveEntity.role} · {liveEntity.id}
+            </div>
+            <div className="text-neutral-400">
+              x {liveEntity.position[0].toFixed(1)} · y {liveEntity.position[1].toFixed(1)} · z{" "}
+              {liveEntity.position[2].toFixed(1)}
+            </div>
+            <div className="text-[10px] text-neutral-500">
+              Live world object — spawned by the game, not the editor document. Edit its source data to move it
+              permanently.
+            </div>
+          </div>
+        ) : null}
+        {liveObject !== null ? (
+          <div className="mt-2 space-y-1">
+            <div className="text-cyan-200">{liveObject.catalogId}</div>
+            <div className="text-neutral-500">live object · {liveObject.instanceId}</div>
+            <div className="text-neutral-400">
+              x {liveObject.position[0].toFixed(1)} · y {liveObject.position[1].toFixed(1)} · z{" "}
+              {liveObject.position[2].toFixed(1)}
+            </div>
+            <div className="text-[10px] text-neutral-500">
+              Live world object — spawned by the game, not the editor document. Edit its source data to move it
+              permanently.
+            </div>
+          </div>
+        ) : null}
+        {selectedMarker === undefined && selectedVolume === undefined && liveEntity === null && liveObject === null ? (
+          <div className="mt-3 text-neutral-500">Click anything in the world to select it.</div>
         ) : null}
         <div className="mt-auto pt-4 text-[10px] text-neutral-500">
           Agent: window.__jgengineEditorHost · MCP: jgengine editor-mcp --stdio

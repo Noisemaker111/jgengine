@@ -62,14 +62,12 @@ const MarkerMesh = memo(function MarkerMesh({
   onSelect,
   sharedSphere,
   sharedCone,
-  sharedHitSphere,
 }: {
   marker: EditorMarker;
   selected: boolean;
   onSelect: (id: string) => void;
   sharedSphere: THREE.SphereGeometry;
   sharedCone: THREE.ConeGeometry;
-  sharedHitSphere: THREE.SphereGeometry;
 }) {
   const color = colorFor(marker.kind, marker.color);
   const scale = selected ? 1.25 : 1;
@@ -84,7 +82,6 @@ const MarkerMesh = memo(function MarkerMesh({
         onSelect(marker.id);
       }}
     >
-      <mesh geometry={sharedHitSphere} visible={false} />
       <mesh geometry={sharedSphere}>
         <meshBasicMaterial color={color} />
       </mesh>
@@ -203,14 +200,12 @@ export function EditorLayerOverlays({
     [],
   );
   const sharedCone = useMemo(() => new THREE.ConeGeometry(0.35, 0.9, 6), []);
-  const sharedHitSphere = useMemo(() => new THREE.SphereGeometry(2.4, 6, 6), []);
   useEffect(
     () => () => {
       sharedSphere.dispose();
       sharedCone.dispose();
-      sharedHitSphere.dispose();
     },
-    [sharedSphere, sharedCone, sharedHitSphere],
+    [sharedSphere, sharedCone],
   );
 
   // Stringify visibility so layer toggles re-filter without new object identity issues.
@@ -249,7 +244,6 @@ export function EditorLayerOverlays({
           onSelect={onSelect}
           sharedSphere={sharedSphere}
           sharedCone={sharedCone}
-          sharedHitSphere={sharedHitSphere}
         />
       ))}
     </group>

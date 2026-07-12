@@ -13,6 +13,7 @@ import { EditorLayerOverlays } from "./DebugDraw";
 import { PerfProbe } from "./PerfProbe";
 import { SelectionGizmo, ViewportSelect, type GizmoMode } from "./SelectionGizmo";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
+import { useF2Chord } from "./useF2Chord";
 
 /** Props for mounting the scene editor over a playable game. */
 export interface EditorAppProps {
@@ -106,17 +107,9 @@ function EditorHud({
   );
 }
 
-/** Escape hatch shown while playing/walking: F8 (or click) returns to the edit view. */
+/** Escape hatch shown while playing/walking: F2+E (or click) returns to the edit view. */
 function EditorModeChip({ api, mode }: { api: EditorHostApi; mode: EditorRunMode }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "F8") return;
-      event.preventDefault();
-      api.setMode("edit");
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [api]);
+  useF2Chord("KeyE", () => api.setMode("edit"));
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-2 z-50 flex justify-center">
@@ -125,7 +118,7 @@ function EditorModeChip({ api, mode }: { api: EditorHostApi; mode: EditorRunMode
         className="pointer-events-auto rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[11px] text-neutral-100 backdrop-blur hover:bg-black/90"
         onClick={() => api.setMode("edit")}
       >
-        {mode === "play" ? "▶ Playing" : "🚶 Walking"} — back to editor (F8)
+        {mode === "play" ? "▶ Playing" : "🚶 Walking"} — back to editor (F2+E)
       </button>
     </div>
   );

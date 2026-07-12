@@ -25,7 +25,7 @@ Editor is **dev-only** (`import.meta.env.DEV`). Production `/play` never loads i
 - **walk** — frozen sim, the game's own camera/movement; roam the world with markers drawn in place.
 - **play** — the real game (loop, HUD, camera) with a floating exit chip.
 
-Toolbar buttons, `F8` (edit ↔ play), chip/F8 returns to edit, or RPC: `{ method: "set_mode", mode: "play" }`. The editor session (document, undo, selection) survives mode switches. **F8 also summons the editor from any plain `mode=play` game in the dev runner** — no URL change needed.
+Toolbar buttons, `F2+E` (edit ↔ play, same chord family as F2 devtools), chip/F2+E returns to edit, or RPC: `{ method: "set_mode", mode: "play" }`. The editor session (document, undo, selection) survives mode switches. **F2+E also summons the editor from any plain `mode=play` game in the dev runner** — including games embedded on the website's `/games/<id>` pages in dev, no URL change needed.
 
 ## Perf: the editor measures itself
 
