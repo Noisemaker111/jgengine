@@ -71,3 +71,11 @@ ship worker re-delegated instead of executing → returned 'launched a worker an
 2026-07-12T01:47:51.521Z — sonnet — Claude
 
 gate worker ran per-package 'bun run check-types' without 'bun scripts/ensure-ready.ts' first → false RED with TS2307 on @jgengine/github (exports point at unbuilt dist/); wasted a round diagnosing a non-bug
+
+2026-07-12T02:55:51.618Z — fable-5 — Claude
+
+multi-round verify loop → stop-hook demanded a commit+push after every single fix round, forcing commit churn workers mid-verification
+
+2026-07-12T02:55:51.647Z — fable-5 — Claude
+
+briefed a Sonnet worker to run gates → it spawned its own background child and returned 'launched in background' instead of results; had to re-run with explicit foreground instruction
