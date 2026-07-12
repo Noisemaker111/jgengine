@@ -35,3 +35,7 @@ check-game-shape gate rejected new cross-game contract file preview.tsx at src r
 2026-07-12T00:33:41.028Z — fable-5 — Claude
 
 briefed a Sonnet worker to run gates+ship → it recursively spawned background sub-workers and returned 'will report later' twice, nearly triple-running the ship motion
+
+2026-07-12T00:42:13.755Z — sonnet — Claude
+
+second ship worker in one session ended its turn with 'waiting on gate worker, will react' after spawning a nested background agent → ship motion stalled, orchestrator had to resume it

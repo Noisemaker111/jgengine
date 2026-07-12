@@ -572,7 +572,7 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   touch?: TouchControlsConfig | false;
   /** Preferred phone orientation. When a coarse-pointer device is held the other way the shell shows a dismissible rotate hint; purely advisory, never blocks play. */
   orientation?: "landscape" | "portrait";
-  /** Where the game is meant to be played. Default `["web"]`. Adding `"mobile"` turns on design-resolution HUD fit: every `HudCanvas` auto-scales from `hudFit.designSize` down to the live viewport, so the desktop layout shrinks to fit a phone instead of overflowing it. */
+  /** Where the game is meant to be played. Default `["web", "mobile"]` — design-resolution HUD fit is on for every game: `HudCanvas` auto-scales from `hudFit.designSize` down to the live viewport, so the desktop layout shrinks to fit a phone instead of overflowing it. Declare `["web"]` to opt a desktop-only game out (compact displays fall back to the legacy fixed 0.85 zoom). */
   platforms?: readonly HudPlatform[];
   /** HUD design resolution + scale clamps (default 1600×900, scale 0.4–1). `mobile` overrides tune the phone fit separately — the same resolution system drives desktop UI-scale and phone shrink. */
   hudFit?: HudViewportConfig;
