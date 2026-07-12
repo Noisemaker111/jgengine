@@ -1201,8 +1201,17 @@ export const MOBS: readonly MobDef[] = [
     armorPerLevel: 46,
     moveSpeed: 11.6,
     aggroRadius: 18,
-    count: 1,
+    count: 0,
     boss: true,
+    abilities: [
+      { id: "thunderclap", name: "Thunderclap", intervalSec: 12, amount: 43, radius: 12, school: "nature", windupMs: 800 },
+      { id: "seismic_stomp", name: "Seismic Stomp", intervalSec: 24, amount: 23, radius: 11, school: "physical", windupMs: 1000 },
+      { id: "stormcall", name: "Stormcall", intervalSec: 40, amount: 80, radius: 30, school: "nature", windupMs: 3500 },
+    ],
+    mechanics: {
+      enrage: { belowHpFraction: 0.2, hasteMult: 1.25, damageMult: 1.5 },
+      summons: { mobId: "thunzharr_stormling", count: 1, intervalSec: 30, maxAlive: 2 },
+    },
     drops: [
       { itemId: "inert_storm_shard", chance: 1 },
       { itemId: "crownforged_gauntlets", chance: 0.08 },
@@ -1230,7 +1239,7 @@ export const MOBS: readonly MobDef[] = [
     armorPerLevel: 22,
     moveSpeed: 7.4,
     aggroRadius: 12,
-    count: 10,
+    count: 0,
     drops: [],
   },
   {

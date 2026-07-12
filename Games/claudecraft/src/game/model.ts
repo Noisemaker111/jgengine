@@ -105,6 +105,7 @@ export interface MobAbilityDef {
   amount: number;
   radius?: number;
   school: AbilitySchool;
+  windupMs?: number;
 }
 
 export interface DropDef {

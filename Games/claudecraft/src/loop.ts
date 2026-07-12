@@ -19,6 +19,7 @@ import { registerCommands } from "./game/session/commands";
 import { applySheet, clearAuras, grantTalentPoint, heroOf, storeKeys } from "./game/session/hero";
 import { QUESTS } from "./game/quests/catalog";
 import { setupWorld } from "./game/world/setup";
+import { isWorldBoss, onWorldBossKilled, tickWorldBoss } from "./game/world/worldBoss";
 import { PLAYER_SPAWN } from "./game/world/zones";
 
 function onPlayerDied(ctx: GameContext, position: readonly [number, number, number]): void {
@@ -86,8 +87,10 @@ export const loop: GameLoop<GameContext> = {
         return;
       }
       clearAuras(ctx, evt.instanceId);
+      const wasWorldBoss = isWorldBoss(evt.instanceId);
       if (evt.reason.kind === "player_kill") onKill(ctx, evt.instanceId);
       else onMobDied(ctx, evt.instanceId);
+      if (wasWorldBoss) onWorldBossKilled(ctx, evt.instanceId, ctx.player.userId);
     });
     setupWorld(ctx);
   },
@@ -102,6 +105,7 @@ export const loop: GameLoop<GameContext> = {
     const clamped = Math.min(dt, 0.25);
     const userId = ctx.player.userId;
     tickHero(ctx, userId, clamped);
+    tickWorldBoss(ctx);
     tickMobs(ctx, clamped);
     tickAuras(ctx);
     tickPets(ctx, userId, clamped);

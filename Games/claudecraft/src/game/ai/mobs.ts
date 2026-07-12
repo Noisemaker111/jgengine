@@ -20,7 +20,7 @@ interface MobRuntime {
   nextWanderAt: number;
   wanderTo: readonly [number, number] | null;
   frenzyUntil: number;
-  nextAbilityAt: number;
+  abilityAt: Map<string, number>;
   telegraphedAt: number;
   stunnedUntil: number;
   rootedUntil: number;
@@ -116,7 +116,7 @@ export function spawnMobAt(
     nextWanderAt: 0,
     wanderTo: null,
     frenzyUntil: 0,
-    nextAbilityAt: 0,
+    abilityAt: new Map(),
     telegraphedAt: 0,
     stunnedUntil: 0,
     rootedUntil: 0,
@@ -227,23 +227,29 @@ function swingAtPlayer(ctx: GameContext, def: MobDef, runtime: MobRuntime, insta
 }
 
 function castMobAbility(ctx: GameContext, def: MobDef, runtime: MobRuntime, instanceId: string): void {
-  const ability = def.abilities?.[0];
-  if (ability === undefined) return;
+  const abilities = def.abilities;
+  if (abilities === undefined) return;
   const now = ctx.time.now();
-  if (runtime.nextAbilityAt === 0) runtime.nextAbilityAt = now + ability.intervalSec;
-  if (now < runtime.nextAbilityAt) return;
   const self = ctx.scene.entity.get(instanceId);
   if (self === null) return;
-  runtime.nextAbilityAt = now + ability.intervalSec;
-  const at: [number, number, number] = [self.position[0], self.position[1], self.position[2]];
-  ctx.scene.entity.telegraph({
-    from: instanceId,
-    shape: { kind: "circle", radius: ability.radius ?? 8 },
-    at,
-    windupMs: 1500,
-    kind: ability.school,
-    effect: { effect: "damage", via: { amount: ability.amount }, radius: ability.radius ?? 8 },
-  });
+  for (const ability of abilities) {
+    const nextAt = runtime.abilityAt.get(ability.id);
+    if (nextAt === undefined) {
+      runtime.abilityAt.set(ability.id, now + ability.intervalSec);
+      continue;
+    }
+    if (now < nextAt) continue;
+    runtime.abilityAt.set(ability.id, now + ability.intervalSec);
+    const at: [number, number, number] = [self.position[0], self.position[1], self.position[2]];
+    ctx.scene.entity.telegraph({
+      from: instanceId,
+      shape: { kind: "circle", radius: ability.radius ?? 8 },
+      at,
+      windupMs: ability.windupMs ?? 1500,
+      kind: ability.school,
+      effect: { effect: "damage", via: { amount: ability.amount }, radius: ability.radius ?? 8 },
+    });
+  }
 }
 
 function runBossMechanics(
