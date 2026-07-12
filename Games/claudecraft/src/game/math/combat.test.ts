@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { armorReduction, fallDamage, mitigate, mobDamage, mobHp, rollWeaponDamage, spellAmount } from "./combat";
+import { CRIT_MULTIPLIER, armorReduction, fallDamage, mitigate, mobDamage, mobHp, rollWeaponDamage, spellAmount } from "./combat";
 import { GROUP_XP_BONUS, MAX_LEVEL, XP_TABLE, groupXpMultiplier, killXp, levelTrack } from "../progression/curves";
 
 describe("armor mitigation (upstream formula)", () => {
@@ -15,6 +15,12 @@ describe("armor mitigation (upstream formula)", () => {
 
   test("mitigate never drops below 1", () => {
     expect(mitigate(2, 100_000, 1)).toBe(1);
+  });
+});
+
+describe("crit multiplier (upstream 1.5x contract)", () => {
+  test("is a flat 1.5x, not 2x", () => {
+    expect(CRIT_MULTIPLIER).toBe(1.5);
   });
 });
 

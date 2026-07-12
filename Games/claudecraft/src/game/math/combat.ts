@@ -7,6 +7,7 @@ export const SPELL_POWER_PER_INT = 0.5;
 export const ATTACK_POWER_PER_STR = 1;
 export const CRIT_RATING_PER_PCT = 10;
 export const BASE_CRIT_PCT = 5;
+export const CRIT_MULTIPLIER = 1.5;
 export const CAST_COEFFICIENT_DIVISOR = 3.5;
 export const HP_PER_STA = 10;
 export const MANA_PER_INT = 15;
