@@ -1,7 +1,7 @@
 {
   "name": "@jgengine/editor",
   "version": "0.1.0",
-  "description": "Scene/world/asset editor for JGengine — dev-only; never import from production game entrypoints.",
+  "description": "Scene/world/asset editor for JGengine — loaded lazily by the runner; never import from game entrypoints.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "sideEffects": false,
