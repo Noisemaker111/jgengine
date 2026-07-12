@@ -1476,6 +1476,31 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/vice-isle": {
+      "name": "@games/vice-isle",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/assets": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@jgengine/ws": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/video-poker": {
       "name": "@games/video-poker",
       "version": "0.1.0",
@@ -1724,7 +1749,7 @@
         "assets": "dist/cli/pull.js",
       },
       "dependencies": {
-        "@jgengine/core": "^0.8.0",
+        "@jgengine/core": "^0.9.0",
         "fflate": "^0.8.2",
       },
       "devDependencies": {
@@ -1787,7 +1812,7 @@
       "name": "@jgengine/react",
       "version": "0.9.0",
       "dependencies": {
-        "@jgengine/core": "^0.8.0",
+        "@jgengine/core": "^0.9.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -1804,9 +1829,9 @@
       "name": "@jgengine/shell",
       "version": "0.9.0",
       "dependencies": {
-        "@jgengine/core": "^0.8.0",
-        "@jgengine/react": "^0.8.0",
-        "@jgengine/ws": "^0.8.0",
+        "@jgengine/core": "^0.9.0",
+        "@jgengine/react": "^0.9.0",
+        "@jgengine/ws": "^0.9.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -1839,7 +1864,7 @@
       "name": "@jgengine/ws",
       "version": "0.9.0",
       "dependencies": {
-        "@jgengine/core": "^0.8.0",
+        "@jgengine/core": "^0.9.0",
       },
     },
     "registry": {
@@ -2087,6 +2112,8 @@
     "@games/tower-guard": ["@games/tower-guard@workspace:Games/tower-guard"],
 
     "@games/turbine-city": ["@games/turbine-city@workspace:Games/turbine-city"],
+
+    "@games/vice-isle": ["@games/vice-isle@workspace:Games/vice-isle"],
 
     "@games/video-poker": ["@games/video-poker@workspace:Games/video-poker"],
 
