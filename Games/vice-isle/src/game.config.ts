@@ -4,6 +4,7 @@ import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
+import { OBJECTS } from "./game/objects/catalog";
 import { prompts } from "./game/prompts";
 import { renderEntity } from "./game/world/renderEntity";
 import { GameUI } from "./game/ui/GameUI";
@@ -25,6 +26,7 @@ export const game = defineGame({
   GameUI,
   prompts,
   renderEntity,
+  objectStyles: Object.fromEntries(OBJECTS.map((o) => [o.id, { color: o.color }])),
   worldHealthBars: { roles: ["enemy", "hostile"] },
   worldItem: {
     pickupRadius: 2.4,
