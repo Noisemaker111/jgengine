@@ -1055,6 +1055,7 @@
 
 ## @jgengine/core/world/features
 
+- `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Order the list by ascending `z`.
 - `BiomesWorldConfig` (interface): interface BiomesWorldConfig extends WorldGridConfig — ⚠ undocumented
 - `BuildingEnvironmentConfig` (interface): interface BuildingEnvironmentConfig — ⚠ undocumented
 - `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette"> — ⚠ undocumented
@@ -1355,7 +1356,8 @@
 - `TerrainSlopeSample` (interface): interface TerrainSlopeSample — ⚠ undocumented
 - `arenaField` (function): function arenaField(config: ArenaFieldConfig = {}): TerrainField — ⚠ undocumented
 - `composeIslandFields` (function): function composeIslandFields(base: TerrainField | null, islands: readonly TerrainIslandDescriptor[], voidHeight = ISLAND_VOID_HEIGHT): TerrainField — Composes a base terrain and any number of bounded islands into one world field: inside an island's rect the island's own field (sampled in island-local coordinates) wins, elsewhere the base terrain answers, and with no base the gap is `ISLAND_VOID_HEIGHT` void. Later islands win overlaps.
-- `createTerrainPaletteSampler` (function): function createTerrainPaletteSampler(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions">): (x: number, z: number) => TerrainPalette — Per-position palette sampler over the descriptor's base `material`/`colors` plus its `materialRegions` — the multi-biome coloring seam. Regions paint fully inside `radius` and blend back to the surrounding palette across `falloff`; later regions win overlaps.
+- `createBiomeBandSampler` (function): function createBiomeBandSampler(bands: readonly BiomeBand[], fallback: TerrainPalette): (z: number) => TerrainPalette — Per-z palette sampler over a descriptor's `biomeBands` — ordered zones that cross-fade their ground palette across a `fade`-wide window centered on the midpoint z between adjacent centers. Below the first / above the last band clamps to that band's palette. Returns `fallback` when no bands are declared. Pure math, unit-testable independent of rendering.
+- `createTerrainPaletteSampler` (function): function createTerrainPaletteSampler(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions" | "biomeBands">): (x: number, z: number) => TerrainPalette — Per-position palette sampler over the descriptor's base `material`/`colors` plus its z-ordered `biomeBands` (painted first) and radial `materialRegions` (painted over) — the multi-biome coloring seam. Regions paint fully inside `radius` and blend back across `falloff`; later regions win overlaps.
 - `flatField` (function): function flatField(): TerrainField — ⚠ undocumented
 - `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — ⚠ undocumented
 - `groundFieldFor` (function): function groundFieldFor(world?: WorldFeature): TerrainField — ⚠ undocumented

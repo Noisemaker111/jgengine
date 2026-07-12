@@ -1,4 +1,5 @@
 import type {
+  BiomeBand,
   EnvironmentWorldFeature,
   TerrainColors,
   TerrainEnvironmentConfig,
@@ -380,23 +381,60 @@ function mixPalette(from: TerrainPalette, to: TerrainPalette, t: number): Terrai
 }
 
 /**
- * Per-position palette sampler over the descriptor's base `material`/`colors` plus its
- * `materialRegions` — the multi-biome coloring seam. Regions paint fully inside `radius`
- * and blend back to the surrounding palette across `falloff`; later regions win overlaps.
+ * Per-z palette sampler over a descriptor's `biomeBands` — ordered zones that cross-fade their
+ * ground palette across a `fade`-wide window centered on the midpoint z between adjacent centers.
+ * Below the first / above the last band clamps to that band's palette. Returns `fallback` when no
+ * bands are declared. Pure math, unit-testable independent of rendering.
+ */
+export function createBiomeBandSampler(
+  bands: readonly BiomeBand[],
+  fallback: TerrainPalette,
+): (z: number) => TerrainPalette {
+  if (bands.length === 0) return () => fallback;
+  const resolved = bands
+    .map((band) => ({ z: band.z, fade: band.fade ?? 64, palette: resolveTerrainPalette(band) }))
+    .sort((a, b) => a.z - b.z);
+  const first = resolved[0]!;
+  const last = resolved[resolved.length - 1]!;
+  return (z: number) => {
+    if (z <= first.z) return first.palette;
+    if (z >= last.z) return last.palette;
+    for (let i = 0; i < resolved.length - 1; i += 1) {
+      const lower = resolved[i]!;
+      const upper = resolved[i + 1]!;
+      if (z < lower.z || z > upper.z) continue;
+      const boundary = (lower.z + upper.z) / 2;
+      const half = Math.min(lower.fade, upper.fade) / 2;
+      if (z <= boundary - half) return lower.palette;
+      if (z >= boundary + half) return upper.palette;
+      return mixPalette(lower.palette, upper.palette, smoothstep(boundary - half, boundary + half, z));
+    }
+    return fallback;
+  };
+}
+
+/**
+ * Per-position palette sampler over the descriptor's base `material`/`colors` plus its z-ordered
+ * `biomeBands` (painted first) and radial `materialRegions` (painted over) — the multi-biome coloring
+ * seam. Regions paint fully inside `radius` and blend back across `falloff`; later regions win overlaps.
  */
 export function createTerrainPaletteSampler(
-  descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions">,
+  descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions" | "biomeBands">,
 ): (x: number, z: number) => TerrainPalette {
   const base = resolveTerrainPalette(descriptor);
+  const bandSampler =
+    descriptor.biomeBands === undefined || descriptor.biomeBands.length === 0
+      ? null
+      : createBiomeBandSampler(descriptor.biomeBands, base);
   const regions = (descriptor.materialRegions ?? []).map((region) => ({
     center: region.center,
     radius: region.radius,
     falloff: region.falloff ?? region.radius * 0.5,
     palette: resolveTerrainPalette(region),
   }));
-  if (regions.length === 0) return () => base;
+  if (regions.length === 0 && bandSampler === null) return () => base;
   return (x, z) => {
-    let palette = base;
+    let palette = bandSampler === null ? base : bandSampler(z);
     for (const region of regions) {
       const distance = Math.hypot(x - region.center[0], z - region.center[1]);
       if (distance <= region.radius) {

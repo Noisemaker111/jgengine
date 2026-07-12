@@ -4,6 +4,7 @@ import { environment, island, terrain } from "./features";
 import {
   arenaField,
   composeIslandFields,
+  createBiomeBandSampler,
   createTerrainPaletteSampler,
   fractalNoise,
   flatField,
@@ -275,6 +276,48 @@ describe("terrain field", () => {
     expect(blended.low).not.toBe(base.low);
     expect(blended.low).not.toBe(snow.low);
     expect(sampler(125, 0)).toEqual(base);
+  });
+
+  test("createBiomeBandSampler clamps outside the band range and cross-fades across boundaries", () => {
+    const vale = resolveTerrainPalette({ colors: { low: "#204010", high: "#3a6020" } });
+    const peaks = resolveTerrainPalette({ colors: { low: "#7a8878", high: "#aab4a0" } });
+    const sampler = createBiomeBandSampler(
+      [
+        { z: -100, fade: 40, colors: { low: "#204010", high: "#3a6020" } },
+        { z: 100, fade: 40, colors: { low: "#7a8878", high: "#aab4a0" } },
+      ],
+      resolveTerrainPalette({ material: "grass" }),
+    );
+    expect(sampler(-200)).toEqual(vale);
+    expect(sampler(200)).toEqual(peaks);
+    expect(sampler(-100)).toEqual(vale);
+    expect(sampler(100)).toEqual(peaks);
+    const midpoint = sampler(0);
+    expect(midpoint.low).not.toBe(vale.low);
+    expect(midpoint.low).not.toBe(peaks.low);
+    expect(sampler(-30)).toEqual(vale);
+    expect(sampler(30)).toEqual(peaks);
+  });
+
+  test("createBiomeBandSampler with no bands is the fallback palette", () => {
+    const fallback = resolveTerrainPalette({ material: "grass" });
+    expect(createBiomeBandSampler([], fallback)(42)).toEqual(fallback);
+  });
+
+  test("createTerrainPaletteSampler layers materialRegions over biomeBands", () => {
+    const sampler = createTerrainPaletteSampler({
+      material: "grass",
+      biomeBands: [
+        { z: -100, colors: { low: "#204010", high: "#3a6020" } },
+        { z: 100, colors: { low: "#7a8878", high: "#aab4a0" } },
+      ],
+      materialRegions: [{ center: [0, 100], radius: 10, material: "snow" }],
+    });
+    const peaks = resolveTerrainPalette({ colors: { low: "#7a8878", high: "#aab4a0" } });
+    const snow = resolveTerrainPalette({ material: "snow" });
+    expect(sampler(0, 100)).toEqual(snow);
+    expect(sampler(300, 100)).toEqual(peaks);
+    expect(sampler(0, -100)).toEqual(resolveTerrainPalette({ colors: { low: "#204010", high: "#3a6020" } }));
   });
 
   test("createTerrainPaletteSampler without regions is the flat base palette", () => {

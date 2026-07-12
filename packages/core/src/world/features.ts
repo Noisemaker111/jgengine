@@ -41,6 +41,23 @@ export interface TerrainMaterialRegion {
   falloff?: number;
 }
 
+/**
+ * A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`.
+ * Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z
+ * between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground
+ * color instead of hard-switching. Order the list by ascending `z`.
+ */
+export interface BiomeBand {
+  /** World-space center z of the zone. */
+  z: number;
+  /** Cross-fade window width straddling the boundary to the next band. Default 64. */
+  fade?: number;
+  /** Named palette preset for the zone (see `TERRAIN_MATERIAL_PALETTES`); overridden field-by-field by `colors`. */
+  material?: TerrainMaterial;
+  /** Explicit low/high/waterline hex colors for the zone. */
+  colors?: TerrainColors;
+}
+
 export interface TerrainEnvironmentConfig {
   bounds?: WorldBounds;
   height?: number;
@@ -57,6 +74,8 @@ export interface TerrainEnvironmentConfig {
   colors?: TerrainColors;
   /** Palette zones blended over the base `material`/`colors` for multi-biome readability. */
   materialRegions?: readonly TerrainMaterialRegion[];
+  /** Ordered z-banded ground palettes that cross-fade along the world's z axis (vale → marsh → peaks). Painted under `materialRegions`. */
+  biomeBands?: readonly BiomeBand[];
   segments?: number;
   seed?: string;
   frequency?: number;
@@ -404,6 +423,7 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
       ...(config.material === undefined ? {} : { material: config.material }),
       ...(config.colors === undefined ? {} : { colors: config.colors }),
       ...(config.materialRegions === undefined ? {} : { materialRegions: config.materialRegions }),
+      ...(config.biomeBands === undefined ? {} : { biomeBands: config.biomeBands }),
       ...(config.segments === undefined ? {} : { segments: config.segments }),
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.frequency === undefined ? {} : { frequency: config.frequency }),
