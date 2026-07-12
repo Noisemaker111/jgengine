@@ -71,6 +71,7 @@ const PERSON_LOOKS: Record<string, { shirt: string; skin: string; hat?: string }
   contact_marco: { shirt: "#f4f0e6", skin: "#caa26e", hat: "#f4f0e6" },
   ganger_dock: { shirt: "#c23b3b", skin: "#d99e6f", hat: "#701f1f" },
   ganger_enforcer: { shirt: "#8a1f1f", skin: "#c98d5f", hat: "#33110f" },
+  kingpin_sal: { shirt: "#f5f0e0", skin: "#caa26e", hat: "#c9a227" },
   cop_patrol: { shirt: "#2e4f8f", skin: "#e8b58a", hat: "#1d3260" },
   cop_swat: { shirt: "#20242e", skin: "#e8b58a", hat: "#12141a" },
 };

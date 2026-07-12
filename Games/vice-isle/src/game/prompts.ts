@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { handroll } from "./handroll";
-import { GUNSHOP_POS, MARCO_POS } from "./world/districts";
+import { GARAGE_POS, GUNSHOP_POS, MARCO_POS } from "./world/districts";
 
 const staticPrompts: readonly PositionedPrompt[] = [
   {
@@ -25,8 +25,31 @@ const staticPrompts: readonly PositionedPrompt[] = [
   },
 ];
 
+const garagePrompt: PositionedPrompt = {
+  id: "garage:dealer",
+  position: { x: GARAGE_POS[0], z: GARAGE_POS[2] },
+  prompt: {
+    radius: 5,
+    display: { kind: "keybind", actionId: "interact" },
+    invoke: { name: "garage.open", input: undefined },
+  },
+};
+
+const racePrompt: PositionedPrompt = {
+  id: "race:oceanloop",
+  position: { x: GARAGE_POS[0] - 8, z: GARAGE_POS[2] },
+  prompt: {
+    radius: 7,
+    display: { kind: "keybind", actionId: "interact" },
+    invoke: { name: "race.start", input: undefined },
+  },
+};
+
 export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
-  if (handroll.drivingVehicleId() !== null) return [];
+  if (handroll.drivingVehicleId() !== null) {
+    if (handroll.raceActive()) return [];
+    return [racePrompt];
+  }
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return staticPrompts;
   let nearestCar: { id: string; x: number; z: number } | null = null;
@@ -39,9 +62,10 @@ export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
       nearestCar = { id: entity.id, x: entity.position[0], z: entity.position[2] };
     }
   }
-  if (nearestCar === null) return staticPrompts;
+  if (nearestCar === null) return [...staticPrompts, garagePrompt];
   return [
     ...staticPrompts,
+    garagePrompt,
     {
       id: `enter:${nearestCar.id}`,
       position: { x: nearestCar.x, z: nearestCar.z },

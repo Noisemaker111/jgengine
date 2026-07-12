@@ -3,6 +3,7 @@ import {
   building,
   environment,
   grass,
+  ocean,
   sky,
   terrain,
   type EnvironmentWorldFeature,
@@ -43,10 +44,20 @@ export const world: EnvironmentWorldFeature = environment({
   }),
   sky: sky({
     preset: "day",
+    timeOfDay: true,
     horizonColor: "#ffd9a0",
     zenithColor: "#3fa9e8",
     fog: { color: "#ffe3b3", near: 180, far: 620 },
   }),
+  water: [
+    ocean({
+      bounds: { w: 400, d: 700 },
+      position: [-440, 0],
+      level: -0.4,
+      color: "#1d9fc4",
+      waveHeight: 0.8,
+    }),
+  ],
   vegetation: [
     grass({
       area: { w: 160, d: 160, position: [70, -240] },

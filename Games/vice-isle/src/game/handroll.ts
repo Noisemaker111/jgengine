@@ -3,7 +3,8 @@ import { steerYaw } from "@jgengine/core/movement/steering";
 import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "@jgengine/core/physics/vehicleBody";
 import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { seededRng } from "@jgengine/core/random/rng";
-import { TRAFFIC_LOOPS } from "./world/districts";
+import { createRaceState, firstPastPost, raceTrack, type RaceState } from "@jgengine/core/game/race";
+import { RACE_CHECKPOINTS, TRAFFIC_LOOPS } from "./world/districts";
 
 export interface CarTuning {
   engineAccel: number;
@@ -105,8 +106,21 @@ export interface WantedSnapshot {
 
 export const WANTED_STORE_KEY = "vice.wanted";
 export const DRIVING_STORE_KEY = "vice.driving";
+export const RACE_STORE_KEY = "vice.race";
 export const HEAT_PER_STAR = 100;
 export const MAX_STARS = 5;
+export const PURSUIT_STARS = 3;
+export const RIVAL_RACER_ID = "race_rival";
+
+export interface RaceSnapshot {
+  active: boolean;
+  checkpoint: number;
+  total: number;
+  position: number;
+  timeSec: number;
+  finished: boolean;
+  won: boolean;
+}
 
 interface TrafficCar {
   entityId: string;
@@ -124,6 +138,9 @@ export interface Handroll {
   clearWanted(ctx: GameContext): void;
   wanted(): WantedSnapshot;
   registerTrafficCar(entityId: string, loopIndex: number, startT: number): void;
+  startRace(ctx: GameContext): boolean;
+  raceActive(): boolean;
+  explodeVehicle(ctx: GameContext, vehicleId: string, at: readonly [number, number, number]): void;
 }
 
 export function createHandroll(): Handroll {
@@ -136,6 +153,13 @@ export function createHandroll(): Handroll {
   let copCounter = 0;
   const traffic: TrafficCar[] = [];
   const rng = seededRng("vice-isle-cops");
+  const cruiserStates = new Map<string, CarState>();
+  let cruiserCounter = 0;
+  let cruiserTimer = 0;
+  let race: RaceState | null = null;
+  let raceStartedAt = 0;
+  let rivalState: PathFollowState | null = null;
+  let rivalConfig: PathFollowConfig | null = null;
 
   function stars(): number {
     return Math.min(MAX_STARS, Math.floor(heat / HEAT_PER_STAR));
@@ -234,6 +258,120 @@ export function createHandroll(): Handroll {
     }
   }
 
+  function playerWorldPos(ctx: GameContext): readonly [number, number, number] | null {
+    if (driving !== null) {
+      const vehicle = ctx.scene.entity.get(driving);
+      if (vehicle !== null) return vehicle.position;
+    }
+    return ctx.scene.entity.get(ctx.player.userId)?.position ?? null;
+  }
+
+  function tickCruisers(ctx: GameContext, dt: number): void {
+    const level = stars();
+    const target = playerWorldPos(ctx);
+    if (target === null) return;
+    const cruisers = ctx.scene.entity.list().filter((e) => e.id.startsWith("cruiser_"));
+
+    if (level >= PURSUIT_STARS) {
+      cruiserTimer -= dt;
+      if (cruiserTimer <= 0 && cruisers.length < level - 1) {
+        cruiserTimer = 9;
+        cruiserCounter += 1;
+        const angle = rng() * Math.PI * 2;
+        const x = target[0] + Math.sin(angle) * 70;
+        const z = target[2] + Math.cos(angle) * 70;
+        const id = `cruiser_${cruiserCounter}`;
+        ctx.scene.entity.spawn("car_cop", { id, position: [x, ctx.world.groundHeightAt(x, z), z], role: "prop" });
+        cruiserStates.set(id, { x, z, heading: Math.atan2(target[0] - x, target[2] - z), vx: 0, vz: 0 });
+      }
+    }
+
+    for (const cruiser of cruisers) {
+      const state = cruiserStates.get(cruiser.id);
+      if (state === undefined) continue;
+      const dist = Math.hypot(state.x - target[0], state.z - target[2]);
+      if (level < PURSUIT_STARS) {
+        if (dist > 60) {
+          ctx.scene.entity.despawn(cruiser.id);
+          cruiserStates.delete(cruiser.id);
+        }
+        continue;
+      }
+      const desired = Math.atan2(target[0] - state.x, target[2] - state.z);
+      let error = desired - state.heading;
+      while (error > Math.PI) error -= Math.PI * 2;
+      while (error < -Math.PI) error += Math.PI * 2;
+      const axis: CarAxis = {
+        throttle: dist > 6 ? 1 : 0.2,
+        brake: 0,
+        steer: Math.max(-1, Math.min(1, error * 2)),
+        handbrake: 0,
+      };
+      const tuning = CAR_TUNINGS.car_cop!;
+      const pose = stepCar(state, tuning, axis, dt, (x, z) => ctx.world.groundHeightAt(x, z));
+      ctx.scene.entity.setPose(cruiser.id, { position: pose.position, rotationY: pose.heading, dt });
+      if (dist < 4 && driving !== null) {
+        ctx.scene.entity.effect({ from: cruiser.id, to: driving, effect: "damage", via: { amount: Math.round(24 * dt * 10) / 10 } });
+      }
+    }
+  }
+
+  function publishRace(ctx: GameContext, snapshot: RaceSnapshot): void {
+    ctx.game.store.set(RACE_STORE_KEY, snapshot);
+  }
+
+  function endRace(ctx: GameContext, won: boolean): void {
+    const standings = race?.standings() ?? [];
+    const player = standings.find((s) => s.racerId === ctx.player.userId);
+    publishRace(ctx, {
+      active: false,
+      checkpoint: player?.progress ?? 0,
+      total: RACE_CHECKPOINTS.length,
+      position: won ? 1 : 2,
+      timeSec: ctx.time.now() - raceStartedAt,
+      finished: true,
+      won,
+    });
+    ctx.scene.entity.despawn(RIVAL_RACER_ID);
+    race = null;
+    rivalState = null;
+    rivalConfig = null;
+  }
+
+  function tickRace(ctx: GameContext, dt: number): void {
+    if (race === null || rivalConfig === null || rivalState === null) return;
+    rivalState = advancePathFollow(rivalConfig, rivalState, dt);
+    const [rx, , rz] = rivalState.position;
+    ctx.scene.entity.setPose(RIVAL_RACER_ID, {
+      position: [rx, ctx.world.groundHeightAt(rx, rz), rz],
+      rotationY: rivalState.heading,
+      dt,
+    });
+    const playerPos = playerWorldPos(ctx);
+    if (playerPos === null) return;
+    const events = race.update(ctx.time.now(), {
+      [ctx.player.userId]: playerPos,
+      [RIVAL_RACER_ID]: [rx, 0, rz] as const,
+    });
+    const finished = events.find((event) => event.type === "race.finished");
+    if (finished !== undefined) {
+      const standings = race.standings();
+      endRace(ctx, standings[0]?.racerId === ctx.player.userId);
+      return;
+    }
+    const player = race.standings().find((s) => s.racerId === ctx.player.userId);
+    const rivalProgress = race.standings().find((s) => s.racerId === RIVAL_RACER_ID)?.progress ?? 0;
+    publishRace(ctx, {
+      active: true,
+      checkpoint: player?.progress ?? 0,
+      total: RACE_CHECKPOINTS.length,
+      position: (player?.progress ?? 0) >= rivalProgress ? 1 : 2,
+      timeSec: ctx.time.now() - raceStartedAt,
+      finished: false,
+      won: false,
+    });
+  }
+
   function tickTraffic(ctx: GameContext, dt: number): void {
     for (const car of traffic) {
       if (car.entityId === driving) continue;
@@ -284,6 +422,58 @@ export function createHandroll(): Handroll {
       publishWanted(ctx);
     },
     wanted: () => ({ heat, stars: stars(), peakStars }),
+    startRace(ctx) {
+      if (race !== null) return false;
+      if (driving === null) return false;
+      const track = raceTrack({
+        checkpoints: RACE_CHECKPOINTS.map(([x, z], i) => ({
+          id: `cp_${i}`,
+          center: [x, 2, z] as const,
+          half: [10, 8, 10] as const,
+        })),
+        laps: 1,
+      });
+      race = createRaceState({ track, win: firstPastPost(1) });
+      raceStartedAt = ctx.time.now();
+      race.addRacer(ctx.player.userId, raceStartedAt);
+      race.addRacer(RIVAL_RACER_ID, raceStartedAt);
+      const start = RACE_CHECKPOINTS[RACE_CHECKPOINTS.length - 1]!;
+      ctx.scene.entity.spawn("car_muscle", {
+        id: RIVAL_RACER_ID,
+        position: [start[0], ctx.world.groundHeightAt(start[0], start[1]), start[1]],
+        role: "prop",
+      });
+      rivalConfig = {
+        waypoints: [...RACE_CHECKPOINTS, RACE_CHECKPOINTS[0]!].map(([x, z]) => [x, 0, z] as const),
+        speed: 15.5,
+        loop: false,
+      };
+      rivalState = createPathFollow(rivalConfig);
+      publishRace(ctx, {
+        active: true,
+        checkpoint: 0,
+        total: RACE_CHECKPOINTS.length,
+        position: 1,
+        timeSec: 0,
+        finished: false,
+        won: false,
+      });
+      return true;
+    },
+    raceActive: () => race !== null,
+    explodeVehicle(ctx, vehicleId, at) {
+      ctx.scene.entity.effect({ from: vehicleId, at, radius: 6, effect: "damage", via: { amount: 55 } });
+      if (driving === vehicleId) {
+        driving = null;
+        lastSpeedKmh = 0;
+        ctx.camera.follow(null);
+        ctx.game.store.set(DRIVING_STORE_KEY, null);
+        heat = Math.min(MAX_STARS * HEAT_PER_STAR, heat + 60);
+        publishWanted(ctx);
+      }
+      carStates.delete(vehicleId);
+      cruiserStates.delete(vehicleId);
+    },
     registerTrafficCar(entityId, loopIndex, startT) {
       const loop = TRAFFIC_LOOPS[loopIndex % TRAFFIC_LOOPS.length];
       if (loop === undefined) return;
@@ -312,6 +502,8 @@ export function createHandroll(): Handroll {
       }
       tickTraffic(ctx, dt);
       tickCops(ctx, dt);
+      tickCruisers(ctx, dt);
+      tickRace(ctx, dt);
     },
   };
 }

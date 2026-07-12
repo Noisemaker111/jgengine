@@ -1,9 +1,25 @@
 import { useCurrency, useGame, useGameStore } from "@jgengine/react/hooks";
 import { SHOP_STORE_KEY } from "../../commands";
+import { WANTED_STORE_KEY, type WantedSnapshot } from "../../handroll";
 import { GEAR, WEAPONS } from "../../items/weapons/catalog";
 import { ITEM_LABELS } from "../../content";
 
 const STOCK = [...WEAPONS, ...GEAR].filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
+
+function BribeButton() {
+  const { commands } = useGame();
+  const stars = useGameStore((ctx) => (ctx.game.store.get(WANTED_STORE_KEY) as WantedSnapshot | undefined)?.stars ?? 0);
+  if (stars === 0) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => commands.run("shop.bribe", {})}
+      className="mx-3 mb-1 -skew-x-6 border-2 border-black bg-[#4f7de8] px-3 py-1 text-xs font-black uppercase text-white hover:bg-[#6b93f0]"
+    >
+      Bribe VCPD — ${stars * 250} clears {stars}★
+    </button>
+  );
+}
 
 export function ShopPanel() {
   const { commands } = useGame();
@@ -36,6 +52,7 @@ export function ShopPanel() {
           );
         })}
       </div>
+      <BribeButton />
       <button
         type="button"
         onClick={() => commands.run("shop.close", {})}
