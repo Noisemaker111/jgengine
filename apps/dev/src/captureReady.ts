@@ -24,12 +24,15 @@ export function captureArmed(): boolean {
   return new URLSearchParams(window.location.search).get("capture") === "1";
 }
 
-export function readCaptureQuery(): { game: string; mode: string; device: string } {
+export function readCaptureQuery(): { game: string; mode: string; device: string; settle: number | null } {
   const params = new URLSearchParams(window.location.search);
+  const settleRaw = params.get("settle");
+  const settle = settleRaw === null ? null : Number.parseInt(settleRaw, 10);
   return {
     game: params.get("game") ?? "demo",
     mode: params.get("mode") ?? "play",
     device: params.get("device") ?? "desktop",
+    settle: settle !== null && Number.isFinite(settle) ? settle : null,
   };
 }
 
@@ -70,7 +73,7 @@ function waitForSelector(selector: string, timeoutMs: number): Promise<Element> 
         resolve(found);
       }
     });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
     const timer = window.setTimeout(() => {
       observer.disconnect();
       reject(new Error(`timed out waiting for ${selector}`));
@@ -85,7 +88,7 @@ function delay(ms: number): Promise<void> {
 }
 
 async function waitPlayFrames(settleMs: number): Promise<void> {
-  await waitForSelector("canvas", 25_000);
+  await waitForSelector("canvas, [data-jg-frame-ready]", 25_000);
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => resolve());
@@ -113,7 +116,7 @@ export function armCaptureReady(mode: string): () => void {
         await waitForSelector("[data-poster-ready]", 25_000);
         await delay(200);
       } else {
-        await waitPlayFrames(2_500);
+        await waitPlayFrames(readCaptureQuery().settle ?? 2_500);
       }
       if (!cancelled) setCaptureStatus("ready");
     } catch (error) {

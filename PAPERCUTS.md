@@ -98,3 +98,11 @@ probe-testing new:game → bun's lenient package.json parser masked a dangling c
 2026-07-12T05:33:03.754Z — fable-5 — Claude
 
 waited on merge-commit CI → CLAUDE.md claims no Actions job exceeds ~1 min, but apps/web build now runs ~6 min; the stale claim caused a false hung-job investigation
+
+2026-07-12T15:41:20.498Z — claude-opus-4-8 — Claude
+
+backgrounded ship worker stalled after its gate sub-workers passed but before committing → detected only via staged-but-uncommitted tree, had to stop it and take over the ship, cost several cycles
+
+2026-07-12T15:41:20.537Z — claude-opus-4-8 — Claude
+
+local check-types failed spuriously on stale node_modules symlinks in examples/next-host + tanstack-host (missing @games/nonogram link) → needed rm -rf node_modules + bun install; main was already green

@@ -1567,6 +1567,25 @@ export function GamePlayerShell({
       offResume();
     };
   }, [ctx, audioEngine]);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset.jgPresentation = playable.presentation ?? "3d";
+    return () => {
+      delete document.documentElement.dataset.jgPresentation;
+    };
+  }, [playable]);
+  useEffect(() => {
+    if (ctx === null || typeof document === "undefined") return;
+    const hud = resolveRigKind(playable.camera) === "none" || playable.presentation === "hud";
+    if (!hud) return;
+    const frame = requestAnimationFrame(() => {
+      document.documentElement.dataset.jgFrameReady = "1";
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      delete document.documentElement.dataset.jgFrameReady;
+    };
+  }, [ctx, playable]);
   const userId = multiplayer?.userId ?? DEV_USER_ID;
   const reportRuntimeError = (error: unknown, phase: string, componentStack?: string) => {
     const diagnostic = logRuntimeError(error, phase, componentStack);

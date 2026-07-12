@@ -106,6 +106,10 @@ const GAME_ID =
 const MODE = urlParams.get("mode") ?? "play";
 const PREVIEW = urlParams.get("preview");
 const STAGE = urlParams.get("stage") === "1";
+const RUN = (urlParams.get("run") ?? "")
+  .split(",")
+  .map((name) => name.trim())
+  .filter((name) => name.length > 0);
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
@@ -311,7 +315,16 @@ function DevApp() {
   }
   const stageScenario =
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
-  return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={stageScenario} />;
+  const onContextReady =
+    stageScenario !== undefined || RUN.length > 0
+      ? (ctx: GameContext) => {
+          stageScenario?.(ctx);
+          for (const name of RUN) {
+            if (ctx.game.commands.has(name)) ctx.game.commands.run(name, { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } });
+          }
+        }
+      : undefined;
+  return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={onContextReady} />;
 }
 
 createRoot(document.getElementById("root")!).render(
