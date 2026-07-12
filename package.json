@@ -14,7 +14,7 @@
     "check-artifacts": "bun scripts/check-no-src-artifacts.ts",
     "check-skills": "bun scripts/check-skill-sync.ts",
     "check-game-shape": "bun scripts/check-game-shape.ts",
-    "check-types": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts && bun run check-artifacts && bun run check-skills && bun run check-game-shape && bun run --filter \"*\" check-types'",
+    "check-types": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts && bun run check-artifacts && bun run check-skills && bun run check-game-shape && bun scripts/check-types-all.ts'",
     "build:registry": "bun scripts/build-registry.ts",
     "gen-llms": "bun scripts/gen-llms-txt.ts",
     "check-llms": "bun scripts/gen-llms-txt.ts --check",

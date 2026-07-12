@@ -427,7 +427,16 @@ try {
 }
 const targets = devicesFor(args.device);
 
-const server = args.url !== undefined ? null : await ensureServer();
+let server: ChildProcess | null = null;
+if (args.url === undefined) {
+  server = await ensureServer();
+} else if (!(await isUp(args.url))) {
+  if (args.url.startsWith(BASE)) {
+    server = await ensureServer();
+  } else {
+    throw new Error(`shoot: nothing is listening at ${args.url} — start that server first (only ${BASE} is auto-started)`);
+  }
+}
 let chrome: ChildProcess | null = null;
 const debugPort = args.connect ?? pickDebugPort();
 let exitCode = 0;

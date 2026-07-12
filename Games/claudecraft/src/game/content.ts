@@ -61,7 +61,7 @@ const petIds = new Set(PETS.map((pet) => pet.id));
 
 export const content: GameContextContent = {
   itemById: itemEntry,
-  entityById(catalogId) {
+  entityById(catalogId): GameContextEntityEntry | null {
     if (catalogId === CLASS_ENTITY_ID) {
       return {
         role: "player",

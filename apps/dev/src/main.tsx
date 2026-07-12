@@ -40,6 +40,8 @@ const gameModules = import.meta.glob<{ game: PlayableGame; uiScenario?: UiPrevie
   "../../../Games/*/src/index.tsx",
 );
 
+const gameStyleModules = import.meta.glob<Record<string, unknown>>("../../../Games/*/src/index.css");
+
 const gameSourceModules = import.meta.glob<Record<string, unknown>>([
   "../../../Games/*/src/**/*.{ts,tsx}",
   "!**/main.tsx",
@@ -170,6 +172,7 @@ function DevApp() {
     }
     void load()
       .then(async (loaded) => {
+        await gameStyleModules[`../../../Games/${GAME_ID}/src/index.css`]?.();
         await discoverGameTunables(GAME_ID, loaded.game.name);
         if (MODE === "poster") {
           setMultiplayer(null);
