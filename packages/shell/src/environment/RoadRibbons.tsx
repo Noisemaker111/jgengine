@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { BufferAttribute, BufferGeometry, DoubleSide } from "three";
 import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
 import { buildRoadRibbon, dashSegments } from "@jgengine/core/world/roads";
+import { offsetPath, sidewalkWidthOf } from "@jgengine/core/world/streets";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
 function toGeometry(positions: Float32Array, indices: Uint32Array): BufferGeometry | null {
@@ -60,6 +61,14 @@ export function RoadRibbons({ road, field }: { road: RoadEnvironmentDescriptor; 
     () => (road.markings ? mergedDashGeometry(road, field) : null),
     [road, field],
   );
+  const sidewalks = useMemo(() => {
+    const width = sidewalkWidthOf(road);
+    if (width <= 0) return [];
+    const offset = road.width / 2 + width / 2;
+    return [offsetPath(road.path, offset), offsetPath(road.path, -offset)]
+      .map((path) => ribbonGeometry(path, width, field, road.elevation + 0.06))
+      .filter((geometry): geometry is BufferGeometry => geometry !== null);
+  }, [road, field]);
 
   if (asphalt === null) return null;
   return (
@@ -72,6 +81,16 @@ export function RoadRibbons({ road, field }: { road: RoadEnvironmentDescriptor; 
           <meshStandardMaterial color={road.markingColor} roughness={0.8} metalness={0} side={DoubleSide} />
         </mesh>
       ) : null}
+      {sidewalks.map((geometry, index) => (
+        <mesh key={`walk-${index}`} geometry={geometry} receiveShadow>
+          <meshStandardMaterial
+            color={road.sidewalk === false ? "#a7adb8" : road.sidewalk.color}
+            roughness={0.9}
+            metalness={0}
+            side={DoubleSide}
+          />
+        </mesh>
+      ))}
     </group>
   );
 }

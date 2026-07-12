@@ -33,27 +33,6 @@ export const ROADS: readonly RoadSegment[] = [
   { from: [-180, 240], to: [180, 240] },
 ];
 
-export const TRAFFIC_LOOPS: readonly (readonly (readonly [number, number])[])[] = [
-  [
-    [-180, -120],
-    [60, -120],
-    [60, 120],
-    [-180, 120],
-  ],
-  [
-    [-60, 0],
-    [180, 0],
-    [180, 240],
-    [-60, 240],
-  ],
-  [
-    [-180, -240],
-    [180, -240],
-    [180, 0],
-    [-180, 0],
-  ],
-];
-
 export function districtAt(x: number, z: number): District | null {
   let best: District | null = null;
   let bestDist = Number.POSITIVE_INFINITY;
@@ -93,17 +72,6 @@ export const RACE_CHECKPOINTS: readonly (readonly [number, number])[] = [
   [-180, -120],
   [-180, 120],
   [-68, 122],
-];
-
-export const PALM_SPOTS: readonly (readonly [number, number])[] = [
-  [-196, -60],
-  [-198, -20],
-  [-196, 20],
-  [-198, 60],
-  [-196, 100],
-  [-198, 140],
-  [-196, -100],
-  [-198, -140],
 ];
 
 export const KINGPIN_POS: readonly [number, number, number] = [92, 0, -252];

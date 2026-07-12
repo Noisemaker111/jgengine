@@ -102,6 +102,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Cosmetic loadout | `game/cosmetics` | `createCosmetics`, `Cosmetics`, `CosmeticLoadoutDef` |
 | Quest | `game/quest` | `QuestDef`, `QuestRewards`, `QuestObjective`, `QuestJournal` |
 | World features | `world/features` | `WorldFeature`, `biomes`, `voxel`, `plots`, `tilemap`, `flat`, `environment`, `terrain`, `rain`, `snow`, `grass`, `ocean`, `building`, `road` |
+| Street layout | `world/streets` | `laneCenters`, `sidewalkPaths`, `furnitureSpots`, `parkingSpots`, `sidewalkPoint`, `offsetPath`, `sidewalkWidthOf`, `StreetLane`, `FurnitureSpot`, `ParkingSpot` — where things belong on a `road()`: lanes for traffic, sidewalks for peds, curb anchors for furniture |
 | Road ribbons | `world/roads` | `buildRoadRibbon`, `dashSegments`, `nearestOnPath`, `isOnRoad`, `pathLength`, `RoadRibbon`, `RoadSample`, `RoadPoint` — geometry + queries behind the `road()` environment feature |
 | Voxel field | `world/voxelField` | `createVoxelField`, `VoxelField`, `VoxelCell`, `VoxelHit`, `VoxelBounds`, `VoxelFieldSummary`, `VoxelFace`, `VOXEL_FACES`, `VOXEL_FACE_NORMALS` — a chunked block lattice, distinct from the `voxel()` `WorldFeature` descriptor |
 | Terrain field | `world/terrain` | `TerrainField`, `noiseField`, `resolveTerrainField`, `rollingField`, `fractalNoise`, `valueNoise`, `withNormal`, `arenaField`, `flatField`, `resolveGroundStep`, `snapToGround`, `snapEntityToGround`, `resolveTerrainPalette`, `TERRAIN_MATERIAL_PALETTES` |
