@@ -12,6 +12,8 @@ export const worldObjects: readonly WorldObjectDef[] = [
   { id: "vendor_zed", name: "Dr. Zed's Meds", color: "#d8d4c8", height: 2.2 },
   { id: "new_u_station", name: "New-U Station", color: "#2f8cff", height: 2.6 },
   { id: "bandit_barrel", name: "Explosive Barrel", color: "#b3452a", height: 0.9 },
+  { id: "fast_travel", name: "Fast Travel Station", color: "#38e1ff", height: 2.8 },
+  { id: "black_market", name: "Crazy Earl's Black Market", color: "#8a2be2", height: 2.2 },
 ];
 
 const byId = new Map(worldObjects.map((object) => [object.id, object]));

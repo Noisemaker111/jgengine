@@ -12,7 +12,13 @@ import { PANDORA, RARITY_COLORS } from "./game/palette";
 import { session } from "./game/session";
 import { GameUI } from "./game/ui/GameUI";
 import { AMMO_CHESTS, RED_CHESTS } from "./game/world/setup";
-import { CLAPTRAP_POS, MARCUS_VENDOR_POS, ZED_VENDOR_POS } from "./game/world/sites";
+import {
+  BLACK_MARKET_POS,
+  CLAPTRAP_POS,
+  MARCUS_VENDOR_POS,
+  TRAVEL_STATIONS,
+  ZED_VENDOR_POS,
+} from "./game/world/sites";
 import { loop } from "./loop";
 import { physics, world } from "./world";
 
@@ -52,6 +58,24 @@ const staticPrompts: readonly PositionedPrompt[] = [
       invoke: { name: "vendor.open", input: { vendor: "claptrap" } },
     },
   },
+  {
+    id: "vendor:blackmarket",
+    position: { x: BLACK_MARKET_POS[0], z: BLACK_MARKET_POS[2] },
+    prompt: {
+      radius: 3.2,
+      display: { kind: "keybind", actionId: "interact" },
+      invoke: { name: "blackmarket.open", input: undefined },
+    },
+  },
+  ...TRAVEL_STATIONS.map((station) => ({
+    id: `travel:${station.zoneId}`,
+    position: { x: station.x, z: station.z },
+    prompt: {
+      radius: 3.4,
+      display: { kind: "keybind", actionId: "interact" } as const,
+      invoke: { name: "travel.open", input: undefined },
+    },
+  })),
   ...RED_CHESTS.map((chest, index) => ({
     id: `chest:red:${index}`,
     position: { x: chest.x, z: chest.z },
@@ -114,7 +138,7 @@ export const game = defineGame({
   hotbarSelection: () => session.selectedSlot(),
   backdrop: {
     background: PANDORA.sky,
-    fog: { color: PANDORA.fog, near: 120, far: 420 },
+    fog: { color: PANDORA.fog, near: 160, far: 680 },
   },
   lighting: {
     ambient: { color: "#c9b8a0", intensity: 1.4 },

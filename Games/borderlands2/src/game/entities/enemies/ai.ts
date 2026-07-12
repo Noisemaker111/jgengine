@@ -3,7 +3,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { cameraShake } from "@jgengine/shell/camera";
 import { ffylPhase } from "../../handroll";
-import { enemyById, type EnemyDef } from "./catalog";
+import { zoneLevelAt } from "../../world/zones";
+import { enemyById, levelDamageMult, type EnemyDef } from "./catalog";
 
 const nextAttackAt = new Map<string, number>();
 const nextNovaAt = new Map<string, number>();
@@ -95,8 +96,9 @@ function tickMelee(
   const readyAt = nextAttackAt.get(enemyId) ?? 0;
   if (nowMs < readyAt) return;
   nextAttackAt.set(enemyId, nowMs + def.attack.intervalMs);
-  ctx.scene.entity.effect({ from: enemyId, to: playerId, effect: "damage", via: { amount: def.attack.damage } });
-  cameraShake(Math.min(0.5, def.attack.damage / 60));
+  const damage = Math.round(def.attack.damage * levelDamageMult(zoneLevelAt(enemyPos[0], enemyPos[2])));
+  ctx.scene.entity.effect({ from: enemyId, to: playerId, effect: "damage", via: { amount: damage } });
+  cameraShake(Math.min(0.5, damage / 60));
 }
 
 function tickRanged(
