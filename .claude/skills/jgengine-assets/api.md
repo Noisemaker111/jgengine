@@ -87,7 +87,7 @@
 - `ExtractedGlb` (interface): interface ExtractedGlb — ⚠ undocumented
 - `ExtractedTexture` (interface): interface ExtractedTexture — ⚠ undocumented
 - `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
-- `defaultReleaseUrl` (function): function defaultReleaseUrl(source: AssetSource): string — Builds the default GitHub-release mirror URL for a pack source.
+- `defaultReleaseUrl` (function): function defaultReleaseUrl(source: AssetSource): string — URL of `source`'s archive on the default GitHub-release mirror.
 - `downloadArchive` (function): function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> — ⚠ undocumented
 - `downloadPackArchive` (function): function downloadPackArchive(source: AssetSource, options: DownloadPackOptions = {}): Promise<DownloadPackResult> — Resolves and downloads a pack's archive, trying sources in order until one succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the default GitHub-release mirror at `defaultReleaseUrl` (skipped when `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`), (3) the primary provider path (`resolveArchiveUrl`: scrape or pinned URL), (4) the pack's own `mirror` URL. A pinned `sha256` is verified against whichever source supplied the bytes; a mismatch is treated as a failed attempt so the next source in the chain is tried. Throws with every attempted URL and its failure reason when all sources fail.
 - `extractGlbs` (function): function extractGlbs(archive: Uint8Array): ExtractedGlb[] — ⚠ undocumented
