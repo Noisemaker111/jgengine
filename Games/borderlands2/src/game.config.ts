@@ -11,6 +11,9 @@ import { keybinds } from "./game/keybinds";
 import { PANDORA, RARITY_COLORS } from "./game/palette";
 import { session } from "./game/session";
 import { GameUI } from "./game/ui/GameUI";
+import { renderPandoraEntity } from "./game/world/renderEntity";
+import { renderPandoraObject } from "./game/world/renderObject";
+import { PandoraViewmodel } from "./game/world/Viewmodel";
 import { AMMO_CHESTS, RED_CHESTS } from "./game/world/setup";
 import {
   BLACK_MARKET_POS,
@@ -132,6 +135,9 @@ export const game = defineGame({
   loop,
   GameUI,
   entitySprites,
+  renderEntity: renderPandoraEntity,
+  renderObject: renderPandoraObject,
+  WorldOverlay: PandoraViewmodel,
   worldHealthBars: { roles: ["enemy"] },
   worldItem: { rarityStyle, pickupRadius: 2.8 },
   prompts,
@@ -151,7 +157,7 @@ export const game = defineGame({
   movement: { collideObjects: true },
   camera: {
     perspective: "first",
-    firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: true },
+    firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
     frustum: { far: 800 },
   },
   orientation: "landscape",

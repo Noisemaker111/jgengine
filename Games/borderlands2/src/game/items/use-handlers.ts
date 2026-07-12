@@ -3,13 +3,16 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import { cameraShake } from "@jgengine/shell/camera";
 import { AMMO_LABELS } from "../ammo";
+import { bonus } from "../characters";
 import { enemyById } from "../entities/enemies/catalog";
+import { noteHit, noteShot } from "../feel";
 import {
   applyElementalProc,
   consumeRound,
   elementalDamageMult,
   gunById,
   isReloading,
+  magState,
   startReload,
 } from "../handroll";
 
@@ -32,9 +35,8 @@ function warn(ctx: GameContext, from: string, text: string): void {
   ctx.scene.entity.floatText({ instanceId: from, text, kind: "warn" });
 }
 
-function gunLustMult(ctx: GameContext, userId: string): number {
-  const points = ctx.scene.entity.stats.get(userId, "skill_gunlust")?.current ?? 0;
-  return 1 + points * 0.04;
+function gunDamageMult(): number {
+  return 1 + bonus("gunDamage");
 }
 
 function applyHitModifiers(
@@ -53,9 +55,9 @@ function applyHitModifiers(
   const shield = ctx.scene.entity.stats.get(targetId, "shield");
   const shielded = shield !== null && shield.current > 0;
 
-  let mult = elementalDamageMult(gun.element, surface, shielded, targetId, nowMs) * gunLustMult(ctx, from);
-  const crit = combatRng() < gun.weapon.critChance;
-  if (crit) mult *= gun.weapon.critMult;
+  let mult = elementalDamageMult(gun.element, surface, shielded, targetId, nowMs) * gunDamageMult();
+  const crit = combatRng() < gun.weapon.critChance + bonus("critChance");
+  if (crit) mult *= gun.weapon.critMult + bonus("critDamage");
 
   const extra = Math.round(gun.weapon.damage * (mult - 1));
   if (extra !== 0) {
@@ -64,6 +66,8 @@ function applyHitModifiers(
   if (crit) {
     ctx.scene.entity.floatText({ instanceId: targetId, text: "CRITICAL!", kind: "warn" });
   }
+  const killed = (ctx.scene.entity.stats.get(targetId, "health")?.current ?? 1) <= 0;
+  noteHit(nowMs, crit, killed);
   applyElementalProc(combatRng, gun, from, targetId, nowMs);
 }
 
@@ -82,7 +86,12 @@ const fireGun: ItemUseHandler<GameContext> = {
       if (!startReload(ctx, gun, nowMs)) warn(ctx, input.from, `NO ${AMMO_LABELS[gun.ammo].toUpperCase()} AMMO`);
       return { state: ctx };
     }
-    lastFiredAt.set(gateKey, nowMs + gun.weapon.fireIntervalMs);
+    if (bonus("ammoRefund") > 0 && combatRng() < bonus("ammoRefund")) {
+      magState(gun).inMag += gun.ammoPerShot;
+      ctx.scene.entity.floatText({ instanceId: input.from, text: "FREE SHOT", kind: "pickup" });
+    }
+    lastFiredAt.set(gateKey, nowMs + Math.round(gun.weapon.fireIntervalMs / (1 + bonus("fireRate"))));
+    noteShot(nowMs, gun.family);
     cameraShake(Math.min(0.3, 0.05 + gun.weapon.damage / 400), 6);
 
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
@@ -104,7 +113,7 @@ const fireGun: ItemUseHandler<GameContext> = {
           at: settled.at,
           radius: explosion.radius,
           effect: "damage",
-          via: { amount: Math.round(gun.weapon.damage * gunLustMult(ctx, input.from)) },
+          via: { amount: Math.round(gun.weapon.damage * gunDamageMult()) },
         });
       });
       return { state: ctx };
@@ -158,7 +167,7 @@ const throwGrenade: ItemUseHandler<GameContext> = {
         at: settled.at,
         radius: GRENADE.radius,
         effect: "damage",
-        via: { amount: GRENADE.damage },
+        via: { amount: Math.round(GRENADE.damage * (1 + bonus("grenadeDamage"))) },
       });
     });
     return { state: ctx };

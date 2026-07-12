@@ -2,8 +2,11 @@ import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_STAT_IDS, type AmmoPool } from "./ammo";
 import { gearById, AMMO_PRICES } from "./items/gear/catalog";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
+import { activeCharacter, characterById, pickCharacter, talentTree, bonus } from "./characters";
+import { noteEquipped } from "./feel";
 import { gunById, rollGun, startReload, ffylPhase } from "./handroll";
-import { skillByIdOrNull } from "./progression/curves";
+import { player } from "./entities/players/catalog";
 import { session } from "./session";
 import { TRAVEL_STATIONS } from "./world/sites";
 import { zoneLevelAt } from "./world/zones";
@@ -65,6 +68,7 @@ function pickupWorldItem(ctx: GameContext): void {
       });
     }
     ctx.player.inventory.put("hotbar", gun.id, 1, { slot });
+    noteEquipped(gun.id);
     ctx.game.store.set("lastPickup", { gunId: gun.id, atMs: ctx.time.now() * 1000 });
     ctx.scene.entity.floatText({ instanceId: userId, text: gun.name.toUpperCase(), kind: "pickup" });
     ctx.game.feed.push("loot.pickup", { itemId: gun.id, rarity: gun.rarity });
@@ -156,6 +160,7 @@ export function registerCommands(ctx: GameContext): void {
     ctx.game.commands.define(`selectSlot${slot + 1}`, {
       apply(state: GameContext) {
         session.selectSlot(state, slot);
+        noteEquipped(selectedGunId(state));
       },
     });
   }
@@ -339,24 +344,52 @@ export function registerCommands(ctx: GameContext): void {
     },
   });
 
-  ctx.game.commands.define<{ skill?: string }>("skill.spend", {
+  ctx.game.commands.define<{ characterId?: string }>("character.pick", {
     apply(state: GameContext, input) {
-      const skill = skillByIdOrNull(input.skill ?? "");
-      if (skill === null) return;
-      const userId = state.player.userId;
-      const points = state.scene.entity.stats.get(userId, "skillPoints");
-      const rank = state.scene.entity.stats.get(userId, skill.statId);
-      if (points === null || rank === null || points.current < 1 || rank.current >= rank.max) return;
-      state.scene.entity.stats.delta(userId, "skillPoints", -1);
-      state.scene.entity.stats.delta(userId, skill.statId, 1);
-      if (skill.id === "brawn") {
-        const health = state.scene.entity.stats.get(userId, "health");
-        if (health !== null) {
-          const bonus = Math.round(health.max * 0.08);
-          state.scene.entity.stats.set(userId, "health", { max: health.max + bonus });
-          state.scene.entity.stats.delta(userId, "health", bonus);
-        }
-      }
+      if (activeCharacter() !== null) return;
+      const def = characterById(input.characterId ?? "");
+      if (def === undefined) return;
+      pickCharacter(def.id);
+      state.game.store.set("characterId", def.id);
+      applyPassiveEffects(state);
+      setGamePhase(state, "playing");
+      state.scene.entity.floatText({
+        instanceId: state.player.userId,
+        text: `${def.name.toUpperCase()} — ${def.className.toUpperCase()}`,
+        kind: "pickup",
+      });
     },
+  });
+
+  ctx.game.commands.define<{ nodeId?: string }>("talent.spend", {
+    apply(state: GameContext, input) {
+      const tree = talentTree();
+      if (tree === null || input.nodeId === undefined) return;
+      const before = 1 + bonus("maxHealth");
+      const result = tree.allocate(input.nodeId);
+      if (!result.ok) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: result.reason.toUpperCase(), kind: "warn" });
+        return;
+      }
+      state.game.store.set("talentRanks", tree.snapshot().ranks);
+      state.scene.entity.stats.set(state.player.userId, "skillPoints", { current: tree.pointsAvailable() });
+      applyPassiveEffects(state, before);
+    },
+  });
+}
+
+function applyPassiveEffects(ctx: GameContext, previousHealthMult = 1): void {
+  const userId = ctx.player.userId;
+  const healthMult = 1 + bonus("maxHealth");
+  if (healthMult !== previousHealthMult) {
+    const health = ctx.scene.entity.stats.get(userId, "health");
+    if (health !== null) {
+      const max = Math.round((health.max / previousHealthMult) * healthMult);
+      ctx.scene.entity.stats.set(userId, "health", { max });
+      ctx.scene.entity.stats.delta(userId, "health", Math.max(0, max - health.max));
+    }
+  }
+  ctx.scene.entity.update(userId, {
+    movement: { walkSpeed: Math.round(player.walkSpeed * (1 + bonus("moveSpeed")) * 10) / 10 },
   });
 }

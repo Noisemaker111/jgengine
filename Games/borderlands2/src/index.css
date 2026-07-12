@@ -7,5 +7,94 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  background: #070c08;
+  background: #14100c;
+}
+
+.bl2-plate {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+}
+
+.bl2-hitmarker {
+  animation: bl2-hit-pop 220ms ease-out forwards;
+}
+
+@keyframes bl2-hit-pop {
+  0% {
+    transform: scale(1.6);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+
+.bl2-levelup {
+  animation: bl2-levelup-in 2200ms ease-out forwards;
+}
+
+.bl2-levelup-ring {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border: 4px solid #ffb400;
+  border-radius: 9999px;
+  animation: bl2-levelup-ring 900ms ease-out forwards;
+}
+
+@keyframes bl2-levelup-in {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  12% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.02);
+    opacity: 0;
+  }
+}
+
+@keyframes bl2-levelup-ring {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(6);
+    opacity: 0;
+  }
+}
+
+.bl2-banner {
+  animation: bl2-banner-in 4000ms ease-out forwards;
+}
+
+@keyframes bl2-banner-in {
+  0% {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  8% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }

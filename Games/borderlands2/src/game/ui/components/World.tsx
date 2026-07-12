@@ -15,7 +15,7 @@ export function ZoneBanner() {
   );
   if (zone === undefined || nowMs - zone.atMs > 4000) return null;
   return (
-    <div className="pointer-events-none flex flex-col items-center">
+    <div key={zone.name} className="bl2-banner pointer-events-none flex flex-col items-center">
       <span className="border-b-2 border-amber-400 px-6 pb-1 text-3xl font-black uppercase tracking-[0.3em] text-stone-50 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
         {zone.name}
       </span>
