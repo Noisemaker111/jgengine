@@ -581,7 +581,7 @@ export interface MovementCommitFrame {
 export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> {
   game: GameDefinition;
   content: GameContextContent;
-  loop: Required<GameLoop<GameContext>>;
+  loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">;
   GameUI: TUi;
   /** Which shell mount to use. Default `"3d"` (canvas, camera rig, pointer, world rendering). `"hud"` mounts no 3D canvas, camera rig, or pointer — the game is `GameUI` plus the command/input loop, for board/card/menu games. */
   presentation?: "3d" | "hud";
