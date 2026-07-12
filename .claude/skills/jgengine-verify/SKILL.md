@@ -75,6 +75,10 @@ Every game ships `src/preview.tsx`: the default export is a static default frame
 
 Capture is `bun run shoot <game> --preview <stateKey>` (bare `--preview` or `--mode preview` = default frame), which drives `/?game=<id>&preview=<stateKey>` in the dev runner. That URL mounts only the resolved preview component — no sim, no three.js, no `GamePlayerShell` — so it renders in milliseconds, never hangs on WebGL, and fires the same `data-jg-capture` handshake. Output lands at `shots/<game>-preview-<state>.png`. An unknown state key fails fast with the list of available keys. Reach for `--preview` before `--mode ui`/`--mode play` whenever the question is "does this UI state render right" — the full-shell modes remain only for live-scene look and integration.
 
+## SSR'd widgets must be hydration-stable
+
+Hosts prerender registry widgets (jgengine.com does this for `/components`), so any widget that emits a computed float straight into an SVG attribute must round at the boundary — server and client stringify a raw trig result to different last digits and React throws a hydration mismatch. Round coordinate output to a fixed precision (≈3 decimals) inside the shared arc/point helper (`polarToCartesian`, `pointAt`, `radial`) so both renders agree; new SVG widgets round by default.
+
 ## Definition of done references this
 
 The numbered `jgengine` intake defines the observable target; this skill proves it after implementation.
