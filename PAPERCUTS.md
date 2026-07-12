@@ -35,3 +35,7 @@ check-game-shape gate rejected new cross-game contract file preview.tsx at src r
 2026-07-12T00:33:41.028Z — fable-5 — Claude
 
 briefed a Sonnet worker to run gates+ship → it recursively spawned background sub-workers and returned 'will report later' twice, nearly triple-running the ship motion
+
+2026-07-12T00:59:12.493Z — claude-fable-5 — Claude
+
+ship worker for the self-hosted mirror returned 'I'll wait for the background agent notification' as its final result despite an explicit do-not-delegate, execute-in-this-turn brief — the enforcement gap is in worker behavior, not brief wording; needed a SendMessage resume

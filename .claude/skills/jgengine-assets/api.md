@@ -81,7 +81,7 @@
 
 ## @jgengine/assets/download
 
-- `DEFAULT_RELEASE_BASE` (const): const DEFAULT_RELEASE_BASE: "https://github.com/Noisemaker111/jgengine-assets/releases/download/packs" — Default asset mirror: GitHub Releases on the jgengine-assets repo, reachable from every cloud sandbox without network-policy changes (github.com is on the default allowlist). Assets live on the rolling `packs` release, one flat zip per pack named `<provider>-<packId>.zip`; publishing a new pack is just uploading a correctly named zip — no code change. Override the whole chain with `--mirror` / `JGENGINE_ASSETS_MIRROR`, or disable this hop with `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
+- `DEFAULT_RELEASE_BASE` (const): const DEFAULT_RELEASE_BASE: "https://github.com/Noisemaker111/jgengine/releases/download/packs" — Default asset mirror: this repo's own GitHub Releases, reachable from every cloud sandbox without network-policy changes (github.com is on the default allowlist). Assets live on the rolling `packs` release, one flat zip per pack named `<provider>-<packId>.zip`, kept in sync with the source catalog by `.github/workflows/mirror-assets.yml` — adding a catalog entry is the whole publishing step. Override the chain with `--mirror` / `JGENGINE_ASSETS_MIRROR`, or disable this hop with `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
 - `DownloadPackOptions` (interface): interface DownloadPackOptions — ⚠ undocumented
 - `DownloadPackResult` (interface): interface DownloadPackResult — ⚠ undocumented
 - `ExtractedGlb` (interface): interface ExtractedGlb — ⚠ undocumented
