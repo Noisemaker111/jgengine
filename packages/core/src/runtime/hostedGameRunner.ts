@@ -19,6 +19,12 @@ export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMulti
   /** The world's own authoritative identity (`ctx.player` server-side); real players join as members. */
   host?: LoopPlayer;
   now?: () => number;
+  /**
+   * Rehydrate a persisted world instead of booting a fresh one — for stateless hosts (Convex) that reconstruct
+   * the runner each invocation. `onInit` still runs (so commands and systems it registers exist), then this
+   * snapshot overlays the world state it seeded. Omit for a long-lived stateful host (ws) that keeps one runner.
+   */
+  restore?: WorldSnapshot;
 }
 
 /**
@@ -47,7 +53,7 @@ export interface HostedGameRunner {
 export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>,
 ): HostedGameRunner {
-  const { definition, content, host, now } = options;
+  const { definition, content, host, now, restore } = options;
   const ctx = createGameContext({
     definition,
     content,
@@ -60,6 +66,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   const inputs = new Map<string, InputFrame>();
 
   loop.onInit?.(ctx);
+  if (restore !== undefined) ctx.hydrate(restore);
 
   return {
     join(userId, isNew) {

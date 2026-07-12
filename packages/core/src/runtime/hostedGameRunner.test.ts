@@ -5,6 +5,7 @@ import { createAssetCatalog } from "../scene/assetCatalog";
 import { applyWorldDiff } from "./worldReplication";
 import { createHostedGameRunner, type HostedGameRunner } from "./hostedGameRunner";
 import type { GameContext, GameContextContent } from "./gameContext";
+import type { WorldSnapshot } from "./worldSnapshot";
 
 const CONTENT: GameContextContent = {
   entityById(catalogId) {
@@ -14,8 +15,9 @@ const CONTENT: GameContextContent = {
   },
 };
 
-function runner(): HostedGameRunner {
+function runner(restore?: WorldSnapshot): HostedGameRunner {
   return createHostedGameRunner({
+    ...(restore === undefined ? {} : { restore }),
     definition: defineGame({
       name: "Hosted",
       assets: createAssetCatalog(),
@@ -119,5 +121,22 @@ describe("hosted game runner", () => {
     host.input("alice", { held: ["moveForward"], pointer: null });
     expect(host.heldInput("alice")).toEqual({ held: ["moveForward"], pointer: null });
     expect(host.heldInput("bob")).toBeNull();
+  });
+
+  test("restore rehydrates a persisted world without re-seeding, and onInit-registered commands still work", () => {
+    const origin = runner();
+    origin.join("alice", true);
+    origin.command("alice", "bump", { by: 2 });
+    origin.tick(1);
+    const saved = origin.snapshot();
+
+    const restored = runner(saved);
+    expect(restored.context().scene.entity.get("alice")).not.toBeNull();
+    expect(restored.context().game.store.get("started")).toBe(true);
+    expect(restored.context().game.store.get("bumped")).toBe(2);
+    expect(restored.context().scene.entity.get("mover")?.position[0]).toBeCloseTo(1);
+
+    restored.command("alice", "bump", { by: 5 });
+    expect(restored.context().game.store.get("bumped")).toBe(7);
   });
 });

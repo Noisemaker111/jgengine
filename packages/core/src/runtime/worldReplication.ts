@@ -144,6 +144,53 @@ function keysAfter(map: Map<string, number>, sinceRevision: number): string[] {
 }
 
 /**
+ * Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of
+ * {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs
+ * per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
+ */
+export function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff {
+  const prevEntities = new Map<string, string>();
+  for (const entity of (prev["entities"] ?? []) as readonly SceneEntity[]) {
+    prevEntities.set(entity.id, JSON.stringify(entity));
+  }
+  const entities: SceneEntity[] = [];
+  const nextEntityIds = new Set<string>();
+  for (const entity of (next["entities"] ?? []) as readonly SceneEntity[]) {
+    nextEntityIds.add(entity.id);
+    const json = JSON.stringify(entity);
+    if (prevEntities.get(entity.id) !== json) entities.push(JSON.parse(json) as SceneEntity);
+  }
+  const removedEntities = [...prevEntities.keys()].filter((id) => !nextEntityIds.has(id));
+
+  const prevStats = (prev["stats"] ?? {}) as Record<string, StatValueMap>;
+  const nextStats = (next["stats"] ?? {}) as Record<string, StatValueMap>;
+  const stats: Record<string, StatValueMap> = {};
+  for (const [id, value] of Object.entries(nextStats)) {
+    const json = JSON.stringify(value);
+    if (JSON.stringify(prevStats[id]) !== json) stats[id] = JSON.parse(json) as StatValueMap;
+  }
+  const removedStats = Object.keys(prevStats).filter((id) => !(id in nextStats));
+
+  const prevStore = new Map((prev["store"] ?? []) as readonly (readonly [string, unknown])[]);
+  const nextStore = new Map((next["store"] ?? []) as readonly (readonly [string, unknown])[]);
+  const store: (readonly [string, unknown])[] = [];
+  for (const [key, value] of nextStore) {
+    const json = JSON.stringify(value ?? null);
+    if (JSON.stringify(prevStore.get(key) ?? null) !== json) store.push([key, JSON.parse(json) as unknown]);
+  }
+  const removedStore = [...prevStore.keys()].filter((key) => !nextStore.has(key));
+
+  const modules: WorldSnapshot = {};
+  for (const [key, value] of Object.entries(next)) {
+    if (CORE_KEYS.has(key)) continue;
+    const json = JSON.stringify(value ?? null);
+    if (JSON.stringify(prev[key] ?? null) !== json) modules[key] = JSON.parse(json) as unknown;
+  }
+
+  return { revision, entities, removedEntities, stats, removedStats, store, removedStore, modules };
+}
+
+/**
  * Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the
  * client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities,
  * stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.

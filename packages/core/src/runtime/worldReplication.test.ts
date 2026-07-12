@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { applyWorldDiff, createWorldReplicator } from "@jgengine/core/runtime/worldReplication";
+import {
+  applyWorldDiff,
+  createWorldReplicator,
+  diffSnapshots,
+} from "@jgengine/core/runtime/worldReplication";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
 
 function ent(id: string, x: number): unknown {
@@ -92,5 +96,37 @@ describe("world replicator", () => {
     expect(rebuilt["stats"]).toEqual({ e1: { hp: { current: 1, max: 3, min: 0 } } });
     expect(new Map(rebuilt["store"] as [string, unknown][])).toEqual(new Map([["phase", "combat"]]));
     expect(rebuilt["feed"]).toEqual({ chat: ["hi", "gg"] });
+  });
+
+  test("diffSnapshots diffs two baselines and applyWorldDiff reproduces the next one", () => {
+    const prev: WorldSnapshot = {
+      entities: [ent("e1", 1), ent("e2", 2)],
+      stats: { e1: { hp: { current: 3, max: 3, min: 0 } } },
+      store: [["a", 1]],
+      feed: { log: [] },
+    };
+    const next: WorldSnapshot = {
+      entities: [ent("e1", 7)],
+      stats: { e1: { hp: { current: 2, max: 3, min: 0 } } },
+      store: [["a", 1], ["b", 2]],
+      feed: { log: ["x"] },
+    };
+
+    const diff = diffSnapshots(prev, next, 5);
+    expect(diff.revision).toBe(5);
+    expect(diff.entities).toEqual([ent("e1", 7)]);
+    expect(diff.removedEntities).toEqual(["e2"]);
+    expect(diff.store).toEqual([["b", 2]]);
+    expect(diff.modules).toEqual({ feed: { log: ["x"] } });
+
+    const rebuilt = applyWorldDiff(prev, diff);
+    expect(new Map((rebuilt["entities"] as { id: string }[]).map((e) => [e.id, e]))).toEqual(
+      new Map((next["entities"] as { id: string }[]).map((e) => [e.id, e])),
+    );
+    expect(rebuilt["stats"]).toEqual(next["stats"]);
+    expect(new Map(rebuilt["store"] as [string, unknown][])).toEqual(
+      new Map(next["store"] as [string, unknown][]),
+    );
+    expect(rebuilt["feed"]).toEqual(next["feed"]);
   });
 });
