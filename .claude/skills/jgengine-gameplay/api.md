@@ -648,7 +648,7 @@
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
 - `actionLabel` (function): function actionLabel(map: ActionCodesMap, action: string): string | null — Short display label for an action's first bound code, or null when unbound.
 - `actionRepeatMs` (function): function actionRepeatMs(codes: ActionCodes | undefined): number | undefined — ⚠ undocumented
-- `bindingLabel` (function): function bindingLabel(code: string): string — ⚠ undocumented
+- `bindingLabel` (function): function bindingLabel(code: string): string — Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
 - `bindingMatches` (function): function bindingMatches<TCode extends string>(code: TCode, binding: ActionBinding<TCode>): boolean — ⚠ undocumented
 - `createActionStateTracker` (function): function createActionStateTracker<TAction extends string, TCode extends string = string>(map: ActionStateBindingMap<TAction, TCode>): ActionStateTracker<TAction> — ⚠ undocumented
 - `hotbarSlotActionIndex` (function): function hotbarSlotActionIndex(action: string): number | null — 0-based slot index for a hotbar-slot action name (`slot1`, `hotbarSlot1`), or null.

@@ -118,100 +118,100 @@
 ## @jgengine/react
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
-- `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): any — ⚠ undocumented
+- `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
 - `BetterAuthSessionState` (interface): interface BetterAuthSessionState — ⚠ undocumented
 - `BetterAuthUserShape` (interface): interface BetterAuthUserShape — ⚠ undocumented
-- `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): any — ⚠ undocumented
+- `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): React.JSX.Element — ⚠ undocumented
 - `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
 - `ChatBubble` (interface): interface ChatBubble — ⚠ undocumented
 - `ChatBubblesOptions` (interface): interface ChatBubblesOptions — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
-- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): any — ⚠ undocumented
+- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `ChatPanel` (function): function ChatPanel({ channels, initialChannel, limit, className, tabsClassName, tabClassName, activeTabClassName, logClassName, messageClassName, inputClassName, inputFieldClassName, sendButtonClassName, placeholder, renderMessage, onRejected, }: { channels?: readonly string[]; initialChannel?: stri… — ⚠ undocumented
 - `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips (bearing to each `MarkerSet` entry).
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
-- `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): any — ⚠ undocumented
-- `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): any — ⚠ undocumented
+- `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): React.JSX.Element — ⚠ undocumented
+- `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
 - `DialogueCheck` (interface): interface DialogueCheck — ⚠ undocumented
 - `DialogueChoice` (interface): interface DialogueChoice — ⚠ undocumented
 - `DialogueDef` (interface): interface DialogueDef — ⚠ undocumented
 - `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
 - `DisplayProfile` (interface): interface DisplayProfile — ⚠ undocumented
-- `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): any — ⚠ undocumented
+- `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `DragLayer` (interface): interface DragLayer<T> — ⚠ undocumented
 - `DragPayload` (interface): interface DragPayload<T> — ⚠ undocumented
 - `DragState` (interface): interface DragState<T> — ⚠ undocumented
-- `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): any — ⚠ undocumented
+- `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
 - `DropInfo` (interface): interface DropInfo<T> — ⚠ undocumented
-- `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): any — ⚠ undocumented
+- `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
 - `EventMeterView` (interface): interface EventMeterView — ⚠ undocumented
 - `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> — ⚠ undocumented
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
-- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): any — ⚠ undocumented
-- `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): any — ⚠ undocumented
+- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `GamePreviewComponent` (type): type GamePreviewComponent = ComponentType<GamePreviewProps> — ⚠ undocumented
 - `GamePreviewProps` (type): type GamePreviewProps = { className?: string; } — ⚠ undocumented
 - `GamePreviewStates` (type): type GamePreviewStates = Record<string, GamePreviewComponent> — ⚠ undocumented
-- `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): any — ⚠ undocumented
-- `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): any — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
-- `HealthBar` (function): function HealthBar({ instanceId, statId, className, fillClassName, }: { instanceId: string; statId: string; className?: string; fillClassName?: string; }): any — ⚠ undocumented
+- `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
+- `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
+- `HealthBar` (function): function HealthBar({ instanceId, statId, className, fillClassName, }: { instanceId: string; statId: string; className?: string; fillClassName?: string; }): React.JSX.Element | null — ⚠ undocumented
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
 - `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
 - `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack position within the r… — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
-- `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): any — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
+- `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
-- `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): any — ⚠ undocumented
-- `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): any — ⚠ undocumented
+- `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
+- `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
-- `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): any — ⚠ undocumented
+- `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
-- `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): any — ⚠ undocumented
+- `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads a core `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
 - `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
-- `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): any — ⚠ undocumented
-- `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): any — ⚠ undocumented
-- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): any — ⚠ undocumented
-- `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): any — ⚠ undocumented
-- `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): any — ⚠ undocumented
-- `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): any — ⚠ undocumented
+- `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
+- `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
+- `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
+- `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> — ⚠ undocumented
 - `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
-- `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): any — ⚠ undocumented
+- `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
-- `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): any — ⚠ undocumented
+- `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — ⚠ undocumented
+- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
 - `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
-- `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): any — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — ⚠ undocumented
-- `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): any — ⚠ undocumented
-- `SettingsRow` (interface): interface SettingsRow — ⚠ undocumented
-- `SettingsTrigger` (function): function SettingsTrigger({ className, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): any — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` for placement/skin and `children` to replace the default gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
-- `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): any — ⚠ undocumented
+- `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
+- `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): React.JSX.Element — ⚠ undocumented
+- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
+- `SettingsTrigger` (function): function SettingsTrigger({ className, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): React.JSX.Element | null — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` for placement/skin and `children` to replace the default gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
+- `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
-- `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): any — ⚠ undocumented
-- `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): any — ⚠ undocumented
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): any — ⚠ undocumented
+- `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
-- `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): any — ⚠ undocumented
+- `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `ViewportMetrics` (interface): interface ViewportMetrics — Live viewport rectangles: the layout viewport and the visible `visualViewport`.
-- `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): any — ⚠ undocumented
+- `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `VoiceState` (interface): interface VoiceState — ⚠ undocumented
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
 - `WorldBrowserState` (interface): interface WorldBrowserState — ⚠ undocumented
-- `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): any — ⚠ undocumented
+- `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
 - `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`.
 - `WorldMapProps` (interface): interface WorldMapProps — ⚠ undocumented
 - `abilityKitNeedsHeartbeat` (function): function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: number): boolean — ⚠ undocumented
@@ -292,7 +292,7 @@
 
 - `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
-- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): any — ⚠ undocumented
+- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `ChatPanel` (function): function ChatPanel({ channels, initialChannel, limit, className, tabsClassName, tabClassName, activeTabClassName, logClassName, messageClassName, inputClassName, inputFieldClassName, sendButtonClassName, placeholder, renderMessage, onRejected, }: { channels?: readonly string[]; initialChannel?: stri… — ⚠ undocumented
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 
@@ -306,23 +306,23 @@
 
 ## @jgengine/react/components
 
-- `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): any — ⚠ undocumented
-- `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): any — ⚠ undocumented
-- `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): any — ⚠ undocumented
+- `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): React.JSX.Element — ⚠ undocumented
+- `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): React.JSX.Element — ⚠ undocumented
+- `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
 - `DialogueCheck` (interface): interface DialogueCheck — ⚠ undocumented
 - `DialogueChoice` (interface): interface DialogueChoice — ⚠ undocumented
 - `DialogueDef` (interface): interface DialogueDef — ⚠ undocumented
 - `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
-- `HealthBar` (function): function HealthBar({ instanceId, statId, className, fillClassName, }: { instanceId: string; statId: string; className?: string; fillClassName?: string; }): any — ⚠ undocumented
-- `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): any — ⚠ undocumented
-- `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): any — ⚠ undocumented
-- `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): any — ⚠ undocumented
-- `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): any — ⚠ undocumented
-- `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): any — ⚠ undocumented
+- `HealthBar` (function): function HealthBar({ instanceId, statId, className, fillClassName, }: { instanceId: string; statId: string; className?: string; fillClassName?: string; }): React.JSX.Element | null — ⚠ undocumented
+- `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
+- `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
+- `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
+- `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
-- `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): any — ⚠ undocumented
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): any — ⚠ undocumented
+- `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
 - `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
@@ -334,13 +334,13 @@
 
 ## @jgengine/react/dragLayer
 
-- `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): any — ⚠ undocumented
+- `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `DragLayer` (interface): interface DragLayer<T> — ⚠ undocumented
 - `DragPayload` (interface): interface DragPayload<T> — ⚠ undocumented
 - `DragState` (interface): interface DragState<T> — ⚠ undocumented
-- `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): any — ⚠ undocumented
+- `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
 - `DropInfo` (interface): interface DropInfo<T> — ⚠ undocumented
-- `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): any — ⚠ undocumented
+- `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
 
 ## @jgengine/react/engineStore
@@ -362,7 +362,7 @@
 ## @jgengine/react/gameIcons
 
 - `GAME_ICON_NAMES` (const): const GAME_ICON_NAMES: readonly ["sword", "dagger", "axe", "hammer", "bow", "arrow", "staff", "wand", "spear", "crossbow", "gun", "bomb", "shield", "helmet", "chestplate", "boots", "gauntlet", "ring", "amulet", "cloak", "backpack", "torch", "potionRed", "potionBlue", "scroll", "tome", "meat", "bread… — ⚠ undocumented
-- `GameIcon` (function): function GameIcon({ name, size = 24, color, className, }: { name: GameIconName; size?: number; color?: string; className?: string; }): any — ⚠ undocumented
+- `GameIcon` (function): function GameIcon({ name, size = 24, color, className, }: { name: GameIconName; size?: number; color?: string; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `GameIconName` (type): type GameIconName = (typeof GAME_ICON_NAMES)[number] — ⚠ undocumented
 - `iconForAction` (function): function iconForAction(action: string): GameIconName | null — Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
 - `iconForItemId` (function): function iconForItemId(itemId: string): GameIconName | null — ⚠ undocumented
@@ -370,7 +370,7 @@
 
 ## @jgengine/react/gameViewport
 
-- `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): any — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
+- `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
 - `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
 - `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
 - `ViewportMetrics` (interface): interface ViewportMetrics — Live viewport rectangles: the layout viewport and the visible `visualViewport`.
@@ -438,7 +438,7 @@
 ## @jgengine/react/hudViewport
 
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
-- `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): any — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
+- `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 
 ## @jgengine/react/identity
@@ -447,11 +447,11 @@
 - `BetterAuthUserShape` (interface): interface BetterAuthUserShape — ⚠ undocumented
 - `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
-- `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): any — ⚠ undocumented
+- `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
-- `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): any — ⚠ undocumented
-- `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): any — ⚠ undocumented
+- `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `betterAuthIdentity` (function): function betterAuthIdentity(state: BetterAuthSessionState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
@@ -460,7 +460,7 @@
 
 ## @jgengine/react/liveBind
 
-- `LiveText` (function): function LiveText({ get, format, className, style, }: { get: () => number | string; format?: (value: number | string) => string; className?: string; style?: CSSProperties; }): any — ⚠ undocumented
+- `LiveText` (function): function LiveText({ get, format, className, style, }: { get: () => number | string; format?: (value: number | string) => string; className?: string; style?: CSSProperties; }): React.JSX.Element — ⚠ undocumented
 - `frameBindSubscriberCount` (function): function frameBindSubscriberCount(): number — ⚠ undocumented
 - `subscribeFrameBind` (function): function subscribeFrameBind(subscriber: FrameSubscriber): () => void — ⚠ undocumented
 - `useFrameBind` (function): function useFrameBind<T, E extends Element = Element>(ref: { current: E | null }, get: () => T, apply: (value: T, element: E) => void): void — ⚠ undocumented
@@ -485,7 +485,7 @@
 
 ## @jgengine/react/provider
 
-- `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): any — ⚠ undocumented
+- `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
 
@@ -502,13 +502,13 @@
 ## @jgengine/react/settings
 
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — ⚠ undocumented
+- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
 - `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
-- `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): any — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — ⚠ undocumented
-- `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): any — ⚠ undocumented
-- `SettingsRow` (interface): interface SettingsRow — ⚠ undocumented
-- `SettingsTrigger` (function): function SettingsTrigger({ className, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): any — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` for placement/skin and `children` to replace the default gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
+- `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
+- `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): React.JSX.Element — ⚠ undocumented
+- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
+- `SettingsTrigger` (function): function SettingsTrigger({ className, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): React.JSX.Element | null — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` for placement/skin and `children` to replace the default gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
@@ -521,40 +521,40 @@
 
 ## @jgengine/react/social
 
-- `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): any — ⚠ undocumented
+- `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
-- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): any — ⚠ undocumented
-- `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): any — ⚠ undocumented
-- `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): any — ⚠ undocumented
-- `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): any — ⚠ undocumented
-- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): any — ⚠ undocumented
-- `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): any — ⚠ undocumented
+- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
+- `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
+- `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
-- `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): any — ⚠ undocumented
+- `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
 
 ## @jgengine/react/voice
 
-- `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): any — ⚠ undocumented
-- `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): any — ⚠ undocumented
-- `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): any — ⚠ undocumented
+- `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
-- `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): any — ⚠ undocumented
+- `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `VoiceState` (interface): interface VoiceState — ⚠ undocumented
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 
 ## @jgengine/shell/GameHost
 
-- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer }: GameHostProps): any — ⚠ undocumented
+- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer }: GameHostProps): React.JSX.Element — ⚠ undocumented
 - `GameHostProps` (interface): interface GameHostProps — ⚠ undocumented
 
 ## @jgengine/shell/GamePlayer
 
-- `GamePlayer` (function): function GamePlayer({ gameId, registry, fallbackGameId, loading = null, multiplayer = null }: GamePlayerProps): any — ⚠ undocumented
+- `GamePlayer` (function): function GamePlayer({ gameId, registry, fallbackGameId, loading = null, multiplayer = null }: GamePlayerProps): React.JSX.Element — ⚠ undocumented
 - `GamePlayerProps` (type): type GamePlayerProps = { gameId: string; registry: GameRegistry; fallbackGameId?: string; loading?: ReactNode; multiplayer?: ShellMultiplayer | null; } — ⚠ undocumented
 
 ## @jgengine/shell/GamePlayerShell
@@ -571,7 +571,7 @@
 
 ## @jgengine/shell/GameUiPreview
 
-- `GameUiPreview` (function): function GameUiPreview({ playable, scenario = defaultUiScenario, }: { playable: PlayableGame; scenario?: UiPreviewScenario; }): any — ⚠ undocumented
+- `GameUiPreview` (function): function GameUiPreview({ playable, scenario = defaultUiScenario, }: { playable: PlayableGame; scenario?: UiPreviewScenario; }): React.JSX.Element — ⚠ undocumented
 - `UiPreviewScenario` (type): type UiPreviewScenario = (ctx: GameContext, playable: PlayableGame) => void — ⚠ undocumented
 - `defaultUiScenario` (const): const defaultUiScenario: UiPreviewScenario — ⚠ undocumented
 
@@ -628,32 +628,34 @@
 - `CameraFollowState` (interface): interface CameraFollowState — ⚠ undocumented
 - `CameraPose` (interface): interface CameraPose — ⚠ undocumented
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
-- `CameraShakeContext` (const): const CameraShakeContext: any — ⚠ undocumented
+- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
 - `ChaseRig` (function): function ChaseRig(props: RigProps): null — ⚠ undocumented
 - `CinematicRig` (function): function CinematicRig(props: RigProps): null — ⚠ undocumented
 - `DEFAULT_ORBIT_CAMERA` (const): const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig — ⚠ undocumented
 - `DirectorCameraValues` (interface): interface DirectorCameraValues — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, }: GameCameraRigProps): any — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, }: GameFirstPersonCameraProps): any — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
-- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): any — Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
+- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
-- `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): any — ⚠ undocumented
+- `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
 - `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — ⚠ undocumented
+- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
+- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `LockOnRig` (function): function LockOnRig(props: RigProps): null — ⚠ undocumented
 - `ORBIT_CAMERA_FRAME_PRIORITY` (const): const ORBIT_CAMERA_FRAME_PRIORITY: -1 — Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY.
 - `ObserverRig` (function): function ObserverRig(props: RigProps): null — Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / photo-mode / kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
 - `OrbitCameraConfig` (interface): interface OrbitCameraConfig — ⚠ undocumented
 - `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState — ⚠ undocumented
-- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: any — ⚠ undocumented
+- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — ⚠ undocumented
 - `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — ⚠ undocumented
 - `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
 - `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
 - `PlayerFovBounds` (interface): interface PlayerFovBounds — ⚠ undocumented
-- `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): any — ⚠ undocumented
-- `PlayerFovSlider` (function): function PlayerFovSlider(): any — ⚠ undocumented
+- `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
 - `PlayerFovState` (interface): interface PlayerFovState — ⚠ undocumented
 - `ResolvedChase` (interface): interface ResolvedChase — ⚠ undocumented
 - `ResolvedDirectedCamera` (interface): interface ResolvedDirectedCamera — ⚠ undocumented
@@ -736,31 +738,31 @@
 
 ## @jgengine/shell/camera/GameCameraRig
 
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, }: GameCameraRigProps): any — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
 - `resolveRigKind` (function): function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind — Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to least specific: an explicit `rig` field always wins; then `perspective: "first"` (the historical shorthand for `rig: "orbit" | "first"`); then the mere presence of a rig's own config block selects that rig, checked in the fixed order below (#207.8) so a config carrying more than one block resolves deterministically instead of depending on object key order. Set `rig` explicitly to break a tie.
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
 
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, }: GameFirstPersonCameraProps): any — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
 
 ## @jgengine/shell/camera/GameInspectionCamera
 
-- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): any — Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
+- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
 
 ## @jgengine/shell/camera/GameOrbitCamera
 
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
-- `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): any — ⚠ undocumented
+- `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
 - `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — ⚠ undocumented
 - `seedOrbitCameraTarget` (function): function seedOrbitCameraTarget(camera: Camera, target: Vector3, distance: number, height: number): void — Seed orbit target before controls mount (demo spawn at origin).
 
 ## @jgengine/shell/camera/PlayerFov
 
-- `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): any — ⚠ undocumented
-- `PlayerFovSlider` (function): function PlayerFovSlider(): any — ⚠ undocumented
+- `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
 - `PlayerFovState` (interface): interface PlayerFovState — ⚠ undocumented
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
@@ -791,7 +793,7 @@
 
 ## @jgengine/shell/camera/fovPreference
 
-- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: any — ⚠ undocumented
+- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — ⚠ undocumented
 - `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — ⚠ undocumented
 - `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
 - `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
@@ -804,6 +806,8 @@
 
 ## @jgengine/shell/camera/inspectionCameraMath
 
+- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
+- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig — ⚠ undocumented
 - `resolveInspectionCameraConfig` (function): function resolveInspectionCameraConfig(config?: InspectionCameraConfig): ResolvedInspectionCameraConfig — ⚠ undocumented
 - `resolveInspectionZoomToCursor` (function): function resolveInspectionZoomToCursor(anchor: InspectionZoomAnchor): boolean — Maps the anchor mode onto three-stdlib OrbitControls' native `zoomToCursor` flag.
@@ -889,7 +893,7 @@
 ## @jgengine/shell/camera/shakeChannel
 
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
-- `CameraShakeContext` (const): const CameraShakeContext: any — ⚠ undocumented
+- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
 - `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Feed the default camera-shake channel from anywhere (see G7 hitstop cross-cut).
 - `createCameraShakeChannel` (function): function createCameraShakeChannel(defaultDecayPerSecond = 1.6): CameraShakeChannel — ⚠ undocumented
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
@@ -925,15 +929,15 @@
 
 ## @jgengine/shell/devtools/CollisionDebugWorld
 
-- `CollisionDebugWorld` (function): function CollisionDebugWorld(): any — World-space collision debugger. Performs zero scene scans and zero raycasts when every layer is off. Mount only when shell devtools are enabled.
+- `CollisionDebugWorld` (function): function CollisionDebugWorld(): React.JSX.Element | null — World-space collision debugger. Performs zero scene scans and zero raycasts when every layer is off. Mount only when shell devtools are enabled.
 
 ## @jgengine/shell/devtools/DevtoolsOverlay
 
-- `DevtoolsOverlay` (function): function DevtoolsOverlay({ open, ctx, playable, multiplayer, }: { open: boolean; ctx: GameContext; playable: PlayableGame; multiplayer: ShellMultiplayer | null; }): any — ⚠ undocumented
+- `DevtoolsOverlay` (function): function DevtoolsOverlay({ open, ctx, playable, multiplayer, }: { open: boolean; ctx: GameContext; playable: PlayableGame; multiplayer: ShellMultiplayer | null; }): React.JSX.Element | null — ⚠ undocumented
 - `DevtoolsRendererProbe` (function): function DevtoolsRendererProbe(): null — ⚠ undocumented
 - `applyStoredDevtoolsOverrides` (function): function applyStoredDevtoolsOverrides(gameName: string): void — ⚠ undocumented
 - `buildFullReport` (function): function buildFullReport(playable: PlayableGame): DevtoolsSnapshot & { game: string } — ⚠ undocumented
-- `buildLeanReport` (function): function buildLeanReport(playable: PlayableGame): { game: any; at: any; why: string | null; frame: { fps: number; avgFrameMs: number; p95FrameMs: number; maxFrameMs: number; avgSimMs: number; maxSimMs: number; avgOutsideMs: number; maxOutsideMs: number; longFrames: any; samples: any; phases: any; } … — ⚠ undocumented
+- `buildLeanReport` (function): function buildLeanReport(playable: PlayableGame): { game: string; at: number; why: string | null; frame: { fps: number; avgFrameMs: number; p95FrameMs: number; maxFrameMs: number; avgSimMs: number; maxSimMs: number; avgOutsideMs: number; maxOutsideMs: number; longFrames: number; samples: number; pha… — ⚠ undocumented
 - `persistDevtoolsOverrides` (function): function persistDevtoolsOverrides(gameName: string): DevtoolsOverrides — ⚠ undocumented
 - `withDevtoolsLatency` (function): function withDevtoolsLatency(multiplayer: ShellMultiplayer): ShellMultiplayer — ⚠ undocumented
 
@@ -978,19 +982,19 @@
 
 ## @jgengine/shell/environment
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): any — ⚠ undocumented
+- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
-- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): any — ⚠ undocumented
+- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): any — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
+- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): any — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): any — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
+- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 - `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
 - `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
@@ -999,19 +1003,19 @@
 
 ## @jgengine/shell/environment
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): any — ⚠ undocumented
+- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
-- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): any — ⚠ undocumented
+- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): any — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
+- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): any — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): any — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
+- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 - `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
 - `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
@@ -1020,28 +1024,28 @@
 
 ## @jgengine/shell/environment/Daylight
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): any — ⚠ undocumented
+- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): any — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
+- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): any — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): any — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
+- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 
 ## @jgengine/shell/environment/EnvironmentScene
 
-- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): any — ⚠ undocumented
+- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
 
 ## @jgengine/shell/environment/GroundPad
 
-- `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): any — ⚠ undocumented
+- `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): React.JSX.Element — ⚠ undocumented
 - `GroundPadProps` (interface): interface GroundPadProps — ⚠ undocumented
 
 ## @jgengine/shell/environment/RoadRibbons
 
-- `RoadRibbons` (function): function RoadRibbons({ road, field }: { road: RoadEnvironmentDescriptor; field: TerrainField }): any — Renders one `road()` descriptor: an asphalt ribbon plus optional dashed centerline, draped on the terrain.
+- `RoadRibbons` (function): function RoadRibbons({ road, field }: { road: RoadEnvironmentDescriptor; field: TerrainField }): React.JSX.Element | null — Renders one `road()` descriptor: an asphalt ribbon plus optional dashed centerline, draped on the terrain.
 
 ## @jgengine/shell/environment/daylightCycle
 
@@ -1089,13 +1093,13 @@
 - `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions — ⚠ undocumented
 - `BakedMap` (interface): interface BakedMap — ⚠ undocumented
 - `MapBakeBounds` (interface): interface MapBakeBounds — ⚠ undocumented
-- `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): any — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
+- `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): React.JSX.Element — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
 - `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps — ⚠ undocumented
 - `bakeTerrainMap` (function): function bakeTerrainMap(field: TerrainField, bounds: MapBakeBounds, options: BakeTerrainMapOptions = {}): BakedMap | null — Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background. Runs in the browser via a 2D canvas; renderer-side, so it lives in the shell.
 
 ## @jgengine/shell/map/MapMarkerBeacons
 
-- `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): any — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
+- `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): React.JSX.Element — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
 - `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps — ⚠ undocumented
 
 ## @jgengine/shell/map/terrainMap
@@ -1121,8 +1125,8 @@
 
 ## @jgengine/shell/pointer/PointerOverlays
 
-- `ContextMenuView` (function): function ContextMenuView({ menu, x, y, onPick, onClose, }: { menu: ContextMenu; x: number; y: number; onPick: (verb: ContextVerb) => void; onClose: () => void; }): any — ⚠ undocumented
-- `MarqueeBox` (function): function MarqueeBox({ rect }: { rect: ScreenRect }): any — ⚠ undocumented
+- `ContextMenuView` (function): function ContextMenuView({ menu, x, y, onPick, onClose, }: { menu: ContextMenu; x: number; y: number; onPick: (verb: ContextVerb) => void; onClose: () => void; }): React.JSX.Element — ⚠ undocumented
+- `MarqueeBox` (function): function MarqueeBox({ rect }: { rect: ScreenRect }): React.JSX.Element — ⚠ undocumented
 
 ## @jgengine/shell/pointer/PointerProbe
 
@@ -1180,19 +1184,19 @@
 
 ## @jgengine/shell/settings/QuickControls
 
-- `QuickControls` (function): function QuickControls({ controller }: { controller: SettingsController }): any — ⚠ undocumented
+- `QuickControls` (function): function QuickControls({ controller }: { controller: SettingsController }): React.JSX.Element | null — ⚠ undocumented
 
 ## @jgengine/shell/settings/SettingsChrome
 
-- `SettingsChrome` (function): function SettingsChrome(): any — ⚠ undocumented
+- `SettingsChrome` (function): function SettingsChrome(): React.JSX.Element | null — ⚠ undocumented
 
 ## @jgengine/shell/settings/SettingsMenu
 
-- `SettingsMenu` (function): function SettingsMenu({ controller, onClose, initialTab, }: { controller: SettingsController; onClose: () => void; initialTab?: string; }): any — ⚠ undocumented
+- `SettingsMenu` (function): function SettingsMenu({ controller, onClose, initialTab, }: { controller: SettingsController; onClose: () => void; initialTab?: string; }): React.JSX.Element | null — ⚠ undocumented
 
 ## @jgengine/shell/settings/SettingsRuntime
 
-- `SettingsRuntime` (function): function SettingsRuntime({ variant, surface, actions, children, ...input }: SettingsRuntimeProps): any — ⚠ undocumented
+- `SettingsRuntime` (function): function SettingsRuntime({ variant, surface, actions, children, ...input }: SettingsRuntimeProps): React.JSX.Element — ⚠ undocumented
 - `SettingsRuntimeProps` (interface): interface SettingsRuntimeProps extends SettingsControllerInput — ⚠ undocumented
 
 ## @jgengine/shell/settings/appliedSettings
@@ -1203,62 +1207,69 @@
 
 ## @jgengine/shell/settings/settingsController
 
+- `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
+- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
+- `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
 - `SettingsControllerInput` (interface): interface SettingsControllerInput — ⚠ undocumented
+- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
+- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
+- `bindingLabel` (function): function bindingLabel(code: string): string — Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
 - `useSettingsCategories` (function): function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] — ⚠ undocumented
 
 ## @jgengine/shell/structures
 
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): any — ⚠ undocumented
+- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
 - `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): any — ⚠ undocumented
+- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
 - `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): any — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): any — ⚠ undocumented
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — ⚠ undocumented
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
 
 ## @jgengine/shell/structures
 
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): any — ⚠ undocumented
+- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
 - `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): any — ⚠ undocumented
+- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
 - `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): any — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): any — ⚠ undocumented
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — ⚠ undocumented
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
 
 ## @jgengine/shell/structures/GeneratedBuilding
 
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): any — ⚠ undocumented
+- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
 - `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
 - `BuildingFacade` (type): type BuildingFacade = "front" | "back" | "left" | "right" | "roof" — ⚠ undocumented
 - `BuildingKitRenderer` (interface): interface BuildingKitRenderer — ⚠ undocumented
 - `BuildingMaterialPalette` (interface): interface BuildingMaterialPalette — ⚠ undocumented
 - `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented
 - `BuildingPartPlacement` (interface): interface BuildingPartPlacement — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): any — ⚠ undocumented
+- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
 - `GeneratedBuildingData` (interface): interface GeneratedBuildingData — ⚠ undocumented
 - `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): any — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
 
 ## @jgengine/shell/structures/PlacementGhost
 
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): any — ⚠ undocumented
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — ⚠ undocumented
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
 
 ## @jgengine/shell/terrain
 
-- `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): any — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
+- `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
 - `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
-- `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): any — ⚠ undocumented
+- `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
+- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1267,42 +1278,54 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): any — ⚠ undocumented
+- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
+- `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
 - `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 - `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments — ⚠ undocumented
 - `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize — ⚠ undocumented
-- `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): any — ⚠ undocumented
+- `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
+- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
+- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
+- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
 - `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
 - `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
 - `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
 - `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
 - `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
 - `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
+- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
+- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
 - `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
+- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
 - `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
 - `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 - `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
 - `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
+- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
+- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
 - `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
 - `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
 - `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
 - `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
+- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
+- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/shell/terrain
 
-- `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): any — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
+- `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
 - `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
-- `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): any — ⚠ undocumented
+- `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
+- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1311,42 +1334,53 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): any — ⚠ undocumented
+- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
+- `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
 - `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 - `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments — ⚠ undocumented
 - `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize — ⚠ undocumented
-- `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): any — ⚠ undocumented
+- `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
+- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
+- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
+- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
 - `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
 - `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
 - `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
 - `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
 - `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
 - `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
+- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
+- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
 - `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
+- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
 - `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
 - `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 - `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
 - `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
+- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
+- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
 - `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
 - `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
 - `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
 - `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
+- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
+- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/shell/terrain/CarvedTerrain
 
-- `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): any — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
+- `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
 - `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 
 ## @jgengine/shell/terrain/EditableGround
 
-- `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): any — ⚠ undocumented
+- `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 
 ## @jgengine/shell/terrain/GrassField
@@ -1359,12 +1393,12 @@
 
 ## @jgengine/shell/terrain/ProceduralGround
 
-- `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): any — ⚠ undocumented
+- `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 
 ## @jgengine/shell/terrain/TerraformBrushCursor
 
-- `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): any — ⚠ undocumented
+- `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 
 ## @jgengine/shell/terrain/grassBudget
@@ -1424,13 +1458,13 @@
 
 ## @jgengine/shell/touch/OrientationHint
 
-- `OrientationHint` (function): function OrientationHint({ wanted }: { wanted: "landscape" | "portrait" }): any — ⚠ undocumented
+- `OrientationHint` (function): function OrientationHint({ wanted }: { wanted: "landscape" | "portrait" }): React.JSX.Element | null — ⚠ undocumented
 
 ## @jgengine/shell/touch/TouchControlsOverlay
 
 - `TouchCodeSink` (interface): interface TouchCodeSink — ⚠ undocumented
-- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, scale = 1 }: { scheme: TouchScheme; sink: TouchCodeSink; scale?: number }): any — ⚠ undocumented
-- `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): any — ⚠ undocumented
+- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, scale = 1 }: { scheme: TouchScheme; sink: TouchCodeSink; scale?: number }): React.JSX.Element — ⚠ undocumented
+- `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
 - `primaryButtonOffsets` (function): function primaryButtonOffsets(count: number, scale = 1): { right: number; bottom: number }[] | null — Thumb-arc placement for primary buttons around the bottom-right corner: up to three on an inner ring, the rest on an outer ring. Null means too many buttons for an arc — the dock falls back to a wrapping grid.
 - `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1): number — Vertical space (px, excluding device safe areas) the dock occupies above the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so `HudCanvas` regions never collide with touch controls.
 
@@ -1442,21 +1476,21 @@
 ## @jgengine/shell/vision/FrustumSensorHud
 
 - `FrustumSensorProbeOptions` (interface): interface FrustumSensorProbeOptions extends FramingConfig — ⚠ undocumented
-- `FrustumSensorReadout` (function): function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }): any — Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a photo-mode "is this subject framed" HUD.
+- `FrustumSensorReadout` (function): function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }): React.JSX.Element — Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a photo-mode "is this subject framed" HUD.
 - `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — ⚠ undocumented
 - `useFrustumSensor` (function): function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSample | null — ⚠ undocumented
 
 ## @jgengine/shell/vision/HiddenStateProbeHud
 
-- `SensorReadoutMeter` (function): function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps): any — A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
+- `SensorReadoutMeter` (function): function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps): React.JSX.Element — A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
 - `SensorReadoutMeterProps` (interface): interface SensorReadoutMeterProps — ⚠ undocumented
-- `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): any — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
+- `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): SensorReading | null — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 
 ## @jgengine/shell/vision/RevealVision
 
-- `RevealHighlights` (function): function RevealHighlights(props: RevealHighlightsProps): any — Screen-space reveal effect (#115) — highlights tagged entities through occluders (Dark Sight / detective-vision / wallhack style). Renders with `depthTest: false` so the highlight draws over any wall standing between the origin and the revealed entity, rather than the usual depth-sorted scene.
+- `RevealHighlights` (function): function RevealHighlights(props: RevealHighlightsProps): React.JSX.Element | null — Screen-space reveal effect (#115) — highlights tagged entities through occluders (Dark Sight / detective-vision / wallhack style). Renders with `depthTest: false` so the highlight draws over any wall standing between the origin and the revealed entity, rather than the usual depth-sorted scene.
 - `RevealHighlightsProps` (interface): interface RevealHighlightsProps extends RevealVisionOptions — ⚠ undocumented
-- `RevealScreenTint` (function): function RevealScreenTint({ enabled, color = "rgba(56, 189, 248, 0.16)", className }: RevealScreenTintProps): any — Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
+- `RevealScreenTint` (function): function RevealScreenTint({ enabled, color = "rgba(56, 189, 248, 0.16)", className }: RevealScreenTintProps): React.JSX.Element | null — Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
 - `RevealScreenTintProps` (interface): interface RevealScreenTintProps — ⚠ undocumented
 - `RevealVisionOptions` (interface): interface RevealVisionOptions — ⚠ undocumented
 - `useRevealHits` (function): function useRevealHits(options: RevealVisionOptions): readonly RevealHit[] — Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene.
@@ -1471,7 +1505,7 @@
 - `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): any — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
 - `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
 - `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
@@ -1497,7 +1531,7 @@
 - `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): any — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
 - `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
 - `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
@@ -1519,7 +1553,7 @@
 
 ## @jgengine/shell/water/Ocean
 
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): any — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 
 ## @jgengine/shell/water/OceanConfig
@@ -1556,19 +1590,19 @@
 
 ## @jgengine/shell/weather
 
-- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): any — ⚠ undocumented
+- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
 - `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps — ⚠ undocumented
-- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): any — ⚠ undocumented
+- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
 - `LightningStrikeProps` (interface): interface LightningStrikeProps — ⚠ undocumented
 - `RainField` (function): function RainField({ count = DEFAULT_RAIN_COUNT, density = DEFAULT_RAIN_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 22, length = 1.35, width = 0.018, opacity = 0.48, color = DEFAULT_RAIN_COLOR, lightning, timeScale, seed = 11939, renderOrder … — ⚠ undocumented
 - `RainFieldProps` (interface): interface RainFieldProps — ⚠ undocumented
 - `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, seed = 72931, renderOrder = 11, frustumC… — ⚠ undocumented
 - `SnowFieldProps` (interface): interface SnowFieldProps — ⚠ undocumented
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, enabled = true, children, }: WeatherLayerProps): any — ⚠ undocumented
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" — ⚠ undocumented
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — ⚠ undocumented
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — ⚠ undocumented
-- `WeatherUniformProvider` (function): function WeatherUniformProvider({ children, ...options }: WeatherUniformOptions & { children: ReactNode }): any — ⚠ undocumented
+- `WeatherUniformProvider` (function): function WeatherUniformProvider({ children, ...options }: WeatherUniformOptions & { children: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `WeatherUniformSet` (interface): interface WeatherUniformSet — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
 - `createWeatherUniformSet` (function): function createWeatherUniformSet(options: WeatherUniformOptions = {}): WeatherUniformSet — ⚠ undocumented
@@ -1576,12 +1610,12 @@
 
 ## @jgengine/shell/weather/FireSpreadLayer
 
-- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): any — ⚠ undocumented
+- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
 - `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps — ⚠ undocumented
 
 ## @jgengine/shell/weather/LightningStrike
 
-- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): any — ⚠ undocumented
+- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
 - `LightningStrikeProps` (interface): interface LightningStrikeProps — ⚠ undocumented
 
 ## @jgengine/shell/weather/RainField
@@ -1596,7 +1630,7 @@
 
 ## @jgengine/shell/weather/WeatherLayer
 
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, enabled = true, children, }: WeatherLayerProps): any — ⚠ undocumented
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" — ⚠ undocumented
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — ⚠ undocumented
 
@@ -1622,7 +1656,7 @@
 ## @jgengine/shell/weather/weatherUniforms
 
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — ⚠ undocumented
-- `WeatherUniformProvider` (function): function WeatherUniformProvider({ children, ...options }: WeatherUniformOptions & { children: ReactNode }): any — ⚠ undocumented
+- `WeatherUniformProvider` (function): function WeatherUniformProvider({ children, ...options }: WeatherUniformOptions & { children: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `WeatherUniformSet` (interface): interface WeatherUniformSet — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
 - `createWeatherUniformSet` (function): function createWeatherUniformSet(options: WeatherUniformOptions = {}): WeatherUniformSet — ⚠ undocumented
@@ -1630,46 +1664,46 @@
 
 ## @jgengine/shell/world/DataObjects
 
-- `DataObjects` (function): function DataObjects<T>({ data, position, height, color, cellSize = 0.28, hovered = null, hoverColor = "#ffffff", onHover, grow, castShadow = true, receiveShadow = true, renderItem, }: DataObjectsProps<T>): any — ⚠ undocumented
+- `DataObjects` (function): function DataObjects<T>({ data, position, height, color, cellSize = 0.28, hovered = null, hoverColor = "#ffffff", onHover, grow, castShadow = true, receiveShadow = true, renderItem, }: DataObjectsProps<T>): React.JSX.Element | null — ⚠ undocumented
 - `DataObjectsProps` (interface): interface DataObjectsProps<T> — Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city of buildings, a crowd. By default each item is an extruded box (all boxes share one `InstancedMesh`, so hundreds cost one draw call), sized and colored from the item; `renderItem` swaps the box for arbitrary content (a sprite, a GLB, a full entity). Genre-agnostic: the caller owns the data `T`, this owns the placement.
 
 ## @jgengine/shell/world/GridWorldScene
 
-- `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): any — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, following the same direct-buffer pattern as `InstancedBodies`.
+- `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): React.JSX.Element | null — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, following the same direct-buffer pattern as `InstancedBodies`.
 - `GridWorldSceneProps` (interface): interface GridWorldSceneProps — ⚠ undocumented
 
 ## @jgengine/shell/world/InstancedBodies
 
-- `InstancedBodies` (function): function InstancedBodies({ world, debugTint = false, baseColors, epoch = 0 }: InstancedBodiesProps): any — Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch. Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch the per-entity React path). Reusable by any game: hand it a physics world and go.
+- `InstancedBodies` (function): function InstancedBodies({ world, debugTint = false, baseColors, epoch = 0 }: InstancedBodiesProps): React.JSX.Element — Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch. Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch the per-entity React path). Reusable by any game: hand it a physics world and go.
 - `InstancedBodiesProps` (interface): interface InstancedBodiesProps — ⚠ undocumented
 
 ## @jgengine/shell/world/InstancedJoints
 
-- `InstancedJoints` (function): function InstancedJoints({ world, color = "#f5c542" }: InstancedJointsProps): any — Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with `InstancedBodies` to see the constraint structure over the bodies.
+- `InstancedJoints` (function): function InstancedJoints({ world, color = "#f5c542" }: InstancedJointsProps): React.JSX.Element — Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with `InstancedBodies` to see the constraint structure over the bodies.
 - `InstancedJointsProps` (interface): interface InstancedJointsProps — ⚠ undocumented
 
 ## @jgengine/shell/world/SpriteBatch
 
-- `SpriteBatch` (function): function SpriteBatch({ url, columns = 1, rows = 1, capacity = DEFAULT_CAPACITY, instances, plane = "xy", billboard = false, pixelated = true, alphaTest = DEFAULT_ALPHA_TEST, opacity = 1, }: SpriteBatchProps): any — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each frame from a plain instance list (bodies never touch the per-entity React path).
+- `SpriteBatch` (function): function SpriteBatch({ url, columns = 1, rows = 1, capacity = DEFAULT_CAPACITY, instances, plane = "xy", billboard = false, pixelated = true, alphaTest = DEFAULT_ALPHA_TEST, opacity = 1, }: SpriteBatchProps): React.JSX.Element — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each frame from a plain instance list (bodies never touch the per-entity React path).
 - `SpriteBatchInstance` (interface): interface SpriteBatchInstance — ⚠ undocumented
 - `SpriteBatchProps` (interface): interface SpriteBatchProps — ⚠ undocumented
 
 ## @jgengine/shell/world/WorldHud
 
 - `CombatCameraShake` (function): function CombatCameraShake(): null — ⚠ undocumented
-- `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): any — ⚠ undocumented
-- `Reticle` (function): function Reticle({ className }: { className?: string }): any — ⚠ undocumented
+- `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
+- `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
 - `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from the player (world… — ⚠ undocumented
-- `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): any — ⚠ undocumented
-- `WorldTelegraphs` (function): function WorldTelegraphs(): any — ⚠ undocumented
+- `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
+- `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
 - `collectWorldBarSamples` (function): function collectWorldBarSamples(ctx: GameContext, statId: string, height: number, roles: readonly CatalogEntityRole[] | undefined, resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined, camera: { matrixWorldInverse: unknown; projectionMatrix: unknown }, viewport: { width:… — ⚠ undocumented
 - `paintWorldBarSamples` (function): function paintWorldBarSamples(canvas: { width: number; height: number; getContext(kind: "2d"): CanvasRenderingContext2D | null }, samples: readonly WorldBarSample[], dpr: number, barWidthPx = 112, barHeightPx = 10): void — ⚠ undocumented
 - `telegraphPulseOpacity` (function): function telegraphPulseOpacity(bornMs: number, windupMs: number, nowMs: number): number — ⚠ undocumented
 
 ## @jgengine/shell/world/WorldItems
 
-- `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): any — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
+- `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 
 ## @jgengine/shell/world/entityPose
 
