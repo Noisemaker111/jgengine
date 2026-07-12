@@ -82,6 +82,32 @@ export function roadPoints(spacing: number): readonly (readonly [number, number]
   return points;
 }
 
+export const RACE_CHECKPOINTS: readonly (readonly [number, number])[] = [
+  [-60, 120],
+  [60, 120],
+  [60, 0],
+  [180, 0],
+  [180, -240],
+  [60, -240],
+  [-60, -120],
+  [-180, -120],
+  [-180, 120],
+  [-68, 122],
+];
+
+export const PALM_SPOTS: readonly (readonly [number, number])[] = [
+  [-196, -60],
+  [-198, -20],
+  [-196, 20],
+  [-198, 60],
+  [-196, 100],
+  [-198, 140],
+  [-196, -100],
+  [-198, -140],
+];
+
+export const KINGPIN_POS: readonly [number, number, number] = [92, 0, -252];
+
 export const PLAYER_SPAWN: readonly [number, number, number] = [-176, 0, 24];
 export const MARCO_POS: readonly [number, number, number] = [52, 0, -52];
 export const GUNSHOP_POS: readonly [number, number, number] = [-52, 0, 8];

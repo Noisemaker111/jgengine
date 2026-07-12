@@ -7,6 +7,7 @@ import {
   GARAGE_POS,
   GUNSHOP_POS,
   MARCO_POS,
+  PALM_SPOTS,
   roadPoints,
 } from "./districts";
 
@@ -36,6 +37,14 @@ const PED_SPOTS: readonly { kind: string; x: number; z: number }[] = [
   { kind: "ped_docks", x: 116, z: 176 },
   { kind: "ped_docks", x: 150, z: 202 },
   { kind: "ped_city", x: 66, z: -228 },
+  { kind: "ped_beach", x: -160, z: 120 },
+  { kind: "ped_beach", x: -186, z: 160 },
+  { kind: "ped_city", x: 62, z: -104 },
+  { kind: "ped_city", x: 28, z: -84 },
+  { kind: "ped_city", x: -46, z: -30 },
+  { kind: "ped_docks", x: 104, z: 214 },
+  { kind: "ped_docks", x: 138, z: 168 },
+  { kind: "ped_city", x: 84, z: -252 },
 ];
 
 export function setupWorld(ctx: GameContext): void {
@@ -56,10 +65,14 @@ export function setupWorld(ctx: GameContext): void {
     });
   });
 
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 9; i += 1) {
     const id = `traffic_${i}`;
-    ctx.scene.entity.spawn("car_compact", { id, position: ground(ctx, -60, 0), role: "prop" });
-    handroll.registerTrafficCar(id, i % 3, rng() * 90);
+    ctx.scene.entity.spawn(i % 3 === 2 ? "car_muscle" : "car_compact", { id, position: ground(ctx, -60, 0), role: "prop" });
+    handroll.registerTrafficCar(id, i % 3, rng() * 140);
+  }
+
+  for (const [x, z] of PALM_SPOTS) {
+    ctx.scene.object.place("obj_palm_planter", Math.round(x), Math.round(ctx.world.groundHeightAt(x, z) + 0.5), Math.round(z));
   }
 
   const gangSpots: readonly (readonly [number, number])[] = [

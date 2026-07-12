@@ -46,5 +46,6 @@ export const game = defineGame({
     frustum: { far: 900 },
   },
   backdrop: { background: "#ffe3b3" },
+  time: { dayLength: 720, start: 320 },
   orientation: "landscape",
 });

@@ -6,8 +6,17 @@ import {
   projectToMinimap,
   type MinimapView,
 } from "@jgengine/core/world/minimap";
-import { BRIEFCASE_POS, DOCK_FIGHT_CENTER, GUNSHOP_POS, MARCO_POS, ROADS, districtAt } from "../../world/districts";
-import { WANTED_STORE_KEY, type WantedSnapshot } from "../../handroll";
+import {
+  BRIEFCASE_POS,
+  DOCK_FIGHT_CENTER,
+  GARAGE_POS,
+  KINGPIN_POS,
+  MARCO_POS,
+  RACE_CHECKPOINTS,
+  ROADS,
+  districtAt,
+} from "../../world/districts";
+import { RACE_STORE_KEY, WANTED_STORE_KEY, type RaceSnapshot, type WantedSnapshot } from "../../handroll";
 
 const SIZE = 176;
 const RADIUS = 130;
@@ -18,6 +27,7 @@ interface MapSnapshot {
   cops: readonly (readonly [number, number])[];
   activeQuest: string | null;
   stars: number;
+  raceCheckpoint: number | null;
 }
 
 function readMap(ctx: GameContext): MapSnapshot | null {
@@ -30,12 +40,14 @@ function readMap(ctx: GameContext): MapSnapshot | null {
   const quests = ctx.game.quest.list(ctx.player.userId);
   const active = quests.find((q) => q.status === "active");
   const wanted = ctx.game.store.get(WANTED_STORE_KEY) as WantedSnapshot | undefined;
+  const race = ctx.game.store.get(RACE_STORE_KEY) as RaceSnapshot | undefined;
   return {
     player: player.position,
     heading: player.rotationY,
     cops,
     activeQuest: active?.questId ?? null,
     stars: wanted?.stars ?? 0,
+    raceCheckpoint: race !== undefined && race.active ? race.checkpoint : null,
   };
 }
 
@@ -43,6 +55,10 @@ const QUEST_TARGETS: Record<string, readonly [number, number]> = {
   m1_welcome: [MARCO_POS[0], MARCO_POS[2]],
   m2_dock_sweep: [DOCK_FIGHT_CENTER[0], DOCK_FIGHT_CENTER[2]],
   m3_the_ledger: [BRIEFCASE_POS[0], BRIEFCASE_POS[2]],
+  m5_ocean_loop: [GARAGE_POS[0], GARAGE_POS[2]],
+  m6_hot_wheels: [74, -236],
+  m7_carmine_convoy: [DOCK_FIGHT_CENTER[0], DOCK_FIGHT_CENTER[2]],
+  m8_kingpin: [KINGPIN_POS[0], KINGPIN_POS[2]],
 };
 
 export function CityMinimap() {
@@ -55,7 +71,12 @@ export function CityMinimap() {
     size: SIZE,
     rotate: headingToBearing(snapshot.heading),
   };
-  const target = snapshot.activeQuest !== null ? QUEST_TARGETS[snapshot.activeQuest] : undefined;
+  const target =
+    snapshot.raceCheckpoint !== null
+      ? RACE_CHECKPOINTS[Math.min(snapshot.raceCheckpoint, RACE_CHECKPOINTS.length - 1)]
+      : snapshot.activeQuest !== null
+        ? QUEST_TARGETS[snapshot.activeQuest]
+        : undefined;
   const district = districtAt(snapshot.player[0], snapshot.player[2]);
 
   return (

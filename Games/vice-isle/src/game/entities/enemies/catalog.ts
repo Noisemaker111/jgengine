@@ -10,6 +10,7 @@ export interface EnemyDef {
 export const ENEMIES: readonly EnemyDef[] = [
   { id: "ganger_dock", role: "enemy", walkSpeed: 4.4, health: 45, drops: "loot_ganger", bounty: 60 },
   { id: "ganger_enforcer", role: "enemy", walkSpeed: 3.8, health: 90, drops: "loot_enforcer", bounty: 140 },
+  { id: "kingpin_sal", role: "enemy", walkSpeed: 3.4, health: 420, drops: "loot_kingpin", bounty: 2500 },
   { id: "cop_patrol", role: "hostile", walkSpeed: 5.2, health: 60, drops: "loot_cop", bounty: 0 },
   { id: "cop_swat", role: "hostile", walkSpeed: 5.6, health: 110, drops: "loot_cop", bounty: 0 },
 ];

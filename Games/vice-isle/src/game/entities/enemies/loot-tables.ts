@@ -27,6 +27,15 @@ export const lootTables = [
     ],
   }),
   lootTable({
+    id: "loot_kingpin",
+    rolls: 3,
+    entries: [
+      { currency: "cash", count: [800, 1500], weight: 5 },
+      { item: "grenade_pineapple", count: [2, 4], weight: 2 },
+      { item: "medkit_street", count: 2, weight: 2 },
+    ],
+  }),
+  lootTable({
     id: "loot_ped",
     entries: [{ currency: "cash", count: [5, 25], weight: 1 }],
   }),
