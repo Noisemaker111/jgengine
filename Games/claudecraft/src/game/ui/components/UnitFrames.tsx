@@ -88,6 +88,7 @@ function Portrait({
 export function PlayerFrame() {
   const { userId } = usePlayer();
   const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
+  const name = useGameStore((ctx) => ctx.game.store.get(`name:${userId}`)) as string | undefined;
   const health = useEntityStat(userId, "health");
   const resource = useEntityStat(userId, "resource");
   const level = useEntityStat(userId, "level");
@@ -104,7 +105,7 @@ export function PlayerFrame() {
       <div className="flex items-center">
         <Portrait icon={cls.icon as GameIconName} color={cls.color} level={level?.current ?? 1} />
         <div className="wcc-panel w-[190px] rounded-l-none px-2 py-1.5">
-          <div className="wcc-title truncate text-xs">{cls.name}</div>
+          <div className="wcc-title truncate text-xs">{name ?? cls.name}</div>
           <div className="mt-0.5 space-y-0.5">
             <Bar value={health.current} max={health.max} fill="bg-[#1eb838]" />
             <Bar

@@ -10,6 +10,7 @@ import {
   chooseSpec,
   classOf,
   clearAuras,
+  endSpawnCinematic,
   heroEntityId,
   heroOf,
   selectClass,
@@ -45,13 +46,18 @@ function togglePanel(ctx: GameContext, panel: Panel): void {
 
 export function registerCommands(ctx: GameContext): void {
   const { commands } = ctx.game;
-  commands.define<{ classId: string }>("class.select", {
+  commands.define<{ classId: string; name?: string }>("class.select", {
     validate: (state, input) =>
       state.game.store.get(storeKeys.class(state.player.userId)) === undefined && input?.classId !== undefined
         ? null
         : { reason: "class-already-chosen" },
     apply(state, input) {
-      selectClass(state, state.player.userId, input.classId);
+      selectClass(state, state.player.userId, input.classId, input.name);
+    },
+  });
+  commands.define("cinematic.skip", {
+    apply(state) {
+      endSpawnCinematic(state, state.player.userId);
     },
   });
   for (let slot = 0; slot < 9; slot += 1) {
