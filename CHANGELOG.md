@@ -13,11 +13,19 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
+## 0.9.0
+
 ### Added
 
-- Mobile HUD fit, on by default for every game — `HudCanvas` measures the live viewport and scales the whole HUD from `PlayableGame.hudFit.designSize` (default 1600×900, clamps `minScale`/`maxScale` 0.4–1) so desktop-authored layouts shrink to fit a phone instead of overflowing it; `hudFit.mobile` overrides tune the phone fit separately, and `PlayableGame.platforms: ["web"]` opts a desktop-only game out (legacy fixed 0.85 compact zoom). Pure math lives in `@jgengine/core/ui/hudScale` (`hudScaleForViewport`, `resolveHudFit`, `rectOverflow`, `overflowingPanels`); the shell mounts `@jgengine/react`'s `HudViewportProvider` around `GameUI` so games need no wiring.
+- Mobile HUD fit — design-resolution UI scaling now applies to every game by default: `HudCanvas` measures the live viewport and scales the whole HUD from `PlayableGame.hudFit.designSize` (default 1600×900, clamps `minScale`/`maxScale` 0.4–1) so desktop-authored layouts shrink to fit a phone instead of overflowing it; `hudFit.mobile` overrides tune the phone fit separately. Pure math lives in `@jgengine/core/ui/hudScale` (`hudScaleForViewport`, `resolveHudFit`, `rectOverflow`, `overflowingPanels`); the shell mounts `@jgengine/react`'s `HudViewportProvider` around `GameUI` so games need no wiring.
 - Graphics → UI scale — a player-facing `graphics.uiScale` slider (0.5–1.5, default 1) multiplies the computed HUD scale on every platform; the same resolution system drives desktop preference and mobile shrink.
 - HUD overflow gate — `HudCanvas` measures every `HudPanel` against the viewport at runtime and reports offenders on a `data-hud-overflow` attribute (plus a console warning); `bun run shoot <game> --device mobile|both` now exits non-zero naming the panels that escape the viewport.
+- Automatic visibility & streaming defaults — an engine-level `VisibilitySystem` (exported from `@jgengine/core`) gives every scene renderer-agnostic culling and asset-streaming policy with no per-object wiring: distance culling, preload margins, hysteresis, delayed unloading, multi-camera awareness (including cameras excluded from streaming), and per-object overrides (always-visible, never-unload, disabled culling/streaming, custom render distance and preload margin).
+- Self-hosted asset mirror — `DEFAULT_RELEASE_BASE` now points at this repo's rolling `packs` release instead of the upstream host; a catalog-driven `mirror-assets` workflow (weekly cron + manual dispatch) keeps the mirror in sync with the asset catalog.
+
+### Changed
+
+- Mobile HUD fit is on by default — design-resolution HUD scaling now applies to every game with no config change (previously opt-in via `platforms: ["web", "mobile"]`). A desktop-only game keeps the legacy fixed 0.85 compact zoom by declaring `platforms: ["web"]` (without `"mobile"`).
 
 ## 0.8.0
 

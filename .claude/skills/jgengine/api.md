@@ -244,7 +244,7 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — ⚠ undocumented
 - `ChangelogEntry` (interface): interface ChangelogEntry — ⚠ undocumented
-- `VERSION` (const): const VERSION: "0.8.0" — ⚠ undocumented
+- `VERSION` (const): const VERSION: "0.9.0" — ⚠ undocumented
 
 ## @jgengine/core/runtime/adapter
 

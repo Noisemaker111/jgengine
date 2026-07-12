@@ -1,4 +1,4 @@
-export const VERSION = "0.8.0";
+export const VERSION = "0.9.0";
 
 export interface ChangelogEntry {
   migrate: readonly string[];
@@ -8,6 +8,25 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.9.0": {
+    migrate: [
+      "Bump every @jgengine/* dependency to ^0.9.0 (the eight packages version in lockstep).",
+      "Mobile HUD fit is now on by default: design-resolution HUD scaling applies to every game with no config change. A desktop-only game that must keep the legacy fixed 0.85 compact zoom declares platforms: [\"web\"] (without \"mobile\").",
+      "Everything else is additive — VisibilitySystem defaults are enabled automatically but only affect renderers that read the policy, and existing games keep every 0.8.0 API unchanged.",
+      "Assets now resolve from this repo's self-hosted mirror (DEFAULT_RELEASE_BASE); games that pinned the previous base can override releaseBase if they need the old host.",
+    ],
+    added: [
+      "Mobile HUD fit — design-resolution UI scaling applies to every game by default: HudCanvas scales the whole HUD from PlayableGame.hudFit.designSize (default 1600×900, clamps minScale/maxScale 0.4–1) so desktop-authored layouts shrink to fit a phone; pure math in @jgengine/core/ui/hudScale (hudScaleForViewport, resolveHudFit, rectOverflow, overflowingPanels), wired by @jgengine/react's HudViewportProvider.",
+      "Graphics → UI scale — a player-facing graphics.uiScale slider (0.5–1.5, default 1) multiplies the computed HUD scale on every platform.",
+      "HUD overflow gate — HudCanvas reports panels that escape the viewport on a data-hud-overflow attribute; bun run shoot <game> --device mobile|both exits non-zero naming the offenders.",
+      "Automatic visibility & streaming defaults — VisibilitySystem (exported from @jgengine/core) gives every scene renderer-agnostic culling and asset-streaming policy with no per-object wiring: distance culling, preload margins, hysteresis, delayed unloading, multi-camera awareness, and per-object overrides.",
+      "Self-hosted asset mirror — DEFAULT_RELEASE_BASE points at this repo's rolling packs release; a catalog-driven mirror-assets workflow (weekly cron + dispatch) keeps it in sync.",
+    ],
+    changed: [
+      "Mobile HUD fit is on by default — design-resolution HUD scaling now applies to every game with no config change (was opt-in via platforms: [\"web\", \"mobile\"]); a desktop-only game keeps the legacy fixed 0.85 compact zoom via platforms: [\"web\"].",
+    ],
+    removed: [],
+  },
   "0.8.0": {
     migrate: [
       "Bump every @jgengine/* dependency to ^0.8.0 (the eight packages version in lockstep).",
