@@ -1,0 +1,4 @@
+[submodule "reference/world-of-claudecraft"]
+	path = reference/world-of-claudecraft
+	url = https://github.com/levy-street/world-of-claudecraft
+	shallow = true
