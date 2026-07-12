@@ -419,4 +419,41 @@ describe("entity blackboard", () => {
     store.spawn("gunner", { id: "g1", onExisting: "replace" });
     expect(store.blackboard.get("g1", "alert")).toBeUndefined();
   });
+
+  test("hydrate mirrors a snapshot: spawns missing, overwrites existing, despawns extras", () => {
+    const host = createEntityStore<{ hp: number }>();
+    host.spawn("hero", { id: "h", position: [1, 0, 2], role: "player", meta: { hp: 30 } });
+    host.spawn("slime", { id: "s", position: [5, 0, 5], role: "npc", meta: { hp: 10 } });
+    host.setPose("s", { position: [6, 0, 5], dt: 1 });
+
+    const client = createEntityStore<{ hp: number }>();
+    client.spawn("hero", { id: "h", position: [0, 0, 0], meta: { hp: 5 } });
+    client.spawn("stale", { id: "z", position: [9, 0, 9] });
+
+    client.hydrate(host.snapshot());
+
+    const ids = client.list().map((entity) => entity.id).sort();
+    expect(ids).toEqual(["h", "s"]);
+    expect(client.get("z")).toBeNull();
+    const hero = client.get("h")!;
+    expect(hero.position).toEqual([1, 0, 2]);
+    expect(hero.role).toBe("player");
+    expect(hero.meta).toEqual({ hp: 30 });
+    const slime = client.get("s")!;
+    expect(slime.position).toEqual([6, 0, 5]);
+    expect(slime.velocity).toEqual(host.get("s")!.velocity);
+  });
+
+  test("hydrate is idempotent and clears scratch for despawned entities", () => {
+    const host = createEntityStore();
+    host.spawn("a", { id: "a" });
+    const client = createEntityStore();
+    client.spawn("a", { id: "a" });
+    client.spawn("b", { id: "b" });
+    client.blackboard.set("b", "alert", 3);
+    client.hydrate(host.snapshot());
+    expect(client.blackboard.get("b", "alert")).toBeUndefined();
+    client.hydrate(host.snapshot());
+    expect(client.list().map((entity) => entity.id)).toEqual(["a"]);
+  });
 });

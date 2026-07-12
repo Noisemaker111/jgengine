@@ -127,6 +127,12 @@ export interface EntityStore<TMeta = unknown> {
   clear(): void;
   subscribe(listener: () => void): () => void;
   snapshot(): readonly SceneEntity<TMeta>[];
+  /**
+   * Apply a `snapshot()` (e.g. from an authoritative host) to this store — the counterpart of `snapshot()`
+   * for host→client world mirroring: spawns entities present in the snapshot but not here, overwrites
+   * existing ones field-for-field (including velocity), and despawns any local entity absent from it.
+   */
+  hydrate(entities: readonly SceneEntity<TMeta>[]): void;
   spawnPoseOf(id: string): SpawnPose | null;
   resetToSpawn(id: string): boolean;
   blackboard: EntityBlackboard;
@@ -279,6 +285,35 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
     },
     snapshot() {
       return store.arraySnapshot();
+    },
+    hydrate(entities) {
+      const incoming = new Set(entities.map((entity) => entity.id));
+      for (const current of store.arraySnapshot()) {
+        if (!incoming.has(current.id)) {
+          store.delete(current.id);
+          spawnPoses.delete(current.id);
+          constraints.delete(current.id);
+          blackboards.delete(current.id);
+        }
+      }
+      for (const entity of entities) {
+        store.set(entity.id, {
+          id: entity.id,
+          name: entity.name,
+          position: entity.position,
+          rotationY: entity.rotationY,
+          rotationX: entity.rotationX,
+          rotationZ: entity.rotationZ,
+          velocity: entity.velocity,
+          role: entity.role,
+          movement: entity.movement,
+          behaviors: entity.behaviors,
+          meta: entity.meta,
+        });
+        if (!spawnPoses.has(entity.id)) {
+          spawnPoses.set(entity.id, { position: entity.position, rotationY: entity.rotationY });
+        }
+      }
     },
     spawnPoseOf(id) {
       return spawnPoses.get(id) ?? null;
