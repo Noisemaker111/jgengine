@@ -4,6 +4,7 @@ import {
   defaultEntityColliders,
   defaultObjectColliders,
   resolveColliders,
+  scaledObjectColliders,
   worldOffset,
 } from "@jgengine/core/scene/colliders";
 
@@ -41,6 +42,15 @@ describe("colliders", () => {
     expect(resolved[1]!.blocks).toBe(false);
     expect(resolved[1]!.damageEligible).toBe(true);
     expect(resolved[2]!.blocks).toBe(true);
+  });
+
+  test("scaledObjectColliders wraps the rendered box, grounded at y=0", () => {
+    const resolved = resolveColliders(scaledObjectColliders([2, 4, 2]));
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]!.blocks).toBe(true);
+    const bounds = colliderBounds(resolved[0]!, [10, 0, 10], 0);
+    expect(bounds.min).toEqual([9, 0, 9]);
+    expect(bounds.max).toEqual([11, 4, 11]);
   });
 
   test("worldOffset rotates local offsets by yaw", () => {

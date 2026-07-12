@@ -263,6 +263,7 @@ export function CollisionDebugWorld() {
           },
           positionOf: (id) => ctx.scene.entity.get(id)?.position,
           rotationYOf: (id) => ctx.scene.entity.get(id)?.rotationY,
+          collidersOf: (id) => ctx.scene.entity.collidersOf(id),
           from: probe.from,
           aim: probe.aim,
           originPolicy: probe.originPolicy,

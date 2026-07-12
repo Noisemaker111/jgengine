@@ -97,9 +97,9 @@ import type {
   SpawnPose,
 } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
-import type { EntityColliderSet } from "../scene/colliders";
+import { scaledObjectColliders, type EntityColliderSet } from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
-import { createObjectStore, type ObjectStore } from "../scene/objectStore";
+import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene/objectStore";
 import { createRoster, type Roster } from "../scene/roster";
 import { createConnectedPlayers, type ConnectedPlayers } from "../game/connectedPlayers";
 import { createPossession, type Possession } from "../scene/possession";
@@ -494,7 +494,12 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   function objectCollidersOf(instanceId: string): EntityColliderSet | null {
     const override = objectColliders.get(instanceId);
     if (override !== undefined) return override;
-    return catalogObject(instanceId)?.colliders ?? null;
+    const catalog = catalogObject(instanceId);
+    if (catalog?.colliders !== undefined) return catalog.colliders;
+    if (catalog?.halfExtents !== undefined) return null;
+    const object = objects.get(instanceId);
+    if (object === null || object.visual?.scale === undefined) return null;
+    return scaledObjectColliders(objectVisualScale(object.visual));
   }
 
   const targeting = notifyAfter(

@@ -558,6 +558,7 @@
 - `defaultEntityColliders` (function): function defaultEntityColliders(): EntityColliderSet — ⚠ undocumented
 - `defaultObjectColliders` (function): function defaultObjectColliders(halfExtents: EntityPosition = DEFAULT_OBJECT_HALF_EXTENTS): EntityColliderSet — ⚠ undocumented
 - `resolveColliders` (function): function resolveColliders(set: EntityColliderSet | null | undefined): ResolvedCollider[] — ⚠ undocumented
+- `scaledObjectColliders` (function): function scaledObjectColliders(scale: readonly [number, number, number]): EntityColliderSet — Blocking physical body derived from an object's rendered scale: a grounded box spanning the visual (base at y=0, matching the shell's fallback mesh).
 - `worldOffset` (function): function worldOffset(local: EntityPosition | undefined, position: EntityPosition, rotationY: number): EntityPosition — ⚠ undocumented
 
 ## @jgengine/core/scene/entityStats

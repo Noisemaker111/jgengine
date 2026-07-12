@@ -228,6 +228,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       {
         positionOf: deps.spatial.positionOf,
         rotationYOf: deps.rotationYOf,
+        collidersOf: deps.entityCollidersOf,
       },
       from,
       aim,
