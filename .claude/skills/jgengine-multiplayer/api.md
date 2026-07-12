@@ -4,76 +4,76 @@
 
 ## @jgengine/convex
 
-- `createConvexChatTransport` (function): function createConvexChatTransport<TRawRow = ChatMessage>(functions: ConvexChatFunctions, options?: { mapRow?: (row: TRawRow) => ChatMessage; extraArgs?: Record<string, unknown>; }): ChatTransport — Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent history, newest last) and one send mutation. mapRow converts backend rows into ChatMessage (defaults to structural passthrough); extraArgs is spread into both calls for games that scope chat by server or world.
-- `ConvexChatFunctions` (interface): interface ConvexChatFunctions — ⚠ undocumented
-- `createConvexPresenceTransport` (function): function createConvexPresenceTransport<TRawRow extends RawPresenceActor, TRow, TLocation, TGameId extends string = string>(functions: ConvexPresenceFunctions, mapRow: (row: TRawRow) => TRow): PresenceTransport<TRow, TLocation, TGameId> — Wires a game's Convex presence functions into the engine's PresenceTransport contract: one snapshot subscription (my location + online players), one residents subscription (dormant candidates, decoupled from pose writes), and one tick mutation for pose upload + keep-alive. Dormant rows are derived client-side by subtracting the snapshot's online actors, so pose ticks never re-execute the residents query. mapRow converts backend rows into the game's row type (e.g. branding positions into its coordinate space).
-- `ConvexPresenceFunctions` (interface): interface ConvexPresenceFunctions — ⚠ undocumented
-- `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
-- `ConvexLeaderboardReads` (type): type ConvexLeaderboardReads = ReturnType<typeof createConvexLeaderboardReads> — ⚠ undocumented
 - `ConvexBackend` (type): type ConvexBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = LiveGameBackend<TPresenceRow, TPresenceLocation, TGameId> & { leaderboard: ConvexLeaderboardReads; } — ⚠ undocumented
 - `ConvexBackendOptions` (type): type ConvexBackendOptions<TRawPresenceRow extends { actorExternalId: string }, TPresenceRow> = { client: ConvexReactClient; gameId: string; userId: string; api?: ConvexGameApi; poseTuning?: PoseSyncTuning; presence?: { functions: ConvexPresenceFunctions; mapRow: (row: TRawPresenceRow) => TPresenceRo… — ⚠ undocumented
-- `defaultConvexGameApi` (function): function defaultConvexGameApi(): ConvexGameApi — ⚠ undocumented
-- `createConvexGameTransport` (function): function createConvexGameTransport(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): GameRuntimeTransport — ⚠ undocumented
-- `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexReactClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
-- `createConvexGameFeeds` (function): function createConvexGameFeeds(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): GameRuntimeFeeds — ⚠ undocumented
-- `createConvexPresenceSync` (function): function createConvexPresenceSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, tuning?: PoseSyncTuning): PresenceSync — ⚠ undocumented
-- `createConvexChatSync` (function): function createConvexChatSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
-- `createConvexFeedWrites` (function): function createConvexFeedWrites(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): { pushFeedEntry(args: { serverId: string; action: string; entry: unknown; }): Promise<void>; } — ⚠ undocumented
-- `createConvexLeaderboardReads` (function): function createConvexLeaderboardReads(api: ConvexGameApi, config: ConvexGameTransportConfig): { getTop(args: { stat: string; scope: import("/home/user/jgengine/packages/core/dist/game/leaderboard").LeaderboardScope; serverId?: string | undefined; limit?: number | undefined; }): { query: import("/hom… — ⚠ undocumented
-- `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
+- `ConvexChatFunctions` (interface): interface ConvexChatFunctions — ⚠ undocumented
 - `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; }, { serverId: string; isNew: boolean } >; leaveServer: FunctionReference<"mutation", … — ⚠ undocumented
-- `commitIfRevisionMatch` (function): function commitIfRevisionMatch(loadedRevision: number, currentRevision: number): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
-- `applyCommandWithOcc` (function): function applyCommandWithOcc(args: { loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; runtime: GameRuntime; actorUserId: string; command: string; input: unknown; }): | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
-- `REVISION_CONFLICT_REASON` (const): const REVISION_CONFLICT_REASON: "Revision conflict" — ⚠ undocumented
-- `randomConvexPlayerId` (function): function randomConvexPlayerId(): string — ⚠ undocumented
-- `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
-- `jgengineTables` (function): function jgengineTables(): { jgGameServers: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/schema").TableDefinition<import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/… — ⚠ undocumented
-- `applyLeaderboardIncrements` (function): function applyLeaderboardIncrements(ctx: JGMutationCtx, gameId: string, entries: LeaderboardIncrement[]): Promise<void> — ⚠ undocumented
-- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/regist… — ⚠ undocumented
-- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/registration").RegisteredQuery<"public", { serverId?: import("/home/user/jgengine/node_modules/.bun/c… — ⚠ undocumented
-- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/registration").RegisteredQuery<"public", { externalId?… — ⚠ undocumented
-- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/registration").RegisteredQuery<"pu… — ⚠ undocumented
-- `jgengineCronSpecs` (function): function jgengineCronSpecs(): readonly JgCronSpec[] — ⚠ undocumented
-- `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
+- `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
+- `ConvexLeaderboardReads` (type): type ConvexLeaderboardReads = ReturnType<typeof createConvexLeaderboardReads> — ⚠ undocumented
+- `ConvexPresenceFunctions` (interface): interface ConvexPresenceFunctions — ⚠ undocumented
 - `DEFAULT_CONVEX_POSE_RULES` (const): const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `JG_RUNTIME_TICK_MS` (const): const JG_RUNTIME_TICK_MS: 1000 — ⚠ undocumented
+- `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
+- `REVISION_CONFLICT_REASON` (const): const REVISION_CONFLICT_REASON: "Revision conflict" — ⚠ undocumented
+- `applyCommandWithOcc` (function): function applyCommandWithOcc(args: { loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; runtime: GameRuntime; actorUserId: string; command: string; input: unknown; }): | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
+- `applyLeaderboardIncrements` (function): function applyLeaderboardIncrements(ctx: JGMutationCtx, gameId: string, entries: LeaderboardIncrement[]): Promise<void> — ⚠ undocumented
+- `commitIfRevisionMatch` (function): function commitIfRevisionMatch(loadedRevision: number, currentRevision: number): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
+- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; channelId: string; }, Promise<ChatMessage[]>>; sendMessage: RegisteredMuta… — ⚠ undocumented
+- `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
+- `createConvexChatSync` (function): function createConvexChatSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
+- `createConvexChatTransport` (function): function createConvexChatTransport<TRawRow = ChatMessage>(functions: ConvexChatFunctions, options?: { mapRow?: (row: TRawRow) => ChatMessage; extraArgs?: Record<string, unknown>; }): ChatTransport — Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent history, newest last) and one send mutation. mapRow converts backend rows into ChatMessage (defaults to structural passthrough); extraArgs is spread into both calls for games that scope chat by server or world.
+- `createConvexFeedWrites` (function): function createConvexFeedWrites(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): { pushFeedEntry(args: { serverId: string; action: string; entry: unknown; }): Promise<void>; } — ⚠ undocumented
+- `createConvexGameFeeds` (function): function createConvexGameFeeds(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): GameRuntimeFeeds — ⚠ undocumented
+- `createConvexGameTransport` (function): function createConvexGameTransport(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): GameRuntimeTransport — ⚠ undocumented
+- `createConvexLeaderboardReads` (function): function createConvexLeaderboardReads(api: ConvexGameApi, config: ConvexGameTransportConfig): { getTop(args: { stat: string; scope: LeaderboardScope; serverId?: string | undefined; limit?: number | undefined; }): { query: FunctionReference<"query", "public", { gameId: string; stat: string; scope: Le… — ⚠ undocumented
+- `createConvexPresenceSync` (function): function createConvexPresenceSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, tuning?: PoseSyncTuning): PresenceSync — ⚠ undocumented
+- `createConvexPresenceTransport` (function): function createConvexPresenceTransport<TRawRow extends RawPresenceActor, TRow, TLocation, TGameId extends string = string>(functions: ConvexPresenceFunctions, mapRow: (row: TRawRow) => TRow): PresenceTransport<TRow, TLocation, TGameId> — Wires a game's Convex presence functions into the engine's PresenceTransport contract: one snapshot subscription (my location + online players), one residents subscription (dormant candidates, decoupled from pose writes), and one tick mutation for pose upload + keep-alive. Dormant rows are derived client-side by subtracting the snapshot's online actors, so pose ticks never re-execute the residents query. mapRow converts backend rows into the game's row type (e.g. branding positions into its coordinate space).
+- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: RegisteredMutation<"public", { mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; jo… — ⚠ undocumented
+- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: RegisteredQuery<"public", { serverId?: Id<"jgGameServers"> | undefined; externalId?: string | undefined; limit?: number | undefined; gameId: string; scope: "global" | "server" | "profile"; stat: string; }, Promise<{ user… — ⚠ undocumented
+- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; }, Promise<{ userId: string; position: { x: number; y: number; z: number; }; rotationY: number… — ⚠ undocumented
+- `defaultConvexGameApi` (function): function defaultConvexGameApi(): ConvexGameApi — ⚠ undocumented
+- `jgengineCronSpecs` (function): function jgengineCronSpecs(): readonly JgCronSpec[] — ⚠ undocumented
+- `jgengineTables` (function): function jgengineTables(): { jgGameServers: TableDefinition<VObject<{ mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; joinCode?: string | undefined; lastSavedAt?: number | undefined; dirtyAt?: number | undefined; save: "none" | { auto: string; scope: "play… — ⚠ undocumented
+- `randomConvexPlayerId` (function): function randomConvexPlayerId(): string — ⚠ undocumented
+- `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
+- `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexReactClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
 
 ## @jgengine/convex/convexChatTransport
 
-- `createConvexChatTransport` (function): function createConvexChatTransport<TRawRow = ChatMessage>(functions: ConvexChatFunctions, options?: { mapRow?: (row: TRawRow) => ChatMessage; extraArgs?: Record<string, unknown>; }): ChatTransport — Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent history, newest last) and one send mutation. mapRow converts backend rows into ChatMessage (defaults to structural passthrough); extraArgs is spread into both calls for games that scope chat by server or world.
 - `ConvexChatFunctions` (interface): interface ConvexChatFunctions — ⚠ undocumented
+- `createConvexChatTransport` (function): function createConvexChatTransport<TRawRow = ChatMessage>(functions: ConvexChatFunctions, options?: { mapRow?: (row: TRawRow) => ChatMessage; extraArgs?: Record<string, unknown>; }): ChatTransport — Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent history, newest last) and one send mutation. mapRow converts backend rows into ChatMessage (defaults to structural passthrough); extraArgs is spread into both calls for games that scope chat by server or world.
 
 ## @jgengine/convex/convexPresenceTransport
 
-- `createConvexPresenceTransport` (function): function createConvexPresenceTransport<TRawRow extends RawPresenceActor, TRow, TLocation, TGameId extends string = string>(functions: ConvexPresenceFunctions, mapRow: (row: TRawRow) => TRow): PresenceTransport<TRow, TLocation, TGameId> — Wires a game's Convex presence functions into the engine's PresenceTransport contract: one snapshot subscription (my location + online players), one residents subscription (dormant candidates, decoupled from pose writes), and one tick mutation for pose upload + keep-alive. Dormant rows are derived client-side by subtracting the snapshot's online actors, so pose ticks never re-execute the residents query. mapRow converts backend rows into the game's row type (e.g. branding positions into its coordinate space).
 - `ConvexPresenceFunctions` (interface): interface ConvexPresenceFunctions — ⚠ undocumented
+- `createConvexPresenceTransport` (function): function createConvexPresenceTransport<TRawRow extends RawPresenceActor, TRow, TLocation, TGameId extends string = string>(functions: ConvexPresenceFunctions, mapRow: (row: TRawRow) => TRow): PresenceTransport<TRow, TLocation, TGameId> — Wires a game's Convex presence functions into the engine's PresenceTransport contract: one snapshot subscription (my location + online players), one residents subscription (dormant candidates, decoupled from pose writes), and one tick mutation for pose upload + keep-alive. Dormant rows are derived client-side by subtracting the snapshot's online actors, so pose ticks never re-execute the residents query. mapRow converts backend rows into the game's row type (e.g. branding positions into its coordinate space).
 
 ## @jgengine/convex/createConvexBackend
 
-- `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
-- `ConvexLeaderboardReads` (type): type ConvexLeaderboardReads = ReturnType<typeof createConvexLeaderboardReads> — ⚠ undocumented
 - `ConvexBackend` (type): type ConvexBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = LiveGameBackend<TPresenceRow, TPresenceLocation, TGameId> & { leaderboard: ConvexLeaderboardReads; } — ⚠ undocumented
 - `ConvexBackendOptions` (type): type ConvexBackendOptions<TRawPresenceRow extends { actorExternalId: string }, TPresenceRow> = { client: ConvexReactClient; gameId: string; userId: string; api?: ConvexGameApi; poseTuning?: PoseSyncTuning; presence?: { functions: ConvexPresenceFunctions; mapRow: (row: TRawPresenceRow) => TPresenceRo… — ⚠ undocumented
+- `ConvexLeaderboardReads` (type): type ConvexLeaderboardReads = ReturnType<typeof createConvexLeaderboardReads> — ⚠ undocumented
+- `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
 
 ## @jgengine/convex/createConvexGameTransport
 
-- `defaultConvexGameApi` (function): function defaultConvexGameApi(): ConvexGameApi — ⚠ undocumented
-- `createConvexGameTransport` (function): function createConvexGameTransport(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): GameRuntimeTransport — ⚠ undocumented
-- `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexReactClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
-- `createConvexGameFeeds` (function): function createConvexGameFeeds(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): GameRuntimeFeeds — ⚠ undocumented
-- `createConvexPresenceSync` (function): function createConvexPresenceSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, tuning?: PoseSyncTuning): PresenceSync — ⚠ undocumented
+- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; }, { serverId: string; isNew: boolean } >; leaveServer: FunctionReference<"mutation", … — ⚠ undocumented
+- `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
 - `createConvexChatSync` (function): function createConvexChatSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
 - `createConvexFeedWrites` (function): function createConvexFeedWrites(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): { pushFeedEntry(args: { serverId: string; action: string; entry: unknown; }): Promise<void>; } — ⚠ undocumented
-- `createConvexLeaderboardReads` (function): function createConvexLeaderboardReads(api: ConvexGameApi, config: ConvexGameTransportConfig): { getTop(args: { stat: string; scope: import("/home/user/jgengine/packages/core/dist/game/leaderboard").LeaderboardScope; serverId?: string | undefined; limit?: number | undefined; }): { query: import("/hom… — ⚠ undocumented
-- `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
-- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; }, { serverId: string; isNew: boolean } >; leaveServer: FunctionReference<"mutation", … — ⚠ undocumented
+- `createConvexGameFeeds` (function): function createConvexGameFeeds(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): GameRuntimeFeeds — ⚠ undocumented
+- `createConvexGameTransport` (function): function createConvexGameTransport(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig): GameRuntimeTransport — ⚠ undocumented
+- `createConvexLeaderboardReads` (function): function createConvexLeaderboardReads(api: ConvexGameApi, config: ConvexGameTransportConfig): { getTop(args: { stat: string; scope: LeaderboardScope; serverId?: string | undefined; limit?: number | undefined; }): { query: FunctionReference<"query", "public", { gameId: string; stat: string; scope: Le… — ⚠ undocumented
+- `createConvexPresenceSync` (function): function createConvexPresenceSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, tuning?: PoseSyncTuning): PresenceSync — ⚠ undocumented
+- `defaultConvexGameApi` (function): function defaultConvexGameApi(): ConvexGameApi — ⚠ undocumented
+- `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexReactClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
 
 ## @jgengine/convex/occ
 
-- `commitIfRevisionMatch` (function): function commitIfRevisionMatch(loadedRevision: number, currentRevision: number): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
-- `applyCommandWithOcc` (function): function applyCommandWithOcc(args: { loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; runtime: GameRuntime; actorUserId: string; command: string; input: unknown; }): | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
 - `REVISION_CONFLICT_REASON` (const): const REVISION_CONFLICT_REASON: "Revision conflict" — ⚠ undocumented
+- `applyCommandWithOcc` (function): function applyCommandWithOcc(args: { loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; runtime: GameRuntime; actorUserId: string; command: string; input: unknown; }): | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
+- `commitIfRevisionMatch` (function): function commitIfRevisionMatch(loadedRevision: number, currentRevision: number): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
 
 ## @jgengine/convex/resolveConvexMultiplayer
 
@@ -82,407 +82,407 @@
 
 ## @jgengine/convex/server
 
-- `jgengineTables` (function): function jgengineTables(): { jgGameServers: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/schema").TableDefinition<import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/… — ⚠ undocumented
-- `applyLeaderboardIncrements` (function): function applyLeaderboardIncrements(ctx: JGMutationCtx, gameId: string, entries: LeaderboardIncrement[]): Promise<void> — ⚠ undocumented
-- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/regist… — ⚠ undocumented
-- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/registration").RegisteredQuery<"public", { serverId?: import("/home/user/jgengine/node_modules/.bun/c… — ⚠ undocumented
-- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/registration").RegisteredQuery<"public", { externalId?… — ⚠ undocumented
-- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: import("/home/user/jgengine/node_modules/.bun/convex@1.42.1+83d5fd7b249dbeef/node_modules/convex/dist/esm-types/server/registration").RegisteredQuery<"pu… — ⚠ undocumented
-- `jgengineCronSpecs` (function): function jgengineCronSpecs(): readonly JgCronSpec[] — ⚠ undocumented
-- `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `DEFAULT_CONVEX_POSE_RULES` (const): const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `JG_RUNTIME_TICK_MS` (const): const JG_RUNTIME_TICK_MS: 1000 — ⚠ undocumented
+- `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
+- `applyLeaderboardIncrements` (function): function applyLeaderboardIncrements(ctx: JGMutationCtx, gameId: string, entries: LeaderboardIncrement[]): Promise<void> — ⚠ undocumented
+- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; channelId: string; }, Promise<ChatMessage[]>>; sendMessage: RegisteredMuta… — ⚠ undocumented
+- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: RegisteredMutation<"public", { mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; jo… — ⚠ undocumented
+- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: RegisteredQuery<"public", { serverId?: Id<"jgGameServers"> | undefined; externalId?: string | undefined; limit?: number | undefined; gameId: string; scope: "global" | "server" | "profile"; stat: string; }, Promise<{ user… — ⚠ undocumented
+- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; }, Promise<{ userId: string; position: { x: number; y: number; z: number; }; rotationY: number… — ⚠ undocumented
+- `jgengineCronSpecs` (function): function jgengineCronSpecs(): readonly JgCronSpec[] — ⚠ undocumented
+- `jgengineTables` (function): function jgengineTables(): { jgGameServers: TableDefinition<VObject<{ mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; joinCode?: string | undefined; lastSavedAt?: number | undefined; dirtyAt?: number | undefined; save: "none" | { auto: string; scope: "play… — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/chatContract
 
-- `createLocalChatTransport` (function): function createLocalChatTransport(options?: { userId?: string; historyLimit?: number; now?: () => number; }): { transport: ChatTransport; sync: ChatSync; actions: ChatActions; } — ⚠ undocumented
+- `ChatActions` (interface): interface ChatActions — ⚠ undocumented
 - `ChatSendArgs` (interface): interface ChatSendArgs — ⚠ undocumented
 - `ChatSendOutcome` (interface): interface ChatSendOutcome — ⚠ undocumented
-- `ChatActions` (interface): interface ChatActions — ⚠ undocumented
-- `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
 - `ChatSync` (interface): interface ChatSync — Callback seam for backends that cannot host React hooks (e.g. the ws client): subscribe delivers the channel's recent history on every change; send resolves with the host's verdict.
+- `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
+- `createLocalChatTransport` (function): function createLocalChatTransport(options?: { userId?: string; historyLimit?: number; now?: () => number; }): { transport: ChatTransport; sync: ChatSync; actions: ChatActions; } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/combatSnapshot
 
-- `serializeBoard` (function): function serializeBoard(args: SerializeBoardArgs): BoardSnapshot — ⚠ undocumented
-- `cloneSnapshot` (function): function cloneSnapshot(snapshot: BoardSnapshot): BoardSnapshot — ⚠ undocumented
-- `replayCombat` (function): function replayCombat(a: BoardSnapshot, b: BoardSnapshot, rules: CombatRules): ReplayResult — ⚠ undocumented
-- `SnapshotUnit` (interface): interface SnapshotUnit — ⚠ undocumented
 - `BoardSnapshot` (interface): interface BoardSnapshot — ⚠ undocumented
-- `SerializeBoardArgs` (interface): interface SerializeBoardArgs — ⚠ undocumented
 - `CombatRules` (interface): interface CombatRules — ⚠ undocumented
 - `CombatSide` (type): type CombatSide = "a" | "b" | "draw" — ⚠ undocumented
 - `ReplayBlow` (interface): interface ReplayBlow — ⚠ undocumented
 - `ReplayResult` (interface): interface ReplayResult — ⚠ undocumented
+- `SerializeBoardArgs` (interface): interface SerializeBoardArgs — ⚠ undocumented
+- `SnapshotUnit` (interface): interface SnapshotUnit — ⚠ undocumented
+- `cloneSnapshot` (function): function cloneSnapshot(snapshot: BoardSnapshot): BoardSnapshot — ⚠ undocumented
+- `replayCombat` (function): function replayCombat(a: BoardSnapshot, b: BoardSnapshot, rules: CombatRules): ReplayResult — ⚠ undocumented
+- `serializeBoard` (function): function serializeBoard(args: SerializeBoardArgs): BoardSnapshot — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/feedWriteGate
 
+- `FeedWriteGate` (type): type FeedWriteGate = { allowedActions: readonly string[]; } — ⚠ undocumented
 - `createFeedWriteGate` (function): function createFeedWriteGate(allowedActions: readonly string[] = []): FeedWriteGate — ⚠ undocumented
 - `validateFeedWrite` (function): function validateFeedWrite(gate: FeedWriteGate | undefined, action: string): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
-- `FeedWriteGate` (type): type FeedWriteGate = { allowedActions: readonly string[]; } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/identity
 
-- `sessionPlayer` (function): function sessionPlayer(session: AuthSession): PlayerIdentity — ⚠ undocumented
-- `resolveGuestSession` (function): function resolveGuestSession(seed?: string): AuthSession — ⚠ undocumented
 - `AuthSession` (interface): interface AuthSession — ⚠ undocumented
 - `PlayerIdentity` (interface): interface PlayerIdentity — ⚠ undocumented
+- `resolveGuestSession` (function): function resolveGuestSession(seed?: string): AuthSession — ⚠ undocumented
+- `sessionPlayer` (function): function sessionPlayer(session: AuthSession): PlayerIdentity — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/lagCompensation
 
-- `createPositionHistory` (function): function createPositionHistory(config: PositionHistoryConfig): PositionHistory — ⚠ undocumented
-- `rewindTimestamp` (function): function rewindTimestamp(nowMs: number, rttMs: number, interpDelayMs: number): number — ⚠ undocumented
-- `raySphereDistance` (function): function raySphereDistance(ray: HitscanRay, center: Vec3, radius: number): number | null — ⚠ undocumented
-- `resolveHitscan` (function): function resolveHitscan(history: PositionHistory, targets: readonly HitscanTarget[], ray: HitscanRay, atMs: number): HitscanHit | null — ⚠ undocumented
-- `Vec3` (interface): interface Vec3 — ⚠ undocumented
-- `PositionSample` (interface): interface PositionSample extends Vec3 — ⚠ undocumented
-- `PositionHistoryConfig` (interface): interface PositionHistoryConfig — ⚠ undocumented
-- `PositionHistory` (class): class PositionHistory — ⚠ undocumented
+- `HitscanHit` (interface): interface HitscanHit — ⚠ undocumented
 - `HitscanRay` (interface): interface HitscanRay — ⚠ undocumented
 - `HitscanTarget` (interface): interface HitscanTarget — ⚠ undocumented
-- `HitscanHit` (interface): interface HitscanHit — ⚠ undocumented
+- `PositionHistory` (class): class PositionHistory — ⚠ undocumented
+- `PositionHistoryConfig` (interface): interface PositionHistoryConfig — ⚠ undocumented
+- `PositionSample` (interface): interface PositionSample extends Vec3 — ⚠ undocumented
+- `Vec3` (interface): interface Vec3 — ⚠ undocumented
+- `createPositionHistory` (function): function createPositionHistory(config: PositionHistoryConfig): PositionHistory — ⚠ undocumented
+- `raySphereDistance` (function): function raySphereDistance(ray: HitscanRay, center: Vec3, radius: number): number | null — ⚠ undocumented
+- `resolveHitscan` (function): function resolveHitscan(history: PositionHistory, targets: readonly HitscanTarget[], ray: HitscanRay, atMs: number): HitscanHit | null — ⚠ undocumented
+- `rewindTimestamp` (function): function rewindTimestamp(nowMs: number, rttMs: number, interpDelayMs: number): number — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/matchmaking
 
-- `normalizeJoinCode` (function): function normalizeJoinCode(code: string): string — ⚠ undocumented
+- `BrowseOptions` (interface): interface BrowseOptions — ⚠ undocumented
+- `MatchFilter` (interface): interface MatchFilter — ⚠ undocumented
+- `SessionListing` (interface): interface SessionListing — ⚠ undocumented
+- `SessionStatus` (type): type SessionStatus = "open" | "running" | "closed" — ⚠ undocumented
+- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
+- `browseSessions` (function): function browseSessions(listings: readonly SessionListing[], filter: MatchFilter = {}, options: BrowseOptions = {}): SessionListing[] — ⚠ undocumented
+- `findByJoinCode` (function): function findByJoinCode(listings: readonly SessionListing[], code: string): SessionListing | null — ⚠ undocumented
 - `generateJoinCode` (function): function generateJoinCode(random: () => number, length = 6): string — ⚠ undocumented
 - `hasSpace` (function): function hasSpace(listing: SessionListing): boolean — ⚠ undocumented
 - `matchesFilter` (function): function matchesFilter(listing: SessionListing, filter: MatchFilter): boolean — ⚠ undocumented
-- `browseSessions` (function): function browseSessions(listings: readonly SessionListing[], filter: MatchFilter = {}, options: BrowseOptions = {}): SessionListing[] — ⚠ undocumented
-- `findByJoinCode` (function): function findByJoinCode(listings: readonly SessionListing[], code: string): SessionListing | null — ⚠ undocumented
+- `normalizeJoinCode` (function): function normalizeJoinCode(code: string): string — ⚠ undocumented
 - `quickMatch` (function): function quickMatch(listings: readonly SessionListing[], filter: MatchFilter = {}): SessionListing | null — ⚠ undocumented
-- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
-- `SessionStatus` (type): type SessionStatus = "open" | "running" | "closed" — ⚠ undocumented
-- `SessionListing` (interface): interface SessionListing — ⚠ undocumented
-- `MatchFilter` (interface): interface MatchFilter — ⚠ undocumented
-- `BrowseOptions` (interface): interface BrowseOptions — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/poseSyncGate
 
-- `createPoseSyncGate` (function): function createPoseSyncGate(tuning: PoseSyncTuning): PoseSyncGate — ⚠ undocumented
 - `PlayerPose` (interface): interface PlayerPose — ⚠ undocumented
-- `PoseSyncTuning` (interface): interface PoseSyncTuning — ⚠ undocumented
 - `PoseSyncGate` (interface): interface PoseSyncGate — ⚠ undocumented
+- `PoseSyncTuning` (interface): interface PoseSyncTuning — ⚠ undocumented
+- `createPoseSyncGate` (function): function createPoseSyncGate(tuning: PoseSyncTuning): PoseSyncGate — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/presenceContract
 
-- `createLocalPresenceTransport` (function): function createLocalPresenceTransport<TRow, TLocation, TGameId extends string = string>(): { transport: PresenceTransport<TRow, TLocation, TGameId>; actions: PresenceActions<TGameId>; } — ⚠ undocumented
-- `PresencePosition` (interface): interface PresencePosition — ⚠ undocumented
-- `PresencePose` (interface): interface PresencePose — ⚠ undocumented
-- `PresenceSession` (interface): interface PresenceSession<TGameId extends string = string> — ⚠ undocumented
 - `EnsurePresenceArgs` (interface): interface EnsurePresenceArgs<TGameId extends string = string> — ⚠ undocumented
 - `EnsurePresenceResult` (interface): interface EnsurePresenceResult — ⚠ undocumented
 - `LeavePresenceArgs` (interface): interface LeavePresenceArgs<TGameId extends string = string> — ⚠ undocumented
-- `PresenceFeeds` (interface): interface PresenceFeeds<TRow, TLocation> — ⚠ undocumented
 - `PresenceActions` (interface): interface PresenceActions<TGameId extends string = string> — ⚠ undocumented
+- `PresenceFeeds` (interface): interface PresenceFeeds<TRow, TLocation> — ⚠ undocumented
+- `PresencePose` (interface): interface PresencePose — ⚠ undocumented
+- `PresencePosition` (interface): interface PresencePosition — ⚠ undocumented
+- `PresenceSession` (interface): interface PresenceSession<TGameId extends string = string> — ⚠ undocumented
 - `PresenceTransport` (interface): interface PresenceTransport<TRow, TLocation, TGameId extends string = string> — Backend seam for multiplayer presence. Feeds are reactive data and change identity whenever any player's pose updates; actions MUST be identity-stable for the lifetime of a mounted session so join/leave lifecycle effects can depend on them without re-running per pose tick. The use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends.
+- `createLocalPresenceTransport` (function): function createLocalPresenceTransport<TRow, TLocation, TGameId extends string = string>(): { transport: PresenceTransport<TRow, TLocation, TGameId>; actions: PresenceActions<TGameId>; } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/presenceModel
 
-- `spawnPresenceState` (function): function spawnPresenceState(origin: { x: number; y: number; z: number } = DEFAULT_SPAWN_ORIGIN, nowMs: number, rules: Pick<PoseSyncRules, "maxElapsedSec">): PresencePoseState — ⚠ undocumented
+- `ActivePresenceResolution` (interface): interface ActivePresenceResolution<T> — ⚠ undocumented
+- `DEFAULT_SPAWN_ORIGIN` (const): const DEFAULT_SPAWN_ORIGIN: { readonly x: 0; readonly y: 0; readonly z: 0; } — ⚠ undocumented
+- `IncomingPose` (interface): interface IncomingPose — ⚠ undocumented
+- `PoseSyncDecision` (interface): interface PoseSyncDecision — ⚠ undocumented
+- `PoseSyncRules` (interface): interface PoseSyncRules — ⚠ undocumented
+- `PresencePoseState` (interface): interface PresencePoseState — ⚠ undocumented
 - `decidePoseSync` (function): function decidePoseSync(current: PresencePoseState, incoming: IncomingPose, rules: PoseSyncRules, nowMs: number, floorY?: number): PoseSyncDecision — ⚠ undocumented
-- `shouldRefreshKeepAlive` (function): function shouldRefreshKeepAlive(lastSeenAtMs: number | undefined, nowMs: number, rules: Pick<PoseSyncRules, "keepAliveRefreshMs">): boolean — ⚠ undocumented
-- `shouldPersistWorldSnapshot` (function): function shouldPersistWorldSnapshot(lastSavedAtMs: number | undefined, nowMs: number, intervalMs: number): boolean — ⚠ undocumented
-- `resolveActivePresence` (function): function resolveActivePresence<T extends { revokedAt?: number; lastSeenAt?: number }>(rows: readonly T[]): ActivePresenceResolution<T> — ⚠ undocumented
 - `isPresenceExpired` (function): function isPresenceExpired(lastSeenAtMs: number, nowMs: number, idleCutoffMs: number): boolean — ⚠ undocumented
 - `pickReusablePresence` (function): function pickReusablePresence<T extends { lastSeenAt?: number }>(rows: readonly T[]): T | undefined — Most-recently-seen row across an actor's rows, to reuse instead of inserting a new one.
-- `PresencePoseState` (interface): interface PresencePoseState — ⚠ undocumented
-- `IncomingPose` (interface): interface IncomingPose — ⚠ undocumented
-- `PoseSyncRules` (interface): interface PoseSyncRules — ⚠ undocumented
-- `PoseSyncDecision` (interface): interface PoseSyncDecision — ⚠ undocumented
-- `DEFAULT_SPAWN_ORIGIN` (const): const DEFAULT_SPAWN_ORIGIN: { readonly x: 0; readonly y: 0; readonly z: 0; } — ⚠ undocumented
-- `ActivePresenceResolution` (interface): interface ActivePresenceResolution<T> — ⚠ undocumented
+- `resolveActivePresence` (function): function resolveActivePresence<T extends { revokedAt?: number; lastSeenAt?: number }>(rows: readonly T[]): ActivePresenceResolution<T> — ⚠ undocumented
+- `shouldPersistWorldSnapshot` (function): function shouldPersistWorldSnapshot(lastSavedAtMs: number | undefined, nowMs: number, intervalMs: number): boolean — ⚠ undocumented
+- `shouldRefreshKeepAlive` (function): function shouldRefreshKeepAlive(lastSeenAtMs: number | undefined, nowMs: number, rules: Pick<PoseSyncRules, "keepAliveRefreshMs">): boolean — ⚠ undocumented
+- `spawnPresenceState` (function): function spawnPresenceState(origin: { x: number; y: number; z: number } = DEFAULT_SPAWN_ORIGIN, nowMs: number, rules: Pick<PoseSyncRules, "maxElapsedSec">): PresencePoseState — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/simultaneousCommit
 
-- `createCommitRound` (function): function createCommitRound<TAction>(config: CommitRoundConfig): CommitRound<TAction> — ⚠ undocumented
-- `resolveCommits` (function): function resolveCommits<TAction, TResult>(reveals: readonly SealedCommit<TAction>[], resolver: (ordered: readonly SealedCommit<TAction>[]) => TResult): TResult — ⚠ undocumented
 - `CommitPhase` (type): type CommitPhase = "collecting" | "revealed" — ⚠ undocumented
-- `SealedCommit` (interface): interface SealedCommit<TAction> — ⚠ undocumented
+- `CommitRound` (class): class CommitRound<TAction> — ⚠ undocumented
 - `CommitRoundConfig` (interface): interface CommitRoundConfig — ⚠ undocumented
 - `SealResult` (type): type SealResult = | { ok: true; allSealed: boolean } | { ok: false; reason: "unknown_participant" | "already_sealed" | "already_revealed" } — ⚠ undocumented
-- `CommitRound` (class): class CommitRound<TAction> — ⚠ undocumented
+- `SealedCommit` (interface): interface SealedCommit<TAction> — ⚠ undocumented
+- `createCommitRound` (function): function createCommitRound<TAction>(config: CommitRoundConfig): CommitRound<TAction> — ⚠ undocumented
+- `resolveCommits` (function): function resolveCommits<TAction, TResult>(reveals: readonly SealedCommit<TAction>[], resolver: (ordered: readonly SealedCommit<TAction>[]) => TResult): TResult — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/voiceContract
 
-- `createLocalVoiceTransport` (function): function createLocalVoiceTransport(options?: { userId?: string }): { transport: VoiceTransport; participants(channelId: string): readonly VoiceParticipant[]; } — ⚠ undocumented
-- `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
+- `PushToTalk` (interface): interface PushToTalk — ⚠ undocumented
+- `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
+- `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
 - `VoiceParticipant` (interface): interface VoiceParticipant — ⚠ undocumented
 - `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
 - `VoiceTransport` (interface): interface VoiceTransport — Signaling seam for voice: who is in a channel and which media stream descriptor they published. The media plane (WebRTC, SFU, or anything else that moves audio bytes) stays behind this seam, host-supplied — the engine never touches it. subscribers delivers the channel roster on every change, starting with the current roster.
-- `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
-- `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
-- `PushToTalk` (interface): interface PushToTalk — ⚠ undocumented
+- `createLocalVoiceTransport` (function): function createLocalVoiceTransport(options?: { userId?: string }): { transport: VoiceTransport; participants(channelId: string): readonly VoiceParticipant[]; } — ⚠ undocumented
+- `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
 
 ## @jgengine/node
 
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
 - `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
 - `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — ⚠ undocumented
-- `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
-- `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
-- `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
-- `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
-- `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
-- `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
-- `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
-- `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
-- `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
-- `NodeHandler` (type): type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void — ⚠ undocumented
-- `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
-- `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
+- `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
+- `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
+- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — ⚠ undocumented
+- `NodeHandler` (type): type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
+- `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
+- `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
+- `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
+- `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
+- `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
+- `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
+- `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
+- `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
+- `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
 
 ## @jgengine/node/host
 
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
 - `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
 - `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
 - `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — ⚠ undocumented
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
 
 ## @jgengine/node/persistence
 
-- `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
+- `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 - `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — ⚠ undocumented
 
 ## @jgengine/node/socketIoServer
 
-- `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
-- `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
-- `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
-- `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
+- `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
+- `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
+- `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
+- `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
 
 ## @jgengine/node/testFixtures
 
-- `createTestRuntime` (function): function createTestRuntime(gameId = "test-game"): GameRuntime — ⚠ undocumented
 - `createChunkTestRuntime` (function): function createChunkTestRuntime(gameId = "chunk-game"): GameRuntime — ⚠ undocumented
+- `createTestRuntime` (function): function createTestRuntime(gameId = "test-game"): GameRuntime — ⚠ undocumented
 
 ## @jgengine/node/webHandler
 
-- `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
-- `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
-- `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `NodeHandler` (type): type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void — ⚠ undocumented
+- `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
+- `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
+- `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
 
 ## @jgengine/node/wsServer
 
-- `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
-- `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
+- `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; } — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
+- `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
 
 ## @jgengine/sql
 
-- `ensureSchema` (function): function ensureSchema(pool: SqlQueryable): Promise<void> — ⚠ undocumented
-- `sqlPersistence` (function): function sqlPersistence(pool: SqlPool, now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `SqlPool` (type): type SqlPool = SqlQueryable & { connect: () => Promise<SqlPoolClient>; } — ⚠ undocumented
+- `SqlPoolClient` (type): type SqlPoolClient = SqlQueryable & { release: () => void; } — ⚠ undocumented
 - `SqlQueryResult` (type): type SqlQueryResult = { rows: Record<string, unknown>[] } — ⚠ undocumented
 - `SqlQueryable` (type): type SqlQueryable = { query: (text: string, params?: unknown[]) => Promise<SqlQueryResult>; } — ⚠ undocumented
-- `SqlPoolClient` (type): type SqlPoolClient = SqlQueryable & { release: () => void; } — ⚠ undocumented
-- `SqlPool` (type): type SqlPool = SqlQueryable & { connect: () => Promise<SqlPoolClient>; } — ⚠ undocumented
+- `ensureSchema` (function): function ensureSchema(pool: SqlQueryable): Promise<void> — ⚠ undocumented
+- `sqlPersistence` (function): function sqlPersistence(pool: SqlPool, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 
 ## @jgengine/sql/sqlPersistence
 
-- `ensureSchema` (function): function ensureSchema(pool: SqlQueryable): Promise<void> — ⚠ undocumented
-- `sqlPersistence` (function): function sqlPersistence(pool: SqlPool, now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `SqlPool` (type): type SqlPool = SqlQueryable & { connect: () => Promise<SqlPoolClient>; } — ⚠ undocumented
+- `SqlPoolClient` (type): type SqlPoolClient = SqlQueryable & { release: () => void; } — ⚠ undocumented
 - `SqlQueryResult` (type): type SqlQueryResult = { rows: Record<string, unknown>[] } — ⚠ undocumented
 - `SqlQueryable` (type): type SqlQueryable = { query: (text: string, params?: unknown[]) => Promise<SqlQueryResult>; } — ⚠ undocumented
-- `SqlPoolClient` (type): type SqlPoolClient = SqlQueryable & { release: () => void; } — ⚠ undocumented
-- `SqlPool` (type): type SqlPool = SqlQueryable & { connect: () => Promise<SqlPoolClient>; } — ⚠ undocumented
+- `ensureSchema` (function): function ensureSchema(pool: SqlQueryable): Promise<void> — ⚠ undocumented
+- `sqlPersistence` (function): function sqlPersistence(pool: SqlPool, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 
 ## @jgengine/ws
 
-- `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
-- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutFn?: typeof s… — ⚠ undocumented
-- `WsPresenceSync` (type): type WsPresenceSync = { subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void; /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */ syncPose: (serverId: string, pose: WsPose) => void; } — ⚠ undocumented
-- `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
-- `WsVoiceSync` (type): type WsVoiceSync = { subscribe: ( serverId: string, channelId: string, onChange: (participants: WsVoiceParticipant[]) => void, ) => () => void; join: (serverId: string, channelId: string, streamId?: string) => Promise<void>; leave: (serverId: string, channelId: string) => Promise<void>; publish: (se… — ⚠ undocumented
-- `WsBackend` (type): type WsBackend = GameBackend & { pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { gameId: string; code: string }) => Promise<JoinSe… — ⚠ undocumented
-- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — ⚠ undocumented
-- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
+- `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
-- `createHostRouter` (function): function createHostRouter(options: HostRouterOptions): HostRouter — ⚠ undocumented
-- `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
+- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
+- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — ⚠ undocumented
+- `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `HostRouterAuthenticate` (type): type HostRouterAuthenticate = (args: { userId: string; token?: string; }) => Promise<string | null> | string | null — ⚠ undocumented
+- `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
 - `HostRouterOptions` (type): type HostRouterOptions = { host: GameHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; now?: () => number; } — ⚠ undocumented
 - `HostRouterTransport` (type): type HostRouterTransport = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
-- `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
-- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
-- `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
-- `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
-- `createHttpReads` (function): function createHttpReads(options: HttpReadsOptions): HttpReads — ⚠ undocumented
-- `HttpReadsOptions` (type): type HttpReadsOptions = { baseUrl: string; gameId: string; fetchImpl?: typeof fetch; } — ⚠ undocumented
 - `HttpReads` (type): type HttpReads = { getTop: (args: { stat: string; scope: LeaderboardScope; serverId?: string; limit?: number; }) => Promise<LeaderboardEntry[]>; getLeaderboardProfile: (userId: string) => Promise<Record<string, number>>; getPlayerProfile: (userId: string) => Promise<GameRuntimePlayerView | null>; li… — ⚠ undocumented
-- `encodePeerSignal` (function): function encodePeerSignal(payload: PeerSignalPayload): string — ⚠ undocumented
-- `decodePeerSignal` (function): function decodePeerSignal(code: string): PeerSignalPayload | null — ⚠ undocumented
-- `createPeerHost` (function): function createPeerHost(options: PeerHostOptions): PeerHost — ⚠ undocumented
-- `createPeerGuest` (function): function createPeerGuest(options: PeerGuestOptions): PeerGuest — ⚠ undocumented
-- `broadcastChannelSignaling` (function): function broadcastChannelSignaling(room: string): PeerSignaling — ⚠ undocumented
-- `announcePeerHost` (function): function announcePeerHost(host: PeerHost, signaling: PeerSignaling): () => void — ⚠ undocumented
-- `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
-- `PeerSignalPayload` (type): type PeerSignalPayload = { type: "offer" | "answer"; sdp: string } — ⚠ undocumented
-- `PeerRtcOptions` (type): type PeerRtcOptions = { configuration?: RTCConfiguration; iceGatherTimeoutMs?: number; } — ⚠ undocumented
-- `PeerHostOptions` (type): type PeerHostOptions = { userId: string; token?: string; host?: GameHost; runtimes?: GameRuntime[]; persistence?: HostPersistence; tickMs?: number; router?: Omit<HostRouterOptions, "host">; rtc?: PeerRtcOptions; } — ⚠ undocumented
-- `PeerHost` (type): type PeerHost = { backend: WsBackend; host: GameHost; router: HostRouter; accept: (offerCode: string) => Promise<string>; close: () => void; } — ⚠ undocumented
-- `PeerGuestOptions` (type): type PeerGuestOptions = { userId: string; token?: string; rtc?: PeerRtcOptions; } — ⚠ undocumented
+- `HttpReadsOptions` (type): type HttpReadsOptions = { baseUrl: string; gameId: string; fetchImpl?: typeof fetch; } — ⚠ undocumented
 - `PeerGuest` (type): type PeerGuest = { backend: WsBackend; offer: () => Promise<string>; connect: (answerCode: string) => Promise<void>; close: () => void; } — ⚠ undocumented
+- `PeerGuestOptions` (type): type PeerGuestOptions = { userId: string; token?: string; rtc?: PeerRtcOptions; } — ⚠ undocumented
+- `PeerHost` (type): type PeerHost = { backend: WsBackend; host: GameHost; router: HostRouter; accept: (offerCode: string) => Promise<string>; close: () => void; } — ⚠ undocumented
+- `PeerHostOptions` (type): type PeerHostOptions = { userId: string; token?: string; host?: GameHost; runtimes?: GameRuntime[]; persistence?: HostPersistence; tickMs?: number; router?: Omit<HostRouterOptions, "host">; rtc?: PeerRtcOptions; } — ⚠ undocumented
+- `PeerRtcOptions` (type): type PeerRtcOptions = { configuration?: RTCConfiguration; iceGatherTimeoutMs?: number; } — ⚠ undocumented
+- `PeerSignalPayload` (type): type PeerSignalPayload = { type: "offer" | "answer"; sdp: string } — ⚠ undocumented
 - `PeerSignaling` (type): type PeerSignaling = { publishOffer: (offerCode: string) => Promise<string>; onOffer: (answer: (offerCode: string) => Promise<string>) => () => void; close: () => void; } — ⚠ undocumented
-- `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
-- `TransportPipe` (type): type TransportPipe = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
-- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string) => void; onClose: () => void; } — ⚠ undocumented
-- `TransportPipeFactory` (type): type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe — ⚠ undocumented
-- `encodeWsMessage` (function): function encodeWsMessage(message: WsClientMessage | WsServerMessage): string — ⚠ undocumented
-- `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
-- `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
-- `decodeWsServerMessage` (function): function decodeWsServerMessage(raw: unknown): WsServerMessage | null — ⚠ undocumented
-- `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
-- `WS_PROTOCOL_VERSION` (const): const WS_PROTOCOL_VERSION: 1 — ⚠ undocumented
-- `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
-- `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
-- `WsPose` (type): type WsPose = PlayerPose & { appearance?: WsAppearance } — ⚠ undocumented
-- `WsPresenceRow` (type): type WsPresenceRow = PresencePoseRow & { appearance?: WsAppearance } — ⚠ undocumented
-- `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
-- `WsVoiceParticipant` (type): type WsVoiceParticipant = { userId: string; streamId?: string; } — ⚠ undocumented
-- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes } | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string } | { v: 1; t: "browse"; id: number; game… — ⚠ undocumented
-- `WsUpdateMessage` (type): type WsUpdateMessage = | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null } | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null } | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unk… — ⚠ undocumented
-- `WsServerMessage` (type): type WsServerMessage = | { v: 1; t: "reply"; id: number; ok: true; result?: unknown } | { v: 1; t: "reply"; id: number; ok: false; reason: string } | WsUpdateMessage — ⚠ undocumented
-- `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
-- `WsRunCommandResult` (type): type WsRunCommandResult = TransportRunCommandResult — ⚠ undocumented
-- `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
-- `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
-- `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number; } — ⚠ undocumented
-- `createReadsHandler` (function): function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler — ⚠ undocumented
-- `ReadsPersistence` (type): type ReadsPersistence = Pick< HostPersistence, "listServers" | "loadProfile" | "getLeaderboardTop" | "getLeaderboardProfile" > — ⚠ undocumented
-- `ReadsHandler` (type): type ReadsHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `ReadsAuthenticate` (type): type ReadsAuthenticate = ( request: Request, ) => Promise<string | null> | string | null — ⚠ undocumented
+- `ReadsHandler` (type): type ReadsHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `ReadsHandlerOptions` (type): type ReadsHandlerOptions = { persistence: ReadsPersistence | (() => Promise<ReadsPersistence>); basePath?: string; listOpenServers?: (args: { gameId: string; limit?: number }) => Promise<ServerListing[]>; authenticate?: ReadsAuthenticate; allowPublicProfiles?: boolean; } — ⚠ undocumented
-- `socketIoPipe` (function): function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory — ⚠ undocumented
-- `createSocketIoBackend` (function): function createSocketIoBackend(options: SocketIoBackendOptions): WsBackend — ⚠ undocumented
-- `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string) => void) => unknown; off: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: () => unknown; } — ⚠ undocumented
+- `ReadsPersistence` (type): type ReadsPersistence = Pick< HostPersistence, "listServers" | "loadProfile" | "getLeaderboardTop" | "getLeaderboardProfile" > — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
 - `SocketIoBackendOptions` (type): type SocketIoBackendOptions = Omit<WsBackendOptions, "url" | "pipe" | "webSocketFactory"> & { socket: SocketIoLikeSocket; } — ⚠ undocumented
-- `computeVoiceGain` (function): function computeVoiceGain(def: VoiceChannelDef, distance: number | null): number — ⚠ undocumented
-- `createVoiceChannelRouter` (function): function createVoiceChannelRouter(channels?: readonly VoiceChannelDef[]): VoiceChannelRouter — ⚠ undocumented
-- `VoiceChannelId` (type): type VoiceChannelId = string — ⚠ undocumented
-- `VoiceMemberId` (type): type VoiceMemberId = string — ⚠ undocumented
+- `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string) => void) => unknown; off: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: () => unknown; } — ⚠ undocumented
+- `TransportPipe` (type): type TransportPipe = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
+- `TransportPipeFactory` (type): type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe — ⚠ undocumented
+- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string) => void; onClose: () => void; } — ⚠ undocumented
 - `VoiceChannelDef` (interface): interface VoiceChannelDef — ⚠ undocumented
+- `VoiceChannelId` (type): type VoiceChannelId = string — ⚠ undocumented
+- `VoiceChannelRouter` (interface): interface VoiceChannelRouter — ⚠ undocumented
+- `VoiceMemberId` (type): type VoiceMemberId = string — ⚠ undocumented
 - `VoicePosition` (interface): interface VoicePosition — ⚠ undocumented
 - `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
-- `VoiceChannelRouter` (interface): interface VoiceChannelRouter — ⚠ undocumented
+- `WS_PROTOCOL_VERSION` (const): const WS_PROTOCOL_VERSION: 1 — ⚠ undocumented
+- `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
+- `WsBackend` (type): type WsBackend = GameBackend & { pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { gameId: string; code: string }) => Promise<JoinSe… — ⚠ undocumented
+- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutFn?: typeof s… — ⚠ undocumented
+- `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
+- `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
+- `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
+- `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes } | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string } | { v: 1; t: "browse"; id: number; game… — ⚠ undocumented
+- `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number; } — ⚠ undocumented
+- `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
+- `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
+- `WsPose` (type): type WsPose = PlayerPose & { appearance?: WsAppearance } — ⚠ undocumented
+- `WsPresenceRow` (type): type WsPresenceRow = PresencePoseRow & { appearance?: WsAppearance } — ⚠ undocumented
+- `WsPresenceSync` (type): type WsPresenceSync = { subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void; /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */ syncPose: (serverId: string, pose: WsPose) => void; } — ⚠ undocumented
+- `WsRunCommandResult` (type): type WsRunCommandResult = TransportRunCommandResult — ⚠ undocumented
+- `WsServerMessage` (type): type WsServerMessage = | { v: 1; t: "reply"; id: number; ok: true; result?: unknown } | { v: 1; t: "reply"; id: number; ok: false; reason: string } | WsUpdateMessage — ⚠ undocumented
+- `WsUpdateMessage` (type): type WsUpdateMessage = | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null } | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null } | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unk… — ⚠ undocumented
+- `WsVoiceParticipant` (type): type WsVoiceParticipant = { userId: string; streamId?: string; } — ⚠ undocumented
+- `WsVoiceSync` (type): type WsVoiceSync = { subscribe: ( serverId: string, channelId: string, onChange: (participants: WsVoiceParticipant[]) => void, ) => () => void; join: (serverId: string, channelId: string, streamId?: string) => Promise<void>; leave: (serverId: string, channelId: string) => Promise<void>; publish: (se… — ⚠ undocumented
+- `announcePeerHost` (function): function announcePeerHost(host: PeerHost, signaling: PeerSignaling): () => void — ⚠ undocumented
+- `broadcastChannelSignaling` (function): function broadcastChannelSignaling(room: string): PeerSignaling — ⚠ undocumented
+- `computeVoiceGain` (function): function computeVoiceGain(def: VoiceChannelDef, distance: number | null): number — ⚠ undocumented
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
+- `createHostRouter` (function): function createHostRouter(options: HostRouterOptions): HostRouter — ⚠ undocumented
+- `createHttpReads` (function): function createHttpReads(options: HttpReadsOptions): HttpReads — ⚠ undocumented
+- `createPeerGuest` (function): function createPeerGuest(options: PeerGuestOptions): PeerGuest — ⚠ undocumented
+- `createPeerHost` (function): function createPeerHost(options: PeerHostOptions): PeerHost — ⚠ undocumented
+- `createReadsHandler` (function): function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler — ⚠ undocumented
+- `createSocketIoBackend` (function): function createSocketIoBackend(options: SocketIoBackendOptions): WsBackend — ⚠ undocumented
+- `createVoiceChannelRouter` (function): function createVoiceChannelRouter(channels?: readonly VoiceChannelDef[]): VoiceChannelRouter — ⚠ undocumented
+- `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
+- `decodePeerSignal` (function): function decodePeerSignal(code: string): PeerSignalPayload | null — ⚠ undocumented
+- `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
+- `decodeWsServerMessage` (function): function decodeWsServerMessage(raw: unknown): WsServerMessage | null — ⚠ undocumented
+- `encodePeerSignal` (function): function encodePeerSignal(payload: PeerSignalPayload): string — ⚠ undocumented
+- `encodeWsMessage` (function): function encodeWsMessage(message: WsClientMessage | WsServerMessage): string — ⚠ undocumented
+- `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
+- `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
+- `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
+- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `socketIoPipe` (function): function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory — ⚠ undocumented
+- `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
+- `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
 
 ## @jgengine/ws/createWsBackend
 
-- `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
-- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutFn?: typeof s… — ⚠ undocumented
-- `WsPresenceSync` (type): type WsPresenceSync = { subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void; /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */ syncPose: (serverId: string, pose: WsPose) => void; } — ⚠ undocumented
-- `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
-- `WsVoiceSync` (type): type WsVoiceSync = { subscribe: ( serverId: string, channelId: string, onChange: (participants: WsVoiceParticipant[]) => void, ) => () => void; join: (serverId: string, channelId: string, streamId?: string) => Promise<void>; leave: (serverId: string, channelId: string) => Promise<void>; publish: (se… — ⚠ undocumented
 - `WsBackend` (type): type WsBackend = GameBackend & { pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { gameId: string; code: string }) => Promise<JoinSe… — ⚠ undocumented
+- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutFn?: typeof s… — ⚠ undocumented
+- `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
+- `WsPresenceSync` (type): type WsPresenceSync = { subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void; /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */ syncPose: (serverId: string, pose: WsPose) => void; } — ⚠ undocumented
+- `WsVoiceSync` (type): type WsVoiceSync = { subscribe: ( serverId: string, channelId: string, onChange: (participants: WsVoiceParticipant[]) => void, ) => () => void; join: (serverId: string, channelId: string, streamId?: string) => Promise<void>; leave: (serverId: string, channelId: string) => Promise<void>; publish: (se… — ⚠ undocumented
+- `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
 
 ## @jgengine/ws/host
 
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
+- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
+- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — ⚠ undocumented
 - `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — ⚠ undocumented
 - `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — ⚠ undocumented
-- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — ⚠ undocumented
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — ⚠ undocumented
 
 ## @jgengine/ws/hostRouter
 
-- `createHostRouter` (function): function createHostRouter(options: HostRouterOptions): HostRouter — ⚠ undocumented
-- `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
+- `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
+- `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `HostRouterAuthenticate` (type): type HostRouterAuthenticate = (args: { userId: string; token?: string; }) => Promise<string | null> | string | null — ⚠ undocumented
+- `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
 - `HostRouterOptions` (type): type HostRouterOptions = { host: GameHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; now?: () => number; } — ⚠ undocumented
 - `HostRouterTransport` (type): type HostRouterTransport = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
-- `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
 - `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — ⚠ undocumented
-- `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
-- `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
+- `createHostRouter` (function): function createHostRouter(options: HostRouterOptions): HostRouter — ⚠ undocumented
+- `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
 
 ## @jgengine/ws/httpReads
 
-- `createHttpReads` (function): function createHttpReads(options: HttpReadsOptions): HttpReads — ⚠ undocumented
-- `HttpReadsOptions` (type): type HttpReadsOptions = { baseUrl: string; gameId: string; fetchImpl?: typeof fetch; } — ⚠ undocumented
 - `HttpReads` (type): type HttpReads = { getTop: (args: { stat: string; scope: LeaderboardScope; serverId?: string; limit?: number; }) => Promise<LeaderboardEntry[]>; getLeaderboardProfile: (userId: string) => Promise<Record<string, number>>; getPlayerProfile: (userId: string) => Promise<GameRuntimePlayerView | null>; li… — ⚠ undocumented
+- `HttpReadsOptions` (type): type HttpReadsOptions = { baseUrl: string; gameId: string; fetchImpl?: typeof fetch; } — ⚠ undocumented
+- `createHttpReads` (function): function createHttpReads(options: HttpReadsOptions): HttpReads — ⚠ undocumented
 
 ## @jgengine/ws/peer
 
-- `encodePeerSignal` (function): function encodePeerSignal(payload: PeerSignalPayload): string — ⚠ undocumented
-- `decodePeerSignal` (function): function decodePeerSignal(code: string): PeerSignalPayload | null — ⚠ undocumented
-- `createPeerHost` (function): function createPeerHost(options: PeerHostOptions): PeerHost — ⚠ undocumented
-- `createPeerGuest` (function): function createPeerGuest(options: PeerGuestOptions): PeerGuest — ⚠ undocumented
-- `broadcastChannelSignaling` (function): function broadcastChannelSignaling(room: string): PeerSignaling — ⚠ undocumented
-- `announcePeerHost` (function): function announcePeerHost(host: PeerHost, signaling: PeerSignaling): () => void — ⚠ undocumented
-- `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
-- `PeerSignalPayload` (type): type PeerSignalPayload = { type: "offer" | "answer"; sdp: string } — ⚠ undocumented
-- `PeerRtcOptions` (type): type PeerRtcOptions = { configuration?: RTCConfiguration; iceGatherTimeoutMs?: number; } — ⚠ undocumented
-- `PeerHostOptions` (type): type PeerHostOptions = { userId: string; token?: string; host?: GameHost; runtimes?: GameRuntime[]; persistence?: HostPersistence; tickMs?: number; router?: Omit<HostRouterOptions, "host">; rtc?: PeerRtcOptions; } — ⚠ undocumented
-- `PeerHost` (type): type PeerHost = { backend: WsBackend; host: GameHost; router: HostRouter; accept: (offerCode: string) => Promise<string>; close: () => void; } — ⚠ undocumented
-- `PeerGuestOptions` (type): type PeerGuestOptions = { userId: string; token?: string; rtc?: PeerRtcOptions; } — ⚠ undocumented
 - `PeerGuest` (type): type PeerGuest = { backend: WsBackend; offer: () => Promise<string>; connect: (answerCode: string) => Promise<void>; close: () => void; } — ⚠ undocumented
+- `PeerGuestOptions` (type): type PeerGuestOptions = { userId: string; token?: string; rtc?: PeerRtcOptions; } — ⚠ undocumented
+- `PeerHost` (type): type PeerHost = { backend: WsBackend; host: GameHost; router: HostRouter; accept: (offerCode: string) => Promise<string>; close: () => void; } — ⚠ undocumented
+- `PeerHostOptions` (type): type PeerHostOptions = { userId: string; token?: string; host?: GameHost; runtimes?: GameRuntime[]; persistence?: HostPersistence; tickMs?: number; router?: Omit<HostRouterOptions, "host">; rtc?: PeerRtcOptions; } — ⚠ undocumented
+- `PeerRtcOptions` (type): type PeerRtcOptions = { configuration?: RTCConfiguration; iceGatherTimeoutMs?: number; } — ⚠ undocumented
+- `PeerSignalPayload` (type): type PeerSignalPayload = { type: "offer" | "answer"; sdp: string } — ⚠ undocumented
 - `PeerSignaling` (type): type PeerSignaling = { publishOffer: (offerCode: string) => Promise<string>; onOffer: (answer: (offerCode: string) => Promise<string>) => () => void; close: () => void; } — ⚠ undocumented
+- `announcePeerHost` (function): function announcePeerHost(host: PeerHost, signaling: PeerSignaling): () => void — ⚠ undocumented
+- `broadcastChannelSignaling` (function): function broadcastChannelSignaling(room: string): PeerSignaling — ⚠ undocumented
+- `createPeerGuest` (function): function createPeerGuest(options: PeerGuestOptions): PeerGuest — ⚠ undocumented
+- `createPeerHost` (function): function createPeerHost(options: PeerHostOptions): PeerHost — ⚠ undocumented
+- `decodePeerSignal` (function): function decodePeerSignal(code: string): PeerSignalPayload | null — ⚠ undocumented
+- `encodePeerSignal` (function): function encodePeerSignal(payload: PeerSignalPayload): string — ⚠ undocumented
+- `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
 
 ## @jgengine/ws/pipe
 
-- `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
 - `TransportPipe` (type): type TransportPipe = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
-- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string) => void; onClose: () => void; } — ⚠ undocumented
 - `TransportPipeFactory` (type): type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe — ⚠ undocumented
+- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string) => void; onClose: () => void; } — ⚠ undocumented
+- `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
 
 ## @jgengine/ws/protocol
 
-- `encodeWsMessage` (function): function encodeWsMessage(message: WsClientMessage | WsServerMessage): string — ⚠ undocumented
-- `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
-- `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
-- `decodeWsServerMessage` (function): function decodeWsServerMessage(raw: unknown): WsServerMessage | null — ⚠ undocumented
-- `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
 - `WS_PROTOCOL_VERSION` (const): const WS_PROTOCOL_VERSION: 1 — ⚠ undocumented
-- `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
 - `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
+- `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
+- `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
+- `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes } | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string } | { v: 1; t: "browse"; id: number; game… — ⚠ undocumented
+- `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number; } — ⚠ undocumented
+- `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
+- `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
 - `WsPose` (type): type WsPose = PlayerPose & { appearance?: WsAppearance } — ⚠ undocumented
 - `WsPresenceRow` (type): type WsPresenceRow = PresencePoseRow & { appearance?: WsAppearance } — ⚠ undocumented
-- `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
-- `WsVoiceParticipant` (type): type WsVoiceParticipant = { userId: string; streamId?: string; } — ⚠ undocumented
-- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes } | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string } | { v: 1; t: "browse"; id: number; game… — ⚠ undocumented
-- `WsUpdateMessage` (type): type WsUpdateMessage = | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null } | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null } | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unk… — ⚠ undocumented
-- `WsServerMessage` (type): type WsServerMessage = | { v: 1; t: "reply"; id: number; ok: true; result?: unknown } | { v: 1; t: "reply"; id: number; ok: false; reason: string } | WsUpdateMessage — ⚠ undocumented
-- `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
 - `WsRunCommandResult` (type): type WsRunCommandResult = TransportRunCommandResult — ⚠ undocumented
-- `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
-- `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
-- `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number; } — ⚠ undocumented
+- `WsServerMessage` (type): type WsServerMessage = | { v: 1; t: "reply"; id: number; ok: true; result?: unknown } | { v: 1; t: "reply"; id: number; ok: false; reason: string } | WsUpdateMessage — ⚠ undocumented
+- `WsUpdateMessage` (type): type WsUpdateMessage = | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null } | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null } | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unk… — ⚠ undocumented
+- `WsVoiceParticipant` (type): type WsVoiceParticipant = { userId: string; streamId?: string; } — ⚠ undocumented
+- `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
+- `decodeWsServerMessage` (function): function decodeWsServerMessage(raw: unknown): WsServerMessage | null — ⚠ undocumented
+- `encodeWsMessage` (function): function encodeWsMessage(message: WsClientMessage | WsServerMessage): string — ⚠ undocumented
+- `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
+- `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
 
 ## @jgengine/ws/readsHandler
 
-- `createReadsHandler` (function): function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler — ⚠ undocumented
-- `ReadsPersistence` (type): type ReadsPersistence = Pick< HostPersistence, "listServers" | "loadProfile" | "getLeaderboardTop" | "getLeaderboardProfile" > — ⚠ undocumented
-- `ReadsHandler` (type): type ReadsHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `ReadsAuthenticate` (type): type ReadsAuthenticate = ( request: Request, ) => Promise<string | null> | string | null — ⚠ undocumented
+- `ReadsHandler` (type): type ReadsHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `ReadsHandlerOptions` (type): type ReadsHandlerOptions = { persistence: ReadsPersistence | (() => Promise<ReadsPersistence>); basePath?: string; listOpenServers?: (args: { gameId: string; limit?: number }) => Promise<ServerListing[]>; authenticate?: ReadsAuthenticate; allowPublicProfiles?: boolean; } — ⚠ undocumented
+- `ReadsPersistence` (type): type ReadsPersistence = Pick< HostPersistence, "listServers" | "loadProfile" | "getLeaderboardTop" | "getLeaderboardProfile" > — ⚠ undocumented
+- `createReadsHandler` (function): function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler — ⚠ undocumented
 
 ## @jgengine/ws/socketIoPipe
 
-- `socketIoPipe` (function): function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory — ⚠ undocumented
-- `createSocketIoBackend` (function): function createSocketIoBackend(options: SocketIoBackendOptions): WsBackend — ⚠ undocumented
-- `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string) => void) => unknown; off: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: () => unknown; } — ⚠ undocumented
 - `SocketIoBackendOptions` (type): type SocketIoBackendOptions = Omit<WsBackendOptions, "url" | "pipe" | "webSocketFactory"> & { socket: SocketIoLikeSocket; } — ⚠ undocumented
+- `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string) => void) => unknown; off: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: () => unknown; } — ⚠ undocumented
+- `createSocketIoBackend` (function): function createSocketIoBackend(options: SocketIoBackendOptions): WsBackend — ⚠ undocumented
+- `socketIoPipe` (function): function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory — ⚠ undocumented
 
 ## @jgengine/ws/voiceChannel
 
-- `computeVoiceGain` (function): function computeVoiceGain(def: VoiceChannelDef, distance: number | null): number — ⚠ undocumented
-- `createVoiceChannelRouter` (function): function createVoiceChannelRouter(channels?: readonly VoiceChannelDef[]): VoiceChannelRouter — ⚠ undocumented
-- `VoiceChannelId` (type): type VoiceChannelId = string — ⚠ undocumented
-- `VoiceMemberId` (type): type VoiceMemberId = string — ⚠ undocumented
 - `VoiceChannelDef` (interface): interface VoiceChannelDef — ⚠ undocumented
+- `VoiceChannelId` (type): type VoiceChannelId = string — ⚠ undocumented
+- `VoiceChannelRouter` (interface): interface VoiceChannelRouter — ⚠ undocumented
+- `VoiceMemberId` (type): type VoiceMemberId = string — ⚠ undocumented
 - `VoicePosition` (interface): interface VoicePosition — ⚠ undocumented
 - `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
-- `VoiceChannelRouter` (interface): interface VoiceChannelRouter — ⚠ undocumented
+- `computeVoiceGain` (function): function computeVoiceGain(def: VoiceChannelDef, distance: number | null): number — ⚠ undocumented
+- `createVoiceChannelRouter` (function): function createVoiceChannelRouter(channels?: readonly VoiceChannelDef[]): VoiceChannelRouter — ⚠ undocumented
