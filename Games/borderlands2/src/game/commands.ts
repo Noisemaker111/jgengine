@@ -260,6 +260,12 @@ export function registerCommands(ctx: GameContext): void {
     },
   });
 
+  ctx.game.commands.define("npc.hammerlock", {
+    apply(state: GameContext) {
+      state.game.store.set("echo", { questId: "q_mong_hunt", atMs: state.time.now() * 1000 });
+    },
+  });
+
   ctx.game.commands.define("blackmarket.open", {
     apply(state: GameContext) {
       state.game.store.set("blackMarketOpen", true);

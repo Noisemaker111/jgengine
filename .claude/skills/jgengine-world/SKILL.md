@@ -123,5 +123,16 @@ Shell wiring: `@jgengine/shell/vision/RevealVision` (`RevealHighlights` — dept
 
 Renderer-free world surface — query primitives, environment fields + weather + realm composition, survival meters/moodles, interactive building & terraform, the optional headless physics world, vehicles/mounts/racing, and spawn placement. Full surface: **[reference.md](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-world/reference.md)**.
 
+## Level design — places, not noise
+
+Procedural terrain is a canvas, never the level. A world with only `terrain()` + spawn clusters reads as an empty sandbox no matter how big its bounds. Every open-world game composes **places** on top of the canvas, and the checklist below is the floor, not the ceiling:
+
+- **Every site is a set-piece.** A camp is a wall ring with a deliberate gate opening facing the approach, cover inside, a tower or banner as its silhouette — never a bare radius of spawns. Compose from placed objects (`ctx.scene.object.place` with stable instance ids) driven by pure data functions (ring/scatter/route generators) so bun tests can assert the composition without rendering.
+- **Roads make the space legible.** Physically connect sites: trace waypoint routes between them and feed the points into the terrain descriptor's `flatten` masks so the route is genuinely walkable, then dress it — markers, wrecks, signposts — every ~60 units so the player can read the path at a glance. A test should walk the route and assert the step height stays small.
+- **One landmark per region.** A water tower, crashed vehicle, gate, or monument visible from the approach gives orientation without a map. Distinct silhouette + distinct color.
+- **Anchor → approach → arena → reward.** Each combat site needs a visible anchor drawing the player in, a readable approach (the road), an arena with cover the AI and player both use, and a visible reward (chest, vendor, quest turn-in) at the back so clearing it feels earned.
+- **People, not just spawns.** Hubs hold named NPCs (talkable entities with prompts), vendors, and light props (lamps, crates, stalls). A hub with only vending-machine objects is a menu, not a town.
+- **Density budget.** Inside a site's flatten radius aim for roughly one placed object per 6–10 units of radius; along roads one prop per ~60 units; open wilderness stays sparse so sites contrast. Frustum/distance culling is automatic — err toward more dressing, not less.
+
 ## Turn-based & tactics (renderer-free)
 

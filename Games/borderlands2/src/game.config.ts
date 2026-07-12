@@ -14,6 +14,7 @@ import { GameUI } from "./game/ui/GameUI";
 import { renderPandoraEntity } from "./game/world/renderEntity";
 import { renderPandoraObject } from "./game/world/renderObject";
 import { PandoraViewmodel } from "./game/world/Viewmodel";
+import { NPC_PLACEMENTS } from "./game/world/level";
 import { AMMO_CHESTS, RED_CHESTS } from "./game/world/setup";
 import {
   BLACK_MARKET_POS,
@@ -61,6 +62,18 @@ const staticPrompts: readonly PositionedPrompt[] = [
       invoke: { name: "vendor.open", input: { vendor: "claptrap" } },
     },
   },
+  ...NPC_PLACEMENTS.map((npc) => ({
+    id: `npc:${npc.name}`,
+    position: { x: npc.x, z: npc.z },
+    prompt: {
+      radius: 3,
+      display: { kind: "keybind", actionId: "interact" } as const,
+      invoke:
+        npc.name === "hammerlock"
+          ? { name: "npc.hammerlock", input: undefined }
+          : { name: "vendor.open", input: { vendor: npc.name === "dr_zed" ? "zed" : "marcus" } },
+    },
+  })),
   {
     id: "vendor:blackmarket",
     position: { x: BLACK_MARKET_POS[0], z: BLACK_MARKET_POS[2] },
