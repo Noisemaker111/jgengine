@@ -8,6 +8,10 @@ function makeCtx(entities: Array<{ id: string; position: [number, number, number
     scene: {
       entity: {
         list: () => entities.map((e) => ({ id: e.id, position: e.position })),
+        get: (id: string) => {
+          const found = entities.find((e) => e.id === id);
+          return found === undefined ? null : { id: found.id, position: found.position };
+        },
         stats: {
           get: (id: string, _statId: string) => {
             const found = entities.find((e) => e.id === id);
