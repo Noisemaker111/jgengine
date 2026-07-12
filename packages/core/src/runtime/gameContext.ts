@@ -337,7 +337,8 @@ export interface GameContext {
     chat: Chat;
     unlocks: Unlocks;
     economy: GameContextEconomy;
-    leaderboard: Leaderboard;
+    /** Competitive score tracking — present only when `features.leaderboard` is set. */
+    leaderboard?: Leaderboard;
     /** Owned-entity roster — present only when `features.roster` is set. */
     roster?: Roster;
     /** Game-defined keyed reactive store slot (#163.1); mutations bump `ctx.version()`/notify `ctx.subscribe`. */
@@ -561,8 +562,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     ["register", "send", "whisper", "hydrate"],
     signal.notify,
   );
-  const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify);
   const features = definition.features ?? {};
+  const leaderboard = features.leaderboard
+    ? notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify)
+    : undefined;
   const roster = features.roster
     ? notifyAfter(createRoster({ now }), ["capture", "release", "setEquipped", "hydrate"], signal.notify)
     : undefined;

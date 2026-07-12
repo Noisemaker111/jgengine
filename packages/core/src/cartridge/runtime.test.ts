@@ -89,7 +89,7 @@ function fixtureSpec(): CartridgeSpec {
 
 function boot(spec: CartridgeSpec = fixtureSpec()): { ctx: GameContext; cart: CartridgeRuntime } {
   const cart = createCartridge(spec);
-  const definition = defineGame({ name: "Cartridge Fixture", multiplayer: offline() });
+  const definition = defineGame({ name: "Cartridge Fixture", multiplayer: offline(), features: { leaderboard: true } });
   const ctx = createGameContext({ definition, content: cart.content, player: { userId: "p1", isNew: true } });
   cart.loop.onInit?.(ctx);
   cart.loop.onNewPlayer?.(ctx);
@@ -243,7 +243,7 @@ describe("cartridge flow", () => {
     const spec = fixtureSpec();
     spec.flow = { start: "gate", countdownSeconds: 3 };
     const cart = createCartridge(spec);
-    const definition = defineGame({ name: "Flow Fixture", multiplayer: offline() });
+    const definition = defineGame({ name: "Flow Fixture", multiplayer: offline(), features: { leaderboard: true } });
     const ctx = createGameContext({ definition, content: cart.content, player: { userId: "p1", isNew: true } });
     cart.loop.onInit?.(ctx);
     cart.loop.onNewPlayer?.(ctx);

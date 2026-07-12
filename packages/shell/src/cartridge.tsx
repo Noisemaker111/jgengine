@@ -475,6 +475,7 @@ export function cartridge(config: CartridgeConfig): PlayableGame {
   return defineGame({
     name: config.name,
     assets: config.assets,
+    features: { leaderboard: config.rules.killLeaderboardStat !== undefined },
     world: config.world,
     physics: config.physics,
     input: config.input ?? WASD_KEYBINDS,
