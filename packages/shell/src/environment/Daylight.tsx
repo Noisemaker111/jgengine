@@ -23,6 +23,51 @@ const SUN_COLOR = "#fff1c9";
 const HEMI_SKY = "#bfe3ff";
 const HEMI_GROUND = "#4c6b34";
 
+/**
+ * Sun directional light whose high-resolution shadow camera follows the view each
+ * frame, so grounded shadows stay crisp under the player anywhere in a large world
+ * instead of only near the origin.
+ */
+function ShadowCastingSun({
+  position,
+  intensity,
+  color,
+}: {
+  position: readonly [number, number, number];
+  intensity: number;
+  color: string;
+}) {
+  const ref = useRef<THREE.DirectionalLight>(null);
+  useFrame((state) => {
+    const light = ref.current;
+    if (light === null) return;
+    const cx = state.camera.position.x;
+    const cz = state.camera.position.z;
+    light.position.set(cx + position[0], position[1], cz + position[2]);
+    light.target.position.set(cx, 0, cz);
+    light.target.updateMatrixWorld();
+  });
+  return (
+    <directionalLight
+      ref={ref}
+      position={[position[0], position[1], position[2]]}
+      intensity={intensity}
+      color={color}
+      castShadow
+      shadow-mapSize-width={2048}
+      shadow-mapSize-height={2048}
+      shadow-camera-left={-90}
+      shadow-camera-right={90}
+      shadow-camera-top={90}
+      shadow-camera-bottom={-90}
+      shadow-camera-near={10}
+      shadow-camera-far={520}
+      shadow-bias={-0.0004}
+      shadow-normalBias={0.02}
+    />
+  );
+}
+
 export function SkyDome({
   topColor = SKY_TOP,
   horizonColor = SKY_HORIZON,
@@ -99,11 +144,10 @@ export function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProp
           <hemisphereLight
             args={[ambient?.skyColor ?? HEMI_SKY, ambient?.groundColor ?? HEMI_GROUND, ambient?.intensity ?? 0.55]}
           />
-          <directionalLight
-            position={[sunPosition[0], sunPosition[1], sunPosition[2]]}
+          <ShadowCastingSun
+            position={sunPosition}
             intensity={sun?.intensity ?? 0.85}
             color={sun?.color ?? SUN_COLOR}
-            castShadow
           />
         </>
       ) : null}

@@ -85,6 +85,7 @@ import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
 import type {
   BackdropConfig,
+  DirectionalLightingConfig,
   EntitySpriteConfig,
   LightingConfig,
   ModelConfig,
@@ -117,6 +118,7 @@ import { VERSION } from "@jgengine/core/meta/changelog";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
+import { PostProcessing } from "./postfx/PostProcessing";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { collisionDebug } from "./devtools/collisionDebug";
 import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
@@ -384,6 +386,28 @@ function colorFromId(id: string): string {
   return `hsl(${hash % 360}, 65%, 55%)`;
 }
 
+function DirectionalShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
+  const size = entry.shadowCameraSize ?? 40;
+  return (
+    <directionalLight
+      position={[entry.position[0], entry.position[1], entry.position[2]]}
+      intensity={entry.intensity ?? 1.3}
+      color={entry.color}
+      castShadow={entry.castShadow ?? false}
+      shadow-mapSize-width={entry.shadowMapSize ?? 1024}
+      shadow-mapSize-height={entry.shadowMapSize ?? 1024}
+      shadow-camera-left={-size}
+      shadow-camera-right={size}
+      shadow-camera-top={size}
+      shadow-camera-bottom={-size}
+      shadow-camera-near={0.5}
+      shadow-camera-far={Math.max(200, size * 6)}
+      shadow-bias={entry.shadowBias ?? -0.0004}
+      shadow-normalBias={entry.shadowNormalBias ?? 0.02}
+    />
+  );
+}
+
 function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
   return (
     <>
@@ -400,13 +424,7 @@ function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
         />
       ) : null}
       {(lighting.directional ?? []).map((entry, index) => (
-        <directionalLight
-          key={index}
-          position={[entry.position[0], entry.position[1], entry.position[2]]}
-          intensity={entry.intensity ?? 1.3}
-          color={entry.color}
-          castShadow={entry.castShadow ?? false}
-        />
+        <DirectionalShadowLight key={index} entry={entry} />
       ))}
     </>
   );
@@ -2414,6 +2432,9 @@ export function GamePlayerShell({
           }}
         />
         <DevtoolsRendererProbe />
+        {playable.postProcessing !== undefined && playable.postProcessing.enabled !== false ? (
+          <PostProcessing config={playable.postProcessing} />
+        ) : null}
       </Canvas>
       {!poster && !orientationGate && coarsePointer && controlsActive && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
         <TouchPlaySurface

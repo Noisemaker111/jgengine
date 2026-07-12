@@ -126,3 +126,7 @@ phase-7a ship worker pushed the branch onto pre-#595-merge history, so PR #596 s
 2026-07-12T20:30:18.174Z — opus-4.8 — Claude
 
 briefed a gate worker with literal 'bun test' → it scanned the whole tree unbounded (incl Games/) and hung 10min with zero output before the guard killed it; the repo gate is 'bun run test' (guarded, scoped to packages apps/dev scripts). Bare 'bun test' is a footgun in briefs.
+
+2026-07-12T21:03:16.266Z — opus-4.8 — Claude
+
+drive tool: guessed '--keys "s s s"' to walk the camera; that flag doesn't exist — it's '--key <Code>:<holdMs>' (singular, one per flag, e.g. --key KeyS:2500). CLAUDE.md's drive example only shows --click/--shot, so the movement flag is undiscoverable without --help.

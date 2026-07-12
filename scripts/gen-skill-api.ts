@@ -34,6 +34,7 @@ const CORE_DOMAIN_SKILLS: Record<string, string> = {
   physics: "jgengine-world",
   puzzle: "jgengine-gameplay",
   random: "jgengine-gameplay",
+  render: "jgengine-ui",
   runtime: MAIN,
   scene: "jgengine-world",
   sensor: "jgengine-world",
