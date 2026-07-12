@@ -47,6 +47,8 @@ export interface GameFeatures {
   turn?: boolean;
   /** Lap/checkpoint race state (`ctx.game.race`) — racers. */
   race?: boolean;
+  /** Competitive score tracking (`ctx.game.leaderboard`) — ranked/arcade games. */
+  leaderboard?: boolean;
 }
 
 export interface GameDefinition<

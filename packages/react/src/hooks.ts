@@ -241,8 +241,10 @@ export function useLeaderboard(
   stat: string,
   options: { scope: LeaderboardScope; limit?: number },
 ): { userId: string; value: number }[] {
-  return useGameStore((ctx) => ctx.game.leaderboard.getTop(stat, options));
+  return useGameStore((ctx) => ctx.game.leaderboard?.getTop(stat, options) ?? EMPTY_LEADERBOARD);
 }
+
+const EMPTY_LEADERBOARD: { userId: string; value: number }[] = [];
 
 export function useLocalPlayerDead(healthStatId = "health"): boolean {
   return useGameStore((ctx) => {

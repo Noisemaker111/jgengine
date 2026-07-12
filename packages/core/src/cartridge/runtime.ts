@@ -487,7 +487,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
     const run = getRun(ctx);
     syncPhase(ctx, run);
     if (spec.rules.killLeaderboardStat !== undefined) {
-      ctx.game.leaderboard.track({ stat: spec.rules.killLeaderboardStat, scope: "profile" });
+      ctx.game.leaderboard?.track({ stat: spec.rules.killLeaderboardStat, scope: "profile" });
     }
     run.disposeEvents?.();
     run.disposeEvents = ctx.game.events.on("entity.died", (event) => {
@@ -504,7 +504,7 @@ export function createCartridge(spec: CartridgeSpec): CartridgeRuntime {
       if (def === undefined) return;
       run.kills += 1;
       if (spec.rules.killLeaderboardStat !== undefined) {
-        ctx.game.leaderboard.increment(ctx.player.userId, spec.rules.killLeaderboardStat, { scope: "profile" });
+        ctx.game.leaderboard?.increment(ctx.player.userId, spec.rules.killLeaderboardStat, { scope: "profile" });
       }
       ctx.scene.worldItem.spawn({
         itemId: XP_GEM_BASE_TYPE,
