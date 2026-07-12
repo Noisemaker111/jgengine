@@ -27,6 +27,8 @@ type Args = {
   device: DeviceArg;
   stage?: boolean;
   preview?: string;
+  run?: string[];
+  settle?: number;
   out?: string;
   url?: string;
   connect?: number;
@@ -71,7 +73,14 @@ function parseArgs(argv: string[]): Args {
       } else {
         args.preview = "";
       }
-    } else if (value === "--out") args.out = argv[++index];
+    } else if (value === "--run") {
+      const list = (argv[++index] ?? "")
+        .split(",")
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0);
+      args.run = list.length > 0 ? list : args.run;
+    } else if (value === "--settle") args.settle = Number(argv[++index]);
+    else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") args.url = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
@@ -347,6 +356,8 @@ function targetUrl(args: Args, device: Device): string {
   url.searchParams.set("capture", "1");
   if (args.stage === true) url.searchParams.set("stage", "1");
   if (args.preview !== undefined) url.searchParams.set("preview", args.preview);
+  if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
+  if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));
   return url.toString();
 }
 

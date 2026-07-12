@@ -5,14 +5,15 @@
  * the shared runner/shell path produces. One clean boot proves the shared
  * GamePlayerShell + <Canvas> world path — where the prod render-loop lived.
  *
- * These are world/canvas games: the play-mode capture handshake
- * (apps/dev/src/captureReady.ts) currently waits on a <canvas> element, so
- * pure-DOM/HUD games (e.g. blackjack) can't yet be smoked in play mode.
+ * The play-mode capture handshake (apps/dev/src/captureReady.ts) resolves on a
+ * <canvas> OR a shape-agnostic `data-jg-frame-ready` marker the shell stamps for
+ * hud-presentation games, so this list covers both world/canvas games and a
+ * pure-DOM/HUD game (nonogram).
  */
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
-const GAMES = ["canyon-chase", "loot-shooter", "drone-derby"];
+const GAMES = ["canyon-chase", "loot-shooter", "drone-derby", "nonogram"];
 const root = resolve(import.meta.dir, "..");
 
 function boot(game: string): Promise<number> {
