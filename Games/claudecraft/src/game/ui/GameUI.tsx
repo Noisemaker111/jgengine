@@ -35,10 +35,10 @@ export function GameUI() {
   return (
     <>
       <HudCanvas layout={layout}>
-        <HudPanel id="player" anchor="top-left" inset={{ x: 16, y: 14 }}>
+        <HudPanel id="player" anchor="bottom" inset={{ x: -200, y: 118 }}>
           <PlayerFrame />
         </HudPanel>
-        <HudPanel id="target" anchor="top-left" inset={{ x: 16, y: 118 }}>
+        <HudPanel id="target" anchor="top-left" inset={{ x: 12, y: 12 }}>
           <TargetFrame />
         </HudPanel>
         <HudPanel id="zone" anchor="top" inset={{ x: 0, y: 12 }}>
@@ -50,7 +50,7 @@ export function GameUI() {
         <HudPanel id="settings" anchor="top-right" inset={{ x: 16, y: 14 }} order={-1}>
           <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-stone-700 bg-stone-950/80 text-amber-300 transition hover:border-amber-500 hover:bg-stone-800" />
         </HudPanel>
-        <HudPanel id="quests" anchor="top-right" inset={{ x: 16, y: 14 }}>
+        <HudPanel id="quests" anchor="top-right" inset={{ x: 14, y: 60 }}>
           <QuestTracker />
         </HudPanel>
         <HudPanel id="content-hud" anchor="top-right" inset={{ x: 16, y: 180 }}>
@@ -64,13 +64,13 @@ export function GameUI() {
         <HudPanel id="feed" anchor="bottom-left" inset={{ x: 16, y: 60 }}>
           <KillLootToasts />
         </HudPanel>
-        <HudPanel id="cast" anchor="bottom" inset={{ x: 0, y: 132 }}>
+        <HudPanel id="cast" anchor="bottom" inset={{ x: 0, y: 240 }}>
           <CastBar />
         </HudPanel>
-        <HudPanel id="actionbar" anchor="bottom" inset={{ x: 0, y: 64 }}>
+        <HudPanel id="actionbar" anchor="bottom" inset={{ x: 0, y: 42 }}>
           <ActionBar />
         </HudPanel>
-        <HudPanel id="xp" anchor="bottom" inset={{ x: 0, y: 26 }}>
+        <HudPanel id="xp" anchor="bottom" inset={{ x: 0, y: 14 }}>
           <XpBar />
         </HudPanel>
         <HudPanel id="credit" anchor="bottom-right" inset={{ x: 14, y: 10 }}>
