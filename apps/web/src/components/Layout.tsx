@@ -93,11 +93,11 @@ export function Header() {
   return (
     <header className="sticky top-0 z-20 px-3 pt-3 sm:px-4">
       <div className="mx-auto flex max-w-6xl items-center justify-between rounded-2xl border border-white/[0.08] bg-ink/75 py-2.5 pl-4 pr-3 shadow-[0_8px_32px_-12px_rgba(2,3,8,0.9)] backdrop-blur-xl sm:pl-5">
-        <Link to="/" className="flex items-center gap-2.5 font-semibold tracking-tight text-slate-100">
+        <Link to="/" className="flex shrink-0 items-center gap-2.5 font-semibold tracking-tight text-slate-100">
           <LogoMark />
           JGengine
         </Link>
-        <nav className="flex items-center gap-0.5 text-sm text-slate-400 sm:gap-1">
+        <nav className="flex min-w-0 items-center gap-0.5 overflow-x-auto text-sm text-slate-400 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0 [scrollbar-width:none] sm:gap-1">
           <Link
             to="/skills"
             className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
@@ -118,6 +118,13 @@ export function Header() {
             activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
           >
             Games
+          </Link>
+          <Link
+            to="/components"
+            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
+            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
+          >
+            Components
           </Link>
           <a
             href={REPO_URL}
@@ -165,6 +172,11 @@ export function Footer() {
                 <li>
                   <Link to="/games" className="transition hover:text-emerald-300">
                     Games
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/components" className="transition hover:text-emerald-300">
+                    Components
                   </Link>
                 </li>
                 <li>

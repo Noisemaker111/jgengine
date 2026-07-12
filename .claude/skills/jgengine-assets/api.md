@@ -4,46 +4,46 @@
 
 ## @jgengine/assets
 
-- `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
-- `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
-- `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
-- `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
-- `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
-- `singles` (const): const singles: readonly SingleAsset[] — ⚠ undocumented
-- `aliases` (const): const aliases: readonly AssetAlias[] — ⚠ undocumented
-- `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
-- `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
-- `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
-- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
-- `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
-- `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): import("/home/user/jgengine/packages/core/dist/scene/assetCatalog").AssetCatalog<import("/home/user/jgengine/packages/core/dist/scene/assetCatalog").ModelAssetRef> — ⚠ undocumented
-- `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
-- `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
+- `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
+- `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "component" | "icon" — ⚠ undocumented
 - `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "component"; name: string; title: string; description: string } | { kind: "icon"; name: strin… — ⚠ undocumented
+- `AssetProvider` (type): type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom" — ⚠ undocumented
+- `AssetSource` (interface): interface AssetSource — ⚠ undocumented
+- `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
+- `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
+- `ModelDims` (interface): interface ModelDims — ⚠ undocumented
+- `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
+- `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
-- `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
-- `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `RegistryCatalog` (interface): interface RegistryCatalog — ⚠ undocumented
 - `RegistryComponent` (interface): interface RegistryComponent — ⚠ undocumented
-- `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
-- `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
-- `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
-- `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
-- `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
-- `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
-- `ModelDims` (interface): interface ModelDims — ⚠ undocumented
-- `AssetProvider` (type): type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom" — ⚠ undocumented
-- `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
-- `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
-- `AssetSource` (interface): interface AssetSource — ⚠ undocumented
-- `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
-- `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
+- `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
+- `aliases` (const): const aliases: readonly AssetAlias[] — ⚠ undocumented
+- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
+- `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
+- `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
+- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
+- `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
+- `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
+- `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
+- `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
+- `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
+- `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
+- `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
+- `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
+- `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
+- `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
+- `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
+- `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
+- `singles` (const): const singles: readonly SingleAsset[] — ⚠ undocumented
+- `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
+- `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
+- `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
 
 ## @jgengine/assets/aliases
 
@@ -51,58 +51,60 @@
 
 ## @jgengine/assets/catalogs/build
 
-- `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
-- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
+- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
+- `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 
 ## @jgengine/assets/catalogs/starter
 
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): import("/home/user/jgengine/packages/core/dist/scene/assetCatalog").AssetCatalog<import("/home/user/jgengine/packages/core/dist/scene/assetCatalog").ModelAssetRef> — ⚠ undocumented
+- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
 
 ## @jgengine/assets/cli/paths
 
 - `resolveGeneratedDir` (function): function resolveGeneratedDir(cliDir: string): string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
-- `resolvePackageTreeRoot` (function): function resolvePackageTreeRoot(cliDir: string): string — ⚠ undocumented
 - `resolvePackageRoot` (function): function resolvePackageRoot(cliDir: string): string — ⚠ undocumented
+- `resolvePackageTreeRoot` (function): function resolvePackageTreeRoot(cliDir: string): string — ⚠ undocumented
 
 ## @jgengine/assets/cli/pull
 
-- `flag` (function): function flag(argv: string[], name: string): string | undefined — ⚠ undocumented
-- `describeNetworkFailure` (function): function describeNetworkFailure(error: unknown): string — ⚠ undocumented
-- `isPopulated` (function): function isPopulated(dir: string): boolean — ⚠ undocumented
 - `cmdPull` (function): function cmdPull(argv: string[]): Promise<void> — ⚠ undocumented
+- `describeNetworkFailure` (function): function describeNetworkFailure(error: unknown): string — ⚠ undocumented
+- `flag` (function): function flag(argv: string[], name: string): string | undefined — ⚠ undocumented
 - `generatedDir` (const): const generatedDir: string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
+- `isPopulated` (function): function isPopulated(dir: string): boolean — ⚠ undocumented
 - `resolveGeneratedDir` (function): function resolveGeneratedDir(cliDir: string): string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
 
 ## @jgengine/assets/dims
 
-- `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 - `ModelDims` (interface): interface ModelDims — ⚠ undocumented
+- `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 
 ## @jgengine/assets/download
 
-- `findArchiveUrl` (function): function findArchiveUrl(html: string, pageUrl: string): string | null — ⚠ undocumented
-- `resolveArchiveUrl` (function): function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<string> — ⚠ undocumented
-- `downloadArchive` (function): function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> — ⚠ undocumented
-- `mirrorOverrideUrl` (function): function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string — Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g. `https://my-mirror.example.com/kenney/kenney-nature.zip`.
-- `downloadPackArchive` (function): function downloadPackArchive(source: AssetSource, options: DownloadPackOptions = {}): Promise<DownloadPackResult> — Resolves and downloads a pack's archive, trying sources in order until one succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the primary provider path (`resolveArchiveUrl`: scrape or pinned URL), (3) the pack's own `mirror` URL. A pinned `sha256` is verified against whichever source supplied the bytes; a mismatch is treated as a failed attempt so the next source in the chain is tried. Throws with every attempted URL and its failure reason when all sources fail.
-- `extractGlbs` (function): function extractGlbs(archive: Uint8Array): ExtractedGlb[] — ⚠ undocumented
-- `extractTextures` (function): function extractTextures(archive: Uint8Array): ExtractedTexture[] — ⚠ undocumented
-- `sha256Hex` (function): function sha256Hex(bytes: Uint8Array): Promise<string> — ⚠ undocumented
-- `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
-- `ExtractedGlb` (interface): interface ExtractedGlb — ⚠ undocumented
-- `ExtractedTexture` (interface): interface ExtractedTexture — ⚠ undocumented
+- `DEFAULT_RELEASE_BASE` (const): const DEFAULT_RELEASE_BASE: "https://github.com/Noisemaker111/jgengine/releases/download/packs" — Default asset mirror: this repo's own GitHub Releases, reachable from every cloud sandbox without network-policy changes (github.com is on the default allowlist). Assets live on the rolling `packs` release, one flat zip per pack named `<provider>-<packId>.zip`, kept in sync with the source catalog by `.github/workflows/mirror-assets.yml` — adding a catalog entry is the whole publishing step. Override the chain with `--mirror` / `JGENGINE_ASSETS_MIRROR`, or disable this hop with `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
 - `DownloadPackOptions` (interface): interface DownloadPackOptions — ⚠ undocumented
 - `DownloadPackResult` (interface): interface DownloadPackResult — ⚠ undocumented
+- `ExtractedGlb` (interface): interface ExtractedGlb — ⚠ undocumented
+- `ExtractedTexture` (interface): interface ExtractedTexture — ⚠ undocumented
+- `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
+- `defaultReleaseUrl` (function): function defaultReleaseUrl(source: AssetSource): string — URL of `source`'s archive on the default GitHub-release mirror.
+- `downloadArchive` (function): function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> — ⚠ undocumented
+- `downloadPackArchive` (function): function downloadPackArchive(source: AssetSource, options: DownloadPackOptions = {}): Promise<DownloadPackResult> — Resolves and downloads a pack's archive, trying sources in order until one succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the default GitHub-release mirror at `defaultReleaseUrl` (skipped when `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`), (3) the primary provider path (`resolveArchiveUrl`: scrape or pinned URL), (4) the pack's own `mirror` URL. A pinned `sha256` is verified against whichever source supplied the bytes; a mismatch is treated as a failed attempt so the next source in the chain is tried. Throws with every attempted URL and its failure reason when all sources fail.
+- `extractGlbs` (function): function extractGlbs(archive: Uint8Array): ExtractedGlb[] — ⚠ undocumented
+- `extractTextures` (function): function extractTextures(archive: Uint8Array): ExtractedTexture[] — ⚠ undocumented
+- `findArchiveUrl` (function): function findArchiveUrl(html: string, pageUrl: string): string | null — ⚠ undocumented
+- `mirrorOverrideUrl` (function): function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string — Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g. `https://my-mirror.example.com/kenney/kenney-nature.zip`.
+- `resolveArchiveUrl` (function): function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<string> — ⚠ undocumented
+- `sha256Hex` (function): function sha256Hex(bytes: Uint8Array): Promise<string> — ⚠ undocumented
 
 ## @jgengine/assets/find
 
-- `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
-- `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "component" | "icon" — ⚠ undocumented
 - `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "component"; name: string; title: string; description: string } | { kind: "icon"; name: strin… — ⚠ undocumented
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
+- `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
 
 ## @jgengine/assets/generated
 
@@ -111,30 +113,30 @@
 
 ## @jgengine/assets/indexGen
 
-- `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
+- `ReindexResult` (interface): interface ReindexResult — ⚠ undocumented
 - `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims): IndexEntry — ⚠ undocumented
 - `indexSourceDir` (function): function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] — ⚠ undocumented
+- `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
 - `reindex` (function): function reindex(modelsDir: string, outDir: string): ReindexResult — ⚠ undocumented
-- `ReindexResult` (interface): interface ReindexResult — ⚠ undocumented
 
 ## @jgengine/assets/manifest
 
-- `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
-- `ModelDims` (interface): interface ModelDims — ⚠ undocumented
-- `AssetProvider` (type): type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom" — ⚠ undocumented
-- `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
-- `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
+- `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
+- `AssetProvider` (type): type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
-- `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
+- `ModelDims` (interface): interface ModelDims — ⚠ undocumented
+- `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
+- `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
+- `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 
 ## @jgengine/assets/registry
 
-- `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
-- `RegistryComponent` (interface): interface RegistryComponent — ⚠ undocumented
 - `RegistryCatalog` (interface): interface RegistryCatalog — ⚠ undocumented
+- `RegistryComponent` (interface): interface RegistryComponent — ⚠ undocumented
+- `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
 
 ## @jgengine/assets/singles
@@ -143,18 +145,18 @@
 
 ## @jgengine/assets/snippet
 
-- `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
+- `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
-- `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
+- `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 
 ## @jgengine/assets/sources
 
-- `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
-- `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
 - `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
+- `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
+- `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
 
 ## @jgengine/assets/sources/kaykit
 
@@ -170,7 +172,7 @@
 
 ## @jgengine/assets/verify
 
+- `VerifyInput` (interface): interface VerifyInput — ⚠ undocumented
+- `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
 - `verifyData` (function): function verifyData(input: VerifyInput): VerifyResult — ⚠ undocumented
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
-- `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
-- `VerifyInput` (interface): interface VerifyInput — ⚠ undocumented

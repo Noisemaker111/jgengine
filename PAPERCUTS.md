@@ -36,6 +36,18 @@ check-game-shape gate rejected new cross-game contract file preview.tsx at src r
 
 briefed a Sonnet worker to run gates+ship → it recursively spawned background sub-workers and returned 'will report later' twice, nearly triple-running the ship motion
 
+2026-07-12T00:39:22.703Z — opus — Claude
+
+gate worker backgrounded build/check-types/test and returned 'still running' with no results → had to re-run; backgrounded verify dies with the worker turn, wasted a round
+
 2026-07-12T00:42:13.755Z — sonnet — Claude
 
 second ship worker in one session ended its turn with 'waiting on gate worker, will react' after spawning a nested background agent → ship motion stalled, orchestrator had to resume it
+
+2026-07-12T00:59:12.493Z — claude-fable-5 — Claude
+
+ship worker for the self-hosted mirror returned 'I'll wait for the background agent notification' as its final result despite an explicit do-not-delegate, execute-in-this-turn brief — the enforcement gap is in worker behavior, not brief wording; needed a SendMessage resume
+
+2026-07-12T01:02:27.112Z — opus — Claude
+
+screenshot worker: fade-up entrance anim + post-hydration layout shift drifts coordinate taps onto wrong element for ~2s after content appears; need DOM .click() + settle wait, not synthetic CDP tap
