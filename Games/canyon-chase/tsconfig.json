@@ -13,6 +13,7 @@
     "paths": {
       "@/components/ui/*": ["../../registry/jgengine/*"],
       "@jgengine/core/*": ["../../packages/core/src/*"],
+      "@jgengine/react": ["../../packages/react/src/index.ts"],
       "@jgengine/react/*": ["../../packages/react/src/*"],
       "@jgengine/ws/*": ["../../packages/ws/src/*"],
       "@jgengine/shell/*": ["../../packages/shell/src/*"],

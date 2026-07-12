@@ -6,6 +6,7 @@ const SKELETON_DIRS = new Set(["game"]);
 
 const REQUIRED_TSCONFIG_PATHS: Record<string, string> = {
   "@jgengine/core/*": "../../packages/core/src/*",
+  "@jgengine/react": "../../packages/react/src/index.ts",
   "@jgengine/react/*": "../../packages/react/src/*",
   "@jgengine/ws/*": "../../packages/ws/src/*",
   "@jgengine/shell/*": "../../packages/shell/src/*",

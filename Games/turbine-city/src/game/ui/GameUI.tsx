@@ -1,7 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { SettingsTrigger } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 
 import { SESSION_STORE_KEY, type RaceSession, type SessionSnapshot } from "../race/session";
 import { BuffetVignette } from "./components/BuffetVignette";
