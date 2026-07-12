@@ -16,18 +16,22 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
 **Don't delegate the trivial.** If the leg is a couple of quick calls or the prompt would outweigh the work, do it inline — spawning a worker has a cost too.
 
-**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "running in background / will report back" returns nothing — background children die with the turn. That final message must report the completed result (PR link, merge state, CI verdict), never intent. Nested delegation obeys the same rule: a worker never hands its leg to a background child of its own. For the ~60s green-check wait, bare `sleep` is blocked by the harness — use one foreground Bash call that embeds the wait: `bun -e 'await Bun.sleep(60000)'`, then read the Actions runs in the same turn. And no worker in a parallel batch ever runs `bun install` — a mid-batch install leaves `node_modules` half-extracted and fails every sibling with phantom TS2307s; if an install is needed, it runs alone, before the batch launches.
+**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "running in background / will report back" returns nothing — background children die with the turn. That final message must report the completed result, never intent. Nested delegation obeys the same rule: a worker does the assigned leg itself and never hands it to a child. For the green-check wait, bare `sleep` is blocked by the harness — use one foreground Bash call that embeds the wait, then read Actions in the same turn. No worker in a parallel batch runs `bun install`; install once before the batch.
+
+**Mechanical return shape is mandatory.** Return `status`, the exact command or operation completed, and evidence: gate exit code, commit SHA, PR link, merge state, or CI verdict. A response containing only intent, a task id, or a background handoff is a failed leg and must not trigger a duplicate dispatch until branch, worktree, and remote state have been inspected.
+
+**Use the repo commands, never reconstruct the ladder.** Before generators or verification, run `bun run agent:preflight`. For the full local verdict, run only `bun run gate`. Immediately before commit/push/PR, run `bun run ship:preflight`; it rejects dirty trees, stale-main ancestry, and no-op branches.
 
 **Per-item sweep briefs say "do these yourself — do not delegate."** A single worker given N small edits will otherwise treat the list as an orchestration job and recursively fan out N sub-workers; the line belongs in every multi-item brief.
 
-**Independent legs launch in parallel, never in sequence.** Before spawning anything, split the turn into legs and sort them: everything that doesn't need another leg's output goes out together in one message as one Batch — lint + typecheck + test, scouts on different angles, doc sweep alongside a build. Serialize only true data dependencies (fix before verify, verify before ship). Spawning one worker, waiting, then spawning the next pays wall-clock for nothing and is the same smell as step numbers in a brief.
+**Independent legs launch in parallel, never in sequence.** Before spawning anything, split the turn into legs and sort them: everything that doesn't need another leg's output goes out together in one Batch — lint + typecheck + test, scouts on different angles, doc sweep alongside a build. Serialize only true data dependencies (fix before verify, verify before ship). Spawning one worker, waiting, then spawning the next pays wall-clock for nothing and is the same smell as step numbers in a brief.
 
 ## Always fan these — never run them on the frontier model
 
 - lint · typecheck · test · build
 - preview · screenshot · `bun run shoot` · Playwright
-- git ceremony once the diff is decided — commit, push, and whatever recovery the push needs (stale refs, prune, restart from origin/main, cherry-pick); the frontier model never grinds through git errors inline
-- GitHub ceremony after the decision is made (PR create, comments, issue ops — MCP tools or `gh` where it exists); the whole ship motion (commit → push → PR → merge → 60s green check) is one worker brief
+- git ceremony once the diff is decided — commit, push, and whatever recovery the push needs
+- GitHub ceremony after the decision is made; the whole ship motion is one worker brief
 - bulk file reads · codebase scouting · research sweeps · renames · doc sweeps · log triage
 
 Announce workers on a 🤖 line, job-named. Judge their output; never dump raw worker text to the user.
@@ -40,10 +44,10 @@ Announce workers on a 🤖 line, job-named. Judge their output; never dump raw w
 
 ## Scouts before deep reads
 
-The frontier model never orients by reading breadth-first — a frontier turn that opens 35 files costs more than a whole fleet of Sonnet scouts. When a task lands in code you haven't mapped, spawn 1–3 Sonnet scouts (the `Explore` agent type fits), each briefed on one angle, each returning a scoped digest: relevant files with `file:line` pointers, key APIs and types, constraints, surprises. Then read deeply only the files the diff will touch. Even two scouts are noise next to a few paragraphs of frontier output; when in doubt, scout.
+The frontier model never orients by reading breadth-first — a frontier turn that opens 35 files costs more than a whole fleet of Sonnet scouts. When a task lands in code you haven't mapped, spawn 1–3 Sonnet scouts, each briefed on one angle and returning a scoped digest: relevant files with `file:line` pointers, key APIs and types, constraints, surprises. Then read deeply only the files the diff will touch.
 
 The one research *don't*: rediscovering scaffolding, HUD idioms, or anything already documented in skills — that's a doc lookup, not research. Codebase scouting is always in bounds.
 
 ## Done when
 
-Mechanical work ran on cheap workers; this session only planned and judged.
+Mechanical work ran on cheap workers; each leg returned terminal evidence; this session only planned and judged.
