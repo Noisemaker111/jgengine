@@ -1,16 +1,20 @@
+/** Stable identifier for a visibility-tracked object or camera. */
 export type VisibilityId = string | number;
 
+/** World-space point; `z` is optional for 2D adapters. */
 export interface VisibilityPoint {
   x: number;
   y: number;
   z?: number;
 }
 
+/** Sphere bounds used for visibility/streaming distance checks. */
 export interface VisibilityBounds {
   center: VisibilityPoint;
   radius: number;
 }
 
+/** A camera's position and reach, as seen by the visibility system. */
 export interface CameraVisibilityContext {
   id: VisibilityId;
   position: VisibilityPoint;
@@ -22,6 +26,7 @@ export interface CameraVisibilityContext {
   influencesStreaming?: boolean;
 }
 
+/** Per-object escape hatches that bypass or tune the default visibility policy. */
 export interface VisibilityOverrides {
   alwaysVisible?: boolean;
   neverUnload?: boolean;
@@ -32,12 +37,14 @@ export interface VisibilityOverrides {
   preloadMargin?: number;
 }
 
+/** An entity/asset tracked by `VisibilitySystem.evaluate`. */
 export interface VisibilityObject {
   id: VisibilityId;
   bounds: VisibilityBounds;
   overrides?: VisibilityOverrides;
 }
 
+/** Baseline policy settings a `VisibilitySystem` is constructed with. */
 export interface VisibilityDefaults {
   enabled: boolean;
   streamingEnabled: boolean;
@@ -48,6 +55,7 @@ export interface VisibilityDefaults {
   hysteresis: number;
 }
 
+/** Default `VisibilityDefaults` a `VisibilitySystem` falls back to when unspecified. */
 export const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> = Object.freeze({
   enabled: true,
   streamingEnabled: true,
@@ -58,6 +66,7 @@ export const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> = Object.
   hysteresis: 8,
 });
 
+/** Result of evaluating one object against the active cameras this tick. */
 export interface VisibilityDecision {
   render: boolean;
   load: boolean;

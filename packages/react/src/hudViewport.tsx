@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { HudPlatform, HudViewportConfig } from "@jgengine/core/ui/hudScale";
 
 export interface HudViewportContextValue {
-  /** True when the game declared `"mobile"` in `platforms` — the HUD auto-fits the design resolution to the live viewport. */
+  /** True unless the game's `platforms` explicitly excludes `"mobile"` — the HUD auto-fits the design resolution to the live viewport. */
   fitEnabled: boolean;
   config: HudViewportConfig | undefined;
   /** Player's UI-scale setting; multiplies the computed fit scale everywhere. */
@@ -27,7 +27,7 @@ export function HudViewportProvider({
   userScale?: number;
   children?: ReactNode;
 }) {
-  const fitEnabled = platforms?.includes("mobile") ?? false;
+  const fitEnabled = platforms?.includes("mobile") ?? true;
   const scale = userScale ?? 1;
   const value = useMemo(
     () => ({ fitEnabled, config, userScale: scale }),

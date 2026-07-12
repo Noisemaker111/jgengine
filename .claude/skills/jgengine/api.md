@@ -4,8 +4,10 @@
 
 ## @jgengine/core
 
+- `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's position and reach, as seen by the visibility system.
 - `CommandDef` (type): type CommandDef<TInput = unknown> = { validate: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => CommandValidationError | null; apply: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => GameRuntimeSnapshot; } — ⚠ undocumented
 - `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
+- `DEFAULT_VISIBILITY_SETTINGS` (const): const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> — Default `VisibilityDefaults` a `VisibilitySystem` falls back to when unspecified.
 - `FeedUnsubscribe` (type): type FeedUnsubscribe = () => void — ⚠ undocumented
 - `GameBackend` (type): type GameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = { transport: GameRuntimeTransport; feeds?: GameRuntimeFeeds; presence?: PresenceTransport<TPresenceRow, TPresenceLocation, TGameId>; } — ⚠ undocumented
 - `GameRuntime` (type): type GameRuntime = { gameId: string; save: SaveConfig; hydrate: (input: HydrateInput) => GameRuntimeSnapshot; runCommand: ( snapshot: GameRuntimeSnapshot, actorUserId: string, commandName: string, input: unknown, ) => ReturnType<typeof runCommand>; tick: (snapshot: GameRuntimeSnapshot, dtSeconds: nu… — ⚠ undocumented
@@ -42,6 +44,14 @@
 - `ServerLoopHooks` (type): type ServerLoopHooks = { onInit?: (ctx: RuntimeInitContext) => void; onNewPlayer?: (ctx: RuntimeLoopContext) => void; onTick?: (ctx: RuntimeWorldContext, dtSeconds: number) => void; } — ⚠ undocumented
 - `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
 - `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
+- `VisibilityBounds` (interface): interface VisibilityBounds — Sphere bounds used for visibility/streaming distance checks.
+- `VisibilityDecision` (interface): interface VisibilityDecision — Result of evaluating one object against the active cameras this tick.
+- `VisibilityDefaults` (interface): interface VisibilityDefaults — Baseline policy settings a `VisibilitySystem` is constructed with.
+- `VisibilityId` (type): type VisibilityId = string | number — Stable identifier for a visibility-tracked object or camera.
+- `VisibilityObject` (interface): interface VisibilityObject — An entity/asset tracked by `VisibilitySystem.evaluate`.
+- `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
+- `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
+- `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
 - `clearDirtyFlags` (function): function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
 - `convex` (function): function convex(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig — ⚠ undocumented
@@ -406,6 +416,19 @@
 - `PresenceSync` (type): type PresenceSync = { subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe; syncPose: (serverId: string, pose: PlayerPose) => void; } — ⚠ undocumented
 - `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented
 - `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
+
+## @jgengine/core/runtime/visibility
+
+- `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's position and reach, as seen by the visibility system.
+- `DEFAULT_VISIBILITY_SETTINGS` (const): const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> — Default `VisibilityDefaults` a `VisibilitySystem` falls back to when unspecified.
+- `VisibilityBounds` (interface): interface VisibilityBounds — Sphere bounds used for visibility/streaming distance checks.
+- `VisibilityDecision` (interface): interface VisibilityDecision — Result of evaluating one object against the active cameras this tick.
+- `VisibilityDefaults` (interface): interface VisibilityDefaults — Baseline policy settings a `VisibilitySystem` is constructed with.
+- `VisibilityId` (type): type VisibilityId = string | number — Stable identifier for a visibility-tracked object or camera.
+- `VisibilityObject` (interface): interface VisibilityObject — An entity/asset tracked by `VisibilitySystem.evaluate`.
+- `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
+- `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
+- `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
 
 ## @jgengine/github
 
