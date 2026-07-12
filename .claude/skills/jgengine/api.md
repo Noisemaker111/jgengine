@@ -7,6 +7,8 @@
 - `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's position and reach, as seen by the visibility system.
 - `CommandDef` (type): type CommandDef<TInput = unknown> = { validate: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => CommandValidationError | null; apply: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => GameRuntimeSnapshot; } — ⚠ undocumented
 - `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
+- `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`.
+- `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`; game code reads `list`/`ids`/`has`/`count`.
 - `DEFAULT_VISIBILITY_SETTINGS` (const): const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> — Default `VisibilityDefaults` a `VisibilitySystem` falls back to when unspecified.
 - `FeedUnsubscribe` (type): type FeedUnsubscribe = () => void — ⚠ undocumented
 - `GameBackend` (type): type GameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = { transport: GameRuntimeTransport; feeds?: GameRuntimeFeeds; presence?: PresenceTransport<TPresenceRow, TPresenceLocation, TGameId>; } — ⚠ undocumented
@@ -71,6 +73,7 @@
 - `clearDirtyFlags` (function): function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
 - `composeWorldSnapshot` (function): function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot — Serialize every registered module into one keyed baseline — the host→client full-world send.
 - `convex` (function): function convex(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig — ⚠ undocumented
+- `createConnectedPlayers` (function): function createConnectedPlayers(): ConnectedPlayers — Build an empty {@link ConnectedPlayers} registry — the host joins/leaves players; the game loop reads them.
 - `createEmptyPlayerRow` (function): function createEmptyPlayerRow(userId: string): RuntimePlayerRow — ⚠ undocumented
 - `createEmptyServerRow` (function): function createEmptyServerRow(): RuntimeServerRow — ⚠ undocumented
 - `createGameRuntime` (function): function createGameRuntime(definition: GameRuntimeDefinition): GameRuntime — ⚠ undocumented
