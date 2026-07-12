@@ -1,5 +1,6 @@
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { createRing, type Ring, type RingPhase } from "@jgengine/core/session/ring";
 
 import { addThreat, despawnMob, spawnMobAt } from "../ai/mobs";
 
@@ -47,7 +48,6 @@ import {
   FIESTA_POWERUP_TTL,
   FIESTA_RING_DPS_PCT,
   FIESTA_RING_SHRINK_RATE,
-  FIESTA_RING_START,
   FIESTA_SCORE_LIMIT,
   FIESTA_TOTAL_WAVES,
   FIESTA_WAVE_INTERVAL,
@@ -103,8 +103,7 @@ interface FiestaSession {
   scoreB: number;
   wave: number;
   nextWaveAt: number;
-  ringRadius: number;
-  ringTarget: number;
+  ring: Ring;
   nextRingDamageAt: number;
   powerups: PowerupSpawn[];
   nextPowerupAt: number;
@@ -180,6 +179,22 @@ function say(ctx: GameContext, userId: string, text: string): void {
 function pop(ctx: GameContext, session: FiestaSession, userId: string, text: string, color: string): void {
   session.pop = { text, color, at: ctx.time.now() };
   say(ctx, userId, text);
+}
+
+function buildFiestaRing(fightAt: number): Ring {
+  const phases: RingPhase[] = [];
+  for (let wave = 1; wave <= FIESTA_TOTAL_WAVES; wave += 1) {
+    const fromRadius = ringTargetForWave(wave - 1);
+    const toRadius = ringTargetForWave(wave);
+    phases.push({
+      startTime: fightAt + FIESTA_FIRST_WAVE_AT + (wave - 1) * FIESTA_WAVE_INTERVAL,
+      shrinkDuration: (fromRadius - toRadius) / FIESTA_RING_SHRINK_RATE,
+      fromRadius,
+      toRadius,
+      damagePerSecond: 1,
+    });
+  }
+  return createRing({ center: [ARENA_CENTER[0], ARENA_CENTER[1] + 2], phases });
 }
 
 function placeArena(ctx: GameContext, session: FiestaSession): void {
@@ -268,8 +283,7 @@ export function startFiesta(ctx: GameContext, userId: string): boolean {
     scoreB: 0,
     wave: 0,
     nextWaveAt: now + FIESTA_COUNTDOWN + FIESTA_FIRST_WAVE_AT,
-    ringRadius: FIESTA_RING_START,
-    ringTarget: FIESTA_RING_START,
+    ring: buildFiestaRing(now + FIESTA_COUNTDOWN),
     nextRingDamageAt: now,
     powerups: [],
     nextPowerupAt: now + FIESTA_COUNTDOWN + FIESTA_POWERUP_FIRST,
@@ -538,7 +552,8 @@ function respawnPlayer(ctx: GameContext, userId: string, session: FiestaSession)
 function spawnPowerup(ctx: GameContext, session: FiestaSession): void {
   const def = POWERUPS[Math.floor(session.roll() * POWERUPS.length)];
   const angle = session.roll() * Math.PI * 2;
-  const radius = (0.25 + session.roll() * 0.6) * Math.max(3, session.ringRadius - 2);
+  const ringNow = session.ring.at(ctx.time.now()).radius;
+  const radius = (0.25 + session.roll() * 0.6) * Math.max(3, ringNow - 2);
   const x = ARENA_CENTER[0] + Math.sin(angle) * radius;
   const z = ARENA_CENTER[1] + 2 + Math.cos(angle) * radius;
   const now = ctx.time.now();
@@ -592,8 +607,9 @@ function tickAlly(ctx: GameContext, userId: string, session: FiestaSession, dt: 
   if (self === null) return;
   const now = ctx.time.now();
 
-  const distCenter = Math.hypot(self.position[0] - ARENA_CENTER[0], self.position[2] - (ARENA_CENTER[1] + 2));
-  if (distCenter > session.ringRadius - 2.5) {
+  const ringSample = session.ring.at(now);
+  const distCenter = Math.hypot(self.position[0] - ringSample.center[0], self.position[2] - ringSample.center[1]);
+  if (distCenter > ringSample.radius - 2.5) {
     const next = ctx.scene.entity.moveToward(
       ally.entityId,
       [ARENA_CENTER[0], self.position[1], ARENA_CENTER[1] + 2],
@@ -659,15 +675,12 @@ function tickAlly(ctx: GameContext, userId: string, session: FiestaSession, dt: 
   }
 }
 
-function ringDamage(ctx: GameContext, session: FiestaSession): void {
-  const cx = ARENA_CENTER[0];
-  const cz = ARENA_CENTER[1] + 2;
+function ringDamage(ctx: GameContext, session: FiestaSession, now: number): void {
   for (const fighter of session.fighters) {
     if (fighter.entityId === null) continue;
     const entity = ctx.scene.entity.get(fighter.entityId);
     if (entity === null) continue;
-    const dist = Math.hypot(entity.position[0] - cx, entity.position[2] - cz);
-    if (dist <= session.ringRadius) continue;
+    if (!session.ring.isOutside(now, [entity.position[0], entity.position[2]])) continue;
     const hp = ctx.scene.entity.stats.get(fighter.entityId, "health");
     if (hp === null || hp.max <= 0) continue;
     const amount = Math.max(1, Math.round(hp.max * FIESTA_RING_DPS_PCT * 0.5));
@@ -712,7 +725,6 @@ export function tickFiesta(ctx: GameContext, userId: string, dt: number): void {
   if (session.wave < FIESTA_TOTAL_WAVES && now >= session.nextWaveAt) {
     session.wave += 1;
     session.nextWaveAt = now + FIESTA_WAVE_INTERVAL;
-    session.ringTarget = ringTargetForWave(session.wave);
     const classId = classOf(ctx, userId)?.id ?? "warrior";
     const pool = eligibleAugments(tierForWave(session.wave), classId, session.augments);
     const offer: string[] = [];
@@ -735,12 +747,9 @@ export function tickFiesta(ctx: GameContext, userId: string, dt: number): void {
     }
   }
 
-  if (session.ringRadius > session.ringTarget) {
-    session.ringRadius = Math.max(session.ringTarget, session.ringRadius - FIESTA_RING_SHRINK_RATE * dt);
-  }
   if (now >= session.nextRingDamageAt) {
     session.nextRingDamageAt = now + 0.5;
-    ringDamage(ctx, session);
+    ringDamage(ctx, session, now);
   }
 
   const liveCount = session.powerups.length;
@@ -801,8 +810,7 @@ function sync(ctx: GameContext, userId: string): void {
   const inRing =
     playerEntity === null
       ? true
-      : Math.hypot(playerEntity.position[0] - ARENA_CENTER[0], playerEntity.position[2] - (ARENA_CENTER[1] + 2)) <=
-        session.ringRadius;
+      : !session.ring.isOutside(now, [playerEntity.position[0], playerEntity.position[2]]);
   const view: FiestaView = {
     active: true,
     status: session.status,
@@ -811,7 +819,7 @@ function sync(ctx: GameContext, userId: string): void {
     scoreA: session.scoreA,
     scoreB: session.scoreB,
     scoreLimit: FIESTA_SCORE_LIMIT,
-    ringRadius: session.ringRadius,
+    ringRadius: session.ring.at(now).radius,
     inRing,
     fighters,
     offer:
