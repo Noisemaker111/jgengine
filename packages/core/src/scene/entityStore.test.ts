@@ -381,3 +381,42 @@ describe("scene entity store", () => {
     expect(store.get("hero")?.position).toEqual([10, 0, 0]);
   });
 });
+
+describe("entity blackboard", () => {
+  test("stores and reads per-entity scratch, isolated by key", () => {
+    const store = createEntityStore();
+    const id = store.spawn("guard");
+    store.blackboard.set(id, "alert", 3);
+    expect(store.blackboard.get<number>(id, "alert")).toBe(3);
+    expect(store.blackboard.has(id, "alert")).toBe(true);
+    expect(store.blackboard.get(id, "missing")).toBeUndefined();
+  });
+
+  test("timers report ready state and remaining time against a clock", () => {
+    const store = createEntityStore();
+    const id = store.spawn("gunner");
+    expect(store.blackboard.ready(id, "shot", 0)).toBe(true);
+    store.blackboard.arm(id, "shot", 1000);
+    expect(store.blackboard.ready(id, "shot", 500)).toBe(false);
+    expect(store.blackboard.remaining(id, "shot", 500)).toBe(500);
+    expect(store.blackboard.ready(id, "shot", 1000)).toBe(true);
+    expect(store.blackboard.remaining(id, "shot", 1000)).toBe(0);
+  });
+
+  test("despawn clears an entity's blackboard", () => {
+    const store = createEntityStore();
+    store.spawn("gunner", { id: "g1" });
+    store.blackboard.arm("g1", "shot", 1000);
+    store.despawn("g1");
+    expect(store.blackboard.ready("g1", "shot", 0)).toBe(true);
+    expect(store.blackboard.get("g1", "shot")).toBeUndefined();
+  });
+
+  test("replacing an id drops stale scratch", () => {
+    const store = createEntityStore();
+    store.spawn("gunner", { id: "g1" });
+    store.blackboard.set("g1", "alert", 5);
+    store.spawn("gunner", { id: "g1", onExisting: "replace" });
+    expect(store.blackboard.get("g1", "alert")).toBeUndefined();
+  });
+});

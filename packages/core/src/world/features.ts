@@ -30,16 +30,47 @@ export interface TerrainFlattenMask {
   falloff?: number;
 }
 
-/** A circular palette zone painted over the base terrain palette — snow caps, ash wastes, sand shores on one heightfield. */
-export interface TerrainMaterialRegion {
-  center: EnvironmentVec2;
-  radius: number;
+/** Palette and blend fields shared by every `TerrainMaterialRegion` shape. */
+export interface TerrainRegionStyle {
   /** Named palette preset for this region (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); overridden field-by-field by `colors`. */
   material?: TerrainMaterial;
   colors?: TerrainColors;
-  /** Blend-ring width outside `radius` back to the surrounding palette; default `radius * 0.5`. */
+  /** Blend-ring width outside the region core back to the surrounding palette; default: half the region's characteristic size. */
   falloff?: number;
 }
+
+/** A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles. */
+export interface TerrainCircleRegion extends TerrainRegionStyle {
+  shape?: "circle";
+  center: EnvironmentVec2;
+  radius: number;
+}
+
+/** A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles. */
+export interface TerrainPolylineRegion extends TerrainRegionStyle {
+  shape: "polyline";
+  /** Centerline vertices in world XZ; needs at least two points. */
+  points: readonly EnvironmentVec2[];
+  /** Full ribbon width; the painted core extends `width / 2` either side of the centerline. `falloff` defaults to `width * 0.5`. */
+  width: number;
+}
+
+/** A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts. */
+export interface TerrainRectRegion extends TerrainRegionStyle {
+  shape: "rect";
+  center: EnvironmentVec2;
+  /** Half-extents along the region's local x and z before rotation. `falloff` defaults to half the smaller extent. */
+  halfExtents: EnvironmentVec2;
+  /** Rotation about the world y axis in radians; default 0. */
+  rotationY?: number;
+}
+
+/**
+ * A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given),
+ * `polyline` ribbons for roads/rivers, and rotatable `rect` districts all paint fully inside their core
+ * and blend back across `falloff`; later regions in the list win overlaps.
+ */
+export type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion;
 
 /**
  * A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`.

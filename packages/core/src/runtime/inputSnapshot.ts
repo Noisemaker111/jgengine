@@ -1,4 +1,5 @@
 import type { PointerAxisState } from "../input/pointerAxis";
+import { type AxisBinding, type AxisRange, sampleAxisBindings } from "../input/axisInput";
 
 export interface InputSnapshot {
   /** Replaces the held-action set for this frame. Called by the shell before `onTick` each frame; does not bump `ctx.version()` or notify `ctx.subscribe` listeners — per-frame publishes would storm subscribers. */
@@ -9,6 +10,16 @@ export interface InputSnapshot {
   held(): readonly string[];
   /** Pointer position over the play surface, `[-1, 1]` per axis with `+y` down, published by the shell each frame; `null` until the first pointer move. */
   pointer(): PointerAxisState | null;
+  /**
+   * Instantaneous analog axis sample against the held-action set and current pointer (#533.7) — bind
+   * throttle/steer/handbrake (or any axes) to *action names*, not raw key codes, since the held set is
+   * semantic actions. Feed the result into an `AxisChannel` for smoothing; unlisted ranges default to
+   * bipolar `[-1, 1]`, so pass `{ min: 0, max: 1 }` for one-directional pedals.
+   */
+  axis<TAxes extends string>(
+    bindings: Record<TAxes, AxisBinding>,
+    ranges?: Partial<Record<TAxes, AxisRange>>,
+  ): Record<TAxes, number>;
 }
 
 export function createInputSnapshot(): InputSnapshot {
@@ -27,5 +38,6 @@ export function createInputSnapshot(): InputSnapshot {
     isDown: (action) => heldSet.has(action),
     held: () => heldList,
     pointer: () => pointerState,
+    axis: (bindings, ranges) => sampleAxisBindings(bindings, (action) => heldSet.has(action), pointerState, ranges),
   };
 }

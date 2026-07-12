@@ -22,3 +22,24 @@ describe("createInputSnapshot", () => {
     expect(input.pointer()).toBeNull();
   });
 });
+
+describe("InputSnapshot.axis", () => {
+  test("samples axis bindings against the held-action set (action names, not key codes)", () => {
+    const input = createInputSnapshot();
+    input.publish(["throttle", "steerLeft"]);
+    const axes = input.axis({
+      throttle: { positive: ["throttle"] },
+      steer: { positive: ["steerRight"], negative: ["steerLeft"] },
+    });
+    expect(axes.throttle).toBe(1);
+    expect(axes.steer).toBe(-1);
+  });
+
+  test("respects per-axis ranges and clears when actions release", () => {
+    const input = createInputSnapshot();
+    input.publish(["gas"]);
+    expect(input.axis({ gas: { positive: ["gas"] } }, { gas: { min: 0, max: 1 } }).gas).toBe(1);
+    input.publish([]);
+    expect(input.axis({ gas: { positive: ["gas"] } }).gas).toBe(0);
+  });
+});

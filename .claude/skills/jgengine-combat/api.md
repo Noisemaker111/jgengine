@@ -111,6 +111,13 @@
 - `totalWindowMs` (function): function totalWindowMs(config: DefensiveWindowConfig): number — ⚠ undocumented
 - `windowActiveAt` (function): function windowActiveAt(config: DefensiveWindowConfig, elapsedMs: number): boolean — ⚠ undocumented
 
+## @jgengine/core/combat/dotField
+
+- `DotField` (interface): interface DotField — A pool of timed damage-over-time instances keyed by string (`bleed`, `poison`, `burn`) — the recurring-damage counterpart to `breakMeters`' one-shot buildup procs (#536.4). `tick` advances every active DoT and returns the damage due this frame, one entry per interval crossed, so the game routes each through its own effect pipeline; a pure scheduler that never applies damage itself.
+- `DotSpec` (interface): interface DotSpec — A single damage-over-time instance: how hard, how often, and for how long.
+- `DotTick` (interface): interface DotTick — One damage event (or expiry marker) emitted by `DotField.tick` for the game to route through its effects.
+- `createDotField` (function): function createDotField(): DotField — Builds an empty {@link DotField}; `apply` DoTs onto it and drain damage each frame with `tick`.
+
 ## @jgengine/core/combat/downed
 
 - `DownedConfig` (interface): interface DownedConfig — ⚠ undocumented
@@ -164,6 +171,12 @@
 - `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
 - `SettleResult` (type): type SettleResult = | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[]; origin?: [number, number, number]; } | { status: "rejected"; shotId: string; reason: string } — ⚠ undocumented
 - `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — ⚠ undocumented
+
+## @jgengine/core/combat/regenShield
+
+- `RegenShield` (interface): interface RegenShield — A shield pool that stops regenerating for `regenDelayMs` after every hit, then refills at `regenPerSecond` — the delayed-regen primitive that replaces snapshot-comparing stat values per tick to detect "damage taken" (#536.3). `damage` resets the grace timer; `tick` counts it down and regenerates once it elapses.
+- `RegenShieldConfig` (interface): interface RegenShieldConfig — Tuning for `createRegenShield`: pool size, refill rate, and the post-damage grace period.
+- `createRegenShield` (function): function createRegenShield(config: RegenShieldConfig): RegenShield — Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
 
 ## @jgengine/core/combat/resistance
 

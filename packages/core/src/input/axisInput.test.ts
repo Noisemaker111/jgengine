@@ -1,6 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import { AxisChannel, DRIVE_AXIS_BINDINGS, clampAxis, createAxisChannel, rampToward } from "./axisInput";
+import {
+  AxisChannel,
+  DRIVE_AXIS_BINDINGS,
+  clampAxis,
+  createAxisChannel,
+  rampToward,
+  sampleAxisBindings,
+} from "./axisInput";
 
 const held = (...codes: string[]) => (code: string) => codes.includes(code);
 
@@ -134,5 +141,26 @@ describe("createAxisChannel (custom axis schema)", () => {
     expect(ch.value.lift).toBeGreaterThan(0);
     ch.reset();
     expect(ch.value).toEqual({ pitch: 0, lift: 0 });
+  });
+});
+
+describe("sampleAxisBindings", () => {
+  test("reads positive-minus-negative held state per axis", () => {
+    const held = new Set(["KeyW", "KeyA"]);
+    const axes = sampleAxisBindings(DRIVE_AXIS_BINDINGS, (code) => held.has(code));
+    expect(axes.throttle).toBe(1);
+    expect(axes.brake).toBe(0);
+    expect(axes.steer).toBe(-1);
+    expect(axes.handbrake).toBe(0);
+  });
+
+  test("clamps each axis to its supplied range", () => {
+    const axes = sampleAxisBindings(
+      { pedal: { positive: ["KeyW"] } },
+      (code) => code === "KeyW",
+      null,
+      { pedal: { min: 0, max: 1 } },
+    );
+    expect(axes.pedal).toBe(1);
   });
 });
