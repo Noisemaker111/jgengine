@@ -37,6 +37,7 @@ import {
 } from "@jgengine/core/interaction/contextMenu";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { aimToPoint } from "@jgengine/core/input/pointer";
+import { eyeHeightFromColliders } from "@jgengine/core/combat/shotOrigin";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import {
@@ -254,9 +255,15 @@ function executeHotbarSlot(
 function pointerAimFor(ctx: GameContext, service: PointerService): Aim | undefined {
   const hit = service.worldHit();
   if (hit === null) return undefined;
-  const player = ctx.scene.entity.get(ctx.player.userId);
-  const origin = player === null ? hit.point : player.position;
-  return aimToPoint([origin[0], origin[1] + 1, origin[2]], hit.point);
+  const shooter =
+    ctx.scene.entity.get(ctx.player.possession.active(ctx.player.userId)) ??
+    ctx.scene.entity.get(ctx.player.userId);
+  if (shooter === null) return undefined;
+  const eye = eyeHeightFromColliders(ctx.scene.entity.collidersOf(shooter.id));
+  return aimToPoint(
+    [shooter.position[0], shooter.position[1] + eye, shooter.position[2]],
+    hit.point,
+  );
 }
 
 function pointerContextMenu(ctx: GameContext, playable: PlayableGame, hit: { point: readonly [number, number, number]; entity: string | null; object: string | null }): ContextMenu | null {
