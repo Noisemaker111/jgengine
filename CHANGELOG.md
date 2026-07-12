@@ -13,6 +13,22 @@ the latest and surface the migration steps.
 
 ## Unreleased
 
+### Migrate
+
+- **Nothing to change for existing games** — the shared mobile-composition system (viewport allocation, region collision, `--jg-*` viewport vars) is wired automatically by the shell for every game; `HudPanel`s inside a `HudCanvas` register themselves. Legacy `orientation: "landscape" | "portrait"` keeps its advisory dismissible-hint behavior unchanged.
+- **Opt a driving/landscape game into the strict gate**: replace the advisory `orientation` with the contract form — `orientation: { mobile: "landscape-required" }` (rules: `any` · `portrait`/`landscape` advisory · `portrait-required`/`landscape-required` · `unsupported`). In portrait the engine now shows a polished `RotateDeviceScreen`, suppresses input, freezes the sim, and unmounts the HUD/controls until the device is landscape.
+- **Declare HUD intent** where useful: `HudPanel` gains `priority` (`critical`/`secondary`/`tertiary`), `mobileBehavior` (`hidden` unmounts on phones, `transient` softens collision, …), `allowOverlapWith`, and `collisionGroup`. Optional — omitting them keeps prior behavior.
+- **Mobile validation now also fails on overlap**: `bun run shoot <game> --device mobile|mobile-landscape|both` exits non-zero on forbidden inter-element collisions (not just viewport overflow), naming both regions.
+
+### Added
+
+- Shared mobile layout composition — `@jgengine/core/ui/gameLayout` (pure geometry: `resolveLayoutMode`, `intersects`, `overlapArea`, `detectLayoutCollisions`, `computeGameplayRect`, `LayoutRegion`, `GameViewportLayout`) and `@jgengine/core/ui/orientation` (`resolveOrientationRequirement`, `orientationGateActive`, `MobileOrientationRule`). `@jgengine/react` adds `GameViewportProvider` (mounted by the shell), hooks (`useGameViewportLayout`, `useGameLayoutMode`, `useGameOrientation`, `useReservedControlZones`, `useLayoutCollisions`, `useRegisterLayoutRegion`), and a headless `RotateDeviceScreen`. The provider tracks `window.visualViewport`, publishes `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS vars, resolves the explicit layout mode, and detects forbidden region overlaps (dev `data-jg-layout-collision` + console diagnostic).
+- Mandatory orientation contract — `PlayableGame.orientation` accepts `{ mobile: <rule> }`; `landscape-required`/`portrait-required` render an engine-owned rotate gate that blocks gameplay (input suppressed, simulation frozen, HUD/controls unmounted), self-correcting when the device is turned. Reduced-motion and safe-area respected; `visualViewport`-sized for mobile Safari/PWA.
+- Reserved touch-control zones — the touch dock registers its joystick / action-cluster / utility rectangles (runtime-measured) as `control` regions, so HUD placement and collision validation know exactly where controls sit.
+- HUD placement metadata — `HudPanel` gains `priority`, `mobileBehavior`, `allowOverlapWith`, `collisionGroup`, and registers as a collision-tracked layout region.
+- Mobile-landscape shoot device — `bun run shoot --device mobile-landscape` (844×390) plus collision-gate reads that fail mobile validation on forbidden overlaps.
+- Canyon Chase migrated as the reference landscape-required game — declares `orientation: { mobile: "landscape-required" }`, composes its HUD through coordinated `HudPanel` regions (pursuit distance critical, border secondary, survey map hidden on mobile, radio transient) instead of independent fixed corners.
+
 ## 0.9.0
 
 ### Added

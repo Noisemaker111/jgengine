@@ -146,6 +146,33 @@ Design-resolution fit is on by default for every game: each `HudCanvas` auto-sca
 
 `HudCanvas` and `HudPanel` take an opt-in `showDuring?: GamePhase[]` — the element renders only while `gamePhase` is one of the listed phases (`"menu" | "playing" | "paused" | "ended"`), so a non-cartridge game hides its HUD under menu/end overlays without hand-rolling a phase check. Omit it for the default always-visible behavior. Gate the whole HUD with `<HudCanvas showDuring={["playing"]}>`, or keep a single results panel up with a per-`HudPanel` value. The read degrades to `"playing"` when the component renders outside a `GameProvider` (component showcases, previews), so it never throws there.
 
+### Shared viewport allocation (`GameViewportProvider`, region collision)
+
+The shell allocates the live viewport once — visual viewport, safe-area insets, orientation, and layout mode — and hosts a **layout registry** every UI subsystem publishes its occupied rectangle to. This replaces "every subsystem independently claims an edge" (the mobile-overlap smell). It is wired automatically for every game; author against it, don't rebuild it.
+
+- **The mode** is one of `desktop-wide | desktop-compact | mobile-landscape | mobile-portrait`, resolved from the live `visualViewport` + coarse-pointer + `platforms`. Read it with `useGameLayoutMode()` (or `useGameViewportLayout()` for the full geometry: `mode`, `orientation`, `safeArea`, `controlZones`, `gameplayRect`). Both degrade to a sane desktop default outside the provider, so previews never throw.
+- **Live CSS variables** are published on the provider root: `--jg-viewport-*`, `--jg-visual-viewport-*`, `--jg-safe-{top,right,bottom,left}`. Use them (with `100dvh` fallbacks) instead of assuming `100vh` equals the visible area on mobile Safari.
+- **Touch controls reserve real rectangles.** The engine measures the joystick / action-cluster / utility zones at runtime (ResizeObserver, not guessed percentages) and registers them as `control` regions. `HudCanvas` already lifts bottom-anchored panels above the dock via `--jg-hud-dock-clearance`; the registry additionally makes any residual overlap a hard error.
+- **Collision is detected, not hoped for.** A `HudPanel` inside a `HudCanvas` registers as a `hud` region automatically. `bun run shoot <game> --device mobile` / `mobile-landscape` reads a `data-jg-layout-collision` attribute and exits non-zero naming both colliding regions (e.g. `throttle ∩ radio (4270px²)`) — the same failure discipline as HUD overflow. In dev the colliding elements also carry `data-jg-collision` for outlining. Opt an intentional overlap out with `allowOverlapWith` / `collisionGroup`, or a soft `mobileBehavior="transient"`.
+
+### HUD priority + mobile behavior (`HudPanel`)
+
+Declare intent, not just CSS. `HudPanel` accepts:
+
+- `priority?: "critical" | "secondary" | "tertiary"` — the Tier from §2, surfaced to tooling. Critical stays visible; tertiary folds away first.
+- `mobileBehavior?: "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal"` — `"hidden"` unmounts the panel on phones (move that Tier-3 readout behind a contextual action instead); `"transient"` softens its collision policy for a fleeting line; the rest tag the element (`data-hud-mobile-behavior`) for the game's own responsive CSS. Keep these game-authored and lightly styled — this is a placement contract, not a website design system.
+
+The game still owns the genre-appropriate composition; the engine owns the geometry and the failure gate.
+
+### Mandatory orientation (`orientation`)
+
+A game declares its phone-orientation contract on `defineGame({ orientation })`:
+
+- Legacy `"landscape"` / `"portrait"` stays **advisory** — a dismissible rotate hint, never a gate.
+- The object form `{ mobile: <rule> }` is the strict contract, where `<rule>` is `any` (both) · `portrait` / `landscape` (advisory preference) · `portrait-required` / `landscape-required` (hard gate) · `unsupported` (no phone support).
+
+For a driving/landscape game: `orientation: { mobile: "landscape-required" }`. When the device is held the wrong way the shell shows an **engine-owned `RotateDeviceScreen`** (polished, safe-area-aware, `visualViewport`-sized, reduced-motion-respecting, themeable via `--jg-*`) above every layer, **suppresses game input, freezes the simulation, and unmounts the HUD and touch controls** — gameplay never runs behind the gate. The gate is derived live from orientation, so rotating back to a valid orientation resumes automatically with no stuck-paused state. Never re-implement a "rotate for best experience" toast; declare the requirement and the engine owns the rest.
+
 ## 5. Change the visual grammar
 
 Avoid making every element the same rounded translucent rectangle.

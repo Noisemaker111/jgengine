@@ -22,9 +22,16 @@ import {
   type HudSize,
 } from "@jgengine/core/ui/hudLayout";
 import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/ui/hudScale";
+import {
+  isMobileMode,
+  type HudPriority,
+  type LayoutCollisionPolicy,
+  type MobileHudBehavior,
+} from "@jgengine/core/ui/gameLayout";
 import type { GamePhase } from "@jgengine/core/game/gamePhase";
 import { useDisplayProfile } from "./display";
 import { useEngineState } from "./engineStore";
+import { useGameLayoutMode, useRegisterLayoutRegion } from "./gameViewport";
 import { useOptionalGamePhase } from "./hooks";
 import { useHudViewport } from "./hudViewport";
 
@@ -504,6 +511,11 @@ export function HudPanel({
   inset,
   locked,
   showDuring,
+  priority,
+  mobileBehavior,
+  allowOverlapWith,
+  collisionGroup,
+  region = true,
   className,
   style,
   children,
@@ -523,14 +535,26 @@ export function HudPanel({
   locked?: boolean;
   /** Opt-in play-phase gate: render this panel only during these phases. Omit for always-visible (default). */
   showDuring?: readonly GamePhase[];
+  /** Gameplay-importance tier, surfaced to layout tooling. `critical` stays visible; `tertiary` is the first to fold away. */
+  priority?: HudPriority;
+  /** How the panel adapts on mobile. `"hidden"` unmounts on phones; `"transient"` softens its collision policy; others tag the element for game CSS. */
+  mobileBehavior?: MobileHudBehavior;
+  /** Region ids this panel may overlap without a forbidden-collision report. */
+  allowOverlapWith?: readonly string[];
+  /** Regions sharing a non-empty group never collide with each other. */
+  collisionGroup?: string;
+  /** Register this panel as a collision-tracked layout region. Default true. */
+  region?: boolean;
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
 }) {
   const ctx = useContext(HudCanvasContext);
   const phase = useOptionalGamePhase();
+  const layoutMode = useGameLayoutMode();
   if (ctx === null) throw new Error("HudPanel must be rendered inside a HudCanvas");
   const { layout, canvasRef, regions, compact } = ctx;
+  const onMobile = isMobileMode(layoutMode);
   const registeredOnRef = useRef<HudLayoutStore | null>(null);
   if (registeredOnRef.current !== layout) {
     registeredOnRef.current = layout;
@@ -549,6 +573,24 @@ export function HudPanel({
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => () => detachRef.current?.(), []);
+
+  const regionHidden =
+    panel === undefined ||
+    (compact && compactMode === "hide") ||
+    (onMobile && mobileBehavior === "hidden") ||
+    !hudVisibleInPhase(showDuring, phase);
+  const regionSpec = useMemo(
+    () => ({
+      id,
+      kind: "hud" as const,
+      collisionPolicy: (mobileBehavior === "transient" ? "warn" : "forbid") as LayoutCollisionPolicy,
+      priority,
+      allowOverlapWith,
+      collisionGroup,
+    }),
+    [id, mobileBehavior, priority, allowOverlapWith, collisionGroup],
+  );
+  useRegisterLayoutRegion(regionSpec, rootRef, region && !regionHidden);
 
   const onPointerDown = (event: ReactPointerEvent) => {
     if (!draggable || event.button !== 0) return;
@@ -644,6 +686,7 @@ export function HudPanel({
 
   if (panel === undefined) return null;
   if (compact && compactMode === "hide") return null;
+  if (onMobile && mobileBehavior === "hidden") return null;
   if (!hudVisibleInPhase(showDuring, phase)) return null;
 
   const flow = compact || !panel.moved;
@@ -657,6 +700,8 @@ export function HudPanel({
         ref={rootRef}
         data-hud-panel={id}
         data-dragging={dragging ? "" : undefined}
+        data-hud-priority={priority}
+        data-hud-mobile-behavior={mobileBehavior}
         className={className}
         onPointerDown={onPointerDown}
         onClickCapture={onClickCapture}

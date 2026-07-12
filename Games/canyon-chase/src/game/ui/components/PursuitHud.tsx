@@ -68,7 +68,7 @@ export interface ConfidenceMeterProps {
 
 export function ConfidenceMeter({ confidence, surging }: ConfidenceMeterProps) {
   return (
-    <div className="pointer-events-none flex w-[min(44vw,11rem)] flex-col gap-1 rounded-xl border border-[#7d8c65]/40 bg-[#241a2c]/85 px-3 py-2">
+    <div className="pointer-events-none flex w-44 flex-col gap-1 rounded-xl border border-[#7d8c65]/40 bg-[#241a2c]/85 px-3 py-2">
       <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-[#e8d7c3]/70">
         <span>Confidence</span>
         {surging ? <span className="text-[#ffc857]">Surge!</span> : null}
@@ -92,7 +92,7 @@ export function BorderCountdown({ truckMainDistance }: BorderCountdownProps) {
   const fraction = Math.max(0, Math.min(1, remaining / TOTAL_MAIN_LENGTH));
   const urgent = remaining < 150;
   return (
-    <div className="pointer-events-none flex w-[min(52vw,14rem)] flex-col gap-1 rounded-xl border border-[#9c3820]/50 bg-[#241a2c]/85 px-3 py-2">
+    <div className="pointer-events-none flex w-56 flex-col gap-1 rounded-xl border border-[#9c3820]/50 bg-[#241a2c]/85 px-3 py-2">
       <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-[#e8d7c3]/70">
         <span>Border Arch</span>
         <span className={urgent ? "text-[#e0546b]" : "text-[#e8d7c3]/70"}>{Math.round(remaining)}m</span>
@@ -109,12 +109,14 @@ export function BorderCountdown({ truckMainDistance }: BorderCountdownProps) {
 
 export interface RadioTickerProps {
   readonly lines: readonly RadioLine[];
+  /** How many recent lines to show. Mobile play passes 1 for a single transient line. */
+  readonly limit?: number;
 }
 
-export function RadioTicker({ lines }: RadioTickerProps) {
-  const latest = lines.slice(-3).reverse();
+export function RadioTicker({ lines, limit = 3 }: RadioTickerProps) {
+  const latest = lines.slice(-limit).reverse();
   return (
-    <div className="pointer-events-none flex w-[min(80vw,18rem)] flex-col gap-1 rounded-xl border border-[#4b3b63]/60 bg-[#1b1220]/90 px-3 py-2">
+    <div className="pointer-events-none flex w-72 flex-col gap-1 rounded-xl border border-[#4b3b63]/60 bg-[#1b1220]/90 px-3 py-2">
       <div className="text-[10px] uppercase tracking-[0.25em] text-[#ffc857]/80">Pursuit Radio</div>
       <div className="flex flex-col gap-1">
         {latest.map((line, index) => (

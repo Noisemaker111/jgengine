@@ -1,4 +1,5 @@
-import { useGameStore, SettingsTrigger } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useGameStore, useGameLayoutMode, useHudLayout } from "@jgengine/react";
+import { isMobileMode } from "@jgengine/core/ui/gameLayout";
 import { SELECTED_SEED_STORE_KEY } from "../run/storeKeys";
 import { isSurging } from "../run/surge";
 import { useRunState } from "../run/useRunState";
@@ -10,35 +11,63 @@ import { CornerSurveyMap, LargeSurveyMap } from "./components/SurveyMinimap";
 export function GameUI() {
   const run = useRunState();
   const markers = useCanyonMarkers();
+  const layout = useHudLayout();
+  const onMobile = isMobileMode(useGameLayoutMode());
   const selectedSeedId = useGameStore((ctx) => ctx.game.store.get(SELECTED_SEED_STORE_KEY) as string | undefined);
 
   if (run === undefined) return null;
+  const playing = run.phase === "playing";
 
   return (
-    <div className="pointer-events-none fixed inset-0 overflow-hidden font-sans text-[#f6e7cf]">
-      {run.phase === "playing" ? (
+    <>
+      {playing ? (
         <>
-          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/65 to-transparent" />
-          <div className="absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-start gap-2 sm:left-5 sm:top-5">
-            <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[#ffc857]/30 bg-[#241a2c]/70 text-[#ffc857] backdrop-blur transition-colors hover:bg-[#ffc857]/15" />
-            <BorderCountdown truckMainDistance={run.truck.mainDistance} />
-          </div>
-          <div className="absolute left-1/2 top-[max(0.75rem,env(safe-area-inset-top))] w-[min(32rem,52vw)] -translate-x-1/2 sm:top-5">
-            <DistanceBar gap={run.gap} gapDelta={run.gapDelta} tensionFraction={run.tensionFraction} />
-          </div>
-          <div className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] sm:right-5 sm:top-5">
-            {markers !== undefined ? <CornerSurveyMap carPosition={run.car.position} carHeading={run.car.heading} markers={markers} /> : null}
-          </div>
-
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/70 to-transparent" />
-          <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 max-w-[min(28rem,72vw)] sm:bottom-5 sm:left-5">
-            <RadioTicker lines={run.radioLog} />
-          </div>
-          <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 sm:bottom-5 sm:right-5">
-            <ConfidenceMeter confidence={run.surge.confidence} surging={isSurging(run.surge, run.elapsed)} />
-          </div>
+          <div className="pointer-events-none fixed inset-x-0 top-0 h-28 bg-gradient-to-b from-black/65 to-transparent" />
+          <div className="pointer-events-none fixed inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/70 to-transparent" />
         </>
       ) : null}
+
+      <HudCanvas layout={layout} className="font-sans text-[#f6e7cf]">
+        {playing ? (
+          <>
+            <HudPanel id="pursuit-distance" anchor="top" priority="critical" interactive={false}>
+              <DistanceBar gap={run.gap} gapDelta={run.gapDelta} tensionFraction={run.tensionFraction} />
+            </HudPanel>
+
+            <HudPanel id="system-settings" anchor="top-left" order={0}>
+              <SettingsTrigger className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[#ffc857]/30 bg-[#241a2c]/70 text-[#ffc857] backdrop-blur transition-colors hover:bg-[#ffc857]/15" />
+            </HudPanel>
+            <HudPanel id="border-distance" anchor="top-left" order={1} priority="secondary" interactive={false}>
+              <BorderCountdown truckMainDistance={run.truck.mainDistance} />
+            </HudPanel>
+
+            <HudPanel id="survey-map" anchor="top-right" priority="secondary" mobileBehavior="hidden">
+              {markers !== undefined ? (
+                <CornerSurveyMap carPosition={run.car.position} carHeading={run.car.heading} markers={markers} />
+              ) : null}
+            </HudPanel>
+
+            <HudPanel
+              id="confidence"
+              anchor={onMobile ? "top-right" : "bottom-right"}
+              priority="secondary"
+              interactive={false}
+            >
+              <ConfidenceMeter confidence={run.surge.confidence} surging={isSurging(run.surge, run.elapsed)} />
+            </HudPanel>
+
+            <HudPanel
+              id="radio"
+              anchor="bottom-left"
+              priority="tertiary"
+              mobileBehavior="transient"
+              interactive={false}
+            >
+              <RadioTicker lines={run.radioLog} limit={onMobile ? 1 : 3} />
+            </HudPanel>
+          </>
+        ) : null}
+      </HudCanvas>
 
       {run.mapSlow.active && markers !== undefined ? (
         <div className="pointer-events-none fixed inset-0 flex items-center justify-center bg-[#08050a]/72 backdrop-blur-[2px]">
@@ -61,6 +90,6 @@ export function GameUI() {
           <LoseScreen result={run.result} />
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

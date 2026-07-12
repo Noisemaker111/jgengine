@@ -11,6 +11,8 @@ export * from "./engineStore";
 export * from "./dragLayer";
 export * from "./hudLayout";
 export * from "./hudViewport";
+export * from "./gameViewport";
+export * from "./rotateDevice";
 export * from "./display";
 export * from "./map";
 export * from "./preview";

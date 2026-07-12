@@ -75,6 +75,8 @@ import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/ga
 import { useGameContext } from "@jgengine/react/provider";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
+import { GameViewportProvider } from "@jgengine/react/gameViewport";
+import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
 import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
@@ -99,6 +101,12 @@ import {
   type BindingOverrides,
 } from "@jgengine/core/input/bindingOverrides";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
+import {
+  orientationGateActive,
+  orientationHintActive,
+  resolveOrientationRequirement,
+  type LayoutOrientation,
+} from "@jgengine/core/ui/orientation";
 import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 
@@ -211,6 +219,9 @@ const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
 
 /** No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own. */
 const EMPTY_RESERVED: ReadonlySet<string> = new Set();
+
+/** Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker. */
+const NO_ACTIONS: string[] = [];
 
 const SHELL_MOVEMENT_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] as const;
 
@@ -1134,6 +1145,7 @@ function FrameDriver({
   pitchRef,
   primaryClickRef,
   pointerAxisRef,
+  gateRef,
   onRuntimeError,
   multiplayer,
   serverIdRef,
@@ -1150,6 +1162,7 @@ function FrameDriver({
   pitchRef: { current: number };
   primaryClickRef: { current: boolean };
   pointerAxisRef: { current: PointerAxisState | null };
+  gateRef: { current: boolean };
   onRuntimeError: (error: unknown, phase: string) => void;
   multiplayer: ShellMultiplayer | null;
   serverIdRef: { current: string | null };
@@ -1205,6 +1218,10 @@ function FrameDriver({
         onPosterSettled();
         return;
       }
+    }
+    if (gateRef.current) {
+      ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
+      return;
     }
     const simStart = performance.now();
     try {
@@ -1459,12 +1476,14 @@ function HudOnlyDriver({
   playable,
   tracker,
   pointerAxisRef,
+  gateRef,
   onRuntimeError,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
   tracker: ActionStateTracker<string>;
   pointerAxisRef: { current: PointerAxisState | null };
+  gateRef: { current: boolean };
   onRuntimeError: (error: unknown, phase: string) => void;
 }) {
   const hasReportedTickError = useRef(false);
@@ -1479,6 +1498,10 @@ function HudOnlyDriver({
       const last = lastFrameRef.current;
       lastFrameRef.current = now;
       if (last === null) return;
+      if (gateRef.current) {
+        ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
+        return;
+      }
       const rawDt = (now - last) / 1000;
       const simStart = performance.now();
       try {
@@ -1510,7 +1533,7 @@ function HudOnlyDriver({
     };
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [ctx, playable, tracker, pointerAxisRef, onRuntimeError, inputActions]);
+  }, [ctx, playable, tracker, pointerAxisRef, gateRef, onRuntimeError, inputActions]);
 
   return null;
 }
@@ -1703,6 +1726,25 @@ export function GamePlayerShell({
     () => ({ onCodeDown: (code: string) => tracker.handleDown(code), onCodeUp: (code: string) => tracker.handleUp(code) }),
     [tracker],
   );
+  const gateRef = useRef(false);
+  const orientationPlatform = coarsePointer ? "mobile" : "desktop";
+  const orientationRequirement = useMemo(
+    () => resolveOrientationRequirement(playable.orientation, orientationPlatform),
+    [playable, orientationPlatform],
+  );
+  const liveOrientation: LayoutOrientation = portrait ? "portrait" : "landscape";
+  const orientationGate = !poster && coarsePointer && orientationGateActive(orientationRequirement, liveOrientation);
+  const orientationHint = !poster && coarsePointer && orientationHintActive(orientationRequirement, liveOrientation);
+  gateRef.current = orientationGate;
+  const orientationGateEl = orientationGate ? (
+    <RotateDeviceScreen
+      requiredOrientation={orientationRequirement.required ?? "landscape"}
+      title={orientationRequirement.required === "portrait" ? "Turn your phone upright" : "Turn your phone sideways"}
+      description={`${playable.game.name} is built for ${orientationRequirement.required ?? "landscape"} play.`}
+    />
+  ) : orientationHint && orientationRequirement.preferred !== null ? (
+    <OrientationHint wanted={orientationRequirement.preferred} />
+  ) : null;
   const audioEngine = useMemo(
     () => createAudioEngine({ sounds: playable.audio?.sounds, buses: playable.audio?.buses }),
     [playable],
@@ -1924,14 +1966,16 @@ export function GamePlayerShell({
         onPointerLeave={deactivatePointerAxis}
         onPointerCancel={deactivatePointerAxis}
       >
+        <GameViewportProvider platforms={playable.platforms}>
         <HudOnlyDriver
           ctx={ctx}
           playable={playable}
           tracker={tracker}
           pointerAxisRef={pointerAxisRef}
+          gateRef={gateRef}
           onRuntimeError={reportRuntimeError}
         />
-        {coarsePointer && touchScheme !== null && touchScheme.gestures !== null && playControlsActive(ctx) ? (
+        {!orientationGate && coarsePointer && touchScheme !== null && touchScheme.gestures !== null && playControlsActive(ctx) ? (
           <TouchPlaySurface
             scheme={touchScheme}
             sink={touchSink}
@@ -1948,14 +1992,16 @@ export function GamePlayerShell({
               config={playable.hudFit}
               userScale={graphics.uiScale}
             >
-              <GameUI />
+              {orientationGate ? null : <GameUI />}
             </HudViewportProvider>
           </GameProvider>
         </GameUiErrorBoundary>
+        {orientationGateEl}
         {devtoolsEnabled ? (
           <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
         ) : null}
         <DiagnosticOverlay diagnostics={diagnostics} gameName={playable.game.name} />
+        </GameViewportProvider>
       </div>
     );
   }
@@ -2154,15 +2200,11 @@ export function GamePlayerShell({
   const touchScale = compact ? 0.88 : 1;
   const dockMounted =
     !poster &&
+    !orientationGate &&
     coarsePointer &&
     controlsActive &&
     touchScheme !== null &&
     (touchScheme.joystick !== null || touchScheme.buttons.length > 0);
-  const orientationMismatch =
-    !poster &&
-    coarsePointer &&
-    playable.orientation !== undefined &&
-    (playable.orientation === "landscape") === portrait;
 
   return (
     <SettingsProvider store={settingsStore}>
@@ -2238,6 +2280,7 @@ export function GamePlayerShell({
         }
       }}
     >
+      <GameViewportProvider platforms={playable.platforms}>
       <Canvas
         frameloop={poster && posterFrozen ? "demand" : "always"}
         orthographic={orthographic}
@@ -2337,6 +2380,7 @@ export function GamePlayerShell({
           pitchRef={pitchRef}
           primaryClickRef={primaryClickRef}
           pointerAxisRef={pointerAxisRef}
+          gateRef={gateRef}
           onRuntimeError={reportRuntimeError}
           multiplayer={multiplayer}
           serverIdRef={serverIdRef}
@@ -2352,7 +2396,7 @@ export function GamePlayerShell({
         />
         <DevtoolsRendererProbe />
       </Canvas>
-      {!poster && coarsePointer && controlsActive && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
+      {!poster && !orientationGate && coarsePointer && controlsActive && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
         <TouchPlaySurface
           scheme={touchScheme}
           sink={touchSink}
@@ -2371,17 +2415,15 @@ export function GamePlayerShell({
             config={playable.hudFit}
             userScale={graphics.uiScale}
           >
-            <GameUI />
+            {orientationGate ? null : <GameUI />}
           </HudViewportProvider>
         </GameProvider>
       </GameUiErrorBoundary>
-      {!poster && showReticle ? <Reticle /> : null}
+      {!poster && !orientationGate && showReticle ? <Reticle /> : null}
       {dockMounted && touchScheme !== null ? (
         <TouchControlsDock scheme={touchScheme} sink={touchSink} scale={touchScale} />
       ) : null}
-      {orientationMismatch && playable.orientation !== undefined ? (
-        <OrientationHint wanted={playable.orientation} />
-      ) : null}
+      {orientationGateEl}
       {marquee !== null ? <MarqueeBox rect={marquee} /> : null}
       {contextMenu !== null ? (
         <ContextMenuView
@@ -2398,6 +2440,7 @@ export function GamePlayerShell({
       {poster ? null : <DiagnosticOverlay diagnostics={diagnostics} gameName={playable.game.name} />}
       {poster || orthographic || settingsHostsFov ? null : <PlayerFovSlider />}
       {poster ? null : <SettingsChrome />}
+      </GameViewportProvider>
     </div>
     </SettingsRuntime>
     </PlayerFovProvider>

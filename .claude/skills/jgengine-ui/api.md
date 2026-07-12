@@ -34,6 +34,33 @@
 - `saveSettingValue` (function): function saveSettingValue(id: string, value: SettingValue, storage: Pick<WebStorageLike, "setItem"> | null | undefined = defaultStorage()): void — ⚠ undocumented
 - `settingStorageKey` (function): function settingStorageKey(id: string): string — ⚠ undocumented
 
+## @jgengine/core/ui/gameLayout
+
+- `DetectCollisionsOptions` (interface): interface DetectCollisionsOptions — Options for `detectLayoutCollisions`.
+- `GameLayoutMode` (type): type GameLayoutMode = "desktop-wide" | "desktop-compact" | "mobile-landscape" | "mobile-portrait" — The explicit composition mode a game renders for — not a scaled desktop layout.
+- `GameViewportLayout` (interface): interface GameViewportLayout — The shared live geometry the engine allocates once and every UI subsystem reads.
+- `HudPriority` (type): type HudPriority = "critical" | "secondary" | "tertiary" — Gameplay-importance tier of a HUD element.
+- `Insets` (interface): interface Insets — Edge insets in CSS pixels (safe areas, reservations).
+- `LayoutCollision` (interface): interface LayoutCollision — One detected forbidden/warned overlap between two regions.
+- `LayoutCollisionPolicy` (type): type LayoutCollisionPolicy = "forbid" | "allow" | "warn" — How a region participates in collision reporting.
+- `LayoutModeInput` (interface): interface LayoutModeInput — Inputs to `resolveLayoutMode`.
+- `LayoutRect` (interface): interface LayoutRect — Axis-aligned rectangle in CSS pixels (origin top-left). Structurally compatible with a `DOMRect`'s edge fields.
+- `LayoutRegion` (interface): interface LayoutRegion — A physical rectangle a UI subsystem occupies, published to the shared registry.
+- `LayoutRegionKind` (type): type LayoutRegionKind = "hud" | "control" | "system" | "screen" — What kind of UI a registered region belongs to.
+- `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
+- `ZERO_INSETS` (const): const ZERO_INSETS: Insets — All-zero insets.
+- `computeGameplayRect` (function): function computeGameplayRect(viewport: LayoutRect, safeArea: Insets, reserved: readonly LayoutRect[]): LayoutRect — The usable gameplay rectangle after reserving physical zones for touch controls and system UI. Starts from the safe-area-inset viewport and carves each reserved zone from whichever edge it hugs.
+- `detectLayoutCollisions` (function): function detectLayoutCollisions(regions: readonly LayoutRegion[], options?: DetectCollisionsOptions): LayoutCollision[] — Every forbidden or warned rectangle intersection across the registered regions. A pair is skipped when either side's policy is `allow`, when either opts into the other via `allowOverlapWith`, when they share a `collisionGroup`, or when the overlap is below `minArea`.
+- `formatLayoutCollisions` (function): function formatLayoutCollisions(collisions: readonly LayoutCollision[]): string — Human-readable diagnostic block for a set of collisions (empty string when there are none).
+- `intersects` (function): function intersects(a: LayoutRect, b: LayoutRect): boolean — Do the two rectangles share any interior area? Touching edges do not count.
+- `isMobileMode` (function): function isMobileMode(mode: GameLayoutMode): boolean — Whether a mode is one of the phone modes.
+- `orientationOf` (function): function orientationOf(width: number, height: number): LayoutOrientation — Portrait when taller than wide, else landscape.
+- `overlapArea` (function): function overlapArea(a: LayoutRect, b: LayoutRect): number — Overlapping area in px²; 0 when the rectangles don't intersect.
+- `rectArea` (function): function rectArea(rect: LayoutRect): number — Area of a rect in px².
+- `rectHeight` (function): function rectHeight(rect: LayoutRect): number — Height of a rect (clamped to ≥0).
+- `rectWidth` (function): function rectWidth(rect: LayoutRect): number — Width of a rect (clamped to ≥0).
+- `resolveLayoutMode` (function): function resolveLayoutMode(input: LayoutModeInput): GameLayoutMode — Resolve the explicit composition mode. A mobile layout is not a scaled desktop layout: a coarse-pointer device on a game that supports mobile is always a `mobile-*` mode, split by live orientation; everything else is a desktop mode split by width.
+
 ## @jgengine/core/ui/hudLayout
 
 - `HUD_ANCHOR_FRACTIONS` (const): const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }> — ⚠ undocumented
@@ -67,6 +94,18 @@
 - `overflowingPanels` (function): function overflowingPanels(panels: readonly { id: string; rect: HudRect }[], viewport: HudSize, tolerance = 1.5): HudOverflow[] — Every panel rect that escapes the viewport — the data behind the HUD overflow gate.
 - `rectOverflow` (function): function rectOverflow(rect: HudRect, viewport: HudSize, tolerance = 1.5): Omit<HudOverflow, "id"> | null — Non-null when any edge of `rect` falls outside `viewport` by more than `tolerance` px; each field is the overflow distance past that edge (0 when inside).
 - `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
+
+## @jgengine/core/ui/orientation
+
+- `GameOrientation` (type): type GameOrientation = "landscape" | "portrait" | GameOrientationConfig — The `orientation` field of a game definition. Legacy shorthand `"landscape"` / `"portrait"` stays advisory (a dismissible rotate hint, never a gate). The object form `{ mobile: "landscape-required" }` is the strict contract that blocks gameplay behind the rotate screen until the device is turned.
+- `GameOrientationConfig` (interface): interface GameOrientationConfig — Object form of the `orientation` field: the strict per-platform contract.
+- `LayoutOrientation` (type): type LayoutOrientation = "portrait" | "landscape" — A concrete device orientation.
+- `MobileOrientationRule` (type): type MobileOrientationRule = | "any" | "portrait" | "landscape" | "portrait-required" | "landscape-required" | "unsupported" — The game-level orientation contract. A game declares how it supports phone orientations; the shell resolves that against the live orientation to decide whether to show a dismissible rotate hint (advisory) or a full-screen gate that blocks gameplay until the device is turned (required).
+- `OrientationRequirement` (interface): interface OrientationRequirement — The resolved orientation contract for a platform: whether it's supported, gated, or merely preferred.
+- `orientationGateActive` (function): function orientationGateActive(requirement: OrientationRequirement, liveOrientation: LayoutOrientation): boolean — The rotate gate blocks gameplay: a hard requirement (or `unsupported`) the live orientation doesn't satisfy.
+- `orientationHintActive` (function): function orientationHintActive(requirement: OrientationRequirement, liveOrientation: LayoutOrientation): boolean — An advisory rotate hint applies: a preference (not a hard gate) the live orientation doesn't satisfy.
+- `resolveMobileOrientationRule` (function): function resolveMobileOrientationRule(orientation: GameOrientation | undefined): MobileOrientationRule — Normalize the `orientation` field (legacy string or object) to a single mobile rule.
+- `resolveOrientationRequirement` (function): function resolveOrientationRequirement(orientation: GameOrientation | undefined, platform: "mobile" | "desktop"): OrientationRequirement — Resolve the game's orientation declaration into a concrete requirement for a platform. Desktop is always unconstrained.
 
 ## @jgengine/react
 
@@ -111,17 +150,19 @@
 - `GamePreviewProps` (type): type GamePreviewProps = { className?: string; } — ⚠ undocumented
 - `GamePreviewStates` (type): type GamePreviewStates = Record<string, GamePreviewComponent> — ⚠ undocumented
 - `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
+- `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
 - `HealthBar` (function): function HealthBar({ instanceId, statId, className, fillClassName, }: { instanceId: string; statId: string; className?: string; fillClassName?: string; }): React.JSX.Element | null — ⚠ undocumented
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
 - `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
-- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack position within the region, ascending outward from the screen edge. Default 0. */ order?: number… — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
+- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack position within the r… — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
 - `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
 - `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
+- `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
 - `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
@@ -137,7 +178,9 @@
 - `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
 - `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> — ⚠ undocumented
+- `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
 - `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
 - `SettingsCategoryView` (interface): interface SettingsCategoryView — ⚠ undocumented
@@ -155,6 +198,7 @@
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
 - `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ViewportMetrics` (interface): interface ViewportMetrics — Live viewport rectangles: the layout viewport and the visible `visualViewport`.
 - `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `VoiceState` (interface): interface VoiceState — ⚠ undocumented
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
@@ -198,13 +242,17 @@
 - `useGame` (function): function useGame(): { commands: GameContext["game"]["commands"]; events: GameEvents } — ⚠ undocumented
 - `useGameClock` (function): function useGameClock(): ClockSnapshot & { controls: SimClock } — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
+- `useGameLayoutMode` (function): function useGameLayoutMode(): GameLayoutMode — The resolved explicit composition mode (`desktop-wide` … `mobile-portrait`).
+- `useGameOrientation` (function): function useGameOrientation(): LayoutOrientation — The live device orientation.
 - `useGamePhase` (function): function useGamePhase(): { phase: GamePhase; setPhase: (phase: GamePhase) => void } — Live run phase + a setter that also gates the shell's touch controls. `menu`/`paused`/`ended` hide the touch dock; `playing` shows it.
 - `useGameStore` (function): function useGameStore<T>(selector: (ctx: GameContext) => T, isEqual: (previous: T, next: T) => boolean = Object.is): T — ⚠ undocumented
+- `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; }): HudLayoutStore — ⚠ undocumented
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
+- `useLayoutCollisions` (function): function useLayoutCollisions(): readonly LayoutCollision[] — Live forbidden/warned region collisions (empty outside a provider).
 - `useLeaderboard` (function): function useLeaderboard(stat: string, options: { scope: LeaderboardScope; limit?: number }): { userId: string; value: number }[] — ⚠ undocumented
 - `useLocalPlayerDead` (function): function useLocalPlayerDead(healthStatId = "health"): boolean — ⚠ undocumented
 - `useMarkers` (function): function useMarkers(markers: MarkerSet): readonly MapMarker[] — ⚠ undocumented
@@ -216,6 +264,8 @@
 - `usePlayer` (function): function usePlayer(): { userId: string; isNew: boolean } — ⚠ undocumented
 - `usePresence` (function): function usePresence(userId: string): PresenceInfo — ⚠ undocumented
 - `useQuestJournal` (function): function useQuestJournal(): QuestInstance[] — ⚠ undocumented
+- `useRegisterLayoutRegion` (function): function useRegisterLayoutRegion(spec: LayoutRegionSpec, ref: RefObject<HTMLElement | null>, enabled = true): void — Register the element behind `ref` as a layout region and keep its measured rectangle live (ResizeObserver + viewport changes). No-op outside a `GameViewportProvider`, so a component using it still works in isolation.
+- `useReservedControlZones` (function): function useReservedControlZones(): readonly LayoutRect[] — Rectangles reserved by touch controls and system UI — HUD placement should avoid these.
 - `useRoster` (function): function useRoster(userId?: string): readonly RosterEntry[] — ⚠ undocumented
 - `useSceneEntities` (function): function useSceneEntities(): readonly SceneEntity[] — ⚠ undocumented
 - `useSceneObjects` (function): function useSceneObjects(): readonly SceneObject[] — ⚠ undocumented
@@ -224,6 +274,7 @@
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
+- `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
@@ -309,6 +360,20 @@
 - `iconForItemId` (function): function iconForItemId(itemId: string): GameIconName | null — ⚠ undocumented
 - `isGameIconName` (function): function isGameIconName(value: string): value is GameIconName — ⚠ undocumented
 
+## @jgengine/react/gameViewport
+
+- `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
+- `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
+- `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
+- `ViewportMetrics` (interface): interface ViewportMetrics — Live viewport rectangles: the layout viewport and the visible `visualViewport`.
+- `useGameLayoutMode` (function): function useGameLayoutMode(): GameLayoutMode — The resolved explicit composition mode (`desktop-wide` … `mobile-portrait`).
+- `useGameOrientation` (function): function useGameOrientation(): LayoutOrientation — The live device orientation.
+- `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
+- `useLayoutCollisions` (function): function useLayoutCollisions(): readonly LayoutCollision[] — Live forbidden/warned region collisions (empty outside a provider).
+- `useRegisterLayoutRegion` (function): function useRegisterLayoutRegion(spec: LayoutRegionSpec, ref: RefObject<HTMLElement | null>, enabled = true): void — Register the element behind `ref` as a layout region and keep its measured rectangle live (ResizeObserver + viewport changes). No-op outside a `GameViewportProvider`, so a component using it still works in isolation.
+- `useReservedControlZones` (function): function useReservedControlZones(): readonly LayoutRect[] — Rectangles reserved by touch controls and system UI — HUD placement should avoid these.
+- `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
+
 ## @jgengine/react/hooks
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
@@ -358,7 +423,7 @@
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
 - `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
-- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack position within the region, ascending outward from the screen edge. Default 0. */ order?: number… — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
+- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack position within the r… — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; }): HudLayoutStore — ⚠ undocumented
 
@@ -415,6 +480,10 @@
 - `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
+
+## @jgengine/react/rotateDevice
+
+- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 
 ## @jgengine/react/selectSnapshot
 
