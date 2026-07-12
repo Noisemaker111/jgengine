@@ -121,7 +121,8 @@ function collectSkillModules(root: string): { skills: SkillModules; undocumented
       }
     }
   }
-  for (const refs of skills.values()) refs.sort((a, b) => a.importPath.localeCompare(b.importPath));
+  for (const refs of skills.values())
+    refs.sort((a, b) => (a.importPath < b.importPath ? -1 : a.importPath > b.importPath ? 1 : 0));
   return { skills, undocumented };
 }
 
