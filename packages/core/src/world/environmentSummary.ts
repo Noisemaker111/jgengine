@@ -12,6 +12,7 @@ import type {
   WorldBounds,
 } from "./features";
 import type { Aabb } from "./geometry";
+import { pathLength } from "./roads";
 import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "./terrain";
 
 export function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] {
@@ -73,6 +74,13 @@ export interface WeatherSummary {
   density: number;
 }
 
+/** One road descriptor's resolved footprint: vertex count, width, and total centerline length. */
+export interface RoadSummary {
+  points: number;
+  width: number;
+  length: number;
+}
+
 export interface EnvironmentCounts {
   terrain: number;
   islands: number;
@@ -82,6 +90,7 @@ export interface EnvironmentCounts {
   vegetationFields: number;
   waterBodies: number;
   weatherSystems: number;
+  roads: number;
 }
 
 export interface IslandSummary extends TerrainSummary {
@@ -95,6 +104,7 @@ export interface EnvironmentSummary {
   vegetation: readonly VegetationSummary[];
   water: readonly WaterSummary[];
   weather: readonly WeatherSummary[];
+  roads: readonly RoadSummary[];
   counts: EnvironmentCounts;
   isEmpty: boolean;
 }
@@ -184,6 +194,11 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
     kind: entry.kind,
     density: entry.density,
   }));
+  const roads: RoadSummary[] = (feature.roads ?? []).map((entry) => ({
+    points: entry.path.length,
+    width: entry.width,
+    length: pathLength(entry.path),
+  }));
 
   const buildings = structures.reduce((sum, entry) => sum + entry.buildings, 0);
   const counts: EnvironmentCounts = {
@@ -195,6 +210,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
     vegetationFields: vegetation.length,
     waterBodies: water.length,
     weatherSystems: weather.length,
+    roads: roads.length,
   };
   const isEmpty =
     counts.terrain === 0 &&
@@ -202,7 +218,8 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
     buildings === 0 &&
     counts.vegetationFields === 0 &&
     counts.waterBodies === 0 &&
-    counts.weatherSystems === 0;
+    counts.weatherSystems === 0 &&
+    counts.roads === 0;
 
   return {
     ...(terrain === undefined ? {} : { terrain }),
@@ -211,6 +228,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
     vegetation,
     water,
     weather,
+    roads,
     counts,
     isEmpty,
   };

@@ -4,19 +4,23 @@ import {
   environment,
   grass,
   ocean,
+  road,
   sky,
   terrain,
   type EnvironmentWorldFeature,
   type TerrainMaterialRegion,
 } from "@jgengine/core/world/features";
-import { DISTRICTS, roadPoints, SHORE_X, WORLD_D, WORLD_W } from "./game/world/districts";
+import { DISTRICTS, ROADS, SHORE_X, WORLD_D, WORLD_W } from "./game/world/districts";
 
-const roadRegions: TerrainMaterialRegion[] = roadPoints(10).map((point) => ({
-  center: point,
-  radius: 5.5,
-  falloff: 1,
-  colors: { low: "#4d5160", high: "#5a5f6e" },
-}));
+const streetRibbons = ROADS.map((segment) =>
+  road({
+    path: [segment.from, segment.to],
+    width: 9,
+    color: "#3d414c",
+    markingColor: "#f3c53d",
+    elevation: segment.from[0] === segment.to[0] ? 0.08 : 0.16,
+  }),
+);
 
 const shoreRegions: TerrainMaterialRegion[] = Array.from({ length: 20 }, (_, i) => ({
   center: [SHORE_X + 8, -300 + i * 30] as const,
@@ -47,10 +51,11 @@ export const world: EnvironmentWorldFeature = environment({
     heightField: coastalHeight,
     waterLevel: -0.6,
     colors: { low: "#a8c065", high: "#6f9a4a", waterline: "#2fc6da" },
-    materialRegions: [...shoreRegions, ...roadRegions],
+    materialRegions: shoreRegions,
     flatten: cityFlatten,
   }),
   sky: sky({ preset: "day", timeOfDay: true }),
+  roads: streetRibbons,
   water: [
     ocean({
       bounds: { w: 400, d: 700 },

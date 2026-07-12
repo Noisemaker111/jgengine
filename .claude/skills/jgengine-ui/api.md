@@ -939,6 +939,10 @@
 - `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): React.JSX.Element — ⚠ undocumented
 - `GroundPadProps` (interface): interface GroundPadProps — ⚠ undocumented
 
+## @jgengine/shell/environment/RoadRibbons
+
+- `RoadRibbons` (function): function RoadRibbons({ road, field }: { road: RoadEnvironmentDescriptor; field: TerrainField }): React.JSX.Element | null — Renders one `road()` descriptor: an asphalt ribbon plus optional dashed centerline, draped on the terrain.
+
 ## @jgengine/shell/environment/daylightCycle
 
 - `DEFAULT_DAY_AMBIENT_INTENSITY` (const): const DEFAULT_DAY_AMBIENT_INTENSITY: 0.6 — ⚠ undocumented

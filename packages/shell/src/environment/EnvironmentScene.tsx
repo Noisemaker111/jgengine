@@ -23,6 +23,7 @@ import {
 } from "@jgengine/core/world/terrain";
 
 import { GroundPad } from "./GroundPad";
+import { RoadRibbons } from "./RoadRibbons";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
 import { CarvedTerrain } from "../terrain/CarvedTerrain";
@@ -225,6 +226,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const structures = feature.structures ?? [];
   const pads = feature.pads ?? [];
   const islands = feature.islands ?? [];
+  const roads = feature.roads ?? [];
   return (
     <>
       {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} /> : null}
@@ -233,6 +235,9 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
       ))}
       {water.map((ocean, index) => (
         <Water key={`ocean-${index}`} ocean={ocean} />
+      ))}
+      {roads.map((entry, index) => (
+        <RoadRibbons key={`road-${index}`} road={entry} field={field} />
       ))}
       {structures.map((entry, index) => (
         <Structures key={`structures-${index}`} structures={entry} field={field} />

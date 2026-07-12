@@ -30,6 +30,12 @@ describe("vice-isle world", () => {
     expect(styles.every((s) => s !== "generic")).toBe(true);
   });
 
+  test("nine street ribbons ride the road primitive", () => {
+    expect(summary.counts.roads).toBe(9);
+    expect(summary.roads.every((r) => r.width === 9)).toBe(true);
+    expect(summary.roads.reduce((sum, r) => sum + r.length, 0)).toBeGreaterThan(4000);
+  });
+
   test("districts resolve and roads cover the city", () => {
     expect(districtAt(40, -60)?.id).toBe("downtown");
     expect(districtAt(130, 190)?.id).toBe("port_carmine");

@@ -1043,6 +1043,7 @@
 - `EnvironmentCounts` (interface): interface EnvironmentCounts — ⚠ undocumented
 - `EnvironmentSummary` (interface): interface EnvironmentSummary — ⚠ undocumented
 - `IslandSummary` (interface): interface IslandSummary extends TerrainSummary — ⚠ undocumented
+- `RoadSummary` (interface): interface RoadSummary — One road descriptor's resolved footprint: vertex count, width, and total centerline length.
 - `StructureSummary` (interface): interface StructureSummary — ⚠ undocumented
 - `TerrainHeightStats` (interface): interface TerrainHeightStats — ⚠ undocumented
 - `TerrainSummary` (interface): interface TerrainSummary — ⚠ undocumented
@@ -1072,6 +1073,8 @@
 - `PlotsWorldConfig` (interface): interface PlotsWorldConfig extends WorldGridConfig — ⚠ undocumented
 - `RainEnvironmentConfig` (interface): interface RainEnvironmentConfig — ⚠ undocumented
 - `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color"> > — ⚠ undocumented
+- `RoadEnvironmentConfig` (interface): interface RoadEnvironmentConfig — Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline.
+- `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
 - `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig — ⚠ undocumented
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented
 - `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig — ⚠ undocumented
@@ -1105,6 +1108,7 @@
 - `padFlattenMasks` (function): function padFlattenMasks(pads: readonly PadEnvironmentDescriptor[]): readonly TerrainFlattenMask[] — Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it. Elevated pads (absolute `elevation`) float free and carve nothing.
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — ⚠ undocumented
 - `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — ⚠ undocumented
+- `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
 - `sky` (function): function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor — ⚠ undocumented
 - `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — ⚠ undocumented
 - `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — ⚠ undocumented
@@ -1263,6 +1267,18 @@
 - `Rgb` (type): type Rgb = readonly [number, number, number] — ⚠ undocumented
 - `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
 - `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
+
+## @jgengine/core/world/roads
+
+- `RoadPoint` (type): type RoadPoint = readonly [number, number] — A road centerline vertex in world XZ.
+- `RoadRibbon` (interface): interface RoadRibbon — Renderer-ready triangle ribbon: flat position triples plus triangle indices.
+- `RoadRibbonOptions` (interface): interface RoadRibbonOptions — Options for {@link buildRoadRibbon}.
+- `RoadSample` (interface): interface RoadSample — Result of {@link nearestOnPath}: closest point on the centerline plus distance and tangent.
+- `buildRoadRibbon` (function): function buildRoadRibbon(path: readonly RoadPoint[], width: number, sampleHeight: (x: number, z: number) => number, options: RoadRibbonOptions = {}): RoadRibbon — Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided, each vertex is offset half a `width` along the local perpendicular, and every vertex sits at `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result into a mesh, and tests can assert on it directly.
+- `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes.
+- `isOnRoad` (function): function isOnRoad(path: readonly RoadPoint[], width: number, x: number, z: number): boolean — True when the query point lies within half the road `width` of the centerline.
+- `nearestOnPath` (function): function nearestOnPath(path: readonly RoadPoint[], x: number, z: number): RoadSample | null — Closest-point query against a road centerline — the seam traffic AI, spawn placement, and "am I on the road" checks share. Returns null for a degenerate path.
+- `pathLength` (function): function pathLength(path: readonly RoadPoint[]): number — Total arc length of a centerline in world units.
 
 ## @jgengine/core/world/scatter
 
