@@ -65,6 +65,8 @@ import {
   type VoxelPlayerBody,
 } from "@jgengine/core/movement/voxelController";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
+import { attachWorldSync } from "./worldSync";
 import { applyHorizontalImpulses, type MotionIntentBatch } from "@jgengine/core/runtime/motionIntents";
 import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
@@ -1193,6 +1195,7 @@ function FrameDriver({
   }, [playable]);
   const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
   const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
+  const serverAuthoritative = useMemo(() => isServerAuthoritative(playable.game.multiplayer), [playable]);
   const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
   const hasTerrain = useMemo(() => hasEnvironmentTerrain(playable.game.world), [playable]);
 
@@ -1221,7 +1224,7 @@ function FrameDriver({
     const player = ctx.scene.entity.get(playerId);
     const forwardX = Math.sin(yawRef.current);
     const forwardZ = Math.cos(yawRef.current);
-    if (player !== null && drivesPose) {
+    if (player !== null && drivesPose && !serverAuthoritative) {
       endPhase = devtools.profile.begin("pose");
       const keys = createEmptyMovementKeys();
       keys.w = tracker.isDown("moveForward");
@@ -1336,7 +1339,7 @@ function FrameDriver({
       endPhase();
     }
 
-    if (autoPickupRadius !== null) {
+    if (autoPickupRadius !== null && !serverAuthoritative) {
       endPhase = devtools.profile.begin("pickup");
       const self = ctx.scene.entity.get(playerId);
       if (self !== null) {
@@ -1346,9 +1349,11 @@ function FrameDriver({
       endPhase();
     }
 
-    devtools.profile.measure("onTick", () => {
-      playable.loop.onTick(ctx, gameDt);
-    });
+    if (!serverAuthoritative) {
+      devtools.profile.measure("onTick", () => {
+        playable.loop.onTick(ctx, gameDt);
+      });
+    }
 
     endPhase = devtools.profile.begin("actions");
     if (tracker.wasPressed("tabTarget")) {
@@ -1791,6 +1796,10 @@ export function GamePlayerShell({
         }
         serverIdRef.current = joined.serverId;
 
+        if (isServerAuthoritative(playable.game.multiplayer) && multiplayer.backend.feeds !== undefined) {
+          cleanups.push(attachWorldSync(multiplayer.backend.feeds, joined.serverId, ctx));
+        }
+
         cleanups.push(
           multiplayer.backend.presenceSync.subscribe(joined.serverId, (rows) => {
             setRemotePlayers(rows.filter((row) => row.userId !== multiplayer.userId));
@@ -1873,7 +1882,7 @@ export function GamePlayerShell({
         void multiplayer.backend.transport.leaveServer({ serverId }).catch(() => undefined);
       }
     };
-  }, [ctx, multiplayer]);
+  }, [ctx, multiplayer, playable]);
 
   useEffect(() => {
     wrapperRef.current?.focus();

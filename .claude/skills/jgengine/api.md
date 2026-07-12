@@ -31,7 +31,8 @@
 - `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, mirroring `ctx.input`.
 - `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; } — ⚠ undocumented
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
-- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology } | { kind: "ws"; topology?: MultiplayerTopology; url?: string } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string } | { kind: "p2p"; topology?: MultiplayerTopology; room?: string } | { kind: "lan"; t… — ⚠ undocumented
+- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
+- `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative. `"client"` (default) keeps the historical model — each client runs its own `onTick` and syncs only presence/feeds/chat. `"server"` opts into host-authoritative replication: the host runs the loop, and the shell mirrors the server's world into the local `ctx` instead of simulating locally.
 - `MultiplayerSession` (type): type MultiplayerSession = { gameId: string; userId: string; backend: LiveGameBackend; feedActions: string[]; } — ⚠ undocumented
 - `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
 - `PresencePoseRow` (type): type PresencePoseRow = { userId: string; position: { x: number; y: number; z: number }; rotationY: number; rotationPitch: number; lastSeenAt: number; } — ⚠ undocumented
@@ -77,7 +78,7 @@
 - `applyWorldSnapshot` (function): function applyWorldSnapshot(modules: readonly SnapshotModule[], snapshot: WorldSnapshot): void — Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
 - `clearDirtyFlags` (function): function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
 - `composeWorldSnapshot` (function): function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot — Serialize every registered module into one keyed baseline — the host→client full-world send.
-- `convex` (function): function convex(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig — ⚠ undocumented
+- `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `createConnectedPlayers` (function): function createConnectedPlayers(): ConnectedPlayers — Build an empty {@link ConnectedPlayers} registry — the host joins/leaves players; the game loop reads them.
 - `createEmptyPlayerRow` (function): function createEmptyPlayerRow(userId: string): RuntimePlayerRow — ⚠ undocumented
 - `createEmptyServerRow` (function): function createEmptyServerRow(): RuntimeServerRow — ⚠ undocumented
@@ -90,24 +91,25 @@
 - `createWorldMirror` (function): function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirror — Build a {@link WorldMirror} that replicates a host's baseline + diff stream onto `ctx` via `ctx.hydrate`.
 - `createWorldReplicator` (function): function createWorldReplicator(takeSnapshot: () => WorldSnapshot): { commit: () => number; diff: (sinceRevision: number) => WorldDiff; revision: () => number; } — Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)` then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per commit; dirty-hint acceleration is a later optimization behind the same seam.
 - `diffSnapshots` (function): function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff — Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
-- `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string }): MultiplayerAdapterConfig — ⚠ undocumented
+- `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `isSaveEnabled` (function): function isSaveEnabled(config: SaveConfig): config is Exclude<SaveConfig, "none"> — ⚠ undocumented
-- `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; }): MultiplayerAdapterConfig — ⚠ undocumented
+- `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
+- `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
 - `markPlayerDirty` (function): function markPlayerDirty(snapshot: GameRuntimeSnapshot, userId: string): GameRuntimeSnapshot — ⚠ undocumented
 - `markServerDirty` (function): function markServerDirty(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
 - `memoryWorldStore` (function): function memoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore — In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host.
 - `multiplayerAdapterKind` (function): function multiplayerAdapterKind(multiplayer: unknown): string | null — ⚠ undocumented
 - `offline` (function): function offline(): MultiplayerAdapterConfig — ⚠ undocumented
-- `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string }): MultiplayerAdapterConfig — ⚠ undocumented
+- `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `parseSaveAutoMs` (function): function parseSaveAutoMs(auto: string): number — ⚠ undocumented
 - `pullWorld` (function): function pullWorld(session: HostedWorldSession, mirror: WorldMirror): void — Pull one replication step from a co-located {@link HostedWorldSession} into a {@link WorldMirror} — the no-network local path (host and client in one process). A fresh mirror pulls a baseline; thereafter it pulls a diff since its own revision. The same `sync(sinceRevision)` call is what a networked transport marshals.
 - `runCommand` (function): function runCommand<TInput>(snapshot: GameRuntimeSnapshot, commands: Record<string, CommandDef<TInput>>, commandName: string, input: TInput, actorUserId: string): RunCommandResult — ⚠ undocumented
 - `saveScopeIncludesChunks` (function): function saveScopeIncludesChunks(scope: SaveScope): boolean — ⚠ undocumented
 - `saveScopeIncludesPlayer` (function): function saveScopeIncludesPlayer(scope: SaveScope): boolean — ⚠ undocumented
 - `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
-- `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig — ⚠ undocumented
+- `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `splitProfilePlayer` (function): function splitProfilePlayer(player: RuntimePlayerRow): { persistent: RuntimePlayerRow; session: Record<string, unknown>; } — ⚠ undocumented
-- `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig — ⚠ undocumented
+- `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 
 ## @jgengine/core/cartridge/runtime
 
@@ -281,19 +283,21 @@
 
 ## @jgengine/core/runtime/adapter
 
-- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology } | { kind: "ws"; topology?: MultiplayerTopology; url?: string } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string } | { kind: "p2p"; topology?: MultiplayerTopology; room?: string } | { kind: "lan"; t… — ⚠ undocumented
+- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
+- `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative. `"client"` (default) keeps the historical model — each client runs its own `onTick` and syncs only presence/feeds/chat. `"server"` opts into host-authoritative replication: the host runs the loop, and the shell mirrors the server's world into the local `ctx` instead of simulating locally.
 - `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
 - `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
-- `convex` (function): function convex(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig — ⚠ undocumented
-- `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string }): MultiplayerAdapterConfig — ⚠ undocumented
-- `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; }): MultiplayerAdapterConfig — ⚠ undocumented
+- `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
+- `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
 - `multiplayerAdapterKind` (function): function multiplayerAdapterKind(multiplayer: unknown): string | null — ⚠ undocumented
 - `offline` (function): function offline(): MultiplayerAdapterConfig — ⚠ undocumented
-- `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string }): MultiplayerAdapterConfig — ⚠ undocumented
+- `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
-- `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig — ⚠ undocumented
-- `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig — ⚠ undocumented
+- `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 
 ## @jgengine/core/runtime/cameraDirector
 
