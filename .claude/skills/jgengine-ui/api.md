@@ -991,7 +991,7 @@
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
@@ -1012,7 +1012,7 @@
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
@@ -1028,7 +1028,7 @@
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
