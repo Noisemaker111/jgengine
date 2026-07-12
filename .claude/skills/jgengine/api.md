@@ -414,6 +414,7 @@
 - `MotionIntentBatch` (interface): interface MotionIntentBatch — ⚠ undocumented
 - `MotionIntents` (interface): interface MotionIntents — Seam for game code to reach the motion the shell's FrameDriver otherwise owns privately (#162.4). Game code calls `impulse`, `pushHorizontal`, `setVerticalVelocity`, and/or `setY` from `onTick` or commands; the shell calls `takePending()` once per frame, before integrating gravity, to drain what accumulated. `setY` wins over physics for that frame; impulses add to the velocity the driver is about to integrate; a later `setVerticalVelocity` replaces that velocity outright. Horizontal pushes compose with the walk controller (#282.4): they add to its horizontal velocity and decay naturally as it re-blends toward input — knockback, dashes, explosion shoves without raw `setPose` offsets.
 - `applyHorizontalImpulses` (function): function applyHorizontalImpulses(velocityX: number, velocityZ: number, batch: MotionIntentBatch | null): readonly [number, number] — Fold a batch's horizontal pushes into a controller's velocity pair — shared by the walk and voxel drivers.
+- `applyMotionImpulses` (function): function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number — Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}.
 - `createMotionIntents` (function): function createMotionIntents(): MotionIntents — ⚠ undocumented
 
 ## @jgengine/core/runtime/persistenceScope

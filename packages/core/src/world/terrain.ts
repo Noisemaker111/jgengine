@@ -231,6 +231,11 @@ export function groundFieldFor(world?: WorldFeature): TerrainField {
   return flatField();
 }
 
+/** Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers. */
+export function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean {
+  return world?.kind === "environment" && (world.terrain !== undefined || (world.islands?.length ?? 0) > 0);
+}
+
 /** Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane. */
 export const ISLAND_VOID_HEIGHT = -256;
 

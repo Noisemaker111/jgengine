@@ -388,8 +388,10 @@ export interface GameContext {
     movement: PoseState;
     possession: Possession;
     cosmetics: Cosmetics;
-    /** Vertical-motion seam into the shell-owned FrameDriver (#162.4); see `MotionIntents`. */
+    /** Motion seam into the movement integrator (#162.4); routes to the command actor's queue (or the local player outside a command), so a command's impulse lands on whoever ran it. See `MotionIntents`. */
     motion: MotionIntents;
+    /** A specific player's motion queue — how the host-side per-player movement integrator drains each connected player's impulses. */
+    motionFor(userId: string): MotionIntents;
   };
   item: {
     use: GameContextItemUse;
@@ -1189,7 +1191,15 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
   const input = createInputSnapshot();
-  const motion = createMotionIntents();
+  const motionByUser = new Map<string, MotionIntents>();
+  function motionFor(userId: string): MotionIntents {
+    let queue = motionByUser.get(userId);
+    if (queue === undefined) {
+      queue = createMotionIntents();
+      motionByUser.set(userId, queue);
+    }
+    return queue;
+  }
 
   const snapshotModules: SnapshotModule[] = [
     { key: "entities", snapshot: () => entities.snapshot(), hydrate: (data) => entities.hydrate(data as SceneEntity[]) },
@@ -1348,7 +1358,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       movement: pose,
       possession,
       cosmetics,
-      motion,
+      get motion() {
+        return motionFor(actingUserId ?? player.userId);
+      },
+      motionFor,
     },
     item: {
       use: {
