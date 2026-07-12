@@ -292,7 +292,7 @@ const GAME_DETAILS: Record<string, GameDetails> = {
   "vice-isle": {
     tagline: "Steal it, drive it, shake the heat.",
     description:
-      "An open-world crime sandbox on a cel-shaded resort island. Boost cars off Ocean Drive, run missions for Marco under the downtown neon, sweep the Carmine gang off the docks, and outdrive an escalating five-star police response — then spend the take at Ammu-Isle.",
+      "An open-world crime sandbox on a cel-shaded resort island. Boost cars off Ocean Drive, run an eight-mission chain for Marco — dock shootouts, a street race, a car heist, and the Palm Heights kingpin — while pursuit cruisers ram you at three stars, day rolls into neon night, and every dollar feeds Ammu-Isle or the Sunset Motors showroom.",
     genre: "Open-world action",
     category: "Action & Arcade",
     controls: "WASD move/drive · Mouse fire · E enter/talk · F exit car · G grenade · Q medkit · 1-4 weapons",

@@ -5,11 +5,17 @@ export function WantedStars() {
   const wanted = useGameStore((ctx) => (ctx.game.store.get(WANTED_STORE_KEY) as WantedSnapshot | undefined) ?? null);
   const stars = wanted?.stars ?? 0;
   return (
-    <div className="flex gap-1 rounded-sm border-2 border-black bg-[#12141a]/85 px-2 py-1 shadow-[3px_3px_0_#000]">
+    <div
+      className={`flex gap-1.5 -skew-x-6 border-2 border-black px-3 py-1 shadow-[4px_4px_0_#000] ${
+        stars >= 3 ? "bg-[#5a1414]/90" : "bg-[#12141a]/85"
+      }`}
+    >
       {Array.from({ length: MAX_STARS }, (_, i) => (
         <span
           key={i}
-          className={`text-xl leading-none ${i < stars ? "text-[#ffb020] drop-shadow-[0_0_4px_#ffb020]" : "text-[#3a3d46]"} ${i < stars ? "animate-pulse" : ""}`}
+          className={`text-2xl leading-none drop-shadow-[1px_1px_0_#000] ${
+            i < stars ? "text-[#ffb020]" : "text-[#3a3d46]"
+          } ${i < stars && stars >= 3 ? "animate-pulse" : ""}`}
         >
           ★
         </span>

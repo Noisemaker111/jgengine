@@ -1,3 +1,4 @@
+import { cameraShake } from "@jgengine/shell/camera";
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { handroll } from "../handroll";
@@ -33,6 +34,7 @@ const fireGun: ItemUseHandler<GameContext> = {
       ctx.scene.entity.stats.delta(input.from, statId, -def.ammoPerShot);
     }
 
+    cameraShake(def.ammo === "shell" ? 0.28 : 0.1);
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
     const shotId = ctx.scene.entity.fireProjectile({
       from: input.from,
@@ -75,6 +77,7 @@ const throwGrenade: ItemUseHandler<GameContext> = {
       const settled = ctx.scene.entity.settleProjectile(shotId);
       if (settled.status !== "settled") return;
       ctx.scene.entity.effect({ from: input.from, at: settled.at, radius: explosion.radius, effect: "damage", via: { amount: damage } });
+      cameraShake(0.55);
       handroll.addHeat(ctx, 70);
     });
     return { state: ctx };

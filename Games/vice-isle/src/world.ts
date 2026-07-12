@@ -3,6 +3,7 @@ import {
   building,
   environment,
   grass,
+  ocean,
   sky,
   terrain,
   type EnvironmentWorldFeature,
@@ -10,11 +11,18 @@ import {
 } from "@jgengine/core/world/features";
 import { DISTRICTS, roadPoints, SHORE_X, WORLD_D, WORLD_W } from "./game/world/districts";
 
-const roadRegions: TerrainMaterialRegion[] = roadPoints(14).map((point) => ({
+const roadRegions: TerrainMaterialRegion[] = roadPoints(10).map((point) => ({
   center: point,
-  radius: 7,
-  falloff: 2,
-  colors: { low: "#3a3d46", high: "#4a4e59" },
+  radius: 5.5,
+  falloff: 1,
+  colors: { low: "#4d5160", high: "#5a5f6e" },
+}));
+
+const shoreRegions: TerrainMaterialRegion[] = Array.from({ length: 20 }, (_, i) => ({
+  center: [SHORE_X + 8, -300 + i * 30] as const,
+  radius: 26,
+  falloff: 14,
+  colors: { low: "#efd9a0", high: "#e8c886" },
 }));
 
 const cityFlatten = DISTRICTS.map((d) => ({
@@ -34,19 +42,24 @@ function coastalHeight(x: number, z: number): number {
 export const world: EnvironmentWorldFeature = environment({
   terrain: terrain({
     bounds: { w: WORLD_W, d: WORLD_D },
+    segments: 300,
     seed: "vice-isle-06",
     heightField: coastalHeight,
     waterLevel: -0.6,
-    colors: { low: "#e8c37a", high: "#8fae56", waterline: "#28b5c9" },
-    materialRegions: roadRegions,
+    colors: { low: "#a8c065", high: "#6f9a4a", waterline: "#2fc6da" },
+    materialRegions: [...shoreRegions, ...roadRegions],
     flatten: cityFlatten,
   }),
-  sky: sky({
-    preset: "day",
-    horizonColor: "#ffd9a0",
-    zenithColor: "#3fa9e8",
-    fog: { color: "#ffe3b3", near: 180, far: 620 },
-  }),
+  sky: sky({ preset: "day", timeOfDay: true }),
+  water: [
+    ocean({
+      bounds: { w: 400, d: 700 },
+      position: [-440, 0],
+      level: -0.4,
+      color: "#1d9fc4",
+      waveHeight: 0.8,
+    }),
+  ],
   vegetation: [
     grass({
       area: { w: 160, d: 160, position: [70, -240] },

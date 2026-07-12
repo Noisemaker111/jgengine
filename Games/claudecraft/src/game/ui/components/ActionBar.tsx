@@ -43,35 +43,34 @@ function Slot({
       type="button"
       onClick={() => commands.run(`castSlot${index + 1}`, {})}
       title={`${ability.name}${ability.cost > 0 ? ` · ${ability.cost}` : ""}${ability.cooldown > 0 ? ` · ${ability.cooldown}s cd` : ""}`}
-      className={`relative flex h-12 w-12 items-center justify-center rounded-md border bg-stone-950/85 transition ${
+      className={`wcc-slot relative flex h-[46px] w-[46px] items-center justify-center overflow-hidden transition ${
         locked
-          ? "border-stone-800 text-stone-700"
+          ? "text-stone-700 grayscale"
           : noResource
-            ? "border-red-900 text-red-400/70"
-            : "border-stone-600 text-amber-100 hover:border-amber-400"
-      } ${justCast ? "ring-2 ring-amber-300" : ""}`}
+            ? "text-[#ff8f85] saturate-50"
+            : "text-[#f0ebd8]"
+      }`}
+      style={justCast ? { boxShadow: "0 0 10px #ffd100aa, inset 0 0 6px #ffd10066" } : undefined}
     >
       <GameIcon name={ability.icon as GameIconName} size={26} />
       {cooldownFraction > 0 && !locked && (
         <span
-          className="absolute inset-0 rounded-md bg-stone-950/80"
-          style={{ clipPath: `inset(${(1 - cooldownFraction) * 100}% 0 0 0)` }}
+          className="absolute inset-x-0 bottom-0 bg-black/75"
+          style={{ height: `${cooldownFraction * 100}%` }}
         />
       )}
       {cooldownFraction > 0 && !locked && snapshot !== null && (
-        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-amber-200">
+        <span className="wcc-title absolute inset-0 flex items-center justify-center text-[17px] font-bold">
           {Math.ceil(snapshot.cooldownRemainingMs / 1000)}
         </span>
       )}
-      {onGcd && !locked && cooldownFraction === 0 && (
-        <span className="absolute inset-0 rounded-md bg-stone-950/50" />
-      )}
+      {onGcd && !locked && cooldownFraction === 0 && <span className="absolute inset-0 bg-black/40" />}
       {locked && (
-        <span className="absolute inset-x-0 bottom-0 rounded-b-md bg-stone-950/90 text-center text-[9px] font-semibold text-stone-500">
+        <span className="absolute inset-x-0 bottom-0 bg-black/85 text-center text-[9px] font-semibold text-stone-500">
           Lv {ability.levelReq}
         </span>
       )}
-      <kbd className="absolute right-0.5 top-0.5 rounded bg-stone-800/90 px-1 text-[9px] font-bold text-amber-300">
+      <kbd className="absolute right-0.5 top-0.5 text-[9px] font-bold text-[#c8a838] [text-shadow:1px_1px_1px_#000]">
         {index + 1}
       </kbd>
     </button>
@@ -92,16 +91,16 @@ export function ActionBar() {
   if (classId === undefined) return null;
   const cls = classById(classId);
   return (
-    <div className="flex items-end gap-1.5">
+    <div className="wcc-panel flex items-end gap-1 p-1.5">
       {Array.from({ length: 9 }, (_, index) => {
         const ability = cls.abilities.find((entry) => entry.id === bar[index]);
         if (ability === undefined) {
           return (
             <span
               key={`empty-${index}`}
-              className="relative flex h-12 w-12 items-center justify-center rounded-md border border-dashed border-stone-800 bg-stone-950/50"
+              className="wcc-slot relative flex h-[46px] w-[46px] items-center justify-center opacity-50"
             >
-              <kbd className="absolute right-0.5 top-0.5 rounded bg-stone-800/70 px-1 text-[9px] font-bold text-stone-500">
+              <kbd className="absolute right-0.5 top-0.5 text-[9px] font-bold text-stone-600">
                 {index + 1}
               </kbd>
             </span>
@@ -131,10 +130,16 @@ export function CastBar() {
   if (cast === undefined) return null;
   const fraction = Math.max(0, Math.min(1, (now - cast.startedAt) / (cast.endAt - cast.startedAt)));
   return (
-    <div className="w-56">
-      <div className="relative h-4 overflow-hidden rounded-sm bg-stone-950/85 ring-1 ring-amber-900/60">
-        <div className="h-full bg-amber-500/90" style={{ width: `${fraction * 100}%` }} />
-        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
+    <div className="w-[300px]">
+      <div className="wcc-bar-rail relative h-6 overflow-hidden rounded-[4px]">
+        <div
+          className="h-full"
+          style={{
+            width: `${fraction * 100}%`,
+            background: "linear-gradient(#ffe48a, #c9941a 60%, #9a6f12)",
+          }}
+        />
+        <span className="wcc-title absolute inset-0 flex items-center justify-center text-[12px]">
           {cast.name}
         </span>
       </div>
@@ -151,19 +156,30 @@ export function XpBar() {
   if (classId === undefined || xp === null) return null;
   const capped = (level?.current ?? 1) >= 20;
   const fraction = capped ? 1 : xp.max > 0 ? xp.current / xp.max : 0;
-  const isRested = rested > 0;
+  const restedFraction = capped || xp.max <= 0 ? 0 : Math.min(1, (xp.current + rested) / xp.max);
   return (
-    <div className="pointer-events-none w-[520px] max-w-[80vw]">
-      <div className="relative h-2 overflow-hidden rounded-full bg-stone-950/80 ring-1 ring-black/70">
+    <div className="pointer-events-none w-[612px] max-w-[86vw]">
+      <div className="wcc-bar-rail relative h-[10px] overflow-hidden">
+        {restedFraction > fraction && (
+          <div
+            className="absolute inset-y-0 left-0 bg-[#4a9eff66]"
+            style={{ width: `${restedFraction * 100}%` }}
+          />
+        )}
         <div
-          className={`h-full ${isRested ? "bg-sky-400/90" : "bg-violet-500/90"}`}
-          style={{ width: `${fraction * 100}%` }}
+          className="absolute inset-y-0 left-0"
+          style={{
+            width: `${fraction * 100}%`,
+            background: capped
+              ? "linear-gradient(#ffe48a, #c9941a 60%, #9a6f12)"
+              : "linear-gradient(#b85eff, #6a1bb0)",
+          }}
         />
       </div>
-      <p className="mt-0.5 text-center text-[10px] font-medium text-violet-200/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
+      <p className="mt-0.5 text-center text-[10px] font-medium text-[#b974ff] [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
         {capped
           ? "Level 20 — the road ends at the Hollow Crypt"
-          : `${xp.current} / ${xp.max} XP${isRested ? ` · rested ${Math.round(rested)}` : ""}`}
+          : `${xp.current} / ${xp.max} XP${rested > 0 ? ` · rested ${Math.round(rested)}` : ""}`}
       </p>
     </div>
   );

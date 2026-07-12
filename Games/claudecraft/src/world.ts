@@ -21,7 +21,7 @@ export const world: EnvironmentWorldFeature = environment({
     bounds: { w: WORLD_WIDTH, d: WORLD_DEPTH },
     seed: "woc-20061",
     material: "grass",
-    colors: { low: "#4d6b3c", high: "#9aa3b0", waterline: "#3d5c4f" },
+    colors: { low: "#548545", high: "#7a8878", waterline: "#c2b283" },
     height: 16,
     frequency: 0.012,
     octaves: 4,
@@ -45,11 +45,11 @@ export const world: EnvironmentWorldFeature = environment({
   }),
   sky: sky({
     preset: "day",
-    horizonColor: "#d9e4ec",
+    horizonColor: "#a6c6e0",
     zenithColor: "#5f83b8",
     sunIntensity: 1.35,
     ambientIntensity: 1.1,
-    fog: { color: "#c3d2dc", near: 180, far: 620 },
+    fog: { color: "#a6c6e0", near: 110, far: 390 },
   }),
   weather: [
     rain({
@@ -79,7 +79,7 @@ export const world: EnvironmentWorldFeature = environment({
         position: [0, (vale.zMin + vale.zMax) / 2],
       },
       density: 0.3,
-      colors: ["#6b8f4e", "#7da35b", "#5c7d43"],
+      colors: ["#9bb48d", "#a7b886", "#768c44"],
       seed: "vale-grass",
     }),
   ],

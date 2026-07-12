@@ -14,16 +14,22 @@ export function DeathOverlay() {
   const dead = useGameStore((ctx) => ctx.game.store.get(`dead:${userId}`) === true);
   if (!dead) return null;
   return (
-    <div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-red-950/40 backdrop-grayscale">
+    <div
+      className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center backdrop-grayscale"
+      style={{ background: "radial-gradient(ellipse at center, #40000077 0%, #300000bb 100%)" }}
+    >
       <div className="text-center">
-        <h2 className="font-serif text-5xl font-bold text-red-200 [text-shadow:0_2px_12px_rgba(0,0,0,0.8)]">
-          You have died
+        <h2
+          className="text-[44px] font-bold text-[#dddddd]"
+          style={{ fontFamily: "var(--wcc-font-display)", textShadow: "2px 2px 8px #000" }}
+        >
+          You Have Died
         </h2>
         <p className="mt-2 text-sm text-red-100/80">Your spirit lingers. Return to the nearest graveyard.</p>
         <button
           type="button"
           onClick={() => commands.run("player.release", {})}
-          className="mt-6 rounded-md border border-red-400 bg-red-900/70 px-6 py-2.5 font-semibold text-red-50 hover:bg-red-800"
+          className="wcc-btn mt-6 px-6 py-2.5 font-semibold"
         >
           Release Spirit
         </button>
@@ -80,7 +86,7 @@ export function ZoneLabel() {
   const label =
     dungeon?.name ?? (inCrypt(position[0], position[2]) ? "The Hollow Crypt" : zoneAt(position[2]).name);
   return (
-    <p className="text-center font-serif text-lg font-semibold tracking-wide text-amber-200/90 [text-shadow:0_1px_4px_rgba(0,0,0,0.9)]">
+    <p className="wcc-title text-center text-lg font-semibold tracking-wide">
       {label}
     </p>
   );

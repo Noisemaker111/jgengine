@@ -5,18 +5,29 @@ import { ITEM_LABELS } from "../content";
 import { prompts as buildPrompts } from "../prompts";
 import { CityMinimap } from "./components/CityMinimap";
 import { DialoguePanel } from "./components/DialoguePanel";
+import { GaragePanel } from "./components/GaragePanel";
+import { RaceHud } from "./components/RaceHud";
 import { Hotbar } from "./components/Hotbar";
 import { MissionTracker } from "./components/MissionTracker";
 import { ShopPanel } from "./components/ShopPanel";
 import { Speedo } from "./components/Speedo";
 import { StatusPanel } from "./components/StatusPanel";
+import { TitleScreen, useGameStarted } from "./components/TitleScreen";
 import { WantedStars } from "./components/WantedStars";
 
 function PromptHint() {
   const prompts = useGameStore((ctx) => buildPrompts(ctx));
   const active = useActivePrompt(prompts);
   if (active === null) return null;
-  const label = active.id.startsWith("enter:") ? "Enter vehicle" : active.id.startsWith("shop:") ? "Browse Ammu-Isle" : "Talk";
+  const label = active.id.startsWith("enter:")
+    ? "Enter vehicle"
+    : active.id.startsWith("shop:")
+      ? "Browse Ammu-Isle"
+      : active.id.startsWith("garage:")
+        ? "Browse Sunset Motors"
+        : active.id.startsWith("race:")
+          ? "Start the Ocean Loop"
+          : "Talk";
   return (
     <div className="-skew-x-6 border-2 border-black bg-[#ffb020] px-3 py-1 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000]">
       [E] {label}
@@ -26,10 +37,21 @@ function PromptHint() {
 
 export function GameUI() {
   const layout = useHudLayout({ storageKey: "vice-isle" });
+  const started = useGameStarted();
+  if (!started) {
+    return (
+      <div className="pointer-events-none absolute inset-0 z-20 font-sans">
+        <TitleScreen />
+      </div>
+    );
+  }
   return (
     <HudCanvas layout={layout} className="z-20 font-sans">
       <HudPanel id="wanted" anchor="top" compact="keep" interactive={false}>
-        <WantedStars />
+        <div className="flex flex-col items-center gap-2">
+          <WantedStars />
+          <RaceHud />
+        </div>
       </HudPanel>
       <HudPanel id="settings" anchor="top-right" order={-1} compact="keep">
         <SettingsTrigger />
@@ -56,6 +78,7 @@ export function GameUI() {
         <div className="flex flex-col items-center gap-3">
           <DialoguePanel />
           <ShopPanel />
+          <GaragePanel />
         </div>
       </HudPanel>
       <HudPanel id="credit" anchor="left" compact="hide" interactive={false}>

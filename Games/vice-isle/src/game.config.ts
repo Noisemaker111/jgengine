@@ -7,6 +7,7 @@ import { keybinds } from "./game/keybinds";
 import { OBJECTS } from "./game/objects/catalog";
 import { prompts } from "./game/prompts";
 import { renderEntity } from "./game/world/renderEntity";
+import { renderObject } from "./game/world/renderObject";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { physics, world } from "./world";
@@ -26,7 +27,14 @@ export const game = defineGame({
   GameUI,
   prompts,
   renderEntity,
+  renderObject,
   objectStyles: Object.fromEntries(OBJECTS.map((o) => [o.id, { color: o.color }])),
+  lighting: {
+    ambient: { color: "#ffe6c4", intensity: 0.85 },
+    hemisphere: { skyColor: "#ffe9c0", groundColor: "#7a8560", intensity: 0.75 },
+    directional: [{ color: "#fff2d8", intensity: 1.1, position: [120, 220, 40], castShadow: false }],
+  },
+  shadows: false,
   worldHealthBars: { roles: ["enemy", "hostile"] },
   worldItem: {
     pickupRadius: 2.4,
@@ -46,5 +54,6 @@ export const game = defineGame({
     frustum: { far: 900 },
   },
   backdrop: { background: "#ffe3b3" },
+  time: { dayLength: 720, start: 320 },
   orientation: "landscape",
 });

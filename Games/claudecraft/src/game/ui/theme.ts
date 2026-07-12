@@ -1,11 +1,12 @@
-export const PANEL =
-  "rounded-lg border border-amber-900/60 bg-stone-950/92 shadow-[0_8px_32px_rgba(0,0,0,0.6)] text-amber-50";
+export const PANEL = "wcc-panel";
 
 export const PANEL_TITLE =
-  "flex items-center justify-between gap-4 border-b border-amber-900/50 px-4 py-2.5 font-semibold tracking-wide text-amber-200";
+  "wcc-title flex items-center justify-between gap-4 border-b border-[#463a1c] px-4 py-2.5 text-[15px]";
 
 export const CLOSE_BUTTON =
-  "rounded px-2 py-0.5 text-amber-300/80 hover:bg-amber-900/40 hover:text-amber-100";
+  "rounded-[3px] border border-[#463a1c] bg-[#1a1410] px-2 py-0.5 text-[#c9b27a] hover:text-[#ffd100]";
+
+export const BUTTON = "wcc-btn px-3 py-1 text-xs font-semibold";
 
 export const QUALITY_COLORS: Record<string, string> = {
   poor: "text-stone-400",
@@ -16,10 +17,12 @@ export const QUALITY_COLORS: Record<string, string> = {
 };
 
 export const RESOURCE_COLORS: Record<string, string> = {
-  mana: "bg-sky-500",
-  rage: "bg-red-600",
-  energy: "bg-yellow-400",
+  mana: "bg-[#2b7bd4]",
+  rage: "bg-[#c0392b]",
+  energy: "bg-[#e4c531]",
 };
+
+export const HP_COLOR = "bg-[#1eb838]";
 
 export function copperLabel(copper: number): string {
   const gold = Math.floor(copper / 10000);
