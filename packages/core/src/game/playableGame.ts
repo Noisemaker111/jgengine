@@ -474,6 +474,20 @@ export interface ModelMaterialOverride {
   emissiveIntensity?: number;
 }
 
+/** Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame. */
+export interface ModelAttachment {
+  /** Bone or node name in the rig to parent to (e.g. `"handslot.r"`). */
+  slot: string;
+  /** The attached model — a catalog asset id or an inline `ModelConfig`. */
+  model: string | ModelConfig;
+  /** Local position offset at the bone, in the attached model's own space. */
+  position?: [number, number, number];
+  /** Local Euler rotation (radians) applied at the bone. */
+  rotation?: [number, number, number];
+  /** Uniform scale of the attached model at the bone. Default 1. */
+  scale?: number;
+}
+
 export interface ModelConfig {
   url: string;
   scale?: number;
@@ -488,6 +502,8 @@ export interface ModelConfig {
   material?: ModelMaterialOverride;
   /** Plays a GLTF animation clip on the model when the source has any (skinned or not); omit to render the rig's bind pose. */
   animation?: ModelAnimationConfig;
+  /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
+  attachments?: readonly ModelAttachment[];
 }
 
 export interface ObjectStyle {
