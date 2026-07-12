@@ -193,5 +193,13 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
       tickRanged(ctx, def, entity.id, entity.position, playerPos, dt, nowMs);
       tickFlyntNova(ctx, def, entity.id, playerPos, nowMs);
     }
+
+    const moved = ctx.scene.entity.get(entity.id);
+    if (moved !== null) {
+      const ground = ctx.world.groundHeightAt(moved.position[0], moved.position[2]);
+      if (Math.abs(moved.position[1] - ground) > 0.05) {
+        ctx.scene.entity.update(entity.id, { position: [moved.position[0], ground, moved.position[2]] });
+      }
+    }
   }
 }
