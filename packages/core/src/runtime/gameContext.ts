@@ -308,6 +308,12 @@ export interface GameContextRace {
   state(id: string, config?: RaceStateConfig): RaceState;
 }
 
+/** Reachable audio seam on `ctx.game`: `play` and `resume` route through the `audio.play`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. */
+export interface GameAudio {
+  play(sound: string, at?: readonly [number, number, number]): void;
+  resume(): void;
+}
+
 export interface GameContext {
   scene: {
     object: SceneObjectContext;
@@ -320,6 +326,7 @@ export interface GameContext {
   game: {
     commands: GameContextCommands;
     events: GameEvents;
+    audio: GameAudio;
     feed: GameContextFeed;
     loot: GameContextLoot;
     trade: TradeSystem;
@@ -1195,6 +1202,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         },
       },
       events,
+      audio: {
+        play: (sound, at) => events.emit("audio.play", at === undefined ? { sound } : { sound, at }),
+        resume: () => events.emit("audio.resume", {}),
+      },
       feed: {
         bind: (action) => feed.bind(action, events),
         push(action, entry) {

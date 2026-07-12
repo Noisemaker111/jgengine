@@ -291,6 +291,7 @@
 ## @jgengine/core/game/events
 
 - `AudioPlayEvent` (interface): interface AudioPlayEvent — ⚠ undocumented
+- `AudioResumeEvent` (type): type AudioResumeEvent = Record<string, never> — Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload.
 - `ChatMessageEvent` (interface): interface ChatMessageEvent — ⚠ undocumented
 - `CombatHitReactionEvent` (interface): interface CombatHitReactionEvent — ⚠ undocumented
 - `CombatTelegraphCancelledEvent` (interface): interface CombatTelegraphCancelledEvent — ⚠ undocumented

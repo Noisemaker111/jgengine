@@ -208,6 +208,9 @@ const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
   "interact",
 ]);
 
+/** No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own. */
+const EMPTY_RESERVED: ReadonlySet<string> = new Set();
+
 const SHELL_MOVEMENT_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] as const;
 
 function shellDrivesPlayerPose(input: PlayableGame["game"]["input"]): boolean {
@@ -292,8 +295,15 @@ export function shouldFireBoundAction(
 }
 
 /** Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`). */
-export function dispatchBoundAction(ctx: GameContext, action: string, yaw: number, pitch: number, aim: Aim): void {
-  const command = resolveActionCommand(action, (name) => ctx.game.commands.has(name), RESERVED_INPUT_ACTIONS);
+export function dispatchBoundAction(
+  ctx: GameContext,
+  action: string,
+  yaw: number,
+  pitch: number,
+  aim: Aim,
+  reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS,
+): void {
+  const command = resolveActionCommand(action, (name) => ctx.game.commands.has(name), reserved);
   if (command !== null) ctx.game.commands.run(command, { yaw, pitch, aim });
 }
 
@@ -1334,7 +1344,7 @@ function HudOnlyDriver({
         for (const action of inputActions) {
           if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
           repeatFiredAtRef.current.set(action, nowMs);
-          dispatchBoundAction(ctx, action, 0, 0, { yaw: 0, pitch: 0 });
+          dispatchBoundAction(ctx, action, 0, 0, { yaw: 0, pitch: 0 }, EMPTY_RESERVED);
         }
         tracker.endFrame();
         endPhase();
@@ -1527,7 +1537,10 @@ export function GamePlayerShell({
   const touchScheme = useMemo(
     () =>
       deriveTouchScheme(playable.game.input, {
-        reserved: RESERVED_INPUT_ACTIONS,
+        reserved:
+          resolveRigKind(playable.camera) === "none" || playable.presentation === "hud"
+            ? EMPTY_RESERVED
+            : RESERVED_INPUT_ACTIONS,
         firstPerson: resolveRigKind(playable.camera) === "first",
         config: playable.touch,
       }),
@@ -1545,9 +1558,14 @@ export function GamePlayerShell({
   useEffect(() => () => audioEngine.dispose(), [audioEngine]);
   useEffect(() => {
     if (ctx === null) return;
-    return ctx.game.events.on("audio.play", ({ sound, at }) => {
+    const offPlay = ctx.game.events.on("audio.play", ({ sound, at }) => {
       audioEngine.playOneShot(sound, at === undefined ? undefined : { x: at[0], y: at[1], z: at[2] });
     });
+    const offResume = ctx.game.events.on("audio.resume", () => audioEngine.resume());
+    return () => {
+      offPlay();
+      offResume();
+    };
   }, [ctx, audioEngine]);
   const userId = multiplayer?.userId ?? DEV_USER_ID;
   const reportRuntimeError = (error: unknown, phase: string, componentStack?: string) => {
@@ -1729,6 +1747,7 @@ export function GamePlayerShell({
           f2HeldRef.current = false;
           tracker.reset();
         }}
+        onPointerDown={() => audioEngine.resume()}
         onPointerMove={trackPointerAxis}
         onPointerLeave={deactivatePointerAxis}
         onPointerCancel={deactivatePointerAxis}
@@ -1740,6 +1759,16 @@ export function GamePlayerShell({
           pointerAxisRef={pointerAxisRef}
           onRuntimeError={reportRuntimeError}
         />
+        {coarsePointer && touchScheme !== null && touchScheme.gestures !== null && playControlsActive(ctx) ? (
+          <TouchPlaySurface
+            scheme={touchScheme}
+            sink={touchSink}
+            yawRef={yawRef}
+            pitchRef={pitchRef}
+            maxPitch={0}
+            onPrimaryTap={() => undefined}
+          />
+        ) : null}
         <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
           <GameProvider context={ctx}>
             <HudViewportProvider

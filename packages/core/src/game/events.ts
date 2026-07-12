@@ -178,6 +178,9 @@ export interface AudioPlayEvent {
   at?: readonly [number, number, number];
 }
 
+/** Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload. */
+export type AudioResumeEvent = Record<string, never>;
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
@@ -204,6 +207,7 @@ export interface GameEventMap {
   "possession.swapped": PossessionSwappedEvent;
   "form.changed": FormChangedEvent;
   "audio.play": AudioPlayEvent;
+  "audio.resume": AudioResumeEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

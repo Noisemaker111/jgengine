@@ -285,6 +285,11 @@ Requirements:
 
 Do not use one generic translucent controller across all games.
 
+**`presentation: "hud"` games get 3D parity.** A pure-HUD game (no camera rig) now reaches the same input/audio seams as a 3D game:
+- **Touch gestures** — the shell mounts a headless `TouchPlaySurface` in the hud branch too, so `touch.gestures` (swipe/tap) reach actions without the game hand-wiring pointer events on its own canvas. The visible dock stays game-authored per the rule above.
+- **No phantom reservations** — camera action names (`turnLeft`/`turnRight`/`interact`/…) are reserved *only* when a camera rig is active, so a hud game may bind them directly instead of renaming to `steer*`.
+- **Audio actually plays** — audio resumes on the first pointer gesture in hud games (not just 3D), and `playOneShot` self-resumes the suspended context. Trigger sound from anywhere holding `ctx` via `ctx.game.audio.play(soundId, at?)` / `ctx.game.audio.resume()` — the reachable seam over the shell's audio engine.
+
 ## 10. Progressive instruction
 
 Do not leave large control grids visible during gameplay.

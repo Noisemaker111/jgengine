@@ -127,6 +127,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       listenerPosition = position;
     },
     playOneShot(soundId, position) {
+      void context.resume().catch(() => undefined);
       playInternal(soundId, position, false);
     },
     playLoop(soundId, position) {
