@@ -11,12 +11,10 @@ export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-export function LogoMark({ className = "h-8 w-8 rounded-xl text-sm" }: { className?: string }) {
+export function LogoMark({ className = "h-8 w-8 rounded-xl" }: { className?: string }) {
   return (
-    <span
-      className={`grid shrink-0 place-items-center bg-gradient-to-br from-emerald-400 via-emerald-300 to-cyan-400 font-mono font-bold text-ink-deep shadow-[0_0_24px_-4px_rgba(52,211,153,0.55)] ${className}`}
-    >
-      jg
+    <span className={`grid shrink-0 place-items-center bg-white/[0.05] ring-1 ring-white/[0.06] ${className}`}>
+      <img src="/logo-mark.png" alt="" aria-hidden className="h-[82%] w-[82%]" />
     </span>
   );
 }
@@ -147,7 +145,7 @@ export function Footer() {
         <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
           <div className="max-w-xs">
             <div className="flex items-center gap-2.5 font-semibold text-slate-100">
-              <LogoMark className="h-7 w-7 rounded-lg text-xs" />
+              <LogoMark className="h-7 w-7 rounded-lg" />
               JGengine
             </div>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">

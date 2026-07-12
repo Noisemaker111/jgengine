@@ -71,3 +71,7 @@ ship worker re-delegated instead of executing → returned 'launched a worker an
 2026-07-12T01:47:51.521Z — sonnet — Claude
 
 gate worker ran per-package 'bun run check-types' without 'bun scripts/ensure-ready.ts' first → false RED with TS2307 on @jgengine/github (exports point at unbuilt dist/); wasted a round diagnosing a non-bug
+
+2026-07-12T02:54:23.153Z — sonnet — Claude
+
+ship worker returned after 21s claiming a background handoff without committing/pushing → had to re-spawn a synchronous worker
