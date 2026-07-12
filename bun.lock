@@ -80,6 +80,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/borderlands2": {
+      "name": "@games/borderlands2",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/brick-breaker": {
       "name": "@games/brick-breaker",
       "version": "0.1.0",
@@ -1994,6 +2017,8 @@
     "@games/blackjack": ["@games/blackjack@workspace:Games/blackjack"],
 
     "@games/block-stacker": ["@games/block-stacker@workspace:Games/block-stacker"],
+
+    "@games/borderlands2": ["@games/borderlands2@workspace:Games/borderlands2"],
 
     "@games/brick-breaker": ["@games/brick-breaker@workspace:Games/brick-breaker"],
 

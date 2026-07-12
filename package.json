@@ -32,6 +32,7 @@
     "games:annals": "bun run --cwd Games/annals dev",
     "games:blackjack": "bun run --cwd Games/blackjack dev",
     "games:block-stacker": "bun run --cwd Games/block-stacker dev",
+    "games:borderlands2": "bun run --cwd Games/borderlands2 dev",
     "games:brick-breaker": "bun run --cwd Games/brick-breaker dev",
     "games:bubble-burst": "bun run --cwd Games/bubble-burst dev",
     "games:canyon-chase": "bun run --cwd Games/canyon-chase dev",

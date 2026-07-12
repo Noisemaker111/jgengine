@@ -83,6 +83,24 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "WASD · mouse fire · E grab/shop · G frag · Q medkit · 1-3 weapons",
     hue: "#f87171",
   },
+  borderlands2: {
+    title: "Borderlands 2 Demake",
+    tagline: "Bazillions of procedurally generated guns, one dusty demake of Pandora.",
+    description:
+      "A fan demake homage to Gearbox's Borderlands 2. Take missions from Claptrap in Fyrestone, clear the bandit camp, thin the skag gully, and bring down Captain Flynt. Every gun is procedurally rolled — manufacturer, rarity, and element included — shields recharge, elements burn, shock, and corrode, and going down starts Fight For Your Life: get a kill for a Second Wind or pay the New-U station its cut.",
+    genre: "First-person looter-shooter",
+    category: "Action & Arcade",
+    controls: "WASD · mouse fire · R reload · E interact · G grenade · Q heal · K skills · 1-4 weapons",
+    hue: "#ff9a00",
+    credit: {
+      name: "Gearbox Software",
+      label: "Original game",
+      handle: "GearboxOfficial",
+      href: "https://www.borderlands.com",
+      avatar: "https://unavatar.io/x/GearboxOfficial",
+      source: { name: "Borderlands 2", href: "https://www.borderlands.com" },
+    },
+  },
   "block-stacker": {
     tagline: "Falling blocks, rising stakes.",
     description:

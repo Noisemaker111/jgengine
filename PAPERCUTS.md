@@ -75,3 +75,11 @@ gate worker ran per-package 'bun run check-types' without 'bun scripts/ensure-re
 2026-07-12T02:54:23.153Z — sonnet — Claude
 
 ship worker returned after 21s claiming a background handoff without committing/pushing → had to re-spawn a synchronous worker
+
+2026-07-12T02:55:51.618Z — fable-5 — Claude
+
+multi-round verify loop → stop-hook demanded a commit+push after every single fix round, forcing commit churn workers mid-verification
+
+2026-07-12T02:55:51.647Z — fable-5 — Claude
+
+briefed a Sonnet worker to run gates → it spawned its own background child and returned 'launched in background' instead of results; had to re-run with explicit foreground instruction
