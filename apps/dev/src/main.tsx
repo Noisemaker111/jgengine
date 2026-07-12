@@ -288,11 +288,7 @@ function EditorModeApp({ gameId, playable }: { gameId: string; playable: Playabl
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!import.meta.env.DEV) {
-      setError("Editor mode is only available in the dev runner (not production /play builds).");
-      return;
-    }
-    // Dynamic import is behind import.meta.env.DEV so production build:site never ships the editor.
+    // Lazy chunk: the editor ships with production /play too, but only downloads when summoned.
     void Promise.all([
       import("@jgengine/editor"),
       editorLayerRegistry[gameId]?.() ?? Promise.resolve(undefined),
@@ -328,7 +324,7 @@ function DevApp({ gameId }: { gameId: string }) {
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [editorSummoned, setEditorSummoned] = useState(false);
   useEffect(() => {
-    if (!import.meta.env.DEV || MODE !== "play") return;
+    if (MODE !== "play") return;
     let f2Held = false;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code === "F2") {

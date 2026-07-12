@@ -17,7 +17,7 @@ bun run dev:runner
 # http://localhost:<port>/?game=canyon-chase&mode=editor
 ```
 
-Editor is **dev-only** (`import.meta.env.DEV`). Production `/play` never loads it.
+The editor ships everywhere as a **lazy chunk** — production `/play` (and the public `/games/<id>` pages) download it only when summoned with F2+E or `?mode=editor`. All edits are client-side and session-local; Export JSON is the only way anything leaves the page.
 
 ## Modes: edit · walk · play
 
@@ -25,7 +25,7 @@ Editor is **dev-only** (`import.meta.env.DEV`). Production `/play` never loads i
 - **walk** — frozen sim, the game's own camera/movement; roam the world with markers drawn in place.
 - **play** — the real game (loop, HUD, camera) with a floating exit chip.
 
-Toolbar buttons, `F2+E` (edit ↔ play, same chord family as F2 devtools), chip/F2+E returns to edit, or RPC: `{ method: "set_mode", mode: "play" }`. The editor session (document, undo, selection) survives mode switches. **F2+E also summons the editor from any plain `mode=play` game in the dev runner** — including games embedded on the website's `/games/<id>` pages in dev, no URL change needed.
+Toolbar buttons, `F2+E` (edit ↔ play, same chord family as F2 devtools), chip/F2+E returns to edit, or RPC: `{ method: "set_mode", mode: "play" }`. The editor session (document, undo, selection) survives mode switches. **F2+E summons the editor from any running `mode=play` game** — dev runner or the website's `/games/<id>` pages, dev and production alike, no URL change needed.
 
 ## Perf: the editor measures itself
 
