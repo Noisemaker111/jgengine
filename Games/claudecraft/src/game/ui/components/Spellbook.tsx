@@ -52,9 +52,14 @@ export function SpellbookPanel() {
               key={ability.id}
               type="button"
               disabled={!known}
+              draggable={known}
+              onDragStart={(event) => {
+                event.dataTransfer.setData("text/plain", `ability:${ability.id}`);
+                event.dataTransfer.effectAllowed = "copy";
+              }}
               onClick={() => commands.run("spellbook.assign", { abilityId: ability.id, slot: pickedSlot })}
               className={`flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-left ${
-                known ? "hover:bg-stone-800/70" : "opacity-45"
+                known ? "cursor-grab hover:bg-stone-800/70" : "opacity-45"
               }`}
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-stone-700 bg-stone-900 text-amber-200">

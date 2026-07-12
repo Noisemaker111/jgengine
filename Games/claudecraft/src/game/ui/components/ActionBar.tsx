@@ -41,6 +41,19 @@ function Slot({
   return (
     <button
       type="button"
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.setData("text/plain", `ability:${ability.id}`);
+        event.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        const data = event.dataTransfer.getData("text/plain");
+        if (data.startsWith("ability:")) {
+          commands.run("spellbook.assign", { abilityId: data.slice(8), slot: index });
+        }
+      }}
       onClick={() => commands.run(`castSlot${index + 1}`, {})}
       title={`${ability.name}${ability.cost > 0 ? ` · ${ability.cost}` : ""}${ability.cooldown > 0 ? ` · ${ability.cooldown}s cd` : ""}`}
       className={`wcc-slot relative flex h-[46px] w-[46px] items-center justify-center overflow-hidden transition ${
@@ -79,6 +92,7 @@ function Slot({
 
 export function ActionBar() {
   useHudTicker();
+  const { commands } = useGame();
   const { userId } = usePlayer();
   const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
   const gameNow = useGameStore((ctx) => ctx.time.now());
@@ -98,6 +112,14 @@ export function ActionBar() {
           return (
             <span
               key={`empty-${index}`}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault();
+                const data = event.dataTransfer.getData("text/plain");
+                if (data.startsWith("ability:")) {
+                  commands.run("spellbook.assign", { abilityId: data.slice(8), slot: index });
+                }
+              }}
               className="wcc-slot relative flex h-[46px] w-[46px] items-center justify-center opacity-50"
             >
               <kbd className="absolute right-0.5 top-0.5 text-[9px] font-bold text-stone-600">
