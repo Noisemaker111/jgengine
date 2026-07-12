@@ -12,11 +12,23 @@ import { PickupPrompt } from "./components/PickupPrompt";
 import { ScorePanel } from "./components/ScorePanel";
 import { RunScreens } from "./components/Screens";
 import { IntermissionBanner, WaveStatus } from "./components/WaveStatus";
+import { useRun } from "./components/useRun";
 
 export function GameUI() {
   const layout = useHudLayout({ storageKey: "loot-shooter" });
+  const run = useRun();
+  const inPlay = run.status === "wave" || run.status === "intermission";
   return (
     <HudCanvas layout={layout} className="z-20 font-sans text-slate-100">
+      {inPlay ? <PlayHud /> : null}
+      <RunScreens />
+    </HudCanvas>
+  );
+}
+
+function PlayHud() {
+  return (
+    <>
       <HudPanel id="wave-status" anchor="top" compact="keep" interactive={false}>
         <WaveStatus />
       </HudPanel>
@@ -84,8 +96,6 @@ export function GameUI() {
           Level up
         </span>
       </LevelUpFlash>
-
-      <RunScreens />
-    </HudCanvas>
+    </>
   );
 }
