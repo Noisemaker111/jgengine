@@ -10,6 +10,7 @@ import {
   chooseSpec,
   classOf,
   clearAuras,
+  heroEntityId,
   heroOf,
   selectClass,
   storeKeys,
