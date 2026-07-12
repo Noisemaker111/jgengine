@@ -456,6 +456,13 @@ export interface ModelAnimationConfig {
   time?: number;
   /** Speed-driven idle/walk/run clip switching, crossfaded by the shell from the entity's live movement; overrides `clip` while set. */
   states?: ModelAnimationStates;
+  /**
+   * One-shot clips keyed by event name, each played once over the locomotion state then released back to it.
+   * Reserved keys `hit` and `death` auto-fire on this entity's `combat.hitReaction` / `entity.died`; any other
+   * key fires when the game emits `entity.animation` (`ctx.game.playEntityAnimation(instanceId, event)`). A
+   * `string[]` picks a random variant per trigger. `death` clamps on its final frame instead of returning.
+   */
+  oneShots?: Record<string, string | readonly string[]>;
 }
 
 /** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */

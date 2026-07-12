@@ -16,6 +16,12 @@ export interface EntityDiedEvent {
   serverId?: string;
 }
 
+/** Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. */
+export interface EntityAnimationEvent {
+  instanceId: string;
+  event: string;
+}
+
 export interface LootGrantedEvent {
   userId: string;
   drops: { item?: string; currency?: string; count: number }[];
@@ -208,6 +214,7 @@ export interface GameEventMap {
   "form.changed": FormChangedEvent;
   "audio.play": AudioPlayEvent;
   "audio.resume": AudioResumeEvent;
+  "entity.animation": EntityAnimationEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

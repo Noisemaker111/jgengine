@@ -99,6 +99,7 @@ import {
   type BindingOverrides,
 } from "@jgengine/core/input/bindingOverrides";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
+import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -507,6 +508,9 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
     smoothedSpeed: number;
   } | null>(null);
   const states = animation?.states;
+  const oneShots = animation?.oneShots;
+  const oneShotPlayRef = useRef<((event: string) => void) | null>(null);
+  const activeOneShotRef = useRef<{ action: THREE.AnimationAction; isDeath: boolean } | null>(null);
 
   useEffect(() => {
     if (animation === undefined || gltf.animations.length === 0) {
@@ -533,7 +537,53 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
       mixerRef.current = mixer;
       stateActionsRef.current = { actions, active: "idle", lastPos: null, smoothedSpeed: 0 };
       animationPausedRef.current = false;
+
+      let onOneShotFinished: ((event: { action: THREE.AnimationAction }) => void) | null = null;
+      if (oneShots !== undefined) {
+        const clipNames = new Set<string>();
+        for (const spec of Object.values(oneShots)) {
+          if (typeof spec === "string") clipNames.add(spec);
+          else for (const name of spec) clipNames.add(name);
+        }
+        const oneShotActions = new Map<string, THREE.AnimationAction>();
+        for (const name of clipNames) {
+          const found = THREE.AnimationClip.findByName(gltf.animations, name);
+          if (found === null) continue;
+          const oneShotAction = mixer.clipAction(found);
+          oneShotAction.setLoop(THREE.LoopOnce, 1);
+          oneShotAction.enabled = true;
+          oneShotActions.set(name, oneShotAction);
+        }
+        onOneShotFinished = ({ action }) => {
+          const active = activeOneShotRef.current;
+          if (active === null || action !== active.action || active.isDeath) return;
+          const machine = stateActionsRef.current;
+          const back = machine?.actions[machine.active];
+          action.fadeOut(0.15);
+          if (back !== undefined) back.reset().fadeIn(0.15).play();
+          activeOneShotRef.current = null;
+        };
+        mixer.addEventListener("finished", onOneShotFinished);
+        oneShotPlayRef.current = (event: string) => {
+          const active = activeOneShotRef.current;
+          if (active !== null && active.isDeath) return;
+          const clipName = resolveOneShotClip(oneShots, event, Math.random());
+          if (clipName === null) return;
+          const oneShotAction = oneShotActions.get(clipName);
+          if (oneShotAction === undefined) return;
+          const machine = stateActionsRef.current;
+          machine?.actions[machine.active]?.fadeOut(0.1);
+          if (active !== null && active.action !== oneShotAction) active.action.stop();
+          oneShotAction.clampWhenFinished = event === "death";
+          oneShotAction.reset().fadeIn(0.1).play();
+          activeOneShotRef.current = { action: oneShotAction, isDeath: event === "death" };
+        };
+      }
+
       return () => {
+        if (onOneShotFinished !== null) mixer.removeEventListener("finished", onOneShotFinished);
+        oneShotPlayRef.current = null;
+        activeOneShotRef.current = null;
         mixer.stopAllAction();
         mixerRef.current = null;
         stateActionsRef.current = null;
@@ -566,7 +616,27 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
     animation?.paused,
     animation?.time,
     states,
+    oneShots,
   ]);
+
+  useEffect(() => {
+    if (instanceId === undefined || oneShots === undefined) return;
+    const fire = (event: string) => oneShotPlayRef.current?.(event);
+    const offAnimation = ctx.game.events.on("entity.animation", (event) => {
+      if (event.instanceId === instanceId) fire(event.event);
+    });
+    const offHit = ctx.game.events.on("combat.hitReaction", (event) => {
+      if (event.instanceId === instanceId) fire("hit");
+    });
+    const offDied = ctx.game.events.on("entity.died", (event) => {
+      if (event.instanceId === instanceId) fire("death");
+    });
+    return () => {
+      offAnimation();
+      offHit();
+      offDied();
+    };
+  }, [ctx, instanceId, oneShots]);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
@@ -602,12 +672,14 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
               ? "run"
               : "walk";
         if (next !== stateMachine.active) {
-          const fade = states.fadeSec ?? 0.2;
-          const from = stateMachine.actions[stateMachine.active];
-          const to = stateMachine.actions[next];
-          if (from !== undefined && to !== undefined) {
-            to.reset().fadeIn(fade).play();
-            from.fadeOut(fade);
+          if (activeOneShotRef.current === null) {
+            const fade = states.fadeSec ?? 0.2;
+            const from = stateMachine.actions[stateMachine.active];
+            const to = stateMachine.actions[next];
+            if (from !== undefined && to !== undefined) {
+              to.reset().fadeIn(fade).play();
+              from.fadeOut(fade);
+            }
           }
           stateMachine.active = next;
         }
