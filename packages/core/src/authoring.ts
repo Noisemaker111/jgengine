@@ -2,7 +2,7 @@
  * Task-first JGEngine authoring surface.
  *
  * Game code should begin here. Domain and runtime deep imports remain available for
- * advanced composition, but this module intentionally exposes the common authored
+ * advanced composition, but this module intentionally exposes common authored
  * concepts without requiring callers to understand the repository layout.
  */
 
@@ -46,8 +46,7 @@ export {
   selectSpawnPoint,
   type SpawnPointSelectionOptions,
   type SpawnPointDistanceBias,
-} from "./ai/spawnDirector";
+} from "./ai/spawnPoint";
 
 export { contextVerb } from "./interaction/contextMenu";
-
 export { type ActionCodesMap } from "./input/actionBindings";

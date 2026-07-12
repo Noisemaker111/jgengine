@@ -21,10 +21,10 @@ Deep imports remain available for advanced systems, adapters, and engine develop
 export const game = defineGame({
   name: "Forest Arena",
   multiplayer: null,
-  world: environment([
-    terrain({ bounds: { w: 100, d: 100 }, height: 8 }),
-    building({ count: 8 }),
-  ]),
+  world: environment({
+    terrain: terrain({ bounds: { w: 100, d: 100 }, height: 8 }),
+    structures: building({ count: 8 }),
+  }),
 });
 ```
 
@@ -48,7 +48,7 @@ The call describes game intent. Weighted selection and random-roll mechanics rem
 
 ## When to use deep imports
 
-Use domain imports when the authoring module does not expose the required primitive or when implementing reusable engine infrastructure. Examples:
+Use domain imports when the authoring module does not expose the required primitive or when implementing reusable engine infrastructure:
 
 ```ts
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
