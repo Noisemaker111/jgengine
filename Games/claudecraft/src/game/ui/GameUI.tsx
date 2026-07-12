@@ -35,9 +35,6 @@ export function GameUI() {
   return (
     <>
       <HudCanvas layout={layout}>
-        <HudPanel id="player" anchor="bottom" inset={{ x: -200, y: 118 }}>
-          <PlayerFrame />
-        </HudPanel>
         <HudPanel id="target" anchor="top-left" inset={{ x: 12, y: 12 }}>
           <TargetFrame />
         </HudPanel>
@@ -64,14 +61,13 @@ export function GameUI() {
         <HudPanel id="feed" anchor="bottom-left" inset={{ x: 16, y: 60 }}>
           <KillLootToasts />
         </HudPanel>
-        <HudPanel id="cast" anchor="bottom" inset={{ x: 0, y: 240 }}>
-          <CastBar />
-        </HudPanel>
-        <HudPanel id="actionbar" anchor="bottom" inset={{ x: 0, y: 42 }}>
-          <ActionBar />
-        </HudPanel>
-        <HudPanel id="xp" anchor="bottom" inset={{ x: 0, y: 14 }}>
-          <XpBar />
+        <HudPanel id="bottom-bar" anchor="bottom" inset={{ x: 0, y: 10 }}>
+          <div className="flex flex-col items-center gap-1.5">
+            <CastBar />
+            <PlayerFrame />
+            <XpBar />
+            <ActionBar />
+          </div>
         </HudPanel>
         <HudPanel id="credit" anchor="bottom-right" inset={{ x: 14, y: 10 }}>
           <CreditLine />
