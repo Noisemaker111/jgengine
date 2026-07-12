@@ -3,7 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { rememberHome } from "../entities/enemies/ai";
 import { enemyById, levelHealthMult } from "../entities/enemies/catalog";
-import { placeLevel } from "./level";
+import { placeLevel, SIDE_POIS } from "./level";
 import {
   BLACK_MARKET_POS,
   CLAPTRAP_POS,
@@ -75,6 +75,22 @@ function planClusters(ctx: GameContext): void {
         level: zone.level,
       });
     }
+  }
+  const poiRng = seededRng("bl2-poi-spawns");
+  for (const poi of SIDE_POIS) {
+    const anchor = ZONES.find((zone) => zone.id === poi.anchorZoneId);
+    poi.spawns.forEach((entry, entryIndex) => {
+      for (let index = 0; index < entry.count; index += 1) {
+        const angle = poiRng() * Math.PI * 2;
+        const distance = 3 + poiRng() * poi.radius * 0.7;
+        clusterMembers.push({
+          id: `spawn_${poi.id}_${entryIndex}_${index}`,
+          catalogId: entry.catalogId,
+          position: grounded(ctx, poi.x + Math.cos(angle) * distance, poi.z + Math.sin(angle) * distance),
+          level: anchor?.level ?? 1,
+        });
+      }
+    });
   }
 }
 
