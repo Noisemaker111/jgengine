@@ -220,6 +220,8 @@ Prefer small headless or lightly styled primitives over a giant universal design
 
 A primitive should expose game-oriented choices such as shape, material, urgency, placement, hierarchy, entry motion, icon treatment, compactness, and diegetic-versus-overlay presentation.
 
+**Minimap** is already shipped, not hand-rolled: `Minimap` / `WorldMap` / `Compass` from `@jgengine/react/map` render a framed SVG minimap over a `MarkerSet` (`createMarkerSet`, `@jgengine/core/world/markers`) and optional `FogField`, projecting via `@jgengine/core/world/minimap` (`projectToMinimap`, `headingToBearing`, edge-clamp). A game feeds flat props (`markers`, `center: [x,z]`, `worldRadius`, `size`, `facingYaw`, `rotate`) and repopulates the marker set each HUD tick from live entities — no custom canvas painter. **Swing timer**: `swingTimerState(player, target, prevPeriod, prevTimer)` (`@jgengine/core/ui/swingTimer`) is the pure, parameter-in/next-state-out core for a melee swing bar (recovers period on the reset edge; hidden unless auto-attacking a live non-object target) — thread the returned `nextPeriod`/`nextTimer` back via refs, render a thin `Meter`.
+
 Do not create a primitive whose only value is wrapping a `div` with border radius.
 
 ## 7. Complete interaction states
