@@ -67,6 +67,7 @@ import {
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import { attachWorldSync } from "./worldSync";
+import { localCommandSink, resolveCommandSink, type CommandSink } from "./commandSink";
 import { applyHorizontalImpulses, type MotionIntentBatch } from "@jgengine/core/runtime/motionIntents";
 import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
@@ -318,9 +319,10 @@ export function dispatchBoundAction(
   pitch: number,
   aim: Aim,
   reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS,
+  sink: CommandSink = localCommandSink(ctx),
 ): void {
   const command = resolveActionCommand(action, (name) => ctx.game.commands.has(name), reserved);
-  if (command !== null) ctx.game.commands.run(command, { yaw, pitch, aim });
+  if (command !== null) sink.run(command, { yaw, pitch, aim });
 }
 
 const OBSTACLE_GATHER_RADIUS = 3;
@@ -1227,6 +1229,17 @@ function FrameDriver({
   const ground = useMemo(() => groundFieldFor(playable.game.world), [playable]);
   const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
   const serverAuthoritative = useMemo(() => isServerAuthoritative(playable.game.multiplayer), [playable]);
+  const commandSink = useMemo<CommandSink>(
+    () => ({
+      run: (name, input) =>
+        resolveCommandSink(ctx, {
+          serverAuthoritative,
+          backend: multiplayer?.backend ?? null,
+          serverId: serverIdRef.current,
+        }).run(name, input),
+    }),
+    [ctx, multiplayer, serverAuthoritative, serverIdRef],
+  );
   const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
   const hasTerrain = useMemo(() => hasEnvironmentTerrain(playable.game.world), [playable]);
 
@@ -1402,7 +1415,7 @@ function FrameDriver({
     if (pingCommand !== undefined && tracker.wasPressed("ping")) {
       const hit = pointerService.worldHit();
       if (hit !== null && ctx.game.commands.has(pingCommand)) {
-        ctx.game.commands.run(pingCommand, {
+        commandSink.run(pingCommand, {
           point: hit.point,
           entity: hit.entity,
           object: hit.object,
@@ -1434,14 +1447,14 @@ function FrameDriver({
         if (prompts !== undefined && focus !== null) {
           const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
           if (active !== null && active.prompt.invoke !== null) {
-            ctx.game.commands.run(active.prompt.invoke.name, active.prompt.invoke.input);
+            commandSink.run(active.prompt.invoke.name, active.prompt.invoke.input);
           }
         }
         continue;
       }
       if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
       repeatFiredAtRef.current.set(action, nowMs);
-      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAim);
+      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAim, RESERVED_INPUT_ACTIONS, commandSink);
     }
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {
