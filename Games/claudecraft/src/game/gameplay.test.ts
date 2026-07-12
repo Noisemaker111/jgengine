@@ -13,7 +13,7 @@ import { FISHING_CHECK, RECIPES, RECIPE_SKILL } from "./crafting/systems";
 import { DUNGEONS, dungeonById } from "./dungeons/catalog";
 import { mobById } from "./entities/enemies/catalog";
 import { NPCS } from "./entities/npcs/catalog";
-import { applySheet, grantTalentPoint, heroOf, resetHero } from "./session/hero";
+import { applySheet, grantTalentPoint, heroOf, heroSheet, resetHero } from "./session/hero";
 import { SPECS } from "./talents/catalog";
 import { GATHER_NODES } from "./professions/catalog";
 import { gatherNodeCount } from "./professions/gathering";
@@ -499,5 +499,31 @@ describe("claudecraft gameplay (headless)", () => {
     const base = classById("warrior").abilities.find((ability) => ability.id === "slam");
     expect(base).toBeDefined();
     expect(slam?.resourceCost ?? 999).toBeLessThan(base?.cost ?? 0);
+  });
+
+  test("equipping a full tier set grants its haste and proc on the hero sheet", () => {
+    resetHero(USER);
+    ctx.game.store.delete(`class:${USER}`);
+    ctx.game.store.delete(`spec:${USER}`);
+    ctx.game.store.delete(`talents:${USER}`);
+    ctx.game.store.delete(`bar:${USER}`);
+    ctx.game.store.delete(`equip:${USER}`);
+    ctx.game.commands.run("class.select", { classId: "warrior" });
+    const bare = heroSheet(ctx, USER);
+    expect(bare).not.toBeNull();
+    expect(bare!.hastePct).toBe(0);
+    const equips = ctx.game.store.get(`equip:${USER}`) as Record<string, string>;
+    ctx.game.store.set(`equip:${USER}`, {
+      ...equips,
+      helmet: "crownforged_dreadhelm",
+      shoulder: "crownforged_warspaulders",
+      waist: "crownforged_girdle",
+      gloves: "crownforged_gauntlets",
+    });
+    const geared = heroSheet(ctx, USER);
+    expect(geared).not.toBeNull();
+    expect(geared!.hastePct).toBeCloseTo(0.15);
+    expect(geared!.setProcs.map((proc) => proc.id)).toContain("set_bonesplinter");
+    expect(geared!.attackPower).toBeGreaterThan(bare!.attackPower);
   });
 });

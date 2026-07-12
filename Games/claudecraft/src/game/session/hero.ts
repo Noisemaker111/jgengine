@@ -6,6 +6,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { classById } from "../classes/catalog";
 import { classEntityId } from "../model";
 import { itemDefById } from "../items/catalog";
+import { aggregateSetBonuses, equippedSetCounts, type SetProc } from "../items/sets";
 import { resolveAbilityMods } from "../talents/abilityMods";
 import { SPECS, TALENT_POINTS_RULE } from "../talents/catalog";
 import { CLASS_ENTITY_ID, type HeroStatId } from "../model";
@@ -32,6 +33,8 @@ export interface AuraState {
   expiresAt: number;
   buffStat?: string;
   buffAmount?: number;
+  stacks?: number;
+  maxStacks?: number;
 }
 
 export interface CastState {
@@ -241,7 +244,9 @@ export interface HeroSheet {
   spellPower: number;
   armor: number;
   critPct: number;
+  hastePct: number;
   weapon: { min: number; max: number; speed: number };
+  setProcs: readonly SetProc[];
 }
 
 const FIST = { min: 1, max: 3, speed: 2 };
@@ -272,11 +277,22 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
       attributes[stat as AttributeId] += amount;
     }
   }
+  const setBonus = aggregateSetBonuses(equippedSetCounts(equips));
+  attributes.str += setBonus.str;
+  attributes.agi += setBonus.agi;
+  attributes.sta += setBonus.sta;
+  attributes.int += setBonus.int;
+  attributes.spi += setBonus.spi;
+  bonusAp += setBonus.ap;
+  bonusSp += setBonus.sp;
+  let bonusHaste = setBonus.hastePct;
   for (const aura of aurasOf(userId)) {
     if (aura.kind !== "buff" || aura.buffStat === undefined || aura.buffAmount === undefined) continue;
     if (aura.buffStat === "armor") armor += aura.buffAmount;
     else if (aura.buffStat === "attackPower") bonusAp += aura.buffAmount;
     else if (aura.buffStat === "spellPower") bonusSp += aura.buffAmount;
+    else if (aura.buffStat === "haste") bonusHaste += aura.buffAmount;
+    else if (aura.buffStat === "next_cast_free") continue;
     else attributes[aura.buffStat as AttributeId] += aura.buffAmount;
   }
   const talentStats = heroes.get(userId)?.talents?.resolved().stats;
@@ -304,8 +320,13 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
     ),
     spellPower: talented("spellPower", attributes.int * SPELL_POWER_PER_INT + bonusSp),
     armor: talented("armor", armor + attributes.agi * 2) + (external?.armorAdd ?? 0),
-    critPct: talented("critPct", BASE_CRIT_PCT + attributes.agi * 0.05) + (external?.critAdd ?? 0),
+    critPct:
+      talented("critPct", BASE_CRIT_PCT + attributes.agi * 0.05) +
+      (external?.critAdd ?? 0) +
+      setBonus.critPct,
+    hastePct: Math.max(0, bonusHaste),
     weapon,
+    setProcs: setBonus.procs,
   };
 }
 
