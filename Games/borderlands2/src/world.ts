@@ -2,7 +2,7 @@ import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
 import { building, environment, sky, terrain, type WorldFeature } from "@jgengine/core/world/features";
 import { PANDORA } from "./game/palette";
-import { BANDIT_CAMP, FLYNT_PERCH, FYRESTONE, SKAG_GULLY, WORLD_BOUNDS } from "./game/world/sites";
+import { WORLD_BOUNDS, ZONES } from "./game/world/zones";
 
 export const PANDORA_SEED = "pandora-arid-badlands-2026";
 
@@ -10,17 +10,15 @@ const terrainDescriptor = terrain({
   bounds: WORLD_BOUNDS,
   seed: PANDORA_SEED,
   material: "rock",
-  height: 22,
-  frequency: 0.006,
+  height: 30,
+  frequency: 0.004,
   octaves: 5,
   ridged: true,
   colors: { low: PANDORA.rockLow, high: PANDORA.rockHigh },
-  flatten: [
-    { center: [FYRESTONE.x, FYRESTONE.z] as const, radius: 42 },
-    { center: [BANDIT_CAMP.x, BANDIT_CAMP.z] as const, radius: 34 },
-    { center: [SKAG_GULLY.x, SKAG_GULLY.z] as const, radius: 28 },
-    { center: [FLYNT_PERCH.x, FLYNT_PERCH.z] as const, radius: 30 },
-  ],
+  flatten: ZONES.map((zone) => ({
+    center: [zone.center.x, zone.center.z] as const,
+    radius: zone.flattenRadius,
+  })),
 });
 
 export const world: WorldFeature = environment({
@@ -31,41 +29,22 @@ export const world: WorldFeature = environment({
     zenithColor: PANDORA.sky,
     sunIntensity: 1.5,
     ambientIntensity: 0.75,
-    fog: { color: PANDORA.fog, near: 180, far: 900 },
+    fog: { color: PANDORA.fog, near: 220, far: 1100 },
   }),
-  structures: [
-    building({
-      position: [FYRESTONE.x, FYRESTONE.z],
-      count: 9,
-      footprint: { w: 7, d: 7 },
-      stories: [1, 2],
+  structures: ZONES.filter((zone) => zone.settlement !== undefined).map((zone) => {
+    const settlement = zone.settlement!;
+    return building({
+      position: [zone.center.x, zone.center.z],
+      count: settlement.count,
+      footprint: { w: settlement.footprint, d: settlement.footprint },
+      stories: [settlement.stories[0], settlement.stories[1]],
       storyHeight: 3,
       spacing: 5,
-      style: "desert",
-      palette: { wall: "#a06a3c", storefront: "#5a3b1e" },
-      seed: `${PANDORA_SEED}-fyrestone`,
-    }),
-    building({
-      position: [BANDIT_CAMP.x, BANDIT_CAMP.z],
-      count: 7,
-      footprint: { w: 6, d: 6 },
-      stories: [1, 1],
-      storyHeight: 2.6,
-      spacing: 4,
-      style: "ruin",
-      seed: `${PANDORA_SEED}-banditcamp`,
-    }),
-    building({
-      position: [FLYNT_PERCH.x, FLYNT_PERCH.z],
-      count: 5,
-      footprint: { w: 8, d: 8 },
-      stories: [1, 3],
-      storyHeight: 3.2,
-      spacing: 5,
-      style: "ruin",
-      seed: `${PANDORA_SEED}-flynt`,
-    }),
-  ],
+      style: settlement.style,
+      ...(settlement.palette !== undefined ? { palette: settlement.palette } : {}),
+      seed: `${PANDORA_SEED}-${zone.id}`,
+    });
+  }),
 });
 
 export const terrainField: TerrainField = resolveTerrainField(terrainDescriptor);

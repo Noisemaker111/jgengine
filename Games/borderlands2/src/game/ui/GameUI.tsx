@@ -5,6 +5,7 @@ import { CashPlate, CreditBadge, MissionTracker } from "./components/Mission";
 import { FfylOverlay, SkillsPanel, VendorPanel } from "./components/Overlays";
 import { VitalsPlate } from "./components/Vitals";
 import { AmmoPlate, Hotbar, ItemCard } from "./components/Weapon";
+import { BlackMarketPanel, EchoBox, EridiumPlate, TravelPanel, VaultEnding, ZoneBanner } from "./components/World";
 
 export function GameUI() {
   const layout = useHudLayout({ storageKey: "borderlands2" });
@@ -20,6 +21,18 @@ export function GameUI() {
 
       <HudPanel id="cash" anchor="top-right" order={0} compact="keep" interactive={false}>
         <CashPlate />
+      </HudPanel>
+
+      <HudPanel id="eridium" anchor="top-right" order={2} compact="keep" interactive={false}>
+        <EridiumPlate />
+      </HudPanel>
+
+      <HudPanel id="zone-banner" anchor="top" order={1} compact="keep" interactive={false}>
+        <ZoneBanner />
+      </HudPanel>
+
+      <HudPanel id="echo" anchor="left" order={1} compact="hide" interactive={false}>
+        <EchoBox />
       </HudPanel>
 
       <HudPanel id="loot-toasts" anchor="top-right" order={1} compact="hide" interactive={false}>
@@ -64,6 +77,9 @@ export function GameUI() {
       <FfylOverlay />
       <VendorPanel />
       <SkillsPanel />
+      <TravelPanel />
+      <BlackMarketPanel />
+      <VaultEnding />
 
       <LevelUpFlash className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
         <span className="text-3xl font-black uppercase tracking-[0.3em] text-amber-300 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">

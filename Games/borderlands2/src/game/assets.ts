@@ -80,6 +80,34 @@ function flyntShape(body: string, accent: string): string {
   `;
 }
 
+function loaderShape(body: string, accent: string): string {
+  return `
+    <ellipse cx="32" cy="60" rx="14" ry="3" fill="#000" opacity="0.35"/>
+    <path d="M24 14 L40 14 L46 26 L42 44 L22 44 L18 26 Z" fill="${body}" stroke="${OUTLINE}" stroke-width="2.2"/>
+    <circle cx="32" cy="24" r="4.6" fill="#20242c" stroke="${OUTLINE}" stroke-width="1.4"/>
+    <circle cx="32" cy="24" r="2" fill="${accent}"/>
+    <rect x="10" y="24" width="9" height="5" rx="2" fill="${body}" stroke="${OUTLINE}" stroke-width="1.6"/>
+    <rect x="45" y="24" width="9" height="5" rx="2" fill="${body}" stroke="${OUTLINE}" stroke-width="1.6"/>
+    <rect x="52" y="21" width="8" height="3" fill="#3d3a34" stroke="${OUTLINE}" stroke-width="1.2"/>
+    <rect x="24" y="44" width="6" height="12" fill="${body}" stroke="${OUTLINE}" stroke-width="1.6"/>
+    <rect x="34" y="44" width="6" height="12" fill="${body}" stroke="${OUTLINE}" stroke-width="1.6"/>
+    <path d="M24 34 h16" stroke="${accent}" stroke-width="2"/>
+  `;
+}
+
+function warriorShape(body: string, accent: string): string {
+  return `
+    <ellipse cx="32" cy="61" rx="22" ry="3" fill="#000" opacity="0.45"/>
+    <path d="M6 50 Q10 30 22 24 L26 10 L34 20 L40 8 L44 22 Q56 30 58 50 Q48 58 32 58 Q16 58 6 50 Z" fill="${body}" stroke="${OUTLINE}" stroke-width="2.4"/>
+    <path d="M26 10 L34 20 L40 8 L44 22 L36 26 L28 24 Z" fill="${accent}" stroke="${OUTLINE}" stroke-width="1.6"/>
+    <circle cx="24" cy="34" r="3.2" fill="${accent}"/>
+    <circle cx="40" cy="34" r="3.2" fill="${accent}"/>
+    <path d="M20 46 Q32 52 44 46" stroke="${OUTLINE}" stroke-width="2.4" fill="none"/>
+    <path d="M22 46 L26 50 M30 48 L32 53 M38 48 L40 52" stroke="${accent}" stroke-width="2"/>
+    <path d="M10 40 h6 M48 40 h6" stroke="${accent}" stroke-width="2" opacity="0.8"/>
+  `;
+}
+
 function claptrapShape(): string {
   return `
     <ellipse cx="32" cy="59" rx="11" ry="3" fill="#000" opacity="0.35"/>
@@ -102,10 +130,21 @@ const FAMILY_COLORS: Record<string, { body: string; accent: string }> = {
   badass_skag: { body: "#7d6844", accent: "#a33c28" },
   badass_psycho: { body: "#a34a2c", accent: "#ffb400" },
   captain_flynt: { body: "#5a4a66", accent: "#ff7a1a" },
+  bullymong_brat: { body: "#8a9aa8", accent: "#5a6a78" },
+  bullymong: { body: "#71828f", accent: "#3f4c58" },
+  spiderant: { body: "#b08a4a", accent: "#6e5426" },
+  spiderant_soldier: { body: "#96702a", accent: "#ffb400" },
+  loader: { body: "#c9a23a", accent: "#e23c2e" },
+  loader_war: { body: "#a8842c", accent: "#ff7a1a" },
+  badass_loader: { body: "#8a6a1e", accent: "#3fc9ff" },
+  bad_maw: { body: "#7d5a3c", accent: "#e23c2e" },
+  the_warrior: { body: "#8a2f1e", accent: "#ff9a00" },
 };
 
 function shapeFor(def: EnemyDef, colors: { body: string; accent: string }): string {
-  if (def.id === "captain_flynt") return flyntShape(colors.body, colors.accent);
+  if (def.id === "the_warrior") return warriorShape(colors.body, colors.accent);
+  if (def.id === "captain_flynt" || def.id === "bad_maw") return flyntShape(colors.body, colors.accent);
+  if (def.id.startsWith("loader") || def.id === "badass_loader") return loaderShape(colors.body, colors.accent);
   if (def.family === "skag") return skagShape(colors.body, colors.accent);
   if (def.id === "psycho" || def.id === "badass_psycho") return psychoShape(colors.body, colors.accent);
   if (def.id === "nomad") return nomadShape(colors.body, colors.accent);

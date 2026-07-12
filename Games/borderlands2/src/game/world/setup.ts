@@ -2,16 +2,14 @@ import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { rememberHome } from "../entities/enemies/ai";
+import { enemyById, levelHealthMult } from "../entities/enemies/catalog";
 import {
-  BANDIT_CAMP,
+  BLACK_MARKET_POS,
   CLAPTRAP_POS,
-  FLYNT_PERCH,
-  FYRESTONE,
   MARCUS_VENDOR_POS,
-  NEW_U_STATION,
-  SKAG_GULLY,
-  SPAWN_CLUSTERS,
+  TRAVEL_STATIONS,
   ZED_VENDOR_POS,
+  ZONES,
 } from "./sites";
 
 export { PLAYER_SPAWN } from "./sites";
@@ -24,64 +22,83 @@ interface ClusterMember {
   id: string;
   catalogId: string;
   position: EntityPosition;
-  clusterIndex: number;
+  level: number;
 }
 
 const clusterMembers: ClusterMember[] = [];
+const bossMembers: ClusterMember[] = [];
 
-function planClusters(ctx: GameContext): void {
-  clusterMembers.length = 0;
-  const rng = seededRng("bl2-cluster-spawns");
-  SPAWN_CLUSTERS.forEach((cluster, clusterIndex) => {
-    for (const entry of cluster.entries) {
-      for (let index = 0; index < entry.count; index += 1) {
-        const angle = rng() * Math.PI * 2;
-        const radius = 3 + rng() * cluster.radius;
-        const x = cluster.center.x + Math.cos(angle) * radius;
-        const z = cluster.center.z + Math.sin(angle) * radius;
-        clusterMembers.push({
-          id: `spawn_${clusterIndex}_${entry.catalogId}_${index}`,
-          catalogId: entry.catalogId,
-          position: grounded(ctx, x, z),
-          clusterIndex,
-        });
-      }
-    }
-  });
+function scaleSpawnedEnemy(ctx: GameContext, member: ClusterMember): void {
+  const def = enemyById(member.catalogId);
+  if (def === undefined) return;
+  const mult = levelHealthMult(member.level);
+  for (const statId of ["health", "shield"] as const) {
+    const stat = ctx.scene.entity.stats.get(member.id, statId);
+    if (stat === null || stat.max <= 0) continue;
+    const max = Math.round(stat.max * mult);
+    ctx.scene.entity.stats.set(member.id, statId, { max });
+    ctx.scene.entity.stats.delta(member.id, statId, max);
+  }
 }
 
 function spawnMember(ctx: GameContext, member: ClusterMember): void {
   ctx.scene.entity.spawn(member.catalogId, { id: member.id, position: member.position });
   rememberHome(member.id, member.position);
+  scaleSpawnedEnemy(ctx, member);
+}
+
+function planClusters(ctx: GameContext): void {
+  clusterMembers.length = 0;
+  bossMembers.length = 0;
+  const rng = seededRng("bl2-cluster-spawns");
+  for (const zone of ZONES) {
+    zone.clusters.forEach((cluster, clusterIndex) => {
+      for (let index = 0; index < cluster.count; index += 1) {
+        const angle = rng() * Math.PI * 2;
+        const radius = 2 + rng() * cluster.radius;
+        const x = zone.center.x + cluster.offset.x + Math.cos(angle) * radius;
+        const z = zone.center.z + cluster.offset.z + Math.sin(angle) * radius;
+        clusterMembers.push({
+          id: `spawn_${zone.id}_${clusterIndex}_${cluster.catalogId}_${index}`,
+          catalogId: cluster.catalogId,
+          position: grounded(ctx, x, z),
+          level: zone.level,
+        });
+      }
+    });
+    if (zone.boss !== undefined) {
+      bossMembers.push({
+        id: zone.boss.instanceId,
+        catalogId: zone.boss.catalogId,
+        position: grounded(ctx, zone.boss.x, zone.boss.z),
+        level: zone.level,
+      });
+    }
+  }
 }
 
 export function respawnClusters(ctx: GameContext): void {
   const playerEntity = ctx.scene.entity.get(ctx.player.userId);
   for (const member of clusterMembers) {
     if (ctx.scene.entity.get(member.id) !== null) continue;
-    if (member.catalogId === "captain_flynt") continue;
     if (playerEntity !== null) {
       const distance = Math.hypot(
         playerEntity.position[0] - member.position[0],
         playerEntity.position[2] - member.position[2],
       );
-      if (distance < 34) continue;
+      if (distance < 38) continue;
     }
     spawnMember(ctx, member);
   }
 }
 
-export const RED_CHESTS: readonly { x: number; z: number }[] = [
-  { x: BANDIT_CAMP.x + 6, z: BANDIT_CAMP.z - 8 },
-  { x: FLYNT_PERCH.x - 4, z: FLYNT_PERCH.z + 6 },
-  { x: SKAG_GULLY.x + 10, z: SKAG_GULLY.z + 4 },
-];
+export const RED_CHESTS: readonly { x: number; z: number }[] = ZONES.flatMap((zone) =>
+  zone.chests.filter((chest) => chest.kind === "red").map((chest) => ({ x: chest.x, z: chest.z })),
+);
 
-export const AMMO_CHESTS: readonly { x: number; z: number }[] = [
-  { x: FYRESTONE.x + 16, z: FYRESTONE.z + 4 },
-  { x: BANDIT_CAMP.x - 10, z: BANDIT_CAMP.z + 4 },
-  { x: FLYNT_PERCH.x + 8, z: FLYNT_PERCH.z - 4 },
-];
+export const AMMO_CHESTS: readonly { x: number; z: number }[] = ZONES.flatMap((zone) =>
+  zone.chests.filter((chest) => chest.kind === "ammo").map((chest) => ({ x: chest.x, z: chest.z })),
+);
 
 export function setupWorld(ctx: GameContext): void {
   const place = (catalogId: string, x: number, z: number, instanceId?: string) => {
@@ -91,23 +108,25 @@ export function setupWorld(ctx: GameContext): void {
 
   place("vendor_marcus", MARCUS_VENDOR_POS[0], MARCUS_VENDOR_POS[2], "vendor_marcus_1");
   place("vendor_zed", ZED_VENDOR_POS[0], ZED_VENDOR_POS[2], "vendor_zed_1");
-  place("new_u_station", NEW_U_STATION[0], NEW_U_STATION[2], "new_u_1");
+  place("black_market", BLACK_MARKET_POS[0], BLACK_MARKET_POS[2], "black_market_1");
+  for (const station of TRAVEL_STATIONS) {
+    place("fast_travel", station.x, station.z, `travel_${station.zoneId}`);
+  }
   RED_CHESTS.forEach((chest, index) => place("red_chest", chest.x, chest.z, `red_chest_${index}`));
   AMMO_CHESTS.forEach((chest, index) => place("ammo_chest", chest.x, chest.z, `ammo_chest_${index}`));
 
   const barrelRng = seededRng("bl2-barrels");
-  for (let index = 0; index < 6; index += 1) {
-    const x = BANDIT_CAMP.x + (barrelRng() - 0.5) * 30;
-    const z = BANDIT_CAMP.z + (barrelRng() - 0.5) * 30;
-    place("bandit_barrel", x, z, `barrel_${index}`);
-  }
+  ZONES.forEach((zone, zoneIndex) => {
+    for (let index = 0; index < 4; index += 1) {
+      const x = zone.center.x + (barrelRng() - 0.5) * zone.flattenRadius * 1.4;
+      const z = zone.center.z + (barrelRng() - 0.5) * zone.flattenRadius * 1.4;
+      place("bandit_barrel", x, z, `barrel_${zoneIndex}_${index}`);
+    }
+  });
 
   ctx.scene.entity.spawn("claptrap", { id: "claptrap_1", position: grounded(ctx, CLAPTRAP_POS[0], CLAPTRAP_POS[2]) });
 
   planClusters(ctx);
   for (const member of clusterMembers) spawnMember(ctx, member);
-
-  const flyntPos = grounded(ctx, FLYNT_PERCH.x, FLYNT_PERCH.z);
-  ctx.scene.entity.spawn("captain_flynt", { id: "boss_flynt", position: flyntPos });
-  rememberHome("boss_flynt", flyntPos);
+  for (const boss of bossMembers) spawnMember(ctx, boss);
 }

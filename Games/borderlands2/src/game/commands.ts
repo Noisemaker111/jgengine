@@ -5,6 +5,21 @@ import { gearById, AMMO_PRICES } from "./items/gear/catalog";
 import { gunById, rollGun, startReload, ffylPhase } from "./handroll";
 import { skillByIdOrNull } from "./progression/curves";
 import { session } from "./session";
+import { TRAVEL_STATIONS } from "./world/sites";
+import { zoneLevelAt } from "./world/zones";
+
+export const BLACK_MARKET_UPGRADES = [
+  { id: "ammo", name: "Ammo SDU", blurb: "+30% max ammo, every pool" },
+  { id: "health", name: "Health SDU", blurb: "+25 max health" },
+  { id: "shield", name: "Shield SDU", blurb: "+25 max shield" },
+  { id: "grenade", name: "Grenade SDU", blurb: "+1 grenade capacity" },
+] as const;
+
+export type BlackMarketCounts = Record<string, number>;
+
+export function upgradeCost(count: number): number {
+  return 4 + count * 4;
+}
 
 const PICKUP_RADIUS = 2.8;
 const chestRng = seededRng("bl2-red-chests");
@@ -88,8 +103,9 @@ function openRedChest(ctx: GameContext, instanceId: string): void {
   ctx.game.store.set("openedChests", [...opened, instanceId]);
   const object = ctx.scene.object.get(instanceId);
   const at = object?.position ?? ctx.scene.entity.get(ctx.player.userId)?.position ?? [0, 0, 0];
+  const chestLevel = Math.max(playerLevel(ctx), zoneLevelAt(at[0], at[2]));
   for (let roll = 0; roll < 2; roll += 1) {
-    const gun = rollGun(chestRng, playerLevel(ctx), { luck: 4 });
+    const gun = rollGun(chestRng, chestLevel, { luck: 4 });
     ctx.scene.worldItem.spawn({
       itemId: gun.id,
       position: [at[0] + 0.8 + roll * 0.8, at[1], at[2] + 0.9],
@@ -236,6 +252,82 @@ export function registerCommands(ctx: GameContext): void {
         baseType: gun.family,
         source: input.vendor ?? "vendor",
       });
+    },
+  });
+
+  ctx.game.commands.define("blackmarket.open", {
+    apply(state: GameContext) {
+      state.game.store.set("blackMarketOpen", true);
+    },
+  });
+
+  ctx.game.commands.define("blackmarket.close", {
+    apply(state: GameContext) {
+      state.game.store.delete("blackMarketOpen");
+    },
+  });
+
+  ctx.game.commands.define("travel.open", {
+    apply(state: GameContext) {
+      state.game.store.set("travelOpen", true);
+    },
+  });
+
+  ctx.game.commands.define("travel.close", {
+    apply(state: GameContext) {
+      state.game.store.delete("travelOpen");
+    },
+  });
+
+  ctx.game.commands.define<{ zoneId?: string }>("travel.go", {
+    apply(state: GameContext, input) {
+      if (ffylPhase() === "downed") return;
+      const station = TRAVEL_STATIONS.find((candidate) => candidate.zoneId === input.zoneId);
+      if (station === undefined) return;
+      const discovered = (state.game.store.get("discoveredStations") as readonly string[] | undefined) ?? [];
+      if (!discovered.includes(station.zoneId)) return;
+      const y = state.world.groundHeightAt(station.x + 3, station.z + 3);
+      state.scene.entity.update(state.player.userId, { position: [station.x + 3, y, station.z + 3] });
+      state.game.store.delete("travelOpen");
+      state.scene.entity.floatText({ instanceId: state.player.userId, text: station.name.toUpperCase(), kind: "pickup" });
+    },
+  });
+
+  ctx.game.commands.define<{ upgrade?: string }>("blackmarket.buy", {
+    apply(state: GameContext, input) {
+      const upgrade = BLACK_MARKET_UPGRADES.find((candidate) => candidate.id === input.upgrade);
+      if (upgrade === undefined) return;
+      const userId = state.player.userId;
+      const counts = { ...((state.game.store.get("blackMarket") as BlackMarketCounts | undefined) ?? {}) };
+      const owned = counts[upgrade.id] ?? 0;
+      const cost = upgradeCost(owned);
+      const rejection = state.game.economy.charge(userId, "eridium", cost);
+      if (rejection !== null) {
+        state.scene.entity.floatText({ instanceId: userId, text: "NOT ENOUGH ERIDIUM", kind: "warn" });
+        return;
+      }
+      counts[upgrade.id] = owned + 1;
+      state.game.store.set("blackMarket", counts);
+      if (upgrade.id === "ammo") {
+        for (const statId of Object.values(AMMO_STAT_IDS)) {
+          const stat = state.scene.entity.stats.get(userId, statId);
+          if (stat !== null) state.scene.entity.stats.set(userId, statId, { max: Math.round(stat.max * 1.3) });
+        }
+      } else if (upgrade.id === "health" || upgrade.id === "shield") {
+        const statId = upgrade.id;
+        const stat = state.scene.entity.stats.get(userId, statId);
+        if (stat !== null) {
+          state.scene.entity.stats.set(userId, statId, { max: stat.max + 25 });
+          state.scene.entity.stats.delta(userId, statId, 25);
+        }
+      } else if (upgrade.id === "grenade") {
+        const stat = state.scene.entity.stats.get(userId, "grenades");
+        if (stat !== null) {
+          state.scene.entity.stats.set(userId, "grenades", { max: stat.max + 1 });
+          state.scene.entity.stats.delta(userId, "grenades", 1);
+        }
+      }
+      state.scene.entity.floatText({ instanceId: userId, text: `${upgrade.name.toUpperCase()} ACQUIRED`, kind: "pickup" });
     },
   });
 
