@@ -72,6 +72,10 @@ ship worker re-delegated instead of executing → returned 'launched a worker an
 
 gate worker ran per-package 'bun run check-types' without 'bun scripts/ensure-ready.ts' first → false RED with TS2307 on @jgengine/github (exports point at unbuilt dist/); wasted a round diagnosing a non-bug
 
+2026-07-12T02:54:23.153Z — sonnet — Claude
+
+ship worker returned after 21s claiming a background handoff without committing/pushing → had to re-spawn a synchronous worker
+
 2026-07-12T02:55:51.618Z — fable-5 — Claude
 
 multi-round verify loop → stop-hook demanded a commit+push after every single fix round, forcing commit churn workers mid-verification

@@ -167,3 +167,4 @@ in [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
 | **[Mahjong Solitaire](Games/mahjong-solitaire)** | `mahjong-solitaire` | **Brodie Lockard**'s Mahjong solitaire (1981). |
 | **[Bubble Burst](Games/bubble-burst)** | `bubble-burst` | Taito's **Puzzle Bobble** (1994). |
 | **[Pinball](Games/pinball)** | `pinball` | Traditional solid-state pinball — genre homage. |
+| **[Vice Isle](Games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |

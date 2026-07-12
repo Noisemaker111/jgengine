@@ -57,6 +57,27 @@ export interface HeroRuntime {
 const heroes = new Map<string, HeroRuntime>();
 const auras = new Map<string, AuraState[]>();
 
+export interface ExternalCombatMods {
+  meleeDmgPct: number;
+  spellDmgPct: number;
+  healPct: number;
+  maxHpPct: number;
+  critAdd: number;
+  armorAdd: number;
+  lifestealPct: number;
+}
+
+const externalMods = new Map<string, ExternalCombatMods>();
+
+export function setExternalCombatMods(userId: string, mods: ExternalCombatMods | null): void {
+  if (mods === null) externalMods.delete(userId);
+  else externalMods.set(userId, mods);
+}
+
+export function externalCombatModsOf(userId: string): ExternalCombatMods | null {
+  return externalMods.get(userId) ?? null;
+}
+
 export const storeKeys = {
   class: (userId: string) => `class:${userId}`,
   equip: (userId: string) => `equip:${userId}`,
@@ -133,7 +154,18 @@ export function allocateTalent(ctx: GameContext, userId: string, nodeId: string)
 
 export function abilityModsOf(ctx: GameContext, userId: string) {
   const view = ctx.game.store.get(storeKeys.talents(userId)) as TalentsView | undefined;
-  return resolveAbilityMods(view?.ranks ?? {});
+  const mods = resolveAbilityMods(view?.ranks ?? {});
+  const external = externalMods.get(userId);
+  if (external === undefined) return mods;
+  return {
+    ...mods,
+    global: {
+      ...mods.global,
+      meleeDmgPct: (mods.global.meleeDmgPct ?? 0) + external.meleeDmgPct,
+      spellDmgPct: (mods.global.spellDmgPct ?? 0) + external.spellDmgPct,
+      healPct: (mods.global.healPct ?? 0) + external.healPct,
+    },
+  };
 }
 
 export function applyAbilityTalentRetunes(ctx: GameContext, userId: string): void {
@@ -260,17 +292,18 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
     cls.resource === "mana"
       ? cls.baseResource + cls.resourcePerLevel * (level - 1) + attributes.int * MANA_PER_INT
       : 100;
+  const external = externalMods.get(userId);
   return {
     attributes,
-    maxHp: Math.round(talented("maxHp", maxHp)),
+    maxHp: Math.round(talented("maxHp", maxHp) * (1 + (external?.maxHpPct ?? 0))),
     maxResource: Math.round(talented("maxResource", maxResource)),
     attackPower: talented(
       "attackPower",
       attributes.str * ATTACK_POWER_PER_STR + Math.floor(attributes.agi / 2) + bonusAp,
     ),
     spellPower: talented("spellPower", attributes.int * SPELL_POWER_PER_INT + bonusSp),
-    armor: talented("armor", armor + attributes.agi * 2),
-    critPct: talented("critPct", BASE_CRIT_PCT + attributes.agi * 0.05),
+    armor: talented("armor", armor + attributes.agi * 2) + (external?.armorAdd ?? 0),
+    critPct: talented("critPct", BASE_CRIT_PCT + attributes.agi * 0.05) + (external?.critAdd ?? 0),
     weapon,
   };
 }

@@ -18,6 +18,7 @@ import {
   barOf,
   classOf,
   enterCombat,
+  externalCombatModsOf,
   gainRage,
   heroOf,
   heroSheet,
@@ -115,6 +116,15 @@ function dealDamage(
   ctx.scene.entity.effect({ from: userId, to: targetId, effect: "damage", via: { amount } });
   addThreat(targetId, userId, amount);
   enterCombat(ctx, userId);
+  const lifesteal = externalCombatModsOf(userId)?.lifestealPct ?? 0;
+  if (lifesteal > 0) {
+    ctx.scene.entity.effect({
+      from: userId,
+      to: userId,
+      effect: "heal",
+      via: { amount: -Math.max(1, Math.round(amount * lifesteal)) },
+    });
+  }
   return amount;
 }
 
@@ -416,7 +426,8 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
       const distance = ctx.scene.entity.distance(userId, targetId);
       if (sheet !== null && distance !== null && distance <= MELEE_RANGE + 0.8) {
         const crit = rollCrit(rng, sheet.critPct);
-        const raw = rollWeaponDamage(rng, sheet.weapon, sheet.attackPower);
+        const meleePct = externalCombatModsOf(userId)?.meleeDmgPct ?? 0;
+        const raw = rollWeaponDamage(rng, sheet.weapon, sheet.attackPower) * (1 + meleePct);
         dealDamage(ctx, userId, targetId, crit ? raw * 2 : raw, false);
         gainRage(ctx, userId, SWING_RAGE);
         hero.nextSwingAt = now + sheet.weapon.speed;

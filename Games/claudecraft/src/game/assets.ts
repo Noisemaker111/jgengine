@@ -1,6 +1,7 @@
 import type { EntitySpriteConfig } from "@jgengine/core/game/playableGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
+import { FIESTA_ALLY_CATALOG, FIESTA_ENEMY_MOBS } from "./arena/catalog";
 import { DELVE_COMPANION_CATALOG } from "./delves/systems";
 import { CLASS_ENTITY_ID } from "./model";
 import { MOBS } from "./entities/enemies/catalog";
@@ -96,6 +97,22 @@ for (const npc of NPCS) {
     width: 1.7,
     height: 1.9,
     y: 1.0,
+  };
+}
+
+entitySprites[FIESTA_ALLY_CATALOG] = {
+  url: billboard(SHAPES.guard, "#ffd24a", "#2e3440"),
+  width: 1.7,
+  height: 1.9,
+  y: 1.0,
+};
+
+for (const bot of FIESTA_ENEMY_MOBS) {
+  entitySprites[bot.id] = {
+    url: billboard(SHAPES.bandit, bot.id === "fiesta_bot_botzo" ? "#b06bff" : "#ff8a1e", "#31363f"),
+    width: 1.8,
+    height: 1.8,
+    y: 0.95,
   };
 }
 

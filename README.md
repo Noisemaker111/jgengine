@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="apps/web/public/og.png" alt="JGengine" width="640" />
+</p>
+
 # jgengine
 
 **TypeScript game engine SDK** for AI agents — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent card [jgengine.com/llms.txt](https://jgengine.com/llms.txt).

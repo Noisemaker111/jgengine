@@ -289,6 +289,23 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "W accelerate · S brake · A/D steer · Space handbrake · Shift boost",
     hue: "#e879f9",
   },
+  "vice-isle": {
+    tagline: "Steal it, drive it, shake the heat.",
+    description:
+      "An open-world crime sandbox on a cel-shaded resort island. Boost cars off Ocean Drive, run missions for Marco under the downtown neon, sweep the Carmine gang off the docks, and outdrive an escalating five-star police response — then spend the take at Ammu-Isle.",
+    genre: "Open-world action",
+    category: "Action & Arcade",
+    controls: "WASD move/drive · Mouse fire · E enter/talk · F exit car · G grenade · Q medkit · 1-4 weapons",
+    hue: "#f2599b",
+    credit: {
+      name: "Rockstar Games & Gearbox",
+      label: "Homage to",
+      handle: "rockstargames",
+      href: "https://www.rockstargames.com/VI",
+      avatar: "https://unavatar.io/x/rockstargames",
+      source: { name: "Grand Theft Auto × Borderlands", href: "https://www.rockstargames.com/VI" },
+    },
+  },
   "drone-derby": {
     tagline: "Thread the rings before the cell runs dry.",
     description:
