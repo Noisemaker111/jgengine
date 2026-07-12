@@ -12,26 +12,36 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
 **Prompts are briefs, not scripts.** Telegraph style — goal, non-discoverable context, exact return shape, nothing else. Never dictate which tools the worker uses, never paste boilerplate footers or session links into its deliverables, never pad with contingencies it can work out itself. Exchanges are tight both ways: one packed prompt out, one compact judged result back.
 
-**Workers read `CLAUDE.md` and the skills too — never restate them.** Anything the repo docs already define (the ship motion, push retries, merge/green-check steps, tool names) is one reference, not a numbered script; a brief that re-explains it pays for those tokens twice. The whole ship brief is: branch, commit message, PR title + a sentence of body, "run the ship motion." If a brief has step numbers, it's a script — cut it down.
+**Workers read `CLAUDE.md` and the skills too — never restate them.** Anything the repo docs already define (the ship motion, push retries, merge/green-check steps, tool names) is one reference, not a numbered script; a brief that re-explains it pays for those tokens twice. The whole ship brief is: branch, commit message, PR title + a sentence of body, "run the ship motion." If a brief has step numbers, it is a script — cut it down.
 
 **Don't delegate the trivial.** If the leg is a couple of quick calls or the prompt would outweigh the work, do it inline — spawning a worker has a cost too.
 
-**Frontier models never consume intermediate worker updates.** The expensive parent plans once, delegates one complete mechanical leg, and receives one compact terminal result. Workers must not stream partial gate results, announce individual command completion, send "waiting" or "holding" updates, or wake the parent after each subcommand. Build, typecheck, test, git, PR, merge, and assigned CI polling stay inside the cheap worker turn. One delegation means one parent wake-up.
+## Frontier cost firewall
 
-**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "running in background / will report back" returns nothing — background children die with the turn. That final message must report the completed result, never intent. Nested delegation obeys the same rule: a worker does the assigned leg itself and never hands it to a child. For the green-check wait, bare `sleep` is blocked by the harness — use one foreground Bash call that embeds the wait, then read Actions in the same turn. No worker in a parallel batch runs `bun install`; install once before the batch.
+**The expensive parent gets at most two user-visible messages for delegated work:** one optional launch line and one terminal result. After launch, absolute silence until the assigned leg is complete or has one actionable failure. No phase recaps, ownership explanations, progress estimates, or promises to report later.
+
+**One delegation means one parent wake-up.** The parent must not consume or answer intermediate worker messages. Tool cards, task-state changes, GitHub subscription events, PR creation, merge events, and individual CI completions are not conversational milestones. They remain inside the cheap worker's leg. Ignore them until the worker returns its single terminal result.
+
+**A ship motion is one worker and one return.** Commit → push → PR → merge → post-merge CI is one serial mechanical leg, never multiple tasks. PR-open and PR-merged are partial states, not reportable results when CI is part of the assignment. Do not launch a second wait/check worker because an event arrived; the original worker owns the full motion.
+
+**No mid-flight housekeeping.** Do not log papercuts, edit docs, inspect unrelated state, or start another mechanical task while a worker owns the worktree or ship motion. The worker records relevant papercuts before its terminal commit/return, or reports one concise entry for the next safe change. This prevents git races and extra frontier turns.
+
+## Worker execution contract
+
+**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "running in background / will report back" returns nothing — background children die with the turn. Nested delegation obeys the same rule: a worker does the assigned leg itself and never hands it to a child. For the green-check wait, bare `sleep` is blocked by the harness — use one foreground Bash call that embeds the wait, then read Actions in the same turn. No worker in a parallel batch runs `bun install`; install once before the batch.
 
 **Mechanical return shape is mandatory and single-shot.** Return exactly once:
 
 - `PASS` — concise terminal evidence: command set, exit status, commit SHA, PR link, merge state, CI verdict as applicable.
 - `FAIL` — first actionable failure plus only the diagnostics needed to fix it.
 
-A response containing intent, partial progress, a task id, raw successful logs, or a background handoff is a failed leg. Do not redispatch until branch, worktree, remote, and CI state have been inspected; the original worker may already have completed.
+A response containing intent, partial progress, a task id, raw successful logs, or a background handoff is a failed leg. Do not redispatch until branch, worktree, remote, task, PR, and CI state have been inspected; the original worker may already have completed.
 
 **Use the repo commands, never reconstruct the ladder.** Before generators or verification, run `bun run agent:preflight`. For the full local verdict, run only `bun run gate`. Immediately before commit/push/PR, run `bun run ship:preflight`; it rejects dirty trees, stale-main ancestry, and no-op branches.
 
 **Per-item sweep briefs say "do these yourself — do not delegate."** A single worker given N small edits will otherwise treat the list as an orchestration job and recursively fan out N sub-workers; the line belongs in every multi-item brief.
 
-**Independent legs launch in parallel, never in sequence.** Before spawning anything, split the turn into legs and sort them: everything that doesn't need another leg's output goes out together in one Batch — lint + typecheck + test, scouts on different angles, doc sweep alongside a build. Serialize only true data dependencies (fix before verify, verify before ship). Spawning one worker, waiting, then spawning the next pays wall-clock for nothing and is the same smell as step numbers in a brief.
+**Parallelize only independent completed-result legs.** Scouts on separate areas may run together. A serial workflow such as gate → commit → PR → merge → CI stays one worker. Never split serial stages merely to surface progress sooner.
 
 ## Always fan these — never run them on the frontier model
 
@@ -41,7 +51,7 @@ A response containing intent, partial progress, a task id, raw successful logs, 
 - GitHub ceremony after the decision is made; the whole ship motion is one worker brief
 - bulk file reads · codebase scouting · research sweeps · renames · doc sweeps · log triage
 
-Announce workers on one 🤖 line before launch. After that, silence until the combined terminal result or first actionable failure. Judge their output; never dump raw worker text to the user.
+Announce workers on one 🤖 line before launch, or omit the announcement when the action card already makes it obvious. After launch, silence until the combined terminal result or first actionable failure. Never narrate a tool card or restate an event the UI already shows.
 
 ## Never fan these
 
@@ -57,4 +67,4 @@ The one research *don't*: rediscovering scaffolding, HUD idioms, or anything alr
 
 ## Done when
 
-Mechanical work ran on cheap workers; each leg returned once with terminal evidence; the frontier model consumed no intermediate updates and only planned and judged.
+Mechanical work ran on cheap workers; each serial leg returned once with terminal evidence; the frontier model consumed no intermediate updates, reacted to no progress events, and only planned and judged.
