@@ -17,7 +17,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-type Mode = "ui" | "play" | "poster";
+type Mode = "ui" | "play" | "poster" | "preview";
 type Device = "desktop" | "mobile";
 type DeviceArg = Device | "both";
 
@@ -26,6 +26,7 @@ type Args = {
   mode: Mode;
   device: DeviceArg;
   stage?: boolean;
+  preview?: string;
   out?: string;
   url?: string;
   connect?: number;
@@ -62,12 +63,21 @@ function parseArgs(argv: string[]): Args {
       }
       args.device = device;
     } else if (value === "--stage") args.stage = true;
-    else if (value === "--out") args.out = argv[++index];
+    else if (value === "--preview") {
+      const next = argv[index + 1];
+      if (next !== undefined && !next.startsWith("--")) {
+        args.preview = next;
+        index += 1;
+      } else {
+        args.preview = "";
+      }
+    } else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") args.url = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
     else if (!value.startsWith("--")) args.game = value;
   }
+  if (args.mode === "preview" && args.preview === undefined) args.preview = "";
   return args;
 }
 
@@ -85,6 +95,10 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     return `${resolved.slice(0, dot)}-mobile${resolved.slice(dot)}`;
   }
   const suffix = device === "mobile" ? "-mobile" : "";
+  if (args.preview !== undefined) {
+    const state = args.preview === "" ? "default" : args.preview.replace(/[^A-Za-z0-9._-]+/g, "_");
+    return join(outDir, `${args.game}-preview-${state}${suffix}.png`);
+  }
   return join(outDir, `${args.game}-${args.mode}${suffix}.png`);
 }
 
@@ -332,6 +346,7 @@ function targetUrl(args: Args, device: Device): string {
   url.searchParams.set("device", device);
   url.searchParams.set("capture", "1");
   if (args.stage === true) url.searchParams.set("stage", "1");
+  if (args.preview !== undefined) url.searchParams.set("preview", args.preview);
   return url.toString();
 }
 

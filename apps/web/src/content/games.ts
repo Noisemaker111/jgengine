@@ -2,12 +2,6 @@ import radiumcodersAvatar from "../assets/credits/radiumcoders.jpg";
 
 const gamePackages = import.meta.glob("../../../../Games/*/package.json");
 
-const shotUrls = import.meta.glob<string>("../assets/screens/*.png", {
-  eager: true,
-  query: "?url",
-  import: "default",
-});
-
 export const GAME_CATEGORIES = [
   "Action & Arcade",
   "Puzzle",
@@ -37,12 +31,11 @@ export type Game = {
   category: GameCategory;
   controls: string;
   hue: string;
-  shot?: string;
   credit?: GameCredit;
   platforms?: readonly ("web" | "mobile")[];
 };
 
-type GameDetails = Omit<Game, "id" | "title" | "href" | "shot"> & { title?: string };
+type GameDetails = Omit<Game, "id" | "title" | "href"> & { title?: string };
 
 const GAME_DETAILS: Record<string, GameDetails> = {
   "maze-muncher": {
@@ -748,7 +741,6 @@ export const GAMES: Game[] = Object.keys(gamePackages)
       href: `/games/${id}`,
       ...details,
       title: details.title ?? titleCase(id),
-      shot: shotUrls[`../assets/screens/${id}.png`],
     };
   })
   .sort((a, b) => a.title.localeCompare(b.title));

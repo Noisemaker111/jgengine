@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -104,6 +104,7 @@ const GAME_ID =
   (import.meta.env.VITE_GAME_ID as string | undefined) ??
   "demo";
 const MODE = urlParams.get("mode") ?? "play";
+const PREVIEW = urlParams.get("preview");
 const STAGE = urlParams.get("stage") === "1";
 const CAM = urlParams.get("cam");
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
@@ -129,6 +130,76 @@ function ErrorPanel({ title, detail }: { title: string; detail: string }) {
       <pre className="max-h-[50vh] max-w-3xl overflow-auto whitespace-pre-wrap break-words rounded border border-red-900/60 bg-black/60 p-3 text-left font-mono text-xs text-red-200">
         {detail}
       </pre>
+    </div>
+  );
+}
+
+type PreviewComponent = ComponentType<{ className?: string }>;
+
+const previewModules = import.meta.glob<{
+  default: PreviewComponent;
+  states?: Record<string, PreviewComponent>;
+}>("../../../Games/*/src/preview.tsx");
+
+const previewLoaders = Object.fromEntries(
+  Object.entries(previewModules).map(([path, loader]) => [path.split("/").at(-3)!, loader] as const),
+);
+
+function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: string }) {
+  const [component, setComponent] = useState<PreviewComponent | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (captureArmed()) setCaptureStatus("preparing");
+    const loader = previewLoaders[gameId];
+    if (loader === undefined) {
+      setError(
+        `No preview module for "${gameId}" — games with previews: ${Object.keys(previewLoaders).sort().join(", ")}`,
+      );
+      return;
+    }
+    void loader()
+      .then((module) => {
+        if (stateKey === "") {
+          setComponent(() => module.default);
+          return;
+        }
+        const resolved = module.states?.[stateKey];
+        if (resolved === undefined) {
+          const available = ["default", ...Object.keys(module.states ?? {}).sort()].join(", ");
+          setError(`Unknown preview state "${stateKey}" for ${gameId} — available: ${available}`);
+          return;
+        }
+        setComponent(() => resolved);
+      })
+      .catch((err: unknown) => setError(formatLoadError(err)));
+  }, []);
+  useEffect(() => {
+    if (error !== null && captureArmed()) setCaptureStatus("error", error);
+  }, [error]);
+  useEffect(() => {
+    if (component === null || !captureArmed()) return;
+    let cancelled = false;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!cancelled) setCaptureStatus("ready");
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [component]);
+  if (error !== null) return <ErrorPanel title={`Preview error for ${gameId}`} detail={error} />;
+  if (component === null) {
+    return (
+      <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
+        Loading preview…
+      </div>
+    );
+  }
+  const Preview = component;
+  return (
+    <div style={{ position: "fixed", inset: 0 }}>
+      <Preview className="h-full w-full" />
     </div>
   );
 }
@@ -243,4 +314,6 @@ function DevApp() {
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={stageScenario} />;
 }
 
-createRoot(document.getElementById("root")!).render(<DevApp />);
+createRoot(document.getElementById("root")!).render(
+  PREVIEW !== null ? <PreviewApp gameId={GAME_ID} stateKey={PREVIEW} /> : <DevApp />,
+);

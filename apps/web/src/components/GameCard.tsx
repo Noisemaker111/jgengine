@@ -1,40 +1,11 @@
 import type { Game } from "../content/games";
-import { GameArt } from "./GameArt";
-import { SceneThumbnail } from "./SceneThumbnail";
-
-function FacePlaceholder({ game }: { game: Game }) {
-  if (game.shot !== undefined) {
-    return (
-      <img
-        src={game.shot}
-        alt={`${game.title} gameplay`}
-        loading="lazy"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-    );
-  }
-  return (
-    <>
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage: `linear-gradient(to right, ${game.hue}14 1px, transparent 1px), linear-gradient(to bottom, ${game.hue}14 1px, transparent 1px)`,
-          backgroundSize: "28px 28px",
-          maskImage: "radial-gradient(ellipse 90% 100% at 50% 100%, black 30%, transparent 80%)",
-        }}
-      />
-      <div className="absolute inset-0 p-6">
-        <GameArt id={game.id} hue={game.hue} genre={game.genre} category={game.category} />
-      </div>
-    </>
-  );
-}
+import { PreviewFrame } from "./PreviewFrame";
 
 export function GameFace({ game, className = "" }: { game: Game; className?: string }) {
   return (
-    <SceneThumbnail id={game.id} capture={game.shot === undefined} className={className}>
-      <FacePlaceholder game={game} />
-    </SceneThumbnail>
+    <div className={`relative h-full w-full ${className}`}>
+      <PreviewFrame game={game} />
+    </div>
   );
 }
 
@@ -57,9 +28,9 @@ export function GameCard({ game }: { game: Game }) {
         <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.05]">
           <GameFace game={game} />
         </div>
-        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/55 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/50 to-transparent" />
         <span
-          className="absolute left-4 top-4 rounded-full border px-2.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider backdrop-blur-sm"
+          className="absolute bottom-3 left-3 rounded-full border px-2.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider backdrop-blur-sm"
           style={{ color: game.hue, borderColor: `${game.hue}45`, backgroundColor: `${game.hue}16` }}
         >
           {game.genre}
