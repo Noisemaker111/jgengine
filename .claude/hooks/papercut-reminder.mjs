@@ -104,7 +104,7 @@ outerRetry: for (const [command, positions] of commandPositions) {
 // one's and explicitly corrects it (e.g. "run synchronously", "don't
 // background") — the shape of a relaunch after an unusable first result.
 const RELAUNCH_HINTS =
-  /(don'?t background|do not background|never background|instead of backgrounding|re-?launch|unusable (first )?result|execute (it |this )?in this turn)/i;
+  /(instead of backgrounding|re-?launch|try (that |it )?again|unusable (first )?result|(last|previous) (attempt|run|worker) (failed|returned nothing|stalled))/i;
 
 function wordSet(text) {
   return new Set((text ?? "").toLowerCase().match(/[a-z]{4,}/g) ?? []);

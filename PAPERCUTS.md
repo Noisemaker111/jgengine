@@ -15,3 +15,7 @@ Log one:
 Every so often these get swept: read the list, make the easy fixes, clear them.
 
 ---
+
+2026-07-12T00:02:14.895Z — claude-fable-5 — Claude
+
+papercut sweep itself → papercut-reminder Stop hook false-positived again: 'do not background' is standard brief boilerplate, not relaunch evidence; hints now require explicit relaunch/failed-attempt language
