@@ -157,6 +157,7 @@ export interface ItemDef {
   kind: "weapon" | "armor" | "consumable" | "junk" | "quest";
   quality: ItemQuality;
   slot?: EquipSlot;
+  set?: string;
   weapon?: { min: number; max: number; speed: number };
   armor?: number;
   stats?: Partial<Record<AttributeId, number>>;

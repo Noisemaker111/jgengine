@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { classById } from "../../classes/catalog";
 import { NPCS } from "../../entities/npcs/catalog";
 import { ITEMS, itemDefById } from "../../items/catalog";
+import { equippedSetStatus } from "../../items/sets";
 import { PROFESSIONS } from "../../professions/catalog";
 import { professionsOf } from "../../professions/gathering";
 import type { EquipSlot } from "../../model";
@@ -159,6 +160,7 @@ export function CharacterPanel() {
             ["Attack power", Math.round(sheet.attackPower)],
             ["Spell power", Math.round(sheet.spellPower)],
             ["Crit", `${sheet.critPct.toFixed(1)}%`],
+            ["Haste", `${(sheet.hastePct * 100).toFixed(1)}%`],
           ] as const
         ).map(([label, value]) => (
           <div key={label} className="flex justify-between border-b border-stone-800/60 py-0.5">
@@ -189,7 +191,35 @@ export function CharacterPanel() {
           )}
         </div>
       )}
+      <SetBonuses equips={equips} />
     </Window>
+  );
+}
+
+function SetBonuses({ equips }: { equips: Partial<Record<EquipSlot, string>> }) {
+  const sets = equippedSetStatus(equips);
+  if (sets.length === 0) return null;
+  return (
+    <>
+      <h3 className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wider text-amber-500/80">Set Bonuses</h3>
+      <div className="space-y-2">
+        {sets.map((set) => (
+          <div key={set.setId}>
+            <p className="text-sm font-semibold text-amber-200">
+              {set.name} <span className="text-stone-400">({set.equipped})</span>
+            </p>
+            {set.tiers.map((tier) => (
+              <p
+                key={tier.pieces}
+                className={`text-xs ${tier.active ? "text-emerald-300" : "text-stone-500"}`}
+              >
+                ({tier.pieces}) {tier.text}
+              </p>
+            ))}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

@@ -28,6 +28,11 @@ import {
 } from "../session/hero";
 import { addThreat, applyMobCc, armorOfMob, isMobInstance } from "../ai/mobs";
 import { handlePetAbility, isPetAbility } from "../pets/systems";
+import {
+  consumeNextCastFree,
+  fireSpellCastProcs,
+  fireWeaponCritProcs,
+} from "./setProcs";
 import { ZONES } from "../world/zones";
 
 const rng = seededRng("claudecraft-combat");
@@ -207,6 +212,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
         crit,
         ability.school === "physical",
       );
+      if (crit && ability.school === "physical") fireWeaponCritProcs(ctx, userId, sheet, targetId);
       hero.autoAttack = true;
       ctx.game.store.set(storeKeys.autoAttack(userId), true);
       break;
@@ -361,7 +367,8 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
   }
   if (ability.castTime > 0) {
     const castMod = abilityModsOf(ctx, userId).byAbility.get(ability.id)?.castPct ?? 0;
-    const castTime = Math.max(0.05, ability.castTime * (1 + castMod));
+    const hastePct = heroSheet(ctx, userId)?.hastePct ?? 0;
+    const castTime = Math.max(0.05, (ability.castTime * (1 + castMod)) / (1 + hastePct));
     hero.casting = {
       abilityId: ability.id,
       name: ability.name,
@@ -381,7 +388,9 @@ function commitCast(ctx: GameContext, userId: string, ability: AbilityDef): void
   const resource = ctx.scene.entity.stats.get(userId, "resource")?.current ?? 0;
   const result = hero.kit.cast(ability.id, resource);
   if (!result.ok) return;
-  const tunedCost = hero.kit.config(ability.id)?.resourceCost ?? ability.cost;
+  const isSpell = ability.school !== "physical";
+  const free = isSpell && consumeNextCastFree(ctx, userId);
+  const tunedCost = free ? 0 : (hero.kit.config(ability.id)?.resourceCost ?? ability.cost);
   if (tunedCost > 0) ctx.scene.entity.stats.delta(userId, "resource", -tunedCost);
   hero.gcdUntil = ctx.time.now() + GCD_SEC;
   if (isPetAbility(ability.id)) {
@@ -389,6 +398,10 @@ function commitCast(ctx: GameContext, userId: string, ability: AbilityDef): void
     return;
   }
   executeAbility(ctx, userId, ability);
+  if (isSpell) {
+    const sheet = heroSheet(ctx, userId);
+    if (sheet !== null) fireSpellCastProcs(ctx, userId, sheet);
+  }
 }
 
 export function tickHero(ctx: GameContext, userId: string, dt: number): void {
@@ -429,8 +442,9 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
         const meleePct = externalCombatModsOf(userId)?.meleeDmgPct ?? 0;
         const raw = rollWeaponDamage(rng, sheet.weapon, sheet.attackPower) * (1 + meleePct);
         dealDamage(ctx, userId, targetId, crit ? raw * 2 : raw, false);
+        if (crit) fireWeaponCritProcs(ctx, userId, sheet, targetId);
         gainRage(ctx, userId, SWING_RAGE);
-        hero.nextSwingAt = now + sheet.weapon.speed;
+        hero.nextSwingAt = now + sheet.weapon.speed / (1 + sheet.hastePct);
       } else {
         hero.nextSwingAt = now + 0.4;
       }
