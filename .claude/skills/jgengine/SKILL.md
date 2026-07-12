@@ -426,6 +426,8 @@ src/
 
 **Smart defaults** — omit any of these and the call still resolves: `multiplayer` → `offline()`; `assets` → an empty asset catalog; `loop` hooks (`onInit`/`onNewPlayer`/`onTick`) → no-ops; `content` → `{}`; `GameUI` → an empty component; `camera` → third-person orbit; `feed` → 20-entry ring buffers per action; a `world` of kind `environment()` auto-renders as the backdrop with no `environment` component supplied — a non-`environment()` world (`flat()`, `voxel()`, …) still needs the game to hand it one.
 
+**Opt-in `ctx.game.*` subsystems (`features`)** — core is genre-agnostic: the always-on base is `commands` / `events` / `store` / `feed` (plus `audio`), and genre subsystems are opt-in via `defineGame({ features: { roster, cards, turn, race } })`. Omit one and `ctx.game.<name>` is `undefined` — a puzzle game isn't handed a card pile or race state it never asked for. Declare only what the game uses. (More systems join this manifest as the slim-core work lands; `social`/`chat`/`leaderboard` are still always-on for now.)
+
 ```ts
 // game.config.ts — imports only, nothing inline
 import { defineGame } from "@jgengine/shell/defineGame";

@@ -32,6 +32,23 @@ export interface GameLoop<TContext = unknown> {
   onTick?(ctx: TContext, dt: number): void;
 }
 
+/**
+ * Opt-in `ctx.game.*` subsystems. Absent = off: the game doesn't carry (or expose) it, and `ctx.game.<name>`
+ * is `undefined`. Present (`true`) builds it. The universal base — `commands`, `events`, `store`, `feed` — is
+ * always on and not listed here. This is what keeps core genre-agnostic: a puzzle game isn't handed an MMO's
+ * leaderboard/roster/turn plumbing it never asked for.
+ */
+export interface GameFeatures {
+  /** Owned/captured entity roster (`ctx.game.roster`) — pet/monster collection games. */
+  roster?: boolean;
+  /** Card pile zones (`ctx.game.cards`) — deckbuilders, card games. */
+  cards?: boolean;
+  /** Turn/phase loop (`ctx.game.turn`) — turn-based games. */
+  turn?: boolean;
+  /** Lap/checkpoint race state (`ctx.game.race`) — racers. */
+  race?: boolean;
+}
+
 export interface GameDefinition<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
@@ -40,6 +57,8 @@ export interface GameDefinition<
   assets: AssetCatalog<TAssetRef>;
   multiplayer: TMultiplayer;
   scene: EntityStore;
+  /** Opt-in `ctx.game.*` subsystems beyond the always-on base; omitted systems are `undefined` on `ctx.game`. */
+  features?: GameFeatures;
   world?: WorldFeature;
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */

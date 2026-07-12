@@ -232,8 +232,10 @@ export function useWorldBrowser(options: {
 }
 
 export function useRoster(userId?: string): readonly RosterEntry[] {
-  return useGameStore((ctx) => ctx.game.roster.list(userId ?? ctx.player.userId));
+  return useGameStore((ctx) => ctx.game.roster?.list(userId ?? ctx.player.userId) ?? EMPTY_ROSTER);
 }
+
+const EMPTY_ROSTER: readonly RosterEntry[] = [];
 
 export function useLeaderboard(
   stat: string,

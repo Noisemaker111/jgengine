@@ -282,6 +282,7 @@
 
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — ⚠ undocumented
 - `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — ⚠ undocumented
+- `GameFeatures` (interface): interface GameFeatures — Opt-in `ctx.game.*` subsystems. Absent = off: the game doesn't carry (or expose) it, and `ctx.game.<name>` is `undefined`. Present (`true`) builds it. The universal base — `commands`, `events`, `store`, `feed` — is always on and not listed here. This is what keeps core genre-agnostic: a puzzle game isn't handed an MMO's leaderboard/roster/turn plumbing it never asked for.
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — ⚠ undocumented
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — ⚠ undocumented
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — ⚠ undocumented

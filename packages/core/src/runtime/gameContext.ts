@@ -338,12 +338,16 @@ export interface GameContext {
     unlocks: Unlocks;
     economy: GameContextEconomy;
     leaderboard: Leaderboard;
-    roster: Roster;
+    /** Owned-entity roster — present only when `features.roster` is set. */
+    roster?: Roster;
     /** Game-defined keyed reactive store slot (#163.1); mutations bump `ctx.version()`/notify `ctx.subscribe`. */
     store: ObservableKeyedStore<unknown>;
-    cards: GameContextCards;
-    turn: GameContextTurn;
-    race: GameContextRace;
+    /** Card pile zones — present only when `features.cards` is set. */
+    cards?: GameContextCards;
+    /** Turn/phase loop — present only when `features.turn` is set. */
+    turn?: GameContextTurn;
+    /** Lap/checkpoint race state — present only when `features.race` is set. */
+    race?: GameContextRace;
   };
   player: {
     userId: string;
@@ -558,11 +562,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     signal.notify,
   );
   const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify);
-  const roster = notifyAfter(
-    createRoster({ now }),
-    ["capture", "release", "setEquipped", "hydrate"],
-    signal.notify,
-  );
+  const features = definition.features ?? {};
+  const roster = features.roster
+    ? notifyAfter(createRoster({ now }), ["capture", "release", "setEquipped", "hydrate"], signal.notify)
+    : undefined;
   const playerStats = createStats<string>({});
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
   const commandRegistry = createCommandRegistry<GameContext>();
@@ -1233,9 +1236,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       leaderboard,
       roster,
       store,
-      cards: { pile },
-      turn: { loop },
-      race: { state: raceState },
+      cards: features.cards ? { pile } : undefined,
+      turn: features.turn ? { loop } : undefined,
+      race: features.race ? { state: raceState } : undefined,
     },
     player: {
       userId: player.userId,
