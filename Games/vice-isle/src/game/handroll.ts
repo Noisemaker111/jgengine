@@ -1,3 +1,4 @@
+import { cameraShake } from "@jgengine/shell/camera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { steerYaw } from "@jgengine/core/movement/steering";
 import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "@jgengine/core/physics/vehicleBody";
@@ -462,6 +463,7 @@ export function createHandroll(): Handroll {
     },
     raceActive: () => race !== null,
     explodeVehicle(ctx, vehicleId, at) {
+      cameraShake(0.7);
       ctx.scene.entity.effect({ from: vehicleId, at, radius: 6, effect: "damage", via: { amount: 55 } });
       if (driving === vehicleId) {
         driving = null;

@@ -103,12 +103,13 @@ export function CityMinimap() {
             })()
           ) : null}
           <polygon
-            points={`${SIZE / 2},${SIZE / 2 - 8} ${SIZE / 2 - 5},${SIZE / 2 + 5} ${SIZE / 2 + 5},${SIZE / 2 + 5}`}
+            points={`${SIZE / 2},${SIZE / 2 - 9} ${SIZE / 2 - 6},${SIZE / 2 + 6} ${SIZE / 2},${SIZE / 2 + 3} ${SIZE / 2 + 6},${SIZE / 2 + 6}`}
             fill="#f2599b"
             stroke="#000"
             strokeWidth={1.5}
           />
         </svg>
+        <div className="absolute right-1 top-0.5 text-[10px] font-black text-white/70">N</div>
       </div>
       <div className="-skew-x-6 border-2 border-black bg-[#f2599b] px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-black">
         {district?.label ?? "Vice Isle"}
