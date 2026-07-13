@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useGameContext } from "@jgengine/react/provider";
 import { useActivePrompt, useGameStore } from "@jgengine/react/hooks";
-import { SettingsTrigger } from "@jgengine/react";
+import { SettingsTrigger, useDisplayProfile } from "@jgengine/react";
 import { heistPrompts } from "../prompts";
 import type { HeistState } from "../state/heistState";
 import { StartScreen } from "./components/StartScreen";
@@ -16,15 +16,17 @@ import { ControlDock } from "./components/ControlDock";
 
 function ActivePromptHint(): ReactNode {
   const ctx = useGameContext();
+  const { coarsePointer } = useDisplayProfile();
   const prompt = useActivePrompt(heistPrompts(ctx));
   if (prompt === null) return null;
   const display = prompt.prompt.display;
+  const hold = coarsePointer ? "Hold to" : "Hold E to";
   const text =
     display.kind === "label"
       ? display.text
       : display.kind === "gauge" && display.gaugeId === "grabTreasure"
-        ? "Hold E to lift"
-        : "Hold E to pocket";
+        ? `${hold} lift`
+        : `${hold} pocket`;
   return (
     <div className="pointer-events-none rounded border border-[#c9a227]/60 bg-[#0b0f1c]/85 px-3 py-1.5 text-center font-serif text-sm text-[#f2e3c2]">
       {text}

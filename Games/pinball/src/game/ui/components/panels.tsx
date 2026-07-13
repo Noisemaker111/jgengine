@@ -1,3 +1,4 @@
+import { KeyHint } from "@jgengine/react";
 import { PALETTE } from "../../palette";
 import type { PinballSnapshot, ScoreEvent } from "../../types";
 
@@ -138,13 +139,13 @@ export function ScoreFeed({ snap }: { snap: PinballSnapshot }) {
 export function ControlBar({ snap }: { snap: PinballSnapshot }) {
   return (
     <div className="flex flex-col items-center gap-1.5 rounded-2xl px-4 py-2.5" style={{ ...card, minWidth: 300 }}>
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[9px] tracking-wide" style={{ color: PALETTE.cream }}>
+      <KeyHint className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[9px] tracking-wide" style={{ color: PALETTE.cream }}>
         <Key label="Z / ←" hint="Left Flip" />
         <Key label="/ / →" hint="Right Flip" />
         <Key label="↓" hint={snap.onPlunger ? "Hold Plunge" : "Plunger"} active={snap.charging} />
         <Key label="Space" hint="Nudge" active={snap.tiltCount > 0 && !snap.tilted} danger={snap.tilted} />
         <Key label="N" hint="New Game" />
-      </div>
+      </KeyHint>
       <div className="text-center text-[8px] leading-tight tracking-[0.12em]" style={{ color: PALETTE.brassLight, opacity: 0.75 }}>
         Homage to the golden age of solid-state pinball (Bally/Williams, late 1970s)
       </div>

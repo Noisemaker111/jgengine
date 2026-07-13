@@ -9,6 +9,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/format/duration"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/format/duration"`
 
+## key-hint — keyboard/mouse control hint that hides itself on touch
+
+- `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
+
+## keycap — styled keyboard/mouse key cap for control hints
+
+- `Keycap` (function) · `import { Keycap } from "@jgengine/react"`
+
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
 - `Minimap` (function) · `import { Minimap } from "@jgengine/react"`

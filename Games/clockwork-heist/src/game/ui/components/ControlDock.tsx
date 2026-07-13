@@ -18,7 +18,10 @@ function DockButton({ k, label, onClick }: { k: string; label: string; onClick: 
       onClick={onClick}
       className="flex min-h-[48px] items-center gap-2 rounded border border-[#c9a227]/60 bg-[#0b0f1c]/85 px-3 py-2 text-xs uppercase tracking-wide text-[#e5d9c3] transition hover:bg-[#1d2b4a]"
     >
-      <kbd className="rounded border border-[#c9a227]/60 bg-black/30 px-1.5 py-0.5 font-mono text-[11px] text-[#c9a227]">
+      <kbd
+        data-jg-kbd-hint=""
+        className="rounded border border-[#c9a227]/60 bg-black/30 px-1.5 py-0.5 font-mono text-[11px] text-[#c9a227]"
+      >
         {k}
       </kbd>
       {label}

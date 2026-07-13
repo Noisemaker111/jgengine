@@ -1,3 +1,4 @@
+import { KeyHint, useDisplayProfile } from "@jgengine/react";
 import { actionLabel, bindingLabel } from "@jgengine/core/input/actionBindings";
 import { keybinds } from "../../keybinds";
 import { CHARGE_FUSE_SECONDS } from "../../charges/chargeState";
@@ -39,6 +40,7 @@ export function ChargeSlots({ slots, dodgeFraction }: { slots: readonly [ChargeS
   const detonateLabel = actionLabel(keybinds, "detonateCharges") ?? "Space";
   const dodgeLabel = actionLabel(keybinds, "dodgeRoll") ?? "Shift";
   const dodgeReady = dodgeFraction >= 1;
+  const { coarsePointer } = useDisplayProfile();
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-[#ff6b35]/25 bg-[#160f0c]/85 p-3 shadow-lg shadow-black/40 backdrop-blur-sm">
       <div className="flex items-center gap-2">
@@ -56,12 +58,12 @@ export function ChargeSlots({ slots, dodgeFraction }: { slots: readonly [ChargeS
                 : `conic-gradient(rgba(59,199,196,0.5) ${Math.round(dodgeFraction * 360)}deg, transparent ${Math.round(dodgeFraction * 360)}deg)`,
             }}
           >
-            {dodgeLabel}
+            {coarsePointer ? "◈" : dodgeLabel}
           </div>
           <span className="text-[9px] font-semibold uppercase tracking-wide text-[#cdb891]/50">Dodge</span>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#cdb891]/70">
+      <KeyHint className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#cdb891]/70">
         <span>
           <span className="rounded bg-black/50 px-1 py-0.5 text-[#ffd7ba]">{throwLabel}</span> arm
         </span>
@@ -71,7 +73,7 @@ export function ChargeSlots({ slots, dodgeFraction }: { slots: readonly [ChargeS
         <span>
           <span className="rounded bg-black/50 px-1 py-0.5 text-[#ffd7ba]">{detonateLabel}</span> detonate
         </span>
-      </div>
+      </KeyHint>
     </div>
   );
 }

@@ -1,8 +1,12 @@
 import type { ReactNode } from "react";
+import { useDisplayProfile } from "@jgengine/react";
 
 export function Kbd({ label, active = false }: { label: string; active?: boolean }): ReactNode {
+  const { coarsePointer } = useDisplayProfile();
+  if (coarsePointer) return null;
   return (
     <kbd
+      data-jg-kbd-hint=""
       className={`grid h-5 min-w-[1.25rem] place-items-center border px-1 text-[11px] font-medium leading-none ${
         active
           ? "border-[#d7ff43] bg-[#d7ff43] text-[#171916]"
