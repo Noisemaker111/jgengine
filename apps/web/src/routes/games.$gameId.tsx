@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
-import { PreviewFrame } from "../components/PreviewFrame";
 import { GAMES, type Game } from "../content/games";
 import { seo } from "../lib/seo";
 
@@ -20,10 +19,10 @@ export const Route = createFileRoute("/games/$gameId")({
   component: PlayPage,
 });
 
-type GamePhase = "poster" | "loading" | "playing";
+type GamePhase = "loading" | "playing";
 
 function GameStage({ game }: { game: Game }) {
-  const [phase, setPhase] = useState<GamePhase>("poster");
+  const [phase, setPhase] = useState<GamePhase>("loading");
   const frameRef = useRef<HTMLIFrameElement | null>(null);
 
   const markPlaying = useCallback(() => {
@@ -83,68 +82,20 @@ function GameStage({ game }: { game: Game }) {
           background: `radial-gradient(ellipse 80% 90% at 50% 110%, ${game.hue}38, transparent 70%), linear-gradient(to bottom, #0a0f1c, #04060c)`,
         }}
       >
-        {phase !== "poster" && (
-          <iframe
-            ref={bindFrame}
-            src={`/play/?game=${encodeURIComponent(game.id)}`}
-            title={game.title}
-            allow="fullscreen; gamepad; pointer-lock"
-            className={`absolute inset-0 h-full w-full border-0 transition-opacity duration-300 ${phase === "playing" ? "opacity-100" : "opacity-0"}`}
-            onLoad={markPlaying}
-          />
-        )}
+        <iframe
+          ref={bindFrame}
+          src={`/play/?game=${encodeURIComponent(game.id)}`}
+          title={game.title}
+          allow="fullscreen; gamepad; pointer-lock"
+          className={`absolute inset-0 h-full w-full border-0 transition-opacity duration-300 ${phase === "playing" ? "opacity-100" : "opacity-0"}`}
+          onLoad={markPlaying}
+        />
 
         {phase !== "playing" && (
-          <div className="absolute inset-0" aria-hidden>
-            <div className="absolute inset-0 opacity-70">
-              <PreviewFrame game={game} />
-            </div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,transparent_0%,rgba(0,0,0,.28)_42%,rgba(0,0,0,.86)_100%)]" />
-            <div
-              className="absolute inset-x-0 bottom-0 h-1/2"
-              style={{ background: `linear-gradient(to top, ${game.hue}20, transparent)` }}
-            />
-          </div>
-        )}
-
-        {phase !== "playing" && (
-          <div className="absolute inset-0 grid place-items-center px-6 py-20 text-center">
-            <div className="relative flex max-w-3xl flex-col items-center">
-              <p className="mb-4 font-mono text-xs uppercase tracking-[0.42em] text-white/55">JGengine presents</p>
-              <h1
-                className="text-balance text-5xl font-black uppercase leading-[0.88] tracking-[-0.045em] text-white sm:text-7xl md:text-8xl"
-                style={{ textShadow: `0 0 48px ${game.hue}66` }}
-              >
-                {game.title}
-              </h1>
-              <p className="mt-5 max-w-xl text-balance text-base font-medium leading-relaxed text-white/75 sm:text-lg">
-                {game.tagline}
-              </p>
-
-              {phase === "poster" ? (
-                <button
-                  type="button"
-                  onClick={() => setPhase("loading")}
-                  className="group relative mt-10 min-h-14 min-w-52 overflow-hidden border border-white/25 px-8 py-4 font-mono text-sm font-bold uppercase tracking-[0.24em] text-white transition duration-150 hover:-translate-y-0.5 hover:border-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 active:translate-y-0 active:scale-[0.98]"
-                  style={{ clipPath: "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)" }}
-                >
-                  <span
-                    className="absolute inset-0 opacity-80 transition group-hover:opacity-100"
-                    style={{ background: `linear-gradient(135deg, ${game.hue}cc, ${game.hue}55)` }}
-                  />
-                  <span className="relative inline-flex items-center gap-3">
-                    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
-                      <path d="M3 2.2v7.6L10 6 3 2.2Z" />
-                    </svg>
-                    Enter game
-                  </span>
-                </button>
-              ) : (
-                <div className="mt-10 flex items-center gap-4 font-mono text-sm uppercase tracking-[0.2em] text-white/70">
-                  <span className="h-5 w-5 animate-spin border-2 border-white/20" style={{ borderTopColor: game.hue }} />
-                  Loading
-                </div>
-              )}
+          <div className="absolute inset-0 grid place-items-center" aria-hidden>
+            <div className="flex items-center gap-4 font-mono text-sm uppercase tracking-[0.2em] text-white/70">
+              <span className="h-5 w-5 animate-spin border-2 border-white/20" style={{ borderTopColor: game.hue }} />
+              Loading
             </div>
           </div>
         )}

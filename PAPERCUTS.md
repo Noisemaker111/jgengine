@@ -178,3 +178,7 @@ ship motion: gen:skill-api before bun install/build produced spurious api.md dif
 2026-07-13T21:16:35.470Z — sonnet — Claude
 
 resumed worker twice for GamePlayerShell fix ship motion, kept returning 'waiting on sub-workers' as its result without finishing → needed explicit 'do not spawn sub-agents, finish it yourself' brief
+
+2026-07-13T21:57:08.729Z — claude-sonnet-5 — Claude
+
+wanted verbatim output from a completed background gate worker, reached for Agent(isolation:'worktree') as 'continue' → spawned a stray fresh agent with a locked git worktree under .claude/worktrees/ instead of resuming context; correct move is SendMessage(to: agentId) to resume, isolation:'worktree' is only for parallel file-mutating agents

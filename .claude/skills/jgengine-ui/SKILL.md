@@ -32,6 +32,7 @@ Read [reference.md](reference.md) when building or reviewing a game interface. I
 ## Non-negotiable defaults
 
 - Active play owns the viewport; no marketing header, page title bar, document scrolling, or website container.
+- The game builds its own main menu (unique per game) and its own in-game menus (pause, settings, results). The hosting site page (`apps/web`) is a loader only — spinner until `/play` is ready, no title/tagline/CTA of its own. One menu per game, and the game owns it.
 - Screen placement belongs in the game's `ui/GameUI.tsx` composition layer.
 - Persistent gameplay information is frameless unless a physical/diegetic frame is part of the game's art direction.
 - Instructions are contextual and temporary, not permanent keyboard grids.
