@@ -10,6 +10,7 @@
 - `AbilityCooldownGroup` (interface): interface AbilityCooldownGroup — A cooldown shared across every member slot: casting any member starts it, and no member can cast while it runs. One group that every slot joins is an MMO global cooldown.
 - `AbilityKit` (interface): interface AbilityKit — ⚠ undocumented
 - `AbilityKitOptions` (interface): interface AbilityKitOptions — ⚠ undocumented
+- `AbilityResource` (interface): interface AbilityResource — A spendable resource pool (mana, energy, rage) bound to an ability kit. When bound, `cast` deducts a slot's `resourceCost` on success and `state`/`snapshot`/`canCast` reflect affordability without a per-call `resourceAvailable` argument — the cast path actually spends instead of only gating (#357).
 - `AbilitySlotConfig` (interface): interface AbilitySlotConfig — ⚠ undocumented
 - `AbilitySlotRetune` (interface): interface AbilitySlotRetune — ⚠ undocumented
 - `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot — ⚠ undocumented

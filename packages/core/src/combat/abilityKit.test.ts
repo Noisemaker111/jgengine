@@ -204,3 +204,60 @@ describe("abilityKit cooldown groups", () => {
     ).toThrow();
   });
 });
+
+describe("abilityKit bound resource (#357)", () => {
+  function pool(initial: number) {
+    let value = initial;
+    return {
+      resource: {
+        available: () => value,
+        spend: (cost: number) => {
+          value -= cost;
+        },
+      },
+      get: () => value,
+    };
+  }
+
+  it("deducts a slot's resourceCost from the bound pool on a successful cast", () => {
+    const mana = pool(100);
+    const kit = createAbilityKit([{ id: "fireball", cooldownMs: 0, resourceCost: 30, chargesMax: 5 }], { resource: mana.resource });
+
+    expect(kit.cast("fireball").ok).toBe(true);
+    expect(mana.get()).toBe(70);
+    expect(kit.cast("fireball").ok).toBe(true);
+    expect(mana.get()).toBe(40);
+  });
+
+  it("fails a cast the pool cannot afford and spends nothing", () => {
+    const mana = pool(20);
+    const kit = createAbilityKit([{ id: "fireball", cooldownMs: 0, resourceCost: 30 }], { resource: mana.resource });
+
+    const result = kit.cast("fireball");
+    expect(result.ok).toBe(false);
+    expect(result.ok === false && result.reason).toBe("no-resource");
+    expect(mana.get()).toBe(20);
+  });
+
+  it("reflects bound-pool affordability in state/snapshot without a per-call argument", () => {
+    const mana = pool(10);
+    const kit = createAbilityKit([{ id: "fireball", cooldownMs: 0, resourceCost: 30 }], { resource: mana.resource });
+
+    expect(kit.state("fireball")?.state).toBe("no-resource");
+    expect(kit.snapshot()[0]?.ready).toBe(false);
+  });
+
+  it("an explicit resourceAvailable argument overrides the pool and never auto-spends", () => {
+    const mana = pool(100);
+    const kit = createAbilityKit([{ id: "fireball", cooldownMs: 0, resourceCost: 30 }], { resource: mana.resource });
+
+    expect(kit.cast("fireball", 30).ok).toBe(true);
+    expect(mana.get()).toBe(100); // legacy path: caller manages the pool itself
+  });
+
+  it("without a bound resource, cast never gates on resource (unchanged default behavior)", () => {
+    const kit = createAbilityKit([{ id: "fireball", cooldownMs: 0, resourceCost: 30, chargesMax: 2 }]);
+    expect(kit.cast("fireball").ok).toBe(true);
+    expect(kit.canCast("fireball").ok).toBe(true); // charge remains, resource ignored (treated as infinite)
+  });
+});
