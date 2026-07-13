@@ -41,7 +41,7 @@ describe("withTouchCodes", () => {
 });
 
 describe("deriveTouchScheme", () => {
-  test("reserved movement actions become the joystick, remaining actions become buttons", () => {
+  test("reserved movement actions become the joystick, remaining non-lifecycle actions become buttons", () => {
     const scheme = deriveTouchScheme(
       { moveLeft: ["KeyA"], moveRight: ["KeyD"], jump: ["Space"], restart: ["KeyR"] },
       { reserved: RESERVED, firstPerson: false },
@@ -49,7 +49,6 @@ describe("deriveTouchScheme", () => {
     expect(scheme?.joystick).toEqual({ up: null, down: null, left: "moveLeft", right: "moveRight" });
     expect(scheme?.buttons).toEqual([
       { action: "jump", label: "Jump", icon: null, kind: "primary", shape: "circle", anchor: null, image: null },
-      { action: "restart", label: "Restart", icon: null, kind: "utility", shape: "circle", anchor: null, image: null },
     ]);
     expect(scheme?.look).toBe(false);
     expect(scheme?.layout).toEqual({ movement: "bottom-left", actions: "bottom-right", utility: "bottom-center" });
@@ -170,7 +169,7 @@ describe("deriveTouchScheme", () => {
     expect(custom?.style).toBe("arcade");
   });
 
-  test("flight-style bindings map pitch/yaw to the joystick and split primary from utility buttons", () => {
+  test("flight-style bindings map pitch/yaw to the joystick and drop lifecycle actions from the dock", () => {
     const scheme = deriveTouchScheme(
       {
         pitchUp: ["ArrowUp"],
@@ -186,15 +185,21 @@ describe("deriveTouchScheme", () => {
       { reserved: RESERVED, firstPerson: false },
     );
     expect(scheme?.joystick).toEqual({ up: "pitchUp", down: "pitchDown", left: "yawLeft", right: "yawRight" });
-    expect(scheme?.buttons.filter((button) => button.kind === "primary").map((button) => button.action)).toEqual([
-      "thrust",
-      "airbrake",
-      "dodge",
-    ]);
-    expect(scheme?.buttons.filter((button) => button.kind === "utility").map((button) => button.action)).toEqual([
-      "restart",
-      "start",
-    ]);
+    expect(scheme?.buttons.map((button) => button.action)).toEqual(["thrust", "airbrake", "dodge"]);
+  });
+
+  test("session-lifecycle actions never auto-derive a button, but an explicit list still docks them", () => {
+    const derived = deriveTouchScheme(
+      { fire: ["KeyF"], restart: ["KeyR"], start: ["Enter"], pause: ["KeyP"], menu: ["Escape"] },
+      { reserved: RESERVED, firstPerson: false },
+    );
+    expect(derived?.buttons.map((button) => button.action)).toEqual(["fire"]);
+
+    const explicit = deriveTouchScheme(
+      { fire: ["KeyF"], pause: ["KeyP"] },
+      { reserved: RESERVED, firstPerson: false, config: { buttons: ["fire", "pause"] } },
+    );
+    expect(explicit?.buttons.map((button) => button.action)).toEqual(["fire", "pause"]);
   });
 
   test("driving-style bindings map accelerate/brake/steer to the joystick", () => {
