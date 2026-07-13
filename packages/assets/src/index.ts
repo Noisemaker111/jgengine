@@ -4,8 +4,11 @@ export {
   sourceById,
   modelSources,
   materialSources,
+  spriteSources,
   ambientcgSources,
+  gameiconsSources,
   kenneySources,
+  kenneySpriteSources,
   quaterniusSources,
   kaykitSources,
 } from "./sources";
@@ -21,11 +24,21 @@ export {
   type MaterialMaps,
   type MaterialRef,
 } from "./materials";
+export { extractSpriteFiles, type ExtractedSpriteFile } from "./download";
+export {
+  keyFromSpriteFile,
+  entryForSpriteFile,
+  indexSpriteSourceDir,
+  reindexSprites,
+  type ReindexSpritesResult,
+} from "./spriteIndexGen";
 export { singles } from "./singles";
 export { aliases } from "./aliases";
 export { generatedIndex, generatedBySource } from "./generated";
+export { generatedSpriteIndex, generatedSpriteBySource } from "./generated-sprites";
 export { readGlbDims } from "./dims";
 export { buildCatalog, entryUrl, type BuildCatalogOptions } from "./catalogs/build";
+export { buildSpriteCatalog, type BuildSpriteCatalogOptions } from "./catalogs/buildSprites";
 export { createStarterCatalog } from "./catalogs/starter";
 export {
   findAssets,
@@ -41,6 +54,7 @@ export {
   materialWiringSnippet,
   componentWiringSnippet,
   iconWiringSnippet,
+  spriteWiringSnippet,
   type ModelSnippetOptions,
 } from "./snippet";
 export { verifyManifest, type VerifyResult } from "./verify";

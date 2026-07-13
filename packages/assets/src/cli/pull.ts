@@ -4,9 +4,10 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFi
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { downloadPackArchive, extractGlbs, extractTextures } from "../download";
+import { downloadPackArchive, extractGlbs, extractSpriteFiles, extractTextures } from "../download";
 import { type AssetKind, type AssetMatch, rankAssets } from "../find";
 import { generatedIndex } from "../generated";
+import { generatedSpriteIndex } from "../generated-sprites";
 import { reindex } from "../indexGen";
 import { isScrapeDownload, type AssetSource, type SingleAsset } from "../manifest";
 import { extractMaterialMaps } from "../materials";
@@ -16,16 +17,20 @@ import {
   iconWiringSnippet,
   materialWiringSnippet,
   modelWiringSnippet,
+  spriteWiringSnippet,
 } from "../snippet";
-import { materialSources, sourceById } from "../sources";
+import { materialSources, sourceById, spriteSources } from "../sources";
+import { reindexSprites } from "../spriteIndexGen";
 import { verifyManifest } from "../verify";
-import { resolveGeneratedDir, resolvePackageRoot, resolvePackageTreeRoot } from "./paths";
+import { resolveGeneratedDir, resolveGeneratedSpritesDir, resolvePackageRoot, resolvePackageTreeRoot } from "./paths";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageTreeRoot = resolvePackageTreeRoot(here);
 const pkgRoot = resolvePackageRoot(here);
 /** Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import. */
 export const generatedDir = resolveGeneratedDir(here);
+/** Sprite-pack counterpart of `generatedDir`. */
+export const generatedSpritesDir = resolveGeneratedSpritesDir(here);
 export { resolveGeneratedDir } from "./paths";
 const singlesJson = join(packageTreeRoot, "singles.json");
 const localDir = join(pkgRoot, "local");
@@ -92,6 +97,28 @@ function cmdList(argv: string[]): void {
     console.log(`— ${Math.min(rows.length, limit)} of ${rows.length} materials`);
     return;
   }
+  if (flag(argv, "kind") === "sprite") {
+    const rows = generatedSpriteIndex.filter(
+      (entry) =>
+        (category === undefined || entry.categories.includes(category)) &&
+        (source === undefined || entry.source === source),
+    );
+    for (const entry of rows.slice(0, limit)) {
+      console.log(`${entry.id}\t[${entry.categories.join(",")}]\t${entry.file}`);
+    }
+    console.log(`— ${Math.min(rows.length, limit)} of ${rows.length} sprite/icon files`);
+    return;
+  }
+  if (flag(argv, "kind") === "spritePack") {
+    const rows = spriteSources.filter(
+      (entry) => category === undefined || entry.categories.includes(category),
+    );
+    for (const entry of rows.slice(0, limit)) {
+      console.log(`${entry.id}\t[${entry.categories.join(",")}]\t${entry.license}`);
+    }
+    console.log(`— ${Math.min(rows.length, limit)} of ${rows.length} sprite/icon packs`);
+    return;
+  }
   const rows = generatedIndex.filter(
     (entry) =>
       (category === undefined || entry.categories.includes(category)) &&
@@ -131,7 +158,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
   if (source === undefined) fail(`unknown source: ${sourceId}`);
 
   const outRoot = resolve(flag(argv, "dir") ?? "public");
-  const outDir = join(outRoot, source.kind === "material" ? "materials" : "models", sourceId);
+  const outDir = join(outRoot, packSubdir(source), sourceId);
   const offline = argv.includes("--offline");
   const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
 
@@ -150,6 +177,12 @@ export async function cmdPull(argv: string[]): Promise<void> {
   console.log(describeFetchResult(source, result));
 }
 
+function packSubdir(source: AssetSource): "materials" | "sprites" | "models" {
+  if (source.kind === "material") return "materials";
+  if (source.kind === "sprite") return "sprites";
+  return "models";
+}
+
 interface FetchPackResult {
   outDir: string;
   models: number;
@@ -161,6 +194,9 @@ function describeFetchResult(source: AssetSource, result: FetchPackResult): stri
   if (source.kind === "material") {
     return `pulled ${result.textures} material map(s) -> ${result.outDir}`;
   }
+  if (source.kind === "sprite") {
+    return `pulled ${result.models} sprite/icon file(s) -> ${result.outDir}`;
+  }
   const textureNote = result.textures > 0 ? ` + ${result.textures} texture(s)` : "";
   return `pulled ${result.models} models${textureNote} -> ${result.outDir}`;
 }
@@ -170,8 +206,7 @@ async function fetchPackInto(
   outRoot: string,
   options: { mirrorBase?: string },
 ): Promise<FetchPackResult> {
-  const isMaterial = source.kind === "material";
-  const outDir = join(outRoot, isMaterial ? "materials" : "models", source.id);
+  const outDir = join(outRoot, packSubdir(source), source.id);
   console.log(
     `resolving ${source.id}${isScrapeDownload(source.download) ? " (scrape)" : ""}` +
       `${options.mirrorBase !== undefined ? ` [mirror override: ${options.mirrorBase}]` : ""}…`,
@@ -183,7 +218,7 @@ async function fetchPackInto(
   console.log(
     `downloaded ${url}${attempted.length > 1 ? ` (after ${attempted.length - 1} failed attempt(s))` : ""}`,
   );
-  if (isMaterial) {
+  if (source.kind === "material") {
     const maps = extractMaterialMaps(archive);
     if (maps.every((map) => map.role !== "color")) {
       fail(`no color map found in ${source.id} archive`);
@@ -191,6 +226,13 @@ async function fetchPackInto(
     mkdirSync(outDir, { recursive: true });
     for (const map of maps) writeFileSync(join(outDir, map.file), map.bytes);
     return { outDir, models: 0, textures: maps.length, url };
+  }
+  if (source.kind === "sprite") {
+    const files = extractSpriteFiles(archive);
+    if (files.length === 0) fail(`no .svg/.png files found in ${source.id} archive`);
+    mkdirSync(outDir, { recursive: true });
+    for (const file of files) writeFileSync(join(outDir, file.file), file.bytes);
+    return { outDir, models: files.length, textures: 0, url };
   }
   const glbs = extractGlbs(archive);
   if (glbs.length === 0) fail(`no .glb files found in ${source.id} archive`);
@@ -250,7 +292,15 @@ function cmdRegisterSingle(argv: string[]): void {
   console.log(`added single ${id} -> ${url}${isUrl ? " (0 bytes stored)" : " (copied to local/)"}`);
 }
 
-const KINDS: readonly AssetKind[] = ["model", "pack", "material", "component", "icon"];
+const KINDS: readonly AssetKind[] = [
+  "model",
+  "pack",
+  "material",
+  "component",
+  "icon",
+  "sprite",
+  "spritePack",
+];
 
 function describeMatch(match: AssetMatch): string {
   switch (match.kind) {
@@ -264,6 +314,10 @@ function describeMatch(match: AssetMatch): string {
       return `[component] ${match.name} — ${match.title}`;
     case "icon":
       return `[icon]      ${match.name}`;
+    case "sprite":
+      return `[sprite]    ${match.id}`;
+    case "spritePack":
+      return `[spritePack] ${match.source} — ${match.title}`;
   }
 }
 
@@ -299,6 +353,33 @@ async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
     return;
   }
 
+  if (match.kind === "sprite" || match.kind === "spritePack") {
+    const source = sourceById.get(match.source);
+    if (source === undefined) fail(`match resolves to unknown source: ${match.source}`);
+    const outDir = join(outRoot, "sprites", match.source);
+
+    if (isPopulated(outDir)) {
+      console.log(`${match.source} already present in ${outDir}`);
+    } else {
+      const result = await fetchPackInto(source, outRoot, { mirrorBase });
+      console.log(describeFetchResult(source, result));
+    }
+
+    const result = reindexSprites(join(outRoot, "sprites"), generatedSpritesDir);
+    console.log(`reindexed ${result.total} entries -> ${generatedSpritesDir}`);
+
+    if (match.kind === "sprite") {
+      console.log(`\nwire it in:\n`);
+      console.log(spriteWiringSnippet(match.id));
+    } else {
+      console.log(
+        `\n${match.title}: browse ids with \`assets list --kind sprite --source ${match.source}\`, then wire like:\n`,
+      );
+      console.log(spriteWiringSnippet(`${match.source}/<icon>`));
+    }
+    return;
+  }
+
   const source = sourceById.get(match.source);
   if (source === undefined) fail(`match resolves to unknown source: ${match.source}`);
   const outDir = join(outRoot, "models", match.source);
@@ -328,7 +409,7 @@ async function cmdAdd(argv: string[]): Promise<void> {
   const query = argv[0];
   if (query === undefined) {
     fail(
-      "usage: add <query> [--kind model|pack|material|component|icon] [--dir <dir>] [--mirror <baseUrl>] [--json]\n" +
+      "usage: add <query> [--kind model|pack|material|component|icon|sprite|spritePack] [--dir <dir>] [--mirror <baseUrl>] [--json]\n" +
         "       add <path|url> --license <l> [--category <c>]   (register a one-off single into the shipped index)",
     );
   }
@@ -373,6 +454,14 @@ function cmdReindex(argv: string[]): void {
   console.log(`reindexed ${result.total} entries -> ${generatedDir}`);
 }
 
+function cmdReindexSprites(argv: string[]): void {
+  const spritesDir = resolve(argv[0] ?? join("public", "sprites"));
+  if (!existsSync(spritesDir)) fail(`sprites dir not found: ${spritesDir}`);
+  const result = reindexSprites(spritesDir, generatedSpritesDir);
+  for (const row of result.perSource) console.log(`  ${row.source}: ${row.count}`);
+  console.log(`reindexed ${result.total} entries -> ${generatedSpritesDir}`);
+}
+
 function cmdVerify(): void {
   const result = verifyManifest();
   if (result.ok) {
@@ -404,11 +493,14 @@ if (import.meta.main) {
     case "reindex":
       cmdReindex(rest);
       break;
+    case "reindex-sprites":
+      cmdReindexSprites(rest);
+      break;
     case "verify":
       cmdVerify();
       break;
     default:
-      console.log("usage: assets <add|list|search|pull|register|reindex|verify> [...args]");
+      console.log("usage: assets <add|list|search|pull|register|reindex|reindex-sprites|verify> [...args]");
       if (command !== undefined && command !== "help") process.exit(1);
   }
 }

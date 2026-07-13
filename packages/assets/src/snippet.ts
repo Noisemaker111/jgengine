@@ -57,6 +57,17 @@ export function componentWiringSnippet(component: RegistryComponent): string {
   ].join("\n");
 }
 
+/** Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog. */
+export function spriteWiringSnippet(id: string, basePath = "/sprites"): string {
+  return [
+    `// src/game/assets.ts`,
+    `import { buildSpriteCatalog } from "@jgengine/assets";`,
+    `export const sprites = buildSpriteCatalog({ basePath: ${JSON.stringify(basePath)} });`,
+    ``,
+    `sprites.resolve(${JSON.stringify(id)})!.url;  // e.g. an <img src> or a HUD icon slot`,
+  ].join("\n");
+}
+
 /** Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog. */
 export function iconWiringSnippet(name: string): string {
   return [

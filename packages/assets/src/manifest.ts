@@ -9,10 +9,14 @@ export type AssetProvider =
   | "polypizza"
   | "itch"
   | "ambientcg"
+  | "gameicons"
   | "custom";
 
-/** What a source's archive contains: GLB models (default) or one PBR material's texture maps. */
-export type AssetSourceKind = "model" | "material";
+/**
+ * What a source's archive contains: GLB models (default), one PBR material's
+ * texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
+ */
+export type AssetSourceKind = "model" | "material" | "sprite";
 
 export interface PinnedDownload {
   url: string;
@@ -31,7 +35,7 @@ export function isScrapeDownload(download: AssetDownload): download is ScrapeDow
 
 export interface AssetSource {
   id: string;
-  /** What the archive contains: GLB models (default) or one PBR material's texture maps. */
+  /** What the archive contains: GLB models (default), a PBR material's texture maps, or a sprite/icon pack. */
   kind?: AssetSourceKind;
   provider: AssetProvider;
   title: string;

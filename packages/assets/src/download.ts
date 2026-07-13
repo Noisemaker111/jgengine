@@ -172,10 +172,8 @@ export async function downloadPackArchive(
   );
 }
 
-export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
-  const entries = unzipSync(archive, {
-    filter: (file) => /\.glb$/i.test(file.name),
-  });
+function dedupeByBasename(archive: Uint8Array, pattern: RegExp): { file: string; bytes: Uint8Array }[] {
+  const entries = unzipSync(archive, { filter: (file) => pattern.test(file.name) });
   const byName = new Map<string, Uint8Array>();
   for (const [path, bytes] of Object.entries(entries)) {
     const base = path.split("/").pop();
@@ -185,6 +183,21 @@ export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
   return Array.from(byName, ([file, bytes]) => ({ file, bytes })).sort((a, b) =>
     a.file.localeCompare(b.file),
   );
+}
+
+export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
+  return dedupeByBasename(archive, /\.glb$/i);
+}
+
+/** One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`. */
+export interface ExtractedSpriteFile {
+  file: string;
+  bytes: Uint8Array;
+}
+
+/** Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth. */
+export function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] {
+  return dedupeByBasename(archive, /\.(svg|png)$/i);
 }
 
 const TEXTURE_ENTRY = /(?:^|\/)(Textures\/[^/]+)$/i;
