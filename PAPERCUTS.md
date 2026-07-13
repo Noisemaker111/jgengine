@@ -158,3 +158,7 @@ expensive frontier session reacted to every worker/task/GitHub transition with p
 2026-07-13T03:17:31.731Z — claude-opus-4-8 — Claude
 
 gen:skill-api errored 'ts-morph missing; finish bun install first' but a fresh 'bun install' reported no changes/already complete — the message steered a wasted re-run when node_modules was actually fine (stale dist was the real cause via ensure-ready)
+
+2026-07-13T03:45:17.053Z — sonnet — Claude
+
+ship worker double-created the editor-overhaul PR (#650 and #651, same head sha) → duplicate merged no-op PR and confusing webhook stream
