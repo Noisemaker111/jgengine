@@ -132,15 +132,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
       },
     },
   },
-  "canyon-chase": {
-    tagline: "Run the smuggler down before the border opens.",
-    description:
-      "A high-speed canyon pursuit: close the gap on a smuggler's truck and hold within striking range long enough to force a capture before it crosses the border. Feints, deceptive shortcuts, and dead-end forks split off the main road, while adrenaline surges and radio chatter keep the chase razor-tight.",
-    genre: "Canyon pursuit racer",
-    category: "Action & Arcade",
-    controls: "WASD/Arrows drive · Space handbrake · M survey map",
-    hue: "#c2410c",
-  },
   "clockwork-heist": {
     tagline: "Five treasures, one clockwork night, zero mistakes.",
     description:
@@ -212,15 +203,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "WASD · Space gather-pulse · Shift hold herd",
     hue: "#2dd4bf",
   },
-  "orbit-kart": {
-    tagline: "Slingshot through gravity wells to the checkered line.",
-    description:
-      "A zero-gravity kart race through six checkpoint rings and seven gravity wells across three laps. Ride the predicted trajectory into a planetoid, charge the slingshot meter, and discharge inside the clean window to fling out faster than you flew in.",
-    genre: "Orbital slingshot racer",
-    category: "Action & Arcade",
-    controls: "W/S thrust · A/D rotate · Space discharge sling",
-    hue: "#ff7f11",
-  },
   "pulse-runner": {
     tagline: "Stay on the beat or fall behind.",
     description:
@@ -230,15 +212,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "Space tap beat · A/D lane · W lean",
     hue: "#f472b6",
   },
-  "rail-rushers": {
-    tagline: "Pump the handcar, beat the express, don't get wrecked.",
-    description:
-      "A branching-network handcar race against the clock. Pump the throttle in rhythm for a speed bonus, throw junctions ahead of you to route around oncoming scheduled trains, and ride the rails to the summit terminus before the express catches up.",
-    genre: "Rail dispatcher racer",
-    category: "Action & Arcade",
-    controls: "W pump · S brake · Space throw junction · M diagram",
-    hue: "#38bdf8",
-  },
   "skyhook-rally": {
     tagline: "Grapple, swing, and release at the apex.",
     description:
@@ -247,16 +220,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Action & Arcade",
     controls: "Mouse/Space hook · W/S pitch · A/D steer",
     hue: "#818cf8",
-  },
-  "turbine-city": {
-    tagline: "Thread the fan-driven wind tunnels, out-glide the pacer.",
-    description:
-      "Pilot a glider through a skyline of scheduled fans that spool up, hold, reverse, and cut out, riding their flow tubes for speed while a rival pacer keeps its own route. Stay centered in a tube's laminar core to build a streak multiplier — stray to the buffeting edge and control degrades, so dodge-burst clear of the turbulence.",
-    genre: "Aerial flow-racing",
-    category: "Action & Arcade",
-    controls: "↑/↓ pitch · ←/→ yaw · W thrust · S airbrake · Space dodge · Mouse steer",
-    hue: "#ec4899",
-    platforms: ["web", "mobile"],
   },
   wreckway: {
     tagline: "Bolt on parts, outrun the compactor eating the yard.",
