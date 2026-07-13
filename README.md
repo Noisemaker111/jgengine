@@ -55,6 +55,8 @@ That is the whole product surface for humans. No install checklist, no “run sk
 
 Under the hood the agent uses `npx jgengine` (create, skills, doctor, llms) and the skills in [`.claude/skills/`](.claude/skills) — an intake router plus focused API domains. Power users may call the CLI themselves; that is optional, not the entry.
 
+The game the agent builds is **its own project in its own repo/directory**, on the published npm packages. Agents must **never clone this monorepo** to build a game, and must **never copy code, assets, or content from `Games/*`** — those are private in-repo test games (some recreate well-known commercial titles for engine-gap probing), not templates, and their content is not licensed for reuse. `npx jgengine create` is the only starting point.
+
 ## Website — [jgengine.com](https://jgengine.com)
 
 [`apps/web`](apps/web) is a TanStack Start app: landing for humans (the prompt) and skill/API pages for agents. Skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.

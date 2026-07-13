@@ -7,6 +7,14 @@ description: Main skill — intake, foundation, and routing for JGengine games.
 
 JGengine is a pure-TypeScript game-engine SDK for games built by AI coding agents. Its skills teach the agent how to use the SDK. When a user says “make X with JGengine” or “make X with jgengine.com,” treat that as sufficient intake. If the skills are not installed, run `npx jgengine skills`; then use this skill and build on the SDK. Do not make the user discover or name skills.
 
+## Where the game lives
+
+The game is **its own project in its own repo/directory**, built on the published npm packages (`@jgengine/core`, `@jgengine/react`, `@jgengine/shell`, …) via the `npx jgengine` CLI and these skills.
+
+- **Never clone the jgengine GitHub repo to build a game.** The repo is the engine's development monorepo, not a starter. Scaffold with `npx jgengine create` and depend on the npm packages.
+- **Never copy code, assets, catalogs, or content from the repo's `Games/*` directory.** Those are private in-repo test games (some recreate well-known commercial titles for engine-gap probing) — they are not templates, and their content is not licensed for reuse. Build the user's game from their intake using the documented API surface below.
+- The only jgengine sources in a game project are the npm dependencies and the installed skills.
+
 ## Intake
 
 State the reading as a short numbered list that is easy to correct, then proceed unless the user changes it. Prefer concrete values and actions over prose:

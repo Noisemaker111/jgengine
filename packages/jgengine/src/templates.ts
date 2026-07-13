@@ -408,6 +408,8 @@ const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agen
 You are in a **JGengine** game project. JGengine is a pure-TypeScript game engine SDK on npm (\`@jgengine/core\`, \`react\`, \`shell\`, …). Site: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
 
 **How people use JGengine:** they say *Make a game that … with jgengine* to an agent. They do **not** start from a CLI tutorial. \`npx jgengine\` is for **you** (scaffold, skills, docs).
+
+**This project is the game.** Build here, on the \`@jgengine/*\` npm packages. Never clone the jgengine GitHub repo, and never copy code, assets, or content from its \`Games/*\` directory — those are private in-repo test games, not templates, and their content is not licensed for reuse.
 - Engine API surface: \`npx jgengine llms core\` (any package name works) prints the packaged API docs.
 - Agent skills — intake router, focused API domains, browserless verify gate: installed by create; recovery via \`npx jgengine skills -p\`.
 - Setup broken or UI unstyled: \`npx jgengine doctor\`.
