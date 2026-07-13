@@ -170,3 +170,7 @@ multi-worker fan-out wait → Stop hook 'commit your changes' fired on every qui
 2026-07-13T15:37:44.050Z — fable-5 — Claude
 
 assets pull in cloud sandbox → bun fetch dies with 'socket connection was closed unexpectedly' on release-assets.githubusercontent.com through the agent proxy (CONNECT ok, TLS stream killed); curl succeeds — needed a curl fallback in the CLI
+
+2026-07-13T16:37:20.805Z — Sonnet 5 — Claude
+
+ship motion: gen:skill-api before bun install/build produced spurious api.md diffs (removed exports) that silently reverted after gate's build step — re-run gen:skill-api after build, not before
