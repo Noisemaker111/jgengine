@@ -1,6 +1,6 @@
 import type { AxisInput } from "@jgengine/core/input/axisInput";
-import { steerYaw } from "@jgengine/core/movement/steering";
-import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "@jgengine/core/physics/vehicleBody";
+import { createKinematicVehicle } from "@jgengine/core/physics/kinematicVehicle";
+import { DEFAULT_GRIP_CURVE, type GripCurve } from "@jgengine/core/physics/vehicleBody";
 
 import {
   BOOST_SPEED_MULTIPLIER,
@@ -60,52 +60,28 @@ export function createVehicleController(
   spawn: { position: readonly [number, number, number]; heading: number },
   tuning: VehicleTuning = DEFAULT_TUNING,
 ): VehicleController {
-  let x = spawn.position[0];
-  let y = spawn.position[1];
-  let z = spawn.position[2];
-  let heading = spawn.heading;
-  let vx = 0;
-  let vz = 0;
+  const car = createKinematicVehicle(
+    {
+      engineAccel: tuning.engineAccel,
+      brakeAccel: tuning.brakeAccel,
+      topSpeed: tuning.topSpeed,
+      reverseSpeed: tuning.reverseSpeed,
+      turnRate: tuning.turnRate,
+      turnSpeedRef: tuning.turnSpeedRef,
+      grip: tuning.grip,
+      gripStrength: tuning.gripStrength,
+      handbrakeGrip: tuning.handbrakeGrip,
+    },
+    { position: spawn.position, heading: spawn.heading },
+  );
   let driftMeter = initialDriftMeter();
-
-  function forward(): [number, number] {
-    return [Math.sin(heading), Math.cos(heading)];
-  }
 
   return {
     tick(dt, axis, boostPressed) {
-      const [fx0, fz0] = forward();
-      const speed0 = vx * fx0 + vz * fz0;
-      const steerScale = Math.min(1, Math.abs(speed0) / tuning.turnSpeedRef);
-      const dir = speed0 >= 0 ? 1 : -1;
-      heading = steerYaw(heading, axis.steer * steerScale * dir, tuning.turnRate, dt);
-
-      const [fx, fz] = forward();
       const boostMultiplier = driftMeter.boosting ? BOOST_SPEED_MULTIPLIER : 1;
-      const topSpeed = tuning.topSpeed * boostMultiplier;
-
-      let accel = 0;
-      if (axis.throttle > 0 && speed0 < topSpeed) accel += axis.throttle * tuning.engineAccel * boostMultiplier;
-      if (axis.brake > 0) {
-        if (speed0 > 0.2) accel -= axis.brake * tuning.brakeAccel;
-        else if (speed0 > -tuning.reverseSpeed) accel -= axis.brake * tuning.engineAccel;
-      }
-      vx += fx * accel * dt;
-      vz += fz * accel * dt;
-
-      const forwardSpeed = vx * fx + vz * fz;
-      const lateralSpeed = -vx * fz + vz * fx;
-      const slip = Math.abs(lateralSpeed) / (Math.abs(forwardSpeed) + 1);
-      const handbrakeFactor = 1 - axis.handbrake * (1 - tuning.handbrakeGrip);
-      const grip = sampleGripCurve(tuning.grip, slip) * handbrakeFactor;
-      const keep = Math.max(0, 1 - grip * tuning.gripStrength * dt);
-      const newLateral = lateralSpeed * keep;
-
-      vx = fx * forwardSpeed - fz * newLateral;
-      vz = fz * forwardSpeed + fx * newLateral;
-
-      x += vx * dt;
-      z += vz * dt;
+      const step = car.tick(dt, axis, { topSpeedScale: boostMultiplier, accelScale: boostMultiplier });
+      const forwardSpeed = step.forwardSpeed;
+      const slip = step.slip;
 
       const drifting =
         axis.handbrake >= DRIFT_MIN_HANDBRAKE &&
@@ -119,8 +95,8 @@ export function createVehicleController(
         : chargeDriftMeter(driftMeter, dt, drifting ? driftStyleFromSlip(slip) : 0);
 
       return {
-        position: [x, y, z],
-        heading,
+        position: step.position,
+        heading: step.heading,
         speedKmh: Math.abs(forwardSpeed) * METERS_PER_SECOND_TO_KMH,
         drifting,
         slip,
@@ -128,12 +104,7 @@ export function createVehicleController(
       };
     },
     resetTo(position, resetHeading) {
-      x = position[0];
-      y = position[1];
-      z = position[2];
-      heading = resetHeading;
-      vx = 0;
-      vz = 0;
+      car.resetTo(position, resetHeading);
       driftMeter = initialDriftMeter();
     },
   };
