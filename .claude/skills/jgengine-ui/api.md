@@ -2,6 +2,20 @@
 
 # jgengine-ui — exported API surface
 
+## @jgengine/core/format/duration
+
+- `DurationFormat` (interface): interface DurationFormat — Options for {@link formatDuration}.
+- `formatDelta` (function): function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string — Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
+- `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
+- `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
+- `padNumber` (function): function padNumber(value: number, width: number): string — Left-pad a non-negative integer to `width` digits with leading zeros.
+
+## @jgengine/core/render/color
+
+- `hexToRgb` (function): function hexToRgb(hex: string): readonly [number, number, number] — Split a `#rrggbb` hex color into its `[r, g, b]` channels (0–255).
+- `mixHex` (function): function mixHex(from: string, to: string, t: number): string — Interpolate between two `#rrggbb` colors by fraction `t`, clamped to the endpoints.
+- `rgbToHex` (function): function rgbToHex(r: number, g: number, b: number): string — Combine `[r, g, b]` channels (0–255, rounded) into a `#rrggbb` hex string.
+
 ## @jgengine/core/render/postProcessing
 
 - `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
@@ -263,6 +277,7 @@
 - `useGameOrientation` (function): function useGameOrientation(): LayoutOrientation — The live device orientation.
 - `useGamePhase` (function): function useGamePhase(): { phase: GamePhase; setPhase: (phase: GamePhase) => void } — Live run phase + a setter that also gates the shell's touch controls. `menu`/`paused`/`ended` hide the touch dock; `playing` shows it.
 - `useGameStore` (function): function useGameStore<T>(selector: (ctx: GameContext) => T, isEqual: (previous: T, next: T) => boolean = Object.is): T — ⚠ undocumented
+- `useGameStoreValue` (function): function useGameStoreValue<T>(key: string, fallback: T): T — Subscribe to a single keyed slice of the game store, returning `fallback` until the key is set.
 - `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
@@ -416,6 +431,7 @@
 - `useGameClock` (function): function useGameClock(): ClockSnapshot & { controls: SimClock } — ⚠ undocumented
 - `useGamePhase` (function): function useGamePhase(): { phase: GamePhase; setPhase: (phase: GamePhase) => void } — Live run phase + a setter that also gates the shell's touch controls. `menu`/`paused`/`ended` hide the touch dock; `playing` shows it.
 - `useGameStore` (function): function useGameStore<T>(selector: (ctx: GameContext) => T, isEqual: (previous: T, next: T) => boolean = Object.is): T — ⚠ undocumented
+- `useGameStoreValue` (function): function useGameStoreValue<T>(key: string, fallback: T): T — Subscribe to a single keyed slice of the game store, returning `fallback` until the key is set.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
 - `useLeaderboard` (function): function useLeaderboard(stat: string, options: { scope: LeaderboardScope; limit?: number }): { userId: string; value: number }[] — ⚠ undocumented
