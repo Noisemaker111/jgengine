@@ -503,3 +503,46 @@ export function createLapTimer(): LapTimer {
     },
   };
 }
+
+/**
+ * Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`):
+ * `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the
+ * cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
+ */
+export function splitSegments(splits: readonly number[], start = 0): number[] {
+  const segments: number[] = [];
+  let previous = start;
+  for (const split of splits) {
+    segments.push(split - previous);
+    previous = split;
+  }
+  return segments;
+}
+
+/**
+ * Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time
+ * is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
+ */
+export function lapDurations(splits: readonly number[], gatesPerLap: number): number[] {
+  if (gatesPerLap <= 0) return [];
+  const laps: number[] = [];
+  for (let lap = 0; ; lap += 1) {
+    const finish = lap * gatesPerLap + (gatesPerLap - 1);
+    if (finish >= splits.length) break;
+    const previousFinish = lap === 0 ? 0 : (splits[lap * gatesPerLap - 1] ?? 0);
+    laps.push(splits[finish]! - previousFinish);
+  }
+  return laps;
+}
+
+/**
+ * Elementwise delta of a cumulative split book against a `reference` book (a personal best or par lap):
+ * positive means behind the reference at that checkpoint. Compared up to the shorter length — the
+ * `+0.3s` / `−1.2s` gap every racing HUD shows against its ghost.
+ */
+export function parDelta(splits: readonly number[], reference: readonly number[]): number[] {
+  const count = Math.min(splits.length, reference.length);
+  const deltas: number[] = [];
+  for (let i = 0; i < count; i += 1) deltas.push(splits[i]! - reference[i]!);
+  return deltas;
+}

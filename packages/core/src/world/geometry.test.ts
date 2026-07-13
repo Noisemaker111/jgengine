@@ -4,11 +4,15 @@ import {
   aabbContains,
   aabbOverlap,
   clampToAabb,
+  clampToEllipse,
+  ellipseNormal,
   footprintAabb,
   pointInAabb,
+  pointInEllipse,
   resolveMove,
   snapToGrid,
   type Aabb,
+  type Ellipse,
 } from "./geometry";
 
 describe("geometry", () => {
@@ -57,5 +61,29 @@ describe("geometry", () => {
     const bounds: Aabb = { minX: 0, maxX: 10, minZ: 0, maxZ: 10 };
     const resolved = resolveMove([5, 5], [10, 0], [], { bounds, radius: 0.5 });
     expect(resolved[0]).toBe(9.5);
+  });
+});
+
+describe("ellipse", () => {
+  const arena: Ellipse = { center: [0, 0], radiusX: 4, radiusY: 2 };
+
+  test("containment respects the semi-axes", () => {
+    expect(pointInEllipse([3.9, 0], arena)).toBe(true);
+    expect(pointInEllipse([0, 1.9], arena)).toBe(true);
+    expect(pointInEllipse([3, 1.5], arena)).toBe(false);
+  });
+
+  test("clampToEllipse snaps outside points onto the boundary and leaves inside points", () => {
+    const inside: [number, number] = [1, 0];
+    expect(clampToEllipse(inside, arena)).toBe(inside);
+    const clamped = clampToEllipse([8, 0], arena);
+    expect(pointInEllipse(clamped, arena)).toBe(true);
+    expect(clamped[0]).toBeCloseTo(4);
+  });
+
+  test("normal points outward and favours the tighter axis", () => {
+    expect(ellipseNormal([4, 0], arena)).toEqual([1, 0]);
+    const n = ellipseNormal([2, 1], arena);
+    expect(Math.hypot(n[0], n[1])).toBeCloseTo(1);
   });
 });

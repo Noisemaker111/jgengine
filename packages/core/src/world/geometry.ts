@@ -94,3 +94,41 @@ export function resolveMove(from: Vec2, delta: Vec2, blockers: readonly Aabb[], 
   if (options.bounds) z = Math.min(Math.max(z, options.bounds.minZ + radius), options.bounds.maxZ - radius);
   return [x, z];
 }
+
+/** An axis-aligned ellipse: `center` with semi-axes `radiusX` and `radiusY`. */
+export interface Ellipse {
+  center: Vec2;
+  radiusX: number;
+  radiusY: number;
+}
+
+function normalizedRadius2(point: Vec2, ellipse: Ellipse): number {
+  const nx = ellipse.radiusX > 0 ? (point[0] - ellipse.center[0]) / ellipse.radiusX : 0;
+  const ny = ellipse.radiusY > 0 ? (point[1] - ellipse.center[1]) / ellipse.radiusY : 0;
+  return nx * nx + ny * ny;
+}
+
+/** True when `point` sits inside (or on) the ellipse — the oval-arena containment test. */
+export function pointInEllipse(point: Vec2, ellipse: Ellipse): boolean {
+  return normalizedRadius2(point, ellipse) <= 1;
+}
+
+/** Clamp `point` to the ellipse boundary when it strays outside, else return it unchanged. */
+export function clampToEllipse(point: Vec2, ellipse: Ellipse): Vec2 {
+  const r2 = normalizedRadius2(point, ellipse);
+  if (r2 <= 1) return point;
+  const scale = 1 / Math.sqrt(r2);
+  return [
+    ellipse.center[0] + (point[0] - ellipse.center[0]) * scale,
+    ellipse.center[1] + (point[1] - ellipse.center[1]) * scale,
+  ];
+}
+
+/** Outward unit normal of the ellipse at the point nearest `point` — the boundary bounce direction. */
+export function ellipseNormal(point: Vec2, ellipse: Ellipse): Vec2 {
+  const nx = ellipse.radiusX > 0 ? (point[0] - ellipse.center[0]) / (ellipse.radiusX * ellipse.radiusX) : 0;
+  const ny = ellipse.radiusY > 0 ? (point[1] - ellipse.center[1]) / (ellipse.radiusY * ellipse.radiusY) : 0;
+  const len = Math.hypot(nx, ny);
+  if (len < 1e-6) return [1, 0];
+  return [nx / len, ny / len];
+}

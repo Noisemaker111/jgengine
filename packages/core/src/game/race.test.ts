@@ -4,8 +4,11 @@ import {
   createLapTimer,
   createRaceState,
   everyoneFinishes,
+  lapDurations,
   lastStanding,
+  parDelta,
   raceTrack,
+  splitSegments,
   topK,
   type Checkpoint,
   type RaceEvent,
@@ -313,5 +316,25 @@ describe("createLapTimer", () => {
       lapCount: 0,
       splits: [],
     });
+  });
+});
+
+describe("split analysis", () => {
+  test("splitSegments turns cumulative splits into leg durations", () => {
+    expect(splitSegments([10, 25, 45])).toEqual([10, 15, 20]);
+    expect(splitSegments([10, 25], 5)).toEqual([5, 15]);
+    expect(splitSegments([])).toEqual([]);
+  });
+
+  test("lapDurations derives per-lap times from gate splits", () => {
+    // 2 gates per lap: lap 1 finishes at index 1, lap 2 at index 3.
+    expect(lapDurations([12, 30, 42, 61], 2)).toEqual([30, 31]);
+    expect(lapDurations([12, 30, 42], 2)).toEqual([30]);
+    expect(lapDurations([12], 0)).toEqual([]);
+  });
+
+  test("parDelta compares against a reference book up to the shorter length", () => {
+    expect(parDelta([10, 26, 40], [10, 25, 42])).toEqual([0, 1, -2]);
+    expect(parDelta([10, 26], [10, 25, 42])).toEqual([0, 1]);
   });
 });
