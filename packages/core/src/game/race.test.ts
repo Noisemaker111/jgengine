@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  createLapTimer,
   createRaceState,
   everyoneFinishes,
   lastStanding,
@@ -263,5 +264,54 @@ describe("race forks", () => {
         forks: [{ id: "bad", afterIndex: 0, routes: [route, { id: "empty", checkpoints: [] }] }],
       }),
     ).toThrow();
+  });
+});
+
+describe("createLapTimer", () => {
+  test("accumulates the current lap and total, banks splits, tracks best/last", () => {
+    const timer = createLapTimer();
+    timer.tick(1);
+    timer.tick(0.5);
+    expect(timer.snapshot().currentLap).toBeCloseTo(1.5);
+
+    const first = timer.completeLap();
+    expect(first).toBeCloseTo(1.5);
+    let s = timer.snapshot();
+    expect(s.currentLap).toBe(0);
+    expect(s.lastLap).toBeCloseTo(1.5);
+    expect(s.bestLap).toBeCloseTo(1.5);
+    expect(s.lapCount).toBe(1);
+
+    timer.tick(1);
+    timer.completeLap();
+    s = timer.snapshot();
+    expect(s.lastLap).toBeCloseTo(1);
+    expect(s.bestLap).toBeCloseTo(1);
+    expect(s.total).toBeCloseTo(2.5);
+    expect(s.splits.map((v) => Number(v.toFixed(2)))).toEqual([1.5, 1]);
+  });
+
+  test("penalize folds a penalty into the running lap and total", () => {
+    const timer = createLapTimer();
+    timer.tick(2);
+    timer.penalize(1);
+    const s = timer.snapshot();
+    expect(s.currentLap).toBeCloseTo(3);
+    expect(s.total).toBeCloseTo(3);
+  });
+
+  test("reset returns to the start line", () => {
+    const timer = createLapTimer();
+    timer.tick(5);
+    timer.completeLap();
+    timer.reset();
+    expect(timer.snapshot()).toEqual({
+      currentLap: 0,
+      lastLap: null,
+      bestLap: null,
+      total: 0,
+      lapCount: 0,
+      splits: [],
+    });
   });
 });

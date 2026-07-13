@@ -429,3 +429,77 @@ export class RaceState {
 export function createRaceState(config: RaceStateConfig): RaceState {
   return new RaceState(config);
 }
+
+/** Wall-clock lap timing: the current/last/best/total split-book every racing HUD reads. */
+export interface LapTimerSnapshot {
+  /** Seconds elapsed in the lap now underway. */
+  currentLap: number;
+  /** Duration of the lap just completed, or `null` before the first lap closes. */
+  lastLap: number | null;
+  /** Fastest completed lap so far, or `null` before the first lap closes. */
+  bestLap: number | null;
+  /** Total time across every lap, including the current one. */
+  total: number;
+  /** Number of laps completed. */
+  lapCount: number;
+  /** Completed lap durations in order — the split book for a results screen. */
+  splits: readonly number[];
+}
+
+/**
+ * Wall-clock lap timer complementing {@link RaceState}: feed it `tick(dt)` each frame and call
+ * `completeLap()` when the race emits a player `lap.completed` event. It accumulates the current lap,
+ * carries best/last, banks splits, and `penalize()` folds a time penalty into the running lap — the
+ * timing bookkeeping every racer reimplemented on top of the position-only race state.
+ */
+export interface LapTimer {
+  /** Advance the current lap and total by `dt` seconds. */
+  tick(dt: number): void;
+  /** Close the current lap: bank its split, update last/best, reset the current lap to 0, and return its time. */
+  completeLap(): number;
+  /** Add a time penalty (seconds) to the lap currently underway. */
+  penalize(seconds: number): void;
+  /** Clear all timing back to the start line. */
+  reset(): void;
+  /** Immutable view of the current timing state. */
+  snapshot(): LapTimerSnapshot;
+}
+
+/** Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded. */
+export function createLapTimer(): LapTimer {
+  let currentLap = 0;
+  let lastLap: number | null = null;
+  let bestLap: number | null = null;
+  let total = 0;
+  const splits: number[] = [];
+  return {
+    tick(dt) {
+      if (dt <= 0) return;
+      currentLap += dt;
+      total += dt;
+    },
+    completeLap() {
+      const lapTime = currentLap;
+      lastLap = lapTime;
+      bestLap = bestLap === null || lapTime < bestLap ? lapTime : bestLap;
+      splits.push(lapTime);
+      currentLap = 0;
+      return lapTime;
+    },
+    penalize(seconds) {
+      if (seconds <= 0) return;
+      currentLap += seconds;
+      total += seconds;
+    },
+    reset() {
+      currentLap = 0;
+      lastLap = null;
+      bestLap = null;
+      total = 0;
+      splits.length = 0;
+    },
+    snapshot() {
+      return { currentLap, lastLap, bestLap, total, lapCount: splits.length, splits: [...splits] };
+    },
+  };
+}

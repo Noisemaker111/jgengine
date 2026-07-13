@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { seededRng, seededStreams } from "./rng";
+import { hashString, seededRng, seededStreams } from "./rng";
 
 function draw(rng: () => number, count: number): number[] {
   return Array.from({ length: count }, () => rng());
@@ -51,5 +51,18 @@ describe("seededStreams", () => {
 
   test("string and number seeds with the same text agree", () => {
     expect(draw(seededStreams(7)("weather"), 4)).toEqual(draw(seededStreams("7")("weather"), 4));
+  });
+
+  test("hashString is deterministic and returns an unsigned 32-bit int", () => {
+    const h = hashString("enemy-42");
+    expect(h).toBe(hashString("enemy-42"));
+    expect(Number.isInteger(h)).toBe(true);
+    expect(h).toBeGreaterThanOrEqual(0);
+    expect(h).toBeLessThan(2 ** 32);
+  });
+
+  test("hashString separates distinct strings", () => {
+    expect(hashString("a")).not.toBe(hashString("b"));
+    expect(hashString("")).toBe(hashString(""));
   });
 });

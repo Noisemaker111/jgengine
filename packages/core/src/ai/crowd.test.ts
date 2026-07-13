@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { computeFlowField, createCrowdField, selectPoi, type Poi } from "@jgengine/core/ai/crowd";
+import { computeFlowField, createCrowdField, selectPoi, spreadOffset, type Poi } from "@jgengine/core/ai/crowd";
 import { createNavGrid, findPath, type NavPoint } from "@jgengine/core/nav/navGrid";
 
 function openGrid(size = 20) {
@@ -120,6 +120,26 @@ describe("POI selection", () => {
   test("returns null when every POI is full", () => {
     const capped: Poi[] = [{ id: "seat", point: [1, 0], capacity: 1 }];
     expect(selectPoi(capped, [0, 0], { roll: 0.5, occupancy: () => 1 })).toBeNull();
+  });
+});
+
+describe("spreadOffset", () => {
+  test("is stable per id and stays within the disc", () => {
+    const a = spreadOffset("guard-7", 5);
+    const b = spreadOffset("guard-7", 5);
+    expect(a).toEqual(b);
+    expect(Math.hypot(a[0], a[1])).toBeLessThanOrEqual(5 + 1e-9);
+  });
+
+  test("different ids fan out to different offsets", () => {
+    const a = spreadOffset("guard-1", 5);
+    const b = spreadOffset("guard-2", 5);
+    expect(a).not.toEqual(b);
+  });
+
+  test("collapses to the origin at radius 0", () => {
+    const o = spreadOffset("x", 0);
+    expect(Math.hypot(o[0], o[1])).toBe(0);
   });
 });
 
