@@ -49,6 +49,11 @@ function rowKey(stat: string, scope: LeaderboardScope, serverId: string | undefi
   return `${scope}:${stat}:${serverId ?? ""}:${userId}`;
 }
 
+/**
+ * Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
+ *
+ * @capability leaderboard ranked score tracking across global, server, and per-profile scopes
+ */
 export function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard {
   const trackedPairs = new Map<string, { stat: string; scope: LeaderboardScope }>();
   const rows = new Map<string, LeaderboardRow>();

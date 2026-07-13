@@ -67,6 +67,11 @@ export interface ComboRunner {
   reset(): void;
 }
 
+/**
+ * Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
+ *
+ * @capability combo-chain advance a chained melee string from timed button inputs
+ */
 export function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner {
   let current: string | null = null;
 

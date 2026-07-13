@@ -79,6 +79,11 @@ export function occupiedCells(
   return rotated.map(([c, r]): Cell => [c + origin[0], r + origin[1]]);
 }
 
+/**
+ * A spatial grid inventory that holds shaped multi-cell items, Resident-Evil/Tarkov style.
+ *
+ * @capability tetris-inventory a spatial grid inventory holding shaped multi-cell items
+ */
 export function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> {
   if (width <= 0 || height <= 0) throw new Error("shaped grid needs positive dimensions");
   return { width, height, placements: [] };

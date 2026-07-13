@@ -108,6 +108,11 @@ export interface EffectSystem {
 
 const DEFAULT_DRAIN_STAT = "damage";
 
+/**
+ * Apply, stack, and tick timed status effects — buffs, debuffs, DoTs — on entities.
+ *
+ * @capability status-effects apply and tick timed status effects and buffs on entities
+ */
 export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
   function resolveRule(instanceId: string, effect: string): ReceiveRule | null {
     return deps.resolveReceive(instanceId)?.[effect] ?? null;

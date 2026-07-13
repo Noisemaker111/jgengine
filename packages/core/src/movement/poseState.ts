@@ -53,6 +53,11 @@ export interface PoseState {
   clear(instanceId: string): void;
 }
 
+/**
+ * Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
+ *
+ * @capability crouch-prone stance/pose transitions that change the hitbox
+ */
 export function createPoseState(
   resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined,
 ): PoseState {

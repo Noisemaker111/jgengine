@@ -208,6 +208,11 @@ function asSceneHits(hits: readonly RaycastHit[]): SceneRaycastHit[] {
   }));
 }
 
+/**
+ * Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
+ *
+ * @capability projectiles spawn and advance projectiles with travel and hit resolution
+ */
 export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem {
   const shots = new Map<string, { input: ProjectileShotInput; firedAt: number; settled: boolean }>();
   let shotCounter = 0;

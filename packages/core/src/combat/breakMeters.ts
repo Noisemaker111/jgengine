@@ -15,6 +15,11 @@ export interface StaggerMeter {
   tick(dtSeconds: number): void;
 }
 
+/**
+ * Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
+ *
+ * @capability stagger-meter build toward a stagger/poise-break threshold from landed hits
+ */
 export function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter {
   const meter: AccumulatorMeter = createAccumulatorMeter({
     max: config.max,
@@ -65,6 +70,11 @@ export interface BuildupMeter {
   tick(dtSeconds: number): void;
 }
 
+/**
+ * Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
+ *
+ * @capability stagger-meter accumulate an ailment buildup (bleed, freeze) until it procs
+ */
 export function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter {
   const meter: AccumulatorMeter = createAccumulatorMeter({
     max: config.max,

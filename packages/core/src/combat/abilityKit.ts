@@ -132,6 +132,11 @@ function snapshotOf(runtime: SlotRuntime, resourceAvailable: number, group: Grou
   };
 }
 
+/**
+ * A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
+ *
+ * @capability ability-bar a bar of cooldown-gated abilities the player triggers by slot
+ */
 export function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit {
   const boundResource = options.resource;
   function currentResource(explicit: number | undefined): number {

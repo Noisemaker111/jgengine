@@ -113,6 +113,11 @@ function isConcludable<TPhase extends string>(order: readonly TPhase[], phase: T
   return idx > 0 && idx < order.length - 1;
 }
 
+/**
+ * Run a match as repeating buy/action/end round phases with per-round win rewards and loss-streak economy.
+ *
+ * @capability match-rounds run buy/action/end round phases with per-round economy
+ */
 export function createRoundState(config: RoundConfig<RoundPhase>): RoundState<RoundPhase>;
 export function createRoundState<TPhase extends string>(
   config: RoundConfig<TPhase> & { phaseOrder: readonly TPhase[] },

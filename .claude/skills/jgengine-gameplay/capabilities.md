@@ -8,7 +8,158 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/game/recordBook"`
 
+## consumables — use/consume items with cooldowns and effects
+
+- `createItemUse` (function) · `import { createItemUse } from "@jgengine/core/item/use"`
+
+## cosmetics — equip cosmetic skins and customizations by slot
+
+- `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/game/cosmetics"`
+
+## currency-format — format a currency amount with its symbol for display
+
+- `formatCurrencyAmount` (function) · `import { formatCurrencyAmount } from "@jgengine/core/economy/currency"`
+
+## durability — track item wear, breakage, and repair
+
+- `applyWear` (function) · `import { applyWear } from "@jgengine/core/item/durability"`
+
+## event-bus — typed publish/subscribe bus for gameplay events
+
+- `createGameEvents` (function) · `import { createGameEvents } from "@jgengine/core/game/events"`
+
+## event-feed — a rolling feed of recent gameplay events for a HUD ticker or killfeed
+
+- `createGameFeed` (function) · `import { createGameFeed } from "@jgengine/core/game/feed"`
+
+## inventory-grid — a bag of stackable items with add, remove, and move
+
+- `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
+
+## lane-board — a lane-based card-battler board with per-lane outcomes
+
+- `createLaneBoard` (function) · `import { createLaneBoard } from "@jgengine/core/board/laneBoard"`
+
+## lap-splits — per-lap durations from a cumulative split book
+
+- `lapDurations` (function) · `import { lapDurations } from "@jgengine/core/game/race"`
+- `parDelta` (function) · `import { parDelta } from "@jgengine/core/game/race"`
+- `splitSegments` (function) · `import { splitSegments } from "@jgengine/core/game/race"`
+
+## lap-timer — wall-clock current/last/best lap timing with splits
+
+- `createLapTimer` (function) · `import { createLapTimer } from "@jgengine/core/game/race"`
+
+## leaderboard — ranked score tracking across global, server, and per-profile scopes
+
+- `createLeaderboard` (function) · `import { createLeaderboard } from "@jgengine/core/game/leaderboard"`
+
+## loadouts — save and swap named equipment loadouts
+
+- `createLoadouts` (function) · `import { createLoadouts } from "@jgengine/core/game/loadout"`
+
+## loot-filter — filter and highlight drops by rarity/name rules
+
+- `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/game/lootFilter"`
+
+## loot-table — register loot tables and roll weighted randomized drops
+
+- `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/game/lootTable"`
+- `lootTable` (function) · `import { lootTable } from "@jgengine/core/game/lootTable"`
+
+## match-rounds — run buy/action/end round phases with per-round economy
+
+- `createRoundState` (function) · `import { createRoundState } from "@jgengine/core/session/roundState"`
+
+## modular-item — attach parts into item mount slots to compute combined stats
+
+- `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/item/modularItem"`
+
+## name-generator — generate procedural names from templates and word banks
+
+- `createNameGenerator` (function) · `import { createNameGenerator } from "@jgengine/core/random/nameGen"`
+
+## objectives — check progress of a threshold objective against a live metric
+
+- `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/game/objectives"`
+
+## ping-wheel — contextual ping/marker communication between teammates
+
+- `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/game/ping"`
+
+## production-building — a factory building converting inputs to outputs over time
+
+- `createProductionState` (function) · `import { createProductionState } from "@jgengine/core/crafting/production"`
+
+## quest-log — track accepted quests and their per-objective progress
+
+- `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/game/quest"`
+
+## race-track — a checkpoint race with laps, standings, splits, and win conditions
+
+- `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/game/race"`
+
+## role-assign — assign hidden or team roles to players by ratio
+
+- `assignRoles` (function) · `import { assignRoles } from "@jgengine/core/session/roles"`
+
+## run-modifiers — a roguelike run built from stacking drafted modifier picks
+
+- `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/game/runDraft"`
+
+## shared-wallet — shared/group currency pools tracking per-member contributions
+
+- `createWalletBook` (function) · `import { createWalletBook } from "@jgengine/core/economy/sharedWallet"`
+
+## shop-trade — buy and sell goods against player currency balances
+
+- `createTradeSystem` (function) · `import { createTradeSystem } from "@jgengine/core/game/trade"`
+
+## social-emotes — emotes and social interactions between nearby players
+
+- `createSocial` (function) · `import { createSocial } from "@jgengine/core/game/social"`
+
+## spawn-points — register spawn locations and pick where entities respawn
+
+- `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/game/spawnPoints"`
+
+## tech-tree — research nodes with prerequisites that unlock recipes
+
+- `availableTech` (function) · `import { availableTech } from "@jgengine/core/economy/techTree"`
+
+## tetris-inventory — a spatial grid inventory holding shaped multi-cell items
+
+- `createShapedGrid` (function) · `import { createShapedGrid } from "@jgengine/core/inventory/shapedGrid"`
+
+## timeline-board — a step-sequencer timeline board of timed slots
+
+- `createTimelineBoard` (function) · `import { createTimelineBoard } from "@jgengine/core/board/timelineBoard"`
+
 ## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
 
 - `appendToast` (function) · `import { appendToast } from "@jgengine/core/game/toasts"`
 - `createToastQueue` (function) · `import { createToastQueue } from "@jgengine/core/game/toasts"`
+
+## touch-controls — default on-screen button silhouette for a touch action
+
+- `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
+
+## unlockables — gate content behind unlock conditions the player earns
+
+- `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/game/unlocks"`
+
+## wallet — hold currency balances with charge and affordability checks
+
+- `createEmptyWallet` (function) · `import { createEmptyWallet } from "@jgengine/core/economy/wallet"`
+
+## weapon-stats — resolve per-weapon stat values for combat math
+
+- `createWeaponStats` (function) · `import { createWeaponStats } from "@jgengine/core/item/weapon"`
+
+## weighted-pick — pick one item from a set with an injected random source
+
+- `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/random/pick"`
+
+## world-drops — spawn pickup-able items in the world, including death drops
+
+- `createWorldItemStore` (function) · `import { createWorldItemStore } from "@jgengine/core/game/worldItem"`

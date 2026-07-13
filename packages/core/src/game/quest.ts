@@ -88,6 +88,11 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/**
+ * Track accepted quests and their per-objective progress, granting rewards on completion.
+ *
+ * @capability quest-log track accepted quests and their per-objective progress
+ */
 export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   const catalog = new Map<string, QuestDef>();
   const users = new Map<string, Map<string, QuestState>>();

@@ -36,6 +36,11 @@ export interface GrappleSwing {
   step(position: SwingVec3, velocity: SwingVec3, dt: number, reeling?: boolean): GrappleSwingStep;
 }
 
+/**
+ * Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
+ *
+ * @capability grapple-swing grappling-hook rope swing physics with reel-in
+ */
 export function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing {
   const reelSpeed = config.reelSpeed ?? 0;
   const minLength = config.minLength ?? 1;

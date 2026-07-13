@@ -18,6 +18,11 @@ export interface SpawnPoints {
   respawn(entities: RespawnTarget, entityId: string, spawnId: string): boolean;
 }
 
+/**
+ * Register spawn locations and choose where entities spawn or respawn.
+ *
+ * @capability spawn-points register spawn locations and pick where entities respawn
+ */
 export function createSpawnPoints(): SpawnPoints {
   const points = new Map<string, SpawnPointPose>();
 

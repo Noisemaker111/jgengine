@@ -70,6 +70,8 @@ export interface PositionedPrompt {
  * Nearest prompt strictly within its radius wins; a higher-priority prompt in
  * range beats any lower-priority one regardless of distance; equal priority
  * and distance keep the earliest prompt in the list.
+ *
+ * @capability proximity-prompt a "press E" contextual prompt shown near an interactable
  */
 export function resolveActivePrompt<T extends PositionedPrompt>(
   playerPosition: PromptPoint,

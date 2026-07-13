@@ -95,6 +95,11 @@ export function selectNearestWorldItem(
   return bestId;
 }
 
+/**
+ * Spawn and track pickup-able items scattered in the world, including drops that scatter on death.
+ *
+ * @capability world-drops spawn pickup-able items in the world, including death drops
+ */
 export function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore {
   const records = new Map<string, WorldItemRecord>();
   const now = deps.now ?? Date.now;

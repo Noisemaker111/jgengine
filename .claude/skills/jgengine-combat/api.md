@@ -15,7 +15,7 @@
 - `AbilitySlotRetune` (interface): interface AbilitySlotRetune — ⚠ undocumented
 - `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot — ⚠ undocumented
 - `AbilitySlotState` (type): type AbilitySlotState = "ready" | "cooldown" | "no-resource" | "just-cast" — ⚠ undocumented
-- `createAbilityKit` (function): function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit — ⚠ undocumented
+- `createAbilityKit` (function): function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit — A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
 
 ## @jgengine/core/combat/animationState
 
@@ -52,8 +52,8 @@
 - `BuildupProc` (interface): interface BuildupProc — ⚠ undocumented
 - `StaggerMeter` (interface): interface StaggerMeter — ⚠ undocumented
 - `StaggerMeterConfig` (interface): interface StaggerMeterConfig — ⚠ undocumented
-- `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — ⚠ undocumented
-- `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — ⚠ undocumented
+- `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
+- `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
 
 ## @jgengine/core/combat/castRunner
 
@@ -62,13 +62,13 @@
 - `CastEvent` (type): type CastEvent = | { kind: "completed"; abilityId: string } | { kind: "interrupted"; abilityId: string; reason: CastInterruptReason } — ⚠ undocumented
 - `CastInterruptReason` (type): type CastInterruptReason = "moved" | "cancelled" | "replaced" — ⚠ undocumented
 - `CastRunner` (interface): interface CastRunner — Per-entity cast-time state machine — begin, tick with game-time `dt` plus how far the caster moved, and act on the returned event. The runner owns timing and move-interruption only; the caller spends resources, starts cooldowns, and executes the ability when `completed` fires (compose with `abilityKit` — check readiness before `begin`, `cast` on completion).
-- `createCastRunner` (function): function createCastRunner(): CastRunner — ⚠ undocumented
+- `createCastRunner` (function): function createCastRunner(): CastRunner — Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
 
 ## @jgengine/core/combat/comboPoints
 
 - `ComboPoints` (interface): interface ComboPoints — ⚠ undocumented
 - `ComboPointsConfig` (interface): interface ComboPointsConfig — ⚠ undocumented
-- `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — ⚠ undocumented
+- `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
 
 ## @jgengine/core/combat/comboString
 
@@ -78,7 +78,7 @@
 - `ComboStep` (interface): interface ComboStep — ⚠ undocumented
 - `ComboString` (interface): interface ComboString — ⚠ undocumented
 - `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
-- `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — ⚠ undocumented
+- `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
 - `stepById` (function): function stepById(combo: ComboString, stepId: string): ComboStep | null — ⚠ undocumented
 
 ## @jgengine/core/combat/death
@@ -94,7 +94,7 @@
 - `OnDeathCommandRule` (interface): interface OnDeathCommandRule — ⚠ undocumented
 - `OnDeathDropRule` (interface): interface OnDeathDropRule — ⚠ undocumented
 - `OnDeathSpec` (interface): interface OnDeathSpec — ⚠ undocumented
-- `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — ⚠ undocumented
+- `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `deathReasonFromEffect` (function): function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason — ⚠ undocumented
 - `normalizeOnDeath` (function): function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath — ⚠ undocumented
 
@@ -106,7 +106,7 @@
 - `DefensiveWindow` (interface): interface DefensiveWindow — ⚠ undocumented
 - `DefensiveWindowConfig` (interface): interface DefensiveWindowConfig — ⚠ undocumented
 - `ResolveDefenseInput` (interface): interface ResolveDefenseInput — ⚠ undocumented
-- `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — ⚠ undocumented
+- `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
 - `iframeActiveAt` (function): function iframeActiveAt(config: DefensiveWindowConfig, elapsedMs: number): boolean — ⚠ undocumented
 - `resolveDefense` (function): function resolveDefense(input: ResolveDefenseInput): DefenseResolution — ⚠ undocumented
 - `totalWindowMs` (function): function totalWindowMs(config: DefensiveWindowConfig): number — ⚠ undocumented
@@ -127,7 +127,7 @@
 - `DownedEventKind` (type): type DownedEventKind = | "downed" | "revived" | "reviving" | "died" | "banner.created" | "banner.expired" | "respawned" — ⚠ undocumented
 - `DownedPhase` (type): type DownedPhase = "alive" | "downed" | "dead" — ⚠ undocumented
 - `DownedState` (interface): interface DownedState — ⚠ undocumented
-- `createDownedState` (function): function createDownedState(config: DownedConfig): DownedState — ⚠ undocumented
+- `createDownedState` (function): function createDownedState(config: DownedConfig): DownedState — A downed/bleed-out state that ticks toward death and that teammates can revive before the timer runs out.
 
 ## @jgengine/core/combat/effects
 
@@ -145,7 +145,7 @@
 - `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
 - `ReceiveRule` (interface): interface ReceiveRule — ⚠ undocumented
 - `SingleTargetEffectInput` (interface): interface SingleTargetEffectInput — ⚠ undocumented
-- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — ⚠ undocumented
+- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Apply, stack, and tick timed status effects — buffs, debuffs, DoTs — on entities.
 - `resolveAreaTargets` (function): function resolveAreaTargets(spatial: CombatSpatialDeps, input: AreaTargetInput, accept?: (instanceId: string) => boolean): AreaTarget[] — ⚠ undocumented
 
 ## @jgengine/core/combat/hitReaction
@@ -171,7 +171,7 @@
 - `Raycast` (type): type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[] — ⚠ undocumented
 - `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
 - `SettleResult` (type): type SettleResult = | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[]; origin?: [number, number, number]; } | { status: "rejected"; shotId: string; reason: string } — ⚠ undocumented
-- `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — ⚠ undocumented
+- `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
 
 ## @jgengine/core/combat/regenShield
 
@@ -193,7 +193,7 @@
 
 - `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
 - `ResourcePoolConfig` (interface): interface ResourcePoolConfig — ⚠ undocumented
-- `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — ⚠ undocumented
+- `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
 
 ## @jgengine/core/combat/shotOrigin
 
@@ -230,7 +230,7 @@
 - `MeterAddResult` (interface): interface MeterAddResult — ⚠ undocumented
 - `MeterMode` (type): type MeterMode = "hold" | "reset" — ⚠ undocumented
 - `MeterTier` (interface): interface MeterTier — ⚠ undocumented
-- `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — ⚠ undocumented
+- `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
 - `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — ⚠ undocumented
 
 ## @jgengine/core/stats/eventMeter
@@ -238,14 +238,14 @@
 - `EventMeter` (interface): interface EventMeter — ⚠ undocumented
 - `EventMeterConfig` (interface): interface EventMeterConfig — ⚠ undocumented
 - `EventMeterFeedResult` (interface): interface EventMeterFeedResult — ⚠ undocumented
-- `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — ⚠ undocumented
+- `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shooters and fighters hand-roll.
 
 ## @jgengine/core/stats/rollCheck
 
 - `CheckAdvantage` (type): type CheckAdvantage = "advantage" | "disadvantage" | "normal" — ⚠ undocumented
 - `CheckInput` (interface): interface CheckInput — ⚠ undocumented
 - `CheckResult` (interface): interface CheckResult — ⚠ undocumented
-- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — ⚠ undocumented
+- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 
 ## @jgengine/core/stats/statModifiers
 
@@ -253,7 +253,7 @@
 - `StatModifier` (interface): interface StatModifier — ⚠ undocumented
 - `StatModifierSet` (type): type StatModifierSet<TStat extends string> = Partial<Record<TStat, StatModifier>> — ⚠ undocumented
 - `Stats` (interface): interface Stats<TStat extends string> — ⚠ undocumented
-- `createStats` (function): function createStats<TStat extends string>(base: Record<TStat, number>, options?: CreateStatsOptions): Stats<TStat> — ⚠ undocumented
+- `createStats` (function): function createStats<TStat extends string>(base: Record<TStat, number>, options?: CreateStatsOptions): Stats<TStat> — A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
 
 ## @jgengine/core/tactics/fallingGrid
 

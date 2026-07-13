@@ -43,6 +43,11 @@ export interface DownedState {
   snapshot(): Record<string, DownedEntry>;
 }
 
+/**
+ * A downed/bleed-out state that ticks toward death and that teammates can revive before the timer runs out.
+ *
+ * @capability downed-revive a downed/bleed-out state teammates can revive before death
+ */
 export function createDownedState(config: DownedConfig): DownedState {
   const bleedoutSeconds = Math.max(0, config.bleedoutSeconds);
   const reviveSeconds = config.reviveSeconds !== undefined ? Math.max(0, config.reviveSeconds) : 0;

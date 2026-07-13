@@ -31,4 +31,4 @@
 - `MultiRegionHealthConfig` (interface): interface MultiRegionHealthConfig — ⚠ undocumented
 - `RegionHealthState` (interface): interface RegionHealthState — ⚠ undocumented
 - `TreatResult` (interface): interface TreatResult — ⚠ undocumented
-- `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — ⚠ undocumented
+- `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.

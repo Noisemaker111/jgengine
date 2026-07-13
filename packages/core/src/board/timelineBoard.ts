@@ -102,6 +102,11 @@ export interface TimelineBoard {
   reset(slotId?: string, remainingMs?: number): void;
 }
 
+/**
+ * A step-sequencer timeline board of timed, toggleable slots.
+ *
+ * @capability timeline-board a step-sequencer timeline board of timed slots
+ */
 export function createTimelineBoard(slots: readonly TimelineSlotConfig[]): TimelineBoard {
   const initial = slots;
   let state = createTimelineBoardState(slots);

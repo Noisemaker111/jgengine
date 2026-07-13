@@ -14,6 +14,11 @@ export type QteOutcome =
   | { status: "success" }
   | { status: "fail"; atStep: string; reason: "missed-window" | "wrong-action" | "too-early" };
 
+/**
+ * Evaluate a quick-time-event input sequence against timed hit windows.
+ *
+ * @capability qte a quick-time-event timed input sequence with hit windows
+ */
 export function evaluateQteSequence(
   steps: readonly QteStep[],
   inputs: readonly QteInputEvent[],

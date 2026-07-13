@@ -21,7 +21,7 @@ import type { AudioEngine } from "../audio/audioEngine";
 /** Sentinel Controls value meaning "defer to the game's suggested touch skin". */
 export const TOUCH_STYLE_AUTO = "auto";
 
-/** Player's Settings choice, or the game's suggested default when left on `auto`. */
+/** Shell-internal: binds the SettingsStore touch-style choice to the touch renderer. @internal */
 export function useTouchStyle(store: SettingsStore, fallback: TouchStyle): TouchStyle {
   useSettingsRevision(store);
   const raw = store.get(SETTING_IDS.touchStyle, TOUCH_STYLE_AUTO);

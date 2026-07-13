@@ -2,4 +2,40 @@
 
 # jgengine-world — capability index
 
-No capabilities tagged in this domain yet.
+Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
+
+## crouch-prone — stance/pose transitions that change the hitbox
+
+- `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/movement/poseState"`
+
+## dash-move — a dash/dodge burst with i-frames and cooldown
+
+- `dashDisplacement` (function) · `import { dashDisplacement } from "@jgengine/core/movement/dash"`
+
+## follow-trail — trailing follower/snake formation that chases a leader
+
+- `createLeaderTrail` (function) · `import { createLeaderTrail } from "@jgengine/core/movement/leaderTrail"`
+
+## glide — gliding/wingsuit descent control from a launch
+
+- `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/movement/glideModel"`
+
+## grapple-swing — grappling-hook rope swing physics with reel-in
+
+- `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/movement/grappleSwing"`
+
+## proximity-prompt — a "press E" contextual prompt shown near an interactable
+
+- `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"`
+
+## qte — a quick-time-event timed input sequence with hit windows
+
+- `evaluateQteSequence` (function) · `import { evaluateQteSequence } from "@jgengine/core/interaction/qte"`
+
+## reputation — faction standing that crosses named reputation tiers
+
+- `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/faction/reputation"`
+
+## skill-check — a timing-bar skill check where you release inside a zone
+
+- `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/interaction/skillCheck"`

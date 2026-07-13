@@ -104,6 +104,11 @@ export interface RunDraft<TStat extends string = string, TData = unknown> {
   stack(): RunModifierStack<TStat, TData>;
 }
 
+/**
+ * A roguelike run built from stacking drafted modifier picks that reshape the run.
+ *
+ * @capability run-modifiers a roguelike run built from stacking drafted modifier picks
+ */
 export function createRunDraft<TStat extends string = string, TData = unknown>(
   config: RunDraftConfig<TStat, TData>,
 ): RunDraft<TStat, TData> {

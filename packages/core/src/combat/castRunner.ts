@@ -47,6 +47,11 @@ interface ActiveCast {
   movedTotal: number;
 }
 
+/**
+ * Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
+ *
+ * @capability cast-bar run a channeled cast timer that movement or damage can interrupt
+ */
 export function createCastRunner(): CastRunner {
   let active: ActiveCast | null = null;
 

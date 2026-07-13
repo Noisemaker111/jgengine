@@ -46,6 +46,11 @@ export function tierAt(value: number, tiers: readonly MeterTier[]): string | nul
   return current;
 }
 
+/**
+ * A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
+ *
+ * @capability charge-meter fill a gauge toward named tier thresholds as a value accumulates
+ */
 export function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter {
   const mode = config.mode ?? "hold";
   const tiers = sortedTiers(config.tiers);

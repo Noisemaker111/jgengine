@@ -17,6 +17,11 @@ export const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] = [
   { id: "exalted", min: 42000, relation: "friendly" },
 ];
 
+/**
+ * Map a faction standing value to its named reputation tier.
+ *
+ * @capability reputation faction standing that crosses named reputation tiers
+ */
 export function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier {
   let match = tiers[0]!;
   for (const tier of tiers) {

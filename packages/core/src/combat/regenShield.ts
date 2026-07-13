@@ -33,7 +33,11 @@ export interface RegenShield {
   tick(dtSeconds: number): void;
 }
 
-/** Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit. */
+/**
+ * Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
+ *
+ * @capability regen-shield a rechargeable overshield that absorbs damage and refills after a lull
+ */
 export function createRegenShield(config: RegenShieldConfig): RegenShield {
   let max = Math.max(0, config.max);
   const regenPerSecond = Math.max(0, config.regenPerSecond);

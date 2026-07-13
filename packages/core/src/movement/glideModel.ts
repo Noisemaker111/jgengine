@@ -46,6 +46,11 @@ export interface GlideModel {
   launch(position: GlideVec3, heading: number, initialSpeed?: number): void;
 }
 
+/**
+ * Gliding/wingsuit descent control — lift, drag, and steering from a launch.
+ *
+ * @capability glide gliding/wingsuit descent control from a launch
+ */
 export function createGlideModel(config: GlideModelConfig = {}): GlideModel {
   const gravity = (config.gravity ?? 20) * (config.gravityScale ?? 0.25);
   const thrustAccel = config.thrustAccel ?? 10;

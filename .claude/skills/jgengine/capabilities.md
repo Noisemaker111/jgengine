@@ -2,4 +2,8 @@
 
 # jgengine — capability index
 
-No capabilities tagged in this domain yet.
+Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
+
+## loot-table — validate a loot table definition for use with the registry
+
+- `lootTable` (function) · `import { lootTable } from "@jgengine/core/authoring"`

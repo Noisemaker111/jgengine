@@ -19,6 +19,11 @@ export interface ResourcePool {
   isEmpty(): boolean;
 }
 
+/**
+ * A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
+ *
+ * @capability resource-pool a regenerating pool like mana or stamina that actions spend from
+ */
 export function createResourcePool(config: ResourcePoolConfig): ResourcePool {
   let max = Math.max(0, config.max);
   const regenPerSecond = Math.max(0, config.regenPerSecond ?? 0);

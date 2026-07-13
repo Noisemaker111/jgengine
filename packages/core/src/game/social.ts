@@ -156,6 +156,11 @@ interface PartyInvite {
 
 const DEFAULT_INVITE_TTL_MS = 60_000;
 
+/**
+ * Emotes and lightweight social interactions between nearby players.
+ *
+ * @capability social-emotes emotes and social interactions between nearby players
+ */
 export function createSocial(deps: SocialDeps): Social {
   const now = deps.now ?? Date.now;
   const events = deps.events;

@@ -29,6 +29,11 @@ export function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSecond
   return bounce(Math.max(0, elapsedSeconds), config.markerPeriod, config.trackWidth);
 }
 
+/**
+ * A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
+ *
+ * @capability skill-check a timing-bar skill check where you release inside a zone
+ */
 export function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone {
   const drift = config.zoneDriftPerSecond ?? 0;
   if (drift === 0) return config.zone;

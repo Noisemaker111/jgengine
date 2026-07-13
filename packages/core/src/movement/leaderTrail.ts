@@ -30,6 +30,11 @@ export interface LeaderTrail {
   reset(position?: TrailPoint): void;
 }
 
+/**
+ * A trailing follower formation that chases a leader along its past path — snake/convoy trails.
+ *
+ * @capability follow-trail trailing follower/snake formation that chases a leader
+ */
 export function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail {
   if (!(config.spacing > 0)) throw new Error(`leader trail spacing must be positive, got ${config.spacing}`);
   const spacing = config.spacing;

@@ -229,7 +229,11 @@ const WHEEL_PREFIXES = ["steer"] as const;
 /** Slot-like verbs read as square tiles (inventory, spell/item/ability slots). */
 const SQUARE_PREFIXES = ["spell", "slot", "item"] as const;
 
-/** Default silhouette for an action; `circle` when nothing more specific fits. */
+/**
+ * Default silhouette for an action; `circle` when nothing more specific fits.
+ *
+ * @capability touch-controls default on-screen button silhouette for a touch action
+ */
 export function touchButtonShape(action: string): TouchButtonShape {
   const direct = SHAPE_BY_ACTION.get(action);
   if (direct !== undefined) return direct;

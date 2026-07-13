@@ -28,6 +28,8 @@ function clamp01(value: number): number {
  * Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along.
  * Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution —
  * the objective shape city-builders and management sims track every tick.
+ *
+ * @capability objectives check progress of a threshold objective against a live metric
  */
 export function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus {
   const direction = objective.direction ?? "atLeast";

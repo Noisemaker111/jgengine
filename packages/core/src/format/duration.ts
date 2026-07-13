@@ -33,13 +33,21 @@ export function formatDuration(seconds: number, options: DurationFormat = {}): s
   return `${m}:${padNumber(s, 2)}${frac}`;
 }
 
-/** Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times. */
+/**
+ * Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
+ *
+ * @capability clock-format format a signed time gap like a race split (+/- m:ss.ff)
+ */
 export function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string {
   const sign = seconds < 0 ? "-" : "+";
   return `${sign}${formatDuration(Math.abs(seconds), { decimals })}`;
 }
 
-/** English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th". */
+/**
+ * English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
+ *
+ * @capability ordinal-format format a placement number as 1st/2nd/3rd for HUD ranks
+ */
 export function formatOrdinal(value: number): string {
   const n = Math.trunc(value);
   const abs = Math.abs(n) % 100;

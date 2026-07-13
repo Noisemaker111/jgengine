@@ -30,6 +30,11 @@ export function dashEase(t: number): number {
   return 1 - (1 - clamped) * (1 - clamped);
 }
 
+/**
+ * Compute a dash/dodge burst's displacement over its window, with i-frame timing for dodges.
+ *
+ * @capability dash-move a dash/dodge burst with i-frames and cooldown
+ */
 export function dashDisplacement(
   config: DashConfig,
   dir: DashDirection,
