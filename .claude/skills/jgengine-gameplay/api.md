@@ -454,6 +454,7 @@
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
 - `GameCameraConfig` (interface): interface GameCameraConfig — ⚠ undocumented
+- `GameCaptureConfig` (interface): interface GameCaptureConfig — How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`.
 - `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig — ⚠ undocumented
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.

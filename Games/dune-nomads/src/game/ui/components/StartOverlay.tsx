@@ -17,7 +17,7 @@ const CONTROLS: readonly [string, string][] = [
 
 export function StartOverlay({ onStart }: { onStart: () => void }) {
   return (
-    <>
+    <div data-jg-menu className="contents">
       <TitleScreen
         title="Dune Nomads"
         subtitle="A caravan crossing to Meridaan"
@@ -50,6 +50,6 @@ export function StartOverlay({ onStart }: { onStart: () => void }) {
           </HudPanel>
         </div>
       </div>
-    </>
+    </div>
   );
 }

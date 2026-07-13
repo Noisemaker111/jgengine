@@ -49,6 +49,13 @@ export function onInit(ctx: GameContext): void {
   placeTrackProps(ctx);
   ctx.game.store.set(RUN_STORE_KEY, freshRunState(null, "start", ctx.time.now()));
   syncPhase(ctx, "start");
+  ctx.game.commands.define("startRun", {
+    validate: () => (readRun(ctx).phase === "start" ? null : { reason: "run already underway" }),
+    apply: () => {
+      ctx.game.store.set(RUN_STORE_KEY, freshRunState(readRun(ctx), "running", ctx.time.now()));
+      syncPhase(ctx, "running");
+    },
+  });
 }
 
 export function onNewPlayer(ctx: GameContext): void {

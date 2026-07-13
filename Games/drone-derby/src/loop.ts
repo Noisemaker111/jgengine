@@ -13,6 +13,7 @@ import {
   consumeCourseRequest,
   consumeRestartRequest,
   consumeStartRequest,
+  requestStart,
 } from "./game/drone/menuIntent";
 import { samplePointerTilt } from "./game/drone/pointerInput";
 import { DRONE_ENTITY_KIND } from "./game/entities/catalog";
@@ -143,7 +144,12 @@ function reachablePad(position: readonly [number, number, number]): ResolvedPad 
   return null;
 }
 
-export function onInit(): void {}
+export function onInit(ctx: GameContext): void {
+  ctx.game.commands.define("start", {
+    validate: () => (runStore.getState().phase === "menu" ? null : { reason: "race already underway" }),
+    apply: () => requestStart(),
+  });
+}
 
 export function onNewPlayer(ctx: GameContext): void {
   edgeState.start = false;

@@ -10,6 +10,7 @@ import { onInit, onNewPlayer, onTick } from "./loop";
 import { world } from "./world";
 
 export const game = defineGame({
+  capture: { play: ["start"] },
   name: "Drone Derby",
   assets,
   world,

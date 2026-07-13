@@ -16,7 +16,7 @@ const CONTROL_ROWS: readonly { action: string; text: string }[] = [
 export function StartScreen() {
   const { commands } = useGame();
   return (
-    <div className="relative w-full max-w-md rounded-sm border border-[#f2c14e]/40 bg-[#14505c] p-6 text-[#e6f2ef] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+    <div data-jg-menu className="relative w-full max-w-md rounded-sm border border-[#f2c14e]/40 bg-[#14505c] p-6 text-[#e6f2ef] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
       <SettingsTrigger className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-sm border border-[#f2c14e]/30 bg-[#0e2a30]/75 text-[#f2c14e] transition-colors hover:bg-[#f2c14e]/15" />
       <p className="text-xs uppercase tracking-[0.35em] text-[#f2c14e]">Race Committee</p>
       <h1 className="mt-1 text-4xl font-black tracking-tight text-[#e6f2ef]">TIDEWAY</h1>

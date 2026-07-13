@@ -14,6 +14,7 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  capture: { play: ["startRace"] },
   settings: {
     variant: "sheet",
     hideBindings: ["restartRace"],

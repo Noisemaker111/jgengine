@@ -18,6 +18,7 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  capture: { play: ["confirm"] },
   renderEntity: renderSled,
   renderObject: renderProp,
   camera: {

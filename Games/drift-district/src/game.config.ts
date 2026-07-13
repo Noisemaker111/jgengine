@@ -16,6 +16,7 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  capture: { play: ["confirm"] },
   settings: {
     variant: "sheet",
     hideBindings: ["restart", "confirm"],

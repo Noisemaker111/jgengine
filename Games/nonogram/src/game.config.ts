@@ -4,6 +4,7 @@ import { GameUI } from "./game/ui/GameUI";
 import { onInit, onNewPlayer, onTick } from "./loop";
 
 export const game = defineGame({
+  capture: { play: [{ name: "selectPuzzle", input: { id: "heart" } }] },
   name: "Nonogram",
   presentation: "hud",
   input: keybinds,

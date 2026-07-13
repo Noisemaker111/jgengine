@@ -26,7 +26,7 @@ export function StartScreen() {
   const selected = useSelectedDifficulty();
 
   return (
-    <div className="pointer-events-auto absolute inset-0 flex items-center justify-center bg-[#0c0806]/85 px-4">
+    <div data-jg-menu className="pointer-events-auto absolute inset-0 flex items-center justify-center bg-[#0c0806]/85 px-4">
       <div className="relative flex w-full max-w-lg flex-col gap-5 rounded-2xl border border-[#ff6b35]/30 bg-[#160f0c]/95 p-6 shadow-2xl shadow-black/60 sm:p-8">
         <SettingsTrigger className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg border border-[#cdb891]/25 bg-black/25 text-[#ff6b35] transition-colors hover:border-[#cdb891]/40" />
         <div className="flex flex-col items-center gap-1 text-center">

@@ -14,7 +14,7 @@ const CONTROLS: { action: string; label: string }[] = [
 export function StartScreen() {
   const { commands } = useGame();
   return (
-    <div className="flex max-w-md flex-col items-center gap-5 rounded-lg border border-[#dfe6ee]/15 bg-[#20242a]/95 px-8 py-7 text-center shadow-2xl">
+    <div data-jg-menu className="flex max-w-md flex-col items-center gap-5 rounded-lg border border-[#dfe6ee]/15 bg-[#20242a]/95 px-8 py-7 text-center shadow-2xl">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-black tracking-wide text-[#dfe6ee]">MAGNET RUN</h1>
         <p className="text-xs font-semibold tracking-widest text-[#ffd23f]">SECTOR 3 CLEAR OR BUST — TELEMETRY LIVE</p>

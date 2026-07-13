@@ -487,15 +487,18 @@ function DevApp({ gameId }: { gameId: string }) {
   }
   const stageScenario =
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
-  const captureRun =
+  const defaultCommandInput = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
+  const captureRun: readonly (string | { name: string; input?: unknown })[] =
     RUN.length > 0 ? RUN : captureArmed() && MODE === "play" ? (playable.capture?.play ?? []) : [];
   const onContextReady =
     stageScenario !== undefined || captureRun.length > 0
       ? (ctx: GameContext) => {
           stageScenario?.(ctx);
-          for (const name of captureRun) {
+          for (const entry of captureRun) {
+            const name = typeof entry === "string" ? entry : entry.name;
+            const input = typeof entry === "string" ? defaultCommandInput : (entry.input ?? defaultCommandInput);
             if (ctx.game.commands.has(name)) {
-              ctx.game.commands.run(name, { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } });
+              ctx.game.commands.run(name, input);
             } else if (captureArmed()) {
               setCaptureStatus(
                 "error",

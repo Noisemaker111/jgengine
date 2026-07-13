@@ -607,8 +607,8 @@ export interface MovementCommitFrame {
 
 /** How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`. */
 export interface GameCaptureConfig {
-  /** Command names run (in order, via `ctx.game.commands.run`) right after boot when a capture host requests the play screen — the same commands the start-menu buttons dispatch (e.g. `["startRun"]`). A name the game never registers fails the capture loudly instead of shipping a menu screenshot. */
-  play?: readonly string[];
+  /** Commands run (in order, via `ctx.game.commands.run`) right after boot when a capture host requests the play screen — the same commands the start-menu buttons dispatch. A bare string runs with a default input; the object form carries the input a command needs (e.g. `[{ name: "class.select", input: { classId: "siren" } }, "startRun"]`). A name the game never registers fails the capture loudly instead of shipping a menu screenshot. */
+  play?: readonly (string | { name: string; input?: unknown })[];
   /** Extra milliseconds the capture host waits after `play` commands before taking the play-mode screenshot — cover an intro cinematic or spawn-in fade. Default 2500. */
   settleMs?: number;
 }

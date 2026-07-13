@@ -16,6 +16,7 @@ export const game = defineGame({
   input: keybinds,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  capture: { play: ["start"] },
   settings: {
     variant: "sheet",
     hideBindings: ["restart", "toggleMap", "start"],

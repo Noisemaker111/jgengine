@@ -19,7 +19,7 @@ export function StartScreen({
   onStart: () => void;
 }): React.ReactNode {
   return (
-    <div className="pointer-events-auto flex h-full w-full flex-col items-center justify-center gap-6 bg-[#101318]/90 px-6 text-center backdrop-blur-md">
+    <div data-jg-menu className="pointer-events-auto flex h-full w-full flex-col items-center justify-center gap-6 bg-[#101318]/90 px-6 text-center backdrop-blur-md">
       <div className="flex flex-col items-center gap-2">
         <h1 className="text-4xl font-semibold tracking-wide text-[#eef4f0]">Neon Shepherd</h1>
         <p className="max-w-md text-sm italic text-[#7ef9c8]">

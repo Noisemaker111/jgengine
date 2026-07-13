@@ -36,7 +36,7 @@ export function GameUI() {
 
   if (run === undefined) return null;
 
-  const beginRun = () => ctx.game.store.set(RUN_STORE_KEY, freshRunState(run ?? null, "running", ctx.time.now()));
+  const beginRun = () => ctx.game.commands.run("startRun", {});
   const resetToStart = () => ctx.game.store.set(RUN_STORE_KEY, freshRunState(run ?? null, "start", ctx.time.now()));
 
   return (

@@ -15,6 +15,7 @@ const CONTROLS: readonly { action: string; label: string }[] = [
 export function StartScreen({ onStart }: { onStart: () => void }) {
   return (
     <div
+      data-jg-menu
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-8 px-6 text-center"
       style={{
         background: `radial-gradient(circle at center, ${PALETTE.iceBlue}22, ${PALETTE.deepWater}f2 70%)`,

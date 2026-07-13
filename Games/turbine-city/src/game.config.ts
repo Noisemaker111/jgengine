@@ -17,6 +17,7 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  capture: { play: ["start"] },
   renderEntity: renderGlider,
   renderObject: renderCityProp,
   objectStyles: OBJECT_STYLES,

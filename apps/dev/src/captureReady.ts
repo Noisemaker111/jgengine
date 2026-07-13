@@ -99,7 +99,8 @@ async function waitPlayFrames(settleMs: number): Promise<void> {
 }
 
 function assertNoMenuOnScreen(): void {
-  const menu = document.querySelector("[data-jg-menu]");
+  const phase = document.documentElement.dataset.jgPhase;
+  const menu = phase === "menu" ? document.documentElement : document.querySelector("[data-jg-menu]");
   if (menu !== null) {
     throw new Error(
       "play-mode capture reached ready with a start menu still on screen — declare the game's start commands in PlayableGame.capture.play (or pass --run) so shoot lands on live gameplay",

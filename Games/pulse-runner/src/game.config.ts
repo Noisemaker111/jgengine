@@ -17,6 +17,7 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
+  capture: { play: ["start"] },
   camera: {
     chase: {
       distance: 6.5,

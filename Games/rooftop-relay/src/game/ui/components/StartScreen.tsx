@@ -3,7 +3,7 @@ import { KeybindLegend } from "./KeybindLegend";
 
 export function StartScreen({ onStart }: { onStart: () => void }) {
   return (
-    <div className="pointer-events-auto flex max-h-full w-[min(92vw,30rem)] flex-col gap-4 overflow-y-auto rounded-xl border border-[#f2b950]/40 bg-[#2b2320]/90 p-6 shadow-2xl backdrop-blur">
+    <div data-jg-menu className="pointer-events-auto flex max-h-full w-[min(92vw,30rem)] flex-col gap-4 overflow-y-auto rounded-xl border border-[#f2b950]/40 bg-[#2b2320]/90 p-6 shadow-2xl backdrop-blur">
       <div>
         <h1 className="text-3xl font-black tracking-tight text-[#f2b950]">ROOFTOP RELAY</h1>
         <p className="mt-1 text-sm text-[#c9c4b8]">

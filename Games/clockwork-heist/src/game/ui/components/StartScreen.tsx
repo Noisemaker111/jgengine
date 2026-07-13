@@ -8,7 +8,7 @@ export function StartScreen(): ReactNode {
   const dawn = mansionClockAt(RUN_SECONDS);
 
   return (
-    <div className="pointer-events-auto absolute inset-0 overflow-hidden bg-[#07101d] text-[#f4e8ca]">
+    <div data-jg-menu className="pointer-events-auto absolute inset-0 overflow-hidden bg-[#07101d] text-[#f4e8ca]">
       <SettingsTrigger className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-[#c9a227]/60 bg-[#0b0f1c]/85 text-[#c9a227] transition hover:bg-[#1d2b4a]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_22%,rgba(201,162,39,0.18),transparent_34%),linear-gradient(135deg,#1d2b4a_0%,#07101d_55%,#03070d_100%)]" />
       <div className="absolute -right-28 -top-28 aspect-square w-[34rem] rounded-full border border-[#c9a227]/25 shadow-[inset_0_0_80px_rgba(201,162,39,0.08)]" />
