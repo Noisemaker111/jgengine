@@ -38,7 +38,7 @@ export function readCaptureQuery(): { game: string; mode: string; device: string
 
 export function setCaptureStatus(status: CaptureStatus, error?: string): void {
   if (typeof document === "undefined") return;
-  if (status === "ready" && document.documentElement.dataset.jgCapture === "error") return;
+  if (status !== "error" && document.documentElement.dataset.jgCapture === "error") return;
   document.documentElement.dataset.jgCapture = status;
   if (error !== undefined && error.length > 0) {
     document.documentElement.dataset.jgCaptureError = error.slice(0, 500);
@@ -99,6 +99,7 @@ async function waitPlayFrames(settleMs: number): Promise<void> {
 }
 
 function assertNoMenuOnScreen(): void {
+  if (new URLSearchParams(window.location.search).get("state") !== null) return;
   const phase = document.documentElement.dataset.jgPhase;
   const menu = phase === "menu" ? document.documentElement : document.querySelector("[data-jg-menu]");
   if (menu !== null) {

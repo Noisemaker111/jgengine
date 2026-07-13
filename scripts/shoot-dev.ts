@@ -26,6 +26,7 @@ type Args = {
   mode: Mode;
   device: DeviceArg;
   stage?: boolean;
+  state?: string;
   preview?: string;
   run?: string[];
   settle?: number;
@@ -66,6 +67,7 @@ function parseArgs(argv: string[]): Args {
       }
       args.device = device;
     } else if (value === "--stage") args.stage = true;
+    else if (value === "--state") args.state = argv[++index];
     else if (value === "--preview") {
       const next = argv[index + 1];
       if (next !== undefined && !next.startsWith("--")) {
@@ -105,6 +107,10 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     return `${resolved.slice(0, dot)}-mobile${resolved.slice(dot)}`;
   }
   const suffix = device === "mobile" ? "-mobile" : "";
+  if (args.state !== undefined) {
+    const key = args.state.replace(/[^A-Za-z0-9._-]+/g, "_");
+    return join(outDir, `${args.game}-state-${key}${suffix}.png`);
+  }
   if (args.preview !== undefined) {
     const state = args.preview === "" ? "default" : args.preview.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `${args.game}-preview-${state}${suffix}.png`);
@@ -356,6 +362,7 @@ function targetUrl(args: Args, device: Device): string {
   url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
   url.searchParams.set("capture", "1");
   if (args.stage === true) url.searchParams.set("stage", "1");
+  if (args.state !== undefined) url.searchParams.set("state", args.state);
   if (args.preview !== undefined) url.searchParams.set("preview", args.preview);
   if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
   if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));

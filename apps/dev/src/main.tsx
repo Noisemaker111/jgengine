@@ -137,7 +137,8 @@ const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario
 const urlParams = new URLSearchParams(window.location.search);
 /** Explicit game only — bare `/` shows the picker so demo is never a silent surprise. */
 const GAME_ID = urlParams.get("game") ?? (import.meta.env.VITE_GAME_ID as string | undefined) ?? null;
-const MODE = urlParams.get("mode") ?? "play";
+const STATE_PARAM = urlParams.get("state");
+const MODE = STATE_PARAM !== null ? "play" : (urlParams.get("mode") ?? "play");
 if (import.meta.env.DEV && GAME_ID !== null) installSaveEndpoint("/__jgengine/save", GAME_ID);
 const PREVIEW = urlParams.get("preview");
 const STAGE = urlParams.get("stage") === "1";
@@ -488,8 +489,22 @@ function DevApp({ gameId }: { gameId: string }) {
   const stageScenario =
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
   const defaultCommandInput = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
-  const captureRun: readonly (string | { name: string; input?: unknown })[] =
-    RUN.length > 0 ? RUN : captureArmed() && MODE === "play" ? (playable.capture?.play ?? []) : [];
+  let captureRun: readonly (string | { name: string; input?: unknown })[] = [];
+  if (STATE_PARAM !== null) {
+    const stateRun = playable.capture?.states?.[STATE_PARAM];
+    if (stateRun === undefined) {
+      const known = Object.keys(playable.capture?.states ?? {}).sort();
+      const detail =
+        known.length > 0 ? `declared states: ${known.join(", ")}` : "the game declares no capture.states";
+      if (captureArmed()) setCaptureStatus("error", `unknown capture state "${STATE_PARAM}" for ${gameId} — ${detail}`);
+    } else {
+      captureRun = stateRun;
+    }
+  } else if (RUN.length > 0) {
+    captureRun = RUN;
+  } else if (captureArmed() && MODE === "play") {
+    captureRun = playable.capture?.play ?? [];
+  }
   const onContextReady =
     stageScenario !== undefined || captureRun.length > 0
       ? (ctx: GameContext) => {
