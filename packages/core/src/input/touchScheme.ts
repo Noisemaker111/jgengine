@@ -3,9 +3,11 @@
  * capture layer renders a virtual joystick, on-screen buttons, and a gesture
  * surface, and feeds synthetic `touch:<action>` codes into the same
  * ActionStateTracker the keyboard uses, so games gain touch play without any
- * per-game input code. Games refine the derived defaults through
- * TouchControlsConfig (gesture bindings, button curation) or opt out entirely
- * with `touch: false`.
+ * per-game input code. Session-lifecycle actions (start/restart/pause/menu/…)
+ * are left off the derived dock — they live in the start screen, pause menu, or
+ * settings sheet, never as a chip over live play. Games refine the derived
+ * defaults through TouchControlsConfig (gesture bindings, button curation) or
+ * opt out entirely with `touch: false`.
  */
 
 import { isHotbarSlotAction, type ActionCodes, type ActionCodesMap } from "./actionBindings";
@@ -141,7 +143,7 @@ export interface TouchMovementConfig {
 export interface TouchControlsConfig {
   /** `false` removes the virtual joystick even when movement actions are bound; an object restricts it to one axis. */
   movement?: false | TouchMovementConfig;
-  /** Curated on-screen buttons (order preserved); omit to derive one button per remaining action. */
+  /** Curated on-screen buttons (order preserved); omit to derive one button per remaining action. Derivation skips session-lifecycle actions (start/restart/pause/menu/…); list one here to dock it anyway. */
   buttons?: readonly (string | TouchButtonSpec)[];
   /** Play-surface gestures; actions consumed here stop appearing as derived buttons. */
   gestures?: TouchGestureBindings;
@@ -278,6 +280,28 @@ const UTILITY_ACTIONS: ReadonlySet<string> = new Set([
 
 const UTILITY_PREFIXES = ["toggle", "cycle", "switch", "open", "close", "show", "hide", "zoom"] as const;
 
+/**
+ * Session-lifecycle and menu-chrome actions never auto-derive an on-screen
+ * touch button: they belong to the start screen, pause menu, or settings sheet
+ * (surfaced via `settings.actions` plus a `<SettingsTrigger>`), not the live
+ * control dock — a `restart` chip stapled over play is the anti-pattern, and a
+ * mis-tap on it wrecks the match. A game that truly wants one docked lists it
+ * explicitly in `touch.buttons`, which bypasses derivation entirely.
+ */
+const LIFECYCLE_ACTIONS: ReadonlySet<string> = new Set([
+  "start",
+  "restart",
+  "reset",
+  "retry",
+  "pause",
+  "resume",
+  "menu",
+  "quit",
+  "exit",
+  "settings",
+  "options",
+]);
+
 export function touchButtonKind(action: string): TouchButtonKind {
   if (UTILITY_ACTIONS.has(action)) return "utility";
   for (const prefix of UTILITY_PREFIXES) {
@@ -376,6 +400,7 @@ export function deriveTouchScheme(
       .filter((action) => !isHotbarSlotAction(action))
       .filter((action) => !consumedByGestures.has(action))
       .filter((action) => !hidden.has(action))
+      .filter((action) => !LIFECYCLE_ACTIONS.has(action))
       .filter((action) => !reserved.has(action) || BUTTONABLE_RESERVED.has(action))
       .map((action) => ({
         action,
