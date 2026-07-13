@@ -85,7 +85,7 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (function): function EditorCameraDriver({ api }: { api: EditorHostApi }): null — Smoothly pans the orbit camera to the editor host's focus target when it changes.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, gizmoMode, setGizmoMode, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; gizmoMode: GizmoMode; setGizmoMode: (mode: GizmoMode) => void; }): React.JSX.Element — The editor's HUD chrome: outliner, asset browser, inspector, and toolbar.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, gizmoMode, setGizmoMode, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; gizmoMode: GizmoMode; setGizmoMode: (mode: GizmoMode) => void; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; }): React.JSX.Element — Renders every visible marker, volume, and path from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
@@ -122,7 +122,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, gizmoMode, setGizmoMode, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; gizmoMode: GizmoMode; setGizmoMode: (mode: GizmoMode) => void; }): React.JSX.Element — The editor's HUD chrome: outliner, asset browser, inspector, and toolbar.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, gizmoMode, setGizmoMode, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; gizmoMode: GizmoMode; setGizmoMode: (mode: GizmoMode) => void; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
 
 ## @jgengine/editor/PerfProbe
 

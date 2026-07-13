@@ -106,7 +106,7 @@ export function EditorChrome({
   gizmoMode: GizmoMode;
   setGizmoMode: (mode: GizmoMode) => void;
 }) {
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
   const [activePanel, setActivePanel] = useState<WorkspacePanel>("outliner");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
