@@ -110,6 +110,19 @@ function createRegionRegistry(): RegionRegistry {
 const RegionRegistryContext = createContext<RegionRegistry | null>(null);
 const GameLayoutContext = createContext<GameViewportLayout | null>(null);
 
+const INPUT_HINT_STYLE_ID = "jg-input-hints";
+const INPUT_HINT_CSS = "@media (pointer: coarse){[data-jg-kbd-hint]{display:none!important}}";
+
+/** Install the backstop rule that hides keyboard/mouse hints on touch, once per document. */
+function ensureInputHintStylesheet(): void {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(INPUT_HINT_STYLE_ID) !== null) return;
+  const style = document.createElement("style");
+  style.id = INPUT_HINT_STYLE_ID;
+  style.textContent = INPUT_HINT_CSS;
+  document.head.appendChild(style);
+}
+
 /** Live viewport rectangles: the layout viewport and the visible `visualViewport`. */
 export interface ViewportMetrics {
   layout: LayoutRect;
@@ -220,6 +233,10 @@ export function GameViewportProvider({
   const probeRef = useRef<HTMLDivElement | null>(null);
   const [safeArea, setSafeArea] = useState<Insets>({ top: 0, right: 0, bottom: 0, left: 0 });
   const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    ensureInputHintStylesheet();
+  }, []);
 
   useEffect(() => {
     const update = () => {

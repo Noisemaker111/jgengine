@@ -1,4 +1,4 @@
-import { SettingsTrigger } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { useMatchSnapshot } from "../match/hooks";
 import { AnnouncerTicker } from "./components/AnnouncerTicker";
 import { ChargeSlots } from "./components/ChargeSlots";
@@ -11,31 +11,34 @@ import { StartScreen } from "./components/StartScreen";
 
 export function GameUI() {
   const snapshot = useMatchSnapshot();
+  const layout = useHudLayout({ storageKey: "craterball" });
 
   if (!snapshot.started) return <StartScreen />;
   if (snapshot.phase === "fulltime") return <EndScreen snapshot={snapshot} />;
 
   return (
     <div className="pointer-events-none absolute inset-0 select-none font-mono text-white">
-      <div className="absolute inset-x-0 top-3 flex justify-center px-3 sm:top-4">
-        <Scoreboard snapshot={snapshot} />
-      </div>
+      <HudCanvas layout={layout}>
+        <HudPanel id="Scoreboard" anchor="top" interactive={false}>
+          <Scoreboard snapshot={snapshot} />
+        </HudPanel>
 
-      <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4">
-        <ChargeSlots slots={snapshot.cyanCharges} dodgeFraction={snapshot.dodgeFraction} />
-      </div>
+        <HudPanel id="Settings" anchor="top-right" order={-1}>
+          <SettingsTrigger className="rounded-lg border border-[#cdb891]/25 bg-[#160f0c]/80 px-3 py-1.5 text-[#ff6b35] shadow-lg shadow-black/40 backdrop-blur-sm transition-colors hover:border-[#cdb891]/40" />
+        </HudPanel>
 
-      <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4">
-        <ScarsTicker craterScars={snapshot.craterScars} craterCount={snapshot.craterCount} />
-      </div>
+        <HudPanel id="Announcer" anchor="bottom" order={1} interactive={false}>
+          <AnnouncerTicker line={snapshot.announcerLine} announcerId={snapshot.announcerId} />
+        </HudPanel>
 
-      <div className="pointer-events-auto absolute top-3 right-3 sm:top-4 sm:right-4">
-        <SettingsTrigger className="rounded-lg border border-[#cdb891]/25 bg-[#160f0c]/80 px-3 py-1.5 text-[#ff6b35] shadow-lg shadow-black/40 backdrop-blur-sm transition-colors hover:border-[#cdb891]/40" />
-      </div>
+        <HudPanel id="Charges" anchor="bottom-left" interactive={false}>
+          <ChargeSlots slots={snapshot.cyanCharges} dodgeFraction={snapshot.dodgeFraction} />
+        </HudPanel>
 
-      <div className="absolute inset-x-0 bottom-24 flex justify-center px-3 sm:bottom-28">
-        <AnnouncerTicker line={snapshot.announcerLine} announcerId={snapshot.announcerId} />
-      </div>
+        <HudPanel id="Scars" anchor="bottom-right" interactive={false}>
+          <ScarsTicker craterScars={snapshot.craterScars} craterCount={snapshot.craterCount} />
+        </HudPanel>
+      </HudCanvas>
 
       {snapshot.phase === "kickoff" ? (
         <div className="absolute inset-x-0 top-1/3 flex justify-center">

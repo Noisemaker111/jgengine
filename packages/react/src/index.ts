@@ -7,6 +7,7 @@ export * from "./social";
 export * from "./hooks";
 export * from "./settings";
 export * from "./components";
+export * from "./keyHint";
 export * from "./engineStore";
 export * from "./dragLayer";
 export * from "./cards";

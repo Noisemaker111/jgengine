@@ -14,6 +14,7 @@ export const game = defineGame({
   world,
   physics,
   input: keybinds,
+  hudFit: { mobile: { minScale: 1 } },
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
