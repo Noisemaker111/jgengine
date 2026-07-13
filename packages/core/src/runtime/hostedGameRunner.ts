@@ -35,6 +35,8 @@ export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMulti
  */
 export interface HostedGameRunner {
   join(userId: string, isNew: boolean): void;
+  /** Re-attach an already-joined member on a reconstructed runner — restores membership and `ctx.game.players` without re-firing `onNewPlayer`. Stateless hosts call it once per persisted member after `restore`. */
+  resume(userId: string): void;
   leave(userId: string): void;
   /** Record a client's latest input frame — stashed for {@link heldInput} and mirrored onto `ctx.game.players` so the movement seam reads each player's intent in `onTick`. */
   input(userId: string, frame: InputFrame): void;
@@ -73,6 +75,10 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       members.set(userId, player);
       ctx.game.players?.join(userId, isNew);
       loop.onNewPlayer?.(ctx, player);
+    },
+    resume(userId) {
+      members.set(userId, { userId, isNew: false });
+      ctx.game.players?.join(userId, false);
     },
     leave(userId) {
       const player = members.get(userId);

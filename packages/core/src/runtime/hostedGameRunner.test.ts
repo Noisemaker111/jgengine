@@ -147,6 +147,23 @@ describe("hosted game runner", () => {
     expect(host.context().game.commands.actor()).toBeNull();
   });
 
+  test("resume re-attaches a persisted member without re-firing onNewPlayer", () => {
+    const origin = runner();
+    origin.join("alice", true);
+    origin.tick(1);
+    origin.command("alice", "bump", { by: 1 });
+    const saved = origin.snapshot();
+
+    const restored = runner(saved);
+    restored.resume("alice");
+    expect(restored.members()).toEqual(["alice"]);
+    expect(restored.context().game.players?.ids()).toEqual(["alice"]);
+    expect(restored.context().game.store.get("lastJoin")).toBe("alice");
+    restored.leave("alice");
+    expect(restored.members()).toEqual([]);
+    expect(restored.context().scene.entity.get("alice")).toBeNull();
+  });
+
   test("restore rehydrates a persisted world without re-seeding, and onInit-registered commands still work", () => {
     const origin = runner();
     origin.join("alice", true);
