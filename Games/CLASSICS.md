@@ -69,7 +69,6 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | Bubble shooter | ❌ | |
 | Space Invaders | ✅ | `star-invaders` |
 | Asteroids | ❌ | |
-| Frogger | ✅ | `road-hopper` |
 | Missile Command | W2 | |
 | Lunar Lander | W2 | |
 | Centipede | W3 | |

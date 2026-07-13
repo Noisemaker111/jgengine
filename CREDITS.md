@@ -107,6 +107,5 @@ in [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
 | --- | --- | --- |
 | **[Nonogram](Games/nonogram)** | `nonogram` | **Non Ishida** and **Tetsuya Nishio**'s independently invented picture-logic puzzle (1987). |
 | **[Star Invaders](Games/star-invaders)** | `star-invaders` | **Tomohiro Nishikado**'s **Space Invaders**, Taito (1978). |
-| **[Road Hopper](Games/road-hopper)** | `road-hopper` | Konami's **Frogger** (1981). |
 | **[Pinball](Games/pinball)** | `pinball` | Traditional solid-state pinball — genre homage. |
 | **[Vice Isle](Games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |
