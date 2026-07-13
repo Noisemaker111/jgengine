@@ -8,8 +8,10 @@
  *     --key KeyW:2500 --shot walked
  *
  * Clicks resolve the first visible element whose text matches (case-
- * insensitive) and dispatch a raw CDP mouse press at its center — no
- * actionability checks to time out on hover overlays. Keys dispatch
+ * insensitive), wait for its center to hold still across consecutive
+ * samples (entrance animations and hydration shift positions for ~2s),
+ * then dispatch a raw CDP mouse press at that center — no actionability
+ * checks to time out on hover overlays. Keys dispatch
  * keyDown/keyUp with the given code, held for the given milliseconds.
  */
 import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
@@ -65,7 +67,12 @@ function parseArgs(argv: string[]): Args {
   return args;
 }
 
-async function findClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number }> {
+const SETTLE_EPSILON_PX = 0.5;
+const SETTLE_SAMPLES = 3;
+const SETTLE_INTERVAL_MS = 100;
+const SETTLE_TIMEOUT_MS = 5_000;
+
+async function measureClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number } | null> {
   const result = await session.send("Runtime.evaluate", {
     expression: `(() => {
       const needle = ${JSON.stringify(text)}.toLowerCase();
@@ -85,9 +92,31 @@ async function findClickPoint(session: CdpSession, text: string): Promise<{ x: n
     })()`,
     returnByValue: true,
   });
-  const point = (result.result as { value?: { x: number; y: number } | null } | undefined)?.value;
-  if (point === null || point === undefined) throw new Error(`drive: no visible element matching "${text}"`);
-  return point;
+  return (result.result as { value?: { x: number; y: number } | null } | undefined)?.value ?? null;
+}
+
+async function findClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number }> {
+  const deadline = Date.now() + SETTLE_TIMEOUT_MS;
+  let last: { x: number; y: number } | null = null;
+  let stableRuns = 0;
+  while (Date.now() < deadline) {
+    const point = await measureClickPoint(session, text);
+    if (
+      point !== null &&
+      last !== null &&
+      Math.abs(point.x - last.x) <= SETTLE_EPSILON_PX &&
+      Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
+    ) {
+      stableRuns += 1;
+      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
+    } else {
+      stableRuns = 0;
+    }
+    last = point;
+    await new Promise((r) => setTimeout(r, SETTLE_INTERVAL_MS));
+  }
+  if (last === null) throw new Error(`drive: no visible element matching "${text}"`);
+  return last;
 }
 
 async function click(session: CdpSession, text: string): Promise<void> {
