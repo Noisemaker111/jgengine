@@ -1,7 +1,16 @@
 export { EditorApp, type EditorAppProps } from "./EditorApp";
-export { EditorLayerOverlays } from "./DebugDraw";
+export { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
 export { EditorChrome } from "./EditorChrome";
-export { SelectionGizmo, ViewportSelect, type GizmoMode } from "./SelectionGizmo";
+export { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";
+export {
+  createEditorUiStore,
+  newPlacementId,
+  type EditorUiState,
+  type EditorUiStore,
+  type GizmoMode,
+  type PlacementTool,
+  type SnapMode,
+} from "./uiStore";
 export { EditorCameraDriver } from "./EditorCameraDriver";
 export { AssetBrowser, assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
 export {

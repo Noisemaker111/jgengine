@@ -4,22 +4,42 @@ import {
   findEditorVolume,
   importEditorDocumentJson,
 } from "./document";
-import type { EditorDocument, EditorMarker, EditorVec3, EditorVolume } from "./types";
+import type {
+  EditorDocument,
+  EditorMarker,
+  EditorNote,
+  EditorPath,
+  EditorVec3,
+  EditorVolume,
+} from "./types";
 
 /** A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session. */
 export type EditorCommand =
   | { type: "select"; ids: readonly string[] }
   | { type: "clearSelection" }
   | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number }
+  | { type: "translate"; ids: readonly string[]; delta: EditorVec3 }
   | { type: "addMarker"; marker: EditorMarker }
-  | { type: "remove"; id: string }
-  | { type: "setVolume"; id: string; patch: Partial<Omit<EditorVolume, "id">> }
   | { type: "addVolume"; volume: EditorVolume }
+  | { type: "addPath"; path: EditorPath }
+  | { type: "addNote"; note: EditorNote }
+  | { type: "setMarker"; id: string; patch: Partial<Omit<EditorMarker, "id">> }
+  | { type: "setVolume"; id: string; patch: Partial<Omit<EditorVolume, "id">> }
+  | { type: "setPath"; id: string; patch: Partial<Omit<EditorPath, "id">> }
+  | { type: "setNote"; id: string; patch: Partial<Omit<EditorNote, "id">> }
+  | { type: "remove"; id: string }
+  | { type: "removeMany"; ids: readonly string[] }
+  | { type: "duplicate"; ids: readonly string[]; offset?: EditorVec3 }
   | { type: "importDocument"; document: EditorDocument }
   | { type: "importJson"; json: string }
   | { type: "replaceDocument"; document: EditorDocument }
   | { type: "undo" }
   | { type: "redo" };
+
+/** Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step. */
+export interface EditorDispatchOptions {
+  coalesce?: string;
+}
 
 /** The document plus current selection at a point in editor history. */
 export interface EditorSessionState {
@@ -31,7 +51,7 @@ export interface EditorSessionState {
 export interface EditorSession {
   getState(): EditorSessionState;
   subscribe(listener: (state: EditorSessionState) => void): () => void;
-  dispatch(command: EditorCommand): EditorSessionState;
+  dispatch(command: EditorCommand, options?: EditorDispatchOptions): EditorSessionState;
   exportJson(pretty?: boolean): string;
   canUndo(): boolean;
   canRedo(): boolean;
@@ -44,13 +64,104 @@ function snapshotState(state: EditorSessionState): EditorSessionState {
   };
 }
 
-function removeById(doc: EditorDocument, id: string): EditorDocument {
+function removeByIds(doc: EditorDocument, ids: ReadonlySet<string>): EditorDocument {
   return {
     version: 1,
-    markers: doc.markers.filter((marker) => marker.id !== id),
-    volumes: doc.volumes.filter((volume) => volume.id !== id),
-    paths: doc.paths.filter((path) => path.id !== id),
-    annotations: doc.annotations.filter((note) => note.id !== id),
+    markers: doc.markers.filter((marker) => !ids.has(marker.id)),
+    volumes: doc.volumes.filter((volume) => !ids.has(volume.id)),
+    paths: doc.paths.filter((path) => !ids.has(path.id)),
+    annotations: doc.annotations.filter((note) => !ids.has(note.id)),
+  };
+}
+
+function shifted(point: EditorVec3, delta: EditorVec3): EditorVec3 {
+  return { x: point.x + delta.x, y: point.y + delta.y, z: point.z + delta.z };
+}
+
+function translateByIds(
+  doc: EditorDocument,
+  ids: ReadonlySet<string>,
+  delta: EditorVec3,
+): EditorDocument {
+  return {
+    version: 1,
+    markers: doc.markers.map((marker) =>
+      ids.has(marker.id) ? { ...marker, position: shifted(marker.position, delta) } : marker,
+    ),
+    volumes: doc.volumes.map((volume) =>
+      ids.has(volume.id) ? { ...volume, center: shifted(volume.center, delta) } : volume,
+    ),
+    paths: doc.paths.map((path) =>
+      ids.has(path.id) ? { ...path, points: path.points.map((point) => shifted(point, delta)) } : path,
+    ),
+    annotations: doc.annotations.map((note) =>
+      ids.has(note.id) ? { ...note, position: shifted(note.position, delta) } : note,
+    ),
+  };
+}
+
+function collectIds(doc: EditorDocument): Set<string> {
+  const all = new Set<string>();
+  for (const marker of doc.markers) all.add(marker.id);
+  for (const volume of doc.volumes) all.add(volume.id);
+  for (const path of doc.paths) all.add(path.id);
+  for (const note of doc.annotations) all.add(note.id);
+  return all;
+}
+
+function copyId(base: string, taken: Set<string>): string {
+  let candidate = `${base}_copy`;
+  let n = 2;
+  while (taken.has(candidate)) {
+    candidate = `${base}_copy${n}`;
+    n += 1;
+  }
+  taken.add(candidate);
+  return candidate;
+}
+
+function duplicateInto(
+  state: EditorSessionState,
+  ids: readonly string[],
+  offset: EditorVec3,
+): EditorSessionState {
+  const doc = state.document;
+  const taken = collectIds(doc);
+  const clones = cloneEditorDocument({
+    version: 1,
+    markers: doc.markers.filter((marker) => ids.includes(marker.id)),
+    volumes: doc.volumes.filter((volume) => ids.includes(volume.id)),
+    paths: doc.paths.filter((path) => ids.includes(path.id)),
+    annotations: doc.annotations.filter((note) => ids.includes(note.id)),
+  });
+  const newIds: string[] = [];
+  const withId = <T extends { id: string }>(item: T): T => {
+    const id = copyId(item.id, taken);
+    newIds.push(id);
+    return { ...item, id };
+  };
+  const markers = clones.markers.map((marker) =>
+    withId({ ...marker, position: shifted(marker.position, offset) }),
+  );
+  const volumes = clones.volumes.map((volume) =>
+    withId({ ...volume, center: shifted(volume.center, offset) }),
+  );
+  const paths = clones.paths.map((path) =>
+    withId({ ...path, points: path.points.map((point) => shifted(point, offset)) }),
+  );
+  const annotations = clones.annotations.map((note) =>
+    withId({ ...note, position: shifted(note.position, offset) }),
+  );
+  if (newIds.length === 0) return state;
+  return {
+    document: {
+      version: 1,
+      markers: [...doc.markers, ...markers],
+      volumes: [...doc.volumes, ...volumes],
+      paths: [...doc.paths, ...paths],
+      annotations: [...doc.annotations, ...annotations],
+    },
+    selection: newIds,
   };
 }
 
@@ -84,6 +195,11 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         document: { ...state.document, markers, volumes, annotations },
       };
     }
+    case "translate":
+      return {
+        ...state,
+        document: translateByIds(state.document, new Set(command.ids), command.delta),
+      };
     case "addMarker":
       return {
         ...state,
@@ -102,6 +218,39 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         },
         selection: [command.volume.id],
       };
+    case "addPath":
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          paths: [...state.document.paths.filter((p) => p.id !== command.path.id), command.path],
+        },
+        selection: [command.path.id],
+      };
+    case "addNote":
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          annotations: [
+            ...state.document.annotations.filter((n) => n.id !== command.note.id),
+            command.note,
+          ],
+        },
+        selection: [command.note.id],
+      };
+    case "setMarker": {
+      const markers = state.document.markers.map((marker) => {
+        if (marker.id !== command.id) return marker;
+        return {
+          ...marker,
+          ...command.patch,
+          position: command.patch.position === undefined ? marker.position : { ...command.patch.position },
+          meta: command.patch.meta === undefined ? marker.meta : { ...command.patch.meta },
+        };
+      });
+      return { ...state, document: { ...state.document, markers } };
+    }
     case "setVolume": {
       const volumes = state.document.volumes.map((volume) => {
         if (volume.id !== command.id) return volume;
@@ -118,11 +267,47 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
       });
       return { ...state, document: { ...state.document, volumes } };
     }
+    case "setPath": {
+      const paths = state.document.paths.map((path) => {
+        if (path.id !== command.id) return path;
+        return {
+          ...path,
+          ...command.patch,
+          points:
+            command.patch.points === undefined
+              ? path.points
+              : command.patch.points.map((point) => ({ ...point })),
+          meta: command.patch.meta === undefined ? path.meta : { ...command.patch.meta },
+        };
+      });
+      return { ...state, document: { ...state.document, paths } };
+    }
+    case "setNote": {
+      const annotations = state.document.annotations.map((note) => {
+        if (note.id !== command.id) return note;
+        return {
+          ...note,
+          ...command.patch,
+          position: command.patch.position === undefined ? note.position : { ...command.patch.position },
+          meta: command.patch.meta === undefined ? note.meta : { ...command.patch.meta },
+        };
+      });
+      return { ...state, document: { ...state.document, annotations } };
+    }
     case "remove":
       return {
-        document: removeById(state.document, command.id),
+        document: removeByIds(state.document, new Set([command.id])),
         selection: state.selection.filter((id) => id !== command.id),
       };
+    case "removeMany": {
+      const gone = new Set(command.ids);
+      return {
+        document: removeByIds(state.document, gone),
+        selection: state.selection.filter((id) => !gone.has(id)),
+      };
+    }
+    case "duplicate":
+      return duplicateInto(state, command.ids, command.offset ?? { x: 2, y: 0, z: 2 });
     case "importDocument":
     case "replaceDocument":
       return {
@@ -142,14 +327,10 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
 
 function isStructural(command: EditorCommand): boolean {
   return (
-    command.type === "setTransform" ||
-    command.type === "addMarker" ||
-    command.type === "addVolume" ||
-    command.type === "setVolume" ||
-    command.type === "remove" ||
-    command.type === "importDocument" ||
-    command.type === "importJson" ||
-    command.type === "replaceDocument"
+    command.type !== "select" &&
+    command.type !== "clearSelection" &&
+    command.type !== "undo" &&
+    command.type !== "redo"
   );
 }
 
@@ -161,6 +342,7 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
   };
   const past: EditorSessionState[] = [];
   const future: EditorSessionState[] = [];
+  let lastCoalesce: string | null = null;
   const listeners = new Set<(state: EditorSessionState) => void>();
 
   const emit = () => {
@@ -177,12 +359,13 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
     },
     canUndo: () => past.length > 0,
     canRedo: () => future.length > 0,
-    dispatch(command) {
+    dispatch(command, options) {
       if (command.type === "undo") {
         const previous = past.pop();
         if (previous === undefined) return state;
         future.push(snapshotState(state));
         state = previous;
+        lastCoalesce = null;
         emit();
         return state;
       }
@@ -191,6 +374,7 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         if (next === undefined) return state;
         past.push(snapshotState(state));
         state = next;
+        lastCoalesce = null;
         emit();
         return state;
       }
@@ -198,9 +382,14 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
       const next = applyMutating(state, command);
       if (next === null) return state;
       if (isStructural(command)) {
-        past.push(snapshotState(state));
-        if (past.length > historyLimit) past.shift();
+        const coalesce = options?.coalesce;
+        const merge = coalesce !== undefined && coalesce === lastCoalesce && past.length > 0;
+        if (!merge) {
+          past.push(snapshotState(state));
+          if (past.length > historyLimit) past.shift();
+        }
         future.length = 0;
+        lastCoalesce = coalesce ?? null;
       }
       state = next;
       emit();

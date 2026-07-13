@@ -69,7 +69,9 @@ bun packages/editor/src/mcp/cli.ts --game borderlands2 --serve   # POST localhos
 bun packages/editor/src/mcp/cli.ts --game borderlands2 --stdio   # MCP JSON-RPC on stdin/stdout
 ```
 
-Viewport: click anything to select — editor gizmos hit directly, world geometry snaps to the nearest marker/volume — then TransformControls (W move / E rotate / R scale volume radius). Outliner groups by kind with ×N dedup rows; `N` cycles instances of the selected row. Assets tab places from game catalog.
+Viewport: click anything to select — editor gizmos hit directly, world geometry snaps to the nearest marker/volume/path/note, repeat-click cycles stacked candidates, shift/ctrl-click multi-selects — then TransformControls (W move / E rotate marker / R scale volume: radius, cylinder height, or box half-extents). Multi-selection drags move every selected object. Snap button cycles ground / grid / off (grid also snaps rotation to 15°); `G` toggles the reference grid. Outliner groups by kind (notes included) with ×N dedup rows; `N` cycles instances of the selected row; ctrl-click adds to selection.
+
+Authoring: **+ Add** menu places markers, volumes (sphere/box/cylinder), notes, and draws paths (click points, Enter finish, Esc cancel; shift-click keeps placing). Select a path, click a vertex sphere to move/insert/delete points. `Ctrl+D` duplicates the selection, Delete removes it, Escape cancels/clears. Inspector edits labels, note text, radius/height/half-extents, and coalesces typed edits into single undo steps. **Import** loads an exported JSON back in; layer visibility and snap prefs persist per game in localStorage.
 
 ## Core APIs (`editor/`)
 

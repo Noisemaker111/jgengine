@@ -41,6 +41,8 @@ export { createEditorSession } from "./commands";
 export { summarizeEditorSession } from "./commands";
 /** A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session. */
 export type { EditorCommand } from "./commands";
+/** Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step. */
+export type { EditorDispatchOptions } from "./commands";
 /** Stateful, undoable handle for driving scene edits from UI or an MCP agent. */
 export type { EditorSession } from "./commands";
 /** The document plus current selection at a point in editor history. */

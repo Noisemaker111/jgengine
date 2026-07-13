@@ -4,7 +4,8 @@
 
 ## @jgengine/core/editor
 
-- `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "addMarker"; marker: EditorMarker } | { type: "remove"; id: string } | { type: "setVolume"; id: string; patch: Pa… — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
+- `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "addMarker"; marker: EditorMarker } | { type: … — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
+- `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, and note for a game.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorLayersInput` (type): type EditorLayersInput = | EditorDocument | Partial<Omit<EditorDocument, "version">> | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>) — Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory.
@@ -36,7 +37,8 @@
 
 ## @jgengine/core/editor/commands
 
-- `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "addMarker"; marker: EditorMarker } | { type: "remove"; id: string } | { type: "setVolume"; id: string; patch: Pa… — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
+- `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "addMarker"; marker: EditorMarker } | { type: … — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
+- `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `createEditorSession` (function): function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession — Creates an editor session with undo/redo history seeded from an initial document.
@@ -76,7 +78,7 @@
 
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers }: EditorAppProps): React.JSX.Element — Top-level scene editor: place spawns/zones/paths visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
@@ -85,20 +87,27 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (function): function EditorCameraDriver({ api }: { api: EditorHostApi }): null — Smoothly pans the orbit camera to the editor host's focus target when it changes.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, gizmoMode, setGizmoMode, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; gizmoMode: GizmoMode; setGizmoMode: (mode: GizmoMode) => void; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
-- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; }): React.JSX.Element — Renders every visible marker, volume, and path from a document as in-scene 3D gizmos.
+- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; }): React.JSX.Element — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" — How the editor hosts the game: frozen placement view, roamable world, or the real game.
+- `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
+- `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
+- `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
 - `PerfProbe` (function): function PerfProbe({ api }: { api: EditorHostApi }): null — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
-- `SelectionGizmo` (function): function SelectionGizmo({ session, mode, groundSnap, }: { session: EditorSession; mode: GizmoMode; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release.
-- `ViewportSelect` (function): function ViewportSelect({ api }: { api: EditorHostApi }): null — Canvas click-to-select. Document markers/volumes pick by screen proximity (registration always matches what you see); everything else picks by occlusion-ordered raycast against the tagged scene graph, so live entities and objects are clickable exactly like editor gizmos.
+- `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
+- `SelectionGizmo` (function): function SelectionGizmo({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
+- `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
+- `ViewportSelect` (function): function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }): null — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
+- `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
+- `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
 - `useF2Chord` (function): function useF2Chord(code: string, onChord: () => void): void — Listens for the engine's F2+<key> chord family and fires on the given code (e.g. "KeyE").
 
 ## @jgengine/editor/AssetBrowser
@@ -109,11 +118,12 @@
 
 ## @jgengine/editor/DebugDraw
 
-- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; }): React.JSX.Element — Renders every visible marker, volume, and path from a document as in-scene 3D gizmos.
+- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; }): React.JSX.Element — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
+- `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
 
 ## @jgengine/editor/EditorApp
 
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers }: EditorAppProps): React.JSX.Element — Top-level scene editor: place spawns/zones/paths visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 
 ## @jgengine/editor/EditorCameraDriver
@@ -122,7 +132,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, gizmoMode, setGizmoMode, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; gizmoMode: GizmoMode; setGizmoMode: (mode: GizmoMode) => void; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
 
 ## @jgengine/editor/PerfProbe
 
@@ -131,8 +141,8 @@
 ## @jgengine/editor/SelectionGizmo
 
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
-- `SelectionGizmo` (function): function SelectionGizmo({ session, mode, groundSnap, }: { session: EditorSession; mode: GizmoMode; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release.
-- `ViewportSelect` (function): function ViewportSelect({ api }: { api: EditorHostApi }): null — Canvas click-to-select. Document markers/volumes pick by screen proximity (registration always matches what you see); everything else picks by occlusion-ordered raycast against the tagged scene graph, so live entities and objects are clickable exactly like editor gizmos.
+- `SelectionGizmo` (function): function SelectionGizmo({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
+- `ViewportSelect` (function): function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }): null — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 
 ## @jgengine/editor/mcp/bridgeServer
 
@@ -171,6 +181,16 @@
 - `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
 - `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
+
+## @jgengine/editor/uiStore
+
+- `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
+- `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
+- `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
+- `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
+- `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
+- `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
+- `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
 
 ## @jgengine/editor/useF2Chord
 

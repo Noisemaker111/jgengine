@@ -14,6 +14,7 @@ const skills = [
   "jgengine-multiplayer",
   "jgengine-ui",
   "jgengine-assets",
+  "jgengine-editor",
 ];
 const trackedPaths = [
   baselinePath,

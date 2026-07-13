@@ -9,10 +9,11 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
 import { EditorCameraDriver } from "./EditorCameraDriver";
 import { EditorChrome } from "./EditorChrome";
-import { EditorLayerOverlays } from "./DebugDraw";
+import { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
 import { PerfProbe } from "./PerfProbe";
-import { SelectionGizmo, ViewportSelect, type GizmoMode } from "./SelectionGizmo";
+import { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
+import { createEditorUiStore, type EditorUiStore, type SnapMode } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 
 /** Props for mounting the scene editor over a playable game. */
@@ -22,88 +23,66 @@ export interface EditorAppProps {
   layers?: EditorLayersInput;
 }
 
-type GizmoStore = {
-  mode: GizmoMode;
-  listeners: Set<() => void>;
-  setMode: (mode: GizmoMode) => void;
-  subscribe: (listener: () => void) => () => void;
-};
-
-function createGizmoStore(initial: GizmoMode = "translate"): GizmoStore {
-  const listeners = new Set<() => void>();
-  const store: GizmoStore = {
-    mode: initial,
-    listeners,
-    setMode(mode) {
-      store.mode = mode;
-      for (const listener of listeners) listener();
-    },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-  };
-  return store;
+interface StoredEditorPrefs {
+  visibility?: Record<string, boolean>;
+  snapMode?: SnapMode;
+  gridSize?: number;
+  showGrid?: boolean;
 }
 
-function useGizmoMode(store: GizmoStore): GizmoMode {
-  const [mode, setMode] = useState(store.mode);
-  useEffect(() => store.subscribe(() => setMode(store.mode)), [store]);
-  return mode;
+function prefsKey(gameId: string): string {
+  return `jgeditor:prefs:${gameId}`;
 }
 
-function EditorWorldOverlay({ api, gizmoStore }: { api: EditorHostApi; gizmoStore: GizmoStore }) {
+function loadPrefs(gameId: string): StoredEditorPrefs {
+  try {
+    const raw = localStorage.getItem(prefsKey(gameId));
+    if (raw === null) return {};
+    const parsed = JSON.parse(raw) as StoredEditorPrefs;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function savePrefs(gameId: string, prefs: StoredEditorPrefs): void {
+  try {
+    localStorage.setItem(prefsKey(gameId), JSON.stringify(prefs));
+  } catch {
+    return;
+  }
+}
+
+function EditorWorldOverlay({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }) {
   const session = api.getSession();
   const ctx = useGameContext();
-  const gizmoMode = useGizmoMode(gizmoStore);
   const [, setTick] = useState(0);
   useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
   useEffect(() => api.subscribeVisibility(() => setTick((value) => value + 1)), [api]);
+  useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
   const state = session.getState();
+  const uiState = ui.getState();
 
   return (
     <>
       <PerfProbe api={api} />
       <EditorCameraDriver api={api} />
-      <ViewportSelect api={api} />
+      <ViewportSelect api={api} ui={ui} />
+      {uiState.showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
       <EditorLayerOverlays
         document={state.document}
         visibility={api.getVisibility()}
         selection={state.selection}
         onSelect={(id) => session.dispatch({ type: "select", ids: [id] })}
+        activePathPoint={uiState.pathPoint}
       />
+      {uiState.pathDraft.length > 0 ? <PathDraftPreview points={uiState.pathDraft} /> : null}
       <SelectionGizmo
         session={session}
-        mode={gizmoMode}
+        ui={ui}
         groundSnap={(x, z) => ctx.world.groundHeightAt(x, z)}
       />
     </>
-  );
-}
-
-function EditorHud({
-  gameId,
-  api,
-  assets,
-  gizmoStore,
-}: {
-  gameId: string;
-  api: EditorHostApi;
-  assets: readonly EditorAssetEntry[];
-  gizmoStore: GizmoStore;
-}) {
-  const gizmoMode = useGizmoMode(gizmoStore);
-  return (
-    <EditorChrome
-      gameId={gameId}
-      session={api.getSession()}
-      api={api}
-      assets={assets}
-      gizmoMode={gizmoMode}
-      setGizmoMode={gizmoStore.setMode}
-    />
   );
 }
 
@@ -161,11 +140,11 @@ function resolveEditorCamera(document: EditorDocument): {
   };
 }
 
-/** Top-level scene editor: place spawns/zones/paths visually over edit, walk, or play modes. */
+/** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
 export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
-  const gizmoStoreRef = useRef<GizmoStore | null>(null);
-  if (gizmoStoreRef.current === null) gizmoStoreRef.current = createGizmoStore();
-  const gizmoStore = gizmoStoreRef.current;
+  const uiStoreRef = useRef<EditorUiStore | null>(null);
+  if (uiStoreRef.current === null) uiStoreRef.current = createEditorUiStore();
+  const ui = uiStoreRef.current;
   const [mode, setModeState] = useState<EditorRunMode>("edit");
 
   const catalogAssets = useMemo(() => {
@@ -190,6 +169,33 @@ export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
   useEffect(() => host.dispose, [host]);
 
   useEffect(() => host.api.subscribeMode(setModeState), [host]);
+
+  useEffect(() => {
+    const prefs = loadPrefs(gameId);
+    if (prefs.visibility !== undefined) {
+      host.api.setVisibility({ ...host.api.getVisibility(), ...prefs.visibility });
+    }
+    ui.patch({
+      ...(prefs.snapMode === undefined ? {} : { snapMode: prefs.snapMode }),
+      ...(prefs.gridSize === undefined ? {} : { gridSize: prefs.gridSize }),
+      ...(prefs.showGrid === undefined ? {} : { showGrid: prefs.showGrid }),
+    });
+    const persist = () => {
+      const state = ui.getState();
+      savePrefs(gameId, {
+        visibility: host.api.getVisibility(),
+        snapMode: state.snapMode,
+        gridSize: state.gridSize,
+        showGrid: state.showGrid,
+      });
+    };
+    const unsubscribeVisibility = host.api.subscribeVisibility(persist);
+    const unsubscribeUi = ui.subscribe(persist);
+    return () => {
+      unsubscribeVisibility();
+      unsubscribeUi();
+    };
+  }, [gameId, host, ui]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -273,12 +279,10 @@ export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
     }
 
     const WorldOverlay: ComponentType = function EditorOverlay() {
-      return <EditorWorldOverlay api={host.api} gizmoStore={gizmoStore} />;
+      return <EditorWorldOverlay api={host.api} ui={ui} />;
     };
     const GameUI: ComponentType = function EditorUi() {
-      return (
-        <EditorHud gameId={gameId} api={host.api} assets={catalogAssets} gizmoStore={gizmoStore} />
-      );
+      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} />;
     };
     const { target, span, far } = initialCamera;
     return {
@@ -314,7 +318,7 @@ export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
         },
       },
     };
-  }, [playable, host, gameId, initialCamera, catalogAssets, gizmoStore, mode]);
+  }, [playable, host, gameId, initialCamera, catalogAssets, ui, mode]);
 
   return (
     <div className="relative h-full w-full bg-neutral-950" data-jg-editor="1" data-jg-editor-game={gameId}>
