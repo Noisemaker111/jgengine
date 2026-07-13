@@ -16,7 +16,7 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 
 **Don't delegate the trivial.** If the leg is a couple of quick calls or the prompt would outweigh the work, do it inline — spawning a worker has a cost too.
 
-**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "running in background / will report back" returns nothing — background children die with the turn. That final message must report the completed result (PR link, merge state, CI verdict), never intent. Nested delegation obeys the same rule: a worker never hands its leg to a background child of its own. For the ~60s green-check wait, bare `sleep` is blocked by the harness — use one foreground Bash call that embeds the wait: `bun -e 'await Bun.sleep(60000)'`, then read the Actions runs in the same turn. And no worker in a parallel batch ever runs `bun install` — a mid-batch install leaves `node_modules` half-extracted and fails every sibling with phantom TS2307s; if an install is needed, it runs alone, before the batch launches.
+**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "running in background / will report back" returns nothing — background children die with the turn. That final message must report the completed result (PR link, checks verdict), never intent. Nested delegation obeys the same rule: a worker never hands its leg to a background child of its own. For the ~60s green-check wait, bare `sleep` is blocked by the harness — use one foreground Bash call that embeds the wait: `bun -e 'await Bun.sleep(60000)'`, then read the Actions runs in the same turn. And no worker in a parallel batch ever runs `bun install` — a mid-batch install leaves `node_modules` half-extracted and fails every sibling with phantom TS2307s; if an install is needed, it runs alone, before the batch launches.
 
 **Use the repo commands, never reconstruct the ladder.** Before generators or hand-rolled verify steps, run `bun run agent:preflight` (catches a half-finished install or malformed `package.json` early). For the full local verdict use `bun run gate`, not a hand-assembled `build && check-types && test` chain. Immediately before commit/push/PR, run `bun run ship:preflight` — it rejects a dirty tree, a branch not based on current `origin/main`, or a no-op diff before the ship motion wastes a PR on it.
 
@@ -29,7 +29,7 @@ Cheap worker: every mechanical leg below, on the cheapest tier that fits.
 - lint · typecheck · test · build
 - preview · screenshot · `bun run shoot` · Playwright
 - git ceremony once the diff is decided — commit, push, and whatever recovery the push needs (stale refs, prune, restart from origin/main, cherry-pick); the frontier model never grinds through git errors inline
-- GitHub ceremony after the decision is made (PR create, comments, issue ops — MCP tools or `gh` where it exists); the whole ship motion (commit → push → PR → merge → 60s green check) is one worker brief
+- GitHub ceremony after the decision is made (PR create, comments, issue ops — MCP tools or `gh` where it exists); the whole ship motion (commit → push → PR → PR-checks green — **never merge**; the user merges on request) is one worker brief
 - bulk file reads · codebase scouting · research sweeps · renames · doc sweeps · log triage
 
 Announce workers on a 🤖 line, job-named. Judge their output; never dump raw worker text to the user.
