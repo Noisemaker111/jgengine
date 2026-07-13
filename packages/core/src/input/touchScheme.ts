@@ -129,6 +129,8 @@ export interface TouchButtonSpec {
   shape?: TouchButtonShape;
   /** Docks this button on its own instead of joining its cluster — e.g. a brake pedal pinned to the right rail. */
   anchor?: TouchAnchor;
+  /** Custom art drawn as the button face instead of the built-in silhouette — any image URL or `data:image/svg+xml` URI (a slot frame, spell plate, …); the icon/label still sits on top. */
+  image?: string;
 }
 
 /** Restricts the virtual joystick to one axis — a `horizontal` zone reads as a steering control, freeing throttle/brake to become pedal buttons. */
@@ -175,6 +177,8 @@ export interface TouchButton {
   shape: TouchButtonShape;
   /** Per-button dock override; null joins the cluster's anchor. */
   anchor: TouchAnchor | null;
+  /** Custom face art (image/SVG URL); null draws the built-in silhouette. */
+  image: string | null;
 }
 
 export interface TouchScheme {
@@ -216,9 +220,14 @@ const SHAPE_BY_ACTION: ReadonlyMap<string, TouchButtonShape> = new Map([
   ["primaryFire", "trigger"],
   ["secondaryFire", "trigger"],
   ["steer", "wheel"],
+  ["inventory", "square"],
+  ["bag", "square"],
+  ["spellbook", "square"],
 ]);
 
 const WHEEL_PREFIXES = ["steer"] as const;
+/** Slot-like verbs read as square tiles (inventory, spell/item/ability slots). */
+const SQUARE_PREFIXES = ["spell", "slot", "item"] as const;
 
 /** Default silhouette for an action; `circle` when nothing more specific fits. */
 export function touchButtonShape(action: string): TouchButtonShape {
@@ -226,6 +235,9 @@ export function touchButtonShape(action: string): TouchButtonShape {
   if (direct !== undefined) return direct;
   for (const prefix of WHEEL_PREFIXES) {
     if (action.startsWith(prefix)) return "wheel";
+  }
+  for (const prefix of SQUARE_PREFIXES) {
+    if (action.startsWith(prefix)) return "square";
   }
   return "circle";
 }
@@ -342,6 +354,7 @@ export function deriveTouchScheme(
             kind: touchButtonKind(spec),
             shape: touchButtonShape(spec),
             anchor: null,
+            image: null,
           }
         : {
             action: spec.action,
@@ -350,6 +363,7 @@ export function deriveTouchScheme(
             kind: spec.kind ?? touchButtonKind(spec.action),
             shape: spec.shape ?? touchButtonShape(spec.action),
             anchor: spec.anchor ?? null,
+            image: spec.image ?? null,
           },
     );
   } else {
@@ -366,6 +380,7 @@ export function deriveTouchScheme(
         kind: touchButtonKind(action),
         shape: touchButtonShape(action),
         anchor: null,
+        image: null,
       }));
   }
 

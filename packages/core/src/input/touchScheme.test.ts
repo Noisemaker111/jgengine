@@ -48,8 +48,8 @@ describe("deriveTouchScheme", () => {
     );
     expect(scheme?.joystick).toEqual({ up: null, down: null, left: "moveLeft", right: "moveRight" });
     expect(scheme?.buttons).toEqual([
-      { action: "jump", label: "Jump", icon: null, kind: "primary", shape: "circle", anchor: null },
-      { action: "restart", label: "Restart", icon: null, kind: "utility", shape: "circle", anchor: null },
+      { action: "jump", label: "Jump", icon: null, kind: "primary", shape: "circle", anchor: null, image: null },
+      { action: "restart", label: "Restart", icon: null, kind: "utility", shape: "circle", anchor: null, image: null },
     ]);
     expect(scheme?.look).toBe(false);
     expect(scheme?.layout).toEqual({ movement: "bottom-left", actions: "bottom-right", utility: "bottom-center" });
@@ -93,7 +93,7 @@ describe("deriveTouchScheme", () => {
       { reserved: RESERVED, firstPerson: false },
     );
     expect(scheme?.buttons).toEqual([
-      { action: "interact", label: "Interact", icon: null, kind: "primary", shape: "circle", anchor: null },
+      { action: "interact", label: "Interact", icon: null, kind: "primary", shape: "circle", anchor: null, image: null },
     ]);
   });
 
@@ -113,9 +113,9 @@ describe("deriveTouchScheme", () => {
       },
     );
     expect(scheme?.buttons).toEqual([
-      { action: "hardDrop", label: "Drop", icon: null, kind: "primary", shape: "circle", anchor: null },
-      { action: "hold", label: "Hold", icon: "star", kind: "primary", shape: "circle", anchor: null },
-      { action: "taunt", label: "Taunt", icon: false, kind: "utility", shape: "circle", anchor: null },
+      { action: "hardDrop", label: "Drop", icon: null, kind: "primary", shape: "circle", anchor: null, image: null },
+      { action: "hold", label: "Hold", icon: "star", kind: "primary", shape: "circle", anchor: null, image: null },
+      { action: "taunt", label: "Taunt", icon: false, kind: "utility", shape: "circle", anchor: null, image: null },
     ]);
   });
 
@@ -135,9 +135,29 @@ describe("deriveTouchScheme", () => {
       },
     );
     expect(scheme?.buttons).toEqual([
-      { action: "brake", label: "Brake", icon: null, kind: "primary", shape: "pedal", anchor: "right" },
-      { action: "handbrake", label: "Handbrake", icon: null, kind: "primary", shape: "lever", anchor: null },
-      { action: "nitro", label: "Nitro", icon: null, kind: "primary", shape: "trigger", anchor: "bottom-right" },
+      { action: "brake", label: "Brake", icon: null, kind: "primary", shape: "pedal", anchor: "right", image: null },
+      { action: "handbrake", label: "Handbrake", icon: null, kind: "primary", shape: "lever", anchor: null, image: null },
+      { action: "nitro", label: "Nitro", icon: null, kind: "primary", shape: "trigger", anchor: "bottom-right", image: null },
+    ]);
+  });
+
+  test("a custom image and square slot shape make a game-art spell slot trivial", () => {
+    const scheme = deriveTouchScheme(
+      { spellFire: ["Digit1"], inventory: ["KeyI"] },
+      {
+        reserved: RESERVED,
+        firstPerson: false,
+        config: {
+          buttons: [
+            { action: "spellFire", image: "data:image/svg+xml,<svg/>", anchor: "right" },
+            "inventory",
+          ],
+        },
+      },
+    );
+    expect(scheme?.buttons).toEqual([
+      { action: "spellFire", label: "Spell Fire", icon: null, kind: "primary", shape: "square", anchor: "right", image: "data:image/svg+xml,<svg/>" },
+      { action: "inventory", label: "Inventory", icon: null, kind: "utility", shape: "square", anchor: null, image: null },
     ]);
   });
 
@@ -232,6 +252,9 @@ describe("touchButtonShape", () => {
     expect(touchButtonShape("handbrake")).toBe("lever");
     expect(touchButtonShape("fire")).toBe("trigger");
     expect(touchButtonShape("steerLeft")).toBe("wheel");
+    expect(touchButtonShape("spellFire")).toBe("square");
+    expect(touchButtonShape("slot1Cast")).toBe("square");
+    expect(touchButtonShape("inventory")).toBe("square");
     expect(touchButtonShape("jump")).toBe("circle");
     expect(touchButtonShape("interact")).toBe("circle");
   });

@@ -492,14 +492,24 @@ function TouchActionButton({
       onContextMenu={(event) => event.preventDefault()}
     >
       <div className="relative" style={{ width: svgW, height: svgH }}>
-        <ShapeSilhouette
-          shape={button.shape}
-          width={svgW}
-          height={svgH}
-          fill={pressed ? tokens.activeFill : tokens.restFill}
-          stroke={pressed ? tokens.activeStroke : tokens.restStroke}
-          strokeWidth={tokens.strokeWidth}
-        />
+        {button.image !== null ? (
+          <img
+            src={button.image}
+            alt=""
+            draggable={false}
+            className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
+            style={{ filter: pressed ? "brightness(1.25)" : undefined }}
+          />
+        ) : (
+          <ShapeSilhouette
+            shape={button.shape}
+            width={svgW}
+            height={svgH}
+            fill={pressed ? tokens.activeFill : tokens.restFill}
+            stroke={pressed ? tokens.activeStroke : tokens.restStroke}
+            strokeWidth={tokens.strokeWidth}
+          />
+        )}
         <span
           className="absolute inset-0 flex items-center justify-center text-center text-[10px] font-semibold uppercase leading-tight tracking-wide"
           style={{ color: tokens.text }}
