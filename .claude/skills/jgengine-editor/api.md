@@ -24,7 +24,9 @@
 - `createEditorSession` (function): function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession — Creates an editor session with undo/redo history seeded from an initial document.
 - `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
 - `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
+- `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
 - `exportEditorDocumentJson` (function): function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string — Serializes an editor document to JSON text for saving or export.
+- `extractEditorFragment` (function): function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument — Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
 - `findEditorMarker` (function): function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined — Looks up a marker by id in an editor document.
 - `findEditorNote` (function): function findEditorNote(doc: EditorDocument, id: string): EditorNote | undefined — Looks up an annotation note by id in an editor document.
 - `findEditorPath` (function): function findEditorPath(doc: EditorDocument, id: string): EditorPath | undefined — Looks up a path by id in an editor document.
@@ -49,7 +51,9 @@
 - `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source.
 - `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
 - `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
+- `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
 - `exportEditorDocumentJson` (function): function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string — Serializes an editor document to JSON text for saving or export.
+- `extractEditorFragment` (function): function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument — Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
 - `findEditorMarker` (function): function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined — Looks up a marker by id in an editor document.
 - `findEditorNote` (function): function findEditorNote(doc: EditorDocument, id: string): EditorNote | undefined — Looks up an annotation note by id in an editor document.
 - `findEditorPath` (function): function findEditorPath(doc: EditorDocument, id: string): EditorPath | undefined — Looks up a path by id in an editor document.
@@ -87,7 +91,7 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (function): function EditorCameraDriver({ api }: { api: EditorHostApi }): null — Smoothly pans the orbit camera to the editor host's focus target when it changes.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; }): React.JSX.Element — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
@@ -132,7 +136,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; }): React.JSX.Element — The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar.
 
 ## @jgengine/editor/PerfProbe
 
@@ -171,13 +175,9 @@
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
 - `EditorBridgeRequest` (type): type EditorBridgeRequest = | { method: "editor_status" } | { method: "set_mode"; mode: EditorRunMode } | { method: "perf_report" } | { method: "list_layers" } | { method: "list_selection" } | { method: "get_marker"; id: string } | { method: "get_volume"; id: string } | { method: "set_transform"; id:… — RPC request shapes the editor host understands, used by the MCP bridge and UI.
 - `EditorBridgeResponse` (type): type EditorBridgeResponse = { ok: boolean; result?: unknown; error?: string; } — Result envelope returned by every editor host RPC call.
-- `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, and note for a game.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
-- `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" — How the editor hosts the game: frozen placement view, roamable world, or the real game.
-- `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
-- `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
 - `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.

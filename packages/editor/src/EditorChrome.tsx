@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  editorDocumentSize,
+  extractEditorFragment,
   findEditorNote,
   findEditorPath,
   listEditorKinds,
   WELL_KNOWN_MARKER_KINDS,
+  type EditorDocument,
   type EditorSession,
 } from "@jgengine/core/editor/index";
 import { useGameContext } from "@jgengine/react/provider";
@@ -103,6 +106,28 @@ function filterOutlinerGroups(groups: readonly OutlinerGroup[], query: string): 
     .filter((group) => group.rows.length > 0);
 }
 
+let clipboardFragment: EditorDocument | null = null;
+
+const SHORTCUTS: readonly { keys: string; action: string }[] = [
+  { keys: "W / E / R", action: "Move · rotate · scale gizmo" },
+  { keys: "F", action: "Frame selection (or whole scene)" },
+  { keys: "G", action: "Toggle reference grid" },
+  { keys: "N", action: "Cycle instances of selected row" },
+  { keys: "Arrows", action: "Nudge selection on X/Z (Shift ×5)" },
+  { keys: "PgUp / PgDn", action: "Nudge selection on Y (Shift ×5)" },
+  { keys: "Ctrl+A", action: "Select all visible objects" },
+  { keys: "Ctrl+C / X / V", action: "Copy · cut · paste selection" },
+  { keys: "Ctrl+D", action: "Duplicate selection" },
+  { keys: "Ctrl+Z / Y", action: "Undo · redo" },
+  { keys: "Ctrl+B", action: "Asset browser" },
+  { keys: "Delete", action: "Remove selection" },
+  { keys: "Enter / Esc", action: "Finish · cancel path drawing" },
+  { keys: "Shift+click", action: "Multi-select · keep placing" },
+  { keys: "F2+E", action: "Toggle editor ↔ play" },
+  { keys: "F2", action: "Engine devtools" },
+  { keys: "?", action: "This help" },
+];
+
 function downloadText(filename: string, text: string): void {
   const blob = new Blob([text], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -142,6 +167,44 @@ function NumberField({
   );
 }
 
+function KindColorFields({
+  kind,
+  color,
+  onKind,
+  onColor,
+}: {
+  kind: string;
+  color: string | undefined;
+  onKind: (kind: string) => void;
+  onColor: (color: string | undefined) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <label className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="uppercase text-neutral-500">kind</span>
+        <input
+          className="w-full min-w-0 rounded border border-white/10 bg-black/40 px-2 py-1"
+          value={kind}
+          onChange={(event) => {
+            const next = event.target.value.trim();
+            if (next.length > 0) onKind(next);
+          }}
+        />
+      </label>
+      <input
+        type="color"
+        className="h-7 w-9 shrink-0 cursor-pointer rounded border border-white/10 bg-black/40"
+        title="Display color"
+        value={color ?? "#ffffff"}
+        onChange={(event) => onColor(event.target.value)}
+      />
+      {color !== undefined ? (
+        <button type="button" className="shrink-0 rounded bg-white/5 px-1.5 py-1 text-neutral-400 hover:bg-white/10" title="Reset to kind default color" onClick={() => onColor(undefined)}>↺</button>
+      ) : null}
+    </div>
+  );
+}
+
 /** The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar. */
 export function EditorChrome({
   gameId,
@@ -149,12 +212,14 @@ export function EditorChrome({
   api,
   assets,
   ui,
+  baselineJson,
 }: {
   gameId: string;
   session: EditorSession;
   api: EditorHostApi;
   assets: readonly EditorAssetEntry[];
   ui: EditorUiStore;
+  baselineJson?: string;
 }) {
   const [, setTick] = useState(0);
   const [activePanel, setActivePanel] = useState<WorkspacePanel>("outliner");
@@ -162,8 +227,22 @@ export function EditorChrome({
   const [rightOpen, setRightOpen] = useState(true);
   const [bottomOpen, setBottomOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [outlinerQuery, setOutlinerQuery] = useState("");
   const [collapsedKinds, setCollapsedKinds] = useState<Record<string, boolean>>({});
+  const [toast, setToast] = useState<{ text: string; tone: "info" | "error" } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notify = useCallback((text: string, tone: "info" | "error" = "info") => {
+    if (toastTimer.current !== null) clearTimeout(toastTimer.current);
+    setToast({ text, tone });
+    toastTimer.current = setTimeout(() => setToast(null), 2600);
+  }, []);
+  useEffect(
+    () => () => {
+      if (toastTimer.current !== null) clearTimeout(toastTimer.current);
+    },
+    [],
+  );
   const importInputRef = useRef<HTMLInputElement>(null);
   const state = session.getState();
   const visibility = api.getVisibility();
@@ -201,6 +280,18 @@ export function EditorChrome({
   useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
   useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
   useEffect(() => {
+    const copySelection = (): number => {
+      const state = session.getState();
+      if (state.selection.length === 0) return 0;
+      const fragment = extractEditorFragment(state.document, state.selection);
+      const count = editorDocumentSize(fragment);
+      if (count === 0) return 0;
+      clipboardFragment = fragment;
+      if (typeof navigator !== "undefined" && navigator.clipboard !== undefined) {
+        void navigator.clipboard.writeText(JSON.stringify(fragment, null, 2)).catch(() => {});
+      }
+      return count;
+    };
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       const target = event.target;
@@ -227,6 +318,44 @@ export function EditorChrome({
         showPanel("assets");
         return;
       }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        const state = session.getState();
+        const visibility = api.getVisibility();
+        const ids = [
+          ...state.document.markers.filter((m) => visibility[m.kind] !== false).map((m) => m.id),
+          ...state.document.volumes.filter((v) => visibility[v.kind] !== false).map((v) => v.id),
+          ...state.document.paths.filter((p) => visibility[p.kind] !== false).map((p) => p.id),
+          ...(visibility["note"] !== false ? state.document.annotations.map((n) => n.id) : []),
+        ];
+        if (ids.length > 0) session.dispatch({ type: "select", ids });
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
+        const count = copySelection();
+        if (count > 0) {
+          event.preventDefault();
+          notify(`Copied ${count} object${count === 1 ? "" : "s"}`);
+        }
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "x") {
+        const count = copySelection();
+        if (count > 0) {
+          event.preventDefault();
+          session.dispatch({ type: "removeMany", ids: session.getState().selection });
+          notify(`Cut ${count} object${count === 1 ? "" : "s"}`);
+        }
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") {
+        if (clipboardFragment === null) return;
+        event.preventDefault();
+        const count = editorDocumentSize(clipboardFragment);
+        session.dispatch({ type: "addFragment", fragment: clipboardFragment, offset: { x: 2, y: 0, z: 2 } });
+        notify(`Pasted ${count} object${count === 1 ? "" : "s"}`);
+        return;
+      }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
         event.preventDefault();
         const selection = session.getState().selection;
@@ -234,6 +363,7 @@ export function EditorChrome({
         return;
       }
       if (event.key === "Escape") {
+        setHelpOpen(false);
         const current = ui.getState();
         if (current.placement !== null || current.pathDraft.length > 0) {
           ui.cancelPlacement();
@@ -256,6 +386,44 @@ export function EditorChrome({
         if (selection.length > 0) session.dispatch({ type: "removeMany", ids: selection });
         return;
       }
+      if (event.key === "?" || event.key === "F1") {
+        event.preventDefault();
+        setHelpOpen((value) => !value);
+        return;
+      }
+      if (event.key === "f" || event.key === "F") {
+        const selected = session.getState().selection[0];
+        if (selected !== undefined) api.handle({ method: "camera_goto", id: selected });
+        else api.handle({ method: "camera_frame" });
+        return;
+      }
+      if (
+        event.key === "ArrowUp" ||
+        event.key === "ArrowDown" ||
+        event.key === "ArrowLeft" ||
+        event.key === "ArrowRight" ||
+        event.key === "PageUp" ||
+        event.key === "PageDown"
+      ) {
+        const selection = session.getState().selection;
+        if (selection.length === 0) return;
+        event.preventDefault();
+        const step = Math.max(0.5, ui.getState().gridSize) * (event.shiftKey ? 5 : 1);
+        const delta =
+          event.key === "ArrowUp"
+            ? { x: 0, y: 0, z: -step }
+            : event.key === "ArrowDown"
+              ? { x: 0, y: 0, z: step }
+              : event.key === "ArrowLeft"
+                ? { x: -step, y: 0, z: 0 }
+                : event.key === "ArrowRight"
+                  ? { x: step, y: 0, z: 0 }
+                  : event.key === "PageUp"
+                    ? { x: 0, y: step, z: 0 }
+                    : { x: 0, y: -step, z: 0 };
+        session.dispatch({ type: "translate", ids: selection, delta }, { coalesce: `nudge:${selection.join(",")}` });
+        return;
+      }
       if (event.key === "w" || event.key === "W") ui.patch({ gizmoMode: "translate" });
       if (event.key === "e" || event.key === "E") ui.patch({ gizmoMode: "rotate" });
       if (event.key === "r" || event.key === "R") ui.patch({ gizmoMode: "scale" });
@@ -274,7 +442,7 @@ export function EditorChrome({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [session, ui, api]);
+  }, [session, ui, api, notify]);
 
   const ctx = useGameContext();
   const kinds = useMemo(() => listEditorKinds(state.document), [state.document]);
@@ -324,11 +492,28 @@ export function EditorChrome({
     void file.text().then((text) => {
       try {
         session.dispatch({ type: "importJson", json: text });
-      } catch {
-        return;
+        const doc = session.getState().document;
+        notify(`Imported ${editorDocumentSize(doc)} objects from ${file.name}`);
+      } catch (error) {
+        notify(`Import failed: ${error instanceof Error ? error.message : "invalid JSON"}`, "error");
       }
     });
   };
+
+  const copyExportJson = () => {
+    const json = session.exportJson(true);
+    if (typeof navigator !== "undefined" && navigator.clipboard !== undefined) {
+      navigator.clipboard.writeText(json).then(
+        () => notify("Document JSON copied to clipboard"),
+        () => notify("Clipboard unavailable — use Export instead", "error"),
+      );
+    } else {
+      notify("Clipboard unavailable — use Export instead", "error");
+    }
+  };
+
+  const currentJson = useMemo(() => session.exportJson(true), [session, state.document]);
+  const dirty = baselineJson !== undefined && currentJson !== baselineJson;
 
   const startPlacement = (tool: PlacementTool) => {
     setAddOpen(false);
@@ -347,7 +532,10 @@ export function EditorChrome({
     <div className="pointer-events-none absolute inset-0 z-50 flex flex-col text-xs text-neutral-100">
       <header className="pointer-events-auto flex h-11 shrink-0 items-center gap-2 border-b border-white/10 bg-neutral-950/90 px-2 backdrop-blur">
         <button type="button" className="rounded px-2 py-1 font-semibold tracking-wide text-cyan-300 hover:bg-white/10" onClick={() => setLeftOpen((value) => !value)} aria-label="Toggle hierarchy panel">JG</button>
-        <span className="hidden text-neutral-500 sm:inline">{gameId}</span>
+        <span className="hidden text-neutral-500 sm:inline">
+          {gameId}
+          {dirty ? <span className="ml-1 text-amber-400" title="Unsaved edits — Export to save">●</span> : null}
+        </span>
         <div className="mx-1 h-5 w-px bg-white/10" />
         {(["translate", "rotate", "scale"] as const).map((mode) => (
           <button key={mode} type="button" className={`rounded px-2 py-1 capitalize ${gizmoMode === mode ? "bg-cyan-700/80 text-white" : "bg-white/5 text-neutral-300 hover:bg-white/10"}`} onClick={() => ui.patch({ gizmoMode: mode })}>
@@ -410,7 +598,9 @@ export function EditorChrome({
               event.target.value = "";
             }}
           />
-          <button type="button" className="rounded bg-cyan-700/80 px-2 py-1 hover:bg-cyan-600" onClick={() => downloadText(`${gameId}-editor.json`, session.exportJson(true))}>Export</button>
+          <button type="button" className="rounded bg-cyan-700/80 px-2 py-1 hover:bg-cyan-600" onClick={() => { downloadText(`${gameId}-editor.json`, session.exportJson(true)); notify(`Exported ${gameId}-editor.json`); }}>Export</button>
+          <button type="button" className="rounded bg-white/5 px-2 py-1 hover:bg-white/10" title="Copy document JSON to clipboard" onClick={copyExportJson}>⧉</button>
+          <button type="button" className={`rounded px-2 py-1 ${helpOpen ? "bg-white/15" : "bg-white/5 hover:bg-white/10"}`} title="Keyboard shortcuts (?)" onClick={() => setHelpOpen((value) => !value)}>?</button>
         </div>
       </header>
 
@@ -466,8 +656,27 @@ export function EditorChrome({
           {placementHint !== null ? (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 rounded border border-cyan-500/40 bg-cyan-950/80 px-3 py-1 text-[11px] text-cyan-100 backdrop-blur">{placementHint}</div>
           ) : null}
+          {toast !== null ? (
+            <div className={`absolute left-1/2 top-10 -translate-x-1/2 rounded border px-3 py-1 text-[11px] backdrop-blur ${toast.tone === "error" ? "border-rose-500/50 bg-rose-950/85 text-rose-100" : "border-emerald-500/40 bg-emerald-950/85 text-emerald-100"}`}>{toast.text}</div>
+          ) : null}
+          {helpOpen ? (
+            <div className="pointer-events-auto absolute left-1/2 top-1/2 z-50 w-[26rem] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-white/15 bg-neutral-950/95 p-4 shadow-2xl backdrop-blur">
+              <div className="mb-2 flex items-center">
+                <div className="font-semibold text-neutral-200">Keyboard shortcuts</div>
+                <button type="button" className="ml-auto rounded px-2 py-1 text-neutral-400 hover:bg-white/10" onClick={() => setHelpOpen(false)} aria-label="Close shortcuts">×</button>
+              </div>
+              <div className="grid max-h-[60vh] grid-cols-[auto_1fr] gap-x-4 gap-y-1 overflow-auto">
+                {SHORTCUTS.map((entry) => (
+                  <div key={entry.keys} className="contents">
+                    <span className="whitespace-nowrap font-mono text-cyan-300">{entry.keys}</span>
+                    <span className="text-neutral-300">{entry.action}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded border border-white/10 bg-black/60 px-3 py-1 text-[11px] text-neutral-300 backdrop-blur">
-            <span>Orbit · click select · shift+click multi · W/E/R transform · Ctrl+D duplicate · F2+E play</span>
+            <span>Orbit · click select · W/E/R transform · Ctrl+C/V copy/paste · F frame · ? help · F2+E play</span>
             {perf !== null ? <span className={`ml-3 ${perf.fps < 30 ? "text-rose-400" : "text-emerald-400"}`}>{perf.fps.toFixed(0)} fps · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris</span> : null}
           </div>
         </main>
@@ -492,6 +701,12 @@ export function EditorChrome({
                 <div className="mt-3 space-y-2">
                   <input className="w-full rounded border border-white/10 bg-black/40 px-2 py-1 text-cyan-200" value={selectedMarker.label ?? ""} placeholder={selectedMarker.id} onChange={(event) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { label: event.target.value } }, { coalesce: `label:${selectedMarker.id}` })} />
                   <div className="text-neutral-500">{selectedMarker.kind} · {selectedMarker.id}</div>
+                  <KindColorFields
+                    kind={selectedMarker.kind}
+                    color={selectedMarker.color}
+                    onKind={(kind) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { kind } }, { coalesce: `kind:${selectedMarker.id}` })}
+                    onColor={(color) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { color } }, { coalesce: `color:${selectedMarker.id}` })}
+                  />
                   {(["x", "y", "z"] as const).map((axis) => (
                     <NumberField key={axis} label={axis} value={selectedMarker.position[axis]} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, position: { ...selectedMarker.position, [axis]: value } }, { coalesce: `pos:${axis}:${selectedMarker.id}` })} />
                   ))}
@@ -503,6 +718,12 @@ export function EditorChrome({
                 <div className="mt-3 space-y-2">
                   <input className="w-full rounded border border-white/10 bg-black/40 px-2 py-1 text-cyan-200" value={selectedVolume.label ?? ""} placeholder={selectedVolume.id} onChange={(event) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { label: event.target.value } }, { coalesce: `label:${selectedVolume.id}` })} />
                   <div className="text-neutral-500">{selectedVolume.kind} · {selectedVolume.shape}</div>
+                  <KindColorFields
+                    kind={selectedVolume.kind}
+                    color={selectedVolume.color}
+                    onKind={(kind) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { kind } }, { coalesce: `kind:${selectedVolume.id}` })}
+                    onColor={(color) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { color } }, { coalesce: `color:${selectedVolume.id}` })}
+                  />
                   {(["x", "y", "z"] as const).map((axis) => (
                     <NumberField key={axis} label={axis} value={selectedVolume.center[axis]} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { center: { ...selectedVolume.center, [axis]: value } } }, { coalesce: `center:${axis}:${selectedVolume.id}` })} />
                   ))}
@@ -521,8 +742,14 @@ export function EditorChrome({
               ) : null}
               {selection.length <= 1 && selectedPath !== undefined ? (
                 <div className="mt-3 space-y-2">
-                  <div className="text-cyan-200">{selectedPath.label ?? selectedPath.id}</div>
+                  <input className="w-full rounded border border-white/10 bg-black/40 px-2 py-1 text-cyan-200" value={selectedPath.label ?? ""} placeholder={selectedPath.id} onChange={(event) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { label: event.target.value } }, { coalesce: `label:${selectedPath.id}` })} />
                   <div className="text-neutral-500">{selectedPath.kind} · {selectedPath.points.length} points</div>
+                  <KindColorFields
+                    kind={selectedPath.kind}
+                    color={selectedPath.color}
+                    onKind={(kind) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { kind } }, { coalesce: `kind:${selectedPath.id}` })}
+                    onColor={(color) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { color } }, { coalesce: `color:${selectedPath.id}` })}
+                  />
                   <NumberField label="width" value={selectedPath.width ?? 4} onCommit={(value) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { width: Math.max(0.5, value) } }, { coalesce: `width:${selectedPath.id}` })} />
                   {uiState.pathPoint !== null && uiState.pathPoint.pathId === selectedPath.id ? (
                     <div className="space-y-2">

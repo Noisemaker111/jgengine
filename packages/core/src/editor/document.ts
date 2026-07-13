@@ -75,6 +75,23 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
   return out;
 }
 
+/** Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste. */
+export function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument {
+  const wanted = new Set(ids);
+  return cloneEditorDocument({
+    version: 1,
+    markers: doc.markers.filter((marker) => wanted.has(marker.id)),
+    volumes: doc.volumes.filter((volume) => wanted.has(volume.id)),
+    paths: doc.paths.filter((path) => wanted.has(path.id)),
+    annotations: doc.annotations.filter((note) => wanted.has(note.id)),
+  });
+}
+
+/** Counts every object in a document across markers, volumes, paths, and notes. */
+export function editorDocumentSize(doc: EditorDocument): number {
+  return doc.markers.length + doc.volumes.length + doc.paths.length + doc.annotations.length;
+}
+
 /** Looks up a marker by id in an editor document. */
 export function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined {
   return doc.markers.find((marker) => marker.id === id);

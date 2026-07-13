@@ -34,6 +34,29 @@ function prefsKey(gameId: string): string {
   return `jgeditor:prefs:${gameId}`;
 }
 
+function draftKey(gameId: string): string {
+  return `jgeditor:draft:${gameId}`;
+}
+
+function readDraft(gameId: string): string | null {
+  try {
+    return localStorage.getItem(draftKey(gameId));
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(gameId: string, json: string | null): void {
+  try {
+    if (json === null) localStorage.removeItem(draftKey(gameId));
+    else localStorage.setItem(draftKey(gameId), json);
+  } catch {
+    return;
+  }
+}
+
+const DRAFT_DEBOUNCE_MS = 800;
+
 function loadPrefs(gameId: string): StoredEditorPrefs {
   try {
     const raw = localStorage.getItem(prefsKey(gameId));
@@ -156,19 +179,51 @@ export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
     }
   }, [playable]);
 
-  const host = useMemo(
-    () =>
-      createEditorHost({
-        gameId,
-        layers,
-        assets: catalogAssets,
-      }),
-    [gameId, layers, catalogAssets],
-  );
+  const host = useMemo(() => {
+    const created = createEditorHost({
+      gameId,
+      layers,
+      assets: catalogAssets,
+    });
+    return { ...created, baselineJson: created.session.exportJson(true) };
+  }, [gameId, layers, catalogAssets]);
 
   useEffect(() => host.dispose, [host]);
 
   useEffect(() => host.api.subscribeMode(setModeState), [host]);
+
+  const [pendingDraft, setPendingDraft] = useState<string | null>(null);
+
+  useEffect(() => {
+    const draft = readDraft(gameId);
+    if (draft !== null && draft !== host.baselineJson) setPendingDraft(draft);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = host.session.subscribe(() => {
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(() => {
+        const json = host.session.exportJson(true);
+        writeDraft(gameId, json === host.baselineJson ? null : json);
+      }, DRAFT_DEBOUNCE_MS);
+    });
+    return () => {
+      if (timer !== null) clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [gameId, host]);
+
+  const restoreDraft = () => {
+    if (pendingDraft === null) return;
+    try {
+      host.session.dispatch({ type: "importJson", json: pendingDraft });
+    } catch {
+      writeDraft(gameId, null);
+    }
+    setPendingDraft(null);
+  };
+  const discardDraft = () => {
+    writeDraft(gameId, null);
+    setPendingDraft(null);
+  };
 
   useEffect(() => {
     const prefs = loadPrefs(gameId);
@@ -282,7 +337,7 @@ export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
       return <EditorWorldOverlay api={host.api} ui={ui} />;
     };
     const GameUI: ComponentType = function EditorUi() {
-      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} />;
+      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} baselineJson={host.baselineJson} />;
     };
     const { target, span, far } = initialCamera;
     return {
@@ -323,6 +378,13 @@ export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
   return (
     <div className="relative h-full w-full bg-neutral-950" data-jg-editor="1" data-jg-editor-game={gameId}>
       <GamePlayerShell playable={editorPlayable} />
+      {pendingDraft !== null && mode === "edit" ? (
+        <div className="absolute left-1/2 top-14 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-950/90 px-4 py-2 text-xs text-amber-100 shadow-xl backdrop-blur">
+          <span>Unsaved edits from a previous session found.</span>
+          <button type="button" className="rounded bg-amber-600/80 px-2 py-1 font-medium text-white hover:bg-amber-500" onClick={restoreDraft}>Restore</button>
+          <button type="button" className="rounded bg-white/10 px-2 py-1 hover:bg-white/20" onClick={discardDraft}>Discard</button>
+        </div>
+      ) : null}
     </div>
   );
 }
