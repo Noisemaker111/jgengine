@@ -5,7 +5,9 @@ import {
   createEditorSession,
   createEmptyEditorDocument,
   editorDocumentBounds,
+  editorDocumentSize,
   exportEditorDocumentJson,
+  extractEditorFragment,
   importEditorDocumentJson,
   listEditorKinds,
   mergeEditorDocuments,
@@ -260,5 +262,50 @@ describe("editor session", () => {
     const summary = summarizeEditorSession(session.getState());
     expect(summary.markers).toBe(1);
     expect(summary.selectedMarker?.kind).toBe("mob");
+  });
+});
+
+describe("editor clipboard fragments", () => {
+  test("extract pulls only the requested ids", () => {
+    const doc = normalizeEditorLayers({
+      markers: [
+        { id: "a", kind: "mob", position: { x: 1, y: 0, z: 1 } },
+        { id: "b", kind: "boss", position: { x: 5, y: 0, z: 5 } },
+      ],
+      volumes: [{ id: "v", kind: "zone", shape: "sphere", center: { x: 0, y: 0, z: 0 }, radius: 4 }],
+    });
+    const fragment = extractEditorFragment(doc, ["a", "v"]);
+    expect(fragment.markers.map((m) => m.id)).toEqual(["a"]);
+    expect(fragment.volumes.map((v) => v.id)).toEqual(["v"]);
+    expect(editorDocumentSize(fragment)).toBe(2);
+  });
+
+  test("addFragment pastes with offset, renames colliding ids, and selects the paste", () => {
+    const session = createEditorSession(
+      normalizeEditorLayers({
+        markers: [{ id: "a", kind: "mob", position: { x: 1, y: 0, z: 1 } }],
+      }),
+    );
+    const fragment = extractEditorFragment(session.getState().document, ["a"]);
+    session.dispatch({ type: "addFragment", fragment, offset: { x: 2, y: 0, z: 2 } });
+    const state = session.getState();
+    expect(state.document.markers).toHaveLength(2);
+    const pasted = state.document.markers[1]!;
+    expect(pasted.id).toBe("a_copy");
+    expect(pasted.position).toEqual({ x: 3, y: 0, z: 3 });
+    expect(state.selection).toEqual(["a_copy"]);
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.markers).toHaveLength(1);
+  });
+
+  test("addFragment keeps non-colliding ids intact", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({
+      type: "addFragment",
+      fragment: normalizeEditorLayers({
+        markers: [{ id: "fresh", kind: "poi", position: { x: 0, y: 0, z: 0 } }],
+      }),
+    });
+    expect(session.getState().document.markers[0]?.id).toBe("fresh");
   });
 });

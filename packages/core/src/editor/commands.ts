@@ -1,5 +1,6 @@
 import {
   cloneEditorDocument,
+  extractEditorFragment,
   findEditorMarker,
   findEditorVolume,
   importEditorDocumentJson,
@@ -30,6 +31,7 @@ export type EditorCommand =
   | { type: "remove"; id: string }
   | { type: "removeMany"; ids: readonly string[] }
   | { type: "duplicate"; ids: readonly string[]; offset?: EditorVec3 }
+  | { type: "addFragment"; fragment: EditorDocument; offset?: EditorVec3 }
   | { type: "importDocument"; document: EditorDocument }
   | { type: "importJson"; json: string }
   | { type: "replaceDocument"; document: EditorDocument }
@@ -120,23 +122,19 @@ function copyId(base: string, taken: Set<string>): string {
   return candidate;
 }
 
-function duplicateInto(
+function insertFragment(
   state: EditorSessionState,
-  ids: readonly string[],
+  fragment: EditorDocument,
   offset: EditorVec3,
+  renameAll: boolean,
 ): EditorSessionState {
   const doc = state.document;
   const taken = collectIds(doc);
-  const clones = cloneEditorDocument({
-    version: 1,
-    markers: doc.markers.filter((marker) => ids.includes(marker.id)),
-    volumes: doc.volumes.filter((volume) => ids.includes(volume.id)),
-    paths: doc.paths.filter((path) => ids.includes(path.id)),
-    annotations: doc.annotations.filter((note) => ids.includes(note.id)),
-  });
+  const clones = cloneEditorDocument(fragment);
   const newIds: string[] = [];
   const withId = <T extends { id: string }>(item: T): T => {
-    const id = copyId(item.id, taken);
+    const id = renameAll || taken.has(item.id) ? copyId(item.id, taken) : item.id;
+    taken.add(id);
     newIds.push(id);
     return { ...item, id };
   };
@@ -307,7 +305,14 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
       };
     }
     case "duplicate":
-      return duplicateInto(state, command.ids, command.offset ?? { x: 2, y: 0, z: 2 });
+      return insertFragment(
+        state,
+        extractEditorFragment(state.document, command.ids),
+        command.offset ?? { x: 2, y: 0, z: 2 },
+        true,
+      );
+    case "addFragment":
+      return insertFragment(state, command.fragment, command.offset ?? { x: 0, y: 0, z: 0 }, false);
     case "importDocument":
     case "replaceDocument":
       return {
