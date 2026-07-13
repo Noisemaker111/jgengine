@@ -130,17 +130,16 @@ emit(
   [
     `Cloud session on branch "${branch}" (default: ${defaultBranch}).`,
     `Flow: commit here, push with git push -u origin ${branch}, open a PR via the GitHub MCP ` +
-      `tools, subscribe_pr_activity on it, and squash-merge it immediately — the local gate ` +
-      `already ran (queue auto-merge (squash) if required checks block the instant merge). The ` +
-      `session ends only when the PR is merged AND the Actions run on its merge commit on ` +
-      `${defaultBranch} is green. Nothing in this repo's Actions takes longer than ~1 minute: ` +
-      `after the merge, have a cheap worker wait ~60s with one foreground Bash call — ` +
-      `bun -e 'await Bun.sleep(60000)' (bare sleep is harness-blocked, backgrounded waits die ` +
-      `with the turn) — then read the merge commit's runs in the same turn. ` +
-      `Green → unsubscribe + stop. Red → fix forward from origin/${defaultBranch}. Still ` +
-      `pending on a second look → treat as broken and investigate. Never arm send_later ` +
-      `check-ins or scheduled remote sessions for CI. No worktrees — every session is its ` +
-      `own isolated cloud container.`,
+      `tools (ready for review), subscribe_pr_activity on it, then have a cheap worker confirm ` +
+      `the PR's checks go green — one foreground Bash wait, bun -e 'await Bun.sleep(120000)' ` +
+      `(bare sleep is harness-blocked, backgrounded waits die with the turn), then read the ` +
+      `runs in the same turn. NEVER merge — no merge_pull_request, no enable_pr_auto_merge. ` +
+      `The user merges PRs themselves by asking in chat; the PR sits parked until then. ` +
+      `Green → report the PR link + stop. Red → fix on the same branch, push, re-check. ` +
+      `New task in the same session → fresh claude/... branch off origin/${defaultBranch}, ` +
+      `separate PR; never stack it on a parked branch. Never arm send_later check-ins or ` +
+      `scheduled remote sessions for CI. No worktrees — every session is its own isolated ` +
+      `cloud container.`,
     ...notes,
   ].join("\n\n") + shallowNote,
 );
