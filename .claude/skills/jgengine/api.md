@@ -249,6 +249,20 @@
 - `unescapePathSegment` (function): function unescapePathSegment(segment: string): string — ⚠ undocumented
 - `validateControlValue` (function): function validateControlValue(kind: DevtoolsControlKind, raw: unknown, context: { min?: number; max?: number; step?: number; integer?: boolean; unit?: AngleUnit; wrap?: boolean; choices?: readonly TunableChoice[]; options?: readonly unknown[]; axisBounds?: ResolvedAxisBounds; alpha?: boolean; }): { … — ⚠ undocumented
 
+## @jgengine/core/devtools/rewriteTunables
+
+- `TunableDelta` (interface): interface TunableDelta — One changed tunable to write back into game source: which table, key path, and new value.
+- `formatTunableLiteral` (function): function formatTunableLiteral(value: unknown): string | null — Renders a tunable value as TS source, or null when the value has no safe literal form.
+- `rewriteTunableExport` (function): function rewriteTunableExport(code: string, exportName: string, path: readonly string[], value: unknown): string | null — Rewrites one tunable's literal inside TS source: `exportName` names the `export const/let`, `path` descends object keys and array indices to the scalar, and `value` becomes the new literal. Returns the updated source, or null when the target cannot be safely located.
+
+## @jgengine/core/devtools/saveEndpoint
+
+- `SaveEndpointInfo` (interface): interface SaveEndpointInfo — Where dev-time saves land: the endpoint URL plus the Games/<gameId> directory it targets.
+- `SaveEndpointRequest` (type): type SaveEndpointRequest = | { kind: "editor-document"; gameId: string; json: string } | { kind: "tunables"; gameId: string; deltas: readonly { table: string; key: string; value: unknown }[]; } — One write request the dev save endpoint accepts: a scene document or tunable deltas.
+- `SaveEndpointResponse` (interface): interface SaveEndpointResponse — Result envelope the dev save endpoint returns for every write request.
+- `getSaveEndpoint` (function): function getSaveEndpoint(): SaveEndpointInfo | null — Returns the installed dev save endpoint, or null when saves cannot reach disk.
+- `installSaveEndpoint` (function): function installSaveEndpoint(url: string, gameId: string): () => void — Publishes the dev-server save endpoint so editor and devtools UIs show Save buttons.
+
 ## @jgengine/core/devtools/transformTunables
 
 - `TunableTransformResult` (interface): interface TunableTransformResult — ⚠ undocumented

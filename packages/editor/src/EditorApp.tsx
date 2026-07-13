@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentType } from "react"
 
 import type { EditorDocument, EditorLayersInput } from "@jgengine/core/editor/index";
 import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/index";
+import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { useGameContext } from "@jgengine/react/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -21,6 +22,27 @@ export interface EditorAppProps {
   gameId: string;
   playable: PlayableGame;
   layers?: EditorLayersInput;
+  save?: EditorSaveFn;
+}
+
+/** Persists an exported document JSON; resolves with where it landed or why it failed. */
+export type EditorSaveFn = (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
+
+function endpointSaver(gameId: string): EditorSaveFn | undefined {
+  const endpoint = getSaveEndpoint();
+  if (endpoint === null) return undefined;
+  return async (json) => {
+    try {
+      const response = await fetch(endpoint.url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ kind: "editor-document", gameId, json }),
+      });
+      return (await response.json()) as { ok: boolean; path?: string; error?: string };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  };
 }
 
 interface StoredEditorPrefs {
@@ -141,7 +163,8 @@ function resolveEditorCamera(document: EditorDocument): {
 }
 
 /** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
-export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
+export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
+  const saveFn = useMemo(() => save ?? endpointSaver(gameId), [save, gameId]);
   const uiStoreRef = useRef<EditorUiStore | null>(null);
   if (uiStoreRef.current === null) uiStoreRef.current = createEditorUiStore();
   const ui = uiStoreRef.current;
@@ -282,7 +305,7 @@ export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
       return <EditorWorldOverlay api={host.api} ui={ui} />;
     };
     const GameUI: ComponentType = function EditorUi() {
-      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} />;
+      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} save={saveFn} />;
     };
     const { target, span, far } = initialCamera;
     return {
@@ -318,7 +341,7 @@ export function EditorApp({ gameId, playable, layers }: EditorAppProps) {
         },
       },
     };
-  }, [playable, host, gameId, initialCamera, catalogAssets, ui, mode]);
+  }, [playable, host, gameId, initialCamera, catalogAssets, ui, mode, saveFn]);
 
   return (
     <div className="relative h-full w-full bg-neutral-950" data-jg-editor="1" data-jg-editor-game={gameId}>

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  applyEditorDocumentOverlay,
   createEditorSession,
   createEmptyEditorDocument,
   editorDocumentBounds,
@@ -62,6 +63,26 @@ describe("editor document", () => {
     expect(bounds).not.toBeNull();
     expect(bounds!.min.x).toBe(-10);
     expect(bounds!.max.x).toBe(20);
+  });
+
+  test("overlay upserts by id and appends new objects", () => {
+    const base = normalizeEditorLayers({
+      markers: [
+        { id: "boss", kind: "boss", position: { x: 0, y: 0, z: 0 } },
+        { id: "spawn", kind: "player_spawn", position: { x: 5, y: 0, z: 5 } },
+      ],
+    });
+    const overlay = normalizeEditorLayers({
+      markers: [
+        { id: "boss", kind: "boss", position: { x: 40, y: 0, z: -10 } },
+        { id: "chest_new", kind: "chest", position: { x: 1, y: 0, z: 1 } },
+      ],
+    });
+    const merged = applyEditorDocumentOverlay(base, overlay);
+    expect(merged.markers).toHaveLength(3);
+    expect(merged.markers.find((m) => m.id === "boss")?.position.x).toBe(40);
+    expect(merged.markers.find((m) => m.id === "spawn")?.position.x).toBe(5);
+    expect(merged.markers.find((m) => m.id === "chest_new")).toBeDefined();
   });
 
   test("list kinds is sorted unique", () => {

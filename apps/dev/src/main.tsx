@@ -15,6 +15,8 @@ import {
 } from "@jgengine/shell/multiplayer";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
+import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+
 import { armCaptureReady, captureArmed, setCaptureStatus } from "./captureReady";
 import "./index.css";
 
@@ -77,10 +79,36 @@ const gameEntries = Object.fromEntries(
   gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.game)]),
 );
 
+const editorSceneModules = import.meta.glob<{ default: unknown }>(
+  "../../../Games/*/src/editor.scene.json",
+);
+
+const editorSceneRegistry: Partial<Record<string, () => Promise<unknown>>> = Object.fromEntries(
+  Object.entries(editorSceneModules).map(([path, loader]) => [
+    path.split("/").at(-3)!,
+    () => loader().then((module) => module.default),
+  ]),
+);
+
 const editorLayerRegistry: Partial<
   Record<string, () => Promise<import("@jgengine/core/editor/index").EditorLayersInput | undefined>>
 > = Object.fromEntries(
-  gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.editorLayers)]),
+  gameLoaders.map(([id, loader]) => [
+    id,
+    async () => {
+      const [module, editorModule, savedScene] = await Promise.all([
+        loader(),
+        import("@jgengine/core/editor/index"),
+        editorSceneRegistry[id]?.() ?? Promise.resolve(undefined),
+      ]);
+      if (savedScene === undefined) return module.editorLayers;
+      const base = editorModule.normalizeEditorLayers(module.editorLayers ?? null);
+      const overlay = editorModule.normalizeEditorLayers(
+        savedScene as import("@jgengine/core/editor/index").EditorLayersInput,
+      );
+      return editorModule.applyEditorDocumentOverlay(base, overlay);
+    },
+  ]),
 );
 
 const gameRegistry: GameRegistry = {
@@ -110,6 +138,7 @@ const urlParams = new URLSearchParams(window.location.search);
 /** Explicit game only — bare `/` shows the picker so demo is never a silent surprise. */
 const GAME_ID = urlParams.get("game") ?? (import.meta.env.VITE_GAME_ID as string | undefined) ?? null;
 const MODE = urlParams.get("mode") ?? "play";
+if (import.meta.env.DEV && GAME_ID !== null) installSaveEndpoint("/__jgengine/save", GAME_ID);
 const PREVIEW = urlParams.get("preview");
 const STAGE = urlParams.get("stage") === "1";
 const RUN = (urlParams.get("run") ?? "")
