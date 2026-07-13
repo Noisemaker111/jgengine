@@ -76,6 +76,8 @@ export const MOVEMENT_TUNING = {
   walkSpeedMultiplier: 1.75,
   runSpeedMultiplier: 2.25,
   crouchSpeedMultiplier: 0.45,
+  /** Backward (S) travels this fraction of walk speed so retreating reads slower than advancing. */
+  backpedalSpeedMultiplier: 0.65,
   groundAcceleration: 26,
   airAcceleration: 12,
   groundFriction: 18,
@@ -95,13 +97,21 @@ export const MOVEMENT_TUNING = {
   maxFrameSeconds: 0.05,
 } as const;
 
-/** Speed (units/s) the avatar should target given the active intent. */
-function resolveTargetSpeed(intent: MovementIntent, baseSpeed: number): number {
+/**
+ * Speed (units/s) the avatar should target given the active intent. Crouch and run
+ * take precedence over backpedal; a plain backward intent (`forward < 0`) slows to
+ * {@link MOVEMENT_TUNING.backpedalSpeedMultiplier} (overridable via `tuning`), while a
+ * pure strafe keeps full speed.
+ */
+function resolveTargetSpeed(intent: MovementIntent, baseSpeed: number, tuning?: MovementTuningOverrides): number {
+  const backpedal = tuning?.backpedalSpeedMultiplier ?? MOVEMENT_TUNING.backpedalSpeedMultiplier;
   const speedMultiplier = intent.crouching
     ? MOVEMENT_TUNING.crouchSpeedMultiplier
     : intent.running
       ? MOVEMENT_TUNING.runSpeedMultiplier
-      : 1;
+      : intent.forward < 0
+        ? backpedal
+        : 1;
   return baseSpeed * MOVEMENT_TUNING.walkSpeedMultiplier * speedMultiplier;
 }
 
@@ -143,6 +153,20 @@ export interface MovementFrameStep {
 export interface MovementTuningOverrides {
   gravityAcceleration?: number;
   jumpVelocity?: number;
+  /** Fraction of walk speed while backpedalling; overrides {@link MOVEMENT_TUNING.backpedalSpeedMultiplier}. */
+  backpedalSpeedMultiplier?: number;
+}
+
+/**
+ * Per-frame dynamic modifiers for {@link advancePlayerMotion} — state the caller
+ * recomputes each tick (unlike the static {@link MovementTuningOverrides}). Omitted
+ * fields leave the integrator at its default behavior.
+ */
+export interface MotionFrameOptions {
+  /** Extra multiplier applied on top of the resolved target speed (e.g. swimming). Default 1. */
+  speedScale?: number;
+  /** Suppress gravity/jump integration and hold the avatar afloat this frame (e.g. swimming). Default false. */
+  floating?: boolean;
 }
 
 /**
@@ -163,9 +187,10 @@ export function advancePlayerMotion(
   baseSpeed: number,
   rawDeltaSeconds: number,
   tuning?: MovementTuningOverrides,
+  options?: MotionFrameOptions,
 ): MovementFrameStep {
   const deltaSeconds = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
-  const targetSpeed = resolveTargetSpeed(intent, baseSpeed);
+  const targetSpeed = resolveTargetSpeed(intent, baseSpeed, tuning) * (options?.speedScale ?? 1);
   const gravityAcceleration = tuning?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration;
   const jumpVelocity = tuning?.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity;
 
@@ -212,14 +237,19 @@ export function advancePlayerMotion(
     motion.horizontalVelocityZ *= friction;
   }
 
+  const floating = options?.floating === true;
   const jumpPressed = intent.jumping;
-  if (jumpPressed && !motion.jumpHeld && motion.grounded && !intent.crouching) {
+  if (jumpPressed && !motion.jumpHeld && motion.grounded && !intent.crouching && !floating) {
     motion.verticalVelocity = jumpVelocity;
     motion.grounded = false;
   }
   motion.jumpHeld = jumpPressed;
 
-  if (!motion.grounded || motion.verticalVelocity > 0) {
+  if (floating) {
+    motion.verticalVelocity = 0;
+    motion.jumpOffset = 0;
+    motion.grounded = true;
+  } else if (!motion.grounded || motion.verticalVelocity > 0) {
     motion.verticalVelocity -= gravityAcceleration * deltaSeconds;
     motion.jumpOffset += motion.verticalVelocity * deltaSeconds;
     if (motion.jumpOffset <= 0) {

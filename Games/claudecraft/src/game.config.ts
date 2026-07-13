@@ -84,11 +84,15 @@ export const game = defineGame({
   },
   camera: {
     perspective: "third",
-    minDistance: 3.5,
-    maxDistance: 16,
+    minDistance: 3,
+    maxDistance: 22,
+    initialDistance: 12,
+    initialYaw: Math.PI,
+    initialPitch: 0.32,
+    pitchClamp: [-0.4, 1.35],
     targetHeight: 1.8,
     rotateSpeed: 0.3,
-    collision: { enabled: true, padding: 0.4 },
+    collision: { enabled: true, padding: 0.4, minTargetDistance: 1 },
     frustum: { far: 720 },
   },
 });

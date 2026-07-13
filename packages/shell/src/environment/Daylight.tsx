@@ -2,7 +2,8 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 
-import type { SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
+import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
+import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/world/terrain";
 
 import { daylightStateAt, SKY_PRESET_DAY_FRACTION } from "./daylightCycle";
 
@@ -203,10 +204,22 @@ export function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProp
 export interface SkyDaylightProps {
   sky: SkyEnvironmentDescriptor;
   lights?: boolean;
+  /** Terrain `biomeBands`; when any carries `fog`/`sky`, fog and dome cross-fade per camera z. */
+  bands?: readonly BiomeBand[];
+}
+
+/** True when at least one band overrides fog or sky — the trigger for the per-frame biome driver. */
+function bandsDriveSkyOrFog(bands: readonly BiomeBand[] | undefined): bands is readonly BiomeBand[] {
+  return bands !== undefined && bands.some((band) => band.fog !== undefined || band.sky !== undefined);
 }
 
 /** Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates. */
-export function SkyDaylight({ sky, lights = true }: SkyDaylightProps) {
+export function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps) {
+  if (bandsDriveSkyOrFog(bands)) return <BiomeDaylight sky={sky} bands={bands} lights={lights} />;
+  return <StaticSkyDaylight sky={sky} lights={lights} />;
+}
+
+function StaticSkyDaylight({ sky, lights }: { sky: SkyEnvironmentDescriptor; lights: boolean }) {
   const state = useMemo(() => daylightStateAt(SKY_PRESET_DAY_FRACTION[sky.preset], sky), [sky]);
   return (
     <Daylight
@@ -224,6 +237,8 @@ export interface TimeOfDayDaylightProps {
   /** The world's `SimClock` (or a stub exposing `calendar().dayFraction`). Absent means static rendering. */
   clock?: { calendar(): { dayFraction: number } };
   lights?: boolean;
+  /** Terrain `biomeBands`; when any carries `fog`/`sky`, fog and dome cross-fade per camera z. */
+  bands?: readonly BiomeBand[];
 }
 
 /**
@@ -231,9 +246,100 @@ export interface TimeOfDayDaylightProps {
  * are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so
  * only dome colors and fog track the day fraction.
  */
-export function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps) {
+export function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps) {
+  if (bandsDriveSkyOrFog(bands)) return <BiomeDaylight sky={sky} bands={bands} clock={clock} lights={lights} />;
   if (!sky.timeOfDay || clock === undefined) return <SkyDaylight sky={sky} lights={lights} />;
   return <DrivenDaylight sky={sky} clock={clock} lights={lights} />;
+}
+
+/**
+ * Per-frame biome fog/sky driver: cross-fades fog color/range, dome colors, and sun/ambient intensity
+ * along the camera's z through the terrain's `biomeBands`. Base look is the sky preset (or, when
+ * `sky.timeOfDay` and a `clock` are present, the live day fraction); bands ride on top.
+ */
+function BiomeDaylight({
+  sky,
+  bands,
+  clock,
+  lights,
+}: {
+  sky: SkyEnvironmentDescriptor;
+  bands: readonly BiomeBand[];
+  clock?: { calendar(): { dayFraction: number } };
+  lights: boolean;
+}) {
+  const timeOfDay = sky.timeOfDay && clock !== undefined;
+  const baseFraction = timeOfDay ? clock!.calendar().dayFraction : SKY_PRESET_DAY_FRACTION[sky.preset];
+  const initial = useMemo(() => daylightStateAt(baseFraction, sky), [sky, baseFraction]);
+  const sunRef = useRef<THREE.DirectionalLight>(null);
+  const hemiRef = useRef<THREE.HemisphereLight>(null);
+  const fogRef = useRef<THREE.Fog>(null);
+  const skyMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  const fogFallback = useMemo(
+    () => ({
+      color: sky.fog?.color ?? initial.background,
+      near: sky.fog?.near ?? 70,
+      far: sky.fog?.far ?? 260,
+      density: 0,
+    }),
+    [sky.fog?.color, sky.fog?.near, sky.fog?.far, initial.background],
+  );
+  const skyFallback = useMemo(
+    () => ({
+      horizonColor: initial.skyBottom,
+      zenithColor: initial.skyTop,
+      sunIntensity: initial.sunIntensity,
+      ambientIntensity: initial.ambientIntensity,
+    }),
+    [initial.skyBottom, initial.skyTop, initial.sunIntensity, initial.ambientIntensity],
+  );
+  const fogSampler = useMemo(() => createBiomeFogSampler(bands, fogFallback), [bands, fogFallback]);
+  const skySampler = useMemo(() => createBiomeSkySampler(bands, skyFallback), [bands, skyFallback]);
+
+  useFrame((state) => {
+    const base = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
+    const z = state.camera.position.z;
+    const fog = fogSampler(z);
+    const skyValue = skySampler(z);
+    const fogNode = fogRef.current;
+    if (fogNode !== null) {
+      fogNode.color.set(fog.color);
+      fogNode.near = fog.near;
+      fogNode.far = fog.far;
+    }
+    const skyMaterial = skyMaterialRef.current;
+    if (skyMaterial !== null) {
+      (skyMaterial.uniforms.topColor!.value as THREE.Color).set(skyValue.zenithColor);
+      (skyMaterial.uniforms.bottomColor!.value as THREE.Color).set(skyValue.horizonColor);
+    }
+    const sun = sunRef.current;
+    if (sun !== null) {
+      sun.position.set(base.sunPosition[0], base.sunPosition[1], base.sunPosition[2]);
+      sun.intensity = skyValue.sunIntensity;
+    }
+    const hemi = hemiRef.current;
+    if (hemi !== null) hemi.intensity = skyValue.ambientIntensity;
+  });
+
+  return (
+    <>
+      <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} />
+      <fog attach="fog" ref={fogRef} args={[fogFallback.color, fogFallback.near, fogFallback.far]} />
+      {lights ? (
+        <>
+          <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
+          <directionalLight
+            ref={sunRef}
+            position={initial.sunPosition}
+            intensity={initial.sunIntensity}
+            color={SUN_COLOR}
+            castShadow
+          />
+        </>
+      ) : null}
+    </>
+  );
 }
 
 function DrivenDaylight({

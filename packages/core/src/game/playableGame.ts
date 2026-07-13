@@ -373,6 +373,10 @@ export interface GameCameraConfig {
   targetOffset?: { x?: number; y?: number; z?: number };
   initialDistance?: number;
   initialHeight?: number;
+  /** Initial horizontal boom facing (radians): 0 = camera behind on -Z, PI = camera on +Z. Seeds the orbit rig; unset keeps the legacy -Z placement. */
+  initialYaw?: number;
+  /** Initial boom elevation (radians): 0 = level, positive = camera above the target looking down. Seeds the orbit rig; unset derives elevation from `initialHeight`/`initialDistance`. */
+  initialPitch?: number;
   /** Lock orbit radius while the follow target moves (default true in shell). */
   followLock?: boolean;
   /** When false, orbit target stays fixed (cinematic / debug). Default true. */
@@ -390,6 +394,8 @@ export interface GameCameraConfig {
   /** Vertical look clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below. Widen for top-down or vertical aim; unset keeps the standard chase feel. */
   minPolarAngle?: number;
   maxPolarAngle?: number;
+  /** Signed boom-elevation clamp `[min, max]` (radians): min < 0 dips the camera below the target, max > 0 rises overhead. Maps onto `minPolarAngle`/`maxPolarAngle` (polar = PI/2 − pitch); explicit polar fields win. */
+  pitchClamp?: readonly [number, number];
   /** Spring-arm occlusion for the orbit rig: pull the camera in past walls/terrain so it never clips inside geometry. Off unless `enabled`. */
   collision?: { enabled?: boolean; padding?: number; minTargetDistance?: number };
 }
@@ -579,6 +585,14 @@ export interface PlayerMovementConfig {
   beforeCommit?: (frame: MovementCommitFrame) => readonly [number, number, number] | undefined | void;
   /** Gates the built-in sprint (`runSpeedMultiplier`) behind live game state — a stamina stat, an encumbrance check (#282.3). Called each frame while sprint is held; `false` walks. */
   canSprint?: (ctx: GameContext) => boolean;
+  /** Fraction of walk speed while backpedalling (holding `moveBack`). Overrides the engine default (0.65). */
+  backpedalMult?: number;
+  /** Radians/second the internally-integrated heading turns under `turnLeft`/`turnRight` (only used when the shell doesn't own yaw). Default 2.4. */
+  turnSpeed?: number;
+  /** On-foot swimming when the terrain declares a `waterLevel` and the player is submerged: caps speed and floats them at the surface. `true` uses defaults; default off. */
+  swim?: { speedMultiplier?: number } | boolean;
+  /** Slide the player downhill on terrain steeper than they can stand on (heightfield worlds only). `true` uses defaults; default off. */
+  slopeSlide?: { maxClimbSlope?: number } | boolean;
 }
 
 /** One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`. */

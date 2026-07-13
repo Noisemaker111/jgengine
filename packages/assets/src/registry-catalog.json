@@ -52,6 +52,11 @@
       "description": "Row of chamfered buff/debuff chips with stack counts and a remaining-duration underline, driven by a plain chip array."
     },
     {
+      "name": "cartridge-panels",
+      "title": "Cartridge Panels",
+      "description": "Standard panel bindings for @jgengine/shell/cartridge: vital/xp/timer/score/ability-bar HUD items, upgrade-draft modal, and win/lose screens composed from the jgengine UI kit."
+    },
+    {
       "name": "cast-bar",
       "title": "Cast Bar",
       "description": "Slant-clipped cast/channel progress bar with a bright leading edge and an interrupted state."
@@ -60,6 +65,11 @@
       "name": "charge-meter",
       "title": "Charge Meter",
       "description": "Slant-clipped charge or ultimate meter with tier ticks and a ready-state glow animation."
+    },
+    {
+      "name": "chat-bubble",
+      "title": "Chat Bubble",
+      "description": "Over-entity speech bubble for proximity chat — presentational, value-driven."
     },
     {
       "name": "combat-float-layer",
@@ -105,6 +115,11 @@
       "name": "dialogue-panel",
       "title": "Dialogue Panel",
       "description": "Notched dialogue box with speaker nameplate, portrait well, and skill-check-annotated branching choices."
+    },
+    {
+      "name": "entity-chat-bubble",
+      "title": "Entity Chat Bubble",
+      "description": "ChatBubble bound to a live entity's latest proximity chat message via useEntityChatBubble — the one-line speech bubble for any entity instance."
     },
     {
       "name": "entity-vital-bar",
@@ -217,6 +232,11 @@
       "description": "Rotating corner-bracket lock-on reticle that snaps into a diamond frame when a target is acquired, with an optional label."
     },
     {
+      "name": "loop-dial",
+      "title": "Loop Dial",
+      "description": "Radial position-around-a-loop dial: markers at cycle fractions plus live/forecast arc windows — laps, patrols, rotation schedules."
+    },
+    {
       "name": "loot-card",
       "title": "Loot Card",
       "description": "Rarity-bordered item tooltip card with icon, stat lines, italic affixes, and flavor text."
@@ -242,6 +262,11 @@
       "description": "Buff Tray adapter for survival-game Moodle records — maps severity to buff/debuff tint and fraction to the duration ring."
     },
     {
+      "name": "mount",
+      "title": "Mount",
+      "description": "One-call React root mount for a PlayableGame: mountGame(game) renders GameHost into #root."
+    },
+    {
       "name": "objective-channel",
       "title": "Objective Channel",
       "description": "Slant-clipped capture/channel progress bar with friendly/hostile/neutral ownership tinting and a contested pulse."
@@ -255,6 +280,16 @@
       "name": "pickup-toast-stack",
       "title": "Pickup Toast Stack",
       "description": "Stacked, fading pickup toasts with rarity-tinted icon/label/count — presentational, list-driven."
+    },
+    {
+      "name": "playing-card",
+      "title": "Playing Card",
+      "description": "French-deck card face with rank, suit pips, and a patterned back when face-down, plus an overlapping stack."
+    },
+    {
+      "name": "progress-strip",
+      "title": "Progress Strip",
+      "description": "Linear 1D minimap: lanes with moving markers and live/forecast segments — race standings along a lap, couriers along a line."
     },
     {
       "name": "quest-tracker",
@@ -285,6 +320,11 @@
       "name": "reticle",
       "title": "Reticle",
       "description": "Configurable crosshair reticle — dot, cross, circle, chevron, or shotgun spread pattern — with an optional hit-flash tick overlay."
+    },
+    {
+      "name": "schematic-diagram",
+      "title": "Schematic Diagram",
+      "description": "Fixed-panel node+edge schematic independent of world positions — circuit layouts, rail networks, heist floor plans, with dashed forecast edges."
     },
     {
       "name": "score-readout",

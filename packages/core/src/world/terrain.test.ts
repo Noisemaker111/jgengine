@@ -5,6 +5,8 @@ import {
   arenaField,
   composeIslandFields,
   createBiomeBandSampler,
+  createBiomeFogSampler,
+  createBiomeSkySampler,
   createTerrainPaletteSampler,
   fractalNoise,
   flatField,
@@ -351,6 +353,73 @@ describe("terrain field", () => {
   test("createBiomeBandSampler with no bands is the fallback palette", () => {
     const fallback = resolveTerrainPalette({ material: "grass" });
     expect(createBiomeBandSampler([], fallback)(42)).toEqual(fallback);
+  });
+
+  test("createBiomeFogSampler cross-fades and clamps between adjacent bands", () => {
+    const fallback = { color: "#000000", near: 70, far: 260, density: 0 };
+    const sampler = createBiomeFogSampler(
+      [
+        { z: -100, fade: 40, fog: { color: "#ff0000", near: 10, far: 100 } },
+        { z: 100, fade: 40, fog: { color: "#0000ff", near: 30, far: 300 } },
+      ],
+      fallback,
+    );
+    expect(sampler(-200)).toEqual({ color: "#ff0000", near: 10, far: 100, density: 0 });
+    expect(sampler(200)).toEqual({ color: "#0000ff", near: 30, far: 300, density: 0 });
+    expect(sampler(-30)).toEqual({ color: "#ff0000", near: 10, far: 100, density: 0 });
+    const mid = sampler(0);
+    expect(mid.color).not.toBe("#ff0000");
+    expect(mid.color).not.toBe("#0000ff");
+    expect(mid.near).toBeGreaterThan(10);
+    expect(mid.near).toBeLessThan(30);
+    expect(mid.far).toBeGreaterThan(100);
+    expect(mid.far).toBeLessThan(300);
+  });
+
+  test("createBiomeFogSampler falls a band with no fog through to the fallback", () => {
+    const fallback = { color: "#123456", near: 70, far: 260, density: 0 };
+    const sampler = createBiomeFogSampler(
+      [
+        { z: -100, fog: { color: "#ff0000" } },
+        { z: 100 },
+      ],
+      fallback,
+    );
+    expect(sampler(200)).toEqual(fallback);
+    expect(sampler(-200).color).toBe("#ff0000");
+    expect(sampler(-200).near).toBe(70);
+  });
+
+  test("createBiomeFogSampler with no bands is the fallback fog", () => {
+    const fallback = { color: "#123456", near: 70, far: 260, density: 0.5 };
+    expect(createBiomeFogSampler([], fallback)(42)).toEqual(fallback);
+  });
+
+  test("createBiomeSkySampler cross-fades and clamps between adjacent bands", () => {
+    const fallback = { horizonColor: "#e3f4ff", zenithColor: "#3fa4f2", sunIntensity: 1, ambientIntensity: 0.6 };
+    const sampler = createBiomeSkySampler(
+      [
+        { z: -100, fade: 40, sky: { horizonColor: "#ffcc88", zenithColor: "#204080", sunIntensity: 0.4, ambientIntensity: 0.3 } },
+        { z: 100, fade: 40, sky: { horizonColor: "#ffffff", zenithColor: "#88bbff", sunIntensity: 1.2, ambientIntensity: 0.8 } },
+      ],
+      fallback,
+    );
+    expect(sampler(-200).zenithColor).toBe("#204080");
+    expect(sampler(200).sunIntensity).toBe(1.2);
+    const mid = sampler(0);
+    expect(mid.sunIntensity).toBeGreaterThan(0.4);
+    expect(mid.sunIntensity).toBeLessThan(1.2);
+    expect(mid.zenithColor).not.toBe("#204080");
+    expect(mid.zenithColor).not.toBe("#88bbff");
+  });
+
+  test("createBiomeSkySampler falls a band with no sky through to the fallback and has no-band fallback", () => {
+    const fallback = { horizonColor: "#e3f4ff", zenithColor: "#3fa4f2", sunIntensity: 1, ambientIntensity: 0.6 };
+    const sampler = createBiomeSkySampler([{ z: -100, sky: { sunIntensity: 0.2 } }, { z: 100 }], fallback);
+    expect(sampler(200)).toEqual(fallback);
+    expect(sampler(-200).sunIntensity).toBe(0.2);
+    expect(sampler(-200).zenithColor).toBe("#3fa4f2");
+    expect(createBiomeSkySampler([], fallback)(5)).toEqual(fallback);
   });
 
   test("createTerrainPaletteSampler layers materialRegions over biomeBands", () => {

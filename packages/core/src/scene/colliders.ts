@@ -56,6 +56,33 @@ export function defaultEntityColliders(): EntityColliderSet {
   };
 }
 
+/** Humanoid damage box uniformly scaled to match a visually scaled mesh, kept grounded (offset stays half its height). At scale 1 this equals `defaultEntityColliders()`. */
+export function scaledEntityColliders(scale: number): EntityColliderSet {
+  return {
+    hitboxes: [
+      {
+        name: "body",
+        purpose: "damage",
+        shape: {
+          kind: "aabb",
+          halfExtents: [
+            DEFAULT_ENTITY_BODY_HALF_EXTENTS[0] * scale,
+            DEFAULT_ENTITY_BODY_HALF_EXTENTS[1] * scale,
+            DEFAULT_ENTITY_BODY_HALF_EXTENTS[2] * scale,
+          ],
+          offset: [
+            DEFAULT_ENTITY_BODY_OFFSET[0] * scale,
+            DEFAULT_ENTITY_BODY_OFFSET[1] * scale,
+            DEFAULT_ENTITY_BODY_OFFSET[2] * scale,
+          ],
+        },
+        damageEligible: true,
+        blocks: false,
+      },
+    ],
+  };
+}
+
 export function defaultObjectColliders(halfExtents: EntityPosition = DEFAULT_OBJECT_HALF_EXTENTS): EntityColliderSet {
   return {
     body: {

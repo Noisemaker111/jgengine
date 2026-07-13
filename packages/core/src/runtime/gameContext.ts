@@ -97,7 +97,7 @@ import type {
   SpawnPose,
 } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
-import { scaledObjectColliders, type EntityColliderSet } from "../scene/colliders";
+import { scaledEntityColliders, scaledObjectColliders, type EntityColliderSet } from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene/objectStore";
 import { createRoster, type Roster } from "../scene/roster";
@@ -149,6 +149,8 @@ export interface GameContextEntityEntry {
   verbs?: readonly ContextVerb[];
   /** Purpose-specific colliders (physical body + named damage hitboxes). */
   colliders?: EntityColliderSet;
+  /** Uniform visual scale of the rendered mesh; derives a matching hitbox (and eye-height) when no explicit `colliders` are set. */
+  scale?: number;
 }
 
 export interface GameContextObjectEntry {
@@ -254,6 +256,8 @@ export interface SceneEntityContext {
   invalidateSpatial: SpatialApi["invalidate"];
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
+  /** Uniform visual scale from the entity's catalog entry (1 when unscaled). */
+  visualScaleOf(instanceId: string): number;
   form: Forms;
   paint: PaintLayer;
 }
@@ -497,7 +501,15 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   function entityCollidersOf(instanceId: string): EntityColliderSet | null {
     const override = entityColliders.get(instanceId);
     if (override !== undefined) return override;
-    return catalogEntry(instanceId)?.colliders ?? null;
+    const entry = catalogEntry(instanceId);
+    if (entry?.colliders !== undefined) return entry.colliders;
+    const scale = entry?.scale;
+    if (scale !== undefined && scale !== 1) return scaledEntityColliders(scale);
+    return null;
+  }
+
+  function entityVisualScaleOf(instanceId: string): number {
+    return catalogEntry(instanceId)?.scale ?? 1;
   }
 
   function objectCollidersOf(instanceId: string): EntityColliderSet | null {
@@ -1314,6 +1326,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           signal.notify();
         },
         collidersOf: entityCollidersOf,
+        visualScaleOf: entityVisualScaleOf,
         form: forms,
         paint: paintLayer,
       },

@@ -4,6 +4,7 @@ import {
   defaultEntityColliders,
   defaultObjectColliders,
   resolveColliders,
+  scaledEntityColliders,
   scaledObjectColliders,
   worldOffset,
 } from "@jgengine/core/scene/colliders";
@@ -51,6 +52,22 @@ describe("colliders", () => {
     const bounds = colliderBounds(resolved[0]!, [10, 0, 10], 0);
     expect(bounds.min).toEqual([9, 0, 9]);
     expect(bounds.max).toEqual([11, 4, 11]);
+  });
+
+  test("scaledEntityColliders(1) equals the humanoid default", () => {
+    expect(scaledEntityColliders(1)).toEqual(defaultEntityColliders());
+  });
+
+  test("scaledEntityColliders scales the body box uniformly and stays grounded", () => {
+    const set = scaledEntityColliders(1.35);
+    const box = set.hitboxes![0]!.shape;
+    if (box.kind !== "aabb") throw new Error("expected aabb");
+    expect(box.halfExtents).toEqual([0.35 * 1.35, 0.9 * 1.35, 0.35 * 1.35]);
+    expect(box.offset).toEqual([0, 0.9 * 1.35, 0]);
+    expect(box.offset![1]).toBeCloseTo(box.halfExtents[1]);
+    const resolved = resolveColliders(set)[0]!;
+    const bounds = colliderBounds(resolved, [0, 0, 0], 0);
+    expect(bounds.min[1]).toBeCloseTo(0);
   });
 
   test("worldOffset rotates local offsets by yaw", () => {

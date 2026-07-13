@@ -429,6 +429,35 @@ function mixPalette(from: TerrainPalette, to: TerrainPalette, t: number): Terrai
   };
 }
 
+function createBandValueSampler<T>(
+  bands: readonly BiomeBand[],
+  fallback: T,
+  resolve: (band: BiomeBand) => T,
+  mix: (from: T, to: T, t: number) => T,
+): (z: number) => T {
+  if (bands.length === 0) return () => fallback;
+  const resolved = bands
+    .map((band) => ({ z: band.z, fade: band.fade ?? 64, value: resolve(band) }))
+    .sort((a, b) => a.z - b.z);
+  const first = resolved[0]!;
+  const last = resolved[resolved.length - 1]!;
+  return (z: number) => {
+    if (z <= first.z) return first.value;
+    if (z >= last.z) return last.value;
+    for (let i = 0; i < resolved.length - 1; i += 1) {
+      const lower = resolved[i]!;
+      const upper = resolved[i + 1]!;
+      if (z < lower.z || z > upper.z) continue;
+      const boundary = (lower.z + upper.z) / 2;
+      const half = Math.min(lower.fade, upper.fade) / 2;
+      if (z <= boundary - half) return lower.value;
+      if (z >= boundary + half) return upper.value;
+      return mix(lower.value, upper.value, smoothstep(boundary - half, boundary + half, z));
+    }
+    return fallback;
+  };
+}
+
 /**
  * Per-z palette sampler over a descriptor's `biomeBands` — ordered zones that cross-fade their
  * ground palette across a `fade`-wide window centered on the midpoint z between adjacent centers.
@@ -439,27 +468,95 @@ export function createBiomeBandSampler(
   bands: readonly BiomeBand[],
   fallback: TerrainPalette,
 ): (z: number) => TerrainPalette {
-  if (bands.length === 0) return () => fallback;
-  const resolved = bands
-    .map((band) => ({ z: band.z, fade: band.fade ?? 64, palette: resolveTerrainPalette(band) }))
-    .sort((a, b) => a.z - b.z);
-  const first = resolved[0]!;
-  const last = resolved[resolved.length - 1]!;
-  return (z: number) => {
-    if (z <= first.z) return first.palette;
-    if (z >= last.z) return last.palette;
-    for (let i = 0; i < resolved.length - 1; i += 1) {
-      const lower = resolved[i]!;
-      const upper = resolved[i + 1]!;
-      if (z < lower.z || z > upper.z) continue;
-      const boundary = (lower.z + upper.z) / 2;
-      const half = Math.min(lower.fade, upper.fade) / 2;
-      if (z <= boundary - half) return lower.palette;
-      if (z >= boundary + half) return upper.palette;
-      return mixPalette(lower.palette, upper.palette, smoothstep(boundary - half, boundary + half, z));
-    }
-    return fallback;
+  return createBandValueSampler(bands, fallback, resolveTerrainPalette, mixPalette);
+}
+
+/** A concrete fog look — the shape `createBiomeFogSampler` resolves per z from a band's `fog` over the base fog. */
+export interface BiomeFogValue {
+  color: string;
+  near: number;
+  far: number;
+  density: number;
+}
+
+function mixBiomeFog(from: BiomeFogValue, to: BiomeFogValue, t: number): BiomeFogValue {
+  if (t <= 0) return from;
+  if (t >= 1) return to;
+  return {
+    color: mixHex(from.color, to.color, t),
+    near: lerp(from.near, to.near, t),
+    far: lerp(from.far, to.far, t),
+    density: lerp(from.density, to.density, t),
   };
+}
+
+/**
+ * Per-z fog sampler over a descriptor's `biomeBands` — cross-fades each band's `fog` (unset fields
+ * falling through to `fallback`) across the same `fade` window as the ground sampler, so fog color and
+ * range track the camera's z. Bands with no `fog` resolve to `fallback`. Pure math, unit-testable.
+ */
+export function createBiomeFogSampler(
+  bands: readonly BiomeBand[],
+  fallback: BiomeFogValue,
+): (z: number) => BiomeFogValue {
+  return createBandValueSampler(
+    bands,
+    fallback,
+    (band) =>
+      band.fog === undefined
+        ? fallback
+        : {
+            color: band.fog.color ?? fallback.color,
+            near: band.fog.near ?? fallback.near,
+            far: band.fog.far ?? fallback.far,
+            density: band.fog.density ?? fallback.density,
+          },
+    mixBiomeFog,
+  );
+}
+
+/** A concrete sky look — the shape `createBiomeSkySampler` resolves per z from a band's `sky` over the base sky. */
+export interface BiomeSkyValue {
+  horizonColor: string;
+  zenithColor: string;
+  sunIntensity: number;
+  ambientIntensity: number;
+}
+
+function mixBiomeSky(from: BiomeSkyValue, to: BiomeSkyValue, t: number): BiomeSkyValue {
+  if (t <= 0) return from;
+  if (t >= 1) return to;
+  return {
+    horizonColor: mixHex(from.horizonColor, to.horizonColor, t),
+    zenithColor: mixHex(from.zenithColor, to.zenithColor, t),
+    sunIntensity: lerp(from.sunIntensity, to.sunIntensity, t),
+    ambientIntensity: lerp(from.ambientIntensity, to.ambientIntensity, t),
+  };
+}
+
+/**
+ * Per-z sky sampler over a descriptor's `biomeBands` — cross-fades each band's `sky` (unset fields
+ * falling through to `fallback`) across the same `fade` window as the ground sampler, so horizon/zenith
+ * colors and sun/ambient intensity track the camera's z. Bands with no `sky` resolve to `fallback`.
+ */
+export function createBiomeSkySampler(
+  bands: readonly BiomeBand[],
+  fallback: BiomeSkyValue,
+): (z: number) => BiomeSkyValue {
+  return createBandValueSampler(
+    bands,
+    fallback,
+    (band) =>
+      band.sky === undefined
+        ? fallback
+        : {
+            horizonColor: band.sky.horizonColor ?? fallback.horizonColor,
+            zenithColor: band.sky.zenithColor ?? fallback.zenithColor,
+            sunIntensity: band.sky.sunIntensity ?? fallback.sunIntensity,
+            ambientIntensity: band.sky.ambientIntensity ?? fallback.ambientIntensity,
+          },
+    mixBiomeSky,
+  );
 }
 
 /**
