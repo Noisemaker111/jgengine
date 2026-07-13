@@ -159,15 +159,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "WASD move · F throw charge · Space detonate · Shift dodge roll",
     hue: "#d946ef",
   },
-  "drift-district": {
-    tagline: "Drift the neon districts, bank boost, beat two rivals to the line.",
-    description:
-      "A night-lit street racer where drifting through style gates charges a boost meter and can permanently shift open new district shortcuts. Chain slides through Harbor, Downtown, and Heights across laps while rivals Ronin and Vega fight to hold their line.",
-    genre: "Arcade drift racing",
-    category: "Action & Arcade",
-    controls: "W accelerate · S brake · A/D steer · Space handbrake · Shift boost",
-    hue: "#e879f9",
-  },
   "vice-isle": {
     tagline: "Steal it, drive it, shake the heat.",
     description:
@@ -202,24 +193,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Sandbox & Simulation",
     controls: "W urge · S ease · A/D steer · E dock · M map",
     hue: "#a16207",
-  },
-  "frostbite-circuit": {
-    tagline: "Five laps, ice that remembers every line you've cut.",
-    description:
-      "An arctic sled race around a frozen lake circuit where each pass cracks the ice under your favorite line, forcing you to hunt new corridors as inner, mid, and outer routes weaken and open into black water. Sink through four times and you're done — outlast Borealis and Polaris across five laps to take the circuit.",
-    genre: "Arctic ice racing",
-    category: "Action & Arcade",
-    controls: "W accelerate · S brake · A/D steer · Space handbrake",
-    hue: "#67e8f9",
-  },
-  "loop-station": {
-    tagline: "Race your own ghost. Every lap is watching.",
-    description:
-      "A synthwave tape-loop speedrunner where every clean lap is recorded and replayed as a solid ghost you must dodge next time around. Steer, brake-drift, and jump-hop the over/under gaps to desync from your own history before the tape catches you.",
-    genre: "Ghost-loop racer",
-    category: "Action & Arcade",
-    controls: "WASD · Shift brake-drift · Space jump-hop",
-    hue: "#f0abfc",
   },
   "magnet-run": {
     tagline: "Flip polarity, stick the wall, don't get thrown.",
@@ -266,15 +239,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "W pump · S brake · Space throw junction · M diagram",
     hue: "#38bdf8",
   },
-  "rooftop-relay": {
-    tagline: "Sprint the rooftops and pass the baton clean.",
-    description:
-      "A parkour relay race across city rooftops. Sprint and vault between runners on your crew, hand off the baton in stride to shave time off the clock, and keep the baton warm — fall off pace too long and the cold-baton penalty starts eating your lead.",
-    genre: "Parkour relay racer",
-    category: "Action & Arcade",
-    controls: "WASD move · Space jump · Shift sprint · E handoff",
-    hue: "#facc15",
-  },
   "skyhook-rally": {
     tagline: "Grapple, swing, and release at the apex.",
     description:
@@ -283,15 +247,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Action & Arcade",
     controls: "Mouse/Space hook · W/S pitch · A/D steer",
     hue: "#818cf8",
-  },
-  tideway: {
-    tagline: "Read the swinging tide, ride the surf.",
-    description:
-      "Race a harbor speedboat against a rival through gated laps while a three-zone current field swings its direction and strength on a 25-second clock. Angle with the current to surf its push or fight straight through it, threading rudder and throttle around harbor buildings and islets.",
-    genre: "Current-racing arcade",
-    category: "Action & Arcade",
-    controls: "W throttle · S reverse · A/D rudder · Space brace · Enter start",
-    hue: "#0ea5e9",
   },
   "turbine-city": {
     tagline: "Thread the fan-driven wind tunnels, out-glide the pacer.",
@@ -331,16 +286,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Action & Arcade",
     controls: "A/D/Arrows or mouse aim · Space/click fire · P pause · R restart",
     hue: "#00ff41",
-  },
-  "road-hopper": {
-    title: "Road Hopper",
-    tagline: "Traffic, river, home",
-    description:
-      "Hop five lanes of traffic and a river of logs and diving turtles to fill five home bays against the clock.",
-    genre: "arcade",
-    category: "Action & Arcade",
-    controls: "WASD/Arrows hop · P pause · R restart",
-    hue: "#4338ca",
   },
   pinball: {
     title: "Pinball",
