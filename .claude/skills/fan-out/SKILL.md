@@ -20,7 +20,7 @@ Cheap worker: substantial mechanical legs, on the cheapest tier that fits.
 
 **Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "will report back" returns nothing — background children die with the turn. Its final message reports the completed result (PR link, checks verdict), never intent; a worker never hands its leg to a background child of its own. No worker in a parallel batch ever runs `bun install` — a mid-batch install fails every sibling with phantom TS2307s; if needed, it runs alone, first.
 
-**Use the repo commands, never reconstruct the ladder.** `bun run agent:preflight` before generators, `bun run gate` for the full local verdict, `bun run ship:preflight` immediately before commit/push/PR.
+**Use the repo commands, never reconstruct the ladder.** `bun run agent:preflight` before generators, `bun run gate` for the full local verdict, `bun run ship:preflight` immediately before commit/push/PR. Never put a bare `bun test` in a brief — unscoped it scans the whole tree unbounded and hangs until the guard kills it; brief the guard-bounded scripts (`bun run test`, `bun run test:all`) or an explicit scope (`bun test packages`).
 
 **Per-item sweep briefs say "do these yourself — do not delegate."** Otherwise a worker treats the list as an orchestration job and fans out N sub-workers.
 

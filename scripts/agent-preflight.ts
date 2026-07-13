@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -34,6 +35,54 @@ requirePath("bun.lock", "run bun install and commit the lockfile");
 requirePath("node_modules", "run bun install before generators or gates");
 requirePath("node_modules/ts-morph", "dependencies are incomplete; finish bun install before continuing");
 requirePath("node_modules/@typescript/native-preview", "dependencies are incomplete; finish bun install before continuing");
+
+function workspaceManifests(): string[] {
+  const manifests = ["package.json"];
+  const patterns = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).workspaces as string[];
+  for (const pattern of patterns) {
+    if (pattern.endsWith("/*")) {
+      const base = pattern.slice(0, -2);
+      if (!existsSync(join(root, base))) continue;
+      for (const entry of readdirSync(join(root, base), { withFileTypes: true })) {
+        if (entry.isDirectory() && existsSync(join(root, base, entry.name, "package.json"))) {
+          manifests.push(join(base, entry.name, "package.json"));
+        }
+      }
+    } else if (existsSync(join(root, pattern, "package.json"))) {
+      manifests.push(join(pattern, "package.json"));
+    }
+  }
+  return manifests;
+}
+
+function checkLockfileSync(): void {
+  if (!existsSync(join(root, "bun.lock"))) return;
+  const workDir = mkdtempSync(join(tmpdir(), "jgengine-lockcheck-"));
+  try {
+    for (const rel of workspaceManifests()) {
+      const dest = join(workDir, rel);
+      mkdirSync(dirname(dest), { recursive: true });
+      copyFileSync(join(root, rel), dest);
+    }
+    copyFileSync(join(root, "bun.lock"), join(workDir, "bun.lock"));
+    const result = spawnSync("bun", ["install", "--frozen-lockfile", "--dry-run"], {
+      cwd: workDir,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: 120_000,
+    });
+    if (result.status !== 0) {
+      const detail = (result.stderr || result.stdout || "").trim().split("\n").slice(0, 3).join(" ");
+      failures.push(
+        `bun.lock is out of sync with the workspace package.json files — CI's bun install --frozen-lockfile will fail. Run bun install and commit the updated bun.lock. (${detail})`,
+      );
+    }
+  } finally {
+    rmSync(workDir, { recursive: true, force: true });
+  }
+}
+
+checkLockfileSync();
 
 if (ship) {
   run("git", ["fetch", "origin", "main"]);
