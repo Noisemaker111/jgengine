@@ -160,7 +160,7 @@ function StatRow({ name, value, alert }: { name: string; value: string; alert?: 
   return (
     <div className="flex items-baseline justify-between gap-3">
       <span className="text-neutral-400">{name}</span>
-      <span className={`font-mono ${alert === true ? "text-red-400" : "text-neutral-100"}`}>{value}</span>
+      <span className={`font-mono tabular-nums ${alert === true ? "text-red-400" : "text-neutral-100"}`}>{value}</span>
     </div>
   );
 }
@@ -171,7 +171,7 @@ function FrameBars({ frames }: { frames: readonly number[] }) {
       {frames.map((frameMs, index) => (
         <div
           key={index}
-          className={`w-1 rounded-sm ${frameMs > LONG_FRAME_MS ? "bg-red-500" : "bg-emerald-500/80"}`}
+          className={`w-1 rounded-full ${frameMs > LONG_FRAME_MS ? "bg-red-400" : "bg-cyan-400/70"}`}
           style={{ height: `${Math.min(100, (frameMs / (LONG_FRAME_MS * 2)) * 100)}%` }}
           title={`${frameMs.toFixed(1)}ms`}
         />
@@ -181,7 +181,7 @@ function FrameBars({ frames }: { frames: readonly number[] }) {
 }
 
 function SectionLabel({ children }: { children: string }) {
-  return <div className="text-[9px] uppercase tracking-wide text-neutral-500">{children}</div>;
+  return <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-500">{children}</div>;
 }
 
 function PhaseBars({ phases, avgSimMs }: { phases: readonly PhaseStats[]; avgSimMs: number }) {
@@ -209,9 +209,9 @@ function PhaseBars({ phases, avgSimMs }: { phases: readonly PhaseStats[]; avgSim
                 {phase.pctOfSim.toFixed(0)}%
               </span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-neutral-800">
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
               <div
-                className={`h-full rounded-full ${hot ? "bg-amber-400" : "bg-emerald-500/80"}`}
+                className={`h-full rounded-full ${hot ? "bg-gradient-to-r from-amber-400 to-amber-300" : "bg-gradient-to-r from-cyan-500 to-cyan-400/70"}`}
                 style={{ width: `${Math.min(100, (phase.avgMs / budget) * 100)}%` }}
               />
             </div>
@@ -229,7 +229,7 @@ function BudgetSplit({ simMs, outsideMs }: { simMs: number; outsideMs: number })
   const simHot = simMs > 8;
   return (
     <div className="space-y-1">
-      <div className="flex h-2 overflow-hidden rounded-full bg-neutral-800">
+      <div className="flex h-2 overflow-hidden rounded-full bg-white/[0.06]">
         <div className={`h-full ${simHot ? "bg-amber-400" : "bg-sky-400"}`} style={{ width: `${simPct}%` }} title={`sim ${ms(simMs)}`} />
         <div
           className={`h-full ${outsideHot ? "bg-red-500" : "bg-violet-400/80"}`}
@@ -286,7 +286,7 @@ function LongFrameList({ events }: { events: readonly LongFrameEvent[] }) {
   return (
     <div className="jg-devtools-scroll max-h-40 space-y-1.5 overflow-auto">
       {newest.map((event, index) => (
-        <div key={`${event.at}-${index}`} className="rounded border border-neutral-800 bg-neutral-900/60 px-1.5 py-1">
+        <div key={`${event.at}-${index}`} className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-1.5">
           <div className="flex items-baseline justify-between gap-2">
             <span className="font-mono text-red-400">{ms(event.frameMs)}</span>
             <span className="truncate text-amber-300" title={event.culprit}>
@@ -410,7 +410,7 @@ function LogsPanel() {
     <div className="space-y-2">
       <button
         type="button"
-        className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+        className="rounded-md bg-white/[0.04] px-2 py-0.5 text-neutral-300 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/10"
         onClick={() => devtools.logs.clear()}
       >
         Clear
@@ -489,14 +489,14 @@ function ColPanel() {
       <div className="flex gap-1">
         <button
           type="button"
-          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+          className="rounded-md bg-white/[0.04] px-2 py-0.5 text-neutral-300 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/10"
           onClick={() => collisionDebug.setAllLayers(true)}
         >
           All on
         </button>
         <button
           type="button"
-          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+          className="rounded-md bg-white/[0.04] px-2 py-0.5 text-neutral-300 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/10"
           onClick={() => collisionDebug.setAllLayers(false)}
         >
           All off
@@ -549,7 +549,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
       <div className="flex items-center gap-2">
         <input
           type="range"
-          className="h-1 w-28 accent-emerald-400"
+          className="h-1 w-28 accent-cyan-400"
           min={displayMin}
           max={displayMax}
           step={displayStep}
@@ -561,7 +561,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
         />
         <input
           type="number"
-          className="w-16 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
+          className="w-16 rounded-md border border-white/10 bg-black/40 px-1 py-0.5 font-mono text-neutral-100"
           step={displayStep}
           value={Number(displayValue.toFixed(4))}
           onChange={(event) => {
@@ -581,7 +581,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
     return (
       <input
         type="checkbox"
-        className="h-4 w-4 accent-emerald-400"
+        className="h-4 w-4 accent-cyan-400"
         checked={Boolean(value)}
         onChange={(event) => write(event.target.checked)}
       />
@@ -612,7 +612,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
         {showAlpha ? (
           <input
             type="range"
-            className="h-1 w-16 accent-emerald-400"
+            className="h-1 w-16 accent-cyan-400"
             min={0}
             max={1}
             step={0.01}
@@ -636,7 +636,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
       [];
     return (
       <select
-        className="rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 text-neutral-100"
+        className="rounded-md border border-white/10 bg-black/40 px-1 py-0.5 text-neutral-100"
         value={String(value)}
         onChange={(event) => {
           const match = choices.find((choice) => String(choice.value) === event.target.value);
@@ -661,7 +661,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
             <span>{labels[index]}</span>
             <input
               type="number"
-              className="w-14 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
+              className="w-14 rounded-md border border-white/10 bg-black/40 px-1 py-0.5 font-mono text-neutral-100"
               min={control.axisMin?.[index]}
               max={control.axisMax?.[index]}
               step={control.axisStep?.[index] ?? control.step}
@@ -689,7 +689,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
       <div className="flex items-center gap-1">
         <input
           type="number"
-          className="w-14 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
+          className="w-14 rounded-md border border-white/10 bg-black/40 px-1 py-0.5 font-mono text-neutral-100"
           min={control.min}
           max={control.max}
           step={control.step}
@@ -702,7 +702,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
         <span className="text-neutral-500">…</span>
         <input
           type="number"
-          className="w-14 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
+          className="w-14 rounded-md border border-white/10 bg-black/40 px-1 py-0.5 font-mono text-neutral-100"
           min={control.min}
           max={control.max}
           step={control.step}
@@ -718,7 +718,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
   return (
     <input
       type="text"
-      className="w-32 rounded border border-neutral-600 bg-neutral-900 px-1 py-0.5 font-mono text-neutral-100"
+      className="w-32 rounded-md border border-white/10 bg-black/40 px-1 py-0.5 font-mono text-neutral-100"
       value={String(value)}
       onChange={(event) => write(event.target.value)}
     />
@@ -876,7 +876,7 @@ function SaveToSourceButton({ discovered }: { discovered: readonly DiscoveredEnt
     <button
       type="button"
       disabled={deltas.length === 0}
-      className="rounded border border-neutral-600 px-2 py-0.5 text-cyan-300 hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-transparent"
+      className="rounded-md bg-cyan-500/15 px-2 py-0.5 text-cyan-200 ring-1 ring-inset ring-cyan-400/25 transition-colors hover:bg-cyan-500/25 disabled:opacity-40 disabled:hover:bg-cyan-500/15"
       onClick={save}
       title={detail ?? "Write changed values back into the game's source files"}
     >
@@ -946,7 +946,7 @@ function TunePanel({ gameName }: { gameName: string }) {
       <div className="flex gap-1.5">
         <button
           type="button"
-          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+          className="rounded-md bg-white/[0.04] px-2 py-0.5 text-neutral-300 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/10"
           onClick={() => {
             devtools.controls.resetAll();
             persist();
@@ -957,7 +957,7 @@ function TunePanel({ gameName }: { gameName: string }) {
         <button
           type="button"
           disabled={snippet === null}
-          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-transparent"
+          className="rounded-md bg-white/[0.04] px-2 py-0.5 text-neutral-300 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent"
           onClick={copyDeltas}
           title="Copy changed values as source snippets to paste upstream"
         >
@@ -969,7 +969,7 @@ function TunePanel({ gameName }: { gameName: string }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="filter…"
-          className="min-w-0 flex-1 rounded border border-neutral-600 bg-transparent px-2 py-0.5 text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
+          className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/30 px-2 py-0.5 text-neutral-200 transition-colors placeholder:text-neutral-600 focus:border-cyan-400/60 focus:outline-none"
         />
       </div>
       {explicit.length === 0 && discovered.length === 0 ? (
@@ -998,7 +998,7 @@ function TunePanel({ gameName }: { gameName: string }) {
                 <label className="flex min-w-0 items-center gap-1.5 text-neutral-300" title={entry.id}>
                   <input
                     type="checkbox"
-                    className="h-3 w-3 shrink-0 accent-emerald-400"
+                    className="h-3 w-3 shrink-0 accent-cyan-400"
                     checked={entry.enabled}
                     onChange={(event) => {
                       if (event.target.checked) devtools.discover.enable(entry.id);
@@ -1211,7 +1211,7 @@ export function DevtoolsOverlay({
   };
 
   return (
-    <div className="pointer-events-auto absolute left-4 top-4 z-50 w-[22rem] rounded border border-neutral-700 bg-neutral-950/95 p-3 text-xs text-neutral-100 shadow-2xl">
+    <div className="pointer-events-auto absolute left-4 top-4 z-50 w-[22rem] rounded-xl border border-white/10 bg-[#0c0e12]/95 p-3 text-xs text-neutral-100 shadow-2xl shadow-black/60 backdrop-blur-md">
       <style>{`
         .jg-devtools-scroll {
           scrollbar-width: thin;
@@ -1235,21 +1235,24 @@ export function DevtoolsOverlay({
         }
       `}</style>
       <div className="mb-2 flex items-center justify-between">
-        <span className="font-semibold uppercase tracking-wide text-neutral-300">{playable.game.name} devtools</span>
+        <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+          {playable.game.name} devtools
+        </span>
         <button
           type="button"
-          className="rounded border border-neutral-600 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+          className="rounded-md bg-white/[0.04] px-2 py-0.5 text-neutral-300 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/10"
           onClick={copyReport}
         >
           {copied ? "Copied" : "Copy report"}
         </button>
       </div>
-      <div className="mb-2 flex gap-1">
+      <div className="mb-2.5 flex gap-0.5 rounded-lg bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
         {TABS.map((entry) => (
           <button
             key={entry.id}
             type="button"
-            className={`rounded px-2 py-0.5 ${tab === entry.id ? "bg-neutral-100 text-neutral-950" : "text-neutral-400 hover:bg-neutral-800"}`}
+            className={`flex-1 rounded-md px-2 py-1 transition-colors ${tab === entry.id ? "bg-cyan-500/90 font-medium text-white shadow-sm shadow-cyan-950/50" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`}
             onClick={() => setTab(entry.id)}
           >
             {entry.label}
@@ -1262,7 +1265,7 @@ export function DevtoolsOverlay({
       {tab === "keys" ? <KeysPanel input={playable.game.input} /> : null}
       {tab === "tune" ? <TunePanel gameName={playable.game.name} /> : null}
       {tab === "col" ? <ColPanel /> : null}
-      <div className="mt-2 border-t border-neutral-800 pt-1.5 text-[9px] text-neutral-500">
+      <div className="mt-2.5 border-t border-white/[0.06] pt-2 text-[9px] tracking-wide text-neutral-500">
         F2 toggles · Col = collision · agents: __JG_DEVTOOLS.snapshot() · .collisionDebug
       </div>
     </div>

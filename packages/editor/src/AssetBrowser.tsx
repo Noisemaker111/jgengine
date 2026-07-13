@@ -31,17 +31,16 @@ export function AssetBrowser({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1">
-      <div className="font-medium text-neutral-300">Assets</div>
       <input
         type="search"
         placeholder="Search assets…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        className="rounded border border-white/10 bg-black/40 px-2 py-1 text-neutral-100"
+        className="rounded-md border border-white/10 bg-black/40 px-2.5 py-1.5 text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-cyan-400/60 focus:bg-black/60"
       />
       <div className="min-h-0 flex-1 space-y-0.5 overflow-auto pr-1">
         {filtered.map((entry) => (
-          <div key={entry.id} className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-white/10">
+          <div key={entry.id} className="group flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-white/[0.06]">
             <div className="min-w-0 flex-1 truncate">
               <div className="truncate text-neutral-100">{entry.label}</div>
               <div className="truncate text-[10px] text-neutral-500">
@@ -50,7 +49,7 @@ export function AssetBrowser({
             </div>
             <button
               type="button"
-              className="shrink-0 rounded bg-cyan-800/70 px-1.5 py-0.5 hover:bg-cyan-700"
+              className="shrink-0 rounded-md bg-cyan-500/20 px-2 py-0.5 text-cyan-200 opacity-0 ring-1 ring-inset ring-cyan-400/30 transition-all hover:bg-cyan-500/30 focus-visible:opacity-100 group-hover:opacity-100"
               onClick={() => onPlace(entry)}
             >
               Place
@@ -61,7 +60,7 @@ export function AssetBrowser({
       </div>
       <button
         type="button"
-        className="rounded bg-white/10 px-2 py-1 hover:bg-white/20"
+        className="rounded-md bg-white/[0.05] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10 hover:text-neutral-100"
         onClick={() => {
           const id = `marker_${Date.now().toString(36)}`;
           const focus = null;
