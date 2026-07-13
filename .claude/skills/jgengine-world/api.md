@@ -1207,15 +1207,19 @@
 ## @jgengine/core/world/geometry
 
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
+- `Ellipse` (interface): interface Ellipse — An axis-aligned ellipse: `center` with semi-axes `radiusX` and `radiusY`.
 - `Footprint` (interface): interface Footprint — ⚠ undocumented
 - `MoveOptions` (interface): interface MoveOptions — ⚠ undocumented
 - `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented
 - `aabbContains` (function): function aabbContains(outer: Aabb, inner: Aabb): boolean — ⚠ undocumented
 - `aabbOverlap` (function): function aabbOverlap(a: Aabb, b: Aabb): boolean — ⚠ undocumented
 - `clampToAabb` (function): function clampToAabb(point: Vec2, aabb: Aabb): Vec2 — ⚠ undocumented
+- `clampToEllipse` (function): function clampToEllipse(point: Vec2, ellipse: Ellipse): Vec2 — Clamp `point` to the ellipse boundary when it strays outside, else return it unchanged.
+- `ellipseNormal` (function): function ellipseNormal(point: Vec2, ellipse: Ellipse): Vec2 — Outward unit normal of the ellipse at the point nearest `point` — the boundary bounce direction.
 - `expandAabb` (function): function expandAabb(aabb: Aabb, margin: number): Aabb — ⚠ undocumented
 - `footprintAabb` (function): function footprintAabb(center: Vec2, footprint: Footprint, quarterTurns = 0): Aabb — ⚠ undocumented
 - `pointInAabb` (function): function pointInAabb(point: Vec2, aabb: Aabb): boolean — ⚠ undocumented
+- `pointInEllipse` (function): function pointInEllipse(point: Vec2, ellipse: Ellipse): boolean — True when `point` sits inside (or on) the ellipse — the oval-arena containment test.
 - `resolveMove` (function): function resolveMove(from: Vec2, delta: Vec2, blockers: readonly Aabb[], options: MoveOptions = {}): Vec2 — ⚠ undocumented
 - `snapToGrid` (function): function snapToGrid(point: Vec2, size: number): Vec2 — ⚠ undocumented
 
@@ -1385,6 +1389,13 @@
 - `ScatterLayer` (interface): interface ScatterLayer — One placeable class. `item` is an opaque id the caller maps to a mesh/entity.
 - `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `scatterItems` (function): function scatterItems<T>(field: RegionField<T>, area: Aabb, layersFor: (sample: RegionSample<T>) => readonly ScatterLayer[], options: { cell?: number; max?: number; saltKey?: number } = {}): ScatterInstance[] — Deterministically place opaque items across `area`, grounded on a region field. For each grid cell it asks `layersFor` which items may appear in that region and rolls one against their densities. The engine never interprets `item` — a game maps it to a mesh or entity. Content scatter (region-driven density) as opposed to `scatter` in `./scatter`, which is renderer-free geometric point distribution.
+
+## @jgengine/core/world/segment
+
+- `CircleSegmentHit` (interface): interface CircleSegmentHit — A resolved circle-vs-segment contact.
+- `ClosestOnSegment` (interface): interface ClosestOnSegment — Closest point on segment `a`→`b` to `p`, and the clamped parameter `t` in [0,1] where it lies.
+- `circleVsSegment` (function): function circleVsSegment(center: Vec2, radius: number, a: Vec2, b: Vec2, thickness = 0): CircleSegmentHit | null — Circle (center + `radius`) against a capsule segment `a`→`b` of half-thickness `thickness` (0 for a thin wall). Returns the contact — surface normal, penetration depth, contact point, and the separated center — or `null` when they do not overlap. Endpoints are rounded (the segment is a capsule), so a ball never catches on a corner. Reflect the velocity across `normal` for the bounce; the pure geometry every 2D ball game (pinball, breakout, air hockey) reimplemented per wall, bumper, and paddle.
+- `closestPointOnSegment` (function): function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): ClosestOnSegment — Closest point on the segment `a`→`b` to point `p`, with the clamped parameter `t` (0 at `a`, 1 at `b`).
 
 ## @jgengine/core/world/streets
 

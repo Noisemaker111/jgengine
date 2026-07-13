@@ -411,6 +411,15 @@
 - `AUTO_ONE_SHOT_EVENTS` (const): const AUTO_ONE_SHOT_EVENTS: readonly ["hit", "death"] — The two one-shot events the shell fires automatically for an entity, from `combat.hitReaction` and `entity.died`.
 - `resolveOneShotClip` (function): function resolveOneShotClip(oneShots: Record<string, string | readonly string[]> | undefined, event: string, roll: number): string | null — Resolves the clip name a one-shot `event` should play from a model's `animation.oneShots` map, or `null` if the event isn't bound. A `string[]` binding picks a variant by `roll` (a value in `[0, 1)`), so combat can vary attack swings. Pure and deterministic given `roll` — the shell supplies the randomness.
 
+## @jgengine/core/game/objectives
+
+- `ObjectiveStatus` (interface): interface ObjectiveStatus — Evaluated state of one {@link ThresholdObjective} against a current metric value.
+- `ObjectiveSummary` (interface): interface ObjectiveSummary — Rolled-up state across a set of objectives.
+- `ThresholdDirection` (type): type ThresholdDirection = "atLeast" | "atMost" — Whether a metric must reach up to a target or stay down under it.
+- `ThresholdObjective` (interface): interface ThresholdObjective — A live-metric goal: hit `target` from the required `direction` (defaults to `atLeast`).
+- `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
+- `evaluateObjectives` (function): function evaluateObjectives(objectives: readonly ThresholdObjective[], values: Readonly<Record<string, number>> | ((id: string) => number)): ObjectiveSummary — Evaluate every objective against current metric values (a lookup map or function) and roll them up into a met-count, completion flag, and mean progress — the brief/charter panel every sim renders.
+
 ## @jgengine/core/game/ping
 
 - `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
@@ -520,8 +529,11 @@
 - `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — ⚠ undocumented
 - `everyoneFinishes` (function): function everyoneFinishes(): RaceWinCondition — Every non-eliminated racer must finish.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
+- `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
 - `lastStanding` (function): function lastStanding(): RaceWinCondition — Destruction-derby last-man-standing: ends when at most one racer is left un-eliminated.
+- `parDelta` (function): function parDelta(splits: readonly number[], reference: readonly number[]): number[] — Elementwise delta of a cumulative split book against a `reference` book (a personal best or par lap): positive means behind the reference at that checkpoint. Compared up to the shorter length — the `+0.3s` / `−1.2s` gap every racing HUD shows against its ghost.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
+- `splitSegments` (function): function splitSegments(splits: readonly number[], start = 0): number[] — Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`): `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
 - `topK` (function): function topK(k: number): RaceWinCondition — Round-cut (Fall Guys): the first `k` finishers qualify; race resolves the moment `k` cross.
 
 ## @jgengine/core/game/recordBook
@@ -949,6 +961,17 @@
 - `pieceCells` (function): function pieceCells<TShape extends string>(table: ShapeTable<TShape>, piece: FallingPiece<TShape>): readonly (readonly [number, number])[] — ⚠ undocumented
 - `pieceCollides` (function): function pieceCollides<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>): boolean — ⚠ undocumented
 - `stepLockDelay` (function): function stepLockDelay(state: LockDelayState, grounded: boolean, dt: number): { state: LockDelayState; locked: boolean } — ⚠ undocumented
+
+## @jgengine/core/puzzle/nonogram
+
+- `NonogramCell` (type): type NonogramCell = "unknown" | "filled" | "empty" — A cell in a nonogram line: not yet determined, painted, or ruled out.
+- `NonogramClue` (type): type NonogramClue = readonly number[] — A line clue — the lengths of its consecutive filled runs, in order.
+- `NonogramSolution` (type): type NonogramSolution = readonly (readonly boolean[])[] — A solved grid, row-major; `true` is a filled cell.
+- `NonogramSolveResult` (interface): interface NonogramSolveResult — Outcome of {@link solveNonogram}: the deduced board and whether propagation fully determined it.
+- `deriveClues` (function): function deriveClues(solution: NonogramSolution): { rows: number[][]; cols: number[][] } — Row and column clues derived from a solution grid — the puzzle a solved board poses.
+- `runLengths` (function): function runLengths(line: readonly boolean[]): number[] — Run lengths of the filled cells in a boolean line — the clue a solved line yields.
+- `solveLine` (function): function solveLine(line: readonly NonogramCell[], clue: NonogramClue): NonogramCell[] | null — Constraint-propagate one line against its `clue`: intersect every clue-consistent arrangement, forcing a cell `filled` when it is filled in all of them and `empty` when empty in all, leaving the rest `unknown`. Returns the tightened line, or `null` on contradiction (no arrangement fits the current cells) — the per-line deduction step at the heart of every nonogram/picross solver.
+- `solveNonogram` (function): function solveNonogram(rows: readonly NonogramClue[], cols: readonly NonogramClue[]): NonogramSolveResult — Solve a nonogram from its row and column clues by iterated line propagation until the board stops changing. `solved` is true iff the board is fully determined without guessing — the standard test for whether a nonogram is fair. Returns `solved: false` with a partial board on contradiction or ambiguity.
 
 ## @jgengine/core/random/nameGen
 
