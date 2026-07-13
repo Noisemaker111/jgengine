@@ -154,3 +154,7 @@ check-types → 445 stray compiled .js/.d.ts sitting beside src (tsgo run outsid
 2026-07-12T20:40:00.000Z — gpt-5.6-thinking — ChatGPT
 
 expensive frontier session reacted to every worker/task/GitHub transition with phase recaps, wait promises, PR-open/merge narration, CI estimates, and mid-flight papercut housekeeping → dozens of unnecessary frontier turns and a git race; cap delegated work at one optional launch line plus one terminal result, treat progress events as non-conversational, and keep the entire serial ship motion inside one cheap worker return
+
+2026-07-13T03:17:31.731Z — claude-opus-4-8 — Claude
+
+gen:skill-api errored 'ts-morph missing; finish bun install first' but a fresh 'bun install' reported no changes/already complete — the message steered a wasted re-run when node_modules was actually fine (stale dist was the real cause via ensure-ready)

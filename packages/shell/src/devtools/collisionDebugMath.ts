@@ -14,7 +14,7 @@ import {
   type SceneRaycastApi,
   type SceneRaycastHit,
 } from "@jgengine/core/scene/sceneRaycast";
-import { resolveShot, type ShotOriginPolicy } from "@jgengine/core/combat/shotOrigin";
+import { convergeShot, resolveShot, type ShotOriginPolicy } from "@jgengine/core/combat/shotOrigin";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import type { CollisionDebugLayers } from "./collisionDebug";
 import { aimProbeNeeded, colliderScanNeeded } from "./collisionDebug";
@@ -203,16 +203,25 @@ export function computeAimLaser(input: ComputeAimLaserInput): AimLaserDebug | nu
   if (!aimProbeNeeded(input.layers)) {
     return null;
   }
-  const resolved = resolveShot(
-    {
-      positionOf: input.positionOf,
-      rotationYOf: input.rotationYOf,
-      collidersOf: input.collidersOf,
-    },
-    input.from,
-    input.aim,
-    input.originPolicy ?? { kind: "eye" },
-  );
+  const shotDeps = {
+    positionOf: input.positionOf,
+    rotationYOf: input.rotationYOf,
+    collidersOf: input.collidersOf,
+  };
+  const policy = input.originPolicy ?? { kind: "converge" };
+  const resolved =
+    policy.kind === "converge"
+      ? convergeShot(shotDeps, input.from, input.aim, input.maxDistance, (origin, direction) => {
+          input.counters !== undefined && (input.counters.queries += 1);
+          const sightHits = input.sceneRaycast.raycastAll({
+            origin,
+            direction,
+            maxDistance: input.maxDistance,
+            excludeInstanceIds: [input.from],
+          });
+          return hitsUntilBlocked(sightHits)[0]?.point ?? null;
+        }, policy.muzzle)
+      : resolveShot(shotDeps, input.from, input.aim, policy);
   if (resolved === null) return null;
   input.counters !== undefined && (input.counters.queries += 1);
   const all = input.sceneRaycast.raycastAll({
