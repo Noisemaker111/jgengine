@@ -145,6 +145,29 @@ export function importEditorDocumentJson(raw: string): EditorDocument {
   return normalizeEditorLayers(parsed);
 }
 
+function upsertById<T extends { id: string }>(base: readonly T[], overlay: readonly T[]): T[] {
+  const overlayIds = new Set(overlay.map((item) => item.id));
+  return [...base.filter((item) => !overlayIds.has(item.id)), ...overlay];
+}
+
+/**
+ * Applies a saved editor document on top of a game's derived layers: overlay objects replace
+ * same-id base objects and new overlay objects are appended, so editor saves win over source
+ * data until they are folded back in.
+ */
+export function applyEditorDocumentOverlay(
+  base: EditorDocument,
+  overlay: EditorDocument,
+): EditorDocument {
+  return {
+    version: 1,
+    markers: upsertById(base.markers, overlay.markers),
+    volumes: upsertById(base.volumes, overlay.volumes),
+    paths: upsertById(base.paths, overlay.paths),
+    annotations: upsertById(base.annotations, overlay.annotations),
+  };
+}
+
 /** Computes the world-space min/max bounds spanning every object in a document, or null if empty. */
 export function editorDocumentBounds(doc: EditorDocument): {
   min: { x: number; y: number; z: number };

@@ -205,7 +205,35 @@ function KindColorFields({
   );
 }
 
-/** The editor's dockable workspace chrome: hierarchy, assets, inspector, and toolbar. */
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+function useDocumentSave(
+  session: EditorSession,
+  save: ((json: string) => Promise<{ ok: boolean; path?: string; error?: string }>) | undefined,
+) {
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const savedDocRef = useRef(session.getState().document);
+  const dirty = session.getState().document !== savedDocRef.current;
+  const doSave = () => {
+    if (save === undefined || saveState === "saving") return;
+    const document = session.getState().document;
+    setSaveState("saving");
+    void save(session.exportJson(true)).then((result) => {
+      if (result.ok) {
+        savedDocRef.current = document;
+        setSaveError(null);
+        setSaveState("saved");
+      } else {
+        setSaveError(result.error ?? "save failed");
+        setSaveState("error");
+      }
+    });
+  };
+  return { available: save !== undefined, dirty, saveState, saveError, doSave };
+}
+
+/** The editor's dockable workspace chrome: hierarchy, assets, inspector, toolbar, and save. */
 export function EditorChrome({
   gameId,
   session,
@@ -213,6 +241,7 @@ export function EditorChrome({
   assets,
   ui,
   baselineJson,
+  save,
 }: {
   gameId: string;
   session: EditorSession;
@@ -220,6 +249,7 @@ export function EditorChrome({
   assets: readonly EditorAssetEntry[];
   ui: EditorUiStore;
   baselineJson?: string;
+  save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
 }) {
   const [, setTick] = useState(0);
   const [activePanel, setActivePanel] = useState<WorkspacePanel>("outliner");
@@ -249,6 +279,9 @@ export function EditorChrome({
   const perf = usePerfSample(api);
   const uiState = ui.getState();
   const gizmoMode = uiState.gizmoMode;
+  const docSave = useDocumentSave(session, save);
+  const docSaveRef = useRef(docSave);
+  docSaveRef.current = docSave;
 
   const outlinerGroups = useMemo(() => buildOutlinerGroups(state.document), [state.document]);
   const visibleOutlinerGroups = useMemo(
@@ -294,6 +327,11 @@ export function EditorChrome({
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        docSaveRef.current.doSave();
+        return;
+      }
       const target = event.target;
       const isTyping =
         target instanceof HTMLInputElement ||
@@ -598,6 +636,29 @@ export function EditorChrome({
               event.target.value = "";
             }}
           />
+          {docSave.available ? (
+            <button
+              type="button"
+              className={`rounded px-3 py-1 font-medium ${
+                docSave.saveState === "error"
+                  ? "bg-rose-800/80 hover:bg-rose-700"
+                  : docSave.dirty
+                    ? "bg-cyan-600 text-white hover:bg-cyan-500"
+                    : "bg-white/5 text-neutral-400 hover:bg-white/10"
+              }`}
+              onClick={docSave.doSave}
+              disabled={docSave.saveState === "saving"}
+              title={docSave.saveError ?? "Write the scene to Games/<id>/src/editor.scene.json (Ctrl+S)"}
+            >
+              {docSave.saveState === "saving"
+                ? "Saving…"
+                : docSave.saveState === "error"
+                  ? "Save failed"
+                  : docSave.dirty
+                    ? "Save"
+                    : "Saved ✓"}
+            </button>
+          ) : null}
           <button type="button" className="rounded bg-cyan-700/80 px-2 py-1 hover:bg-cyan-600" onClick={() => { downloadText(`${gameId}-editor.json`, session.exportJson(true)); notify(`Exported ${gameId}-editor.json`); }}>Export</button>
           <button type="button" className="rounded bg-white/5 px-2 py-1 hover:bg-white/10" title="Copy document JSON to clipboard" onClick={copyExportJson}>⧉</button>
           <button type="button" className={`rounded px-2 py-1 ${helpOpen ? "bg-white/15" : "bg-white/5 hover:bg-white/10"}`} title="Keyboard shortcuts (?)" onClick={() => setHelpOpen((value) => !value)}>?</button>

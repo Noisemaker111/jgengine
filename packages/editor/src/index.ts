@@ -1,4 +1,4 @@
-export { EditorApp, type EditorAppProps } from "./EditorApp";
+export { EditorApp, type EditorAppProps, type EditorSaveFn } from "./EditorApp";
 export { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
 export { EditorChrome } from "./EditorChrome";
 export { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";

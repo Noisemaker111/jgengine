@@ -22,6 +22,7 @@ export {
   WELL_KNOWN_VOLUME_KINDS,
 } from "./types";
 export {
+  applyEditorDocumentOverlay,
   cloneEditorDocument,
   createEmptyEditorDocument,
   editorDocumentBounds,

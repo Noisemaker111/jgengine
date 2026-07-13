@@ -15,6 +15,7 @@ import {
   type LongFrameEvent,
   type PhaseStats,
 } from "@jgengine/core/devtools/devtools";
+import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { bindingLabel, type ActionCodes, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -815,6 +816,83 @@ function deltaSnippet(discovered: readonly DiscoveredEntry[]): string | null {
   return parts.join("\n\n");
 }
 
+function tunableDeltas(
+  discovered: readonly DiscoveredEntry[],
+): { table: string; key: string; value: unknown }[] {
+  const overrides = devtools.overrides.export();
+  const discoveredById = new Map(discovered.map((entry) => [entry.id, entry]));
+  const deltas: { table: string; key: string; value: unknown }[] = [];
+  for (const [name, value] of Object.entries(overrides.values)) {
+    const entry = discoveredById.get(name);
+    if (entry !== undefined) deltas.push({ table: entry.table, key: entry.key, value });
+  }
+  return deltas;
+}
+
+type SourceSaveState = "idle" | "saving" | "saved" | "partial" | "error";
+
+function SaveToSourceButton({ discovered }: { discovered: readonly DiscoveredEntry[] }) {
+  const [state, setState] = useState<SourceSaveState>("idle");
+  const [detail, setDetail] = useState<string | null>(null);
+  const endpoint = getSaveEndpoint();
+  if (endpoint === null) return null;
+  const deltas = tunableDeltas(discovered);
+  const save = () => {
+    if (deltas.length === 0 || state === "saving") return;
+    setState("saving");
+    void fetch(endpoint.url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "tunables", gameId: endpoint.gameId, deltas }),
+    })
+      .then(async (response) => {
+        const result = (await response.json()) as {
+          ok: boolean;
+          applied?: number;
+          skipped?: readonly { table: string; key: string; reason: string }[];
+          error?: string;
+        };
+        if (!result.ok) {
+          setState("error");
+          setDetail(result.error ?? "save failed");
+          return;
+        }
+        const skipped = result.skipped ?? [];
+        if (skipped.length > 0) {
+          setState("partial");
+          setDetail(skipped.map((entry) => `${entry.table}/${entry.key}: ${entry.reason}`).join("\n"));
+        } else {
+          setState("saved");
+          setDetail(null);
+        }
+        setTimeout(() => setState("idle"), 2500);
+      })
+      .catch((error: unknown) => {
+        setState("error");
+        setDetail(error instanceof Error ? error.message : String(error));
+      });
+  };
+  return (
+    <button
+      type="button"
+      disabled={deltas.length === 0}
+      className="rounded border border-neutral-600 px-2 py-0.5 text-cyan-300 hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-transparent"
+      onClick={save}
+      title={detail ?? "Write changed values back into the game's source files"}
+    >
+      {state === "saving"
+        ? "Saving…"
+        : state === "saved"
+          ? "Saved to source"
+          : state === "partial"
+            ? "Saved (some skipped)"
+            : state === "error"
+              ? "Save failed"
+              : `Save to source${deltas.length > 0 ? ` (${deltas.length})` : ""}`}
+    </button>
+  );
+}
+
 function TunePanel({ gameName }: { gameName: string }) {
   const [deltasCopied, setDeltasCopied] = useState(false);
   const [query, setQuery] = useState("");
@@ -885,6 +963,7 @@ function TunePanel({ gameName }: { gameName: string }) {
         >
           {deltasCopied ? "Copied" : "Copy deltas"}
         </button>
+        <SaveToSourceButton discovered={allDiscovered} />
         <input
           type="text"
           value={query}
