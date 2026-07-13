@@ -1,6 +1,6 @@
 ---
 name: fan-out
-description: Delegate substantial mechanical legs cheaply. Cost first — a worker must save more than it costs.
+description: Cost-first delegation — workers only for substantial mechanical legs.
 ---
 
 # Cheap workers do the dumb work — when there's enough of it
