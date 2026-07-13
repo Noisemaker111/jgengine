@@ -1626,6 +1626,7 @@ export function GamePlayerShell({
       }),
     [playable],
   );
+  const touchStyle = useTouchStyle(settingsStore, touchScheme?.style ?? DEFAULT_TOUCH_STYLE);
   const { coarsePointer, portrait, compact } = useDisplayProfile();
   const touchSink = useMemo(
     () => ({ onCodeDown: (code: string) => tracker.handleDown(code), onCodeUp: (code: string) => tracker.handleUp(code) }),
@@ -2122,7 +2123,6 @@ export function GamePlayerShell({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
-  const touchStyle = useTouchStyle(settingsStore, touchScheme?.style ?? DEFAULT_TOUCH_STYLE);
   const dockMounted =
     !poster &&
     !orientationGate &&
