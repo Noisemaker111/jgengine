@@ -174,3 +174,7 @@ assets pull in cloud sandbox → bun fetch dies with 'socket connection was clos
 2026-07-13T16:37:20.805Z — Sonnet 5 — Claude
 
 ship motion: gen:skill-api before bun install/build produced spurious api.md diffs (removed exports) that silently reverted after gate's build step — re-run gen:skill-api after build, not before
+
+2026-07-13T21:16:35.470Z — sonnet — Claude
+
+resumed worker twice for GamePlayerShell fix ship motion, kept returning 'waiting on sub-workers' as its result without finishing → needed explicit 'do not spawn sub-agents, finish it yourself' brief
