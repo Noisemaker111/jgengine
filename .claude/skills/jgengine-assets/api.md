@@ -21,6 +21,7 @@
 - `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material: color, normal, roughness, ao, or displacement.
 - `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`displacement` files may be absent from a rare pack.
 - `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
+- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
@@ -35,7 +36,7 @@
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
+- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
 - `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
@@ -71,7 +72,7 @@
 
 ## @jgengine/assets/catalogs/starter
 
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
+- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
 
 ## @jgengine/assets/cli/paths
 
@@ -91,6 +92,7 @@
 
 ## @jgengine/assets/dims
 
+- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 
 ## @jgengine/assets/download
@@ -141,6 +143,7 @@
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" — What a source's archive contains: GLB models (default) or one PBR material's texture maps.
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
+- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
