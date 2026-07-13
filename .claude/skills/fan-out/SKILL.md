@@ -10,7 +10,7 @@ Cheap worker: substantial mechanical legs, on the cheapest tier that fits.
 
 **Cost first — the spawn threshold.** Every worker pays a fixed overhead: its own CLAUDE.md load, orientation, and report. Delegate only when the leg's work clearly exceeds that overhead — a full gate run, a multi-file sweep, a long build. A couple of quick calls, a small doc ship, a single command, or *waiting for anything* stays inline in this session. A whole conversation should use a handful of workers, not one per action; five subagents for a few small edits is the failure mode this rule exists to stop.
 
-**Never spawn a worker to wait.** CI merges arrive as webhook events; run verdicts are one inline `bun -e 'await Bun.sleep(60000)'` (bare `sleep` is harness-blocked) followed by reading the Actions runs. Green checks happen in this session, always.
+**Never wait on CI — not with a worker, not inline.** The PR subscription pushes failures into the chat as events; silence is green. Ship, subscribe, end the turn.
 
 **Set `model` explicitly on every worker call.** Omitting it makes the worker inherit the session model. Sonnet for mechanical legs — lint, typecheck, test, build, shoot, the verify ladder, a substantial ship motion. Opus for scouts and legs needing real judgment. Haiku for pure script/process execution. Fable never runs a leg — a Sonnet grinding a too-hard task escalates to Opus, not upward.
 

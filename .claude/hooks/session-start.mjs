@@ -130,13 +130,13 @@ emit(
   [
     `Cloud session on branch "${branch}" (default: ${defaultBranch}).`,
     `Flow: commit here, push with git push -u origin ${branch}, open a PR via the GitHub MCP ` +
-      `tools (ready for review), subscribe_pr_activity on it, then confirm inline ` +
-      `the PR's checks go green (PRs run only the ~30s quick job; the heavy suite runs on ` +
-      `${defaultBranch} post-merge) — one foreground Bash wait, bun -e 'await Bun.sleep(60000)' ` +
-      `(bare sleep is harness-blocked, backgrounded waits die with the turn), then read the ` +
-      `runs in the same turn. NEVER merge — no merge_pull_request, no enable_pr_auto_merge. ` +
-      `The user merges PRs themselves by asking in chat; the PR sits parked until then. ` +
-      `Green → report the PR link + stop. Red → fix on the same branch, push, re-check. ` +
+      `tools (ready for review), subscribe_pr_activity on it, report the PR link, and END ` +
+      `THE TURN. Never wait or poll on CI — the subscription delivers failures as events, ` +
+      `silence is green (PRs run only the ~30s quick job). NEVER merge — no ` +
+      `merge_pull_request, no enable_pr_auto_merge. The user merges PRs themselves by asking ` +
+      `in chat; the PR sits parked until then, and a user-requested merge ends at "merged" — ` +
+      `no post-merge babysitting of ${defaultBranch}. A CI failure event → fix on the same ` +
+      `branch, push, end turn. ` +
       `New task in the same session → fresh claude/... branch off origin/${defaultBranch}, ` +
       `separate PR; never stack it on a parked branch. Never arm send_later check-ins or ` +
       `scheduled remote sessions for CI. No worktrees — every session is its own isolated ` +
