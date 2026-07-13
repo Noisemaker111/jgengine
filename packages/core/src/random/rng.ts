@@ -8,6 +8,7 @@ function hashSeed(seed: string | number): number {
   return h >>> 0;
 }
 
+/** Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence. */
 export function seededRng(seed: string | number): () => number {
   let a = hashSeed(seed) >>> 0;
   return () => {
@@ -19,6 +20,7 @@ export function seededRng(seed: string | number): () => number {
   };
 }
 
+/** Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name. */
 export function seededStreams(seed: string | number): (stream: string) => () => number {
   const base = typeof seed === "number" ? seed.toString() : seed;
   return (stream) => seededRng(`${base}:${stream}`);

@@ -57,6 +57,7 @@ export type ActionCodes<TCode extends string = string> =
   | readonly TCode[]
   | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number };
 
+/** Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. */
 export type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record<
   TAction,
   ActionCodes<TCode>

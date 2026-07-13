@@ -65,13 +65,21 @@
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — ⚠ undocumented
 - `SpawnDirectorState` (interface): interface SpawnDirectorState — ⚠ undocumented
 - `SpawnEntry` (interface): interface SpawnEntry — ⚠ undocumented
+- `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
+- `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
 - `SpawnRequest` (interface): interface SpawnRequest — ⚠ undocumented
 - `WaveManifest` (interface): interface WaveManifest — ⚠ undocumented
 - `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
 - `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
-- `pickSpawnPoint` (function): function pickSpawnPoint(points: readonly NavPoint[], players: readonly NavPoint[], options: { roll: number; bias?: number }): NavPoint | null — ⚠ undocumented
+- `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
 - `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — ⚠ undocumented
+
+## @jgengine/core/ai/spawnPoint
+
+- `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
+- `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
+- `selectSpawnPoint` (function): function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a spawn point by game intent while keeping weighting mechanics internal.
 
 ## @jgengine/core/ai/threat
 
@@ -157,7 +165,7 @@
 - `ContextTargetKind` (type): type ContextTargetKind = "entity" | "object" — ⚠ undocumented
 - `ContextVerb` (interface): interface ContextVerb — One right-click verb: a label plus the command it dispatches (walk-then-act supported by args).
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
-- `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — ⚠ undocumented
+- `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
 
 ## @jgengine/core/interaction/proximityPrompt
@@ -1136,26 +1144,26 @@
 - `WaterEnvironmentDescriptor` (type): type WaterEnvironmentDescriptor = OceanEnvironmentDescriptor — ⚠ undocumented
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
 - `WorldBounds` (interface): interface WorldBounds — ⚠ undocumented
-- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — ⚠ undocumented
+- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
-- `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — ⚠ undocumented
-- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — ⚠ undocumented
-- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — ⚠ undocumented
-- `flat` (function): function flat(): WorldFeature — ⚠ undocumented
-- `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — ⚠ undocumented
+- `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
+- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
+- `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
 - `island` (function): function island(config: TerrainIslandConfig): TerrainIslandDescriptor — ⚠ undocumented
-- `ocean` (function): function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor — ⚠ undocumented
+- `ocean` (function): function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor — Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
 - `pad` (function): function pad(config: PadEnvironmentConfig): PadEnvironmentDescriptor — ⚠ undocumented
 - `padFlattenMasks` (function): function padFlattenMasks(pads: readonly PadEnvironmentDescriptor[]): readonly TerrainFlattenMask[] — Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it. Elevated pads (absolute `elevation`) float free and carve nothing.
-- `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — ⚠ undocumented
-- `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — ⚠ undocumented
+- `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
+- `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, and wind.
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
 - `sky` (function): function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor — ⚠ undocumented
-- `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — ⚠ undocumented
-- `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — ⚠ undocumented
-- `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — ⚠ undocumented
-- `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — ⚠ undocumented
+- `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, and wind.
+- `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
+- `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
+- `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
 
 ## @jgengine/core/world/fog
 

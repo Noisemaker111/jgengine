@@ -8,6 +8,7 @@ import { createEntityStore, type EntityStore } from "../scene/entityStore";
 import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
 
+/** World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step. */
 export interface PhysicsConfig {
   gravity?: number;
   jumpVelocity?: number;
@@ -15,6 +16,7 @@ export interface PhysicsConfig {
   projectileObstacles?: boolean;
 }
 
+/** Shape of one named inventory a game declares — slot count, accepted item types, HUD binding. */
 export interface InventoryDeclaration {
   slots: number;
   hud?: string;
@@ -24,6 +26,7 @@ export interface InventoryDeclaration {
   tier?: StorageTier;
 }
 
+/** Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options. */
 export type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown };
 
 /** Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks. */
@@ -32,6 +35,7 @@ export interface LoopPlayer {
   isNew: boolean;
 }
 
+/** Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave. */
 export interface GameLoop<TContext = unknown> {
   onInit?(ctx: TContext): void;
   /** Once per join. `player` identifies the joiner in a hosted world; single-player callers may omit it. */
@@ -66,6 +70,7 @@ export interface GameFeatures {
   players?: boolean;
 }
 
+/** Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems. */
 export interface GameDefinition<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
@@ -90,6 +95,7 @@ export interface GameDefinition<
   loop?: GameLoop<any>;
 }
 
+/** Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional. */
 export type GameDefinitionConfig<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
@@ -97,6 +103,7 @@ export type GameDefinitionConfig<
   assets?: AssetCatalog<TAssetRef>;
 };
 
+/** Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`. */
 export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
   config: GameDefinitionConfig<TAssetRef, TMultiplayer>,
 ): GameDefinition<TAssetRef, TMultiplayer> {

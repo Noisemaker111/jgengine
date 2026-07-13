@@ -1,3 +1,4 @@
+/** One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds. */
 export interface LootEntry {
   item?: string;
   currency?: string;
@@ -8,6 +9,7 @@ export interface LootEntry {
   chance?: number;
 }
 
+/** A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries. */
 export interface LootTableDef {
   id: string;
   rolls?: number;
@@ -20,6 +22,7 @@ export interface LootTableDef {
   entries: LootEntry[];
 }
 
+/** A resolved loot outcome — one item or currency grant with its rolled count. */
 export interface Drop {
   item?: string;
   currency?: string;
@@ -118,6 +121,7 @@ export function createLootRegistry(): LootRegistry {
   };
 }
 
+/** Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}. */
 export function lootTable(def: LootTableDef): LootTableDef {
   assertValidDef(def);
   return def;

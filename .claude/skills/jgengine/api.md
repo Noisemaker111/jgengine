@@ -112,6 +112,41 @@
 - `splitProfilePlayer` (function): function splitProfilePlayer(player: RuntimePlayerRow): { persistent: RuntimePlayerRow; session: Record<string, unknown>; } — ⚠ undocumented
 - `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 
+## @jgengine/core/authoring
+
+- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
+- `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
+- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems.
+- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional.
+- `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
+- `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
+- `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
+- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds.
+- `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
+- `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
+- `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
+- `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
+- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
+- `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
+- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
+- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`.
+- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
+- `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
+- `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
+- `ocean` (function): function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor — Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
+- `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
+- `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, and wind.
+- `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
+- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+- `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
+- `selectSpawnPoint` (function): function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a spawn point by game intent while keeping weighting mechanics internal.
+- `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, and wind.
+- `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
+- `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
+- `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
+
 ## @jgengine/core/cartridge/runtime
 
 - `CartridgeRuntime` (interface): interface CartridgeRuntime — ⚠ undocumented
