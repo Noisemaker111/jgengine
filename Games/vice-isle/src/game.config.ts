@@ -25,6 +25,7 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
+  capture: { play: ["game.start"] },
   prompts,
   renderEntity,
   renderObject,

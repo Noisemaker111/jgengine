@@ -605,6 +605,16 @@ export interface MovementCommitFrame {
   ctx: GameContext;
 }
 
+/** How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`. */
+export interface GameCaptureConfig {
+  /** Commands run (in order, via `ctx.game.commands.run`) right after boot when a capture host requests the play screen — the same commands the start-menu buttons dispatch. A bare string runs with a default input; the object form carries the input a command needs (e.g. `[{ name: "class.select", input: { classId: "siren" } }, "startRun"]`). A name the game never registers fails the capture loudly instead of shipping a menu screenshot. */
+  play?: readonly (string | { name: string; input?: unknown })[];
+  /** Named capture states beyond live gameplay — any screen worth screenshotting on demand (`lobby`, `store`, `game_over`), each mapping to the command sequence that reaches it from boot. `shoot <game> --state <name>` runs that sequence and captures whatever is on screen — menus included, no live-play guard. An unknown state name fails the capture with the declared list. */
+  states?: Record<string, readonly (string | { name: string; input?: unknown })[]>;
+  /** Extra milliseconds the capture host waits after `play` commands before taking the play-mode screenshot — cover an intro cinematic or spawn-in fade. Default 2500. */
+  settleMs?: number;
+}
+
 export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> {
   game: GameDefinition;
   content: GameContextContent;
@@ -634,6 +644,8 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   prompts?: (ctx: GameContext) => readonly PositionedPrompt[];
   /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
+  /** Screenshot-host recipe for reaching live gameplay past a start menu (`shoot --mode play` runs `capture.play` automatically). Any game with a start/title screen declares this. */
+  capture?: GameCaptureConfig;
   /** Cast/receive shadows across the scene (R3F Canvas shadow pass). Default true. */
   shadows?: boolean;
   /** Pointer-driven input: click-to-move, box-select, right-click verbs, cursor aim (#22/#30/#31). */

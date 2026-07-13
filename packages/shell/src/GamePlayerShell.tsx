@@ -65,7 +65,7 @@ import { useDisplayProfile } from "@jgengine/react/display";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
-import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { useSceneEntityIds, useSceneObjectIds, useGamePhase, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
@@ -276,6 +276,14 @@ function pointerContextMenu(ctx: GameContext, playable: PlayableGame, hit: { poi
     const verbs = ctx.scene.object.catalog(hit.object)?.verbs;
     return buildContextMenu({ kind: "object", targetId: hit.object, verbs, point: hit.point });
   }
+  return null;
+}
+
+function GamePhaseStamp() {
+  const { phase } = useGamePhase();
+  useEffect(() => {
+    document.documentElement.dataset.jgPhase = phase;
+  }, [phase]);
   return null;
 }
 
@@ -1896,6 +1904,7 @@ export function GamePlayerShell({
         ) : null}
         <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
           <GameProvider context={ctx}>
+            <GamePhaseStamp />
             <HudViewportProvider
               platforms={playable.platforms}
               config={playable.hudFit}
@@ -2337,6 +2346,7 @@ export function GamePlayerShell({
       ) : null}
       <GameUiErrorBoundary onRuntimeError={reportRuntimeError}>
         <GameProvider context={ctx}>
+          <GamePhaseStamp />
           <HudViewportProvider
             platforms={playable.platforms}
             config={playable.hudFit}

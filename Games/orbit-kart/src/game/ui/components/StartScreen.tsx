@@ -11,7 +11,7 @@ const CONTROLS: readonly { action: string; label: string }[] = [
 
 export function StartScreen({ onStart }: { onStart: () => void }) {
   return (
-    <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-7 bg-[radial-gradient(circle_at_center,rgba(127,216,190,0.16),rgba(5,4,15,0.96)_72%)] px-6 text-center">
+    <div data-jg-menu className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-7 bg-[radial-gradient(circle_at_center,rgba(127,216,190,0.16),rgba(5,4,15,0.96)_72%)] px-6 text-center">
       <div className="flex flex-col items-center gap-2">
         <span className="text-xs font-bold uppercase tracking-[0.5em] text-[#7fd8be]">Retro Space-Cartoon Grand Prix</span>
         <h1 className="text-5xl font-black uppercase tracking-tight text-[#f5f3ff] drop-shadow-[0_0_20px_rgba(255,127,17,0.5)] sm:text-6xl">

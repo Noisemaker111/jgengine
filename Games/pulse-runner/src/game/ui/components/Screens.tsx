@@ -32,7 +32,8 @@ function Panel({ children }: { children: ReactNode }) {
 export function StartScreen() {
   const { commands } = useGame();
   return (
-    <Panel>
+    <div data-jg-menu className="contents">
+      <Panel>
       <div className="flex flex-col gap-1">
         <h1 className="font-serif text-3xl tracking-[0.3em] text-[#f8f4ff]">PULSE RUNNER</h1>
         <p className="text-xs uppercase tracking-[0.35em] text-[#ffd166]">the world is the metronome</p>
@@ -62,7 +63,8 @@ export function StartScreen() {
         keep the pulse
       </button>
       <p className="text-[10px] uppercase tracking-[0.3em] text-[#6d5f8d]">press enter or space to start</p>
-    </Panel>
+      </Panel>
+    </div>
   );
 }
 

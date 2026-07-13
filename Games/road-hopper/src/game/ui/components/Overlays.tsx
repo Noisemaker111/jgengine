@@ -35,7 +35,8 @@ function Shell({ children }: { children: ReactNode }) {
 
 export function StartScreen({ best, onStart }: { best: number; onStart: () => void }) {
   return (
-    <Shell>
+    <div data-jg-menu className="contents">
+      <Shell>
       <div
         className="text-5xl font-black uppercase tracking-[0.18em]"
         style={{ color: PALETTE.hopper, textShadow: "0 0 22px rgba(124,252,90,0.55)" }}
@@ -54,7 +55,8 @@ export function StartScreen({ best, onStart }: { best: number; onStart: () => vo
       <div className="mt-2 text-[11px] uppercase tracking-[0.24em]" style={{ color: PALETTE.textDim }}>
         Arrows / WASD to hop · swipe on touch · P pause
       </div>
-    </Shell>
+      </Shell>
+    </div>
   );
 }
 

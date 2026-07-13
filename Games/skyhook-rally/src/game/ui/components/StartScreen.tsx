@@ -20,7 +20,7 @@ export function StartScreen({ courses, session }: { courses: readonly CourseDef[
   const { commands } = useGame();
 
   return (
-    <div className="pointer-events-auto flex h-full w-full items-center justify-center bg-gradient-to-b from-[#f7c59f]/25 via-transparent to-[#2b2118]/60 px-4">
+    <div data-jg-menu className="pointer-events-auto flex h-full w-full items-center justify-center bg-gradient-to-b from-[#f7c59f]/25 via-transparent to-[#2b2118]/60 px-4">
       <div className={`${panelClass} w-full max-w-xl`}>
         <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#b08d57]">Sunrise Brass Archipelago</p>
         <h1 className="mt-1 text-3xl font-black tracking-tight text-[#f4efe6]">Skyhook Rally</h1>

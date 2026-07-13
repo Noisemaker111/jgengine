@@ -21,6 +21,7 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  capture: { play: ["startRun"] },
   camera: {
     rig: "chase",
     chase: {

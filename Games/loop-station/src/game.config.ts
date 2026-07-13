@@ -10,6 +10,7 @@ import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
+  capture: { play: ["startRun"] },
   name: "Loop Station",
   world,
   physics,

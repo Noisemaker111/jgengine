@@ -72,6 +72,7 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
+  capture: { play: ["run.start"] },
   entitySprites,
   audio: gameAudio,
   objectSounds,

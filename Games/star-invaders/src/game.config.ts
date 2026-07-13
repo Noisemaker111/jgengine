@@ -16,6 +16,7 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  capture: { play: ["fire"] },
   camera: { followEntityId: null },
   touch: false,
   settings: {

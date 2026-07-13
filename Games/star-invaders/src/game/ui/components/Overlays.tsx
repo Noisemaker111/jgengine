@@ -19,7 +19,7 @@ function ScoreRow({ sprite, color, points }: { sprite: readonly string[]; color:
 
 function StartScreen({ onStart, coarsePointer }: { onStart: () => void; coarsePointer: boolean }) {
   return (
-    <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/78 backdrop-blur-[1px]">
+    <div data-jg-menu className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/78 backdrop-blur-[1px]">
       <div className="text-center">
         <div
           className="text-3xl font-black uppercase tracking-[0.35em] text-emerald-300 sm:text-4xl"

@@ -13,7 +13,7 @@ const CONTROLS: readonly { action: string; label: string }[] = [
 
 export function StartScreen({ onStart }: { onStart: () => void }) {
   return (
-    <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-8 bg-[radial-gradient(circle_at_center,rgba(255,45,120,0.16),rgba(10,10,16,0.94)_70%)] px-6 text-center">
+    <div data-jg-menu className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-8 bg-[radial-gradient(circle_at_center,rgba(255,45,120,0.16),rgba(10,10,16,0.94)_70%)] px-6 text-center">
       <SettingsTrigger className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg border border-[#e8e6f0]/15 bg-[#15151d]/85 text-[#e8e6f0] shadow-[0_0_24px_rgba(0,0,0,0.5)] transition-colors hover:bg-[#e8e6f0]/15" />
       <div className="flex flex-col items-center gap-2">
         <span className="text-xs font-bold uppercase tracking-[0.5em] text-[#29d9e0]">Neon Noir Arcade Racer</span>

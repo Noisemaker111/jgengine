@@ -8,7 +8,7 @@ export function useGameStarted(): boolean {
 export function TitleScreen() {
   const { commands } = useGame();
   return (
-    <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#2b1a3f] via-[#c94f7c] to-[#ffb020]">
+    <div data-jg-menu className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#2b1a3f] via-[#c94f7c] to-[#ffb020]">
       <div
         className="absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(#000 1.2px, transparent 1.2px)", backgroundSize: "14px 14px" }}

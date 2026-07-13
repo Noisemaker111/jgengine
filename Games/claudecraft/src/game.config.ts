@@ -58,6 +58,7 @@ const objectStyles = {
 };
 
 export const game = defineGame({
+  capture: { play: [{ name: "class.select", input: { classId: "warrior" } }] },
   name: "World of ClaudeCraft",
   features: { players: true },
   multiplayer: ws({ authority: "server" }),

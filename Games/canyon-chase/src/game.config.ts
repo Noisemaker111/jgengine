@@ -27,6 +27,7 @@ export const game = defineGame({
   },
   renderEntity: renderVehicleEntity,
   objectStyles,
+  capture: { play: ["startRun"], states: { main_menu: [], racing: ["startRun"] } },
   orientation: { mobile: "landscape-required" },
   touch: {
     movement: { axis: "horizontal" },

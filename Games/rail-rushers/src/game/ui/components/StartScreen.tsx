@@ -19,7 +19,7 @@ export interface StartScreenProps {
 
 export function StartScreen({ deadlineSeconds, onStart }: StartScreenProps) {
   return (
-    <div className="pointer-events-auto absolute inset-0 flex items-center justify-center bg-[#1a160f]/92 p-4">
+    <div data-jg-menu className="pointer-events-auto absolute inset-0 flex items-center justify-center bg-[#1a160f]/92 p-4">
       <div className="flex w-full max-w-[560px] flex-col gap-4 rounded-sm border-2 border-[#a98467] bg-[#211d14] p-6 shadow-[0_8px_0_rgba(0,0,0,0.5)]">
         <div className="flex flex-col items-center gap-1 border-b-2 border-[#a98467] pb-3 text-center">
           <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#a98467]">Mountain Rail Network</span>

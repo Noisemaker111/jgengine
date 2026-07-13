@@ -137,7 +137,8 @@ const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario
 const urlParams = new URLSearchParams(window.location.search);
 /** Explicit game only — bare `/` shows the picker so demo is never a silent surprise. */
 const GAME_ID = urlParams.get("game") ?? (import.meta.env.VITE_GAME_ID as string | undefined) ?? null;
-const MODE = urlParams.get("mode") ?? "play";
+const STATE_PARAM = urlParams.get("state");
+const MODE = STATE_PARAM !== null ? "play" : (urlParams.get("mode") ?? "play");
 if (import.meta.env.DEV && GAME_ID !== null) installSaveEndpoint("/__jgengine/save", GAME_ID);
 const PREVIEW = urlParams.get("preview");
 const STAGE = urlParams.get("stage") === "1";
@@ -398,7 +399,13 @@ function DevApp({ gameId }: { gameId: string }) {
       window.removeEventListener("unhandledrejection", onRejection);
     };
   }, []);
-  useEffect(() => armCaptureReady(MODE), []);
+  useEffect(() => {
+    if (MODE === "play" && playable === null && captureArmed()) {
+      setCaptureStatus("preparing");
+      return;
+    }
+    return armCaptureReady(MODE, playable?.capture?.settleMs);
+  }, [playable]);
   useEffect(() => {
     if (!captureArmed()) return;
     if (loadError !== null) setCaptureStatus("error", loadError);
@@ -481,12 +488,38 @@ function DevApp({ gameId }: { gameId: string }) {
   }
   const stageScenario =
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
+  const defaultCommandInput = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
+  let captureRun: readonly (string | { name: string; input?: unknown })[] = [];
+  if (STATE_PARAM !== null) {
+    const stateRun = playable.capture?.states?.[STATE_PARAM];
+    if (stateRun === undefined) {
+      const known = Object.keys(playable.capture?.states ?? {}).sort();
+      const detail =
+        known.length > 0 ? `declared states: ${known.join(", ")}` : "the game declares no capture.states";
+      if (captureArmed()) setCaptureStatus("error", `unknown capture state "${STATE_PARAM}" for ${gameId} — ${detail}`);
+    } else {
+      captureRun = stateRun;
+    }
+  } else if (RUN.length > 0) {
+    captureRun = RUN;
+  } else if (captureArmed() && MODE === "play") {
+    captureRun = playable.capture?.play ?? [];
+  }
   const onContextReady =
-    stageScenario !== undefined || RUN.length > 0
+    stageScenario !== undefined || captureRun.length > 0
       ? (ctx: GameContext) => {
           stageScenario?.(ctx);
-          for (const name of RUN) {
-            if (ctx.game.commands.has(name)) ctx.game.commands.run(name, { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } });
+          for (const entry of captureRun) {
+            const name = typeof entry === "string" ? entry : entry.name;
+            const input = typeof entry === "string" ? defaultCommandInput : (entry.input ?? defaultCommandInput);
+            if (ctx.game.commands.has(name)) {
+              ctx.game.commands.run(name, input);
+            } else if (captureArmed()) {
+              setCaptureStatus(
+                "error",
+                `capture command "${name}" is not registered by ${gameId} — registered commands: ${ctx.game.commands.names().sort().join(", ")}`,
+              );
+            }
           }
         }
       : undefined;

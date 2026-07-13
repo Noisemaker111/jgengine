@@ -19,6 +19,7 @@ export function StartScreen({ snapshot, onStart }: { snapshot: SessionSnapshot; 
   const { coarsePointer } = useDisplayProfile();
   return (
     <div
+      data-jg-menu
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-7 px-6 text-center"
       style={{
         background: `radial-gradient(circle at center, ${PALETTE.skyTeal}22, #0d1b1c 78%)`,

@@ -38,6 +38,7 @@ export function readCaptureQuery(): { game: string; mode: string; device: string
 
 export function setCaptureStatus(status: CaptureStatus, error?: string): void {
   if (typeof document === "undefined") return;
+  if (status !== "error" && document.documentElement.dataset.jgCapture === "error") return;
   document.documentElement.dataset.jgCapture = status;
   if (error !== undefined && error.length > 0) {
     document.documentElement.dataset.jgCaptureError = error.slice(0, 500);
@@ -97,11 +98,22 @@ async function waitPlayFrames(settleMs: number): Promise<void> {
   await delay(settleMs);
 }
 
+function assertNoMenuOnScreen(): void {
+  if (new URLSearchParams(window.location.search).get("state") !== null) return;
+  const phase = document.documentElement.dataset.jgPhase;
+  const menu = phase === "menu" ? document.documentElement : document.querySelector("[data-jg-menu]");
+  if (menu !== null) {
+    throw new Error(
+      "play-mode capture reached ready with a start menu still on screen — declare the game's start commands in PlayableGame.capture.play (or pass --run) so shoot lands on live gameplay",
+    );
+  }
+}
+
 /**
  * When `?capture=1`, marks preparing → ready|error once the runner has an
  * honest frame for the active mode. Host polls `data-jg-capture` / console.
  */
-export function armCaptureReady(mode: string): () => void {
+export function armCaptureReady(mode: string, defaultSettleMs?: number): () => void {
   if (!captureArmed()) return () => undefined;
 
   let cancelled = false;
@@ -119,7 +131,8 @@ export function armCaptureReady(mode: string): () => void {
         await waitForSelector("[data-jg-editor], canvas", 30_000);
         await waitPlayFrames(readCaptureQuery().settle ?? 3_500);
       } else {
-        await waitPlayFrames(readCaptureQuery().settle ?? 2_500);
+        await waitPlayFrames(readCaptureQuery().settle ?? defaultSettleMs ?? 2_500);
+        assertNoMenuOnScreen();
       }
       if (!cancelled) setCaptureStatus("ready");
     } catch (error) {

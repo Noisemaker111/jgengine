@@ -76,7 +76,8 @@ export function RunScreens() {
 
   if (run.status === "ready") {
     return (
-      <ScreenShell>
+      <div data-jg-menu className="contents">
+        <ScreenShell>
         <span className="text-xs font-bold uppercase tracking-[0.5em] text-amber-400">The salvage yard</span>
         <h1 className="mt-2 text-4xl font-black uppercase tracking-[0.1em] text-slate-100 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] sm:text-6xl sm:tracking-[0.15em]">
           Loot Shooter
@@ -87,7 +88,8 @@ export function RunScreens() {
         </p>
         <RecordsLine />
         <ActionButton label="Deploy" onClick={start} />
-      </ScreenShell>
+        </ScreenShell>
+      </div>
     );
   }
 
