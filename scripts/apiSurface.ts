@@ -2,11 +2,17 @@ import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { Node, Project, ts, type JSDocableNode, type SourceFile } from "ts-morph";
 
+export interface ApiCapability {
+  slug: string;
+  intent: string;
+}
+
 export interface ApiExport {
   name: string;
   kind: string;
   signature: string;
   doc?: string;
+  capabilities?: ApiCapability[];
 }
 
 export interface ApiModule {
@@ -47,6 +53,20 @@ function firstDocParagraph(node: JSDocableNode): string | undefined {
 
 function isInternal(node: JSDocableNode): boolean {
   return node.getJsDocs().some((doc) => doc.getTags().some((tag) => tag.getTagName() === "internal"));
+}
+
+function capabilityTags(node: JSDocableNode): ApiCapability[] | undefined {
+  const capabilities: ApiCapability[] = [];
+  for (const doc of node.getJsDocs()) {
+    for (const tag of doc.getTags()) {
+      if (tag.getTagName() !== "capability") continue;
+      const text = collapseWhitespace(tag.getCommentText() ?? "");
+      const [slug, ...rest] = text.split(/\s+/);
+      if (slug === undefined || slug === "") continue;
+      capabilities.push({ slug, intent: rest.join(" ") });
+    }
+  }
+  return capabilities.length > 0 ? capabilities : undefined;
 }
 
 function functionSignature(name: string, decl: Node): string {
@@ -106,19 +126,19 @@ function moduleExports(sourceFile: SourceFile): ApiExport[] {
 
     if (Node.isFunctionDeclaration(decl)) {
       if (isInternal(decl)) continue;
-      exports.push({ name, kind: "function", signature: functionSignature(name, decl), doc: firstDocParagraph(decl) });
+      exports.push({ name, kind: "function", signature: functionSignature(name, decl), doc: firstDocParagraph(decl), capabilities: capabilityTags(decl) });
     } else if (Node.isClassDeclaration(decl)) {
       if (isInternal(decl)) continue;
-      exports.push({ name, kind: "class", signature: classSignature(decl), doc: firstDocParagraph(decl) });
+      exports.push({ name, kind: "class", signature: classSignature(decl), doc: firstDocParagraph(decl), capabilities: capabilityTags(decl) });
     } else if (Node.isInterfaceDeclaration(decl)) {
       if (isInternal(decl)) continue;
-      exports.push({ name, kind: "interface", signature: interfaceSignature(decl), doc: firstDocParagraph(decl) });
+      exports.push({ name, kind: "interface", signature: interfaceSignature(decl), doc: firstDocParagraph(decl), capabilities: capabilityTags(decl) });
     } else if (Node.isTypeAliasDeclaration(decl)) {
       if (isInternal(decl)) continue;
-      exports.push({ name, kind: "type", signature: typeSignature(decl), doc: firstDocParagraph(decl) });
+      exports.push({ name, kind: "type", signature: typeSignature(decl), doc: firstDocParagraph(decl), capabilities: capabilityTags(decl) });
     } else if (Node.isEnumDeclaration(decl)) {
       if (isInternal(decl)) continue;
-      exports.push({ name, kind: "enum", signature: enumSignature(decl), doc: firstDocParagraph(decl) });
+      exports.push({ name, kind: "enum", signature: enumSignature(decl), doc: firstDocParagraph(decl), capabilities: capabilityTags(decl) });
     } else if (Node.isVariableDeclaration(decl)) {
       const statement = decl.getVariableStatement();
       if (statement !== undefined && isInternal(statement)) continue;
@@ -127,6 +147,7 @@ function moduleExports(sourceFile: SourceFile): ApiExport[] {
         kind: "const",
         signature: constSignature(decl),
         doc: statement !== undefined ? firstDocParagraph(statement) : undefined,
+        capabilities: statement !== undefined ? capabilityTags(statement) : undefined,
       });
     }
   }

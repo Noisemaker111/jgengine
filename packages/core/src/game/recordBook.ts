@@ -53,6 +53,8 @@ function loadStored<K extends string>(config: RecordBookConfig<K>, storage: Reco
  * key-value storage (pass `localStorage` in a browser, a stub in tests, or
  * `null` for in-memory only). Corrupt or unavailable storage degrades to an
  * empty book — a record write never throws into a game tick.
+ *
+ * @capability best-record persist personal-best times/scores with safe storage fallback
  */
 export function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> {
   const storage = config.storage ?? null;

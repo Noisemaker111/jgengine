@@ -194,6 +194,8 @@ export interface MapBounds {
  * Framed circular minimap: optional baked terrain background, reveal-on-event
  * fog overlay, categorized marker icons, and a facing arrow. Reads a core
  * `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
+ *
+ * @capability minimap framed circular minimap with terrain bake, fog, markers, and facing arrow
  */
 export function Minimap({
   markers,
