@@ -28,7 +28,7 @@ import {
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
-import { deriveTouchScheme, withTouchCodes } from "@jgengine/core/input/touchScheme";
+import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengine/core/input/touchScheme";
 import {
   buildContextMenu,
   contextVerbInput,
@@ -158,7 +158,7 @@ import { BUILT_IN_SETTING_CATEGORIES } from "@jgengine/core/settings/settingsMod
 import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings";
 import { SettingsRuntime } from "./settings/SettingsRuntime";
 import { SettingsChrome } from "./settings/SettingsChrome";
-import { AudioSettingsBridge, useGraphicsSettings } from "./settings/appliedSettings";
+import { AudioSettingsBridge, useGraphicsSettings, useTouchStyle } from "./settings/appliedSettings";
 
 const DEV_USER_ID = "dev-player";
 const TURN_SPEED = 2.4;
@@ -2113,6 +2113,7 @@ export function GamePlayerShell({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
+  const touchStyle = useTouchStyle(settingsStore, touchScheme?.style ?? DEFAULT_TOUCH_STYLE);
   const dockMounted =
     !poster &&
     !orientationGate &&
@@ -2136,6 +2137,11 @@ export function GamePlayerShell({
       hide={hideCategories}
       fovEnabled={fovControlEnabled}
       hideBindings={settingsConfig.hideBindings ?? []}
+      touchStyle={
+        coarsePointer &&
+        touchScheme !== null &&
+        (touchScheme.joystick !== null || touchScheme.buttons.length > 0)
+      }
       overrides={bindingOverrides}
       rebind={rebindAction}
       resetBinding={resetActionBinding}
@@ -2342,7 +2348,7 @@ export function GamePlayerShell({
       </GameUiErrorBoundary>
       {!poster && !orientationGate && showReticle ? <Reticle /> : null}
       {dockMounted && touchScheme !== null ? (
-        <TouchControlsDock scheme={touchScheme} sink={touchSink} scale={touchScale} />
+        <TouchControlsDock scheme={touchScheme} sink={touchSink} style={touchStyle} scale={touchScale} />
       ) : null}
       {orientationGateEl}
       {marquee !== null ? <MarqueeBox rect={marquee} /> : null}

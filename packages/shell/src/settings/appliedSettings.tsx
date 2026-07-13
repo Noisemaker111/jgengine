@@ -14,7 +14,19 @@ import {
   type SettingsStore,
 } from "@jgengine/core/settings/settingsModel";
 
+import { TOUCH_STYLES, type TouchStyle } from "@jgengine/core/input/touchScheme";
+
 import type { AudioEngine } from "../audio/audioEngine";
+
+/** Sentinel Controls value meaning "defer to the game's suggested touch skin". */
+export const TOUCH_STYLE_AUTO = "auto";
+
+/** Player's Settings choice, or the game's suggested default when left on `auto`. */
+export function useTouchStyle(store: SettingsStore, fallback: TouchStyle): TouchStyle {
+  useSettingsRevision(store);
+  const raw = store.get(SETTING_IDS.touchStyle, TOUCH_STYLE_AUTO);
+  return TOUCH_STYLES.includes(raw as TouchStyle) ? (raw as TouchStyle) : fallback;
+}
 
 export function useSettingsRevision(store: SettingsStore): number {
   const [rev, bump] = useReducer((n: number) => n + 1, 0);

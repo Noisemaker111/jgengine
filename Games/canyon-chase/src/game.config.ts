@@ -28,7 +28,17 @@ export const game = defineGame({
   renderEntity: renderVehicleEntity,
   objectStyles,
   orientation: { mobile: "landscape-required" },
-  touch: { buttons: ["handbrake", "surveyMap"] },
+  touch: {
+    movement: { axis: "horizontal" },
+    style: "mechanical",
+    layout: { utility: "top-right" },
+    buttons: [
+      { action: "throttle", shape: "pedal", anchor: "right" },
+      { action: "brake", shape: "pedal", anchor: "right" },
+      { action: "handbrake", shape: "lever", anchor: "bottom-right" },
+      { action: "surveyMap", kind: "utility" },
+    ],
+  },
   settings: {
     variant: "sheet",
     hideBindings: ["restart", "startRun"],

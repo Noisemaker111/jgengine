@@ -38,7 +38,7 @@
 - `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
 - `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
 - `SETTINGS_STORAGE_PREFIX` (const): const SETTINGS_STORAGE_PREFIX: "jgengine:setting:" — ⚠ undocumented
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; } — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; } — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
@@ -1256,8 +1256,10 @@
 ## @jgengine/shell/settings/appliedSettings
 
 - `AudioSettingsBridge` (function): function AudioSettingsBridge({ store, engine, buses, }: { store: SettingsStore; engine: AudioEngine; buses: Record<string, AudioBusDef> | undefined; }): null — ⚠ undocumented
+- `TOUCH_STYLE_AUTO` (const): const TOUCH_STYLE_AUTO: "auto" — Sentinel Controls value meaning "defer to the game's suggested touch skin".
 - `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean): { shadows: boolean; dpr: number; uiScale: number } — ⚠ undocumented
 - `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
+- `useTouchStyle` (function): function useTouchStyle(store: SettingsStore, fallback: TouchStyle): TouchStyle — Player's Settings choice, or the game's suggested default when left on `auto`.
 
 ## @jgengine/shell/settings/settingsController
 
@@ -1517,10 +1519,10 @@
 ## @jgengine/shell/touch/TouchControlsOverlay
 
 - `TouchCodeSink` (interface): interface TouchCodeSink — ⚠ undocumented
-- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, scale = 1 }: { scheme: TouchScheme; sink: TouchCodeSink; scale?: number }): React.JSX.Element — ⚠ undocumented
+- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; scale?: number; }): React.JSX.Element — ⚠ undocumented
 - `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
 - `primaryButtonOffsets` (function): function primaryButtonOffsets(count: number, scale = 1): { right: number; bottom: number }[] | null — Thumb-arc placement for primary buttons around the bottom-right corner: up to three on an inner ring, the rest on an outer ring. Null means too many buttons for an arc — the dock falls back to a wrapping grid.
-- `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1): number — Vertical space (px, excluding device safe areas) the dock occupies above the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so `HudCanvas` regions never collide with touch controls.
+- `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1): number — Vertical space (px, excluding device safe areas) that *bottom-docked* clusters occupy above the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so `HudCanvas` regions never collide with touch controls. Side rails and top clusters reserve their own rectangles through the layout registry instead of this scalar.
 
 ## @jgengine/shell/visibility/CullingProvider
 
