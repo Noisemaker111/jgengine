@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createActionStateTracker, toActionStateBindingMap } from "./actionBindings";
-import { deriveTouchScheme, touchButtonKind, touchCode, withTouchCodes } from "./touchScheme";
+import { deriveTouchScheme, touchButtonKind, touchButtonShape, touchCode, withTouchCodes } from "./touchScheme";
 
 const RESERVED = new Set([
   "moveForward",
@@ -48,10 +48,12 @@ describe("deriveTouchScheme", () => {
     );
     expect(scheme?.joystick).toEqual({ up: null, down: null, left: "moveLeft", right: "moveRight" });
     expect(scheme?.buttons).toEqual([
-      { action: "jump", label: "Jump", icon: null, kind: "primary" },
-      { action: "restart", label: "Restart", icon: null, kind: "utility" },
+      { action: "jump", label: "Jump", icon: null, kind: "primary", shape: "circle", anchor: null },
+      { action: "restart", label: "Restart", icon: null, kind: "utility", shape: "circle", anchor: null },
     ]);
     expect(scheme?.look).toBe(false);
+    expect(scheme?.layout).toEqual({ movement: "bottom-left", actions: "bottom-right", utility: "bottom-center" });
+    expect(scheme?.style).toBe("glass");
   });
 
   test("turn actions fill the horizontal axis when strafing is unbound", () => {
@@ -90,7 +92,9 @@ describe("deriveTouchScheme", () => {
       { moveForward: ["KeyW"], tabTarget: ["Tab"], slot1: ["Digit1"], interact: ["KeyE"] },
       { reserved: RESERVED, firstPerson: false },
     );
-    expect(scheme?.buttons).toEqual([{ action: "interact", label: "Interact", icon: null, kind: "primary" }]);
+    expect(scheme?.buttons).toEqual([
+      { action: "interact", label: "Interact", icon: null, kind: "primary", shape: "circle", anchor: null },
+    ]);
   });
 
   test("explicit button list wins over derivation and honors custom labels and icons", () => {
@@ -109,10 +113,41 @@ describe("deriveTouchScheme", () => {
       },
     );
     expect(scheme?.buttons).toEqual([
-      { action: "hardDrop", label: "Drop", icon: null, kind: "primary" },
-      { action: "hold", label: "Hold", icon: "star", kind: "primary" },
-      { action: "taunt", label: "Taunt", icon: false, kind: "utility" },
+      { action: "hardDrop", label: "Drop", icon: null, kind: "primary", shape: "circle", anchor: null },
+      { action: "hold", label: "Hold", icon: "star", kind: "primary", shape: "circle", anchor: null },
+      { action: "taunt", label: "Taunt", icon: false, kind: "utility", shape: "circle", anchor: null },
     ]);
+  });
+
+  test("shape and anchor come from the spec, or derive from the action name", () => {
+    const scheme = deriveTouchScheme(
+      { brake: ["KeyS"], handbrake: ["Space"], nitro: ["KeyN"] },
+      {
+        reserved: RESERVED,
+        firstPerson: false,
+        config: {
+          buttons: [
+            { action: "brake", anchor: "right" },
+            "handbrake",
+            { action: "nitro", shape: "trigger", anchor: "bottom-right" },
+          ],
+        },
+      },
+    );
+    expect(scheme?.buttons).toEqual([
+      { action: "brake", label: "Brake", icon: null, kind: "primary", shape: "pedal", anchor: "right" },
+      { action: "handbrake", label: "Handbrake", icon: null, kind: "primary", shape: "lever", anchor: null },
+      { action: "nitro", label: "Nitro", icon: null, kind: "primary", shape: "trigger", anchor: "bottom-right" },
+    ]);
+  });
+
+  test("layout and style resolve from config, falling back to the classic bottom glass defaults", () => {
+    const custom = deriveTouchScheme(
+      { fire: ["KeyF"] },
+      { reserved: RESERVED, firstPerson: false, config: { layout: { actions: "right" }, style: "arcade" } },
+    );
+    expect(custom?.layout).toEqual({ movement: "bottom-left", actions: "right", utility: "bottom-center" });
+    expect(custom?.style).toBe("arcade");
   });
 
   test("flight-style bindings map pitch/yaw to the joystick and split primary from utility buttons", () => {
@@ -151,6 +186,18 @@ describe("deriveTouchScheme", () => {
     expect(scheme?.buttons.map((button) => button.action)).toEqual(["boost"]);
   });
 
+  test("a horizontal movement axis steers only, freeing throttle/brake to become pedal buttons", () => {
+    const scheme = deriveTouchScheme(
+      { throttle: ["KeyW"], brake: ["KeyS"], steerLeft: ["KeyA"], steerRight: ["KeyD"] },
+      { reserved: RESERVED, firstPerson: false, config: { movement: { axis: "horizontal" } } },
+    );
+    expect(scheme?.joystick).toEqual({ up: null, down: null, left: "steerLeft", right: "steerRight" });
+    expect(scheme?.buttons.map((button) => ({ action: button.action, shape: button.shape }))).toEqual([
+      { action: "throttle", shape: "pedal" },
+      { action: "brake", shape: "pedal" },
+    ]);
+  });
+
   test("first person defaults look on; touch: false disables everything", () => {
     const scheme = deriveTouchScheme({ moveForward: ["KeyW"] }, { reserved: RESERVED, firstPerson: true });
     expect(scheme?.look).toBe(true);
@@ -175,5 +222,17 @@ describe("touchButtonKind", () => {
     expect(touchButtonKind("toggler")).toBe("primary");
     expect(touchButtonKind("fire")).toBe("primary");
     expect(touchButtonKind("dodge")).toBe("primary");
+  });
+});
+
+describe("touchButtonShape", () => {
+  test("driving, firing, and steering verbs get their physical silhouette; the rest stay circles", () => {
+    expect(touchButtonShape("brake")).toBe("pedal");
+    expect(touchButtonShape("accelerate")).toBe("pedal");
+    expect(touchButtonShape("handbrake")).toBe("lever");
+    expect(touchButtonShape("fire")).toBe("trigger");
+    expect(touchButtonShape("steerLeft")).toBe("wheel");
+    expect(touchButtonShape("jump")).toBe("circle");
+    expect(touchButtonShape("interact")).toBe("circle");
   });
 });

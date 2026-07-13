@@ -167,7 +167,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Crop tile / farming | `crafting/crop` | `createCropField`, `CropField`, `CropDef`, `CropTileState`, `tillTile`, `plantCrop`, `waterTile`, `advanceCropDay`, `harvestCrop`, `applyToolToTiles`, `squarePattern`, `diamondPattern`, `createDayTicker` |
 | Skill-check roll | `stats/rollCheck` | `rollCheck`, `CheckInput`, `CheckResult`, `CheckAdvantage` |
 | Input bindings (full) | `input/actionBindings` | `hotbarSlotBindings`, `actionLabel`, `bindingLabel`, `resolveActionCommand`, `bindingMatches`, `createActionStateTracker` |
-| Touch controls | `input/touchScheme` | `deriveTouchScheme`, `touchCode`, `touchActionLabel`, `withTouchCodes`, `TouchControlsConfig`, `TouchGestureBindings`, `TouchDragBinding`, `TouchButtonSpec`, `TouchScheme`, `TouchJoystick`, `TouchButton` |
+| Touch controls | `input/touchScheme` | `deriveTouchScheme`, `touchCode`, `touchActionLabel`, `touchButtonShape`, `withTouchCodes`, `TouchControlsConfig`, `TouchGestureBindings`, `TouchDragBinding`, `TouchButtonSpec`, `TouchButtonShape`, `TouchAnchor`, `TouchLayoutConfig`, `TouchMovementConfig`, `TouchStyle`, `TOUCH_STYLE_OPTIONS`, `TouchScheme`, `TouchJoystick`, `TouchButton` — `shape`/`anchor`/`layout`/`movement.axis`/`style` refine the derived dock; player picks the skin in Settings → Controls |
 | Pointer hit | `input/pointer` | `PointerHit`, `PointerButton`, `aimToPoint`, `moveTargetFromHit`, `groundOf`, `PointerVec3` |
 | Navmesh + A* | `nav/navGrid` | `createNavGrid`, `findPath`, `smoothPath`, `NavGrid`, `NavGridConfig`, `NavPoint`, `FindPathOptions` |
 | Path follow | `nav/pathFollow` | `createPathFollow`, `advancePathFollow`, `pathFromNav`, `PathFollowConfig`, `PathFollowState`, `Waypoint` |

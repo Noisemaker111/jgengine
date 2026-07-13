@@ -331,6 +331,15 @@ Requirements:
 
 Do not use one generic translucent controller across all games.
 
+**Shape, skin, and placement are data on `defineGame({ touch })`** — the engine derives a working dock from the input map, and you refine it without touching render code:
+
+- **`shape`** per button (`TouchButtonSpec.shape`): `pedal | lever | trigger | wheel | square | circle | tab`. The capture layer draws each as its physical silhouette, so `brake` is a foot pedal and `handbrake` a pull lever instead of a labelled circle. Unset derives one from the action name (`brake`/`throttle`→pedal, `handbrake`/`boost`→lever, `fire`/`attack`→trigger, `steer*`→wheel).
+- **`anchor`** per button, or **`layout: { movement, actions, utility }`** per cluster: dock controls to any of `bottom-left | bottom-center | bottom-right | left | right | top-left | top-center | top-right`. `left`/`right` are vertical rails (MMO-style hotbars) — use them to spread controls across the whole viewport instead of one bottom bar. `bottom-left`/`bottom-right` keep the thumb-arc; other anchors stack.
+- **`movement: { axis: "horizontal" }`** restricts the joystick to a steering-only zone, freeing throttle/brake to render as pedal buttons — the standard driving layout.
+- **`style`** suggests a skin: `glass` (default translucent) · `arcade` (neon bezel) · `mechanical` (metal plate) · `minimal` (thin outline). A skin changes material and geometry, not only colour. The **player overrides it in Settings → Controls** ("Touch controls", persisted); leave it on `Auto` to honour the game's `style`. This is the four-variant chooser — never hand-roll a control-skin toggle.
+
+Canyon Chase is the worked example: `movement: { axis: "horizontal" }` steering, `throttle`/`brake` pedals on the `right` rail, `handbrake` lever bottom-right, `style: "mechanical"`.
+
 **`presentation: "hud"` games get 3D parity.** A pure-HUD game (no camera rig) now reaches the same input/audio seams as a 3D game:
 - **Touch gestures** — the shell mounts a headless `TouchPlaySurface` in the hud branch too, so `touch.gestures` (swipe/tap) reach actions without the game hand-wiring pointer events on its own canvas. The visible dock stays game-authored per the rule above.
 - **No phantom reservations** — camera action names (`turnLeft`/`turnRight`/`interact`/…) are reserved *only* when a camera rig is active, so a hud game may bind them directly instead of renaming to `steer*`.

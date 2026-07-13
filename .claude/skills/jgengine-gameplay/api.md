@@ -772,19 +772,29 @@
 
 ## @jgengine/core/input/touchScheme
 
+- `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
 - `DeriveTouchSchemeOptions` (interface): interface DeriveTouchSchemeOptions — ⚠ undocumented
+- `ResolvedTouchLayout` (interface): interface ResolvedTouchLayout — The dock zone each cluster resolved to, after applying game config over the bottom-layout defaults.
 - `TOUCH_CODE_PREFIX` (const): const TOUCH_CODE_PREFIX: "touch:" — ⚠ undocumented
+- `TOUCH_STYLES` (const): const TOUCH_STYLES: readonly TouchStyle[] — Every touch skin id, in menu order.
+- `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
+- `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
 - `TouchButton` (interface): interface TouchButton — ⚠ undocumented
 - `TouchButtonKind` (type): type TouchButtonKind = "primary" | "utility" — ⚠ undocumented
+- `TouchButtonShape` (type): type TouchButtonShape = "circle" | "square" | "pedal" | "lever" | "trigger" | "wheel" | "tab" — Physical silhouette a touch button wears. The capture layer draws each as its own shape — a `pedal` reads as a foot pedal, a `lever` as a pull handle, a `trigger` as a firing paddle — so a control looks like the thing it does instead of a labelled circle. `circle`/`square` are the neutral fallbacks.
 - `TouchButtonSpec` (interface): interface TouchButtonSpec — ⚠ undocumented
 - `TouchControlsConfig` (interface): interface TouchControlsConfig — ⚠ undocumented
 - `TouchDragBinding` (interface): interface TouchDragBinding — ⚠ undocumented
 - `TouchGestureBindings` (interface): interface TouchGestureBindings — ⚠ undocumented
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
+- `TouchLayoutConfig` (interface): interface TouchLayoutConfig — Where each touch cluster docks; unset falls back to the classic bottom layout.
+- `TouchMovementConfig` (interface): interface TouchMovementConfig — Restricts the virtual joystick to one axis — a `horizontal` zone reads as a steering control, freeing throttle/brake to become pedal buttons.
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
+- `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `touchActionLabel` (function): function touchActionLabel(action: string): string — ⚠ undocumented
 - `touchButtonKind` (function): function touchButtonKind(action: string): TouchButtonKind — ⚠ undocumented
+- `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
 - `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 

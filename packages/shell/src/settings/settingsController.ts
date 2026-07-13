@@ -17,8 +17,11 @@ import {
   type GameSettingDef,
   type SettingCategory,
   type SettingCategoryDef,
+  type SettingOption,
   type SettingValue,
 } from "@jgengine/core/settings/settingsModel";
+import { TOUCH_STYLE_OPTIONS } from "@jgengine/core/input/touchScheme";
+import { TOUCH_STYLE_AUTO } from "./appliedSettings";
 import {
   useSettingsStore,
   type SettingsActionView,
@@ -49,10 +52,17 @@ export interface SettingsControllerInput {
   hide: readonly SettingCategory[];
   fovEnabled: boolean;
   hideBindings: readonly string[];
+  /** Show the touch-controls skin selector in Controls (touch device with a dock). */
+  touchStyle: boolean;
   overrides: BindingOverrides;
   rebind: (action: string, code: string) => void;
   resetBinding: (action: string) => void;
 }
+
+const TOUCH_STYLE_SELECT_OPTIONS: readonly SettingOption[] = [
+  { value: TOUCH_STYLE_AUTO, label: "Auto (game default)" },
+  ...TOUCH_STYLE_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+];
 
 export function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] {
   const store = useSettingsStore();
@@ -170,11 +180,27 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
     };
   });
 
+  const controlsRows: SettingsRow[] = [
+    ...(config.touchStyle
+      ? [
+          {
+            id: SETTING_IDS.touchStyle,
+            label: "Touch controls",
+            kind: "select" as const,
+            value: store.get(SETTING_IDS.touchStyle, TOUCH_STYLE_AUTO),
+            options: TOUCH_STYLE_SELECT_OPTIONS,
+            set: (value: SettingValue) => store.set(SETTING_IDS.touchStyle, value),
+          },
+        ]
+      : []),
+    ...extrasFor("controls"),
+  ];
+
   const builtInRows: Record<string, SettingsRow[]> = {
     sound: soundRows,
     graphics: graphicsRows,
     gameplay: gameplayRows,
-    controls: extrasFor("controls"),
+    controls: controlsRows,
   };
   const builtInKeybinds: Record<string, SettingsKeybindRow[]> = { controls: keybinds };
 
