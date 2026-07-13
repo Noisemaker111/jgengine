@@ -23,6 +23,30 @@ export interface KinematicVehicleOptions {
   surfaceFriction?: (x: number, z: number) => number;
   /** Extra velocity damping per second by world position (rough ground drag); default `0`. */
   dragAt?: (x: number, z: number) => number;
+  /**
+   * Veto or clamp a planar move before it commits — walls, closed gates, arena bounds. Given the
+   * attempted `from`→`to` on the XZ plane, return the destination actually allowed; velocity is
+   * rederived from the permitted displacement, so motion blocked on an axis stops on that axis
+   * instead of grinding into the obstacle. Default: no clamp (the move always commits).
+   */
+  clampMove?: (
+    from: readonly [number, number],
+    to: readonly [number, number],
+  ) => readonly [number, number];
+}
+
+/**
+ * Per-tick multipliers layered over the base tuning — the transient overrides games apply for one
+ * frame without rebuilding the vehicle: nitro/boost, a braced-plow bonus, or entering a speed zone or
+ * slow field. Each defaults to `1` (no change), so passing nothing leaves the base tuning untouched.
+ */
+export interface KinematicVehicleModifiers {
+  /** Scale top speed this tick (sustained boost, speed pads). */
+  topSpeedScale?: number;
+  /** Scale engine acceleration this tick (boost, brace bonus). */
+  accelScale?: number;
+  /** Scale turn rate this tick (brace penalty, heavy-load steering). */
+  turnRateScale?: number;
 }
 
 export interface KinematicVehicleStep {
@@ -44,7 +68,7 @@ export interface KinematicVehicleStep {
  * (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
  */
 export interface KinematicVehicle {
-  tick(dt: number, axis: AxisInput): KinematicVehicleStep;
+  tick(dt: number, axis: AxisInput, modifiers?: KinematicVehicleModifiers): KinematicVehicleStep;
   pose(): { position: readonly [number, number, number]; heading: number };
   velocity(): readonly [number, number];
   /** Scale the current velocity (boost pads, hard collisions). */
@@ -60,6 +84,7 @@ export function createKinematicVehicle(
   const rollingResistance = tuning.rollingResistance ?? 0;
   const surfaceFriction = options.surfaceFriction ?? (() => 1);
   const dragAt = options.dragAt ?? (() => 0);
+  const clampMove = options.clampMove;
 
   let x = options.position?.[0] ?? 0;
   let y = options.position?.[1] ?? 0;
@@ -73,19 +98,23 @@ export function createKinematicVehicle(
   }
 
   return {
-    tick(dt, axis) {
+    tick(dt, axis, modifiers) {
+      const topSpeed = tuning.topSpeed * (modifiers?.topSpeedScale ?? 1);
+      const engineAccel = tuning.engineAccel * (modifiers?.accelScale ?? 1);
+      const turnRate = tuning.turnRate * (modifiers?.turnRateScale ?? 1);
+
       const [fx0, fz0] = forward();
       const speed = vx * fx0 + vz * fz0;
       const steerScale = Math.min(1, Math.abs(speed) / tuning.turnSpeedRef);
       const direction = speed >= 0 ? 1 : -1;
-      heading = steerYaw(heading, axis.steer * steerScale * direction, tuning.turnRate, dt);
+      heading = steerYaw(heading, axis.steer * steerScale * direction, turnRate, dt);
 
       const [fx, fz] = forward();
       let accel = 0;
-      if (axis.throttle > 0 && speed < tuning.topSpeed) accel += axis.throttle * tuning.engineAccel;
+      if (axis.throttle > 0 && speed < topSpeed) accel += axis.throttle * engineAccel;
       if (axis.brake > 0) {
         if (speed > 0.2) accel -= axis.brake * tuning.brakeAccel;
-        else if (speed > -tuning.reverseSpeed) accel -= axis.brake * tuning.engineAccel;
+        else if (speed > -tuning.reverseSpeed) accel -= axis.brake * engineAccel;
       }
       vx += fx * accel * dt;
       vz += fz * accel * dt;
@@ -111,14 +140,24 @@ export function createKinematicVehicle(
         vz *= dragDamp;
       }
 
-      x += vx * dt;
-      z += vz * dt;
+      const toX = x + vx * dt;
+      const toZ = z + vz * dt;
+      if (clampMove !== undefined && dt > 0) {
+        const allowed = clampMove([x, z], [toX, toZ]);
+        vx = (allowed[0] - x) / dt;
+        vz = (allowed[1] - z) / dt;
+        x = allowed[0];
+        z = allowed[1];
+      } else {
+        x = toX;
+        z = toZ;
+      }
 
       return {
         position: [x, y, z],
         heading,
         forwardSpeed: vx * fx + vz * fz,
-        lateralSpeed: keptLateral * dragDamp,
+        lateralSpeed: -vx * fz + vz * fx,
         slip,
         surface,
       };

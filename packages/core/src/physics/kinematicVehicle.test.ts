@@ -149,3 +149,67 @@ describe("createKinematicVehicle — scaleVelocity/velocity/pose/resetTo", () =>
     expect(vehicle.velocity()).toEqual([0, 0]);
   });
 });
+
+describe("createKinematicVehicle — per-tick modifiers", () => {
+  test("no modifiers matches passing all scales of 1", () => {
+    const a = createKinematicVehicle(TUNING);
+    const b = createKinematicVehicle(TUNING);
+    for (let i = 0; i < 60; i += 1) {
+      const ra = a.tick(DT, axis({ throttle: 1, steer: 0.5 }));
+      const rb = b.tick(DT, axis({ throttle: 1, steer: 0.5 }), { topSpeedScale: 1, accelScale: 1, turnRateScale: 1 });
+      expect(rb.forwardSpeed).toBeCloseTo(ra.forwardSpeed, 10);
+      expect(rb.heading).toBeCloseTo(ra.heading, 10);
+    }
+  });
+
+  test("accelScale and topSpeedScale boost acceleration and raise the cap", () => {
+    const base = createKinematicVehicle(TUNING);
+    const boosted = createKinematicVehicle(TUNING);
+    let rb = boosted.tick(DT, axis({ throttle: 1 }), { accelScale: 2, topSpeedScale: 1.5 });
+    let rn = base.tick(DT, axis({ throttle: 1 }));
+    expect(rb.forwardSpeed).toBeGreaterThan(rn.forwardSpeed);
+    for (let i = 0; i < 400; i += 1) {
+      rb = boosted.tick(DT, axis({ throttle: 1 }), { accelScale: 2, topSpeedScale: 1.5 });
+      rn = base.tick(DT, axis({ throttle: 1 }));
+    }
+    expect(rb.forwardSpeed).toBeGreaterThan(TUNING.topSpeed + 1);
+    expect(rn.forwardSpeed).toBeLessThanOrEqual(TUNING.topSpeed + 1);
+  });
+
+  test("turnRateScale below 1 reduces the yaw change (brace penalty)", () => {
+    const full = createKinematicVehicle(TUNING);
+    const braced = createKinematicVehicle(TUNING);
+    for (let i = 0; i < 30; i += 1) {
+      full.tick(DT, axis({ throttle: 1 }));
+      braced.tick(DT, axis({ throttle: 1 }));
+    }
+    const rf = full.tick(DT, axis({ throttle: 1, steer: 1 }));
+    const rb = braced.tick(DT, axis({ throttle: 1, steer: 1 }), { turnRateScale: 0.5 });
+    expect(Math.abs(rb.heading)).toBeLessThan(Math.abs(rf.heading));
+  });
+});
+
+describe("createKinematicVehicle — clampMove", () => {
+  test("a clamp that blocks the z-axis stops z motion and zeroes z velocity", () => {
+    const vehicle = createKinematicVehicle(TUNING, {
+      heading: 0,
+      clampMove: (from, to) => [to[0], Math.min(to[1], 5)],
+    });
+    let step = vehicle.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 600; i += 1) step = vehicle.tick(DT, axis({ throttle: 1 }));
+    expect(step.position[2]).toBeLessThanOrEqual(5 + 1e-9);
+    const [, vz] = vehicle.velocity();
+    expect(vz).toBeCloseTo(0, 6);
+  });
+
+  test("an identity clamp leaves motion identical to no clamp", () => {
+    const plain = createKinematicVehicle(TUNING);
+    const clamped = createKinematicVehicle(TUNING, { clampMove: (_from, to) => to });
+    for (let i = 0; i < 120; i += 1) {
+      const rp = plain.tick(DT, axis({ throttle: 1, steer: 0.6 }));
+      const rc = clamped.tick(DT, axis({ throttle: 1, steer: 0.6 }));
+      expect(rc.position[0]).toBeCloseTo(rp.position[0], 9);
+      expect(rc.position[2]).toBeCloseTo(rp.position[2], 9);
+    }
+  });
+});

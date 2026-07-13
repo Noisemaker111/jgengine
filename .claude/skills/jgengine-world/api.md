@@ -460,6 +460,7 @@
 ## @jgengine/core/physics/kinematicVehicle
 
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
+- `KinematicVehicleModifiers` (interface): interface KinematicVehicleModifiers — Per-tick multipliers layered over the base tuning — the transient overrides games apply for one frame without rebuilding the vehicle: nitro/boost, a braced-plow bonus, or entering a speed zone or slow field. Each defaults to `1` (no change), so passing nothing leaves the base tuning untouched.
 - `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions — ⚠ undocumented
 - `KinematicVehicleStep` (interface): interface KinematicVehicleStep — ⚠ undocumented
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
