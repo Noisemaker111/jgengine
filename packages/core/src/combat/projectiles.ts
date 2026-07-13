@@ -13,6 +13,7 @@ import type { CombatSpatialDeps, EffectResult, EffectSystem, EffectVia } from ".
 import {
   aimDirection,
   aimSpreadDeg,
+  convergeShot,
   resolveShot,
   type ShotOriginPolicy,
 } from "./shotOrigin";
@@ -211,7 +212,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   const shots = new Map<string, { input: ProjectileShotInput; firedAt: number; settled: boolean }>();
   let shotCounter = 0;
   const now = deps.now ?? (() => Date.now());
-  const defaultPolicy = deps.defaultOriginPolicy ?? { kind: "eye" as const };
+  const defaultPolicy: ShotOriginPolicy = deps.defaultOriginPolicy ?? { kind: "converge" };
 
   function itemStat(via: EffectVia, stat: string): number | null {
     return via.item === undefined ? null : deps.getStat(via.item, stat);
@@ -223,17 +224,26 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     return spread === null ? aim : { ...aim, spread };
   }
 
-  function resolveShotFor(from: string, aim: Aim, policy?: ShotOriginPolicy) {
-    return resolveShot(
-      {
-        positionOf: deps.spatial.positionOf,
-        rotationYOf: deps.rotationYOf,
-        collidersOf: deps.entityCollidersOf,
-      },
-      from,
-      aim,
-      policy ?? defaultPolicy,
-    );
+  const shotOriginDeps = {
+    positionOf: deps.spatial.positionOf,
+    rotationYOf: deps.rotationYOf,
+    collidersOf: deps.entityCollidersOf,
+  };
+
+  function resolveShotFor(from: string, aim: Aim, policy: ShotOriginPolicy | undefined, range: number) {
+    const active = policy ?? defaultPolicy;
+    if (active.kind === "converge") {
+      return convergeShot(shotOriginDeps, from, aim, range, (origin, direction) => {
+        const all = internalSceneRaycast.raycastAll({
+          origin,
+          direction,
+          maxDistance: range,
+          excludeInstanceIds: [from],
+        });
+        return hitsUntilBlocked(all)[0]?.point ?? null;
+      }, active.muzzle);
+    }
+    return resolveShot(shotOriginDeps, from, aim, active);
   }
 
   const internalSceneRaycast =
@@ -286,7 +296,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   const raycast: Raycast =
     deps.raycast ??
     ((from, aim, range, originPolicy) => {
-      const resolved = resolveShotFor(from, aim, originPolicy);
+      const resolved = resolveShotFor(from, aim, originPolicy, range);
       if (resolved === null) return [];
       const { origin, direction } = resolved;
       const all = internalSceneRaycast.raycastAll({
@@ -350,7 +360,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   }
 
   function ballisticArc(input: ProjectileShotInput): BallisticArc {
-    const resolved = resolveShotFor(input.from, input.aim, input.originPolicy);
+    const resolved = resolveShotFor(input.from, input.aim, input.originPolicy, resolveRange(input.via));
     const origin = resolved?.origin ?? [0, 0, 0];
     const direction = resolved?.direction ?? aimDirection(input.aim) ?? [0, 0, 1];
     const speed = itemStat(input.via, "projectile.speed") ?? DEFAULT_PROJECTILE_SPEED;
@@ -395,7 +405,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     direction: EntityPosition | undefined;
   } {
     const aim = withWeaponSpread(input.via, input.aim);
-    const resolved = resolveShotFor(input.from, aim, input.originPolicy);
+    const resolved = resolveShotFor(input.from, aim, input.originPolicy, resolveRange(input.via));
     const rawHits = raycast(input.from, aim, resolveRange(input.via), input.originPolicy);
     const visible = rawHits.filter(
       (hit) => isObjectHit(hit) || deps.spatial.hasLineOfSight(input.from, hit.instanceId),
@@ -409,9 +419,9 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   }
 
   function missPoint(input: ProjectileShotInput): [number, number, number] {
-    const resolved = resolveShotFor(input.from, input.aim, input.originPolicy);
-    if (resolved === null) return [0, 0, 0];
     const range = resolveRange(input.via);
+    const resolved = resolveShotFor(input.from, input.aim, input.originPolicy, range);
+    if (resolved === null) return [0, 0, 0];
     return [
       resolved.origin[0] + resolved.direction[0] * range,
       resolved.origin[1] + resolved.direction[1] * range,
@@ -446,7 +456,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       if (shot.settled) return { status: "rejected", shotId, reason: "already-settled" };
       shot.settled = true;
       const { input } = shot;
-      const resolved = resolveShotFor(input.from, input.aim, input.originPolicy);
+      const resolved = resolveShotFor(input.from, input.aim, input.originPolicy, resolveRange(input.via));
       const origin = resolved?.origin ?? [0, 0, 0];
       const originTuple: [number, number, number] = [origin[0], origin[1], origin[2]];
 

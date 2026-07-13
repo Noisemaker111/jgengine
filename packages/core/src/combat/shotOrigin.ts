@@ -4,8 +4,14 @@ import type { Aim } from "../scene/spatial";
 
 /**
  * How a shot's world-space origin (and optional direction) is resolved before prediction/settlement.
+ * - `converge` — the shot leaves the gun `muzzle` yet still passes through whatever the shooter's
+ *   sightline (crosshair) covers: origin is the muzzle offset, direction is bent from the muzzle to
+ *   the eye ray's aim point. The projectile system's default for a free `{ yaw, pitch }` aim, so a
+ *   bullet visibly comes from the barrel without missing the reticle. Needs a scene raycast to find
+ *   the aim point (`convergeShot`); a bare `resolveShot` degrades to a straight muzzle ray. Passes an
+ *   explicit `{ origin, direction }` aim through untouched.
  * - `eye` — `aim.origin` when present, else the shooter's entity position raised to eye height; the
- *   shot traces the shooter's sightline, so what the crosshair covers is what gets hit (the default).
+ *   shot traces the shooter's sightline, so what the crosshair covers is what gets hit.
  * - `legacy` — `aim.origin` when present, else the shooter's raw entity position (feet).
  * - `entity` — always the shooter's entity position.
  * - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model).
@@ -13,6 +19,7 @@ import type { Aim } from "../scene/spatial";
  * - `world` — absolute world origin.
  */
 export type ShotOriginPolicy =
+  | { kind: "converge"; muzzle?: EntityPosition; height?: number }
   | { kind: "eye"; height?: number }
   | { kind: "legacy" }
   | { kind: "entity" }
@@ -79,6 +86,15 @@ export function resolveShot(
   if (aimDir === null && policy.kind !== "camera" && policy.kind !== "world") return null;
 
   switch (policy.kind) {
+    case "converge": {
+      if ("origin" in aim) {
+        if (aimDir === null) return null;
+        return { origin: aim.origin, direction: aimDir };
+      }
+      if (aimDir === null) return null;
+      const muzzle = resolveShot(deps, from, aim, { kind: "muzzle", offset: policy.muzzle });
+      return muzzle ?? null;
+    }
     case "eye": {
       if ("origin" in aim) {
         if (aimDir === null) return null;
@@ -123,4 +139,38 @@ export function resolveShot(
       return { origin: policy.origin, direction };
     }
   }
+}
+
+/**
+ * Resolves a `converge` shot with scene knowledge: fires from the gun muzzle but bends the direction
+ * so the shot passes through the aim point the shooter's eye ray covers. `sightHit` casts the eye ray
+ * and returns where it lands (first impact), or `null` to fall back to a point `range` metres down the
+ * sightline. A `{ origin, direction }` aim is passed through unchanged (nothing to converge).
+ */
+export function convergeShot(
+  deps: ShotOriginDeps,
+  from: string,
+  aim: Aim,
+  range: number,
+  sightHit: (origin: EntityPosition, direction: EntityPosition) => EntityPosition | null,
+  muzzleOffset?: EntityPosition,
+): ResolvedShot | null {
+  const sight = resolveShot(deps, from, aim, { kind: "eye", height: undefined });
+  if (sight === null) return null;
+  if ("origin" in aim) return sight;
+  const muzzle = resolveShot(deps, from, aim, { kind: "muzzle", offset: muzzleOffset });
+  if (muzzle === null) return sight;
+  const aimPoint =
+    sightHit(sight.origin, sight.direction) ??
+    ([
+      sight.origin[0] + sight.direction[0] * range,
+      sight.origin[1] + sight.direction[1] * range,
+      sight.origin[2] + sight.direction[2] * range,
+    ] as EntityPosition);
+  const direction = normalize([
+    aimPoint[0] - muzzle.origin[0],
+    aimPoint[1] - muzzle.origin[1],
+    aimPoint[2] - muzzle.origin[2],
+  ]);
+  return { origin: muzzle.origin, direction: direction ?? muzzle.direction };
 }

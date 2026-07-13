@@ -1287,7 +1287,7 @@ function FrameDriver({
       collisionDebug.setAimProbe({
         from: aimFrom,
         aim: commandAim,
-        originPolicy: { kind: "eye" },
+        originPolicy: { kind: "converge" },
         maxDistance: 100,
       });
     } else if (collisionDebug.getAimProbe() !== null) {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_EYE_HEIGHT, resolveShot } from "@jgengine/core/combat/shotOrigin";
+import { DEFAULT_EYE_HEIGHT, convergeShot, resolveShot } from "@jgengine/core/combat/shotOrigin";
 
 describe("resolveShot", () => {
   const deps = {
@@ -75,6 +75,33 @@ describe("resolveShot", () => {
     );
     expect(shot!.origin[0]).toBeCloseTo(1);
     expect(shot!.origin[2]).toBeCloseTo(2 - 1);
+  });
+
+  test("converge approximates a straight muzzle ray without a scene raycast", () => {
+    const shot = resolveShot(deps, "hero", { yaw: 0, pitch: 0 }, { kind: "converge" });
+    expect(shot!.origin[0]).toBeCloseTo(1 + 0.35);
+    expect(shot!.origin[1]).toBeCloseTo(1.4);
+    expect(shot!.direction[2]).toBeCloseTo(1);
+  });
+
+  test("convergeShot bends the muzzle ray toward the eye aim point", () => {
+    const shot = convergeShot(deps, "hero", { yaw: 0, pitch: 0 }, 100, () => [1.35, 5, 2]);
+    expect(shot!.origin[0]).toBeCloseTo(1.35);
+    expect(shot!.origin[1]).toBeCloseTo(1.4);
+    expect(shot!.direction[1]).toBeCloseTo(1);
+    expect(shot!.direction[0]).toBeCloseTo(0);
+  });
+
+  test("convergeShot passes an explicit aim through unchanged", () => {
+    const shot = convergeShot(
+      deps,
+      "hero",
+      { origin: [0, 1, 0], direction: [0, 0, 1] },
+      100,
+      () => [9, 9, 9],
+    );
+    expect(shot?.origin).toEqual([0, 1, 0]);
+    expect(shot?.direction[2]).toBeCloseTo(1);
   });
 
   test("camera and world policies use explicit origin", () => {
