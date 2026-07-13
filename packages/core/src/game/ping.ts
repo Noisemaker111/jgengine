@@ -110,6 +110,11 @@ function categoryDef(
   return categories[category] ?? { id: category, markerKind: category, label: category, callout: category };
 }
 
+/**
+ * Contextual ping/marker communication between teammates, classified by what was pinged.
+ *
+ * @capability ping-wheel contextual ping/marker communication between teammates
+ */
 export function createPingSystem(deps: PingSystemDeps): PingSystem {
   const now = deps.now ?? Date.now;
   const categories = deps.categories ?? DEFAULT_PING_CATEGORIES;

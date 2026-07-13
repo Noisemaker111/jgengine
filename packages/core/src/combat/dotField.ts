@@ -52,7 +52,11 @@ interface ActiveDot {
   ticksEmitted: number;
 }
 
-/** Builds an empty {@link DotField}; `apply` DoTs onto it and drain damage each frame with `tick`. */
+/**
+ * Builds an empty {@link DotField}; `apply` DoTs onto it and drain damage each frame with `tick`.
+ *
+ * @capability dot-field track stacking damage-over-time effects and drain damage each frame
+ */
 export function createDotField(): DotField {
   const dots = new Map<string, ActiveDot>();
 

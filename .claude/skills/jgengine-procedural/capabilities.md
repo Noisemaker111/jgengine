@@ -7,3 +7,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/survival/decayMeter"`
+
+## limb-health — per-body-part/region health tracked separately
+
+- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/survival/regionHealth"`

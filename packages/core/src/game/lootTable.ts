@@ -86,6 +86,11 @@ function rollEntry(entry: LootEntry, rng: () => number): Drop {
   return entry.item !== undefined ? { item: entry.item, count } : { currency: entry.currency, count };
 }
 
+/**
+ * Register named loot tables and roll weighted randomized drops from them.
+ *
+ * @capability loot-table register loot tables and roll weighted randomized drops
+ */
 export function createLootRegistry(): LootRegistry {
   const tables = new Map<string, LootTableDef>();
 
@@ -121,7 +126,11 @@ export function createLootRegistry(): LootRegistry {
   };
 }
 
-/** Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}. */
+/**
+ * Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
+ *
+ * @capability loot-table validate a loot table definition for use with the registry
+ */
 export function lootTable(def: LootTableDef): LootTableDef {
   assertValidDef(def);
   return def;

@@ -74,6 +74,11 @@ function matchesReason(when: { reason: DeathReasonKind } | undefined, reason: De
   return when === undefined || when.reason === reason.kind;
 }
 
+/**
+ * Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
+ *
+ * @capability death-system resolve entity death and its on-death consequences
+ */
 export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
   const dead = new Set<string>();
 

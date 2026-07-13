@@ -66,6 +66,11 @@ export interface DefensiveWindow {
   isInvulnerable(nowMs: number): boolean;
 }
 
+/**
+ * Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
+ *
+ * @capability parry-window time a block/parry/i-frame defensive window against incoming hits
+ */
 export function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow {
   let openedAt: number | null = null;
 

@@ -85,6 +85,11 @@ interface RegionRuntime {
   current: number;
 }
 
+/**
+ * Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
+ *
+ * @capability limb-health per-body-part/region health tracked separately
+ */
 export function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth {
   if (config.regions.length === 0) {
     throw new Error("createMultiRegionHealth: regions must be non-empty");

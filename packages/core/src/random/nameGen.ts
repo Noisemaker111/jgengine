@@ -21,6 +21,11 @@ export function pickFrom(rng: () => number, bank: readonly string[]): string {
   return bank[Math.floor(rng() * bank.length)]!;
 }
 
+/**
+ * Generate procedural names from templates and word banks with an injected random source.
+ *
+ * @capability name-generator generate procedural names from templates and word banks
+ */
 export function createNameGenerator(options: NameGeneratorOptions): NameGenerator {
   const { rng, syllables } = options;
   const minSyllables = Math.max(1, options.minSyllables ?? 2);

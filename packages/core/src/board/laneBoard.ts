@@ -175,6 +175,11 @@ export interface LaneBoard<C> {
   reset(next?: LaneBoardState<C>): void;
 }
 
+/**
+ * A lane-based board where cards resolve per lane — the lane card-battler layout.
+ *
+ * @capability lane-board a lane-based card-battler board with per-lane outcomes
+ */
 export function createLaneBoard<C>(config: LaneBoardConfig<C>): LaneBoard<C> {
   let state = createLaneBoardState(config);
   return {

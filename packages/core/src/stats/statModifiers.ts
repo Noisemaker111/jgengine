@@ -25,6 +25,11 @@ interface StatSourceEntry<TStat extends string> {
   expiresAtMs: number | undefined;
 }
 
+/**
+ * A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
+ *
+ * @capability stat-block base stats with stacking, expiring buffs and debuffs applied on read
+ */
 export function createStats<TStat extends string>(
   base: Record<TStat, number>,
   options?: CreateStatsOptions,

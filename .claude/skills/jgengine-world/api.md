@@ -163,7 +163,7 @@
 - `ReputationTier` (interface): interface ReputationTier — ⚠ undocumented
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
-- `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — ⚠ undocumented
+- `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 
 ## @jgengine/core/interaction/contextMenu
 
@@ -201,7 +201,7 @@
 - `QteInputEvent` (interface): interface QteInputEvent — ⚠ undocumented
 - `QteOutcome` (type): type QteOutcome = | { status: "success" } | { status: "fail"; atStep: string; reason: "missed-window" | "wrong-action" | "too-early" } — ⚠ undocumented
 - `QteStep` (interface): interface QteStep — ⚠ undocumented
-- `evaluateQteSequence` (function): function evaluateQteSequence(steps: readonly QteStep[], inputs: readonly QteInputEvent[]): QteOutcome — ⚠ undocumented
+- `evaluateQteSequence` (function): function evaluateQteSequence(steps: readonly QteStep[], inputs: readonly QteInputEvent[]): QteOutcome — Evaluate a quick-time-event input sequence against timed hit windows.
 - `pendingQteStep` (function): function pendingQteStep(steps: readonly QteStep[], elapsedSeconds: number): QteStep | null — ⚠ undocumented
 - `qteProgress` (function): function qteProgress(steps: readonly QteStep[], elapsedSeconds: number): number — ⚠ undocumented
 
@@ -212,7 +212,7 @@
 - `SkillCheckZone` (interface): interface SkillCheckZone — ⚠ undocumented
 - `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
-- `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — ⚠ undocumented
+- `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 
 ## @jgengine/core/math/scalar
 
@@ -254,7 +254,7 @@
 - `DashRejection` (type): type DashRejection = { reason: "no-stamina" | "cooldown" | "dashing" } — ⚠ undocumented
 - `DashState` (interface): interface DashState — ⚠ undocumented
 - `createDashState` (function): function createDashState(config: DashConfig): DashState — ⚠ undocumented
-- `dashDisplacement` (function): function dashDisplacement(config: DashConfig, dir: DashDirection, elapsedMs: number): [number, number, number] — ⚠ undocumented
+- `dashDisplacement` (function): function dashDisplacement(config: DashConfig, dir: DashDirection, elapsedMs: number): [number, number, number] — Compute a dash/dodge burst's displacement over its window, with i-frame timing for dodges.
 - `dashEase` (function): function dashEase(t: number): number — ⚠ undocumented
 - `dashFrameDelta` (function): function dashFrameDelta(config: DashConfig, dir: DashDirection, previousElapsedMs: number, elapsedMs: number): [number, number, number] — ⚠ undocumented
 - `dashOffset` (function): function dashOffset(config: DashConfig, dir: DashDirection, elapsedMs: number): [number, number, number] — ⚠ undocumented
@@ -267,7 +267,7 @@
 - `GlideModelConfig` (interface): interface GlideModelConfig — ⚠ undocumented
 - `GlideStep` (interface): interface GlideStep — ⚠ undocumented
 - `GlideVec3` (type): type GlideVec3 = readonly [number, number, number] — ⚠ undocumented
-- `createGlideModel` (function): function createGlideModel(config: GlideModelConfig = {}): GlideModel — ⚠ undocumented
+- `createGlideModel` (function): function createGlideModel(config: GlideModelConfig = {}): GlideModel — Gliding/wingsuit descent control — lift, drag, and steering from a launch.
 
 ## @jgengine/core/movement/grappleSwing
 
@@ -276,7 +276,7 @@
 - `GrappleSwingState` (interface): interface GrappleSwingState — ⚠ undocumented
 - `GrappleSwingStep` (interface): interface GrappleSwingStep — ⚠ undocumented
 - `SwingVec3` (type): type SwingVec3 = readonly [number, number, number] — ⚠ undocumented
-- `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — ⚠ undocumented
+- `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
 
 ## @jgengine/core/movement/leaderTrail
 
@@ -284,7 +284,7 @@
 - `LeaderTrailConfig` (interface): interface LeaderTrailConfig — ⚠ undocumented
 - `TrailPoint` (type): type TrailPoint = readonly [number, number, number] — ⚠ undocumented
 - `TrailPose` (interface): interface TrailPose — ⚠ undocumented
-- `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — ⚠ undocumented
+- `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 
 ## @jgengine/core/movement/movementModel
 
@@ -326,7 +326,7 @@
 - `PoseHitbox` (interface): interface PoseHitbox — ⚠ undocumented
 - `PoseRejection` (interface): interface PoseRejection — ⚠ undocumented
 - `PoseState` (interface): interface PoseState — ⚠ undocumented
-- `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — ⚠ undocumented
+- `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 
 ## @jgengine/core/movement/steering
 

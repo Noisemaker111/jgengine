@@ -32,6 +32,11 @@ export interface GameFeed {
   hydrate(data: Record<string, FeedEntry[]>): void;
 }
 
+/**
+ * A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
+ *
+ * @capability event-feed a rolling feed of recent gameplay events for a HUD ticker or killfeed
+ */
 export function createGameFeed(options?: GameFeedOptions): GameFeed {
   const limit = options?.limit ?? 20;
   const buffers = new Map<string, FeedEntry[]>();

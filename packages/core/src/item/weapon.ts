@@ -18,6 +18,11 @@ export interface WeaponStats {
   getStat(itemId: string, stat: string): number | null;
 }
 
+/**
+ * Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
+ *
+ * @capability weapon-stats resolve per-weapon stat values for combat math
+ */
 export function createWeaponStats(
   resolveEntry: (itemId: string) => WeaponEntry | null | undefined,
 ): WeaponStats {

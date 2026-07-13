@@ -60,6 +60,11 @@ export function wearAmount(spec: DurabilitySpec, kind: WearKind): number {
   return kind === "use" ? spec.wearPerUse ?? 0 : spec.wearPerHit ?? 0;
 }
 
+/**
+ * Apply wear to an item, tracking breakage and repair eligibility.
+ *
+ * @capability durability track item wear, breakage, and repair
+ */
 export function applyWear(state: DurabilityState, amount: number): DurabilityState {
   if (amount <= 0) return state;
   return { current: clamp(state.current - amount, 0, state.max), max: state.max };

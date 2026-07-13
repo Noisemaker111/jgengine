@@ -43,6 +43,11 @@ export function productionBuilding(config: ProductionBuildingConfig): Production
   };
 }
 
+/**
+ * A production building that converts input items into outputs over time — factory/crafting station.
+ *
+ * @capability production-building a factory building converting inputs to outputs over time
+ */
 export function createProductionState(): ProductionState {
   return { buffer: {}, output: {}, progress: 0, active: false };
 }

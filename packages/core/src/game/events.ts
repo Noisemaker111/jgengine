@@ -232,6 +232,11 @@ export interface GameEvents<TMap extends GameEventMap = GameEventMap> {
   emit<TName extends keyof TMap>(name: TName, payload: TMap[TName]): void;
 }
 
+/**
+ * A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
+ *
+ * @capability event-bus typed publish/subscribe bus for gameplay events
+ */
 export function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> {
   const listeners = new Map<keyof TMap, Set<GameEventHandler<never>>>();
 

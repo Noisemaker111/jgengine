@@ -1259,7 +1259,6 @@
 - `TOUCH_STYLE_AUTO` (const): const TOUCH_STYLE_AUTO: "auto" — Sentinel Controls value meaning "defer to the game's suggested touch skin".
 - `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean): { shadows: boolean; dpr: number; uiScale: number } — ⚠ undocumented
 - `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
-- `useTouchStyle` (function): function useTouchStyle(store: SettingsStore, fallback: TouchStyle): TouchStyle — Player's Settings choice, or the game's suggested default when left on `auto`.
 
 ## @jgengine/shell/settings/settingsController
 

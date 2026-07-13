@@ -1,4 +1,8 @@
-/** Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty. */
+/**
+ * Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
+ *
+ * @capability weighted-pick pick one item from a set with an injected random source
+ */
 export function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined {
   if (items.length === 0) return undefined;
   return items[Math.min(items.length - 1, Math.floor(rng() * items.length))];

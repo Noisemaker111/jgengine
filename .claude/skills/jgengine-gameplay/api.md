@@ -28,7 +28,7 @@
 - `LaneRuleInput` (interface): interface LaneRuleInput<C> — ⚠ undocumented
 - `Side` (type): type Side = string — ⚠ undocumented
 - `boardTotals` (function): function boardTotals<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>): Readonly<Record<Side, number>> — ⚠ undocumented
-- `createLaneBoard` (function): function createLaneBoard<C>(config: LaneBoardConfig<C>): LaneBoard<C> — ⚠ undocumented
+- `createLaneBoard` (function): function createLaneBoard<C>(config: LaneBoardConfig<C>): LaneBoard<C> — A lane-based board where cards resolve per lane — the lane card-battler layout.
 - `createLaneBoardState` (function): function createLaneBoardState<C>(config: LaneBoardConfig<C>): LaneBoardState<C> — ⚠ undocumented
 - `laneAggregate` (function): function laneAggregate<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number, side: Side): LaneAggregate — ⚠ undocumented
 - `laneOutcome` (function): function laneOutcome<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number): LaneOutcome — ⚠ undocumented
@@ -44,7 +44,7 @@
 - `TimelineSlot` (interface): interface TimelineSlot — ⚠ undocumented
 - `TimelineSlotConfig` (interface): interface TimelineSlotConfig — ⚠ undocumented
 - `TimelineTickResult` (interface): interface TimelineTickResult — ⚠ undocumented
-- `createTimelineBoard` (function): function createTimelineBoard(slots: readonly TimelineSlotConfig[]): TimelineBoard — ⚠ undocumented
+- `createTimelineBoard` (function): function createTimelineBoard(slots: readonly TimelineSlotConfig[]): TimelineBoard — A step-sequencer timeline board of timed, toggleable slots.
 - `createTimelineBoardState` (function): function createTimelineBoardState(slots: readonly TimelineSlotConfig[]): TimelineBoardState — ⚠ undocumented
 - `resetSlot` (function): function resetSlot(state: TimelineBoardState, slotId: string, remainingMs?: number): TimelineBoardState — ⚠ undocumented
 - `setSlotEnabled` (function): function setSlotEnabled(state: TimelineBoardState, slotId: string, enabled: boolean): TimelineBoardState — ⚠ undocumented
@@ -126,7 +126,7 @@
 - `TransportPath` (interface): interface TransportPath — ⚠ undocumented
 - `acceptsInput` (function): function acceptsInput(def: ProductionBuildingDef, state: ProductionState, itemId: string): boolean — ⚠ undocumented
 - `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
-- `createProductionState` (function): function createProductionState(): ProductionState — ⚠ undocumented
+- `createProductionState` (function): function createProductionState(): ProductionState — A production building that converts input items into outputs over time — factory/crafting station.
 - `drainOutput` (function): function drainOutput(state: ProductionState, itemId: string, count?: number): { state: ProductionState; taken: number } — ⚠ undocumented
 - `feedProduction` (function): function feedProduction(def: ProductionBuildingDef, state: ProductionState, itemId: string, count: number): { state: ProductionState; accepted: number } — ⚠ undocumented
 - `productionBuilding` (function): function productionBuilding(config: ProductionBuildingConfig): ProductionBuildingDef — ⚠ undocumented
@@ -188,7 +188,7 @@
 - `CurrencyDefinition` (interface): interface CurrencyDefinition<TCurrencyId extends string = string> — ⚠ undocumented
 - `CurrencyOperation` (type): type CurrencyOperation = "add" | "deduct" — ⚠ undocumented
 - `applyCurrencyOperation` (function): function applyCurrencyOperation(currency: CurrencyDefinition, current: number, operation: CurrencyOperation, amount: number): CurrencyAdjustment — ⚠ undocumented
-- `formatCurrencyAmount` (function): function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string — ⚠ undocumented
+- `formatCurrencyAmount` (function): function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string — Format a currency amount with its symbol and grouping for HUD display.
 - `insufficientCurrencyReason` (function): function insufficientCurrencyReason(currency: CurrencyDefinition, needed: number, current: number): string — ⚠ undocumented
 - `resolveCurrencyDelta` (function): function resolveCurrencyDelta(current: number, delta: number): { operation: CurrencyOperation; amount: number } — Deducts clamp to the available balance (a delta can never overdraw); adds apply in full.
 - `sanitizeCurrencyAmount` (function): function sanitizeCurrencyAmount(amount: number): number — ⚠ undocumented
@@ -202,7 +202,7 @@
 - `chargeFrom` (function): function chargeFrom(book: WalletBook, scope: WalletScope, currency: string, amount: number, by?: string): BookChargeResult — ⚠ undocumented
 - `contributionOf` (function): function contributionOf(book: WalletBook, groupId: string, userId: string): Readonly<Record<string, number>> — ⚠ undocumented
 - `contributorsOf` (function): function contributorsOf(book: WalletBook, groupId: string): string[] — ⚠ undocumented
-- `createWalletBook` (function): function createWalletBook(): WalletBook — ⚠ undocumented
+- `createWalletBook` (function): function createWalletBook(): WalletBook — Shared or group currency pools that track each member's contribution to a common balance.
 - `grantTo` (function): function grantTo(book: WalletBook, scope: WalletScope, currency: string, amount: number, by?: string): WalletBook — ⚠ undocumented
 - `groupScope` (function): function groupScope(groupId: string): WalletScope — ⚠ undocumented
 - `scopeKey` (function): function scopeKey(scope: WalletScope): string — ⚠ undocumented
@@ -215,7 +215,7 @@
 - `TechRejection` (type): type TechRejection = | { reason: "unknown-node" } | { reason: "already-unlocked" } | { reason: "missing-prerequisites"; missing: readonly string[] } — ⚠ undocumented
 - `TechState` (type): type TechState = UnlockState — ⚠ undocumented
 - `TechTree` (interface): interface TechTree — ⚠ undocumented
-- `availableTech` (function): function availableTech(defs: readonly TechNodeDef[], state: TechState): TechNodeDef[] — ⚠ undocumented
+- `availableTech` (function): function availableTech(defs: readonly TechNodeDef[], state: TechState): TechNodeDef[] — Research/tech nodes gated by prerequisites that unlock recipes and capabilities as they are granted.
 - `canUnlockTech` (function): function canUnlockTech(defs: readonly TechNodeDef[], state: TechState, id: string): TechCheck — ⚠ undocumented
 - `createTechTree` (function): function createTechTree(defs: readonly TechNodeDef[] = []): TechTree — ⚠ undocumented
 - `grantTech` (function): function grantTech(state: TechState, node: TechNodeDef): string[] — ⚠ undocumented
@@ -231,7 +231,7 @@
 - `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — ⚠ undocumented
 - `charge` (function): function charge(state: WalletState, currency: string, amount: number): ChargeResult — ⚠ undocumented
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>): ChargeResult — ⚠ undocumented
-- `createEmptyWallet` (function): function createEmptyWallet(): WalletState — ⚠ undocumented
+- `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
 
 ## @jgengine/core/game/chat
@@ -282,7 +282,7 @@
 - `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
 - `CosmeticsDeps` (interface): interface CosmeticsDeps — ⚠ undocumented
 - `CosmeticsEvents` (interface): interface CosmeticsEvents — ⚠ undocumented
-- `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — ⚠ undocumented
+- `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
 
 ## @jgengine/core/game/defineGame
 
@@ -330,7 +330,7 @@
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
 - `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent — ⚠ undocumented
 - `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent — ⚠ undocumented
-- `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — ⚠ undocumented
+- `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
 
 ## @jgengine/core/game/feed
 
@@ -338,7 +338,7 @@
 - `GameFeed` (interface): interface GameFeed — ⚠ undocumented
 - `GameFeedOptions` (interface): interface GameFeedOptions — ⚠ undocumented
 - `appendFeedEntry` (function): function appendFeedEntry<T>(buffer: readonly FeedEntry<T>[], entry: FeedEntry<T>, limit: number): FeedEntry<T>[] — ⚠ undocumented
-- `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — ⚠ undocumented
+- `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
 - `recentFeedEntries` (function): function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] — ⚠ undocumented
 
 ## @jgengine/core/game/gamePhase
@@ -364,7 +364,7 @@
 - `LeaderboardRow` (interface): interface LeaderboardRow — ⚠ undocumented
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
 - `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef — ⚠ undocumented
-- `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — ⚠ undocumented
+- `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 
 ## @jgengine/core/game/levelSequence
 
@@ -385,7 +385,7 @@
 - `LoadoutInventoryTransaction` (interface): interface LoadoutInventoryTransaction — ⚠ undocumented
 - `LoadoutItemEntry` (interface): interface LoadoutItemEntry — ⚠ undocumented
 - `Loadouts` (interface): interface Loadouts — ⚠ undocumented
-- `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — ⚠ undocumented
+- `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — Save, name, and swap equipment loadouts.
 
 ## @jgengine/core/game/lootFilter
 
@@ -402,7 +402,7 @@
 - `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds.
 - `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
-- `createLootRegistry` (function): function createLootRegistry(): LootRegistry — ⚠ undocumented
+- `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
 - `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — ⚠ undocumented
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 
@@ -434,7 +434,7 @@
 - `PingSystem` (interface): interface PingSystem — ⚠ undocumented
 - `PingSystemDeps` (interface): interface PingSystemDeps — ⚠ undocumented
 - `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
-- `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — ⚠ undocumented
+- `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
 
 ## @jgengine/core/game/playableGame
 
@@ -510,7 +510,7 @@
 - `QuestTurnIn` (interface): interface QuestTurnIn — ⚠ undocumented
 - `applyQuestRewards` (function): function applyQuestRewards(rewards: QuestRewards, appliers: { grantXp?(amount: number): void; grantEconomy?(currencyId: string, amount: number): void; grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void; grantUnlock?(unlockId: string): void; }): { reason:… — ⚠ undocumented
 - `createQuestEvaluator` (function): function createQuestEvaluator(defs: QuestDef[] | Record<string, QuestDef>): QuestEvaluator — ⚠ undocumented
-- `createQuestJournal` (function): function createQuestJournal(deps: QuestJournalDeps): QuestJournal — ⚠ undocumented
+- `createQuestJournal` (function): function createQuestJournal(deps: QuestJournalDeps): QuestJournal — Track accepted quests and their per-objective progress, granting rewards on completion.
 
 ## @jgengine/core/game/race
 
@@ -527,7 +527,7 @@
 - `RaceWinCondition` (type): type RaceWinCondition = (standings: readonly RacerProgress[], track: RaceTrack) => readonly string[] | null — ⚠ undocumented
 - `RacerProgress` (interface): interface RacerProgress — ⚠ undocumented
 - `createLapTimer` (function): function createLapTimer(): LapTimer — Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded.
-- `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — ⚠ undocumented
+- `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — A checkpoint race state machine — laps, forks, live standings, splits, and pluggable win conditions.
 - `everyoneFinishes` (function): function everyoneFinishes(): RaceWinCondition — Every non-eliminated racer must finish.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
@@ -553,7 +553,7 @@
 - `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `RunModifierPick` (interface): interface RunModifierPick — ⚠ undocumented
 - `RunModifierStack` (interface): interface RunModifierStack<TStat extends string = string, TData = unknown> — ⚠ undocumented
-- `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — ⚠ undocumented
+- `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
 - `createRunModifierStack` (function): function createRunModifierStack<TStat extends string = string, TData = unknown>(offers: readonly RunModifierOffer<TStat, TData>[]): RunModifierStack<TStat, TData> — ⚠ undocumented
 
 ## @jgengine/core/game/snapshotHistory
@@ -592,14 +592,14 @@
 - `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
 - `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
 - `WorldInvites` (interface): interface WorldInvites — ⚠ undocumented
-- `createSocial` (function): function createSocial(deps: SocialDeps): Social — ⚠ undocumented
+- `createSocial` (function): function createSocial(deps: SocialDeps): Social — Emotes and lightweight social interactions between nearby players.
 
 ## @jgengine/core/game/spawnPoints
 
 - `RespawnTarget` (interface): interface RespawnTarget — ⚠ undocumented
 - `SpawnPointPose` (interface): interface SpawnPointPose — ⚠ undocumented
 - `SpawnPoints` (interface): interface SpawnPoints — ⚠ undocumented
-- `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — ⚠ undocumented
+- `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — Register spawn locations and choose where entities spawn or respawn.
 
 ## @jgengine/core/game/talents
 
@@ -635,7 +635,7 @@
 - `TradeWallet` (interface): interface TradeWallet — ⚠ undocumented
 - `applyTradeOutcome` (function): function applyTradeOutcome(outcome: TradeOutcome, appliers: { adjustItem(itemId: string, count: number): { reason: string } | null; adjustCurrency(delta: Record<string, number>): void; }): { reason: string } | null — ⚠ undocumented
 - `canAffordCosts` (function): function canAffordCosts(balances: Record<string, number>, costs: Record<string, number>): string | null — ⚠ undocumented
-- `createTradeSystem` (function): function createTradeSystem(deps: TradeSystemDeps): TradeSystem — ⚠ undocumented
+- `createTradeSystem` (function): function createTradeSystem(deps: TradeSystemDeps): TradeSystem — Buy and sell goods against player currency balances, resolving affordability and price.
 - `resolveBuy` (function): function resolveBuy(itemId: string, trade: TradeField | null | undefined, shopId: string, count: number, balances: Record<string, number>): TradeResolution — ⚠ undocumented
 - `resolveSell` (function): function resolveSell(itemId: string, trade: TradeField | null | undefined, count: number): TradeResolution — ⚠ undocumented
 
@@ -645,7 +645,7 @@
 - `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
 - `UnlockState` (type): type UnlockState = readonly string[] — ⚠ undocumented
 - `Unlocks` (interface): interface Unlocks — ⚠ undocumented
-- `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — ⚠ undocumented
+- `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
 - `grantUnlock` (function): function grantUnlock(granted: UnlockState, unlockId: string): string[] — ⚠ undocumented
 - `hasUnlock` (function): function hasUnlock(granted: UnlockState, unlockId: string): boolean — ⚠ undocumented
@@ -666,7 +666,7 @@
 - `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput — ⚠ undocumented
 - `WorldItemStore` (interface): interface WorldItemStore — ⚠ undocumented
 - `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps — ⚠ undocumented
-- `createWorldItemStore` (function): function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore — ⚠ undocumented
+- `createWorldItemStore` (function): function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore — Spawn and track pickup-able items scattered in the world, including drops that scatter on death.
 - `resolveDeathDrops` (function): function resolveDeathDrops(drops: readonly Drop[], options: ResolveDeathDropsOptions): ResolvedDeathDrops — Splits rolled death drops between direct grants and scattered ground items. `mode: "grant"` is the legacy behavior (loot straight to inventory); `mode: "world"` routes item drops through a scatter impulse and leaves currency drops granting directly (coins fly to the killer, gear hits the ground).
 - `resolveWorldItemPresentation` (function): function resolveWorldItemPresentation(item: LootFilterItem, rarityStyle: Record<string, RarityStyle> | undefined, rules: readonly LootFilterRule[] | undefined): WorldItemPresentation — Composes the baseline rarity→beam/color/label render binding (#32, catalog data the game supplies) with the loot-filter rule overrides (#33). A matching rule wins field-by-field; unmatched fields fall back to the rarity's baseline style.
 - `scatterOffset` (function): function scatterOffset(rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — Random offset within an annulus `[minRadius, radius]` around the origin — the on-death scatter impulse.
@@ -810,7 +810,7 @@
 - `PutResult` (type): type PutResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" } — ⚠ undocumented
 - `TakeResult` (type): type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" } — ⚠ undocumented
 - `countItem` (function): function countItem(state: InventoryState, itemId: string): number — ⚠ undocumented
-- `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — ⚠ undocumented
+- `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — A bag of stackable items supporting add, remove, count, and move — the base inventory model.
 - `createInventorySet` (function): function createInventorySet<TId extends string>(layouts: Record<TId, InventoryLayout>, traits: ItemTraits): InventorySet<TId> — ⚠ undocumented
 - `hasItem` (function): function hasItem(state: InventoryState, itemId: string, count: number): boolean — ⚠ undocumented
 - `moveItem` (function): function moveItem(from: InventoryState, fromSlot: number, to: InventoryState, toLayout: InventoryLayout, traits: ItemTraits, toSlot?: number): MoveResult — ⚠ undocumented
@@ -833,7 +833,7 @@
 - `canPlace` (function): function canPlace<T>(grid: ShapedGrid<T>, footprint: Footprint, origin: Cell, rotation: Rotation, ignoreId?: string): ShapedRejection | null — ⚠ undocumented
 - `cellFromPoint` (function): function cellFromPoint(point: { x: number; y: number }, cellSize: number, gridOrigin: { x: number; y: number } = { x: 0, y: 0 }): Cell — ⚠ undocumented
 - `cellOccupant` (function): function cellOccupant<T>(grid: ShapedGrid<T>, cell: Cell): string | null — ⚠ undocumented
-- `createShapedGrid` (function): function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> — ⚠ undocumented
+- `createShapedGrid` (function): function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> — A spatial grid inventory that holds shaped multi-cell items, Resident-Evil/Tarkov style.
 - `gridAdjacencyQuery` (function): function gridAdjacencyQuery<T>(grid: ShapedGrid<T>, options: { diagonal?: boolean } = {}): GridAdjacencyQuery — ⚠ undocumented
 - `moveShaped` (function): function moveShaped<T>(grid: ShapedGrid<T>, id: string, origin: Cell, rotation?: Rotation): ShapedResult<T> — ⚠ undocumented
 - `normalizeFootprint` (function): function normalizeFootprint(footprint: Footprint): Footprint — ⚠ undocumented
@@ -899,7 +899,7 @@
 - `RepairQuote` (interface): interface RepairQuote — ⚠ undocumented
 - `RepairSpec` (interface): interface RepairSpec — ⚠ undocumented
 - `WearKind` (type): type WearKind = "use" | "hit" — ⚠ undocumented
-- `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — ⚠ undocumented
+- `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
 - `canRepairAt` (function): function canRepairAt(spec: DurabilitySpec, stationId?: string): boolean — ⚠ undocumented
 - `createDurability` (function): function createDurability(spec: DurabilitySpec): DurabilityState — ⚠ undocumented
 - `createDurabilityTracker` (function): function createDurabilityTracker(): DurabilityTracker — ⚠ undocumented
@@ -924,7 +924,7 @@
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
 - `missingRequiredSlots` (function): function missingRequiredSlots(def: ModularItemDef, installed: readonly InstalledPart[]): string[] — ⚠ undocumented
 - `partInSlot` (function): function partInSlot(installed: readonly InstalledPart[], slotId: string): PartDef | null — ⚠ undocumented
-- `slotAccepts` (function): function slotAccepts(slot: MountSlotDef, category: string): boolean — ⚠ undocumented
+- `slotAccepts` (function): function slotAccepts(slot: MountSlotDef, category: string): boolean — Attach parts into an item's mount slots and resolve the combined stats.
 - `slotById` (function): function slotById(def: ModularItemDef, slotId: string): MountSlotDef | null — ⚠ undocumented
 - `uninstall` (function): function uninstall(installed: readonly InstalledPart[], slotId: string): readonly InstalledPart[] — ⚠ undocumented
 
@@ -935,13 +935,13 @@
 - `ItemUseInput` (interface): interface ItemUseInput — ⚠ undocumented
 - `ItemUseRejection` (interface): interface ItemUseRejection — ⚠ undocumented
 - `ItemUseResult` (interface): interface ItemUseResult<TState> — ⚠ undocumented
-- `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — ⚠ undocumented
+- `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — Use or consume items, applying their effects and per-item cooldowns.
 
 ## @jgengine/core/item/weapon
 
 - `WeaponEntry` (interface): interface WeaponEntry — ⚠ undocumented
 - `WeaponStats` (interface): interface WeaponStats — ⚠ undocumented
-- `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — ⚠ undocumented
+- `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `getWeaponStat` (function): function getWeaponStat(entry: WeaponEntry | null | undefined, stat: string): number | null — ⚠ undocumented
 
 ## @jgengine/core/puzzle/cellGrid
@@ -989,7 +989,7 @@
 - `NameGenerator` (interface): interface NameGenerator — ⚠ undocumented
 - `NameGeneratorOptions` (interface): interface NameGeneratorOptions — ⚠ undocumented
 - `SyllableBank` (interface): interface SyllableBank — ⚠ undocumented
-- `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — ⚠ undocumented
+- `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
 - `fillTemplate` (function): function fillTemplate(template: string, vars: Record<string, () => string> | Record<string, string>): string — ⚠ undocumented
 - `pickFrom` (function): function pickFrom(rng: () => number, bank: readonly string[]): string — ⚠ undocumented
 
@@ -1049,7 +1049,7 @@
 ## @jgengine/core/session/roles
 
 - `RoleSpec` (interface): interface RoleSpec — ⚠ undocumented
-- `assignRoles` (function): function assignRoles(userIds: readonly string[], roles: readonly RoleSpec[], rng: () => number = Math.random): Record<string, string> — ⚠ undocumented
+- `assignRoles` (function): function assignRoles(userIds: readonly string[], roles: readonly RoleSpec[], rng: () => number = Math.random): Record<string, string> — Assign hidden or team roles across players by ratio — social-deduction and team-shuffle setups.
 
 ## @jgengine/core/session/roundState
 
@@ -1064,7 +1064,7 @@
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
-- `createRoundState` (function): function createRoundState(config: RoundConfig<RoundPhase>): RoundState<RoundPhase> — ⚠ undocumented
+- `createRoundState` (function): function createRoundState(config: RoundConfig<RoundPhase>): RoundState<RoundPhase> — Run a match as repeating buy/action/end round phases with per-round win rewards and loss-streak economy.
 - `lossBonusFor` (function): function lossBonusFor(rule: LossBonusRule | undefined, streak: number): number — ⚠ undocumented
 
 ## @jgengine/core/turn/commit

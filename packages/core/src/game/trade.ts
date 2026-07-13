@@ -116,6 +116,11 @@ export function applyTradeOutcome(
   return null;
 }
 
+/**
+ * Buy and sell goods against player currency balances, resolving affordability and price.
+ *
+ * @capability shop-trade buy and sell goods against player currency balances
+ */
 export function createTradeSystem(deps: TradeSystemDeps): TradeSystem {
   const { resolveTrade, wallet, inventory } = deps;
 

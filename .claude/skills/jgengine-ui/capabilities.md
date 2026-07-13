@@ -4,10 +4,15 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## clock-format — render seconds as m:ss / m:ss.ff / h:mm:ss for timers and race HUDs
+## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
+- `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/format/duration"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/format/duration"`
 
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
 - `Minimap` (function) · `import { Minimap } from "@jgengine/react"`
+
+## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
+
+- `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/format/duration"`

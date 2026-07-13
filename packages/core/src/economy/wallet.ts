@@ -4,6 +4,11 @@ export interface WalletState {
 
 export type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" };
 
+/**
+ * Hold per-currency balances with affordability checks and charge/grant operations.
+ *
+ * @capability wallet hold currency balances with charge and affordability checks
+ */
 export function createEmptyWallet(): WalletState {
   return { balances: {} };
 }

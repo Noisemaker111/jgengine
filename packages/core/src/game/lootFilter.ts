@@ -44,6 +44,8 @@ function matchesCondition(when: LootFilterCondition, item: LootFilterItem): bool
  * First matching rule wins (PoE/Last Epoch block semantics) — later rules
  * never override an earlier match. Returns overrides only; fields the rule
  * doesn't set are left for the caller's baseline (rarity style) to fill in.
+ *
+ * @capability loot-filter filter and highlight drops by rarity/name rules
  */
 export function evaluateLootFilter(
   rules: readonly LootFilterRule[],

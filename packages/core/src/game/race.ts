@@ -426,6 +426,11 @@ export class RaceState {
   }
 }
 
+/**
+ * A checkpoint race state machine — laps, forks, live standings, splits, and pluggable win conditions.
+ *
+ * @capability race-track a checkpoint race with laps, standings, splits, and win conditions
+ */
 export function createRaceState(config: RaceStateConfig): RaceState {
   return new RaceState(config);
 }
@@ -465,7 +470,11 @@ export interface LapTimer {
   snapshot(): LapTimerSnapshot;
 }
 
-/** Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded. */
+/**
+ * Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded.
+ *
+ * @capability lap-timer wall-clock current/last/best lap timing with splits
+ */
 export function createLapTimer(): LapTimer {
   let currentLap = 0;
   let lastLap: number | null = null;
@@ -508,6 +517,8 @@ export function createLapTimer(): LapTimer {
  * Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`):
  * `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the
  * cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
+ *
+ * @capability lap-splits turn cumulative split times into per-segment leg times
  */
 export function splitSegments(splits: readonly number[], start = 0): number[] {
   const segments: number[] = [];
@@ -522,6 +533,8 @@ export function splitSegments(splits: readonly number[], start = 0): number[] {
 /**
  * Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time
  * is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
+ *
+ * @capability lap-splits per-lap durations from a cumulative split book
  */
 export function lapDurations(splits: readonly number[], gatesPerLap: number): number[] {
   if (gatesPerLap <= 0) return [];
@@ -539,6 +552,8 @@ export function lapDurations(splits: readonly number[], gatesPerLap: number): nu
  * Elementwise delta of a cumulative split book against a `reference` book (a personal best or par lap):
  * positive means behind the reference at that checkpoint. Compared up to the shorter length — the
  * `+0.3s` / `−1.2s` gap every racing HUD shows against its ghost.
+ *
+ * @capability lap-splits delta of splits against a personal-best or par reference
  */
 export function parDelta(splits: readonly number[], reference: readonly number[]): number[] {
   const count = Math.min(splits.length, reference.length);

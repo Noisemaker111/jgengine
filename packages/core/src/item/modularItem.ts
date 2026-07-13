@@ -30,6 +30,11 @@ export function slotById(def: ModularItemDef, slotId: string): MountSlotDef | nu
   return def.slots.find((s) => s.id === slotId) ?? null;
 }
 
+/**
+ * Attach parts into an item's mount slots and resolve the combined stats.
+ *
+ * @capability modular-item attach parts into item mount slots to compute combined stats
+ */
 export function slotAccepts(slot: MountSlotDef, category: string): boolean {
   return typeof slot.accepts === "string" ? slot.accepts === category : slot.accepts.includes(category);
 }

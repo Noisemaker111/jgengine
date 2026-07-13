@@ -24,6 +24,11 @@ export type MoveResult =
   | { status: "ok"; from: InventoryState; to: InventoryState }
   | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" };
 
+/**
+ * A bag of stackable items supporting add, remove, count, and move — the base inventory model.
+ *
+ * @capability inventory-grid a bag of stackable items with add, remove, and move
+ */
 export function createEmptyInventory(layout: InventoryLayout): InventoryState {
   return { slots: new Array(layout.slots).fill(null) };
 }

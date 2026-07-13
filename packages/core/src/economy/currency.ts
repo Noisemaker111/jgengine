@@ -17,6 +17,11 @@ export function sanitizeCurrencyAmount(amount: number): number {
   return Math.max(0, Math.floor(amount));
 }
 
+/**
+ * Format a currency amount with its symbol and grouping for HUD display.
+ *
+ * @capability currency-format format a currency amount with its symbol for display
+ */
 export function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string {
   const prefix = currency.symbol ?? "";
   const suffix = currency.unit ? ` ${currency.unit}` : "";

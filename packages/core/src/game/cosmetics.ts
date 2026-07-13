@@ -27,6 +27,11 @@ export interface Cosmetics {
 
 const EMPTY_SLOTS: Readonly<Record<string, string>> = Object.freeze({});
 
+/**
+ * Equip cosmetic skins and customizations by slot, independent of gameplay stats.
+ *
+ * @capability cosmetics equip cosmetic skins and customizations by slot
+ */
 export function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics {
   const definitions = new Map<string, CosmeticLoadoutDef>();
   const equipped = new Map<string, Record<string, string>>();

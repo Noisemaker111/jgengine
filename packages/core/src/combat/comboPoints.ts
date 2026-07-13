@@ -13,6 +13,11 @@ export interface ComboPoints {
   clear(): void;
 }
 
+/**
+ * Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
+ *
+ * @capability combo-points build up and spend finisher/combo points
+ */
 export function createComboPoints(config: ComboPointsConfig): ComboPoints {
   const max = config.max;
   const expireAfterSeconds = config.expireAfterSeconds;
