@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/react",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "React UI layer for JGengine: GameProvider, hooks, and headless primitives over @jgengine/core.",
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -31,7 +31,7 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.9.0"
+    "@jgengine/core": "^0.10.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",

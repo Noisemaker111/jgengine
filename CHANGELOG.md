@@ -11,7 +11,7 @@ Agents building on the published SDK can also read this programmatically:
 same data as typed values, so an updater can diff its installed version against
 the latest and surface the migration steps.
 
-## Unreleased
+## 0.10.0
 
 ### Migrate
 
@@ -28,6 +28,10 @@ the latest and surface the migration steps.
 - HUD placement metadata — `HudPanel` gains `priority`, `mobileBehavior`, `allowOverlapWith`, `collisionGroup`, and registers as a collision-tracked layout region.
 - Mobile-landscape shoot device — `bun run shoot --device mobile-landscape` (844×390) plus collision-gate reads that fail mobile validation on forbidden overlaps.
 - Canyon Chase migrated as the reference landscape-required game — declares `orientation: { mobile: "landscape-required" }`, composes its HUD through coordinated `HudPanel` regions (pursuit distance critical, border secondary, survey map hidden on mobile, radio transient) instead of independent fixed corners.
+
+### Changed
+
+- First-person projectile tracers now originate from the weapon muzzle instead of the camera/eye centerline. Hit detection is unchanged (still crosshair-accurate) — only the drawn tracer's start point moved to the viewmodel muzzle, which tracks full aim yaw and pitch. Non-viewmodel games and enemy tracers are unaffected.
 
 ## 0.9.0
 
