@@ -393,6 +393,7 @@ export interface TilemapWorldConfig extends WorldGridConfig {
   map: string;
 }
 
+/** A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`. */
 export type WorldFeature =
   | ({ kind: "biomes" } & BiomesWorldConfig)
   | ({ kind: "voxel" } & VoxelWorldConfig)
@@ -440,6 +441,7 @@ function withPadFlatten(
   };
 }
 
+/** Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads. */
 export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature {
   const weather = list(config.weather);
   const vegetation = list(config.vegetation);
@@ -462,6 +464,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
   };
 }
 
+/** Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks. */
 export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor {
   if (
     config.baseHeight !== undefined &&
@@ -520,6 +523,7 @@ function withAreaPosition(area: EnvironmentArea, position: EnvironmentVec2 | und
   return position !== undefined && area.position === undefined ? { ...area, position } : area;
 }
 
+/** Declares a rainfall weather effect for `environment()` — area, density, speed, and wind. */
 export function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor {
   return {
     kind: "rain",
@@ -532,6 +536,7 @@ export function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescrip
   };
 }
 
+/** Declares a snowfall weather effect for `environment()` — area, density, drift, and wind. */
 export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor {
   return {
     kind: "snow",
@@ -545,6 +550,7 @@ export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescrip
   };
 }
 
+/** Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors. */
 export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor {
   return withOptional(
     {
@@ -560,6 +566,7 @@ export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDesc
   );
 }
 
+/** Declares an ocean water body for `environment()` — bounds, level, and wave tuning. */
 export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor {
   return {
     kind: "ocean",
@@ -600,6 +607,7 @@ export function island(config: TerrainIslandConfig): TerrainIslandDescriptor {
   return { ...descriptor, kind: "island", origin };
 }
 
+/** Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. */
 export function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor {
   return withOptional(
     {
@@ -635,22 +643,27 @@ export function pad(config: PadEnvironmentConfig): PadEnvironmentDescriptor {
   );
 }
 
+/** Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain. */
 export function biomes(config: BiomesWorldConfig): WorldFeature {
   return { kind: "biomes", ...config };
 }
 
+/** Declares a voxel-grid world for block-based games. */
 export function voxel(config: VoxelWorldConfig): WorldFeature {
   return { kind: "voxel", ...config };
 }
 
+/** Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts. */
 export function plots(config: PlotsWorldConfig = {}): WorldFeature {
   return { kind: "plots", ...config };
 }
 
+/** Declares a 2D tilemap world from a map string. */
 export function tilemap(config: TilemapWorldConfig): WorldFeature {
   return { kind: "tilemap", ...config };
 }
 
+/** Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own. */
 export function flat(): WorldFeature {
   return { kind: "flat" };
 }

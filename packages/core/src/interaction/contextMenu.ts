@@ -9,6 +9,7 @@ export interface ContextVerb {
   disabled?: boolean;
 }
 
+/** Builds a {@link ContextVerb} for a right-click menu entry. */
 export function contextVerb(
   label: string,
   command: string,

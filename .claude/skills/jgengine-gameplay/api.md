@@ -286,15 +286,15 @@
 
 ## @jgengine/core/game/defineGame
 
-- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — ⚠ undocumented
-- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — ⚠ undocumented
+- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems.
+- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional.
 - `GameFeatures` (interface): interface GameFeatures — Opt-in `ctx.game.*` subsystems. Absent = off: the game doesn't carry (or expose) it, and `ctx.game.<name>` is `undefined`. Present (`true`) builds it. The universal base — `commands`, `events`, `store`, `feed` — is always on and not listed here. This is what keeps core genre-agnostic: a puzzle game isn't handed an MMO's leaderboard/roster/turn plumbing it never asked for.
-- `GameLoop` (interface): interface GameLoop<TContext = unknown> — ⚠ undocumented
-- `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — ⚠ undocumented
-- `InventoryDeclaration` (interface): interface InventoryDeclaration — ⚠ undocumented
+- `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
+- `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
+- `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `LoopPlayer` (interface): interface LoopPlayer — Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks.
-- `PhysicsConfig` (interface): interface PhysicsConfig — ⚠ undocumented
-- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — ⚠ undocumented
+- `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
+- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`.
 
 ## @jgengine/core/game/events
 
@@ -398,13 +398,13 @@
 
 ## @jgengine/core/game/lootTable
 
-- `Drop` (interface): interface Drop — ⚠ undocumented
-- `LootEntry` (interface): interface LootEntry — ⚠ undocumented
+- `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
+- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds.
 - `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
-- `LootTableDef` (interface): interface LootTableDef — ⚠ undocumented
+- `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `createLootRegistry` (function): function createLootRegistry(): LootRegistry — ⚠ undocumented
 - `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — ⚠ undocumented
-- `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — ⚠ undocumented
+- `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 
 ## @jgengine/core/game/modelAnimation
 
@@ -642,7 +642,7 @@
 - `ActionBindingMap` (type): type ActionBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBinding<TCode> > — ⚠ undocumented
 - `ActionBindingModes` (interface): interface ActionBindingModes<TCode extends string = string> — ⚠ undocumented
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
-- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — ⚠ undocumented
+- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
@@ -839,7 +839,7 @@
 - `RolledItem` (interface): interface RolledItem — ⚠ undocumented
 - `RollerConfig` (interface): interface RollerConfig — ⚠ undocumented
 - `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
-- `seededRng` (function): function seededRng(seed: string | number): () => number — ⚠ undocumented
+- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 
 ## @jgengine/core/item/durability
 
@@ -936,8 +936,8 @@
 
 ## @jgengine/core/random/rng
 
-- `seededRng` (function): function seededRng(seed: string | number): () => number — ⚠ undocumented
-- `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — ⚠ undocumented
+- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+- `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 
 ## @jgengine/core/random/seedLink
 
