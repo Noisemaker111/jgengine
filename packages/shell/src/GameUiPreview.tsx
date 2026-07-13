@@ -53,7 +53,6 @@ export function GameUiPreview({
   const [ctx, setCtx] = useState<GameContext | null>(null);
 
   useEffect(() => {
-    playable.game.scene.clear();
     const context = createGameContext({
       definition: playable.game,
       content: playable.content,
@@ -68,7 +67,6 @@ export function GameUiPreview({
     }
     setCtx(context);
     return () => {
-      playable.game.scene.clear();
       setCtx(null);
     };
   }, [playable, scenario]);

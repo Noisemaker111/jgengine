@@ -466,6 +466,10 @@
 - `applyMotionImpulses` (function): function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number — Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}.
 - `createMotionIntents` (function): function createMotionIntents(): MotionIntents — ⚠ undocumented
 
+## @jgengine/core/runtime/perContext
+
+- `perContext` (function): function perContext<T>(init: (ctx: GameContext) => T): (ctx: GameContext) => T — Per-`GameContext` lazy state, keyed by context identity through a `WeakMap` so it is reclaimed when the context is — the seam a game uses instead of a module-global `Map`, which is process-global and bleeds across worlds when one host serves several `serverId`s (#632). `init` runs once per distinct context on first access; the same context always resolves to the same value. This mirrors the engine's built-in per-ctx pattern (`ctx.player.motion`, `stepPlayerMovement`).
+
 ## @jgengine/core/runtime/persistenceScope
 
 - `NormalizedScenarioReset` (interface): interface NormalizedScenarioReset — ⚠ undocumented

@@ -1694,7 +1694,6 @@ export function GamePlayerShell({
   };
 
   useEffect(() => {
-    playable.game.scene.clear();
     setDiagnostics([]);
     try {
       const context = createGameContext({
@@ -1711,7 +1710,6 @@ export function GamePlayerShell({
       setCtx(null);
     }
     return () => {
-      playable.game.scene.clear();
       setCtx(null);
     };
   }, [playable, userId]);
