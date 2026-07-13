@@ -7,7 +7,18 @@
       "environment",
       "prop"
     ],
-    "file": "bed_floor.glb"
+    "file": "bed_floor.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.320292,
+        "d": 0.747325861
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0031648695000000004
+      },
+      "minY": -0.05000000000000004
+    }
   },
   {
     "id": "kenney-nature/bed",
@@ -17,7 +28,18 @@
       "environment",
       "prop"
     ],
-    "file": "bed.glb"
+    "file": "bed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3348643,
+        "d": 0.747325861
+      },
+      "center": {
+        "x": -0.007286149999999991,
+        "z": -0.0031648695000000004
+      },
+      "minY": -0.05000000000000011
+    }
   },
   {
     "id": "kenney-nature/bridge_center_stone",
@@ -27,7 +49,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_center_stone.glb"
+    "file": "bridge_center_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.04999999999999986
+    }
   },
   {
     "id": "kenney-nature/bridge_center_stoneRound",
@@ -37,7 +70,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_center_stoneRound.glb"
+    "file": "bridge_center_stoneRound.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.09999999999999999
+    }
   },
   {
     "id": "kenney-nature/bridge_center_wood",
@@ -47,7 +91,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_center_wood.glb"
+    "file": "bridge_center_wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/bridge_center_woodRound",
@@ -57,7 +112,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_center_woodRound.glb"
+    "file": "bridge_center_woodRound.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.09999999999999999
+    }
   },
   {
     "id": "kenney-nature/bridge_side_stone",
@@ -67,7 +133,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_side_stone.glb"
+    "file": "bridge_side_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.02,
+        "d": 1.04
+      },
+      "center": {
+        "x": -0.010000000000000009,
+        "z": 0
+      },
+      "minY": -0.05000000000000021
+    }
   },
   {
     "id": "kenney-nature/bridge_side_stoneRound",
@@ -77,7 +154,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_side_stoneRound.glb"
+    "file": "bridge_side_stoneRound.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.02,
+        "d": 1.04
+      },
+      "center": {
+        "x": -0.010000000000000009,
+        "z": 0
+      },
+      "minY": -0.050000000000002404
+    }
   },
   {
     "id": "kenney-nature/bridge_side_wood",
@@ -87,7 +175,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_side_wood.glb"
+    "file": "bridge_side_wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.02,
+        "d": 1.04
+      },
+      "center": {
+        "x": -0.010000000000000009,
+        "z": 0
+      },
+      "minY": -0.05000000000000021
+    }
   },
   {
     "id": "kenney-nature/bridge_side_woodRound",
@@ -97,7 +196,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_side_woodRound.glb"
+    "file": "bridge_side_woodRound.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.02,
+        "d": 1.04
+      },
+      "center": {
+        "x": -0.010000000000000009,
+        "z": 0
+      },
+      "minY": -0.050000000000002404
+    }
   },
   {
     "id": "kenney-nature/bridge_stone",
@@ -107,7 +217,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_stone.glb"
+    "file": "bridge_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.04,
+        "d": 1.04
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/bridge_stoneNarrow",
@@ -117,7 +238,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_stoneNarrow.glb"
+    "file": "bridge_stoneNarrow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.04,
+        "d": 0.84
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/bridge_stoneRound",
@@ -127,7 +259,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_stoneRound.glb"
+    "file": "bridge_stoneRound.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.04,
+        "d": 1.04
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/bridge_stoneRoundNarrow",
@@ -137,7 +280,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_stoneRoundNarrow.glb"
+    "file": "bridge_stoneRoundNarrow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.04,
+        "d": 0.84
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/bridge_wood",
@@ -147,7 +301,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_wood.glb"
+    "file": "bridge_wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.04,
+        "d": 1.04
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/bridge_woodNarrow",
@@ -157,7 +322,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_woodNarrow.glb"
+    "file": "bridge_woodNarrow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.04,
+        "d": 0.84
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/bridge_woodRound",
@@ -167,7 +343,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_woodRound.glb"
+    "file": "bridge_woodRound.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.04,
+        "d": 1.04
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/bridge_woodRoundNarrow",
@@ -177,7 +364,18 @@
       "environment",
       "prop"
     ],
-    "file": "bridge_woodRoundNarrow.glb"
+    "file": "bridge_woodRoundNarrow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.04,
+        "d": 0.84
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cactus_short",
@@ -187,7 +385,18 @@
       "environment",
       "prop"
     ],
-    "file": "cactus_short.glb"
+    "file": "cactus_short.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.341661603,
+        "d": 0.297189608
+      },
+      "center": {
+        "x": 0.002495661499999996,
+        "z": 0.031244627999999997
+      },
+      "minY": -0.05000000000000001
+    }
   },
   {
     "id": "kenney-nature/cactus_tall",
@@ -197,7 +406,18 @@
       "environment",
       "prop"
     ],
-    "file": "cactus_tall.glb"
+    "file": "cactus_tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.39624994999999996,
+        "d": 0.339082063
+      },
+      "center": {
+        "x": -0.0013363059999999954,
+        "z": 0.0370614975
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/campfire_bricks",
@@ -207,7 +427,18 @@
       "environment",
       "prop"
     ],
-    "file": "campfire_bricks.glb"
+    "file": "campfire_bricks.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4692,
+        "d": 0.4692
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/campfire_logs",
@@ -217,7 +448,18 @@
       "environment",
       "prop"
     ],
-    "file": "campfire_logs.glb"
+    "file": "campfire_logs.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.291852326,
+        "d": 0.291852326
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/campfire_planks",
@@ -227,7 +469,18 @@
       "environment",
       "prop"
     ],
-    "file": "campfire_planks.glb"
+    "file": "campfire_planks.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.35,
+        "d": 0.35
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/campfire_stones",
@@ -237,7 +490,18 @@
       "environment",
       "prop"
     ],
-    "file": "campfire_stones.glb"
+    "file": "campfire_stones.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.540837899,
+        "d": 0.515507042
+      },
+      "center": {
+        "x": 0.0204445345,
+        "z": 0
+      },
+      "minY": -0.050000000000000114
+    }
   },
   {
     "id": "kenney-nature/canoe_paddle",
@@ -247,7 +511,18 @@
       "environment",
       "prop"
     ],
-    "file": "canoe_paddle.glb"
+    "file": "canoe_paddle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.0767214,
+        "d": 0.590192
+      },
+      "center": {
+        "x": 0,
+        "z": -0.039668799999999976
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/canoe",
@@ -257,7 +532,18 @@
       "environment",
       "prop"
     ],
-    "file": "canoe.glb"
+    "file": "canoe.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3,
+        "d": 1.15
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_block_rock",
@@ -267,7 +553,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_block_rock.glb"
+    "file": "cliff_block_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_block_stone",
@@ -277,7 +574,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_block_stone.glb"
+    "file": "cliff_block_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockCave_rock",
@@ -287,7 +595,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockCave_rock.glb"
+    "file": "cliff_blockCave_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockCave_stone",
@@ -297,7 +616,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockCave_stone.glb"
+    "file": "cliff_blockCave_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockDiagonal_rock",
@@ -307,7 +637,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockDiagonal_rock.glb"
+    "file": "cliff_blockDiagonal_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 9.999999997511999e-8
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockDiagonal_stone",
@@ -317,7 +658,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockDiagonal_stone.glb"
+    "file": "cliff_blockDiagonal_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 9.999999997511999e-8
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockHalf_rock",
@@ -327,7 +679,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockHalf_rock.glb"
+    "file": "cliff_blockHalf_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockHalf_stone",
@@ -337,7 +700,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockHalf_stone.glb"
+    "file": "cliff_blockHalf_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockQuarter_rock",
@@ -347,7 +721,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockQuarter_rock.glb"
+    "file": "cliff_blockQuarter_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockQuarter_stone",
@@ -357,7 +742,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockQuarter_stone.glb"
+    "file": "cliff_blockQuarter_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockSlope_rock",
@@ -367,7 +763,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockSlope_rock.glb"
+    "file": "cliff_blockSlope_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1999999639999999,
+        "d": 1
+      },
+      "center": {
+        "x": 1.7999999990525595e-8,
+        "z": 0
+      },
+      "minY": -0.050000005021570273
+    }
   },
   {
     "id": "kenney-nature/cliff_blockSlope_stone",
@@ -377,7 +784,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockSlope_stone.glb"
+    "file": "cliff_blockSlope_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1999999639999999,
+        "d": 1
+      },
+      "center": {
+        "x": 1.7999999990525595e-8,
+        "z": 0
+      },
+      "minY": -0.050000005021570273
+    }
   },
   {
     "id": "kenney-nature/cliff_blockSlopeHalfWalls_rock",
@@ -387,7 +805,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockSlopeHalfWalls_rock.glb"
+    "file": "cliff_blockSlopeHalfWalls_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockSlopeHalfWalls_stone",
@@ -397,7 +826,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockSlopeHalfWalls_stone.glb"
+    "file": "cliff_blockSlopeHalfWalls_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockSlopeWalls_rock",
@@ -407,7 +847,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockSlopeWalls_rock.glb"
+    "file": "cliff_blockSlopeWalls_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_blockSlopeWalls_stone",
@@ -417,7 +868,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_blockSlopeWalls_stone.glb"
+    "file": "cliff_blockSlopeWalls_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cave_rock",
@@ -427,7 +889,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cave_rock.glb"
+    "file": "cliff_cave_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.16849999999999998
+      },
+      "center": {
+        "x": 0,
+        "z": 0.41575
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cave_stone",
@@ -437,7 +910,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cave_stone.glb"
+    "file": "cliff_cave_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.16849999999999998
+      },
+      "center": {
+        "x": 0,
+        "z": 0.41575
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_corner_rock",
@@ -447,7 +931,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_corner_rock.glb"
+    "file": "cliff_corner_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16849999999999998,
+        "d": 0.168499976
+      },
+      "center": {
+        "x": -0.41575,
+        "z": 0.415750012
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_corner_stone",
@@ -457,7 +952,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_corner_stone.glb"
+    "file": "cliff_corner_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16849999999999998,
+        "d": 0.168499976
+      },
+      "center": {
+        "x": -0.41575,
+        "z": 0.415750012
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerInner_rock",
@@ -467,7 +973,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerInner_rock.glb"
+    "file": "cliff_cornerInner_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerInner_stone",
@@ -477,7 +994,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerInner_stone.glb"
+    "file": "cliff_cornerInner_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerInnerLarge_rock",
@@ -487,7 +1015,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerInnerLarge_rock.glb"
+    "file": "cliff_cornerInnerLarge_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerInnerLarge_stone",
@@ -497,7 +1036,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerInnerLarge_stone.glb"
+    "file": "cliff_cornerInnerLarge_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerInnerTop_rock",
@@ -507,7 +1057,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerInnerTop_rock.glb"
+    "file": "cliff_cornerInnerTop_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerInnerTop_stone",
@@ -517,7 +1078,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerInnerTop_stone.glb"
+    "file": "cliff_cornerInnerTop_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerLarge_rock",
@@ -527,7 +1099,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerLarge_rock.glb"
+    "file": "cliff_cornerLarge_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4185000062,
+        "d": 0.41849999
+      },
+      "center": {
+        "x": -0.29074999690000003,
+        "z": 0.290750005
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerLarge_stone",
@@ -537,7 +1120,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerLarge_stone.glb"
+    "file": "cliff_cornerLarge_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4185000062,
+        "d": 0.41849999
+      },
+      "center": {
+        "x": -0.29074999690000003,
+        "z": 0.290750005
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerTop_rock",
@@ -547,7 +1141,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerTop_rock.glb"
+    "file": "cliff_cornerTop_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.268500015,
+        "d": 0.268499985
+      },
+      "center": {
+        "x": -0.3657499925,
+        "z": 0.3657500075
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_cornerTop_stone",
@@ -557,7 +1162,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_cornerTop_stone.glb"
+    "file": "cliff_cornerTop_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.268500015,
+        "d": 0.268499985
+      },
+      "center": {
+        "x": -0.3657499925,
+        "z": 0.3657500075
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_diagonal_rock",
@@ -567,7 +1183,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_diagonal_rock.glb"
+    "file": "cliff_diagonal_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1684999999999999,
+        "d": 1.1684999999999999
+      },
+      "center": {
+        "x": 0.08424999999999999,
+        "z": -0.08424999999999999
+      },
+      "minY": -0.0500000000000009
+    }
   },
   {
     "id": "kenney-nature/cliff_diagonal_stone",
@@ -577,7 +1204,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_diagonal_stone.glb"
+    "file": "cliff_diagonal_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1684999999999999,
+        "d": 1.1684999999999999
+      },
+      "center": {
+        "x": 0.08424999999999999,
+        "z": -0.08424999999999999
+      },
+      "minY": -0.0500000000000009
+    }
   },
   {
     "id": "kenney-nature/cliff_half_rock",
@@ -587,7 +1225,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_half_rock.glb"
+    "file": "cliff_half_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4185000062
+      },
+      "center": {
+        "x": 0,
+        "z": 0.29074999690000003
+      },
+      "minY": -0.05000000000000027
+    }
   },
   {
     "id": "kenney-nature/cliff_half_stone",
@@ -597,7 +1246,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_half_stone.glb"
+    "file": "cliff_half_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4185000062
+      },
+      "center": {
+        "x": 0,
+        "z": 0.29074999690000003
+      },
+      "minY": -0.05000000000000027
+    }
   },
   {
     "id": "kenney-nature/cliff_halfCorner_rock",
@@ -607,7 +1267,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_halfCorner_rock.glb"
+    "file": "cliff_halfCorner_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4185000062,
+        "d": 0.4185000062
+      },
+      "center": {
+        "x": -0.29074999690000003,
+        "z": 0.29074999690000003
+      },
+      "minY": -0.050000000000000204
+    }
   },
   {
     "id": "kenney-nature/cliff_halfCorner_stone",
@@ -617,7 +1288,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_halfCorner_stone.glb"
+    "file": "cliff_halfCorner_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4185000062,
+        "d": 0.4185000062
+      },
+      "center": {
+        "x": -0.29074999690000003,
+        "z": 0.29074999690000003
+      },
+      "minY": -0.050000000000000204
+    }
   },
   {
     "id": "kenney-nature/cliff_halfCornerInner_rock",
@@ -627,7 +1309,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_halfCornerInner_rock.glb"
+    "file": "cliff_halfCornerInner_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_halfCornerInner_stone",
@@ -637,7 +1330,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_halfCornerInner_stone.glb"
+    "file": "cliff_halfCornerInner_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_large_rock",
@@ -647,7 +1351,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_large_rock.glb"
+    "file": "cliff_large_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4185000062
+      },
+      "center": {
+        "x": 0,
+        "z": 0.29074999690000003
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_large_stone",
@@ -657,7 +1372,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_large_stone.glb"
+    "file": "cliff_large_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4185000062
+      },
+      "center": {
+        "x": 0,
+        "z": 0.29074999690000003
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_rock",
@@ -667,7 +1393,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_rock.glb"
+    "file": "cliff_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.16849999999999998
+      },
+      "center": {
+        "x": 0,
+        "z": 0.41575
+      },
+      "minY": -0.05000000000000018
+    }
   },
   {
     "id": "kenney-nature/cliff_steps_rock",
@@ -677,7 +1414,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_steps_rock.glb"
+    "file": "cliff_steps_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1.05
+      },
+      "center": {
+        "x": 0,
+        "z": -0.025000000000000022
+      },
+      "minY": -0.05000000000000361
+    }
   },
   {
     "id": "kenney-nature/cliff_steps_stone",
@@ -687,7 +1435,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_steps_stone.glb"
+    "file": "cliff_steps_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1.05
+      },
+      "center": {
+        "x": 0,
+        "z": -0.025000000000000022
+      },
+      "minY": -0.05000000000000361
+    }
   },
   {
     "id": "kenney-nature/cliff_stepsCorner_rock",
@@ -697,7 +1456,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_stepsCorner_rock.glb"
+    "file": "cliff_stepsCorner_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.05,
+        "d": 1.05
+      },
+      "center": {
+        "x": 0.025000000000000022,
+        "z": -0.025000000000000022
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_stepsCorner_stone",
@@ -707,7 +1477,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_stepsCorner_stone.glb"
+    "file": "cliff_stepsCorner_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.05,
+        "d": 1.05
+      },
+      "center": {
+        "x": 0.025000000000000022,
+        "z": -0.025000000000000022
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_stepsCornerInner_rock",
@@ -717,7 +1498,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_stepsCornerInner_rock.glb"
+    "file": "cliff_stepsCornerInner_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_stepsCornerInner_stone",
@@ -727,7 +1519,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_stepsCornerInner_stone.glb"
+    "file": "cliff_stepsCornerInner_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_stone",
@@ -737,7 +1540,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_stone.glb"
+    "file": "cliff_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.16849999999999998
+      },
+      "center": {
+        "x": 0,
+        "z": 0.41575
+      },
+      "minY": -0.05000000000000018
+    }
   },
   {
     "id": "kenney-nature/cliff_top_rock",
@@ -747,7 +1561,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_top_rock.glb"
+    "file": "cliff_top_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.268500015
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3657499925
+      },
+      "minY": -0.05000000000000018
+    }
   },
   {
     "id": "kenney-nature/cliff_top_stone",
@@ -757,7 +1582,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_top_stone.glb"
+    "file": "cliff_top_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.268500015
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3657499925
+      },
+      "minY": -0.05000000000000018
+    }
   },
   {
     "id": "kenney-nature/cliff_topDiagonal_rock",
@@ -767,7 +1603,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_topDiagonal_rock.glb"
+    "file": "cliff_topDiagonal_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2685,
+        "d": 1.2685
+      },
+      "center": {
+        "x": 0.13424999999999998,
+        "z": -0.13424999999999998
+      },
+      "minY": -0.05000000000000088
+    }
   },
   {
     "id": "kenney-nature/cliff_topDiagonal_stone",
@@ -777,7 +1624,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_topDiagonal_stone.glb"
+    "file": "cliff_topDiagonal_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2685,
+        "d": 1.2685
+      },
+      "center": {
+        "x": 0.13424999999999998,
+        "z": -0.13424999999999998
+      },
+      "minY": -0.05000000000000088
+    }
   },
   {
     "id": "kenney-nature/cliff_waterfall_rock",
@@ -787,7 +1645,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_waterfall_rock.glb"
+    "file": "cliff_waterfall_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.16849999999999998
+      },
+      "center": {
+        "x": 0,
+        "z": 0.41575
+      },
+      "minY": -0.05000000000000018
+    }
   },
   {
     "id": "kenney-nature/cliff_waterfall_stone",
@@ -797,7 +1666,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_waterfall_stone.glb"
+    "file": "cliff_waterfall_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.16849999999999998
+      },
+      "center": {
+        "x": 0,
+        "z": 0.41575
+      },
+      "minY": -0.05000000000000018
+    }
   },
   {
     "id": "kenney-nature/cliff_waterfallTop_rock",
@@ -807,7 +1687,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_waterfallTop_rock.glb"
+    "file": "cliff_waterfallTop_rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.268500015
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3657499925
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/cliff_waterfallTop_stone",
@@ -817,7 +1708,18 @@
       "environment",
       "prop"
     ],
-    "file": "cliff_waterfallTop_stone.glb"
+    "file": "cliff_waterfallTop_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.268500015
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3657499925
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crop_carrot",
@@ -827,7 +1729,18 @@
       "environment",
       "prop"
     ],
-    "file": "crop_carrot.glb"
+    "file": "crop_carrot.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.343141974,
+        "d": 0.343141974
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000005
+    }
   },
   {
     "id": "kenney-nature/crop_melon",
@@ -837,7 +1750,18 @@
       "environment",
       "prop"
     ],
-    "file": "crop_melon.glb"
+    "file": "crop_melon.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.417599976,
+        "d": 0.3616522
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crop_pumpkin",
@@ -847,7 +1771,18 @@
       "environment",
       "prop"
     ],
-    "file": "crop_pumpkin.glb"
+    "file": "crop_pumpkin.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.441270112,
+        "d": 0.451944112
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crop_turnip",
@@ -857,7 +1792,18 @@
       "environment",
       "prop"
     ],
-    "file": "crop_turnip.glb"
+    "file": "crop_turnip.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.343141974,
+        "d": 0.343141974
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_bambooStageA",
@@ -867,7 +1813,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_bambooStageA.glb"
+    "file": "crops_bambooStageA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.340094575,
+        "d": 0.30800777700000004
+      },
+      "center": {
+        "x": -0.006770487500000005,
+        "z": -0.007223859499999999
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_bambooStageB",
@@ -877,7 +1834,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_bambooStageB.glb"
+    "file": "crops_bambooStageB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.340094575,
+        "d": 0.30800777700000004
+      },
+      "center": {
+        "x": -0.006770487500000005,
+        "z": -0.007223859499999999
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_cornStageA",
@@ -887,7 +1855,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_cornStageA.glb"
+    "file": "crops_cornStageA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.304202,
+        "d": 0.304202
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_cornStageB",
@@ -897,7 +1876,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_cornStageB.glb"
+    "file": "crops_cornStageB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.304202,
+        "d": 0.304202
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_cornStageC",
@@ -907,7 +1897,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_cornStageC.glb"
+    "file": "crops_cornStageC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.304202,
+        "d": 0.304202
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_cornStageD",
@@ -917,7 +1918,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_cornStageD.glb"
+    "file": "crops_cornStageD.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44157160947890933,
+        "d": 0.4415716240412645
+      },
+      "center": {
+        "x": 4.739454662061604e-9,
+        "z": -1.2020632253473273e-8
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_dirtDoubleRow",
@@ -927,7 +1939,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_dirtDoubleRow.glb"
+    "file": "crops_dirtDoubleRow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.938
+      },
+      "center": {
+        "x": 0,
+        "z": 0.031
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_dirtDoubleRowCorner",
@@ -937,7 +1960,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_dirtDoubleRowCorner.glb"
+    "file": "crops_dirtDoubleRowCorner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.938,
+        "d": 0.938
+      },
+      "center": {
+        "x": -0.031,
+        "z": 0.031
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_dirtDoubleRowEnd",
@@ -947,7 +1981,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_dirtDoubleRowEnd.glb"
+    "file": "crops_dirtDoubleRowEnd.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6,
+        "d": 0.938
+      },
+      "center": {
+        "x": 0.2,
+        "z": 0.031
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_dirtRow",
@@ -957,7 +2002,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_dirtRow.glb"
+    "file": "crops_dirtRow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.619999984
+      },
+      "center": {
+        "x": 0,
+        "z": 0.031000008000000023
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_dirtRowCorner",
@@ -967,7 +2023,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_dirtRowCorner.glb"
+    "file": "crops_dirtRowCorner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7789999839999999,
+        "d": 0.7789999839999999
+      },
+      "center": {
+        "x": -0.11050000800000001,
+        "z": 0.11050000800000001
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_dirtRowEnd",
@@ -977,7 +2044,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_dirtRowEnd.glb"
+    "file": "crops_dirtRowEnd.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6,
+        "d": 0.619999984
+      },
+      "center": {
+        "x": 0.2,
+        "z": 0.031000008000000023
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_dirtSingle",
@@ -987,7 +2065,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_dirtSingle.glb"
+    "file": "crops_dirtSingle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4,
+        "d": 0.346410156
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_leafsStageA",
@@ -997,7 +2086,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_leafsStageA.glb"
+    "file": "crops_leafsStageA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.389378548,
+        "d": 0.389378548
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_leafsStageB",
@@ -1007,7 +2107,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_leafsStageB.glb"
+    "file": "crops_leafsStageB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.389378548,
+        "d": 0.389378548
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.050000000000000024
+    }
   },
   {
     "id": "kenney-nature/crops_wheatStageA",
@@ -1017,7 +2128,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_wheatStageA.glb"
+    "file": "crops_wheatStageA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.539607882,
+        "d": 0.446699142
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/crops_wheatStageB",
@@ -1027,7 +2149,18 @@
       "environment",
       "prop"
     ],
-    "file": "crops_wheatStageB.glb"
+    "file": "crops_wheatStageB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.539607882,
+        "d": 0.446699142
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_bend",
@@ -1037,7 +2170,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_bend.glb"
+    "file": "fence_bend.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_bendCenter",
@@ -1047,7 +2191,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_bendCenter.glb"
+    "file": "fence_bendCenter.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_corner",
@@ -1057,7 +2212,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_corner.glb"
+    "file": "fence_corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_gate",
@@ -1067,7 +2233,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_gate.glb"
+    "file": "fence_gate.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.07000001112165843
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4650000051703142
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_planks",
@@ -1077,7 +2254,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_planks.glb"
+    "file": "fence_planks.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.09590000000000004
+      },
+      "center": {
+        "x": 0,
+        "z": -0.47795
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_planksDouble",
@@ -1087,7 +2275,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_planksDouble.glb"
+    "file": "fence_planksDouble.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.059863531000000025
+      },
+      "center": {
+        "x": 0,
+        "z": -0.49596823450000005
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_simple",
@@ -1097,7 +2296,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_simple.glb"
+    "file": "fence_simple.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.07
+      },
+      "center": {
+        "x": 0,
+        "z": -0.46499999999999997
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_simpleCenter",
@@ -1107,7 +2317,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_simpleCenter.glb"
+    "file": "fence_simpleCenter.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.07
+      },
+      "center": {
+        "x": 0,
+        "z": -0.46499999999999997
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_simpleDiagonal",
@@ -1117,7 +2338,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_simpleDiagonal.glb"
+    "file": "fence_simpleDiagonal.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_simpleDiagonalCenter",
@@ -1127,7 +2359,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_simpleDiagonalCenter.glb"
+    "file": "fence_simpleDiagonalCenter.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_simpleHigh",
@@ -1137,7 +2380,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_simpleHigh.glb"
+    "file": "fence_simpleHigh.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0412059,
+        "d": 0.11120574499999997
+      },
+      "center": {
+        "x": -5.000000002919336e-8,
+        "z": -0.4650000275
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/fence_simpleLow",
@@ -1147,7 +2401,18 @@
       "environment",
       "prop"
     ],
-    "file": "fence_simpleLow.glb"
+    "file": "fence_simpleLow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0412059,
+        "d": 0.11120574499999997
+      },
+      "center": {
+        "x": -5.000000002919336e-8,
+        "z": -0.4650000275
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_purpleA",
@@ -1157,7 +2422,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_purpleA.glb"
+    "file": "flower_purpleA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.15909752,
+        "d": 0.18105906
+      },
+      "center": {
+        "x": -0.024985740000000003,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_purpleB",
@@ -1167,7 +2443,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_purpleB.glb"
+    "file": "flower_purpleB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20733457,
+        "d": 0.239179536
+      },
+      "center": {
+        "x": -0.025059615,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_purpleC",
@@ -1177,7 +2464,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_purpleC.glb"
+    "file": "flower_purpleC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.180597,
+        "d": 0.18105906
+      },
+      "center": {
+        "x": -0.014235999999999999,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_redA",
@@ -1187,7 +2485,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_redA.glb"
+    "file": "flower_redA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.15909752,
+        "d": 0.18105906
+      },
+      "center": {
+        "x": -0.024985740000000003,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_redB",
@@ -1197,7 +2506,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_redB.glb"
+    "file": "flower_redB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20733457,
+        "d": 0.239179536
+      },
+      "center": {
+        "x": -0.025059615,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_redC",
@@ -1207,7 +2527,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_redC.glb"
+    "file": "flower_redC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.180597,
+        "d": 0.18105906
+      },
+      "center": {
+        "x": -0.014235999999999999,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_yellowA",
@@ -1217,7 +2548,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_yellowA.glb"
+    "file": "flower_yellowA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.15909752,
+        "d": 0.18105906
+      },
+      "center": {
+        "x": -0.024985740000000003,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_yellowB",
@@ -1227,7 +2569,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_yellowB.glb"
+    "file": "flower_yellowB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20733457,
+        "d": 0.239179536
+      },
+      "center": {
+        "x": -0.025059615,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/flower_yellowC",
@@ -1237,7 +2590,18 @@
       "environment",
       "prop"
     ],
-    "file": "flower_yellowC.glb"
+    "file": "flower_yellowC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.180597,
+        "d": 0.18105906
+      },
+      "center": {
+        "x": -0.014235999999999999,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/grass_large",
@@ -1247,7 +2611,18 @@
       "environment",
       "prop"
     ],
-    "file": "grass_large.glb"
+    "file": "grass_large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.408997834,
+        "d": 0.407888984
+      },
+      "center": {
+        "x": 0.005357146000000007,
+        "z": -0.008150991999999996
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/grass_leafs",
@@ -1257,7 +2632,18 @@
       "environment",
       "prop"
     ],
-    "file": "grass_leafs.glb"
+    "file": "grass_leafs.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.234485998,
+        "d": 0.25730825199999996
+      },
+      "center": {
+        "x": -0.005796968999999999,
+        "z": -0.004772287
+      },
+      "minY": -0.05000000000000018
+    }
   },
   {
     "id": "kenney-nature/grass_leafsLarge",
@@ -1267,7 +2653,18 @@
       "environment",
       "prop"
     ],
-    "file": "grass_leafsLarge.glb"
+    "file": "grass_leafsLarge.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.475897134,
+        "d": 0.487308234
+      },
+      "center": {
+        "x": -0.003661707,
+        "z": 0.0005918739999999922
+      },
+      "minY": -0.05000000000000018
+    }
   },
   {
     "id": "kenney-nature/grass",
@@ -1277,7 +2674,18 @@
       "environment",
       "prop"
     ],
-    "file": "grass.glb"
+    "file": "grass.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.381074,
+        "d": 0.392182798
+      },
+      "center": {
+        "x": -0.008299600000000004,
+        "z": -0.043247357
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/ground_grass",
@@ -1287,7 +2695,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_grass.glb"
+    "file": "ground_grass.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/ground_pathBend",
@@ -1297,7 +2716,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathBend.glb"
+    "file": "ground_pathBend.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathBendBank",
@@ -1307,7 +2737,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathBendBank.glb"
+    "file": "ground_pathBendBank.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathCorner",
@@ -1317,7 +2758,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathCorner.glb"
+    "file": "ground_pathCorner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathCornerSmall",
@@ -1327,7 +2779,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathCornerSmall.glb"
+    "file": "ground_pathCornerSmall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathCross",
@@ -1337,7 +2800,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathCross.glb"
+    "file": "ground_pathCross.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathEnd",
@@ -1347,7 +2821,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathEnd.glb"
+    "file": "ground_pathEnd.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathEndClosed",
@@ -1357,7 +2842,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathEndClosed.glb"
+    "file": "ground_pathEndClosed.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathOpen",
@@ -1367,7 +2863,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathOpen.glb"
+    "file": "ground_pathOpen.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathRocks",
@@ -1377,7 +2884,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathRocks.glb"
+    "file": "ground_pathRocks.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathSide",
@@ -1387,7 +2905,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathSide.glb"
+    "file": "ground_pathSide.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathSideOpen",
@@ -1397,7 +2926,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathSideOpen.glb"
+    "file": "ground_pathSideOpen.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathSplit",
@@ -1407,7 +2947,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathSplit.glb"
+    "file": "ground_pathSplit.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathStraight",
@@ -1417,7 +2968,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathStraight.glb"
+    "file": "ground_pathStraight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_pathTile",
@@ -1427,7 +2989,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_pathTile.glb"
+    "file": "ground_pathTile.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverBend",
@@ -1437,7 +3010,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverBend.glb"
+    "file": "ground_riverBend.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverBendBank",
@@ -1447,7 +3031,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverBendBank.glb"
+    "file": "ground_riverBendBank.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverCorner",
@@ -1457,7 +3052,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverCorner.glb"
+    "file": "ground_riverCorner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverCornerSmall",
@@ -1467,7 +3073,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverCornerSmall.glb"
+    "file": "ground_riverCornerSmall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverCross",
@@ -1477,7 +3094,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverCross.glb"
+    "file": "ground_riverCross.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverEnd",
@@ -1487,7 +3115,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverEnd.glb"
+    "file": "ground_riverEnd.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverEndClosed",
@@ -1497,7 +3136,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverEndClosed.glb"
+    "file": "ground_riverEndClosed.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverOpen",
@@ -1507,7 +3157,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverOpen.glb"
+    "file": "ground_riverOpen.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverRocks",
@@ -1517,7 +3178,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverRocks.glb"
+    "file": "ground_riverRocks.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverSide",
@@ -1527,7 +3199,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverSide.glb"
+    "file": "ground_riverSide.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverSideOpen",
@@ -1537,7 +3220,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverSideOpen.glb"
+    "file": "ground_riverSideOpen.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverSplit",
@@ -1547,7 +3241,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverSplit.glb"
+    "file": "ground_riverSplit.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverStraight",
@@ -1557,7 +3262,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverStraight.glb"
+    "file": "ground_riverStraight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/ground_riverTile",
@@ -1567,7 +3283,18 @@
       "environment",
       "prop"
     ],
-    "file": "ground_riverTile.glb"
+    "file": "ground_riverTile.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1
+    }
   },
   {
     "id": "kenney-nature/hanging_moss",
@@ -1577,7 +3304,18 @@
       "environment",
       "prop"
     ],
-    "file": "hanging_moss.glb"
+    "file": "hanging_moss.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1598336,
+        "d": 0.034999999999999976
+      },
+      "center": {
+        "x": 0,
+        "z": 0.48250000000000004
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/lily_large",
@@ -1587,7 +3325,18 @@
       "environment",
       "prop"
     ],
-    "file": "lily_large.glb"
+    "file": "lily_large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.271862686,
+        "d": 0.313920022
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/lily_small",
@@ -1597,7 +3346,18 @@
       "environment",
       "prop"
     ],
-    "file": "lily_small.glb"
+    "file": "lily_small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.18879354,
+        "d": 0.218
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/log_large",
@@ -1607,7 +3367,18 @@
       "environment",
       "prop"
     ],
-    "file": "log_large.glb"
+    "file": "log_large.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.549321636
+      },
+      "center": {
+        "x": 0,
+        "z": 0.021919317999999993
+      },
+      "minY": -0.050000000000000024
+    }
   },
   {
     "id": "kenney-nature/log_stack",
@@ -1617,7 +3388,18 @@
       "environment",
       "prop"
     ],
-    "file": "log_stack.glb"
+    "file": "log_stack.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.42471714000000005,
+        "d": 0.71
+      },
+      "center": {
+        "x": -0.01235857,
+        "z": 0
+      },
+      "minY": -0.050000083446500004
+    }
   },
   {
     "id": "kenney-nature/log_stackLarge",
@@ -1627,7 +3409,18 @@
       "environment",
       "prop"
     ],
-    "file": "log_stackLarge.glb"
+    "file": "log_stackLarge.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.633960992,
+        "d": 0.71
+      },
+      "center": {
+        "x": -0.007736638000000018,
+        "z": 0
+      },
+      "minY": -0.050000083446500004
+    }
   },
   {
     "id": "kenney-nature/log",
@@ -1637,7 +3430,18 @@
       "environment",
       "prop"
     ],
-    "file": "log.glb"
+    "file": "log.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.233961009,
+        "d": 0.71
+      },
+      "center": {
+        "x": 0.007736649499999998,
+        "z": 0
+      },
+      "minY": -0.050000000000563656
+    }
   },
   {
     "id": "kenney-nature/mushroom_red",
@@ -1647,7 +3451,18 @@
       "environment",
       "prop"
     ],
-    "file": "mushroom_red.glb"
+    "file": "mushroom_red.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.17396721510000002,
+        "d": 0.200879998
+      },
+      "center": {
+        "x": 0.0009122775499999999,
+        "z": 0.005031358999999999
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/mushroom_redGroup",
@@ -1657,7 +3472,18 @@
       "environment",
       "prop"
     ],
-    "file": "mushroom_redGroup.glb"
+    "file": "mushroom_redGroup.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.269630998,
+        "d": 0.254196599
+      },
+      "center": {
+        "x": -0.0015139430000000037,
+        "z": 0.015084691500000004
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/mushroom_redTall",
@@ -1667,7 +3493,18 @@
       "environment",
       "prop"
     ],
-    "file": "mushroom_redTall.glb"
+    "file": "mushroom_redTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.12351671980000001,
+        "d": 0.1426248
+      },
+      "center": {
+        "x": 0.000647725499999998,
+        "z": 0.0035722700000000024
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/mushroom_tan",
@@ -1677,7 +3514,18 @@
       "environment",
       "prop"
     ],
-    "file": "mushroom_tan.glb"
+    "file": "mushroom_tan.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.19136392419999998,
+        "d": 0.220967993
+      },
+      "center": {
+        "x": 0.0009122821000000017,
+        "z": 0.005031362499999997
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/mushroom_tanGroup",
@@ -1687,7 +3535,18 @@
       "environment",
       "prop"
     ],
-    "file": "mushroom_tanGroup.glb"
+    "file": "mushroom_tanGroup.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.269630998,
+        "d": 0.254196599
+      },
+      "center": {
+        "x": -0.0015139430000000037,
+        "z": 0.015084691500000004
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/mushroom_tanTall",
@@ -1697,7 +3556,18 @@
       "environment",
       "prop"
     ],
-    "file": "mushroom_tanTall.glb"
+    "file": "mushroom_tanTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.12351671980000001,
+        "d": 0.1426248
+      },
+      "center": {
+        "x": 0.000647725499999998,
+        "z": 0.0035722700000000024
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/path_stone",
@@ -1707,7 +3577,18 @@
       "environment",
       "prop"
     ],
-    "file": "path_stone.glb"
+    "file": "path_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5766129200000001
+      },
+      "center": {
+        "x": 0,
+        "z": -0.010247185999999991
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/path_stoneCircle",
@@ -1717,7 +3598,18 @@
       "environment",
       "prop"
     ],
-    "file": "path_stoneCircle.glb"
+    "file": "path_stoneCircle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.93237406,
+        "d": 0.876612962
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/path_stoneCorner",
@@ -1727,7 +3619,18 @@
       "environment",
       "prop"
     ],
-    "file": "path_stoneCorner.glb"
+    "file": "path_stoneCorner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7382695669999999,
+        "d": 0.778372747
+      },
+      "center": {
+        "x": -0.1012758315,
+        "z": 0.0852282735
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/path_stoneEnd",
@@ -1737,7 +3640,18 @@
       "environment",
       "prop"
     ],
-    "file": "path_stoneEnd.glb"
+    "file": "path_stoneEnd.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.618233465,
+        "d": 0.571007848
+      },
+      "center": {
+        "x": 0.1908832675,
+        "z": -0.007444649999999997
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/path_wood",
@@ -1747,7 +3661,18 @@
       "environment",
       "prop"
     ],
-    "file": "path_wood.glb"
+    "file": "path_wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.514380872
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/path_woodCorner",
@@ -1757,7 +3682,18 @@
       "environment",
       "prop"
     ],
-    "file": "path_woodCorner.glb"
+    "file": "path_woodCorner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.75
+      },
+      "center": {
+        "x": -0.125,
+        "z": 0.125
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/path_woodEnd",
@@ -1767,7 +3703,18 @@
       "environment",
       "prop"
     ],
-    "file": "path_woodEnd.glb"
+    "file": "path_woodEnd.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.614849493,
+        "d": 0.514380872
+      },
+      "center": {
+        "x": 0.1925752535,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/plant_bush",
@@ -1777,7 +3724,18 @@
       "environment",
       "prop"
     ],
-    "file": "plant_bush.glb"
+    "file": "plant_bush.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.396,
+        "d": 0.396
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/plant_bushDetailed",
@@ -1787,7 +3745,18 @@
       "environment",
       "prop"
     ],
-    "file": "plant_bushDetailed.glb"
+    "file": "plant_bushDetailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.602543712,
+        "d": 0.602543712
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/plant_bushLarge",
@@ -1797,7 +3766,18 @@
       "environment",
       "prop"
     ],
-    "file": "plant_bushLarge.glb"
+    "file": "plant_bushLarge.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.37431,
+        "d": 0.3356878
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000001
+    }
   },
   {
     "id": "kenney-nature/plant_bushLargeTriangle",
@@ -1807,7 +3787,18 @@
       "environment",
       "prop"
     ],
-    "file": "plant_bushLargeTriangle.glb"
+    "file": "plant_bushLargeTriangle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.40769074899999996,
+        "d": 0.470760704
+      },
+      "center": {
+        "x": -0.04716385149999999,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/plant_bushSmall",
@@ -1817,7 +3808,18 @@
       "environment",
       "prop"
     ],
-    "file": "plant_bushSmall.glb"
+    "file": "plant_bushSmall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.382977158,
+        "d": 0.336342276
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/plant_bushTriangle",
@@ -1827,7 +3829,18 @@
       "environment",
       "prop"
     ],
-    "file": "plant_bushTriangle.glb"
+    "file": "plant_bushTriangle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.364432247,
+        "d": 0.4135922
+      },
+      "center": {
+        "x": -0.056571423499999995,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/plant_flatShort",
@@ -1837,7 +3850,18 @@
       "environment",
       "prop"
     ],
-    "file": "plant_flatShort.glb"
+    "file": "plant_flatShort.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.277619868,
+        "d": 0.277619868
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/plant_flatTall",
@@ -1847,7 +3871,18 @@
       "environment",
       "prop"
     ],
-    "file": "plant_flatTall.glb"
+    "file": "plant_flatTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.27165562,
+        "d": 0.27165562
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/platform_beach",
@@ -1857,7 +3892,18 @@
       "environment",
       "prop"
     ],
-    "file": "platform_beach.glb"
+    "file": "platform_beach.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.893197123,
+        "d": 0.723919575
+      },
+      "center": {
+        "x": 0.0015985384999999963,
+        "z": 0.00804018749999999
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/platform_grass",
@@ -1867,7 +3913,18 @@
       "environment",
       "prop"
     ],
-    "file": "platform_grass.glb"
+    "file": "platform_grass.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.893197123,
+        "d": 0.723919575
+      },
+      "center": {
+        "x": 0.0015985384999999963,
+        "z": 0.00804018749999999
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/platform_stone",
@@ -1877,7 +3934,18 @@
       "environment",
       "prop"
     ],
-    "file": "platform_stone.glb"
+    "file": "platform_stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.893197123,
+        "d": 0.723919575
+      },
+      "center": {
+        "x": 0.0015985384999999963,
+        "z": 0.00804018749999999
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/pot_large",
@@ -1887,7 +3955,18 @@
       "environment",
       "prop"
     ],
-    "file": "pot_large.glb"
+    "file": "pot_large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5635964,
+        "d": 0.488088846
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/pot_small",
@@ -1897,7 +3976,18 @@
       "environment",
       "prop"
     ],
-    "file": "pot_small.glb"
+    "file": "pot_small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3234496,
+        "d": 0.280115574
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_largeA",
@@ -1907,7 +3997,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_largeA.glb"
+    "file": "rock_largeA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.784906686,
+        "d": 1.0154614
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.050000000000000294
+    }
   },
   {
     "id": "kenney-nature/rock_largeB",
@@ -1917,7 +4018,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_largeB.glb"
+    "file": "rock_largeB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.76671511,
+        "d": 1.0154614
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000059
+    }
   },
   {
     "id": "kenney-nature/rock_largeC",
@@ -1927,7 +4039,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_largeC.glb"
+    "file": "rock_largeC.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0644098,
+        "d": 1.015662074
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000027
+    }
   },
   {
     "id": "kenney-nature/rock_largeD",
@@ -1937,7 +4060,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_largeD.glb"
+    "file": "rock_largeD.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0687768,
+        "d": 1.030283094
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000086
+    }
   },
   {
     "id": "kenney-nature/rock_largeE",
@@ -1947,7 +4081,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_largeE.glb"
+    "file": "rock_largeE.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0954588,
+        "d": 0.919871092
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000027
+    }
   },
   {
     "id": "kenney-nature/rock_largeF",
@@ -1957,7 +4102,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_largeF.glb"
+    "file": "rock_largeF.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0954588,
+        "d": 0.898982346
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000059
+    }
   },
   {
     "id": "kenney-nature/rock_smallA",
@@ -1967,7 +4123,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallA.glb"
+    "file": "rock_smallA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3608,
+        "d": 0.3608
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.04999999999999998
+    }
   },
   {
     "id": "kenney-nature/rock_smallB",
@@ -1977,7 +4144,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallB.glb"
+    "file": "rock_smallB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3608,
+        "d": 0.3608
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.04999999999999999
+    }
   },
   {
     "id": "kenney-nature/rock_smallC",
@@ -1987,7 +4165,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallC.glb"
+    "file": "rock_smallC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3608,
+        "d": 0.3608
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.04999999999999998
+    }
   },
   {
     "id": "kenney-nature/rock_smallD",
@@ -1997,7 +4186,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallD.glb"
+    "file": "rock_smallD.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.425744026,
+        "d": 0.368705124
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallE",
@@ -2007,7 +4207,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallE.glb"
+    "file": "rock_smallE.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3608,
+        "d": 0.312461942
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallF",
@@ -2017,7 +4228,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallF.glb"
+    "file": "rock_smallF.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.353584022,
+        "d": 0.306212754
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallFlatA",
@@ -2027,7 +4249,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallFlatA.glb"
+    "file": "rock_smallFlatA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.495789736,
+        "d": 0.42957735
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallFlatB",
@@ -2037,7 +4270,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallFlatB.glb"
+    "file": "rock_smallFlatB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.42950797,
+        "d": 0.402353256
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallFlatC",
@@ -2047,7 +4291,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallFlatC.glb"
+    "file": "rock_smallFlatC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4703786,
+        "d": 0.360346616
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000026
+    }
   },
   {
     "id": "kenney-nature/rock_smallG",
@@ -2057,7 +4312,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallG.glb"
+    "file": "rock_smallG.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5936778,
+        "d": 0.685519934
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallH",
@@ -2067,7 +4333,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallH.glb"
+    "file": "rock_smallH.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.461824,
+        "d": 0.461824
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallI",
@@ -2077,7 +4354,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallI.glb"
+    "file": "rock_smallI.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.358331322,
+        "d": 0.41376543
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallTopA",
@@ -2087,7 +4375,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallTopA.glb"
+    "file": "rock_smallTopA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.487734228,
+        "d": 0.4891464
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_smallTopB",
@@ -2097,7 +4396,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_smallTopB.glb"
+    "file": "rock_smallTopB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6221436,
+        "d": 0.6462614
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallA",
@@ -2107,7 +4417,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallA.glb"
+    "file": "rock_tallA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.983068884,
+        "d": 0.6832108
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallB",
@@ -2117,7 +4438,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallB.glb"
+    "file": "rock_tallB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.764788448,
+        "d": 0.7700374
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.050000000000000544
+    }
   },
   {
     "id": "kenney-nature/rock_tallC",
@@ -2127,7 +4459,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallC.glb"
+    "file": "rock_tallC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.45619443,
+        "d": 0.436507642
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallD",
@@ -2137,7 +4480,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallD.glb"
+    "file": "rock_tallD.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.442836374,
+        "d": 0.46148187
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallE",
@@ -2147,7 +4501,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallE.glb"
+    "file": "rock_tallE.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.45619443,
+        "d": 0.52676797
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallF",
@@ -2157,7 +4522,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallF.glb"
+    "file": "rock_tallF.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.443696022,
+        "d": 0.512336
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallG",
@@ -2167,7 +4543,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallG.glb"
+    "file": "rock_tallG.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.424948276,
+        "d": 0.490688026
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallH",
@@ -2177,7 +4564,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallH.glb"
+    "file": "rock_tallH.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.57493,
+        "d": 0.663871944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallI",
@@ -2187,7 +4585,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallI.glb"
+    "file": "rock_tallI.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.45619443,
+        "d": 0.464351118
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/rock_tallJ",
@@ -2197,7 +4606,18 @@
       "environment",
       "prop"
     ],
-    "file": "rock_tallJ.glb"
+    "file": "rock_tallJ.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.487947584,
+        "d": 0.538233
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/sign",
@@ -2207,7 +4627,18 @@
       "environment",
       "prop"
     ],
-    "file": "sign.glb"
+    "file": "sign.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3,
+        "d": 0.0699999982
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0175000009
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/statue_block",
@@ -2217,7 +4648,18 @@
       "environment",
       "prop"
     ],
-    "file": "statue_block.glb"
+    "file": "statue_block.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4,
+        "d": 0.4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.050000000000041046
+    }
   },
   {
     "id": "kenney-nature/statue_column",
@@ -2227,7 +4669,18 @@
       "environment",
       "prop"
     ],
-    "file": "statue_column.glb"
+    "file": "statue_column.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3,
+        "d": 0.3
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/statue_columnDamaged",
@@ -2237,7 +4690,18 @@
       "environment",
       "prop"
     ],
-    "file": "statue_columnDamaged.glb"
+    "file": "statue_columnDamaged.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3,
+        "d": 0.3
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/statue_head",
@@ -2247,7 +4711,18 @@
       "environment",
       "prop"
     ],
-    "file": "statue_head.glb"
+    "file": "statue_head.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.726,
+        "d": 0.5544202930000001
+      },
+      "center": {
+        "x": 0,
+        "z": -0.037210136500000005
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/statue_obelisk",
@@ -2257,7 +4732,18 @@
       "environment",
       "prop"
     ],
-    "file": "statue_obelisk.glb"
+    "file": "statue_obelisk.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.307018668,
+        "d": 0.307018668
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/statue_ring",
@@ -2267,7 +4753,18 @@
       "environment",
       "prop"
     ],
-    "file": "statue_ring.glb"
+    "file": "statue_ring.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6,
+        "d": 0.4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_largeA",
@@ -2277,7 +4774,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_largeA.glb"
+    "file": "stone_largeA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.784906686,
+        "d": 1.0154614
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.050000000000000294
+    }
   },
   {
     "id": "kenney-nature/stone_largeB",
@@ -2287,7 +4795,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_largeB.glb"
+    "file": "stone_largeB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.76671511,
+        "d": 1.0154614
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000059
+    }
   },
   {
     "id": "kenney-nature/stone_largeC",
@@ -2297,7 +4816,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_largeC.glb"
+    "file": "stone_largeC.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0644098,
+        "d": 1.015662074
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000027
+    }
   },
   {
     "id": "kenney-nature/stone_largeD",
@@ -2307,7 +4837,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_largeD.glb"
+    "file": "stone_largeD.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0687768,
+        "d": 1.030283094
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000086
+    }
   },
   {
     "id": "kenney-nature/stone_largeE",
@@ -2317,7 +4858,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_largeE.glb"
+    "file": "stone_largeE.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0954588,
+        "d": 0.919871092
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000027
+    }
   },
   {
     "id": "kenney-nature/stone_largeF",
@@ -2327,7 +4879,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_largeF.glb"
+    "file": "stone_largeF.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0954588,
+        "d": 0.898982346
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000059
+    }
   },
   {
     "id": "kenney-nature/stone_smallA",
@@ -2337,7 +4900,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallA.glb"
+    "file": "stone_smallA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3608,
+        "d": 0.3608
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.04999999999999998
+    }
   },
   {
     "id": "kenney-nature/stone_smallB",
@@ -2347,7 +4921,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallB.glb"
+    "file": "stone_smallB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3608,
+        "d": 0.3608
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.04999999999999999
+    }
   },
   {
     "id": "kenney-nature/stone_smallC",
@@ -2357,7 +4942,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallC.glb"
+    "file": "stone_smallC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3608,
+        "d": 0.3608
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.04999999999999998
+    }
   },
   {
     "id": "kenney-nature/stone_smallD",
@@ -2367,7 +4963,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallD.glb"
+    "file": "stone_smallD.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.425744026,
+        "d": 0.368705124
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallE",
@@ -2377,7 +4984,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallE.glb"
+    "file": "stone_smallE.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3608,
+        "d": 0.312461942
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallF",
@@ -2387,7 +5005,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallF.glb"
+    "file": "stone_smallF.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.353584022,
+        "d": 0.306212754
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallFlatA",
@@ -2397,7 +5026,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallFlatA.glb"
+    "file": "stone_smallFlatA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.495789736,
+        "d": 0.42957735
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallFlatB",
@@ -2407,7 +5047,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallFlatB.glb"
+    "file": "stone_smallFlatB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.42950797,
+        "d": 0.402353256
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallFlatC",
@@ -2417,7 +5068,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallFlatC.glb"
+    "file": "stone_smallFlatC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4703786,
+        "d": 0.360346616
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000026
+    }
   },
   {
     "id": "kenney-nature/stone_smallG",
@@ -2427,7 +5089,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallG.glb"
+    "file": "stone_smallG.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5936778,
+        "d": 0.685519934
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallH",
@@ -2437,7 +5110,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallH.glb"
+    "file": "stone_smallH.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.461824,
+        "d": 0.461824
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallI",
@@ -2447,7 +5131,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallI.glb"
+    "file": "stone_smallI.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.358331322,
+        "d": 0.41376543
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallTopA",
@@ -2457,7 +5152,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallTopA.glb"
+    "file": "stone_smallTopA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.487734228,
+        "d": 0.4891464
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_smallTopB",
@@ -2467,7 +5173,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_smallTopB.glb"
+    "file": "stone_smallTopB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6221436,
+        "d": 0.6462614
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallA",
@@ -2477,7 +5194,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallA.glb"
+    "file": "stone_tallA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.983068884,
+        "d": 0.6832108
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallB",
@@ -2487,7 +5215,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallB.glb"
+    "file": "stone_tallB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.764788448,
+        "d": 0.7700374
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.050000000000000544
+    }
   },
   {
     "id": "kenney-nature/stone_tallC",
@@ -2497,7 +5236,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallC.glb"
+    "file": "stone_tallC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.45619443,
+        "d": 0.436507642
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallD",
@@ -2507,7 +5257,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallD.glb"
+    "file": "stone_tallD.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.442836374,
+        "d": 0.46148187
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallE",
@@ -2517,7 +5278,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallE.glb"
+    "file": "stone_tallE.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.45619443,
+        "d": 0.52676797
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallF",
@@ -2527,7 +5299,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallF.glb"
+    "file": "stone_tallF.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.443696022,
+        "d": 0.512336
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallG",
@@ -2537,7 +5320,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallG.glb"
+    "file": "stone_tallG.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.424948276,
+        "d": 0.490688026
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallH",
@@ -2547,7 +5341,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallH.glb"
+    "file": "stone_tallH.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.57493,
+        "d": 0.663871944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallI",
@@ -2557,7 +5362,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallI.glb"
+    "file": "stone_tallI.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.45619443,
+        "d": 0.464351118
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stone_tallJ",
@@ -2567,7 +5383,18 @@
       "environment",
       "prop"
     ],
-    "file": "stone_tallJ.glb"
+    "file": "stone_tallJ.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.487947584,
+        "d": 0.538233
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stump_old",
@@ -2577,7 +5404,18 @@
       "environment",
       "prop"
     ],
-    "file": "stump_old.glb"
+    "file": "stump_old.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.35652700000000004,
+        "d": 0.371
+      },
+      "center": {
+        "x": 0.0176158,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stump_oldTall",
@@ -2587,7 +5425,18 @@
       "environment",
       "prop"
     ],
-    "file": "stump_oldTall.glb"
+    "file": "stump_oldTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.35652700000000004,
+        "d": 0.371
+      },
+      "center": {
+        "x": 0.0176158,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stump_round",
@@ -2597,7 +5446,18 @@
       "environment",
       "prop"
     ],
-    "file": "stump_round.glb"
+    "file": "stump_round.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.32129535,
+        "d": 0.371
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stump_roundDetailed",
@@ -2607,7 +5467,18 @@
       "environment",
       "prop"
     ],
-    "file": "stump_roundDetailed.glb"
+    "file": "stump_roundDetailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.35652700000000004,
+        "d": 0.371
+      },
+      "center": {
+        "x": 0.0176158,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stump_square",
@@ -2617,7 +5488,18 @@
       "environment",
       "prop"
     ],
-    "file": "stump_square.glb"
+    "file": "stump_square.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.35958684399999996,
+        "d": 0.3
+      },
+      "center": {
+        "x": 0.029793422,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stump_squareDetailed",
@@ -2627,7 +5509,18 @@
       "environment",
       "prop"
     ],
-    "file": "stump_squareDetailed.glb"
+    "file": "stump_squareDetailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.439999968,
+        "d": 0.439999968
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/stump_squareDetailedWide",
@@ -2637,7 +5530,18 @@
       "environment",
       "prop"
     ],
-    "file": "stump_squareDetailedWide.glb"
+    "file": "stump_squareDetailedWide.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.64,
+        "d": 0.64
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000001
+    }
   },
   {
     "id": "kenney-nature/tent_detailedClosed",
@@ -2647,7 +5551,18 @@
       "environment",
       "prop"
     ],
-    "file": "tent_detailedClosed.glb"
+    "file": "tent_detailedClosed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.874928,
+        "d": 0.6364
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000000000029
+    }
   },
   {
     "id": "kenney-nature/tent_detailedOpen",
@@ -2657,7 +5572,18 @@
       "environment",
       "prop"
     ],
-    "file": "tent_detailedOpen.glb"
+    "file": "tent_detailedOpen.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.874928,
+        "d": 0.6664
+      },
+      "center": {
+        "x": 0,
+        "z": -0.015000000000000013
+      },
+      "minY": -0.05000000000000029
+    }
   },
   {
     "id": "kenney-nature/tent_smallClosed",
@@ -2667,7 +5593,18 @@
       "environment",
       "prop"
     ],
-    "file": "tent_smallClosed.glb"
+    "file": "tent_smallClosed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5476,
+        "d": 0.6364
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.050000000000000266
+    }
   },
   {
     "id": "kenney-nature/tent_smallOpen",
@@ -2677,7 +5614,18 @@
       "environment",
       "prop"
     ],
-    "file": "tent_smallOpen.glb"
+    "file": "tent_smallOpen.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5476,
+        "d": 0.6664
+      },
+      "center": {
+        "x": 0,
+        "z": -0.015000000000000013
+      },
+      "minY": -0.05000000000000026
+    }
   },
   {
     "id": "kenney-nature/tree_blocks_dark",
@@ -2687,7 +5635,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_blocks_dark.glb"
+    "file": "tree_blocks_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6,
+        "d": 0.6
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_blocks_fall",
@@ -2697,7 +5656,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_blocks_fall.glb"
+    "file": "tree_blocks_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6,
+        "d": 0.6
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_blocks",
@@ -2707,7 +5677,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_blocks.glb"
+    "file": "tree_blocks.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6,
+        "d": 0.6
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_cone_dark",
@@ -2717,7 +5698,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_cone_dark.glb"
+    "file": "tree_cone_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.529663682,
+        "d": 0.529663682
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_cone_fall",
@@ -2727,7 +5719,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_cone_fall.glb"
+    "file": "tree_cone_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.529663682,
+        "d": 0.529663682
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_cone",
@@ -2737,7 +5740,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_cone.glb"
+    "file": "tree_cone.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.529663682,
+        "d": 0.529663682
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_default_dark",
@@ -2747,7 +5761,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_default_dark.glb"
+    "file": "tree_default_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.755000054,
+        "d": 0.653849
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_default_fall",
@@ -2757,7 +5782,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_default_fall.glb"
+    "file": "tree_default_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.755000054,
+        "d": 0.653849
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_default",
@@ -2767,7 +5803,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_default.glb"
+    "file": "tree_default.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.755000054,
+        "d": 0.653849
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_detailed_dark",
@@ -2777,7 +5824,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_detailed_dark.glb"
+    "file": "tree_detailed_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.84711504,
+        "d": 0.761602491
+      },
+      "center": {
+        "x": -0.008925080000000002,
+        "z": 0.008665278499999984
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_detailed_fall",
@@ -2787,7 +5845,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_detailed_fall.glb"
+    "file": "tree_detailed_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.84711504,
+        "d": 0.761602491
+      },
+      "center": {
+        "x": -0.008925080000000002,
+        "z": 0.008665278499999984
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_detailed",
@@ -2797,7 +5866,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_detailed.glb"
+    "file": "tree_detailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.84711504,
+        "d": 0.761602491
+      },
+      "center": {
+        "x": -0.008925080000000002,
+        "z": 0.008665278499999984
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_fat_darkh",
@@ -2807,7 +5887,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_fat_darkh.glb"
+    "file": "tree_fat_darkh.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.755000054,
+        "d": 0.653849
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_fat_fall",
@@ -2817,7 +5908,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_fat_fall.glb"
+    "file": "tree_fat_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.755000054,
+        "d": 0.653849
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_fat",
@@ -2827,7 +5929,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_fat.glb"
+    "file": "tree_fat.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.755000054,
+        "d": 0.653849
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_oak_dark",
@@ -2837,7 +5950,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_oak_dark.glb"
+    "file": "tree_oak_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6405540110000001,
+        "d": 0.739648
+      },
+      "center": {
+        "x": -5.950000001031519e-8,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_oak_fall",
@@ -2847,7 +5971,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_oak_fall.glb"
+    "file": "tree_oak_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6405540110000001,
+        "d": 0.739648
+      },
+      "center": {
+        "x": -5.950000001031519e-8,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_oak",
@@ -2857,7 +5992,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_oak.glb"
+    "file": "tree_oak.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6405540110000001,
+        "d": 0.739648
+      },
+      "center": {
+        "x": -5.950000001031519e-8,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_palm",
@@ -2867,7 +6013,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_palm.glb"
+    "file": "tree_palm.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.935489714,
+        "d": 1.0127635
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_palmBend",
@@ -2877,7 +6034,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_palmBend.glb"
+    "file": "tree_palmBend.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.935489714,
+        "d": 1.0127635
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_palmDetailedShort",
@@ -2887,7 +6055,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_palmDetailedShort.glb"
+    "file": "tree_palmDetailedShort.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4627620263050432,
+        "d": 1.4627620263050432
+      },
+      "center": {
+        "x": 1.776574265477393e-8,
+        "z": 0.0025670850000000245
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_palmDetailedTall",
@@ -2897,7 +6076,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_palmDetailedTall.glb"
+    "file": "tree_palmDetailedTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4627620263050432,
+        "d": 1.4627620263050432
+      },
+      "center": {
+        "x": 1.776573999023867e-8,
+        "z": 0.0025670850000000245
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_palmShort",
@@ -2907,7 +6097,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_palmShort.glb"
+    "file": "tree_palmShort.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.034329167,
+        "d": 1.034329154
+      },
+      "center": {
+        "x": 1.835000000283138e-7,
+        "z": 0.0025669229999999987
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_palmTall",
@@ -2917,7 +6118,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_palmTall.glb"
+    "file": "tree_palmTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.034329167,
+        "d": 1.034329154
+      },
+      "center": {
+        "x": 1.835000000283138e-7,
+        "z": 0.0025669229999999987
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineDefaultA",
@@ -2927,7 +6139,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineDefaultA.glb"
+    "file": "tree_pineDefaultA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.53196,
+        "d": 0.53196
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineDefaultB",
@@ -2937,7 +6160,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineDefaultB.glb"
+    "file": "tree_pineDefaultB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.53196,
+        "d": 0.53196
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineGroundA",
@@ -2947,7 +6181,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineGroundA.glb"
+    "file": "tree_pineGroundA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48038438,
+        "d": 0.5547
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineGroundB",
@@ -2957,7 +6202,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineGroundB.glb"
+    "file": "tree_pineGroundB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48038438,
+        "d": 0.5547
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineRoundA",
@@ -2967,7 +6223,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineRoundA.glb"
+    "file": "tree_pineRoundA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6170188,
+        "d": 0.712472
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.050000000000000065
+    }
   },
   {
     "id": "kenney-nature/tree_pineRoundB",
@@ -2977,7 +6244,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineRoundB.glb"
+    "file": "tree_pineRoundB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.532210648,
+        "d": 0.61320153
+      },
+      "center": {
+        "x": -0.010397403999999999,
+        "z": 0.0010160650000000104
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineRoundC",
@@ -2987,7 +6265,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineRoundC.glb"
+    "file": "tree_pineRoundC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48038429,
+        "d": 0.5547
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineRoundD",
@@ -2997,7 +6286,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineRoundD.glb"
+    "file": "tree_pineRoundD.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48038429,
+        "d": 0.5547
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineRoundE",
@@ -3007,7 +6307,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineRoundE.glb"
+    "file": "tree_pineRoundE.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.53196,
+        "d": 0.53196
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineRoundF",
@@ -3017,7 +6328,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineRoundF.glb"
+    "file": "tree_pineRoundF.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.53196,
+        "d": 0.53196
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineSmallA",
@@ -3027,7 +6349,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineSmallA.glb"
+    "file": "tree_pineSmallA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.5
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineSmallB",
@@ -3037,7 +6370,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineSmallB.glb"
+    "file": "tree_pineSmallB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.386272907,
+        "d": 0.391950012
+      },
+      "center": {
+        "x": 0.010739818499999998,
+        "z": -0.0032867790000000036
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineSmallC",
@@ -3047,7 +6391,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineSmallC.glb"
+    "file": "tree_pineSmallC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.386272923,
+        "d": 0.391949978
+      },
+      "center": {
+        "x": 0.014661468499999997,
+        "z": 0.017500010999999996
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineSmallD",
@@ -3057,7 +6412,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineSmallD.glb"
+    "file": "tree_pineSmallD.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.35695,
+        "d": 0.35695
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineTallA_detailed",
@@ -3067,7 +6433,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineTallA_detailed.glb"
+    "file": "tree_pineTallA_detailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.38627292199999996,
+        "d": 0.39195
+      },
+      "center": {
+        "x": 0.013957030999999995,
+        "z": 0.0020615000000000078
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineTallA",
@@ -3077,7 +6454,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineTallA.glb"
+    "file": "tree_pineTallA.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.38627292199999996,
+        "d": 0.39195
+      },
+      "center": {
+        "x": 0.013957030999999995,
+        "z": 0.0020615000000000078
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineTallB_detailed",
@@ -3087,7 +6475,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineTallB_detailed.glb"
+    "file": "tree_pineTallB_detailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.38627292199999996,
+        "d": 0.39195
+      },
+      "center": {
+        "x": 0.013957030999999995,
+        "z": 0.0020615000000000078
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineTallB",
@@ -3097,7 +6496,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineTallB.glb"
+    "file": "tree_pineTallB.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.38627292199999996,
+        "d": 0.39195
+      },
+      "center": {
+        "x": 0.013957030999999995,
+        "z": 0.0020615000000000078
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineTallC_detailed",
@@ -3107,7 +6517,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineTallC_detailed.glb"
+    "file": "tree_pineTallC_detailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48038429,
+        "d": 0.5547
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineTallC",
@@ -3117,7 +6538,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineTallC.glb"
+    "file": "tree_pineTallC.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48038429,
+        "d": 0.5547
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineTallD_detailed",
@@ -3127,7 +6559,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineTallD_detailed.glb"
+    "file": "tree_pineTallD_detailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48038429,
+        "d": 0.5547
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_pineTallD",
@@ -3137,7 +6580,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_pineTallD.glb"
+    "file": "tree_pineTallD.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48038429,
+        "d": 0.5547
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_plateau_dark",
@@ -3147,7 +6601,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_plateau_dark.glb"
+    "file": "tree_plateau_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6117395,
+        "d": 0.6549
+      },
+      "center": {
+        "x": -0.022289649999999994,
+        "z": 0.0019750000000000045
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_plateau_fall",
@@ -3157,7 +6622,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_plateau_fall.glb"
+    "file": "tree_plateau_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6117395,
+        "d": 0.6549
+      },
+      "center": {
+        "x": -0.022289649999999994,
+        "z": 0.0019750000000000045
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_plateau",
@@ -3167,7 +6643,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_plateau.glb"
+    "file": "tree_plateau.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6117395,
+        "d": 0.6549
+      },
+      "center": {
+        "x": -0.022289649999999994,
+        "z": 0.0019750000000000045
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_simple_dark",
@@ -3177,7 +6664,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_simple_dark.glb"
+    "file": "tree_simple_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.354637354,
+        "d": 0.409499944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_simple_fall",
@@ -3187,7 +6685,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_simple_fall.glb"
+    "file": "tree_simple_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.354637354,
+        "d": 0.409499944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_simple",
@@ -3197,7 +6706,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_simple.glb"
+    "file": "tree_simple.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.354637354,
+        "d": 0.409499944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_small_dark",
@@ -3207,7 +6727,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_small_dark.glb"
+    "file": "tree_small_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.354637354,
+        "d": 0.409499944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_small_fall",
@@ -3217,7 +6748,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_small_fall.glb"
+    "file": "tree_small_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.354637354,
+        "d": 0.409499944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_small",
@@ -3227,7 +6769,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_small.glb"
+    "file": "tree_small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.354637354,
+        "d": 0.409499944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_tall_dark",
@@ -3237,7 +6790,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_tall_dark.glb"
+    "file": "tree_tall_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.39958325,
+        "d": 0.461399018
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_tall_fall",
@@ -3247,7 +6811,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_tall_fall.glb"
+    "file": "tree_tall_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.39958325,
+        "d": 0.461399018
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_tall",
@@ -3257,7 +6832,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_tall.glb"
+    "file": "tree_tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.39958325,
+        "d": 0.461399018
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_thin_dark",
@@ -3267,7 +6853,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_thin_dark.glb"
+    "file": "tree_thin_dark.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.680436492,
+        "d": 0.616522521
+      },
+      "center": {
+        "x": 0.08276853,
+        "z": 0.05678738650000001
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_thin_fall",
@@ -3277,7 +6874,18 @@
       "environment",
       "prop"
     ],
-    "file": "tree_thin_fall.glb"
+    "file": "tree_thin_fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.680436492,
+        "d": 0.616522521
+      },
+      "center": {
+        "x": 0.08276853,
+        "z": 0.05678738650000001
+      },
+      "minY": -0.05
+    }
   },
   {
     "id": "kenney-nature/tree_thin",
@@ -3287,6 +6895,17 @@
       "environment",
       "prop"
     ],
-    "file": "tree_thin.glb"
+    "file": "tree_thin.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.680436492,
+        "d": 0.616522521
+      },
+      "center": {
+        "x": 0.08276853,
+        "z": 0.05678738650000001
+      },
+      "minY": -0.05
+    }
   }
 ]

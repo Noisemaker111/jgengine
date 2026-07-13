@@ -1,0 +1,422 @@
+[
+  {
+    "id": "kenney-mini-skate/bowl-corner-inner",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "bowl-corner-inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/bowl-corner-outer",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "bowl-corner-outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/bowl-side",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "bowl-side.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/character-skate-boy",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "character-skate-boy.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7805639505386353,
+        "d": 0.46065761148929596
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04375862330198288
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/character-skate-girl",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "character-skate-girl.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7805641889572144,
+        "d": 0.5135499835014343
+      },
+      "center": {
+        "x": 0,
+        "z": -0.06628605723381042
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/floor-concrete",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "floor-concrete.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/floor-wood",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "floor-wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -2.504633343807733e-33
+    }
+  },
+  {
+    "id": "kenney-mini-skate/half-pipe",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "half-pipe.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/obstacle-box",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "obstacle-box.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.05000000074505806
+    }
+  },
+  {
+    "id": "kenney-mini-skate/obstacle-end",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "obstacle-end.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5
+      },
+      "center": {
+        "x": -0.5,
+        "z": 0.25
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/obstacle-middle",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "obstacle-middle.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.000000238418579,
+        "d": 1.000000238418579
+      },
+      "center": {
+        "x": 0,
+        "z": -1.1920928955078125e-7
+      },
+      "minY": -7.59275205398957e-18
+    }
+  },
+  {
+    "id": "kenney-mini-skate/pallet",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "pallet.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4228571504354477,
+        "d": 0.4228571355342865
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": 0
+      },
+      "minY": -1.2947008713065124e-14
+    }
+  },
+  {
+    "id": "kenney-mini-skate/rail-curve",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rail-curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.550000011920929,
+        "d": 0.5499999821186066
+      },
+      "center": {
+        "x": -0.2750000059604645,
+        "z": 0.7250000089406967
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/rail-high",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rail-high.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.15000002086162567,
+        "d": 1.0000001192092896
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -1.1349550797396143e-18
+    }
+  },
+  {
+    "id": "kenney-mini-skate/rail-low",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rail-low.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.15000002086162567,
+        "d": 1.0000001192092896
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 2.1424776921595143e-17
+    }
+  },
+  {
+    "id": "kenney-mini-skate/rail-slope",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "rail-slope.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.15000002086162567,
+        "d": 1.0000001192092896
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 3.0165966685718635e-17
+    }
+  },
+  {
+    "id": "kenney-mini-skate/skateboard",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "skateboard.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.30000001192092896,
+        "d": 0.699999988079071
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -2.7277611864152257e-15
+    }
+  },
+  {
+    "id": "kenney-mini-skate/steps",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "steps.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-skate/structure-platform",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "structure-platform.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5
+      },
+      "center": {
+        "x": 0,
+        "z": -0.25
+      },
+      "minY": -4.284233090208147e-17
+    }
+  },
+  {
+    "id": "kenney-mini-skate/structure-wood",
+    "source": "kenney-mini-skate",
+    "categories": [
+      "character",
+      "vehicle",
+      "prop"
+    ],
+    "file": "structure-wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -4.284233090208147e-17
+    }
+  }
+]

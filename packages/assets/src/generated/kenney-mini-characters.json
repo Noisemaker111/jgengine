@@ -1,0 +1,522 @@
+[
+  {
+    "id": "kenney-mini-characters/aid_hearing",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid_hearing.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.05000004917383194,
+        "d": 0.1567620038986206
+      },
+      "center": {
+        "x": -9.313225746154785e-9,
+        "z": 0
+      },
+      "minY": 8.975364451657697e-9
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-cane-blind",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-cane-blind.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.09600000455975533,
+        "d": 0.09600000455975533
+      },
+      "center": {
+        "x": -1.862645149230957e-9,
+        "z": 1.862645149230957e-9
+      },
+      "minY": 2.1933431071374798e-8
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-cane-low-vision",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-cane-low-vision.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.09600000455975533,
+        "d": 0.09600000455975533
+      },
+      "center": {
+        "x": -1.862645149230957e-9,
+        "z": 1.862645149230957e-9
+      },
+      "minY": 2.1933431071374798e-8
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-cane",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-cane.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.09600000083446503,
+        "d": 0.22999999672174454
+      },
+      "center": {
+        "x": 0,
+        "z": -0.06699999794363976
+      },
+      "minY": -1.0412352935418312e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-crutch",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-crutch.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.19599999487400055,
+        "d": 0.18700005859136581
+      },
+      "center": {
+        "x": 0,
+        "z": 0.045500028878450394
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-defibrillator-green",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-defibrillator-green.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.22545458376407623,
+        "d": 0.14000014930963517
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": -7.465481757784609e-8
+      },
+      "minY": 1.522023040934073e-8
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-defibrillator-red",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-defibrillator-red.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.22545458376407623,
+        "d": 0.14000014930963517
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": -7.465481757784609e-8
+      },
+      "minY": 1.522023040934073e-8
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-glasses",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-glasses.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.32999998331069946,
+        "d": 0.18359117209911346
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -2.4835269396561444e-9
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-mask",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-mask.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.33551277220249176,
+        "d": 0.21033678576350212
+      },
+      "center": {
+        "x": 0.0014041140675544739,
+        "z": 0.1282601449638605
+      },
+      "minY": -0.05000002682209015
+    }
+  },
+  {
+    "id": "kenney-mini-characters/aid-sunglasses",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "aid-sunglasses.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.32999998331069946,
+        "d": 0.18359117209911346
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 1.1444102909763387e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-female-a",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-female-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0987870693206787,
+        "d": 0.49953030049800873
+      },
+      "center": {
+        "x": 0,
+        "z": -0.04212636500597
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-female-b",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-female-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.41852225363254547
+      },
+      "center": {
+        "x": 0,
+        "z": -0.001622311770915985
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-female-c",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-female-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.49953030049800873
+      },
+      "center": {
+        "x": 0,
+        "z": -0.04212636500597
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-female-d",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-female-d.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.4995303303003311
+      },
+      "center": {
+        "x": 0,
+        "z": -0.04212635010480881
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-female-e",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-female-e.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.5270615965127945
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0558919832110405
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-female-f",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-female-f.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.44111211597919464
+      },
+      "center": {
+        "x": 0,
+        "z": -0.01291724294424057
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-male-a",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-male-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.33999985456466675
+      },
+      "center": {
+        "x": 0,
+        "z": -0.002361312508583069
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-male-b",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-male-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.389472097158432
+      },
+      "center": {
+        "x": 0,
+        "z": 0.03187474608421326
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-male-c",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-male-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.46065743267536163
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04230984300374985
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-male-d",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-male-d.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.3400000184774399
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0023612305521965027
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-male-e",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-male-e.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.3419664651155472
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0013779476284980774
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/character-male-f",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "character-male-f.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7671682834625244,
+        "d": 0.33999985456466675
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0023612529039382935
+      },
+      "minY": 1.043081283569336e-7
+    }
+  },
+  {
+    "id": "kenney-mini-characters/wheelchair-deluxe",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "wheelchair-deluxe.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5791050791740417,
+        "d": 0.5924151241779327
+      },
+      "center": {
+        "x": 0.0004474520683288574,
+        "z": -0.07843120396137238
+      },
+      "minY": 1.2417634698280722e-9
+    }
+  },
+  {
+    "id": "kenney-mini-characters/wheelchair-power-deluxe",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "wheelchair-power-deluxe.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.47999992966651917,
+        "d": 0.5109408795833588
+      },
+      "center": {
+        "x": 4.470348358154297e-8,
+        "z": 0.003246799111366272
+      },
+      "minY": 1.2417635808503746e-9
+    }
+  },
+  {
+    "id": "kenney-mini-characters/wheelchair-power",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "wheelchair-power.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.47999992966651917,
+        "d": 0.5109408795833588
+      },
+      "center": {
+        "x": 4.470348358154297e-8,
+        "z": 0.003246799111366272
+      },
+      "minY": 1.2417635808503746e-9
+    }
+  },
+  {
+    "id": "kenney-mini-characters/wheelchair",
+    "source": "kenney-mini-characters",
+    "categories": [
+      "character",
+      "rigged"
+    ],
+    "file": "wheelchair.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5000000596046448,
+        "d": 0.5824151337146759
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07343120872974396
+      },
+      "minY": 1.2417634698280722e-9
+    }
+  }
+]

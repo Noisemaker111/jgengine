@@ -1,0 +1,842 @@
+[
+  {
+    "id": "kenney-city-suburban/building-type-a",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2999999523162842,
+        "d": 1.0281378030776978
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-b",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.8280000686645508,
+        "d": 1.1399999856948853
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-c",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2863802909851074,
+        "d": 1.0281378030776978
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-d",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-d.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.756380319595337,
+        "d": 1.027999997138977
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-e",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-e.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2999999523162842,
+        "d": 1.027999997138977
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 2.707167856703783e-16
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-f",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-f.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.428000032901764,
+        "d": 1.405891239643097
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-g",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-g.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4500000476837158,
+        "d": 1.1779999732971191
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-h",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-h.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2999999523162842,
+        "d": 0.9160000085830688
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-i",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-i.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2863802909851074,
+        "d": 1.027999997138977
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-j",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-j.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3700000047683716,
+        "d": 0.9160000085830688
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-k",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-k.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9209379851818085,
+        "d": 1.0199999809265137
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-l",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-l.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.03358793258667,
+        "d": 1.0200000405311584
+      },
+      "center": {
+        "x": 0,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-m",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-m.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4280000925064087,
+        "d": 1.428000032901764
+      },
+      "center": {
+        "x": 0,
+        "z": -2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-n",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-n.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7842715382575989,
+        "d": 1.377891182899475
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-o",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-o.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2700000405311584,
+        "d": 1.027999997138977
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-p",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-p.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2400001287460327,
+        "d": 0.9900000691413879
+      },
+      "center": {
+        "x": 0,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-q",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-q.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2400000095367432,
+        "d": 0.8855879306793213
+      },
+      "center": {
+        "x": 0,
+        "z": 0.020793944597244263
+      },
+      "minY": -8.823155091021372e-19
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-r",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-r.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0280001163482666,
+        "d": 1.0200000405311584
+      },
+      "center": {
+        "x": 0,
+        "z": -2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-s",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-s.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4060290455818176,
+        "d": 1.086380422115326
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-t",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-t.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3135879039764404,
+        "d": 1.406380295753479
+      },
+      "center": {
+        "x": -0.006793975830078125,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/building-type-u",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building-type-u.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.428000271320343,
+        "d": 1.0869349837303162
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/driveway-long",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "driveway-long.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.35999998450279236,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/driveway-short",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "driveway-short.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.35999998450279236,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence-1x2",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence-1x2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.875,
+        "d": 0.4375
+      },
+      "center": {
+        "x": 0,
+        "z": 0.018750011920928955
+      },
+      "minY": -3.25311338197215e-14
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence-1x3",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence-1x3.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2750000953674316,
+        "d": 0.4375
+      },
+      "center": {
+        "x": 0,
+        "z": 0.018750011920928955
+      },
+      "minY": -3.25311338197215e-14
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence-1x4",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence-1x4.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.6750000715255737,
+        "d": 0.4375
+      },
+      "center": {
+        "x": 0,
+        "z": 0.018750011920928955
+      },
+      "minY": -3.25311338197215e-14
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence-2x2",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence-2x2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.875,
+        "d": 0.8374999761581421
+      },
+      "center": {
+        "x": 0,
+        "z": 0.018750011920928955
+      },
+      "minY": -3.25311338197215e-14
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence-2x3",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence-2x3.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2750000953674316,
+        "d": 0.8374999761581421
+      },
+      "center": {
+        "x": 0,
+        "z": 0.018750011920928955
+      },
+      "minY": -3.25311338197215e-14
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence-3x2",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence-3x2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.875,
+        "d": 1.2375000715255737
+      },
+      "center": {
+        "x": 0,
+        "z": 0.018750011920928955
+      },
+      "minY": -3.253111687906256e-14
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence-3x3",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence-3x3.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2750000953674316,
+        "d": 1.2375000715255737
+      },
+      "center": {
+        "x": 0,
+        "z": 0.018750011920928955
+      },
+      "minY": -3.25311338197215e-14
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence-low",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence-low.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2750000953674316,
+        "d": 0.8374999761581421
+      },
+      "center": {
+        "x": 0,
+        "z": -0.018750011920928955
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/fence",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "fence.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4750000238418579,
+        "d": 0.07500000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/path-long",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "path-long.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20000000298023224,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/path-short",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "path-short.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20000000298023224,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/path-stones-long",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "path-stones-long.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.14000000059604645,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/path-stones-messy",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "path-stones-messy.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.155624121427536,
+        "d": 0.3613504469394684
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/path-stones-short",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "path-stones-short.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.14000000059604645,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/planter",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "planter.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4000000059604645,
+        "d": 0.29999999701976776
+      },
+      "center": {
+        "x": 0,
+        "z": -0.000573374330997467
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/tree-large",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "tree-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.21044418215751648,
+        "d": 0.24299998581409454
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-suburban/tree-small",
+    "source": "kenney-city-suburban",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "tree-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.21044418215751648,
+        "d": 0.24299998581409454
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  }
+]

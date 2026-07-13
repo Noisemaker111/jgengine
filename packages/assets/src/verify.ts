@@ -1,6 +1,7 @@
 import { aliases } from "./aliases";
 import { generatedIndex } from "./generated";
 import type { AssetAlias, AssetSource, IndexEntry, SingleAsset } from "./manifest";
+import { materialAliases } from "./materials";
 import { singles } from "./singles";
 import { sources } from "./sources";
 
@@ -14,6 +15,7 @@ export interface VerifyInput {
   singles: readonly SingleAsset[];
   aliases: readonly AssetAlias[];
   index: readonly IndexEntry[];
+  materialAliases?: readonly AssetAlias[];
 }
 
 export function verifyData(input: VerifyInput): VerifyResult {
@@ -40,9 +42,24 @@ export function verifyData(input: VerifyInput): VerifyResult {
     }
   }
 
+  const materialIds = new Set(
+    input.sources.filter((source) => source.kind === "material").map((source) => source.id),
+  );
+  for (const alias of input.materialAliases ?? []) {
+    if (!materialIds.has(alias.target)) {
+      errors.push(`material alias ${alias.key}: target "${alias.target}" is not a material source`);
+    }
+  }
+
+  const seenIds = new Set<string>();
+  for (const source of input.sources) {
+    if (seenIds.has(source.id)) errors.push(`source ${source.id}: duplicate id`);
+    seenIds.add(source.id);
+  }
+
   return { ok: errors.length === 0, errors };
 }
 
 export function verifyManifest(): VerifyResult {
-  return verifyData({ sources, singles, aliases, index: generatedIndex });
+  return verifyData({ sources, singles, aliases, index: generatedIndex, materialAliases });
 }

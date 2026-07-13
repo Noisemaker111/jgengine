@@ -1,0 +1,1913 @@
+[
+  {
+    "id": "kenney-graveyard/altar-stone",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "altar-stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.039592981338501,
+        "d": 0.6531999707221985
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/altar-wood",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "altar-wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0450929403305054,
+        "d": 0.6586999893188477
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/bench-damaged",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "bench-damaged.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9083852767944336,
+        "d": 0.45511841773986816
+      },
+      "center": {
+        "x": -0.0242844820022583,
+        "z": 0
+      },
+      "minY": -3.725290298461914e-9
+    }
+  },
+  {
+    "id": "kenney-graveyard/bench",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "bench.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8071525692939758,
+        "d": 0.45511841773986816
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/border-pillar",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "border-pillar.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.22150002419948578,
+        "d": 0.22150002419948578
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/brick-wall-curve-small",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "brick-wall-curve-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0000000596046448,
+        "d": 1.0000000596046448
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -4.539889603606565e-16
+    }
+  },
+  {
+    "id": "kenney-graveyard/brick-wall-curve",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "brick-wall-curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/brick-wall-end",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "brick-wall-end.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.44999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": -0.3499999940395355
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/brick-wall",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "brick-wall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.30000001192092896
+      },
+      "center": {
+        "x": 0,
+        "z": -0.3499999940395355
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/candle-multiple",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "candle-multiple.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.25519199669361115,
+        "d": 0.2667401432991028
+      },
+      "center": {
+        "x": 0.002739839255809784,
+        "z": 0.0028504282236099243
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/candle",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "candle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.13610665500164032,
+        "d": 0.13610665500164032
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/character-ghost",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "character-ghost.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7880679368972778,
+        "d": 0.4882267415523529
+      },
+      "center": {
+        "x": 0,
+        "z": -7.216449660063518e-16
+      },
+      "minY": 0.11003684554958343
+    }
+  },
+  {
+    "id": "kenney-graveyard/character-keeper",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "character-keeper.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8113622665405273,
+        "d": 0.5370728075504303
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0058014541864387925
+      },
+      "minY": 0.02202891860866546
+    }
+  },
+  {
+    "id": "kenney-graveyard/character-skeleton",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "character-skeleton.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7608036398887634,
+        "d": 0.3159402906894684
+      },
+      "center": {
+        "x": 0,
+        "z": 0.003970131278037303
+      },
+      "minY": 0.02202891860866546
+    }
+  },
+  {
+    "id": "kenney-graveyard/character-vampire",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "character-vampire.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8113622665405273,
+        "d": 0.454561784863472
+      },
+      "center": {
+        "x": -1.4432899320127035e-15,
+        "z": -0.05328091233968807
+      },
+      "minY": 0.02202891860866546
+    }
+  },
+  {
+    "id": "kenney-graveyard/character-zombie",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "character-zombie.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8113622665405273,
+        "d": 0.3454999476671219
+      },
+      "center": {
+        "x": -1.4432899320127035e-15,
+        "z": 0.010250009596347087
+      },
+      "minY": 0.02202891860866546
+    }
+  },
+  {
+    "id": "kenney-graveyard/coffin-old",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "coffin-old.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5738074779510498,
+        "d": 0.8378239274024963
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/coffin",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "coffin.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5738074779510498,
+        "d": 0.8378239274024963
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/column-large",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "column-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.39000001549720764,
+        "d": 0.39000001549720764
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/cross-column",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "cross-column.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44999998807907104,
+        "d": 0.44999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/cross-wood",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "cross-wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4300000071525574,
+        "d": 0.4300000071525574
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/cross",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "cross.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6691054105758667,
+        "d": 0.25
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt-a",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6200000047683716,
+        "d": 1.1159999370574951
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt-b",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6200000047683716,
+        "d": 1.1159999370574951
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt-door",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt-door.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.33000001311302185,
+        "d": 0.1250000074505806
+      },
+      "center": {
+        "x": 6.5565109175214076e-9,
+        "z": -3.725290298461914e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt-large-door",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt-large-door.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6299999952316198,
+        "d": 0.13499999046325684
+      },
+      "center": {
+        "x": -2.384181463366275e-9,
+        "z": 0
+      },
+      "minY": 1.0306388686547602e-25
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt-large-roof",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt-large-roof.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9767817854881287,
+        "d": 2.4380253553390503
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt-large",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.850000023841858,
+        "d": 2.400175452232361
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt-small-roof",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt-small-roof.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.5016273260116577,
+        "d": 1.4380252361297607
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt-small",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.350000023841858,
+        "d": 1.4001753330230713
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/crypt",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "crypt.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7199999690055847,
+        "d": 1.1159999370574951
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/debris-wood",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "debris-wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4585110545158386,
+        "d": 0.5042247772216797
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0007256269454956055
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/debris",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "debris.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.536216139793396,
+        "d": 0.5472697764635086
+      },
+      "center": {
+        "x": -0.019637346267700195,
+        "z": -0.037085674703121185
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/detail-bowl",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "detail-bowl.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20092110335826874,
+        "d": 0.20092110335826874
+      },
+      "center": {
+        "x": -0.10046055167913437,
+        "z": 0.10046055167913437
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/detail-chalice",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "detail-chalice.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16422000527381897,
+        "d": 0.16422000527381897
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/detail-plate",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "detail-plate.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.27151498198509216,
+        "d": 0.27151498198509216
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/fence-damaged",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "fence-damaged.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.31206145137548447
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0453488714993
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/fence-gate",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "fence-gate.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.20399999618530273
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/fence",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "fence.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.18400000035762787
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/fire-basket",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "fire-basket.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4165577292442322,
+        "d": 0.41655778884887695
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/grave-border",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "grave-border.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7616614997386932,
+        "d": 1.3886455297470093
+      },
+      "center": {
+        "x": -0.01643429696559906,
+        "z": -0.040449321269989014
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/grave",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "grave.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.723835289478302,
+        "d": 1.2409493923187256
+      },
+      "center": {
+        "x": -0.0202254056930542,
+        "z": 0.011144697666168213
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-bevel",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-bevel.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44999998807907104,
+        "d": 0.25
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-broken",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-broken.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5090253949165344,
+        "d": 0.3915451765060425
+      },
+      "center": {
+        "x": 0.02951270341873169,
+        "z": 0.07077258825302124
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-cross-large",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-cross-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44999998807907104,
+        "d": 0.32999997586011887
+      },
+      "center": {
+        "x": 0,
+        "z": 0.03999999538064003
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-cross",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-cross.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44999998807907104,
+        "d": 0.32999998331069946
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-debris",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-debris.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4951944053173065,
+        "d": 0.641903281211853
+      },
+      "center": {
+        "x": -0.022597208619117737,
+        "z": -0.1959516406059265
+      },
+      "minY": -0.05000002682209015
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-decorative",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-decorative.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5100793838500977,
+        "d": 0.25
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-roof",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-roof.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48643818497657776,
+        "d": 0.25
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-round",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44999998807907104,
+        "d": 0.25
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/gravestone-wide",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "gravestone-wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8500000238418579,
+        "d": 0.29999999701976776
+      },
+      "center": {
+        "x": 0,
+        "z": -7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/hay-bale-bundled",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "hay-bale-bundled.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6065758466720581,
+        "d": 0.4311719834804535
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 8.905454929758968e-17
+    }
+  },
+  {
+    "id": "kenney-graveyard/hay-bale",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "hay-bale.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6065758466720581,
+        "d": 0.4019399881362915
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.012876000255346298
+    }
+  },
+  {
+    "id": "kenney-graveyard/iron-fence-bar",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "iron-fence-bar.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.11935440450906754,
+        "d": 0.10336393862962723
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/iron-fence-border-column",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "iron-fence-border-column.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.22150003910064697
+      },
+      "center": {
+        "x": 0,
+        "z": -0.32499998807907104
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/iron-fence-border-curve",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "iron-fence-border-curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8999999761581421,
+        "d": 0.8999999165534973
+      },
+      "center": {
+        "x": 0.050000011920928955,
+        "z": 0.04999998211860657
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/iron-fence-border-gate",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "iron-fence-border-gate.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.22150003910064697
+      },
+      "center": {
+        "x": 0,
+        "z": -0.32499998807907104
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/iron-fence-border",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "iron-fence-border.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.15000000596046448
+      },
+      "center": {
+        "x": 0,
+        "z": -0.32500000298023224
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/iron-fence-curve",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "iron-fence-curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8799999356269836,
+        "d": 0.8799999356269836
+      },
+      "center": {
+        "x": 0.06000003218650818,
+        "z": 0.0599999725818634
+      },
+      "minY": -9.587885684909014e-16
+    }
+  },
+  {
+    "id": "kenney-graveyard/iron-fence-damaged",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "iron-fence-damaged.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.32483308017253876
+      },
+      "center": {
+        "x": 0,
+        "z": -0.2175835445523262
+      },
+      "minY": -0.001487108995206654
+    }
+  },
+  {
+    "id": "kenney-graveyard/iron-fence",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "iron-fence.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.11000001430511475
+      },
+      "center": {
+        "x": 0,
+        "z": -0.32499998807907104
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/lantern-candle",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "lantern-candle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.24000000953674316,
+        "d": 0.24000000953674316
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/lantern-glass",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "lantern-glass.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.24000000953674316,
+        "d": 0.24000000953674316
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/lightpost-all",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "lightpost-all.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7265550494194031,
+        "d": 0.7265549898147583
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -5.639933145090297e-17
+    }
+  },
+  {
+    "id": "kenney-graveyard/lightpost-double",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "lightpost-double.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20879998803138733,
+        "d": 0.7265549898147583
+      },
+      "center": {
+        "x": 0,
+        "z": 5.960464477539063e-8
+      },
+      "minY": -5.639933145090297e-17
+    }
+  },
+  {
+    "id": "kenney-graveyard/lightpost-single",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "lightpost-single.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20879998803138733,
+        "d": 0.4648516997694969
+      },
+      "center": {
+        "x": 2.384185791015625e-7,
+        "z": 0.1308516450226307
+      },
+      "minY": -5.639933145090297e-17
+    }
+  },
+  {
+    "id": "kenney-graveyard/pillar-large",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pillar-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.22150002419948578,
+        "d": 0.22150002419948578
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/pillar-obelisk",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pillar-obelisk.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3499999940395355,
+        "d": 0.3499999940395355
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/pillar-small",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pillar-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.18150001764297485,
+        "d": 0.18150001764297485
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/pillar-square",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pillar-square.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3499999940395355,
+        "d": 0.3499999940395355
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/pine-crooked",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pine-crooked.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1779999732971191,
+        "d": 1.334557294845581
+      },
+      "center": {
+        "x": 0.01791250705718994,
+        "z": 0
+      },
+      "minY": -0.10000000149011612
+    }
+  },
+  {
+    "id": "kenney-graveyard/pine-fall-crooked",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pine-fall-crooked.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1779999732971191,
+        "d": 1.334557294845581
+      },
+      "center": {
+        "x": 0.01791250705718994,
+        "z": 0
+      },
+      "minY": -0.10000000149011612
+    }
+  },
+  {
+    "id": "kenney-graveyard/pine-fall",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pine-fall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1779999732971191,
+        "d": 1.334557294845581
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.10000000149011612
+    }
+  },
+  {
+    "id": "kenney-graveyard/pine",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pine.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1779999732971191,
+        "d": 1.334557294845581
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.10000000149011612
+    }
+  },
+  {
+    "id": "kenney-graveyard/pumpkin-carved",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pumpkin-carved.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3774920105934143,
+        "d": 0.3774920105934143
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/pumpkin-tall-carved",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pumpkin-tall-carved.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3254919946193695,
+        "d": 0.3254920095205307
+      },
+      "center": {
+        "x": 0,
+        "z": 0.026000000536441803
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/pumpkin-tall",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pumpkin-tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3254919946193695,
+        "d": 0.3254920095205307
+      },
+      "center": {
+        "x": 0,
+        "z": 0.026000000536441803
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/pumpkin",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "pumpkin.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3774920105934143,
+        "d": 0.3774920105934143
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/road",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "road.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7971351742744446,
+        "d": 0.7898434102535248
+      },
+      "center": {
+        "x": 0.00010749697685241699,
+        "z": -0.004802718758583069
+      },
+      "minY": -4.70197740328915e-38
+    }
+  },
+  {
+    "id": "kenney-graveyard/rocks-tall",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "rocks-tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0331388115882874,
+        "d": 1.0201396942138672
+      },
+      "center": {
+        "x": 0.006123572587966919,
+        "z": -0.054722726345062256
+      },
+      "minY": -3.383959622356382e-16
+    }
+  },
+  {
+    "id": "kenney-graveyard/rocks",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "rocks.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0758797526359558,
+        "d": 0.9644204378128052
+      },
+      "center": {
+        "x": 0.10265657305717468,
+        "z": 0.05118447542190552
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/shovel-dirt",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "shovel-dirt.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6223823428153992,
+        "d": 0.5241823494434357
+      },
+      "center": {
+        "x": 0.013136357069015503,
+        "z": 0.0006453543901443481
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/shovel",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "shovel.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.19200000166893005,
+        "d": 0.09539999812841415
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/stone-wall-column",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "stone-wall-column.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.34999997913837433
+      },
+      "center": {
+        "x": 0,
+        "z": -0.3999999985098839
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/stone-wall-curve",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "stone-wall-curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/stone-wall-damaged",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "stone-wall-damaged.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.19999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4000000059604645
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/stone-wall",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "stone-wall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.19999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4000000059604645
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/trunk-long",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "trunk-long.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5392934679985046,
+        "d": 0.5408730208873749
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0007897764444351196
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/trunk",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "trunk.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5392934679985046,
+        "d": 0.5542448163032532
+      },
+      "center": {
+        "x": 0,
+        "z": 0.007475674152374268
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/urn-round",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "urn-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2644200026988983,
+        "d": 0.2644200026988983
+      },
+      "center": {
+        "x": 7.216449660063518e-16,
+        "z": -1.4432899320127035e-15
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-graveyard/urn-square",
+    "source": "kenney-graveyard",
+    "categories": [
+      "environment",
+      "halloween",
+      "prop"
+    ],
+    "file": "urn-square.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2644200026988983,
+        "d": 0.2644200026988983
+      },
+      "center": {
+        "x": 3.608224830031759e-16,
+        "z": -2.1649348980190553e-15
+      },
+      "minY": 0
+    }
+  }
+]

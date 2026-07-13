@@ -1,13 +1,14 @@
 # @jgengine/assets
 
-A self-generating, license-verified index of thousands of CC0 3D models — hosted at **zero cost**. No GLB bytes ship in the npm tarball; every byte comes from infrastructure you don't pay for:
+A self-generating, license-verified index of thousands of CC0 3D models **and PBR materials** — hosted at **zero cost**. No GLB or texture bytes ship in the npm tarball; every byte comes from infrastructure you don't pay for:
 
 | What | Where it lives | Whose bandwidth |
 |------|----------------|-----------------|
 | Pack GLBs (Kenney, Quaternius, KayKit…) | Fetched at `pull` time from the provider's CDN | Provider's |
+| PBR materials (ambientCG) | Fetched at `pull` time (provider or the `packs` release mirror) | Provider's / GitHub's |
 | The generated index (JSON) | Inside this npm package | npm (KB) |
 | Your one-off models | `packages/assets/local/`, served via jsDelivr-over-GitHub | GitHub + jsDelivr |
-| A consumer's downloaded bytes | Their `public/models/` (gitignored) | The consumer's |
+| A consumer's downloaded bytes | Their `public/models/` + `public/materials/` (gitignored) | The consumer's |
 
 ## Layers
 
@@ -15,23 +16,26 @@ A self-generating, license-verified index of thousands of CC0 3D models — host
 2. **Generated index** (`src/generated/*.json`) — machine-produced from the real `.glb` filenames after a pack is extracted. Never hand-typed. Committed JSON; bytes are not.
 3. **Aliases** (`src/aliases.ts`) — hand-authored semantic keys (`nature/tree_pine → kenney-nature/tree_pineDefaultA`).
 4. **Singles** (`src/singles.json`) — long-tail one-offs (per-model `url` + `license`).
+5. **Materials** (`src/sources/ambientcg.ts` + `src/materials.ts`) — `kind: "material"` sources, one CC0 PBR material each (hundreds of ambientCG materials: grass, rock, wood, brick, metal, fabric…). `pull` normalizes the maps to fixed filenames, so `buildMaterialCatalog({ basePath })` resolves ids and `material/…` aliases to map URLs with no generated index at all.
 
-Everything collapses into the core `AssetCatalog` via `buildCatalog({ basePath })`.
+Model entries collapse into the core `AssetCatalog` via `buildCatalog({ basePath })`; materials resolve through `buildMaterialCatalog({ basePath })`.
 
 ## `add` — one command for anything
 
-`assets add <query>` is the front door. It fuzzy-searches **every** catalog at once — 3D models, whole packs, HUD components (the shadcn registry), and `game-icon` glyphs — then does the fetch and prints the exact copy-paste wiring. One mental model instead of four.
+`assets add <query>` is the front door. It fuzzy-searches **every** catalog at once — 3D models, whole packs, PBR materials, HUD components (the shadcn registry), and `game-icon` glyphs — then does the fetch and prints the exact copy-paste wiring. One mental model instead of five.
 
 ```bash
 assets add astronaut --dir ../../apps/dev/public   # model → pull + reindex + print the assets.ts snippet
 assets add nature    --dir ../../apps/dev/public   # whole pack → pull + reindex + how to wire an id
+assets add grass --kind material --dir ../../apps/dev/public  # PBR material → pull maps + resolve snippet
 assets add "mana bar"                              # HUD component → the `npx shadcn add` cmd + <VitalBar/> usage
 assets add sword                                    # icon → the game-icon name to drop in a slot
 ```
 
 - A **model / pack** match is fully automated: if the pack isn't already in `<dir>/models/`, it's pulled and extracted, then `reindex` runs so the id is addressable, then the `buildCatalog` + model-seam snippet is printed.
+- A **material** match pulls the maps into `<dir>/materials/<id>/` with normalized names (`color.jpg`, `normal.jpg`, `roughness.jpg`, `ao.jpg`, `displacement.jpg`) and prints the `buildMaterialCatalog` resolve snippet — no reindex needed, the material catalog is fully static.
 - A **component / icon** match prints the one-liner to run and the import + usage — no bytes to pull.
-- Ambiguous query? `add` lists the top matches across kinds; narrow with `--kind model|pack|component|icon` or a more specific term. `--json` emits the ranked matches for scripting.
+- Ambiguous query? `add` lists the top matches across kinds; narrow with `--kind model|pack|material|component|icon` or a more specific term. `--json` emits the ranked matches for scripting.
 
 The same ranking is available programmatically: `import { findAssets } from "@jgengine/assets"`.
 
@@ -40,7 +44,8 @@ The same ranking is available programmatically: `import { findAssets } from "@jg
 ```
 assets add <query> [--kind <k>] [--dir <dir>] [--mirror <baseUrl>] [--json]
                                                # unified import: models, packs, components, icons
-assets list [--category <c>] [--source <s>]   # browse the generated index
+assets list [--category <c>] [--source <s>] [--kind material]
+                                               # browse the generated model index, or the material catalog
 assets search <term>                          # grep the index
 assets pull <source-id> [--dir public] [--mirror <baseUrl>] [--offline]
                                                # download + extract a whole pack's GLBs into <dir>/models/<source>/
@@ -118,6 +123,17 @@ export const game: PlayableGame = {
 ```
 
 `buildCatalog({ sources: ["kenney-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets add <query>` (or `assets search <term>` / `assets list --category <c>`) instead of memorizing them.
+
+Materials resolve the same way — ids (or `material/…` aliases) to normalized PBR map URLs:
+
+```ts
+import { buildMaterialCatalog } from "@jgengine/assets";
+
+const materials = buildMaterialCatalog({ basePath: "/materials" });
+
+materials.resolve("ambientcg-grass001")!.maps.color; // "/materials/ambientcg-grass001/color.jpg"
+materials.resolve("material/grass")!.maps.normal;    // alias → "/materials/ambientcg-grass001/normal.jpg"
+```
 
 ### Serving the bytes
 

@@ -1,5 +1,26 @@
 export * from "./manifest";
-export { sources, sourceById, kenneySources, quaterniusSources, kaykitSources } from "./sources";
+export {
+  sources,
+  sourceById,
+  modelSources,
+  materialSources,
+  ambientcgSources,
+  kenneySources,
+  quaterniusSources,
+  kaykitSources,
+} from "./sources";
+export {
+  buildMaterialCatalog,
+  extractMaterialMaps,
+  materialAliases,
+  MATERIAL_MAP_FILES,
+  type BuildMaterialCatalogOptions,
+  type ExtractedMaterialMap,
+  type MaterialCatalog,
+  type MaterialMapRole,
+  type MaterialMaps,
+  type MaterialRef,
+} from "./materials";
 export { singles } from "./singles";
 export { aliases } from "./aliases";
 export { generatedIndex, generatedBySource } from "./generated";
@@ -15,5 +36,11 @@ export {
   type RankedMatch,
 } from "./find";
 export { registryCatalog, componentInstallUrl, type RegistryCatalog, type RegistryComponent } from "./registry";
-export { modelWiringSnippet, componentWiringSnippet, iconWiringSnippet, type ModelSnippetOptions } from "./snippet";
+export {
+  modelWiringSnippet,
+  materialWiringSnippet,
+  componentWiringSnippet,
+  iconWiringSnippet,
+  type ModelSnippetOptions,
+} from "./snippet";
 export { verifyManifest, type VerifyResult } from "./verify";

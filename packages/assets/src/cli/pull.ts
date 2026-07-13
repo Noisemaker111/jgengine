@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,9 +9,15 @@ import { type AssetKind, type AssetMatch, rankAssets } from "../find";
 import { generatedIndex } from "../generated";
 import { reindex } from "../indexGen";
 import { isScrapeDownload, type AssetSource, type SingleAsset } from "../manifest";
+import { extractMaterialMaps } from "../materials";
 import { registryCatalog } from "../registry";
-import { componentWiringSnippet, iconWiringSnippet, modelWiringSnippet } from "../snippet";
-import { sourceById } from "../sources";
+import {
+  componentWiringSnippet,
+  iconWiringSnippet,
+  materialWiringSnippet,
+  modelWiringSnippet,
+} from "../snippet";
+import { materialSources, sourceById } from "../sources";
 import { verifyManifest } from "../verify";
 import { resolveGeneratedDir, resolvePackageRoot, resolvePackageTreeRoot } from "./paths";
 
@@ -34,6 +41,28 @@ function fail(message: string): never {
   process.exit(1);
 }
 
+/**
+ * The runtime's own fetch, with a curl fallback for hosts it cannot reach —
+ * some proxied sandboxes tear down bun's TLS stream to GitHub's release-asset
+ * host while curl (which honors SSL_CERT_FILE) gets through fine.
+ */
+export const cliFetch: typeof fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    if (init?.method !== undefined && init.method !== "GET") throw error;
+    try {
+      const bytes = execFileSync("curl", ["-fsSL", "--max-time", "600", url], {
+        maxBuffer: 1024 * 1024 * 1024,
+      });
+      return new Response(new Uint8Array(bytes));
+    } catch {
+      throw error;
+    }
+  }
+}) as typeof fetch;
+
 export function describeNetworkFailure(error: unknown): string {
   const chain: string[] = [];
   let current: unknown = error;
@@ -53,6 +82,16 @@ function cmdList(argv: string[]): void {
   const category = flag(argv, "category");
   const source = flag(argv, "source");
   const limit = Number(flag(argv, "limit") ?? "50");
+  if (flag(argv, "kind") === "material") {
+    const rows = materialSources.filter(
+      (entry) => category === undefined || entry.categories.includes(category),
+    );
+    for (const entry of rows.slice(0, limit)) {
+      console.log(`${entry.id}\t[${entry.categories.join(",")}]\t${entry.license}`);
+    }
+    console.log(`— ${Math.min(rows.length, limit)} of ${rows.length} materials`);
+    return;
+  }
   const rows = generatedIndex.filter(
     (entry) =>
       (category === undefined || entry.categories.includes(category)) &&
@@ -92,7 +131,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
   if (source === undefined) fail(`unknown source: ${sourceId}`);
 
   const outRoot = resolve(flag(argv, "dir") ?? "public");
-  const outDir = join(outRoot, "models", sourceId);
+  const outDir = join(outRoot, source.kind === "material" ? "materials" : "models", sourceId);
   const offline = argv.includes("--offline");
   const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
 
@@ -108,8 +147,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
   }
 
   const result = await fetchPackInto(source, outRoot, { mirrorBase });
-  const textureNote = result.textures > 0 ? ` + ${result.textures} texture(s)` : "";
-  console.log(`pulled ${result.models} models${textureNote} -> ${result.outDir}`);
+  console.log(describeFetchResult(source, result));
 }
 
 interface FetchPackResult {
@@ -119,20 +157,41 @@ interface FetchPackResult {
   url: string;
 }
 
+function describeFetchResult(source: AssetSource, result: FetchPackResult): string {
+  if (source.kind === "material") {
+    return `pulled ${result.textures} material map(s) -> ${result.outDir}`;
+  }
+  const textureNote = result.textures > 0 ? ` + ${result.textures} texture(s)` : "";
+  return `pulled ${result.models} models${textureNote} -> ${result.outDir}`;
+}
+
 async function fetchPackInto(
   source: AssetSource,
   outRoot: string,
   options: { mirrorBase?: string },
 ): Promise<FetchPackResult> {
-  const outDir = join(outRoot, "models", source.id);
+  const isMaterial = source.kind === "material";
+  const outDir = join(outRoot, isMaterial ? "materials" : "models", source.id);
   console.log(
     `resolving ${source.id}${isScrapeDownload(source.download) ? " (scrape)" : ""}` +
       `${options.mirrorBase !== undefined ? ` [mirror override: ${options.mirrorBase}]` : ""}…`,
   );
-  const { archive, url, attempted } = await downloadPackArchive(source, { mirrorBase: options.mirrorBase });
+  const { archive, url, attempted } = await downloadPackArchive(source, {
+    mirrorBase: options.mirrorBase,
+    fetchImpl: cliFetch,
+  });
   console.log(
     `downloaded ${url}${attempted.length > 1 ? ` (after ${attempted.length - 1} failed attempt(s))` : ""}`,
   );
+  if (isMaterial) {
+    const maps = extractMaterialMaps(archive);
+    if (maps.every((map) => map.role !== "color")) {
+      fail(`no color map found in ${source.id} archive`);
+    }
+    mkdirSync(outDir, { recursive: true });
+    for (const map of maps) writeFileSync(join(outDir, map.file), map.bytes);
+    return { outDir, models: 0, textures: maps.length, url };
+  }
   const glbs = extractGlbs(archive);
   if (glbs.length === 0) fail(`no .glb files found in ${source.id} archive`);
   mkdirSync(outDir, { recursive: true });
@@ -191,7 +250,7 @@ function cmdRegisterSingle(argv: string[]): void {
   console.log(`added single ${id} -> ${url}${isUrl ? " (0 bytes stored)" : " (copied to local/)"}`);
 }
 
-const KINDS: readonly AssetKind[] = ["model", "pack", "component", "icon"];
+const KINDS: readonly AssetKind[] = ["model", "pack", "material", "component", "icon"];
 
 function describeMatch(match: AssetMatch): string {
   switch (match.kind) {
@@ -199,6 +258,8 @@ function describeMatch(match: AssetMatch): string {
       return `[model]     ${match.id}${match.via === "alias" ? "  (alias)" : match.via === "single" ? "  (single)" : ""}`;
     case "pack":
       return `[pack]      ${match.source} — ${match.title}`;
+    case "material":
+      return `[material]  ${match.id} — ${match.title}`;
     case "component":
       return `[component] ${match.name} — ${match.title}`;
     case "icon":
@@ -220,18 +281,33 @@ async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
     return;
   }
 
+  const outRoot = resolve(flag(argv, "dir") ?? "public");
+  const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
+
+  if (match.kind === "material") {
+    const source = sourceById.get(match.id);
+    if (source === undefined) fail(`match resolves to unknown source: ${match.id}`);
+    const outDir = join(outRoot, "materials", match.id);
+    if (isPopulated(outDir)) {
+      console.log(`${match.id} already present in ${outDir}`);
+    } else {
+      const result = await fetchPackInto(source, outRoot, { mirrorBase });
+      console.log(describeFetchResult(source, result));
+    }
+    console.log(`\nwire it in:\n`);
+    console.log(materialWiringSnippet(match.id));
+    return;
+  }
+
   const source = sourceById.get(match.source);
   if (source === undefined) fail(`match resolves to unknown source: ${match.source}`);
-  const outRoot = resolve(flag(argv, "dir") ?? "public");
   const outDir = join(outRoot, "models", match.source);
-  const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
 
   if (isPopulated(outDir)) {
     console.log(`${match.source} already present in ${outDir}`);
   } else {
     const result = await fetchPackInto(source, outRoot, { mirrorBase });
-    const textureNote = result.textures > 0 ? ` + ${result.textures} texture(s)` : "";
-    console.log(`pulled ${result.models} models${textureNote} -> ${result.outDir}`);
+    console.log(describeFetchResult(source, result));
   }
 
   const result = reindex(join(outRoot, "models"), generatedDir);
@@ -252,7 +328,7 @@ async function cmdAdd(argv: string[]): Promise<void> {
   const query = argv[0];
   if (query === undefined) {
     fail(
-      "usage: add <query> [--kind model|pack|component|icon] [--dir <dir>] [--mirror <baseUrl>] [--json]\n" +
+      "usage: add <query> [--kind model|pack|material|component|icon] [--dir <dir>] [--mirror <baseUrl>] [--json]\n" +
         "       add <path|url> --license <l> [--category <c>]   (register a one-off single into the shipped index)",
     );
   }

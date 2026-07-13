@@ -1,0 +1,3362 @@
+[
+  {
+    "id": "kenney-tower-defense/detail-crystal-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "detail-crystal-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.892179548740387,
+        "d": 0.8593374192714691
+      },
+      "center": {
+        "x": 0.01221504807472229,
+        "z": 0.011854752898216248
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-tower-defense/detail-crystal",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "detail-crystal.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.25118017196655273,
+        "d": 0.2900378704071045
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 8.014826700184745e-32
+    }
+  },
+  {
+    "id": "kenney-tower-defense/detail-dirt-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "detail-dirt-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8530588448047638,
+        "d": 0.7784786820411682
+      },
+      "center": {
+        "x": 0.017925217747688293,
+        "z": 0.006932467222213745
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-tower-defense/detail-dirt",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "detail-dirt.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7027659714221954,
+        "d": 0.7120292484760284
+      },
+      "center": {
+        "x": -0.00952504575252533,
+        "z": 0.015936866402626038
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-tower-defense/detail-rocks-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "detail-rocks-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.892179548740387,
+        "d": 0.8593374192714691
+      },
+      "center": {
+        "x": 0.01221504807472229,
+        "z": 0.011854752898216248
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-tower-defense/detail-rocks",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "detail-rocks.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.597537100315094,
+        "d": 0.605470597743988
+      },
+      "center": {
+        "x": 0.0031143128871917725,
+        "z": -0.017963021993637085
+      },
+      "minY": -4.0607516527067767e-16
+    }
+  },
+  {
+    "id": "kenney-tower-defense/detail-tree-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "detail-tree-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.5
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/detail-tree",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "detail-tree.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3499999940395355,
+        "d": 0.3499999940395355
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-a-weapon",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-a-weapon.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-b-weapon",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-b-weapon.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9993500113487244,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9993500113487244,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-beam-burst",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-beam-burst.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0523945093154907,
+        "d": 1.0523945093154907
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-beam",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-beam.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.800000011920929,
+        "d": 0.800000011920929
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-c-weapon",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-c-weapon.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0043467283248901,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0043467283248901,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-d-weapon",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-d-weapon.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9493824243545532,
+        "d": 0.9499999284744263
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/enemy-ufo-d",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "enemy-ufo-d.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9493824243545532,
+        "d": 0.9499999284744263
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/selection-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "selection-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/selection-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "selection-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-detail-crystal-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-detail-crystal-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.892179548740387,
+        "d": 0.8593374192714691
+      },
+      "center": {
+        "x": 0.01221504807472229,
+        "z": 0.011854752898216248
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-detail-crystal",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-detail-crystal.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.25118017196655273,
+        "d": 0.2900378704071045
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 8.014826700184745e-32
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-detail-dirt-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-detail-dirt-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8530588448047638,
+        "d": 0.7784786820411682
+      },
+      "center": {
+        "x": 0.017925217747688293,
+        "z": 0.006932467222213745
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-detail-dirt",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-detail-dirt.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7027659714221954,
+        "d": 0.7120292484760284
+      },
+      "center": {
+        "x": -0.00952504575252533,
+        "z": 0.015936866402626038
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-detail-rocks-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-detail-rocks-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.892179548740387,
+        "d": 0.8593374192714691
+      },
+      "center": {
+        "x": 0.01221504807472229,
+        "z": 0.011854752898216248
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-detail-rocks",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-detail-rocks.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.597537100315094,
+        "d": 0.605470597743988
+      },
+      "center": {
+        "x": 0.0031143128871917725,
+        "z": -0.017963021993637085
+      },
+      "minY": -4.0607516527067767e-16
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-detail-tree-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-detail-tree-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.5
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-detail-tree",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-detail-tree.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3499999940395355,
+        "d": 0.3499999940395355
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-bump",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-bump.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-corner-inner",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-corner-inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-corner-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-corner-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-corner-outer",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-corner-outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-corner-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-corner-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-corner-square",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-corner-square.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-crossing",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-crossing.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-crystal",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-crystal.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-dirt",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-dirt.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-end-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-end-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-end",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-end.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-hill",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-hill.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-river-bridge",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-river-bridge.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-river-corner",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-river-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-river-slope-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-river-slope-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-river-slope",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-river-slope.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-river-straight",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-river-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-river-transition",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-river-transition.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-river-waterfall",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-river-waterfall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-rock",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-slope",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-slope.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-spawn-end-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-spawn-end-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-spawn-end",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-spawn-end.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1.0258978176236474e-29
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-spawn-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-spawn-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-spawn",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-spawn.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-split",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-split.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-straight-slope-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-straight-slope-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-straight-slope",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-straight-slope.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-straight",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-transition",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-transition.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-tree-double",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-tree-double.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-tree-quad",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-tree-quad.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-tree",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-tree.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-wide-corner",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-wide-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-wide-split",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-wide-split.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-wide-straight",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-wide-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile-wide-transition",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile-wide-transition.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-tile",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-tile.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-wood-structure-high-part",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-wood-structure-high-part.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.12800002098083496
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4359999895095825
+      },
+      "minY": -5.009266908020657e-32
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-wood-structure-high",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-wood-structure-high.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -5.009266908020657e-32
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-wood-structure-part",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-wood-structure-part.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.12800002098083496
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4359999895095825
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/snow-wood-structure",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "snow-wood-structure.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/spawn-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "spawn-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6875,
+        "d": 0.6875
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/spawn-square",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "spawn-square.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6875,
+        "d": 0.6862500309944153
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -3.725290298461914e-9
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-bump",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-bump.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-corner-inner",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-corner-inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-corner-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-corner-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-corner-outer",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-corner-outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-corner-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-corner-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-corner-square",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-corner-square.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-crossing",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-crossing.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-crystal",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-crystal.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-dirt",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-dirt.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-end-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-end-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-end",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-end.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-hill",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-hill.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-river-bridge",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-river-bridge.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-river-corner",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-river-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-river-slope-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-river-slope-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-river-slope",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-river-slope.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-river-straight",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-river-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-river-transition",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-river-transition.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-river-waterfall",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-river-waterfall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-rock",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-rock.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-slope",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-slope.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-spawn-end-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-spawn-end-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-spawn-end",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-spawn-end.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1.0258978176236474e-29
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-spawn-round",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-spawn-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-spawn",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-spawn.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-split",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-split.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-straight-slope-large",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-straight-slope-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-straight-slope",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-straight-slope.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-straight",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-transition",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-transition.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-tree-double",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-tree-double.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-tree-quad",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-tree-quad.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-tree",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-tree.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-wide-corner",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-wide-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-wide-split",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-wide-split.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-wide-straight",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-wide-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile-wide-transition",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile-wide-transition.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tile",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tile.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-base",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-base.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-bottom-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-bottom-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-bottom-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-bottom-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-bottom-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-bottom-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-build-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-build-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-build-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-build-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-build-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-build-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-build-d",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-build-d.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-build-e",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-build-e.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-build-f",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-build-f.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-crystals",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-crystals.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-middle-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-middle-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1077971458435059,
+        "d": 1.1077971458435059
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-middle-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-middle-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1287498474121094,
+        "d": 1.243237853050232
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05724400281906128
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-middle-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-middle-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.149999976158142,
+        "d": 1.149999976158142
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-roof-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-roof-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9200000166893005,
+        "d": 0.9200000166893005
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-roof-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-roof-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-roof-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-roof-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9760000109672546,
+        "d": 0.9760000109672546
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-top-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-top-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9200000166893005,
+        "d": 0.9200000166893005
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-top-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-top-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-round-top-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-round-top-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9760000109672546,
+        "d": 0.9760000109672546
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-bottom-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-bottom-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-bottom-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-bottom-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-bottom-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-bottom-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-build-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-build-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.0999999046325684
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-build-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-build-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.100000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-build-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-build-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-build-d",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-build-d.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.0999999046325684
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-build-e",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-build-e.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.100000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-build-f",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-build-f.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-middle-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-middle-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.0999999046325684
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-middle-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-middle-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-middle-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-middle-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-roof-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-roof-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.0999999046325684
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-roof-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-roof-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.100000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-roof-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-roof-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-top-a",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-top-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.0999999046325684
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-top-b",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-top-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 1.100000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/tower-square-top-c",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "tower-square-top-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/weapon-ammo-arrow",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "weapon-ammo-arrow.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1599999964237213,
+        "d": 0.7775999903678894
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.07999999821186066
+    }
+  },
+  {
+    "id": "kenney-tower-defense/weapon-ammo-boulder",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "weapon-ammo-boulder.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3199999928474426,
+        "d": 0.27712810039520264
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.12000000476837158
+    }
+  },
+  {
+    "id": "kenney-tower-defense/weapon-ammo-bullet",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "weapon-ammo-bullet.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20000000298023224,
+        "d": 0.30000005662441254
+      },
+      "center": {
+        "x": 0,
+        "z": 7.450580596923828e-9
+      },
+      "minY": -0.1000000387430191
+    }
+  },
+  {
+    "id": "kenney-tower-defense/weapon-ammo-cannonball",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "weapon-ammo-cannonball.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2800000011920929,
+        "d": 0.2800000011920929
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.14000000059604645
+    }
+  },
+  {
+    "id": "kenney-tower-defense/weapon-ballista",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "weapon-ballista.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.662655770778656,
+        "d": 0.7775999903678894
+      },
+      "center": {
+        "x": 1.4432899320127035e-15,
+        "z": 0.08879990463256837
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/weapon-cannon",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "weapon-cannon.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6000000238418579,
+        "d": 0.6000000238418579
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/weapon-catapult",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "weapon-catapult.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6000000238418579,
+        "d": 0.8366119265556335
+      },
+      "center": {
+        "x": 0,
+        "z": -0.06830582023953552
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/weapon-turret",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "weapon-turret.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5109731554985046,
+        "d": 0.6168632507324219
+      },
+      "center": {
+        "x": 0,
+        "z": -0.001568542439999987
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/wood-structure-high-part",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "wood-structure-high-part.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.12800002098083496
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4359999895095825
+      },
+      "minY": -5.009266908020657e-32
+    }
+  },
+  {
+    "id": "kenney-tower-defense/wood-structure-high",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "wood-structure-high.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -5.009266908020657e-32
+    }
+  },
+  {
+    "id": "kenney-tower-defense/wood-structure-part",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "wood-structure-part.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.12800002098083496
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4359999895095825
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-tower-defense/wood-structure",
+    "source": "kenney-tower-defense",
+    "categories": [
+      "tower",
+      "environment",
+      "prop"
+    ],
+    "file": "wood-structure.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  }
+]
