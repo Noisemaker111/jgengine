@@ -495,7 +495,7 @@ export const physics: PhysicsConfig = { gravity: -32 };
 - `server.mode` is a string your loop/commands interpret — the engine ships no gamemode presets.
 - Never in defineGame: player tuning, catalog helpers (`defineItems` etc.), game nouns, behaviors, prompts, or inline binding/inventory/world blobs. The one exception is `physics.gravity`/`physics.jumpVelocity` — global controller tuning, not a catalog value (see "Controller kinematics" below).
 - `assets` may be omitted for a game with no models (a HUD-only card/board game, say) — `defineGame` injects an empty catalog, so `GameDefinition.assets` is always present downstream with no per-caller `?.` checks.
-- `devtools` defaults to `true` — every game gets the F2-toggled debug overlay (Perf/Tune/Logs/Net/Keys) for free, and every top-level `export const` number/boolean/color and every exported flat table of them under `src/` is auto-discovered into the Tune tab with zero game code; set `false` to disable the toggle entirely. See "Devtools — F2 overlay and tunables" below.
+- `devtools` defaults to `true` — every game gets the F2-toggled debug overlay (Perf/Tune/Logs/Net/Keys) for free, and every top-level `export const` number/boolean/color and every exported flat table of them under `src/` is auto-discovered into the Tune tab with zero game code; set `false` to disable the toggle entirely. In the dev runner the Tune tab's **Save to source** button writes changed values back into the game's `.ts` files via the dev server's `/__jgengine/save` endpoint (`@jgengine/core/devtools/rewriteTunables` does the literal rewrite; unlocatable keys are reported skipped). See "Devtools — F2 overlay and tunables" below.
 
 ### `@jgengine/core/game/defineGame` — the underlying primitive
 
