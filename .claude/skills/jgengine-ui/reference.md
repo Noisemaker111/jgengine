@@ -449,6 +449,7 @@ Require revision when any of these are true:
 - important UI sits beneath safe areas
 - ordinary document flow determines the HUD layout
 - generic default styling is used because no art direction was written
+- the hosting website page renders its own title, tagline, or "enter game" button instead of loading straight into the game's own menu
 
 ## 15. Compact implementation API appendix
 

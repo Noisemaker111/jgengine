@@ -16,5 +16,5 @@
     "types": ["vite/client", "node"]
   },
   "include": ["src", "vite.config.ts", "scripts"],
-  "exclude": ["dist", ".output", ".nitro", ".vercel", ".tanstack"]
+  "exclude": ["dist", ".output", ".nitro", ".vercel", ".tanstack", "src/**/*.test.ts"]
 }
