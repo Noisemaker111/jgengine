@@ -18,7 +18,7 @@ export function GameUI() {
 
   return (
     <div className="pointer-events-none absolute inset-0 select-none font-mono text-white">
-      <HudCanvas layout={layout} compactScale={1}>
+      <HudCanvas layout={layout}>
         <HudPanel id="Scoreboard" anchor="top" interactive={false}>
           <Scoreboard snapshot={snapshot} />
         </HudPanel>
