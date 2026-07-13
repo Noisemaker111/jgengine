@@ -1,19 +1,25 @@
 import { aliases } from "./aliases";
 import { generatedIndex } from "./generated";
+import { generatedSpriteIndex } from "./generated-sprites";
 import { keyFromFile } from "./indexGen";
 import { materialAliases } from "./materials";
 import { registryCatalog } from "./registry";
 import { singles } from "./singles";
-import { materialSources, modelSources } from "./sources";
+import { materialSources, modelSources, spriteSources } from "./sources";
+import { keyFromSpriteFile } from "./spriteIndexGen";
 
-export type AssetKind = "model" | "pack" | "material" | "component" | "icon";
+export type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack";
 
 export type AssetMatch =
   | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" }
   | { kind: "pack"; source: string; title: string; categories: readonly string[] }
   | { kind: "material"; id: string; title: string; categories: readonly string[] }
   | { kind: "component"; name: string; title: string; description: string }
-  | { kind: "icon"; name: string };
+  | { kind: "icon"; name: string }
+  /** One already-indexed file inside a pulled sprite/icon pack, e.g. `gameicons-icons/sword`. */
+  | { kind: "sprite"; id: string; source: string; via: "index" }
+  /** A whole sprite/icon pack, not yet resolved to individual files — same role as `pack` for models. */
+  | { kind: "spritePack"; source: string; title: string; categories: readonly string[] };
 
 export interface FindOptions {
   /** Restrict results to one kind. */
@@ -160,6 +166,28 @@ export function rankAssets(query: string, options: FindOptions = {}): RankedMatc
     }
   }
 
+  if (options.kind === undefined || options.kind === "sprite") {
+    for (const entry of generatedSpriteIndex) {
+      push(best(q, entry.id, keyFromSpriteFile(entry.file), ...entry.categories), {
+        kind: "sprite",
+        id: entry.id,
+        source: entry.source,
+        via: "index",
+      });
+    }
+  }
+
+  if (options.kind === undefined || options.kind === "spritePack") {
+    for (const source of spriteSources) {
+      push(best(q, source.id, source.title, source.provider, ...source.categories), {
+        kind: "spritePack",
+        source: source.id,
+        title: source.title,
+        categories: source.categories,
+      });
+    }
+  }
+
   ranked.sort((a, b) => b.score - a.score || matchKey(a.match).localeCompare(matchKey(b.match)));
   return dedupe(ranked).slice(0, options.limit ?? 12);
 }
@@ -172,6 +200,10 @@ function matchKey(match: AssetMatch): string {
       return `pack:${match.source}`;
     case "material":
       return `material:${match.id}`;
+    case "sprite":
+      return `sprite:${match.id}`;
+    case "spritePack":
+      return `spritePack:${match.source}`;
     default:
       return `${match.kind}:${match.name}`;
   }

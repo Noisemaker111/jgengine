@@ -42,3 +42,30 @@ export const kenneySources: readonly AssetSource[] = KENNEY_PACKS.map((pack) => 
   download: { scrape: `https://kenney.nl/assets/${pack.slug}` },
   homepage: `https://kenney.nl/assets/${pack.slug}`,
 }));
+
+/**
+ * Kenney's 2D icon/UI packs — same CC0 `kenney.nl/assets/<slug>` scrape
+ * mechanism as the 3D kits above, just archives of individual SVG/PNG files
+ * instead of GLBs. This is a small, deliberately conservative starter set;
+ * Kenney's 2D catalog (platformer tiles, particles, more UI kits) is
+ * comparable in scale to the 3D side and mostly untapped — extend
+ * `KENNEY_SPRITE_PACKS` the same way as `KENNEY_PACKS` above.
+ */
+const KENNEY_SPRITE_PACKS: readonly KenneyPack[] = [
+  { id: "kenney-game-icons", slug: "game-icons", title: "Game Icons", categories: ["icon", "item", "ui"] },
+  { id: "kenney-input-prompts", slug: "input-prompts", title: "Input Prompts", categories: ["icon", "ui", "input"] },
+  { id: "kenney-ui-pack", slug: "ui-pack", title: "UI Pack", categories: ["ui", "icon"] },
+];
+
+/** Kenney's CC0 2D icon/UI packs — `kind: "sprite"` counterpart of `kenneySources`. */
+export const kenneySpriteSources: readonly AssetSource[] = KENNEY_SPRITE_PACKS.map((pack) => ({
+  id: pack.id,
+  kind: "sprite",
+  provider: "kenney",
+  title: pack.title,
+  license: "CC0-1.0",
+  author: "Kenney",
+  categories: pack.categories,
+  download: { scrape: `https://kenney.nl/assets/${pack.slug}` },
+  homepage: `https://kenney.nl/assets/${pack.slug}`,
+}));

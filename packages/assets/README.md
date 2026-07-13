@@ -1,14 +1,15 @@
 # @jgengine/assets
 
-A self-generating, license-verified index of thousands of CC0 3D models **and PBR materials** — hosted at **zero cost**. No GLB or texture bytes ship in the npm tarball; every byte comes from infrastructure you don't pay for:
+A self-generating, license-verified index of thousands of CC0 3D models, PBR materials, **and 2D sprite/icon packs** — hosted at **zero cost**. No GLB, texture, or sprite bytes ship in the npm tarball; every byte comes from infrastructure you don't pay for:
 
 | What | Where it lives | Whose bandwidth |
 |------|----------------|-----------------|
 | Pack GLBs (Kenney, Quaternius, KayKit…) | Fetched at `pull` time from the provider's CDN | Provider's |
 | PBR materials (ambientCG) | Fetched at `pull` time (provider or the `packs` release mirror) | Provider's / GitHub's |
+| Sprite/icon packs (Kenney 2D, game-icons.net) | Fetched at `pull` time (provider or the `packs` release mirror) | Provider's / GitHub's |
 | The generated index (JSON) | Inside this npm package | npm (KB) |
 | Your one-off models | `packages/assets/local/`, served via jsDelivr-over-GitHub | GitHub + jsDelivr |
-| A consumer's downloaded bytes | Their `public/models/` + `public/materials/` (gitignored) | The consumer's |
+| A consumer's downloaded bytes | Their `public/models/` + `public/materials/` + `public/sprites/` (gitignored) | The consumer's |
 
 ## Layers
 
@@ -17,25 +18,28 @@ A self-generating, license-verified index of thousands of CC0 3D models **and PB
 3. **Aliases** (`src/aliases.ts`) — hand-authored semantic keys (`nature/tree_pine → kenney-nature/tree_pineDefaultA`).
 4. **Singles** (`src/singles.json`) — long-tail one-offs (per-model `url` + `license`).
 5. **Materials** (`src/sources/ambientcg.ts` + `src/materials.ts`) — `kind: "material"` sources, one CC0 PBR material each (hundreds of ambientCG materials: grass, rock, wood, brick, metal, fabric…). `pull` normalizes the maps to fixed filenames, so `buildMaterialCatalog({ basePath })` resolves ids and `material/…` aliases to map URLs with no generated index at all.
+6. **Sprites** (`src/sources/kenney.ts` sprite packs + `src/sources/gameicons.ts` + `src/spriteIndexGen.ts`) — `kind: "sprite"` sources, packs of individual SVG/PNG icon and UI files (Kenney's CC0 2D packs, game-icons.net's ~4,000 CC BY 3.0 icons as one mirrored repo). Same shape as models — `reindex-sprites` discovers real files after a pull and writes `src/generated-sprites/*.json`, resolved through `buildSpriteCatalog({ basePath })`.
 
-Model entries collapse into the core `AssetCatalog` via `buildCatalog({ basePath })`; materials resolve through `buildMaterialCatalog({ basePath })`.
+Model entries collapse into the core `AssetCatalog` via `buildCatalog({ basePath })`; materials resolve through `buildMaterialCatalog({ basePath })`; sprites/icons resolve through `buildSpriteCatalog({ basePath })`.
 
 ## `add` — one command for anything
 
-`assets add <query>` is the front door. It fuzzy-searches **every** catalog at once — 3D models, whole packs, PBR materials, HUD components (the shadcn registry), and `game-icon` glyphs — then does the fetch and prints the exact copy-paste wiring. One mental model instead of five.
+`assets add <query>` is the front door. It fuzzy-searches **every** catalog at once — 3D models, whole packs, PBR materials, sprite/icon packs, HUD components (the shadcn registry), and `game-icon` glyphs — then does the fetch and prints the exact copy-paste wiring. One mental model instead of six.
 
 ```bash
 assets add astronaut --dir ../../apps/dev/public   # model → pull + reindex + print the assets.ts snippet
 assets add nature    --dir ../../apps/dev/public   # whole pack → pull + reindex + how to wire an id
 assets add grass --kind material --dir ../../apps/dev/public  # PBR material → pull maps + resolve snippet
+assets add "game icons" --dir ../../apps/dev/public  # sprite pack → pull + reindex-sprites + resolve snippet
 assets add "mana bar"                              # HUD component → the `npx shadcn add` cmd + <VitalBar/> usage
 assets add sword                                    # icon → the game-icon name to drop in a slot
 ```
 
 - A **model / pack** match is fully automated: if the pack isn't already in `<dir>/models/`, it's pulled and extracted, then `reindex` runs so the id is addressable, then the `buildCatalog` + model-seam snippet is printed.
 - A **material** match pulls the maps into `<dir>/materials/<id>/` with normalized names (`color.jpg`, `normal.jpg`, `roughness.jpg`, `ao.jpg`, `displacement.jpg`) and prints the `buildMaterialCatalog` resolve snippet — no reindex needed, the material catalog is fully static.
+- A **sprite / spritePack** match works like model/pack: if the pack isn't already in `<dir>/sprites/`, it's pulled and extracted, then `reindex-sprites` runs so individual SVG/PNG ids are addressable, then the `buildSpriteCatalog` snippet is printed.
 - A **component / icon** match prints the one-liner to run and the import + usage — no bytes to pull.
-- Ambiguous query? `add` lists the top matches across kinds; narrow with `--kind model|pack|material|component|icon` or a more specific term. `--json` emits the ranked matches for scripting.
+- Ambiguous query? `add` lists the top matches across kinds; narrow with `--kind model|pack|material|component|icon|sprite|spritePack` or a more specific term. `--json` emits the ranked matches for scripting.
 
 The same ranking is available programmatically: `import { findAssets } from "@jgengine/assets"`.
 
@@ -43,15 +47,16 @@ The same ranking is available programmatically: `import { findAssets } from "@jg
 
 ```
 assets add <query> [--kind <k>] [--dir <dir>] [--mirror <baseUrl>] [--json]
-                                               # unified import: models, packs, components, icons
-assets list [--category <c>] [--source <s>] [--kind material]
-                                               # browse the generated model index, or the material catalog
-assets search <term>                          # grep the index
+                                               # unified import: models, packs, materials, sprites, components, icons
+assets list [--category <c>] [--source <s>] [--kind material|sprite|spritePack]
+                                               # browse the generated model/sprite index, or the material/sprite-pack catalog
+assets search <term>                          # grep the model index
 assets pull <source-id> [--dir public] [--mirror <baseUrl>] [--offline]
-                                               # download + extract a whole pack's GLBs into <dir>/models/<source>/
+                                               # download + extract a pack into <dir>/models|materials|sprites/<source>/
 assets register <path|url> --category <c> --license <l> [--author <a>]
                                                # register a one-off single into the shipped index
-assets reindex [public/models]                # regenerate generated/*.json from pulled packs
+assets reindex [public/models]                # regenerate generated/*.json from pulled model packs
+assets reindex-sprites [public/sprites]       # regenerate generated-sprites/*.json from pulled sprite packs
 assets verify                                 # license + alias-integrity gate
 ```
 
@@ -91,6 +96,18 @@ bun src/cli/pull.ts verify                                         # license + a
 ```
 
 A **new provider** is just a new `src/sources/<provider>.ts` added to the `sources` array in `src/sources/index.ts`. Pinned providers use `download: { url, sha256? }`; providers that rotate URLs (Kenney) use `download: { scrape: <page> }`. Any entry can also carry an optional top-level `mirror: <archiveUrl>` — a direct URL `pull` falls back to if both a `--mirror`/`JGENGINE_ASSETS_MIRROR` override and the primary path fail (see "Mirror fallback and offline pulls" above).
+
+**A whole new sprite/icon pack** — same shape as a model pack, just `kind: "sprite"` and `reindex-sprites` instead of `reindex`; files are matched by `.svg`/`.png` extension, deduped by basename regardless of archive nesting, so no filenames are hand-typed here either.
+
+```ts
+// src/sources/kenney.ts → KENNEY_SPRITE_PACKS
+{ id: "kenney-particle-pack", slug: "particle-pack", title: "Particle Pack", categories: ["particle", "vfx"] },
+```
+
+```bash
+bun src/cli/pull.ts pull kenney-particle-pack --dir ../../apps/dev/public   # fetch + extract SVG/PNG
+bun src/cli/pull.ts reindex-sprites ../../apps/dev/public/sprites           # regenerate generated-sprites/*.json + barrel
+```
 
 **A single one-off** — no code edit, zero bytes stored (URL) or copied into `local/` (path):
 
@@ -135,6 +152,16 @@ materials.resolve("ambientcg-grass001")!.maps.color; // "/materials/ambientcg-gr
 materials.resolve("material/grass")!.maps.normal;    // alias → "/materials/ambientcg-grass001/normal.jpg"
 ```
 
+Sprite/icon packs resolve the same way once pulled + reindexed — individual files, not whole packs:
+
+```ts
+import { buildSpriteCatalog } from "@jgengine/assets";
+
+const sprites = buildSpriteCatalog({ basePath: "/sprites" });
+
+sprites.resolve("gameicons-icons/sword")!.url; // "/sprites/gameicons-icons/sword.svg"
+```
+
 ### Serving the bytes
 
 A resolved id only yields a **URL** — the GLB must be somewhere your app serves. For a game, `pull` the packs into your app's `public/`, and line `basePath` up with it:
@@ -145,8 +172,17 @@ bun src/cli/pull.ts pull kenney-nature --dir ../../apps/dev/public   # → apps/
 
 `buildCatalog({ basePath: "/models" })` then resolves to `/models/kenney-nature/…`, which the dev server serves from `public/models/` (gitignored — the bytes are the consumer's, fetched once from the provider's CDN).
 
+Sprite/icon packs pull the same way, into `public/sprites/`:
+
+```bash
+bun src/cli/pull.ts pull gameicons-icons --dir ../../apps/dev/public        # → apps/dev/public/sprites/gameicons-icons/*.svg
+bun src/cli/pull.ts reindex-sprites ../../apps/dev/public/sprites           # → src/generated-sprites/gameicons-icons.json
+```
+
 ## Notes
 
 - Kenney rotates download URLs, so its sources `scrape` the asset page at pull time.
 - Quaternius / KayKit pages gate downloads behind JS; automated `pull` falls back to a clear error when no archive link is found — download those manually into the staging dir, then `reindex`.
 - `pull`'s mirror fallback and `--offline` guard exist for network-restricted environments (CI, sandboxes without provider access); see "Mirror fallback and offline pulls" above.
+- `gameicons-icons` is **CC BY 3.0**, not CC0 — a game using it needs one credit line (source, "game-icons.net contributors", license) per the engine's asset-credit rule; the repo's own per-author `license.txt` files carry the individual credits behind this pack's single collective `author` field.
+- `src/generated-sprites/` starts empty for a brand-new sprite source — same as any brand-new model pack, the committed per-file index only exists after someone runs `pull` + `reindex-sprites` with real network access; until then the source is fully declared (and the weekly mirror job will fetch it) but has no individually-addressable ids yet.

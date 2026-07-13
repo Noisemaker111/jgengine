@@ -1,7 +1,8 @@
 import type { AssetSource } from "../manifest";
 import { ambientcgSources } from "./ambientcg";
+import { gameiconsSources } from "./gameicons";
 import { kaykitSources } from "./kaykit";
-import { kenneySources } from "./kenney";
+import { kenneySources, kenneySpriteSources } from "./kenney";
 import { quaterniusSources } from "./quaternius";
 
 export const sources: readonly AssetSource[] = [
@@ -9,6 +10,8 @@ export const sources: readonly AssetSource[] = [
   ...quaterniusSources,
   ...kaykitSources,
   ...ambientcgSources,
+  ...kenneySpriteSources,
+  ...gameiconsSources,
 ];
 
 /** Every source whose archive holds GLB models (Kenney, Quaternius, KayKit packs). */
@@ -21,8 +24,13 @@ export const materialSources: readonly AssetSource[] = sources.filter(
   (source) => source.kind === "material",
 );
 
+/** Every `kind: "sprite"` source — a pack of individual 2D icon/UI files, resolvable via `buildSpriteCatalog`. */
+export const spriteSources: readonly AssetSource[] = sources.filter(
+  (source) => source.kind === "sprite",
+);
+
 export const sourceById: ReadonlyMap<string, AssetSource> = new Map(
   sources.map((source) => [source.id, source]),
 );
 
-export { ambientcgSources, kaykitSources, kenneySources, quaterniusSources };
+export { ambientcgSources, gameiconsSources, kaykitSources, kenneySources, kenneySpriteSources, quaterniusSources };

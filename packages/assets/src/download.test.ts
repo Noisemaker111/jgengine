@@ -5,6 +5,7 @@ import {
   defaultReleaseUrl,
   downloadPackArchive,
   extractGlbs,
+  extractSpriteFiles,
   mirrorOverrideUrl,
   sha256Hex,
   type FetchLike,
@@ -47,6 +48,34 @@ function fetchFrom(table: Record<string, () => Response>, calls: string[] = []):
     return respond();
   }) as FetchLike;
 }
+
+describe("extractSpriteFiles", () => {
+  test("pulls svg and png files out of a nested archive, deduped by basename", () => {
+    const bytes = new TextEncoder().encode("stub");
+    const archive = zipSync({
+      "icons-abc123/icons/lorc/sword.svg": bytes,
+      "icons-abc123/icons/delapouite/backpack.svg": bytes,
+      "icons-abc123/icons/lorc/license.txt": bytes,
+      "icons-abc123/README.md": bytes,
+    });
+    const files = extractSpriteFiles(archive).map((entry) => entry.file);
+    expect(files).toEqual(["backpack.svg", "sword.svg"]);
+  });
+
+  test("ignores archives with no sprite files", () => {
+    const archive = zipSync({ "model.glb": new TextEncoder().encode("stub") });
+    expect(extractSpriteFiles(archive)).toEqual([]);
+  });
+
+  test("keeps the first file seen when two entries share a basename", () => {
+    const archive = zipSync({
+      "a/icon.png": new TextEncoder().encode("first"),
+      "b/icon.png": new TextEncoder().encode("second"),
+    });
+    const [entry] = extractSpriteFiles(archive);
+    expect(new TextDecoder().decode(entry!.bytes)).toBe("first");
+  });
+});
 
 describe("mirrorOverrideUrl", () => {
   test("lays out the archive at <baseUrl>/<provider>/<packId>.zip", () => {

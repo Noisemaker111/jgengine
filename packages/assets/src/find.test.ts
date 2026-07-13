@@ -43,6 +43,21 @@ describe("findAssets", () => {
     expect(packs.some((entry) => entry.kind === "pack" && entry.source === "kenney-nature")).toBe(true);
   });
 
+  test("matches a whole sprite pack by name", () => {
+    const packs = findAssets("game icons", { kind: "spritePack" });
+    expect(packs.every((entry) => entry.kind === "spritePack")).toBe(true);
+    expect(
+      packs.some((entry) => entry.kind === "spritePack" && entry.source === "kenney-game-icons"),
+    ).toBe(true);
+  });
+
+  test("finds the game-icons.net sprite pack too", () => {
+    const packs = findAssets("icon library", { kind: "spritePack" });
+    expect(packs.some((entry) => entry.kind === "spritePack" && entry.source === "gameicons-icons")).toBe(
+      true,
+    );
+  });
+
   test("returns nothing for gibberish", () => {
     expect(findAssets("zzqx-not-a-thing")).toHaveLength(0);
   });
