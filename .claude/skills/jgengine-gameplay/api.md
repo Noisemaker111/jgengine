@@ -934,6 +934,11 @@
 - `fillTemplate` (function): function fillTemplate(template: string, vars: Record<string, () => string> | Record<string, string>): string — ⚠ undocumented
 - `pickFrom` (function): function pickFrom(rng: () => number, bank: readonly string[]): string — ⚠ undocumented
 
+## @jgengine/core/random/pick
+
+- `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
+- `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
+
 ## @jgengine/core/random/rng
 
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.

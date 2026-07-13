@@ -63,6 +63,11 @@ export function useGameStore<T>(
   return useSyncExternalStore(ctx.subscribe, getSnapshot, getSnapshot);
 }
 
+/** Subscribe to a single keyed slice of the game store, returning `fallback` until the key is set. */
+export function useGameStoreValue<T>(key: string, fallback: T): T {
+  return useGameStore((ctx) => (ctx.game.store.get(key) as T | undefined) ?? fallback);
+}
+
 export function useGame(): { commands: GameContext["game"]["commands"]; events: GameEvents } {
   const ctx = useGameContext();
   return useMemo(() => ({ commands: ctx.game.commands, events: ctx.game.events }), [ctx]);

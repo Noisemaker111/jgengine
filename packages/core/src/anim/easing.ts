@@ -1,13 +1,16 @@
 export type Easing = (t: number) => number;
 
+/** Linearly interpolate from `from` to `to` by fraction `t` (unclamped). */
 export function lerp(from: number, to: number, t: number): number {
   return from + (to - from) * t;
 }
 
+/** Constrain `t` to the unit range `[0, 1]`. */
 export function clamp01(t: number): number {
   return t < 0 ? 0 : t > 1 ? 1 : t;
 }
 
+/** Smooth Hermite interpolation of `t` across `[0, 1]`, easing both ends. */
 export function smoothstep(t: number): number {
   const c = clamp01(t);
   return c * c * (3 - 2 * c);

@@ -92,7 +92,7 @@
 ## @jgengine/core/anim/easing
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
-- `clamp01` (function): function clamp01(t: number): number — ⚠ undocumented
+- `clamp01` (function): function clamp01(t: number): number — Constrain `t` to the unit range `[0, 1]`.
 - `easeInCubic` (function): function easeInCubic(t: number): number — ⚠ undocumented
 - `easeInOutCubic` (function): function easeInOutCubic(t: number): number — ⚠ undocumented
 - `easeInOutQuad` (function): function easeInOutQuad(t: number): number — ⚠ undocumented
@@ -101,10 +101,16 @@
 - `easeOutCubic` (function): function easeOutCubic(t: number): number — ⚠ undocumented
 - `easeOutElastic` (function): function easeOutElastic(t: number): number — ⚠ undocumented
 - `easeOutQuad` (function): function easeOutQuad(t: number): number — ⚠ undocumented
-- `lerp` (function): function lerp(from: number, to: number, t: number): number — ⚠ undocumented
-- `smoothstep` (function): function smoothstep(t: number): number — ⚠ undocumented
+- `lerp` (function): function lerp(from: number, to: number, t: number): number — Linearly interpolate from `from` to `to` by fraction `t` (unclamped).
+- `smoothstep` (function): function smoothstep(t: number): number — Smooth Hermite interpolation of `t` across `[0, 1]`, easing both ends.
 - `timedProgress` (function): function timedProgress(startedAt: number, now: number, durationMs: number): number — ⚠ undocumented
 - `tween` (function): function tween(from: number, to: number, t: number, easing: Easing = smoothstep): number — ⚠ undocumented
+
+## @jgengine/core/anim/oscillator
+
+- `pingPong` (function): function pingPong(value: number, length: number): number — Ping-pong a value across `[0, length]`, bouncing at each edge — the index/position analog of {@link triangleWave}.
+- `sawWave` (function): function sawWave(time: number, period: number): number — Sawtooth ramp: rises 0→1 over each `period` then resets, for looping sweeps and scrolls.
+- `triangleWave` (function): function triangleWave(time: number, period: number): number — Triangle wave: ramps 0→1→0 across each `period`, for patrols, searchlights, and pulsing glows.
 
 ## @jgengine/core/audio/audioFalloff
 
@@ -206,6 +212,18 @@
 - `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — ⚠ undocumented
+
+## @jgengine/core/math/scalar
+
+- `clamp` (function): function clamp(value: number, min: number, max: number): number — Constrain a value to the inclusive `[min, max]` range.
+- `clamp01` (function): function clamp01(t: number): number — Constrain `t` to the unit range `[0, 1]`.
+- `inverseLerp` (function): function inverseLerp(from: number, to: number, value: number): number — Fraction of the way `value` sits between `from` and `to`; inverse of `lerp`. Returns 0 when the span is empty.
+- `lerp` (function): function lerp(from: number, to: number, t: number): number — Linearly interpolate from `from` to `to` by fraction `t` (unclamped).
+- `mod` (function): function mod(value: number, modulus: number): number — Euclidean modulo that always returns a non-negative result in `[0, modulus)`, unlike the `%` operator.
+- `moveTowards` (function): function moveTowards(current: number, target: number, maxDelta: number): number — Step `current` toward `target` by at most `maxDelta`, without overshooting.
+- `remap` (function): function remap(value: number, inMin: number, inMax: number, outMin: number, outMax: number, clamped = false): number — Map `value` from the `[inMin, inMax]` range onto `[outMin, outMax]`, optionally clamped to the output range.
+- `smoothstep` (function): function smoothstep(t: number): number — Smooth Hermite interpolation of `t` across `[0, 1]`, easing both ends.
+- `wrap` (function): function wrap(value: number, min: number, max: number): number — Wrap `value` into the half-open range `[min, max)`, cycling past either edge.
 
 ## @jgengine/core/movement/avatarGait
 
@@ -1296,6 +1314,16 @@
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — ⚠ undocumented
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — ⚠ undocumented
 
+## @jgengine/core/world/polyline
+
+- `Polyline` (interface): interface Polyline — A polyline prepared for repeated distance/fraction sampling, with cumulative arc-length precomputed.
+- `PolylineHit` (interface): interface PolylineHit — The closest point on a polyline to a query point, with where it lands along the line.
+- `closestPoint` (function): function closestPoint(line: Polyline, query: Vec2): PolylineHit — Closest point on the line to `query`, reporting arc-length position, segment index, and signed lateral offset.
+- `pointAtDistance` (function): function pointAtDistance(line: Polyline, dist: number): Vec2 — Point at an absolute arc-length distance along the line, clamped to the endpoints.
+- `pointAtFraction` (function): function pointAtFraction(line: Polyline, fraction: number): Vec2 — Point at a `[0, 1]` fraction of the line's total length.
+- `polyline` (function): function polyline(points: readonly Vec2[]): Polyline — Prepare a polyline from ordered points, computing cumulative arc-length once for O(log n) sampling.
+- `tangentAtDistance` (function): function tangentAtDistance(line: Polyline, dist: number): Vec2 — Unit tangent (direction of travel) at an absolute distance along the line.
+
 ## @jgengine/core/world/realm
 
 - `ComposedRealm` (interface): interface ComposedRealm — ⚠ undocumented
@@ -1427,6 +1455,27 @@
 - `snapToGround` (function): function snapToGround(field: TerrainField, position: readonly [number, number, number], offset = 0): [number, number, number] — Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`.
 - `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
 - `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
+
+## @jgengine/core/world/vec2
+
+- `add` (function): function add(a: Vec2, b: Vec2): Vec2 — Sum of two 2D vectors.
+- `cross` (function): function cross(a: Vec2, b: Vec2): number — 2D cross product (scalar z of the 3D cross), positive when `b` is counter-clockwise from `a`.
+- `distance` (function): function distance(a: Vec2, b: Vec2): number — Distance between two points.
+- `distanceSquared` (function): function distanceSquared(a: Vec2, b: Vec2): number — Squared distance between two points; cheaper than `distance` for radius comparisons.
+- `dot` (function): function dot(a: Vec2, b: Vec2): number — Dot product of two 2D vectors.
+- `fromHeading` (function): function fromHeading(headingRad: number): Vec2 — Unit vector for a heading measured clockwise from +Y (the engine's XZ-plane convention).
+- `heading` (function): function heading(a: Vec2): number — Heading in radians of a vector, measured clockwise from +Y to match `fromHeading`.
+- `length` (function): function length(a: Vec2): number — Euclidean length of a 2D vector.
+- `lengthSquared` (function): function lengthSquared(a: Vec2): number — Squared length of a 2D vector; cheaper than `length` when only comparing magnitudes.
+- `lerp` (function): function lerp(a: Vec2, b: Vec2, t: number): Vec2 — Linearly interpolate between points `a` and `b` by fraction `t`.
+- `negate` (function): function negate(a: Vec2): Vec2 — Negate a 2D vector.
+- `normalize` (function): function normalize(a: Vec2): Vec2 — Unit vector in the direction of `a`; returns the zero vector when `a` has no length.
+- `normalizeAngle` (function): function normalizeAngle(angleRad: number): number — Wrap an angle in radians into `[0, 2π)`.
+- `normalizeAngleDeg` (function): function normalizeAngleDeg(angleDeg: number): number — Wrap an angle in degrees into `[0, 360)`.
+- `perp` (function): function perp(a: Vec2): Vec2 — Left-hand perpendicular of `a` (rotated 90° counter-clockwise).
+- `rotate` (function): function rotate(a: Vec2, radians: number): Vec2 — Rotate a 2D vector by `radians` about the origin.
+- `scale` (function): function scale(a: Vec2, s: number): Vec2 — Scale a 2D vector by a scalar.
+- `sub` (function): function sub(a: Vec2, b: Vec2): Vec2 — Difference `a - b` of two 2D vectors.
 
 ## @jgengine/core/world/voxelField
 
