@@ -31,9 +31,9 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.9.0",
-    "@jgengine/react": "^0.9.0",
-    "@jgengine/shell": "^0.9.0"
+    "@jgengine/core": "^0.10.0",
+    "@jgengine/react": "^0.10.0",
+    "@jgengine/shell": "^0.10.0"
   },
   "peerDependencies": {
     "@react-three/drei": "^10.0.0",

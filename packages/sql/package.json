@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/sql",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Postgres persistence for the JGengine host: implements HostPersistence over a structural pool interface (no hard pg dependency).",
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -31,7 +31,7 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.9.0"
+    "@jgengine/core": "^0.10.0"
   },
   "devDependencies": {
     "pg-mem": "^3.0.5"

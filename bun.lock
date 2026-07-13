@@ -890,12 +890,12 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
       "dependencies": {
-        "@jgengine/core": "^0.9.0",
+        "@jgengine/core": "^0.10.0",
         "fflate": "^0.8.2",
       },
       "devDependencies": {
@@ -904,7 +904,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "dependencies": {
         "@jgengine/core": "^0.9.0",
       },
@@ -920,7 +920,7 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.9.0",
+      "version": "0.10.0",
     },
     "packages/editor": {
       "name": "@jgengine/editor",
@@ -954,12 +954,12 @@
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.8.4",
+      "version": "0.8.5",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
       "dependencies": {
-        "@jgengine/assets": "^0.8.0",
+        "@jgengine/assets": "^0.10.0",
       },
       "devDependencies": {
         "@types/node": "^24",
@@ -967,7 +967,7 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "dependencies": {
         "@jgengine/core": "^0.7.0",
         "@jgengine/ws": "^0.7.0",
@@ -982,7 +982,7 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "dependencies": {
         "@jgengine/core": "^0.9.0",
       },
@@ -999,7 +999,7 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "dependencies": {
         "@jgengine/core": "^0.9.0",
         "@jgengine/react": "^0.9.0",
@@ -1024,7 +1024,7 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "dependencies": {
         "@jgengine/core": "^0.9.0",
       },
@@ -1034,7 +1034,7 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "dependencies": {
         "@jgengine/core": "^0.9.0",
       },
@@ -2145,8 +2145,6 @@
 
     "convex/esbuild": ["esbuild@0.27.0", "", { "optionalDependencies": { "@esbuild/aix-ppc64": "0.27.0", "@esbuild/android-arm": "0.27.0", "@esbuild/android-arm64": "0.27.0", "@esbuild/android-x64": "0.27.0", "@esbuild/darwin-arm64": "0.27.0", "@esbuild/darwin-x64": "0.27.0", "@esbuild/freebsd-arm64": "0.27.0", "@esbuild/freebsd-x64": "0.27.0", "@esbuild/linux-arm": "0.27.0", "@esbuild/linux-arm64": "0.27.0", "@esbuild/linux-ia32": "0.27.0", "@esbuild/linux-loong64": "0.27.0", "@esbuild/linux-mips64el": "0.27.0", "@esbuild/linux-ppc64": "0.27.0", "@esbuild/linux-riscv64": "0.27.0", "@esbuild/linux-s390x": "0.27.0", "@esbuild/linux-x64": "0.27.0", "@esbuild/netbsd-arm64": "0.27.0", "@esbuild/netbsd-x64": "0.27.0", "@esbuild/openbsd-arm64": "0.27.0", "@esbuild/openbsd-x64": "0.27.0", "@esbuild/openharmony-arm64": "0.27.0", "@esbuild/sunos-x64": "0.27.0", "@esbuild/win32-arm64": "0.27.0", "@esbuild/win32-ia32": "0.27.0", "@esbuild/win32-x64": "0.27.0" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-jd0f4NHbD6cALCyGElNpGAOtWxSq46l9X/sWB0Nzd5er4Kz2YTm+Vl0qKFT9KUJvD8+fiO8AvoHhFvEatfVixA=="],
 
-    "jgengine/@jgengine/assets": ["@jgengine/assets@0.8.0", "", { "dependencies": { "@jgengine/core": "^0.8.0", "fflate": "^0.8.2" }, "bin": { "assets": "dist/cli/pull.js" } }, "sha512-unEhIsEJ5Twotg+HsJsfLyPNV+gBnpt3yrVjSWWdOYuzEZNrWGsVdpkwOh8DOcoePbjk65AXXiDm6xBcyOn0+w=="],
-
     "next/postcss": ["postcss@8.4.31", "", { "dependencies": { "nanoid": "^3.3.6", "picocolors": "^1.0.0", "source-map-js": "^1.0.2" } }, "sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ=="],
 
     "promise-worker-transferable/is-promise": ["is-promise@2.2.2", "", {}, "sha512-+lP4/6lKUBfQjZ2pdxThZvLUAafmZb8OAxFb8XXtiQmS35INgr85hdOGoEs124ez1FCnZJt6jau/T+alh58QFQ=="],
@@ -2220,7 +2218,5 @@
     "convex/esbuild/@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.27.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-30z1aKL9h22kQhilnYkORFYt+3wp7yZsHWus+wSKAJR8JtdfI76LJ4SBdMsCopTR3z/ORqVu5L1vtnHZWVj4cQ=="],
 
     "convex/esbuild/@esbuild/win32-x64": ["@esbuild/win32-x64@0.27.0", "", { "os": "win32", "cpu": "x64" }, "sha512-aIitBcjQeyOhMTImhLZmtxfdOcuNRpwlPNmlFKPcHQYPhEssw75Cl1TSXJXpMkzaua9FUetx/4OQKq7eJul5Cg=="],
-
-    "jgengine/@jgengine/assets/@jgengine/core": ["@jgengine/core@0.8.0", "", {}, "sha512-qLJ+XfbhtK+MHjGWS5Pw5UuLdjSi60qRe9FBB+j6aPNUeZsGk2oE2VhXRkZeKh2BFE0VBcSl74nM9hTn9FLD3g=="],
   }
 }
