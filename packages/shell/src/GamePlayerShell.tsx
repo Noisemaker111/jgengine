@@ -65,7 +65,7 @@ import { useDisplayProfile } from "@jgengine/react/display";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
-import { useSceneEntities, useSceneObjects, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { GameProvider } from "@jgengine/react/provider";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
@@ -997,34 +997,38 @@ function WorldActors({
   hideLocalActor: boolean;
 }) {
   const ctx = useGameContext();
-  const entities = useSceneEntities();
-  const objects = useSceneObjects();
+  const entityIds = useSceneEntityIds();
+  const objectIds = useSceneObjectIds();
   const player = usePlayer();
   const targetId = useTarget(player.userId);
-  const controlledId = ctx.player.possession.active(player.userId);
+  const controlledId = useGameStore((c) => c.player.possession.active(player.userId));
   const handleSelect = (entity: SceneEntity) => {
     const relation = ctx.scene.entity.canReceive(entity.id, "damage") === null ? "hostile" : "friendly";
     ctx.scene.entity.setTarget(controlledId, relation === "hostile" || entity.role === "npc" ? entity.id : null);
   };
   return (
     <>
-      {entities
-        .filter((entity) => entity.name !== WORLD_ITEM_ENTITY_NAME)
-        .filter((entity) => !(hideLocalActor && entity.id === controlledId))
-        .map((entity) => (
+      {entityIds.map((entityId) => {
+        const entity = ctx.scene.entity.get(entityId);
+        if (entity === null || entity.name === WORLD_ITEM_ENTITY_NAME) return null;
+        if (hideLocalActor && entityId === controlledId) return null;
+        return (
           <EntityMarker
-            key={entity.id}
+            key={entityId}
             entity={entity}
             custom={renderEntity?.(entity)}
             model={resolveEntityModel(entityModels?.[entity.name], assets, entity.name)}
             sprite={entitySprites?.[entity.name]}
-            isLocal={entity.id === controlledId}
-            targeted={entity.id === targetId}
-            selected={selectedIds.has(entity.id)}
+            isLocal={entityId === controlledId}
+            targeted={entityId === targetId}
+            selected={selectedIds.has(entityId)}
             onSelect={handleSelect}
           />
-        ))}
-      {objects.map((object) => {
+        );
+      })}
+      {objectIds.map((instanceId) => {
+        const object = ctx.scene.object.get(instanceId);
+        if (object === null) return null;
         const model =
           resolveModel(objectModels?.[object.catalogId], assets, {
             seam: "objectModels",
@@ -1032,7 +1036,7 @@ function WorldActors({
           }) ?? tryResolveCatalogModel(object.catalogId, assets);
         return (
           <ObjectMarker
-            key={object.instanceId}
+            key={instanceId}
             object={object}
             custom={renderObject?.(object)}
             model={model}

@@ -101,6 +101,25 @@ export function useSceneObjects(): readonly SceneObject[] {
   return useGameStore((ctx) => ctx.scene.object.list());
 }
 
+/**
+ * Membership-only entity id list: the returned array keeps a stable identity across per-frame pose
+ * writes and only changes when an entity spawns, despawns, or the store is hydrated (#625). A marker
+ * mapped from these ids reads its own live pose imperatively (useFrame), so the actor tree no longer
+ * re-reconciles every frame. Prefer this over {@link useSceneEntities} for large scenes.
+ */
+export function useSceneEntityIds(): readonly string[] {
+  const ctx = useGameContext();
+  const entity = ctx.scene.entity;
+  return useSyncExternalStore(entity.subscribeMembership, entity.ids, entity.ids);
+}
+
+/** Membership-only object id list — the object counterpart of {@link useSceneEntityIds}; stable across move/rotate/setVisual, changes only on place/remove. */
+export function useSceneObjectIds(): readonly string[] {
+  const ctx = useGameContext();
+  const object = ctx.scene.object;
+  return useSyncExternalStore(object.subscribeMembership, object.ids, object.ids);
+}
+
 export function useWorldItems(): readonly WorldItemRecord[] {
   return useGameStore((ctx) => ctx.scene.worldItem.list());
 }

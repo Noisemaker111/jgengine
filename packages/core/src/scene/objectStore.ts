@@ -37,10 +37,14 @@ export interface ObjectStore {
   setVisual(instanceId: string, visual: ObjectVisual | undefined): boolean;
   get(instanceId: string): SceneObject | null;
   list(filter?: ObjectListFilter): readonly SceneObject[];
+  /** Stable-identity list of all placed object ids; identity changes only on place/remove, not on move/rotate/setVisual. Pair with {@link subscribeMembership} for membership-only React subscriptions (#625). */
+  ids(): readonly string[];
   at(x: number, y: number, z: number, tolerance?: number): SceneObject[];
   inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
   clear(): void;
   subscribe(listener: () => void): () => void;
+  /** Notified only when the object set changes (place/remove), never on move/rotate/setVisual — markers read live poses imperatively. */
+  subscribeMembership(listener: () => void): () => void;
   snapshot(): readonly SceneObject[];
 }
 
@@ -156,6 +160,9 @@ export function createObjectStore(): ObjectStore {
       if (filter?.parentSpace === undefined) return all;
       return all.filter((object) => object.parentSpace === filter.parentSpace);
     },
+    ids() {
+      return store.keysSnapshot();
+    },
     at(x, y, z, tolerance = 0) {
       const minCx = cellIndexOf(x - tolerance);
       const maxCx = cellIndexOf(x + tolerance);
@@ -220,6 +227,9 @@ export function createObjectStore(): ObjectStore {
     },
     subscribe(listener) {
       return store.subscribe(listener);
+    },
+    subscribeMembership(listener) {
+      return store.subscribeMembership(listener);
     },
     snapshot() {
       return store.arraySnapshot();

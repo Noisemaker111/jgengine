@@ -380,6 +380,31 @@ describe("scene entity store", () => {
     store.setPose("hero", { position: [10, 0, 0] });
     expect(store.get("hero")?.position).toEqual([10, 0, 0]);
   });
+
+  test("ids() and subscribeMembership skip pose churn, firing only on spawn/despawn (#625)", () => {
+    const store = createEntityStore();
+    let membership = 0;
+    store.subscribeMembership(() => {
+      membership += 1;
+    });
+
+    store.spawn("mob", { id: "a", position: [0, 0, 0] });
+    const ids = store.ids();
+    expect(ids).toEqual(["a"]);
+
+    store.setPose("a", { position: [1, 0, 0], dt: 0.016 });
+    store.update("a", { rotationY: 1 });
+    expect(store.ids()).toBe(ids); // pose/field writes never churn the id list
+    expect(membership).toBe(1);
+
+    store.spawn("mob", { id: "b", position: [2, 0, 0] });
+    expect(store.ids()).not.toBe(ids);
+    expect(membership).toBe(2);
+
+    store.despawn("a");
+    expect(store.ids()).toEqual(["b"]);
+    expect(membership).toBe(3);
+  });
 });
 
 describe("entity blackboard", () => {

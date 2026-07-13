@@ -231,6 +231,8 @@ export interface SceneEntityContext {
   setPoseConstraint: EntityStore["setPoseConstraint"];
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
+  ids: EntityStore["ids"];
+  subscribeMembership: EntityStore["subscribeMembership"];
   spawnPoseOf(instanceId: string): SpawnPose | null;
   resetToSpawn(instanceId: string): boolean;
   resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number;
@@ -1297,6 +1299,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         setPoseConstraint: entities.setPoseConstraint,
         get: entities.get,
         list: entities.list,
+        ids: entities.ids,
+        subscribeMembership: entities.subscribeMembership,
         spawnPoseOf: entities.spawnPoseOf,
         resetToSpawn: entities.resetToSpawn,
         resetAllToSpawn,
