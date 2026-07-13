@@ -162,3 +162,7 @@ gen:skill-api errored 'ts-morph missing; finish bun install first' but a fresh '
 2026-07-13T03:45:17.053Z — sonnet — Claude
 
 ship worker double-created the editor-overhaul PR (#650 and #651, same head sha) → duplicate merged no-op PR and confusing webhook stream
+
+2026-07-13T03:53:06.709Z — claude-opus-4-8 — Claude
+
+multi-worker fan-out wait → Stop hook 'commit your changes' fired on every quiet turn while background workers were mid-edit; committing then would have captured partial worker state. Hook can't see in-flight background agents.
