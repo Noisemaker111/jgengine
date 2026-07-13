@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { createGameContext } from "../runtime/gameContext";
 import { flat } from "../world/features";
 import { defineGame } from "./defineGame";
 
@@ -25,6 +26,17 @@ describe("defineGame", () => {
     const second = defineGame(VALID);
     first.scene.spawn("bench");
     expect(second.scene.list()).toEqual([]);
+  });
+
+  test("two contexts from one definition own isolated entity stores (#632)", () => {
+    const definition = defineGame(VALID);
+    const world1 = createGameContext({ definition, content: {}, player: { userId: "a", isNew: true } });
+    const world2 = createGameContext({ definition, content: {}, player: { userId: "b", isNew: true } });
+
+    world1.scene.entity.spawn("goblin", { id: "mob-1", position: [0, 0, 0] });
+
+    expect(world1.scene.entity.get("mob-1")?.name).toBe("goblin");
+    expect(world2.scene.entity.get("mob-1")).toBeNull(); // no bleed across worlds on one host
   });
 
   test("omitted assets resolve to an empty catalog", () => {

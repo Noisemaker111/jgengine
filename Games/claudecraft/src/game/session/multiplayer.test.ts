@@ -12,15 +12,9 @@ const BOB_CLASS = "mage";
 
 // `game.game` (the core GameDefinition) carries no `loop` — the shell's `defineGame` strips it
 // off into the top-level `game.loop` for the shell's own driver. A host runner needs the real
-// loop wired in to register commands and tick movement, so the test supplies it explicitly.
-//
-// `defineGame` also bakes a single, module-scoped `EntityStore` into `game.game.scene` at import
-// time, so every `createGameContext`/`createHostedWorldSession` built straight from the shared
-// `game` export collides with any other live world built from it in the same process (e.g.
-// `gameplay.test.ts`'s `beforeAll` ctx) — both try to spawn the same fixed-id NPCs into the same
-// store. Re-running `defineGame` here mints a fresh, independent `EntityStore` for this file's
-// own hosted session, matching how `hostedWorldSession.test.ts` builds a fresh definition per
-// session instead of reusing one.
+// loop wired in to register commands and tick movement, so the test supplies it explicitly by
+// re-running `defineGame`. (EntityStore isolation is now automatic: `createGameContext` mints a
+// fresh per-context store per #632, so worlds no longer collide over the shared `game.game.scene`.)
 const hostDefinition = defineEngineGame({ ...game.game, loop: game.loop });
 
 describe("claudecraft host-authoritative multiplayer", () => {

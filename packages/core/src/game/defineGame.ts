@@ -78,6 +78,7 @@ export interface GameDefinition<
   name: string;
   assets: AssetCatalog<TAssetRef>;
   multiplayer: TMultiplayer;
+  /** @deprecated No longer the runtime store — `createGameContext` mints a fresh per-context `EntityStore` so one host can serve many worlds without state bleed (#632). Retained only for API compatibility; read `ctx.scene.entity` instead. */
   scene: EntityStore;
   /** Opt-in `ctx.game.*` subsystems beyond the always-on base; omitted systems are `undefined` on `ctx.game`. */
   features?: GameFeatures;

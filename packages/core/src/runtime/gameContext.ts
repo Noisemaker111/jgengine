@@ -87,14 +87,15 @@ import {
   type StatCatalog,
   type StatValueMap,
 } from "../scene/entityStats";
-import type {
-  EntityBlackboard,
-  EntityPose,
-  EntityPosition,
-  EntityStore,
-  SceneEntity,
-  SpawnOptions,
-  SpawnPose,
+import {
+  createEntityStore,
+  type EntityBlackboard,
+  type EntityPose,
+  type EntityPosition,
+  type EntityStore,
+  type SceneEntity,
+  type SpawnOptions,
+  type SpawnPose,
 } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
 import { scaledEntityColliders, scaledObjectColliders, type EntityColliderSet } from "../scene/colliders";
@@ -440,7 +441,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
   const ground = groundFieldFor(definition.world);
 
-  const entities = definition.scene;
+  const entities = createEntityStore();
   const objects = createObjectStore();
   entities.subscribe(signal.notify);
   objects.subscribe(signal.notify);

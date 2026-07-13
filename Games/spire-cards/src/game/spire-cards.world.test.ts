@@ -13,7 +13,6 @@ import { run } from "./run";
 const HERO = "hero-test";
 
 function boot(): GameContext {
-  game.game.scene.clear();
   const ctx = createGameContext({
     definition: game.game,
     content,
