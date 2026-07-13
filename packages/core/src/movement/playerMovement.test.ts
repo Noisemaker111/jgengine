@@ -4,7 +4,13 @@ import { defineGame } from "../game/defineGame";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent } from "../runtime/gameContext";
 import type { InputFrame } from "../runtime/inputSnapshot";
-import { playerMovementHeading, resolvePlayerMovementTuning, stepPlayerMovement } from "./playerMovement";
+import type { TerrainField } from "../world/terrain";
+import {
+  playerMovementHeading,
+  resolvePlayerMovementTuning,
+  stepPlayerMovement,
+  type PlayerMovementTuning,
+} from "./playerMovement";
 
 const CONTENT: GameContextContent = {
   entityById: (catalogId) => (catalogId === "hero" ? { stats: { health: { max: 10 } } } : null),
@@ -84,6 +90,67 @@ describe("stepPlayerMovement", () => {
     ctx.player.motionFor("a").impulse(6);
     stepPlayerMovement(ctx, "a", frame([]), 1 / 60, FLAT, 0);
     expect(ctx.scene.entity.get("a")!.position[1]).toBeGreaterThan(0);
+  });
+});
+
+function tuning(over: Partial<PlayerMovementTuning> & { ground: TerrainField }): PlayerMovementTuning {
+  return { hasTerrain: true, ...over };
+}
+
+const FLAT_GROUND: TerrainField = { sampleHeight: () => 0, sampleNormal: () => [0, 1, 0] };
+const SUBMERGED_GROUND: TerrainField = { sampleHeight: () => -5, sampleNormal: () => [0, 1, 0], waterLevel: 0 };
+const ABOVE_WATER_GROUND: TerrainField = { sampleHeight: () => 5, sampleNormal: () => [0, 1, 0], waterLevel: 0 };
+const N = Math.sqrt(10);
+const STEEP_GROUND: TerrainField = {
+  sampleHeight: (x) => -3 * x,
+  sampleNormal: () => [3 / N, 1 / N, 0],
+};
+
+function driveWith(ctx: GameContext, userId: string, held: string[], steps: number, t: PlayerMovementTuning, heading?: number): void {
+  for (let i = 0; i < steps; i++) stepPlayerMovement(ctx, userId, frame(held), 1 / 60, t, heading);
+}
+
+describe("swim (heightfield)", () => {
+  test("submerged travel is capped below waterLevel and floats at the surface", () => {
+    const water = context(["a"]);
+    driveWith(water, "a", ["moveForward"], 40, tuning({ movement: { swim: true }, ground: SUBMERGED_GROUND }), Math.PI / 2);
+    const wet = water.scene.entity.get("a")!.position;
+
+    const dry = context(["b"]);
+    driveWith(dry, "b", ["moveForward"], 40, tuning({ movement: { swim: true }, ground: ABOVE_WATER_GROUND }), Math.PI / 2);
+    const land = dry.scene.entity.get("b")!.position;
+
+    expect(wet[1]).toBeCloseTo(0, 6);
+    expect(wet[0]).toBeGreaterThan(0);
+    expect(wet[0] / land[0]).toBeCloseTo(0.65, 2);
+  });
+
+  test("swim unset leaves the player on the (submerged) floor", () => {
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", [], 5, tuning({ ground: SUBMERGED_GROUND }));
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeCloseTo(-5, 6);
+  });
+});
+
+describe("slope-slide (heightfield)", () => {
+  test("off by default: idling on a steep slope does not move the player", () => {
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", [], 30, tuning({ ground: STEEP_GROUND }));
+    expect(ctx.scene.entity.get("a")!.position[0]).toBeCloseTo(0, 6);
+  });
+
+  test("enabled: idling on a steep slope slides downhill", () => {
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", [], 30, tuning({ movement: { slopeSlide: true }, ground: STEEP_GROUND }));
+    expect(ctx.scene.entity.get("a")!.position[0]).toBeGreaterThan(0.1);
+  });
+
+  test("enabled: flat ground is untouched", () => {
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", [], 30, tuning({ movement: { slopeSlide: true }, ground: FLAT_GROUND }));
+    const pos = ctx.scene.entity.get("a")!.position;
+    expect(pos[0]).toBeCloseTo(0, 6);
+    expect(pos[2]).toBeCloseTo(0, 6);
   });
 });
 

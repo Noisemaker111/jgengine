@@ -25,6 +25,61 @@ function idleIntent() {
   return resolveMovementIntent(createEmptyMovementKeys(), true);
 }
 
+function forwardIntent() {
+  const keys = createEmptyMovementKeys();
+  keys.w = true;
+  return resolveMovementIntent(keys, true);
+}
+
+function backIntent() {
+  const keys = createEmptyMovementKeys();
+  keys.s = true;
+  return resolveMovementIntent(keys, true);
+}
+
+function steadySpeed(
+  intent: ReturnType<typeof forwardIntent>,
+  tuning?: Parameters<typeof advancePlayerMotion>[6],
+  options?: Parameters<typeof advancePlayerMotion>[7],
+): number {
+  const motion = createPlayerMotionState();
+  for (let frame = 0; frame < 300; frame += 1) {
+    advancePlayerMotion(motion, intent, 0, -1, 2.5, DT, tuning, options);
+  }
+  return Math.hypot(motion.horizontalVelocityX, motion.horizontalVelocityZ);
+}
+
+describe("resolveTargetSpeed backpedal / speed scale", () => {
+  const fullWalk = 2.5 * MOVEMENT_TUNING.walkSpeedMultiplier;
+
+  test("forward (unset knobs) reaches exactly the prior walk speed", () => {
+    expect(steadySpeed(forwardIntent())).toBeCloseTo(fullWalk, 4);
+  });
+
+  test("backpedal caps forward-key-negative travel at 0.65x", () => {
+    expect(steadySpeed(backIntent()) / steadySpeed(forwardIntent())).toBeCloseTo(
+      MOVEMENT_TUNING.backpedalSpeedMultiplier,
+      5,
+    );
+  });
+
+  test("backpedalSpeedMultiplier override replaces the default factor", () => {
+    expect(steadySpeed(backIntent(), { backpedalSpeedMultiplier: 0.4 }) / fullWalk).toBeCloseTo(0.4, 5);
+  });
+
+  test("speedScale option scales the target speed", () => {
+    expect(steadySpeed(forwardIntent(), undefined, { speedScale: 0.5 })).toBeCloseTo(fullWalk * 0.5, 4);
+  });
+
+  test("floating suppresses the jump launch and gravity", () => {
+    const motion = createPlayerMotionState();
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, undefined, { floating: true });
+    expect(motion.jumpOffset).toBe(0);
+    expect(motion.verticalVelocity).toBe(0);
+    expect(motion.grounded).toBe(true);
+  });
+});
+
 function runJumpArc(motion: PlayerMotionState, frames: number, tuning?: Parameters<typeof advancePlayerMotion>[6]) {
   const offsets: number[] = [];
   advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning);

@@ -100,7 +100,6 @@ export interface ReindexResult {
 export function reindex(modelsDir: string, outDir: string): ReindexResult {
   mkdirSync(outDir, { recursive: true });
   const perSource: { source: string; count: number }[] = [];
-  const sourceIds: string[] = [];
 
   const subdirs = existsSync(modelsDir)
     ? readdirSync(modelsDir).filter((name) => statSync(join(modelsDir, name)).isDirectory())
@@ -114,15 +113,19 @@ export function reindex(modelsDir: string, outDir: string): ReindexResult {
     }
     const entries = indexSourceDir(source, join(modelsDir, sourceId));
     writeFileSync(join(outDir, `${sourceId}.json`), `${JSON.stringify(entries, null, 2)}\n`);
-    sourceIds.push(sourceId);
     perSource.push({ source: sourceId, count: entries.length });
   }
 
-  writeFileSync(join(outDir, "index.ts"), renderTsBarrel(sourceIds));
+  const barrelIds = readdirSync(outDir)
+    .filter((name) => name.endsWith(".json"))
+    .map((name) => name.slice(0, -".json".length))
+    .filter((id) => sourceById.has(id));
+
+  writeFileSync(join(outDir, "index.ts"), renderTsBarrel(barrelIds));
   // Published installs only ship dist/; write a JS barrel there so buildCatalog can re-import after reindex.
   // Source-tree reindex keeps the TypeScript barrel that the package build compiles.
   if (!/[/\\]src[/\\]generated$/i.test(outDir)) {
-    writeFileSync(join(outDir, "index.js"), renderJsBarrel(sourceIds));
+    writeFileSync(join(outDir, "index.js"), renderJsBarrel(barrelIds));
   }
   return { perSource, total: perSource.reduce((sum, entry) => sum + entry.count, 0) };
 }

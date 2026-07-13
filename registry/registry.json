@@ -599,6 +599,31 @@
       }
     },
     {
+      "name": "playing-card",
+      "type": "registry:ui",
+      "title": "Playing Card",
+      "description": "French-deck card face with rank, suit pips, and a patterned back when face-down, plus an overlapping stack.",
+      "files": [
+        {
+          "path": "jgengine/playing-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/playing-card.tsx"
+        }
+      ],
+      "cssVars": {
+        "light": {
+          "jg-card-face": "#ffffff",
+          "jg-card-edge": "#c8ccd6",
+          "jg-card-red": "#c02434",
+          "jg-card-black": "#16181d",
+          "jg-card-back": "#2b3a72",
+          "jg-card-back-deep": "#1b2650",
+          "jg-card-back-edge": "#1e2a52",
+          "jg-font-card": "Georgia, \"Times New Roman\", serif"
+        }
+      }
+    },
+    {
       "name": "combat-float-layer",
       "type": "registry:ui",
       "title": "Combat Float Layer",

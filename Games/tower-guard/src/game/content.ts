@@ -7,6 +7,7 @@ function creepEntry(id: string): GameContextEntityEntry {
   const def = CREEP_CATALOG[id]!;
   return {
     role: "enemy",
+    scale: def.scale,
     stats: { health: { max: def.health } },
     receive: { damage: { order: ["health"] } },
   };

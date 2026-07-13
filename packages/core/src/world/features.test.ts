@@ -140,6 +140,32 @@ describe("world features", () => {
     });
   });
 
+  test("biomeBand weather expands into positioned strips alongside explicit weather", () => {
+    const world = environment({
+      terrain: terrain({
+        bounds: { w: 400, d: 600 },
+        biomeBands: [
+          { z: -150, fade: 50, material: "grass", weather: "rain" },
+          { z: 150, material: "snow", weather: "snow" },
+          { z: 0, material: "sand" },
+        ],
+      }),
+      weather: rain({ density: 0.9 }),
+    });
+
+    expect(world.weather).toHaveLength(3);
+    expect(world.weather![0]).toMatchObject({ kind: "rain", density: 0.9 });
+    expect(world.weather![1]).toMatchObject({
+      kind: "rain",
+      area: { w: 400, d: 50, h: 80, position: [0, -150] },
+    });
+    expect(world.weather![2]).toMatchObject({
+      kind: "snow",
+      area: { w: 400, d: 64, h: 80, position: [0, 150] },
+    });
+    expect(JSON.parse(JSON.stringify(world))).toEqual(world);
+  });
+
   test("environment omits empty groups and descriptors stay serializable", () => {
     expect(environment()).toEqual({ kind: "environment" });
 

@@ -35,6 +35,12 @@ export interface OrbitCameraConfig {
   targetHeight?: number;
   initialDistance?: number;
   initialHeight?: number;
+  /** Initial horizontal facing of the boom (radians): 0 = camera behind on -Z, PI = camera on +Z. Seeds the rig when set; unset keeps the legacy -Z placement. */
+  initialYaw?: number;
+  /** Initial boom elevation (radians): 0 = level, positive = camera above the target looking down. Seeds the rig when set; unset derives elevation from `initialHeight`/`initialDistance`. */
+  initialPitch?: number;
+  /** Signed boom-elevation clamp `[min, max]` (radians): min < 0 dips below the target, max > 0 rises overhead. Maps onto `minPolarAngle`/`maxPolarAngle` (polar = PI/2 − pitch); explicit polar fields win. */
+  pitchClamp?: readonly [number, number];
   /** Extra offset applied on top of entity position for the orbit target. */
   targetOffset?: Partial<Vec3>;
   /** Keep orbit radius locked while the follow target moves. */
@@ -83,6 +89,8 @@ export interface ResolvedOrbitCameraConfig {
   targetHeight: number;
   initialDistance: number;
   initialHeight: number;
+  initialYaw?: number;
+  initialPitch?: number;
   targetOffset?: Partial<Vec3>;
   followLock: boolean;
   followEnabled: boolean;
@@ -133,11 +141,31 @@ export function smoothBlend(deltaSeconds: number, speed: number): number {
 }
 
 export function resolveOrbitCameraConfig(patch?: OrbitCameraConfig): ResolvedOrbitCameraConfig {
-  return {
+  const resolved: ResolvedOrbitCameraConfig = {
     ...DEFAULT_ORBIT_CAMERA,
     ...patch,
     collision: { ...DEFAULT_ORBIT_CAMERA.collision, ...patch?.collision },
   };
+  if (patch?.pitchClamp !== undefined) {
+    const [minPitch, maxPitch] = patch.pitchClamp;
+    resolved.minPolarAngle = patch.minPolarAngle ?? Math.PI / 2 - maxPitch;
+    resolved.maxPolarAngle = patch.maxPolarAngle ?? Math.PI / 2 - minPitch;
+  }
+  return resolved;
+}
+
+/**
+ * FOV that keeps a target's on-screen size constant as the spring-arm pulls the
+ * camera in. Widens the base FOV by the desired/pulled distance ratio; a no-op
+ * (returns the base) whenever the camera sits at or beyond its desired distance.
+ */
+export function compensatedFov(baseFovDegrees: number, desiredDistance: number, pulledDistance: number): number {
+  if (pulledDistance <= 0 || desiredDistance <= 0 || pulledDistance >= desiredDistance) {
+    return baseFovDegrees;
+  }
+  const half = (baseFovDegrees * Math.PI) / 360;
+  const widened = 2 * Math.atan(Math.tan(half) * (desiredDistance / pulledDistance));
+  return Math.min((widened * 180) / Math.PI, 170);
 }
 
 export function resolveTargetSmoothing(config: ResolvedOrbitCameraConfig, dragging: boolean): number {
@@ -176,9 +204,28 @@ export function distanceBetween(a: Vec3, b: Vec3): number {
 
 export function seedOrbitFollowState(input: {
   entityPosition: readonly [number, number, number];
-  config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset" | "initialDistance" | "initialHeight">;
+  config: Pick<
+    ResolvedOrbitCameraConfig,
+    "targetHeight" | "targetOffset" | "initialDistance" | "initialHeight" | "initialYaw" | "initialPitch"
+  >;
 }): OrbitFollowRuntimeState {
   const target = resolveFollowTargetFromPosition(input.entityPosition, input.config);
+  const { initialDistance, initialYaw, initialPitch } = input.config;
+  if (initialYaw !== undefined || initialPitch !== undefined) {
+    const yaw = initialYaw ?? 0;
+    const pitch =
+      initialPitch ?? Math.atan2(input.config.initialHeight - input.config.targetHeight, initialDistance);
+    const horizontal = initialDistance * Math.cos(pitch);
+    return {
+      target,
+      camera: {
+        x: target.x - horizontal * Math.sin(yaw),
+        y: target.y + initialDistance * Math.sin(pitch),
+        z: target.z - horizontal * Math.cos(yaw),
+      },
+      lockedDistance: initialDistance,
+    };
+  }
   return {
     target,
     camera: {

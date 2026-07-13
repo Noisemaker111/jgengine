@@ -289,14 +289,15 @@
 
 - `CollisionObstacle` (interface): interface CollisionObstacle — A placed scene object the walking player collides against as a circle-vs-AABB obstacle.
 - `MAX_JUMP_OFFSET` (const): const MAX_JUMP_OFFSET: 1.15 — Peak jump height from MOVEMENT_TUNING.jumpVelocity + gravity, with small buffer.
-- `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly groundAcceleration: 26; readonly airAcceleration: 12; readonly groundFriction: 18; readonly jum… — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
+- `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
+- `MotionFrameOptions` (interface): interface MotionFrameOptions — Per-frame dynamic modifiers for {@link advancePlayerMotion} — state the caller recomputes each tick (unlike the static {@link MovementTuningOverrides}). Omitted fields leave the integrator at its default behavior.
 - `MovementFrameStep` (interface): interface MovementFrameStep — Horizontal step (world units) the avatar should commit this frame.
 - `MovementIntent` (interface): interface MovementIntent — Frame-independent description of what the player is asking the avatar to do. `forward`/`right` are in the range -1..1 in the avatar's local frame; the controller rotates them into world space against the camera each frame.
 - `MovementKey` (type): type MovementKey = "w" | "a" | "s" | "d" | "shift" | "control" | "c" | "space" — Movement core (pure model).
 - `MovementKeysState` (type): type MovementKeysState = Record<MovementKey, boolean> — ⚠ undocumented
 - `MovementTuningOverrides` (interface): interface MovementTuningOverrides — Per-game overrides for the gravity/jump feel, sourced from `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
 - `PlayerMotionState` (interface): interface PlayerMotionState — Mutable kinematic state carried between frames by the controller. Kept here so the velocity / jump / gravity integration is a pure function testable without a renderer — the controller just owns the ref.
-- `advancePlayerMotion` (function): function advancePlayerMotion(motion: PlayerMotionState, intent: MovementIntent, forwardX: number, forwardZ: number, baseSpeed: number, rawDeltaSeconds: number, tuning?: MovementTuningOverrides): MovementFrameStep — Advance one frame of avatar kinematics. Mutates `motion` (velocity, jump, gravity, grounded) and returns the horizontal step to commit through the collision-resolving stepper.
+- `advancePlayerMotion` (function): function advancePlayerMotion(motion: PlayerMotionState, intent: MovementIntent, forwardX: number, forwardZ: number, baseSpeed: number, rawDeltaSeconds: number, tuning?: MovementTuningOverrides, options?: MotionFrameOptions): MovementFrameStep — Advance one frame of avatar kinematics. Mutates `motion` (velocity, jump, gravity, grounded) and returns the horizontal step to commit through the collision-resolving stepper.
 - `cameraYawToAvatarBodyYaw` (function): function cameraYawToAvatarBodyYaw(cameraYaw: number): number — Camera yaw looks along -Z; character mesh faces +Z at body rotation.y = 0.
 - `constrainStepToAxis` (function): function constrainStepToAxis(stepX: number, stepZ: number, axis: "x" | "z"): MovementFrameStep — Zeroes the off-axis component so travel is locked to a single world axis (`PlayerMovementConfig.mode: "axis"`).
 - `createEmptyMovementKeys` (function): function createEmptyMovementKeys(): MovementKeysState — ⚠ undocumented
@@ -584,6 +585,7 @@
 - `defaultEntityColliders` (function): function defaultEntityColliders(): EntityColliderSet — ⚠ undocumented
 - `defaultObjectColliders` (function): function defaultObjectColliders(halfExtents: EntityPosition = DEFAULT_OBJECT_HALF_EXTENTS): EntityColliderSet — ⚠ undocumented
 - `resolveColliders` (function): function resolveColliders(set: EntityColliderSet | null | undefined): ResolvedCollider[] — ⚠ undocumented
+- `scaledEntityColliders` (function): function scaledEntityColliders(scale: number): EntityColliderSet — Humanoid damage box uniformly scaled to match a visually scaled mesh, kept grounded (offset stays half its height). At scale 1 this equals `defaultEntityColliders()`.
 - `scaledObjectColliders` (function): function scaledObjectColliders(scale: readonly [number, number, number]): EntityColliderSet — Blocking physical body derived from an object's rendered scale: a grounded box spanning the visual (base at y=0, matching the shell's fallback mesh).
 - `worldOffset` (function): function worldOffset(local: EntityPosition | undefined, position: EntityPosition, rotationY: number): EntityPosition — ⚠ undocumented
 
@@ -1117,7 +1119,9 @@
 
 ## @jgengine/core/world/features
 
-- `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Order the list by ascending `z`.
+- `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
+- `BiomeFog` (interface): interface BiomeFog — Per-band fog override cross-faded along z by `createBiomeFogSampler`; unset fields fall through to the base sky fog.
+- `BiomeSky` (interface): interface BiomeSky — Per-band sky/light override cross-faded along z by `createBiomeSkySampler`; unset fields fall through to the base sky.
 - `BiomesWorldConfig` (interface): interface BiomesWorldConfig extends WorldGridConfig — ⚠ undocumented
 - `BuildingEnvironmentConfig` (interface): interface BuildingEnvironmentConfig — ⚠ undocumented
 - `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette"> — ⚠ undocumented
@@ -1416,6 +1420,8 @@
 
 - `ARENA_WATER_LEVEL` (const): const ARENA_WATER_LEVEL: -0.9 — ⚠ undocumented
 - `ArenaFieldConfig` (interface): interface ArenaFieldConfig — ⚠ undocumented
+- `BiomeFogValue` (interface): interface BiomeFogValue — A concrete fog look — the shape `createBiomeFogSampler` resolves per z from a band's `fog` over the base fog.
+- `BiomeSkyValue` (interface): interface BiomeSkyValue — A concrete sky look — the shape `createBiomeSkySampler` resolves per z from a band's `sky` over the base sky.
 - `DEFAULT_MAX_WALK_SLOPE` (const): const DEFAULT_MAX_WALK_SLOPE: 0.6 — ⚠ undocumented
 - `DEFAULT_TERRAIN_MATERIAL` (const): const DEFAULT_TERRAIN_MATERIAL: TerrainMaterial — ⚠ undocumented
 - `FLAT_FIELD` (const): const FLAT_FIELD: TerrainField — ⚠ undocumented
@@ -1435,6 +1441,8 @@
 - `arenaField` (function): function arenaField(config: ArenaFieldConfig = {}): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
 - `composeIslandFields` (function): function composeIslandFields(base: TerrainField | null, islands: readonly TerrainIslandDescriptor[], voidHeight = ISLAND_VOID_HEIGHT): TerrainField — Composes a base terrain and any number of bounded islands into one world field: inside an island's rect the island's own field (sampled in island-local coordinates) wins, elsewhere the base terrain answers, and with no base the gap is `ISLAND_VOID_HEIGHT` void. Later islands win overlaps.
 - `createBiomeBandSampler` (function): function createBiomeBandSampler(bands: readonly BiomeBand[], fallback: TerrainPalette): (z: number) => TerrainPalette — Per-z palette sampler over a descriptor's `biomeBands` — ordered zones that cross-fade their ground palette across a `fade`-wide window centered on the midpoint z between adjacent centers. Below the first / above the last band clamps to that band's palette. Returns `fallback` when no bands are declared. Pure math, unit-testable independent of rendering.
+- `createBiomeFogSampler` (function): function createBiomeFogSampler(bands: readonly BiomeBand[], fallback: BiomeFogValue): (z: number) => BiomeFogValue — Per-z fog sampler over a descriptor's `biomeBands` — cross-fades each band's `fog` (unset fields falling through to `fallback`) across the same `fade` window as the ground sampler, so fog color and range track the camera's z. Bands with no `fog` resolve to `fallback`. Pure math, unit-testable.
+- `createBiomeSkySampler` (function): function createBiomeSkySampler(bands: readonly BiomeBand[], fallback: BiomeSkyValue): (z: number) => BiomeSkyValue — Per-z sky sampler over a descriptor's `biomeBands` — cross-fades each band's `sky` (unset fields falling through to `fallback`) across the same `fade` window as the ground sampler, so horizon/zenith colors and sun/ambient intensity track the camera's z. Bands with no `sky` resolve to `fallback`.
 - `createTerrainPaletteSampler` (function): function createTerrainPaletteSampler(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions" | "biomeBands">): (x: number, z: number) => TerrainPalette — Per-position palette sampler over the descriptor's base `material`/`colors` plus its z-ordered `biomeBands` (painted first) and radial `materialRegions` (painted over) — the multi-biome coloring seam. Regions paint fully inside `radius` and blend back across `falloff`; later regions win overlaps.
 - `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
 - `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.

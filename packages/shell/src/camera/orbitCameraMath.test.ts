@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   cameraLookPitch,
+  compensatedFov,
   DEFAULT_ORBIT_CAMERA,
   distanceBetween,
   orbitFollowStep,
@@ -46,6 +47,61 @@ describe("resolveOrbitCameraConfig", () => {
     expect(config.minDistance).toBe(2);
     expect(config.rotateSpeed).toBe(0.5);
     expect(config.targetSmoothing).toBe(DEFAULT_ORBIT_CAMERA.targetSmoothing);
+  });
+});
+
+describe("resolveOrbitCameraConfig pitchClamp", () => {
+  test("maps signed pitch clamp onto polar angles (polar = PI/2 - pitch)", () => {
+    const config = resolveOrbitCameraConfig({ pitchClamp: [-0.4, 1.35] });
+    expect(config.minPolarAngle).toBeCloseTo(Math.PI / 2 - 1.35);
+    expect(config.maxPolarAngle).toBeCloseTo(Math.PI / 2 + 0.4);
+  });
+
+  test("explicit polar fields win over pitchClamp", () => {
+    const config = resolveOrbitCameraConfig({ pitchClamp: [-0.4, 1.35], minPolarAngle: 0.1, maxPolarAngle: 2 });
+    expect(config.minPolarAngle).toBe(0.1);
+    expect(config.maxPolarAngle).toBe(2);
+  });
+
+  test("unset pitchClamp leaves defaults untouched", () => {
+    const config = resolveOrbitCameraConfig({});
+    expect(config.minPolarAngle).toBe(DEFAULT_ORBIT_CAMERA.minPolarAngle);
+    expect(config.maxPolarAngle).toBe(DEFAULT_ORBIT_CAMERA.maxPolarAngle);
+  });
+});
+
+describe("seedOrbitFollowState initialYaw/initialPitch", () => {
+  test("legacy placement when yaw and pitch unset", () => {
+    const state = seedOrbitFollowState({ entityPosition: [0, 0, 0], config: DEFAULT_ORBIT_CAMERA });
+    expect(state.camera).toEqual({ x: 0, y: DEFAULT_ORBIT_CAMERA.initialHeight, z: -DEFAULT_ORBIT_CAMERA.initialDistance });
+  });
+
+  test("seeds yaw and pitch spherically around the target", () => {
+    const config = { ...DEFAULT_ORBIT_CAMERA, initialDistance: 12, initialYaw: Math.PI, initialPitch: 0.32 };
+    const state = seedOrbitFollowState({ entityPosition: [0, 0, 0], config });
+    expect(distanceBetween(state.camera, state.target)).toBeCloseTo(12);
+    expect(orbitYawFromCamera(state.camera.x, state.camera.z, state.target.x, state.target.z)).toBeCloseTo(Math.PI);
+    // boom elevation positive => camera above target => look-pitch negative
+    expect(cameraLookPitch(state.camera, state.target)).toBeCloseTo(-0.32);
+    expect(state.lockedDistance).toBe(12);
+  });
+});
+
+describe("compensatedFov", () => {
+  test("no-op at or beyond desired distance", () => {
+    expect(compensatedFov(55, 12, 12)).toBe(55);
+    expect(compensatedFov(55, 12, 20)).toBe(55);
+  });
+
+  test("widens as the camera pulls in", () => {
+    const widened = compensatedFov(55, 12, 6);
+    expect(widened).toBeGreaterThan(55);
+    // halving distance doubles the tangent of the half-angle
+    expect(Math.tan((widened * Math.PI) / 360)).toBeCloseTo(2 * Math.tan((55 * Math.PI) / 360));
+  });
+
+  test("clamps to a projection-safe maximum", () => {
+    expect(compensatedFov(90, 100, 0.01)).toBeLessThanOrEqual(170);
   });
 });
 

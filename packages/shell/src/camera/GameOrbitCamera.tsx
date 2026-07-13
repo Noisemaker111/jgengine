@@ -7,6 +7,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
 import {
   cameraLookPitch,
+  compensatedFov,
   ORBIT_CAMERA_FRAME_PRIORITY,
   orbitFollowStep,
   orbitYawFromCamera,
@@ -105,12 +106,15 @@ export function GameOrbitCamera({
 
     controls.update();
 
+    let desiredDistance = 0;
+    let pulledDistance = 0;
     if (config.collision.enabled) {
       const t = stepped.target;
       const dx = camera.position.x - t.x;
       const dy = camera.position.y - t.y;
       const dz = camera.position.z - t.z;
       const dist = Math.hypot(dx, dy, dz);
+      desiredDistance = dist;
       if (dist > config.collision.minTargetDistance) {
         const dir = collisionDirRef.current.set(dx / dist, dy / dist, dz / dist);
         const ray = raycasterRef.current;
@@ -129,6 +133,7 @@ export function GameOrbitCamera({
         if (blocked > 0) {
           const pulled = Math.max(config.collision.minTargetDistance, blocked - config.collision.padding);
           camera.position.set(t.x + dir.x * pulled, t.y + dir.y * pulled, t.z + dir.z * pulled);
+          pulledDistance = pulled;
         }
       }
     }
@@ -149,8 +154,12 @@ export function GameOrbitCamera({
     }
     if ((camera as PerspectiveCamera).isPerspectiveCamera === true) {
       const perspective = camera as PerspectiveCamera;
-      if (Math.abs(perspective.fov - playerFov.fov) > 0.001) {
-        perspective.fov = playerFov.fov;
+      const targetFov =
+        pulledDistance > 0 && pulledDistance < desiredDistance
+          ? compensatedFov(playerFov.fov, desiredDistance, pulledDistance)
+          : playerFov.fov;
+      if (Math.abs(perspective.fov - targetFov) > 0.001) {
+        perspective.fov = targetFov;
         perspective.updateProjectionMatrix();
       }
     }

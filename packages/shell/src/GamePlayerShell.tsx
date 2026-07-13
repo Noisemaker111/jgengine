@@ -841,7 +841,7 @@ function EntityMarker({
           <meshStandardMaterial color={color} />
         </mesh>
       ) : (
-        <>
+        <group scale={ctx.scene.entity.visualScaleOf(entityId)}>
           <mesh position-y={0.95}>
             <capsuleGeometry args={[0.35, 1.1, 6, 14]} />
             <meshStandardMaterial color={color} />
@@ -850,7 +850,7 @@ function EntityMarker({
             <boxGeometry args={[0.16, 0.16, 0.16]} />
             <meshStandardMaterial color="#f8fafc" />
           </mesh>
-        </>
+        </group>
       )}
       {targeted ? (
         <mesh rotation-x={-Math.PI / 2} position-y={0.03}>
@@ -1212,7 +1212,7 @@ function FrameDriver({
       lastSentInputRef.current = frame;
       inputSink.send(frame);
     };
-    if (gateRef.current) {
+    if (gateRef.current || !playControlsActive(ctx)) {
       ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
       sendInput();
       return;
@@ -1391,7 +1391,7 @@ function HudOnlyDriver({
       const last = lastFrameRef.current;
       lastFrameRef.current = now;
       if (last === null) return;
-      if (gateRef.current) {
+      if (gateRef.current || !playControlsActive(ctx)) {
         ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
         return;
       }
@@ -1854,7 +1854,7 @@ export function GamePlayerShell({
             return;
           }
           if (event.code === "Tab" || event.code === "Space") event.preventDefault();
-          tracker.handleDown(event.code);
+          if (playControlsActive(ctx)) tracker.handleDown(event.code);
         }}
         onKeyUp={(event) => {
           if (event.code === "F2" && devtoolsEnabled) {
@@ -1862,7 +1862,7 @@ export function GamePlayerShell({
             if (!f2ChordedRef.current) setDevtoolsOpen((current) => !current);
             return;
           }
-          tracker.handleUp(event.code);
+          if (playControlsActive(ctx)) tracker.handleUp(event.code);
         }}
         onBlur={() => {
           f2HeldRef.current = false;
@@ -1937,6 +1937,7 @@ export function GamePlayerShell({
   const selectFilter = pointer?.selectFilter;
   const worldSky = resolveWorldSky(playable.game.world);
   const world = playable.game.world;
+  const biomeBands = world?.kind === "environment" ? world.terrain?.biomeBands : undefined;
   const AutoEnvironment =
     playable.environment ??
     (world?.kind === "environment"
@@ -1978,7 +1979,7 @@ export function GamePlayerShell({
     event.target instanceof HTMLCanvasElement;
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    wrapperRef.current?.focus();
+    if (isWorldPointerTarget(event)) wrapperRef.current?.focus();
     trackPointerAxis(event);
     audioEngine.resume();
     if (contextMenu !== null) setContextMenu(null);
@@ -2159,7 +2160,7 @@ export function GamePlayerShell({
           return;
         }
         if (event.code === "Tab" || event.code === "Space") event.preventDefault();
-        tracker.handleDown(event.code);
+        if (playControlsActive(ctx)) tracker.handleDown(event.code);
       }}
       onKeyUp={(event) => {
         if (event.code === "F2" && devtoolsEnabled) {
@@ -2170,7 +2171,7 @@ export function GamePlayerShell({
           }
           return;
         }
-        tracker.handleUp(event.code);
+        if (playControlsActive(ctx)) tracker.handleUp(event.code);
       }}
       onBlur={() => {
         f2HeldRef.current = false;
@@ -2228,11 +2229,13 @@ export function GamePlayerShell({
             <TimeOfDayDaylight
               sky={effectiveSky}
               clock={ctx.time}
+              bands={effectiveSky === worldSky ? biomeBands : undefined}
               lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
             />
           ) : (
             <SkyDaylight
               sky={effectiveSky}
+              bands={effectiveSky === worldSky ? biomeBands : undefined}
               lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
             />
           )

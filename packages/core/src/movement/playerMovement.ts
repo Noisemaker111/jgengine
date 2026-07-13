@@ -3,7 +3,7 @@ import type { MovementCommitFrame, PlayerMovementConfig, VoxelCollisionConfig } 
 import type { GameContext } from "../runtime/gameContext";
 import type { InputFrame } from "../runtime/inputSnapshot";
 import { applyHorizontalImpulses, applyMotionImpulses } from "../runtime/motionIntents";
-import { groundFieldFor, hasEnvironmentTerrain, type TerrainField } from "../world/terrain";
+import { groundFieldFor, hasEnvironmentTerrain, sampleSlope, type TerrainField } from "../world/terrain";
 import type { WorldFeature } from "../world/features";
 import {
   advancePlayerMotion,
@@ -14,6 +14,7 @@ import {
   resolveMovementIntent,
   resolveObstacleStep,
   snapPositionToGrid,
+  type MotionFrameOptions,
   type MovementTuningOverrides,
   type PlayerMotionState,
 } from "./movementModel";
@@ -27,6 +28,11 @@ import {
 
 const DEFAULT_TURN_SPEED = 2.4;
 const DEFAULT_WALK_SPEED = 2;
+const DEFAULT_SWIM_SPEED_MULTIPLIER = 0.65;
+/** Minimum ground-normal `y` the player can stand on before slope-slide kicks in — cos(50°) ≈ 0.643. */
+const DEFAULT_MAX_CLIMB_NORMAL_Y = Math.cos((50 * Math.PI) / 180);
+/** Downhill slide speed (units/s) per unit of slope steepness while on too-steep ground. */
+const SLOPE_SLIDE_SPEED = 4;
 
 /** The resolved, per-world movement configuration {@link stepPlayerMovement} integrates against — the same inputs the shell FrameDriver used to read piecemeal, gathered into one struct so single-player and host movement run identical math. */
 export interface PlayerMovementTuning {
@@ -62,10 +68,13 @@ export function resolvePlayerMovementTuning(opts: {
   world?: WorldFeature;
 }): PlayerMovementTuning {
   const physics = resolvePhysicsTuning(opts.physics);
+  const backpedal = opts.movement?.backpedalMult;
+  const overrides =
+    backpedal === undefined ? physics : { ...(physics ?? {}), backpedalSpeedMultiplier: backpedal };
   return {
     ...(opts.collision === undefined ? {} : { collision: opts.collision }),
     ...(opts.movement === undefined ? {} : { movement: opts.movement }),
-    ...(physics === undefined ? {} : { physics }),
+    ...(overrides === undefined ? {} : { physics: overrides }),
     ground: groundFieldFor(opts.world),
     hasTerrain: hasEnvironmentTerrain(opts.world),
   };
@@ -142,7 +151,8 @@ export function stepPlayerMovement(
     state.heading = heading;
   } else {
     const turnInput = (isDown("turnRight") ? 1 : 0) - (isDown("turnLeft") ? 1 : 0);
-    if (turnInput !== 0) state.heading = steerYaw(state.heading, turnInput, DEFAULT_TURN_SPEED, dt);
+    const turnSpeed = tuning.movement?.turnSpeed ?? DEFAULT_TURN_SPEED;
+    if (turnInput !== 0) state.heading = steerYaw(state.heading, turnInput, turnSpeed, dt);
   }
   const forwardX = Math.sin(state.heading);
   const forwardZ = Math.cos(state.heading);
@@ -210,7 +220,21 @@ export function stepPlayerMovement(
     motion.horizontalVelocityZ,
     motionBatch,
   );
-  const step = advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning.physics);
+  const swimCfg = tuning.movement?.swim;
+  const swimEnabled = swimCfg === true || (typeof swimCfg === "object" && swimCfg !== null);
+  const swimSpeedMultiplier =
+    typeof swimCfg === "object" && swimCfg !== null
+      ? swimCfg.speedMultiplier ?? DEFAULT_SWIM_SPEED_MULTIPLIER
+      : DEFAULT_SWIM_SPEED_MULTIPLIER;
+  const waterLevel = tuning.ground.waterLevel;
+  const submerged =
+    swimEnabled &&
+    waterLevel !== undefined &&
+    tuning.ground.sampleHeight(player.position[0], player.position[2]) < waterLevel;
+  const motionOptions: MotionFrameOptions | undefined = submerged
+    ? { speedScale: swimSpeedMultiplier, floating: true }
+    : undefined;
+  const step = advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning.physics, motionOptions);
   let stepX = step.stepX;
   let stepZ = step.stepZ;
   if (tuning.movement?.mode === "axis") {
@@ -231,10 +255,26 @@ export function stepPlayerMovement(
     nextX = snapped[0];
     nextZ = snapped[1];
   }
-  let nextY = tuning.ground.sampleHeight(nextX, nextZ) + motion.jumpOffset;
+  const slideCfg = tuning.movement?.slopeSlide;
+  if (slideCfg === true || (typeof slideCfg === "object" && slideCfg !== null)) {
+    const maxClimbNormalY =
+      typeof slideCfg === "object" && slideCfg.maxClimbSlope !== undefined
+        ? slideCfg.maxClimbSlope
+        : DEFAULT_MAX_CLIMB_NORMAL_Y;
+    if (tuning.ground.sampleNormal(nextX, nextZ)[1] < maxClimbNormalY) {
+      const slope = sampleSlope(tuning.ground, nextX, nextZ);
+      const slide = SLOPE_SLIDE_SPEED * slope.steepness * dt;
+      nextX += slope.downhill[0] * slide;
+      nextZ += slope.downhill[1] * slide;
+    }
+  }
+  const groundAtNext = tuning.ground.sampleHeight(nextX, nextZ);
+  let nextY = groundAtNext + motion.jumpOffset;
   if (motionBatch !== null && motionBatch.y !== null) {
     nextY = motionBatch.y;
-    motion.jumpOffset = motionBatch.y - tuning.ground.sampleHeight(nextX, nextZ);
+    motion.jumpOffset = motionBatch.y - groundAtNext;
+  } else if (swimEnabled && waterLevel !== undefined && groundAtNext < waterLevel) {
+    nextY = waterLevel;
   }
   if (tuning.movement?.beforeCommit !== undefined) {
     const frame: MovementCommitFrame = {

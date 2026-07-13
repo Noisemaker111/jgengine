@@ -145,6 +145,8 @@
 - `BetterAuthSessionState` (interface): interface BetterAuthSessionState — ⚠ undocumented
 - `BetterAuthUserShape` (interface): interface BetterAuthUserShape — ⚠ undocumented
 - `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): React.JSX.Element — ⚠ undocumented
+- `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean; width?: number; height?: number; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
+- `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): React.JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
 - `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
 - `ChatBubble` (interface): interface ChatBubble — ⚠ undocumented
 - `ChatBubblesOptions` (interface): interface ChatBubblesOptions — ⚠ undocumented
@@ -203,15 +205,19 @@
 - `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PlayingCard` (interface): interface PlayingCard — A single card in a stack: an id plus its face and orientation.
 - `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
 - `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
 - `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `RANKS` (const): const RANKS: readonly Rank[] — Ranks in ascending order, ace low.
+- `Rank` (type): type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" — A playing-card rank, ace through king.
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> — ⚠ undocumented
 - `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
 - `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
+- `SUITS` (const): const SUITS: readonly Suit[] — Suits in canonical order (clubs, diamonds, hearts, spades).
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
 - `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
@@ -225,6 +231,8 @@
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `StackedPile` (function): function StackedPile({ cards, faceDown, offsetX = 0, offsetY = 20, cardWidth = 64, cardHeight = 90, layer, dropId, draggableFrom = 0, className, cardClassName, onCardClick, renderOverlay, }: { cards: readonly PlayingCard[]; faceDown?: boolean; offsetX?: number; offsetY?: number; cardWidth?: number; … — An overlapping fan of `CardFace`s. Plain-props: pass `cards`. Optional drag: pass a `layer` to make each card a `DraggableCard`, and `dropId` to wrap the pile in a `DropZone`.
+- `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
@@ -245,6 +253,7 @@
 - `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — ⚠ undocumented
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
+- `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
 - `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
@@ -311,6 +320,18 @@
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — ⚠ undocumented
+
+## @jgengine/react/cards
+
+- `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean; width?: number; height?: number; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
+- `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): React.JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
+- `PlayingCard` (interface): interface PlayingCard — A single card in a stack: an id plus its face and orientation.
+- `RANKS` (const): const RANKS: readonly Rank[] — Ranks in ascending order, ace low.
+- `Rank` (type): type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" — A playing-card rank, ace through king.
+- `SUITS` (const): const SUITS: readonly Suit[] — Suits in canonical order (clubs, diamonds, hearts, spades).
+- `StackedPile` (function): function StackedPile({ cards, faceDown, offsetX = 0, offsetY = 20, cardWidth = 64, cardHeight = 90, layer, dropId, draggableFrom = 0, className, cardClassName, onCardClick, renderOverlay, }: { cards: readonly PlayingCard[]; faceDown?: boolean; offsetX?: number; offsetY?: number; cardWidth?: number; … — An overlapping fan of `CardFace`s. Plain-props: pass `cards`. Optional drag: pass a `layer` to make each card a `DraggableCard`, and `dropId` to wrap the pile in a `DropZone`.
+- `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
+- `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
 
 ## @jgengine/react/chat
 
@@ -746,7 +767,7 @@
 - `savePlayerFov` (function): function savePlayerFov(value: number, bounds: PlayerFovBounds = resolvePlayerFovBounds(), storage: Pick<Storage, "setItem"> | null | undefined = defaultStorage()): number — ⚠ undocumented
 - `seatPose` (function): function seatPose(follow: Vec3, yaw: number, local: { x?: number; y?: number; z?: number }, fov: number): CameraPose — World-space seat pose (cockpit/hood/rear) rigidly attached to the vehicle.
 - `seedInspectionCamera` (function): function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { camera: Vec3; target: Vec3 } — Seeds the camera/target world position before OrbitControls mounts. Falls back to `initialDistance` behind `target` on the -Z axis, raised by 40% of that distance, when `initialPosition` is unset.
-- `seedOrbitFollowState` (function): function seedOrbitFollowState(input: { entityPosition: readonly [number, number, number]; config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset" | "initialDistance" | "initialHeight">; }): OrbitFollowRuntimeState — ⚠ undocumented
+- `seedOrbitFollowState` (function): function seedOrbitFollowState(input: { entityPosition: readonly [number, number, number]; config: Pick< ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset" | "initialDistance" | "initialHeight" | "initialYaw" | "initialPitch" >; }): OrbitFollowRuntimeState — ⚠ undocumented
 - `shakeOffset` (function): function shakeOffset(state: TraumaState, config: { maxOffset?: number; maxRoll?: number; exponent?: number; frequency?: number; } | undefined): ShakeOffset — Positional + roll shake for the current trauma. Shake magnitude is `trauma^exponent` so small hits stay subtle; the oscillation is deterministic per-seed pseudo-noise (no per-frame RNG, so identical inputs reproduce).
 - `shoulderPose` (function): function shoulderPose(follow: Vec3, yaw: number, pitch: number, sideSign: number, shoulder: ResolvedShoulder): CameraPose — Over-the-shoulder camera pose. The boom sits behind the follow point along `yaw`, raised by `heightOffset`, and pushed sideways by `shoulderOffset` (sign set by `sideSign`: +1 right, -1 left). `pitch` tilts the look point.
 - `sideScrollFollowBlend` (function): function sideScrollFollowBlend(followSmoothing: number, dt: number): number — Frame-rate independent follow blend for the side-scroll rig; `followSmoothing <= 0` hard-locks (blend 1) instead of freezing.
@@ -853,6 +874,7 @@
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
 - `cameraFollowStep` (function): function cameraFollowStep(input: { camera: Vec3; target: Vec3; previousTarget: Vec3 | null; lockedDistance: number | null; }): CameraFollowState — ⚠ undocumented
 - `cameraLookPitch` (function): function cameraLookPitch(camera: Vec3, target: Vec3): number — Elevation the camera looks along (radians): negative = aiming down, positive = aiming up, 0 = level. Feeds aim.pitch so vertical aim tracks the camera.
+- `compensatedFov` (function): function compensatedFov(baseFovDegrees: number, desiredDistance: number, pulledDistance: number): number — FOV that keeps a target's on-screen size constant as the spring-arm pulls the camera in. Widens the base FOV by the desired/pulled distance ratio; a no-op (returns the base) whenever the camera sits at or beyond its desired distance.
 - `distanceBetween` (function): function distanceBetween(a: Vec3, b: Vec3): number — ⚠ undocumented
 - `lerpVec3` (function): function lerpVec3(from: Vec3, to: Vec3, blend: number): Vec3 — ⚠ undocumented
 - `orbitFollowStep` (function): function orbitFollowStep(input: { state: OrbitFollowRuntimeState; desiredTarget: Vec3; deltaSeconds: number; config: ResolvedOrbitCameraConfig; dragging: boolean; }): OrbitFollowRuntimeState & { distance: number } — Pure orbit follow step — smooth target tracking, camera carries target delta (OrbitControls alone keeps camera fixed when only target moves), optional distance lock. Call each frame before OrbitControls.update() in the shell.
@@ -860,7 +882,7 @@
 - `resolveFollowTargetFromPosition` (function): function resolveFollowTargetFromPosition(position: readonly [number, number, number], config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset">): Vec3 — ⚠ undocumented
 - `resolveOrbitCameraConfig` (function): function resolveOrbitCameraConfig(patch?: OrbitCameraConfig): ResolvedOrbitCameraConfig — ⚠ undocumented
 - `resolveTargetSmoothing` (function): function resolveTargetSmoothing(config: ResolvedOrbitCameraConfig, dragging: boolean): number — ⚠ undocumented
-- `seedOrbitFollowState` (function): function seedOrbitFollowState(input: { entityPosition: readonly [number, number, number]; config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset" | "initialDistance" | "initialHeight">; }): OrbitFollowRuntimeState — ⚠ undocumented
+- `seedOrbitFollowState` (function): function seedOrbitFollowState(input: { entityPosition: readonly [number, number, number]; config: Pick< ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset" | "initialDistance" | "initialHeight" | "initialYaw" | "initialPitch" >; }): OrbitFollowRuntimeState — ⚠ undocumented
 - `smoothBlend` (function): function smoothBlend(deltaSeconds: number, speed: number): number — Frame-rate independent exponential smoothing factor in [0, 1].
 
 ## @jgengine/shell/camera/rigMath
@@ -1017,12 +1039,12 @@
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
+- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
 - `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
+- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 - `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
 - `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
@@ -1038,12 +1060,12 @@
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
+- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
 - `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
+- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 - `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
 - `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
@@ -1054,11 +1076,11 @@
 
 - `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
+- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
 - `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
+- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 
 ## @jgengine/shell/environment/EnvironmentScene

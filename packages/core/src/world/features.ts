@@ -101,11 +101,28 @@ export interface TerrainRectRegion extends TerrainRegionStyle {
  */
 export type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion;
 
+/** Per-band fog override cross-faded along z by `createBiomeFogSampler`; unset fields fall through to the base sky fog. */
+export interface BiomeFog {
+  color?: string;
+  near?: number;
+  far?: number;
+  density?: number;
+}
+
+/** Per-band sky/light override cross-faded along z by `createBiomeSkySampler`; unset fields fall through to the base sky. */
+export interface BiomeSky {
+  horizonColor?: string;
+  zenithColor?: string;
+  sunIntensity?: number;
+  ambientIntensity?: number;
+}
+
 /**
  * A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`.
  * Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z
  * between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground
- * color instead of hard-switching. Order the list by ascending `z`.
+ * color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order
+ * the list by ascending `z`.
  */
 export interface BiomeBand {
   /** World-space center z of the zone. */
@@ -116,6 +133,12 @@ export interface BiomeBand {
   material?: TerrainMaterial;
   /** Explicit low/high/waterline hex colors for the zone. */
   colors?: TerrainColors;
+  /** Fog color/near/far/density for the zone, cross-faded per camera z; unset fields keep the base sky fog. */
+  fog?: BiomeFog;
+  /** Sky horizon/zenith colors and sun/ambient intensity for the zone, cross-faded per camera z; unset fields keep the base sky. */
+  sky?: BiomeSky;
+  /** Precipitation covering the zone — expands into a full-width weather strip centered at `[0, z]`, `fade`-deep. */
+  weather?: "rain" | "snow";
 }
 
 export interface TerrainEnvironmentConfig {
@@ -441,9 +464,29 @@ function withPadFlatten(
   };
 }
 
+/** Expands each `biomeBand.weather` into a full-width precipitation strip centered on the band's z, `fade`-deep. */
+function bandWeatherDescriptors(
+  terrainDescriptor: TerrainEnvironmentDescriptor | undefined,
+): readonly WeatherEnvironmentDescriptor[] {
+  const bands = terrainDescriptor?.biomeBands;
+  if (bands === undefined || bands.length === 0) return [];
+  const width = terrainDescriptor!.bounds.w;
+  const out: WeatherEnvironmentDescriptor[] = [];
+  for (const band of bands) {
+    if (band.weather === undefined) continue;
+    const area: EnvironmentArea = { w: width, d: band.fade ?? 64, h: 80 };
+    const position: EnvironmentVec2 = [0, band.z];
+    out.push(band.weather === "rain" ? rain({ area, position }) : snow({ area, position }));
+  }
+  return out;
+}
+
 /** Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads. */
 export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature {
-  const weather = list(config.weather);
+  const explicitWeather = list(config.weather);
+  const bandWeather = bandWeatherDescriptors(config.terrain);
+  const weatherAll = [...(explicitWeather ?? []), ...bandWeather];
+  const weather = weatherAll.length === 0 ? undefined : weatherAll;
   const vegetation = list(config.vegetation);
   const water = list(config.water);
   const structures = list(config.structures);
