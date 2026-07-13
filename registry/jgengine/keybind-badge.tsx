@@ -1,3 +1,5 @@
+import { useDisplayProfile } from "@jgengine/react";
+
 const chamfer = (cut: number) =>
   `polygon(${cut}px 0, calc(100% - ${cut}px) 0, 100% ${cut}px, 100% calc(100% - ${cut}px), calc(100% - ${cut}px) 100%, ${cut}px 100%, 0 calc(100% - ${cut}px), 0 ${cut}px)`;
 
@@ -10,6 +12,8 @@ export function KeybindBadge({
   size?: "sm" | "md";
   className?: string;
 }) {
+  const { coarsePointer } = useDisplayProfile();
+  if (coarsePointer) return null;
   const dims =
     size === "sm"
       ? "min-w-[15px] h-[15px] px-[3px] text-[9px]"

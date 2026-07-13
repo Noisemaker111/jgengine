@@ -362,6 +362,10 @@ Prefer:
 
 Desktop keyboard legends must not appear on touch devices. Prompts should appear near the relevant action, object, or HUD region and clear when no longer useful.
 
+The shared `KeybindBadge` (and everything built on it — `MenuButton`, `MenuList`, `TitleScreen`, `ResultsScreen`) already renders nothing on a coarse pointer, so route key hints through it instead of hand-rolling `<kbd>`. When a screen hand-rolls its own control grid or a `START — {key}` / `Press Enter` call-to-action, gate that text on `const { coarsePointer } = useDisplayProfile()` (`@jgengine/react`) — hide the keyboard legend and let the tappable button carry a plain label (`Start`, `Restart`). Never surface a bare "press E / press enter" line as the only way to advance; the button itself must be tappable.
+
+The dev runner locks its own document (`overscroll-behavior: none`, `touch-action: manipulation`, no page zoom or rubber-band, no long-press text selection). Games never add scroll/pinch guards or `position: fixed` body hacks of their own; active play owns the viewport by default.
+
 ## 11. Reference directions for flagship games
 
 ### Clockwork Heist
