@@ -1506,6 +1506,19 @@
 - `scale` (function): function scale(a: Vec2, s: number): Vec2 — Scale a 2D vector by a scalar.
 - `sub` (function): function sub(a: Vec2, b: Vec2): Vec2 — Difference `a - b` of two 2D vectors.
 
+## @jgengine/core/world/vegetation
+
+- `VEGETATION_DEFAULTS` (const): const VEGETATION_DEFAULTS: VegetationSettings — Defaults a bare `kind: "vegetation"` volume grows with: grass at 4 blades/m².
+- `VEGETATION_VOLUME_KIND` (const): const VEGETATION_VOLUME_KIND: "vegetation" — The editor volume kind that marks an area as vegetation fill.
+- `VegetationPlacement` (interface): interface VegetationPlacement — One placed vegetation instance — position on the ground plane plus per-instance variation.
+- `VegetationSettings` (interface): interface VegetationSettings — How a vegetation volume fills its area, read from the volume's `meta`. `density` is items per square meter — the one slider number: grass blades, trees, bushes, rocks all scale with it. Every field has a default, so a freshly placed `kind: "vegetation"` volume already grows grass.
+- `grassPatchesFromVegetation` (function): function grassPatchesFromVegetation(doc: EditorDocument): GrassEnvironmentConfig[] — Grass-blade patches for every `item: "grass"` vegetation volume, ready to spread into `environment()`'s `grass` list — the volume's density number is the blades-per-m² the shell renders, so the editor slider drives it directly.
+- `isVegetationVolume` (function): function isVegetationVolume(volume: EditorVolume): boolean — True when an editor volume is a vegetation fill area.
+- `readVegetationSettings` (function): function readVegetationSettings(volume: EditorVolume): VegetationSettings | null — The volume's vegetation settings with defaults filled in; null for non-vegetation volumes.
+- `resolveVegetation` (function): function resolveVegetation(doc: EditorDocument): VegetationPlacement[] — All model-item placements in a document (every vegetation volume except `item: "grass"`, which the shell renders as blades — see `grassPatchesFromVegetation`). A game maps each placement's `item` to a mesh/entity via its render catalog and places it grounded.
+- `resolveVegetationVolume` (function): function resolveVegetationVolume(volume: EditorVolume): VegetationPlacement[] — Deterministic placements for one vegetation volume: scatter its footprint at `density` items/m² (respecting `minDistance`), clip round shapes to their radius, and derive per-instance scale/rotation from the volume id + seed, so the same saved scene always grows the same field.
+- `vegetationFootprint` (function): function vegetationFootprint(volume: EditorVolume): Aabb — The ground-plane footprint of a volume: box half-extents or sphere/cylinder radius.
+
 ## @jgengine/core/world/voxelField
 
 - `VOXEL_FACES` (const): const VOXEL_FACES: readonly VoxelFace[] — ⚠ undocumented

@@ -9,7 +9,13 @@ import {
   WELL_KNOWN_MARKER_KINDS,
   type EditorDocument,
   type EditorSession,
+  type EditorVolume,
 } from "@jgengine/core/editor/index";
+import {
+  readVegetationSettings,
+  vegetationFootprint,
+  VEGETATION_VOLUME_KIND,
+} from "@jgengine/core/world/vegetation";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
@@ -29,6 +35,8 @@ const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }[] = [
   { label: "Leash range", tool: { tool: "volume", kind: "leash", shape: "sphere" } },
   { label: "Discover area", tool: { tool: "volume", kind: "discover", shape: "sphere" } },
   { label: "Capture area", tool: { tool: "volume", kind: "capture", shape: "cylinder" } },
+  { label: "Vegetation (box)", tool: { tool: "volume", kind: VEGETATION_VOLUME_KIND, shape: "box" } },
+  { label: "Vegetation (circle)", tool: { tool: "volume", kind: VEGETATION_VOLUME_KIND, shape: "sphere" } },
 ];
 
 const SNAP_MODES: readonly { mode: SnapMode; label: string }[] = [
@@ -164,6 +172,64 @@ function NumberField({
         }}
       />
     </label>
+  );
+}
+
+function VegetationFields({
+  volume,
+  onMeta,
+}: {
+  volume: EditorVolume;
+  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
+}) {
+  const settings = readVegetationSettings(volume);
+  if (settings === null) return null;
+  const footprint = vegetationFootprint(volume);
+  const areaM2 = (footprint.maxX - footprint.minX) * (footprint.maxZ - footprint.minZ);
+  const sliderMax = settings.item === "grass" ? 12 : 1;
+  const estimated = Math.floor(areaM2 * settings.density);
+  return (
+    <div className="space-y-2 rounded border border-emerald-500/20 bg-emerald-950/20 p-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Vegetation</div>
+      <label className="flex items-center justify-between gap-2">
+        <span className="uppercase text-neutral-500">item</span>
+        <input
+          className="w-32 rounded border border-white/10 bg-black/40 px-2 py-1"
+          value={settings.item}
+          placeholder="grass"
+          onChange={(event) => onMeta({ item: event.target.value }, "veg:item")}
+        />
+      </label>
+      <label className="block space-y-1">
+        <span className="flex items-center justify-between">
+          <span className="uppercase text-neutral-500">density /m²</span>
+          <span className="text-cyan-200">{settings.density.toFixed(2)}</span>
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={sliderMax}
+          step={sliderMax / 200}
+          className="w-full accent-emerald-400"
+          value={Math.min(settings.density, sliderMax)}
+          onChange={(event) => onMeta({ density: Number(event.target.value) }, "veg:density")}
+        />
+      </label>
+      <NumberField label="density" step={0.01} value={settings.density} onCommit={(value) => onMeta({ density: Math.max(0, value) }, "veg:density")} />
+      <NumberField label="min scale" step={0.05} value={settings.minScale} onCommit={(value) => onMeta({ minScale: value }, "veg:minScale")} />
+      <NumberField label="max scale" step={0.05} value={settings.maxScale} onCommit={(value) => onMeta({ maxScale: value }, "veg:maxScale")} />
+      <NumberField label="spacing" step={0.25} value={settings.minDistance} onCommit={(value) => onMeta({ minDistance: Math.max(0, value) }, "veg:minDistance")} />
+      <label className="flex items-center justify-between gap-2">
+        <span className="uppercase text-neutral-500">seed</span>
+        <input
+          className="w-32 rounded border border-white/10 bg-black/40 px-2 py-1"
+          value={settings.seed}
+          placeholder="reroll…"
+          onChange={(event) => onMeta({ seed: event.target.value }, "veg:seed")}
+        />
+      </label>
+      <div className="text-[10px] text-neutral-500">≈ {estimated.toLocaleString()} {settings.item === "grass" ? "blades" : "placements"} over {Math.round(areaM2).toLocaleString()} m²</div>
+    </div>
   );
 }
 
@@ -799,6 +865,10 @@ export function EditorChrome({
                       <NumberField key={axis} label={`half ${axis}`} value={selectedVolume.halfExtents?.[axis] ?? 5} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { halfExtents: { x: selectedVolume.halfExtents?.x ?? 5, y: selectedVolume.halfExtents?.y ?? 5, z: selectedVolume.halfExtents?.z ?? 5, [axis]: Math.max(0.5, value) } } }, { coalesce: `he:${axis}:${selectedVolume.id}` })} />
                     ))
                   ) : null}
+                  <VegetationFields
+                    volume={selectedVolume}
+                    onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
+                  />
                 </div>
               ) : null}
               {selection.length <= 1 && selectedPath !== undefined ? (
