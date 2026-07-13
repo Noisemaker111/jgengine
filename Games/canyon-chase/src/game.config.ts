@@ -27,6 +27,7 @@ export const game = defineGame({
   },
   renderEntity: renderVehicleEntity,
   objectStyles,
+  capture: { play: ["startRun"] },
   orientation: { mobile: "landscape-required" },
   touch: { buttons: ["handbrake", "surveyMap"] },
   settings: {

@@ -72,6 +72,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     presentation,
     objectStyles,
     devtools,
+    capture,
     ...engineFields
   } = config;
 
@@ -116,5 +117,6 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     presentation,
     objectStyles,
     devtools,
+    capture,
   };
 }

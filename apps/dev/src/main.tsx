@@ -398,7 +398,13 @@ function DevApp({ gameId }: { gameId: string }) {
       window.removeEventListener("unhandledrejection", onRejection);
     };
   }, []);
-  useEffect(() => armCaptureReady(MODE), []);
+  useEffect(() => {
+    if (MODE === "play" && playable === null && captureArmed()) {
+      setCaptureStatus("preparing");
+      return;
+    }
+    return armCaptureReady(MODE, playable?.capture?.settleMs);
+  }, [playable]);
   useEffect(() => {
     if (!captureArmed()) return;
     if (loadError !== null) setCaptureStatus("error", loadError);
@@ -481,12 +487,21 @@ function DevApp({ gameId }: { gameId: string }) {
   }
   const stageScenario =
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
+  const captureRun =
+    RUN.length > 0 ? RUN : captureArmed() && MODE === "play" ? (playable.capture?.play ?? []) : [];
   const onContextReady =
-    stageScenario !== undefined || RUN.length > 0
+    stageScenario !== undefined || captureRun.length > 0
       ? (ctx: GameContext) => {
           stageScenario?.(ctx);
-          for (const name of RUN) {
-            if (ctx.game.commands.has(name)) ctx.game.commands.run(name, { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } });
+          for (const name of captureRun) {
+            if (ctx.game.commands.has(name)) {
+              ctx.game.commands.run(name, { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } });
+            } else if (captureArmed()) {
+              setCaptureStatus(
+                "error",
+                `capture command "${name}" is not registered by ${gameId} — registered commands: ${ctx.game.commands.names().sort().join(", ")}`,
+              );
+            }
           }
         }
       : undefined;

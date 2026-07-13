@@ -16,7 +16,7 @@ export interface StartScreenProps {
 export function StartScreen({ selectedSeedId }: StartScreenProps) {
   const { commands } = useGame();
   return (
-    <div className="relative flex h-full min-h-0 items-end overflow-hidden bg-[#120d12] text-[#f4e6d2] sm:items-center">
+    <div data-jg-menu className="relative flex h-full min-h-0 items-end overflow-hidden bg-[#120d12] text-[#f4e6d2] sm:items-center">
       <SettingsTrigger className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-[#ffc857]/35 text-[#ffc857] transition-colors hover:bg-[#ffc857]/15" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_24%,rgba(255,200,87,0.20),transparent_27%),linear-gradient(155deg,#21131d_0%,#090709_58%,#24120c_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-[48%] opacity-50 [clip-path:polygon(0_48%,18%_22%,36%_42%,55%_8%,72%_30%,100%_0,100%_100%,0_100%)] bg-[#5f2b1c]" />
