@@ -12,7 +12,7 @@ Cheap worker: substantial mechanical legs, on the cheapest tier that fits.
 
 **Never wait on CI — not with a worker, not inline.** The PR subscription pushes failures into the chat as events; silence is green. Ship, subscribe, end the turn.
 
-**Set `model` explicitly on every worker call.** Omitting it makes the worker inherit the session model. Sonnet for mechanical legs — lint, typecheck, test, build, shoot, the verify ladder, a substantial ship motion. Opus for scouts and legs needing real judgment. Haiku for pure script/process execution. Fable never runs a leg — a Sonnet grinding a too-hard task escalates to Opus, not upward.
+**Set `model` explicitly on every worker call.** Omitting it makes the worker inherit the session model. Haiku for pure run-and-report legs — lint, typecheck, test, build, shoot, the verify ladder. Sonnet for a substantial ship motion and for diagnosing/fixing anything Haiku's run turned up failing. Opus for scouts and legs needing real judgment. Fable never runs a leg — a Sonnet grinding a too-hard task escalates to Opus, not upward.
 
 **Prompts are briefs, not scripts.** Telegraph style — goal, non-discoverable context, exact return shape, nothing else. Short *and* sharp: precision comes from naming the right files, commands, and constraints, not from more words. Never dictate tools, paste boilerplate footers, or pad with contingencies the worker can work out itself. One packed prompt out, one compact judged result back.
 
