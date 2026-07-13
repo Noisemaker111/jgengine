@@ -50,11 +50,13 @@ export function skillsInstallArgs(scope: SkillsScope): string[] {
   return args;
 }
 
+/** @internal */
 export function packagedSkillsDir(): string | null {
   const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "skills");
   return existsSync(join(dir, "jgengine", "SKILL.md")) ? dir : null;
 }
 
+/** @internal */
 export function installPackagedSkills(packaged: string, scope: SkillsScope, cwd?: string): number {
   const base = scope === "global" ? homedir() : (cwd ?? process.cwd());
   const target = join(base, ".claude", "skills");
