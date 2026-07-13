@@ -11,7 +11,11 @@ export function padNumber(value: number, width: number): string {
   return Math.trunc(value).toString().padStart(width, "0");
 }
 
-/** Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs. */
+/**
+ * Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
+ *
+ * @capability clock-format render seconds as m:ss / m:ss.ff / h:mm:ss for timers and race HUDs
+ */
 export function formatDuration(seconds: number, options: DurationFormat = {}): string {
   const decimals = options.decimals ?? 0;
   const total = Math.max(0, seconds);

@@ -88,6 +88,8 @@ function crossed(threshold: MeterThreshold, value: number): boolean {
  * actions, and raises moodle statuses at thresholds. Rate modifiers let the environment
  * drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads
  * an environment field then calls `setRateModifier`.
+ *
+ * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
  */
 export function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet {
   const meters = new Map<string, MeterRuntime>();

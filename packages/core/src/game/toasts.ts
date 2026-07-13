@@ -8,7 +8,11 @@ export interface Toast<T = string> {
   expiresAt: number;
 }
 
-/** Append `toast`, keeping only the newest `cap` entries. */
+/**
+ * Append `toast`, keeping only the newest `cap` entries.
+ *
+ * @capability toast-feed queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
+ */
 export function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] {
   const next = [...toasts, toast];
   return cap > 0 && next.length > cap ? next.slice(next.length - cap) : next;
@@ -44,6 +48,8 @@ export interface ToastQueueOptions {
  * A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled
  * on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones,
  * `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
+ *
+ * @capability toast-feed queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
  */
 export function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> {
   const cap = options.cap ?? 4;

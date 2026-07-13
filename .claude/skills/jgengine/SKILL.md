@@ -41,6 +41,8 @@ This skill is the foundation for every task (packages, project shape, defineGame
 
 Do not read every domain by default. Build through documented engine surfaces; do not infer APIs from gallery games. Inspect engine source only when a documented surface appears wrong or a missing primitive blocks the work.
 
+**Before hand-rolling any mechanic, check the domain's `capabilities.md`.** Each selected domain skill carries a generated `capabilities.md` — an intent→primitive index (`the thing you need` → `the import line`). Toast/announcer feeds, charge/decay meters, mm:ss clocks, best-time persistence, minimaps, and the like already exist as primitives; grep the capability index for the concept before writing your own. Re-implementing a listed capability is the papercut this index exists to kill.
+
 ## Build behavior
 
 Scaffold with `npx jgengine create game-name --name "Game Name"` when needed. Build the requested game continuously from the intake, keeping systems end-to-end rather than leaving registered-but-unusable pieces. Use real assets and visible feedback early. Verify at completion with `jgengine-verify`.
