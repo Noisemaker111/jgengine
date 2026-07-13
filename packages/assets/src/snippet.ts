@@ -32,6 +32,18 @@ export function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}
   ].join("\n");
 }
 
+/** Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog. */
+export function materialWiringSnippet(id: string, basePath = "/materials"): string {
+  return [
+    `// src/game/assets.ts`,
+    `import { buildMaterialCatalog } from "@jgengine/assets";`,
+    `export const materials = buildMaterialCatalog({ basePath: ${JSON.stringify(basePath)} });`,
+    ``,
+    `const material = materials.resolve(${JSON.stringify(id)})!;`,
+    `// material.maps => { color, normal, roughness, ao, displacement } URLs under ${basePath}/${id}/`,
+  ].join("\n");
+}
+
 /** Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage. */
 export function componentWiringSnippet(component: RegistryComponent): string {
   const symbol = pascalCase(component.name);

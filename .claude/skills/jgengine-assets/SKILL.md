@@ -15,10 +15,11 @@ Squares as enemies, colored boxes as buildings, and a flat grid floor read as *b
 |-----------|-----|-----------------|
 | A 3D model (tree, astronaut) | `assets add astronaut --dir ../../apps/dev/public` | `catalog.resolve("kenney-space/astronautA")!.url` in an `entityModels`/`objectModels` seam |
 | A whole style pack | `assets add nature --dir ../../apps/dev/public` | any pulled id (browse with `assets list --source kenney-nature`) |
+| A PBR surface material (grass, rock, brick…) | `assets add grass --kind material --dir ../../apps/dev/public` | `buildMaterialCatalog({ basePath: "/materials" }).resolve("material/grass")!.maps` — hundreds of CC0 ambientCG materials, maps normalized to `color/normal/roughness/ao/displacement.jpg` |
 | A HUD component (health/mana bar, boss bar, inventory, dialogue…) | `assets add "mana bar"` → prints the `npx shadcn add …` line | `<VitalBar … />` from `@/components/ui/vital-bar` |
 | An item / ability icon | `assets add sword` | `<GameIcon name="sword" />` (or `iconForItemId`) |
 
-`--kind model|pack|component|icon` disambiguates a broad query, `--json` emits the ranked matches, and `findAssets(query)` from `@jgengine/assets` is the same search in code. The HUD component + icon catalogs are the shadcn registry at `jgengine.com/r` — 70+ presentational and engine-bound widgets (`vital-bar`, `boss-bar`, `resource-orb`, `ability-action-bar`, `inventory-slot-grid`, `dialogue-panel`, …). Search before you build: the "mana pool component" almost certainly already exists.
+`--kind model|pack|material|component|icon` disambiguates a broad query, `--json` emits the ranked matches, and `findAssets(query)` from `@jgengine/assets` is the same search in code. The HUD component + icon catalogs are the shadcn registry at `jgengine.com/r` — 70+ presentational and engine-bound widgets (`vital-bar`, `boss-bar`, `resource-orb`, `ability-action-bar`, `inventory-slot-grid`, `dialogue-panel`, …). Search before you build: the "mana pool component" almost certainly already exists.
 
 **Sources** (CC0 — public domain, commercial use, no attribution — unless noted):
 

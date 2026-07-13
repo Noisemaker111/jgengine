@@ -6,13 +6,21 @@
 
 - `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
-- `AssetKind` (type): type AssetKind = "model" | "pack" | "component" | "icon" — ⚠ undocumented
-- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "component"; name: string; title: string; description: string } | { kind: "icon"; name: strin… — ⚠ undocumented
-- `AssetProvider` (type): type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom" — ⚠ undocumented
+- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" — ⚠ undocumented
+- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
+- `AssetProvider` (type): type AssetProvider = | "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
+- `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" — What a source's archive contains: GLB models (default) or one PBR material's texture maps.
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
+- `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
+- `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
+- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly displacement: "displacement.jpg"; } — Normalized filenames a pulled material directory contains, keyed by map role.
+- `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
+- `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material: color, normal, roughness, ao, or displacement.
+- `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`displacement` files may be absent from a rare pack.
+- `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
@@ -23,11 +31,14 @@
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
 - `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
 - `aliases` (const): const aliases: readonly AssetAlias[] — ⚠ undocumented
+- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
+- `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
+- `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
 - `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
 - `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
@@ -35,6 +46,10 @@
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
 - `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
+- `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
+- `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
+- `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog.
+- `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Kenney, Quaternius, KayKit packs).
 - `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
 - `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
@@ -67,6 +82,7 @@
 
 ## @jgengine/assets/cli/pull
 
+- `cliFetch` (const): const cliFetch: typeof fetch — The runtime's own fetch, with a curl fallback for hosts it cannot reach — some proxied sandboxes tear down bun's TLS stream to GitHub's release-asset host while curl (which honors SSL_CERT_FILE) gets through fine.
 - `cmdPull` (function): function cmdPull(argv: string[]): Promise<void> — ⚠ undocumented
 - `describeNetworkFailure` (function): function describeNetworkFailure(error: unknown): string — ⚠ undocumented
 - `flag` (function): function flag(argv: string[], name: string): string | undefined — ⚠ undocumented
@@ -99,8 +115,8 @@
 
 ## @jgengine/assets/find
 
-- `AssetKind` (type): type AssetKind = "model" | "pack" | "component" | "icon" — ⚠ undocumented
-- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "component"; name: string; title: string; description: string } | { kind: "icon"; name: strin… — ⚠ undocumented
+- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" — ⚠ undocumented
+- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
 - `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
@@ -123,14 +139,28 @@
 
 - `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
-- `AssetProvider` (type): type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom" — ⚠ undocumented
+- `AssetProvider` (type): type AssetProvider = | "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
+- `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" — What a source's archive contains: GLB models (default) or one PBR material's texture maps.
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
+
+## @jgengine/assets/materials
+
+- `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
+- `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
+- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly displacement: "displacement.jpg"; } — Normalized filenames a pulled material directory contains, keyed by map role.
+- `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
+- `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material: color, normal, roughness, ao, or displacement.
+- `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`displacement` files may be absent from a rare pack.
+- `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
+- `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
+- `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
+- `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
 
 ## @jgengine/assets/registry
 
@@ -148,15 +178,24 @@
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
+- `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog.
 - `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 
 ## @jgengine/assets/sources
 
+- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
 - `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
+- `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
+- `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Kenney, Quaternius, KayKit packs).
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
 - `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
 - `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
+
+## @jgengine/assets/sources/ambientcg
+
+- `ambientcgAssetId` (function): function ambientcgAssetId(source: AssetSource): string — Upstream asset id (`Grass001`) for a material source id (`ambientcg-grass001`).
+- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 
 ## @jgengine/assets/sources/kaykit
 

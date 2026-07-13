@@ -2,7 +2,17 @@ import type { ModelDims } from "@jgengine/core/scene/assetCatalog";
 
 export type { ModelDims };
 
-export type AssetProvider = "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "custom";
+export type AssetProvider =
+  | "kenney"
+  | "quaternius"
+  | "kaykit"
+  | "polypizza"
+  | "itch"
+  | "ambientcg"
+  | "custom";
+
+/** What a source's archive contains: GLB models (default) or one PBR material's texture maps. */
+export type AssetSourceKind = "model" | "material";
 
 export interface PinnedDownload {
   url: string;
@@ -21,6 +31,8 @@ export function isScrapeDownload(download: AssetDownload): download is ScrapeDow
 
 export interface AssetSource {
   id: string;
+  /** What the archive contains: GLB models (default) or one PBR material's texture maps. */
+  kind?: AssetSourceKind;
   provider: AssetProvider;
   title: string;
   license: string;

@@ -166,3 +166,7 @@ ship worker double-created the editor-overhaul PR (#650 and #651, same head sha)
 2026-07-13T03:53:06.709Z — claude-opus-4-8 — Claude
 
 multi-worker fan-out wait → Stop hook 'commit your changes' fired on every quiet turn while background workers were mid-edit; committing then would have captured partial worker state. Hook can't see in-flight background agents.
+
+2026-07-13T15:37:44.050Z — fable-5 — Claude
+
+assets pull in cloud sandbox → bun fetch dies with 'socket connection was closed unexpectedly' on release-assets.githubusercontent.com through the agent proxy (CONNECT ok, TLS stream killed); curl succeeds — needed a curl fallback in the CLI

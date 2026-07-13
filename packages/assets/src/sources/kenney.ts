@@ -30,8 +30,6 @@ const KENNEY_PACKS: readonly KenneyPack[] = [
   { id: "kenney-tower-defense", slug: "tower-defense-kit", title: "Tower Defense Kit", categories: ["tower", "environment", "prop"] },
   { id: "kenney-food", slug: "food-kit", title: "Food Kit", categories: ["food", "prop"] },
   { id: "kenney-blaster", slug: "blaster-kit", title: "Blaster Kit", categories: ["weapon", "prop"] },
-  { id: "kenney-furniture", slug: "furniture-kit", title: "Furniture Kit", categories: ["furniture", "interior", "prop"] },
-  { id: "kenney-mini-characters", slug: "mini-characters", title: "Mini Characters", categories: ["character", "prop"] },
 ];
 
 export const kenneySources: readonly AssetSource[] = KENNEY_PACKS.map((pack) => ({

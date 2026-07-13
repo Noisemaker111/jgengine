@@ -1,0 +1,1514 @@
+[
+  {
+    "id": "kenney-pirate/barrel",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "barrel.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3360981941223145,
+        "d": 1.3360981941223145
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/boat-row-large",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "boat-row-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.748538017272949,
+        "d": 2.852146625518799
+      },
+      "center": {
+        "x": 3.907985046680551e-14,
+        "z": 0
+      },
+      "minY": -6.767919641759458e-17
+    }
+  },
+  {
+    "id": "kenney-pirate/boat-row-small",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "boat-row-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.748538017272949,
+        "d": 2.3721463680267334
+      },
+      "center": {
+        "x": 4.04121180963557e-14,
+        "z": 0
+      },
+      "minY": -6.767919641759458e-17
+    }
+  },
+  {
+    "id": "kenney-pirate/bottle-large",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "bottle-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4658176004886627,
+        "d": 0.4658176004886627
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/bottle",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "bottle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.36432087421417236,
+        "d": 0.36432087421417236
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/cannon-ball",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "cannon-ball.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6372078657150269,
+        "d": 0.551838219165802
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.33500000834465027
+    }
+  },
+  {
+    "id": "kenney-pirate/cannon-mobile",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "cannon-mobile.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.6787500381469727,
+        "d": 1.9249998927116394
+      },
+      "center": {
+        "x": 0,
+        "z": 0.028157085180282593
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/cannon",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "cannon.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4023749828338623,
+        "d": 1.9249999523162842
+      },
+      "center": {
+        "x": 0,
+        "z": 0.02815711498260498
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/castle-door",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "castle-door.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 3.200000047683716
+      },
+      "center": {
+        "x": 0,
+        "z": 0.20000004768371582
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/castle-gate",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "castle-gate.glb",
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 3.5999999046325684
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/castle-wall",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "castle-wall.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.799999952316284
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/castle-window",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "castle-window.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.799999952316284
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/chest",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "chest.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2749999856571201,
+        "d": 1.2749999856948853
+      },
+      "center": {
+        "x": -4.74948902429162e-9,
+        "z": -4.768371586472142e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/crate-bottles",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "crate-bottles.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0779999494552612,
+        "d": 1.309000015258789
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/crate",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "crate.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0779999494552612,
+        "d": 1.309000015258789
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/flag-high-pennant",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "flag-high-pennant.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7615543007850647,
+        "d": 0.39890821278095245
+      },
+      "center": {
+        "x": 0.6813230216503143,
+        "z": 7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/flag-high",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "flag-high.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3367542624473572,
+        "d": 0.39890821278095245
+      },
+      "center": {
+        "x": 0.46892300248146057,
+        "z": 7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/flag-pennant",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "flag-pennant.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7615543007850647,
+        "d": 0.39890821278095245
+      },
+      "center": {
+        "x": 0.6813230216503143,
+        "z": 7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/flag-pirate-high-pennant",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "flag-pirate-high-pennant.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7615543007850647,
+        "d": 0.39890821278095245
+      },
+      "center": {
+        "x": 0.6813230216503143,
+        "z": 7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/flag-pirate-high",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "flag-pirate-high.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3367542624473572,
+        "d": 0.39890821278095245
+      },
+      "center": {
+        "x": 0.46892300248146057,
+        "z": 7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/flag-pirate-pennant",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "flag-pirate-pennant.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7615543007850647,
+        "d": 0.39890821278095245
+      },
+      "center": {
+        "x": 0.6813230216503143,
+        "z": 7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/flag-pirate",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "flag-pirate.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3367542624473572,
+        "d": 0.39890821278095245
+      },
+      "center": {
+        "x": 0.46892300248146057,
+        "z": 7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/flag",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "flag.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3367542624473572,
+        "d": 0.39890821278095245
+      },
+      "center": {
+        "x": 0.46892300248146057,
+        "z": 7.450580596923828e-9
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/grass-patch",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "grass-patch.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3127873539924622,
+        "d": 1.2708476781845093
+      },
+      "center": {
+        "x": 0.006963223218917847,
+        "z": -0.0063062310218811035
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/grass-plant",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "grass-plant.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1141895651817322,
+        "d": 1.2370126843452454
+      },
+      "center": {
+        "x": 0.022808998823165894,
+        "z": -0.036602526903152466
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/grass",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "grass.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5187247395515442,
+        "d": 0.543677568435669
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/hole",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "hole.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.8607901334762573,
+        "d": 2.7039800882339478
+      },
+      "center": {
+        "x": -0.00819307565689087,
+        "z": 0.00899893045425415
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/mast-ropes",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "mast-ropes.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.385667085647583,
+        "d": 2.348839402198803
+      },
+      "center": {
+        "x": -5.960464477539062e-7,
+        "z": -0.004470407962804845
+      },
+      "minY": -0.02449793741106987
+    }
+  },
+  {
+    "id": "kenney-pirate/mast",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "mast.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.385667085647583,
+        "d": 1.739890098571789
+      },
+      "center": {
+        "x": -5.960464477539062e-7,
+        "z": -0.3089450597763119
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/palm-bend",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "palm-bend.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.8803678154945374,
+        "d": 3.216046094894409
+      },
+      "center": {
+        "x": -0.7334472835063934,
+        "z": -1.1920928955078125e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/palm-detailed-bend",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "palm-detailed-bend.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.8803678154945374,
+        "d": 3.216046094894409
+      },
+      "center": {
+        "x": -0.7334472835063934,
+        "z": -1.1920928955078125e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/palm-detailed-straight",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "palm-detailed-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.216046094894409,
+        "d": 3.21604585647583
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/palm-straight",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "palm-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.4886298179626465,
+        "d": 2.4886300563812256
+      },
+      "center": {
+        "x": 0,
+        "z": -1.1920928955078125e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/patch-grass-foliage",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "patch-grass-foliage.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.273066520690918,
+        "d": 4.112220764160156
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/patch-grass",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "patch-grass.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.273066520690918,
+        "d": 4.112220764160156
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/patch-sand-foliage",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "patch-sand-foliage.glb",
+    "dims": {
+      "footprint": {
+        "w": 7.736306190490723,
+        "d": 6.036109924316406
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/patch-sand",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "patch-sand.glb",
+    "dims": {
+      "footprint": {
+        "w": 7.736306190490723,
+        "d": 6.036109924316406
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/platform-planks",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "platform-planks.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.893878698348999,
+        "d": 2.7023714780807495
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/platform",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "platform.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.5,
+        "d": 2.5126914978027344
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/rocks-a",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "rocks-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.112595558166504,
+        "d": 4.386431694030762
+      },
+      "center": {
+        "x": -0.13927459716796875,
+        "z": -0.059839725494384766
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/rocks-b",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "rocks-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.436958074569702,
+        "d": 4.704512596130371
+      },
+      "center": {
+        "x": -0.17045772075653076,
+        "z": -0.1392192840576172
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/rocks-c",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "rocks-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.642709493637085,
+        "d": 3.6692001819610596
+      },
+      "center": {
+        "x": 0.19697225093841553,
+        "z": -0.04669785499572754
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/rocks-sand-a",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "rocks-sand-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.112595558166504,
+        "d": 4.386431694030762
+      },
+      "center": {
+        "x": -0.13927459716796875,
+        "z": -0.059839725494384766
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/rocks-sand-b",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "rocks-sand-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.3790318965911865,
+        "d": 4.709814548492432
+      },
+      "center": {
+        "x": -0.15274465084075928,
+        "z": -0.11201930046081543
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/rocks-sand-c",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "rocks-sand-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.7103824615478516,
+        "d": 3.7222697734832764
+      },
+      "center": {
+        "x": 0.21853923797607422,
+        "z": -0.07484686374664307
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/ship-ghost",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "ship-ghost.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.800000190734863,
+        "d": 10.600000381469727
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/ship-large",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "ship-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.800000190734863,
+        "d": 13.100000381469727
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/ship-medium",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "ship-medium.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.800000190734863,
+        "d": 10.600000381469727
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/ship-pirate-large",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "ship-pirate-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.800000190734863,
+        "d": 13.100000381469727
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/ship-pirate-medium",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "ship-pirate-medium.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.800000190734863,
+        "d": 10.600000381469727
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/ship-pirate-small",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "ship-pirate-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.800000190734863,
+        "d": 8.799999713897705
+      },
+      "center": {
+        "x": 0,
+        "z": 0.20000004768371582
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/ship-small",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "ship-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.800000190734863,
+        "d": 8.799999713897705
+      },
+      "center": {
+        "x": 0,
+        "z": 0.20000004768371582
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/ship-wreck",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "ship-wreck.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.800000190734863,
+        "d": 10.599999904632568
+      },
+      "center": {
+        "x": 0,
+        "z": -2.384185791015625e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/structure-fence-sides",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "structure-fence-sides.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.5,
+        "d": 2.5
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/structure-fence",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "structure-fence.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.5,
+        "d": 2.5
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/structure-platform-dock-small",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "structure-platform-dock-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.899999976158142,
+        "d": 2.5118346214294434
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/structure-platform-dock",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "structure-platform-dock.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.5,
+        "d": 2.5126914978027344
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/structure-platform-small",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "structure-platform-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.899999976158142,
+        "d": 2.5118346214294434
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/structure-platform",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "structure-platform.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.5,
+        "d": 2.5126914978027344
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/structure-roof",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "structure-roof.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.085458993911743,
+        "d": 3.2338162660598755
+      },
+      "center": {
+        "x": -0.0013012886047363281,
+        "z": -0.00035136938095092773
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/structure",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "structure.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.5,
+        "d": 2.5
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tool-paddle",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tool-paddle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6578308939933777,
+        "d": 0.2075311839580536
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tool-shovel",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tool-shovel.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6578308939933777,
+        "d": 0.28290000557899475
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-base-door",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-base-door.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.15966796875,
+        "d": 3.5598889589309692
+      },
+      "center": {
+        "x": 0,
+        "z": 0.20011049509048462
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-base",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-base.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.15966796875,
+        "d": 3.15966796875
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-complete-large",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-complete-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.628075122833252,
+        "d": 3.628075122833252
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-complete-small",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-complete-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.35368275642395,
+        "d": 3.6568963527679443
+      },
+      "center": {
+        "x": 0,
+        "z": 0.15160679817199707
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-middle-windows",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-middle-windows.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.8336386680603027,
+        "d": 3.071638584136963
+      },
+      "center": {
+        "x": 0.03100001811981201,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-middle",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-middle.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.0528600215911865,
+        "d": 3.0528600215911865
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-roof",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-roof.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.628075122833252,
+        "d": 3.628075122833252
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-top",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-top.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.35368275642395,
+        "d": 3.35368275642395
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-pirate/tower-watch",
+    "source": "kenney-pirate",
+    "categories": [
+      "ship",
+      "pirate",
+      "environment"
+    ],
+    "file": "tower-watch.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.048802375793457,
+        "d": 3.048802375793457
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  }
+]

@@ -1,0 +1,2081 @@
+[
+  {
+    "id": "kenney-holiday/bench-short",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "bench-short.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6210452318191528,
+        "d": 0.6321089565753937
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4901161193847656e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/bench",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "bench.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1210452318191528,
+        "d": 0.6321089565753937
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4901161193847656e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-corner-bottom",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-corner-bottom.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.25,
+        "d": 0.25
+      },
+      "center": {
+        "x": -0.574999988079071,
+        "z": 0.574999988079071
+      },
+      "minY": -3.590642399298585e-29
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-corner-logs",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-corner-logs.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3500000238418579,
+        "d": 0.3500000834465027
+      },
+      "center": {
+        "x": -0.5250000357627869,
+        "z": 0.5249999463558197
+      },
+      "minY": 5.757243640158727e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-corner",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1499999761581421,
+        "d": 0.1499999761581421
+      },
+      "center": {
+        "x": -0.574999988079071,
+        "z": 0.574999988079071
+      },
+      "minY": -2.526689964297158e-15
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-door-rotate",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-door-rotate.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-doorway-center",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-doorway-center.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": 0.800000011920929
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-doorway-left",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-doorway-left.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-doorway-right",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-doorway-right.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-doorway",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-doorway.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-fence",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-fence.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.100000023841858,
+        "d": 0.20000004768371582
+      },
+      "center": {
+        "x": -0.550000011920929,
+        "z": 0.9499999284744263
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-overhang-door-rotate",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-overhang-door-rotate.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5414814651012421
+      },
+      "center": {
+        "x": 0,
+        "z": 0.5707407146692276
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-overhang-doorway",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-overhang-doorway.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5414814651012421
+      },
+      "center": {
+        "x": 0,
+        "z": 0.5707407146692276
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-chimney",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-chimney.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.282842755317688,
+        "d": 1.399999976158142
+      },
+      "center": {
+        "x": 0.141421377658844,
+        "z": 0
+      },
+      "minY": -0.1414213627576828
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-corner",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3078428506851196,
+        "d": 1.3078429102897644
+      },
+      "center": {
+        "x": 0.12892144918441772,
+        "z": 0.12892141938209534
+      },
+      "minY": -0.1414213627576828
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-dormer",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-dormer.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.282842993736267,
+        "d": 1.100000262260437
+      },
+      "center": {
+        "x": 0,
+        "z": 0.050000011920928955
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-point",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-point.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4874340295791626,
+        "d": 1.399999976158142
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.08944271504878998
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-snow-chimney",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-snow-chimney.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.311188519001007,
+        "d": 1.399999976158142
+      },
+      "center": {
+        "x": 0.15559425950050354,
+        "z": 0
+      },
+      "minY": -0.1414213627576828
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-snow-corner",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-snow-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3361884951591492,
+        "d": 1.3361886143684387
+      },
+      "center": {
+        "x": 0.1430942714214325,
+        "z": 0.1430942714214325
+      },
+      "minY": -0.1414213627576828
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-snow-dormer",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-snow-dormer.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3535537719726562,
+        "d": 1.100000262260437
+      },
+      "center": {
+        "x": 0,
+        "z": 0.050000011920928955
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-snow-point",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-snow-point.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.5866119861602783,
+        "d": 1.399999976158142
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.08944271504878998
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-snow",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-snow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.311188519001007,
+        "d": 1.399999976158142
+      },
+      "center": {
+        "x": 0.15559425950050354,
+        "z": 0
+      },
+      "minY": -0.1414213627576828
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof-top",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof-top.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20000000298023224,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-roof",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-roof.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.282842755317688,
+        "d": 1.399999976158142
+      },
+      "center": {
+        "x": 0.141421377658844,
+        "z": 0
+      },
+      "minY": -0.1414213627576828
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-wall-low",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-wall-low.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.29999998211860657
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-wall-roof-center",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-wall-roof-center.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.29999998211860657
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-wall-roof",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-wall-roof.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.29999998211860657
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": 1.804778527019556e-16
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-wall-wreath",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-wall-wreath.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.4104315936565399
+      },
+      "center": {
+        "x": 0,
+        "z": 0.5552157908678055
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-wall",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-wall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.29999998211860657
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4999999850988388
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-window-a",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-window-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5448888540267944
+      },
+      "center": {
+        "x": 0,
+        "z": 0.5724444389343262
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-window-b",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-window-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5448888540267944
+      },
+      "center": {
+        "x": 0,
+        "z": 0.5724444389343262
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-window-c",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-window-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5448888540267944
+      },
+      "center": {
+        "x": 0,
+        "z": 0.5724444389343262
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/cabin-window-large",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "cabin-window-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.7000000774860382
+      },
+      "center": {
+        "x": 0,
+        "z": 0.7000000327825546
+      },
+      "minY": -2.887645770286232e-14
+    }
+  },
+  {
+    "id": "kenney-holiday/candy-cane-green",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "candy-cane-green.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2982962727546692,
+        "d": 0.10000000149011612
+      },
+      "center": {
+        "x": -0.09999999403953552,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/candy-cane-red",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "candy-cane-red.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2982963025569916,
+        "d": 0.10000000149011612
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/festivus-pole",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "festivus-pole.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.5
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/floor-stone",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "floor-stone.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": -0.5,
+        "z": 0.5
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/floor-wood-snow",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "floor-wood-snow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/floor-wood",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "floor-wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/gingerbread-man",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "gingerbread-man.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3392881155014038,
+        "d": 0.08021599613130093
+      },
+      "center": {
+        "x": 0,
+        "z": 0.013776999898254871
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/gingerbread-woman",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "gingerbread-woman.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3392881155014038,
+        "d": 0.12371599860489368
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0070270010700821915
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/hanukkah-dreidel",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "hanukkah-dreidel.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16055171191692352,
+        "d": 0.16055171191692352
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/hanukkah-menorah-candles",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "hanukkah-menorah-candles.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5660204887390137,
+        "d": 0.18901574611663818
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/hanukkah-menorah",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "hanukkah-menorah.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.564153790473938,
+        "d": 0.18901574611663818
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/kwanzaa-kikombe",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "kwanzaa-kikombe.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2475000023841858,
+        "d": 0.2475000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -2.6437184715095356e-16
+    }
+  },
+  {
+    "id": "kenney-holiday/kwanzaa-kinara-alternative",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "kwanzaa-kinara-alternative.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.15000000596046448
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/kwanzaa-kinara",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "kwanzaa-kinara.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8500000238418579,
+        "d": 0.15000000596046448
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/lantern-hanging",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "lantern-hanging.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.42540785670280457,
+        "d": 0.41621291637420654
+      },
+      "center": {
+        "x": 0,
+        "z": 0.20810645818710327
+      },
+      "minY": -0.5671514272689819
+    }
+  },
+  {
+    "id": "kenney-holiday/lantern",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "lantern.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5251949429512024,
+        "d": 0.45483115315437317
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/lights-colored",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "lights-colored.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0097159147262573,
+        "d": 0.06359999626874924
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/lights-green",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "lights-green.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0097159147262573,
+        "d": 0.06359999626874924
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/lights-red",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "lights-red.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0097159147262573,
+        "d": 0.06359999626874924
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/nutcracker",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "nutcracker.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5484309792518616,
+        "d": 0.34746184945106506
+      },
+      "center": {
+        "x": 0,
+        "z": 0.013730928301811218
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/present-a-cube",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "present-a-cube.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44999998807907104,
+        "d": 0.44999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/present-a-rectangle",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "present-a-rectangle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6499999761581421,
+        "d": 0.44999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/present-a-round",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "present-a-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5488949716091156,
+        "d": 0.5488949716091156
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/present-b-cube",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "present-b-cube.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44999998807907104,
+        "d": 0.44999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/present-b-rectangle",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "present-b-rectangle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6499999761581421,
+        "d": 0.44999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/present-b-round",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "present-b-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5488949716091156,
+        "d": 0.5488949716091156
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/reindeer",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "reindeer.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6252495050430298,
+        "d": 1.070839524269104
+      },
+      "center": {
+        "x": 0,
+        "z": -0.08469611406326294
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/rocks-large",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "rocks-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.1414493322372437,
+        "d": 2.6873735189437866
+      },
+      "center": {
+        "x": 0.0833328366279602,
+        "z": 0.00129622220993042
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/rocks-medium",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "rocks-medium.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9827930927276611,
+        "d": 1.7201932668685913
+      },
+      "center": {
+        "x": 0.048517704010009766,
+        "z": 0.019137799739837646
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/rocks-small",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "rocks-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.5391526818275452,
+        "d": 1.4148158431053162
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": 0.023995667695999146
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/sled-long",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "sled-long.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6250000894069672,
+        "d": 1
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": 0
+      },
+      "minY": -3.9114009505623263e-16
+    }
+  },
+  {
+    "id": "kenney-holiday/sled",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "sled.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6250001192092896,
+        "d": 1.0000001192092896
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -3.1094907718972426e-16
+    }
+  },
+  {
+    "id": "kenney-holiday/snow-bunker",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snow-bunker.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9397755861282349,
+        "d": 1.3468400239944458
+      },
+      "center": {
+        "x": -0.06152588129043579,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/snow-flat-large",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snow-flat-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.094522476196289,
+        "d": 2.4144439697265625
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/snow-flat",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snow-flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.8567134141921997,
+        "d": 1.4479650259017944
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/snow-pile",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snow-pile.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9933093786239624,
+        "d": 1.1136722564697266
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/snowflake-a",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snowflake-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3464101552963257,
+        "d": 0.08750000223517418
+      },
+      "center": {
+        "x": -0.17320507764816284,
+        "z": 0.00624999962747097
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/snowflake-b",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snowflake-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.37141016125679016,
+        "d": 0.08750000223517418
+      },
+      "center": {
+        "x": -0.18570508062839508,
+        "z": 0.00624999962747097
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/snowflake-c",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snowflake-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3464101552963257,
+        "d": 0.08750000223517418
+      },
+      "center": {
+        "x": -0.17320507764816284,
+        "z": 0.00624999962747097
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/snowman-hat",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snowman-hat.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0776455402374268,
+        "d": 0.6881948709487915
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/snowman",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "snowman.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1034687757492065,
+        "d": 0.6881948709487915
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/sock-green-cane",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "sock-green-cane.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4193956106901169,
+        "d": 0.24548064917325974
+      },
+      "center": {
+        "x": -0.05547148734331131,
+        "z": 0.022740323096513748
+      },
+      "minY": 0.021708687767386436
+    }
+  },
+  {
+    "id": "kenney-holiday/sock-green",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "sock-green.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3060539662837982,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0.0011993348598480225,
+        "z": 0
+      },
+      "minY": 0.021708687767386436
+    }
+  },
+  {
+    "id": "kenney-holiday/sock-red-cane",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "sock-red-cane.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4193956106901169,
+        "d": 0.24548064917325974
+      },
+      "center": {
+        "x": -0.05547148734331131,
+        "z": 0.022740323096513748
+      },
+      "minY": 0.021708687767386436
+    }
+  },
+  {
+    "id": "kenney-holiday/sock-red",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "sock-red.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3060539662837982,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0.0011993348598480225,
+        "z": 0
+      },
+      "minY": 0.021708687767386436
+    }
+  },
+  {
+    "id": "kenney-holiday/train-locomotive",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "train-locomotive.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6695050597190857,
+        "d": 0.26519104838371277
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -7.354471984752711e-15
+    }
+  },
+  {
+    "id": "kenney-holiday/train-tender",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "train-tender.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.34570133686065674,
+        "d": 0.1949438527226448
+      },
+      "center": {
+        "x": 0,
+        "z": 3.725290298461914e-9
+      },
+      "minY": -5.228640786260124e-15
+    }
+  },
+  {
+    "id": "kenney-holiday/train-wagon-flat-short",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "train-wagon-flat-short.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.34570133686065674,
+        "d": 0.1949438527226448
+      },
+      "center": {
+        "x": 0,
+        "z": 3.725290298461914e-9
+      },
+      "minY": -5.222676403762033e-15
+    }
+  },
+  {
+    "id": "kenney-holiday/train-wagon-flat",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "train-wagon-flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6914026737213135,
+        "d": 0.194943867623806
+      },
+      "center": {
+        "x": 0,
+        "z": 1.1175870895385742e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/train-wagon-logs",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "train-wagon-logs.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6914026737213135,
+        "d": 0.194943867623806
+      },
+      "center": {
+        "x": 0,
+        "z": 1.1175870895385742e-8
+      },
+      "minY": -5.964229056087527e-18
+    }
+  },
+  {
+    "id": "kenney-holiday/train-wagon-short",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "train-wagon-short.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3696713149547577,
+        "d": 0.2069869339466095
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -5.220688417434827e-15
+    }
+  },
+  {
+    "id": "kenney-holiday/train-wagon",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "train-wagon.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.715372622013092,
+        "d": 0.2069869339466095
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -5.964229056087527e-18
+    }
+  },
+  {
+    "id": "kenney-holiday/trainset-rail-bend",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "trainset-rail-bend.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8485109806060791,
+        "d": 0.8485109806060791
+      },
+      "center": {
+        "x": -0.0757444948,
+        "z": -0.0757444948
+      },
+      "minY": -3.947953e-17
+    }
+  },
+  {
+    "id": "kenney-holiday/trainset-rail-corner",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "trainset-rail-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3485109806060791,
+        "d": 0.3485109806060791
+      },
+      "center": {
+        "x": -0.07574449479579926,
+        "z": -0.07574449479579926
+      },
+      "minY": -4.51194631754889e-17
+    }
+  },
+  {
+    "id": "kenney-holiday/trainset-rail-detailed-bend",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "trainset-rail-detailed-bend.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9000000357627869,
+        "d": 0.9000000059604645
+      },
+      "center": {
+        "x": -0.04999998211860657,
+        "z": -0.04999999701976776
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/trainset-rail-detailed-corner",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "trainset-rail-detailed-corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.40000002086162567,
+        "d": 0.40000003576278687
+      },
+      "center": {
+        "x": -0.049999989569187164,
+        "z": -0.050000011920928955
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/trainset-rail-detailed-straight",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "trainset-rail-detailed-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.30000001192092896
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/trainset-rail-straight",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "trainset-rail-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.1970219910144806
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/tree-decorated-snow",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "tree-decorated-snow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2494999170303345,
+        "d": 1.2494999170303345
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/tree-decorated",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "tree-decorated.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.190000057220459,
+        "d": 1.190000057220459
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/tree-snow-a",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "tree-snow-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.190000057220459,
+        "d": 1.190000057220459
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/tree-snow-b",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "tree-snow-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2494999170303345,
+        "d": 1.2494999170303345
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/tree-snow-c",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "tree-snow-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.190000057220459,
+        "d": 1.190000057220459
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/tree",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "tree.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.190000057220459,
+        "d": 1.190000057220459
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-holiday/wreath-decorated",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "wreath-decorated.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6713948249816895,
+        "d": 0.25925447791814804
+      },
+      "center": {
+        "x": 0.10356065630912781,
+        "z": -0.0050092823803424835
+      },
+      "minY": -0.004272163845598698
+    }
+  },
+  {
+    "id": "kenney-holiday/wreath",
+    "source": "kenney-holiday",
+    "categories": [
+      "prop",
+      "holiday",
+      "environment"
+    ],
+    "file": "wreath.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6713948249816895,
+        "d": 0.25925447791814804
+      },
+      "center": {
+        "x": 0.10356065630912781,
+        "z": -0.0050092823803424835
+      },
+      "minY": -0.004272163845598698
+    }
+  }
+]

@@ -1,15 +1,17 @@
 import { aliases } from "./aliases";
 import { generatedIndex } from "./generated";
 import { keyFromFile } from "./indexGen";
+import { materialAliases } from "./materials";
 import { registryCatalog } from "./registry";
 import { singles } from "./singles";
-import { sources } from "./sources";
+import { materialSources, modelSources } from "./sources";
 
-export type AssetKind = "model" | "pack" | "component" | "icon";
+export type AssetKind = "model" | "pack" | "material" | "component" | "icon";
 
 export type AssetMatch =
   | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" }
   | { kind: "pack"; source: string; title: string; categories: readonly string[] }
+  | { kind: "material"; id: string; title: string; categories: readonly string[] }
   | { kind: "component"; name: string; title: string; description: string }
   | { kind: "icon"; name: string };
 
@@ -110,12 +112,33 @@ export function rankAssets(query: string, options: FindOptions = {}): RankedMatc
   }
 
   if (options.kind === undefined || options.kind === "pack") {
-    for (const source of sources) {
+    for (const source of modelSources) {
       push(best(q, source.id, source.title, source.provider, ...source.categories), {
         kind: "pack",
         source: source.id,
         title: source.title,
         categories: source.categories,
+      });
+    }
+  }
+
+  if (options.kind === undefined || options.kind === "material") {
+    for (const source of materialSources) {
+      push(best(q, source.id, source.title, ...source.categories), {
+        kind: "material",
+        id: source.id,
+        title: source.title,
+        categories: source.categories,
+      });
+    }
+    for (const alias of materialAliases) {
+      const target = materialSources.find((source) => source.id === alias.target);
+      if (target === undefined) continue;
+      push(best(q, alias.key, alias.target), {
+        kind: "material",
+        id: target.id,
+        title: target.title,
+        categories: target.categories,
       });
     }
   }
@@ -147,6 +170,8 @@ function matchKey(match: AssetMatch): string {
       return `model:${match.id}`;
     case "pack":
       return `pack:${match.source}`;
+    case "material":
+      return `material:${match.id}`;
     default:
       return `${match.kind}:${match.name}`;
   }

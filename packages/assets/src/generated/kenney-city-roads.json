@@ -1,0 +1,1514 @@
+[
+  {
+    "id": "kenney-city-roads/bridge-pillar-wide",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "bridge-pillar-wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.14000000059604645,
+        "d": 0.14000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/bridge-pillar",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "bridge-pillar.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10000000149011612,
+        "d": 0.10000000149011612
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/construction-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "construction-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10499999672174454,
+        "d": 0.22499999403953552
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/construction-cone",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "construction-cone.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.07500000298023224,
+        "d": 0.07500000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/construction-light",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "construction-light.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.07500000298023224,
+        "d": 0.07500000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/light-curved-cross",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "light-curved-cross.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4000000059604645,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/light-curved-double",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "light-curved-double.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.05000000074505806,
+        "d": 0.4000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/light-curved",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "light-curved.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.05000000074505806,
+        "d": 0.22500000335276127
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0875000013038516
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/light-square-cross",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "light-square-cross.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.42499998211860657,
+        "d": 0.42499998211860657
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/light-square-double",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "light-square-double.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.05000000447034836,
+        "d": 0.42499998211860657
+      },
+      "center": {
+        "x": -1.862645149230957e-9,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/light-square",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "light-square.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.05000000074505806,
+        "d": 0.2374999914318323
+      },
+      "center": {
+        "x": 0,
+        "z": -0.09374999534338713
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-bend-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-bend-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-bend-sidewalk",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-bend-sidewalk.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-bend-square-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-bend-square-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-bend-square",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-bend-square.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-bend",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-bend.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-bridge",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-bridge.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.000000238418579,
+        "d": 1.000000238418579
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-crossing",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-crossing.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-crossroad-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-crossroad-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-crossroad-line",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-crossroad-line.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-crossroad-path",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-crossroad-path.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-crossroad",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-crossroad.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-curve-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-curve-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-curve-intersection-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-curve-intersection-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-curve-intersection",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-curve-intersection.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-curve-pavement",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-curve-pavement.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-curve",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-driveway-double-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-driveway-double-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-driveway-double",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-driveway-double.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-driveway-single-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-driveway-single-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-driveway-single",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-driveway-single.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-end-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-end-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-end-round-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-end-round-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-end-round",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-end-round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -2.8199664484680564e-18
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-end",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-end.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-intersection-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-intersection-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-intersection-line",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-intersection-line.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-intersection-path",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-intersection-path.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-intersection",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-intersection.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-roundabout-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-roundabout-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 3
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-roundabout",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-roundabout.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 3
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-side-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-side-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.000000238418579,
+        "d": 1.3100001811981201
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": -0.1549999713897705
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-side-entry-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-side-entry-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.000000238418579,
+        "d": 1.3100001811981201
+      },
+      "center": {
+        "x": 0,
+        "z": -0.15500003099441528
+      },
+      "minY": -7.291192389430323e-13
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-side-entry",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-side-entry.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1.309999942779541
+      },
+      "center": {
+        "x": 0,
+        "z": -0.1549999713897705
+      },
+      "minY": -9.327885279507633e-14
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-side-exit-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-side-exit-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.000000238418579,
+        "d": 1.3100001215934753
+      },
+      "center": {
+        "x": 0,
+        "z": -0.1550000011920929
+      },
+      "minY": -7.291305146456262e-13
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-side-exit",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-side-exit.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1.309999942779541
+      },
+      "center": {
+        "x": 0,
+        "z": -0.1549999713897705
+      },
+      "minY": -9.32816717207248e-14
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-side",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-side.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1.309999942779541
+      },
+      "center": {
+        "x": 0,
+        "z": -0.1549999713897705
+      },
+      "minY": -2.6507684326086516e-16
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant-curve-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant-curve-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant-curve",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant-curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant-flat-curve",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant-flat-curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1
+      },
+      "center": {
+        "x": -0.00028395652770996094,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant-flat-high",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant-flat-high.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant-flat",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant-flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant-high-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant-high-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant-high",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant-high.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-slant",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-slant.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-split-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-split-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-split",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-split.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-square-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-square-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-square",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-square.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-straight-barrier-end",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-straight-barrier-end.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.000000238418579,
+        "d": 1.000000238418579
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-straight-barrier-half",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-straight-barrier-half.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5000001788139343,
+        "d": 1.000000238418579
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-straight-barrier",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-straight-barrier.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.000000238418579,
+        "d": 1.000000238418579
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-straight-half",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-straight-half.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/road-straight",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "road-straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/sign-highway-detailed",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "sign-highway-detailed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.13237499631941319,
+        "d": 0.9999999403953552
+      },
+      "center": {
+        "x": -0.04118749778717756,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/sign-highway-wide",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "sign-highway-wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.13237499631941319,
+        "d": 0.9999999403953552
+      },
+      "center": {
+        "x": -0.04118749778717756,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/sign-highway",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "sign-highway.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.13237499631941319,
+        "d": 0.9999999403953552
+      },
+      "center": {
+        "x": -0.04118749778717756,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/tile-high",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "tile-high.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/tile-low",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "tile-low.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/tile-slant",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "tile-slant.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kenney-city-roads/tile-slantHigh",
+    "source": "kenney-city-roads",
+    "categories": [
+      "road",
+      "city",
+      "environment"
+    ],
+    "file": "tile-slantHigh.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  }
+]

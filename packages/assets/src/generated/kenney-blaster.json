@@ -6,7 +6,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-a.glb"
+    "file": "blaster-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.18379999697208405,
+        "d": 0.7999999821186066
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0299999862909317
+      },
+      "minY": -0.3029508589604645
+    }
   },
   {
     "id": "kenney-blaster/blaster-b",
@@ -15,7 +26,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-b.glb"
+    "file": "blaster-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1550000011920929,
+        "d": 0.42010000348091125
+      },
+      "center": {
+        "x": 0,
+        "z": -0.050050005316734314
+      },
+      "minY": -0.1970800757408142
+    }
   },
   {
     "id": "kenney-blaster/blaster-c",
@@ -24,7 +46,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-c.glb"
+    "file": "blaster-c.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16499999165534973,
+        "d": 0.4753502309322357
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.16689836978912354
+    }
   },
   {
     "id": "kenney-blaster/blaster-d",
@@ -33,7 +66,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-d.glb"
+    "file": "blaster-d.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16499999165534973,
+        "d": 0.9078850448131561
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4901161193847656e-8
+      },
+      "minY": -0.18595002086162568
+    }
   },
   {
     "id": "kenney-blaster/blaster-e",
@@ -42,7 +86,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-e.glb"
+    "file": "blaster-e.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.166399996727705,
+        "d": 1.3900001049041748
+      },
+      "center": {
+        "x": -0.044999996200203896,
+        "z": 0.6950000524520874
+      },
+      "minY": -0.21500000596046448
+    }
   },
   {
     "id": "kenney-blaster/blaster-f",
@@ -51,7 +106,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-f.glb"
+    "file": "blaster-f.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16999999433755875,
+        "d": 1.309999942779541
+      },
+      "center": {
+        "x": -3.725290298461914e-9,
+        "z": 0
+      },
+      "minY": -0.2224999922513962
+    }
   },
   {
     "id": "kenney-blaster/blaster-g",
@@ -60,7 +126,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-g.glb"
+    "file": "blaster-g.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.19999998807907104,
+        "d": 0.7858695387840271
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04482486844062805
+      },
+      "minY": -0.17894752323627472
+    }
   },
   {
     "id": "kenney-blaster/blaster-h",
@@ -69,7 +146,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-h.glb"
+    "file": "blaster-h.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16499999165534973,
+        "d": 0.6479999721050262
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4901161193847656e-8
+      },
+      "minY": -0.13725288212299347
+    }
   },
   {
     "id": "kenney-blaster/blaster-i",
@@ -78,7 +166,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-i.glb"
+    "file": "blaster-i.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16499999165534973,
+        "d": 0.5200000107288361
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4901161193847656e-8
+      },
+      "minY": -0.1599999964237213
+    }
   },
   {
     "id": "kenney-blaster/blaster-j",
@@ -87,7 +186,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-j.glb"
+    "file": "blaster-j.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1550000011920929,
+        "d": 0.6099999845027924
+      },
+      "center": {
+        "x": 0,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": -0.17795084105930328
+    }
   },
   {
     "id": "kenney-blaster/blaster-k",
@@ -96,7 +206,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-k.glb"
+    "file": "blaster-k.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1550000011920929,
+        "d": 0.46035023033618927
+      },
+      "center": {
+        "x": 0,
+        "z": 7.450580596923828e-9
+      },
+      "minY": -0.16689836978912354
+    }
   },
   {
     "id": "kenney-blaster/blaster-l",
@@ -105,7 +226,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-l.glb"
+    "file": "blaster-l.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.24379999935626984,
+        "d": 0.5503502488136292
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.16394752264022827
+    }
   },
   {
     "id": "kenney-blaster/blaster-m",
@@ -114,7 +246,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-m.glb"
+    "file": "blaster-m.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16499999165534973,
+        "d": 0.6200999915599823
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4901161193847656e-8
+      },
+      "minY": -0.16872160136699677
+    }
   },
   {
     "id": "kenney-blaster/blaster-n",
@@ -123,7 +266,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-n.glb"
+    "file": "blaster-n.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16999999433755875,
+        "d": 0.6401000022888184
+      },
+      "center": {
+        "x": -3.725290298461914e-9,
+        "z": 0
+      },
+      "minY": -0.16499999165534973
+    }
   },
   {
     "id": "kenney-blaster/blaster-o",
@@ -132,7 +286,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-o.glb"
+    "file": "blaster-o.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.24500000476837158,
+        "d": 0.47999998927116394
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04500000178813934
+      },
+      "minY": -0.1528950333595276
+    }
   },
   {
     "id": "kenney-blaster/blaster-p",
@@ -141,7 +306,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-p.glb"
+    "file": "blaster-p.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1599999964237213,
+        "d": 0.8620800077915192
+      },
+      "center": {
+        "x": 0,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": -0.18545085596046448
+    }
   },
   {
     "id": "kenney-blaster/blaster-q",
@@ -150,7 +326,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-q.glb"
+    "file": "blaster-q.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16999998688697815,
+        "d": 0.7103502452373505
+      },
+      "center": {
+        "x": 0,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": -0.16189835965633392
+    }
   },
   {
     "id": "kenney-blaster/blaster-r",
@@ -159,7 +346,18 @@
       "weapon",
       "prop"
     ],
-    "file": "blaster-r.glb"
+    "file": "blaster-r.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.17999999970197678,
+        "d": 0.6834096014499664
+      },
+      "center": {
+        "x": 3.725290298461914e-9,
+        "z": -0.07829521596431732
+      },
+      "minY": -0.16250000715255736
+    }
   },
   {
     "id": "kenney-blaster/bullet-foam-thick",
@@ -168,7 +366,18 @@
       "weapon",
       "prop"
     ],
-    "file": "bullet-foam-thick.glb"
+    "file": "bullet-foam-thick.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.030000001192092896,
+        "d": 0.030000001192092896
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/bullet-foam-tip-thick",
@@ -177,7 +386,18 @@
       "weapon",
       "prop"
     ],
-    "file": "bullet-foam-tip-thick.glb"
+    "file": "bullet-foam-tip-thick.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.030000001192092896,
+        "d": 0.030000001192092896
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/bullet-foam-tip",
@@ -186,7 +406,18 @@
       "weapon",
       "prop"
     ],
-    "file": "bullet-foam-tip.glb"
+    "file": "bullet-foam-tip.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.019999999552965164,
+        "d": 0.019999999552965164
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/bullet-foam",
@@ -195,7 +426,18 @@
       "weapon",
       "prop"
     ],
-    "file": "bullet-foam.glb"
+    "file": "bullet-foam.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.019999999552965164,
+        "d": 0.019999999552965164
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/clip-large",
@@ -204,7 +446,18 @@
       "weapon",
       "prop"
     ],
-    "file": "clip-large.glb"
+    "file": "clip-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.06000000238418579,
+        "d": 0.15000000596046448
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/clip-small",
@@ -213,7 +466,18 @@
       "weapon",
       "prop"
     ],
-    "file": "clip-small.glb"
+    "file": "clip-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.06000000238418579,
+        "d": 0.15000000596046448
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/crate-medium",
@@ -222,7 +486,18 @@
       "weapon",
       "prop"
     ],
-    "file": "crate-medium.glb"
+    "file": "crate-medium.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5495078861713409,
+        "d": 1.0000000000000004
+      },
+      "center": {
+        "x": -0.004753962159156799,
+        "z": -2.7755575615628914e-16
+      },
+      "minY": -0.019999999552965164
+    }
   },
   {
     "id": "kenney-blaster/crate-small",
@@ -231,7 +506,18 @@
       "weapon",
       "prop"
     ],
-    "file": "crate-small.glb"
+    "file": "crate-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5495078861713409,
+        "d": 0.8000000119209296
+      },
+      "center": {
+        "x": -0.004753962159156799,
+        "z": -3.608224830031759e-16
+      },
+      "minY": -0.019999999552965164
+    }
   },
   {
     "id": "kenney-blaster/crate-wide",
@@ -240,7 +526,18 @@
       "weapon",
       "prop"
     ],
-    "file": "crate-wide.glb"
+    "file": "crate-wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5495078861713409,
+        "d": 1.2000000476837163
+      },
+      "center": {
+        "x": -0.004753962159156799,
+        "z": -2.7755575615628914e-16
+      },
+      "minY": -0.019999999552965164
+    }
   },
   {
     "id": "kenney-blaster/grenade-a",
@@ -249,7 +546,18 @@
       "weapon",
       "prop"
     ],
-    "file": "grenade-a.glb"
+    "file": "grenade-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1688937246799469,
+        "d": 0.15994399785995483
+      },
+      "center": {
+        "x": -0.014474861323833466,
+        "z": -0.009999997913837433
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/grenade-b",
@@ -258,7 +566,18 @@
       "weapon",
       "prop"
     ],
-    "file": "grenade-b.glb"
+    "file": "grenade-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.17999999225139618,
+        "d": 0.2028505578637123
+      },
+      "center": {
+        "x": 0,
+        "z": -0.011425282806158066
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/scope-large-a",
@@ -267,7 +586,18 @@
       "weapon",
       "prop"
     ],
-    "file": "scope-large-a.glb"
+    "file": "scope-large-a.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10999999195337296,
+        "d": 0.4399999678134918
+      },
+      "center": {
+        "x": 0.004999998956918716,
+        "z": 0
+      },
+      "minY": -4.51194631754889e-17
+    }
   },
   {
     "id": "kenney-blaster/scope-large-b",
@@ -276,7 +606,18 @@
       "weapon",
       "prop"
     ],
-    "file": "scope-large-b.glb"
+    "file": "scope-large-b.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10999999195337296,
+        "d": 0.4399999678134918
+      },
+      "center": {
+        "x": 0.004999998956918716,
+        "z": 0
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/scope-small",
@@ -285,7 +626,18 @@
       "weapon",
       "prop"
     ],
-    "file": "scope-small.glb"
+    "file": "scope-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10999999195337296,
+        "d": 0.2799999862909317
+      },
+      "center": {
+        "x": 0.004999998956918716,
+        "z": -0.07999999076128006
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/silencer-larger",
@@ -294,7 +646,18 @@
       "weapon",
       "prop"
     ],
-    "file": "silencer-larger.glb"
+    "file": "silencer-larger.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.11462879180908203,
+        "d": 0.28299999237060547
+      },
+      "center": {
+        "x": 0,
+        "z": -0.14149999618530273
+      },
+      "minY": -0.05731441453099251
+    }
   },
   {
     "id": "kenney-blaster/silencer-small",
@@ -303,7 +666,18 @@
       "weapon",
       "prop"
     ],
-    "file": "silencer-small.glb"
+    "file": "silencer-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10295999050140381,
+        "d": 0.24400000274181366
+      },
+      "center": {
+        "x": 0,
+        "z": -0.12200000137090683
+      },
+      "minY": -0.0514799989759922
+    }
   },
   {
     "id": "kenney-blaster/smoke",
@@ -312,7 +686,18 @@
       "weapon",
       "prop"
     ],
-    "file": "smoke.glb"
+    "file": "smoke.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.27703380584716797,
+        "d": 0.27703380584716797
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.08521690219640732
+    }
   },
   {
     "id": "kenney-blaster/target-detail",
@@ -321,7 +706,18 @@
       "weapon",
       "prop"
     ],
-    "file": "target-detail.glb"
+    "file": "target-detail.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.12999999523162842,
+        "d": 0.36000001430511475
+      },
+      "center": {
+        "x": -0.06499999761581421,
+        "z": 0.18000000715255737
+      },
+      "minY": 0
+    }
   },
   {
     "id": "kenney-blaster/target-fragment-large",
@@ -330,7 +726,18 @@
       "weapon",
       "prop"
     ],
-    "file": "target-fragment-large.glb"
+    "file": "target-fragment-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.05000000447034836,
+        "d": 0.12020815163850784
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.08500000089406967
+    }
   },
   {
     "id": "kenney-blaster/target-fragment-small",
@@ -339,7 +746,18 @@
       "weapon",
       "prop"
     ],
-    "file": "target-fragment-small.glb"
+    "file": "target-fragment-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.05000000074505806,
+        "d": 0.06010407581925392
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.027059806510806084
+    }
   },
   {
     "id": "kenney-blaster/target-large",
@@ -348,7 +766,18 @@
       "weapon",
       "prop"
     ],
-    "file": "target-large.glb"
+    "file": "target-large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10000000894069672,
+        "d": 0.3400000035762787
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.17000000178813934
+    }
   },
   {
     "id": "kenney-blaster/target-small",
@@ -357,6 +786,17 @@
       "weapon",
       "prop"
     ],
-    "file": "target-small.glb"
+    "file": "target-small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10000000149011612,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.10000000149011612
+    }
   }
 ]
