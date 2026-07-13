@@ -8,6 +8,7 @@ import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
 import { useCameraShake } from "../camera/shakeChannel";
+import { readFirstPersonMuzzle } from "../camera/GameFirstPersonCamera";
 import { resolveFloatTextStyle } from "./floatTextStyle";
 import {
   collectWorldBarSamples,
@@ -264,14 +265,13 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
   useEffect(() => {
     const unsub = ctx.game.events.on("projectile.settled", (event) => {
       const id = nextId.current++;
+      const start = new THREE.Vector3(event.origin[0], event.origin[1], event.origin[2]);
+      if (event.from === ctx.player.userId) readFirstPersonMuzzle(start);
       setTracers((current) => [
         ...current,
         {
           id,
-          points: [
-            new THREE.Vector3(event.origin[0], event.origin[1], event.origin[2]),
-            new THREE.Vector3(event.at[0], event.at[1], event.at[2]),
-          ],
+          points: [start, new THREE.Vector3(event.at[0], event.at[1], event.at[2])],
         },
       ]);
       const handle = setTimeout(() => {

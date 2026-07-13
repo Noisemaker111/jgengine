@@ -11,6 +11,20 @@ import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCam
 const DEFAULT_SENSITIVITY = 0.0025;
 const DEFAULT_MAX_PITCH = 1.45;
 
+const VIEWMODEL_ORIGIN = new THREE.Vector3(0.34, -0.26, -0.72);
+const MUZZLE_TIP_LOCAL = new THREE.Vector3(0, 0.03, -0.61);
+const MUZZLE_OFFSET = VIEWMODEL_ORIGIN.clone().add(MUZZLE_TIP_LOCAL);
+
+const muzzleWorld = new THREE.Vector3();
+let muzzleTracked = false;
+
+/** World position of the first-person weapon muzzle, or false when no viewmodel is mounted. */
+export function readFirstPersonMuzzle(target: THREE.Vector3): boolean {
+  if (!muzzleTracked) return false;
+  target.copy(muzzleWorld);
+  return true;
+}
+
 export interface GameFirstPersonCameraProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
@@ -85,14 +99,19 @@ export function GameFirstPersonCamera({
 
 function FirstPersonViewmodel({ camera }: { camera: THREE.Camera }) {
   const groupRef = useRef<THREE.Group>(null);
+  useEffect(() => () => {
+    muzzleTracked = false;
+  }, []);
   useFrame(() => {
     const group = groupRef.current;
     if (group === null) return;
     group.position.copy(camera.position);
     group.quaternion.copy(camera.quaternion);
-    group.translateX(0.34);
-    group.translateY(-0.26);
-    group.translateZ(-0.72);
+    group.translateX(VIEWMODEL_ORIGIN.x);
+    group.translateY(VIEWMODEL_ORIGIN.y);
+    group.translateZ(VIEWMODEL_ORIGIN.z);
+    muzzleWorld.copy(MUZZLE_OFFSET).applyQuaternion(camera.quaternion).add(camera.position);
+    muzzleTracked = true;
   }, GAME_SIM_FRAME_PRIORITY);
   return (
     <group ref={groupRef}>
