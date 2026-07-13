@@ -309,6 +309,8 @@
 - `useReservedControlZones` (function): function useReservedControlZones(): readonly LayoutRect[] — Rectangles reserved by touch controls and system UI — HUD placement should avoid these.
 - `useRoster` (function): function useRoster(userId?: string): readonly RosterEntry[] — ⚠ undocumented
 - `useSceneEntities` (function): function useSceneEntities(): readonly SceneEntity[] — ⚠ undocumented
+- `useSceneEntityIds` (function): function useSceneEntityIds(): readonly string[] — Membership-only entity id list: the returned array keeps a stable identity across per-frame pose writes and only changes when an entity spawns, despawns, or the store is hydrated (#625). A marker mapped from these ids reads its own live pose imperatively (useFrame), so the actor tree no longer re-reconciles every frame. Prefer this over {@link useSceneEntities} for large scenes.
+- `useSceneObjectIds` (function): function useSceneObjectIds(): readonly string[] — Membership-only object id list — the object counterpart of {@link useSceneEntityIds}; stable across move/rotate/setVisual, changes only on place/remove.
 - `useSceneObjects` (function): function useSceneObjects(): readonly SceneObject[] — ⚠ undocumented
 - `useSession` (function): function useSession(): IdentitySource — ⚠ undocumented
 - `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
@@ -466,6 +468,8 @@
 - `useQuestJournal` (function): function useQuestJournal(): QuestInstance[] — ⚠ undocumented
 - `useRoster` (function): function useRoster(userId?: string): readonly RosterEntry[] — ⚠ undocumented
 - `useSceneEntities` (function): function useSceneEntities(): readonly SceneEntity[] — ⚠ undocumented
+- `useSceneEntityIds` (function): function useSceneEntityIds(): readonly string[] — Membership-only entity id list: the returned array keeps a stable identity across per-frame pose writes and only changes when an entity spawns, despawns, or the store is hydrated (#625). A marker mapped from these ids reads its own live pose imperatively (useFrame), so the actor tree no longer re-reconciles every frame. Prefer this over {@link useSceneEntities} for large scenes.
+- `useSceneObjectIds` (function): function useSceneObjectIds(): readonly string[] — Membership-only object id list — the object counterpart of {@link useSceneEntityIds}; stable across move/rotate/setVisual, changes only on place/remove.
 - `useSceneObjects` (function): function useSceneObjects(): readonly SceneObject[] — ⚠ undocumented
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.

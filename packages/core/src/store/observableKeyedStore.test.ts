@@ -93,4 +93,67 @@ describe("observable keyed store", () => {
     expect(target.has("stale")).toBe(false);
     expect(new Map(target.snapshot())).toEqual(new Map(source.snapshot()));
   });
+
+  test("membership fires only on add/delete/hydrate, never on updating an existing key", () => {
+    const store = createObservableKeyedStore<{ n: number }>();
+    let membership = 0;
+    store.subscribeMembership(() => {
+      membership += 1;
+    });
+
+    store.set("a", { n: 1 }); // add
+    const value = { n: 2 };
+    store.set("b", value); // add
+    store.set("b", value); // same reference, still same key — no membership change
+    store.set("b", { n: 3 }); // new value, existing key — no membership change
+    expect(membership).toBe(2);
+
+    store.delete("b"); // delete
+    store.delete("missing"); // no-op
+    expect(membership).toBe(3);
+
+    store.hydrate([["x", { n: 9 }]]); // hydrate
+    expect(membership).toBe(4);
+  });
+
+  test("keysSnapshot keeps a stable identity across value updates, changing only on membership", () => {
+    const store = createObservableKeyedStore<{ n: number }>();
+    expect(store.keysSnapshot()).toEqual([]);
+
+    store.set("a", { n: 1 });
+    const first = store.keysSnapshot();
+    expect(first).toEqual(["a"]);
+
+    store.set("a", { n: 2 }); // pose-style update
+    store.set("a", { n: 3 });
+    expect(store.keysSnapshot()).toBe(first); // identity unchanged — no churn
+
+    store.set("b", { n: 4 }); // membership change
+    const second = store.keysSnapshot();
+    expect(second).not.toBe(first);
+    expect(second).toEqual(["a", "b"]);
+
+    store.delete("a");
+    expect(store.keysSnapshot()).toEqual(["b"]);
+  });
+
+  test("membership listeners unsubscribe independently of value listeners", () => {
+    const store = createObservableKeyedStore<number>();
+    let membership = 0;
+    let values = 0;
+    const off = store.subscribeMembership(() => {
+      membership += 1;
+    });
+    store.subscribe(() => {
+      values += 1;
+    });
+
+    store.set("a", 1); // both fire
+    off();
+    store.set("b", 2); // only value listener
+    store.set("b", 3); // only value listener
+
+    expect(membership).toBe(1);
+    expect(values).toBe(3);
+  });
 });

@@ -124,8 +124,12 @@ export interface EntityStore<TMeta = unknown> {
   setPoseConstraint(id: string, constraint: PoseConstraint | null): void;
   get(id: string): SceneEntity<TMeta> | null;
   list(): readonly SceneEntity<TMeta>[];
+  /** Stable-identity list of live entity ids; identity changes only on spawn/despawn/hydrate, not on pose writes. Pair with {@link subscribeMembership} for membership-only React subscriptions that skip per-frame pose churn (#625). */
+  ids(): readonly string[];
   clear(): void;
   subscribe(listener: () => void): () => void;
+  /** Notified only when the entity set changes (spawn/despawn/hydrate), never on a pose or field update — the render tree re-reconciles on membership, individual markers read live poses imperatively. */
+  subscribeMembership(listener: () => void): () => void;
   snapshot(): readonly SceneEntity<TMeta>[];
   /**
    * Apply a `snapshot()` (e.g. from an authoritative host) to this store — the counterpart of `snapshot()`
@@ -273,6 +277,9 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
     list() {
       return store.arraySnapshot();
     },
+    ids() {
+      return store.keysSnapshot();
+    },
     clear() {
       for (const entity of store.arraySnapshot()) {
         store.delete(entity.id);
@@ -282,6 +289,9 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
     },
     subscribe(listener) {
       return store.subscribe(listener);
+    },
+    subscribeMembership(listener) {
+      return store.subscribeMembership(listener);
     },
     snapshot() {
       return store.arraySnapshot();
