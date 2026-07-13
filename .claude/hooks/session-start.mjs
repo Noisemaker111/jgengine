@@ -130,7 +130,7 @@ emit(
   [
     `Cloud session on branch "${branch}" (default: ${defaultBranch}).`,
     `Flow: commit here, push with git push -u origin ${branch}, open a PR via the GitHub MCP ` +
-      `tools (ready for review), subscribe_pr_activity on it, then have a cheap worker confirm ` +
+      `tools (ready for review), subscribe_pr_activity on it, then confirm inline ` +
       `the PR's checks go green (PRs run only the ~30s quick job; the heavy suite runs on ` +
       `${defaultBranch} post-merge) — one foreground Bash wait, bun -e 'await Bun.sleep(60000)' ` +
       `(bare sleep is harness-blocked, backgrounded waits die with the turn), then read the ` +

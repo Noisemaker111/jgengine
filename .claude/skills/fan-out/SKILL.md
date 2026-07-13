@@ -1,36 +1,37 @@
 ---
 name: fan-out
-description: Invoke on any mechanical leg — verify, ship, scout, sweep. Standing authorization.
+description: Delegate substantial mechanical legs cheaply. Cost first — a worker must save more than it costs.
 ---
 
-# Cheap workers do the dumb work
+# Cheap workers do the dumb work — when there's enough of it
 
 Frontier model: plan, design, judge, synthesize.  
-Cheap worker: every mechanical leg below, on the cheapest tier that fits.
+Cheap worker: substantial mechanical legs, on the cheapest tier that fits.
 
-**Set `model` explicitly on every worker call.** Omitting it makes the worker inherit the session model; that is how typecheck re-runs and CI triage have ended up on frontier models. Sonnet for every mechanical leg — lint, typecheck, test, build, shoot, the verify ladder, the whole ship motion. **Opus for scouts** and any leg needing real judgment. Haiku for pure script/process execution. Fable never runs a leg — a Sonnet grinding a too-hard task escalates to Opus, not upward.
+**Cost first — the spawn threshold.** Every worker pays a fixed overhead: its own CLAUDE.md load, orientation, and report. Delegate only when the leg's work clearly exceeds that overhead — a full gate run, a multi-file sweep, a long build. A couple of quick calls, a small doc ship, a single command, or *waiting for anything* stays inline in this session. A whole conversation should use a handful of workers, not one per action; five subagents for a few small edits is the failure mode this rule exists to stop.
 
-**Prompts are briefs, not scripts.** Telegraph style — goal, non-discoverable context, exact return shape, nothing else. Short *and* sharp: precision comes from naming the right files, commands, and constraints, not from more words. Never dictate which tools the worker uses, never paste boilerplate footers or session links into its deliverables, never pad with contingencies it can work out itself. Exchanges are tight both ways: one packed prompt out, one compact judged result back.
+**Never spawn a worker to wait.** CI merges arrive as webhook events; run verdicts are one inline `bun -e 'await Bun.sleep(60000)'` (bare `sleep` is harness-blocked) followed by reading the Actions runs. Green checks happen in this session, always.
 
-**Workers read `CLAUDE.md` and the skills too — never restate them.** Anything the repo docs already define (the ship motion, push retries, merge/green-check steps, tool names) is one reference, not a numbered script; a brief that re-explains it pays for those tokens twice. The whole ship brief is: branch, commit message, PR title + a sentence of body, "run the ship motion." If a brief has step numbers, it's a script — cut it down.
+**Set `model` explicitly on every worker call.** Omitting it makes the worker inherit the session model. Sonnet for mechanical legs — lint, typecheck, test, build, shoot, the verify ladder, a substantial ship motion. Opus for scouts and legs needing real judgment. Haiku for pure script/process execution. Fable never runs a leg — a Sonnet grinding a too-hard task escalates to Opus, not upward.
 
-**Don't delegate the trivial.** If the leg is a couple of quick calls or the prompt would outweigh the work, do it inline — spawning a worker has a cost too.
+**Prompts are briefs, not scripts.** Telegraph style — goal, non-discoverable context, exact return shape, nothing else. Short *and* sharp: precision comes from naming the right files, commands, and constraints, not from more words. Never dictate tools, paste boilerplate footers, or pad with contingencies the worker can work out itself. One packed prompt out, one compact judged result back.
 
-**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "running in background / will report back" returns nothing — background children die with the turn. That final message must report the completed result (PR link, checks verdict), never intent. Nested delegation obeys the same rule: a worker never hands its leg to a background child of its own. For the ~60s green-check wait, bare `sleep` is blocked by the harness — use one foreground Bash call that embeds the wait: `bun -e 'await Bun.sleep(60000)'`, then read the Actions runs in the same turn. And no worker in a parallel batch ever runs `bun install` — a mid-batch install leaves `node_modules` half-extracted and fails every sibling with phantom TS2307s; if an install is needed, it runs alone, before the batch launches.
+**Workers read `CLAUDE.md` and the skills too — never restate them.** The whole ship brief is: branch, commit message, PR title + a sentence of body, "run the ship motion." If a brief has step numbers, it's a script — cut it down.
 
-**Use the repo commands, never reconstruct the ladder.** Before generators or hand-rolled verify steps, run `bun run agent:preflight` (catches a half-finished install or malformed `package.json` early). For the full local verdict use `bun run gate`, not a hand-assembled `build && check-types && test` chain. Immediately before commit/push/PR, run `bun run ship:preflight` — it rejects a dirty tree, a branch not based on current `origin/main`, or a no-op diff before the ship motion wastes a PR on it.
+**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "will report back" returns nothing — background children die with the turn. Its final message reports the completed result (PR link, checks verdict), never intent; a worker never hands its leg to a background child of its own. No worker in a parallel batch ever runs `bun install` — a mid-batch install fails every sibling with phantom TS2307s; if needed, it runs alone, first.
 
-**Per-item sweep briefs say "do these yourself — do not delegate."** A single worker given N small edits will otherwise treat the list as an orchestration job and recursively fan out N sub-workers; the line belongs in every multi-item brief.
+**Use the repo commands, never reconstruct the ladder.** `bun run agent:preflight` before generators, `bun run gate` for the full local verdict, `bun run ship:preflight` immediately before commit/push/PR.
 
-**Independent legs launch in parallel, never in sequence.** Before spawning anything, split the turn into legs and sort them: everything that doesn't need another leg's output goes out together in one message as one Batch — lint + typecheck + test, scouts on different angles, doc sweep alongside a build. Serialize only true data dependencies (fix before verify, verify before ship). Spawning one worker, waiting, then spawning the next pays wall-clock for nothing and is the same smell as step numbers in a brief.
+**Per-item sweep briefs say "do these yourself — do not delegate."** Otherwise a worker treats the list as an orchestration job and fans out N sub-workers.
 
-## Always fan these — never run them on the frontier model
+**Independent legs launch in parallel, never in sequence.** Everything that doesn't need another leg's output goes out together in one message as one Batch. Serialize only true data dependencies.
 
-- lint · typecheck · test · build
-- preview · screenshot · `bun run shoot` · Playwright
-- git ceremony once the diff is decided — commit, push, and whatever recovery the push needs (stale refs, prune, restart from origin/main, cherry-pick); the frontier model never grinds through git errors inline
-- GitHub ceremony after the decision is made (PR create, comments, issue ops — MCP tools or `gh` where it exists); the whole ship motion (commit → push → PR → PR-checks green — **never merge**; the user merges on request) is one worker brief
-- bulk file reads · codebase scouting · research sweeps · renames · doc sweeps · log triage
+## Worth a worker (when substantial)
+
+- the verify ladder — gate, tests, build — on a real diff
+- `bun run shoot` · Playwright · screenshot rounds
+- a ship motion with a big diff or gnarly push recovery
+- bulk file reads · multi-file renames · doc sweeps · log triage · research sweeps
 
 Announce workers on a 🤖 line, job-named. Judge their output; never dump raw worker text to the user.
 
@@ -38,14 +39,15 @@ Announce workers on a 🤖 line, job-named. Judge their output; never dump raw w
 
 - engine / product design, API surface, layering, gnarly types
 - synthesizing worker results into the user-facing answer
-- trivial single-file edits and direct Q&A
+- small edits, small ships, direct Q&A, waiting on CI or anything else
+- anything a Grep and two file reads would answer
 
-## Scouts before deep reads
+## Scouts — a look first, a scout rarely
 
-The frontier model never orients by reading breadth-first — a frontier turn that opens 35 files costs more than a whole fleet of scouts. When a task lands in code you haven't mapped, spawn 1–3 **Opus** scouts (the `Explore` agent type fits; scouting is a judgment read, so Opus, not Sonnet), each briefed on one angle, each returning a scoped digest: relevant files with `file:line` pointers, key APIs and types, constraints, surprises. Then read deeply only the files the diff will touch. Even two scouts are noise next to a few paragraphs of frontier output; when in doubt, scout.
+Before any scout: take the little look inline — a Grep, a Glob, two file reads. That answers most orientation questions for near-zero cost. Reserve scouts for genuinely unmapped territory where orienting would mean reading many unfamiliar files (think 10+). Default is **one** Opus scout (the `Explore` agent type fits); multiple only for truly separate angles. Digest shape: relevant files with `file:line` pointers, key APIs and types, constraints, surprises. Then read deeply only the files the diff will touch.
 
-The one research *don't*: rediscovering scaffolding, HUD idioms, or anything already documented in skills — that's a doc lookup, not research. Codebase scouting is always in bounds.
+Never scout for scaffolding, HUD idioms, or anything already documented in skills — that's a doc lookup.
 
 ## Done when
 
-Mechanical work ran on cheap workers; this session only planned and judged.
+Heavy mechanical work ran on cheap workers, small work stayed inline, and the worker count stayed small.

@@ -4,7 +4,7 @@ Operational facts discovered the hard way. Update this when you learn something 
 
 ## Cheap workers do the dumb work
 
-Read the **`fan-out`** skill. Almost every non-trivial turn: lint, typecheck, test, build, shoot, screenshots, GitHub ceremony, bulk reads, and research sweeps run on cheap workers — never on the frontier model in this chat. Standing authorization; do not ask first. Details: `.claude/skills/fan-out/SKILL.md` and root `CLAUDE.md`.
+Read the **`fan-out`** skill. Cost first: a worker must save more than it costs — delegate substantial legs only (full gate, shoot, big-diff ships, bulk sweeps); small edits, small ships, and all waiting stay inline. A handful of workers per conversation, never one per action. Details: `.claude/skills/fan-out/SKILL.md` and root `CLAUDE.md`.
 
 ## Publishing
 
