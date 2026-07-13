@@ -19,8 +19,22 @@ export interface AbilityCooldownGroup {
   cooldownMs: number;
 }
 
+/**
+ * A spendable resource pool (mana, energy, rage) bound to an ability kit. When bound, `cast` deducts a
+ * slot's `resourceCost` on success and `state`/`snapshot`/`canCast` reflect affordability without a
+ * per-call `resourceAvailable` argument — the cast path actually spends instead of only gating (#357).
+ */
+export interface AbilityResource {
+  /** Current spendable amount, read fresh on each cast/snapshot. */
+  available(): number;
+  /** Deduct `cost` from the pool after a successful cast. */
+  spend(cost: number): void;
+}
+
 export interface AbilityKitOptions {
   groups?: readonly AbilityCooldownGroup[];
+  /** Bind a resource pool so casting charges `resourceCost` and snapshots reflect affordability automatically. Passing an explicit `resourceAvailable` to a method overrides the bound pool for that call and never auto-spends. */
+  resource?: AbilityResource;
 }
 
 export interface AbilitySlotSnapshot {
@@ -119,6 +133,11 @@ function snapshotOf(runtime: SlotRuntime, resourceAvailable: number, group: Grou
 }
 
 export function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit {
+  const boundResource = options.resource;
+  function currentResource(explicit: number | undefined): number {
+    if (explicit !== undefined) return explicit;
+    return boundResource === undefined ? Number.POSITIVE_INFINITY : boundResource.available();
+  }
   const groupCooldowns = new Map<string, number>();
   const groupRemaining = new Map<string, number>();
   for (const group of options.groups ?? []) {
@@ -180,21 +199,22 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[], options:
     config(slotId) {
       return runtimes.get(slotId)?.config ?? null;
     },
-    state(slotId, resourceAvailable = Number.POSITIVE_INFINITY) {
+    state(slotId, resourceAvailable) {
       const runtime = runtimes.get(slotId);
-      return runtime === undefined ? null : snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime));
+      return runtime === undefined ? null : snapshotOf(runtime, currentResource(resourceAvailable), groupBlockOf(runtime));
     },
-    snapshot(resourceAvailable = Number.POSITIVE_INFINITY) {
+    snapshot(resourceAvailable) {
+      const available = currentResource(resourceAvailable);
       return order.map((slotId) => {
         const runtime = runtimes.get(slotId)!;
-        return snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime));
+        return snapshotOf(runtime, available, groupBlockOf(runtime));
       });
     },
-    canCast(slotId, resourceAvailable = Number.POSITIVE_INFINITY) {
-      return evaluate(slotId, resourceAvailable);
+    canCast(slotId, resourceAvailable) {
+      return evaluate(slotId, currentResource(resourceAvailable));
     },
-    cast(slotId, resourceAvailable = Number.POSITIVE_INFINITY) {
-      const result = evaluate(slotId, resourceAvailable);
+    cast(slotId, resourceAvailable) {
+      const result = evaluate(slotId, currentResource(resourceAvailable));
       if (!result.ok) return result;
       const runtime = runtimes.get(slotId)!;
       runtime.charges -= 1;
@@ -203,7 +223,10 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[], options:
       for (const groupId of runtime.config.groups) {
         groupRemaining.set(groupId, groupCooldowns.get(groupId) ?? 0);
       }
-      return { ok: true, slot: snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime)) };
+      if (resourceAvailable === undefined && boundResource !== undefined && runtime.config.resourceCost > 0) {
+        boundResource.spend(runtime.config.resourceCost);
+      }
+      return { ok: true, slot: snapshotOf(runtime, currentResource(resourceAvailable), groupBlockOf(runtime)) };
     },
     tick(dtSeconds) {
       if (dtSeconds <= 0) return;
