@@ -126,6 +126,27 @@ export function jgengineTables() {
   };
 }
 
+/**
+ * Convex table for the hosted GameContext-world path: one row per (gameId, serverId) holding the full
+ * `WorldSnapshot` blob, its revision, the member roster, and each member's held input. A sibling of
+ * {@link jgengineTables} — spread either (or both) into `defineSchema`.
+ */
+export function jgengineHostedTables() {
+  return {
+    jgHostedWorlds: defineTable({
+      gameId: v.string(),
+      serverId: v.string(),
+      snapshot: v.any(),
+      revision: v.number(),
+      memberUserIds: v.array(v.string()),
+      inputs: v.any(),
+      tickAnchorMs: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }).index("by_game_and_server", ["gameId", "serverId"]),
+  };
+}
+
 const schemaForTypes = defineSchema(jgengineTables());
 type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes>;
 type JGQueryCtx = GenericQueryCtx<JGDataModel>;
@@ -146,7 +167,8 @@ export const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules = {
   keepAliveRefreshMs: 10_000,
 };
 
-async function resolveActor(
+/** Resolve the acting user id under a {@link JgAuthMode}: the Convex identity when signed in (rejecting a mismatched claim), the claimed external id under `"anonymous"`, else `null`. */
+export async function resolveActor(
   ctx: { auth: Auth },
   claimedExternalId: string | undefined,
   mode: JgAuthMode,
