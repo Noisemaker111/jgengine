@@ -6,14 +6,16 @@
 
 - `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
-- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" — ⚠ undocumented
+- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
 - `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
-- `AssetProvider` (type): type AssetProvider = | "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "custom" — ⚠ undocumented
+- `AssetProvider` (type): type AssetProvider = | "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
-- `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" — What a source's archive contains: GLB models (default) or one PBR material's texture maps.
+- `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
 - `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
+- `BuildSpriteCatalogOptions` (interface): interface BuildSpriteCatalogOptions — Options for `buildSpriteCatalog`.
 - `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
+- `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
 - `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly displacement: "displacement.jpg"; } — Normalized filenames a pulled material directory contains, keyed by map role.
@@ -27,6 +29,7 @@
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
 - `RegistryCatalog` (interface): interface RegistryCatalog — ⚠ undocumented
 - `RegistryComponent` (interface): interface RegistryComponent — ⚠ undocumented
+- `ReindexSpritesResult` (interface): interface ReindexSpritesResult — Per-source and total counts returned by `reindexSprites`.
 - `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
 - `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
@@ -34,18 +37,27 @@
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
+- `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
+- `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
+- `extractSpriteFiles` (function): function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] — Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth.
 - `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
 - `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
 - `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
+- `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
+- `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
 - `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
+- `indexSpriteSourceDir` (function): function indexSpriteSourceDir(source: AssetSource, dir: string): IndexEntry[] — Walks a pulled sprite-pack directory and returns one `IndexEntry` per SVG/PNG, deduped by filename.
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
 - `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
+- `kenneySpriteSources` (const): const kenneySpriteSources: readonly AssetSource[] — Kenney's CC0 2D icon/UI packs — `kind: "sprite"` counterpart of `kenneySources`.
+- `keyFromSpriteFile` (function): function keyFromSpriteFile(file: string): string — Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix.
 - `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
 - `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
 - `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog.
@@ -55,9 +67,12 @@
 - `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 - `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
+- `reindexSprites` (function): function reindexSprites(spritesDir: string, outDir: string): ReindexSpritesResult — Same shape as `reindex` (models) but walks SVG/PNG files and skips dims measurement — sprites have no footprint.
 - `singles` (const): const singles: readonly SingleAsset[] — ⚠ undocumented
 - `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
 - `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
+- `spriteSources` (const): const spriteSources: readonly AssetSource[] — Every `kind: "sprite"` source — a pack of individual 2D icon/UI files, resolvable via `buildSpriteCatalog`.
+- `spriteWiringSnippet` (function): function spriteWiringSnippet(id: string, basePath = "/sprites"): string — Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog.
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
 
 ## @jgengine/assets/aliases
@@ -70,6 +85,11 @@
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 
+## @jgengine/assets/catalogs/buildSprites
+
+- `BuildSpriteCatalogOptions` (interface): interface BuildSpriteCatalogOptions — Options for `buildSpriteCatalog`.
+- `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
+
 ## @jgengine/assets/catalogs/starter
 
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
@@ -77,6 +97,7 @@
 ## @jgengine/assets/cli/paths
 
 - `resolveGeneratedDir` (function): function resolveGeneratedDir(cliDir: string): string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
+- `resolveGeneratedSpritesDir` (function): function resolveGeneratedSpritesDir(cliDir: string): string — Sprite-pack counterpart of `resolveGeneratedDir` — a separate generated tree, same sibling layout.
 - `resolvePackageRoot` (function): function resolvePackageRoot(cliDir: string): string — ⚠ undocumented
 - `resolvePackageTreeRoot` (function): function resolvePackageTreeRoot(cliDir: string): string — ⚠ undocumented
 
@@ -87,6 +108,7 @@
 - `describeNetworkFailure` (function): function describeNetworkFailure(error: unknown): string — ⚠ undocumented
 - `flag` (function): function flag(argv: string[], name: string): string | undefined — ⚠ undocumented
 - `generatedDir` (const): const generatedDir: string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
+- `generatedSpritesDir` (const): const generatedSpritesDir: string — Sprite-pack counterpart of `generatedDir`.
 - `isPopulated` (function): function isPopulated(dir: string): boolean — ⚠ undocumented
 - `resolveGeneratedDir` (function): function resolveGeneratedDir(cliDir: string): string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
 
@@ -101,12 +123,14 @@
 - `DownloadPackOptions` (interface): interface DownloadPackOptions — ⚠ undocumented
 - `DownloadPackResult` (interface): interface DownloadPackResult — ⚠ undocumented
 - `ExtractedGlb` (interface): interface ExtractedGlb — ⚠ undocumented
+- `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `ExtractedTexture` (interface): interface ExtractedTexture — ⚠ undocumented
 - `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
 - `defaultReleaseUrl` (function): function defaultReleaseUrl(source: AssetSource): string — URL of `source`'s archive on the default GitHub-release mirror.
 - `downloadArchive` (function): function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> — ⚠ undocumented
 - `downloadPackArchive` (function): function downloadPackArchive(source: AssetSource, options: DownloadPackOptions = {}): Promise<DownloadPackResult> — Resolves and downloads a pack's archive, trying sources in order until one succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the default GitHub-release mirror at `defaultReleaseUrl` (skipped when `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`), (3) the primary provider path (`resolveArchiveUrl`: scrape or pinned URL), (4) the pack's own `mirror` URL. A pinned `sha256` is verified against whichever source supplied the bytes; a mismatch is treated as a failed attempt so the next source in the chain is tried. Throws with every attempted URL and its failure reason when all sources fail.
 - `extractGlbs` (function): function extractGlbs(archive: Uint8Array): ExtractedGlb[] — ⚠ undocumented
+- `extractSpriteFiles` (function): function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] — Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth.
 - `extractTextures` (function): function extractTextures(archive: Uint8Array): ExtractedTexture[] — ⚠ undocumented
 - `findArchiveUrl` (function): function findArchiveUrl(html: string, pageUrl: string): string | null — ⚠ undocumented
 - `mirrorOverrideUrl` (function): function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string — Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g. `https://my-mirror.example.com/kenney/kenney-nature.zip`.
@@ -115,7 +139,7 @@
 
 ## @jgengine/assets/find
 
-- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" — ⚠ undocumented
+- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
 - `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
@@ -126,6 +150,11 @@
 
 - `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
 - `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
+
+## @jgengine/assets/generated-sprites
+
+- `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
+- `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
 
 ## @jgengine/assets/indexGen
 
@@ -139,9 +168,9 @@
 
 - `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
-- `AssetProvider` (type): type AssetProvider = | "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "custom" — ⚠ undocumented
+- `AssetProvider` (type): type AssetProvider = | "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
-- `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" — What a source's archive contains: GLB models (default) or one PBR material's texture maps.
+- `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
@@ -180,22 +209,30 @@
 - `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
 - `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog.
 - `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
+- `spriteWiringSnippet` (function): function spriteWiringSnippet(id: string, basePath = "/sprites"): string — Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog.
 
 ## @jgengine/assets/sources
 
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
+- `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
 - `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
+- `kenneySpriteSources` (const): const kenneySpriteSources: readonly AssetSource[] — Kenney's CC0 2D icon/UI packs — `kind: "sprite"` counterpart of `kenneySources`.
 - `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
 - `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Kenney, Quaternius, KayKit packs).
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
 - `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
 - `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
+- `spriteSources` (const): const spriteSources: readonly AssetSource[] — Every `kind: "sprite"` source — a pack of individual 2D icon/UI files, resolvable via `buildSpriteCatalog`.
 
 ## @jgengine/assets/sources/ambientcg
 
 - `ambientcgAssetId` (function): function ambientcgAssetId(source: AssetSource): string — Upstream asset id (`Grass001`) for a material source id (`ambientcg-grass001`).
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
+
+## @jgengine/assets/sources/gameicons
+
+- `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
 
 ## @jgengine/assets/sources/kaykit
 
@@ -204,10 +241,19 @@
 ## @jgengine/assets/sources/kenney
 
 - `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
+- `kenneySpriteSources` (const): const kenneySpriteSources: readonly AssetSource[] — Kenney's CC0 2D icon/UI packs — `kind: "sprite"` counterpart of `kenneySources`.
 
 ## @jgengine/assets/sources/quaternius
 
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
+
+## @jgengine/assets/spriteIndexGen
+
+- `ReindexSpritesResult` (interface): interface ReindexSpritesResult — Per-source and total counts returned by `reindexSprites`.
+- `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
+- `indexSpriteSourceDir` (function): function indexSpriteSourceDir(source: AssetSource, dir: string): IndexEntry[] — Walks a pulled sprite-pack directory and returns one `IndexEntry` per SVG/PNG, deduped by filename.
+- `keyFromSpriteFile` (function): function keyFromSpriteFile(file: string): string — Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix.
+- `reindexSprites` (function): function reindexSprites(spritesDir: string, outDir: string): ReindexSpritesResult — Same shape as `reindex` (models) but walks SVG/PNG files and skips dims measurement — sprites have no footprint.
 
 ## @jgengine/assets/verify
 
