@@ -505,6 +505,8 @@
 ## @jgengine/core/game/race
 
 - `Checkpoint` (interface): interface Checkpoint — ⚠ undocumented
+- `LapTimer` (interface): interface LapTimer — Wall-clock lap timer complementing {@link RaceState}: feed it `tick(dt)` each frame and call `completeLap()` when the race emits a player `lap.completed` event. It accumulates the current lap, carries best/last, banks splits, and `penalize()` folds a time penalty into the running lap — the timing bookkeeping every racer reimplemented on top of the position-only race state.
+- `LapTimerSnapshot` (interface): interface LapTimerSnapshot — Wall-clock lap timing: the current/last/best/total split-book every racing HUD reads.
 - `RaceEvent` (type): type RaceEvent = | { type: "checkpoint.hit"; racerId: string; checkpoint: number; lap: number; time: number; /** Set when the hit is a fork-route checkpoint (`checkpoint` is then the fork's `afterIndex`). */ fork?: { forkId: string; routeId: string; index: number }; } | { type: "fork.taken"; racerId… — ⚠ undocumented
 - `RaceFork` (interface): interface RaceFork — An alternate-route section (#286.3): after passing mainline checkpoint `afterIndex`, a racer commits to whichever route's first checkpoint they hit, runs its checkpoints in order, and rejoins at mainline `afterIndex + 1`. Every completed route contributes exactly one checkpoint of `progress` regardless of length, and each hit records a split — so route time accounting comes for free.
 - `RaceForkRoute` (interface): interface RaceForkRoute — ⚠ undocumented
@@ -514,6 +516,7 @@
 - `RaceTrackConfig` (interface): interface RaceTrackConfig — ⚠ undocumented
 - `RaceWinCondition` (type): type RaceWinCondition = (standings: readonly RacerProgress[], track: RaceTrack) => readonly string[] | null — ⚠ undocumented
 - `RacerProgress` (interface): interface RacerProgress — ⚠ undocumented
+- `createLapTimer` (function): function createLapTimer(): LapTimer — Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded.
 - `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — ⚠ undocumented
 - `everyoneFinishes` (function): function everyoneFinishes(): RaceWinCondition — Every non-eliminated racer must finish.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
@@ -539,6 +542,19 @@
 - `RunModifierStack` (interface): interface RunModifierStack<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — ⚠ undocumented
 - `createRunModifierStack` (function): function createRunModifierStack<TStat extends string = string, TData = unknown>(offers: readonly RunModifierOffer<TStat, TData>[]): RunModifierStack<TStat, TData> — ⚠ undocumented
+
+## @jgengine/core/game/snapshotHistory
+
+- `HistoryStacks` (interface): interface HistoryStacks<T> — Bounded past/future snapshot stacks — a serializable undo/redo record for any state `T`.
+- `HistoryStep` (interface): interface HistoryStep<T> — The snapshot an undo/redo restores plus the advanced stacks.
+- `SnapshotHistory` (interface): interface SnapshotHistory<T> — Stateful undo/redo handle over {@link HistoryStacks}, holding the stacks in a closure.
+- `canRedo` (function): function canRedo<T>(stacks: HistoryStacks<T>): boolean — True when there is an undone state to redo.
+- `canUndo` (function): function canUndo<T>(stacks: HistoryStacks<T>): boolean — True when there is a prior state to undo to.
+- `createSnapshotHistory` (function): function createSnapshotHistory<T>(limit = 100): SnapshotHistory<T> — Stateful undo/redo handle wrapping the pure snapshot functions. Call `record(state)` before each mutation; `undo`/`redo` return the state to apply. `limit` bounds the past stack.
+- `emptyHistory` (function): function emptyHistory<T>(): HistoryStacks<T> — Empty history stacks for state `T`.
+- `recordSnapshot` (function): function recordSnapshot<T>(stacks: HistoryStacks<T>, present: T, limit = 100): HistoryStacks<T> — Record `present` as the newest undo step and clear the redo future (a fresh action forks history). The oldest past entries beyond `limit` are dropped so the stack stays bounded for save/transport.
+- `redoSnapshot` (function): function redoSnapshot<T>(stacks: HistoryStacks<T>, present: T): HistoryStep<T> | null — Step forward: pop the newest future snapshot to apply as the new present, and push the given `present` back onto the past. Returns `null` when there is nothing to redo.
+- `undoSnapshot` (function): function undoSnapshot<T>(stacks: HistoryStacks<T>, present: T): HistoryStep<T> | null — Step back: pop the newest past snapshot to apply as the new present, and push the given `present` onto the future for a later redo. Returns `null` when there is nothing to undo.
 
 ## @jgengine/core/game/social
 
@@ -583,6 +599,15 @@
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
 - `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> — ⚠ undocumented
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
+
+## @jgengine/core/game/toasts
+
+- `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
+- `ToastQueue` (interface): interface ToastQueue<T = string> — Stateful transient-toast list with a size cap and time-to-live eviction.
+- `ToastQueueOptions` (interface): interface ToastQueueOptions — Options for {@link createToastQueue}.
+- `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
+- `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
+- `pruneToasts` (function): function pruneToasts<T>(toasts: readonly Toast<T>[], now: number): readonly Toast<T>[] — Drop every toast whose `expiresAt` is at or before `now`. Returns the same array when nothing expired.
 
 ## @jgengine/core/game/trade
 
@@ -941,6 +966,7 @@
 
 ## @jgengine/core/random/rng
 
+- `hashString` (function): function hashString(text: string): number — Deterministic 32-bit FNV-1a hash of a string → unsigned int. Same text, same number, on every platform — the stable seed behind per-id jitter, spread offsets, and content-addressed variation.
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 

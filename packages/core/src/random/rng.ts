@@ -1,11 +1,18 @@
-function hashSeed(seed: string | number): number {
-  const text = typeof seed === "number" ? seed.toString() : seed;
+/**
+ * Deterministic 32-bit FNV-1a hash of a string → unsigned int. Same text, same number, on every
+ * platform — the stable seed behind per-id jitter, spread offsets, and content-addressed variation.
+ */
+export function hashString(text: string): number {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < text.length; i++) {
     h ^= text.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
+}
+
+function hashSeed(seed: string | number): number {
+  return hashString(typeof seed === "number" ? seed.toString() : seed);
 }
 
 /** Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence. */

@@ -1,6 +1,19 @@
+import { seededRng } from "../random/rng";
 import type { NavGrid, NavPoint } from "../nav/navGrid";
 
 const SQRT2 = Math.SQRT2;
+
+/**
+ * Deterministic 2D offset uniformly within a disc of `radius`, stable per `id` — so a crowd converging
+ * on one target (a flank point, a rally banner, a boss) fans out to distinct spots instead of all
+ * stacking on the same coordinate. Same `id` always yields the same offset, no per-entity state to store.
+ */
+export function spreadOffset(id: string, radius: number): readonly [number, number] {
+  const rng = seededRng(id);
+  const angle = rng() * Math.PI * 2;
+  const r = Math.sqrt(rng()) * radius;
+  return [Math.cos(angle) * r, Math.sin(angle) * r];
+}
 
 export interface FlowFieldOptions {
   clearance?: number;

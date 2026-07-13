@@ -75,6 +75,18 @@ export function rotate(a: Vec2, radians: number): Vec2 {
   return [a[0] * c - a[1] * s, a[0] * s + a[1] * c];
 }
 
+/**
+ * Reflect a velocity off a surface with unit `normal`, losing energy by `restitution` (0..1). At
+ * `restitution` 1 the normal component mirrors elastically (`v − 2(v·n)n`); at 0 it is removed so the
+ * vector slides along the surface. Only the normal component is scaled — tangential motion is kept — so
+ * this is the wall/paddle/boundary bounce every arcade ball game hand-rolls.
+ */
+export function reflect(v: Vec2, normal: Vec2, restitution = 1): Vec2 {
+  const vn = v[0] * normal[0] + v[1] * normal[1];
+  const j = (1 + restitution) * vn;
+  return [v[0] - j * normal[0], v[1] - j * normal[1]];
+}
+
 /** Unit vector for a heading measured clockwise from +Y (the engine's XZ-plane convention). */
 export function fromHeading(headingRad: number): Vec2 {
   return [Math.sin(headingRad), Math.cos(headingRad)];

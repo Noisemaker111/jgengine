@@ -12,6 +12,7 @@ import {
   normalizeAngle,
   normalizeAngleDeg,
   perp,
+  reflect,
   rotate,
   scale,
   sub,
@@ -58,5 +59,20 @@ describe("vec2 angles", () => {
     expect(normalizeAngle(-Math.PI / 2)).toBeCloseTo((3 * Math.PI) / 2);
     expect(normalizeAngleDeg(-90)).toBe(270);
     expect(normalizeAngleDeg(450)).toBe(90);
+  });
+  test("reflect mirrors the normal component elastically", () => {
+    const r = reflect([1, -1], [0, 1]);
+    expect(r[0]).toBeCloseTo(1);
+    expect(r[1]).toBeCloseTo(1);
+  });
+  test("reflect with restitution 0 removes the normal component (slide)", () => {
+    const r = reflect([2, -3], [0, 1], 0);
+    expect(r[0]).toBeCloseTo(2);
+    expect(r[1]).toBeCloseTo(0);
+  });
+  test("reflect keeps tangential motion and scales bounce by restitution", () => {
+    const r = reflect([1, -1], [0, 1], 0.5);
+    expect(r[0]).toBeCloseTo(1);
+    expect(r[1]).toBeCloseTo(0.5);
   });
 });

@@ -12,6 +12,7 @@
 - `computeFlowField` (function): function computeFlowField(grid: NavGrid, goals: readonly NavPoint[], options: FlowFieldOptions = {}): FlowField — ⚠ undocumented
 - `createCrowdField` (function): function createCrowdField(grid: NavGrid): CrowdField — ⚠ undocumented
 - `selectPoi` (function): function selectPoi(pois: readonly Poi[], from: NavPoint, options: SelectPoiOptions): Poi | null — ⚠ undocumented
+- `spreadOffset` (function): function spreadOffset(id: string, radius: number): readonly [number, number] — Deterministic 2D offset uniformly within a disc of `radius`, stable per `id` — so a crowd converging on one target (a flank point, a rally banner, a boss) fans out to distinct spots instead of all stacking on the same coordinate. Same `id` always yields the same offset, no per-entity state to store.
 
 ## @jgengine/core/ai/flock
 
@@ -487,6 +488,13 @@
 - `SphereBodyOptions` (interface): interface SphereBodyOptions extends BodyCommonOptions — The radius fills all three half-extent columns, so broadphase and bounds see the sphere's enclosing AABB.
 - `cellCoord` (function): function cellCoord(value: number, min: number, cellSize: number, cells: number): number — Grid cell containing a point, clamped into the grid. Pure — exported for tests.
 - `cellIndex` (function): function cellIndex(cx: number, cy: number, cz: number, nx: number, ny: number): number — Linear cell index from clamped 3D coords. Pure — exported for tests.
+
+## @jgengine/core/physics/radialImpulse
+
+- `RadialFalloff` (type): type RadialFalloff = "linear" | "quadratic" | "none" — How a radial impulse fades from the blast center to its edge.
+- `RadialImpulse` (interface): interface RadialImpulse — A radial push: the impulse vector plus the 0..1 falloff sampled at the target.
+- `RadialImpulseOptions` (interface): interface RadialImpulseOptions — Options for {@link radialImpulse}.
+- `radialImpulse` (function): function radialImpulse(source: readonly [number, number], target: readonly [number, number], radius: number, power: number, options: RadialImpulseOptions = {}): RadialImpulse | null — Point-source radial impulse pushing a `target` away from a blast `source`: full `power` at the center fading to zero at `radius`. Returns `null` when the target sits at or beyond the radius (unaffected), so callers can early-out. At the exact center the direction is zero. This is the explosion/knockback/ shockwave push — every arena game hand-rolled the distance, falloff, and normalize.
 
 ## @jgengine/core/physics/ragdoll
 
@@ -1481,6 +1489,7 @@
 - `normalizeAngle` (function): function normalizeAngle(angleRad: number): number — Wrap an angle in radians into `[0, 2π)`.
 - `normalizeAngleDeg` (function): function normalizeAngleDeg(angleDeg: number): number — Wrap an angle in degrees into `[0, 360)`.
 - `perp` (function): function perp(a: Vec2): Vec2 — Left-hand perpendicular of `a` (rotated 90° counter-clockwise).
+- `reflect` (function): function reflect(v: Vec2, normal: Vec2, restitution = 1): Vec2 — Reflect a velocity off a surface with unit `normal`, losing energy by `restitution` (0..1). At `restitution` 1 the normal component mirrors elastically (`v − 2(v·n)n`); at 0 it is removed so the vector slides along the surface. Only the normal component is scaled — tangential motion is kept — so this is the wall/paddle/boundary bounce every arcade ball game hand-rolls.
 - `rotate` (function): function rotate(a: Vec2, radians: number): Vec2 — Rotate a 2D vector by `radians` about the origin.
 - `scale` (function): function scale(a: Vec2, s: number): Vec2 — Scale a 2D vector by a scalar.
 - `sub` (function): function sub(a: Vec2, b: Vec2): Vec2 — Difference `a - b` of two 2D vectors.
