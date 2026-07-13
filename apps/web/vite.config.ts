@@ -8,6 +8,8 @@ import viteReact from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { defineConfig, type Connect, type Plugin } from "vite";
 
+import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache";
+
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
 const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta.url));
@@ -38,12 +40,17 @@ const gamesPlayerPlugin = (): Plugin => ({
   buildStart() {
     if (gamePlayerBuilt) return;
     gamePlayerBuilt = true;
+    if (restoreFromCache()) {
+      console.log("[games-player] cache hit — Games/* unchanged, skipped rebuild");
+      return;
+    }
     const result = spawnSync("bun", ["run", "--cwd", devAppRoot, "build:site"], {
       stdio: "inherit",
     });
     if (result.status !== 0) {
       throw new Error("games-player: apps/dev build:site failed");
     }
+    saveToCache();
   },
 });
 
