@@ -4,7 +4,7 @@
 
 # jgengine
 
-**TypeScript game engine SDK** for AI agents — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent card [jgengine.com/llms.txt](https://jgengine.com/llms.txt).
+**TypeScript game engine SDK** for AI agents — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
 
 > Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is a software game engine.
 
@@ -22,7 +22,7 @@ A genre-agnostic, pure-TypeScript game engine SDK built for AI coding agents. Ag
 | [`@jgengine/convex`](packages/convex) | Convex adapters: game transport, presence transport. |
 | [`@jgengine/shell`](packages/shell) | Game player shell: R3F canvas, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
 | [`@jgengine/assets`](packages/assets) | Self-generating, license-verified index of CC0 3D models: ships the typed index + pull CLI, not the GLB bytes. |
-| [`jgengine`](packages/jgengine) | Agent-side CLI (`npx jgengine`) — create, skills, doctor, desktop, llms. **People** do not start here; they tell an agent *Make a game that … with jgengine*. |
+| [`jgengine`](packages/jgengine) | Agent-side CLI (`npx jgengine`) — create, skills, doctor, desktop. **People** do not start here; they tell an agent *Make a game that … with jgengine*. |
 
 ## Install
 
@@ -53,7 +53,7 @@ Examples: *Make a game that is Mario Party with goo characters, with jgengine* �
 
 That is the whole product surface for humans. No install checklist, no “run skills first,” no required CLI.
 
-Under the hood the agent uses `npx jgengine` (create, skills, doctor, llms) and the skills in [`.claude/skills/`](.claude/skills) — an intake router plus focused API domains. Power users may call the CLI themselves; that is optional, not the entry.
+Under the hood the agent uses `npx jgengine` (create, skills, doctor) and the skills in [`.claude/skills/`](.claude/skills) — an intake router plus focused API domains, staged into every published tarball at `skills/` so they travel with `node_modules`. Power users may call the CLI themselves; that is optional, not the entry.
 
 The game the agent builds is **its own project in its own repo/directory**, on the published npm packages. Agents must **never clone this monorepo** to build a game, and must **never copy code, assets, or content from `Games/*`** — those are private in-repo test games (some recreate well-known commercial titles for engine-gap probing), not templates, and their content is not licensed for reuse. `npx jgengine create` is the only starting point.
 

@@ -23,7 +23,7 @@
   "files": [
     "dist",
     "CHANGELOG.md",
-    "llms.txt"
+    "skills"
   ],
   "exports": {
     ".": {

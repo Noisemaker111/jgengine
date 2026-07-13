@@ -38,8 +38,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Stage the lockstep changelog into each package
         run: for p in core ws sql react convex node shell assets jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
-      - name: Stage per-package llms.txt
-        run: bun run gen-llms
+      - name: Stage per-package skills
+        run: bun run stage-skills
       - run: bun run check-artifacts
       - run: bun run build
       - run: bun run check-types

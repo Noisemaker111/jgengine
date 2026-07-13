@@ -13,7 +13,7 @@
   "files": [
     "dist",
     "CHANGELOG.md",
-    "llms.txt"
+    "skills"
   ],
   "bin": {
     "assets": "dist/cli/pull.js"
