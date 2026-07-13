@@ -73,6 +73,22 @@ Viewport: click anything to select — editor gizmos hit directly, world geometr
 
 Authoring: **+ Add** menu places markers, volumes (sphere/box/cylinder), notes, and draws paths (click points, Enter finish, Esc cancel; shift-click keeps placing). Select a path, click a vertex sphere to move/insert/delete points. `Ctrl+D` duplicates, `Ctrl+C/X/V` copy/cut/paste (system clipboard gets the JSON fragment too), `Ctrl+A` selects all visible, Delete removes, arrows/PgUp/PgDn nudge by grid step (Shift ×5), `F` frames the selection, `?` opens the shortcut sheet. Inspector edits labels, kind, display color, note text, radius/height/half-extents, and coalesces typed edits into single undo steps. **Import** loads an exported JSON back in (success/error toasts); Export downloads, `⧉` copies the JSON. Edits autosave to a per-game localStorage draft — reopening the editor offers Restore/Discard; the header shows an amber ● while the document differs from the game's authored layers. Layer visibility and snap prefs persist per game in localStorage.
 
+## Vegetation volumes — density is one slider
+
+**+ Add → Vegetation (box/circle)** places a fill area; its inspector section has an **item** field (`grass`, or any render-catalog id like a tree/bush model) and a **density /m² slider** (plus exact number, scale range, spacing, reroll seed) with a live `≈ N placements over M m²` readout. Data rides `volume.meta` in the saved scene — no new schema.
+
+Consume in the game (`@jgengine/core/world/vegetation`):
+
+```ts
+import { grassPatchesFromVegetation, resolveVegetation } from "@jgengine/core/world/vegetation";
+
+grass: grassPatchesFromVegetation(sceneDoc),          // item "grass" → shell blade patches, density = blades/m²
+for (const p of resolveVegetation(sceneDoc))          // everything else → deterministic placements
+  ctx.world.object.place(p.item, p.x, 0, p.z, { rotation: p.rotation, visual: { scale: p.scale } });
+```
+
+Same volume, same seed → same field every run; drag the slider, save, done.
+
 ## Core APIs (`editor/`)
 
 - `@jgengine/core/editor/index` — document, session, commands, undo
