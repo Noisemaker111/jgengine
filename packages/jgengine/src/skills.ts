@@ -1,4 +1,8 @@
 ﻿import { spawnSync } from "node:child_process";
+import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const SKILLS_SOURCE = "Noisemaker111/jgengine";
 
@@ -46,9 +50,29 @@ export function skillsInstallArgs(scope: SkillsScope): string[] {
   return args;
 }
 
+export function packagedSkillsDir(): string | null {
+  const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "skills");
+  return existsSync(join(dir, "jgengine", "SKILL.md")) ? dir : null;
+}
+
+export function installPackagedSkills(packaged: string, scope: SkillsScope, cwd?: string): number {
+  const base = scope === "global" ? homedir() : (cwd ?? process.cwd());
+  const target = join(base, ".claude", "skills");
+  console.log(`installing packaged agent skills into ${target}: ${GAME_SKILLS.join(", ")}…`);
+  mkdirSync(target, { recursive: true });
+  for (const skill of GAME_SKILLS) {
+    const source = join(packaged, skill);
+    if (!existsSync(join(source, "SKILL.md"))) continue;
+    cpSync(source, join(target, skill), { recursive: true });
+  }
+  return 0;
+}
+
 export function installSkills(scope: SkillsScope, cwd?: string): number {
+  const packaged = packagedSkillsDir();
+  if (packaged !== null) return installPackagedSkills(packaged, scope, cwd);
   const where = scope === "global" ? "globally" : "in this project";
-  console.log(`installing agent skills ${where}: ${GAME_SKILLS.join(", ")}…`);
+  console.log(`installing agent skills ${where} from ${SKILLS_SOURCE}: ${GAME_SKILLS.join(", ")}…`);
   const result = spawnSync("npx", skillsInstallArgs(scope), {
     stdio: "inherit",
     shell: process.platform === "win32",
@@ -66,7 +90,7 @@ export function runSkills(argv: string[]): number {
   -p, --project   install into this project (default)
   -g, --global    install for your user (every project / agent session)
 
-Installs ${GAME_SKILLS.join(", ")} from ${SKILLS_SOURCE}.
+Installs ${GAME_SKILLS.join(", ")} from the copy packaged in this CLI (fallback: ${SKILLS_SOURCE}).
 
 People do not run this. Agents use it; create already installs project skills.
 `);

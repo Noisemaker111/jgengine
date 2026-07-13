@@ -4,7 +4,7 @@ import { GAMES } from "../content/games";
 import { SKILL_SLUGS } from "../content/skills";
 import { PACKAGES, SITE_URL } from "../lib/site";
 
-const STATIC_PATHS = ["/", "/games", "/skills", "/api", "/components", "/llms.txt"];
+const STATIC_PATHS = ["/", "/games", "/skills", "/api", "/components"];
 
 function packageSlug(name: string): string {
   return name.replace(/^@jgengine\//, "");

@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -25,6 +25,10 @@ AGENT RESPONSE (you run these; do not dump this as homework for the user):
   cd Game-Name
   # intake → foundation + only needed domains → build (see jgengine skill)
 
+The game is its own project on the npm packages. NEVER clone the jgengine
+GitHub repo to build a game, and NEVER copy code/assets/content from its
+Games/* directory — those are private in-repo test games, not templates.
+
 usage: jgengine <command> [...args]
 
   create "<Game Name>"  scaffold playable base + install agent skills into the project
@@ -34,7 +38,6 @@ usage: jgengine <command> [...args]
                         [--url] [--name] [--id] [--version] [--icon] [--out] [--dry-run]
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
-  llms [package]        print packaged API docs (llms.txt) — agent-ready
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
   editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
   versions              CLI + installed @jgengine/* versions
@@ -54,28 +57,6 @@ function runVersions(): number {
     console.log(`  ${name}  declared ${range}  installed ${installed ?? "(not installed — run install)"}`);
   }
   if (declared.length === 0) console.log("  no @jgengine/* dependencies in the nearest package.json");
-  return 0;
-}
-
-function runLlms(argv: string[]): number {
-  const target = argv.find((arg) => !arg.startsWith("--")) ?? "core";
-  if (target === "jgengine") {
-    const own = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "llms.txt");
-    if (existsSync(own)) {
-      process.stdout.write(readFileSync(own, "utf8"));
-      return 0;
-    }
-    console.error("error: llms.txt not packaged in this build");
-    return 1;
-  }
-  const packageName = target.startsWith("@jgengine/") ? target : `@jgengine/${target}`;
-  const found = findUp(process.cwd(), (dir) => existsSync(join(dir, "node_modules", packageName, "llms.txt")));
-  if (found === null) {
-    console.error(`error: ${packageName}/llms.txt not found in any node_modules above ${process.cwd()}`);
-    console.error(`install the package first (bun add ${packageName}) — its llms.txt ships in the npm tarball`);
-    return 1;
-  }
-  process.stdout.write(readFileSync(join(found, "node_modules", packageName, "llms.txt"), "utf8"));
   return 0;
 }
 
@@ -117,9 +98,6 @@ switch (command) {
     break;
   case "skills":
     process.exit(runSkills(rest));
-    break;
-  case "llms":
-    process.exit(runLlms(rest));
     break;
   case "assets":
     process.exit(runAssets(rest));

@@ -408,20 +408,22 @@ const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agen
 You are in a **JGengine** game project. JGengine is a pure-TypeScript game engine SDK on npm (\`@jgengine/core\`, \`react\`, \`shell\`, …). Site: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
 
 **How people use JGengine:** they say *Make a game that … with jgengine* to an agent. They do **not** start from a CLI tutorial. \`npx jgengine\` is for **you** (scaffold, skills, docs).
-- Engine API surface: \`npx jgengine llms core\` (any package name works) prints the packaged API docs.
+
+**This project is the game.** Build here, on the \`@jgengine/*\` npm packages. Never clone the jgengine GitHub repo, and never copy code, assets, or content from its \`Games/*\` directory — those are private in-repo test games, not templates, and their content is not licensed for reuse.
+- Engine API surface: the skills ship inside every \`@jgengine/*\` tarball — read \`node_modules/@jgengine/<pkg>/skills/\` (each domain skill carries \`SKILL.md\` + a generated \`api.md\` of the full export surface).
 - Agent skills — intake router, focused API domains, browserless verify gate: installed by create; recovery via \`npx jgengine skills -p\`.
 - Setup broken or UI unstyled: \`npx jgengine doctor\`.
 
 ## What to do when the user wants this game built
 
 1. Read skills if present: \`jgengine\` (intake + routing), domain skills as needed, \`jgengine-verify\` (prove it works). They land under \`.agents/skills/\` or \`.claude/skills/\` when scaffolded via create.
-2. If skills are missing (your problem, not the user's): \`npx jgengine skills -p\` or use this file + \`npx jgengine llms core\`.
+2. If skills are missing (your problem, not the user's): \`npx jgengine skills -p\`, or read them straight from \`node_modules/@jgengine/<pkg>/skills/\`.
 3. **User-facing first reply is short** — game name, fantasy in 2–4 lines, POV (1st / 3rd / top-down / HUD-only), world kind, scale vibe. Ask a few tight questions (POV, world, multiplayer, how big). **Do not** dump file trees, catalog ids, keybind tables, or full phase plans to the user.
 4. Keep the full engineering plan (files, systems, budgets) internal. After they answer, scaffold is already here — build in phases, full game not a slice.
 
 ## Engine loaders
 
-- API docs in the tarball: \`npx jgengine llms core\` (any package: react, shell, …)
+- Skills + API docs in every tarball: \`node_modules/@jgengine/<pkg>/skills/\`
 - Doctor: \`npx jgengine doctor\`
 - Dev: \`bun dev\` / \`npm run dev\`
 - Windows installer: \`bun run desktop\` / \`npx jgengine desktop\` (or \`--url https://…\` for a hosted game)

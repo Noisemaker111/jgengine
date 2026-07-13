@@ -22,8 +22,8 @@ packages/*/src/**/*.d.ts
 packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts.map
 
-# llms.txt and the API-surface JSON are generated from packages/*/src by
-# scripts/gen-llms-txt.ts and scripts/gen-api-docs.ts (see check-llms/gen-api-docs) —
+# Packaged skills and the API-surface JSON are staged from .claude/skills and
+# packages/*/src by scripts/stage-skills.ts and scripts/gen-api-docs.ts —
 # never author or commit these by hand.
-packages/*/llms.txt
+packages/*/skills/
 apps/web/src/generated/
