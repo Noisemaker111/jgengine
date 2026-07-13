@@ -139,7 +139,7 @@ function EditorModeChip({ api, mode }: { api: EditorHostApi; mode: EditorRunMode
     <div className="pointer-events-none absolute inset-x-0 top-2 z-50 flex justify-center">
       <button
         type="button"
-        className="pointer-events-auto rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[11px] text-neutral-100 backdrop-blur hover:bg-black/90"
+        className="pointer-events-auto rounded-full border border-white/10 bg-black/70 px-4 py-1.5 text-[11px] text-neutral-100 shadow-lg shadow-black/40 backdrop-blur-md transition-colors hover:bg-black/90"
         onClick={() => api.setMode("edit")}
       >
         {mode === "play" ? "▶ Playing" : "🚶 Walking"} — back to editor (F2+E)
@@ -402,10 +402,10 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
     <div className="relative h-full w-full bg-neutral-950" data-jg-editor="1" data-jg-editor-game={gameId}>
       <GamePlayerShell playable={editorPlayable} />
       {pendingDraft !== null && mode === "edit" ? (
-        <div className="absolute left-1/2 top-14 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-950/90 px-4 py-2 text-xs text-amber-100 shadow-xl backdrop-blur">
+        <div className="absolute left-1/2 top-14 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-950/90 px-4 py-2 text-xs text-amber-100 shadow-2xl shadow-black/50 backdrop-blur-md">
           <span>Unsaved edits from a previous session found.</span>
-          <button type="button" className="rounded bg-amber-600/80 px-2 py-1 font-medium text-white hover:bg-amber-500" onClick={restoreDraft}>Restore</button>
-          <button type="button" className="rounded bg-white/10 px-2 py-1 hover:bg-white/20" onClick={discardDraft}>Discard</button>
+          <button type="button" className="rounded-md bg-gradient-to-b from-amber-500 to-amber-600 px-2.5 py-1 font-semibold text-white shadow-md shadow-amber-950/50 transition-colors hover:from-amber-400 hover:to-amber-500" onClick={restoreDraft}>Restore</button>
+          <button type="button" className="rounded-md bg-white/[0.07] px-2.5 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15" onClick={discardDraft}>Discard</button>
         </div>
       ) : null}
     </div>
