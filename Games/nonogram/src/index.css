@@ -1,11 +1,4 @@
 @import "tailwindcss";
+@import "./style.css";
 @source "../../../packages/react/src";
 @source "../../../packages/shell/src";
-
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-  background: #12161d;
-}
