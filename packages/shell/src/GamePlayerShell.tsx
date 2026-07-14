@@ -147,6 +147,7 @@ import {
   Reticle,
   WorldEntityBars,
   WorldFloatText,
+  WorldNameplates,
   WorldTelegraphs,
 } from "./world/WorldHud";
 import { WorldSpellVfx } from "./world/WorldVfx";
@@ -1956,6 +1957,17 @@ export function GamePlayerShell({
     worldBars === undefined || worldBars === true || worldBars === false
       ? undefined
       : worldBars.maxDistance;
+  const nameplates = playable.nameplates;
+  const nameplatesStatId =
+    nameplates === undefined || nameplates === false
+      ? null
+      : nameplates === true
+        ? "health"
+        : nameplates.statId ?? "health";
+  const nameplatesRoles =
+    nameplates === undefined || nameplates === true || nameplates === false ? undefined : nameplates.roles;
+  const nameplatesMaxDistance =
+    nameplates === undefined || nameplates === true || nameplates === false ? undefined : nameplates.maxDistance;
   const resolveEntityRole = (entity: SceneEntity) => playable.content.entityById?.(entity.name)?.role;
 
   const pointer: PointerConfig | undefined = playable.pointer;
@@ -2293,6 +2305,14 @@ export function GamePlayerShell({
               roles={barsRoles}
               resolveRole={resolveEntityRole}
               {...(barsMaxDistance === undefined ? {} : { maxDistance: barsMaxDistance })}
+            />
+          ) : null}
+          {nameplatesStatId !== null ? (
+            <WorldNameplates
+              statId={nameplatesStatId}
+              roles={nameplatesRoles}
+              resolveRole={resolveEntityRole}
+              {...(nameplatesMaxDistance === undefined ? {} : { maxDistance: nameplatesMaxDistance })}
             />
           ) : null}
           <WorldItems config={playable.worldItem} />

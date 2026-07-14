@@ -60,7 +60,7 @@ const objectStyles = {
 export const game = defineGame({
   capture: { play: [{ name: "class.select", input: { classId: "warrior" } }] },
   name: "World of ClaudeCraft",
-  features: { players: true, quest: true, trade: true },
+  features: { players: true, quest: true, trade: true, chat: true },
   multiplayer: ws({ authority: "server" }),
   assets,
   world,
@@ -77,6 +77,7 @@ export const game = defineGame({
   objectStyles,
   settings: { variant: "sidebar" },
   worldHealthBars: { roles: ["enemy", "hostile"], maxDistance: 60 },
+  nameplates: { maxDistance: 40 },
   postProcessing: {
     toneMapping: "aces",
     ao: { radius: 2, intensity: 1.2, distanceFalloff: 3.6, blend: 0.85 },

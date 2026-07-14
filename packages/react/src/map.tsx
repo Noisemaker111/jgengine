@@ -514,6 +514,93 @@ export function Compass({
   );
 }
 
+/** Props for `MinimapChrome` — all `MinimapProps` plus the zone-label/clock header and compass slots. */
+export interface MinimapChromeProps extends MinimapProps {
+  /** Zone/area name slot rendered in the chrome header — the game supplies its own zone lookup. */
+  zoneLabel?: ReactNode;
+  /** Clock readout slot rendered in the chrome header — pair with `useGameClock()` + `calendar()`. */
+  clock?: ReactNode;
+  /** Compass strip beneath the circle. Default true; pass `false` to omit it entirely. */
+  showCompass?: boolean;
+  compassProps?: Partial<Omit<CompassProps, "className">>;
+  headerClassName?: string;
+  zoneLabelClassName?: string;
+  clockClassName?: string;
+  compassClassName?: string;
+}
+
+/**
+ * Composed circular-minimap chrome: optional zone-label + clock header above
+ * the `Minimap`, optional `Compass` strip below. Purely a wiring layer over
+ * the existing primitives — the game supplies the zone name and clock text,
+ * this only places them; omit either slot and the header disappears.
+ *
+ * @capability minimap-chrome circular minimap with zone label, clock, and compass composed together
+ */
+export function MinimapChrome({
+  zoneLabel,
+  clock,
+  showCompass = true,
+  compassProps,
+  headerClassName,
+  zoneLabelClassName,
+  clockClassName,
+  compassClassName,
+  children,
+  ...minimapProps
+}: MinimapChromeProps): ReactNode {
+  const hasHeader = zoneLabel !== undefined || clock !== undefined;
+  return (
+    <div data-minimap-chrome>
+      {hasHeader ? (
+        <div
+          className={headerClassName}
+          data-minimap-chrome-header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            gap: 8,
+            marginBottom: 4,
+            width: minimapProps.size ?? 176,
+            color: "#e2e8f0",
+            fontFamily: "ui-sans-serif, system-ui, sans-serif",
+          }}
+        >
+          {zoneLabel !== undefined ? (
+            <span className={zoneLabelClassName} data-minimap-chrome-zone style={{ fontSize: 12, fontWeight: 700 }}>
+              {zoneLabel}
+            </span>
+          ) : (
+            <span />
+          )}
+          {clock !== undefined ? (
+            <span
+              className={clockClassName}
+              data-minimap-chrome-clock
+              style={{ fontSize: 11, color: "rgba(226,232,240,0.75)" }}
+            >
+              {clock}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      <Minimap {...minimapProps}>{children}</Minimap>
+      {showCompass ? (
+        <div className={compassClassName} data-minimap-chrome-compass style={{ marginTop: 6 }}>
+          <Compass
+            facingYaw={minimapProps.facingYaw ?? 0}
+            center={minimapProps.center}
+            markers={minimapProps.markers}
+            width={minimapProps.size ?? 176}
+            {...compassProps}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function WorldMapFogImage({
   fogCells,
   project,

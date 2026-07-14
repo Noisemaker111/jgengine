@@ -660,6 +660,15 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   hudFit?: HudViewportConfig;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the player (default 60). */
   worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
+  /**
+   * Opt in to billboarded nameplates (name + optional HP bar) floating over non-local entities — the
+   * MMO "who's this and how hurt are they" readout. `roles` restricts to entities whose catalog entry
+   * declares one of the given roles (default: all); `maxDistance` hides nameplates beyond this many
+   * world units from the player (default 40). Headless: skin every part via `className`/`data-*` hooks
+   * on `WorldNameplates` (`@jgengine/shell/world/WorldHud`) — this flag only turns the readout on and
+   * scopes which entities it covers.
+   */
+  nameplates?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. `sounds` may be sample (`url`) or procedural (`synth`); `music` holds procedural themes crossfaded via `ctx.game.audio.music(id)`. */
   audio?: {
     sounds: Record<string, SoundDef>;
