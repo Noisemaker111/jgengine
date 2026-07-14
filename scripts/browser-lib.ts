@@ -6,6 +6,57 @@ import { join, resolve } from "node:path";
 export const DEV_PORT = 4517;
 export const DEV_BASE = `http://127.0.0.1:${DEV_PORT}`;
 
+/**
+ * Fixed debug port a `--keep` launch binds to, so a later `--connect` call
+ * never has to parse the previous call's stdout to find it — the warm-loop
+ * pattern is `--keep` once, then `--connect 9223` for every re-shot.
+ */
+export const WARM_CHROME_PORT = 9223;
+
+export type Device = "desktop" | "mobile" | "mobile-landscape";
+export type DeviceProfile = { width: number; height: number; deviceScaleFactor: number; mobile: boolean };
+export type SizeMode = "full" | "half";
+
+export const DEVICES: Record<Device, DeviceProfile> = {
+  desktop: { width: 1600, height: 900, deviceScaleFactor: 1, mobile: false },
+  mobile: { width: 390, height: 844, deviceScaleFactor: 2, mobile: true },
+  "mobile-landscape": { width: 844, height: 390, deviceScaleFactor: 2, mobile: true },
+};
+
+export const MOBILE_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+
+/**
+ * Half-res mid-loop judge shots run ~1/4 the pixels of a full-res shot
+ * (both dimensions halved) — cheaper to encode and cheaper for a vision
+ * model to read back. Full-res stays the default for final/PR evidence.
+ */
+export function scaleProfile(profile: DeviceProfile, size: SizeMode): DeviceProfile {
+  if (size === "full") return profile;
+  return {
+    width: Math.round(profile.width / 2),
+    height: Math.round(profile.height / 2),
+    deviceScaleFactor: profile.deviceScaleFactor,
+    mobile: profile.mobile,
+  };
+}
+
+export async function applyDevice(session: CdpSession, device: Device, size: SizeMode = "full"): Promise<void> {
+  const profile = scaleProfile(DEVICES[device], size);
+  await session.send("Emulation.setDeviceMetricsOverride", {
+    width: profile.width,
+    height: profile.height,
+    deviceScaleFactor: profile.deviceScaleFactor,
+    mobile: profile.mobile,
+  });
+  if (profile.mobile) {
+    await session.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+    await session.send("Emulation.setUserAgentOverride", { userAgent: MOBILE_UA });
+  } else {
+    await session.send("Emulation.setTouchEmulationEnabled", { enabled: false });
+  }
+}
+
 export function findChromeExecutable(): string {
   for (const candidate of [
     process.env.CHROME_PATH,
