@@ -8,7 +8,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       { speaker: "Marco", text: "The Carmine crew took my docks. Sweep them out and the money's yours." },
       {
         choices: [
-          { label: "I'm on it.", invoke: { command: "mission.acknowledge", args: {} } },
+          { label: "I'm on it.", invoke: { command: "dialogue.close", args: {} } },
           { label: "Not yet.", invoke: null },
         ],
       },

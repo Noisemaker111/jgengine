@@ -44,6 +44,18 @@ Read [reference.md](reference.md) when building or reviewing a game interface. I
 - Ordinary rounded cards, pill buttons, generic dark modals, and dashboard grids are fallback failures, not defaults.
 - HUD numbers go through `@jgengine/core/format` — `formatDuration`/`formatDelta`/`formatOrdinal` (clocks, splits, ranks), `formatSpeed` (m/s → km/h/mph/knots), `formatDistance` (m/km) — never a hand-rolled `Math.round(x * 3.6)` or `mm:ss` string. Two games once diverged on the m/s→km/h factor (3.2 vs 3.6) because each hand-rolled its own conversion; the shared functions are the one correct table.
 
+## Dialogue panel
+
+Render talkable-NPC dialogue with `DialogueBox` (`@jgengine/react/components`) over the `features.dialogue` bridge — no per-game open/close store. `useOpenDialogueId()` returns the id `ctx.game.dialogue`/a `talkable(id)` prompt has open (or `null`); look it up in the game's dialogue catalog and pass it. Route a click with `runDialogueChoice(commands, choice, result)` (resolves the choice's invoke — honoring a skill-check `result` — runs it, else closes), or call `resolveDialogueInvoke(choice, result)` yourself for custom routing. A whole panel:
+
+```tsx
+const id = useOpenDialogueId();
+if (id === null) return null;
+return <DialogueBox dialogue={DIALOGUES[id]} onChoice={(c, r) => runDialogueChoice(commands, c, r)} className="…" />;
+```
+
+Style through `DialogueBox`'s class-name props (`speakerClassName`, `choiceClassName`, …) — it ships structure, the game ships the skin. See `jgengine-gameplay` for the `dialogues.ts` catalog shape and `features.dialogue` wiring.
+
 ## Preview states ship with the UI
 
 Every game ships `src/preview.tsx`: a static default frame plus a `states` named export (`GamePreviewStates` from `@jgengine/react/preview`) keying named UI states — `stage_1`, `game_over`, `boss_intro` — to components. The website card uses a captured real-gameplay screenshot instead, not this component. Build state entries from the game's **real UI components** with fixture snapshots (canned props/state), not redrawn lookalikes; that turns every key into a capturable render test. Capture any state instantly with `bun run shoot <game> --preview <stateKey>` — no sim, no three.js, no hang risk — and use it as the screenshot-critique loop for HUD/menu/overlay work before any full-shell `--mode ui`/`play` glance. Live-sim screens (a running match, a real store with live state) are the other capture family: declare them as `PlayableGame.capture.states` and shoot with `--state <name>` — see `jgengine-verify`.

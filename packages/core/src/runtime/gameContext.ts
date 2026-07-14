@@ -44,6 +44,7 @@ import { setGamePhase } from "../game/gamePhase";
 import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
+import { createGameDialogue, type GameDialogue } from "../game/dialogue";
 import { createQuestJournal, type QuestJournal } from "../game/quest";
 import {
   createWorldItemStore,
@@ -387,6 +388,8 @@ export interface GameContext {
     trade?: TradeSystem;
     /** Quest/mission journal — present only when `features.quest` is set. */
     quest?: QuestJournal;
+    /** Talkable-NPC dialogue open/close bridge — present only when `features.dialogue` is set. */
+    dialogue?: GameDialogue;
     /** Friends/party/presence/emotes/world-invites — present only when `features.social` is set. */
     social?: Social;
     /** Channels + messages — present only when `features.chat` is set (implies `social`). */
@@ -1241,6 +1244,21 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
 
+  const dialogue = features.dialogue ? createGameDialogue(store) : undefined;
+  if (dialogue !== undefined) {
+    commandRegistry.define("dialogue.open", {
+      apply(state, input) {
+        const id = (input as { id?: string }).id;
+        if (id !== undefined) state.game.dialogue?.open(id);
+      },
+    });
+    commandRegistry.define("dialogue.close", {
+      apply(state) {
+        state.game.dialogue?.close();
+      },
+    });
+  }
+
   const players = features.players
     ? notifyAfter(createConnectedPlayers(), ["join", "leave"], signal.notify)
     : undefined;
@@ -1521,6 +1539,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       leaderboard,
       roster,
       store,
+      dialogue,
       cards: features.cards ? { pile } : undefined,
       turn: features.turn ? { loop } : undefined,
       race: features.race ? { state: raceState } : undefined,
