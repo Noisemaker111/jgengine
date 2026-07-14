@@ -589,6 +589,8 @@
 - `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
 - `Social` (interface): interface Social — ⚠ undocumented
 - `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
+- `SocialPartySnapshot` (interface): interface SocialPartySnapshot — One party's replicated membership — id, current leader, and ordered member ids.
+- `SocialSnapshot` (interface): interface SocialSnapshot — Full friends/party/world-invite state as one serializable baseline — the host→client replication payload behind the `social` snapshot module. Presence and emotes are derived from live deps, not stored.
 - `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
 - `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
 - `WorldInvites` (interface): interface WorldInvites — ⚠ undocumented

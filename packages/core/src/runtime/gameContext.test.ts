@@ -846,7 +846,7 @@ describe("ctx.snapshot / ctx.hydrate", () => {
     expect(snap["chat"]).toBeUndefined();
   });
 
-  test("roundtrips entities, stats, store, leaderboard and chat into a fresh context", () => {
+  test("roundtrips entities, stats, store, leaderboard, chat and party into a fresh context", () => {
     const host = fullContext("user_a");
     const id = host.scene.entity.spawn("dummy", { position: [1, 0, 2] });
     host.scene.entity.stats.set(id, "health", { current: 12, max: 30, min: 0 });
@@ -854,8 +854,13 @@ describe("ctx.snapshot / ctx.hydrate", () => {
     host.game.leaderboard!.track({ stat: "kills", scope: "global" });
     host.game.leaderboard!.increment("user_a", "kills", { scope: "global", by: 3 });
     host.game.chat!.send("user_a", "global", "gg");
+    host.game.social!.party.register({ maxMembers: 4 });
+    const invite = host.game.social!.party.invite("user_a", "user_b");
+    if (!("inviteId" in invite)) throw new Error(invite.reason);
+    host.game.social!.party.accept("user_b", invite.inviteId);
 
     const snap = host.snapshot();
+    expect(snap["social"]).toBeDefined();
 
     const client = fullContext("user_b");
     const before = client.version();
@@ -869,6 +874,10 @@ describe("ctx.snapshot / ctx.hydrate", () => {
       { userId: "user_a", value: 3 },
     ]);
     expect(client.game.chat!.history("global").map((m) => m.body)).toEqual(["gg"]);
+    expect(client.game.social!.party.list("user_b")).toEqual([
+      { userId: "user_a", role: "leader" },
+      { userId: "user_b", role: "member" },
+    ]);
   });
 
   test("hydrate leaves modules whose key is absent from the snapshot untouched", () => {

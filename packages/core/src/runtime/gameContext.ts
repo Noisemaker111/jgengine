@@ -53,7 +53,7 @@ import {
   type WorldItemSpawnInput,
 } from "../game/worldItem";
 import { createChat, type Chat, type ChatSnapshot } from "../game/chat";
-import { createSocial, type Social } from "../game/social";
+import { createSocial, type Social, type SocialSnapshot } from "../game/social";
 import { createTradeSystem, type TradeField, type TradeSystem } from "../game/trade";
 import { createUnlocks, type Unlocks } from "../game/unlocks";
 import {
@@ -637,6 +637,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         ["invite", "accept", "decline"],
         signal.notify,
       ),
+      snapshot: rawSocial.snapshot,
+      hydrate: (data) => {
+        rawSocial.hydrate(data);
+        signal.notify();
+      },
     };
   }
   let chat: Chat | undefined;
@@ -1345,6 +1350,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       key: "chat",
       snapshot: () => chat.snapshot(),
       hydrate: (data) => chat.hydrate(data as ChatSnapshot),
+    });
+  }
+  if (social) {
+    const socialModule = social;
+    snapshotModules.push({
+      key: "social",
+      snapshot: () => socialModule.snapshot(),
+      hydrate: (data) => socialModule.hydrate(data as SocialSnapshot),
     });
   }
 

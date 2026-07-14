@@ -71,4 +71,42 @@ describe("resolveShellMultiplayer", () => {
     expect(result).not.toBeNull();
     expect(connectedUrl(result)).toBe("ws://localhost:8080/ws");
   });
+
+  test("p2p adapter warns loudly instead of silently shipping single-player", () => {
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (message: string) => void warnings.push(message);
+    try {
+      const game = makeGame(p2p({ room: "lobby" }));
+      expect(resolveShellMultiplayer({ game, gameId: "g5" })).toBeNull();
+    } finally {
+      console.warn = originalWarn;
+    }
+    expect(warnings.some((w) => w.includes("g5") && w.includes("p2p"))).toBe(true);
+  });
+
+  test("server-authoritative ws without a url warns and falls back", () => {
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (message: string) => void warnings.push(message);
+    try {
+      const game = makeGame(ws({ authority: "server" }));
+      expect(resolveShellMultiplayer({ game, gameId: "g6" })).toBeNull();
+    } finally {
+      console.warn = originalWarn;
+    }
+    expect(warnings.some((w) => w.includes("g6") && w.includes("authority"))).toBe(true);
+  });
+
+  test("offline stays silent — no warning", () => {
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (message: string) => void warnings.push(message);
+    try {
+      resolveShellMultiplayer({ game: makeGame(offline()), gameId: "g7" });
+    } finally {
+      console.warn = originalWarn;
+    }
+    expect(warnings).toEqual([]);
+  });
 });
