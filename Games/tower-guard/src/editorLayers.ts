@@ -9,20 +9,23 @@ const BOUNDS = { minX: -42, minZ: -42, maxX: 42, maxZ: 42 };
  * path and build plots. Consumed at runtime as `environment({ sculpt })` (so ground render + collision
  * agree) and shown in the editor as `document.terrain`.
  */
+// Gentle rolling mounds, only in the two open triangles the creep staircase never crosses
+// (upper-left and lower-right) — kept clear of the path corridor and build plots so the flat
+// path ribbon never clips through raised ground.
 function buildSculpt(): TerraformSnapshot {
   const terrain = createEditableTerrain({ bounds: BOUNDS, cellSize: 2 });
-  const mounds: readonly [number, number, number][] = [
-    [-33, -33, 2.6],
-    [33, -33, 2.4],
-    [-33, 33, 2.4],
-    [33, 33, 2.6],
-    [0, -37, 1.8],
-    [0, 37, 1.8],
-    [-38, 0, 1.6],
-    [38, 0, 1.6],
+  const mounds: readonly [number, number, number, number][] = [
+    // [cx, cz, radius, strength] — upper-left
+    [-32, 26, 11, 2.2],
+    [-18, 34, 9, 1.5],
+    [-36, 12, 8, 1.2],
+    // lower-right
+    [32, -26, 11, 2.2],
+    [18, -34, 9, 1.5],
+    [36, -12, 8, 1.2],
   ];
-  for (const [cx, cz, strength] of mounds) {
-    terrain.apply({ mode: "raise", center: [cx, cz], radius: 13, strength, falloff: "smooth" });
+  for (const [cx, cz, radius, strength] of mounds) {
+    terrain.apply({ mode: "raise", center: [cx, cz], radius, strength, falloff: "smooth" });
   }
   // migrate seeds an (empty) material layer stack so the snapshot is 2.0-shaped from the start.
   return migrateTerrainSnapshot(terrain.snapshot());
@@ -30,31 +33,26 @@ function buildSculpt(): TerraformSnapshot {
 
 export const TERRAIN_SCULPT: TerraformSnapshot = buildSculpt();
 
-/** Corner + edge foliage bands, kept off the central path so gameplay reads unchanged. */
+// Organic foliage groves in the two open triangles the creep path never crosses — irregular
+// outlines (not squared blocks) so the field reads natural, and clear of the path + build plots.
 const FOLIAGE_REGIONS: readonly (readonly [number, number][])[] = [
+  // upper-left grove
   [
-    [-42, -42],
-    [-16, -42],
-    [-16, -18],
-    [-42, -18],
-  ],
-  [
-    [16, 18],
-    [42, 18],
-    [42, 42],
-    [16, 42],
-  ],
-  [
-    [-42, 16],
-    [-18, 16],
-    [-18, 42],
+    [-42, 8],
+    [-24, 6],
+    [-12, 16],
+    [-14, 30],
+    [-24, 42],
     [-42, 42],
   ],
+  // lower-right grove
   [
-    [18, -42],
-    [42, -42],
-    [42, -18],
-    [18, -18],
+    [8, -42],
+    [24, -42],
+    [42, -30],
+    [40, -14],
+    [26, -8],
+    [12, -18],
   ],
 ];
 
@@ -73,11 +71,12 @@ export const editorLayers: EditorDocument = {
     points: points.map(([x, z]) => ({ x, y: 0, z })),
     label: "arena foliage",
     meta: {
-      density: 0.34,
-      minSpacing: 1.6,
+      density: 0.2,
+      minSpacing: 2,
       seed: `tower-guard-${index}`,
       maxSlope: 3,
-      minScale: 0.9,
+      edgeFalloff: 4,
+      minScale: 0.85,
       maxScale: 1.7,
       palette: [
         { item: "pine", weight: 3 },
