@@ -725,9 +725,9 @@
 - `DEFAULT_ORBIT_CAMERA` (const): const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig — ⚠ undocumented
 - `DirectorCameraValues` (interface): interface DirectorCameraValues — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
 - `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
@@ -765,6 +765,7 @@
 - `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented
 - `TraumaState` (interface): interface TraumaState — ⚠ undocumented
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
+- `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `addTrauma` (function): function addTrauma(state: TraumaState, amount: number): void — Add trauma (0..1) and clamp; larger hits raise the ceiling toward 1.
 - `angleDelta` (function): function angleDelta(a: number, b: number): number — Shortest signed angular delta from `a` to `b`, wrapped to (-PI, PI].
 - `applyCameraBlendStep` (function): function applyCameraBlendStep(scratch: CameraBlendScratch, camera: Camera, targetFov: number, dt: number): boolean — ⚠ undocumented
@@ -793,6 +794,7 @@
 - `observerPose` (function): function observerPose(subject: Vec3, angle: number, resolved: ResolvedObserver, fov: number): CameraPose — Detached spectator pose: orbits `subject` at a fixed distance/height, never reading player input.
 - `orbitFollowStep` (function): function orbitFollowStep(input: { state: OrbitFollowRuntimeState; desiredTarget: Vec3; deltaSeconds: number; config: ResolvedOrbitCameraConfig; dragging: boolean; }): OrbitFollowRuntimeState & { distance: number } — Pure orbit follow step — smooth target tracking, camera carries target delta (OrbitControls alone keeps camera fixed when only target moves), optional distance lock. Call each frame before OrbitControls.update() in the shell.
 - `orbitYawFromCamera` (function): function orbitYawFromCamera(cameraX: number, cameraZ: number, targetX: number, targetZ: number): number — Horizontal facing derived from an orbit camera orbiting a target on the XZ plane.
+- `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 - `resolveChase` (function): function resolveChase(config: ChaseCameraConfig | undefined): ResolvedChase — ⚠ undocumented
 - `resolveDirectedCamera` (function): function resolveDirectedCamera(director: DirectorCameraValues | undefined, staticConfig: StaticCameraValues): ResolvedDirectedCamera — Merges a `CameraDirector` runtime snapshot over the static `GameCameraConfig` (#196.2). `director` omitted, or its fields `undefined`/`null`, is a pure passthrough to `staticConfig` so mounting a director with no active override changes nothing.
 - `resolveFollowTargetFromPosition` (function): function resolveFollowTargetFromPosition(position: readonly [number, number, number], config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset">): Vec3 — ⚠ undocumented
@@ -829,14 +831,15 @@
 
 ## @jgengine/shell/camera/GameCameraRig
 
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
 - `resolveRigKind` (function): function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind — Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to least specific: an explicit `rig` field always wins; then `perspective: "first"` (the historical shorthand for `rig: "orbit" | "first"`); then the mere presence of a rig's own config block selects that rig, checked in the fixed order below (#207.8) so a config carrying more than one block resolves deterministically instead of depending on object key order. Set `rig` explicitly to break a tie.
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
 
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
+- `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 
 ## @jgengine/shell/camera/GameInspectionCamera
@@ -1241,7 +1244,7 @@
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
-- `PlayableGame` (type): type PlayableGame = EnginePlayableGame<ComponentType, ComponentType, RenderEntity, RenderObject> — ⚠ undocumented
+- `PlayableGame` (type): type PlayableGame = EnginePlayableGame< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > — ⚠ undocumented
 - `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
@@ -1266,6 +1269,10 @@
 - `ModelResolveContext` (interface): interface ModelResolveContext — ⚠ undocumented
 - `resolveModel` (function): function resolveModel(value: string | ModelConfig | undefined, assets: AssetCatalog, context?: ModelResolveContext): ModelConfig | undefined — Resolve a string asset id or a direct ModelConfig. Missing/misspelled catalog ids throw — silent generic-primitive fallback only happens when the mapping omits the key entirely (or uses tryResolveCatalogModel for optional ids).
 - `tryResolveCatalogModel` (function): function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelConfig | undefined — Soft lookup used when an object catalog id may double as a model asset id.
+
+## @jgengine/shell/render/useEntityRenderCues
+
+- `useEntityRenderCues` (function): function useEntityRenderCues(instanceId: string | undefined, tuning?: RenderCueTuning): MutableRefObject<EntityRenderCues> — Live motion + animation cues for one entity, read from a mutable ref inside your own `useFrame` — no re-render per frame, no diffing the parent group's position, no game-side module map for attack/hit timing. Backs both custom `renderEntity` rigs and a custom first-person viewmodel (#542): call it with `entity.id` / the local player's userId and drive bob/recoil/reload poses from `cuesRef.current` inside the calling component's own `useFrame`.
 
 ## @jgengine/shell/replay/useSessionRecorder
 

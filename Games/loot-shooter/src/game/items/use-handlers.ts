@@ -108,6 +108,7 @@ const fireGun: ItemUseHandler<GameContext> = {
     mag.fire(def.ammoPerShot);
     syncMagazineStat(ctx, input.from, mag);
     ctx.game.events.emit("audio.play", { sound: SOUND_IDS.fire(def.family) });
+    ctx.game.playEntityAnimation(input.from, "fire");
     kickCamera(FIRE_KICK[def.family]);
 
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };

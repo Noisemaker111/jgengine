@@ -17,6 +17,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
 
+## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
+
+- `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
+
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`

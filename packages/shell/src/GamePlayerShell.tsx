@@ -2306,7 +2306,7 @@ export function GamePlayerShell({
               hideLocalActor={firstPerson}
             />
           </CullingProvider>
-          {WorldOverlay !== undefined ? <WorldOverlay /> : null}
+          {WorldOverlay !== undefined ? <WorldOverlay ctx={ctx} /> : null}
           {barsStatId !== null ? (
             <WorldEntityBars
               statId={barsStatId}
@@ -2329,6 +2329,7 @@ export function GamePlayerShell({
             yawRef={yawRef}
             pitchRef={pitchRef}
             config={cameraConfig}
+            viewmodel={playable.viewmodel}
             pointerControls={pointerUsesLeft}
             panKeysEnabled={rtsPanKeysEnabled}
             director={ctx.camera}

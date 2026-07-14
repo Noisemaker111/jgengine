@@ -486,7 +486,7 @@
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
 - `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
-- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> — ⚠ undocumented
+- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — ⚠ undocumented
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
 - `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
@@ -497,6 +497,7 @@
 - `TurntableCameraConfig` (interface): interface TurntableCameraConfig — Turntable / showcase rig — slowly auto-orbits a fixed world point (no player input), the way a museum turntable rotates an object on display. A flat, self-describing spelling of `observer`'s point-orbit mode: `target` names the point directly instead of `bind: { kind: "point", position }`. Set `camera.turntable` and the rig is inferred — you don't also write `rig`.
 - `VoxelCollisionConfig` (interface): interface VoxelCollisionConfig — Player-vs-world collision for the first-person controller. Without this the shell keeps the player on flat ground at y=0. With `voxel: true` the shell resolves the player as a box against placed scene objects (each treated as a solid unit cell), so they stand on blocks, fall into holes, and are stopped by walls — the controller a block-building/mining game needs.
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
+- `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
 
 ## @jgengine/core/game/progression
