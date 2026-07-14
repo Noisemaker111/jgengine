@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentType } from "react"
 import type { EditorDocument, EditorLayersInput } from "@jgengine/core/editor/index";
 import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/index";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { useGameContext } from "@jgengine/react/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -328,10 +329,10 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
             </>
           );
         },
-        WorldOverlay: function EditorPlayOverlay() {
+        WorldOverlay: function EditorPlayOverlay({ ctx }: WorldOverlayProps) {
           return (
             <>
-              {BaseOverlay !== undefined ? <BaseOverlay /> : null}
+              {BaseOverlay !== undefined ? <BaseOverlay ctx={ctx} /> : null}
               <PerfProbe api={host.api} />
             </>
           );

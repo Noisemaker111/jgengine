@@ -3,6 +3,7 @@ import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 import { useEffect } from "react";
 
 import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
+import { AuctionPanel } from "./components/Auction";
 import { ClassSelect } from "./components/ClassSelect";
 import { DialoguePanel } from "./components/Dialogue";
 import { BankPanel } from "./components/Bank";
@@ -62,6 +63,7 @@ export function GameUI() {
   const dialogueOpen = useGameStore((ctx) => typeof ctx.game.store.get(`dialogue:${userId}`) === "string");
   const bankOpen = useGameStore((ctx) => ctx.game.store.get(`bank:${userId}`) === true);
   const mailOpen = useGameStore((ctx) => ctx.game.store.get(`mail:${userId}`) === true);
+  const auctionOpen = useGameStore((ctx) => ctx.game.store.get(`auction:${userId}`) === true);
   if (classId === undefined) return <ClassSelect />;
   return (
     <>
@@ -118,12 +120,14 @@ export function GameUI() {
         shopOpen ||
         dialogueOpen ||
         bankOpen ||
-        mailOpen) && (
+        mailOpen ||
+        auctionOpen) && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-4">
           {dialogueOpen && <DialoguePanel />}
           {shopOpen && <VendorPanel />}
           {bankOpen && <BankPanel />}
           {mailOpen && <MailPanel />}
+          {auctionOpen && <AuctionPanel />}
           {panel === "bags" && <BagsPanel />}
           {panel === "character" && <CharacterPanel />}
           {panel === "quests" && <QuestLogPanel />}

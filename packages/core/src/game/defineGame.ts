@@ -1,10 +1,13 @@
 import type { ActionCodesMap } from "../input/actionBindings";
 import type { GameFeedOptions } from "./feed";
+import type { GamePhase } from "./gamePhase";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
+import type { GameContext } from "../runtime/gameContext";
 import type { SaveConfig } from "../runtime/save";
 import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../scene/assetCatalog";
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
+import type { StoreHandle } from "../store/defineStore";
 import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
 
@@ -78,6 +81,33 @@ export interface GameFeatures {
   players?: boolean;
 }
 
+/**
+ * Declarative start/restart run lifecycle: the state transitions a game's run phase every genre repeats
+ * (title screen → live run → live run → title screen again), expressed as pure functions over one typed
+ * {@link StoreHandle} slot instead of hand-rolled `commands.define("start"/"restart")` glue that re-derives
+ * phase after every mutation. `start`/`restart` receive the store's own value type — the store's `TState`,
+ * never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and derives
+ * {@link GamePhase} from it via `phaseOf` in one place, so every adopting game gets identical, correct
+ * phase-sync for free.
+ *
+ * @capability lifecycle declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions
+ */
+export interface LifecycleConfig<TState = unknown> {
+  /** The store slot holding this game's run state; `start`/`restart` transform its current value. */
+  store: StoreHandle<TState>;
+  /** Pure transition into a live run. `input` is whatever the `start` command was invoked with (e.g. a chosen difficulty/tier). */
+  start(state: TState, ctx: GameContext, input?: unknown): TState;
+  /** Pure transition back into a fresh live run — same shape as `start` but never re-shows the menu first. */
+  restart(state: TState, ctx: GameContext): TState;
+  /** Derive the canonical {@link GamePhase} from the post-transition state; the runtime calls `setGamePhase` with the result. */
+  phaseOf(state: TState): GamePhase;
+  /** Override the registered command names — default `"start"`/`"restart"` — for games whose input bindings already name them differently. */
+  commands?: {
+    start?: string;
+    restart?: string;
+  };
+}
+
 /** Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems. */
 export interface GameDefinition<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
@@ -102,6 +132,8 @@ export interface GameDefinition<
   save?: SaveConfig;
   ui?: unknown;
   loop?: GameLoop<any>;
+  /** Declarative start/restart run lifecycle — see {@link LifecycleConfig}. Omitted games keep hand-rolling their own commands. */
+  lifecycle?: LifecycleConfig;
 }
 
 /** Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional. */

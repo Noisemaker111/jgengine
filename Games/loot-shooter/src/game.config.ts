@@ -14,7 +14,9 @@ import { RARITY_COLORS, ARENA_COLORS } from "./game/palette";
 import { session } from "./game/run/session";
 import { GameUI } from "./game/ui/GameUI";
 import { Arena } from "./game/world/Arena";
+import { MuzzleFlash } from "./game/world/MuzzleFlash";
 import { renderCoverObject } from "./game/world/renderObject";
+import { Viewmodel } from "./game/world/Viewmodel";
 import { clampToArena } from "./game/world/setup";
 import { loop } from "./loop";
 import { physics, world } from "./world";
@@ -79,6 +81,8 @@ export const game = defineGame({
   objectSounds,
   renderObject: renderCoverObject,
   environment: Arena,
+  viewmodel: Viewmodel,
+  WorldOverlay: MuzzleFlash,
   worldHealthBars: { roles: ["enemy"] },
   worldItem: { rarityStyle, pickupRadius: 2.6 },
   prompts,

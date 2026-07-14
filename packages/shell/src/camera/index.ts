@@ -1,5 +1,10 @@
 export { GameOrbitCamera, type CameraFollowListener, type GameOrbitCameraProps } from "./GameOrbitCamera";
-export { GameFirstPersonCamera, type GameFirstPersonCameraProps } from "./GameFirstPersonCamera";
+export {
+  GameFirstPersonCamera,
+  readFirstPersonMuzzle,
+  type GameFirstPersonCameraProps,
+  type ViewmodelProps,
+} from "./GameFirstPersonCamera";
 export { GameInspectionCamera, type GameInspectionCameraProps } from "./GameInspectionCamera";
 export { GameCameraRig, resolveRigKind, type GameCameraRigProps } from "./GameCameraRig";
 export {

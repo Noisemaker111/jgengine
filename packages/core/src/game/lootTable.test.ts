@@ -122,6 +122,51 @@ describe("lootTable", () => {
     ).toThrow();
   });
 
+  test("generate entries roll a runtime id via the injected callback", () => {
+    const registry = createLootRegistry();
+    const seen: number[] = [];
+    registry.register({
+      id: "relic_drop",
+      entries: [
+        {
+          generate: (rng) => {
+            const roll = rng();
+            seen.push(roll);
+            return `relic:charm:${Math.floor(roll * 100)}`;
+          },
+          count: 1,
+          weight: 1,
+        },
+      ],
+    });
+    expect(registry.roll("relic_drop", () => 0.42)).toEqual([{ item: "relic:charm:42", count: 1 }]);
+    expect(seen).toEqual([0.42]);
+  });
+
+  test("generate cannot combine with item or currency, and needs one of the three", () => {
+    const registry = createLootRegistry();
+    expect(() =>
+      registry.register({ id: "bad-gen-item", entries: [{ item: "gold", generate: () => "x", count: 1, weight: 1 }] }),
+    ).toThrow();
+    expect(() =>
+      registry.register({
+        id: "bad-gen-currency",
+        entries: [{ currency: "coins", generate: () => "x", count: 1, weight: 1 }],
+      }),
+    ).toThrow();
+    expect(() => registry.register({ id: "bad-none", entries: [{ count: 1, weight: 1 }] })).toThrow();
+  });
+
+  test("generate entries roll a fresh id each draw across multiple rolls", () => {
+    const registry = createLootRegistry();
+    let n = 0;
+    registry.register({ id: "multi_gen", rolls: 2, entries: [{ generate: () => `gen:${n++}`, count: 1, weight: 1 }] });
+    expect(registry.roll("multi_gen")).toEqual([
+      { item: "gen:0", count: 1 },
+      { item: "gen:1", count: 1 },
+    ]);
+  });
+
   test("grantDrops routes items and currency to their appliers", () => {
     const putItem = (itemId: string, count: number) => calls.push(["putItem", itemId, count]);
     const grantCurrency = (currencyId: string, amount: number) => calls.push(["grantCurrency", currencyId, amount]);
