@@ -484,7 +484,7 @@ function ColPanel() {
   return (
     <div className="space-y-2">
       <div className="text-[10px] text-neutral-500">
-        F2 world collision debugger · layers stay on when panel closes · zero cost when all off
+        F2+D world collision debugger · layers stay on when panel closes · zero cost when all off
       </div>
       <div className="flex gap-1">
         <button
@@ -1266,7 +1266,7 @@ export function DevtoolsOverlay({
       {tab === "tune" ? <TunePanel gameName={playable.game.name} /> : null}
       {tab === "col" ? <ColPanel /> : null}
       <div className="mt-2.5 border-t border-white/[0.06] pt-2 text-[9px] tracking-wide text-neutral-500">
-        F2 toggles · Col = collision · agents: __JG_DEVTOOLS.snapshot() · .collisionDebug
+        F2+D toggles · Col = collision · agents: __JG_DEVTOOLS.snapshot() · .collisionDebug
       </div>
     </div>
   );

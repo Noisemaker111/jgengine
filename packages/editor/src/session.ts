@@ -215,7 +215,7 @@ export function createEditorHost(options: {
             if (devtoolsGlobal?.snapshot === undefined) {
               return {
                 ok: false,
-                error: "engine devtools not mounted — open the browser editor (F2 panel) first",
+                error: "engine devtools not mounted — open the browser editor (F2+D panel) first",
               };
             }
             return { ok: true, result: { perf, report: devtoolsGlobal.snapshot() } };

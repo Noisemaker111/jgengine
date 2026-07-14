@@ -138,7 +138,7 @@ const SHORTCUTS: readonly { keys: string; action: string }[] = [
   { keys: "Enter / Esc", action: "Finish · cancel path drawing" },
   { keys: "Shift+click", action: "Multi-select · keep placing" },
   { keys: "F2+E", action: "Toggle editor ↔ play" },
-  { keys: "F2", action: "Engine devtools" },
+  { keys: "F2+D", action: "Engine devtools" },
   { keys: "?", action: "This help" },
 ];
 

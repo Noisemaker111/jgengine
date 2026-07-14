@@ -107,6 +107,7 @@ import { PostProcessing } from "./postfx/PostProcessing";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { collisionDebug } from "./devtools/collisionDebug";
 import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
+import { installAgentBridge } from "./devtools/agentBridge";
 import {
   GAME_SIM_FRAME_PRIORITY,
   GameCameraRig,
@@ -1560,6 +1561,18 @@ export function GamePlayerShell({
   );
   const devtoolsEnabled = playable.devtools !== false && !poster;
   const [devtoolsOpen, setDevtoolsOpen] = useState(false);
+  const devtoolsOpenRef = useRef(false);
+  devtoolsOpenRef.current = devtoolsOpen;
+  useEffect(
+    () =>
+      installAgentBridge({
+        playable,
+        devtoolsEnabled,
+        isDevtoolsOpen: () => devtoolsOpenRef.current,
+        setDevtoolsOpen,
+      }),
+    [playable, devtoolsEnabled],
+  );
   const [posterFrozen, setPosterFrozen] = useState(false);
   const posterSettledRef = useRef(false);
   const [ctx, setCtx] = useState<GameContext | null>(null);
@@ -1575,7 +1588,6 @@ export function GamePlayerShell({
   const pointerAxisRef = useRef<PointerAxisState | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
   const f2HeldRef = useRef(false);
-  const f2ChordedRef = useRef(false);
   const pointerService = useMemo(() => createPointerService(), []);
   const selection = useMemo(() => createSelectionSet(), [playable]);
   const [marquee, setMarquee] = useState<ScreenRect | null>(null);
@@ -1854,23 +1866,24 @@ export function GamePlayerShell({
         tabIndex={0}
         className="relative h-full w-full bg-neutral-950 outline-none"
         onKeyDown={(event) => {
-          if (event.code === "F2" && devtoolsEnabled) {
+          if (event.code === "F2") {
             event.preventDefault();
             f2HeldRef.current = true;
-            f2ChordedRef.current = false;
             return;
           }
           if (f2HeldRef.current) {
-            f2ChordedRef.current = true;
+            if (event.code === "KeyD" && devtoolsEnabled) {
+              event.preventDefault();
+              setDevtoolsOpen((current) => !current);
+            }
             return;
           }
           if (event.code === "Tab" || event.code === "Space") event.preventDefault();
           if (playControlsActive(ctx)) tracker.handleDown(event.code);
         }}
         onKeyUp={(event) => {
-          if (event.code === "F2" && devtoolsEnabled) {
+          if (event.code === "F2") {
             f2HeldRef.current = false;
-            if (!f2ChordedRef.current) setDevtoolsOpen((current) => !current);
             return;
           }
           if (playControlsActive(ctx)) tracker.handleUp(event.code);
@@ -2166,26 +2179,25 @@ export function GamePlayerShell({
         } as CSSProperties
       }
       onKeyDown={(event) => {
-        if (event.code === "F2" && devtoolsEnabled) {
+        if (event.code === "F2") {
           event.preventDefault();
           f2HeldRef.current = true;
-          f2ChordedRef.current = false;
           return;
         }
         if (f2HeldRef.current) {
-          f2ChordedRef.current = true;
+          if (event.code === "KeyD" && devtoolsEnabled) {
+            event.preventDefault();
+            document.exitPointerLock?.();
+            setDevtoolsOpen((current) => !current);
+          }
           return;
         }
         if (event.code === "Tab" || event.code === "Space") event.preventDefault();
         if (playControlsActive(ctx)) tracker.handleDown(event.code);
       }}
       onKeyUp={(event) => {
-        if (event.code === "F2" && devtoolsEnabled) {
+        if (event.code === "F2") {
           f2HeldRef.current = false;
-          if (!f2ChordedRef.current) {
-            document.exitPointerLock?.();
-            setDevtoolsOpen((current) => !current);
-          }
           return;
         }
         if (playControlsActive(ctx)) tracker.handleUp(event.code);

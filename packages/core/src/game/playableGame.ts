@@ -683,7 +683,7 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   backdrop?: BackdropConfig;
   /** Declarative post-processing chain (AO/bloom/tone-map/grade). When set, the shell mounts an EffectComposer and owns the render; absent leaves the renderer drawing directly (unchanged). */
   postProcessing?: PostProcessingConfig;
-  /** F2 debug overlay (frame/sim timing, logs, backend latency, keybinds, live tunables). On for every game by default; `false` disables the toggle. */
+  /** F2+D debug overlay (frame/sim timing, logs, backend latency, keybinds, live tunables). On for every game by default; `false` disables the toggle. */
   devtools?: boolean;
   /** Player settings menu. Auto-mounted for every game (Sound / Graphics / Gameplay / Controls); unset uses the defaults, `false` opts out. Add game-specific rows via `extra`, switch overlay/full-page via `mode`, or swap the gear for compact on-screen buttons via `surface: "quick"`. */
   settings?: GameSettingsConfig | false;

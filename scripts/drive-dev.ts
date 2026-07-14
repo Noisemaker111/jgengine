@@ -142,7 +142,12 @@ async function holdKey(session: CdpSession, code: string, holdMs: number): Promi
 async function rpc(session: CdpSession, json: string): Promise<void> {
   JSON.parse(json);
   const result = await session.send("Runtime.evaluate", {
-    expression: `JSON.stringify(globalThis.__jgengineEditorHost?.handle(${json}) ?? { ok: false, error: "no editor host on this page (use --mode editor)" })`,
+    expression: `(async () => {
+      const host = globalThis.__jgengineAgent ?? globalThis.__jgengineEditorHost;
+      if (host === undefined) return JSON.stringify({ ok: false, error: "no agent bridge or editor host on this page" });
+      return JSON.stringify(await host.handle(${json}));
+    })()`,
+    awaitPromise: true,
     returnByValue: true,
   });
   const value = (result.result as { value?: string } | undefined)?.value;
