@@ -1,34 +1,4 @@
 @import "tailwindcss";
+@import "./style.css";
 @source "../../../packages/react/src";
 @source "../../../packages/shell/src";
-
-@keyframes fadeSlide {
-  0% {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  12% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  78% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-}
-
-@keyframes craterballPulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.06);
-    opacity: 0.85;
-  }
-}

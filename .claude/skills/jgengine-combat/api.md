@@ -231,7 +231,7 @@
 - `MeterMode` (type): type MeterMode = "hold" | "reset" — ⚠ undocumented
 - `MeterTier` (interface): interface MeterTier — ⚠ undocumented
 - `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
-- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — ⚠ undocumented
+- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`.
 
 ## @jgengine/core/stats/eventMeter
 

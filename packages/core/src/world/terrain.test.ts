@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import type { TerrainMaterialMaps } from "./features";
 import { environment, island, terrain } from "./features";
 import {
   arenaField,
@@ -16,6 +17,7 @@ import {
   noiseField,
   resolveEnvironmentField,
   resolveGroundStep,
+  resolveTerrainDetail,
   resolveTerrainField,
   resolveTerrainPalette,
   sampleSlope,
@@ -505,5 +507,34 @@ describe("terrain field", () => {
     }
     expect(resolved.sampleHeight(50, 50)).toBe(7);
     expect(resolved.sampleHeight(0, 0)).toBe(0);
+  });
+
+  test("resolveTerrainDetail leaves material undefined when no texture is configured", () => {
+    const detail = resolveTerrainDetail({});
+    expect(detail.material).toBeUndefined();
+  });
+
+  test("resolveTerrainDetail passes through material maps and fills repeat/strength defaults", () => {
+    const maps: TerrainMaterialMaps = {
+      color: "/materials/grass/color.jpg",
+      normal: "/materials/grass/normal.jpg",
+      roughness: "/materials/grass/roughness.jpg",
+      ao: "/materials/grass/ao.jpg",
+      displacement: "/materials/grass/displacement.jpg",
+    };
+    const detail = resolveTerrainDetail({ material: { maps } });
+    expect(detail.material).toEqual({ maps, repeat: 4, strength: 1 });
+  });
+
+  test("resolveTerrainDetail honors explicit material repeat/strength overrides", () => {
+    const maps: TerrainMaterialMaps = {
+      color: "c",
+      normal: "n",
+      roughness: "r",
+      ao: "a",
+      displacement: "d",
+    };
+    const detail = resolveTerrainDetail({ material: { maps, repeat: 12, strength: 0.4 } });
+    expect(detail.material).toEqual({ maps, repeat: 12, strength: 0.4 });
   });
 });
