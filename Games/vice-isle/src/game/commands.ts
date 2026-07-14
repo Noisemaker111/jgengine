@@ -4,7 +4,6 @@ import { handroll } from "./handroll";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { GARAGE_POS } from "./world/districts";
 
-export const dialogueStore = defineStore<string | undefined>("vice.dialogue", undefined);
 export const shopStore = defineStore<string | undefined>("vice.shop", undefined);
 export const garageStore = defineStore<boolean | undefined>("vice.garage", undefined);
 export const startedStore = defineStore<boolean | undefined>("vice.started", undefined);
@@ -76,25 +75,6 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("exitVehicle", {
     apply(state) {
       handroll.exitVehicle(state);
-    },
-  });
-
-  ctx.game.commands.define("contact.talk", {
-    apply(state, input) {
-      const dialogue = (input as { dialogue?: string }).dialogue;
-      if (dialogue !== undefined) dialogueStore.write(state, dialogue);
-    },
-  });
-
-  ctx.game.commands.define("dialogue.close", {
-    apply(state) {
-      dialogueStore.clear(state);
-    },
-  });
-
-  ctx.game.commands.define("mission.acknowledge", {
-    apply(state) {
-      dialogueStore.clear(state);
     },
   });
 

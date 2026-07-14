@@ -20,7 +20,7 @@ const staticPrompts: readonly PositionedPrompt[] = [
     prompt: {
       radius: 4,
       display: { kind: "keybind", actionId: "interact" },
-      invoke: { name: "contact.talk", input: { dialogue: "dlg_marco" } },
+      invoke: { name: "dialogue.open", input: { id: "dlg_marco" } },
     },
   },
 ];

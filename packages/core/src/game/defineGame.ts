@@ -69,6 +69,8 @@ export interface GameFeatures {
   cards?: boolean;
   /** Turn/phase loop (`ctx.game.turn`) — turn-based games. */
   turn?: boolean;
+  /** Talkable-NPC dialogue bridge (`ctx.game.dialogue`) — auto-registers `dialogue.open`/`dialogue.close`; dialogue-driven games. */
+  dialogue?: boolean;
   /** Lap/checkpoint race state (`ctx.game.race`) — racers. */
   race?: boolean;
   /** Competitive score tracking (`ctx.game.leaderboard`) — ranked/arcade games. */

@@ -20,6 +20,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatCurrencyAmount` (function) · `import { formatCurrencyAmount } from "@jgengine/core/economy/currency"`
 
+## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
+
+- `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/game/dialogue"`
+
 ## durability — track item wear, breakage, and repair
 
 - `applyWear` (function) · `import { applyWear } from "@jgengine/core/item/durability"`
