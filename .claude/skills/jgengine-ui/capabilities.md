@@ -9,6 +9,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/format/duration"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/format/duration"`
 
+## controls-list — keybind-derived control legend that hides on touch
+
+- `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
+
 ## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
@@ -36,3 +40,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
 - `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/format/speed"`
+
+## start-screen — headless title/attract overlay the game fills and skins
+
+- `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`

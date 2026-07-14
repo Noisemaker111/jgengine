@@ -1,8 +1,8 @@
-import { useGameStore } from "@jgengine/react/hooks";
-import { RACE_STORE_KEY, type RaceSnapshot } from "../../handroll";
+import { useStore } from "@jgengine/react/store";
+import { raceStore } from "../../handroll";
 
 export function RaceHud() {
-  const race = useGameStore((ctx) => (ctx.game.store.get(RACE_STORE_KEY) as RaceSnapshot | undefined) ?? null);
+  const race = useStore(raceStore, (v) => v ?? null);
   if (race === null) return null;
   if (race.finished) {
     return (

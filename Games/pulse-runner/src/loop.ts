@@ -4,7 +4,7 @@ import type { GameLoop } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { RUNNER_CATALOG_ID, RUNNER_HOVER_OFFSET } from "./game/entities/catalog";
-import { installEngine, readEngine } from "./game/session/engineStore";
+import { engineStore } from "./game/session/engineStore";
 import { createRunnerEngine, type RunnerPhase } from "./game/session/runnerEngine";
 import { placeWorldDressing } from "./game/world/setup";
 
@@ -14,7 +14,7 @@ const RESONANCE_SHAKE_AMPLITUDE = 0.14;
 const RESONANCE_SHAKE_DECAY = 3;
 
 function requireEngine(ctx: GameContext) {
-  const engine = readEngine(ctx);
+  const engine = engineStore.peek(ctx);
   if (engine === undefined) {
     throw new Error("pulse-runner: engine not installed — onInit must run before this call");
   }
@@ -27,7 +27,7 @@ function syncPhase(ctx: GameContext, phase: RunnerPhase): void {
 
 function onInit(ctx: GameContext): void {
   const engine = createRunnerEngine();
-  installEngine(ctx, engine);
+  engineStore.write(ctx, engine);
   placeWorldDressing(ctx);
   syncPhase(ctx, "idle");
 

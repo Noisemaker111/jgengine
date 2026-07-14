@@ -1,16 +1,14 @@
 import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
-import { elapsedSecondsFor, MAX_STRIKES, type HeistState } from "../../state/heistState";
+import { elapsedSecondsFor, heistStore, MAX_STRIKES } from "../../state/heistState";
 import { mansionClockAt } from "../../schedule/mansionClock";
 
 export function DawnClockHud(): ReactNode {
   const reading = useGameStore((ctx) => {
-    const heist = ctx.game.store.get("heist") as HeistState | undefined;
-    if (heist === undefined) return null;
+    const heist = heistStore.read(ctx);
     const elapsed = elapsedSecondsFor(heist, ctx.time.now());
     return { clock: mansionClockAt(elapsed), strikes: heist.strikes, sneaking: heist.sneaking };
   });
-  if (reading === null) return null;
 
   return (
     <div className="flex flex-col items-center gap-1 rounded-b-lg border border-t-0 border-[#c9a227]/60 bg-[#0b0f1c]/85 px-5 py-2 shadow-lg">

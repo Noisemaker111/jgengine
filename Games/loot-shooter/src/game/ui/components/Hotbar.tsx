@@ -1,13 +1,14 @@
 import { SlotGrid } from "@jgengine/react/components";
 import { useDisplayProfile } from "@jgengine/react/display";
+import { useStore } from "@jgengine/react/store";
 import { itemNameById } from "../../content";
 import { weaponById } from "../../items/weapons/catalog";
 import { RARITY_COLORS } from "../../palette";
+import { selectedSlotStore } from "../../run/stores";
 import { WeaponIcon } from "./icons";
-import { useSelectedSlot } from "./useRun";
 
 export function Hotbar() {
-  const selected = useSelectedSlot();
+  const selected = useStore(selectedSlotStore);
   const { compact } = useDisplayProfile();
   const slotSize = compact ? "h-11 w-11" : "h-14 w-16";
   const iconSize = compact ? "h-5 w-8" : "h-8 w-12";

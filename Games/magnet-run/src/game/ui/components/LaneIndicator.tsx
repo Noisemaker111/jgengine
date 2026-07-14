@@ -1,10 +1,11 @@
 import { keyLabel } from "../keyLabel";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 const SURFACE_LABEL: Record<string, string> = { floor: "FLOOR", ceiling: "CEILING", train: "TRAIN ROOF" };
 
 export function LaneIndicator() {
-  const run = useRunState();
+  const run = useStore(runStore);
   return (
     <div className="flex flex-col items-center gap-1 rounded bg-[#2b2f36]/85 px-3 py-1.5 shadow-lg">
       <span className="text-[10px] font-semibold tracking-widest text-[#dfe6ee]/60">

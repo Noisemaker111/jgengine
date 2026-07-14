@@ -1,6 +1,7 @@
 import { useGame } from "@jgengine/react/hooks";
 import { keyLabel } from "../keyLabel";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -12,7 +13,7 @@ const MEDAL_COLOR: Record<string, string> = { gold: "#ffd23f", silver: "#dfe6ee"
 
 export function WinScreen() {
   const { commands } = useGame();
-  const run = useRunState();
+  const run = useStore(runStore);
   const medal = run.medal ?? "none";
 
   return (

@@ -1,11 +1,13 @@
-import { useEntityStat, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useEntityStat, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
+import { slotStore } from "../../commands";
 import { AMMO_STAT_IDS, weaponById } from "../../items/weapons/catalog";
 import { ITEM_LABELS } from "../../content";
 
 export function Hotbar() {
   const { userId } = usePlayer();
   const slots = useInventory("hotbar");
-  const selected = useGameStore((ctx) => (ctx.game.store.get("vice.slot") as number | undefined) ?? 0);
+  const selected = useStore(slotStore, (v) => v ?? 0);
   const ammo9 = useEntityStat(userId, "ammo_9mm");
   const ammoShell = useEntityStat(userId, "ammo_shell");
 

@@ -1,11 +1,11 @@
-import { useGameStore } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { POLARITY_COLOR } from "../systems/palette";
-import type { RunState } from "../systems/runState";
+import { runStore } from "../systems/runState";
 
 export function BotMesh() {
-  const run = useGameStore((ctx) => ctx.game.store.get("run") as RunState | undefined);
-  const polarity = run?.polarity ?? "red";
-  const flashing = run !== undefined && run.flipFlashUntil > run.totalElapsed;
+  const run = useStore(runStore);
+  const polarity = run.polarity;
+  const flashing = run.flipFlashUntil > run.totalElapsed;
   const color = POLARITY_COLOR[polarity];
   return (
     <group>

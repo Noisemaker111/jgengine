@@ -1,10 +1,11 @@
 import { RETRIES_PER_SECTOR } from "../../systems/sectorController";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 const TOTAL_LIVES = RETRIES_PER_SECTOR + 1;
 
 export function RetriesIndicator() {
-  const run = useRunState();
+  const run = useStore(runStore);
   const used = run.crashesInSector;
   return (
     <div className="flex flex-col items-end gap-1 rounded bg-[#2b2f36]/85 px-3 py-1.5 shadow-lg">

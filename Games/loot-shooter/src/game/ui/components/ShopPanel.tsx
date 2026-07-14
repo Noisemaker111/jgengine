@@ -1,8 +1,10 @@
 import { useEffect, type ReactNode } from "react";
-import { useCurrency, useGame, useGameStore, useInventory } from "@jgengine/react/hooks";
+import { useCurrency, useGame, useInventory } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { AMMO_LABELS, AMMO_POOLS } from "../../ammo";
 import { gearById } from "../../items/gear/catalog";
 import { AMMO_PRICES, GEAR_STOCK, MYSTERY_CRATE, stationById } from "../../objects/stations";
+import { shopOpenStore } from "../../run/stores";
 import { GrenadeIcon, MedkitIcon } from "./icons";
 
 function BuyRow({
@@ -43,7 +45,7 @@ function BuyRow({
 
 export function ShopPanel() {
   const { commands } = useGame();
-  const stationId = useGameStore((ctx) => ctx.game.store.get("shopOpen") as string | undefined);
+  const stationId = useStore(shopOpenStore);
   const scrap = useCurrency("scrap");
   const backpack = useInventory("backpack");
   const open = stationId !== undefined;

@@ -6,16 +6,15 @@ import { DOOR_DEFS } from "../../entities/doors";
 import { guardPhaseAt, guardPositionAt } from "../../schedule/guardSchedule";
 import { doorStateAt } from "../../schedule/doorSchedule";
 import { mansionClockAt, RUN_SECONDS } from "../../schedule/mansionClock";
-import { elapsedSecondsFor, type HeistState } from "../../state/heistState";
-import type { HeistUiState } from "../../uiState";
+import { elapsedSecondsFor, heistStore } from "../../state/heistState";
+import { uiStore } from "../../uiState";
 import { roomAt } from "../../mansion/floorPlan";
 
 export function SchedulePanel(): ReactNode {
   const { commands } = useGame();
   const data = useGameStore((ctx) => {
-    const heist = ctx.game.store.get("heist") as HeistState | undefined;
-    const ui = ctx.game.store.get("ui") as HeistUiState | undefined;
-    if (heist === undefined || ui === undefined) return null;
+    const heist = heistStore.read(ctx);
+    const ui = uiStore.read(ctx);
     if (!ui.scheduleOpen) return null;
     const liveElapsed = elapsedSecondsFor(heist, ctx.time.now());
     const t = ui.scrubT ?? liveElapsed;
