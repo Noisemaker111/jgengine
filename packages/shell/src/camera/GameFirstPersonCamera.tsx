@@ -1,10 +1,12 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, type MutableRefObject } from "react";
+import { useEffect, useRef, type ComponentType, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
 import { DEFAULT_EYE_HEIGHT } from "@jgengine/core/combat/shotOrigin";
+import type { EntityRenderCues } from "@jgengine/core/combat/renderCues";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
+import { useEntityRenderCues } from "../render/useEntityRenderCues";
 import { usePlayerFov } from "./PlayerFov";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 
@@ -25,11 +27,18 @@ export function readFirstPersonMuzzle(target: THREE.Vector3): boolean {
   return true;
 }
 
+/** Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state. */
+export interface ViewmodelProps {
+  cuesRef: MutableRefObject<EntityRenderCues>;
+}
+
 export interface GameFirstPersonCameraProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
   config?: FirstPersonCameraConfig;
   followEntityId?: string;
+  /** Custom viewmodel component replacing the built-in three-mesh gun, rendered inside the same camera-locked, muzzle-tracked anchor. Ignored when `config.viewmodel === false`. */
+  viewmodel?: ComponentType<ViewmodelProps>;
 }
 
 export function GameFirstPersonCamera({
@@ -37,6 +46,7 @@ export function GameFirstPersonCamera({
   pitchRef,
   config,
   followEntityId,
+  viewmodel,
 }: GameFirstPersonCameraProps) {
   const eyeHeight = config?.eyeHeight ?? DEFAULT_EYE_HEIGHT;
   const sensitivity = config?.sensitivity ?? DEFAULT_SENSITIVITY;
@@ -48,6 +58,7 @@ export function GameFirstPersonCamera({
   const domElement = useThree((state) => state.gl.domElement);
   const followId = followEntityId ?? userId;
   const seededRef = useRef(false);
+  const cuesRef = useEntityRenderCues(followId);
 
   useEffect(() => {
     const requestLock = () => {
@@ -94,10 +105,18 @@ export function GameFirstPersonCamera({
   }, ORBIT_CAMERA_FRAME_PRIORITY);
 
   if (config?.viewmodel === false) return null;
-  return <FirstPersonViewmodel camera={camera} />;
+  return <FirstPersonViewmodel camera={camera} viewmodel={viewmodel} cuesRef={cuesRef} />;
 }
 
-function FirstPersonViewmodel({ camera }: { camera: THREE.Camera }) {
+function FirstPersonViewmodel({
+  camera,
+  viewmodel: Viewmodel,
+  cuesRef,
+}: {
+  camera: THREE.Camera;
+  viewmodel: ComponentType<ViewmodelProps> | undefined;
+  cuesRef: MutableRefObject<EntityRenderCues>;
+}) {
   const groupRef = useRef<THREE.Group>(null);
   useEffect(() => () => {
     muzzleTracked = false;
@@ -113,6 +132,13 @@ function FirstPersonViewmodel({ camera }: { camera: THREE.Camera }) {
     muzzleWorld.copy(MUZZLE_OFFSET).applyQuaternion(camera.quaternion).add(camera.position);
     muzzleTracked = true;
   }, GAME_SIM_FRAME_PRIORITY);
+  if (Viewmodel !== undefined) {
+    return (
+      <group ref={groupRef}>
+        <Viewmodel cuesRef={cuesRef} />
+      </group>
+    );
+  }
   return (
     <group ref={groupRef}>
       <mesh position={[0, 0, -0.22]}>

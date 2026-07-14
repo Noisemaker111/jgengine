@@ -179,6 +179,20 @@
 - `RegenShieldConfig` (interface): interface RegenShieldConfig — Tuning for `createRegenShield`: pool size, refill rate, and the post-damage grace period.
 - `createRegenShield` (function): function createRegenShield(config: RegenShieldConfig): RegenShield — Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
 
+## @jgengine/core/combat/renderCues
+
+- `DEFAULT_CYCLES_PER_UNIT` (const): const DEFAULT_CYCLES_PER_UNIT: 0.6 — Default `RenderCueTuning.cyclesPerUnit`.
+- `DEFAULT_FIRE_PULSE_SECONDS` (const): const DEFAULT_FIRE_PULSE_SECONDS: 0.12 — Default `RenderCueTuning.firePulseSeconds`.
+- `DEFAULT_HIT_PULSE_SECONDS` (const): const DEFAULT_HIT_PULSE_SECONDS: 0.2 — Default `RenderCueTuning.hitPulseSeconds`.
+- `DEFAULT_RECOIL_DECAY_PER_SECOND` (const): const DEFAULT_RECOIL_DECAY_PER_SECOND: 6 — Default `RenderCueTuning.recoilDecayPerSecond`.
+- `DEFAULT_RENDER_CUES` (const): const DEFAULT_RENDER_CUES: Readonly<EntityRenderCues> — Neutral starting cue set: idle, unarmed, undamaged.
+- `EntityRenderCues` (interface): interface EntityRenderCues — Per-entity render cues: the motion/animation signal a custom `renderEntity` or first-person viewmodel component needs to drive gait, muzzle flash, reload poses, and hit reactions — without diffing the parent group's position itself or reading a game-side module map for attack timing.
+- `RenderCueTuning` (interface): interface RenderCueTuning — Tuning knobs for `advanceMotionCues` / `useEntityRenderCues`; every field has a default, override only what a weapon/rig's feel needs to differ.
+- `advanceMotionCues` (function): function advanceMotionCues(cues: EntityRenderCues, speed: number, dt: number, tuning?: RenderCueTuning): EntityRenderCues — Advances `bobPhase` and decays `recoil` from a live `speed` sample (e.g. `groundSpeed(entity)`); leaves event-driven fields untouched.
+- `applyRenderAnimationEvent` (function): function applyRenderAnimationEvent(cues: EntityRenderCues, event: string): EntityRenderCues — Applies a `entity.animation` event (`"fire"` / `"reload"` / `"reloadEnd"`, or any game-defined name) to the cue set. Unknown event names are a no-op.
+- `applyRenderDeathEvent` (function): function applyRenderDeathEvent(cues: EntityRenderCues): EntityRenderCues — Marks the cue set dead after `entity.died`; sticky for the lifetime of the render component.
+- `applyRenderHitEvent` (function): function applyRenderHitEvent(cues: EntityRenderCues): EntityRenderCues — Marks a `combat.hitReaction` pulse; the caller clears `hit` again after its own pulse window.
+
 ## @jgengine/core/combat/resistance
 
 - `ResistVerdict` (type): type ResistVerdict = "immune" | "resist" | "normal" | "vulnerable" — ⚠ undocumented

@@ -13,6 +13,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
 
+## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
+
+- `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`

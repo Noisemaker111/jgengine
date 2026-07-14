@@ -1143,7 +1143,6 @@
   "@jgengine/shell/camera/GameCameraRig#GameCameraRig",
   "@jgengine/shell/camera/GameCameraRig#resolveRigKind",
   "@jgengine/shell/camera/GameFirstPersonCamera#GameFirstPersonCamera",
-  "@jgengine/shell/camera/GameFirstPersonCamera#readFirstPersonMuzzle",
   "@jgengine/shell/camera/GameInspectionCamera#GameInspectionCamera",
   "@jgengine/shell/camera/GameOrbitCamera#GameOrbitCamera",
   "@jgengine/shell/camera/GameOrbitCamera#seedOrbitCameraTarget",

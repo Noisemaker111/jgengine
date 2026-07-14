@@ -44,6 +44,7 @@ const fireGun: ItemUseHandler<GameContext> = {
     lastFiredAt.set(gateKey, nowMs + def.weapon.fireIntervalMs);
     ctx.scene.entity.stats.delta(input.from, statId, -def.ammoPerShot);
     ctx.game.events.emit("audio.play", { sound: SOUND_IDS.fire(def.family) });
+    ctx.game.playEntityAnimation(input.from, "fire");
     kickCamera(FIRE_KICK[def.family]);
 
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
