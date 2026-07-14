@@ -16,6 +16,7 @@ import {
   relativeBearing,
   unprojectFromMinimap,
   type Cardinal,
+  type MinimapView,
   type WorldXZ,
 } from "@jgengine/core/world/minimap";
 import {
@@ -385,6 +386,110 @@ export function Minimap({
   );
 }
 
+/** One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`. */
+export interface MinimapChromeMarker {
+  id: string;
+  position: WorldXZ | readonly [number, number, number];
+  /** Bearing (radians) to draw an arrow instead of a dot — pass `headingToBearing(yaw)` for the player/other facing blips. */
+  heading?: number;
+  color?: string;
+  radius?: number;
+  glyph?: string;
+  glyphColor?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+  /** Clamp to the minimap edge when outside `view.worldRadius` (off-screen indicator); `false` hides it instead. Default `true`. */
+  clampToEdge?: boolean;
+}
+
+/** Props for `MinimapChrome`. */
+export interface MinimapChromeProps {
+  /** Shared with `projectToMinimap`/`clampToMinimapEdge` — pass `view.rotate` to keep a rotating map's arrows pointed correctly. */
+  view: MinimapView;
+  /** Ring outline (+ `cardinalLabel`). Default `false` — most games draw their own frame/panel around the chrome. */
+  frame?: boolean;
+  frameColor?: string;
+  frameStrokeWidth?: number;
+  /** Label drawn at the top of the ring when `frame` is on; `false` omits it. */
+  cardinalLabel?: string | false;
+  markers?: readonly MinimapChromeMarker[];
+  markerColor?: string;
+  markerRadius?: number;
+  className?: string;
+}
+
+/**
+ * Headless minimap chrome — nests inside a game's own `<svg>`: an optional
+ * ring frame, and edge-clamped marker dots that draw as directional arrows
+ * when a marker carries a `heading` (the compass-arrow / player-blip layer
+ * ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`).
+ * Renders a bare `<g>` — no background, panel, or title; compose your own
+ * content layer (routes, zones, terrain) as sibling SVG nodes for full control
+ * of z-order, or call `MinimapChrome` twice (once for `frame`, again for
+ * `markers`) to sandwich custom content between the ring and the blips.
+ *
+ * @capability minimap-chrome ring frame plus edge-clamped, heading-aware marker dots to nest inside a game's own `<svg>`
+ */
+export function MinimapChrome({
+  view,
+  frame = false,
+  frameColor = "rgba(148,163,184,0.4)",
+  frameStrokeWidth = 1.5,
+  cardinalLabel = "N",
+  markers = [],
+  markerColor = "#e2e8f0",
+  markerRadius = 5,
+  className,
+}: MinimapChromeProps): ReactNode {
+  const half = view.size / 2;
+  const rotate = view.rotate ?? 0;
+  return (
+    <g className={className} data-minimap-chrome>
+      {frame ? (
+        <>
+          <circle cx={half} cy={half} r={half - 1} fill="none" stroke={frameColor} strokeWidth={frameStrokeWidth} />
+          {cardinalLabel !== false ? (
+            <text x={half} y={13} textAnchor="middle" fontSize={11} fill={frameColor} style={{ fontWeight: 700 }}>
+              {cardinalLabel}
+            </text>
+          ) : null}
+        </>
+      ) : null}
+      {markers.map((marker) => {
+        const projected = projectToMinimap(marker.position, view);
+        const clamp = marker.clampToEdge ?? true;
+        if (!projected.inside && !clamp) return null;
+        const at = projected.inside ? projected : clampToMinimapEdge(projected, view.size);
+        const color = marker.color ?? markerColor;
+        const radius = marker.radius ?? markerRadius;
+        if (marker.heading !== undefined) {
+          const deg = (marker.heading - rotate) * (180 / Math.PI);
+          return (
+            <g key={marker.id} data-minimap-marker={marker.id} transform={`translate(${at.x} ${at.y}) rotate(${deg})`}>
+              <path
+                d={`M0,${-radius} L${radius * 0.7},${radius * 0.8} L0,${radius * 0.35} L${-radius * 0.7},${radius * 0.8} Z`}
+                fill={color}
+                stroke={marker.strokeColor ?? "rgba(0,0,0,0.6)"}
+                strokeWidth={marker.strokeWidth ?? 0.75}
+              />
+            </g>
+          );
+        }
+        return (
+          <g key={marker.id} data-minimap-marker={marker.id}>
+            <circle cx={at.x} cy={at.y} r={radius} fill={color} stroke={marker.strokeColor} strokeWidth={marker.strokeWidth} />
+            {marker.glyph !== undefined ? (
+              <text x={at.x} y={at.y + 3.5} textAnchor="middle" fontSize={10} fill={marker.glyphColor ?? "#0f172a"} style={{ fontWeight: 700 }}>
+                {marker.glyph}
+              </text>
+            ) : null}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
 const NO_SUBSCRIBE = (): (() => void) => () => undefined;
 const NULL_CELLS = (): null => null;
 const EMPTY_MARKERS_VALUE: readonly MapMarker[] = [];
@@ -514,8 +619,8 @@ export function Compass({
   );
 }
 
-/** Props for `MinimapChrome` — all `MinimapProps` plus the zone-label/clock header and compass slots. */
-export interface MinimapChromeProps extends MinimapProps {
+/** Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots. */
+export interface MinimapPanelProps extends MinimapProps {
   /** Zone/area name slot rendered in the chrome header — the game supplies its own zone lookup. */
   zoneLabel?: ReactNode;
   /** Clock readout slot rendered in the chrome header — pair with `useGameClock()` + `calendar()`. */
@@ -535,9 +640,9 @@ export interface MinimapChromeProps extends MinimapProps {
  * the existing primitives — the game supplies the zone name and clock text,
  * this only places them; omit either slot and the header disappears.
  *
- * @capability minimap-chrome circular minimap with zone label, clock, and compass composed together
+ * @capability minimap-panel circular minimap with zone label, clock, and compass composed together
  */
-export function MinimapChrome({
+export function MinimapPanel({
   zoneLabel,
   clock,
   showCompass = true,
@@ -548,7 +653,7 @@ export function MinimapChrome({
   compassClassName,
   children,
   ...minimapProps
-}: MinimapChromeProps): ReactNode {
+}: MinimapPanelProps): ReactNode {
   const hasHeader = zoneLabel !== undefined || clock !== undefined;
   return (
     <div data-minimap-chrome>

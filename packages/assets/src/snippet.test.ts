@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { componentInstallUrl } from "./registry";
-import { componentWiringSnippet, iconWiringSnippet, modelWiringSnippet } from "./snippet";
+import { componentWiringSnippet, iconWiringSnippet, materialWiringSnippet, modelWiringSnippet } from "./snippet";
 
 describe("componentInstallUrl", () => {
   test("builds the shadcn registry url", () => {
@@ -28,5 +28,13 @@ describe("wiring snippets", () => {
     expect(snippet).toContain("game-icon");
     expect(snippet).toContain("GameIcon");
     expect(snippet).toContain('"sword"');
+  });
+
+  test("material snippet resolves the catalog and wires both the terrain and model texture seams", () => {
+    const snippet = materialWiringSnippet("material/grass");
+    expect(snippet).toContain("buildMaterialCatalog");
+    expect(snippet).toContain("material/grass");
+    expect(snippet).toContain("terrain({ detail: { material:");
+    expect(snippet).toContain("material: { maps: material.maps }");
   });
 });

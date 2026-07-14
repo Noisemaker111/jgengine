@@ -1,4 +1,5 @@
 import type { LootEntry, LootTableDef } from "@jgengine/core/game/lootTable";
+import { rollRelicDrop } from "../../items/relics/catalog";
 import { RARITY_TIERS, weapons, type Rarity } from "../../items/weapons/catalog";
 
 interface TierProfile {
@@ -10,6 +11,7 @@ interface TierProfile {
   weaponWeight: number;
   rarityFloor: Rarity;
   rolls: number;
+  relicWeight?: number;
 }
 
 const TIER_PROFILES: readonly TierProfile[] = [
@@ -42,6 +44,7 @@ const TIER_PROFILES: readonly TierProfile[] = [
     weaponWeight: 52,
     rarityFloor: "rare",
     rolls: 2,
+    relicWeight: 6,
   },
   {
     id: "drops_boss",
@@ -52,6 +55,7 @@ const TIER_PROFILES: readonly TierProfile[] = [
     weaponWeight: 70,
     rarityFloor: "epic",
     rolls: 3,
+    relicWeight: 12,
   },
 ];
 
@@ -90,6 +94,11 @@ function medkitEntries(profile: TierProfile): LootEntry[] {
   return [{ item: id, count: 1, weight: profile.medkitWeight }];
 }
 
+function relicEntries(profile: TierProfile): LootEntry[] {
+  if (profile.relicWeight === undefined || profile.relicWeight <= 0) return [];
+  return [{ generate: rollRelicDrop, count: 1, weight: profile.relicWeight }];
+}
+
 function buildTable(profile: TierProfile): LootTableDef {
   return {
     id: profile.id,
@@ -99,6 +108,7 @@ function buildTable(profile: TierProfile): LootTableDef {
       ...ammoEntries(profile),
       ...medkitEntries(profile),
       ...weaponEntries(profile),
+      ...relicEntries(profile),
     ],
   };
 }

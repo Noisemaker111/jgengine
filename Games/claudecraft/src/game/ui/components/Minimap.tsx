@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MinimapChrome } from "@jgengine/react/map";
+import { MinimapPanel } from "@jgengine/react/map";
 import { useGameClock } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { createMarkerSet } from "@jgengine/core/world/markers";
@@ -63,7 +63,7 @@ export function Minimap() {
   if (player === null) return null;
 
   return (
-    <MinimapChrome
+    <MinimapPanel
       markers={markers}
       center={[player.position[0], player.position[2]]}
       worldRadius={46}

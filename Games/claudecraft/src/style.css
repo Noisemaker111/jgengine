@@ -1,0 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&family=Alegreya:wght@400;500&display=swap");
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #08080d;
+}
+
+:root {
+  --wcc-font-display: "Cinzel", "Palatino Linotype", Palatino, Georgia, serif;
+  --wcc-font-ui: "Alegreya Sans", "Segoe UI", system-ui, "Helvetica Neue", sans-serif;
+  --wcc-gold: #ffd100;
+  --wcc-gold-dim: #c8a838;
+  --wcc-border: #6f5a2a;
+  --wcc-panel-bg: linear-gradient(170deg, #15151ff2 0%, #0b0b12f2 60%, #08080df2 100%);
+  --wcc-text-light: #f0ebd8;
+  --wcc-text-muted: #998d6a;
+  --wcc-hp: #1eb838;
+  --wcc-mana: #2b7bd4;
+  --wcc-rage: #c0392b;
+  --wcc-energy: #e4c531;
+  --wcc-hostile: #ff6b5e;
+  --wcc-friendly: #9fdc7f;
+}
+
+#root {
+  font-family: var(--wcc-font-ui);
+}
+
+.wcc-panel {
+  background: var(--wcc-panel-bg);
+  border: 2px solid var(--wcc-border);
+  outline: 1px solid #000;
+  border-radius: 6px;
+  box-shadow:
+    0 2px 16px #000c,
+    inset 0 0 24px #0006,
+    inset 0 1px 0 #ffffff14;
+  color: var(--wcc-text-light);
+}
+
+.wcc-title {
+  font-family: var(--wcc-font-display);
+  color: var(--wcc-gold);
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 2px #000;
+}
+
+.wcc-btn {
+  background: linear-gradient(#8a3326, #5a1d12 55%, #471409);
+  color: #ffd9a0;
+  border: 1px solid #aa8866;
+  outline: 1px solid #000;
+  border-radius: 4px;
+  text-shadow: 1px 1px 1px #000;
+  box-shadow:
+    inset 0 1px 0 #ffffff2a,
+    0 2px 4px #0008;
+}
+.wcc-btn:hover {
+  filter: brightness(1.25);
+  box-shadow:
+    inset 0 1px 0 #ffffff2a,
+    0 2px 4px #0008,
+    0 0 8px #ffd10055;
+}
+.wcc-btn:active {
+  transform: translateY(1px);
+}
+.wcc-btn:disabled {
+  filter: grayscale(1) brightness(0.7);
+}
+
+.wcc-slot {
+  border: 2px solid #4a3d1d;
+  border-radius: 6px;
+  background: radial-gradient(circle at 35% 30%, #2c2c3a, #15151f);
+  box-shadow:
+    inset 0 1px 0 #ffffff18,
+    0 2px 4px #0009;
+}
+.wcc-slot:hover {
+  border-color: var(--wcc-gold);
+}
+
+.wcc-bar-rail {
+  background: #1a1a1a;
+  border: 1px solid #000;
+}

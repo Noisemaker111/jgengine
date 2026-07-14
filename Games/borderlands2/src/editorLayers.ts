@@ -292,6 +292,8 @@ export function buildBorderlands2EditorLayers(): EditorDocument {
     volumes: [...zoneVolumes(), ...bossRangeVolumes(), ...travelDiscoverVolumes(), ...poi.volumes],
     paths: routePaths(),
     annotations: [],
+    prefabs: [],
+    collections: [],
   };
 }
 

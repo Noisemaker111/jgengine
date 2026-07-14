@@ -1,43 +1,71 @@
 import { describe, expect, test } from "bun:test";
-import { CAR_TUNINGS, stepCar, type CarState } from "./handroll";
+import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
-const flat = () => 0;
+import { game } from "../game.config";
+import { loop } from "../loop";
+import { content } from "./content";
+import { createHandroll } from "./handroll";
 
-describe("handroll car controller", () => {
-  test("accelerates forward under throttle", () => {
-    const state: CarState = { x: 0, z: 0, heading: 0, vx: 0, vz: 0 };
-    const tuning = CAR_TUNINGS.car_muscle!;
-    let pose = stepCar(state, tuning, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }, 1 / 60, flat);
-    for (let i = 0; i < 120; i += 1) {
-      pose = stepCar(state, tuning, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }, 1 / 60, flat);
-    }
-    expect(pose.speedKmh).toBeGreaterThan(30);
-    expect(state.z).toBeGreaterThan(5);
+const HERO = "hero-test";
+const STEP = 1 / 60;
+
+function boot(): GameContext {
+  const ctx = createGameContext({ definition: game.game, content, player: { userId: HERO, isNew: true } });
+  loop.onInit(ctx);
+  loop.onNewPlayer(ctx);
+  return ctx;
+}
+
+describe("handroll drivable-vehicle adoption", () => {
+  test("entering a vehicle freezes the rider and points the camera at it, exiting reverses both", () => {
+    const ctx = boot();
+    const handroll = createHandroll();
+    ctx.scene.entity.spawn("car_compact", { id: "car_1", position: [10, 0, 10], role: "prop" });
+
+    handroll.enterVehicle(ctx, "car_1");
+    expect(handroll.drivingVehicleId()).toBe("car_1");
+    expect(ctx.camera.followedEntityId()).toBe("car_1");
+    expect(ctx.scene.entity.get(HERO)?.movement.frozen).toBe(true);
+
+    handroll.exitVehicle(ctx);
+    expect(handroll.drivingVehicleId()).toBeNull();
+    expect(ctx.camera.followedEntityId()).toBe(HERO);
+    expect(ctx.scene.entity.get(HERO)?.movement.frozen).toBe(false);
   });
 
-  test("steering turns the heading only with speed", () => {
-    const parked: CarState = { x: 0, z: 0, heading: 0, vx: 0, vz: 0 };
-    const tuning = CAR_TUNINGS.car_sport!;
-    stepCar(parked, tuning, { throttle: 0, brake: 0, steer: 1, handbrake: 0 }, 1 / 60, flat);
-    expect(Math.abs(parked.heading)).toBeLessThan(0.01);
+  test("throttle drives the vehicle entity forward over several ticks", () => {
+    const ctx = boot();
+    const handroll = createHandroll();
+    ctx.scene.entity.spawn("car_muscle", { id: "car_2", position: [0, 0, 0], rotationY: 0, role: "prop" });
+    handroll.enterVehicle(ctx, "car_2");
 
-    const moving: CarState = { x: 0, z: 0, heading: 0, vx: 0, vz: 12 };
-    for (let i = 0; i < 60; i += 1) {
-      stepCar(moving, tuning, { throttle: 1, brake: 0, steer: 1, handbrake: 0 }, 1 / 60, flat);
-    }
-    expect(Math.abs(moving.heading)).toBeGreaterThan(0.5);
+    ctx.input.publish(["moveForward"]);
+    for (let i = 0; i < 120; i += 1) handroll.tick(ctx, STEP);
+
+    const vehicle = ctx.scene.entity.get("car_2")!;
+    expect(Math.hypot(vehicle.position[0], vehicle.position[2])).toBeGreaterThan(5);
+    expect(handroll.carSpeedKmh()).toBeGreaterThan(0);
   });
 
-  test("brake reverses from standstill and world bounds clamp", () => {
-    const state: CarState = { x: 0, z: 0, heading: 0, vx: 0, vz: 0 };
-    const tuning = CAR_TUNINGS.car_compact!;
-    for (let i = 0; i < 120; i += 1) {
-      stepCar(state, tuning, { throttle: 0, brake: 1, steer: 0, handbrake: 0 }, 1 / 60, flat);
-    }
-    expect(state.z).toBeLessThan(-1);
+  test("witnessed heat gains escalate stars, unwitnessed gains do not", () => {
+    const ctx = boot();
+    const handroll = createHandroll();
 
-    const runaway: CarState = { x: 0, z: 299, heading: 0, vx: 0, vz: 60 };
-    stepCar(runaway, tuning, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }, 1, flat);
-    expect(runaway.z).toBeLessThanOrEqual(300);
+    handroll.addHeat(ctx, 250);
+    handroll.tick(ctx, STEP);
+    expect(handroll.wanted().stars).toBe(2);
+    expect(handroll.wanted().peakStars).toBe(2);
+  });
+
+  test("clearWanted resets heat and stars", () => {
+    const ctx = boot();
+    const handroll = createHandroll();
+    handroll.addHeat(ctx, 150);
+    handroll.tick(ctx, STEP);
+    expect(handroll.wanted().stars).toBeGreaterThan(0);
+
+    handroll.clearWanted(ctx);
+    expect(handroll.wanted().stars).toBe(0);
+    expect(handroll.wanted().heat).toBe(0);
   });
 });

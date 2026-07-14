@@ -3,16 +3,16 @@ import { describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { buildStartingDeck, cardTypeOf } from "./cards";
-import { combat, scaleDamage } from "./combat";
+import { combatHandle, scaleDamage, type CombatStore } from "./combat";
 import { content } from "./content";
 import { ENCOUNTERS, ENEMY_ID, intentForEncounter } from "./enemy";
 import { game } from "../game.config";
 import { onInit, onNewPlayer } from "../loop";
-import { run } from "./run";
+import { runHandle, type RunStore } from "./run";
 
 const HERO = "hero-test";
 
-function boot(): GameContext {
+function boot(): { ctx: GameContext; combat: CombatStore; run: RunStore } {
   const ctx = createGameContext({
     definition: game.game,
     content,
@@ -20,10 +20,10 @@ function boot(): GameContext {
   });
   onInit(ctx);
   onNewPlayer(ctx);
-  return ctx;
+  return { ctx, combat: combatHandle.read(ctx), run: runHandle.read(ctx) };
 }
 
-function totalCards(): number {
+function totalCards(combat: CombatStore): number {
   const snap = combat.getSnapshot();
   return snap.hand.length + snap.deckCount + snap.discardCount + snap.exhaustCount;
 }
@@ -65,7 +65,7 @@ describe("spire-cards status math", () => {
 
 describe("spire-cards combat", () => {
   test("opening state is populated and conserved", () => {
-    boot();
+    const { combat } = boot();
     const snap = combat.getSnapshot();
     expect(snap.phase).toBe("player");
     expect(snap.hero.maxHp).toBe(72);
@@ -77,22 +77,22 @@ describe("spire-cards combat", () => {
     expect(snap.deckCount).toBe(8);
     expect(snap.energy).toEqual({ current: 3, max: 3 });
     expect(snap.intent).toEqual({ kind: "attack", value: 9, hits: undefined });
-    expect(totalCards()).toBe(13);
+    expect(totalCards(combat)).toBe(13);
   });
 
   test("playing a card spends energy and conserves the deck", () => {
-    const ctx = boot();
+    const { ctx, combat } = boot();
     const before = combat.getSnapshot();
     const affordable = before.hand.find((entry) => combat.canPlay(entry.id) === null);
     expect(affordable).toBeDefined();
     ctx.game.commands.run("playCard", { cardId: affordable!.id });
     const after = combat.getSnapshot();
     expect(after.energy.current).toBeLessThan(before.energy.current);
-    expect(totalCards()).toBe(13);
+    expect(totalCards(combat)).toBe(13);
   });
 
   test("block absorbs damage before health via the receive order", () => {
-    const ctx = boot();
+    const { ctx } = boot();
     ctx.scene.entity.stats.set(ENEMY_ID, "block", { current: 5 });
     ctx.scene.entity.effect({ from: HERO, to: ENEMY_ID, effect: "strike", via: { amount: 8 } });
     expect(ctx.scene.entity.stats.get(ENEMY_ID, "block")?.current).toBe(0);
@@ -100,18 +100,18 @@ describe("spire-cards combat", () => {
   });
 
   test("ending the turn resolves the enemy intent and advances the round", () => {
-    const ctx = boot();
+    const { ctx, combat } = boot();
     ctx.game.commands.run("endTurn", {});
     const snap = combat.getSnapshot();
     expect(snap.phase).toBe("player");
     expect(snap.round).toBe(2);
     expect(snap.hero.hp).toBeLessThan(72);
     expect(snap.hand.length).toBe(5);
-    expect(totalCards()).toBe(13);
+    expect(totalCards(combat)).toBe(13);
   });
 
   test("reducing enemy health to zero wins the combat", () => {
-    const ctx = boot();
+    const { ctx, combat } = boot();
     killEnemy(ctx);
     expect(combat.getSnapshot().phase).toBe("won");
   });
@@ -119,7 +119,7 @@ describe("spire-cards combat", () => {
 
 describe("spire-cards run progression", () => {
   test("winning a non-final encounter offers a card reward drawn from non-starter cards", () => {
-    const ctx = boot();
+    const { ctx, run } = boot();
     killEnemy(ctx);
     const snap = run.getSnapshot();
     expect(snap.phase).toBe("reward");
@@ -133,12 +133,12 @@ describe("spire-cards run progression", () => {
   });
 
   test("choosing a reward adds the card to the deck and starts the next encounter", () => {
-    const ctx = boot();
+    const { ctx, combat, run } = boot();
     killEnemy(ctx);
-    const before = totalCards();
+    const before = totalCards(combat);
     const picked = run.getSnapshot().rewardOptions[0]!;
     run.chooseReward(ctx, picked.type);
-    expect(totalCards()).toBe(before + 1);
+    expect(totalCards(combat)).toBe(before + 1);
     const snap = run.getSnapshot();
     expect(snap.phase).toBe("combat");
     expect(snap.encounterIndex).toBe(1);
@@ -148,16 +148,16 @@ describe("spire-cards run progression", () => {
   });
 
   test("skipping a reward advances the run without growing the deck", () => {
-    const ctx = boot();
+    const { ctx, combat, run } = boot();
     killEnemy(ctx);
-    const before = totalCards();
+    const before = totalCards(combat);
     run.skipReward(ctx);
-    expect(totalCards()).toBe(before);
+    expect(totalCards(combat)).toBe(before);
     expect(run.getSnapshot().encounterIndex).toBe(1);
   });
 
   test("the hero keeps hp carried across encounters instead of healing on win", () => {
-    const ctx = boot();
+    const { ctx, combat, run } = boot();
     ctx.game.commands.run("endTurn", {});
     const hpAfterHit = combat.getSnapshot().hero.hp;
     expect(hpAfterHit).toBeLessThan(72);
@@ -167,7 +167,7 @@ describe("spire-cards run progression", () => {
   });
 
   test("clearing every encounter wins the run", () => {
-    const ctx = boot();
+    const { ctx, run } = boot();
     for (let i = 0; i < ENCOUNTERS.length; i += 1) {
       killEnemy(ctx);
       if (i < ENCOUNTERS.length - 1) {
@@ -179,19 +179,19 @@ describe("spire-cards run progression", () => {
   });
 
   test("hero defeat ends the run in defeat", () => {
-    const ctx = boot();
+    const { ctx, combat, run } = boot();
     ctx.scene.entity.effect({ from: ENEMY_ID, to: HERO, effect: "strike", via: { amount: 999 } });
     expect(run.getSnapshot().phase).toBe("defeat");
     expect(combat.getSnapshot().phase).toBe("lost");
   });
 
   test("starting a new run resets the deck to the 13-card starter recipe", () => {
-    const ctx = boot();
+    const { ctx, combat, run } = boot();
     killEnemy(ctx);
     run.chooseReward(ctx, run.getSnapshot().rewardOptions[0]!.type);
-    expect(totalCards()).toBe(14);
+    expect(totalCards(combat)).toBe(14);
     run.start(ctx);
-    expect(totalCards()).toBe(13);
+    expect(totalCards(combat)).toBe(13);
     expect(run.getSnapshot().encounterIndex).toBe(0);
     expect(run.getSnapshot().phase).toBe("combat");
   });
@@ -199,7 +199,7 @@ describe("spire-cards run progression", () => {
 
 describe("spire-cards enemy roster", () => {
   test("cultist telegraphs a strength buff then applies Weak to the hero on schedule", () => {
-    const ctx = boot();
+    const { ctx, combat, run } = boot();
     killEnemy(ctx);
     run.skipReward(ctx);
     expect(combat.getSnapshot().enemy.name).toBe("Cultist");
@@ -208,7 +208,7 @@ describe("spire-cards enemy roster", () => {
   });
 
   test("jaw worm's multi-hit attack strikes twice for the intent amount", () => {
-    const ctx = boot();
+    const { ctx, combat, run } = boot();
     killEnemy(ctx);
     run.skipReward(ctx);
     killEnemy(ctx);
@@ -226,12 +226,12 @@ describe("spire-cards enemy roster", () => {
 
 describe("spire-cards reward cards", () => {
   test("exhaust cards move to the exhaust zone instead of discard when played", () => {
-    const ctx = boot();
+    const { ctx, combat, run } = boot();
     killEnemy(ctx);
-    run.chooseReward(ctx, "battle_trance");
+    run.chooseReward(ctx, "impervious");
     let played = false;
     for (let i = 0; i < 3 && !played; i += 1) {
-      const found = combat.getSnapshot().hand.find((entry) => entry.card.type === "battle_trance");
+      const found = combat.getSnapshot().hand.find((entry) => entry.card.type === "impervious");
       if (found === undefined) {
         ctx.game.commands.run("endTurn", {});
         continue;

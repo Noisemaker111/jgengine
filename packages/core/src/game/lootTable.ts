@@ -1,7 +1,15 @@
-/** One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds. */
+/** One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds. */
 export interface LootEntry {
   item?: string;
   currency?: string;
+  /**
+   * Roll a procedurally generated item instead of a static catalog id (a rolled unique gun, an
+   * affixed relic) — invoked with the roll's rng and returning the generated item's runtime id, the
+   * one `content.itemById` and inventories treat exactly like a static id (#536.1). Compose it with
+   * `item/itemInstanceRegistry`'s `proceduralLootEntry` over any procedural roller (e.g. `item/affix`'s
+   * `createAffixRoller`).
+   */
+  generate?: (rng: () => number) => string;
   count: number | [number, number];
   /** Relative pick weight — required in `"weighted"` mode, forbidden in `"independent"` mode. */
   weight?: number;
@@ -36,10 +44,11 @@ export interface LootRegistry {
 }
 
 function assertValidEntry(entry: LootEntry, mode: "weighted" | "independent"): void {
-  const hasItem = entry.item !== undefined;
-  const hasCurrency = entry.currency !== undefined;
-  if (hasItem === hasCurrency) {
-    throw new Error("loot entry must have exactly one of item or currency");
+  const kinds = [entry.item !== undefined, entry.currency !== undefined, entry.generate !== undefined].filter(
+    Boolean,
+  ).length;
+  if (kinds !== 1) {
+    throw new Error("loot entry must have exactly one of item, currency, or generate");
   }
   if (mode === "weighted") {
     if (entry.chance !== undefined) {
@@ -83,6 +92,7 @@ function pickEntry(entries: LootEntry[], rng: () => number): LootEntry {
 
 function rollEntry(entry: LootEntry, rng: () => number): Drop {
   const count = resolveCount(entry.count, rng);
+  if (entry.generate !== undefined) return { item: entry.generate(rng), count };
   return entry.item !== undefined ? { item: entry.item, count } : { currency: entry.currency, count };
 }
 
