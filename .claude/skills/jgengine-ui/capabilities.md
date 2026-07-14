@@ -33,6 +33,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Minimap` (function) · `import { Minimap } from "@jgengine/react"`
 
+## minimap-chrome — ring frame plus edge-clamped, heading-aware marker dots to nest inside a game's own `<svg>`
+
+- `MinimapChrome` (function) · `import { MinimapChrome } from "@jgengine/react"`
+
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/format/duration"`
