@@ -69,15 +69,25 @@ function onInit(ctx: GameContext): void {
   });
 }
 
+function poseRunner(ctx: GameContext, laneX: number, worldZ: number, dt?: number): void {
+  const groundY = ctx.world.groundHeightAt(laneX, worldZ);
+  ctx.scene.entity.bind("runner").sync(
+    [
+      {
+        id: ctx.player.userId,
+        kind: RUNNER_CATALOG_ID,
+        position: [laneX, groundY + RUNNER_HOVER_OFFSET, worldZ],
+        role: "player",
+      },
+    ],
+    dt,
+  );
+}
+
 function onNewPlayer(ctx: GameContext): void {
   const engine = requireEngine(ctx);
   const snapshot = engine.snapshot();
-  const groundY = ctx.world.groundHeightAt(snapshot.laneX, snapshot.worldZ);
-  ctx.scene.entity.spawn(RUNNER_CATALOG_ID, {
-    id: ctx.player.userId,
-    position: [snapshot.laneX, groundY + RUNNER_HOVER_OFFSET, snapshot.worldZ],
-    role: "player",
-  });
+  poseRunner(ctx, snapshot.laneX, snapshot.worldZ);
 }
 
 function onTick(ctx: GameContext, dt: number): void {
@@ -85,11 +95,7 @@ function onTick(ctx: GameContext, dt: number): void {
   engine.tick(dt);
   const snapshot = engine.snapshot();
   syncPhase(ctx, snapshot.phase);
-  const groundY = ctx.world.groundHeightAt(snapshot.laneX, snapshot.worldZ);
-  ctx.scene.entity.setPose(ctx.player.userId, {
-    position: [snapshot.laneX, groundY + RUNNER_HOVER_OFFSET, snapshot.worldZ],
-    dt,
-  });
+  poseRunner(ctx, snapshot.laneX, snapshot.worldZ, dt);
   for (const event of engine.drainEvents()) {
     if (event.kind === "beat") cameraShake(BEAT_SHAKE_AMPLITUDE, BEAT_SHAKE_DECAY);
     if (event.kind === "resonanceStart") cameraShake(RESONANCE_SHAKE_AMPLITUDE, RESONANCE_SHAKE_DECAY);

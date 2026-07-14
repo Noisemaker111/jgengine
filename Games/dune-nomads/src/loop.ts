@@ -5,6 +5,9 @@ import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
+import type { BodySnapshot } from "@jgengine/core/scene/bodyBind";
+
+import { CAMEL_LEAD_KIND, CAMEL_PACK_KIND, CAMEL_RIVAL_KIND } from "./game/entities/kinds";
 import { PACK_ENTITY_IDS, placeDuneProps, spawnCaravan } from "./game/world/setup";
 import { RIVAL_WAYPOINTS, WIND_SCHEDULE } from "./game/run/deps";
 import { CARAVAN_RACE_TRACK, CARAVAN_WIN_CONDITION, PLAYER_RACER_ID, RIVAL_RACER_ID } from "./game/race/track";
@@ -134,11 +137,15 @@ export function onTick(ctx: GameContext, dt: number): void {
   });
 
   const playerY = terrainField.sampleHeight(next.player.x, next.player.z);
-  ctx.scene.entity.setPose(ctx.player.userId, {
-    position: [next.player.x, playerY, next.player.z],
-    rotationY: next.player.heading,
-    dt,
-  });
+  const bodies: BodySnapshot[] = [
+    {
+      id: ctx.player.userId,
+      kind: CAMEL_LEAD_KIND,
+      position: [next.player.x, playerY, next.player.z],
+      rotationY: next.player.heading,
+      role: "player",
+    },
+  ];
 
   for (let index = 0; index < PACK_ENTITY_IDS.length; index += 1) {
     const id = PACK_ENTITY_IDS[index]!;
@@ -147,15 +154,19 @@ export function onTick(ctx: GameContext, dt: number): void {
     const fallback = ctx.scene.entity.get(id)?.rotationY ?? next.player.heading;
     const heading = headingFromDelta(follower.x - previous.x, follower.z - previous.z, fallback);
     const y = terrainField.sampleHeight(follower.x, follower.z);
-    ctx.scene.entity.setPose(id, { position: [follower.x, y, follower.z], rotationY: heading, dt });
+    bodies.push({ id, kind: CAMEL_PACK_KIND, position: [follower.x, y, follower.z], rotationY: heading, role: "npc" });
   }
 
   const rivalY = terrainField.sampleHeight(next.rival.position[0], next.rival.position[2]);
-  ctx.scene.entity.setPose(RIVAL_RACER_ID, {
+  bodies.push({
+    id: RIVAL_RACER_ID,
+    kind: CAMEL_RIVAL_KIND,
     position: [next.rival.position[0], rivalY, next.rival.position[2]],
     rotationY: next.rival.heading,
-    dt,
+    role: "npc",
   });
+
+  ctx.scene.entity.bind("caravan").sync(bodies, dt);
 
   if (next.phase === "playing") {
     const raceEngine = raceEngineStore.read(ctx);

@@ -49,11 +49,10 @@ export function onInit(ctx: GameContext): void {
 }
 
 export function onNewPlayer(ctx: GameContext): void {
-  ctx.scene.entity.despawn(ctx.player.userId);
-  ctx.scene.entity.spawn(KART_PLAYER_ENTITY, { id: ctx.player.userId, position: [0, 0, 4], role: "player" });
-
-  ctx.scene.entity.despawn(COMPACTOR_ENTITY);
-  ctx.scene.entity.spawn(COMPACTOR_ENTITY, { id: COMPACTOR_ENTITY, position: [0, 0, -35], role: "prop" });
+  ctx.scene.entity.bind("racers").sync([
+    { id: ctx.player.userId, kind: KART_PLAYER_ENTITY, position: [0, 0, 4], role: "player" },
+    { id: COMPACTOR_ENTITY, kind: COMPACTOR_ENTITY, position: [0, 0, -35], role: "prop" },
+  ]);
 }
 
 export function onTick(ctx: GameContext, dt: number): void {
@@ -75,15 +74,18 @@ export function onTick(ctx: GameContext, dt: number): void {
   const snapshot = session.snapshot();
   if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
 
-  ctx.scene.entity.setPose(ctx.player.userId, {
-    position: snapshot.pose.position,
-    rotationY: snapshot.pose.heading,
+  ctx.scene.entity.bind("racers").sync(
+    [
+      { id: ctx.player.userId, kind: KART_PLAYER_ENTITY, position: snapshot.pose.position, rotationY: snapshot.pose.heading, role: "player" },
+      {
+        id: COMPACTOR_ENTITY,
+        kind: COMPACTOR_ENTITY,
+        position: [0, ctx.world.groundHeightAt(0, snapshot.compactorZ), snapshot.compactorZ],
+        role: "prop",
+      },
+    ],
     dt,
-  });
-  ctx.scene.entity.setPose(COMPACTOR_ENTITY, {
-    position: [0, ctx.world.groundHeightAt(0, snapshot.compactorZ), snapshot.compactorZ],
-    dt,
-  });
+  );
 
   syncPickupMarkers(ctx, snapshot.collectedIds, world.removedMarkers);
   syncCompactorRow(ctx, snapshot.compactorZ, world.propRows, world.cursor);

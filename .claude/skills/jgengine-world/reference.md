@@ -118,6 +118,16 @@ Five primitives layer a driving/racing game over the physics sim and `world/wate
     racePlacements(event.ranking, { winningPlaces: 3 });    // podium = wins
     ```
 
+### Sim-snapshot → scene-entity pose bind
+
+`ctx.scene.entity.bind(key)` (`scene/bodyBind`, `createBodyBind`) replaces a hand-written per-tick `setPose` loop plus its `despawn`/`spawn` respawn dance: call `bind(key).sync(bodies, dt?)` once a tick with every sim body's current snapshot (`{ id, kind, position, rotationY?, rotationX?, rotationZ?, role?, meta? }`, `kind` = catalog entity name, read only the first time an `id` appears). An `id` seen for the first time spawns from its `kind`; one already bound gets posed (`dt` derives velocity the same as a direct `setPose`); a previously-bound `id` absent from this tick's `bodies` is despawned — a dying/leaving sim body just stops appearing in the iterable, no explicit `despawn` call. `bind` is lazily keyed (one bind per swarm/roster the game tracks — a player+rivals racing pack, a wave of enemies, a vehicle pool), so unrelated scene entities are untouched. `drone-derby`, `wreckway`, `dune-nomads`, `neon-shepherd`, and `pulse-runner` drive their racer/caravan/creature-swarm poses this way.
+```ts
+ctx.scene.entity.bind("racers").sync(
+  [{ id: ctx.player.userId, kind: KART_PLAYER_ENTITY, position, rotationY, role: "player" }],
+  dt,
+);
+```
+
 ### Spawn placement
 
 `spawn(catalogId, { id?, position | anchor, offset?, parentSpace?, group? })` â€” anchor `{ kind: "entity" | "zone", id }` with offset `{ radius, pattern }` or `{ xyz }`. Catalog supplies movement/model; no behaviors on spawn.

@@ -592,6 +592,15 @@
 - `talkable` (function): function talkable(dialogueId: string): PromptableBehavior — ⚠ undocumented
 - `wander` (function): function wander({ radius }: { radius: number }): WanderBehavior — ⚠ undocumented
 
+## @jgengine/core/scene/bodyBind
+
+- `BodyBind` (interface): interface BodyBind — The lazily-keyed handle `ctx.scene.entity.bind(key)` returns.
+- `BodyBindDeps` (interface): interface BodyBindDeps — Structural entity-store seam a {@link BodyBind} mirrors onto — satisfied by `ctx.scene.entity` itself.
+- `BodyBindPose` (interface): interface BodyBindPose — The pose a {@link BodyBindDeps.setPose} call receives for an id already bound.
+- `BodyBindSpawnInput` (interface): interface BodyBindSpawnInput — The options a {@link BodyBindDeps.spawn} call receives for an id seen for the first time.
+- `BodySnapshot` (interface): interface BodySnapshot — One sim body's per-tick pose, as the game's simulation computed it — the shape a game already builds to hand to `setPose`, just declared instead of imperatively pushed. `kind` is the entity catalog name used only the first time `id` is seen (a respawn/despawn never re-reads it).
+- `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
+
 ## @jgengine/core/scene/captureCheck
 
 - `CaptureCheckInput` (interface): interface CaptureCheckInput — ⚠ undocumented

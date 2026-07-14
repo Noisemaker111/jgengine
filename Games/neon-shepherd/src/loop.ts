@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
+import type { BodySnapshot } from "@jgengine/core/scene/bodyBind";
 import { CREATURE_RADIUS, PARK_Z, SANCTUARY_Z } from "./game/constants";
 import { TIERS, isTierId, type TierId } from "./game/difficulty/tiers";
 import { SHEPHERD_ENTITY_ID } from "./game/entities/shepherd/catalog";
@@ -148,6 +149,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   const nextCreatures: Record<string, CreaturePos> = {};
   const extinguishedThisTick: string[] = [];
   let extinguishRoadIndex: number | null = null;
+  const aliveBodies: BodySnapshot[] = [];
 
   for (const creature of stepped) {
     if (!creature.alive) {
@@ -168,30 +170,36 @@ export function onTick(ctx: GameContext, dt: number): void {
     }
     if (hit) {
       extinguishedThisTick.push(creature.id);
-      ctx.scene.entity.despawn(creature.id);
       nextCreatures[creature.id] = { ...creature, alive: false, vx: 0, vz: 0 };
     } else {
       nextCreatures[creature.id] = creature;
-      ctx.scene.entity.setPose(creature.id, {
+      aliveBodies.push({
+        id: creature.id,
+        kind: creature.id,
         position: [creature.x, ctx.world.groundHeightAt(creature.x, creature.z), creature.z],
-        dt,
+        role: "npc",
       });
     }
   }
+  ctx.scene.entity.bind("creatures").sync(aliveBodies, dt);
 
   if (run.phase === "playing") {
+    const vehicleBodies: BodySnapshot[] = [];
     for (const road of ROADS) {
       road.lanes.forEach((lane, laneIndex) => {
         const id = vehicleEntityId(road.id, laneIndex);
         const x = laneVehicleX(lane, tier, t);
         const pose = x === null ? { x: 9999, z: road.z } : { x, z: road.z + lane.laneOffsetZ };
-        ctx.scene.entity.setPose(id, {
+        vehicleBodies.push({
+          id,
+          kind: lane.vehicle,
           position: [pose.x, ctx.world.groundHeightAt(pose.x, pose.z), pose.z],
           rotationY: lane.direction > 0 ? Math.PI / 2 : -Math.PI / 2,
-          dt,
+          role: "prop",
         });
       });
     }
+    ctx.scene.entity.bind("vehicles").sync(vehicleBodies, dt);
   }
 
   let nextRun: RunState = { ...run, creatures: nextCreatures, strayBase: nextStrayBase, hold: nextHold };
