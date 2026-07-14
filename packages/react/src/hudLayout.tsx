@@ -17,6 +17,7 @@ import {
   anchoredPlacement,
   createHudLayout,
   isPanelDraggable,
+  registerActiveHudLayout,
   type HudAnchor,
   type HudLayoutStore,
   type HudSize,
@@ -258,6 +259,7 @@ export function HudCanvas({
     [layout, regions, compact],
   );
   const editing = useEngineState(layout).editing;
+  useEffect(() => registerActiveHudLayout(layout), [layout]);
   const chordEnabled = editChord !== false;
   const hold = editChord === false ? undefined : (editChord?.hold ?? "F2");
   const press = editChord === false ? undefined : (editChord?.press ?? "KeyC");

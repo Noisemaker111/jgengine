@@ -355,6 +355,15 @@ function DevApp({ gameId }: { gameId: string }) {
   const [editorSummoned, setEditorSummoned] = useState(false);
   useEffect(() => {
     if (MODE !== "play") return;
+    const summon = () => setEditorSummoned(true);
+    (window as { __jgengineSummonEditor?: () => void }).__jgengineSummonEditor = summon;
+    return () => {
+      const host = window as { __jgengineSummonEditor?: () => void };
+      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
+    };
+  }, []);
+  useEffect(() => {
+    if (MODE !== "play") return;
     let f2Held = false;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code === "F2") {

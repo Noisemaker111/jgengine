@@ -17,7 +17,7 @@ bun run dev:runner
 # http://localhost:<port>/?game=vice-isle&mode=editor
 ```
 
-The editor ships everywhere as a **lazy chunk** — production `/play` (and the public `/games/<id>` pages) download it only when summoned with F2+E or `?mode=editor`. In the dev runner, **Save (Ctrl+S)** writes the scene straight to `Games/<id>/src/editor.scene.json` through the dev server's `/__jgengine/save` endpoint; the file auto-loads on the next editor open as an overlay (same-id objects win over the game's derived `editorLayers`, new objects append) and is plain JSON a game can import as runtime data. Fold long-lived edits back into source tables when they stabilize. Outside the dev server (production pages) the Save button hides and Export JSON remains the only exit. The F2 Tune tab has the same seam: **Save to source** rewrites changed tunable literals directly in `Games/<id>/src/*.ts`.
+The editor ships everywhere as a **lazy chunk** — production `/play` (and the public `/games/<id>` pages) download it only when summoned with F2+E or `?mode=editor`. In the dev runner, **Save (Ctrl+S)** writes the scene straight to `Games/<id>/src/editor.scene.json` through the dev server's `/__jgengine/save` endpoint; the file auto-loads on the next editor open as an overlay (same-id objects win over the game's derived `editorLayers`, new objects append) and is plain JSON a game can import as runtime data. Fold long-lived edits back into source tables when they stabilize. Outside the dev server (production pages) the Save button hides and Export JSON remains the only exit. The F2+D Tune tab has the same seam: **Save to source** rewrites changed tunable literals directly in `Games/<id>/src/*.ts`.
 
 ## Modes: edit · walk · play
 
@@ -25,12 +25,12 @@ The editor ships everywhere as a **lazy chunk** — production `/play` (and the 
 - **walk** — frozen sim, the game's own camera/movement; roam the world with markers drawn in place.
 - **play** — the real game (loop, HUD, camera) with a floating exit chip.
 
-Toolbar buttons, `F2+E` (edit ↔ play, same chord family as F2 devtools), chip/F2+E returns to edit, or RPC: `{ method: "set_mode", mode: "play" }`. The editor session (document, undo, selection) survives mode switches. **F2+E summons the editor from any running `mode=play` game** — dev runner or the website's `/games/<id>` pages, dev and production alike, no URL change needed.
+Toolbar buttons, `F2+E` (edit ↔ play, same chord family as F2+D devtools), chip/F2+E returns to edit, or RPC: `{ method: "set_mode", mode: "play" }`. The editor session (document, undo, selection) survives mode switches. **F2+E summons the editor from any running `mode=play` game** — dev runner or the website's `/games/<id>` pages, dev and production alike, no URL change needed.
 
 ## Perf: the editor measures itself
 
 - Toolbar shows a live `fps · draws · tris` pill (red under 30fps).
-- `F2` opens the engine devtools panel — sim phase bars name the exact lag culprit.
+- `F2+D` opens the engine devtools panel (debug mode) — sim phase bars name the exact lag culprit.
 - Agents: `{ method: "editor_status" }` includes a `perf` sample and current `mode`; `{ method: "perf_report" }` returns the devtools snapshot (fps, sim phases, culprit hints). Never guess at lag — pull the report.
 
 ## Game opt-in (optional, thin)
@@ -42,6 +42,26 @@ export { editorLayers } from "./editorLayers";
 ```
 
 `editorLayers` returns an `EditorDocument` (markers, volumes, paths). Live entities from `onInit` still render without it.
+
+## The F2 chord family — three modes, all agent-usable headless
+
+- **F2+D — debug mode**: engine devtools overlay (Perf/Tune/Logs/Net/Keys/Col). A plain F2 tap does nothing; F2 is only the chord holder.
+- **F2+C — canvas mode**: HUD layout editing — drag `HudPanel`s live (`HudCanvas` `editChord`).
+- **F2+E — editor mode**: this scene editor.
+
+Agents never need a user-launched server: `bun run drive` boots the dev server **and** headless Chromium itself, and every `GamePlayerShell` page installs `window.__jgengineAgent` — one RPC surface covering all three modes (`--rpc` prefers it, falls back to the raw editor host). Unknown verbs delegate to the live editor host, so all editor verbs below work through it too.
+
+```
+bun run drive <id> --rpc '{"method":"agent_status"}'                    # which modes are live
+bun run drive <id> --rpc '{"method":"debug_snapshot"}'                  # lean perf/logs/tunables report
+bun run drive <id> --rpc '{"method":"debug_report"}'                    # full devtools snapshot
+bun run drive <id> --rpc '{"method":"canvas_state"}'                    # HUD panels + placements
+bun run drive <id> --rpc '{"method":"canvas_move_panel","id":"minimap","anchor":"top-right"}' --shot hud
+bun run drive <id> --rpc '{"method":"editor_summon"}' --wait 2000 --rpc '{"method":"scene_summary"}'
+bun run drive <id> --mode editor --rpc '{"method":"set_transform","id":"boss","x":-90,"z":-650}' --rpc '{"method":"export_document"}'
+```
+
+Canvas verbs: `canvas_state`, `canvas_set_editing {editing}`, `canvas_move_panel {id, anchor, dx?, dy?}`, `canvas_reset {id?}`. Debug verbs: `debug_open {open?}`, `debug_snapshot`, `debug_report`. Editor extras: `save_scene` writes the live document to `Games/<id>/src/editor.scene.json` through the dev-server save endpoint — the headless Ctrl+S. Menu-gated games: `--click`/`--key` steps first, then RPC. For pure document edits without WebGL, use the headless CLI below.
 
 ## Agent RPC (same verbs as UI)
 

@@ -172,6 +172,21 @@ function parseSerialized(raw: string): Map<string, HudPlacement> {
   return out;
 }
 
+const activeHudLayouts = new Set<HudLayoutStore>();
+
+/** @internal Agent bridge seam — HudCanvas registers its store while mounted so headless drivers can reach canvas mode. */
+export function registerActiveHudLayout(store: HudLayoutStore): () => void {
+  activeHudLayouts.add(store);
+  return () => {
+    activeHudLayouts.delete(store);
+  };
+}
+
+/** @internal */
+export function listActiveHudLayouts(): HudLayoutStore[] {
+  return [...activeHudLayouts];
+}
+
 export function createHudLayout(options?: HudLayoutOptions): HudLayoutStore {
   const snap = options?.snap ?? 1;
   const defaults = new Map<string, HudPlacement>();
