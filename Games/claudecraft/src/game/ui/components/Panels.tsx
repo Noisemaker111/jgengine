@@ -274,7 +274,7 @@ export function VendorPanel() {
   const shopId = useGameStore((ctx) => ctx.game.store.get(`shop:${userId}`)) as string | undefined;
   const copper = useCurrency("copper");
   const stock = useGameStore((ctx) =>
-    shopId === undefined ? [] : ctx.game.trade.tradableAt(shopId, ITEMS.map((item) => item.id)),
+    shopId === undefined ? [] : ctx.game.trade!.tradableAt(shopId, ITEMS.map((item) => item.id)),
   );
   if (shopId === undefined) return null;
   const vendor = NPCS.find((npc) => npc.shopId === shopId);

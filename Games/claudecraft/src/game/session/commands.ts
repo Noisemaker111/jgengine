@@ -107,7 +107,7 @@ export function registerCommands(ctx: GameContext): void {
   });
   commands.define<{ questId: string }>("quest.accept", {
     apply(state, input) {
-      const rejection = state.game.quest.accept(state.player.userId, input.questId);
+      const rejection = state.game.quest!.accept(state.player.userId, input.questId);
       if (rejection !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: rejection.reason, kind: "info" });
       }
@@ -115,7 +115,7 @@ export function registerCommands(ctx: GameContext): void {
   });
   commands.define<{ questId: string }>("quest.turnIn", {
     apply(state, input) {
-      const rejection = state.game.quest.turnIn(state.player.userId, input.questId);
+      const rejection = state.game.quest!.turnIn(state.player.userId, input.questId);
       if (rejection !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: rejection.reason, kind: "info" });
       }
@@ -136,7 +136,7 @@ export function registerCommands(ctx: GameContext): void {
     apply(state, input) {
       const shopId = state.game.store.get(storeKeys.shop(state.player.userId));
       if (typeof shopId !== "string") return;
-      const rejection = state.game.trade.buy(input.itemId, 1, { shop: shopId, inventoryId: "bags" });
+      const rejection = state.game.trade!.buy(input.itemId, 1, { shop: shopId, inventoryId: "bags" });
       if (rejection !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: rejection.reason, kind: "info" });
       }
@@ -146,7 +146,7 @@ export function registerCommands(ctx: GameContext): void {
     apply(state, input) {
       const shopId = state.game.store.get(storeKeys.shop(state.player.userId));
       if (typeof shopId !== "string") return;
-      const rejection = state.game.trade.sell(input.itemId, 1, { shop: shopId, inventoryId: "bags" });
+      const rejection = state.game.trade!.sell(input.itemId, 1, { shop: shopId, inventoryId: "bags" });
       if (rejection !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: rejection.reason, kind: "info" });
       }

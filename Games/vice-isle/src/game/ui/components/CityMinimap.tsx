@@ -37,7 +37,7 @@ function readMap(ctx: GameContext): MapSnapshot | null {
     .list()
     .filter((e) => e.name.startsWith("cop_"))
     .map((e) => [e.position[0], e.position[2]] as const);
-  const quests = ctx.game.quest.list(ctx.player.userId);
+  const quests = ctx.game.quest!.list(ctx.player.userId);
   const active = quests.find((q) => q.status === "active");
   const wanted = ctx.game.store.get(WANTED_STORE_KEY) as WantedSnapshot | undefined;
   const race = ctx.game.store.get(RACE_STORE_KEY) as RaceSnapshot | undefined;

@@ -61,6 +61,7 @@ function prompts(ctx: GameContext): readonly PositionedPrompt[] {
 
 export const game = defineGame({
   name: "Loot Shooter",
+  features: { quest: true, trade: true },
   assets,
   world,
   physics,

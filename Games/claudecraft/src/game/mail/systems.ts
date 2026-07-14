@@ -163,6 +163,6 @@ export function marketBuy(ctx: GameContext, userId: string, itemId: string): str
     typeof ctx.game.store.get(`shop:${userId}`) === "string"
       ? (ctx.game.store.get(`shop:${userId}`) as string)
       : MARKET_SHOP;
-  const rejection = ctx.game.trade.buy(itemId, 1, { shop: shopId, inventoryId: "bags" });
+  const rejection = ctx.game.trade!.buy(itemId, 1, { shop: shopId, inventoryId: "bags" });
   return rejection?.reason ?? null;
 }

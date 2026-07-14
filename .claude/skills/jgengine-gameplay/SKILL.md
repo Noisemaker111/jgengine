@@ -183,7 +183,7 @@ Two extras beyond the default buy/live/end cycle: `phaseOrder?: string[]` overri
 
 ## Trade
 
-Catalog `trade` fields drive everything — no duplicate price lists.
+Opt-in: `defineGame({ features: { trade: true } })` — else `ctx.game.trade` is `undefined`. Catalog `trade` fields drive everything — no duplicate price lists.
 
 ```ts
 ctx.game.trade.canBuy(itemId, shopId, count?)   // → reason | null
@@ -194,6 +194,8 @@ ctx.game.trade.tradableAt(shopId, allItemIds)   // derive stock from catalogs
 ```
 
 ## Economy and unlocks
+
+`economy` is always on; `ctx.game.unlocks` is opt-in via `features: { unlocks: true }` (else `undefined`).
 
 ```ts
 ctx.game.economy.balance(userId, currencyId) / grant(...) / charge(...)  // charge → { reason } | null
@@ -224,6 +226,8 @@ ctx.player.applyLoadout(userId, loadoutId)               // → null | { reason 
 `LoadoutDef = { inventories?: { hotbar: [{ item, count, slot? }], … }, stats?, economy?, unlocks? }`. Application is **all-or-nothing**: every inventory put dry-runs first; any rejection applies nothing. Starter kits gate on `ctx.player.isNew`; class/respawn kits run from commands. Never scatter raw `put`/`grant` calls for a kit.
 
 ## Quests
+
+Opt-in: `defineGame({ features: { quest: true } })` — else `ctx.game.quest` is `undefined`.
 
 ```ts
 ctx.game.quest.register(catalog)                          // onInit
@@ -267,6 +271,8 @@ Built-in channels: `global` (everyone), `party` (reuses `social.party.membersOf`
 **Remote chat seam** (`multiplayer/chatContract`): `ChatTransport` is the hook-shaped contract (`useMessages(channelId | "skip")` / `useActions()`, identity-stable like `PresenceTransport`); `ChatSync` is the callback shape for backends that can't host React hooks. Bindings: ws — `createWsBackend(...).chatSync` / `.chatSyncFor(serverId)` over `chatSend` frames + a `chat` update channel (host relays per-channel rings, validates length + rate limit); Convex — `@jgengine/convex/convexChatTransport` `createConvexChatTransport({ messages, sendMessage })` (one live query + one mutation); local/dev — `createLocalChatTransport()`. React lifts a `ChatSync` via `chatTransportFromSync`.
 
 ## Cosmetic loadout
+
+Opt-in: `defineGame({ features: { cosmetics: true } })` — else `ctx.player.cosmetics` is `undefined`.
 
 ```ts
 ctx.player.cosmetics.register(defs)                       // onInit — Record<loadoutId, { slots: Record<slot, cosmeticId> }>

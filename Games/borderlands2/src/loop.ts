@@ -195,8 +195,8 @@ function onInit(ctx: GameContext): void {
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
   for (const table of lootTables) ctx.game.loot.register(table);
-  ctx.game.quest.register(quests);
-  ctx.game.quest.bind("entity.died");
+  ctx.game.quest!.register(quests);
+  ctx.game.quest!.bind("entity.died");
   registerCommands(ctx);
 
   ctx.game.feed.bind("entity.died");
@@ -210,7 +210,7 @@ function onInit(ctx: GameContext): void {
     ctx.game.store.set("echo", { questId: event.questId, atMs: ctx.time.now() * 1000 });
   });
   ctx.game.events.on("quest.completed", (event) => {
-    ctx.game.quest.turnIn(event.userId, event.questId);
+    ctx.game.quest!.turnIn(event.userId, event.questId);
     const reward = quests.find((quest) => quest.id === event.questId)?.rewards;
     if (reward?.xp !== undefined) grantXp(ctx, event.userId, reward.xp.amount);
     ctx.scene.entity.floatText({ instanceId: event.userId, text: "MISSION COMPLETE", kind: "pickup" });
@@ -228,9 +228,9 @@ function onNewPlayer(ctx: GameContext): void {
     role: "player",
   });
   if (ctx.player.isNew) ctx.player.applyLoadout(ctx.player.userId, "starterKit");
-  ctx.game.quest.accept(ctx.player.userId, MAIN_QUEST_IDS[0]!);
-  ctx.game.quest.accept(ctx.player.userId, QUEST_IDS.mongHunt);
-  ctx.game.quest.accept(ctx.player.userId, QUEST_IDS.skagDogDays);
+  ctx.game.quest!.accept(ctx.player.userId, MAIN_QUEST_IDS[0]!);
+  ctx.game.quest!.accept(ctx.player.userId, QUEST_IDS.mongHunt);
+  ctx.game.quest!.accept(ctx.player.userId, QUEST_IDS.skagDogDays);
   session.reset(ctx);
   noteEquipped(ctx.player.inventory.state("hotbar").slots[0]?.itemId ?? null);
   if (activeCharacter() === null) setGamePhase(ctx, "menu");

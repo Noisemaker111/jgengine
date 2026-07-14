@@ -362,13 +362,16 @@ export interface GameContext {
     playEntityAnimation(instanceId: string, event: string): void;
     feed: GameContextFeed;
     loot: GameContextLoot;
-    trade: TradeSystem;
-    quest: QuestJournal;
+    /** Shop/vendor barter — present only when `features.trade` is set. */
+    trade?: TradeSystem;
+    /** Quest/mission journal — present only when `features.quest` is set. */
+    quest?: QuestJournal;
     /** Friends/party/presence/emotes/world-invites — present only when `features.social` is set. */
     social?: Social;
     /** Channels + messages — present only when `features.chat` is set (implies `social`). */
     chat?: Chat;
-    unlocks: Unlocks;
+    /** Earned unlockable content — present only when `features.unlocks` is set. */
+    unlocks?: Unlocks;
     economy: GameContextEconomy;
     /** Competitive score tracking — present only when `features.leaderboard` is set. */
     leaderboard?: Leaderboard;
@@ -401,7 +404,8 @@ export interface GameContext {
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
     possession: Possession;
-    cosmetics: Cosmetics;
+    /** Cosmetic skins/customization — present only when `features.cosmetics` is set. */
+    cosmetics?: Cosmetics;
     /** Motion seam into the movement integrator (#162.4); routes to the command actor's queue (or the local player outside a command), so a command's impulse lands on whoever ran it. See `MotionIntents`. */
     motion: MotionIntents;
     /** A specific player's motion queue — how the host-side per-player movement integrator drains each connected player's impulses. */
@@ -587,8 +591,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   };
   const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry();
-  const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify);
   const features = definition.features ?? {};
+  const unlocks = features.unlocks
+    ? notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify)
+    : undefined;
   const rawSocial =
     features.social || features.chat
       ? createSocial({
@@ -659,7 +665,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
   const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
-  const cosmetics = notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify);
+  const cosmetics = features.cosmetics
+    ? notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify)
+    : undefined;
   const paintLayer = notifyAfter(createPaintLayer(), ["paint", "clear"], signal.notify);
 
   const inventoryDeclarations = definition.inventories ?? {};
@@ -720,7 +728,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
   };
 
-  const trade = createTradeSystem({
+  const trade = features.trade
+    ? createTradeSystem({
     resolveTrade: (itemId) => content.itemById?.(itemId)?.trade,
     wallet: {
       canAfford: (costs) => (walletCanAfford(walletOf(activeUserId()), costs) ? null : "insufficient-funds"),
@@ -750,7 +759,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       },
       count: (inventoryId, itemId) => inventoryFor(activeUserId()).count(inventoryId, itemId),
     },
-  });
+      })
+    : undefined;
 
   function seedUserPool(
     userId: string,
@@ -762,29 +772,30 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     map[statId] = next[statId]!;
   }
 
-  const rawQuest = createQuestJournal({
-    events,
-    rewards: {
-      grantXp(userId, amount) {
-        const existing = ensureInstanceStats(userId)["xp"];
-        const current = (existing?.current ?? 0) + amount;
-        seedUserPool(userId, "xp", { current, max: Math.max(existing?.max ?? 0, current) });
-      },
-      grantEconomy: (userId, currencyId, amount) => economy.grant(userId, currencyId, amount),
-      grantItem(userId, inventoryId, itemId, count) {
-        if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventoryFor(userId).put(inventoryId, itemId, count);
-        return result.status === "ok" ? null : { reason: result.reason };
-      },
-      grantUnlock: (userId, unlockId) => unlocks.grant(userId, unlockId),
-    },
-    hasUnlock: (userId, id) => unlocks.has(userId, id),
-  });
-  const quest = notifyAfter(
-    rawQuest,
-    ["accept", "abandon", "progress", "turnIn", "grant", "revoke", "hydrate"],
-    signal.notify,
-  );
+  const quest = features.quest
+    ? notifyAfter(
+        createQuestJournal({
+          events,
+          rewards: {
+            grantXp(userId, amount) {
+              const existing = ensureInstanceStats(userId)["xp"];
+              const current = (existing?.current ?? 0) + amount;
+              seedUserPool(userId, "xp", { current, max: Math.max(existing?.max ?? 0, current) });
+            },
+            grantEconomy: (userId, currencyId, amount) => economy.grant(userId, currencyId, amount),
+            grantItem(userId, inventoryId, itemId, count) {
+              if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
+              const result = inventoryFor(userId).put(inventoryId, itemId, count);
+              return result.status === "ok" ? null : { reason: result.reason };
+            },
+            grantUnlock: (userId, unlockId) => unlocks?.grant(userId, unlockId),
+          },
+          hasUnlock: (userId, id) => unlocks?.has(userId, id) ?? false,
+        }),
+        ["accept", "abandon", "progress", "turnIn", "grant", "revoke", "hydrate"],
+        signal.notify,
+      )
+    : undefined;
 
   const loadouts = notifyAfter(
     createLoadouts({
@@ -810,7 +821,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
       stats: { seed: seedUserPool },
       economy: { grant: economy.grant },
-      unlocks: { grant: unlocks.grant },
+      unlocks: { grant: (userId, unlockId) => unlocks?.grant(userId, unlockId) },
     }),
     ["applyLoadout"],
     signal.notify,

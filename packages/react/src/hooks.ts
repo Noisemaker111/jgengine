@@ -156,8 +156,10 @@ export function useFeed({ action, limit }: { action: string; limit?: number }): 
   );
 }
 
+const EMPTY_QUESTS: QuestInstance[] = [];
+
 export function useQuestJournal(): QuestInstance[] {
-  return useGameStore((ctx) => ctx.game.quest.list(ctx.player.userId));
+  return useGameStore((ctx) => ctx.game.quest?.list(ctx.player.userId) ?? EMPTY_QUESTS);
 }
 
 const EMPTY_FRIENDS: FriendEntry[] = [];

@@ -57,7 +57,7 @@ function makeContext() {
       assets: createAssetCatalog(),
       multiplayer: "off",
       inventories: { backpack: { slots: 9 } },
-      features: { roster: true, cards: true, turn: true, race: true },
+      features: { roster: true, cards: true, turn: true, race: true, quest: true },
     }),
     content: CONTENT,
     player: { userId: "user_a", isNew: true },
@@ -79,6 +79,10 @@ describe("opt-in features", () => {
     expect(ctx.game.social).toBeUndefined();
     expect(ctx.game.chat).toBeUndefined();
     expect(ctx.game.players).toBeUndefined();
+    expect(ctx.game.quest).toBeUndefined();
+    expect(ctx.game.trade).toBeUndefined();
+    expect(ctx.game.unlocks).toBeUndefined();
+    expect(ctx.player.cosmetics).toBeUndefined();
     expect(ctx.game.commands).toBeDefined();
     expect(ctx.game.store).toBeDefined();
     expect(ctx.game.commands.actor()).toBeNull();
@@ -90,7 +94,19 @@ describe("opt-in features", () => {
         name: "Full",
         assets: createAssetCatalog(),
         multiplayer: "off",
-        features: { roster: true, cards: true, turn: true, race: true, leaderboard: true, social: true, chat: true },
+        features: {
+          roster: true,
+          cards: true,
+          turn: true,
+          race: true,
+          leaderboard: true,
+          social: true,
+          chat: true,
+          quest: true,
+          trade: true,
+          unlocks: true,
+          cosmetics: true,
+        },
       }),
       content: CONTENT,
       player: { userId: "user_a", isNew: true },
@@ -102,6 +118,10 @@ describe("opt-in features", () => {
     expect(ctx.game.leaderboard).toBeDefined();
     expect(ctx.game.social).toBeDefined();
     expect(ctx.game.chat).toBeDefined();
+    expect(ctx.game.quest).toBeDefined();
+    expect(ctx.game.trade).toBeDefined();
+    expect(ctx.game.unlocks).toBeDefined();
+    expect(ctx.player.cosmetics).toBeDefined();
   });
 
   test("chat opts in social implicitly (chat depends on it)", () => {
@@ -471,10 +491,10 @@ describe("game context change signal", () => {
     expect(listener.count()).toBe(1);
     ctx.game.events.emit("stat.levelUp", { userId: "user_a", stat: "mining", level: 2 });
     expect(listener.count()).toBe(2);
-    ctx.game.quest.register([
+    ctx.game.quest!.register([
       { id: "q1", objectives: [{ id: "o1", count: 1 }], rewards: {} },
     ]);
-    ctx.game.quest.accept("user_a", "q1");
+    ctx.game.quest!.accept("user_a", "q1");
     expect(listener.count()).toBeGreaterThan(2);
     listener.unsubscribe();
     ctx.game.feed.push("chat", { text: "bye" });
