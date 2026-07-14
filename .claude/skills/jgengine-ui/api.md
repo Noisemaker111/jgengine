@@ -185,7 +185,7 @@
 - `DropInfo` (interface): interface DropInfo<T> — ⚠ undocumented
 - `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
-- `EventMeterView` (interface): interface EventMeterView — ⚠ undocumented
+- `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
 - `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> — ⚠ undocumented
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
 - `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -247,7 +247,7 @@
 - `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `StackedPile` (function): function StackedPile({ cards, faceDown, offsetX = 0, offsetY = 20, cardWidth = 64, cardHeight = 90, layer, dropId, draggableFrom = 0, className, cardClassName, onCardClick, renderOverlay, }: { cards: readonly PlayingCard[]; faceDown?: boolean; offsetX?: number; offsetY?: number; cardWidth?: number; … — An overlapping fan of `CardFace`s. Plain-props: pass `cards`. Optional drag: pass a `layer` to make each card a `DraggableCard`, and `dropId` to wrap the pile in a `DropZone`.
 - `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
 - `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -264,7 +264,7 @@
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 - `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
-- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — ⚠ undocumented
+- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
@@ -288,7 +288,7 @@
 - `useEngineStore` (function): function useEngineStore<TState, TSelected>(store: ReadableEngineStore<TState>, selector: (state: TState) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
-- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — ⚠ undocumented
+- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useFriendRequests` (function): function useFriendRequests(): FriendRequestEntry[] — ⚠ undocumented
@@ -383,7 +383,7 @@
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
 - `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
@@ -446,12 +446,12 @@
 ## @jgengine/react/hooks
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
-- `EventMeterView` (interface): interface EventMeterView — ⚠ undocumented
+- `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `WorldBrowserState` (interface): interface WorldBrowserState — ⚠ undocumented
 - `abilityKitNeedsHeartbeat` (function): function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: number): boolean — ⚠ undocumented
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
-- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — ⚠ undocumented
+- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
@@ -460,7 +460,7 @@
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
-- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — ⚠ undocumented
+- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
 - `useFriendRequests` (function): function useFriendRequests(): FriendRequestEntry[] — ⚠ undocumented
 - `useFriends` (function): function useFriends(): FriendEntry[] — ⚠ undocumented
@@ -1465,10 +1465,10 @@
 ## @jgengine/shell/terrain/GrassField
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
-- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 1 — ⚠ undocumented
+- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, budget?: number): number — ⚠ undocumented
+- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/ProceduralGround
 
@@ -1483,8 +1483,8 @@
 ## @jgengine/shell/terrain/grassBudget
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
-- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 1 — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, budget?: number): number — ⚠ undocumented
+- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
+- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/grassGeometry
 
