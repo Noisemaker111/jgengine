@@ -582,7 +582,7 @@ function grabPowerup(ctx: GameContext, userId: string, session: FiestaSession, s
     list.push({
       id: auraId,
       name: spawn.def.name,
-      icon: "sparkles",
+      icon: "buffArrow",
       school: "nature",
       kind: "buff",
       sourceId: userId,

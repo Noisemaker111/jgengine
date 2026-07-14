@@ -2,6 +2,7 @@ import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/ability
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createTalentTree, type TalentTree } from "@jgengine/core/game/talents";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { GameIconName } from "@jgengine/react/gameIcons";
 
 import { classById } from "../classes/catalog";
 import { classEntityId } from "../model";
@@ -23,7 +24,7 @@ import { MAX_LEVEL } from "../progression/curves";
 export interface AuraState {
   id: string;
   name: string;
-  icon: string;
+  icon: GameIconName;
   school: string;
   kind: "dot" | "hot" | "buff" | "drink";
   sourceId: string;
