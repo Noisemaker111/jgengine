@@ -157,6 +157,13 @@
 - `applyImpulse` (function): function applyImpulse(position: EntityPosition, impulse: [number, number, number]): EntityPosition — ⚠ undocumented
 - `resolveHitReaction` (function): function resolveHitReaction(config: HitReactionConfig, input: HitReactionInput): HitReaction — ⚠ undocumented
 
+## @jgengine/core/combat/magazine
+
+- `Magazine` (interface): interface Magazine — A per-weapon magazine: discrete loaded rounds, a timed reload that refills from a reserve pool, and the reserve-pool interaction itself — the primitive that replaces hand-rolling mag size, reload delay, and reserve bookkeeping per game (#536.2).
+- `MagazineConfig` (interface): interface MagazineConfig — Tuning for `createMagazine`: mag capacity, reload delay, and where reserve ammo is drawn from.
+- `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
+- `createMagazine` (function): function createMagazine(config: MagazineConfig): Magazine — Builds a {@link Magazine}: discrete loaded ammo, a timed reload, and reserve-pool interaction.
+
 ## @jgengine/core/combat/projectiles
 
 - `EntityRaycastHit` (interface): interface EntityRaycastHit — ⚠ undocumented
@@ -178,6 +185,20 @@
 - `RegenShield` (interface): interface RegenShield — A shield pool that stops regenerating for `regenDelayMs` after every hit, then refills at `regenPerSecond` — the delayed-regen primitive that replaces snapshot-comparing stat values per tick to detect "damage taken" (#536.3). `damage` resets the grace timer; `tick` counts it down and regenerates once it elapses.
 - `RegenShieldConfig` (interface): interface RegenShieldConfig — Tuning for `createRegenShield`: pool size, refill rate, and the post-damage grace period.
 - `createRegenShield` (function): function createRegenShield(config: RegenShieldConfig): RegenShield — Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
+
+## @jgengine/core/combat/renderCues
+
+- `DEFAULT_CYCLES_PER_UNIT` (const): const DEFAULT_CYCLES_PER_UNIT: 0.6 — Default `RenderCueTuning.cyclesPerUnit`.
+- `DEFAULT_FIRE_PULSE_SECONDS` (const): const DEFAULT_FIRE_PULSE_SECONDS: 0.12 — Default `RenderCueTuning.firePulseSeconds`.
+- `DEFAULT_HIT_PULSE_SECONDS` (const): const DEFAULT_HIT_PULSE_SECONDS: 0.2 — Default `RenderCueTuning.hitPulseSeconds`.
+- `DEFAULT_RECOIL_DECAY_PER_SECOND` (const): const DEFAULT_RECOIL_DECAY_PER_SECOND: 6 — Default `RenderCueTuning.recoilDecayPerSecond`.
+- `DEFAULT_RENDER_CUES` (const): const DEFAULT_RENDER_CUES: Readonly<EntityRenderCues> — Neutral starting cue set: idle, unarmed, undamaged.
+- `EntityRenderCues` (interface): interface EntityRenderCues — Per-entity render cues: the motion/animation signal a custom `renderEntity` or first-person viewmodel component needs to drive gait, muzzle flash, reload poses, and hit reactions — without diffing the parent group's position itself or reading a game-side module map for attack timing.
+- `RenderCueTuning` (interface): interface RenderCueTuning — Tuning knobs for `advanceMotionCues` / `useEntityRenderCues`; every field has a default, override only what a weapon/rig's feel needs to differ.
+- `advanceMotionCues` (function): function advanceMotionCues(cues: EntityRenderCues, speed: number, dt: number, tuning?: RenderCueTuning): EntityRenderCues — Advances `bobPhase` and decays `recoil` from a live `speed` sample (e.g. `groundSpeed(entity)`); leaves event-driven fields untouched.
+- `applyRenderAnimationEvent` (function): function applyRenderAnimationEvent(cues: EntityRenderCues, event: string): EntityRenderCues — Applies a `entity.animation` event (`"fire"` / `"reload"` / `"reloadEnd"`, or any game-defined name) to the cue set. Unknown event names are a no-op.
+- `applyRenderDeathEvent` (function): function applyRenderDeathEvent(cues: EntityRenderCues): EntityRenderCues — Marks the cue set dead after `entity.died`; sticky for the lifetime of the render component.
+- `applyRenderHitEvent` (function): function applyRenderHitEvent(cues: EntityRenderCues): EntityRenderCues — Marks a `combat.hitReaction` pulse; the caller clears `hit` again after its own pulse window.
 
 ## @jgengine/core/combat/resistance
 
@@ -231,7 +252,7 @@
 - `MeterMode` (type): type MeterMode = "hold" | "reset" — ⚠ undocumented
 - `MeterTier` (interface): interface MeterTier — ⚠ undocumented
 - `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
-- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — ⚠ undocumented
+- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`.
 
 ## @jgengine/core/stats/eventMeter
 

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Keycap, KeyHint } from "@jgengine/react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { projectToMinimap, type MinimapView } from "@jgengine/core/world/minimap";
 import { GUARD_DEFS } from "../../entities/guards";
@@ -93,7 +94,9 @@ export function MinimapPanel(): ReactNode {
         onClick={() => commands.run("ui.minimapScrub", {})}
         className="flex items-center gap-1.5 rounded border border-[#c9a227]/60 bg-[#0b0f1c]/85 px-2 py-1 text-[10px] uppercase tracking-wide text-[#e5d9c3]"
       >
-        <kbd className="rounded border border-[#c9a227]/60 bg-black/30 px-1 font-mono">M</kbd>
+        <KeyHint>
+          <Keycap className="rounded border border-[#c9a227]/60 bg-black/30 px-1 font-mono">M</Keycap>
+        </KeyHint>
         {scrubbing ? "Previewing" : "Scrub"}
       </button>
       {scrubbing ? (

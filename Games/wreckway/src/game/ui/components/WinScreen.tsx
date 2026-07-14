@@ -1,5 +1,6 @@
 import { formatDistance } from "@jgengine/core/format/distance";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { KeyHint } from "@jgengine/react";
 
 import { keybinds } from "../../keybinds";
 import { PART_SLOTS } from "../../parts/catalog";
@@ -46,7 +47,8 @@ export function WinScreen({ snapshot, onRestart }: WinScreenProps) {
           onClick={onRestart}
           className="mt-6 rounded border-2 border-[#f0c419] bg-[#b7410e] px-8 py-3 text-lg font-black tracking-widest text-[#fef3e0] transition hover:bg-[#d94f14]"
         >
-          RUN IT AGAIN — {actionLabel(keybinds, "restart") ?? "R"}
+          RUN IT AGAIN
+          <KeyHint> — {actionLabel(keybinds, "restart") ?? "R"}</KeyHint>
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
 
 import { game } from "../game.config";
 import { loop } from "../loop";
+import type { AuctionView } from "./auction/systems";
 import { classById } from "./classes/catalog";
 import { applyMobCc, isMobInstance, mobCount, mobRuntimeOf } from "./ai/mobs";
 import { buildLootTables, content } from "./content";
@@ -29,7 +30,7 @@ function step(ctx: GameContext, seconds: number, dt = 0.1): void {
 }
 
 function firstMobOf(ctx: GameContext, catalogId: string): string {
-  const mob = ctx.scene.entity.list().find((entity) => entity.name === catalogId && isMobInstance(entity.id));
+  const mob = ctx.scene.entity.list().find((entity) => entity.name === catalogId && isMobInstance(ctx, entity.id));
   if (mob === undefined) throw new Error(`no ${catalogId} spawned`);
   return mob.id;
 }
@@ -66,7 +67,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("world boots with a populated roster", () => {
-    expect(mobCount()).toBeGreaterThan(120);
+    expect(mobCount(ctx)).toBeGreaterThan(120);
     expect(ctx.scene.entity.get(USER)).not.toBeNull();
     for (const npc of NPCS) expect(ctx.scene.entity.get(`npc:${npc.id}`)).not.toBeNull();
   });
@@ -116,7 +117,7 @@ describe("claudecraft gameplay (headless)", () => {
       guard += 1;
     }
     expect(ctx.scene.entity.get(wolfId)).toBeNull();
-    expect(mobRuntimeOf(wolfId)).toBeNull();
+    expect(mobRuntimeOf(ctx, wolfId)).toBeNull();
     expect(ctx.scene.entity.stats.get(USER, "xp")?.current ?? 0).toBeGreaterThan(startXp - 1);
     expect(ctx.game.economy.balance(USER, COPPER)).toBeGreaterThan(startCopper);
     const journal = ctx.game.quest!.list(USER).find((quest) => quest.questId === "q_wolves");
@@ -203,7 +204,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("gathering nodes are placed and gathering grants materials and profession skill", () => {
-    expect(gatherNodeCount()).toBeGreaterThan(50);
+    expect(gatherNodeCount(ctx)).toBeGreaterThan(50);
     const valeStarterIds = new Set(
       GATHER_NODES.filter((node) => node.zone === "vale" && node.skillReq === 0).map((node) => node.id),
     );
@@ -282,7 +283,7 @@ describe("claudecraft gameplay (headless)", () => {
   test("every dungeon has at least one of its catalog mobs spawned within its radius", () => {
     for (const dungeon of DUNGEONS) {
       const inhabited = ctx.scene.entity.list().some((entity) => {
-        const runtime = mobRuntimeOf(entity.id);
+        const runtime = mobRuntimeOf(ctx, entity.id);
         if (runtime === null) return false;
         if (mobById(runtime.defId)?.dungeonId !== dungeon.id) return false;
         const dist = Math.hypot(entity.position[0] - dungeon.center[0], entity.position[2] - dungeon.center[1]);
@@ -323,7 +324,7 @@ describe("claudecraft gameplay (headless)", () => {
     const before = new Set(
       ctx.scene.entity
         .list()
-        .filter((entity) => mobRuntimeOf(entity.id)?.defId === "raised_bonewalker")
+        .filter((entity) => mobRuntimeOf(ctx, entity.id)?.defId === "raised_bonewalker")
         .map((entity) => entity.id),
     );
     ctx.scene.entity.stats.set(USER, "health", { max: 100000, current: 100000 });
@@ -333,7 +334,7 @@ describe("claudecraft gameplay (headless)", () => {
     step(ctx, 26);
     const newBonewalkers = ctx.scene.entity
       .list()
-      .filter((entity) => mobRuntimeOf(entity.id)?.defId === "raised_bonewalker" && !before.has(entity.id));
+      .filter((entity) => mobRuntimeOf(ctx, entity.id)?.defId === "raised_bonewalker" && !before.has(entity.id));
     expect(newBonewalkers.length).toBeGreaterThan(0);
     ctx.scene.entity.setTarget(USER, null);
     const exit = ctx.game.commands.run("dungeon.exit", { dungeonId: "gravewyrm_sanctum" });
@@ -434,6 +435,52 @@ describe("claudecraft gameplay (headless)", () => {
     ctx.game.commands.run("shop.close", {});
   });
 
+  test("world market lists, sells through the seller's collection box with a house cut, and sweeps unsold goods", () => {
+    const SELLER = "market-seller-test";
+    ctx.game.loot.grantToPlayer(SELLER, [{ item: "baked_bread", count: 2 }]);
+    ctx.game.commands.runAs(SELLER, "auction.open", {});
+    const posted = ctx.game.commands.runAs(SELLER, "auction.list", {
+      itemId: "baked_bread",
+      count: 1,
+      price: 100,
+    });
+    expect(posted.status).toBe("applied");
+    let sellerView = ctx.game.store.get(`auctionView:${SELLER}`) as AuctionView;
+    expect(sellerView.mine).toHaveLength(1);
+    const listingId = sellerView.mine[0]?.id;
+    expect(listingId).toBeDefined();
+
+    ctx.game.economy.grant(USER, COPPER, 200);
+    const buyerCopperBefore = ctx.game.economy.balance(USER, COPPER);
+    const breadBefore = ctx.player.inventory.count("bags", "baked_bread");
+    const bought = ctx.game.commands.run("auction.buy", { listingId });
+    expect(bought.status).toBe("applied");
+    expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(breadBefore + 1);
+    expect(ctx.game.economy.balance(USER, COPPER)).toBe(buyerCopperBefore - 100);
+    expect(ctx.game.economy.balance(SELLER, COPPER)).toBe(0);
+
+    ctx.game.commands.runAs(SELLER, "auction.collect", {});
+    expect(ctx.game.economy.balance(SELLER, COPPER)).toBe(95);
+
+    const expiring = ctx.game.commands.runAs(SELLER, "auction.list", {
+      itemId: "baked_bread",
+      count: 1,
+      price: 50,
+    });
+    expect(expiring.status).toBe("applied");
+    step(ctx, 172_860, 6000);
+    ctx.game.commands.runAs(SELLER, "auction.open", {});
+    sellerView = ctx.game.store.get(`auctionView:${SELLER}`) as AuctionView;
+    expect(sellerView.mine).toHaveLength(0);
+    expect(sellerView.collection.items).toEqual([{ itemId: "baked_bread", count: 1 }]);
+
+    ctx.game.commands.runAs(SELLER, "auction.collect", {});
+    sellerView = ctx.game.store.get(`auctionView:${SELLER}`) as AuctionView;
+    expect(sellerView.collection.items).toEqual([]);
+    ctx.game.commands.runAs(SELLER, "auction.close", {});
+    ctx.game.commands.run("auction.close", {});
+  });
+
   test("vale cup match starts and records a kick", () => {
     ensureHeroPresent(ctx);
     const start = ctx.game.commands.run("valecup.start", { wager: 0 });
@@ -460,7 +507,7 @@ describe("claudecraft gameplay (headless)", () => {
 
   test("hunter call_pet ability summons a living pet frame", () => {
     ensureHeroPresent(ctx);
-    resetHero(USER);
+    resetHero(ctx, USER);
     ctx.game.store.delete(`class:${USER}`);
     ctx.game.store.delete(`spec:${USER}`);
     ctx.game.store.delete(`talents:${USER}`);
@@ -479,7 +526,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("talent ability mods retune slot cost for rank-only nodes", () => {
-    resetHero(USER);
+    resetHero(ctx, USER);
     ctx.game.store.delete(`class:${USER}`);
     ctx.game.store.delete(`spec:${USER}`);
     ctx.game.store.delete(`talents:${USER}`);
@@ -493,7 +540,7 @@ describe("claudecraft gameplay (headless)", () => {
     expect(ctx.game.commands.run("talent.allocate", { nodeId: "arms_imp_overpower" }).status).toBe("applied");
     const allocate = ctx.game.commands.run("talent.allocate", { nodeId: "arms_imp_slam" });
     expect(allocate.status).toBe("applied");
-    const hero = heroOf(USER);
+    const hero = heroOf(ctx, USER);
     expect(hero).not.toBeNull();
     const slam = hero?.kit.config("slam");
     expect(slam).not.toBeNull();
@@ -503,7 +550,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("equipping a full tier set grants its haste and proc on the hero sheet", () => {
-    resetHero(USER);
+    resetHero(ctx, USER);
     ctx.game.store.delete(`class:${USER}`);
     ctx.game.store.delete(`spec:${USER}`);
     ctx.game.store.delete(`talents:${USER}`);

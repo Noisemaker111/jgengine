@@ -4,11 +4,15 @@ import {
   applyEditorDocumentOverlay,
   createEditorSession,
   createEmptyEditorDocument,
+  createPrefabFragment,
   editorDocumentBounds,
   editorDocumentSize,
   exportEditorDocumentJson,
   extractEditorFragment,
+  findEditorCollection,
+  findEditorPrefab,
   importEditorDocumentJson,
+  isEditorObjectLocked,
   listEditorKinds,
   mergeEditorDocuments,
   normalizeEditorLayers,
@@ -456,5 +460,205 @@ describe("editor hierarchy / parenting", () => {
     session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
     const reloaded = importEditorDocumentJson(session.exportJson(true));
     expect(editorParentOf(reloaded, "child")).toBe("parent");
+  });
+});
+
+describe("editor prefabs", () => {
+  function campScene() {
+    return createEditorSession(
+      normalizeEditorLayers({
+        markers: [
+          { id: "tent", kind: "prop", position: { x: 10, y: 0, z: 10 } },
+          { id: "fire", kind: "prop", position: { x: 14, y: 0, z: 10 } },
+        ],
+      }),
+    );
+  }
+
+  test("createPrefab centers the fragment on its own bounds centroid", () => {
+    const session = campScene();
+    session.dispatch({ type: "createPrefab", id: "camp", name: "Camp", ids: ["tent", "fire"] });
+    const prefab = findEditorPrefab(session.getState().document, "camp");
+    expect(prefab).toBeDefined();
+    const xs = prefab!.fragment.markers.map((m) => m.position.x).sort((a, b) => a - b);
+    expect(xs).toEqual([-2, 2]);
+  });
+
+  test("insertPrefab stamps a fresh, tagged instance at the target point", () => {
+    const session = campScene();
+    session.dispatch({ type: "createPrefab", id: "camp", name: "Camp", ids: ["tent", "fire"] });
+    session.dispatch({ type: "insertPrefab", prefabId: "camp", at: { x: 100, y: 0, z: 0 }, instanceId: "camp_1" });
+    const doc = session.getState().document;
+    expect(doc.markers).toHaveLength(4);
+    const instanceMarkers = doc.markers.filter((m) => m.meta?.prefabInstanceId === "camp_1");
+    expect(instanceMarkers).toHaveLength(2);
+    for (const marker of instanceMarkers) expect(marker.meta?.prefabId).toBe("camp");
+    const xs = instanceMarkers.map((m) => m.position.x).sort((a, b) => a - b);
+    expect(xs).toEqual([98, 102]);
+    expect(session.getState().selection).toHaveLength(2);
+  });
+
+  test("insertPrefab twice renames ids and tags each with its own instance id", () => {
+    const session = campScene();
+    session.dispatch({ type: "createPrefab", id: "camp", name: "Camp", ids: ["tent", "fire"] });
+    session.dispatch({ type: "insertPrefab", prefabId: "camp", at: { x: 0, y: 0, z: 0 } });
+    session.dispatch({ type: "insertPrefab", prefabId: "camp", at: { x: 50, y: 0, z: 0 } });
+    const doc = session.getState().document;
+    expect(doc.markers).toHaveLength(6);
+    const ids = new Set(doc.markers.map((m) => m.id));
+    expect(ids.size).toBe(6);
+    const instanceIds = new Set(doc.markers.map((m) => m.meta?.prefabInstanceId).filter((id) => id !== undefined));
+    expect(instanceIds.size).toBe(2);
+  });
+
+  test("detachPrefabInstance strips the link but keeps the content", () => {
+    const session = campScene();
+    session.dispatch({ type: "createPrefab", id: "camp", name: "Camp", ids: ["tent", "fire"] });
+    session.dispatch({ type: "insertPrefab", prefabId: "camp", at: { x: 0, y: 0, z: 0 }, instanceId: "camp_1" });
+    session.dispatch({ type: "detachPrefabInstance", instanceId: "camp_1" });
+    const doc = session.getState().document;
+    expect(doc.markers).toHaveLength(4);
+    for (const marker of doc.markers) {
+      expect(marker.meta?.prefabInstanceId).toBeUndefined();
+      expect(marker.meta?.prefabId).toBeUndefined();
+    }
+  });
+
+  test("deletePrefab removes it from the library without touching placed instances", () => {
+    const session = campScene();
+    session.dispatch({ type: "createPrefab", id: "camp", name: "Camp", ids: ["tent", "fire"] });
+    session.dispatch({ type: "insertPrefab", prefabId: "camp", at: { x: 0, y: 0, z: 0 } });
+    session.dispatch({ type: "deletePrefab", prefabId: "camp" });
+    expect(findEditorPrefab(session.getState().document, "camp")).toBeUndefined();
+    expect(session.getState().document.markers).toHaveLength(4);
+  });
+
+  test("prefab library survives export/import", () => {
+    const session = campScene();
+    session.dispatch({ type: "createPrefab", id: "camp", name: "Camp", ids: ["tent", "fire"] });
+    const reloaded = importEditorDocumentJson(session.exportJson(true));
+    expect(findEditorPrefab(reloaded, "camp")?.fragment.markers).toHaveLength(2);
+  });
+});
+
+describe("editor collections / selection sets", () => {
+  function threeMobs() {
+    return createEditorSession(
+      normalizeEditorLayers({
+        markers: [
+          { id: "a", kind: "mob", position: { x: 0, y: 0, z: 0 } },
+          { id: "b", kind: "mob", position: { x: 1, y: 0, z: 0 } },
+          { id: "c", kind: "mob", position: { x: 2, y: 0, z: 0 } },
+        ],
+      }),
+    );
+  }
+
+  test("createCollection, add/remove members, and selectCollection restores the set", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "createCollection", id: "pack", name: "Wolf pack", memberIds: ["a", "b"] });
+    session.dispatch({ type: "addToCollection", id: "pack", ids: ["c"] });
+    expect(findEditorCollection(session.getState().document, "pack")?.memberIds).toEqual(["a", "b", "c"]);
+    session.dispatch({ type: "removeFromCollection", id: "pack", ids: ["b"] });
+    expect(findEditorCollection(session.getState().document, "pack")?.memberIds).toEqual(["a", "c"]);
+
+    session.dispatch({ type: "select", ids: [] });
+    session.dispatch({ type: "selectCollection", id: "pack" });
+    expect(session.getState().selection).toEqual(["a", "c"]);
+  });
+
+  test("renameCollection and setCollectionFlags patch color/locked/visible", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "createCollection", id: "pack", name: "Pack", memberIds: ["a"] });
+    session.dispatch({ type: "renameCollection", id: "pack", name: "Wolf pack" });
+    session.dispatch({ type: "setCollectionFlags", id: "pack", patch: { color: "#f00", locked: true, visible: false } });
+    const collection = findEditorCollection(session.getState().document, "pack")!;
+    expect(collection.name).toBe("Wolf pack");
+    expect(collection.color).toBe("#f00");
+    expect(collection.locked).toBe(true);
+    expect(collection.visible).toBe(false);
+  });
+
+  test("a locked collection blocks translate/setTransform/remove on its members", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "createCollection", id: "pack", name: "Pack", memberIds: ["a", "b"] });
+    session.dispatch({ type: "setCollectionFlags", id: "pack", patch: { locked: true } });
+    expect(isEditorObjectLocked(session.getState().document, "a")).toBe(true);
+
+    session.dispatch({ type: "setTransform", id: "a", position: { x: 99, y: 0, z: 0 } });
+    expect(session.getState().document.markers.find((m) => m.id === "a")!.position.x).toBe(0);
+
+    session.dispatch({ type: "translate", ids: ["a", "b", "c"], delta: { x: 5, y: 0, z: 0 } });
+    const doc = session.getState().document;
+    expect(doc.markers.find((m) => m.id === "a")!.position.x).toBe(0);
+    expect(doc.markers.find((m) => m.id === "b")!.position.x).toBe(1);
+    expect(doc.markers.find((m) => m.id === "c")!.position.x).toBe(7);
+
+    session.dispatch({ type: "remove", id: "a" });
+    expect(session.getState().document.markers.some((m) => m.id === "a")).toBe(true);
+
+    session.dispatch({ type: "removeMany", ids: ["a", "c"] });
+    const remaining = session.getState().document.markers.map((m) => m.id);
+    expect(remaining).toContain("a");
+    expect(remaining).not.toContain("c");
+  });
+
+  test("deleteCollection drops it and removing a member prunes stale collection references", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "createCollection", id: "pack", name: "Pack", memberIds: ["a", "b"] });
+    session.dispatch({ type: "removeMany", ids: ["b"] });
+    expect(findEditorCollection(session.getState().document, "pack")?.memberIds).toEqual(["a"]);
+    session.dispatch({ type: "deleteCollection", id: "pack" });
+    expect(findEditorCollection(session.getState().document, "pack")).toBeUndefined();
+  });
+
+  test("collections survive export/import", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "createCollection", id: "pack", name: "Pack", memberIds: ["a", "b"] });
+    const reloaded = importEditorDocumentJson(session.exportJson(true));
+    expect(findEditorCollection(reloaded, "pack")?.memberIds).toEqual(["a", "b"]);
+  });
+});
+
+describe("editor batch property edit and material assignment", () => {
+  test("batchSetProperties patches color/label/meta across kinds in one dispatch", () => {
+    const session = createEditorSession(
+      normalizeEditorLayers({
+        markers: [{ id: "m", kind: "mob", position: { x: 0, y: 0, z: 0 } }],
+        volumes: [{ id: "v", kind: "zone", shape: "sphere", center: { x: 0, y: 0, z: 0 }, radius: 4 }],
+      }),
+    );
+    session.dispatch({
+      type: "batchSetProperties",
+      ids: ["m", "v"],
+      patch: { color: "#0ff", meta: { tier: 2 } },
+    });
+    const doc = session.getState().document;
+    expect(doc.markers[0]?.color).toBe("#0ff");
+    expect(doc.markers[0]?.meta?.tier).toBe(2);
+    expect(doc.volumes[0]?.color).toBe("#0ff");
+    expect(doc.volumes[0]?.meta?.tier).toBe(2);
+  });
+
+  test("assignMaterial stamps meta.materialId on every targeted object", () => {
+    const session = createEditorSession(
+      normalizeEditorLayers({
+        markers: [{ id: "rock", kind: "prop", position: { x: 0, y: 0, z: 0 } }],
+      }),
+    );
+    session.dispatch({ type: "assignMaterial", ids: ["rock"], materialId: "granite" });
+    expect(session.getState().document.markers[0]?.meta?.materialId).toBe("granite");
+    session.dispatch({ type: "assignMaterial", ids: ["rock"], materialId: "sandstone" });
+    expect(session.getState().document.markers[0]?.meta?.materialId).toBe("sandstone");
+  });
+});
+
+describe("editor prefab/fragment helper", () => {
+  test("createPrefabFragment centers a single object at the origin", () => {
+    const doc = normalizeEditorLayers({
+      markers: [{ id: "solo", kind: "prop", position: { x: 40, y: 2, z: -8 } }],
+    });
+    const fragment = createPrefabFragment(doc, ["solo"]);
+    expect(fragment.markers[0]?.position).toEqual({ x: 0, y: 0, z: 0 });
   });
 });

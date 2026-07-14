@@ -181,6 +181,7 @@ export function ChatPanel({
   sendButtonClassName,
   placeholder,
   renderMessage,
+  renderTab,
   onRejected,
 }: {
   channels?: readonly string[];
@@ -197,6 +198,8 @@ export function ChatPanel({
   sendButtonClassName?: string;
   placeholder?: string;
   renderMessage?: (message: ChatMessage) => ReactNode;
+  /** Overrides a tab's label — e.g. render channel id `"proximity"` as "Nearby". */
+  renderTab?: (channelId: string, isActive: boolean) => ReactNode;
   onRejected?: (reason: string) => void;
 }) {
   const ctx = useGameContext();
@@ -213,6 +216,7 @@ export function ChatPanel({
         className={tabsClassName}
         tabClassName={tabClassName}
         activeTabClassName={activeTabClassName}
+        renderTab={renderTab}
       />
       <ChatLog
         channelId={active}

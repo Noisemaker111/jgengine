@@ -1,7 +1,7 @@
-import type { SpawnDirectorConfig } from "../ai/spawnDirector";
-import type { Curve } from "../game/progression";
-import type { ActionCodesMap } from "../input/actionBindings";
-import type { GameContext } from "../runtime/gameContext";
+import type { SpawnDirectorConfig } from "@jgengine/core/ai/spawnDirector";
+import type { Curve } from "@jgengine/core/game/progression";
+import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 export type Leveled =
   | number

@@ -1,10 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { Minimap as EngineMinimap } from "@jgengine/react/map";
+import { MinimapPanel } from "@jgengine/react/map";
+import { useGameClock } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { createMarkerSet } from "@jgengine/core/world/markers";
 
 import { isMobInstance } from "../../ai/mobs";
 import { NPCS } from "../../entities/npcs/catalog";
+import { useZoneName } from "./Overlays";
+
+function pad(value: number): string {
+  return value.toString().padStart(2, "0");
+}
+
+function ClockReadout() {
+  const { calendar } = useGameClock();
+  return (
+    <span>
+      {pad(calendar.hour)}:{pad(calendar.minute)}
+    </span>
+  );
+}
 
 function useHudTicker(): number {
   const [tick, setTick] = useState(0);
@@ -28,7 +43,7 @@ export function Minimap() {
     markers.clear();
     for (const entity of ctx.scene.entity.list()) {
       if (entity.id === ctx.player.userId) continue;
-      if (isMobInstance(entity.id)) {
+      if (isMobInstance(ctx, entity.id)) {
         markers.add({ kind: "enemy", position: entity.position });
       } else if (entity.role === "npc") {
         markers.add({
@@ -44,17 +59,20 @@ export function Minimap() {
   }, [tick, ctx, markers]);
 
   const player = ctx.scene.entity.get(ctx.player.userId);
+  const zoneName = useZoneName();
   if (player === null) return null;
 
   return (
-    <EngineMinimap
+    <MinimapPanel
       markers={markers}
       center={[player.position[0], player.position[2]]}
       worldRadius={46}
       size={168}
       facingYaw={player.rotationY}
       rotate
-      title="Map"
+      title={zoneName ?? "Map"}
+      clock={<ClockReadout />}
+      compassProps={{ width: 168 }}
     />
   );
 }

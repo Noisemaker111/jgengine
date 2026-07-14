@@ -2,9 +2,6 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ComponentType }
 import { useFrame } from "@react-three/fiber";
 import type { Group, Mesh } from "three";
 
-import { createCartridge, type CartridgeRuntime } from "@jgengine/core/cartridge/runtime";
-import { WASD_KEYBINDS, leveled, type CartridgeSpec, type CartridgeWeapon } from "@jgengine/core/cartridge/spec";
-import { validateCartridge } from "@jgengine/core/cartridge/validate";
 import type { AbilitySlotState } from "@jgengine/core/combat/abilityKit";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { HudAnchor } from "@jgengine/core/ui/hudLayout";
@@ -12,6 +9,9 @@ import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { useAbilitySlots, useEntityStat } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 
+import { createCartridge, type CartridgeRuntime } from "./cartridge/runtime";
+import { WASD_KEYBINDS, leveled, type CartridgeSpec, type CartridgeWeapon } from "./cartridge/spec";
+import { validateCartridge } from "./cartridge/validate";
 import { defineGame, type GameConfig } from "./defineGame";
 import type { PlayableGame } from "./registry";
 

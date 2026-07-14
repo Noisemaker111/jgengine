@@ -40,6 +40,7 @@ import type { GameDefinition } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
 import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
+import { setGamePhase } from "../game/gamePhase";
 import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
@@ -76,6 +77,7 @@ import {
 import { createWeaponStats, type WeaponStats } from "../item/weapon";
 import { createPoseState, type PoseAllowedStates, type PoseState } from "../movement/poseState";
 import type { ModelAssetRef } from "../scene/assetCatalog";
+import { createBodyBind, type BodyBind } from "../scene/bodyBind";
 import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
 import {
   createEntityStatsApi,
@@ -274,6 +276,14 @@ export interface SceneEntityContext {
   visualScaleOf(instanceId: string): number;
   form: Forms;
   paint: PaintLayer;
+  /**
+   * Lazily creates (on first call) or returns the existing declarative bind for `key` — the sim-snapshot →
+   * scene-entity pose mirror (#673). Call `bind(key).sync(bodies, dt)` once per tick with every sim body's
+   * current snapshot instead of hand-writing `setPose` per body: an id seen for the first time is spawned
+   * from its `kind`, an id already bound is posed, and a previously-bound id absent from this tick's
+   * `bodies` is despawned — no per-game spawn/despawn dance.
+   */
+  bind(key: string): BodyBind;
 }
 
 export type WorldItemPickupResult =
@@ -678,6 +688,23 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   }
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
   const commandRegistry = createCommandRegistry<GameContext>();
+  if (definition.lifecycle !== undefined) {
+    const lifecycle = definition.lifecycle;
+    commandRegistry.define(lifecycle.commands?.start ?? "start", {
+      apply(state, input) {
+        const next = lifecycle.start(lifecycle.store.read(state), state, input);
+        lifecycle.store.write(state, next);
+        setGamePhase(state, lifecycle.phaseOf(next));
+      },
+    });
+    commandRegistry.define(lifecycle.commands?.restart ?? "restart", {
+      apply(state) {
+        const next = lifecycle.restart(lifecycle.store.read(state), state);
+        lifecycle.store.write(state, next);
+        setGamePhase(state, lifecycle.phaseOf(next));
+      },
+    });
+  }
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
   const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
@@ -872,6 +899,21 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       if (entities.resetToSpawn(entity.id)) count += 1;
     }
     return count;
+  }
+
+  const bodyBinds = new Map<string, BodyBind>();
+  function bind(key: string): BodyBind {
+    const existing = bodyBinds.get(key);
+    if (existing !== undefined) return existing;
+    const created = createBodyBind({
+      has: (id) => entities.get(id) !== null,
+      spawn: spawnEntity,
+      despawn: despawnEntity,
+      setPose: entities.setPose,
+      update: entities.update,
+    });
+    bodyBinds.set(key, created);
+    return created;
   }
 
   const worldItems = notifyAfter(
@@ -1407,6 +1449,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         visualScaleOf: entityVisualScaleOf,
         form: forms,
         paint: paintLayer,
+        bind,
       },
       worldItem: {
         spawn: spawnWorldItem,

@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
+
+- `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/scene/bodyBind"`
+
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/movement/poseState"`

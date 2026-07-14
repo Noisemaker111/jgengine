@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { addThreat, isMobInstance } from "../ai/mobs";
 import { classOf } from "../session/hero";
@@ -26,10 +27,10 @@ interface PetRuntime {
   nextSwingAt: number;
 }
 
-const pets = new Map<string, PetRuntime>();
+const petsOf = perContext(() => new Map<string, PetRuntime>());
 
 export function petViewOf(ctx: GameContext, userId: string): PetView | null {
-  const runtime = pets.get(userId);
+  const runtime = petsOf(ctx).get(userId);
   if (runtime === undefined) return null;
   const def = petById(runtime.defId);
   if (def === null) return null;
@@ -91,7 +92,7 @@ export function summonPet(ctx: GameContext, userId: string, petId?: string): boo
   dismissPet(ctx, userId, false);
   const instanceId = spawnPetEntity(ctx, userId, def);
   if (instanceId === null) return false;
-  pets.set(userId, {
+  petsOf(ctx).set(userId, {
     defId: def.id,
     instanceId,
     dead: false,
@@ -103,7 +104,7 @@ export function summonPet(ctx: GameContext, userId: string, petId?: string): boo
 }
 
 export function dismissPet(ctx: GameContext, userId: string, announce = true): boolean {
-  const runtime = pets.get(userId);
+  const runtime = petsOf(ctx).get(userId);
   if (runtime === undefined) return false;
   if (runtime.instanceId !== null && ctx.scene.entity.get(runtime.instanceId) !== null) {
     ctx.scene.entity.despawn(runtime.instanceId);
@@ -118,7 +119,7 @@ export function dismissPet(ctx: GameContext, userId: string, announce = true): b
 }
 
 export function revivePet(ctx: GameContext, userId: string): boolean {
-  const runtime = pets.get(userId);
+  const runtime = petsOf(ctx).get(userId);
   if (runtime === undefined || !runtime.dead) return false;
   const def = petById(runtime.defId);
   if (def === null) return false;
@@ -159,15 +160,15 @@ export function isPetAbility(abilityId: string): boolean {
   return (Object.values(PET_ABILITY_IDS) as string[]).includes(abilityId);
 }
 
-export function isPetInstance(instanceId: string): boolean {
-  for (const runtime of pets.values()) {
+export function isPetInstance(ctx: GameContext, instanceId: string): boolean {
+  for (const runtime of petsOf(ctx).values()) {
     if (runtime.instanceId === instanceId) return true;
   }
   return false;
 }
 
 export function tickPets(ctx: GameContext, userId: string, dt: number): void {
-  const runtime = pets.get(userId);
+  const runtime = petsOf(ctx).get(userId);
   if (runtime === undefined || runtime.instanceId === null || runtime.dead) return;
   const def = petById(runtime.defId);
   const pet = ctx.scene.entity.get(runtime.instanceId);
@@ -191,8 +192,8 @@ export function tickPets(ctx: GameContext, userId: string, dt: number): void {
   }
 
   let targetId: string | null = ctx.scene.entity.getTarget(userId);
-  if (targetId === null || !isMobInstance(targetId)) {
-    const nearby = ctx.scene.entity.inRadius(pet.position, 16, isMobInstance);
+  if (targetId === null || !isMobInstance(ctx, targetId)) {
+    const nearby = ctx.scene.entity.inRadius(pet.position, 16, (id) => isMobInstance(ctx, id));
     targetId = nearby[0] ?? null;
   }
 
@@ -222,8 +223,8 @@ export function tickPets(ctx: GameContext, userId: string, dt: number): void {
           effect: "damage",
           via: { amount },
         });
-        addThreat(targetId, userId, amount * (def.role === "tank" ? 1.6 : 0.7));
-        if (def.role === "tank") addThreat(targetId, runtime.instanceId, amount * 2);
+        addThreat(ctx, targetId, userId, amount * (def.role === "tank" ? 1.6 : 0.7));
+        if (def.role === "tank") addThreat(ctx, targetId, runtime.instanceId, amount * 2);
         runtime.nextSwingAt = now + def.attackSpeed;
       }
     }
@@ -246,10 +247,10 @@ export function tickPets(ctx: GameContext, userId: string, dt: number): void {
   syncPet(ctx, userId);
 }
 
-export function resetPets(userId?: string): void {
+export function resetPets(ctx: GameContext, userId?: string): void {
   if (userId !== undefined) {
-    pets.delete(userId);
+    petsOf(ctx).delete(userId);
     return;
   }
-  pets.clear();
+  petsOf(ctx).clear();
 }

@@ -1,6 +1,7 @@
 import type { Drop } from "@jgengine/core/game/lootTable";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { mobById } from "../entities/enemies/catalog";
 import { itemDefById } from "../items/catalog";
@@ -16,11 +17,11 @@ const LOCKOUT_SEC = 1800;
 
 const lootRng = seededRng("claudecraft-worldboss");
 
-let currentBossId: string | null = null;
-let nextSpawnAt = 0;
+const worldBossOf = perContext(() => ({ currentBossId: null as string | null, nextSpawnAt: 0 }));
 
-export function isWorldBoss(instanceId: string): boolean {
-  return currentBossId !== null && instanceId === currentBossId;
+export function isWorldBoss(ctx: GameContext, instanceId: string): boolean {
+  const state = worldBossOf(ctx);
+  return state.currentBossId !== null && instanceId === state.currentBossId;
 }
 
 function lockKey(userId: string): string {
@@ -38,20 +39,21 @@ function spawnThunzharr(ctx: GameContext): void {
   if (def === null) return;
   const id = spawnMobAt(ctx, def, STORMCRAG, def.maxLevel, { noRespawn: true });
   ctx.scene.entity.stats.set(id, "health", { max: WORLD_BOSS_HP, current: WORLD_BOSS_HP });
-  currentBossId = id;
+  worldBossOf(ctx).currentBossId = id;
   announce(ctx, `${def.name} rises over Thornpeak Heights!`);
 }
 
 export function tickWorldBoss(ctx: GameContext): void {
   const now = ctx.time.now();
-  if (currentBossId !== null) {
-    if (ctx.scene.entity.get(currentBossId) === null) {
-      currentBossId = null;
-      nextSpawnAt = now + RESPAWN_SEC;
+  const state = worldBossOf(ctx);
+  if (state.currentBossId !== null) {
+    if (ctx.scene.entity.get(state.currentBossId) === null) {
+      state.currentBossId = null;
+      state.nextSpawnAt = now + RESPAWN_SEC;
     }
     return;
   }
-  if (now >= nextSpawnAt) spawnThunzharr(ctx);
+  if (now >= state.nextSpawnAt) spawnThunzharr(ctx);
 }
 
 function pickGroup(entries: readonly DropDef[], rng: () => number): string | null {
@@ -85,10 +87,11 @@ export function rollWorldBossLoot(rng: () => number): Drop[] {
 }
 
 export function onWorldBossKilled(ctx: GameContext, instanceId: string, userId: string): void {
-  if (currentBossId !== instanceId) return;
-  currentBossId = null;
+  const state = worldBossOf(ctx);
+  if (state.currentBossId !== instanceId) return;
+  state.currentBossId = null;
   const now = ctx.time.now();
-  nextSpawnAt = now + RESPAWN_SEC;
+  state.nextSpawnAt = now + RESPAWN_SEC;
   const expiry = (ctx.game.store.get(lockKey(userId)) as number | undefined) ?? 0;
   if (now < expiry) {
     announce(ctx, "You have already claimed Thunzharr's spoils this cycle.");
@@ -103,7 +106,8 @@ export function worldBossLockedOut(ctx: GameContext, userId: string): boolean {
   return ctx.time.now() < expiry;
 }
 
-export function resetWorldBoss(): void {
-  currentBossId = null;
-  nextSpawnAt = 0;
+export function resetWorldBoss(ctx: GameContext): void {
+  const state = worldBossOf(ctx);
+  state.currentBossId = null;
+  state.nextSpawnAt = 0;
 }

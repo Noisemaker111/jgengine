@@ -1,8 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { COMPACTOR_ENTITY, KART_PLAYER_ENTITY } from "./game/entities/catalog";
-import { createRunSession, runSessionStore, type RunPhase } from "./game/run/session";
+import { createRunSession, runSessionStore, type RunPhase, type RunSession } from "./game/run/session";
 import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
 import { createDriveInput } from "./game/vehicle/input";
 import { placeExitGate, placeGateBarricades, placePickupMarkers, placeZoneDressing, syncCompactorRow, syncPickupMarkers } from "./game/world/setup";
@@ -10,6 +11,23 @@ import { placeExitGate, placeGateBarricades, placePickupMarkers, placeZoneDressi
 function syncPhase(ctx: GameContext, phase: RunPhase): void {
   setGamePhase(ctx, phase === "running" ? "playing" : phase === "start" ? "menu" : "ended");
 }
+
+export const lifecycle: LifecycleConfig<RunSession> = {
+  store: runSessionStore,
+  start(session) {
+    session.start();
+    return session;
+  },
+  restart(session) {
+    session.restart();
+    return session;
+  },
+  phaseOf(session) {
+    const phase = session.snapshot().phase;
+    return phase === "running" ? "playing" : phase === "start" ? "menu" : "ended";
+  },
+  commands: { start: "startRun" },
+};
 
 export function onInit(ctx: GameContext): void {
   const previousInput = driveInputStore.peek(ctx);
@@ -28,25 +46,13 @@ export function onInit(ctx: GameContext): void {
   const input = createDriveInput();
   input.attach();
   driveInputStore.write(ctx, input);
-
-  if (!ctx.game.commands.has("startRun")) {
-    ctx.game.commands.define("startRun", {
-      apply: (state) => runSessionStore.peek(state)?.start(),
-    });
-  }
-  if (!ctx.game.commands.has("restart")) {
-    ctx.game.commands.define("restart", {
-      apply: (state) => runSessionStore.peek(state)?.restart(),
-    });
-  }
 }
 
 export function onNewPlayer(ctx: GameContext): void {
-  ctx.scene.entity.despawn(ctx.player.userId);
-  ctx.scene.entity.spawn(KART_PLAYER_ENTITY, { id: ctx.player.userId, position: [0, 0, 4], role: "player" });
-
-  ctx.scene.entity.despawn(COMPACTOR_ENTITY);
-  ctx.scene.entity.spawn(COMPACTOR_ENTITY, { id: COMPACTOR_ENTITY, position: [0, 0, -35], role: "prop" });
+  ctx.scene.entity.bind("racers").sync([
+    { id: ctx.player.userId, kind: KART_PLAYER_ENTITY, position: [0, 0, 4], role: "player" },
+    { id: COMPACTOR_ENTITY, kind: COMPACTOR_ENTITY, position: [0, 0, -35], role: "prop" },
+  ]);
 }
 
 export function onTick(ctx: GameContext, dt: number): void {
@@ -68,15 +74,18 @@ export function onTick(ctx: GameContext, dt: number): void {
   const snapshot = session.snapshot();
   if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
 
-  ctx.scene.entity.setPose(ctx.player.userId, {
-    position: snapshot.pose.position,
-    rotationY: snapshot.pose.heading,
+  ctx.scene.entity.bind("racers").sync(
+    [
+      { id: ctx.player.userId, kind: KART_PLAYER_ENTITY, position: snapshot.pose.position, rotationY: snapshot.pose.heading, role: "player" },
+      {
+        id: COMPACTOR_ENTITY,
+        kind: COMPACTOR_ENTITY,
+        position: [0, ctx.world.groundHeightAt(0, snapshot.compactorZ), snapshot.compactorZ],
+        role: "prop",
+      },
+    ],
     dt,
-  });
-  ctx.scene.entity.setPose(COMPACTOR_ENTITY, {
-    position: [0, ctx.world.groundHeightAt(0, snapshot.compactorZ), snapshot.compactorZ],
-    dt,
-  });
+  );
 
   syncPickupMarkers(ctx, snapshot.collectedIds, world.removedMarkers);
   syncCompactorRow(ctx, snapshot.compactorZ, world.propRows, world.cursor);

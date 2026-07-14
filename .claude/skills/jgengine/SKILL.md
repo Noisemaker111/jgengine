@@ -101,6 +101,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Typed store handle | `store/defineStore` | `defineStore<T>(key, initial)` → `StoreHandle<T>` (`read`/`peek`/`write`/`update`/`clear`); pair with `useStore` (`@jgengine/react/store`). The cast-free default for run state |
 | Reactive keyed store | `store/observableKeyedStore` | `createObservableKeyedStore`, `ObservableKeyedStore` — backs `ctx.game.store`, sits under `defineStore` |
 | Scene instance role | `scene/entityStore` | `EntityRole`, `SceneEntity`, `SpawnOptions`, `EntityPose` |
+| Sim → scene pose bind | `scene/bodyBind` | `createBodyBind`, `BodyBind`, `BodySnapshot`, `BodyBindDeps` — backs `ctx.scene.entity.bind` |
 | Object spatial queries | `scene/objectQuery` | `raycastObjects`, `raycastObjectsAll`, `ObjectRaycastInput`, `ObjectRaycastHit` — backs `ctx.scene.object.raycast`/`raycastAll` |
 | Runtime paint layer | `scene/paintLayer` | `createPaintLayer`, `PaintLayer`, `PaintStroke` — backs `ctx.scene.entity.paint` |
 | Possession | `scene/possession` | `createPossession`, `Possession`, `PossessionDeps`, `PossessionSwappedEvent` |
@@ -172,6 +173,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Capture check | `scene/captureCheck` | `captureChance`, `rollCapture`, `CaptureCheckInput` |
 | Owned roster | `scene/roster` | `createRoster`, `Roster`, `RosterEntry`, `RosterCaptureOptions` |
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
+| Player listing marketplace | `economy/listingBook` | `createListingBook`, `ListingBook`, `ListingBookConfig`, `Listing`, `PostListingInput`, `PostListingResult`, `CancelListingResult`, `BuyListingResult`, `BuyListingOutcome`, `CollectionBoxSnapshot` — post/cancel/buy against a shared listing book with a house cut, an expiry sweep, and a per-seller collection box for proceeds/returns |
 | Tech tree | `economy/techTree` | `createTechTree`, `TechTree`, `TechNodeDef`, `canUnlockTech`, `availableTech`, `unlockedRecipes`, `grantTech`, `techPrerequisitesMet` |
 | Recipe graph | `crafting/recipe` | `createRecipeGraph`, `RecipeGraph`, `RecipeDef`, `RecipeItem`, `canCraft`, `craft`, `missingInputs`, `stationSatisfied`, `craftSeconds` |
 | Production building | `crafting/production` | `productionBuilding`, `ProductionBuildingDef`, `createProductionState`, `tickProduction`, `feedProduction`, `drainOutput`, `advanceTransport`, `resolvePowerGrid` |
@@ -339,7 +341,7 @@ export default defineConfig({
 @source "../node_modules/@jgengine/shell/dist";
 ```
 
-Inside the engine repo the two `@source` lines point at `../../../packages/react/src` and `../../../packages/shell/src` instead (see any `Games/*/src/index.css`) — same file, different `@source` targets depending on where dist lives.
+Inside the engine repo the two `@source` lines point at `../../../packages/react/src` and `../../../packages/shell/src` instead (see any `Games/*/src/index.css`) — same file, different `@source` targets depending on where dist lives. In-repo, `index.css` also does `@import "./style.css";` and carries no game-specific rules itself — those live in a sibling `src/style.css` (no Tailwind import), which is what the `/play` runner lazy-loads per game so it isn't re-shipping the shared Tailwind base on every game switch.
 
 ```tsx
 // main.tsx
@@ -614,7 +616,10 @@ ctx.scene.entity    spawn, despawn, setPose, update, get, list,
                     willHitProjectile, fireProjectile, settleProjectile,
                     distance, inRadius, hasLineOfSight, queryArc, moveToward,
                     spawnPoseOf, resetToSpawn, resetAllToSpawn,
-                    form.{register,get,active,abilities,shapeshift,revert}
+                    form.{register,get,active,abilities,shapeshift,revert},
+                    bind(key) — lazily-keyed sim-snapshot → scene-entity pose
+                    mirror; bind(key).sync(bodies, dt?) replaces a per-body
+                    setPose loop + spawn/despawn dance (see jgengine-world)
 ctx.game            commands, events, feed, loot, trade, quest, social, chat,
                     unlocks, economy, leaderboard, roster, store, cards, turn
 ctx.game.social     friends, party, presence, emotes.play, worldInvites
@@ -775,6 +780,7 @@ Renderer-free async-state primitives (`@jgengine/core/data`) for a game that rea
 | Half a system: quest without tracker, cooldown without sweep, keybind never shown, stub "coming soon" modal | Finish the system end to end — or cut it whole (see `jgengine`) |
 | Game-side workaround for a missing engine primitive | File the gap at github.com/Noisemaker111/jgengine/issues (or PR the primitive) and cut or scope the dependent system honestly |
 | Game nouns in this skill | Engine primitives + placeholder ids only |
+| Per-body `setPose` every tick + a `despawn`/`spawn` respawn dance in `onNewPlayer` | `ctx.scene.entity.bind(key).sync(bodies, dt)` (see `jgengine-world`) |
 
 ## New-game definition of done
 
