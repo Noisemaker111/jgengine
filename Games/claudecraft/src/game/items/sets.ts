@@ -1,10 +1,12 @@
+import type { GameIconName } from "@jgengine/react/gameIcons";
+
 import type { EquipSlot } from "../model";
 import { itemDefById } from "./catalog";
 
 export interface SetProc {
   id: string;
   name: string;
-  icon: string;
+  icon: GameIconName;
   trigger: "weaponCrit" | "spellCast";
   chance: number;
   icdSec: number;
@@ -51,7 +53,7 @@ const STRENGTH_T1: readonly SetBonusTier[] = [
       proc: {
         id: "set_gravemight",
         name: "Gravemight",
-        icon: "chestplate",
+        icon: "buffArrow",
         trigger: "weaponCrit",
         chance: 0.5,
         icdSec: 15,
@@ -75,7 +77,7 @@ const AGILITY_T1: readonly SetBonusTier[] = [
       proc: {
         id: "set_fangrush",
         name: "Fangrush",
-        icon: "boots",
+        icon: "sprint",
         trigger: "weaponCrit",
         chance: 0.5,
         icdSec: 15,
@@ -95,7 +97,7 @@ const CASTER_T1: readonly SetBonusTier[] = [
       proc: {
         id: "set_clearcasting",
         name: "Clearcasting",
-        icon: "chestplate",
+        icon: "star",
         trigger: "spellCast",
         chance: 0.1,
         icdSec: 4,
@@ -119,7 +121,7 @@ const STRENGTH_T2: readonly SetBonusTier[] = [
       proc: {
         id: "set_bonesplinter",
         name: "Bonesplinter",
-        icon: "skull",
+        icon: "debuffArrow",
         trigger: "weaponCrit",
         chance: 1,
         icdSec: 0,
@@ -167,7 +169,7 @@ const CASTER_T2: readonly SetBonusTier[] = [
       proc: {
         id: "set_soulblaze",
         name: "Soulblaze",
-        icon: "chestplate",
+        icon: "fire",
         trigger: "spellCast",
         chance: 0.1,
         icdSec: 20,

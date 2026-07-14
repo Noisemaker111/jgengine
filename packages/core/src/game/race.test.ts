@@ -4,11 +4,18 @@ import {
   createLapTimer,
   createRaceState,
   everyoneFinishes,
+  finishRaceSession,
+  idleRaceSession,
   lapDurations,
   lastStanding,
   parDelta,
+  placementOf,
+  raceOutcomeOf,
+  racePlacements,
   raceTrack,
   splitSegments,
+  startRaceCountdown,
+  tickRaceSession,
   topK,
   type Checkpoint,
   type RaceEvent,
@@ -336,5 +343,88 @@ describe("split analysis", () => {
   test("parDelta compares against a reference book up to the shorter length", () => {
     expect(parDelta([10, 26, 40], [10, 25, 42])).toEqual([0, 1, -2]);
     expect(parDelta([10, 26], [10, 25, 42])).toEqual([0, 1]);
+  });
+});
+
+describe("race session lifecycle", () => {
+  test("idle session sits at zero on both clocks", () => {
+    expect(idleRaceSession()).toEqual({ phase: "idle", countdown: 0, elapsed: 0 });
+  });
+
+  test("startRaceCountdown arms the default three-second countdown", () => {
+    expect(startRaceCountdown()).toEqual({ phase: "countdown", countdown: 3, elapsed: 0 });
+    expect(startRaceCountdown({ seconds: 5 })).toEqual({ phase: "countdown", countdown: 5, elapsed: 0 });
+  });
+
+  test("a non-positive countdown goes green immediately for a standing start", () => {
+    expect(startRaceCountdown({ seconds: 0 })).toEqual({ phase: "racing", countdown: 0, elapsed: 0 });
+    expect(startRaceCountdown({ seconds: -2 })).toEqual({ phase: "racing", countdown: 0, elapsed: 0 });
+  });
+
+  test("ticking bleeds the countdown then flips to racing at zero without banking overshoot", () => {
+    let session = startRaceCountdown({ seconds: 3 });
+    session = tickRaceSession(session, 1);
+    expect(session).toEqual({ phase: "countdown", countdown: 2, elapsed: 0 });
+    session = tickRaceSession(session, 5);
+    expect(session).toEqual({ phase: "racing", countdown: 0, elapsed: 0 });
+  });
+
+  test("racing accumulates elapsed time", () => {
+    let session = startRaceCountdown({ seconds: 0 });
+    session = tickRaceSession(session, 1.5);
+    session = tickRaceSession(session, 0.5);
+    expect(session).toEqual({ phase: "racing", countdown: 0, elapsed: 2 });
+  });
+
+  test("non-positive dt and terminal phases are inert", () => {
+    const racing = startRaceCountdown({ seconds: 0 });
+    expect(tickRaceSession(racing, 0)).toBe(racing);
+    expect(tickRaceSession(racing, -1)).toBe(racing);
+    const idle = idleRaceSession();
+    expect(tickRaceSession(idle, 2)).toBe(idle);
+    const done = finishRaceSession(tickRaceSession(racing, 4));
+    expect(tickRaceSession(done, 4)).toEqual(done);
+  });
+
+  test("finishRaceSession freezes elapsed only from racing", () => {
+    const racing = tickRaceSession(startRaceCountdown({ seconds: 0 }), 9);
+    expect(finishRaceSession(racing)).toEqual({ phase: "finished", countdown: 0, elapsed: 9 });
+    const idle = idleRaceSession();
+    expect(finishRaceSession(idle)).toBe(idle);
+    const counting = startRaceCountdown({ seconds: 3 });
+    expect(finishRaceSession(counting)).toBe(counting);
+  });
+});
+
+describe("placement and outcome", () => {
+  test("racePlacements ranks a finish order into 1-based places with a single-winner cutoff", () => {
+    expect(racePlacements(["p1", "p2", "p3"])).toEqual([
+      { racerId: "p1", place: 1, outcome: "win" },
+      { racerId: "p2", place: 2, outcome: "lose" },
+      { racerId: "p3", place: 3, outcome: "lose" },
+    ]);
+  });
+
+  test("winningPlaces widens the podium to multiple wins", () => {
+    expect(racePlacements(["a", "b", "c", "d"], { winningPlaces: 3 }).map((p) => p.outcome)).toEqual([
+      "win",
+      "win",
+      "win",
+      "lose",
+    ]);
+  });
+
+  test("placementOf finds one racer or returns null when they never finished", () => {
+    const order = ["lead", "chase", "trail"];
+    expect(placementOf(order, "chase")).toEqual({ racerId: "chase", place: 2, outcome: "lose" });
+    expect(placementOf(order, "lead")).toEqual({ racerId: "lead", place: 1, outcome: "win" });
+    expect(placementOf(order, "ghost")).toBeNull();
+  });
+
+  test("raceOutcomeOf is the ranking[0]===player check, defaulting an absent racer to lose", () => {
+    expect(raceOutcomeOf(["player", "rival"], "player")).toBe("win");
+    expect(raceOutcomeOf(["rival", "player"], "player")).toBe("lose");
+    expect(raceOutcomeOf(["rival", "player"], "player", { winningPlaces: 2 })).toBe("win");
+    expect(raceOutcomeOf([], "player")).toBe("lose");
   });
 });

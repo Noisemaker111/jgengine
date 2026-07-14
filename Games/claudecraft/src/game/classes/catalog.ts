@@ -51,7 +51,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "commanding_shout",
         name: "Bolstering Cry",
-        icon: "shield",
+        icon: "heart",
         school: "physical",
         kind: "buff",
         levelReq: 14,
@@ -101,7 +101,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "hamstring",
         name: "Hobbling Cut",
-        icon: "sword",
+        icon: "boots",
         school: "physical",
         kind: "damage",
         levelReq: 8,
@@ -115,7 +115,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "overpower",
         name: "Redhand",
-        icon: "sword",
+        icon: "gauntlet",
         school: "physical",
         kind: "damage",
         levelReq: 10,
@@ -188,7 +188,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "demoralizing_shout",
         name: "Direhowl",
-        icon: "debuffArrow",
+        icon: "arrowDown",
         school: "physical",
         kind: "buff",
         levelReq: 14,
@@ -208,7 +208,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "taunt",
         name: "Goad",
-        icon: "shield",
+        icon: "pin",
         school: "physical",
         kind: "buff",
         levelReq: 10,
@@ -224,7 +224,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "sunder_armor",
         name: "Armor Shear",
-        icon: "debuffArrow",
+        icon: "crosshairIcon",
         school: "physical",
         kind: "buff",
         levelReq: 10,
@@ -286,7 +286,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "frost_armor",
         name: "Hoarfrost Mantle",
-        icon: "frost",
+        icon: "cloak",
         school: "frost",
         kind: "buff",
         levelReq: 1,
@@ -338,7 +338,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "fire_blast",
         name: "Cinderfall",
-        icon: "fire",
+        icon: "gem",
         school: "fire",
         kind: "damage",
         levelReq: 6,
@@ -368,7 +368,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "frost_nova",
         name: "Icebind",
-        icon: "frost",
+        icon: "potionBlue",
         school: "frost",
         kind: "aoe",
         levelReq: 10,
@@ -401,7 +401,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "arcane_explosion",
         name: "Aetherburst",
-        icon: "star",
+        icon: "crystal",
         school: "arcane",
         kind: "aoe",
         levelReq: 14,
@@ -416,7 +416,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "scorch",
         name: "Scald",
-        icon: "fire",
+        icon: "torch",
         school: "fire",
         kind: "damage",
         levelReq: 16,
@@ -430,7 +430,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "pyroblast",
         name: "Pyrelance",
-        icon: "fire",
+        icon: "bomb",
         school: "fire",
         kind: "damage",
         levelReq: 20,
@@ -460,7 +460,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "flamestrike",
         name: "Flamestrike",
-        icon: "fire",
+        icon: "lightning",
         school: "fire",
         kind: "aoe",
         levelReq: 20,
@@ -505,7 +505,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "eviscerate",
         name: "Dirt Nap",
-        icon: "dagger",
+        icon: "gauntlet",
         school: "physical",
         kind: "damage",
         levelReq: 1,
@@ -519,7 +519,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "garrote",
         name: "Throat Wire",
-        icon: "dagger",
+        icon: "crosshairIcon",
         school: "physical",
         kind: "dot",
         levelReq: 1,
@@ -535,7 +535,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "backstab",
         name: "Craven Thrust",
-        icon: "dagger",
+        icon: "sword",
         school: "physical",
         kind: "damage",
         levelReq: 4,
@@ -563,7 +563,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "cheap_shot",
         name: "Gut Punch",
-        icon: "fist",
+        icon: "boots",
         school: "physical",
         kind: "damage",
         levelReq: 8,
@@ -639,7 +639,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "ambush",
         name: "Lurker's Strike",
-        icon: "dagger",
+        icon: "spear",
         school: "physical",
         kind: "damage",
         levelReq: 16,
@@ -669,7 +669,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "vanish",
         name: "Smokestep",
-        icon: "cloak",
+        icon: "wing",
         school: "physical",
         kind: "buff",
         levelReq: 18,
@@ -685,7 +685,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "instant_poison",
         name: "Adder's Bite",
-        icon: "poison",
+        icon: "potionRed",
         school: "nature",
         kind: "buff",
         levelReq: 18,
@@ -701,7 +701,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "deadly_poison",
         name: "Festering Venom",
-        icon: "poison",
+        icon: "potionBlue",
         school: "nature",
         kind: "buff",
         levelReq: 20,
@@ -749,7 +749,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "sap",
         name: "Sap",
-        icon: "hourglass",
+        icon: "star",
         school: "physical",
         kind: "buff",
         levelReq: 10,
@@ -781,7 +781,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "expose_armor",
         name: "Armor Breach",
-        icon: "debuffArrow",
+        icon: "gear",
         school: "physical",
         kind: "buff",
         levelReq: 14,
@@ -882,7 +882,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "divine_protection",
         name: "Ward of Faith",
-        icon: "shield",
+        icon: "amulet",
         school: "holy",
         kind: "buff",
         levelReq: 6,
@@ -898,7 +898,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "lay_on_hands",
         name: "Last Rite",
-        icon: "heart",
+        icon: "wing",
         school: "holy",
         kind: "heal",
         levelReq: 10,
@@ -913,7 +913,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "flash_of_light",
         name: "Lightmend",
-        icon: "heart",
+        icon: "feather",
         school: "holy",
         kind: "heal",
         levelReq: 12,
@@ -928,7 +928,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "exorcism",
         name: "Rite of Expulsion",
-        icon: "star",
+        icon: "cross",
         school: "holy",
         kind: "damage",
         levelReq: 14,
@@ -959,7 +959,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "righteous_fury",
         name: "Burning Oath",
-        icon: "shield",
+        icon: "torch",
         school: "holy",
         kind: "buff",
         levelReq: 16,
@@ -975,7 +975,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "retribution_aura",
         name: "Requital Aura",
-        icon: "buffArrow",
+        icon: "ring",
         school: "holy",
         kind: "buff",
         levelReq: 16,
@@ -1086,7 +1086,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "concussive_shot",
         name: "Rattling Shot",
-        icon: "arrow",
+        icon: "crossbow",
         school: "physical",
         kind: "damage",
         levelReq: 8,
@@ -1114,7 +1114,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "wing_clip",
         name: "Fettering Slash",
-        icon: "axe",
+        icon: "boots",
         school: "physical",
         kind: "damage",
         levelReq: 10,
@@ -1128,7 +1128,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "aspect_of_the_monkey",
         name: "Marten's Guise",
-        icon: "wing",
+        icon: "leaf",
         school: "nature",
         kind: "buff",
         levelReq: 10,
@@ -1174,7 +1174,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "rapid_fire",
         name: "Fevered Draw",
-        icon: "sprint",
+        icon: "lightning",
         school: "physical",
         kind: "buff",
         levelReq: 20,
@@ -1190,7 +1190,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "volley",
         name: "Volley",
-        icon: "bow",
+        icon: "arrowUp",
         school: "physical",
         kind: "aoe",
         levelReq: 18,
@@ -1282,7 +1282,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "lesser_heal",
         name: "Whispered Prayer",
-        icon: "heart",
+        icon: "feather",
         school: "holy",
         kind: "heal",
         levelReq: 1,
@@ -1297,7 +1297,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "power_word_fortitude",
         name: "Litany of Resolve",
-        icon: "shield",
+        icon: "amulet",
         school: "holy",
         kind: "buff",
         levelReq: 1,
@@ -1365,7 +1365,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "mind_blast",
         name: "Mindfracture",
-        icon: "skull",
+        icon: "eye",
         school: "shadow",
         kind: "damage",
         levelReq: 10,
@@ -1394,7 +1394,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "mind_flay",
         name: "Litany of Woe",
-        icon: "skull",
+        icon: "hourglass",
         school: "shadow",
         kind: "dot",
         levelReq: 16,
@@ -1410,7 +1410,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "flash_heal",
         name: "Urgent Prayer",
-        icon: "heart",
+        icon: "wing",
         school: "holy",
         kind: "heal",
         levelReq: 20,
@@ -1455,7 +1455,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "rockbiter_weapon",
         name: "Stonebound Weapon",
-        icon: "stone",
+        icon: "ore",
         school: "nature",
         kind: "buff",
         levelReq: 1,
@@ -1500,7 +1500,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "lightning_shield",
         name: "Thunder Ward",
-        icon: "lightning",
+        icon: "shield",
         school: "nature",
         kind: "buff",
         levelReq: 8,
@@ -1532,7 +1532,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "flametongue_weapon",
         name: "Pyrebrand Weapon",
-        icon: "fire",
+        icon: "torch",
         school: "fire",
         kind: "buff",
         levelReq: 10,
@@ -1562,7 +1562,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "frostbrand_weapon",
         name: "Rimebound Weapon",
-        icon: "frost",
+        icon: "potionBlue",
         school: "frost",
         kind: "buff",
         levelReq: 12,
@@ -1608,7 +1608,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "earthquake",
         name: "Earthquake",
-        icon: "stone",
+        icon: "crystal",
         school: "nature",
         kind: "aoe",
         levelReq: 18,
@@ -1706,7 +1706,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "curse_of_agony",
         name: "Hex of Anguish",
-        icon: "skull",
+        icon: "eye",
         school: "shadow",
         kind: "dot",
         levelReq: 8,
@@ -1722,7 +1722,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "drain_life",
         name: "Consume",
-        icon: "skull",
+        icon: "amulet",
         school: "shadow",
         kind: "dot",
         levelReq: 10,
@@ -1738,7 +1738,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "searing_pain",
         name: "Sear",
-        icon: "fire",
+        icon: "torch",
         school: "fire",
         kind: "damage",
         levelReq: 16,
@@ -1752,7 +1752,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "shadowburn",
         name: "Duskfire",
-        icon: "skull",
+        icon: "bomb",
         school: "shadow",
         kind: "damage",
         levelReq: 20,
@@ -1766,7 +1766,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "rain_of_fire",
         name: "Rain of Fire",
-        icon: "fire",
+        icon: "star",
         school: "fire",
         kind: "aoe",
         levelReq: 18,
@@ -1815,7 +1815,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "summon_imp",
         name: "Summon Emberkin",
-        icon: "fire",
+        icon: "wing",
         school: "shadow",
         kind: "buff",
         levelReq: 1,
@@ -1830,7 +1830,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "summon_voidwalker",
         name: "Summon Gloomshade",
-        icon: "skull",
+        icon: "shield",
         school: "shadow",
         kind: "buff",
         levelReq: 10,
@@ -1845,7 +1845,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "summon_felhunter",
         name: "Summon Spellhound",
-        icon: "poison",
+        icon: "fist",
         school: "shadow",
         kind: "buff",
         levelReq: 14,
@@ -1860,7 +1860,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "summon_succubus",
         name: "Summon Duskborn",
-        icon: "heart",
+        icon: "ring",
         school: "shadow",
         kind: "buff",
         levelReq: 16,
@@ -1920,7 +1920,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "mark_of_the_wild",
         name: "Wildward",
-        icon: "star",
+        icon: "amulet",
         school: "nature",
         kind: "buff",
         levelReq: 1,
@@ -1936,7 +1936,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "moonfire",
         name: "Lunar Tempest",
-        icon: "star",
+        icon: "crystal",
         school: "arcane",
         kind: "dot",
         levelReq: 4,
@@ -1952,7 +1952,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "rejuvenation",
         name: "Wildbloom",
-        icon: "leaf",
+        icon: "apple",
         school: "nature",
         kind: "hot",
         levelReq: 4,
@@ -1969,7 +1969,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "thorns",
         name: "Briarguard",
-        icon: "leaf",
+        icon: "cloak",
         school: "nature",
         kind: "buff",
         levelReq: 6,
@@ -1985,7 +1985,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "entangling_roots",
         name: "Gripping Roots",
-        icon: "leaf",
+        icon: "wood",
         school: "nature",
         kind: "dot",
         levelReq: 8,
@@ -2032,7 +2032,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "demoralizing_roar",
         name: "Craven Roar",
-        icon: "debuffArrow",
+        icon: "arrowDown",
         school: "physical",
         kind: "buff",
         levelReq: 10,
@@ -2084,7 +2084,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "rake",
         name: "Flense",
-        icon: "fist",
+        icon: "dagger",
         school: "physical",
         kind: "dot",
         levelReq: 12,
@@ -2114,7 +2114,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "regrowth",
         name: "Second Bloom",
-        icon: "heart",
+        icon: "gem",
         school: "nature",
         kind: "heal",
         levelReq: 14,
@@ -2129,7 +2129,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "ferocious_bite",
         name: "Gorebite",
-        icon: "fist",
+        icon: "skull",
         school: "physical",
         kind: "damage",
         levelReq: 14,
@@ -2143,7 +2143,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "barkskin",
         name: "Oakhide",
-        icon: "shield",
+        icon: "chestplate",
         school: "nature",
         kind: "buff",
         levelReq: 16,
@@ -2162,7 +2162,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "swipe",
         name: "Sweeping Claws",
-        icon: "fist",
+        icon: "axe",
         school: "physical",
         kind: "aoe",
         levelReq: 16,
@@ -2191,7 +2191,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "travel_form",
         name: "Fleet Form",
-        icon: "sprint",
+        icon: "wing",
         school: "nature",
         kind: "buff",
         levelReq: 16,
@@ -2291,7 +2291,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "growl",
         name: "Menace",
-        icon: "shield",
+        icon: "pin",
         school: "physical",
         kind: "buff",
         levelReq: 10,
@@ -2339,7 +2339,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "pounce",
         name: "Slinkstrike",
-        icon: "hourglass",
+        icon: "boots",
         school: "physical",
         kind: "buff",
         levelReq: 18,
@@ -2355,7 +2355,7 @@ export const CLASSES: readonly ClassDef[] = [
       {
         id: "hibernate",
         name: "Slumber",
-        icon: "hourglass",
+        icon: "potionBlue",
         school: "nature",
         kind: "buff",
         levelReq: 18,

@@ -61,15 +61,6 @@ interface Sim {
 let sim: Sim | null = null;
 let resolvedPads: readonly ResolvedPad[] = [];
 
-const edgeState = { start: false, restart: false, charge: false, c1: false, c2: false, c3: false };
-
-function pressedEdge(ctx: GameContext, action: string, key: keyof typeof edgeState): boolean {
-  const down = ctx.input.isDown(action);
-  const pressed = down && !edgeState[key];
-  edgeState[key] = down;
-  return pressed;
-}
-
 function createSim(courseId: CourseId, ctx: GameContext): Sim {
   const spawn = spawnPoseFor(courseId, ctx.world.groundHeightAt);
   const track = buildTrack(courseId, ctx.world.groundHeightAt);
@@ -148,12 +139,6 @@ export function onInit(ctx: GameContext): void {
 }
 
 export function onNewPlayer(ctx: GameContext): void {
-  edgeState.start = false;
-  edgeState.restart = false;
-  edgeState.charge = false;
-  edgeState.c1 = false;
-  edgeState.c2 = false;
-  edgeState.c3 = false;
   setRunState(ctx, (state) => selectCourse(state.courseId));
   syncPhase(ctx, runStore.read(ctx).phase);
   resolvedPads = placeStaticProps(ctx);
@@ -173,11 +158,11 @@ export function onTick(ctx: GameContext, dt: number): void {
   const state = runStore.read(ctx);
 
   const clickedCourse = consumeCourseRequest();
-  const keyCourse = pressedEdge(ctx, "courseShort", "c1")
+  const keyCourse = ctx.input.justPressed("courseShort")
     ? "short"
-    : pressedEdge(ctx, "courseTechnical", "c2")
+    : ctx.input.justPressed("courseTechnical")
       ? "technical"
-      : pressedEdge(ctx, "courseEndurance", "c3")
+      : ctx.input.justPressed("courseEndurance")
         ? "endurance"
         : null;
   const courseChange = clickedCourse ?? (keyCourse as CourseId | null);
@@ -187,14 +172,14 @@ export function onTick(ctx: GameContext, dt: number): void {
     return;
   }
 
-  const restartPressed = pressedEdge(ctx, "restart", "restart") || consumeRestartRequest();
+  const restartPressed = ctx.input.justPressed("restart") || consumeRestartRequest();
   if (restartPressed && state.phase !== "menu") {
     beginRun(ctx, state.courseId);
     return;
   }
 
   if (state.phase === "menu") {
-    const startPressed = pressedEdge(ctx, "startRace", "start") || consumeStartRequest();
+    const startPressed = ctx.input.justPressed("startRace") || consumeStartRequest();
     if (startPressed) beginRun(ctx, state.courseId);
     return;
   }
@@ -219,7 +204,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   const currentPos = player?.position ?? sim.spawn.position;
 
   const pad = reachablePad(currentPos);
-  const chargePressed = pressedEdge(ctx, "chargeToggle", "charge") || consumeChargeToggleRequest();
+  const chargePressed = ctx.input.justPressed("chargeToggle") || consumeChargeToggleRequest();
   if (chargePressed) {
     if (sim.charging) {
       sim.charging = false;

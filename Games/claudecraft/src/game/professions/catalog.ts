@@ -1,3 +1,5 @@
+import type { GameIconName } from "@jgengine/react/gameIcons";
+
 import type { GatherNodeDef, ProfessionId } from "../model";
 
 export const GATHER_NODES: readonly GatherNodeDef[] = [
@@ -14,7 +16,7 @@ export const GATHER_NODES: readonly GatherNodeDef[] = [
   { id: "herb_highwatch", name: "Highwatch Herb Patch", profession: "herbalism", zone: "peaks", skillReq: 200, skillUpTo: 250, count: 4, respawnSec: 90, materials: [{ itemId: "sunpetal_herb", min: 1, max: 2 }] },
 ];
 
-export const PROFESSIONS: readonly { id: ProfessionId; name: string; icon: string; maxSkill: number }[] = [
+export const PROFESSIONS: readonly { id: ProfessionId; name: string; icon: GameIconName; maxSkill: number }[] = [
   { id: "mining", name: "Mining", icon: "pickaxe", maxSkill: 300 },
   { id: "logging", name: "Logging", icon: "axe", maxSkill: 300 },
   { id: "herbalism", name: "Herbalism", icon: "leaf", maxSkill: 300 },

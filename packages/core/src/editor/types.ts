@@ -1,3 +1,5 @@
+import type { TerraformSnapshot } from "../world/terraform";
+
 /** A world-space point used across editor markers, volumes, and paths. */
 export type EditorVec3 = { x: number; y: number; z: number };
 
@@ -12,6 +14,8 @@ export interface EditorMarker {
   rotationY?: number;
   color?: string;
   label?: string;
+  /** Id of the object this one is parented under; moving the parent moves this with it. */
+  parentId?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -26,6 +30,8 @@ export interface EditorVolume {
   halfExtents?: EditorVec3;
   color?: string;
   label?: string;
+  /** Id of the object this one is parented under; moving the parent moves this with it. */
+  parentId?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -37,6 +43,8 @@ export interface EditorPath {
   width?: number;
   color?: string;
   label?: string;
+  /** Id of the object this one is parented under; moving the parent moves this with it. */
+  parentId?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -46,16 +54,27 @@ export interface EditorNote {
   text: string;
   position: EditorVec3;
   color?: string;
+  /** Id of the object this one is parented under; moving the parent moves this with it. */
+  parentId?: string;
   meta?: Record<string, unknown>;
 }
 
-/** The full authored scene: every marker, volume, path, and note for a game. */
+/**
+ * A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas
+ * over the game's base ground. Serializes with the scene; a game rebuilds the field with
+ * `editableTerrainFromSnapshot`.
+ */
+export type EditorTerrain = TerraformSnapshot;
+
+/** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
   version: 1;
   markers: EditorMarker[];
   volumes: EditorVolume[];
   paths: EditorPath[];
   annotations: EditorNote[];
+  /** Optional sculpted heightfield overlay; absent until terrain is created in the editor. */
+  terrain?: EditorTerrain;
 }
 
 /** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */

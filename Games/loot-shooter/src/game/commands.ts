@@ -51,7 +51,7 @@ function pickupWorldItem(ctx: GameContext): void {
     ctx.scene.entity.floatText({ instanceId: userId, text: weapon.name.toUpperCase(), kind: "pickup" });
     ctx.game.feed.push("loot.pickup", { itemId: weapon.id, rarity: weapon.rarity });
     if (weapon.rarity === "legendary") {
-      ctx.game.quest.progress(userId, CHALLENGE_IDS.legendaryFind, "pickup", 1);
+      ctx.game.quest!.progress(userId, CHALLENGE_IDS.legendaryFind, "pickup", 1);
     }
     return;
   }
@@ -168,7 +168,7 @@ export function registerCommands(ctx: GameContext): void {
     apply(state: GameContext, input) {
       if (input.itemId === undefined) return;
       const userId = state.player.userId;
-      const rejection = state.game.trade.buy(input.itemId, 1, { shop: SHOP_ID, inventoryId: "backpack" });
+      const rejection = state.game.trade!.buy(input.itemId, 1, { shop: SHOP_ID, inventoryId: "backpack" });
       if (rejection !== null) {
         state.scene.entity.floatText({ instanceId: userId, text: "NOT ENOUGH SCRAP", kind: "warn" });
         return;

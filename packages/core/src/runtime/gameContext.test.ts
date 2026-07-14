@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGame } from "../game/defineGame";
-import type { EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
+import type { CombatVfxEvent, EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
 import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { environment, terrain } from "../world/features";
@@ -57,7 +57,7 @@ function makeContext() {
       assets: createAssetCatalog(),
       multiplayer: "off",
       inventories: { backpack: { slots: 9 } },
-      features: { roster: true, cards: true, turn: true, race: true },
+      features: { roster: true, cards: true, turn: true, race: true, quest: true },
     }),
     content: CONTENT,
     player: { userId: "user_a", isNew: true },
@@ -79,6 +79,10 @@ describe("opt-in features", () => {
     expect(ctx.game.social).toBeUndefined();
     expect(ctx.game.chat).toBeUndefined();
     expect(ctx.game.players).toBeUndefined();
+    expect(ctx.game.quest).toBeUndefined();
+    expect(ctx.game.trade).toBeUndefined();
+    expect(ctx.game.unlocks).toBeUndefined();
+    expect(ctx.player.cosmetics).toBeUndefined();
     expect(ctx.game.commands).toBeDefined();
     expect(ctx.game.store).toBeDefined();
     expect(ctx.game.commands.actor()).toBeNull();
@@ -90,7 +94,19 @@ describe("opt-in features", () => {
         name: "Full",
         assets: createAssetCatalog(),
         multiplayer: "off",
-        features: { roster: true, cards: true, turn: true, race: true, leaderboard: true, social: true, chat: true },
+        features: {
+          roster: true,
+          cards: true,
+          turn: true,
+          race: true,
+          leaderboard: true,
+          social: true,
+          chat: true,
+          quest: true,
+          trade: true,
+          unlocks: true,
+          cosmetics: true,
+        },
       }),
       content: CONTENT,
       player: { userId: "user_a", isNew: true },
@@ -102,6 +118,10 @@ describe("opt-in features", () => {
     expect(ctx.game.leaderboard).toBeDefined();
     expect(ctx.game.social).toBeDefined();
     expect(ctx.game.chat).toBeDefined();
+    expect(ctx.game.quest).toBeDefined();
+    expect(ctx.game.trade).toBeDefined();
+    expect(ctx.game.unlocks).toBeDefined();
+    expect(ctx.player.cosmetics).toBeDefined();
   });
 
   test("chat opts in social implicitly (chat depends on it)", () => {
@@ -471,10 +491,10 @@ describe("game context change signal", () => {
     expect(listener.count()).toBe(1);
     ctx.game.events.emit("stat.levelUp", { userId: "user_a", stat: "mining", level: 2 });
     expect(listener.count()).toBe(2);
-    ctx.game.quest.register([
+    ctx.game.quest!.register([
       { id: "q1", objectives: [{ id: "o1", count: 1 }], rewards: {} },
     ]);
-    ctx.game.quest.accept("user_a", "q1");
+    ctx.game.quest!.accept("user_a", "q1");
     expect(listener.count()).toBeGreaterThan(2);
     listener.unsubscribe();
     ctx.game.feed.push("chat", { text: "bye" });
@@ -516,6 +536,24 @@ describe("float text and projectile events", () => {
     const dummy = ctx.scene.entity.spawn("dummy", { position: [4, 0, -2] });
     ctx.scene.entity.floatText({ instanceId: dummy, text: "Crit!", kind: "info" });
     expect(events).toEqual([{ instanceId: dummy, position: [4, 0, -2], text: "Crit!", kind: "info" }]);
+  });
+
+  test("the vfx verb resolves endpoints from instance ids and defaults duration", () => {
+    const ctx = makeContext();
+    const events: CombatVfxEvent[] = [];
+    ctx.game.events.on("combat.vfx", (event) => events.push(event));
+    const caster = ctx.scene.entity.spawn("caster", { position: [0, 0, 0] });
+    const target = ctx.scene.entity.spawn("target", { position: [5, 0, 1] });
+    ctx.scene.entity.vfx({ kind: "projectile", color: 0x8ed2ff, from: caster, to: target });
+    expect(events).toHaveLength(1);
+    expect(events[0]!.kind).toBe("projectile");
+    expect(events[0]!.color).toBe(0x8ed2ff);
+    expect(events[0]!.from).toEqual([0, 0, 0]);
+    expect(events[0]!.to).toEqual([5, 0, 1]);
+    expect(events[0]!.durationMs).toBeGreaterThan(0);
+    ctx.scene.entity.vfx({ kind: "nova", color: 0xff7a2a, from: [2, 0, 2], radius: 6 });
+    expect(events[1]!.from).toEqual([2, 0, 2]);
+    expect(events[1]!.radius).toBe(6);
   });
 
   test("settling a projectile emits projectile.settled with origin and hit flag", () => {
@@ -808,7 +846,7 @@ describe("ctx.snapshot / ctx.hydrate", () => {
     expect(snap["chat"]).toBeUndefined();
   });
 
-  test("roundtrips entities, stats, store, leaderboard and chat into a fresh context", () => {
+  test("roundtrips entities, stats, store, leaderboard, chat and party into a fresh context", () => {
     const host = fullContext("user_a");
     const id = host.scene.entity.spawn("dummy", { position: [1, 0, 2] });
     host.scene.entity.stats.set(id, "health", { current: 12, max: 30, min: 0 });
@@ -816,8 +854,13 @@ describe("ctx.snapshot / ctx.hydrate", () => {
     host.game.leaderboard!.track({ stat: "kills", scope: "global" });
     host.game.leaderboard!.increment("user_a", "kills", { scope: "global", by: 3 });
     host.game.chat!.send("user_a", "global", "gg");
+    host.game.social!.party.register({ maxMembers: 4 });
+    const invite = host.game.social!.party.invite("user_a", "user_b");
+    if (!("inviteId" in invite)) throw new Error(invite.reason);
+    host.game.social!.party.accept("user_b", invite.inviteId);
 
     const snap = host.snapshot();
+    expect(snap["social"]).toBeDefined();
 
     const client = fullContext("user_b");
     const before = client.version();
@@ -831,6 +874,10 @@ describe("ctx.snapshot / ctx.hydrate", () => {
       { userId: "user_a", value: 3 },
     ]);
     expect(client.game.chat!.history("global").map((m) => m.body)).toEqual(["gg"]);
+    expect(client.game.social!.party.list("user_b")).toEqual([
+      { userId: "user_a", role: "leader" },
+      { userId: "user_b", role: "member" },
+    ]);
   });
 
   test("hydrate leaves modules whose key is absent from the snapshot untouched", () => {

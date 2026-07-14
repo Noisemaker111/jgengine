@@ -1,6 +1,9 @@
 import {
   createEditorSession,
+  editorChildren,
   editorDocumentBounds,
+  editorParentOf,
+  editorRoots,
   listEditorKinds,
   normalizeEditorLayers,
   summarizeEditorSession,
@@ -11,6 +14,21 @@ import {
   type EditorSession,
   type EditorSessionState,
 } from "@jgengine/core/editor/index";
+import {
+  createTerrainSnapshot,
+  editableTerrainFromSnapshot,
+  type TerraformEdit,
+  type TerraformMode,
+  type TerrainSurfaceRule,
+} from "@jgengine/core/world/terraform";
+
+import {
+  resolveScatter,
+  scatterRegionEstimate,
+  SCATTER_PATH_KIND,
+} from "@jgengine/core/world/scatterRegion";
+
+import { TERRAIN_MATERIALS } from "./uiStore";
 
 /** How the editor hosts the game: frozen placement view, roamable world, or the real game. */
 export type EditorRunMode = "edit" | "walk" | "play";
@@ -39,7 +57,44 @@ export type EditorBridgeRequest =
   | { method: "undo" }
   | { method: "redo" }
   | { method: "list_assets" }
-  | { method: "place_asset"; id: string; kind?: string; x?: number; y?: number; z?: number };
+  | { method: "place_asset"; id: string; kind?: string; x?: number; y?: number; z?: number }
+  | { method: "create_terrain"; width?: number; depth?: number; cellSize?: number; centerX?: number; centerZ?: number }
+  | {
+      method: "sculpt_terrain";
+      mode: TerraformMode;
+      x: number;
+      z: number;
+      radius?: number;
+      strength?: number;
+      target?: number;
+      toX?: number;
+      toZ?: number;
+      seed?: number;
+      shape?: "circle" | "square";
+    }
+  | { method: "terrain_summary" }
+  | { method: "paint_terrain"; surface: string; x: number; z: number; radius?: number; shape?: "circle" | "square" }
+  | { method: "fill_terrain"; surface: string | null }
+  | {
+      method: "auto_paint";
+      surface: string;
+      minSlope?: number;
+      maxSlope?: number;
+      minHeight?: number;
+      maxHeight?: number;
+    }
+  | { method: "terrain_materials" }
+  | {
+      method: "add_foliage";
+      points: { x: number; z: number }[];
+      density?: number;
+      item?: string;
+      seed?: string;
+      minSpacing?: number;
+    }
+  | { method: "scatter_summary" }
+  | { method: "set_parent"; ids: string[]; parentId: string | null }
+  | { method: "hierarchy" };
 
 /** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
@@ -375,6 +430,147 @@ export function createEditorHost(options: {
                 position,
                 marker: session.getState().document.markers.find((marker) => marker.id === id),
               },
+            };
+          }
+          case "create_terrain": {
+            const width = request.width ?? 200;
+            const depth = request.depth ?? 200;
+            const cx = request.centerX ?? 0;
+            const cz = request.centerZ ?? 0;
+            const terrain = createTerrainSnapshot({
+              bounds: { minX: cx - width / 2, minZ: cz - depth / 2, maxX: cx + width / 2, maxZ: cz + depth / 2 },
+              cellSize: request.cellSize ?? 2,
+            });
+            session.dispatch({ type: "setTerrain", terrain });
+            return { ok: true, result: { cols: terrain.cols, rows: terrain.rows, cellSize: terrain.cellSize } };
+          }
+          case "sculpt_terrain": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            const live = editableTerrainFromSnapshot(terrain);
+            const edit: TerraformEdit = {
+              mode: request.mode,
+              center: [request.x, request.z],
+              radius: request.radius ?? 8,
+              strength: request.strength ?? 1,
+              ...(request.target === undefined ? {} : { target: request.target }),
+              ...(request.toX === undefined || request.toZ === undefined ? {} : { to: [request.toX, request.toZ] }),
+              ...(request.seed === undefined ? {} : { seed: request.seed }),
+              ...(request.shape === undefined ? {} : { shape: request.shape }),
+            };
+            const delta = live.editDelta(edit);
+            if (delta.indices.length === 0) return { ok: false, error: "brush touched no vertices (check radius/position)" };
+            session.dispatch({ type: "sculptTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length, canUndo: session.canUndo() } };
+          }
+          case "terrain_summary": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: true, result: { terrain: null } };
+            let min = Infinity;
+            let max = -Infinity;
+            let nonZero = 0;
+            for (const value of terrain.offsets) {
+              if (value < min) min = value;
+              if (value > max) max = value;
+              if (value !== 0) nonZero += 1;
+            }
+            return {
+              ok: true,
+              result: {
+                cols: terrain.cols,
+                rows: terrain.rows,
+                cellSize: terrain.cellSize,
+                bounds: terrain.bounds,
+                minOffset: terrain.offsets.length === 0 ? 0 : min,
+                maxOffset: terrain.offsets.length === 0 ? 0 : max,
+                editedVertices: nonZero,
+                paintedCells: terrain.surfaces.filter((surface) => surface !== null).length,
+              },
+            };
+          }
+          case "paint_terrain": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            const live = editableTerrainFromSnapshot(terrain);
+            const delta = live.paintDelta({
+              mode: "paint",
+              center: [request.x, request.z],
+              radius: request.radius ?? 8,
+              surface: request.surface,
+              ...(request.shape === undefined ? {} : { shape: request.shape }),
+            });
+            if (delta.indices.length === 0) return { ok: false, error: "paint touched no cells (check radius/position)" };
+            session.dispatch({ type: "paintTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length, canUndo: session.canUndo() } };
+          }
+          case "fill_terrain": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            const live = editableTerrainFromSnapshot(terrain);
+            const delta = live.fillSurfaceDelta(request.surface);
+            if (delta.indices.length === 0) return { ok: true, result: { changed: 0 } };
+            session.dispatch({ type: "paintTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length } };
+          }
+          case "auto_paint": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            const live = editableTerrainFromSnapshot(terrain);
+            const rule: TerrainSurfaceRule = {
+              surface: request.surface,
+              ...(request.minSlope === undefined ? {} : { minSlope: request.minSlope }),
+              ...(request.maxSlope === undefined ? {} : { maxSlope: request.maxSlope }),
+              ...(request.minHeight === undefined ? {} : { minHeight: request.minHeight }),
+              ...(request.maxHeight === undefined ? {} : { maxHeight: request.maxHeight }),
+            };
+            const delta = live.autoPaintDelta(rule);
+            if (delta.indices.length === 0) return { ok: true, result: { changed: 0 } };
+            session.dispatch({ type: "paintTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length } };
+          }
+          case "terrain_materials":
+            return { ok: true, result: { materials: TERRAIN_MATERIALS } };
+          case "add_foliage": {
+            if (request.points.length < 3) return { ok: false, error: "add_foliage needs at least 3 polygon points" };
+            const id = `foliage_${Date.now().toString(36)}`;
+            session.dispatch({
+              type: "addPath",
+              path: {
+                id,
+                kind: SCATTER_PATH_KIND,
+                points: request.points.map((point) => ({ x: point.x, y: 0, z: point.z })),
+                label: "foliage",
+                meta: {
+                  density: request.density ?? 0.15,
+                  ...(request.item === undefined ? {} : { item: request.item }),
+                  ...(request.seed === undefined ? {} : { seed: request.seed }),
+                  ...(request.minSpacing === undefined ? {} : { minSpacing: request.minSpacing }),
+                },
+              },
+            });
+            const path = session.getState().document.paths.find((p) => p.id === id)!;
+            return { ok: true, result: { id, estimate: scatterRegionEstimate(path) } };
+          }
+          case "scatter_summary": {
+            const doc = session.getState().document;
+            const regions = doc.paths.filter((path) => path.kind === SCATTER_PATH_KIND).length;
+            const instances = resolveScatter(doc).length;
+            return { ok: true, result: { regions, instances } };
+          }
+          case "set_parent": {
+            session.dispatch({ type: "setParent", ids: request.ids, parentId: request.parentId });
+            const doc = session.getState().document;
+            return {
+              ok: true,
+              result: { roots: editorRoots(doc), parents: request.ids.map((id) => ({ id, parentId: editorParentOf(doc, id) ?? null })) },
+            };
+          }
+          case "hierarchy": {
+            const doc = session.getState().document;
+            const roots = editorRoots(doc);
+            return {
+              ok: true,
+              result: { roots, tree: roots.map((id) => ({ id, children: editorChildren(doc, id) })) },
             };
           }
         }

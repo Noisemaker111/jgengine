@@ -110,6 +110,20 @@ export interface EntityFloatTextEvent {
   scale?: number;
 }
 
+/** The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark. */
+export type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark";
+
+/** A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects). */
+export interface CombatVfxEvent {
+  id: number;
+  kind: VfxKind;
+  color: number;
+  from: [number, number, number];
+  to?: [number, number, number];
+  radius?: number;
+  durationMs: number;
+}
+
 export interface CombatTelegraphEvent {
   id: number;
   shape: TelegraphShape;
@@ -197,6 +211,7 @@ export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
   "combat.telegraph": CombatTelegraphEvent;
+  "combat.vfx": CombatVfxEvent;
   "combat.telegraphCancelled": CombatTelegraphCancelledEvent;
   "combat.hitReaction": CombatHitReactionEvent;
   "loot.granted": LootGrantedEvent;

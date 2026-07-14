@@ -1,3 +1,5 @@
+import type { GameIconName } from "@jgengine/react/gameIcons";
+
 export type ResourceKind = "mana" | "rage" | "energy";
 export type AbilitySchool = "physical" | "holy" | "fire" | "frost" | "arcane" | "nature" | "shadow";
 export type AbilityKind = "damage" | "heal" | "dot" | "hot" | "buff" | "aoe";
@@ -24,7 +26,7 @@ export interface AbilityCcDef {
 export interface AbilityDef {
   id: string;
   name: string;
-  icon: string;
+  icon: GameIconName;
   school: AbilitySchool;
   kind: AbilityKind;
   levelReq: number;
@@ -59,7 +61,7 @@ export interface SpecDef {
   id: string;
   classId: string;
   name: string;
-  icon: string;
+  icon: GameIconName;
   nodes: readonly import("@jgengine/core/game/talents").TalentNodeDef<HeroStatId>[];
 }
 
@@ -80,7 +82,7 @@ export interface GatherNodeDef {
 export interface ClassDef {
   id: string;
   name: string;
-  icon: string;
+  icon: GameIconName;
   color: string;
   resource: ResourceKind;
   baseHp: number;
@@ -154,7 +156,7 @@ export interface DungeonDef {
 export interface ItemDef {
   id: string;
   name: string;
-  icon: string;
+  icon: GameIconName;
   kind: "weapon" | "armor" | "consumable" | "junk" | "quest";
   quality: ItemQuality;
   slot?: EquipSlot;

@@ -120,7 +120,7 @@ A capture item's `item.use` handler composes the primitives instead of forking t
 
 ### Local saves — mutable single-player state
 
-`@jgengine/core/game/keyValueStore` — `createKeyValueStore({ key, initial, storage? })` is a single persisted mutable cell (`get` / `set` / `update` / `clear`) for single-player state a `recordBook` can't hold: a credit bank, a settings blob, level progress. `recordBook` is monotonic — it keeps only improved values; reach for the KV store when the value moves both ways. It targets the DOM-free `KeyValueStorage` seam (defaults to `localStorage`, pass a stub in tests or `null` for memory-only); corrupt or unavailable storage degrades to in-memory and never throws into a tick. Author any core-side persistence against `KeyValueStorage`, never the DOM `Storage` type — core has no DOM lib, so copying shell's `fovPreference.ts` shape into core fails the build.
+`@jgengine/core/game/recordBook` — `createRecordBook({ key, fields, storage? })` is a personal-best record book: named numeric fields racing toward `"lower"` (times) or `"higher"` (scores, streaks), with `best()` / `bestOf(field)` / `submit(run)` / `clear()`. `@jgengine/core/game/keyValueStore` — `createKeyValueStore({ key, initial, storage? })` is a single persisted mutable cell (`get` / `set` / `update` / `clear`) for single-player state a `recordBook` can't hold: a credit bank, a settings blob, level progress. `recordBook` is monotonic — it keeps only improved values; reach for the KV store when the value moves both ways. Both target the DOM-free `KeyValueStorage` seam and both default `storage` to the browser's `localStorage` when omitted — pass a stub in tests, or `storage: null` to force memory-only. That default already no-ops when `localStorage` is missing or throws (private mode, quota, SSR): adopters pass a `key`, never a hand-rolled `typeof localStorage` guard. Corrupt or unavailable storage degrades to in-memory and never throws into a tick. Author any core-side persistence against `KeyValueStorage`, never the DOM `Storage` type — core has no DOM lib, so copying shell's `fovPreference.ts` shape into core fails the build.
 
 ## Combat — effects, projectiles, death, feel, abilities
 ## Card, board & shaped-inventory primitives
@@ -183,7 +183,7 @@ Two extras beyond the default buy/live/end cycle: `phaseOrder?: string[]` overri
 
 ## Trade
 
-Catalog `trade` fields drive everything — no duplicate price lists.
+Opt-in: `defineGame({ features: { trade: true } })` — else `ctx.game.trade` is `undefined`. Catalog `trade` fields drive everything — no duplicate price lists.
 
 ```ts
 ctx.game.trade.canBuy(itemId, shopId, count?)   // → reason | null
@@ -194,6 +194,8 @@ ctx.game.trade.tradableAt(shopId, allItemIds)   // derive stock from catalogs
 ```
 
 ## Economy and unlocks
+
+`economy` is always on; `ctx.game.unlocks` is opt-in via `features: { unlocks: true }` (else `undefined`).
 
 ```ts
 ctx.game.economy.balance(userId, currencyId) / grant(...) / charge(...)  // charge → { reason } | null
@@ -224,6 +226,8 @@ ctx.player.applyLoadout(userId, loadoutId)               // → null | { reason 
 `LoadoutDef = { inventories?: { hotbar: [{ item, count, slot? }], … }, stats?, economy?, unlocks? }`. Application is **all-or-nothing**: every inventory put dry-runs first; any rejection applies nothing. Starter kits gate on `ctx.player.isNew`; class/respawn kits run from commands. Never scatter raw `put`/`grant` calls for a kit.
 
 ## Quests
+
+Opt-in: `defineGame({ features: { quest: true } })` — else `ctx.game.quest` is `undefined`.
 
 ```ts
 ctx.game.quest.register(catalog)                          // onInit
@@ -267,6 +271,8 @@ Built-in channels: `global` (everyone), `party` (reuses `social.party.membersOf`
 **Remote chat seam** (`multiplayer/chatContract`): `ChatTransport` is the hook-shaped contract (`useMessages(channelId | "skip")` / `useActions()`, identity-stable like `PresenceTransport`); `ChatSync` is the callback shape for backends that can't host React hooks. Bindings: ws — `createWsBackend(...).chatSync` / `.chatSyncFor(serverId)` over `chatSend` frames + a `chat` update channel (host relays per-channel rings, validates length + rate limit); Convex — `@jgengine/convex/convexChatTransport` `createConvexChatTransport({ messages, sendMessage })` (one live query + one mutation); local/dev — `createLocalChatTransport()`. React lifts a `ChatSync` via `chatTransportFromSync`.
 
 ## Cosmetic loadout
+
+Opt-in: `defineGame({ features: { cosmetics: true } })` — else `ctx.player.cosmetics` is `undefined`.
 
 ```ts
 ctx.player.cosmetics.register(defs)                       // onInit — Record<loadoutId, { slots: Record<slot, cosmeticId> }>
