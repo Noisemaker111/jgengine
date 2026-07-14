@@ -33,22 +33,28 @@ export const TERRAIN_SCULPT: TerraformSnapshot = buildSculpt();
 /** Corner + edge foliage bands, kept off the central path so gameplay reads unchanged. */
 const FOLIAGE_REGIONS: readonly (readonly [number, number][])[] = [
   [
-    [-40, -40],
-    [-22, -40],
-    [-22, -22],
-    [-40, -22],
+    [-42, -42],
+    [-16, -42],
+    [-16, -18],
+    [-42, -18],
   ],
   [
-    [22, 22],
-    [40, 22],
-    [40, 40],
-    [22, 40],
+    [16, 18],
+    [42, 18],
+    [42, 42],
+    [16, 42],
   ],
   [
-    [-40, 22],
-    [-24, 22],
-    [-24, 40],
-    [-40, 40],
+    [-42, 16],
+    [-18, 16],
+    [-18, 42],
+    [-42, 42],
+  ],
+  [
+    [18, -42],
+    [42, -42],
+    [42, -18],
+    [18, -18],
   ],
 ];
 
@@ -67,12 +73,12 @@ export const editorLayers: EditorDocument = {
     points: points.map(([x, z]) => ({ x, y: 0, z })),
     label: "arena foliage",
     meta: {
-      density: 0.16,
-      minSpacing: 2.2,
+      density: 0.34,
+      minSpacing: 1.6,
       seed: `tower-guard-${index}`,
-      maxSlope: 1.4,
-      minScale: 0.8,
-      maxScale: 1.5,
+      maxSlope: 3,
+      minScale: 0.9,
+      maxScale: 1.7,
       palette: [
         { item: "pine", weight: 3 },
         { item: "tree", weight: 2 },
