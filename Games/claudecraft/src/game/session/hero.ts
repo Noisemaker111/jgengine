@@ -7,6 +7,7 @@ import type { GameIconName } from "@jgengine/react/gameIcons";
 import { classById } from "../classes/catalog";
 import { classEntityId } from "../model";
 import { itemDefById } from "../items/catalog";
+import { aggregateEnchantBonuses } from "../items/enchanting";
 import { aggregateSetBonuses, equippedSetCounts, type SetProc } from "../items/sets";
 import { resolveAbilityMods } from "../talents/abilityMods";
 import { SPECS, TALENT_POINTS_RULE } from "../talents/catalog";
@@ -99,6 +100,7 @@ export const storeKeys = {
   rested: (userId: string) => `rested:${userId}`,
   bank: (userId: string) => `bank:${userId}`,
   professions: (userId: string) => `profs:${userId}`,
+  enchants: (userId: string) => `enchants:${userId}`,
   name: (userId: string) => `name:${userId}`,
   cinematic: (userId: string) => `cinematic:${userId}`,
 } as const;
@@ -221,6 +223,11 @@ export function equipsOf(ctx: GameContext, userId: string): Partial<Record<Equip
   return (raw as Partial<Record<EquipSlot, string>> | undefined) ?? {};
 }
 
+export function enchantsOf(ctx: GameContext, userId: string): Partial<Record<EquipSlot, string>> {
+  const raw = ctx.game.store.get(storeKeys.enchants(userId));
+  return (raw as Partial<Record<EquipSlot, string>> | undefined) ?? {};
+}
+
 export function auraEntries(): IterableIterator<[string, AuraState[]]> {
   return auras.entries();
 }
@@ -293,6 +300,15 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
   bonusAp += setBonus.ap;
   bonusSp += setBonus.sp;
   let bonusHaste = setBonus.hastePct;
+  const enchantBonus = aggregateEnchantBonuses(equips, enchantsOf(ctx, userId));
+  attributes.str += enchantBonus.str;
+  attributes.agi += enchantBonus.agi;
+  attributes.sta += enchantBonus.sta;
+  attributes.int += enchantBonus.int;
+  attributes.spi += enchantBonus.spi;
+  bonusAp += enchantBonus.attackPower;
+  bonusSp += enchantBonus.spellPower;
+  bonusHaste += enchantBonus.hastePct;
   for (const aura of aurasOf(userId)) {
     if (aura.kind !== "buff" || aura.buffStat === undefined || aura.buffAmount === undefined) continue;
     if (aura.buffStat === "armor") armor += aura.buffAmount;
@@ -330,7 +346,8 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
     critPct:
       talented("critPct", BASE_CRIT_PCT + attributes.agi * 0.05) +
       (external?.critAdd ?? 0) +
-      setBonus.critPct,
+      setBonus.critPct +
+      enchantBonus.critPct,
     hastePct: Math.max(0, bonusHaste),
     weapon,
     setProcs: setBonus.procs,
