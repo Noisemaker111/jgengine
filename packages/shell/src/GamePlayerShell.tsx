@@ -149,6 +149,7 @@ import {
   WorldFloatText,
   WorldTelegraphs,
 } from "./world/WorldHud";
+import { WorldSpellVfx } from "./world/WorldVfx";
 import { GridWorldScene } from "./world/GridWorldScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
@@ -2296,6 +2297,7 @@ export function GamePlayerShell({
           ) : null}
           <WorldItems config={playable.worldItem} />
           <WorldTelegraphs />
+          <WorldSpellVfx />
           <WorldFloatText />
           <ProjectileTracers />
           {devtoolsEnabled ? <CollisionDebugWorld /> : null}
