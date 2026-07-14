@@ -1,14 +1,15 @@
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useEntityStat, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { AMMO_LABELS, AMMO_POOLS, AMMO_STAT_IDS } from "../../ammo";
 import { weaponById } from "../../items/weapons/catalog";
 import { RARITY_COLORS } from "../../palette";
-import { useSelectedSlot } from "./useRun";
+import { selectedSlotStore } from "../../run/stores";
 
 export function AmmoPanel() {
   const { compact } = useDisplayProfile();
   const { userId } = usePlayer();
-  const selected = useSelectedSlot();
+  const selected = useStore(selectedSlotStore);
   const slots = useInventory("hotbar");
   const stack = slots[selected] ?? null;
   const weapon = stack === null ? undefined : weaponById(stack.itemId);

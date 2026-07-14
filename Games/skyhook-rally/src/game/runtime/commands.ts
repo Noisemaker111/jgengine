@@ -1,11 +1,10 @@
 import { createRaceState, firstPastPost, raceTrack } from "@jgengine/core/game/race";
 import { createSpawnPoints } from "@jgengine/core/game/spawnPoints";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import type { MarkerSet } from "@jgengine/core/world/markers";
 
 import { HOOK_CONE_COS, HOOK_MAX_LENGTH } from "../physics/constants";
 import { pickHookTarget } from "../physics/hookTarget";
-import { createApexDetector, forwardVector, isApexOpen, type Vec3 } from "../physics/swing";
+import { createApexDetector, forwardVector, isApexOpen } from "../physics/swing";
 import {
   applyFlightDistance,
   applyMissedHook,
@@ -19,18 +18,18 @@ import type { Archipelago } from "../world/archipelago";
 import type { CourseDef } from "../world/courses";
 import { headingTo, spawnPoseId } from "../world/spawnIds";
 import { getBridge, resetBridge } from "./bridge";
-import { storeGet, storeSet } from "./store";
+import { courseStore, flightOriginStore, markersStore, raceStore, sessionStore, spawnPointsStore } from "./store";
 
 function settleFlight(ctx: GameContext, session: SessionState, landedAt: readonly [number, number, number]): SessionState {
-  const origin = storeGet<Vec3>(ctx, "flightOrigin");
+  const origin = flightOriginStore.peek(ctx);
   if (origin === undefined) return session;
-  storeSet<Vec3 | undefined>(ctx, "flightOrigin", undefined);
+  flightOriginStore.write(ctx, undefined);
   const distance = Math.hypot(landedAt[0] - origin.x, landedAt[1] - origin.y, landedAt[2] - origin.z);
   return applyFlightDistance(session, distance);
 }
 
 function syncCourseMarkers(ctx: GameContext, course: CourseDef): void {
-  const markers = storeGet<MarkerSet>(ctx, "markers");
+  const markers = markersStore.peek(ctx);
   if (markers === undefined) return;
   for (const marker of markers.query({ kind: "objective" })) markers.remove(marker.id);
   course.checkpoints.forEach((cp, index) => {
@@ -67,10 +66,10 @@ export function beginCourse(ctx: GameContext, courses: readonly CourseDef[], cou
     spawnPoints.record(spawnPoseId(course.id, index), { x: cp.center[0], y: cp.center[1], z: cp.center[2], rotationY: yaw });
   });
 
-  storeSet(ctx, "race", race);
-  storeSet(ctx, "spawnPoints", spawnPoints);
-  storeSet(ctx, "course", course);
-  storeSet<Vec3 | undefined>(ctx, "flightOrigin", undefined);
+  raceStore.write(ctx, race);
+  spawnPointsStore.write(ctx, spawnPoints);
+  courseStore.write(ctx, course);
+  flightOriginStore.write(ctx, undefined);
   syncCourseMarkers(ctx, course);
 
   const bridge = resetBridge();
@@ -84,13 +83,13 @@ export function beginCourse(ctx: GameContext, courses: readonly CourseDef[], cou
     rotationY: startYaw,
   });
 
-  storeSet(ctx, "session", startCourse(course, ctx.time.now()));
+  sessionStore.write(ctx, startCourse(course, ctx.time.now()));
 }
 
 export function registerCommands(ctx: GameContext, archipelago: Archipelago, courses: readonly CourseDef[]): void {
   ctx.game.commands.define("hook", {
     apply(gameCtx) {
-      const session = storeGet<SessionState>(gameCtx, "session");
+      const session = sessionStore.peek(gameCtx);
       if (session === undefined || session.phase !== "playing") return;
       const bridge = getBridge();
       const userId = gameCtx.player.userId;
@@ -103,8 +102,8 @@ export function registerCommands(ctx: GameContext, archipelago: Archipelago, cou
         bridge.attached = false;
         bridge.anchor = null;
         bridge.apex = createApexDetector();
-        storeSet<Vec3>(gameCtx, "flightOrigin", { x: entity.position[0], y: entity.position[1], z: entity.position[2] });
-        storeSet(gameCtx, "session", applyRelease(session, wasTrueSwing, now));
+        flightOriginStore.write(gameCtx, { x: entity.position[0], y: entity.position[1], z: entity.position[2] });
+        sessionStore.write(gameCtx, applyRelease(session, wasTrueSwing, now));
         return;
       }
 
@@ -112,7 +111,7 @@ export function registerCommands(ctx: GameContext, archipelago: Archipelago, cou
       const forward = forwardVector(bridge.aim.yaw, bridge.aim.pitch);
       const target = pickHookTarget(origin, forward, archipelago.pylons, HOOK_MAX_LENGTH, HOOK_CONE_COS);
       if (target === null) {
-        storeSet(gameCtx, "session", applyMissedHook(session, now));
+        sessionStore.write(gameCtx, applyMissedHook(session, now));
         return;
       }
       const anchor = { x: target.base.x, y: target.ringY, z: target.base.z };
@@ -121,13 +120,13 @@ export function registerCommands(ctx: GameContext, archipelago: Archipelago, cou
       bridge.anchor = anchor;
       bridge.ropeLength = Math.max(1.5, dist);
       bridge.apex = createApexDetector();
-      storeSet(gameCtx, "session", settleFlight(gameCtx, session, entity.position));
+      sessionStore.write(gameCtx, settleFlight(gameCtx, session, entity.position));
     },
   });
 
   ctx.game.commands.define("restartCourse", {
     apply(gameCtx) {
-      const session = storeGet<SessionState>(gameCtx, "session");
+      const session = sessionStore.peek(gameCtx);
       const courseId = session?.courseId ?? session?.selectedCourseId ?? courses[0]!.id;
       beginCourse(gameCtx, courses, courseId);
     },
@@ -135,7 +134,7 @@ export function registerCommands(ctx: GameContext, archipelago: Archipelago, cou
 
   ctx.game.commands.define("startRun", {
     apply(gameCtx) {
-      const session = storeGet<SessionState>(gameCtx, "session") ?? initialSession(courses[0]!.id);
+      const session = sessionStore.peek(gameCtx) ?? initialSession(courses[0]!.id);
       if (session.phase !== "menu") return;
       beginCourse(gameCtx, courses, session.selectedCourseId);
     },
@@ -143,7 +142,7 @@ export function registerCommands(ctx: GameContext, archipelago: Archipelago, cou
 
   ctx.game.commands.define("returnToMenu", {
     apply(gameCtx) {
-      const session = storeGet<SessionState>(gameCtx, "session");
+      const session = sessionStore.peek(gameCtx);
       const selected = session?.selectedCourseId ?? courses[0]!.id;
       const bridge = resetBridge();
       bridge.active = true;
@@ -151,16 +150,16 @@ export function registerCommands(ctx: GameContext, archipelago: Archipelago, cou
       const course = courses.find((c) => c.id === selected) ?? courses[0]!;
       const cp = course.checkpoints[0]!;
       gameCtx.scene.entity.update(gameCtx.player.userId, { position: [cp.center[0], cp.center[1], cp.center[2]] });
-      storeSet(gameCtx, "session", initialSession(selected));
+      sessionStore.write(gameCtx, initialSession(selected));
     },
   });
 
   courses.forEach((course, index) => {
     ctx.game.commands.define(`selectCourse${index + 1}`, {
       apply(gameCtx) {
-        const session = storeGet<SessionState>(gameCtx, "session");
+        const session = sessionStore.peek(gameCtx);
         if (session === undefined) return;
-        storeSet(gameCtx, "session", selectCourse(session, course.id));
+        sessionStore.write(gameCtx, selectCourse(session, course.id));
       },
     });
   });

@@ -1,9 +1,8 @@
-import { useGameStore } from "@jgengine/react/hooks";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { useStore } from "@jgengine/react/store";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 
 import { PART_SLOTS, type PartIconId, type PartSlotId, type WreckwayPartDef } from "../parts/catalog";
-import { RUN_STORE_KEY, type RunSession } from "../run/session";
+import { runSessionStore, type RunSession } from "../run/session";
 import { COMPACTOR_ENTITY, KART_PLAYER_ENTITY } from "../entities/catalog";
 
 const RUST = "#b7410e";
@@ -12,8 +11,7 @@ const HAZARD_YELLOW = "#f0c419";
 const SCRAP_STEEL = "#8d99a6";
 const WELD_WHITE = "#fef3e0";
 
-function readSlots(ctx: GameContext): Readonly<Record<PartSlotId, WreckwayPartDef | null>> {
-  const session = ctx.game.store.get(RUN_STORE_KEY) as RunSession | undefined;
+function toSlots(session: RunSession | undefined): Readonly<Record<PartSlotId, WreckwayPartDef | null>> {
   const empty = { engine: null, front: null, wheels: null, frame: null } as Record<PartSlotId, WreckwayPartDef | null>;
   return session === undefined ? empty : session.snapshot().installed;
 }
@@ -120,7 +118,7 @@ function FrameRig({ partId }: { partId: PartIconId | undefined }) {
 }
 
 function KartMesh() {
-  const slots = useGameStore(readSlots);
+  const slots = useStore(runSessionStore, toSlots);
   return (
     <group>
       <mesh position-y={0.5} castShadow>

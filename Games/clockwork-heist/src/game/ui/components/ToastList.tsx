@@ -1,12 +1,9 @@
 import type { ReactNode } from "react";
-import { useGameStore } from "@jgengine/react/hooks";
-import type { HeistState } from "../../state/heistState";
+import { useStore } from "@jgengine/react/store";
+import { heistStore } from "../../state/heistState";
 
 export function ToastList(): ReactNode {
-  const toasts = useGameStore((ctx) => {
-    const heist = ctx.game.store.get("heist") as HeistState | undefined;
-    return heist?.toasts ?? [];
-  });
+  const toasts = useStore(heistStore, (heist) => heist.toasts);
   if (toasts.length === 0) return null;
   return (
     <div className="pointer-events-none flex w-full max-w-md flex-col items-center gap-1.5">

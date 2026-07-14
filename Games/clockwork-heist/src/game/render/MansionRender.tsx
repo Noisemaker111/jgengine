@@ -9,7 +9,7 @@ import { ROOMS } from "../mansion/floorPlan";
 import { GUARD_CATALOG_KIND, GUARD_DEFS } from "../entities/guards";
 import { PLAYER_CATALOG_KIND } from "../entities/player";
 import { guardPhaseAt } from "../schedule/guardSchedule";
-import { elapsedSecondsFor, type HeistState } from "../state/heistState";
+import { elapsedSecondsFor, heistStore } from "../state/heistState";
 import { PALETTE } from "../ui/palette";
 
 const FLOOR_COLOR = PALETTE.midnightBlue;
@@ -67,8 +67,7 @@ function GuardDial({ entityId }: { entityId: string }): ReactNode {
   const ref = useRef<Group>(null);
   const phase = useGameStore((ctx) => {
     if (guard === undefined) return 0;
-    const heist = ctx.game.store.get("heist") as HeistState | undefined;
-    if (heist === undefined) return 0;
+    const heist = heistStore.read(ctx);
     return guardPhaseAt(guard, elapsedSecondsFor(heist, ctx.time.now()));
   });
   useFrame(() => {

@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { DEFAULT_DIFFICULTY, type DifficultyId } from "./game/match/difficulty";
 import { getSimulation } from "./game/match/simulation";
+import { difficultyStore } from "./game/match/snapshot";
 import { PLAYER_CYAN } from "./game/entities/catalog";
 import { placeArenaDressing, spawnMatchEntities } from "./game/world/setup";
 
@@ -20,7 +21,7 @@ interface SelectDifficultyInput {
 export function onInit(ctx: GameContext): void {
   placeArenaDressing(ctx);
   spawnMatchEntities(ctx, 0, 0, 13, 0);
-  ctx.game.store.set("selectedDifficulty", DEFAULT_DIFFICULTY);
+  difficultyStore.write(ctx, DEFAULT_DIFFICULTY);
   setGamePhase(ctx, "menu");
 
   const sim = getSimulation(ctx);
@@ -47,8 +48,8 @@ export function onInit(ctx: GameContext): void {
   });
   ctx.game.commands.define<StartInput>("start", {
     apply(state, input) {
-      const stored = state.game.store.get("selectedDifficulty") as DifficultyId | undefined;
-      sim.start(state, input?.difficulty ?? stored ?? DEFAULT_DIFFICULTY);
+      const stored = difficultyStore.read(state);
+      sim.start(state, input?.difficulty ?? stored);
     },
   });
   ctx.game.commands.define("restart", {

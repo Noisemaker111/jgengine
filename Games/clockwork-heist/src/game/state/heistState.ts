@@ -1,3 +1,4 @@
+import { defineStore } from "@jgengine/core/store/defineStore";
 import { RUN_SECONDS, mansionClockAt } from "../schedule/mansionClock";
 import { SIDE_LOOT_DEFS, TREASURE_DEFS } from "../items/treasures";
 
@@ -66,6 +67,8 @@ export function initialHeistState(): HeistState {
     wonSummary: null,
   };
 }
+
+export const heistStore = defineStore<HeistState>("heist", () => initialHeistState());
 
 export function elapsedSecondsFor(state: HeistState, now: number): number {
   if (state.status === "intro") return 0;

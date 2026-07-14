@@ -1,8 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { registerCommands } from "./game/commands";
+import { dialogueStore, registerCommands } from "./game/commands";
 import { enemyById } from "./game/entities/enemies/catalog";
 import { lootTables } from "./game/entities/enemies/loot-tables";
-import { RACE_STORE_KEY, resetHandroll, handroll, type RaceSnapshot } from "./game/handroll";
+import { raceStore, resetHandroll, handroll } from "./game/handroll";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { itemUseHandlers, resetWeaponState } from "./game/items/use-handlers";
 import { loadouts } from "./game/loadouts";
@@ -64,7 +64,7 @@ function tickMissions(ctx: GameContext): void {
     if (dist < 5) {
       ctx.game.quest!.progress(ctx.player.userId, "m1_welcome", "meet_marco", 1);
       ctx.game.quest!.turnIn(ctx.player.userId, "m1_welcome");
-      ctx.game.store.set("vice.dialogue", "dlg_marco");
+      dialogueStore.write(ctx, "dlg_marco");
     }
   }
 
@@ -80,10 +80,10 @@ function tickMissions(ctx: GameContext): void {
 
   const race = quests.find((q) => q.questId === "m5_ocean_loop" && q.status === "active");
   if (race !== undefined) {
-    const snapshot = ctx.game.store.get(RACE_STORE_KEY) as RaceSnapshot | undefined;
+    const snapshot = raceStore.peek(ctx);
     if (snapshot !== undefined && snapshot.finished && snapshot.won) {
       ctx.game.quest!.progress(ctx.player.userId, "m5_ocean_loop", "win_race", 1);
-      ctx.game.store.delete(RACE_STORE_KEY);
+      raceStore.clear(ctx);
     }
   }
 

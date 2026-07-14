@@ -6,6 +6,7 @@ import { weaponById, type AmmoPool } from "./items/weapons/catalog";
 import { AMMO_PRICES, MYSTERY_CRATE, SHOP_ID, stationById } from "./objects/stations";
 import { CHALLENGE_IDS } from "./quests/catalog";
 import { session } from "./run/session";
+import { shopOpenStore } from "./run/stores";
 
 const PICKUP_RADIUS = 2.6;
 
@@ -153,13 +154,13 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ station?: string }>("shop.open", {
     apply(state: GameContext, input) {
       if (input.station === undefined || stationById(input.station) === undefined) return;
-      state.game.store.set("shopOpen", input.station);
+      shopOpenStore.write(state, input.station);
     },
   });
 
   ctx.game.commands.define("shop.close", {
     apply(state: GameContext) {
-      state.game.store.delete("shopOpen");
+      shopOpenStore.clear(state);
     },
   });
 
