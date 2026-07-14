@@ -23,9 +23,21 @@ import {
   heroEntityId,
   heroOf,
   selectClass,
-  storeKeys,
   teleportHero,
 } from "./hero";
+import {
+  autoAttackStore,
+  bankStore,
+  barStore,
+  castStore,
+  classStore,
+  corpseStore,
+  deadStore,
+  deathStatsStore,
+  dialogueStore,
+  panelStore,
+  shopStore,
+} from "./stores";
 import { castFishing, craftRecipe } from "../crafting/systems";
 import { advanceDelve, enterDelve, exitDelve } from "../delves/systems";
 import type { DelveTier } from "../delves/catalog";
@@ -53,15 +65,15 @@ import { graveyardOf } from "../world/setup";
 type Panel = "bags" | "character" | "quests" | "spellbook" | "talents" | "crafting" | "arena";
 
 function togglePanel(ctx: GameContext, panel: Panel): void {
-  const key = storeKeys.panel(ctx.player.userId);
-  ctx.game.store.set(key, ctx.game.store.get(key) === panel ? null : panel);
+  const userId = ctx.player.userId;
+  panelStore.write(ctx, userId, panelStore.read(ctx, userId) === panel ? null : panel);
 }
 
 export function registerCommands(ctx: GameContext): void {
   const { commands } = ctx.game;
   commands.define<{ classId: string; name?: string }>("class.select", {
     validate: (state, input) =>
-      state.game.store.get(storeKeys.class(state.player.userId)) === undefined && input?.classId !== undefined
+      classStore.peek(state, state.player.userId) === undefined && input?.classId !== undefined
         ? null
         : { reason: "class-already-chosen" },
     apply(state, input) {
@@ -85,7 +97,7 @@ export function registerCommands(ctx: GameContext): void {
       const hero = heroOf(state, state.player.userId);
       if (hero === null) return;
       hero.autoAttack = !hero.autoAttack;
-      state.game.store.set(storeKeys.autoAttack(state.player.userId), hero.autoAttack);
+      autoAttackStore.write(state, state.player.userId, hero.autoAttack);
     },
   });
   commands.define("openBags", { apply: (state) => togglePanel(state, "bags") });
@@ -103,19 +115,19 @@ export function registerCommands(ctx: GameContext): void {
       const existing = bar.indexOf(input.abilityId);
       if (existing >= 0) bar[existing] = bar[input.slot];
       bar[input.slot] = input.abilityId;
-      state.game.store.set(storeKeys.bar(userId), bar);
+      barStore.write(state, userId, bar);
     },
   });
   commands.define<{ npcId: string }>("dialogue.open", {
     apply(state, input) {
       if (NPCS.some((npc) => npc.id === input.npcId)) {
-        state.game.store.set(storeKeys.dialogue(state.player.userId), input.npcId);
+        dialogueStore.write(state, state.player.userId, input.npcId);
       }
     },
   });
   commands.define("dialogue.close", {
     apply(state) {
-      state.game.store.delete(storeKeys.dialogue(state.player.userId));
+      dialogueStore.clear(state, state.player.userId);
     },
   });
   commands.define<{ questId: string }>("quest.accept", {
@@ -136,19 +148,19 @@ export function registerCommands(ctx: GameContext): void {
   });
   commands.define<{ shopId: string }>("shop.open", {
     apply(state, input) {
-      state.game.store.set(storeKeys.shop(state.player.userId), input.shopId);
-      state.game.store.delete(storeKeys.dialogue(state.player.userId));
+      shopStore.write(state, state.player.userId, input.shopId);
+      dialogueStore.clear(state, state.player.userId);
     },
   });
   commands.define("shop.close", {
     apply(state) {
-      state.game.store.delete(storeKeys.shop(state.player.userId));
+      shopStore.clear(state, state.player.userId);
     },
   });
   commands.define<{ itemId: string }>("shop.buy", {
     apply(state, input) {
-      const shopId = state.game.store.get(storeKeys.shop(state.player.userId));
-      if (typeof shopId !== "string") return;
+      const shopId = shopStore.read(state, state.player.userId);
+      if (shopId === null) return;
       const rejection = state.game.trade!.buy(input.itemId, 1, { shop: shopId, inventoryId: "bags" });
       if (rejection !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: rejection.reason, kind: "info" });
@@ -157,8 +169,8 @@ export function registerCommands(ctx: GameContext): void {
   });
   commands.define<{ itemId: string }>("shop.sell", {
     apply(state, input) {
-      const shopId = state.game.store.get(storeKeys.shop(state.player.userId));
-      if (typeof shopId !== "string") return;
+      const shopId = shopStore.read(state, state.player.userId);
+      if (shopId === null) return;
       const rejection = state.game.trade!.sell(input.itemId, 1, { shop: shopId, inventoryId: "bags" });
       if (rejection !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: rejection.reason, kind: "info" });
@@ -184,17 +196,17 @@ export function registerCommands(ctx: GameContext): void {
   });
   commands.define("bank.open", {
     apply(state) {
-      state.game.store.set(storeKeys.bank(state.player.userId), true);
+      bankStore.write(state, state.player.userId, true);
     },
   });
   commands.define("bank.close", {
     apply(state) {
-      state.game.store.delete(storeKeys.bank(state.player.userId));
+      bankStore.clear(state, state.player.userId);
     },
   });
   commands.define<{ itemId: string }>("bank.deposit", {
     apply(state, input) {
-      if (state.game.store.get(storeKeys.bank(state.player.userId)) !== true) return;
+      if (!bankStore.read(state, state.player.userId)) return;
       if (state.player.inventory.take("bags", input.itemId, 1).status !== "ok") return;
       const result = state.player.inventory.put("bank", input.itemId, 1);
       if (result.status !== "ok") state.player.inventory.put("bags", input.itemId, 1);
@@ -202,7 +214,7 @@ export function registerCommands(ctx: GameContext): void {
   });
   commands.define<{ itemId: string }>("bank.withdraw", {
     apply(state, input) {
-      if (state.game.store.get(storeKeys.bank(state.player.userId)) !== true) return;
+      if (!bankStore.read(state, state.player.userId)) return;
       if (state.player.inventory.take("bank", input.itemId, 1).status !== "ok") return;
       const result = state.player.inventory.put("bags", input.itemId, 1);
       if (result.status !== "ok") state.player.inventory.put("bank", input.itemId, 1);
@@ -256,29 +268,27 @@ export function registerCommands(ctx: GameContext): void {
   commands.define("player.release", {
     apply(state) {
       const userId = state.player.userId;
-      if (state.game.store.get(storeKeys.dead(userId)) !== true) return;
-      const snapshot = state.game.store.get(`deathstats:${userId}`) as
-        | { level: number; xp: number; xpMax: number }
-        | undefined;
-      const corpse = state.game.store.get(`corpse:${userId}`) as readonly [number, number] | undefined;
+      if (!deadStore.read(state, userId)) return;
+      const snapshot = deathStatsStore.read(state, userId);
+      const corpse = corpseStore.read(state, userId);
       const [gx, gz] = graveyardOf(corpse?.[0] ?? 0, corpse?.[1] ?? 0);
       state.scene.entity.spawn(heroEntityId(state, userId), {
         id: userId,
         position: [gx, state.world.groundHeightAt(gx, gz), gz],
       });
-      if (snapshot !== undefined) {
+      if (snapshot !== null) {
         state.scene.entity.stats.set(userId, "level", { current: snapshot.level });
         state.scene.entity.stats.set(userId, "xp", { current: snapshot.xp, max: snapshot.xpMax });
       }
       clearAuras(state, userId);
-      state.game.store.set(storeKeys.dead(userId), false);
+      deadStore.write(state, userId, false);
       const hero = heroOf(state, userId);
       if (hero !== null) {
         hero.casting = null;
         hero.autoAttack = false;
         hero.combatUntil = 0;
       }
-      state.game.store.delete(storeKeys.cast(userId));
+      castStore.clear(state, userId);
       applySheet(state, userId, { fill: true });
     },
   });

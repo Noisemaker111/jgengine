@@ -1,17 +1,15 @@
-import { useGame, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useGame, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 
 import { itemDefById } from "../../items/catalog";
-import type { DelveSessionView } from "../../delves/systems";
-import type { MailView } from "../../mail/systems";
-import type { ValeCupView } from "../../minigames/valeCup";
-import type { YumiView } from "../../minigames/yumi";
+import { delveStore, mailOpenStore, mailViewStore, valeCupStore, yumiStore } from "../../session/stores";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE, QUALITY_COLORS } from "../theme";
 
 export function MailPanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const open = useGameStore((ctx) => ctx.game.store.get(`mail:${userId}`) === true);
-  const view = useGameStore((ctx) => ctx.game.store.get(`mailView:${userId}`) as MailView | undefined);
+  const open = useKeyedStore(mailOpenStore, userId);
+  const view = useKeyedStore(mailViewStore, userId);
   const bags = useInventory("bags");
   if (!open) return null;
   return (
@@ -86,8 +84,8 @@ export function MailPanel() {
 export function DelveHud() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const session = useGameStore((ctx) => ctx.game.store.get(`delve:${userId}`) as DelveSessionView | undefined);
-  if (session === undefined || session.status === "idle") return null;
+  const session = useKeyedStore(delveStore, userId);
+  if (session === null || session.status === "idle") return null;
   return (
     <div className="rounded-md border border-violet-800/70 bg-stone-950/85 px-3 py-2 text-sm text-violet-100 shadow-lg">
       <div className="font-semibold text-violet-200">
@@ -121,8 +119,8 @@ export function DelveHud() {
 export function ValeCupHud() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const match = useGameStore((ctx) => ctx.game.store.get(`valecup:${userId}`) as ValeCupView | undefined);
-  if (match === undefined || !match.active) return null;
+  const match = useKeyedStore(valeCupStore, userId);
+  if (match === null || !match.active) return null;
   return (
     <div className="rounded-md border border-amber-800/70 bg-stone-950/85 px-3 py-2 text-sm text-amber-50 shadow-lg">
       <div className="font-semibold text-amber-200">Vale Cup</div>
@@ -155,8 +153,8 @@ export function ValeCupHud() {
 export function YumiHud() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const session = useGameStore((ctx) => ctx.game.store.get(`yumi:${userId}`) as YumiView | undefined);
-  if (session === undefined || !session.active) return null;
+  const session = useKeyedStore(yumiStore, userId);
+  if (session === null || !session.active) return null;
   const frac = session.yumiMaxHp > 0 ? session.yumiHp / session.yumiMaxHp : 0;
   return (
     <div className="rounded-md border border-pink-800/70 bg-stone-950/85 px-3 py-2 text-sm text-pink-50 shadow-lg">

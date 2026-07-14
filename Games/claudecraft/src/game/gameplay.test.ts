@@ -15,6 +15,22 @@ import { DUNGEONS, dungeonById } from "./dungeons/catalog";
 import { mobById } from "./entities/enemies/catalog";
 import { NPCS } from "./entities/npcs/catalog";
 import { applySheet, grantTalentPoint, heroOf, heroSheet, resetHero } from "./session/hero";
+import {
+  barStore,
+  classStore,
+  deadStore,
+  delveStore,
+  equipStore,
+  fishingStore,
+  mailViewStore,
+  petStore,
+  professionsStore,
+  restedStore,
+  specStore,
+  talentsStore,
+  valeCupStore,
+  yumiStore,
+} from "./session/stores";
 import { SPECS } from "./talents/catalog";
 import { GATHER_NODES } from "./professions/catalog";
 import { gatherNodeCount } from "./professions/gathering";
@@ -81,20 +97,20 @@ describe("claudecraft gameplay (headless)", () => {
     expect(health?.current).toBe(health?.max);
     expect(ctx.game.economy.balance(USER, COPPER)).toBe(40);
     expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(5);
-    const equips = ctx.game.store.get(`equip:${USER}`) as { mainhand?: string };
+    const equips = equipStore.read(ctx, USER);
     expect(equips.mainhand).toBeDefined();
     expect(ctx.game.commands.run("class.select", { classId: "mage" }).status).toBe("rejected");
   });
 
   test("action bar defaults from the kit and spellbook reassigns slots", () => {
-    const bar = ctx.game.store.get(`bar:${USER}`) as string[];
+    const bar = barStore.read(ctx, USER);
     expect(bar.length).toBeGreaterThanOrEqual(9);
     expect(bar.filter((id) => id !== "").length).toBe(9);
     const warrior = classById("warrior");
     const starter = warrior.abilities.find((ability) => ability.levelReq <= 1);
     expect(starter).toBeDefined();
     ctx.game.commands.run("spellbook.assign", { abilityId: starter?.id ?? "", slot: 8 });
-    const after = ctx.game.store.get(`bar:${USER}`) as string[];
+    const after = barStore.read(ctx, USER);
     expect(after[8]).toBe(starter?.id ?? "");
   });
 
@@ -135,7 +151,7 @@ describe("claudecraft gameplay (headless)", () => {
     const levelBefore = ctx.scene.entity.stats.get(USER, "level")?.current ?? 1;
     const boss = firstMobOf(ctx, "morthen");
     ctx.scene.entity.effect({ from: boss, to: USER, effect: "damage", via: { amount: 999999 } });
-    expect(ctx.game.store.get(`dead:${USER}`)).toBe(true);
+    expect(deadStore.read(ctx, USER)).toBe(true);
     expect(ctx.scene.entity.get(USER)).toBeNull();
     const release = ctx.game.commands.run("player.release", {});
     expect(release.status).toBe("applied");
@@ -144,7 +160,7 @@ describe("claudecraft gameplay (headless)", () => {
     expect(ctx.scene.entity.stats.get(USER, "level")?.current).toBe(levelBefore);
     const health = ctx.scene.entity.stats.get(USER, "health");
     expect(health?.current).toBe(health?.max);
-    expect(ctx.game.store.get(`dead:${USER}`)).toBe(false);
+    expect(deadStore.read(ctx, USER)).toBe(false);
   });
 
   test("vendor buys and sells against the eastbrook shop", () => {
@@ -183,11 +199,11 @@ describe("claudecraft gameplay (headless)", () => {
   test("talent points are withheld before level 10 and grantTalentPoint unlocks allocation", () => {
     const chosen = ctx.game.commands.run("talent.choose", { specId: "warrior_arms" });
     expect(chosen.status).toBe("applied");
-    const before = ctx.game.store.get(`talents:${USER}`) as { pointsAvailable: number } | undefined;
+    const before = talentsStore.read(ctx, USER);
     expect(before?.pointsAvailable ?? 0).toBe(0);
     ctx.scene.entity.stats.set(USER, "level", { current: 10 });
     grantTalentPoint(ctx, USER, 10);
-    const granted = ctx.game.store.get(`talents:${USER}`) as { pointsAvailable: number } | undefined;
+    const granted = talentsStore.read(ctx, USER);
     expect(granted?.pointsAvailable).toBe(1);
     const spec = SPECS.find((entry) => entry.id === "warrior_arms");
     const node = spec?.nodes.find(
@@ -196,9 +212,7 @@ describe("claudecraft gameplay (headless)", () => {
     expect(node).toBeDefined();
     const allocated = ctx.game.commands.run("talent.allocate", { nodeId: node?.id ?? "" });
     expect(allocated.status).toBe("applied");
-    const after = ctx.game.store.get(`talents:${USER}`) as
-      | { pointsAvailable: number; ranks: Record<string, number> }
-      | undefined;
+    const after = talentsStore.read(ctx, USER);
     expect(after?.ranks[node?.id ?? ""]).toBe(1);
     expect(after?.pointsAvailable).toBe(0);
   });
@@ -218,8 +232,8 @@ describe("claudecraft gameplay (headless)", () => {
     ctx.game.commands.run("gather", { instanceId: object?.instanceId ?? "" });
     const after = ctx.player.inventory.count("bags", material?.itemId ?? "");
     expect(after).toBeGreaterThan(before);
-    const profs = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
-    expect(profs?.[node?.profession ?? ""]).toBe(2);
+    const profs = professionsStore.read(ctx, USER);
+    expect(node !== undefined ? profs[node.profession] : undefined).toBe(2);
   });
 
   test("bank deposit and withdraw round-trip bags contents", () => {
@@ -235,11 +249,11 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("rested xp pool is drawn down by a kill", () => {
-    ctx.game.store.set(`rested:${USER}`, 500);
+    restedStore.write(ctx, USER, 500);
     const preyId = firstMobOf(ctx, "mire_prowler");
     ctx.scene.entity.effect({ from: USER, to: preyId, effect: "damage", via: { amount: 999999 } });
     expect(ctx.scene.entity.get(preyId)).toBeNull();
-    const pool = ctx.game.store.get(`rested:${USER}`) as number;
+    const pool = restedStore.read(ctx, USER);
     expect(pool).toBeLessThan(500);
   });
 
@@ -369,13 +383,13 @@ describe("claudecraft gameplay (headless)", () => {
       expect(ctx.player.inventory.count("bags", input.itemId)).toBe(0);
     }
     expect(ctx.player.inventory.count("bags", output.itemId)).toBe(outputBefore + output.count);
-    const profs = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
-    expect(profs?.crafting).toBe(2);
+    const profs = professionsStore.read(ctx, USER);
+    expect(profs.crafting).toBe(2);
   });
 
   test("fishing casts, resolves a passing skill check, and lands a fish plus a skill-up", () => {
     ctx.game.commands.run("fishing.cast", {});
-    expect(ctx.game.store.get(`fishing:${USER}`)).toBeDefined();
+    expect(fishingStore.peek(ctx, USER)).toBeDefined();
     let passingElapsed: number | null = null;
     for (let elapsed = 0; elapsed <= 6; elapsed += 0.05) {
       if (evaluateSkillCheck(FISHING_CHECK, elapsed).success) {
@@ -386,13 +400,13 @@ describe("claudecraft gameplay (headless)", () => {
     if (passingElapsed === null) throw new Error("no passing elapsed found for FISHING_CHECK");
     ctx.time.advance(passingElapsed);
     const bagsBefore = FISH_TABLE.map((entry) => ctx.player.inventory.count("bags", entry.itemId));
-    const profsBefore = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
+    const profsBefore = professionsStore.read(ctx, USER);
     ctx.game.commands.run("fishing.cast", {});
-    expect(ctx.game.store.get(`fishing:${USER}`)).toBeUndefined();
+    expect(fishingStore.peek(ctx, USER)).toBeUndefined();
     const bagsAfter = FISH_TABLE.map((entry) => ctx.player.inventory.count("bags", entry.itemId));
     expect(bagsAfter.some((count, index) => count > bagsBefore[index])).toBe(true);
-    const profsAfter = ctx.game.store.get(`profs:${USER}`) as Record<string, number> | undefined;
-    expect(profsAfter?.fishing).toBe((profsBefore?.fishing ?? 1) + 1);
+    const profsAfter = professionsStore.read(ctx, USER);
+    expect(profsAfter.fishing).toBe(profsBefore.fishing + 1);
   });
 
   test("delve enter spawns chamber hostiles and a companion, exit returns the hero", () => {
@@ -400,15 +414,13 @@ describe("claudecraft gameplay (headless)", () => {
     expect(before).toBeDefined();
     const enter = ctx.game.commands.run("delve.enter", { delveId: "embervein_delve", tier: "normal" });
     expect(enter.status).toBe("applied");
-    const session = ctx.game.store.get(`delve:${USER}`) as
-      | { remaining: number; companionId: string | null; status: string }
-      | undefined;
+    const session = delveStore.read(ctx, USER);
     expect(session?.status).toBe("playing");
     expect(session?.remaining ?? 0).toBeGreaterThan(0);
     expect(session?.companionId).not.toBeNull();
     const exit = ctx.game.commands.run("delve.exit", {});
     expect(exit.status).toBe("applied");
-    expect(ctx.game.store.get(`delve:${USER}`)).toBeUndefined();
+    expect(delveStore.peek(ctx, USER)).toBeUndefined();
     expect(ctx.scene.entity.get(USER)).not.toBeNull();
   });
 
@@ -418,7 +430,7 @@ describe("claudecraft gameplay (headless)", () => {
     ctx.game.commands.run("mail.open", {});
     ctx.game.commands.run("mail.sendSelf", { itemId: "baked_bread", count: 1 });
     expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(before - 1);
-    const view = ctx.game.store.get(`mailView:${USER}`) as { pending: readonly unknown[] } | undefined;
+    const view = mailViewStore.read(ctx, USER);
     expect((view?.pending.length ?? 0)).toBeGreaterThan(0);
     step(ctx, 9);
     expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(before);
@@ -485,53 +497,53 @@ describe("claudecraft gameplay (headless)", () => {
     ensureHeroPresent(ctx);
     const start = ctx.game.commands.run("valecup.start", { wager: 0 });
     expect(start.status).toBe("applied");
-    const match = ctx.game.store.get(`valecup:${USER}`) as { active: boolean; scoreHome: number } | undefined;
+    const match = valeCupStore.read(ctx, USER);
     expect(match?.active).toBe(true);
     ctx.game.commands.run("valecup.kick", { dirX: 0, dirZ: -1 });
     step(ctx, 0.5);
     ctx.game.commands.run("valecup.leave", {});
-    expect(ctx.game.store.get(`valecup:${USER}`)).toBeUndefined();
+    expect(valeCupStore.peek(ctx, USER)).toBeUndefined();
   });
 
   test("protect yumi spawns the cat and leaves cleanly", () => {
     ensureHeroPresent(ctx);
     const start = ctx.game.commands.run("yumi.start", {});
     expect(start.status).toBe("applied");
-    const view = ctx.game.store.get(`yumi:${USER}`) as { yumiHp: number; status: string } | undefined;
+    const view = yumiStore.read(ctx, USER);
     expect(view?.status).toBe("playing");
     expect(view?.yumiHp).toBeGreaterThan(0);
     step(ctx, 1);
     ctx.game.commands.run("yumi.leave", {});
-    expect(ctx.game.store.get(`yumi:${USER}`)).toBeUndefined();
+    expect(yumiStore.peek(ctx, USER)).toBeUndefined();
   });
 
   test("hunter call_pet ability summons a living pet frame", () => {
     ensureHeroPresent(ctx);
     resetHero(ctx, USER);
-    ctx.game.store.delete(`class:${USER}`);
-    ctx.game.store.delete(`spec:${USER}`);
-    ctx.game.store.delete(`talents:${USER}`);
-    ctx.game.store.delete(`bar:${USER}`);
-    ctx.game.store.delete(`equip:${USER}`);
+    classStore.clear(ctx, USER);
+    specStore.clear(ctx, USER);
+    talentsStore.clear(ctx, USER);
+    barStore.clear(ctx, USER);
+    equipStore.clear(ctx, USER);
     const select = ctx.game.commands.run("class.select", { classId: "hunter" });
     expect(select.status).toBe("applied");
     const summon = ctx.game.commands.run("pet.summon", { petId: "pet_wolf" });
     expect(summon.status).toBe("applied");
-    const pet = ctx.game.store.get(`pet:${USER}`) as { alive: boolean; name: string } | undefined;
+    const pet = petStore.read(ctx, USER);
     expect(pet?.alive).toBe(true);
     expect(pet?.name).toBe("Tamed Wolf");
     ctx.game.commands.run("pet.dismiss", {});
-    const after = ctx.game.store.get(`pet:${USER}`) as { alive: boolean } | undefined;
+    const after = petStore.read(ctx, USER);
     expect(after?.alive).toBe(false);
   });
 
   test("talent ability mods retune slot cost for rank-only nodes", () => {
     resetHero(ctx, USER);
-    ctx.game.store.delete(`class:${USER}`);
-    ctx.game.store.delete(`spec:${USER}`);
-    ctx.game.store.delete(`talents:${USER}`);
-    ctx.game.store.delete(`bar:${USER}`);
-    ctx.game.store.delete(`equip:${USER}`);
+    classStore.clear(ctx, USER);
+    specStore.clear(ctx, USER);
+    talentsStore.clear(ctx, USER);
+    barStore.clear(ctx, USER);
+    equipStore.clear(ctx, USER);
     ctx.game.commands.run("class.select", { classId: "warrior" });
     ctx.game.commands.run("talent.choose", { specId: "warrior_arms" });
     ctx.scene.entity.stats.set(USER, "level", { current: 15 });
@@ -551,17 +563,17 @@ describe("claudecraft gameplay (headless)", () => {
 
   test("equipping a full tier set grants its haste and proc on the hero sheet", () => {
     resetHero(ctx, USER);
-    ctx.game.store.delete(`class:${USER}`);
-    ctx.game.store.delete(`spec:${USER}`);
-    ctx.game.store.delete(`talents:${USER}`);
-    ctx.game.store.delete(`bar:${USER}`);
-    ctx.game.store.delete(`equip:${USER}`);
+    classStore.clear(ctx, USER);
+    specStore.clear(ctx, USER);
+    talentsStore.clear(ctx, USER);
+    barStore.clear(ctx, USER);
+    equipStore.clear(ctx, USER);
     ctx.game.commands.run("class.select", { classId: "warrior" });
     const bare = heroSheet(ctx, USER);
     expect(bare).not.toBeNull();
     expect(bare!.hastePct).toBe(0);
-    const equips = ctx.game.store.get(`equip:${USER}`) as Record<string, string>;
-    ctx.game.store.set(`equip:${USER}`, {
+    const equips = equipStore.read(ctx, USER);
+    equipStore.write(ctx, USER, {
       ...equips,
       helmet: "crownforged_dreadhelm",
       shoulder: "crownforged_warspaulders",

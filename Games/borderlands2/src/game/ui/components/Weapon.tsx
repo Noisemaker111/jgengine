@@ -1,10 +1,12 @@
 import { useEntityStat, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../../ammo";
 import { gunById, magState, type GunDef } from "../../handroll";
 import { ELEMENT_COLORS, RARITY_COLORS } from "../../palette";
+import { lastPickupStore, selectedSlotStore } from "../../stores";
 
 export function useSelectedSlot(): number {
-  return useGameStore((ctx) => (ctx.game.store.get("selectedSlot") as number | undefined) ?? 0);
+  return useStore(selectedSlotStore);
 }
 
 function useNowMs(): number {
@@ -96,8 +98,8 @@ export function Hotbar() {
 
 export function ItemCard() {
   const nowMs = useNowMs();
-  const pickup = useGameStore((ctx) => ctx.game.store.get("lastPickup") as { gunId: string; atMs: number } | undefined);
-  if (pickup === undefined || nowMs - pickup.atMs > 5000) return null;
+  const pickup = useStore(lastPickupStore);
+  if (pickup === null || nowMs - pickup.atMs > 5000) return null;
   const gun: GunDef | undefined = gunById(pickup.gunId);
   if (gun === undefined) return null;
   return (

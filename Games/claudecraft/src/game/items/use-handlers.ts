@@ -4,7 +4,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { itemDefById } from "./catalog";
 import { applyFood } from "../combat/engine";
 import type { EquipSlot } from "../model";
-import { applySheet, equipsOf, inCombat, storeKeys } from "../session/hero";
+import { applySheet, equipsOf, inCombat } from "../session/hero";
+import { equipStore } from "../session/stores";
 
 const COMBAT_SAFE = /potion|elixir/;
 
@@ -61,7 +62,7 @@ export const useHandlers: Record<string, ItemUseHandler<GameContext>> = {
       ctx.player.inventory.take("bags", input.itemId, 1);
       if (previous !== undefined) ctx.player.inventory.put("bags", previous, 1);
       equips[slot] = input.itemId;
-      ctx.game.store.set(storeKeys.equip(input.from), equips);
+      equipStore.write(ctx, input.from, equips);
       applySheet(ctx, input.from);
       return { state: ctx };
     },

@@ -22,6 +22,18 @@ import {
 } from "../math/combat";
 import type { AttributeId, ClassDef, EquipSlot } from "../model";
 import { MAX_LEVEL } from "../progression/curves";
+import {
+  autoAttackStore,
+  aurasStore,
+  barStore,
+  castStore,
+  cinematicStore,
+  classStore,
+  equipStore,
+  nameStore,
+  specStore,
+  talentsStore,
+} from "./stores";
 
 export interface AuraState {
   id: string;
@@ -129,8 +141,8 @@ export interface TalentsView {
 
 export function syncTalents(ctx: GameContext, userId: string): void {
   const hero = heroesOf(ctx).get(userId);
-  const specId = ctx.game.store.get(storeKeys.spec(userId));
-  if (hero?.talents == null || typeof specId !== "string") return;
+  const specId = specStore.read(ctx, userId);
+  if (hero?.talents == null || specId === null) return;
   const spec = SPECS.find((entry) => entry.id === specId);
   const ranks: Record<string, number> = {};
   for (const node of spec?.nodes ?? []) ranks[node.id] = hero.talents.rank(node.id);
@@ -141,20 +153,20 @@ export function syncTalents(ctx: GameContext, userId: string): void {
     ranks,
     granted: hero.talents.resolved().abilities ?? [],
   };
-  ctx.game.store.set(storeKeys.talents(userId), view);
+  talentsStore.write(ctx, userId, view);
 }
 
 export function chooseSpec(ctx: GameContext, userId: string, specId: string): boolean {
   const hero = heroesOf(ctx).get(userId);
   const spec = SPECS.find((entry) => entry.id === specId);
   if (hero === undefined || spec === undefined || spec.classId !== hero.classId) return false;
-  if (ctx.game.store.get(storeKeys.spec(userId)) !== undefined) return false;
+  if (specStore.peek(ctx, userId) !== undefined) return false;
   const level = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
   hero.talents = createTalentTree<HeroStatId>({
     nodes: spec.nodes,
     points: talentPointsForLevel(level),
   });
-  ctx.game.store.set(storeKeys.spec(userId), specId);
+  specStore.write(ctx, userId, specId);
   syncTalents(ctx, userId);
   return true;
 }
@@ -171,7 +183,7 @@ export function allocateTalent(ctx: GameContext, userId: string, nodeId: string)
 }
 
 export function abilityModsOf(ctx: GameContext, userId: string) {
-  const view = ctx.game.store.get(storeKeys.talents(userId)) as TalentsView | undefined;
+  const view = talentsStore.read(ctx, userId);
   const mods = resolveAbilityMods(view?.ranks ?? {});
   const external = externalModsOf(ctx).get(userId);
   if (external === undefined) return mods;
@@ -210,8 +222,7 @@ export function grantTalentPoint(ctx: GameContext, userId: string, level: number
 }
 
 export function barOf(ctx: GameContext, userId: string): readonly string[] {
-  const raw = ctx.game.store.get(storeKeys.bar(userId));
-  return Array.isArray(raw) ? (raw as string[]) : [];
+  return barStore.read(ctx, userId);
 }
 
 export function heroOf(ctx: GameContext, userId: string): HeroRuntime | null {
@@ -219,13 +230,12 @@ export function heroOf(ctx: GameContext, userId: string): HeroRuntime | null {
 }
 
 export function classOf(ctx: GameContext, userId: string): ClassDef | null {
-  const classId = ctx.game.store.get(storeKeys.class(userId));
-  return typeof classId === "string" ? classById(classId) : null;
+  const classId = classStore.read(ctx, userId);
+  return classId === null ? null : classById(classId);
 }
 
 export function equipsOf(ctx: GameContext, userId: string): Partial<Record<EquipSlot, string>> {
-  const raw = ctx.game.store.get(storeKeys.equip(userId));
-  return (raw as Partial<Record<EquipSlot, string>> | undefined) ?? {};
+  return equipStore.read(ctx, userId);
 }
 
 export function enchantsOf(ctx: GameContext, userId: string): Partial<Record<EquipSlot, string>> {
@@ -248,12 +258,12 @@ export function aurasOf(ctx: GameContext, instanceId: string): AuraState[] {
 }
 
 export function syncAuras(ctx: GameContext, instanceId: string): void {
-  ctx.game.store.set(storeKeys.auras(instanceId), aurasOf(ctx, instanceId).map((aura) => ({ ...aura })));
+  aurasStore.write(ctx, instanceId, aurasOf(ctx, instanceId).map((aura) => ({ ...aura })));
 }
 
 export function clearAuras(ctx: GameContext, instanceId: string): void {
   aurasOf_(ctx).delete(instanceId);
-  ctx.game.store.delete(storeKeys.auras(instanceId));
+  aurasStore.clear(ctx, instanceId);
 }
 
 export interface HeroSheet {
@@ -374,8 +384,8 @@ export function applySheet(ctx: GameContext, userId: string, options?: { fill?: 
 }
 
 export function heroEntityId(ctx: GameContext, userId: string): string {
-  const classId = ctx.game.store.get(storeKeys.class(userId));
-  return typeof classId === "string" ? classEntityId(classId) : CLASS_ENTITY_ID;
+  const classId = classStore.read(ctx, userId);
+  return classId === null ? CLASS_ENTITY_ID : classEntityId(classId);
 }
 
 function respawnAsClassEntity(ctx: GameContext, userId: string): void {
@@ -399,7 +409,7 @@ function respawnAsClassEntity(ctx: GameContext, userId: string): void {
 
 export function endSpawnCinematic(ctx: GameContext, userId: string): void {
   ctx.camera.setCinematic(null);
-  ctx.game.store.delete(storeKeys.cinematic(userId));
+  cinematicStore.clear(ctx, userId);
   const timers = cinematicTimersOf(ctx);
   const cancel = timers.get(userId);
   if (cancel !== undefined) {
@@ -419,7 +429,7 @@ function startSpawnCinematic(ctx: GameContext, userId: string): void {
       { position: { x: sx, y: sy + 5.5, z: sz - 9 }, lookAt, duration: 9, ease: "smooth" },
     ],
   });
-  ctx.game.store.set(storeKeys.cinematic(userId), true);
+  cinematicStore.write(ctx, userId, true);
   cinematicTimersOf(ctx).set(userId, ctx.time.after(9, () => endSpawnCinematic(ctx, userId)));
 }
 
@@ -430,9 +440,9 @@ export function selectClass(
   name?: string,
 ): void {
   const cls = classById(classId);
-  ctx.game.store.set(storeKeys.class(userId), cls.id);
+  classStore.write(ctx, userId, cls.id);
   if (name !== undefined && NAME_PATTERN.test(name.trim())) {
-    ctx.game.store.set(storeKeys.name(userId), name.trim());
+    nameStore.write(ctx, userId, name.trim());
   }
   respawnAsClassEntity(ctx, userId);
   setGamePhase(ctx, "playing");
@@ -463,9 +473,10 @@ export function selectClass(
   ctx.player.applyLoadout(userId, `kit_${cls.id}`);
   const equips: Partial<Record<EquipSlot, string>> = { mainhand: cls.startWeapon };
   ctx.player.inventory.take("bags", cls.startWeapon, 1);
-  ctx.game.store.set(storeKeys.equip(userId), equips);
-  ctx.game.store.set(
-    storeKeys.bar(userId),
+  equipStore.write(ctx, userId, equips);
+  barStore.write(
+    ctx,
+    userId,
     [...cls.abilities]
       .sort((a, b) => a.levelReq - b.levelReq)
       .slice(0, 9)
@@ -512,8 +523,8 @@ export function teleportHero(ctx: GameContext, userId: string, x: number, z: num
     hero.autoAttack = false;
     hero.lastPos = null;
   }
-  ctx.game.store.delete(storeKeys.cast(userId));
-  ctx.game.store.set(storeKeys.autoAttack(userId), false);
+  castStore.clear(ctx, userId);
+  autoAttackStore.write(ctx, userId, false);
   return true;
 }
 

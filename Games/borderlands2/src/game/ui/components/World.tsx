@@ -1,6 +1,16 @@
 import { useCurrency, useGame, useGameStore } from "@jgengine/react/hooks";
-import { BLACK_MARKET_UPGRADES, upgradeCost, type BlackMarketCounts } from "../../commands";
+import { useStore } from "@jgengine/react/store";
+import { BLACK_MARKET_UPGRADES, upgradeCost } from "../../commands";
 import { QUEST_ECHOES } from "../../quests/catalog";
+import {
+  blackMarketOpenStore,
+  blackMarketStore,
+  currentZoneStore,
+  discoveredStationsStore,
+  echoStore,
+  travelOpenStore,
+  vaultOpenStore,
+} from "../../stores";
 import { TRAVEL_STATIONS } from "../../world/sites";
 import { PANDORA } from "../../palette";
 
@@ -10,10 +20,8 @@ function useNowMs(): number {
 
 export function ZoneBanner() {
   const nowMs = useNowMs();
-  const zone = useGameStore(
-    (ctx) => ctx.game.store.get("currentZone") as { name: string; level: number; atMs: number } | undefined,
-  );
-  if (zone === undefined || nowMs - zone.atMs > 4000) return null;
+  const zone = useStore(currentZoneStore);
+  if (zone === null || nowMs - zone.atMs > 4000) return null;
   return (
     <div key={zone.name} className="bl2-banner pointer-events-none flex flex-col items-center">
       <span className="border-b-2 border-amber-400 px-6 pb-1 text-3xl font-black uppercase tracking-[0.3em] text-stone-50 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
@@ -28,8 +36,8 @@ export function ZoneBanner() {
 
 export function EchoBox() {
   const nowMs = useNowMs();
-  const echo = useGameStore((ctx) => ctx.game.store.get("echo") as { questId: string; atMs: number } | undefined);
-  if (echo === undefined || nowMs - echo.atMs > 9000) return null;
+  const echo = useStore(echoStore);
+  if (echo === null || nowMs - echo.atMs > 9000) return null;
   const line = QUEST_ECHOES[echo.questId];
   if (line === undefined) return null;
   return (
@@ -74,10 +82,8 @@ function PanelShell({ title, onClose, children }: { title: string; onClose: () =
 
 export function TravelPanel() {
   const { commands } = useGame();
-  const open = useGameStore((ctx) => ctx.game.store.get("travelOpen") === true);
-  const discovered = useGameStore(
-    (ctx) => (ctx.game.store.get("discoveredStations") as readonly string[] | undefined) ?? [],
-  );
+  const open = useStore(travelOpenStore);
+  const discovered = useStore(discoveredStationsStore);
   if (!open) return null;
   return (
     <PanelShell title="Fast Travel Network" onClose={() => commands.run("travel.close", {})}>
@@ -113,11 +119,9 @@ export function TravelPanel() {
 
 export function BlackMarketPanel() {
   const { commands } = useGame();
-  const open = useGameStore((ctx) => ctx.game.store.get("blackMarketOpen") === true);
+  const open = useStore(blackMarketOpenStore);
   const eridium = useCurrency("eridium");
-  const counts = useGameStore(
-    (ctx) => (ctx.game.store.get("blackMarket") as BlackMarketCounts | undefined) ?? {},
-  );
+  const counts = useStore(blackMarketStore);
   if (!open) return null;
   return (
     <PanelShell title="Crazy Earl's Black Market" onClose={() => commands.run("blackmarket.close", {})}>
@@ -157,9 +161,9 @@ export function BlackMarketPanel() {
 }
 
 export function VaultEnding() {
-  const vault = useGameStore((ctx) => ctx.game.store.get("vaultOpen") as { atMs: number } | undefined);
+  const vault = useStore(vaultOpenStore);
   const nowMs = useNowMs();
-  if (vault === undefined || nowMs - vault.atMs > 16000) return null;
+  if (vault === null || nowMs - vault.atMs > 16000) return null;
   return (
     <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
       <div className="absolute inset-0" style={{ boxShadow: `inset 0 0 220px 80px ${PANDORA.hudAmber}44` }} />

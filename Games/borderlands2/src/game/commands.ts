@@ -8,6 +8,19 @@ import { noteEquipped } from "./feel";
 import { gunById, rollGun, startReload, ffylPhase } from "./handroll";
 import { player } from "./entities/players/catalog";
 import { session } from "./session";
+import {
+  blackMarketOpenStore,
+  blackMarketStore,
+  characterIdStore,
+  discoveredStationsStore,
+  echoStore,
+  lastPickupStore,
+  openedChestsStore,
+  skillsOpenStore,
+  talentRanksStore,
+  travelOpenStore,
+  vendorOpenStore,
+} from "./stores";
 import { TRAVEL_STATIONS } from "./world/sites";
 import { zoneLevelAt } from "./world/zones";
 
@@ -69,7 +82,7 @@ function pickupWorldItem(ctx: GameContext): void {
     }
     ctx.player.inventory.put("hotbar", gun.id, 1, { slot });
     noteEquipped(gun.id);
-    ctx.game.store.set("lastPickup", { gunId: gun.id, atMs: ctx.time.now() * 1000 });
+    lastPickupStore.write(ctx, { gunId: gun.id, atMs: ctx.time.now() * 1000 });
     ctx.scene.entity.floatText({ instanceId: userId, text: gun.name.toUpperCase(), kind: "pickup" });
     ctx.game.feed.push("loot.pickup", { itemId: gun.id, rarity: gun.rarity });
     return;
@@ -99,12 +112,12 @@ function pickupWorldItem(ctx: GameContext): void {
 }
 
 function openRedChest(ctx: GameContext, instanceId: string): void {
-  const opened = (ctx.game.store.get("openedChests") as readonly string[] | undefined) ?? [];
+  const opened = openedChestsStore.read(ctx);
   if (opened.includes(instanceId)) {
     ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "CHEST EMPTY", kind: "warn" });
     return;
   }
-  ctx.game.store.set("openedChests", [...opened, instanceId]);
+  openedChestsStore.write(ctx, [...opened, instanceId]);
   const object = ctx.scene.object.get(instanceId);
   const at = object?.position ?? ctx.scene.entity.get(ctx.player.userId)?.position ?? [0, 0, 0];
   const chestLevel = Math.max(playerLevel(ctx), zoneLevelAt(at[0], at[2]));
@@ -199,13 +212,13 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define<{ vendor?: string }>("vendor.open", {
     apply(state: GameContext, input) {
-      if (input.vendor !== undefined) state.game.store.set("vendorOpen", input.vendor);
+      if (input.vendor !== undefined) vendorOpenStore.write(state, input.vendor);
     },
   });
 
   ctx.game.commands.define("vendor.close", {
     apply(state: GameContext) {
-      state.game.store.delete("vendorOpen");
+      vendorOpenStore.clear(state);
     },
   });
 
@@ -262,31 +275,31 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("npc.hammerlock", {
     apply(state: GameContext) {
-      state.game.store.set("echo", { questId: "q_mong_hunt", atMs: state.time.now() * 1000 });
+      echoStore.write(state, { questId: "q_mong_hunt", atMs: state.time.now() * 1000 });
     },
   });
 
   ctx.game.commands.define("blackmarket.open", {
     apply(state: GameContext) {
-      state.game.store.set("blackMarketOpen", true);
+      blackMarketOpenStore.write(state, true);
     },
   });
 
   ctx.game.commands.define("blackmarket.close", {
     apply(state: GameContext) {
-      state.game.store.delete("blackMarketOpen");
+      blackMarketOpenStore.clear(state);
     },
   });
 
   ctx.game.commands.define("travel.open", {
     apply(state: GameContext) {
-      state.game.store.set("travelOpen", true);
+      travelOpenStore.write(state, true);
     },
   });
 
   ctx.game.commands.define("travel.close", {
     apply(state: GameContext) {
-      state.game.store.delete("travelOpen");
+      travelOpenStore.clear(state);
     },
   });
 
@@ -295,11 +308,11 @@ export function registerCommands(ctx: GameContext): void {
       if (ffylPhase() === "downed") return;
       const station = TRAVEL_STATIONS.find((candidate) => candidate.zoneId === input.zoneId);
       if (station === undefined) return;
-      const discovered = (state.game.store.get("discoveredStations") as readonly string[] | undefined) ?? [];
+      const discovered = discoveredStationsStore.read(state);
       if (!discovered.includes(station.zoneId)) return;
       const y = state.world.groundHeightAt(station.x + 3, station.z + 3);
       state.scene.entity.update(state.player.userId, { position: [station.x + 3, y, station.z + 3] });
-      state.game.store.delete("travelOpen");
+      travelOpenStore.clear(state);
       state.scene.entity.floatText({ instanceId: state.player.userId, text: station.name.toUpperCase(), kind: "pickup" });
     },
   });
@@ -309,7 +322,7 @@ export function registerCommands(ctx: GameContext): void {
       const upgrade = BLACK_MARKET_UPGRADES.find((candidate) => candidate.id === input.upgrade);
       if (upgrade === undefined) return;
       const userId = state.player.userId;
-      const counts = { ...((state.game.store.get("blackMarket") as BlackMarketCounts | undefined) ?? {}) };
+      const counts = { ...blackMarketStore.read(state) };
       const owned = counts[upgrade.id] ?? 0;
       const cost = upgradeCost(owned);
       const rejection = state.game.economy.charge(userId, "eridium", cost);
@@ -318,7 +331,7 @@ export function registerCommands(ctx: GameContext): void {
         return;
       }
       counts[upgrade.id] = owned + 1;
-      state.game.store.set("blackMarket", counts);
+      blackMarketStore.write(state, counts);
       if (upgrade.id === "ammo") {
         for (const statId of Object.values(AMMO_STAT_IDS)) {
           const stat = state.scene.entity.stats.get(userId, statId);
@@ -344,9 +357,9 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("ui.openSkills", {
     apply(state: GameContext) {
-      const open = state.game.store.get("skillsOpen") === true;
-      if (open) state.game.store.delete("skillsOpen");
-      else state.game.store.set("skillsOpen", true);
+      const open = skillsOpenStore.read(state);
+      if (open) skillsOpenStore.clear(state);
+      else skillsOpenStore.write(state, true);
     },
   });
 
@@ -356,7 +369,7 @@ export function registerCommands(ctx: GameContext): void {
       const def = characterById(input.characterId ?? "");
       if (def === undefined) return;
       pickCharacter(def.id);
-      state.game.store.set("characterId", def.id);
+      characterIdStore.write(state, def.id);
       applyPassiveEffects(state);
       setGamePhase(state, "playing");
       state.scene.entity.floatText({
@@ -377,7 +390,7 @@ export function registerCommands(ctx: GameContext): void {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: result.reason.toUpperCase(), kind: "warn" });
         return;
       }
-      state.game.store.set("talentRanks", tree.snapshot().ranks);
+      talentRanksStore.write(state, tree.snapshot().ranks);
       state.scene.entity.stats.set(state.player.userId, "skillPoints", { current: tree.pointsAvailable() });
       applyPassiveEffects(state, before);
     },

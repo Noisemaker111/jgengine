@@ -25,6 +25,13 @@ import { loadouts } from "./game/loadouts";
 import { grantXp } from "./game/progression/curves";
 import { MAIN_QUEST_IDS, QUEST_IDS, quests } from "./game/quests/catalog";
 import { session } from "./game/session";
+import {
+  currentZoneStore,
+  discoveredStationsStore,
+  echoStore,
+  flyntDownStore,
+  vaultOpenStore,
+} from "./game/stores";
 import { TRAVEL_STATIONS, zoneAt, zoneLevelAt } from "./game/world/sites";
 import { PLAYER_SPAWN, respawnClusters, setupWorld } from "./game/world/setup";
 
@@ -83,7 +90,7 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
     grantXp(ctx, userId, levelXpFor(enemy.xp, zoneLevelAt(anchor[0], anchor[2])));
     grantEridium(ctx, event);
     if (enemy.id === "the_warrior") {
-      ctx.game.store.set("vaultOpen", { atMs: ctx.time.now() * 1000 });
+      vaultOpenStore.write(ctx, { atMs: ctx.time.now() * 1000 });
       dropGunAt(ctx, event, anchor, 3);
     } else {
       dropGunAt(ctx, event, anchor);
@@ -93,7 +100,7 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
       ctx.scene.entity.update(userId, { movement: { walkSpeed: player.walkSpeed } });
       ctx.scene.entity.floatText({ instanceId: userId, text: "SECOND WIND!", kind: "pickup" });
     }
-    if (enemy.id === "captain_flynt") ctx.game.store.set("flyntDown", true);
+    if (enemy.id === "captain_flynt") flyntDownStore.write(ctx, true);
   }
 }
 
@@ -115,7 +122,7 @@ function onLevelUp(ctx: GameContext, userId: string): void {
 }
 
 function nearestDiscoveredStation(ctx: GameContext): { x: number; z: number } {
-  const discovered = (ctx.game.store.get("discoveredStations") as readonly string[] | undefined) ?? [];
+  const discovered = discoveredStationsStore.read(ctx);
   const playerEntity = ctx.scene.entity.get(ctx.player.userId);
   const from = playerEntity?.position ?? PLAYER_SPAWN;
   let best: { x: number; z: number } = { x: PLAYER_SPAWN[0], z: PLAYER_SPAWN[2] };
@@ -171,16 +178,16 @@ function tickZoneAndStations(ctx: GameContext, nowMs: number): void {
   const [x, , z] = playerEntity.position;
 
   const zone = zoneAt(x, z);
-  const currentZone = ctx.game.store.get("currentZone") as { id: string } | undefined;
+  const currentZone = currentZoneStore.read(ctx);
   if (zone !== null && zone.id !== currentZone?.id) {
-    ctx.game.store.set("currentZone", { id: zone.id, name: zone.name, level: zone.level, atMs: nowMs });
+    currentZoneStore.write(ctx, { id: zone.id, name: zone.name, level: zone.level, atMs: nowMs });
   }
 
-  const discovered = (ctx.game.store.get("discoveredStations") as readonly string[] | undefined) ?? [];
+  const discovered = discoveredStationsStore.read(ctx);
   for (const station of TRAVEL_STATIONS) {
     if (discovered.includes(station.zoneId)) continue;
     if (Math.hypot(x - station.x, z - station.z) <= STATION_DISCOVER_RADIUS) {
-      ctx.game.store.set("discoveredStations", [...discovered, station.zoneId]);
+      discoveredStationsStore.write(ctx, [...discovered, station.zoneId]);
       ctx.scene.entity.floatText({
         instanceId: ctx.player.userId,
         text: `FAST TRAVEL DISCOVERED: ${station.name.toUpperCase()}`,
@@ -207,7 +214,7 @@ function onInit(ctx: GameContext): void {
     if (event.stat === "level") onLevelUp(ctx, event.userId);
   });
   ctx.game.events.on("quest.accepted", (event) => {
-    ctx.game.store.set("echo", { questId: event.questId, atMs: ctx.time.now() * 1000 });
+    echoStore.write(ctx, { questId: event.questId, atMs: ctx.time.now() * 1000 });
   });
   ctx.game.events.on("quest.completed", (event) => {
     ctx.game.quest!.turnIn(event.userId, event.questId);

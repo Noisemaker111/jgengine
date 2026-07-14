@@ -1,7 +1,9 @@
 import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 import { useEffect } from "react";
 
+import { bankStore, cinematicStore, classStore, dialogueStore, mailOpenStore, panelStore, shopStore } from "../session/stores";
 import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
 import { ChatLog } from "./components/ChatLog";
 import { AuctionPanel } from "./components/Auction";
@@ -29,7 +31,7 @@ import { PlayerFrame, TargetFrame } from "./components/UnitFrames";
 function SkipIntro() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const active = useGameStore((ctx) => ctx.game.store.get(`cinematic:${userId}`) === true);
+  const active = useKeyedStore(cinematicStore, userId);
   useEffect(() => {
     if (!active) return;
     const onKey = (event: KeyboardEvent) => {
@@ -58,15 +60,15 @@ function SkipIntro() {
 export function GameUI() {
   const { userId } = usePlayer();
   const layout = useHudLayout({ storageKey: "claudecraft-hud" });
-  const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
-  const panel = useGameStore((ctx) => ctx.game.store.get(`panel:${userId}`)) as string | undefined | null;
-  const shopOpen = useGameStore((ctx) => typeof ctx.game.store.get(`shop:${userId}`) === "string");
-  const dialogueOpen = useGameStore((ctx) => typeof ctx.game.store.get(`dialogue:${userId}`) === "string");
-  const bankOpen = useGameStore((ctx) => ctx.game.store.get(`bank:${userId}`) === true);
-  const mailOpen = useGameStore((ctx) => ctx.game.store.get(`mail:${userId}`) === true);
+  const classId = useKeyedStore(classStore, userId);
+  const panel = useKeyedStore(panelStore, userId);
+  const shopOpen = useKeyedStore(shopStore, userId, (id) => id !== null);
+  const dialogueOpen = useKeyedStore(dialogueStore, userId, (id) => id !== null);
+  const bankOpen = useKeyedStore(bankStore, userId);
+  const mailOpen = useKeyedStore(mailOpenStore, userId);
   const lockpickOpen = useGameStore((ctx) => ctx.game.store.get(`lockpick:${userId}`) !== undefined);
   const auctionOpen = useGameStore((ctx) => ctx.game.store.get(`auction:${userId}`) === true);
-  if (classId === undefined) return <ClassSelect />;
+  if (classId === null) return <ClassSelect />;
   return (
     <>
       <HudCanvas layout={layout}>

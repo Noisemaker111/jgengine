@@ -6,7 +6,8 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { LEASH_DISTANCE, mitigate, mobDamage, mobHp } from "../math/combat";
 import type { MobDef } from "../model";
 import { MOBS, mobById } from "../entities/enemies/catalog";
-import { aurasOf, enterCombat, gainRage, heroSheet, storeKeys } from "../session/hero";
+import { aurasOf, enterCombat, gainRage, heroSheet } from "../session/hero";
+import { deadStore } from "../session/stores";
 import { dungeonById } from "../dungeons/catalog";
 import { CRYPT, zoneById } from "../world/zones";
 import { HIT_TAKEN_RAGE } from "../combat/engine";
@@ -326,7 +327,7 @@ function moveMob(
 
 export function tickMobs(ctx: GameContext, dt: number): void {
   const playerId = ctx.player.userId;
-  const playerDead = ctx.game.store.get(storeKeys.dead(playerId)) === true;
+  const playerDead = deadStore.read(ctx, playerId);
   const player = ctx.scene.entity.get(playerId);
   const now = ctx.time.now();
   for (const [instanceId, runtime] of runtimesOf(ctx)) {

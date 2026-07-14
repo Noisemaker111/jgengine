@@ -1,12 +1,13 @@
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { useEntityStat, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { classById } from "../../classes/catalog";
 import { mobById } from "../../entities/enemies/catalog";
 import { NPCS } from "../../entities/npcs/catalog";
 import { mobRuntimeOf } from "../../ai/mobs";
-import type { AuraState } from "../../session/hero";
+import { autoAttackStore, aurasStore, classStore, nameStore, petStore } from "../../session/stores";
 import { RESOURCE_COLORS } from "../theme";
 
 function Bar({
@@ -34,9 +35,7 @@ function Bar({
 }
 
 function AuraRow({ instanceId }: { instanceId: string }) {
-  const auras = useGameStore(
-    (ctx) => (ctx.game.store.get(`auras:${instanceId}`) as AuraState[] | undefined) ?? [],
-  );
+  const auras = useKeyedStore(aurasStore, instanceId);
   if (auras.length === 0) return null;
   return (
     <div className="mt-1 flex flex-wrap gap-1">
@@ -88,18 +87,13 @@ function Portrait({
 
 export function PlayerFrame() {
   const { userId } = usePlayer();
-  const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
-  const name = useGameStore((ctx) => ctx.game.store.get(`name:${userId}`)) as string | undefined;
+  const classId = useKeyedStore(classStore, userId);
+  const name = useKeyedStore(nameStore, userId);
   const health = useEntityStat(userId, "health");
   const resource = useEntityStat(userId, "resource");
   const level = useEntityStat(userId, "level");
-  const pet = useGameStore(
-    (ctx) =>
-      ctx.game.store.get(`pet:${userId}`) as
-        | { name: string; alive: boolean; hp: number; maxHp: number; role: string }
-        | undefined,
-  );
-  if (classId === undefined || health === null) return null;
+  const pet = useKeyedStore(petStore, userId);
+  if (classId === null || health === null) return null;
   const cls = classById(classId);
   return (
     <div>
@@ -118,7 +112,7 @@ export function PlayerFrame() {
         </div>
       </div>
       <AuraRow instanceId={userId} />
-      {pet !== undefined && (
+      {pet !== null && (
         <div className="wcc-panel mt-1.5 w-[190px] px-2 py-1">
           <div className="flex items-baseline justify-between text-[11px]">
             <span className="truncate font-semibold text-[#9fdc7f]">
@@ -142,7 +136,7 @@ export function TargetFrame() {
   const targetId = useTarget(userId);
   const health = useEntityStat(targetId ?? "", "health");
   const targetName = useGameStore((ctx) => (targetId === null ? null : (ctx.scene.entity.get(targetId)?.name ?? null)));
-  const autoAttack = useGameStore((ctx) => ctx.game.store.get(`autoattack:${userId}`) === true);
+  const autoAttack = useKeyedStore(autoAttackStore, userId);
   if (targetId === null || targetName === null || health === null) return null;
   const runtime = mobRuntimeOf(ctx, targetId);
   const mob = mobById(runtime?.defId ?? targetName);

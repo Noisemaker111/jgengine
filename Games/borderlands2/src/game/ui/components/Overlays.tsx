@@ -1,15 +1,15 @@
 import { useEffect } from "react";
 import { useCurrency, useGame, useGameStore } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { AMMO_LABELS, AMMO_POOLS } from "../../ammo";
 import { gearItems, AMMO_PRICES } from "../../items/gear/catalog";
 import { PANDORA } from "../../palette";
+import { ffylStore, flyntDownStore, vendorOpenStore } from "../../stores";
 
 export function FfylOverlay() {
   const nowMs = useGameStore((ctx) => ctx.time.now() * 1000);
-  const ffyl = useGameStore(
-    (ctx) => ctx.game.store.get("ffyl") as { phase: string; untilMs: number } | undefined,
-  );
-  if (ffyl === undefined || ffyl.phase !== "downed") return null;
+  const ffyl = useStore(ffylStore);
+  if (ffyl.phase !== "downed") return null;
   const secondsLeft = Math.max(0, (ffyl.untilMs - nowMs) / 1000);
   return (
     <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
@@ -77,10 +77,10 @@ function BuyRow({ label, detail, cost, affordable, onBuy }: { label: string; det
 
 export function VendorPanel() {
   const { commands } = useGame();
-  const vendor = useGameStore((ctx) => ctx.game.store.get("vendorOpen") as string | undefined);
+  const vendor = useStore(vendorOpenStore);
   const cash = useCurrency("cash");
-  const flyntDown = useGameStore((ctx) => ctx.game.store.get("flyntDown") === true);
-  const open = vendor !== undefined;
+  const flyntDown = useStore(flyntDownStore);
+  const open = vendor !== null;
   useCloseOnOpen(open);
   if (!open) return null;
   const close = () => commands.run("vendor.close", {});

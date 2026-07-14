@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { selectedSlotStore } from "./stores";
 
 let slot = 0;
 
@@ -8,10 +9,10 @@ export const session = {
   },
   selectSlot(ctx: GameContext, next: number): void {
     slot = Math.max(0, Math.min(3, next));
-    ctx.game.store.set("selectedSlot", slot);
+    selectedSlotStore.write(ctx, slot);
   },
   reset(ctx: GameContext): void {
     slot = 0;
-    ctx.game.store.set("selectedSlot", 0);
+    selectedSlotStore.write(ctx, 0);
   },
 };

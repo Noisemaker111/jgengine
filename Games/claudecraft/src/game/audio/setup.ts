@@ -1,7 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
-import { inCombat, storeKeys } from "../session/hero";
+import { inCombat } from "../session/hero";
+import { classStore } from "../session/stores";
 import { ZONES, zoneAt } from "../world/zones";
 import { cue } from "./cues";
 
@@ -30,7 +31,7 @@ export function setupAudioCues(ctx: GameContext): void {
 
 /** Crossfade the soundtrack to the player's current zone/combat theme. Cheap per-tick — only emits on a theme change. */
 export function tickMusic(ctx: GameContext, userId: string): void {
-  if (ctx.game.store.get(storeKeys.class(userId)) === undefined) return;
+  if (classStore.peek(ctx, userId) === undefined) return;
   const self = ctx.scene.entity.get(userId);
   if (self === null) return;
   const [x, , z] = self.position;

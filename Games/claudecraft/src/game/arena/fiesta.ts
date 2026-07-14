@@ -13,11 +13,11 @@ import {
   clearAuras,
   heroOf,
   setExternalCombatMods,
-  storeKeys,
   syncAuras,
   teleportHero,
   type ExternalCombatMods,
 } from "../session/hero";
+import { castStore, deadStore, fiestaRecordStore, fiestaStore } from "../session/stores";
 import {
   ARENA_CENTER,
   ARENA_DAIS,
@@ -271,7 +271,7 @@ function spawnAlly(ctx: GameContext, session: FiestaSession, fighter: Fighter): 
 export function startFiesta(ctx: GameContext, userId: string): boolean {
   if (sessionsOf(ctx).has(userId)) return false;
   const hero = ctx.scene.entity.get(userId);
-  if (hero === null || ctx.game.store.get(storeKeys.dead(userId)) === true) return false;
+  if (hero === null || deadStore.read(ctx, userId)) return false;
   matchCounterOf(ctx).value += 1;
   const now = ctx.time.now();
   const level = ctx.scene.entity.stats.get(userId, "level");
@@ -418,7 +418,7 @@ export function onFiestaEntityDied(
       hero.casting = null;
       hero.autoAttack = false;
     }
-    ctx.game.store.delete(storeKeys.cast(userId));
+    castStore.clear(ctx, userId);
     checkWin(ctx, userId, session);
     sync(ctx, userId);
     return true;
@@ -487,15 +487,11 @@ function endMatch(ctx: GameContext, userId: string, session: FiestaSession): voi
 
 function recordResult(ctx: GameContext, userId: string, result: "victory" | "defeat" | "draw"): void {
   if (result === "draw") return;
-  const record = (ctx.game.store.get(fiestaRecordKey(userId)) as FiestaRecord | undefined) ?? {
-    wins: 0,
-    losses: 0,
-  };
-  const next: FiestaRecord =
+  fiestaRecordStore.update(ctx, userId, (record) =>
     result === "victory"
       ? { wins: record.wins + 1, losses: record.losses }
-      : { wins: record.wins, losses: record.losses + 1 };
-  ctx.game.store.set(fiestaRecordKey(userId), next);
+      : { wins: record.wins, losses: record.losses + 1 },
+  );
 }
 
 function cleanupAndReturn(ctx: GameContext, userId: string, session: FiestaSession): void {
@@ -511,7 +507,7 @@ function cleanupAndReturn(ctx: GameContext, userId: string, session: FiestaSessi
   for (const objectId of session.arenaObjects) ctx.scene.object.remove(objectId);
   sessionsOf(ctx).delete(userId);
   setExternalCombatMods(ctx, userId, null);
-  ctx.game.store.delete(fiestaStoreKey(userId));
+  fiestaStore.clear(ctx, userId);
   const alive = ctx.scene.entity.get(userId) !== null;
   if (!alive) {
     const [x, z] = session.returnPos;
@@ -792,7 +788,7 @@ export function tickFiesta(ctx: GameContext, userId: string, dt: number): void {
 function sync(ctx: GameContext, userId: string): void {
   const session = sessionsOf(ctx).get(userId);
   if (session === undefined) {
-    ctx.game.store.delete(fiestaStoreKey(userId));
+    fiestaStore.clear(ctx, userId);
     return;
   }
   const now = ctx.time.now();
@@ -841,5 +837,5 @@ function sync(ctx: GameContext, userId: string): void {
     playerRespawnIn:
       session.fighters[0].respawnAt === null ? 0 : Math.max(0, session.fighters[0].respawnAt - now),
   };
-  ctx.game.store.set(fiestaStoreKey(userId), view);
+  fiestaStore.write(ctx, userId, view);
 }

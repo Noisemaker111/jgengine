@@ -1,4 +1,5 @@
-import { useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useEntityStat, useGame, usePlayer } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import {
   activeCharacter,
   characterNodes,
@@ -8,6 +9,7 @@ import {
   type CharacterNode,
 } from "../../characters";
 import { PANDORA } from "../../palette";
+import { characterIdStore, skillsOpenStore, talentRanksStore } from "../../stores";
 
 function CharacterCard({ character, onPick }: { character: CharacterDef; onPick: () => void }) {
   return (
@@ -48,8 +50,8 @@ function CharacterCard({ character, onPick }: { character: CharacterDef; onPick:
 
 export function CharacterSelect() {
   const { commands } = useGame();
-  const picked = useGameStore((ctx) => ctx.game.store.get("characterId") as string | undefined);
-  if (picked !== undefined) return null;
+  const picked = useStore(characterIdStore);
+  if (picked !== null) return null;
   return (
     <div className="pointer-events-auto absolute inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-[#0c0a08]/95">
       <div className="text-center">
@@ -108,8 +110,8 @@ function NodeButton({ node, onSpend }: { node: CharacterNode; onSpend: () => voi
 export function TalentsPanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const open = useGameStore((ctx) => ctx.game.store.get("skillsOpen") === true);
-  useGameStore((ctx) => ctx.game.store.get("talentRanks"));
+  const open = useStore(skillsOpenStore);
+  useStore(talentRanksStore);
   const points = useEntityStat(userId, "skillPoints");
   const character = activeCharacter();
   const tree = talentTree();

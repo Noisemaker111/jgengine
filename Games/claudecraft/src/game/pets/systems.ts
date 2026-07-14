@@ -3,6 +3,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { addThreat, isMobInstance } from "../ai/mobs";
 import { classOf } from "../session/hero";
+import { petStore } from "../session/stores";
 import {
   defaultPetForClass,
   PET_ABILITY_IDS,
@@ -52,10 +53,10 @@ export function petViewOf(ctx: GameContext, userId: string): PetView | null {
 function syncPet(ctx: GameContext, userId: string): void {
   const view = petViewOf(ctx, userId);
   if (view === null) {
-    ctx.game.store.delete(`pet:${userId}`);
+    petStore.clear(ctx, userId);
     return;
   }
-  ctx.game.store.set(`pet:${userId}`, view);
+  petStore.write(ctx, userId, view);
 }
 
 function petHp(def: PetDef, level: number): number {
