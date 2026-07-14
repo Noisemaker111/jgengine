@@ -30,6 +30,18 @@
 - `AssistNetworkConfig` (interface): interface AssistNetworkConfig — ⚠ undocumented
 - `createAssistNetwork` (function): function createAssistNetwork(config: AssistNetworkConfig = {}): AssistNetwork — ⚠ undocumented
 
+## @jgengine/core/ai/heatSystem
+
+- `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
+- `HeatGain` (interface): interface HeatGain — One crime tick's contribution — only `witnessed` gains raise heat (unseen crimes are free, GTA-style).
+- `HeatLevelDef` (interface): interface HeatLevelDef — One escalation tier — the heat threshold it begins at and the pursuer count it wants active.
+- `HeatPoint` (type): type HeatPoint = readonly [number, number] — A world-space `[x, z]` used for the heat system's spawn ring and witness proximity checks.
+- `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
+- `HeatStep` (interface): interface HeatStep — One `advanceHeat` tick's result — updated state plus what the caller should spawn/despawn.
+- `HeatTickContext` (interface): interface HeatTickContext — Per-tick world facts {@link advanceHeat} needs but can't derive itself — witness proximity, pursuer count, origin.
+- `advanceHeat` (function): function advanceHeat(config: HeatConfig, state: HeatState, dt: number, gains: readonly HeatGain[], ctx: HeatTickContext): HeatStep — Advances {@link HeatState} by one tick: sums this tick's witnessed gains, bleeds heat once clear of witnesses past `decayDelaySeconds`, resolves the current {@link HeatLevelDef}, and reports how many pursuers to spawn (with ring points) or whether to stand pursuit down entirely.
+- `createHeatState` (function): function createHeatState(config: HeatConfig): HeatState — Escalating crime/heat/pursuit state machine (#533.4) — the star-meter every open-world crime sandbox hand-rolls: witness-scoped gain (unseen crimes don't raise heat), proximity-gated decay (still hot while a witness or pursuer is close), tiered pursuer budgets, ring-shaped spawn points around the player, and a stand-down countdown once heat clears so pursuit doesn't vanish instantly. Pure and seeded like `ai/spawnDirector` — the caller owns spawning/despawning the actual entities.
+
 ## @jgengine/core/ai/jobBoard
 
 - `Job` (interface): interface Job — ⚠ undocumented
@@ -437,6 +449,14 @@
 - `DamageZoneState` (interface): interface DamageZoneState — ⚠ undocumented
 - `createDamageModel` (function): function createDamageModel(config: DamageModelConfig): DamageModel — ⚠ undocumented
 
+## @jgengine/core/physics/drivableVehicle
+
+- `DrivableVehicleOptions` (interface): interface DrivableVehicleOptions — Options for {@link tickDrivableVehicle} — ground snapping and per-tick tuning modifiers.
+- `DrivableVehiclePose` (interface): interface DrivableVehiclePose — A `setPose`-ready patch — spread straight into `entities.setPose(vehicleId, drive.pose)`.
+- `DrivableVehiclePosition` (type): type DrivableVehiclePosition = readonly [number, number, number] — World-space `[x, y, z]` for a drivable vehicle's resolved pose.
+- `DrivableVehicleStep` (interface): interface DrivableVehicleStep — {@link tickDrivableVehicle}'s result — the ready-to-apply pose patch plus the raw sim step for HUD/telemetry reads.
+- `tickDrivableVehicle` (function): function tickDrivableVehicle(vehicle: KinematicVehicle, dt: number, axis: AxisInput, options: DrivableVehicleOptions = {}): DrivableVehicleStep — Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points; this function only steps the sim and shapes the pose patch, nothing else.
+
 ## @jgengine/core/physics/flowTube
 
 - `FlowTube` (interface): interface FlowTube — An axial corridor of directional flow with radial core falloff and a spool scalar — fan tunnels, updraft shafts, river narrows, thruster wash. Pure math: sample `velocityAt(point, spool)` and add it to whatever integrator moves the body (walk controller drift, `BuoyantBody`, a custom sim).
@@ -762,6 +782,18 @@
 - `Targeting` (interface): interface Targeting — ⚠ undocumented
 - `TargetingOptions` (interface): interface TargetingOptions — ⚠ undocumented
 - `createTargeting` (function): function createTargeting(options: TargetingOptions): Targeting — ⚠ undocumented
+
+## @jgengine/core/scene/vehicleSeat
+
+- `DismountOffset` (interface): interface DismountOffset — Where {@link VehicleSeats.exit} steps the rider out, relative to the vehicle's heading.
+- `EnterVehicleOptions` (interface): interface EnterVehicleOptions — Options for {@link VehicleSeats.enter}.
+- `EnterVehicleResult` (type): type EnterVehicleResult = | { ok: true; seat: MountSeat; /** Feed straight into `ctx.camera.follow(...)` — the vehicle while a control seat is taken, else the rider's own id. */ cameraTarget: string; /** Entity this rider's axis input should now drive (`scene/mount`'s `driveTarget`); `null` for a pa… — Result of {@link VehicleSeats.enter} — the resolved seat plus the camera/drive/movement patches to apply.
+- `ExitVehicleResult` (type): type ExitVehicleResult = | { ok: true; vehicleId: string; /** Where to `setPose` the rider — alongside the vehicle's side door, facing its heading. */ placement: VehiclePose; cameraTarget: string; riderMovementPatch: RiderMovementPatch; } | { ok: false; reason: "not_seated" } — Result of {@link VehicleSeats.exit} — the side-door placement plus the camera/movement patches to apply.
+- `RiderMovementPatch` (interface): interface RiderMovementPatch — Movement-lock patch for `entities.update(riderId, { movement: { ...current, ...patch } })` (#286.gameplay `movement.frozen`).
+- `VehiclePose` (interface): interface VehiclePose — A vehicle's world-space position and heading, used for {@link VehicleSeats.exit}'s dismount placement math.
+- `VehiclePosition` (type): type VehiclePosition = readonly [number, number, number] — World-space `[x, y, z]` for a vehicle's current position.
+- `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
+- `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
 
 ## @jgengine/core/sensor/concealment
 
