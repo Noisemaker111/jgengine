@@ -38,7 +38,7 @@ import {
 import { createCosmetics, type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
-import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
+import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
 import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
 import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
@@ -201,6 +201,16 @@ export interface FloatTextInput {
   scale?: number;
 }
 
+/** Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`. */
+export interface VfxInput {
+  kind: VfxKind;
+  color: number;
+  from?: string | readonly [number, number, number];
+  to?: string | readonly [number, number, number];
+  radius?: number;
+  durationMs?: number;
+}
+
 export interface TelegraphInput {
   from: string;
   shape: TelegraphShape;
@@ -240,6 +250,7 @@ export interface SceneEntityContext {
   blackboard: EntityBlackboard;
   stats: EntityStatsApi;
   floatText(input: FloatTextInput): void;
+  vfx(input: VfxInput): void;
   telegraph(input: TelegraphInput): () => void;
   hitReaction(input: HitReactionInput): HitReaction | null;
   setTarget(fromId: string, toId: string | null): void;
@@ -967,6 +978,43 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     events.emit("entity.floatText", event);
   }
 
+  const vfxDefaultDurationMs: Record<VfxKind, number> = {
+    projectile: 380,
+    beam: 260,
+    nova: 520,
+    glow: 700,
+    spark: 240,
+  };
+  let vfxSeq = 0;
+
+  function resolveVfxPoint(
+    ref: string | readonly [number, number, number] | undefined,
+  ): [number, number, number] | undefined {
+    if (ref === undefined) return undefined;
+    if (typeof ref === "string") {
+      const entity = entities.get(ref);
+      if (entity === null) return undefined;
+      return [entity.position[0], entity.position[1], entity.position[2]];
+    }
+    return [ref[0], ref[1], ref[2]];
+  }
+
+  function emitVfx(input: VfxInput): void {
+    const to = resolveVfxPoint(input.to);
+    const from = resolveVfxPoint(input.from) ?? to;
+    if (from === undefined) return;
+    const event: GameEventMap["combat.vfx"] = {
+      id: vfxSeq++,
+      kind: input.kind,
+      color: input.color,
+      from,
+      durationMs: input.durationMs ?? vfxDefaultDurationMs[input.kind],
+    };
+    if (to !== undefined) event.to = to;
+    if (input.radius !== undefined) event.radius = input.radius;
+    events.emit("combat.vfx", event);
+  }
+
   let telegraphSeq = 0;
 
   function fireTelegraph(input: TelegraphInput): () => void {
@@ -1308,6 +1356,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         blackboard: entities.blackboard,
         stats: entityStats,
         floatText: emitFloatText,
+        vfx: emitVfx,
         telegraph: fireTelegraph,
         hitReaction: applyHitReaction,
         setTarget: targeting.setTarget,

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGame } from "../game/defineGame";
-import type { EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
+import type { CombatVfxEvent, EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
 import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { environment, terrain } from "../world/features";
@@ -516,6 +516,24 @@ describe("float text and projectile events", () => {
     const dummy = ctx.scene.entity.spawn("dummy", { position: [4, 0, -2] });
     ctx.scene.entity.floatText({ instanceId: dummy, text: "Crit!", kind: "info" });
     expect(events).toEqual([{ instanceId: dummy, position: [4, 0, -2], text: "Crit!", kind: "info" }]);
+  });
+
+  test("the vfx verb resolves endpoints from instance ids and defaults duration", () => {
+    const ctx = makeContext();
+    const events: CombatVfxEvent[] = [];
+    ctx.game.events.on("combat.vfx", (event) => events.push(event));
+    const caster = ctx.scene.entity.spawn("caster", { position: [0, 0, 0] });
+    const target = ctx.scene.entity.spawn("target", { position: [5, 0, 1] });
+    ctx.scene.entity.vfx({ kind: "projectile", color: 0x8ed2ff, from: caster, to: target });
+    expect(events).toHaveLength(1);
+    expect(events[0]!.kind).toBe("projectile");
+    expect(events[0]!.color).toBe(0x8ed2ff);
+    expect(events[0]!.from).toEqual([0, 0, 0]);
+    expect(events[0]!.to).toEqual([5, 0, 1]);
+    expect(events[0]!.durationMs).toBeGreaterThan(0);
+    ctx.scene.entity.vfx({ kind: "nova", color: 0xff7a2a, from: [2, 0, 2], radius: 6 });
+    expect(events[1]!.from).toEqual([2, 0, 2]);
+    expect(events[1]!.radius).toBe(6);
   });
 
   test("settling a projectile emits projectile.settled with origin and hit flag", () => {
