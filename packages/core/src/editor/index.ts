@@ -4,6 +4,12 @@ export type { EditorDocument } from "./types";
 export type { EditorTerrain } from "./types";
 /** Per-kind show/hide flags for the editor's layer panel. */
 export type { EditorKindVisibility } from "./types";
+/** The four placeable-object collections a prefab fragment or clipboard fragment carries. */
+export type { EditorFragmentContent } from "./types";
+/** A serializable, reusable stamp of authored objects — "make prefab" / "insert prefab" / detach. */
+export type { EditorPrefab } from "./types";
+/** A named, persisted list of object ids — selection bookmark and/or locked production group. */
+export type { EditorCollection } from "./types";
 /** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */
 export type { EditorLayersInput } from "./types";
 /** A placeable point object in the scene — spawn, mob, chest, POI, etc. */
@@ -28,6 +34,7 @@ export {
   cloneEditorDocument,
   collectDescendants,
   createEmptyEditorDocument,
+  createPrefabFragment,
   editorChildren,
   editorDocumentBounds,
   editorDocumentSize,
@@ -35,11 +42,14 @@ export {
   editorRoots,
   exportEditorDocumentJson,
   extractEditorFragment,
+  findEditorCollection,
   findEditorMarker,
   findEditorNote,
   findEditorPath,
+  findEditorPrefab,
   findEditorVolume,
   importEditorDocumentJson,
+  isEditorObjectLocked,
   listEditorKinds,
   mergeEditorDocuments,
   normalizeEditorLayers,
