@@ -1,20 +1,27 @@
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { SettingsTrigger } from "@jgengine/react";
 import { useGame, usePlayer } from "@jgengine/react/hooks";
-import { useState } from "react";
+import { type MouseEvent, useCallback, useState } from "react";
 
 import { CLASSES } from "../../classes/catalog";
-
-const SUGGESTED_NAMES = ["Aldric", "Brynn", "Cael", "Dara", "Eirik", "Faye", "Gorm", "Isolde", "Kael", "Rowan", "Sable", "Thane"];
+import {
+  classSelectReady,
+  isHeroNameValid,
+  pickSuggestedName,
+  selectClass,
+} from "./classSelectState";
 
 export function ClassSelect() {
   const { commands } = useGame();
   const { userId } = usePlayer();
   void userId;
   const [selected, setSelected] = useState<string | null>(null);
-  const [name, setName] = useState(() => SUGGESTED_NAMES[Math.floor(Math.random() * SUGGESTED_NAMES.length)] ?? "Adventurer");
-  const nameValid = /^[A-Za-z][A-Za-z' -]{1,15}$/.test(name.trim());
-  const ready = selected !== null && nameValid;
+  const [name, setName] = useState(pickSuggestedName);
+  const handleSelect = useCallback((event: MouseEvent<HTMLButtonElement>) => {
+    const classId = event.currentTarget.dataset.classId;
+    if (classId !== undefined) setSelected((current) => selectClass(current, classId));
+  }, []);
+  const ready = classSelectReady(selected, name);
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center"
@@ -48,7 +55,8 @@ export function ClassSelect() {
               <button
                 key={cls.id}
                 type="button"
-                onClick={() => setSelected(cls.id)}
+                data-class-id={cls.id}
+                onClick={handleSelect}
                 className="wcc-panel group flex min-h-[92px] items-center gap-3 px-4 py-3 text-left transition"
                 style={
                   sel
@@ -82,7 +90,7 @@ export function ClassSelect() {
           type="button"
           disabled={!ready}
           onClick={() => {
-            if (selected !== null && nameValid) {
+            if (selected !== null && isHeroNameValid(name)) {
               commands.run("class.select", { classId: selected, name: name.trim() });
             }
           }}
