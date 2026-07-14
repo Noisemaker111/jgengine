@@ -120,6 +120,43 @@ for (const p of resolveVegetation(sceneDoc))          // everything else → det
 
 Same volume, same seed → same field every run; drag the slider, save, done.
 
+## Terrain sculpting — brushes on the live heightfield
+
+Toolbar **Terrain** (or press `T`) enters the sculpt tool. **Create terrain** lays an editable
+heightfield over the scene; brushes then reshape it with live feedback:
+
+- **Raise / Lower** — push ground up or dig it down · **Smooth** — average toward neighbours ·
+  **Flatten** — level to a sampled or numeric height · **Noise** — fractal roughening (seeded, repeatable) ·
+  **Ramp** — drag low→high to grade a straight slope.
+- Live controls: radius, strength, falloff (smooth/linear/none), shape (circle/square), spacing,
+  invert modifier, flatten height, noise seed. A preview ring tracks the cursor.
+- A whole drag commits as **one** undoable stroke (compact vertex delta — the terrain document is
+  never copied per move). `Ctrl+Z` / `Ctrl+Y` undo/redo strokes like any edit; strokes serialize with
+  the scene under `document.terrain`.
+
+The sculpt engine is the reusable `@jgengine/core/world/terraform` seam — build, edit, and consume it
+outside the editor too:
+
+```ts
+import {
+  createTerrainSnapshot,          // fresh flat heightfield over an Aabb
+  editableTerrainFromSnapshot,    // rebuild a live EditableTerrain over the game's ground
+  beginTerraformStroke,           // batch many stamps into one compact TerraformDelta
+  applyDeltaToSnapshot,           // redo a stroke onto a snapshot (copy-on-write)
+  revertDeltaFromSnapshot,        // undo a stroke onto a snapshot (copy-on-write)
+} from "@jgengine/core/world/terraform";
+
+const snapshot = createTerrainSnapshot({ bounds: { minX: -100, minZ: -100, maxX: 100, maxZ: 100 }, cellSize: 2 });
+const terrain = editableTerrainFromSnapshot(snapshot, ctx.world.ground);
+const stroke = beginTerraformStroke(terrain);
+stroke.stamp({ mode: "raise", center: [0, 0], radius: 12, strength: 1 });
+const delta = stroke.delta();                       // one undoable step
+const next = applyDeltaToSnapshot(snapshot, delta); // serializable, back to document.terrain
+```
+
+Headless: `create_terrain`, `sculpt_terrain {mode,x,z,radius,strength,…}`, and `terrain_summary`
+RPC verbs drive and assert sculpting without WebGL (`bun packages/editor/src/mcp/cli.ts`).
+
 ## Core APIs (`editor/`)
 
 - `@jgengine/core/editor/index` — document, session, commands, undo

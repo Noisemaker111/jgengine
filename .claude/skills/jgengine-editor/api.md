@@ -6,7 +6,7 @@
 
 - `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "addMarker"; marker: EditorMarker } | { type: … — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
-- `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, and note for a game.
+- `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorLayersInput` (type): type EditorLayersInput = | EditorDocument | Partial<Omit<EditorDocument, "version">> | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>) — Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory.
 - `EditorMarker` (interface): interface EditorMarker — A placeable point object in the scene — spawn, mob, chest, POI, etc.
@@ -14,6 +14,7 @@
 - `EditorPath` (interface): interface EditorPath — A polyline of points — road, corridor, patrol route — placed in the scene.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
+- `EditorTerrain` (type): type EditorTerrain = TerraformSnapshot — A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas over the game's base ground. Serializes with the scene; a game rebuilds the field with `editableTerrainFromSnapshot`.
 - `EditorVec3` (type): type EditorVec3 = { x: number; y: number; z: number } — A world-space point used across editor markers, volumes, and paths.
 - `EditorVolume` (interface): interface EditorVolume — A spatial region — zone, aggro range, capture area — placed in the scene.
 - `EditorVolumeShape` (type): type EditorVolumeShape = "sphere" | "cylinder" | "box" — Collision shape a volume is rendered and tested as.
@@ -21,7 +22,7 @@
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
 - `applyEditorDocumentOverlay` (function): function applyEditorDocumentOverlay(base: EditorDocument, overlay: EditorDocument): EditorDocument — Applies a saved editor document on top of a game's derived layers: overlay objects replace same-id base objects and new overlay objects are appended, so editor saves win over source data until they are folded back in.
-- `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source.
+- `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source. The terrain snapshot is shared by reference: sculpt commands replace it wholesale (copy-on-write), never mutate it in place, so history snapshots stay cheap even on large heightfields.
 - `createEditorSession` (function): function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession — Creates an editor session with undo/redo history seeded from an initial document.
 - `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
 - `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
@@ -50,7 +51,7 @@
 ## @jgengine/core/editor/document
 
 - `applyEditorDocumentOverlay` (function): function applyEditorDocumentOverlay(base: EditorDocument, overlay: EditorDocument): EditorDocument — Applies a saved editor document on top of a game's derived layers: overlay objects replace same-id base objects and new overlay objects are appended, so editor saves win over source data until they are folded back in.
-- `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source.
+- `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source. The terrain snapshot is shared by reference: sculpt commands replace it wholesale (copy-on-write), never mutate it in place, so history snapshots stay cheap even on large heightfields.
 - `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
 - `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
 - `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
@@ -67,12 +68,13 @@
 
 ## @jgengine/core/editor/types
 
-- `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, and note for a game.
+- `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorLayersInput` (type): type EditorLayersInput = | EditorDocument | Partial<Omit<EditorDocument, "version">> | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>) — Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory.
 - `EditorMarker` (interface): interface EditorMarker — A placeable point object in the scene — spawn, mob, chest, POI, etc.
 - `EditorNote` (interface): interface EditorNote — A free-text annotation pinned to a world position for designers.
 - `EditorPath` (interface): interface EditorPath — A polyline of points — road, corridor, patrol route — placed in the scene.
+- `EditorTerrain` (type): type EditorTerrain = TerraformSnapshot — A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas over the game's base ground. Serializes with the scene; a game rebuilds the field with `editableTerrainFromSnapshot`.
 - `EditorVec3` (type): type EditorVec3 = { x: number; y: number; z: number } — A world-space point used across editor markers, volumes, and paths.
 - `EditorVolume` (interface): interface EditorVolume — A spatial region — zone, aggro range, capture area — placed in the scene.
 - `EditorVolumeShape` (type): type EditorVolumeShape = "sphere" | "cylinder" | "box" — Collision shape a volume is rendered and tested as.
@@ -83,6 +85,7 @@
 ## @jgengine/editor
 
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
+- `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
 - `EditorApp` (function): function EditorApp({ gameId, playable, layers, save }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
@@ -100,14 +103,17 @@
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" — How the editor hosts the game: frozen placement view, roamable world, or the real game.
 - `EditorSaveFn` (type): type EditorSaveFn = (json: string) => Promise<{ ok: boolean; path?: string; error?: string }> — Persists an exported document JSON; resolves with where it landed or why it failed.
+- `EditorTool` (type): type EditorTool = "select" | "terrain" — Which top-level editor tool is active: object placement/selection, or terrain sculpting.
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
 - `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
 - `PerfProbe` (function): function PerfProbe({ api }: { api: EditorHostApi }): null — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
+- `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SelectionGizmo` (function): function SelectionGizmo({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
 - `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
+- `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply (surface paint is Phase 3).
 - `ViewportSelect` (function): function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }): null — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
@@ -179,7 +185,7 @@
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
 - `EditorBridgeRequest` (type): type EditorBridgeRequest = | { method: "editor_status" } | { method: "set_mode"; mode: EditorRunMode } | { method: "perf_report" } | { method: "list_layers" } | { method: "list_selection" } | { method: "get_marker"; id: string } | { method: "get_volume"; id: string } | { method: "set_transform"; id:… — RPC request shapes the editor host understands, used by the MCP bridge and UI.
 - `EditorBridgeResponse` (type): type EditorBridgeResponse = { ok: boolean; result?: unknown; error?: string; } — Result envelope returned by every editor host RPC call.
-- `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, and note for a game.
+- `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
@@ -192,11 +198,15 @@
 
 ## @jgengine/editor/uiStore
 
+- `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
+- `EditorTool` (type): type EditorTool = "select" | "terrain" — Which top-level editor tool is active: object placement/selection, or terrain sculpting.
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
+- `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
+- `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply (surface paint is Phase 3).
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
 

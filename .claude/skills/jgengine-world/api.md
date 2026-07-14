@@ -1428,13 +1428,23 @@
 - `EditableTerrainConfig` (interface): interface EditableTerrainConfig — ⚠ undocumented
 - `TerraformBrush` (interface): interface TerraformBrush — ⚠ undocumented
 - `TerraformBrushConfig` (interface): interface TerraformBrushConfig — ⚠ undocumented
-- `TerraformEdit` (interface): interface TerraformEdit — ⚠ undocumented
-- `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — ⚠ undocumented
-- `TerraformMode` (type): type TerraformMode = "raise" | "lower" | "flatten" | "paint" — ⚠ undocumented
+- `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
+- `TerraformDeltaRecorder` (type): type TerraformDeltaRecorder = (index: number, before: number, after: number) => void — Reports each changed vertex during a recorded edit: grid index, prior offset, new offset.
+- `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
+- `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — How a brush's strength fades from its center to its rim.
+- `TerraformHeightLimit` (interface): interface TerraformHeightLimit — Clamp bounds applied to the resulting terrain height after a heightfield edit.
+- `TerraformMode` (type): type TerraformMode = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" | "paint" — A sculpt operation kind: heightfield brushes plus the surface-paint brush.
+- `TerraformShape` (type): type TerraformShape = "circle" | "square" — A brush footprint: a round disc or an axis-aligned square.
 - `TerraformSnapshot` (interface): interface TerraformSnapshot — ⚠ undocumented
-- `brushWeight` (function): function brushWeight(distance: number, radius: number, falloff: TerraformFalloff): number — ⚠ undocumented
+- `TerraformStroke` (interface): interface TerraformStroke — Accumulates a whole drag — many brush stamps — into one compact {@link TerraformDelta}. Keeps each vertex's first `before` and latest `after`, so undo replays the stroke as a single step even though the pointer fired dozens of moves.
+- `applyDeltaToSnapshot` (function): function applyDeltaToSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
+- `beginTerraformStroke` (function): function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke — Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta.
+- `brushWeight` (function): function brushWeight(distance: number, radius: number, falloff: TerraformFalloff): number — Smooth/linear/hard brush weight for a sample `distance` from the brush center.
 - `createEditableTerrain` (function): function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain — ⚠ undocumented
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
+- `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
+- `editableTerrainFromSnapshot` (function): function editableTerrainFromSnapshot(snapshot: TerraformSnapshot, base?: TerrainField): EditableTerrain — Rebuilds a live {@link EditableTerrain} from a snapshot, layered over `base` ground.
+- `revertDeltaFromSnapshot` (function): function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `before` offsets restored (copy-on-write undo).
 
 ## @jgengine/core/world/terrain
 

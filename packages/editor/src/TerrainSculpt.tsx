@@ -132,6 +132,7 @@ function SculptMesh({
  * Terrain-sculpt viewport layer: renders the editable heightfield and, while the terrain tool is
  * active, converts pointer drags into brush strokes. A whole drag batches into one
  * `sculptTerrain` command committed on release, so undo replays the stroke as a single step.
+ * @internal — mounted by `EditorApp`; not a game-author entry point.
  */
 export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }) {
   const ctx = useGameContext();
