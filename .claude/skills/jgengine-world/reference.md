@@ -102,6 +102,18 @@ Five primitives layer a driving/racing game over the physics sim and `world/wate
 - **`scene/stationClaim`.** `createStationClaim(controller?)` layers **facet stations** on `scene/mount` for a vehicle several players crew at once: `register({ id, kit, stations })` where each `Station` tags a seat with a `facet` (`"steer"`/`"sails"`/`"cannon"`). `claim(playerId, vehicleId, facetOrStationId)`, `release`, `controllerOf(vehicleId, facet)` (who mans it), `facetOf(playerId)`, `openFacets`, `crew`. Only a `control` station operates the hull (`driver`/`driveTarget`); the rest ride but command their own facet. Sea of Thieves helm + sails + cannons.
 - **`physics/damageZones`.** `createDamageModel({ zones, disableAt })` maps accumulated contact impulse (from `onCollision`) to **coarse discrete stages** (not soft-body): `absorb(zoneId, impulse)` / `routeCollision(event, resolveZone)` bump a zone's stage (caller swaps the visual/collider), an optional `detachStage` ejects a part as debris once, and crossing `disableAt` flips a whole-vehicle `disabled` state. Wreckfest crumple/derby.
 - **`game/race`.** `raceTrack({ checkpoints, laps })` is an ordered ring of AABB checkpoint volumes (the final one is the finish line); `createRaceState({ track, win })` â€” driven each tick by `update(now, positions)` on game time â€” emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps split times, resolves a pluggable `RaceWinCondition` (`firstPastPost`, `topK` round-cut, `everyoneFinishes`, `lastStanding` derby), and `resetToCheckpoint(id)` hands back a respawn pose. `removeRacer(id)` drops a racer mid-race and renumbers the remaining standings; `reset()` clears all racer progress/finish state back to construction time so the same instance replays without rebuilding it. Trackmania, Mario Kart, Fall Guys.
+  - **Session lifecycle** (`RaceSessionState`, phases `idle → countdown → racing → finished`) — the pure clock every racer wraps around `RaceState`, so no game hand-rolls its own `RacePhase`/`COUNTDOWN_SECONDS`. `idleRaceSession()` is the grid; `startRaceCountdown({ seconds })` drops the lights (default 3, `seconds ≤ 0` = standing start); `tickRaceSession(session, dt)` bleeds the countdown then accumulates `elapsed` once green; `finishRaceSession(session)` freezes the clock at the flag. It carries no track/lap data — compose it with `RaceState` (positions/laps) and `createLapTimer` (per-lap wall-clock). `drone-derby/src/game/race/run.ts` layers medals/DNF on top of it.
+    ```ts
+    let session = startRaceCountdown();          // { phase: "countdown", countdown: 3, elapsed: 0 }
+    session = tickRaceSession(session, 3);        // { phase: "racing", countdown: 0, elapsed: 0 }
+    session = tickRaceSession(session, 12.4);     // elapsed 12.4
+    session = finishRaceSession(session);         // { phase: "finished", elapsed: 12.4 }
+    ```
+  - **Placement → outcome** turns a `race.finished` `ranking` (or any finish order, index 0 = winner) into results: `racePlacements(order, { winningPlaces })` → `{ racerId, place, outcome }[]` (`place` 1-based); `placementOf(order, id)` → one racer or `null`; `raceOutcomeOf(order, id)` is the `ranking[0] === player ? "win" : "lose"` check generalized to a `winningPlaces` podium (an absent racer loses). `dune-nomads` derives its win/strand this way.
+    ```ts
+    raceOutcomeOf(event.ranking, ctx.player.userId);        // "win" | "lose"
+    racePlacements(event.ranking, { winningPlaces: 3 });    // podium = wins
+    ```
 
 ### Spawn placement
 

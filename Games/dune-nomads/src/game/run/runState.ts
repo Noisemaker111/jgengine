@@ -1,4 +1,5 @@
 import { advancePathFollow, createPathFollow, type PathFollowState, type Waypoint } from "@jgengine/core/nav/pathFollow";
+import { raceOutcomeOf } from "@jgengine/core/game/race";
 import type { DecayMeterSet } from "@jgengine/core/survival/decayMeter";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
@@ -209,7 +210,9 @@ export function toggleMap(state: RunState): RunState {
 }
 
 export function resolveRaceOutcome(winnerId: string): { phase: "won" | "stranded"; reason: StrandReason } {
-  return winnerId === PLAYER_RACER_ID ? { phase: "won", reason: null } : { phase: "stranded", reason: "rival" };
+  return raceOutcomeOf([winnerId], PLAYER_RACER_ID) === "win"
+    ? { phase: "won", reason: null }
+    : { phase: "stranded", reason: "rival" };
 }
 
 export function applyRaceFinish(state: RunState, winnerId: string): RunState {
