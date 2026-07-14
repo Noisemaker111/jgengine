@@ -462,7 +462,6 @@
   "@jgengine/core/physics/flowTube#createFlowTube",
   "@jgengine/core/physics/forceVolume#applyVolumeForce",
   "@jgengine/core/physics/forceVolume#createVolumeTrigger",
-  "@jgengine/core/physics/kinematicVehicle#createKinematicVehicle",
   "@jgengine/core/physics/physicsWorld#cellCoord",
   "@jgengine/core/physics/physicsWorld#cellIndex",
   "@jgengine/core/physics/radialImpulse#radialImpulse",
