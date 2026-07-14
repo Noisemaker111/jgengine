@@ -1,5 +1,8 @@
+import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { KeyHint } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 
+import { keybinds } from "../../keybinds";
 import type { CourseDef } from "../../world/courses";
 import type { SessionState } from "../../session/sessionState";
 import { panelClass, primaryButtonClass, secondaryButtonClass } from "../theme";
@@ -63,7 +66,8 @@ export function ResultsScreen({ course, session }: { course: CourseDef; session:
 
         <div className="mt-5 flex items-center justify-center gap-3">
           <button type="button" className={secondaryButtonClass} onClick={() => commands.run("restartCourse", {})}>
-            Retry (R)
+            Retry
+            <KeyHint> ({actionLabel(keybinds, "restartCourse") ?? "R"})</KeyHint>
           </button>
           <button type="button" className={primaryButtonClass} onClick={() => commands.run("returnToMenu", {})}>
             Course select

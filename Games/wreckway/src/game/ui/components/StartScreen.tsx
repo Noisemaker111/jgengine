@@ -1,5 +1,5 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
-import { ControlsList, SettingsTrigger, StartScreen as MenuScreen } from "@jgengine/react";
+import { ControlsList, KeyHint, SettingsTrigger, StartScreen as MenuScreen } from "@jgengine/react";
 
 import { keybinds } from "../../keybinds";
 import { PARTS, PART_SLOTS } from "../../parts/catalog";
@@ -69,7 +69,8 @@ export function StartScreen({ onStart }: StartScreenProps) {
           onClick={onStart}
           className="mt-7 w-full rounded border-2 border-[#f0c419] bg-[#b7410e] py-3 text-lg font-black tracking-widest text-[#fef3e0] transition hover:bg-[#d94f14] sm:w-auto sm:px-10"
         >
-          BOLT IT ON, GO GO — {actionLabel(keybinds, "startRun") ?? "ENTER"}
+          BOLT IT ON, GO GO
+          <KeyHint> — {actionLabel(keybinds, "startRun") ?? "ENTER"}</KeyHint>
         </button>
       </div>
     </MenuScreen>

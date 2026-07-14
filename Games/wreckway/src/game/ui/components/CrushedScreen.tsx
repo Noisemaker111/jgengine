@@ -1,4 +1,5 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { KeyHint } from "@jgengine/react";
 
 import { keybinds } from "../../keybinds";
 import { PART_SLOTS } from "../../parts/catalog";
@@ -40,7 +41,8 @@ export function CrushedScreen({ snapshot, onRestart }: CrushedScreenProps) {
           onClick={onRestart}
           className="mt-6 rounded border-2 border-[#ff3b30] bg-[#b7410e] px-8 py-3 text-lg font-black tracking-widest text-[#fef3e0] transition hover:bg-[#d94f14]"
         >
-          RESTART — {actionLabel(keybinds, "restart") ?? "R"}
+          RESTART
+          <KeyHint> — {actionLabel(keybinds, "restart") ?? "R"}</KeyHint>
         </button>
       </div>
     </div>

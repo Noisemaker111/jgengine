@@ -1,20 +1,21 @@
 import type { ReactNode } from "react";
-import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { ControlsList, KeyHint } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 
 import { keybinds } from "../../keybinds";
 import { MOVEMENTS } from "../../course/course";
 import type { RunnerSnapshot } from "../../session/runnerEngine";
 
-function KeyBadge({ action, label }: { action: string; label: string }) {
-  const key = actionLabel(keybinds, action) ?? "?";
+function RestartHint() {
   return (
-    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#f8f4ff]/80">
-      <kbd className="min-w-8 rounded border border-[#6d5f8d] bg-[#241b3a] px-2 py-1 text-center font-mono text-[#ffd166]">
-        {key}
-      </kbd>
-      <span>{label}</span>
-    </div>
+    <ControlsList
+      bindings={keybinds}
+      controls={[{ action: "restart", label: "restart" }]}
+      className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#f8f4ff]/80"
+      rowClassName="flex items-center gap-2"
+      keyClassName="min-w-8 rounded border border-[#6d5f8d] bg-[#241b3a] px-2 py-1 text-center font-mono text-[#ffd166]"
+      labelClassName="lowercase tracking-[0.2em]"
+    />
   );
 }
 
@@ -47,13 +48,20 @@ export function StartScreen() {
           </div>
         ))}
       </div>
-      <div className="flex flex-col gap-2">
-        <KeyBadge action="strideBeat" label="stride the beat" />
-        <KeyBadge action="laneLeft" label="lane left" />
-        <KeyBadge action="laneRight" label="lane right" />
-        <KeyBadge action="lean" label="lean (speed nudge)" />
-        <KeyBadge action="restart" label="restart" />
-      </div>
+      <ControlsList
+        bindings={keybinds}
+        controls={[
+          { action: "strideBeat", label: "stride the beat" },
+          { action: "laneLeft", label: "lane left" },
+          { action: "laneRight", label: "lane right" },
+          { action: "lean", label: "lean (speed nudge)" },
+          { action: "restart", label: "restart" },
+        ]}
+        className="flex flex-col gap-2"
+        rowClassName="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#f8f4ff]/80"
+        keyClassName="min-w-8 rounded border border-[#6d5f8d] bg-[#241b3a] px-2 py-1 text-center font-mono text-[#ffd166]"
+        labelClassName="lowercase tracking-[0.2em]"
+      />
       <button
         type="button"
         onClick={() => commands.run("start", {})}
@@ -62,7 +70,9 @@ export function StartScreen() {
       >
         keep the pulse
       </button>
-      <p className="text-[10px] uppercase tracking-[0.3em] text-[#6d5f8d]">press enter or space to start</p>
+      <KeyHint className="text-[10px] uppercase tracking-[0.3em] text-[#6d5f8d]">
+        press enter or space to start
+      </KeyHint>
       </Panel>
     </div>
   );
@@ -104,7 +114,7 @@ export function WinScreen({ snapshot }: { snapshot: RunnerSnapshot }) {
       >
         restart
       </button>
-      <KeyBadge action="restart" label="restart" />
+      <RestartHint />
     </Panel>
   );
 }
@@ -126,7 +136,7 @@ export function LoseScreen({ snapshot }: { snapshot: RunnerSnapshot }) {
       >
         restart
       </button>
-      <KeyBadge action="restart" label="restart" />
+      <RestartHint />
     </Panel>
   );
 }

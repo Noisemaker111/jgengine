@@ -1,4 +1,4 @@
-import { ControlsList, StartScreen as MenuScreen } from "@jgengine/react";
+import { ControlsList, KeyHint, StartScreen as MenuScreen } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 import { keybinds } from "../../keybinds";
 import { keyLabel } from "../keyLabel";
@@ -45,7 +45,8 @@ export function StartScreen() {
         onClick={() => commands.run("startRun", {})}
         className="w-full rounded bg-[#ff4b3e] py-2.5 text-sm font-black tracking-widest text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-95"
       >
-        START — {keyLabel("startRun")}
+        START
+        <KeyHint> — {keyLabel("startRun")}</KeyHint>
       </button>
     </MenuScreen>
   );

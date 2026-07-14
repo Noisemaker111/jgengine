@@ -1,5 +1,5 @@
 import { actionLabel, bindingLabel } from "@jgengine/core/input/actionBindings";
-import { ControlsList, SettingsTrigger, StartScreen as MenuScreen } from "@jgengine/react";
+import { ControlsList, KeyHint, SettingsTrigger, StartScreen as MenuScreen } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 import { keybinds } from "../../keybinds";
 import { DIFFICULTY_PRESETS } from "../../match/difficulty";
@@ -87,7 +87,8 @@ export function StartScreen() {
           onClick={() => commands.run("start", { difficulty: selected })}
           className="rounded-lg bg-[#ff6b35] px-6 py-3 text-center text-lg font-black uppercase tracking-widest text-[#160f0c] shadow-lg shadow-[#ff6b35]/30 transition-transform hover:scale-[1.02] active:scale-95"
         >
-          Start — {actionLabel(keybinds, "start") ?? "Enter"}
+          Start
+          <KeyHint> — {actionLabel(keybinds, "start") ?? "Enter"}</KeyHint>
         </button>
       </div>
     </MenuScreen>

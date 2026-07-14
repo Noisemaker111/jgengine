@@ -1,4 +1,5 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { KeyHint } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 import { keybinds } from "../../keybinds";
 import { formatDistance } from "../format";
@@ -56,7 +57,8 @@ export function EndScreen({ snapshot }: { snapshot: MatchSnapshot }) {
             onClick={() => commands.run("restart", {})}
             className="flex-1 rounded-lg bg-[#ff6b35] px-4 py-3 text-sm font-black uppercase tracking-widest text-[#160f0c] shadow-lg shadow-[#ff6b35]/30 transition-transform hover:scale-[1.02] active:scale-95"
           >
-            Rematch — {actionLabel(keybinds, "restart") ?? "R"}
+            Rematch
+            <KeyHint> — {actionLabel(keybinds, "restart") ?? "R"}</KeyHint>
           </button>
         </div>
       </div>

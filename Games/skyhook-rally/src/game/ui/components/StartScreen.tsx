@@ -1,4 +1,4 @@
-import { ControlsList, StartScreen as MenuScreen } from "@jgengine/react";
+import { ControlsList, KeyHint, StartScreen as MenuScreen } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 
 import { keybinds } from "../../keybinds";
@@ -68,7 +68,7 @@ export function StartScreen({ courses, session }: { courses: readonly CourseDef[
         />
 
         <div className="mt-5 flex items-center justify-between">
-          <span className="text-xs text-[#f4efe6]/60">Press Enter or click Start</span>
+          <KeyHint className="text-xs text-[#f4efe6]/60">Press Enter or click Start</KeyHint>
           <button type="button" className={primaryButtonClass} onClick={() => commands.run("startRun", {})}>
             Start run
           </button>

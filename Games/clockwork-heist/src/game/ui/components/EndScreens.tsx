@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Keycap, KeyHint } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { heistStore } from "../../state/heistState";
@@ -81,7 +82,9 @@ function RestartButton({ onClick }: { onClick: () => void }): ReactNode {
       className="mt-6 flex w-full items-center justify-center gap-2 rounded border border-[#c9a227] bg-[#1d2b4a] px-4 py-3 font-serif text-base font-semibold uppercase tracking-wide text-[#f2e3c2] transition hover:bg-[#2a3c63]"
     >
       Try Again
-      <kbd className="rounded border border-[#c9a227]/60 bg-black/30 px-1.5 py-0.5 font-mono text-[11px]">R</kbd>
+      <KeyHint>
+        <Keycap className="rounded border border-[#c9a227]/60 bg-black/30 px-1.5 py-0.5 font-mono text-[11px]">R</Keycap>
+      </KeyHint>
     </button>
   );
 }
