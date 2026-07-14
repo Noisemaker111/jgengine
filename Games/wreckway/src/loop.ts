@@ -1,16 +1,11 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
-import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { COMPACTOR_ENTITY, KART_PLAYER_ENTITY } from "./game/entities/catalog";
-import { createRunSession, runSessionStore, type RunPhase, type RunSession } from "./game/run/session";
+import { createRunSession, runSessionStore, type RunSession } from "./game/run/session";
 import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
 import { createDriveInput } from "./game/vehicle/input";
 import { placeExitGate, placeGateBarricades, placePickupMarkers, placeZoneDressing, syncCompactorRow, syncPickupMarkers } from "./game/world/setup";
-
-function syncPhase(ctx: GameContext, phase: RunPhase): void {
-  setGamePhase(ctx, phase === "running" ? "playing" : phase === "start" ? "menu" : "ended");
-}
 
 export const lifecycle: LifecycleConfig<RunSession> = {
   store: runSessionStore,
@@ -41,7 +36,6 @@ export function onInit(ctx: GameContext): void {
 
   const session = createRunSession(ctx.world.groundHeightAt);
   runSessionStore.write(ctx, session);
-  syncPhase(ctx, "start");
 
   const input = createDriveInput();
   input.attach();
@@ -61,8 +55,6 @@ export function onTick(ctx: GameContext, dt: number): void {
   const world = worldRuntimeStore.peek(ctx);
   if (session === undefined || input === undefined || world === undefined) return;
 
-  const previousPhase = session.snapshot().phase;
-
   if (input.consumeRestart()) session.restart();
   if (input.consumeStart()) session.start();
 
@@ -72,7 +64,6 @@ export function onTick(ctx: GameContext, dt: number): void {
   session.tick(dt, axis, { jumpPressed, plowBracing });
 
   const snapshot = session.snapshot();
-  if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
 
   ctx.scene.entity.bind("racers").sync(
     [

@@ -1,4 +1,5 @@
 import type { GameContext } from "../runtime/gameContext";
+import type { LifecycleConfig } from "./defineGame";
 
 import { setPlayControlsActive } from "./controlGate";
 
@@ -32,4 +33,19 @@ export function gamePhase(ctx: GameContext): GamePhase {
 
 export function isPlaying(ctx: GameContext): boolean {
   return gamePhase(ctx) === "playing";
+}
+
+/**
+ * Derive the canonical phase from a game's own run state via its {@link LifecycleConfig.phaseOf} and
+ * publish it when it changed — the runtime calls this after every loop hook so a game never hand-writes
+ * a per-tick `setGamePhase(ctx, state.phase === … ? … : …)` ternary or its own previous-phase diff. The
+ * guard makes it idempotent: the phase store is only rewritten (and touch controls re-gated) on an actual
+ * transition, so a busy `onTick` costs one `phaseOf` read, not a store write per frame.
+ *
+ * @internal
+ */
+export function syncLifecyclePhase(ctx: GameContext, lifecycle: LifecycleConfig | undefined): void {
+  if (lifecycle === undefined) return;
+  const desired = lifecycle.phaseOf(lifecycle.store.read(ctx));
+  if (gamePhase(ctx) !== desired) setGamePhase(ctx, desired);
 }

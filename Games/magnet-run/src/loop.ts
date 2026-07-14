@@ -1,21 +1,16 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
-import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { BOT_ENTITY_ID } from "./game/entities/catalog";
 import { controllerStore, RunController } from "./game/systems/runController";
 import { botPoseFor } from "./game/systems/pose";
-import { runStore, type RunPhase } from "./game/systems/runState";
+import { runStore } from "./game/systems/runState";
 import { setupWorld } from "./game/world/setup";
 
 function controllerOf(ctx: GameContext): RunController {
   const existing = controllerStore.peek(ctx);
   if (existing !== undefined) return existing;
   throw new Error("run controller accessed before onInit");
-}
-
-function syncPhase(ctx: GameContext, phase: RunPhase): void {
-  setGamePhase(ctx, phase === "menu" ? "menu" : phase === "running" ? "playing" : "ended");
 }
 
 export const lifecycle: LifecycleConfig<RunController> = {
@@ -40,22 +35,12 @@ export function onInit(ctx: GameContext): void {
   const controller = new RunController();
   controllerStore.write(ctx, controller);
   runStore.write(ctx, controller.snapshot());
-  syncPhase(ctx, controller.snapshot().phase);
 
   setupWorld(ctx);
 
-  function withPhaseSync(mutate: () => void): () => void {
-    return () => {
-      const previousPhase = controller.snapshot().phase;
-      mutate();
-      const nextPhase = controller.snapshot().phase;
-      if (nextPhase !== previousPhase) syncPhase(ctx, nextPhase);
-    };
-  }
-
-  ctx.game.commands.define("laneLeft", { apply: withPhaseSync(() => controller.moveLane(-1)) });
-  ctx.game.commands.define("laneRight", { apply: withPhaseSync(() => controller.moveLane(1)) });
-  ctx.game.commands.define("polarityFlip", { apply: withPhaseSync(() => controller.flip()) });
+  ctx.game.commands.define("laneLeft", { apply: () => controller.moveLane(-1) });
+  ctx.game.commands.define("laneRight", { apply: () => controller.moveLane(1) });
+  ctx.game.commands.define("polarityFlip", { apply: () => controller.flip() });
 }
 
 export function onNewPlayer(ctx: GameContext): void {
@@ -72,13 +57,11 @@ export function onNewPlayer(ctx: GameContext): void {
 
 export function onTick(ctx: GameContext, dt: number): void {
   const controller = controllerOf(ctx);
-  const previousPhase = controller.snapshot().phase;
   const boosting = ctx.input.isDown("boost");
   const braking = ctx.input.isDown("brake");
   controller.tick(dt, { boosting, braking }, ctx.time.now());
 
   const snapshot = controller.snapshot();
-  if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
   runStore.write(ctx, snapshot);
 
   const pose = botPoseFor(snapshot);

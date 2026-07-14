@@ -5,6 +5,7 @@ import {
   type GameDefinitionConfig,
   type GameLoop,
 } from "@jgengine/core/game/defineGame";
+import { syncLifecyclePhase } from "@jgengine/core/game/gamePhase";
 import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
@@ -82,13 +83,22 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
 
   const game = defineEngineGame({ ...engineFields, multiplayer: multiplayer ?? offline() });
 
+  function withPhaseSync<A extends unknown[]>(
+    inner: ((ctx: GameContext, ...args: A) => void) | undefined,
+  ): (ctx: GameContext, ...args: A) => void {
+    return (ctx, ...args) => {
+      inner?.(ctx, ...args);
+      syncLifecyclePhase(ctx, game.lifecycle);
+    };
+  }
+
   return {
     game,
     content: content ?? {},
     loop: {
-      onInit: loop?.onInit ?? noop,
-      onNewPlayer: loop?.onNewPlayer ?? noop,
-      onTick: loop?.onTick ?? noop,
+      onInit: withPhaseSync(loop?.onInit),
+      onNewPlayer: withPhaseSync(loop?.onNewPlayer),
+      onTick: withPhaseSync(loop?.onTick),
       onPlayerLeave: loop?.onPlayerLeave ?? noop,
     },
     GameUI: GameUI ?? emptyUi,
