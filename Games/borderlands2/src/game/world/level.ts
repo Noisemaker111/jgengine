@@ -285,10 +285,20 @@ export function zoneSetPieces(zone: ZoneDef): PlacedPiece[] {
 
   switch (zone.id) {
     case "windshear_waste": {
-      pieces.push({ catalogId: "bus_wreck", x: zone.center.x + 14, z: zone.center.z + 40, instanceId: "crash_bus" });
-      pieces.push(...scatterPieces("cover_crate", "windshear_debris", { x: zone.center.x + 16, z: zone.center.z + 34 }, 14, 6, "bl2-crash-debris"));
+      const spawn = { x: zone.center.x + 18, z: zone.center.z + 34 };
+      pieces.push({ catalogId: "bus_wreck", x: zone.center.x + 10, z: zone.center.z + 46, instanceId: "crash_bus" });
+      pieces.push(...scatterPieces("cover_crate", "windshear_debris", { x: zone.center.x + 12, z: zone.center.z + 42 }, 10, 5, "bl2-crash-debris"));
+      pieces.push({ catalogId: "wreck", x: spawn.x + 13, z: spawn.z + 6, instanceId: "windshear_wreck_spawn" });
+      pieces.push({ catalogId: "rock_spire", x: spawn.x - 14, z: spawn.z + 10, instanceId: "windshear_spire_a" });
+      pieces.push({ catalogId: "rock_spire", x: spawn.x + 18, z: spawn.z - 12, instanceId: "windshear_spire_b" });
+      pieces.push({ catalogId: "rock_spire", x: spawn.x - 8, z: spawn.z - 18, instanceId: "windshear_spire_c" });
+      pieces.push({ catalogId: "bone_arch", x: spawn.x + 6, z: spawn.z + 12, instanceId: "windshear_bones_spawn" });
+      pieces.push({ catalogId: "dead_tree", x: spawn.x - 10, z: spawn.z - 6, instanceId: "windshear_tree_spawn" });
+      pieces.push({ catalogId: "banner_pole", x: spawn.x + 10, z: spawn.z - 8, instanceId: "windshear_banner_spawn" });
+      pieces.push({ catalogId: "signpost", x: spawn.x - 5, z: spawn.z + 7, instanceId: "sign_windshear_spawn" });
       pieces.push({ catalogId: "signpost", x: zone.center.x + 28, z: zone.center.z + 8, instanceId: "sign_windshear" });
       pieces.push(...ringPieces("bone_arch", "windshear_bones", offsetFrom(zone, 0), 22, 4, null));
+      pieces.push(...scatterPieces("rock_spire", "windshear_rocks", zone.center, zone.flattenRadius * 1.1, 6, "bl2-windshear-rocks"));
       break;
     }
     case "southern_shelf": {

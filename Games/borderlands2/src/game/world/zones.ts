@@ -48,7 +48,7 @@ export const ZONES: readonly ZoneDef[] = [
     radius: 150,
     level: 1,
     flattenRadius: 70,
-    settlement: { count: 4, footprint: 6, stories: [1, 1], style: "ruin" },
+    settlement: { count: 4, footprint: 6, stories: [1, 1], style: "ruin", palette: { wall: "#8a5c3a", storefront: "#4a3524" } },
     clusters: [
       { catalogId: "bullymong", count: 4, offset: { x: 40, z: -30 }, radius: 18 },
       { catalogId: "bullymong_brat", count: 5, offset: { x: -35, z: 40 }, radius: 16 },
@@ -110,7 +110,7 @@ export const ZONES: readonly ZoneDef[] = [
     radius: 220,
     level: 12,
     flattenRadius: 70,
-    settlement: { count: 6, footprint: 6, stories: [1, 1], style: "ruin" },
+    settlement: { count: 6, footprint: 6, stories: [1, 1], style: "ruin", palette: { wall: "#7d6b52", storefront: "#43392c" } },
     clusters: [
       { catalogId: "marauder", count: 5, offset: { x: -60, z: -50 }, radius: 24 },
       { catalogId: "nomad", count: 3, offset: { x: -60, z: -50 }, radius: 18 },
