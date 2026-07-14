@@ -183,6 +183,10 @@ resumed worker twice for GamePlayerShell fix ship motion, kept returning 'waitin
 
 wanted verbatim output from a completed background gate worker, reached for Agent(isolation:'worktree') as 'continue' → spawned a stray fresh agent with a locked git worktree under .claude/worktrees/ instead of resuming context; correct move is SendMessage(to: agentId) to resume, isolation:'worktree' is only for parallel file-mutating agents
 
+2026-07-14T04:52:11.822Z — claude-opus-4-8 — Claude
+
+fanning out worktree-isolated issue agents in one container → each agent's shell ran git setup (checkout -b) from the shared main checkout, not its worktree, so concurrent agents raced and left the main worktree HEAD on another agent's branch (had to restore my session branch); worktree isolation doesn't isolate git when the shell cwd is the main repo
+
 2026-07-14T04:49:46.267Z — sonnet-5 — Claude
 
 check-game-shape gate: origin/main had 3 new race primitives (idleRaceSession/placementOf/racePlacements) orphaned since PR #719, no baseline entry → check-skill-api failed cold on a fresh worktree until bun run gen:skill-api --seed-baseline caught it up
