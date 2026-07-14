@@ -2,6 +2,12 @@
 
 # jgengine-ui — exported API surface
 
+## @jgengine/core/format/distance
+
+- `DistanceFormat` (interface): interface DistanceFormat — Options for {@link formatDistance}.
+- `DistanceUnit` (type): type DistanceUnit = "m" | "km" | "auto" — Target unit for {@link formatDistance}: meters, kilometers, or `"auto"` (km past 1000m).
+- `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
+
 ## @jgengine/core/format/duration
 
 - `DurationFormat` (interface): interface DurationFormat — Options for {@link formatDuration}.
@@ -9,6 +15,12 @@
 - `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
 - `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
 - `padNumber` (function): function padNumber(value: number, width: number): string — Left-pad a non-negative integer to `width` digits with leading zeros.
+
+## @jgengine/core/format/speed
+
+- `SpeedFormat` (interface): interface SpeedFormat — Options for {@link formatSpeed}.
+- `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
+- `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
 ## @jgengine/core/render/color
 

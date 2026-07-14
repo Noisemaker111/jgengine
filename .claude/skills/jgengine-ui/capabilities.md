@@ -9,6 +9,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/format/duration"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/format/duration"`
 
+## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
+
+- `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
@@ -24,3 +28,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/format/duration"`
+
+## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
+
+- `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/format/speed"`

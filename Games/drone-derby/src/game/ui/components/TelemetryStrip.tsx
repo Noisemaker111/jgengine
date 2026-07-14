@@ -1,3 +1,6 @@
+import { formatDistance } from "@jgengine/core/format/distance";
+import { formatSpeed } from "@jgengine/core/format/speed";
+
 import { HudLabel } from "@/components/ui/hud-label";
 
 function Readout({ label, value }: { label: string; value: string }) {
@@ -30,8 +33,8 @@ export function TelemetryStrip({
         border: "1px solid var(--jg-edge)",
       }}
     >
-      <Readout label="Speed" value={`${Math.round(speed * 3.6)} km/h`} />
-      <Readout label="Altitude" value={`${altitude.toFixed(1)} m`} />
+      <Readout label="Speed" value={formatSpeed(speed)} />
+      <Readout label="Altitude" value={formatDistance(altitude, { decimals: 1 })} />
       <Readout label="Wind" value={gustActive ? `${windSpeed.toFixed(1)} m/s ⚡` : `${windSpeed.toFixed(1)} m/s`} />
     </div>
   );

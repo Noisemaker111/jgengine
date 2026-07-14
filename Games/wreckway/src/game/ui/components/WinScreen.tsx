@@ -1,3 +1,4 @@
+import { formatDistance } from "@jgengine/core/format/distance";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 
 import { keybinds } from "../../keybinds";
@@ -29,7 +30,7 @@ export function WinScreen({ snapshot, onRestart }: WinScreenProps) {
           <Stat label="TIME" value={formatTime(outcome.time)} />
           <Stat label="PARTS ON EXIT" value={`${outcome.partsOnExit}/4`} />
           <Stat label="NEAR MISSES" value={`${outcome.nearMisses}`} />
-          <Stat label="CLOSEST CALL" value={`${Math.round(outcome.closestGap)}m`} />
+          <Stat label="CLOSEST CALL" value={formatDistance(outcome.closestGap)} />
         </div>
 
         <div className="mt-5 flex justify-center gap-2">
