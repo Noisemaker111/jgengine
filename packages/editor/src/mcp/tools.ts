@@ -301,4 +301,180 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     description: "The scene's parent/child tree: root ids and each root's direct children.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
+  {
+    name: "list_prefabs",
+    description: "List the document's reusable prefab stamps (id, name, fragment content).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "create_prefab",
+    description: "Make a reusable prefab from selected ids, centered on their own bounds.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        ids: { type: "array", items: { type: "string" } },
+      },
+      required: ["id", "name", "ids"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "insert_prefab",
+    description: "Insert a fresh, tagged instance of a prefab at the camera focus or given x/y/z.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        prefabId: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
+        z: { type: "number" },
+      },
+      required: ["prefabId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "detach_prefab_instance",
+    description: "Strip the prefab link from every object in an instance, keeping its content.",
+    inputSchema: {
+      type: "object",
+      properties: { instanceId: { type: "string" } },
+      required: ["instanceId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "delete_prefab",
+    description: "Remove a prefab from the library (placed instances are unaffected).",
+    inputSchema: {
+      type: "object",
+      properties: { prefabId: { type: "string" } },
+      required: ["prefabId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_collections",
+    description: "List named collections / selection sets (id, name, memberIds, color, locked, visible).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "create_collection",
+    description: "Create a named collection / selection set from member ids.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        memberIds: { type: "array", items: { type: "string" } },
+      },
+      required: ["id", "name"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "rename_collection",
+    description: "Rename a collection.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" }, name: { type: "string" } },
+      required: ["id", "name"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "delete_collection",
+    description: "Delete a collection (its member objects are untouched).",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" } },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "set_collection_members",
+    description: "Replace a collection's member ids wholesale.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" }, memberIds: { type: "array", items: { type: "string" } } },
+      required: ["id", "memberIds"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "add_to_collection",
+    description: "Add ids to a collection's membership.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" }, ids: { type: "array", items: { type: "string" } } },
+      required: ["id", "ids"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "remove_from_collection",
+    description: "Remove ids from a collection's membership.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" }, ids: { type: "array", items: { type: "string" } } },
+      required: ["id", "ids"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "set_collection_flags",
+    description: "Patch a collection's color / locked / visible flags.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        color: { type: "string" },
+        locked: { type: "boolean" },
+        visible: { type: "boolean" },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "select_collection",
+    description: "Restore the current selection to a collection's member ids.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" } },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "batch_set_properties",
+    description: "Patch color/label/meta across every listed id in one dispatch, regardless of kind.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ids: { type: "array", items: { type: "string" } },
+        color: { type: "string" },
+        label: { type: "string" },
+        meta: { type: "object" },
+      },
+      required: ["ids"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "assign_material",
+    description: "Stamp meta.materialId on every listed object — the drag-drop material assignment primitive.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ids: { type: "array", items: { type: "string" } },
+        materialId: { type: "string" },
+      },
+      required: ["ids", "materialId"],
+      additionalProperties: false,
+    },
+  },
 ];

@@ -1,13 +1,13 @@
-import { advanceSpawnDirector, createSpawnDirectorState, type SpawnDirectorState } from "../ai/spawnDirector";
-import { createAbilityKit, type AbilityKit } from "../combat/abilityKit";
-import type { GameLoop } from "../game/defineGame";
-import { setGamePhase } from "../game/gamePhase";
-import { leveling, type LevelingTrack } from "../game/progression";
-import { createRunDraft, type RunDraft, type RunModifierOffer } from "../game/runDraft";
-import { aimToPoint } from "../input/pointer";
-import { seededRng } from "../item/affix";
-import type { GameContext, GameContextContent, GameContextEntityEntry } from "../runtime/gameContext";
-import { selectAutoTarget } from "../scene/autoTarget";
+import { advanceSpawnDirector, createSpawnDirectorState, type SpawnDirectorState } from "@jgengine/core/ai/spawnDirector";
+import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/abilityKit";
+import type { GameLoop } from "@jgengine/core/game/defineGame";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
+import { leveling, type LevelingTrack } from "@jgengine/core/game/progression";
+import { createRunDraft, type RunDraft, type RunModifierOffer } from "@jgengine/core/game/runDraft";
+import { aimToPoint } from "@jgengine/core/input/pointer";
+import { seededRng } from "@jgengine/core/item/affix";
+import type { GameContext, GameContextContent, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
+import { selectAutoTarget } from "@jgengine/core/scene/autoTarget";
 
 import {
   HIT_EFFECT,

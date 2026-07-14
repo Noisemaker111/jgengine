@@ -2,6 +2,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { spawnAllMobs } from "../ai/mobs";
+import { AUCTION_BOARD, auctionPrompts, placeAuctionBoard } from "../auction/systems";
 import { placeCraftingWorld } from "../crafting/systems";
 import { DELVES } from "../delves/catalog";
 import { DELVE_PORTAL, placeDelveWorld } from "../delves/systems";
@@ -31,6 +32,7 @@ export function setupWorld(ctx: GameContext): void {
     ctx.scene.object.place(STRONGBOX, x, ctx.world.groundHeightAt(x, z), z);
   }
   placeMailboxes(ctx);
+  placeAuctionBoard(ctx);
   placeDelveWorld(ctx);
   placeValeCup(ctx);
   placeYumiShrine(ctx);
@@ -122,10 +124,11 @@ export function contentPrompts(ctx: GameContext): readonly PositionedPrompt[] {
       invoke: command("yumi.start", {}),
     }),
   });
+  prompts.push(...auctionPrompts(ctx));
   return prompts;
 }
 
-export { DELVE_PORTAL, MAILBOX, VALE_CUP_STADIUM, YUMI_SHRINE };
+export { AUCTION_BOARD, DELVE_PORTAL, MAILBOX, VALE_CUP_STADIUM, YUMI_SHRINE };
 
 export function npcPrompts(ctx: GameContext): readonly PositionedPrompt[] {
   const prompts: PositionedPrompt[] = [];

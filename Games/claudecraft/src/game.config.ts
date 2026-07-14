@@ -13,6 +13,7 @@ import { craftingPrompts, FISHING_SPOT, FORGE } from "./game/crafting/systems";
 import { GATHER_NODES } from "./game/professions/catalog";
 import { gatherPrompts } from "./game/professions/gathering";
 import {
+  AUCTION_BOARD,
   contentPrompts,
   DELVE_PORTAL,
   dungeonPrompts,
@@ -49,6 +50,7 @@ const objectStyles = {
   [FORGE]: { color: "#5a4a3a" },
   [FISHING_SPOT]: { color: "#3a6a8a" },
   [MAILBOX]: { color: "#6b8cae" },
+  [AUCTION_BOARD]: { color: "#b5651d" },
   [DELVE_PORTAL]: { color: "#8b5cf6" },
   [VALE_CUP_STADIUM]: { color: "#c4a35a" },
   [YUMI_SHRINE]: { color: "#e8a0bf" },
@@ -60,7 +62,7 @@ const objectStyles = {
 export const game = defineGame({
   capture: { play: [{ name: "class.select", input: { classId: "warrior" } }] },
   name: "World of ClaudeCraft",
-  features: { players: true, quest: true, trade: true },
+  features: { players: true, quest: true, trade: true, chat: true },
   multiplayer: ws({ authority: "server" }),
   assets,
   world,
@@ -77,6 +79,7 @@ export const game = defineGame({
   objectStyles,
   settings: { variant: "sidebar" },
   worldHealthBars: { roles: ["enemy", "hostile"], maxDistance: 60 },
+  nameplates: { maxDistance: 40 },
   postProcessing: {
     toneMapping: "aces",
     ao: { radius: 2, intensity: 1.2, distanceFalloff: 3.6, blend: 0.85 },

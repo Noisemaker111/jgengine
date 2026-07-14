@@ -17,6 +17,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
 
+## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
+
+- `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
+
+## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
+
+- `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
@@ -28,6 +36,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
 - `Minimap` (function) · `import { Minimap } from "@jgengine/react"`
+
+## minimap-chrome — ring frame plus edge-clamped, heading-aware marker dots to nest inside a game's own `<svg>`
+
+- `MinimapChrome` (function) · `import { MinimapChrome } from "@jgengine/react"`
+
+## minimap-panel — circular minimap with zone label, clock, and compass composed together
+
+- `MinimapPanel` (function) · `import { MinimapPanel } from "@jgengine/react"`
+
+## nameplates — billboarded name + HP bar over nearby entities
+
+- `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
 
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 

@@ -1,103 +1,29 @@
 import { cameraShake } from "@jgengine/shell/camera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { steerYaw } from "@jgengine/core/movement/steering";
-import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "@jgengine/core/physics/vehicleBody";
+import type { AxisBindingMap } from "@jgengine/core/input/axisInput";
+import { createKinematicVehicle, type KinematicVehicle, type KinematicVehicleTuning } from "@jgengine/core/physics/kinematicVehicle";
+import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
+import { createVehicleSeats, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
+import { advanceHeat, createHeatState, type HeatConfig, type HeatGain, type HeatState } from "@jgengine/core/ai/heatSystem";
 import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { seededRng } from "@jgengine/core/random/rng";
 import { createRaceState, firstPastPost, raceTrack, type RaceState } from "@jgengine/core/game/race";
 import { RACE_CHECKPOINTS } from "./world/districts";
 
-export interface CarTuning {
-  engineAccel: number;
-  brakeAccel: number;
-  topSpeed: number;
-  reverseSpeed: number;
-  turnRate: number;
-  turnSpeedRef: number;
-  grip: GripCurve;
-  gripStrength: number;
-  handbrakeGrip: number;
-}
+export const CAR_TUNINGS: Record<string, KinematicVehicleTuning> = {
+  car_compact: { engineAccel: 14, brakeAccel: 22, topSpeed: 20, reverseSpeed: 7, turnRate: 2.4, turnSpeedRef: 6, gripStrength: 8, handbrakeGrip: 0.3 },
+  car_muscle: { engineAccel: 20, brakeAccel: 26, topSpeed: 28, reverseSpeed: 8, turnRate: 2.1, turnSpeedRef: 7, gripStrength: 6.5, handbrakeGrip: 0.22 },
+  car_sport: { engineAccel: 26, brakeAccel: 30, topSpeed: 36, reverseSpeed: 9, turnRate: 2.5, turnSpeedRef: 8, gripStrength: 7.5, handbrakeGrip: 0.2 },
+  car_cop: { engineAccel: 22, brakeAccel: 28, topSpeed: 30, reverseSpeed: 8, turnRate: 2.3, turnSpeedRef: 7, gripStrength: 7, handbrakeGrip: 0.22 },
+};
 
-export interface CarAxis {
-  throttle: number;
-  brake: number;
-  steer: number;
-  handbrake: number;
-}
-
-export interface CarPose {
-  position: readonly [number, number, number];
-  heading: number;
-  speedKmh: number;
-}
-
-export interface CarState {
-  x: number;
-  z: number;
-  heading: number;
-  vx: number;
-  vz: number;
-}
-
-export function stepCar(
-  state: CarState,
-  tuning: CarTuning,
-  axis: CarAxis,
-  dt: number,
-  groundY: (x: number, z: number) => number,
-): CarPose {
-  const fx0 = Math.sin(state.heading);
-  const fz0 = Math.cos(state.heading);
-  const speed0 = state.vx * fx0 + state.vz * fz0;
-  const steerScale = Math.min(1, Math.abs(speed0) / tuning.turnSpeedRef);
-  const dir = speed0 >= 0 ? 1 : -1;
-  state.heading = steerYaw(state.heading, axis.steer * steerScale * dir, tuning.turnRate, dt);
-
-  const fx = Math.sin(state.heading);
-  const fz = Math.cos(state.heading);
-  let accel = 0;
-  if (axis.throttle > 0 && speed0 < tuning.topSpeed) accel += axis.throttle * tuning.engineAccel;
-  if (axis.brake > 0) {
-    if (speed0 > 0.2) accel -= axis.brake * tuning.brakeAccel;
-    else if (speed0 > -tuning.reverseSpeed) accel -= axis.brake * tuning.engineAccel;
-  }
-  state.vx += fx * accel * dt;
-  state.vz += fz * accel * dt;
-
-  const forwardSpeed = state.vx * fx + state.vz * fz;
-  const lateralSpeed = -state.vx * fz + state.vz * fx;
-  const slip = Math.abs(lateralSpeed) / (Math.abs(forwardSpeed) + 1);
-  const handbrakeFactor = 1 - axis.handbrake * (1 - tuning.handbrakeGrip);
-  const grip = sampleGripCurve(tuning.grip, slip) * handbrakeFactor;
-  const keep = Math.max(0, 1 - grip * tuning.gripStrength * dt);
-  const newLateral = lateralSpeed * keep;
-  state.vx = fx * forwardSpeed - fz * newLateral;
-  state.vz = fz * forwardSpeed + fx * newLateral;
-
-  const drag = Math.max(0, 1 - 0.35 * dt);
-  state.vx *= drag;
-  state.vz *= drag;
-  state.x += state.vx * dt;
-  state.z += state.vz * dt;
-
-  const half = 300;
-  state.x = Math.max(-half, Math.min(half, state.x));
-  state.z = Math.max(-half, Math.min(half, state.z));
-
-  return {
-    position: [state.x, groundY(state.x, state.z), state.z],
-    heading: state.heading,
-    speedKmh: Math.abs(forwardSpeed) * 3.6,
-  };
-}
-
-export const CAR_TUNINGS: Record<string, CarTuning> = {
-  car_compact: { engineAccel: 14, brakeAccel: 22, topSpeed: 20, reverseSpeed: 7, turnRate: 2.4, turnSpeedRef: 6, grip: DEFAULT_GRIP_CURVE, gripStrength: 8, handbrakeGrip: 0.3 },
-  car_muscle: { engineAccel: 20, brakeAccel: 26, topSpeed: 28, reverseSpeed: 8, turnRate: 2.1, turnSpeedRef: 7, grip: DEFAULT_GRIP_CURVE, gripStrength: 6.5, handbrakeGrip: 0.22 },
-  car_sport: { engineAccel: 26, brakeAccel: 30, topSpeed: 36, reverseSpeed: 9, turnRate: 2.5, turnSpeedRef: 8, grip: DEFAULT_GRIP_CURVE, gripStrength: 7.5, handbrakeGrip: 0.2 },
-  car_cop: { engineAccel: 22, brakeAccel: 28, topSpeed: 30, reverseSpeed: 8, turnRate: 2.3, turnSpeedRef: 7, grip: DEFAULT_GRIP_CURVE, gripStrength: 7, handbrakeGrip: 0.22 },
+/** Drive axes bound to this game's own action names, not raw key codes — the `ctx.input.axis` contract (#533.7). */
+const DRIVE_AXIS_BINDINGS: AxisBindingMap = {
+  throttle: { positive: ["moveForward"] },
+  brake: { positive: ["moveBack"] },
+  steer: { positive: ["moveRight"], negative: ["moveLeft"] },
+  handbrake: { positive: ["jump"] },
 };
 
 export interface WantedSnapshot {
@@ -106,10 +32,19 @@ export interface WantedSnapshot {
   peakStars: number;
 }
 
-export const HEAT_PER_STAR = 100;
 export const MAX_STARS = 5;
 export const PURSUIT_STARS = 3;
 export const RIVAL_RACER_ID = "race_rival";
+
+const HEAT_CONFIG: HeatConfig = {
+  levels: [1, 2, 3, 4, 5].map((level) => ({ level, threshold: level * 100, pursuerBudget: level * 2 })),
+  maxHeat: MAX_STARS * 100,
+  decayPerSecond: 7,
+  decayDelaySeconds: 0,
+  standDownSeconds: 6,
+  spawnRingRadius: [46, 66],
+  seed: 20260712,
+};
 
 export interface RaceSnapshot {
   active: boolean;
@@ -147,16 +82,18 @@ export interface Handroll {
 }
 
 export function createHandroll(): Handroll {
-  const carStates = new Map<string, CarState>();
+  const carVehicles = new Map<string, KinematicVehicle>();
+  const cruiserVehicles = new Map<string, KinematicVehicle>();
+  const vehicleSeats: VehicleSeats = createVehicleSeats();
   let driving: string | null = null;
   let lastSpeedKmh = 0;
-  let heat = 0;
+  let heatState: HeatState = createHeatState(HEAT_CONFIG);
   let peakStars = 0;
+  let pendingGains: HeatGain[] = [];
   let copTimer = 0;
   let copCounter = 0;
   const traffic: TrafficCar[] = [];
   const rng = seededRng("vice-isle-cops");
-  const cruiserStates = new Map<string, CarState>();
   let cruiserCounter = 0;
   let cruiserTimer = 0;
   let race: RaceState | null = null;
@@ -164,71 +101,85 @@ export function createHandroll(): Handroll {
   let rivalState: PathFollowState | null = null;
   let rivalConfig: PathFollowConfig | null = null;
 
-  function stars(): number {
-    return Math.min(MAX_STARS, Math.floor(heat / HEAT_PER_STAR));
-  }
-
   function publishWanted(ctx: GameContext): void {
-    wantedStore.write(ctx, { heat, stars: stars(), peakStars } satisfies WantedSnapshot);
+    wantedStore.write(ctx, { heat: heatState.heat, stars: heatState.level, peakStars } satisfies WantedSnapshot);
   }
 
-  function carStateFor(ctx: GameContext, vehicleId: string): CarState {
-    const existing = carStates.get(vehicleId);
+  function carVehicleFor(ctx: GameContext, vehicleId: string): KinematicVehicle {
+    const existing = carVehicles.get(vehicleId);
     if (existing !== undefined) return existing;
     const entity = ctx.scene.entity.get(vehicleId);
-    const created: CarState = {
-      x: entity?.position[0] ?? 0,
-      z: entity?.position[2] ?? 0,
+    const tuning = CAR_TUNINGS[entity?.name ?? ""] ?? CAR_TUNINGS.car_compact!;
+    const created = createKinematicVehicle(tuning, {
+      position: entity?.position ?? [0, 0, 0],
       heading: entity?.rotationY ?? 0,
-      vx: 0,
-      vz: 0,
-    };
-    carStates.set(vehicleId, created);
+    });
+    carVehicles.set(vehicleId, created);
     return created;
   }
 
-  function sampleAxis(ctx: GameContext): CarAxis {
-    return {
-      throttle: ctx.input.isDown("moveForward") ? 1 : 0,
-      brake: ctx.input.isDown("moveBack") ? 1 : 0,
-      steer: (ctx.input.isDown("moveRight") ? 1 : 0) - (ctx.input.isDown("moveLeft") ? 1 : 0),
-      handbrake: ctx.input.isDown("jump") ? 1 : 0,
-    };
+  function setRiderFrozen(ctx: GameContext, riderId: string, frozen: boolean): void {
+    const rider = ctx.scene.entity.get(riderId);
+    ctx.scene.entity.update(riderId, { movement: { ...(rider?.movement ?? {}), frozen } });
   }
 
-  function tickCops(ctx: GameContext, dt: number): void {
-    const level = stars();
-    const player = ctx.scene.entity.get(ctx.player.userId);
-    if (player === null) return;
-    const playerPos = driving !== null ? (ctx.scene.entity.get(driving)?.position ?? player.position) : player.position;
+  function playerWorldPos(ctx: GameContext): readonly [number, number, number] | null {
+    if (driving !== null) {
+      const vehicle = ctx.scene.entity.get(driving);
+      if (vehicle !== null) return vehicle.position;
+    }
+    return ctx.scene.entity.get(ctx.player.userId)?.position ?? null;
+  }
 
-    const cops = ctx.scene.entity
-      .list()
-      .filter((e) => e.name === "cop_patrol" || e.name === "cop_swat");
+  function tickWanted(ctx: GameContext, dt: number): void {
+    const playerPos = playerWorldPos(ctx);
+    if (playerPos === null) return;
+    const cops = ctx.scene.entity.list().filter((e) => e.name === "cop_patrol" || e.name === "cop_swat");
+    const anyCopClose = cops.some((cop) => Math.hypot(cop.position[0] - playerPos[0], cop.position[2] - playerPos[2]) < 60);
 
-    if (level > 0) {
+    const step = advanceHeat(HEAT_CONFIG, heatState, dt, pendingGains, {
+      nearWitness: anyCopClose,
+      activePursuers: cops.length,
+      around: [playerPos[0], playerPos[2]],
+    });
+    heatState = step.state;
+    peakStars = Math.max(peakStars, heatState.level);
+    pendingGains = [];
+    publishWanted(ctx);
+
+    if (step.standDown) {
+      for (const cop of cops) ctx.scene.entity.despawn(cop.id);
+      for (const cruiser of ctx.scene.entity.list().filter((e) => e.id.startsWith("cruiser_"))) {
+        ctx.scene.entity.despawn(cruiser.id);
+        cruiserVehicles.delete(cruiser.id);
+      }
+      return;
+    }
+
+    if (step.wantSpawns > 0) {
       copTimer -= dt;
-      const wantedCops = level * 2;
-      if (copTimer <= 0 && cops.length < wantedCops) {
-        copTimer = Math.max(2, 8 - level * 1.2);
+      if (copTimer <= 0) {
+        copTimer = Math.max(2, 8 - heatState.level * 1.2);
         copCounter += 1;
-        const angle = rng() * Math.PI * 2;
-        const distance = 46 + rng() * 20;
-        const x = playerPos[0] + Math.sin(angle) * distance;
-        const z = playerPos[2] + Math.cos(angle) * distance;
-        ctx.scene.entity.spawn(level >= 4 ? "cop_swat" : "cop_patrol", {
+        const [x, z] = step.spawnPoints[0]!;
+        ctx.scene.entity.spawn(heatState.level >= 4 ? "cop_swat" : "cop_patrol", {
           id: `cop_${copCounter}`,
           position: [x, ctx.world.groundHeightAt(x, z), z],
           role: "npc",
         });
       }
     }
+  }
 
-    let anyCopClose = false;
+  function tickCops(ctx: GameContext, dt: number): void {
+    const playerPos = playerWorldPos(ctx);
+    if (playerPos === null) return;
+    const cops = ctx.scene.entity.list().filter((e) => e.name === "cop_patrol" || e.name === "cop_swat");
+    const now = ctx.time.now();
+
     for (const cop of cops) {
       const dist = Math.hypot(cop.position[0] - playerPos[0], cop.position[2] - playerPos[2]);
-      if (dist < 60) anyCopClose = true;
-      if (level === 0) {
+      if (heatState.level === 0) {
         if (dist > 70) ctx.scene.entity.despawn(cop.id);
         continue;
       }
@@ -241,7 +192,6 @@ export function createHandroll(): Handroll {
       }
       if (dist < 16 && ctx.scene.entity.hasLineOfSight(cop.id, ctx.player.userId)) {
         const meta = (cop.meta ?? {}) as { nextShotAt?: number };
-        const now = ctx.time.now();
         if ((meta.nextShotAt ?? 0) <= now) {
           ctx.scene.entity.update(cop.id, { meta: { ...meta, nextShotAt: now + (cop.name === "cop_swat" ? 0.7 : 1.2) } });
           ctx.scene.entity.effect({
@@ -253,24 +203,10 @@ export function createHandroll(): Handroll {
         }
       }
     }
-
-    if (level > 0) {
-      const decay = anyCopClose ? 1.6 : 7;
-      heat = Math.max(0, heat - decay * dt);
-      publishWanted(ctx);
-    }
-  }
-
-  function playerWorldPos(ctx: GameContext): readonly [number, number, number] | null {
-    if (driving !== null) {
-      const vehicle = ctx.scene.entity.get(driving);
-      if (vehicle !== null) return vehicle.position;
-    }
-    return ctx.scene.entity.get(ctx.player.userId)?.position ?? null;
   }
 
   function tickCruisers(ctx: GameContext, dt: number): void {
-    const level = stars();
+    const level = heatState.level;
     const target = playerWorldPos(ctx);
     if (target === null) return;
     const cruisers = ctx.scene.entity.list().filter((e) => e.id.startsWith("cruiser_"));
@@ -285,34 +221,32 @@ export function createHandroll(): Handroll {
         const z = target[2] + Math.cos(angle) * 70;
         const id = `cruiser_${cruiserCounter}`;
         ctx.scene.entity.spawn("car_cop", { id, position: [x, ctx.world.groundHeightAt(x, z), z], role: "prop" });
-        cruiserStates.set(id, { x, z, heading: Math.atan2(target[0] - x, target[2] - z), vx: 0, vz: 0 });
+        cruiserVehicles.set(
+          id,
+          createKinematicVehicle(CAR_TUNINGS.car_cop!, { position: [x, 0, z], heading: Math.atan2(target[0] - x, target[2] - z) }),
+        );
       }
     }
 
     for (const cruiser of cruisers) {
-      const state = cruiserStates.get(cruiser.id);
-      if (state === undefined) continue;
-      const dist = Math.hypot(state.x - target[0], state.z - target[2]);
+      const vehicle = cruiserVehicles.get(cruiser.id);
+      if (vehicle === undefined) continue;
+      const pose = vehicle.pose();
+      const dist = Math.hypot(pose.position[0] - target[0], pose.position[2] - target[2]);
       if (level < PURSUIT_STARS) {
         if (dist > 60) {
           ctx.scene.entity.despawn(cruiser.id);
-          cruiserStates.delete(cruiser.id);
+          cruiserVehicles.delete(cruiser.id);
         }
         continue;
       }
-      const desired = Math.atan2(target[0] - state.x, target[2] - state.z);
-      let error = desired - state.heading;
+      const desired = Math.atan2(target[0] - pose.position[0], target[2] - pose.position[2]);
+      let error = desired - pose.heading;
       while (error > Math.PI) error -= Math.PI * 2;
       while (error < -Math.PI) error += Math.PI * 2;
-      const axis: CarAxis = {
-        throttle: dist > 6 ? 1 : 0.2,
-        brake: 0,
-        steer: Math.max(-1, Math.min(1, error * 2)),
-        handbrake: 0,
-      };
-      const tuning = CAR_TUNINGS.car_cop!;
-      const pose = stepCar(state, tuning, axis, dt, (x, z) => ctx.world.groundHeightAt(x, z));
-      ctx.scene.entity.setPose(cruiser.id, { position: pose.position, rotationY: pose.heading, dt });
+      const axis = { throttle: dist > 6 ? 1 : 0.2, brake: 0, steer: Math.max(-1, Math.min(1, error * 2)), handbrake: 0 };
+      const result = tickDrivableVehicle(vehicle, dt, axis, { groundHeight: (x, z) => ctx.world.groundHeightAt(x, z) });
+      ctx.scene.entity.setPose(cruiser.id, result.pose);
       if (dist < 4 && driving !== null) {
         ctx.scene.entity.effect({ from: cruiser.id, to: driving, effect: "damage", via: { amount: Math.round(24 * dt * 10) / 10 } });
       }
@@ -376,7 +310,7 @@ export function createHandroll(): Handroll {
   }
 
   function tickTraffic(ctx: GameContext, dt: number): void {
-    const panicking = stars() > 0;
+    const panicking = heatState.level > 0;
     for (const car of traffic) {
       if (car.entityId === driving) continue;
       if (panicking && car.entityId.startsWith("ped_")) continue;
@@ -392,41 +326,45 @@ export function createHandroll(): Handroll {
 
   return {
     enterVehicle(ctx, vehicleId) {
+      if (driving !== null) return;
+      if (!vehicleSeats.mounts.isRegistered(vehicleId)) {
+        vehicleSeats.register({ id: vehicleId, kit: { kind: "ground" } });
+      }
+      const result = vehicleSeats.enter(ctx.player.userId, vehicleId);
+      if (!result.ok) return;
       driving = vehicleId;
-      carStateFor(ctx, vehicleId);
-      ctx.camera.follow(vehicleId);
+      carVehicleFor(ctx, vehicleId);
+      ctx.camera.follow(result.cameraTarget);
+      setRiderFrozen(ctx, ctx.player.userId, result.riderMovementPatch.frozen);
       drivingStore.write(ctx, vehicleId);
     },
     exitVehicle(ctx) {
       if (driving === null) return;
       const vehicle = ctx.scene.entity.get(driving);
+      const result = vehicleSeats.exit(ctx.player.userId, {
+        position: vehicle?.position ?? [0, 0, 0],
+        rotationY: vehicle?.rotationY ?? 0,
+      });
       driving = null;
       lastSpeedKmh = 0;
-      ctx.camera.follow(null);
       drivingStore.write(ctx, null);
-      if (vehicle !== null) {
-        const side = vehicle.rotationY + Math.PI / 2;
-        const x = vehicle.position[0] + Math.sin(side) * 2.2;
-        const z = vehicle.position[2] + Math.cos(side) * 2.2;
-        ctx.scene.entity.setPose(ctx.player.userId, {
-          position: [x, ctx.world.groundHeightAt(x, z), z],
-          rotationY: vehicle.rotationY,
-        });
-      }
+      if (!result.ok) return;
+      ctx.camera.follow(result.cameraTarget);
+      setRiderFrozen(ctx, result.cameraTarget, result.riderMovementPatch.frozen);
+      ctx.scene.entity.setPose(ctx.player.userId, { position: result.placement.position, rotationY: result.placement.rotationY });
     },
     drivingVehicleId: () => driving,
     carSpeedKmh: () => lastSpeedKmh,
-    addHeat(ctx, amount) {
-      heat = Math.min(MAX_STARS * HEAT_PER_STAR, heat + amount);
-      peakStars = Math.max(peakStars, stars());
-      publishWanted(ctx);
+    addHeat(_ctx, amount) {
+      pendingGains.push({ amount, witnessed: true });
     },
     clearWanted(ctx) {
-      heat = 0;
+      heatState = createHeatState(HEAT_CONFIG);
       peakStars = 0;
+      pendingGains = [];
       publishWanted(ctx);
     },
-    wanted: () => ({ heat, stars: stars(), peakStars }),
+    wanted: () => ({ heat: heatState.heat, stars: heatState.level, peakStars }),
     startRace(ctx) {
       if (race !== null) return false;
       if (driving === null) return false;
@@ -470,15 +408,18 @@ export function createHandroll(): Handroll {
       cameraShake(0.7);
       ctx.scene.entity.effect({ from: vehicleId, at, radius: 6, effect: "damage", via: { amount: 55 } });
       if (driving === vehicleId) {
+        vehicleSeats.mounts.dismount(ctx.player.userId);
         driving = null;
         lastSpeedKmh = 0;
-        ctx.camera.follow(null);
+        ctx.camera.follow(ctx.player.userId);
+        const rider = ctx.scene.entity.get(ctx.player.userId);
+        setRiderFrozen(ctx, ctx.player.userId, false);
+        ctx.scene.entity.setPose(ctx.player.userId, { position: at, rotationY: rider?.rotationY ?? 0 });
         drivingStore.write(ctx, null);
-        heat = Math.min(MAX_STARS * HEAT_PER_STAR, heat + 60);
-        publishWanted(ctx);
+        pendingGains.push({ amount: 60, witnessed: true });
       }
-      carStates.delete(vehicleId);
-      cruiserStates.delete(vehicleId);
+      carVehicles.delete(vehicleId);
+      cruiserVehicles.delete(vehicleId);
     },
     registerRoute(entityId, waypoints, speed, startT) {
       if (waypoints.length < 2) return;
@@ -497,18 +438,19 @@ export function createHandroll(): Handroll {
         if (vehicle === null) {
           driving = null;
         } else {
-          const tuning = CAR_TUNINGS[vehicle.name] ?? CAR_TUNINGS.car_compact!;
-          const state = carStateFor(ctx, driving);
-          const pose = stepCar(state, tuning, sampleAxis(ctx), dt, (x, z) => ctx.world.groundHeightAt(x, z));
-          lastSpeedKmh = pose.speedKmh;
-          ctx.scene.entity.setPose(driving, { position: pose.position, rotationY: pose.heading, dt });
+          const kinematic = carVehicleFor(ctx, driving);
+          const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
+          const result = tickDrivableVehicle(kinematic, dt, axis, { groundHeight: (x, z) => ctx.world.groundHeightAt(x, z) });
+          lastSpeedKmh = Math.abs(result.step.forwardSpeed) * 3.6;
+          ctx.scene.entity.setPose(driving, result.pose);
           ctx.scene.entity.setPose(ctx.player.userId, {
-            position: [pose.position[0], pose.position[1] + 0.4, pose.position[2]],
-            rotationY: pose.heading,
+            position: [result.pose.position[0], result.pose.position[1] + 0.4, result.pose.position[2]],
+            rotationY: result.pose.rotationY,
           });
         }
       }
       tickTraffic(ctx, dt);
+      tickWanted(ctx, dt);
       tickCops(ctx, dt);
       tickCruisers(ctx, dt);
       tickRace(ctx, dt);

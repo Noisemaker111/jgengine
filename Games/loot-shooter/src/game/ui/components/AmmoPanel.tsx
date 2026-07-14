@@ -1,10 +1,12 @@
 import { useDisplayProfile } from "@jgengine/react/display";
-import { useEntityStat, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useEntityStat, useGameStoreValue, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
-import { AMMO_LABELS, AMMO_POOLS, AMMO_STAT_IDS } from "../../ammo";
+import { AMMO_LABELS, AMMO_POOLS, AMMO_STAT_IDS, MAGAZINE_STAT_ID } from "../../ammo";
 import { weaponById } from "../../items/weapons/catalog";
 import { RARITY_COLORS } from "../../palette";
 import { selectedSlotStore } from "../../run/stores";
+
+const NO_RELOAD = { reloading: false, fraction: 0 };
 
 export function AmmoPanel() {
   const { compact } = useDisplayProfile();
@@ -14,25 +16,30 @@ export function AmmoPanel() {
   const stack = slots[selected] ?? null;
   const weapon = stack === null ? undefined : weaponById(stack.itemId);
   const poolId = weapon?.ammo ?? "light";
-  const ammo = useEntityStat(userId, AMMO_STAT_IDS[poolId]);
+  const mag = useEntityStat(userId, MAGAZINE_STAT_ID);
+  const reserve = useEntityStat(userId, AMMO_STAT_IDS[poolId]);
   const lightPool = useEntityStat(userId, AMMO_STAT_IDS.light);
   const heavyPool = useEntityStat(userId, AMMO_STAT_IDS.heavy);
   const shellPool = useEntityStat(userId, AMMO_STAT_IDS.shell);
   const energyPool = useEntityStat(userId, AMMO_STAT_IDS.energy);
   const pools = { light: lightPool, heavy: heavyPool, shell: shellPool, energy: energyPool };
-  const empty = (ammo?.current ?? 0) < (weapon?.ammoPerShot ?? 1);
+  const reload = useGameStoreValue(`weaponReload:${userId}`, NO_RELOAD);
+  const loaded = mag?.current ?? 0;
+  const empty = loaded < (weapon?.ammoPerShot ?? 1);
 
   if (compact) {
     return (
       <div className="flex items-baseline gap-1.5">
         <span
           className={`text-3xl font-black tabular-nums drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] ${
-            empty ? "animate-pulse text-rose-400" : "text-cyan-100"
+            reload.reloading ? "animate-pulse text-amber-300" : empty ? "animate-pulse text-rose-400" : "text-cyan-100"
           }`}
         >
-          {Math.round(ammo?.current ?? 0)}
+          {reload.reloading ? "…" : Math.round(loaded)}
         </span>
-        <span className="text-xs font-bold uppercase text-slate-400">{AMMO_LABELS[poolId]}</span>
+        <span className="text-xs font-bold uppercase text-slate-400">
+          / {Math.round(reserve?.current ?? 0)} {AMMO_LABELS[poolId]}
+        </span>
       </div>
     );
   }
@@ -57,12 +64,14 @@ export function AmmoPanel() {
       <div className="flex items-baseline gap-1.5">
         <span
           className={`text-4xl font-black tabular-nums drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] ${
-            empty ? "animate-pulse text-rose-400" : "text-cyan-100"
+            reload.reloading ? "animate-pulse text-amber-300" : empty ? "animate-pulse text-rose-400" : "text-cyan-100"
           }`}
         >
-          {Math.round(ammo?.current ?? 0)}
+          {reload.reloading ? "RELD" : Math.round(loaded)}
         </span>
-        <span className="text-sm font-bold uppercase text-slate-400">{AMMO_LABELS[poolId]}</span>
+        <span className="text-sm font-bold uppercase text-slate-400">
+          / {Math.round(reserve?.current ?? 0)} {AMMO_LABELS[poolId]}
+        </span>
       </div>
       <div className="flex gap-2">
         {AMMO_POOLS.map((pool) => (

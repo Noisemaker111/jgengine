@@ -1,7 +1,7 @@
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 
-import { starInvadersStore } from "./invaders/store";
+import { starInvadersHandle } from "./invaders/store";
 
-export const starInvadersUiScenario: UiPreviewScenario = () => {
-  starInvadersStore.preview();
+export const starInvadersUiScenario: UiPreviewScenario = (ctx) => {
+  starInvadersHandle.read(ctx).preview();
 };

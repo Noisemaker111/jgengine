@@ -1,6 +1,6 @@
 import { Html, Line } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";
@@ -11,14 +11,16 @@ import { useCameraShake } from "../camera/shakeChannel";
 import { readFirstPersonMuzzle } from "../camera/GameFirstPersonCamera";
 import { resolveFloatTextStyle } from "./floatTextStyle";
 import {
+  collectNameplateSamples,
   collectWorldBarSamples,
   paintWorldBarSamples,
+  type NameplateSample,
   type WorldBarSample,
 } from "./worldBarSamples";
 import { telegraphPulseOpacity } from "./telegraphPulse";
 
-export type { WorldBarSample } from "./worldBarSamples";
-export { collectWorldBarSamples, paintWorldBarSamples } from "./worldBarSamples";
+export type { NameplateSample, WorldBarSample } from "./worldBarSamples";
+export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "./worldBarSamples";
 export { telegraphPulseOpacity } from "./telegraphPulse";
 
 function pinOverlayToViewport(
@@ -85,6 +87,147 @@ export function WorldEntityBars({
         ref={canvasRef}
         style={{ width: "100%", height: "100%", display: "block", pointerEvents: "none" }}
       />
+    </Html>
+  );
+}
+
+/** Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks. */
+export interface WorldNameplatesProps {
+  statId?: string;
+  height?: number;
+  roles?: readonly CatalogEntityRole[];
+  resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
+  /** Hide nameplates for entities farther than this from the player (world units). Default 40. */
+  maxDistance?: number;
+  /** Minimum ms between position/health refreshes — trades smoothness for fewer re-renders at scale. Default 120. */
+  tickMs?: number;
+  className?: string;
+  nameplateClassName?: string;
+  nameClassName?: string;
+  barClassName?: string;
+  fillClassName?: string;
+  /** Full override for one nameplate's markup; receives the raw sample (name, percent, screen x/y). */
+  renderNameplate?: (sample: NameplateSample) => ReactNode;
+}
+
+/**
+ * Billboarded name + 78×6px HP bar over every nearby non-local entity that
+ * passes `roles`/`maxDistance` — headless (className/data-* slots on every
+ * part, `renderNameplate` for a full swap), turned on declaratively via
+ * `defineGame({ nameplates })` rather than mounted by hand.
+ *
+ * @capability nameplates billboarded name + HP bar over nearby entities
+ */
+export function WorldNameplates({
+  statId = "health",
+  height = 2.3,
+  roles,
+  resolveRole,
+  maxDistance = 40,
+  tickMs = 120,
+  className,
+  nameplateClassName,
+  nameClassName,
+  barClassName,
+  fillClassName,
+  renderNameplate,
+}: WorldNameplatesProps) {
+  const ctx = useGameContext();
+  const camera = useThree((state) => state.camera);
+  const size = useThree((state) => state.size);
+  const [samples, setSamples] = useState<readonly NameplateSample[]>([]);
+  const samplesRef = useRef<NameplateSample[]>([]);
+  const projectRef = useRef(new THREE.Vector3());
+  const lastTickRef = useRef(0);
+
+  useFrame((state) => {
+    const nowMs = state.clock.elapsedTime * 1000;
+    if (nowMs - lastTickRef.current < tickMs) return;
+    lastTickRef.current = nowMs;
+    camera.updateMatrixWorld();
+    collectNameplateSamples(
+      ctx,
+      statId,
+      height,
+      roles,
+      resolveRole,
+      camera,
+      { width: size.width, height: size.height },
+      samplesRef.current,
+      projectRef.current,
+      maxDistance,
+    );
+    setSamples([...samplesRef.current]);
+  });
+
+  return (
+    <Html fullscreen calculatePosition={pinOverlayToViewport} zIndexRange={[19, 0]} style={{ pointerEvents: "none" }}>
+      <div className={className} data-nameplates>
+        {samples.map((sample) =>
+          renderNameplate !== undefined ? (
+            <div key={sample.id} style={{ position: "absolute", left: sample.x, top: sample.y }}>
+              {renderNameplate(sample)}
+            </div>
+          ) : (
+            <div
+              key={sample.id}
+              className={nameplateClassName}
+              data-nameplate={sample.id}
+              style={{
+                position: "absolute",
+                left: sample.x,
+                top: sample.y,
+                transform: "translate(-50%, -100%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+                fontFamily: "ui-sans-serif, system-ui, sans-serif",
+              }}
+            >
+              <span
+                className={nameClassName}
+                data-nameplate-name
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#f1f5f9",
+                  textShadow: "0 1px 3px rgba(0,0,0,0.9)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {sample.name}
+              </span>
+              {sample.percent !== null ? (
+                <span
+                  className={barClassName}
+                  data-nameplate-bar
+                  style={{
+                    display: "block",
+                    width: 78,
+                    height: 6,
+                    borderRadius: 2,
+                    background: "rgba(0,0,0,0.65)",
+                    border: "1px solid rgba(0,0,0,0.8)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <span
+                    className={fillClassName}
+                    data-nameplate-fill
+                    style={{
+                      display: "block",
+                      width: `${sample.percent * 100}%`,
+                      height: "100%",
+                      background: sample.percent > 0.5 ? "#22c55e" : sample.percent > 0.25 ? "#f59e0b" : "#ef4444",
+                    }}
+                  />
+                </span>
+              ) : null}
+            </div>
+          ),
+        )}
+      </div>
     </Html>
   );
 }

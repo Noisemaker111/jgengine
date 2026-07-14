@@ -56,7 +56,7 @@ export interface RunSession {
   tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean }): void;
 }
 
-export const runSessionStore = defineStore<RunSession | undefined>("runSession", undefined);
+export const runSessionStore = defineStore<RunSession>("runSession", () => createRunSession());
 
 const SPAWN_POSITION: readonly [number, number, number] = [0, 0, SPAWN_Z];
 const SPAWN_HEADING = 0;

@@ -1,6 +1,7 @@
 import { KeyHint } from "@jgengine/react";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 import { useEffect, useState } from "react";
 
 import { classById } from "../../classes/catalog";
@@ -31,8 +32,9 @@ function Slot({
   resource: number;
   now: number;
 }) {
+  const ctx = useGameContext();
   const { commands } = useGame();
-  const hero = heroOf(userId);
+  const hero = heroOf(ctx, userId);
   const snapshot = hero?.kit.state(ability.id, resource) ?? null;
   const locked = ability.levelReq > level;
   const onGcd = hero !== null && hero.gcdUntil > now;

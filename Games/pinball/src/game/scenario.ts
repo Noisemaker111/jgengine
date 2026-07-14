@@ -1,9 +1,9 @@
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import { MESSAGE_SECONDS } from "./config";
-import { pinballStore } from "./store";
+import { pinballHandle } from "./store";
 
-export const uiScenario: UiPreviewScenario = () => {
-  const store = pinballStore;
+export const uiScenario: UiPreviewScenario = (ctx) => {
+  const store = pinballHandle.read(ctx);
   store.reset("preview-showcase");
   const sim = store.sim;
 

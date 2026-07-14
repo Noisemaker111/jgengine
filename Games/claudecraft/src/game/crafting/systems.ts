@@ -2,6 +2,7 @@ import { evaluateSkillCheck, type SkillCheckConfig } from "@jgengine/core/intera
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { FISH_TABLE, FISHING_SPOTS, RECIPES, RECIPE_SKILL } from "./catalog";
 import { INTERACT_RANGE } from "../math/combat";
@@ -21,7 +22,7 @@ export const FISHING_CHECK: SkillCheckConfig = {
   window: 6,
 };
 
-const fishingSessions = new Map<string, number>();
+const fishingSessionsOf = perContext(() => new Map<string, number>());
 const fishRoll = seededRng("claudecraft-fishing");
 
 export function fishingKey(userId: string): string {
@@ -94,6 +95,7 @@ export function craftRecipe(ctx: GameContext, userId: string, recipeId: string):
 
 export function castFishing(ctx: GameContext, userId: string): void {
   const now = ctx.time.now();
+  const fishingSessions = fishingSessionsOf(ctx);
   const startedAt = fishingSessions.get(userId);
   if (startedAt === undefined) {
     fishingSessions.set(userId, now);

@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
+import { useGameContext } from "@jgengine/react";
 import { CX, LANE_X, TABLE } from "../config";
 import { flipperTip } from "../physics";
 import { PALETTE } from "../palette";
 import type { PinballSim } from "../sim";
-import { pinballStore } from "../store";
+import { pinballHandle } from "../store";
 import type { Bumper, DropTarget, Flipper, RolloverLane, Slingshot } from "../types";
 
 const { width: W, height: H } = TABLE;
@@ -251,6 +252,7 @@ function drawScene(c: CanvasRenderingContext2D, sim: PinballSim): void {
 type Zone = "left" | "right" | "plunge";
 
 export function Table() {
+  const ctx = useGameContext();
   const ref = useRef<HTMLCanvasElement>(null);
   const pointers = useRef(new Map<number, Zone>());
 
@@ -263,9 +265,10 @@ export function Table() {
       else if (z === "right") r = true;
       else p = true;
     }
-    pinballStore.setPointerFlip("left", l);
-    pinballStore.setPointerFlip("right", r);
-    pinballStore.setPointerPlunge(p);
+    const store = pinballHandle.read(ctx);
+    store.setPointerFlip("left", l);
+    store.setPointerFlip("right", r);
+    store.setPointerPlunge(p);
   };
 
   const zoneAt = (clientX: number, clientY: number): Zone => {
@@ -284,8 +287,8 @@ export function Table() {
   useEffect(() => {
     const canvas = ref.current;
     if (canvas === null) return;
-    const ctx = canvas.getContext("2d");
-    if (ctx === null) return;
+    const canvasCtx = canvas.getContext("2d");
+    if (canvasCtx === null) return;
     let raf = 0;
     const render = (): void => {
       raf = requestAnimationFrame(render);
@@ -299,15 +302,15 @@ export function Table() {
         canvas.width = bw;
         canvas.height = bh;
       }
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, bw, bh);
+      canvasCtx.setTransform(1, 0, 0, 1, 0, 0);
+      canvasCtx.clearRect(0, 0, bw, bh);
       const scale = Math.min(bw / W, bh / H);
-      ctx.setTransform(scale, 0, 0, scale, (bw - W * scale) / 2, (bh - H * scale) / 2);
-      drawScene(ctx, pinballStore.sim);
+      canvasCtx.setTransform(scale, 0, 0, scale, (bw - W * scale) / 2, (bh - H * scale) / 2);
+      drawScene(canvasCtx, pinballHandle.read(ctx).sim);
     };
     raf = requestAnimationFrame(render);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [ctx]);
 
   return (
     <canvas

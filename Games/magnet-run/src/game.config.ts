@@ -8,7 +8,7 @@ import { objectStyles } from "./game/objects/catalog";
 import { GameUI } from "./game/ui/GameUI";
 import { BotMesh } from "./game/world/BotMesh";
 import { CourseOverlay } from "./game/world/CourseOverlay";
-import { onInit, onNewPlayer, onTick } from "./loop";
+import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
@@ -20,6 +20,7 @@ export const game = defineGame({
   save: "none",
   content,
   loop: { onInit, onNewPlayer, onTick },
+  lifecycle,
   GameUI,
   capture: { play: ["startRun"] },
   camera: {

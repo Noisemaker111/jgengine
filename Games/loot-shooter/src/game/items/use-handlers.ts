@@ -1,18 +1,23 @@
+import { createMagazine, type Magazine } from "@jgengine/core/combat/magazine";
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { AMMO_LABELS, AMMO_STAT_IDS } from "../ammo";
+import { AMMO_LABELS, AMMO_STAT_IDS, MAGAZINE_STAT_ID } from "../ammo";
 import { SOUND_IDS } from "../audio/catalog";
 import { FIRE_KICK, SHOT_KNOCKBACK, kickCamera } from "../feel";
 import { session } from "../run/session";
 import { gearById } from "./gear/catalog";
-import { weaponById } from "./weapons/catalog";
+import { weaponById, type WeaponItemDef } from "./weapons/catalog";
 
 const lastFiredAt = new Map<string, number>();
 const lastWarnAt = new Map<string, number>();
+const magazines = new Map<string, Magazine>();
+const magazineTickedAtMs = new Map<string, number>();
 
 export function resetWeaponState(): void {
   lastFiredAt.clear();
   lastWarnAt.clear();
+  magazines.clear();
+  magazineTickedAtMs.clear();
 }
 
 function warn(ctx: GameContext, from: string, text: string, sound?: string): void {
@@ -22,6 +27,64 @@ function warn(ctx: GameContext, from: string, text: string, sound?: string): voi
   lastWarnAt.set(from, nowMs);
   ctx.scene.entity.floatText({ instanceId: from, text, kind: "warn" });
   if (sound !== undefined) ctx.game.events.emit("audio.play", { sound });
+}
+
+function magazineFor(ctx: GameContext, from: string, def: WeaponItemDef): Magazine {
+  const key = `${from}:${def.id}`;
+  const nowMs = ctx.time.now() * 1000;
+  let mag = magazines.get(key);
+  if (mag === undefined) {
+    const statId = AMMO_STAT_IDS[def.ammo];
+    mag = createMagazine({
+      capacity: def.magazineSize,
+      reloadMs: def.reloadMs,
+      reserve: {
+        current: () => ctx.scene.entity.stats.get(from, statId)?.current ?? 0,
+        spend(amount) {
+          const stat = ctx.scene.entity.stats.get(from, statId);
+          if (stat === null || stat.current < amount) return false;
+          ctx.scene.entity.stats.delta(from, statId, -amount);
+          return true;
+        },
+      },
+    });
+    magazines.set(key, mag);
+  } else {
+    const lastMs = magazineTickedAtMs.get(key) ?? nowMs;
+    mag.tick((nowMs - lastMs) / 1000);
+  }
+  magazineTickedAtMs.set(key, nowMs);
+  return mag;
+}
+
+function syncMagazineStat(ctx: GameContext, from: string, mag: Magazine): void {
+  ctx.scene.entity.stats.set(from, MAGAZINE_STAT_ID, { max: mag.capacity(), current: mag.loaded() });
+  ctx.game.store.set(`weaponReload:${from}`, { reloading: mag.isReloading(), fraction: mag.reloadFraction() });
+}
+
+/** Advances the equipped weapon's `Magazine` for `from` and syncs its HUD-reactive stat; call every tick. */
+export function tickEquippedMagazine(ctx: GameContext, from: string, itemId: string | null): void {
+  if (itemId === null) return;
+  const def = weaponById(itemId);
+  if (def === undefined) return;
+  syncMagazineStat(ctx, from, magazineFor(ctx, from, def));
+}
+
+/** Starts a reload for `itemId` if one can begin; used by the `reload` command. */
+export function reloadWeapon(ctx: GameContext, from: string, itemId: string): void {
+  const def = weaponById(itemId);
+  if (def === undefined) return;
+  const mag = magazineFor(ctx, from, def);
+  if (mag.isFull()) {
+    syncMagazineStat(ctx, from, mag);
+    return;
+  }
+  if (!mag.startReload()) {
+    warn(ctx, from, `NO ${AMMO_LABELS[def.ammo].toUpperCase()} AMMO`, SOUND_IDS.noAmmo);
+    return;
+  }
+  syncMagazineStat(ctx, from, mag);
+  ctx.game.events.emit("audio.play", { sound: SOUND_IDS.pickupGear });
 }
 
 const fireGun: ItemUseHandler<GameContext> = {
@@ -34,16 +97,18 @@ const fireGun: ItemUseHandler<GameContext> = {
     const readyAt = lastFiredAt.get(gateKey) ?? 0;
     if (nowMs < readyAt) return { state: ctx };
 
-    const statId = AMMO_STAT_IDS[def.ammo];
-    const ammo = ctx.scene.entity.stats.get(input.from, statId);
-    if (ammo === null || ammo.current < def.ammoPerShot) {
-      warn(ctx, input.from, `NO ${AMMO_LABELS[def.ammo].toUpperCase()} AMMO`, SOUND_IDS.noAmmo);
+    const mag = magazineFor(ctx, input.from, def);
+    if (!mag.canFire(def.ammoPerShot)) {
+      syncMagazineStat(ctx, input.from, mag);
+      if (!mag.isReloading()) warn(ctx, input.from, "RELOAD", SOUND_IDS.noAmmo);
       return { state: ctx };
     }
 
     lastFiredAt.set(gateKey, nowMs + def.weapon.fireIntervalMs);
-    ctx.scene.entity.stats.delta(input.from, statId, -def.ammoPerShot);
+    mag.fire(def.ammoPerShot);
+    syncMagazineStat(ctx, input.from, mag);
     ctx.game.events.emit("audio.play", { sound: SOUND_IDS.fire(def.family) });
+    ctx.game.playEntityAnimation(input.from, "fire");
     kickCamera(FIRE_KICK[def.family]);
 
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };

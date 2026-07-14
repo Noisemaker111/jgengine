@@ -172,6 +172,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Capture check | `scene/captureCheck` | `captureChance`, `rollCapture`, `CaptureCheckInput` |
 | Owned roster | `scene/roster` | `createRoster`, `Roster`, `RosterEntry`, `RosterCaptureOptions` |
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
+| Player listing marketplace | `economy/listingBook` | `createListingBook`, `ListingBook`, `ListingBookConfig`, `Listing`, `PostListingInput`, `PostListingResult`, `CancelListingResult`, `BuyListingResult`, `BuyListingOutcome`, `CollectionBoxSnapshot` — post/cancel/buy against a shared listing book with a house cut, an expiry sweep, and a per-seller collection box for proceeds/returns |
 | Tech tree | `economy/techTree` | `createTechTree`, `TechTree`, `TechNodeDef`, `canUnlockTech`, `availableTech`, `unlockedRecipes`, `grantTech`, `techPrerequisitesMet` |
 | Recipe graph | `crafting/recipe` | `createRecipeGraph`, `RecipeGraph`, `RecipeDef`, `RecipeItem`, `canCraft`, `craft`, `missingInputs`, `stationSatisfied`, `craftSeconds` |
 | Production building | `crafting/production` | `productionBuilding`, `ProductionBuildingDef`, `createProductionState`, `tickProduction`, `feedProduction`, `drainOutput`, `advanceTransport`, `resolvePowerGrid` |
@@ -339,7 +340,7 @@ export default defineConfig({
 @source "../node_modules/@jgengine/shell/dist";
 ```
 
-Inside the engine repo the two `@source` lines point at `../../../packages/react/src` and `../../../packages/shell/src` instead (see any `Games/*/src/index.css`) — same file, different `@source` targets depending on where dist lives.
+Inside the engine repo the two `@source` lines point at `../../../packages/react/src` and `../../../packages/shell/src` instead (see any `Games/*/src/index.css`) — same file, different `@source` targets depending on where dist lives. In-repo, `index.css` also does `@import "./style.css";` and carries no game-specific rules itself — those live in a sibling `src/style.css` (no Tailwind import), which is what the `/play` runner lazy-loads per game so it isn't re-shipping the shared Tailwind base on every game switch.
 
 ```tsx
 // main.tsx
