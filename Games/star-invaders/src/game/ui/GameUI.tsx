@@ -1,16 +1,17 @@
 import { useDisplayProfile } from "@jgengine/react/display";
 import { useEngineState } from "@jgengine/react/engineStore";
 import { useGame } from "@jgengine/react/hooks";
-import { SettingsTrigger } from "@jgengine/react";
+import { SettingsTrigger, useGameContext } from "@jgengine/react";
 
-import { starInvadersStore } from "../invaders/store";
+import { starInvadersHandle } from "../invaders/store";
 import { Hud } from "./components/Hud";
 import { Overlays } from "./components/Overlays";
 import { Playfield } from "./components/Playfield";
 import { TouchControls } from "./components/TouchControls";
 
 export function GameUI() {
-  const snapshot = useEngineState(starInvadersStore);
+  const ctx = useGameContext();
+  const snapshot = useEngineState(starInvadersHandle.read(ctx));
   const { commands } = useGame();
   const { compact, coarsePointer } = useDisplayProfile();
 
