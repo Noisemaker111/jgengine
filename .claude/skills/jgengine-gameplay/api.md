@@ -305,6 +305,7 @@
 - `CombatHitReactionEvent` (interface): interface CombatHitReactionEvent — ⚠ undocumented
 - `CombatTelegraphCancelledEvent` (interface): interface CombatTelegraphCancelledEvent — ⚠ undocumented
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
+- `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — ⚠ undocumented
 - `EmotePlayedEvent` (interface): interface EmotePlayedEvent — ⚠ undocumented
@@ -328,6 +329,7 @@
 - `SocialWorldAcceptedEvent` (interface): interface SocialWorldAcceptedEvent — ⚠ undocumented
 - `SocialWorldInvitedEvent` (interface): interface SocialWorldInvitedEvent — ⚠ undocumented
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
+- `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
 - `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent — ⚠ undocumented
 - `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent — ⚠ undocumented
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
@@ -517,9 +519,15 @@
 - `Checkpoint` (interface): interface Checkpoint — ⚠ undocumented
 - `LapTimer` (interface): interface LapTimer — Wall-clock lap timer complementing {@link RaceState}: feed it `tick(dt)` each frame and call `completeLap()` when the race emits a player `lap.completed` event. It accumulates the current lap, carries best/last, banks splits, and `penalize()` folds a time penalty into the running lap — the timing bookkeeping every racer reimplemented on top of the position-only race state.
 - `LapTimerSnapshot` (interface): interface LapTimerSnapshot — Wall-clock lap timing: the current/last/best/total split-book every racing HUD reads.
+- `PlacementOptions` (interface): interface PlacementOptions — Options for {@link racePlacements} / {@link placementOf} / {@link raceOutcomeOf}.
+- `RaceCountdownOptions` (interface): interface RaceCountdownOptions — Options for {@link startRaceCountdown}.
 - `RaceEvent` (type): type RaceEvent = | { type: "checkpoint.hit"; racerId: string; checkpoint: number; lap: number; time: number; /** Set when the hit is a fork-route checkpoint (`checkpoint` is then the fork's `afterIndex`). */ fork?: { forkId: string; routeId: string; index: number }; } | { type: "fork.taken"; racerId… — ⚠ undocumented
 - `RaceFork` (interface): interface RaceFork — An alternate-route section (#286.3): after passing mainline checkpoint `afterIndex`, a racer commits to whichever route's first checkpoint they hit, runs its checkpoints in order, and rejoins at mainline `afterIndex + 1`. Every completed route contributes exactly one checkpoint of `progress` regardless of length, and each hit records a split — so route time accounting comes for free.
 - `RaceForkRoute` (interface): interface RaceForkRoute — ⚠ undocumented
+- `RaceOutcome` (type): type RaceOutcome = "win" | "lose" — Whether a racer won or lost, derived from where they placed against the winning-places cutoff.
+- `RacePhase` (type): type RacePhase = "idle" | "countdown" | "racing" | "finished" — The lifecycle every race runs through before, during, and after the clock: `idle` on the grid, `countdown` on the lights, `racing` once they go green, `finished` at the flag. A pure value driven by the transition functions below — it carries no track, racer, or lap data, so it composes with {@link RaceState} (position/laps) and {@link LapTimer} (wall-clock) rather than duplicating them.
+- `RacePlacement` (interface): interface RacePlacement — A racer's finishing position (`place`, 1-based) in a finish order, and the {@link RaceOutcome} it earns.
+- `RaceSessionState` (interface): interface RaceSessionState — Immutable lifecycle snapshot: the current {@link RacePhase} plus the two clocks it owns.
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
 - `RaceStateConfig` (interface): interface RaceStateConfig — ⚠ undocumented
 - `RaceTrack` (interface): interface RaceTrack — ⚠ undocumented
@@ -529,12 +537,19 @@
 - `createLapTimer` (function): function createLapTimer(): LapTimer — Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded.
 - `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — A checkpoint race state machine — laps, forks, live standings, splits, and pluggable win conditions.
 - `everyoneFinishes` (function): function everyoneFinishes(): RaceWinCondition — Every non-eliminated racer must finish.
+- `finishRaceSession` (function): function finishRaceSession(session: RaceSessionState): RaceSessionState — Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
+- `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
 - `lastStanding` (function): function lastStanding(): RaceWinCondition — Destruction-derby last-man-standing: ends when at most one racer is left un-eliminated.
 - `parDelta` (function): function parDelta(splits: readonly number[], reference: readonly number[]): number[] — Elementwise delta of a cumulative split book against a `reference` book (a personal best or par lap): positive means behind the reference at that checkpoint. Compared up to the shorter length — the `+0.3s` / `−1.2s` gap every racing HUD shows against its ghost.
+- `placementOf` (function): function placementOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RacePlacement | null — One racer's {@link RacePlacement} within a finish order, or `null` if they never crossed the line.
+- `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
+- `racePlacements` (function): function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] — Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
 - `splitSegments` (function): function splitSegments(splits: readonly number[], start = 0): number[] — Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`): `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
+- `startRaceCountdown` (function): function startRaceCountdown(options?: RaceCountdownOptions): RaceSessionState — Drop the lights: return a fresh `countdown` session of `seconds` (default 3). A non-positive length skips straight to `racing` for a standing start with no countdown.
+- `tickRaceSession` (function): function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState — Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
 - `topK` (function): function topK(k: number): RaceWinCondition — Round-cut (Fall Guys): the first `k` finishers qualify; race resolves the moment `k` cross.
 
 ## @jgengine/core/game/recordBook

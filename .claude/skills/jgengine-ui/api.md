@@ -215,6 +215,9 @@
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
 - `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads a core `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers = [], markerColor = "#e2e8f0", markerRadius = 5, className, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
+- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
 - `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
 - `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -540,6 +543,9 @@
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads a core `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers = [], markerColor = "#e2e8f0", markerRadius = 5, className, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
+- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
 - `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
 - `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`.
 - `WorldMapProps` (interface): interface WorldMapProps — ⚠ undocumented
@@ -1465,10 +1471,10 @@
 ## @jgengine/shell/terrain/GrassField
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
-- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 1 — ⚠ undocumented
+- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, budget?: number): number — ⚠ undocumented
+- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/ProceduralGround
 
@@ -1483,8 +1489,8 @@
 ## @jgengine/shell/terrain/grassBudget
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
-- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 1 — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, budget?: number): number — ⚠ undocumented
+- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
+- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/grassGeometry
 
