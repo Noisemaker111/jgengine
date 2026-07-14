@@ -173,19 +173,40 @@ function DeadTree({ seedIndex }: { seedIndex: number }) {
 }
 
 function Wreck({ seedIndex }: { seedIndex: number }) {
+  const rust = seedIndex % 2 === 0 ? "#8a5230" : "#75604a";
   return (
     <group position={[0, -0.5, 0]} rotation={[0, seedIndex * 1.3, 0.06]}>
       <mesh position={[0, 0.42, 0]} castShadow>
         <boxGeometry args={[2.4, 0.7, 1.2]} />
-        <meshStandardMaterial color="#5e564a" flatShading />
+        <meshStandardMaterial color={rust} flatShading roughness={1} />
       </mesh>
-      <mesh position={[0.4, 0.9, 0]} castShadow>
-        <boxGeometry args={[1.1, 0.4, 1.05]} />
-        <meshStandardMaterial color="#4a443c" flatShading />
+      <mesh position={[0.9, 0.55, 0]} rotation={[0, 0, -0.35]} castShadow>
+        <boxGeometry args={[0.9, 0.35, 1.22]} />
+        <meshStandardMaterial color="#5e4632" flatShading roughness={1} />
       </mesh>
-      <mesh position={[-0.9, 0.25, 0.62]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.3, 0.3, 0.2, 8]} />
+      <mesh position={[0.4, 0.95, 0]} rotation={[0, 0, -0.06]} castShadow>
+        <boxGeometry args={[1.1, 0.5, 1.05]} />
+        <meshStandardMaterial color="#4a3a2c" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[0.4, 0.98, 0.54]}>
+        <boxGeometry args={[0.8, 0.3, 0.03]} />
+        <meshStandardMaterial color="#141a20" flatShading />
+      </mesh>
+      <mesh position={[-0.9, 0.25, 0.62]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.3, 0.3, 0.2, 10]} />
+        <meshStandardMaterial color="#1d1a16" flatShading />
+      </mesh>
+      <mesh position={[0.8, 0.25, 0.62]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.3, 0.3, 0.2, 10]} />
+        <meshStandardMaterial color="#1d1a16" flatShading />
+      </mesh>
+      <mesh position={[-1.1, 0.15, -0.7]} rotation={[Math.PI / 2, 0.3, 0.9]}>
+        <cylinderGeometry args={[0.28, 0.28, 0.18, 10]} />
         <meshStandardMaterial color="#26221e" flatShading />
+      </mesh>
+      <mesh position={[-1.35, 0.6, 0.1]} rotation={[0.2, 0.5, 0.6]} castShadow>
+        <boxGeometry args={[0.7, 0.5, 0.06]} />
+        <meshStandardMaterial color="#6e4a26" flatShading roughness={1} />
       </mesh>
     </group>
   );
@@ -315,28 +336,79 @@ function RoadMarker({ seedIndex }: { seedIndex: number }) {
 
 function BusWreck() {
   return (
-    <group position={[0, -0.5, 0]} rotation={[0, 0.6, 0.1]}>
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <boxGeometry args={[6.5, 2.2, 2.2]} />
-        <meshStandardMaterial color="#c9a23a" flatShading />
+    <group position={[0, -0.5, 0]} rotation={[0, 0.6, 0.14]}>
+      <mesh position={[0, 1.15, 0]} castShadow>
+        <boxGeometry args={[6.5, 1.9, 2.2]} />
+        <meshStandardMaterial color="#b5893a" flatShading roughness={0.95} />
       </mesh>
-      <mesh position={[0, 1.7, 0]} castShadow>
-        <boxGeometry args={[6.6, 0.6, 2.24]} />
-        <meshStandardMaterial color="#8a6a1e" flatShading />
+      <mesh position={[0, 0.5, 0]} castShadow>
+        <boxGeometry args={[6.6, 0.5, 2.26]} />
+        <meshStandardMaterial color="#6e4a26" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[0.4, 2.16, 0]} rotation={[0, 0, -0.05]} castShadow>
+        <boxGeometry args={[6.3, 0.24, 2.3]} />
+        <meshStandardMaterial color="#7a5a24" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[-1.1, 2.42, 0.2]} rotation={[0.12, 0.3, -0.08]} castShadow>
+        <boxGeometry args={[1.8, 0.28, 1]} />
+        <meshStandardMaterial color="#5e4a2c" flatShading roughness={1} />
       </mesh>
       {[-2.4, -0.8, 0.8, 2.4].map((x, index) => (
-        <mesh key={index} position={[x, 1.35, 1.12]}>
-          <boxGeometry args={[1, 0.7, 0.04]} />
-          <meshStandardMaterial color="#1c2228" flatShading />
+        <mesh key={index} position={[x, 1.42, 1.12]}>
+          <boxGeometry args={[1.05, 0.75, 0.05]} />
+          <meshStandardMaterial
+            color={index === 1 ? "#0d1116" : "#20303a"}
+            flatShading
+            roughness={index === 2 ? 0.25 : 0.8}
+            metalness={index === 2 ? 0.4 : 0}
+          />
         </mesh>
       ))}
-      <mesh position={[-2.2, 0.2, 1.1]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.5, 0.5, 0.3, 10]} />
+      {[-2.4, 0.8].map((x, index) => (
+        <mesh key={`b-${index}`} position={[x, 1.42, -1.12]}>
+          <boxGeometry args={[1.05, 0.75, 0.05]} />
+          <meshStandardMaterial color="#16222c" flatShading />
+        </mesh>
+      ))}
+      <mesh position={[3.28, 1.1, 0]} rotation={[0, 0, -0.2]} castShadow>
+        <boxGeometry args={[0.24, 1.7, 2.1]} />
+        <meshStandardMaterial color="#8a6428" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[3.15, 0.62, 0.6]}>
+        <boxGeometry args={[0.3, 0.28, 0.5]} />
+        <meshStandardMaterial color="#ffd98a" emissive="#c99a3a" emissiveIntensity={0.4} flatShading />
+      </mesh>
+      <mesh position={[-3.3, 1.35, 0.4]} rotation={[0.1, 0.4, 0.35]} castShadow>
+        <boxGeometry args={[0.9, 1.3, 0.08]} />
+        <meshStandardMaterial color="#8a6428" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[-2.2, 0.28, 1.14]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.52, 0.52, 0.34, 12]} />
+        <meshStandardMaterial color="#1d1a16" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[2.2, 0.28, 1.14]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.52, 0.52, 0.34, 12]} />
+        <meshStandardMaterial color="#1d1a16" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[2.2, 0.14, -1.14]} rotation={[Math.PI / 2, 0, 0.4]}>
+        <cylinderGeometry args={[0.52, 0.52, 0.3, 12]} />
         <meshStandardMaterial color="#26221e" flatShading />
       </mesh>
-      <mesh position={[2.2, 0.15, -1.1]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.5, 0.5, 0.3, 10]} />
+      <mesh position={[-3.6, 0.35, -0.8]} rotation={[Math.PI / 2, 0, 1.2]} castShadow>
+        <cylinderGeometry args={[0.5, 0.5, 0.3, 12]} />
         <meshStandardMaterial color="#26221e" flatShading />
+      </mesh>
+      <mesh position={[-1, 1, 1.16]} rotation={[0, 0, 0.5]}>
+        <boxGeometry args={[1.6, 0.5, 0.03]} />
+        <meshStandardMaterial color="#7a4a22" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[1.6, 0.75, 1.15]} rotation={[0, 0, -0.3]}>
+        <boxGeometry args={[1.1, 0.7, 0.03]} />
+        <meshStandardMaterial color="#5e3c1c" flatShading roughness={1} />
+      </mesh>
+      <mesh position={[0.6, 0.12, 1.7]} rotation={[-0.1, 0.3, 0]} receiveShadow>
+        <boxGeometry args={[4.5, 0.3, 1.6]} />
+        <meshStandardMaterial color="#cba568" flatShading />
       </mesh>
     </group>
   );
@@ -412,15 +484,45 @@ function VaultGate() {
 }
 
 function CoverCrate({ seedIndex }: { seedIndex: number }) {
+  const wood = seedIndex % 2 === 0 ? "#96784c" : "#8a7a58";
+  const trim = seedIndex % 2 === 0 ? "#6e5432" : "#665a3e";
   return (
     <group position={[0, -0.5, 0]} rotation={[0, seedIndex * 0.9, 0]}>
       <mesh position={[0, 0.55, 0]} castShadow>
         <boxGeometry args={[1.1, 1.1, 1.1]} />
-        <meshStandardMaterial color={seedIndex % 2 === 0 ? "#6b5a44" : "#5e6455"} flatShading />
+        <meshStandardMaterial color={wood} flatShading roughness={1} />
       </mesh>
-      <mesh position={[0, 0.55, 0.56]}>
-        <boxGeometry args={[0.7, 0.7, 0.02]} />
-        <meshStandardMaterial color="#c9a23a" flatShading />
+      {[0.56, -0.56].map((z, faceIndex) => (
+        <group key={faceIndex}>
+          <mesh position={[0, 0.14, z]}>
+            <boxGeometry args={[1.14, 0.14, 0.03]} />
+            <meshStandardMaterial color={trim} flatShading />
+          </mesh>
+          <mesh position={[0, 0.96, z]}>
+            <boxGeometry args={[1.14, 0.14, 0.03]} />
+            <meshStandardMaterial color={trim} flatShading />
+          </mesh>
+          <mesh position={[0, 0.55, z]}>
+            <boxGeometry args={[0.66, 0.66, 0.02]} />
+            <meshStandardMaterial color="#c9a23a" flatShading />
+          </mesh>
+        </group>
+      ))}
+      {[0.56, -0.56].map((x, sideIndex) => (
+        <group key={`s-${sideIndex}`}>
+          <mesh position={[x, 0.14, 0]}>
+            <boxGeometry args={[0.03, 0.14, 1.14]} />
+            <meshStandardMaterial color={trim} flatShading />
+          </mesh>
+          <mesh position={[x, 0.96, 0]}>
+            <boxGeometry args={[0.03, 0.14, 1.14]} />
+            <meshStandardMaterial color={trim} flatShading />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[0, 1.11, 0]}>
+        <boxGeometry args={[1.14, 0.04, 1.14]} />
+        <meshStandardMaterial color={trim} flatShading />
       </mesh>
     </group>
   );
