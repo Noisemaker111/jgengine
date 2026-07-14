@@ -2,10 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   collectDescendants,
-  editorChildren,
   editorDocumentSize,
   editorParentOf,
-  editorRoots,
   extractEditorFragment,
   findEditorNote,
   findEditorPath,
@@ -40,6 +38,8 @@ import {
 import { useGameContext } from "@jgengine/react/provider";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
+import { OutlinerPanel } from "./OutlinerPanel";
+import { buildOutlinerGroups } from "./outlinerModel";
 import type { EditorHostApi, EditorPerfSample } from "./session";
 import { TERRAIN_MATERIALS, type EditorUiStore, type PlacementTool, type SnapMode, type TerrainBrushKind } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
@@ -85,88 +85,6 @@ function formatTriangles(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(0)}k`;
   return String(count);
-}
-
-interface OutlinerRow {
-  label: string;
-  ids: string[];
-}
-
-interface OutlinerGroup {
-  kind: string;
-  rows: OutlinerRow[];
-  total: number;
-}
-
-function buildOutlinerGroups(document: {
-  markers: readonly { id: string; kind: string; label?: string }[];
-  volumes: readonly { id: string; kind: string; label?: string }[];
-  paths: readonly { id: string; kind: string; label?: string }[];
-  annotations: readonly { id: string; text: string }[];
-}): OutlinerGroup[] {
-  const byKind = new Map<string, Map<string, OutlinerRow>>();
-  const push = (kind: string, label: string, id: string) => {
-    let labels = byKind.get(kind);
-    if (labels === undefined) {
-      labels = new Map();
-      byKind.set(kind, labels);
-    }
-    const row = labels.get(label);
-    if (row === undefined) labels.set(label, { label, ids: [id] });
-    else row.ids.push(id);
-  };
-  for (const marker of document.markers) push(marker.kind, marker.label ?? marker.id, marker.id);
-  for (const volume of document.volumes) push(volume.kind, volume.label ?? volume.id, volume.id);
-  for (const path of document.paths) push(path.kind, path.label ?? path.id, path.id);
-  for (const note of document.annotations) push("note", note.text.slice(0, 40) || note.id, note.id);
-  return [...byKind.entries()]
-    .map(([kind, labels]) => {
-      const rows = [...labels.values()];
-      return { kind, rows, total: rows.reduce((sum, row) => sum + row.ids.length, 0) };
-    })
-    .sort((a, b) => a.kind.localeCompare(b.kind));
-}
-
-interface HierarchyRow {
-  id: string;
-  label: string;
-  kind: string;
-  depth: number;
-  hasChildren: boolean;
-}
-
-/** Builds a flat list of hierarchy rows (roots then nested children) honoring collapsed nodes. */
-function flattenHierarchy(document: EditorDocument, collapsed: Record<string, boolean>): HierarchyRow[] {
-  const label = new Map<string, { label: string; kind: string }>();
-  for (const marker of document.markers) label.set(marker.id, { label: marker.label ?? marker.id, kind: marker.kind });
-  for (const volume of document.volumes) label.set(volume.id, { label: volume.label ?? volume.id, kind: volume.kind });
-  for (const path of document.paths) label.set(path.id, { label: path.label ?? path.id, kind: path.kind });
-  for (const note of document.annotations) label.set(note.id, { label: note.text.slice(0, 40) || note.id, kind: "note" });
-
-  const rows: HierarchyRow[] = [];
-  const visit = (id: string, depth: number) => {
-    const info = label.get(id) ?? { label: id, kind: "?" };
-    const children = editorChildren(document, id).sort((a, b) => (label.get(a)?.label ?? a).localeCompare(label.get(b)?.label ?? b));
-    rows.push({ id, label: info.label, kind: info.kind, depth, hasChildren: children.length > 0 });
-    if (collapsed[id] === true) return;
-    for (const child of children) visit(child, depth + 1);
-  };
-  for (const root of editorRoots(document)) visit(root, 0);
-  return rows;
-}
-
-function filterOutlinerGroups(groups: readonly OutlinerGroup[], query: string): OutlinerGroup[] {
-  const normalized = query.trim().toLowerCase();
-  if (normalized.length === 0) return [...groups];
-  return groups
-    .map((group) => {
-      const kindMatches = group.kind.toLowerCase().includes(normalized);
-      const rows = kindMatches
-        ? group.rows
-        : group.rows.filter((row) => row.label.toLowerCase().includes(normalized));
-      return { ...group, rows, total: rows.reduce((sum, row) => sum + row.ids.length, 0) };
-    })
-    .filter((group) => group.rows.length > 0);
 }
 
 let clipboardFragment: EditorDocument | null = null;
@@ -667,10 +585,6 @@ export function EditorChrome({
   const [bottomOpen, setBottomOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [outlinerQuery, setOutlinerQuery] = useState("");
-  const [collapsedKinds, setCollapsedKinds] = useState<Record<string, boolean>>({});
-  const [collapsedNodes, setCollapsedNodes] = useState<Record<string, boolean>>({});
-  const [outlinerView, setOutlinerView] = useState<"kind" | "tree">("kind");
   const [toast, setToast] = useState<{ text: string; tone: "info" | "error" } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notify = useCallback((text: string, tone: "info" | "error" = "info") => {
@@ -695,23 +609,16 @@ export function EditorChrome({
   docSaveRef.current = docSave;
 
   const outlinerGroups = useMemo(() => buildOutlinerGroups(state.document), [state.document]);
-  const visibleOutlinerGroups = useMemo(
-    () => filterOutlinerGroups(outlinerGroups, outlinerQuery),
-    [outlinerGroups, outlinerQuery],
-  );
   const outlinerGroupsRef = useRef(outlinerGroups);
   outlinerGroupsRef.current = outlinerGroups;
 
-  const selectRow = (id: string, additive: boolean) => {
-    if (additive) {
-      const selection = session.getState().selection;
-      const next = selection.includes(id) ? selection.filter((s) => s !== id) : [...selection, id];
-      session.dispatch({ type: "select", ids: next });
-      return;
-    }
-    session.dispatch({ type: "select", ids: [id] });
-    api.handle({ method: "camera_goto", id });
-  };
+  const sceneStats = useMemo(() => {
+    const doc = state.document;
+    const objects = doc.markers.length + doc.volumes.length + doc.paths.length + doc.annotations.length;
+    let foliage = 0;
+    for (const path of doc.paths) if (path.kind === SCATTER_PATH_KIND) foliage += scatterRegionEstimate(path).count;
+    return { objects, foliage };
+  }, [state.document]);
 
   const showPanel = (panel: WorkspacePanel) => {
     setActivePanel(panel);
@@ -1094,14 +1001,6 @@ export function EditorChrome({
               <button type="button" className="rounded-md px-2 py-1 text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-neutral-200" onClick={() => showPanel("assets")}>Assets {assets.length}</button>
               <button type="button" className="ml-auto rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={() => setLeftOpen(false)} aria-label="Close hierarchy panel">×</button>
             </div>
-            <div className="space-y-1.5 border-b border-white/[0.08] p-2">
-              <input type="search" value={outlinerQuery} onChange={(event) => setOutlinerQuery(event.target.value)} placeholder="Search objects and kinds…" className={`w-full ${INPUT} px-2.5 py-1.5`} />
-              <div className="flex gap-0.5 rounded-md bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
-                {(["kind", "tree"] as const).map((view) => (
-                  <button key={view} type="button" className={`flex-1 rounded px-2 py-0.5 text-[10px] capitalize transition-colors ${outlinerView === view ? "bg-cyan-500/80 text-white" : "text-neutral-400 hover:text-neutral-200"}`} onClick={() => setOutlinerView(view)}>{view === "kind" ? "By kind" : "Tree"}</button>
-                ))}
-              </div>
-            </div>
             <div className="border-b border-white/[0.08] p-2">
               <div className={`mb-1.5 ${MICRO}`}>Layers</div>
               <div className="flex max-h-24 flex-wrap gap-1 overflow-auto">
@@ -1114,47 +1013,7 @@ export function EditorChrome({
                 {allKinds.length === 0 ? <span className="text-neutral-600">No authored layers</span> : null}
               </div>
             </div>
-            <div className="min-h-0 flex-1 space-y-0.5 overflow-auto p-2">
-              {outlinerView === "tree" ? (
-                <>
-                  {flattenHierarchy(state.document, collapsedNodes).map((node) => {
-                    const rowSelected = selection.includes(node.id);
-                    return (
-                      <div key={node.id} className="flex items-center" style={{ paddingLeft: `${node.depth * 12}px` }}>
-                        {node.hasChildren ? (
-                          <button type="button" className="w-4 shrink-0 text-neutral-500 transition-colors hover:text-neutral-200" onClick={() => setCollapsedNodes((previous) => ({ ...previous, [node.id]: !(previous[node.id] === true) }))}>{collapsedNodes[node.id] === true ? "▸" : "▾"}</button>
-                        ) : <span className="w-4 shrink-0" />}
-                        <button type="button" className={`flex-1 truncate rounded-md px-1.5 py-1 text-left transition-colors ${rowSelected ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/20" : "text-neutral-300 hover:bg-white/[0.06]"}`} onClick={(event) => selectRow(node.id, event.ctrlKey || event.metaKey || event.shiftKey)} title={node.id}>
-                          {node.label}<span className="ml-1 text-[9px] text-neutral-600">{node.kind}</span>
-                        </button>
-                      </div>
-                    );
-                  })}
-                  {state.document.markers.length + state.document.volumes.length + state.document.paths.length + state.document.annotations.length === 0 ? <div className="p-3 text-center text-neutral-600">No objects yet</div> : null}
-                </>
-              ) : (
-              visibleOutlinerGroups.map((group) => {
-                const collapsed = collapsedKinds[group.kind] === true;
-                return (
-                  <div key={group.kind}>
-                    <button type="button" className="flex w-full items-center gap-1 rounded-md px-1.5 py-1 text-left font-semibold text-neutral-300 transition-colors hover:bg-white/[0.06]" onClick={() => setCollapsedKinds((previous) => ({ ...previous, [group.kind]: !collapsed }))}>
-                      <span className="w-3 text-neutral-500">{collapsed ? "▸" : "▾"}</span><span>{group.kind}</span><span className="ml-auto text-neutral-500">{group.total}</span>
-                    </button>
-                    {collapsed ? null : group.rows.map((row) => {
-                      const rowSelected = selectedId !== undefined && row.ids.includes(selectedId);
-                      const cycleIndex = rowSelected ? row.ids.indexOf(selectedId) + 1 : 0;
-                      return (
-                        <button key={`${group.kind}:${row.label}`} type="button" className={`block w-full truncate rounded-md py-1 pl-5 pr-1.5 text-left transition-colors ${rowSelected ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/20" : "text-neutral-300 hover:bg-white/[0.06]"}`} onClick={(event) => selectRow(row.ids[0]!, event.ctrlKey || event.metaKey || event.shiftKey)}>
-                          {row.label}{row.ids.length > 1 ? <span className="text-neutral-500"> ×{row.ids.length}{rowSelected ? ` · ${cycleIndex}/${row.ids.length} · N next` : ""}</span> : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })
-              )}
-              {outlinerView === "kind" && visibleOutlinerGroups.length === 0 ? <div className="p-3 text-center text-neutral-600">No matching objects</div> : null}
-            </div>
+            <OutlinerPanel session={session} api={api} />
           </aside>
         ) : null}
 
@@ -1186,6 +1045,7 @@ export function EditorChrome({
           ) : null}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/[0.08] bg-black/70 px-4 py-1.5 text-[11px] text-neutral-400 shadow-lg shadow-black/40 backdrop-blur-md">
             <span>Orbit · click select · W/E/R transform · Ctrl+C/V copy/paste · F frame · ? help · F2+E play</span>
+            <span className="ml-3 text-neutral-500">{sceneStats.objects} objs{sceneStats.foliage > 0 ? ` · ≈${formatTriangles(sceneStats.foliage)} foliage` : ""}</span>
             {perf !== null ? <span className={`ml-3 ${perf.fps < 30 ? "text-rose-400" : "text-emerald-400"}`}>{perf.fps.toFixed(0)} fps · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris</span> : null}
           </div>
         </main>

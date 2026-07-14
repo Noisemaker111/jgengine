@@ -187,6 +187,17 @@ translating a parent carries its whole subtree by the same delta, and cycles are
 Helpers in `@jgengine/core/editor/index`: `editorRoots`, `editorChildren`, `editorParentOf`,
 `collectDescendants`, `wouldCreateCycle`. Headless: `set_parent {ids, parentId}` and `hierarchy`.
 
+## Responsiveness — selector subscriptions + virtualization
+
+The editor stays smooth on large scenes via two seams (`@jgengine/editor`):
+- `useStoreSelector(store, selector, isEqual?)` subscribes a component to a **slice** of the session/UI
+  store through `useSyncExternalStore`, so it rerenders only when that slice changes — UI-only churn
+  (gizmo mode, snapping, active tool) no longer rerenders the outliner/inspector. `shallowArrayEqual`
+  is the selection-list comparator.
+- `virtualWindow(scrollTop, viewportHeight, rowHeight, rowCount, overscan?)` is the pure windowing math
+  behind the outliner's fixed-height virtual list — a scene with thousands of objects only mounts the
+  visible handful of rows. The status bar shows live object + foliage-instance counts next to the fps pill.
+
 ## Core APIs (`editor/`)
 
 - `@jgengine/core/editor/index` — document, session, commands, undo

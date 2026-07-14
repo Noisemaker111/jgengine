@@ -125,19 +125,24 @@
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SelectionGizmo` (function): function SelectionGizmo({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
 - `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
+- `SubscribableStore` (interface): interface SubscribableStore<S> — The minimal external-store shape both the editor session and UI store satisfy.
 - `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
 - `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
 - `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.
 - `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
 - `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
 - `ViewportSelect` (function): function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }): null — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
+- `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
+- `shallowArrayEqual` (function): function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean — Shallow array equality — for selectors that return id lists (`selection`) or small tuples.
 - `useF2Chord` (function): function useF2Chord(code: string, onChord: () => void): void — Listens for the engine's F2+<key> chord family and fires on the given code (e.g. "KeyE").
+- `useStoreSelector` (function): function useStoreSelector<S, T>(store: SubscribableStore<S>, selector: (state: S) => T, isEqual: (a: T, b: T) => boolean = Object.is): T — Subscribe a component to a **selected slice** of an external store (editor session or UI store) via `useSyncExternalStore`. The component re-renders only when `selector`'s output changes by `isEqual` (default `Object.is`) — a gizmo drag no longer rerenders panels that read an unrelated slice. The selected value is memoized so an equal slice keeps its reference (no render churn).
+- `virtualWindow` (function): function virtualWindow(scrollTop: number, viewportHeight: number, rowHeight: number, rowCount: number, overscan = 6): VirtualWindow — Pure windowing math for a fixed-row-height virtual list: given the scroll offset and viewport, returns the `[start, end)` row range to mount (padded by `overscan`) plus the spacer heights, so a 10,000-row outliner only ever mounts the visible handful. No DOM, unit-testable.
 
 ## @jgengine/editor/AssetBrowser
 
@@ -196,6 +201,13 @@
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
 
+## @jgengine/editor/outlinerModel
+
+- `OutlinerFlatRow` (type): type OutlinerFlatRow = | { type: "group"; key: string; kind: string; total: number; collapsed: boolean } | { type: "kindItem"; key: string; kind: string; label: string; ids: string[] } | { type: "treeItem"; key: string; id: string; label: string; kind: string; depth: number; hasChildren: boolean } — One rendered outliner line — a kind header, a deduped kind row, or a hierarchy tree node.
+- `OutlinerGroup` (interface): interface OutlinerGroup — A kind group in the "By kind" outliner view.
+- `OutlinerRow` (interface): interface OutlinerRow — A distinct label under a kind, backing one or more object ids (×N dedup rows).
+- `OutlinerViewState` (interface): interface OutlinerViewState — How the outliner is displayed and folded — the state a flat row list is built from.
+
 ## @jgengine/editor/session
 
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
@@ -235,3 +247,11 @@
 ## @jgengine/editor/useF2Chord
 
 - `useF2Chord` (function): function useF2Chord(code: string, onChord: () => void): void — Listens for the engine's F2+<key> chord family and fires on the given code (e.g. "KeyE").
+
+## @jgengine/editor/useStoreSelector
+
+- `SubscribableStore` (interface): interface SubscribableStore<S> — The minimal external-store shape both the editor session and UI store satisfy.
+- `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
+- `shallowArrayEqual` (function): function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean — Shallow array equality — for selectors that return id lists (`selection`) or small tuples.
+- `useStoreSelector` (function): function useStoreSelector<S, T>(store: SubscribableStore<S>, selector: (state: S) => T, isEqual: (a: T, b: T) => boolean = Object.is): T — Subscribe a component to a **selected slice** of an external store (editor session or UI store) via `useSyncExternalStore`. The component re-renders only when `selector`'s output changes by `isEqual` (default `Object.is`) — a gizmo drag no longer rerenders panels that read an unrelated slice. The selected value is memoized so an equal slice keeps its reference (no render churn).
+- `virtualWindow` (function): function virtualWindow(scrollTop: number, viewportHeight: number, rowHeight: number, rowCount: number, overscan = 6): VirtualWindow — Pure windowing math for a fixed-row-height virtual list: given the scroll offset and viewport, returns the `[start, end)` row range to mount (padded by `overscan`) plus the spacer heights, so a 10,000-row outliner only ever mounts the visible handful. No DOM, unit-testable.
