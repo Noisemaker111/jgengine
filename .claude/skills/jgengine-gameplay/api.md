@@ -306,6 +306,7 @@
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
+- `LifecycleConfig` (interface): interface LifecycleConfig<TState = unknown> — Declarative start/restart run lifecycle: the state transitions a game's run phase every genre repeats (title screen → live run → live run → title screen again), expressed as pure functions over one typed {@link StoreHandle} slot instead of hand-rolled `commands.define("start"/"restart")` glue that re-derives phase after every mutation. `start`/`restart` receive the store's own value type — the store's `TState`, never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and derives {@link GamePhase} from it via `phaseOf` in one place, so every adopting game gets identical, correct phase-sync for free.
 - `LoopPlayer` (interface): interface LoopPlayer — Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks.
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`.
@@ -415,7 +416,7 @@
 ## @jgengine/core/game/lootTable
 
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
-- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds.
+- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
 - `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
@@ -480,6 +481,7 @@
 - `ModelAnimationStates` (interface): interface ModelAnimationStates — Movement-state clip set for `ModelAnimationConfig.states`: the shell reads the entity's live speed each frame and crossfades between these clips, so a walking mob animates without any game-side driver.
 - `ModelAttachment` (interface): interface ModelAttachment — Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame.
 - `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
+- `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph.
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
 - `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
@@ -940,6 +942,12 @@
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
+
+## @jgengine/core/item/itemInstanceRegistry
+
+- `ItemInstanceRegistry` (interface): interface ItemInstanceRegistry<TDef> — A runtime store for procedurally generated item instances — a rolled unique gun, a rolled affixed relic — keyed by a generated id distinct from any static catalog id. The counterpart a game's `content.itemById` consults for ids `lootTable`'s `generate` entries hand back, so runtime rolls never need a hand-rolled parallel registry (#536.1).
+- `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
+- `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 
 ## @jgengine/core/item/modularItem
 

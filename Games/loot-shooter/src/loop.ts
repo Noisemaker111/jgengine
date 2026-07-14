@@ -3,12 +3,12 @@ import type { EntityDiedEvent } from "@jgengine/core/game/events";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { SOUND_IDS } from "./game/audio/catalog";
-import { registerCommands } from "./game/commands";
+import { registerCommands, selectedWeaponId } from "./game/commands";
 import { tickEnemies } from "./game/entities/enemies/ai";
 import { enemyById } from "./game/entities/enemies/catalog";
 import { lootTables } from "./game/entities/enemies/loot-tables";
 import { player } from "./game/entities/players/catalog";
-import { itemUseHandlers } from "./game/items/use-handlers";
+import { itemUseHandlers, tickEquippedMagazine } from "./game/items/use-handlers";
 import { loadouts } from "./game/loadouts";
 import { grantXp } from "./game/progression/curves";
 import { challenges } from "./game/quests/catalog";
@@ -90,6 +90,7 @@ function onNewPlayer(ctx: GameContext): void {
 function onTick(ctx: GameContext, dt: number): void {
   session.tick(ctx, dt);
   if (session.status() === "wave") tickEnemies(ctx, dt);
+  tickEquippedMagazine(ctx, ctx.player.userId, selectedWeaponId(ctx));
 }
 
 export const loop = { onInit, onNewPlayer, onTick };

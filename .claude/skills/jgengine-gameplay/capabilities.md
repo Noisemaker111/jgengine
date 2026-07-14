@@ -36,6 +36,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
 
+## item-instance-registry — a runtime store for procedurally generated item instances
+
+- `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/item/itemInstanceRegistry"`
+- `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/item/itemInstanceRegistry"`
+
 ## lane-board — a lane-based card-battler board with per-lane outcomes
 
 - `createLaneBoard` (function) · `import { createLaneBoard } from "@jgengine/core/board/laneBoard"`
@@ -53,6 +58,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## leaderboard — ranked score tracking across global, server, and per-profile scopes
 
 - `createLeaderboard` (function) · `import { createLeaderboard } from "@jgengine/core/game/leaderboard"`
+
+## lifecycle — declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions
+
+- `LifecycleConfig` (interface) · `import { LifecycleConfig } from "@jgengine/core/game/defineGame"`
 
 ## listing-book — player-driven marketplace listings with a house cut, expiry sweep, and seller collection box
 

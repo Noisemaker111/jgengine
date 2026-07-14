@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
-import { offline } from "../runtime/adapter";
-import { createGameContext, type GameContext } from "../runtime/gameContext";
+import { defineGame } from "@jgengine/core/game/defineGame";
+import { offline } from "@jgengine/core/runtime/adapter";
+import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createCartridge, type CartridgeRuntime } from "./runtime";
 import { XP_GEM_BASE_TYPE, type CartridgeSpec } from "./spec";
 

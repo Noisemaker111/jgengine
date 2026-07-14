@@ -60,7 +60,7 @@
 - `keyFromSpriteFile` (function): function keyFromSpriteFile(file: string): string — Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix.
 - `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
 - `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
-- `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog.
+- `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
 - `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Kenney, Quaternius, KayKit packs).
 - `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
@@ -207,7 +207,7 @@
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
-- `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog.
+- `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
 - `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `spriteWiringSnippet` (function): function spriteWiringSnippet(id: string, basePath = "/sprites"): string — Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog.
 

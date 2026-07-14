@@ -11,8 +11,23 @@ import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 
+const groundMaterialMaps = {
+  color: "/materials/ambientcg-grass001/color.jpg",
+  normal: "/materials/ambientcg-grass001/normal.jpg",
+  roughness: "/materials/ambientcg-grass001/roughness.jpg",
+  ao: "/materials/ambientcg-grass001/ao.jpg",
+  displacement: "/materials/ambientcg-grass001/displacement.jpg",
+};
+
 export const showcaseEnvironment = environment({
-  terrain: terrain({ bounds: { w: 220, d: 220 }, height: 4, frequency: 0.035, seed: "showcase", waterLevel: -1 }),
+  terrain: terrain({
+    bounds: { w: 220, d: 220 },
+    height: 4,
+    frequency: 0.035,
+    seed: "showcase",
+    waterLevel: -1,
+    detail: { material: { maps: groundMaterialMaps, repeat: 6 } },
+  }),
   vegetation: grass({ area: { w: 120, d: 120 }, density: 5, colors: ["#31531f", "#8fbf4a"], seed: "showcase" }),
   water: ocean({ bounds: { w: 520, d: 520 }, level: -1.4, waveHeight: 0.9, waveSpeed: 0.5, color: "#1f6f92" }),
   weather: rain({ area: { w: 160, d: 160, h: 70 }, density: 0.5, wind: [1.4, 0.4] }),
