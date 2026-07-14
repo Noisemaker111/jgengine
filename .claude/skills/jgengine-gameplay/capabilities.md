@@ -54,6 +54,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createLeaderboard` (function) · `import { createLeaderboard } from "@jgengine/core/game/leaderboard"`
 
+## lifecycle — declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions
+
+- `LifecycleConfig` (interface) · `import { LifecycleConfig } from "@jgengine/core/game/defineGame"`
+
 ## loadouts — save and swap named equipment loadouts
 
 - `createLoadouts` (function) · `import { createLoadouts } from "@jgengine/core/game/loadout"`
