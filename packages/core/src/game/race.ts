@@ -514,6 +514,116 @@ export function createLapTimer(): LapTimer {
 }
 
 /**
+ * The lifecycle every race runs through before, during, and after the clock: `idle` on the grid,
+ * `countdown` on the lights, `racing` once they go green, `finished` at the flag. A pure value driven
+ * by the transition functions below — it carries no track, racer, or lap data, so it composes with
+ * {@link RaceState} (position/laps) and {@link LapTimer} (wall-clock) rather than duplicating them.
+ */
+export type RacePhase = "idle" | "countdown" | "racing" | "finished";
+
+/** Immutable lifecycle snapshot: the current {@link RacePhase} plus the two clocks it owns. */
+export interface RaceSessionState {
+  /** Where the session sits in the start→countdown→race→finish lifecycle. */
+  readonly phase: RacePhase;
+  /** Seconds left on the countdown, or 0 outside the `countdown` phase. */
+  readonly countdown: number;
+  /** Seconds of green-flag racing accumulated so far. */
+  readonly elapsed: number;
+}
+
+/** Options for {@link startRaceCountdown}. */
+export interface RaceCountdownOptions {
+  /** Countdown length in seconds before the race goes green (default 3). A value ≤ 0 starts racing immediately. */
+  readonly seconds?: number;
+}
+
+const DEFAULT_COUNTDOWN_SECONDS = 3;
+
+/**
+ * The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to
+ * light the lights, or hold here until the field is ready.
+ */
+export function idleRaceSession(): RaceSessionState {
+  return { phase: "idle", countdown: 0, elapsed: 0 };
+}
+
+/**
+ * Drop the lights: return a fresh `countdown` session of `seconds` (default 3). A non-positive length
+ * skips straight to `racing` for a standing start with no countdown.
+ */
+export function startRaceCountdown(options?: RaceCountdownOptions): RaceSessionState {
+  const seconds = Math.max(0, options?.seconds ?? DEFAULT_COUNTDOWN_SECONDS);
+  return seconds === 0 ? { phase: "racing", countdown: 0, elapsed: 0 } : { phase: "countdown", countdown: seconds, elapsed: 0 };
+}
+
+/**
+ * Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches
+ * zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the
+ * countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
+ */
+export function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState {
+  if (dt <= 0) return session;
+  if (session.phase === "countdown") {
+    const countdown = session.countdown - dt;
+    return countdown <= 0 ? { phase: "racing", countdown: 0, elapsed: 0 } : { phase: "countdown", countdown, elapsed: session.elapsed };
+  }
+  if (session.phase === "racing") return { phase: "racing", countdown: 0, elapsed: session.elapsed + dt };
+  return session;
+}
+
+/** Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase. */
+export function finishRaceSession(session: RaceSessionState): RaceSessionState {
+  return session.phase === "racing" ? { phase: "finished", countdown: 0, elapsed: session.elapsed } : session;
+}
+
+/** Whether a racer won or lost, derived from where they placed against the winning-places cutoff. */
+export type RaceOutcome = "win" | "lose";
+
+/** A racer's finishing position (`place`, 1-based) in a finish order, and the {@link RaceOutcome} it earns. */
+export interface RacePlacement {
+  readonly racerId: string;
+  /** 1-based finishing position: `1` is the winner. */
+  readonly place: number;
+  readonly outcome: RaceOutcome;
+}
+
+/** Options for {@link racePlacements} / {@link placementOf} / {@link raceOutcomeOf}. */
+export interface PlacementOptions {
+  /** How many top places count as a win (default 1). A podium finish would pass `3`. */
+  readonly winningPlaces?: number;
+}
+
+function outcomeForPlace(place: number, winningPlaces: number): RaceOutcome {
+  return place <= winningPlaces ? "win" : "lose";
+}
+
+/**
+ * Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into
+ * per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
+ */
+export function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] {
+  const winningPlaces = Math.max(0, Math.floor(options?.winningPlaces ?? 1));
+  return finishOrder.map((racerId, index) => ({ racerId, place: index + 1, outcome: outcomeForPlace(index + 1, winningPlaces) }));
+}
+
+/** One racer's {@link RacePlacement} within a finish order, or `null` if they never crossed the line. */
+export function placementOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RacePlacement | null {
+  const index = finishOrder.indexOf(racerId);
+  if (index < 0) return null;
+  const winningPlaces = Math.max(0, Math.floor(options?.winningPlaces ?? 1));
+  return { racerId, place: index + 1, outcome: outcomeForPlace(index + 1, winningPlaces) };
+}
+
+/**
+ * The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the
+ * check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the
+ * order counts as a `lose`.
+ */
+export function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome {
+  return placementOf(finishOrder, racerId, options)?.outcome ?? "lose";
+}
+
+/**
  * Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`):
  * `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the
  * cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
