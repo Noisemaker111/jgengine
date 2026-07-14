@@ -8,6 +8,7 @@ import type {
   TerrainFlattenMask,
   TerrainIslandDescriptor,
   TerrainMaterial,
+  TerrainMaterialMaps,
   TerrainMaterialRegion,
   WorldBounds,
   WorldFeature,
@@ -354,8 +355,18 @@ export const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> 
   slate: { low: "#2f3540", high: "#7d8896", waterline: "#26404f" },
 };
 
+/** A resolved {@link TerrainDetailMaterialConfig} — `repeat`/`strength` filled with defaults, `maps` passed through. */
+export interface ResolvedTerrainDetailMaterial {
+  maps: TerrainMaterialMaps;
+  repeat: number;
+  strength: number;
+}
+
 /** A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes. */
-export type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel">> & { waterLevel: number };
+export type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & {
+  waterLevel: number;
+  material?: ResolvedTerrainDetailMaterial;
+};
 
 const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
   rockColor: "#6f7175",
@@ -368,6 +379,9 @@ const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
   roughness: 0.9,
   strength: 1,
 };
+
+const DEFAULT_TERRAIN_MATERIAL_REPEAT = 4;
+const DEFAULT_TERRAIN_MATERIAL_STRENGTH = 1;
 
 /** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level. */
 export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail {
@@ -382,6 +396,15 @@ export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLe
     roughness: config.roughness ?? DEFAULT_TERRAIN_DETAIL.roughness,
     strength: config.strength ?? DEFAULT_TERRAIN_DETAIL.strength,
     waterLevel: config.waterLevel ?? terrainWaterLevel,
+    ...(config.material === undefined
+      ? {}
+      : {
+          material: {
+            maps: config.material.maps,
+            repeat: config.material.repeat ?? DEFAULT_TERRAIN_MATERIAL_REPEAT,
+            strength: config.material.strength ?? DEFAULT_TERRAIN_MATERIAL_STRENGTH,
+          },
+        }),
   };
 }
 
