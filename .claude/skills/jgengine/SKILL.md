@@ -101,6 +101,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Typed store handle | `store/defineStore` | `defineStore<T>(key, initial)` → `StoreHandle<T>` (`read`/`peek`/`write`/`update`/`clear`); pair with `useStore` (`@jgengine/react/store`). The cast-free default for run state |
 | Reactive keyed store | `store/observableKeyedStore` | `createObservableKeyedStore`, `ObservableKeyedStore` — backs `ctx.game.store`, sits under `defineStore` |
 | Scene instance role | `scene/entityStore` | `EntityRole`, `SceneEntity`, `SpawnOptions`, `EntityPose` |
+| Sim → scene pose bind | `scene/bodyBind` | `createBodyBind`, `BodyBind`, `BodySnapshot`, `BodyBindDeps` — backs `ctx.scene.entity.bind` |
 | Object spatial queries | `scene/objectQuery` | `raycastObjects`, `raycastObjectsAll`, `ObjectRaycastInput`, `ObjectRaycastHit` — backs `ctx.scene.object.raycast`/`raycastAll` |
 | Runtime paint layer | `scene/paintLayer` | `createPaintLayer`, `PaintLayer`, `PaintStroke` — backs `ctx.scene.entity.paint` |
 | Possession | `scene/possession` | `createPossession`, `Possession`, `PossessionDeps`, `PossessionSwappedEvent` |
@@ -614,7 +615,10 @@ ctx.scene.entity    spawn, despawn, setPose, update, get, list,
                     willHitProjectile, fireProjectile, settleProjectile,
                     distance, inRadius, hasLineOfSight, queryArc, moveToward,
                     spawnPoseOf, resetToSpawn, resetAllToSpawn,
-                    form.{register,get,active,abilities,shapeshift,revert}
+                    form.{register,get,active,abilities,shapeshift,revert},
+                    bind(key) — lazily-keyed sim-snapshot → scene-entity pose
+                    mirror; bind(key).sync(bodies, dt?) replaces a per-body
+                    setPose loop + spawn/despawn dance (see jgengine-world)
 ctx.game            commands, events, feed, loot, trade, quest, social, chat,
                     unlocks, economy, leaderboard, roster, store, cards, turn
 ctx.game.social     friends, party, presence, emotes.play, worldInvites
@@ -775,6 +779,7 @@ Renderer-free async-state primitives (`@jgengine/core/data`) for a game that rea
 | Half a system: quest without tracker, cooldown without sweep, keybind never shown, stub "coming soon" modal | Finish the system end to end — or cut it whole (see `jgengine`) |
 | Game-side workaround for a missing engine primitive | File the gap at github.com/Noisemaker111/jgengine/issues (or PR the primitive) and cut or scope the dependent system honestly |
 | Game nouns in this skill | Engine primitives + placeholder ids only |
+| Per-body `setPose` every tick + a `despawn`/`spawn` respawn dance in `onNewPlayer` | `ctx.scene.entity.bind(key).sync(bodies, dt)` (see `jgengine-world`) |
 
 ## New-game definition of done
 

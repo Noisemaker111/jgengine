@@ -76,6 +76,7 @@ import {
 import { createWeaponStats, type WeaponStats } from "../item/weapon";
 import { createPoseState, type PoseAllowedStates, type PoseState } from "../movement/poseState";
 import type { ModelAssetRef } from "../scene/assetCatalog";
+import { createBodyBind, type BodyBind } from "../scene/bodyBind";
 import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
 import {
   createEntityStatsApi,
@@ -274,6 +275,14 @@ export interface SceneEntityContext {
   visualScaleOf(instanceId: string): number;
   form: Forms;
   paint: PaintLayer;
+  /**
+   * Lazily creates (on first call) or returns the existing declarative bind for `key` — the sim-snapshot →
+   * scene-entity pose mirror (#673). Call `bind(key).sync(bodies, dt)` once per tick with every sim body's
+   * current snapshot instead of hand-writing `setPose` per body: an id seen for the first time is spawned
+   * from its `kind`, an id already bound is posed, and a previously-bound id absent from this tick's
+   * `bodies` is despawned — no per-game spawn/despawn dance.
+   */
+  bind(key: string): BodyBind;
 }
 
 export type WorldItemPickupResult =
@@ -874,6 +883,21 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return count;
   }
 
+  const bodyBinds = new Map<string, BodyBind>();
+  function bind(key: string): BodyBind {
+    const existing = bodyBinds.get(key);
+    if (existing !== undefined) return existing;
+    const created = createBodyBind({
+      has: (id) => entities.get(id) !== null,
+      spawn: spawnEntity,
+      despawn: despawnEntity,
+      setPose: entities.setPose,
+      update: entities.update,
+    });
+    bodyBinds.set(key, created);
+    return created;
+  }
+
   const worldItems = notifyAfter(
     createWorldItemStore({
       spawnEntity: (position) => entities.spawn(WORLD_ITEM_ENTITY_NAME, { position, role: "prop" }),
@@ -1407,6 +1431,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         visualScaleOf: entityVisualScaleOf,
         form: forms,
         paint: paintLayer,
+        bind,
       },
       worldItem: {
         spawn: spawnWorldItem,

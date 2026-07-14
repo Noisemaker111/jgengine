@@ -23,16 +23,9 @@ export function spawnCaravan(ctx: GameContext, heading: number): void {
   const y = terrainField.sampleHeight(SOUTH_GATE.x, SOUTH_GATE.z);
   const position: readonly [number, number, number] = [SOUTH_GATE.x, y, SOUTH_GATE.z];
 
-  ctx.scene.entity.spawn(CAMEL_LEAD_KIND, {
-    id: ctx.player.userId,
-    position,
-    rotationY: heading,
-    role: "player",
-  });
-
-  for (const id of PACK_ENTITY_IDS) {
-    ctx.scene.entity.spawn(CAMEL_PACK_KIND, { id, position, rotationY: heading, role: "npc" });
-  }
-
-  ctx.scene.entity.spawn(CAMEL_RIVAL_KIND, { id: RIVAL_RACER_ID, position, rotationY: heading, role: "npc" });
+  ctx.scene.entity.bind("caravan").sync([
+    { id: ctx.player.userId, kind: CAMEL_LEAD_KIND, position, rotationY: heading, role: "player" },
+    ...PACK_ENTITY_IDS.map((id) => ({ id, kind: CAMEL_PACK_KIND, position, rotationY: heading, role: "npc" as const })),
+    { id: RIVAL_RACER_ID, kind: CAMEL_RIVAL_KIND, position, rotationY: heading, role: "npc" as const },
+  ]);
 }
