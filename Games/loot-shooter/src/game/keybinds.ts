@@ -14,4 +14,5 @@ export const keybinds: ActionCodesMap = {
   selectSlot3: ["Digit3"],
   throwGrenade: ["KeyG"],
   useMedkit: ["KeyQ"],
+  reload: ["KeyR"],
 };

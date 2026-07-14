@@ -36,6 +36,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
 
+## item-instance-registry — a runtime store for procedurally generated item instances
+
+- `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/item/itemInstanceRegistry"`
+- `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/item/itemInstanceRegistry"`
+
 ## lane-board — a lane-based card-battler board with per-lane outcomes
 
 - `createLaneBoard` (function) · `import { createLaneBoard } from "@jgengine/core/board/laneBoard"`

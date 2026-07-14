@@ -29,6 +29,8 @@ export interface WeaponBaseDef {
   auto: boolean;
   ammoPerShot: number;
   legendaryName: string;
+  magazineSize: number;
+  reloadMs: number;
   stats: WeaponStats;
 }
 
@@ -40,6 +42,8 @@ export const WEAPON_BASES: readonly WeaponBaseDef[] = [
     auto: false,
     ammoPerShot: 1,
     legendaryName: "Iron Oath",
+    magazineSize: 12,
+    reloadMs: 950,
     stats: { damage: 22, range: 55, spread: 1.1, fireIntervalMs: 240, critChance: 0.14, critMult: 1.7 },
   },
   {
@@ -49,6 +53,8 @@ export const WEAPON_BASES: readonly WeaponBaseDef[] = [
     auto: true,
     ammoPerShot: 1,
     legendaryName: "Wasp Chorus",
+    magazineSize: 30,
+    reloadMs: 1400,
     stats: { damage: 9, range: 40, spread: 3.4, fireIntervalMs: 88, critChance: 0.08, critMult: 1.5 },
   },
   {
@@ -58,6 +64,8 @@ export const WEAPON_BASES: readonly WeaponBaseDef[] = [
     auto: false,
     ammoPerShot: 1,
     legendaryName: "Doorbreaker",
+    magazineSize: 6,
+    reloadMs: 2200,
     stats: { damage: 8, range: 22, spread: 6.5, fireIntervalMs: 720, critChance: 0.05, critMult: 1.5, pellets: 8 },
   },
   {
@@ -67,6 +75,8 @@ export const WEAPON_BASES: readonly WeaponBaseDef[] = [
     auto: true,
     ammoPerShot: 1,
     legendaryName: "Warcry",
+    magazineSize: 30,
+    reloadMs: 1800,
     stats: { damage: 16, range: 70, spread: 1.9, fireIntervalMs: 132, critChance: 0.1, critMult: 1.6 },
   },
   {
@@ -76,6 +86,8 @@ export const WEAPON_BASES: readonly WeaponBaseDef[] = [
     auto: false,
     ammoPerShot: 2,
     legendaryName: "Quiet Argument",
+    magazineSize: 8,
+    reloadMs: 2000,
     stats: { damage: 48, range: 95, spread: 0.35, fireIntervalMs: 560, critChance: 0.25, critMult: 2.1 },
   },
   {
@@ -85,6 +97,8 @@ export const WEAPON_BASES: readonly WeaponBaseDef[] = [
     auto: true,
     ammoPerShot: 1,
     legendaryName: "Sunspill",
+    magazineSize: 40,
+    reloadMs: 1600,
     stats: { damage: 12, range: 60, spread: 0.8, fireIntervalMs: 108, critChance: 0.1, critMult: 1.6 },
   },
   {
@@ -94,6 +108,8 @@ export const WEAPON_BASES: readonly WeaponBaseDef[] = [
     auto: false,
     ammoPerShot: 2,
     legendaryName: "Fireworks Permit",
+    magazineSize: 4,
+    reloadMs: 2400,
     stats: {
       damage: 55,
       range: 45,
@@ -112,6 +128,8 @@ export const WEAPON_BASES: readonly WeaponBaseDef[] = [
     auto: false,
     ammoPerShot: 4,
     legendaryName: "Horizon Cutter",
+    magazineSize: 4,
+    reloadMs: 2600,
     stats: { damage: 90, range: 120, spread: 0, fireIntervalMs: 1250, critChance: 0.2, critMult: 2.0 },
   },
 ];
@@ -145,6 +163,8 @@ export interface WeaponItemDef {
   ammo: AmmoPool;
   auto: boolean;
   ammoPerShot: number;
+  magazineSize: number;
+  reloadMs: number;
   use: "fireGun";
   weapon: WeaponStats;
 }
@@ -170,6 +190,8 @@ function buildWeapon(base: WeaponBaseDef, tier: RarityTierDef): WeaponItemDef {
     ammo: base.ammo,
     auto: base.auto,
     ammoPerShot: base.ammoPerShot,
+    magazineSize: base.magazineSize,
+    reloadMs: base.reloadMs,
     use: "fireGun",
     weapon: {
       damage: Math.round(stats.damage * tier.damageMult),
