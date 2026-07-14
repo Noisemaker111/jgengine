@@ -120,7 +120,7 @@ const terrainDescriptor = terrain({
     detailScale: 12,
     macroScale: 24,
     roughness: 0.95,
-    strength: 4,
+    strength: 1,
   },
   flatten: [
     ...ZONES.map((zone) => ({

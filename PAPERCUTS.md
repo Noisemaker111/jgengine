@@ -190,3 +190,7 @@ fanning out worktree-isolated issue agents in one container → each agent's she
 2026-07-14T04:49:46.267Z — sonnet-5 — Claude
 
 check-game-shape gate: origin/main had 3 new race primitives (idleRaceSession/placementOf/racePlacements) orphaned since PR #719, no baseline entry → check-skill-api failed cold on a fresh worktree until bun run gen:skill-api --seed-baseline caught it up
+
+2026-07-14T22:29:14.727Z — sonnet-5 — Claude
+
+fresh cloud session: bun run dev:runner / drive failed first try (vite: command not found) → node_modules wasn't installed at session start, had to bun install before any dev server/screenshot command worked
