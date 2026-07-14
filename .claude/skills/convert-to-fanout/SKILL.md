@@ -44,7 +44,7 @@ Pick the branch matching where the agent runs:
 
 No API surgery needed — the primitives already exist:
 
-- **Orchestrator**: run the session on Fable 5. Delegate mechanical high-volume work to Sonnet workers: `Agent` tool with `model: "sonnet"` for one-off legs, `Workflow` with `agent(prompt, {model: 'sonnet'})` for structured fan-out (pipelines, verify passes). Keep planning, decomposition, and synthesis in the main loop; never forward raw worker dumps to the user — synthesize.
+- **Orchestrator**: run the session on Fable 5. Delegate mechanical high-volume work to Sonnet workers: `Agent` tool with `model: "sonnet"` for one-off legs, `Workflow` with `agent(prompt, {model: 'sonnet'})` for structured fan-out (pipelines, verify passes). When N independent units each *ship* (branch → commit → PR), launch them together as `Agent({ isolation: "worktree", model: "sonnet" })` so parallel git ceremony doesn't stomp the shared tree — N tasks → N PRs at once. Keep planning, decomposition, and synthesis in the main loop; never forward raw worker dumps to the user — synthesize.
 - **Advisor**: when the session runs on Sonnet, consult a Fable advisor before committing to a non-obvious approach: `Agent` with `model: "fable"`, prompt carrying the full task context and the instruction to return a plan or course-correction only (no edits). One consult per task is the calibrated rate.
 - **Make it standing**: put the policy in `CLAUDE.md` — user-global (`~/.claude/CLAUDE.md`) for all local projects, repo-level (checked in) for cloud sessions, which read only the repo's `.claude/`. A repo that needs cloud coverage also needs this skill copied into its `.claude/skills/`.
 

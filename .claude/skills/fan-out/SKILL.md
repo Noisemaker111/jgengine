@@ -1,53 +1,56 @@
 ---
 name: fan-out
-description: Cost-first delegation — workers only for substantial mechanical legs.
+description: Parallelize large or multi-part work across subagents; small stays inline.
 ---
 
-# Cheap workers do the dumb work — when there's enough of it
+# Fan out independent work — inline the small stuff
 
-Frontier model: plan, design, judge, synthesize.  
-Cheap worker: substantial mechanical legs, on the cheapest tier that fits.
+Two ways work fans out. **Multiple independent tasks** ("do all the issues", fix these N bugs, shoot these N games) → one subagent per task, launched together. **One large task with independent legs** → decompose, fan the legs. Everything small or single-threaded stays inline in this session.
 
-**Cost first — the spawn threshold.** Every worker pays a fixed overhead: its own CLAUDE.md load, orientation, and report. Delegate only when the leg's work clearly exceeds that overhead — a full gate run, a multi-file sweep, a long build. A couple of quick calls, a small doc ship, a single command, or *waiting for anything* stays inline in this session. A whole conversation should use a handful of workers, not one per action; five subagents for a few small edits is the failure mode this rule exists to stop.
+Main's job is orchestration: decompose into independent units, launch the batch in one message, judge and synthesize what comes back. Planning, design, and judgment never leave the main loop.
 
-**Never wait on CI — not with a worker, not inline.** The PR subscription pushes failures into the chat as events; silence is green. Ship, subscribe, end the turn.
+**The trigger is independence, not just size.** ≥2 units that don't need each other's output run in parallel, full stop. Grinding them one at a time in the main loop is the failure mode this skill exists to kill — "do all the issues" is N parallel ships, not a to-do list you work top to bottom.
 
-**Set `model` explicitly on every worker call.** Omitting it makes the worker inherit the session model. Haiku for pure run-and-report legs — lint, typecheck, test, build, shoot, the verify ladder. Sonnet for a substantial ship motion and for diagnosing/fixing anything Haiku's run turned up failing. Opus for scouts and legs needing real judgment. Fable never runs a leg — a Sonnet grinding a too-hard task escalates to Opus, not upward.
+## What fans out
 
-**Prompts are briefs, not scripts.** Telegraph style — goal, non-discoverable context, exact return shape, nothing else. Short *and* sharp: precision comes from naming the right files, commands, and constraints, not from more words. Never dictate tools, paste boilerplate footers, or pad with contingencies the worker can work out itself. One packed prompt out, one compact judged result back.
+- **N independent tasks → N subagents → N PRs.** Each issue/bug/feature is its own subagent: branch off `origin/main`, do the work, ship its own PR. "One task, one PR" still holds — per subagent.
+- **A large task's parallel legs** — investigate M subsystems, sweep K files, review D dimensions, shoot G games.
+- **Substantial mechanical legs** — the verify ladder (gate, tests, build), `bun run shoot`/Playwright rounds, bulk reads, multi-file renames, doc sweeps, research sweeps.
 
-**Workers read `CLAUDE.md` and the skills too — never restate them.** The whole ship brief is: branch, commit message, PR title + a sentence of body, "run the ship motion." If a brief has step numbers, it's a script — cut it down.
+## Ship in isolation — worktree per task
 
-**Workers run their legs in the foreground, in the current turn.** A worker that backgrounds its command, arms a Monitor, or ends its turn saying "will report back" returns nothing — background children die with the turn. Its final message reports the completed result (PR link, checks verdict), never intent; a worker never hands its leg to a background child of its own. No worker in a parallel batch ever runs `bun install` — a mid-batch install fails every sibling with phantom TS2307s; if needed, it runs alone, first.
+A subagent that will commit / branch / PR runs in its **own git worktree** so parallel ships never stomp the shared tree: `Agent({ isolation: "worktree", model: "sonnet", ... })`. Each worktree branches off `origin/main`, ships one PR, and auto-cleans. N shipping tasks launch together in one message → N PRs, truly parallel.
 
-**Use the repo commands, never reconstruct the ladder.** `bun run agent:preflight` before generators, `bun run gate` for the full local verdict, `bun run ship:preflight` immediately before commit/push/PR. Never put a bare `bun test` in a brief — unscoped it scans the whole tree unbounded and hangs until the guard kills it; brief the guard-bounded scripts (`bun run test`, `bun run test:all`) or an explicit scope (`bun test packages`).
+The main session stays on its assigned branch and does **not** juggle worktrees — only the shipping subagents do. Because each is alone in its own tree, the shared-tree hazards disappear: a worktree subagent runs its own setup (including `bun install` when the fresh tree needs it) without failing siblings. The "no parallel `bun install`" rule is a *shared-tree* rule — worktree isolation is exactly what lifts it.
 
-**Per-item sweep briefs say "do these yourself — do not delegate."** Otherwise a worker treats the list as an orchestration job and fans out N sub-workers.
+## Stays inline — never fan these
 
-**Independent legs launch in parallel, never in sequence.** Everything that doesn't need another leg's output goes out together in one message as one Batch. Serialize only true data dependencies.
-
-## Worth a worker (when substantial)
-
-- the verify ladder — gate, tests, build — on a real diff
-- `bun run shoot` · Playwright · screenshot rounds
-- a ship motion with a big diff or gnarly push recovery
-- bulk file reads · multi-file renames · doc sweeps · log triage · research sweeps
-
-Announce workers on a 🤖 line, job-named. Judge their output; never dump raw worker text to the user.
-
-## Never fan these
-
-- engine / product design, API surface, layering, gnarly types
-- synthesizing worker results into the user-facing answer
-- small edits, small ships, direct Q&A, waiting on CI or anything else
+- one small thing: a small edit, a small ship, a quick grep, direct Q&A
+- planning, decomposition, engine/API/layering design, gnarly types
+- synthesizing subagent results into the user-facing answer
+- waiting on CI or anything else — silence is green, ship and end the turn
 - anything a Grep and two file reads would answer
 
-## Scouts — a look first, a scout rarely
+A single small task is one agent: this session. Don't spawn a subagent to do what you'd finish inline before it loaded CLAUDE.md.
 
-Before any scout: take the little look inline — a Grep, a Glob, two file reads. That answers most orientation questions for near-zero cost. Reserve scouts for genuinely unmapped territory where orienting would mean reading many unfamiliar files (think 10+). Default is **one** Opus scout (the `Explore` agent type fits); multiple only for truly separate angles. Digest shape: relevant files with `file:line` pointers, key APIs and types, constraints, surprises. Then read deeply only the files the diff will touch.
+## Set `model` explicitly on every subagent
 
-Never scout for scaffolding, HUD idioms, or anything already documented in skills — that's a doc lookup.
+Omitting it inherits the session model. **Haiku** — pure run-and-report legs: lint, typecheck, test, build, `shoot`, the verify ladder, screenshots, "all the bs testing". **Sonnet** — a substantial ship motion, or diagnosing/fixing what Haiku's run turned up red. **Opus** — scouts and legs needing real judgment. Fable never runs a leg; a Sonnet grinding a too-hard task escalates to Opus, not upward.
+
+The common shape: **Sonnet** worktree subagents run the N parallel ships; **Haiku** runs the verify/shoot legs and reports back; **Opus** scouts unmapped territory. Main (frontier) decomposes and judges.
+
+## Prompts are briefs, not scripts
+
+Telegraph style — goal, non-discoverable context, exact return shape, nothing else. Subagents read CLAUDE.md and the skills; never restate them. The whole ship brief is: which issue/task, branch name, PR title + a sentence of body, "run the ship motion." Step numbers mean it's a script — cut it down. One packed prompt out, one compact judged result back.
+
+**Foreground, current turn.** A subagent that backgrounds its command, arms a Monitor, or ends its turn saying "will report back" returns nothing — background children die with the turn. Its final message reports the completed result (PR link, checks verdict), never intent.
+
+**Use the repo commands, never reconstruct the ladder.** `bun run agent:preflight` before generators, `bun run gate` for the full local verdict, `bun run ship:preflight` immediately before commit/push/PR. Never brief a bare `bun test` — unscoped it scans the whole tree unbounded and hangs; brief `bun run test` / `bun run test:all` or an explicit `bun test packages` scope.
+
+## Launch, announce, judge
+
+Independent legs go out **together in one message** as one Batch — serialize only true data dependencies. Announce workers on a 🤖 line, job-named. Judge their output; never dump raw subagent text to the user — synthesize one verdict.
 
 ## Done when
 
-Heavy mechanical work ran on cheap workers, small work stayed inline, and the worker count stayed small.
+Independent tasks ran in parallel subagents (worktree-isolated when they ship), small and single work stayed inline, cheap models ran the mechanical legs, and main kept only planning and judgment.
