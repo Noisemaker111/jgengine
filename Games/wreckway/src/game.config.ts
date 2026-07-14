@@ -5,7 +5,7 @@ import { keybinds } from "./game/keybinds";
 import { GameUI } from "./game/ui/GameUI";
 import { renderProp } from "./game/world/propMesh";
 import { renderVehicle } from "./game/world/kartMesh";
-import { onInit, onNewPlayer, onTick } from "./loop";
+import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
@@ -15,6 +15,7 @@ export const game = defineGame({
   input: keybinds,
   content,
   loop: { onInit, onNewPlayer, onTick },
+  lifecycle,
   GameUI,
   capture: { play: ["startRun"] },
   renderEntity: renderVehicle,

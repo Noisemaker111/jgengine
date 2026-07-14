@@ -319,6 +319,22 @@ ctx.game.leaderboard.increment(userId, stat, { scope, by? }) / getTop / getProfi
 
 `ctx.game.commands.define(name, { validate?(ctx, input), apply(ctx, input) })` registers a verb (`has`/`names`/`run` round it out); `run(name, input)` returns `{ status: "applied", state } | { status: "rejected", reason } | { status: "unknown-command" }`. `apply` may either **return** the next state (the classic reducer shape) or mutate `ctx` in place and return **nothing** — `run` keeps the current `ctx` as `state` when `apply` returns `void`, so a handler that only calls other `ctx` methods (spawn, effect, loot.grantToPlayer, …) doesn't need a pointless `return ctx`. **Event handlers use `ctx` directly** the same way (side effects: leaderboard, economy, scheduling) and never reassign state. One feed primitive for kill feeds, loot logs, quest updates — no per-domain feed hooks.
 
+**Start/restart is a declarative `lifecycle`, never a hand-rolled command pair.** Every genre repeats the same shape — pull the run state out of the store, transition it, re-derive `GamePhase`, write it back — so `defineGame` owns it: pass `lifecycle` and the runtime registers the `start`/`restart` commands itself.
+
+```ts
+export const lifecycle: LifecycleConfig<RunState> = {
+  store: runStore,                                    // the StoreHandle holding this game's run state
+  start(state, ctx, input) { return beginRun(state); },   // pure transition; input is whatever "start" was run with
+  restart(state, ctx) { return createInitialRunState(); }, // same shape, skips the menu
+  phaseOf: (state) => (state.phase === "playing" ? "playing" : state.phase === "menu" ? "menu" : "ended"),
+  commands: { start: "startHeist" },                  // optional — default names are "start"/"restart"
+};
+
+defineGame({ ..., lifecycle });
+```
+
+`start`/`restart` receive the store's own `TState` — never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and calls `setGamePhase(ctx, phaseOf(next))` in one place, so every adopting game gets identical phase-sync for free. Take a `ctx` inside `start`/`restart` for side effects beyond the one store slot (reset a second store, re-pose the player, replant world dressing) the same way the pure transition functions already do. Skip `lifecycle` only when start/restart genuinely isn't a store transition (e.g. a full scene rebuild) — keep hand-rolling `commands.define("start"/"restart")` there.
+
 ## `ctx.game.store` — reactive game state
 
 **Default to a typed handle: `defineStore` (`@jgengine/core/store/defineStore`) + `useStore` (`@jgengine/react/store`).** One handle per key, one type parameter, no `as T` at any call site — the blessed way to hold run state. Never re-author a per-game `store.get(KEY) as T` accessor or a byte-identical `useGameStore(... as T)` hook, and never fork run state into a module-level singleton read via `useSyncExternalStore` (that state escapes replay/host authority).
