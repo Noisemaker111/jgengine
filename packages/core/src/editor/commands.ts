@@ -1,15 +1,26 @@
 import {
+  applyDeltaToSnapshot,
+  applySurfaceDeltaToSnapshot,
+  revertDeltaFromSnapshot,
+  revertSurfaceDeltaFromSnapshot,
+  type SurfaceDelta,
+  type TerraformDelta,
+} from "../world/terraform";
+import {
   cloneEditorDocument,
+  collectDescendants,
   extractEditorFragment,
   findEditorMarker,
   findEditorVolume,
   importEditorDocumentJson,
+  wouldCreateCycle,
 } from "./document";
 import type {
   EditorDocument,
   EditorMarker,
   EditorNote,
   EditorPath,
+  EditorTerrain,
   EditorVec3,
   EditorVolume,
 } from "./types";
@@ -20,6 +31,7 @@ export type EditorCommand =
   | { type: "clearSelection" }
   | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number }
   | { type: "translate"; ids: readonly string[]; delta: EditorVec3 }
+  | { type: "setParent"; ids: readonly string[]; parentId: string | null }
   | { type: "addMarker"; marker: EditorMarker }
   | { type: "addVolume"; volume: EditorVolume }
   | { type: "addPath"; path: EditorPath }
@@ -35,6 +47,10 @@ export type EditorCommand =
   | { type: "importDocument"; document: EditorDocument }
   | { type: "importJson"; json: string }
   | { type: "replaceDocument"; document: EditorDocument }
+  | { type: "setTerrain"; terrain: EditorTerrain }
+  | { type: "sculptTerrain"; delta: TerraformDelta }
+  | { type: "paintTerrain"; delta: SurfaceDelta }
+  | { type: "clearTerrain" }
   | { type: "undo" }
   | { type: "redo" };
 
@@ -73,6 +89,7 @@ function removeByIds(doc: EditorDocument, ids: ReadonlySet<string>): EditorDocum
     volumes: doc.volumes.filter((volume) => !ids.has(volume.id)),
     paths: doc.paths.filter((path) => !ids.has(path.id)),
     annotations: doc.annotations.filter((note) => !ids.has(note.id)),
+    ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
 
@@ -99,6 +116,7 @@ function translateByIds(
     annotations: doc.annotations.map((note) =>
       ids.has(note.id) ? { ...note, position: shifted(note.position, delta) } : note,
     ),
+    ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
 
@@ -158,6 +176,7 @@ function insertFragment(
       volumes: [...doc.volumes, ...volumes],
       paths: [...doc.paths, ...paths],
       annotations: [...doc.annotations, ...annotations],
+      ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     },
     selection: newIds,
   };
@@ -170,34 +189,82 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
     case "clearSelection":
       return { ...state, selection: [] };
     case "setTransform": {
-      const markers = state.document.markers.map((marker) => {
-        if (marker.id !== command.id) return marker;
-        return {
-          ...marker,
-          position: command.position === undefined ? marker.position : { ...command.position },
-          ...(command.rotationY === undefined ? {} : { rotationY: command.rotationY }),
-        };
+      const marker = findEditorMarker(state.document, command.id);
+      const volume = findEditorVolume(state.document, command.id);
+      const note = state.document.annotations.find((n) => n.id === command.id);
+      const previous = marker?.position ?? volume?.center ?? note?.position;
+      // Moving a parent to a new position carries its whole subtree by the same delta.
+      const childDelta =
+        command.position === undefined || previous === undefined
+          ? null
+          : {
+              x: command.position.x - previous.x,
+              y: command.position.y - previous.y,
+              z: command.position.z - previous.z,
+            };
+      const descendants =
+        childDelta === null ? new Set<string>() : collectDescendants(state.document, [command.id]);
+      const shift = (point: EditorVec3): EditorVec3 =>
+        childDelta === null ? point : shifted(point, childDelta);
+      const markers = state.document.markers.map((entry) => {
+        if (entry.id === command.id) {
+          return {
+            ...entry,
+            position: command.position === undefined ? entry.position : { ...command.position },
+            ...(command.rotationY === undefined ? {} : { rotationY: command.rotationY }),
+          };
+        }
+        return descendants.has(entry.id) ? { ...entry, position: shift(entry.position) } : entry;
       });
-      const volumes = state.document.volumes.map((volume) => {
-        if (volume.id !== command.id) return volume;
-        if (command.position === undefined) return volume;
-        return { ...volume, center: { ...command.position } };
+      const volumes = state.document.volumes.map((entry) => {
+        if (entry.id === command.id) return command.position === undefined ? entry : { ...entry, center: { ...command.position } };
+        return descendants.has(entry.id) ? { ...entry, center: shift(entry.center) } : entry;
       });
-      const annotations = state.document.annotations.map((note) => {
-        if (note.id !== command.id) return note;
-        if (command.position === undefined) return note;
-        return { ...note, position: { ...command.position } };
+      const paths = state.document.paths.map((entry) =>
+        descendants.has(entry.id) ? { ...entry, points: entry.points.map(shift) } : entry,
+      );
+      const annotations = state.document.annotations.map((entry) => {
+        if (entry.id === command.id) return command.position === undefined ? entry : { ...entry, position: { ...command.position } };
+        return descendants.has(entry.id) ? { ...entry, position: shift(entry.position) } : entry;
       });
       return {
         ...state,
-        document: { ...state.document, markers, volumes, annotations },
+        document: { ...state.document, markers, volumes, paths, annotations },
       };
     }
-    case "translate":
+    case "translate": {
+      const ids = new Set(command.ids);
+      for (const descendant of collectDescendants(state.document, command.ids)) ids.add(descendant);
       return {
         ...state,
-        document: translateByIds(state.document, new Set(command.ids), command.delta),
+        document: translateByIds(state.document, ids, command.delta),
       };
+    }
+    case "setParent": {
+      const targets = command.ids.filter((id) => !wouldCreateCycle(state.document, id, command.parentId));
+      if (targets.length === 0) return state;
+      const wanted = new Set(targets);
+      const reparent = <T extends { id: string; parentId?: string }>(entry: T): T => {
+        if (!wanted.has(entry.id)) return entry;
+        if (command.parentId === null) {
+          if (entry.parentId === undefined) return entry;
+          const next = { ...entry };
+          delete next.parentId;
+          return next;
+        }
+        return { ...entry, parentId: command.parentId };
+      };
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          markers: state.document.markers.map(reparent),
+          volumes: state.document.volumes.map(reparent),
+          paths: state.document.paths.map(reparent),
+          annotations: state.document.annotations.map(reparent),
+        },
+      };
+    }
     case "addMarker":
       return {
         ...state,
@@ -324,6 +391,32 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         document: importEditorDocumentJson(command.json),
         selection: [],
       };
+    case "setTerrain":
+      return { ...state, document: { ...state.document, terrain: command.terrain } };
+    case "clearTerrain": {
+      const nextDoc: EditorDocument = {
+        version: 1,
+        markers: state.document.markers,
+        volumes: state.document.volumes,
+        paths: state.document.paths,
+        annotations: state.document.annotations,
+      };
+      return { ...state, document: nextDoc };
+    }
+    case "sculptTerrain": {
+      if (state.document.terrain === undefined) return state;
+      return {
+        ...state,
+        document: { ...state.document, terrain: applyDeltaToSnapshot(state.document.terrain, command.delta) },
+      };
+    }
+    case "paintTerrain": {
+      if (state.document.terrain === undefined) return state;
+      return {
+        ...state,
+        document: { ...state.document, terrain: applySurfaceDeltaToSnapshot(state.document.terrain, command.delta) },
+      };
+    }
     case "undo":
     case "redo":
       return null;
@@ -339,19 +432,53 @@ function isStructural(command: EditorCommand): boolean {
   );
 }
 
+/**
+ * A single reversible step. A `snapshot` entry restores a whole prior document; a `sculpt` entry
+ * carries only the stroke's compact vertex delta, so terrain history never copies the heightfield.
+ */
+type HistoryEntry =
+  | { kind: "snapshot"; state: EditorSessionState }
+  | { kind: "sculpt"; delta: TerraformDelta; selection: string[] }
+  | { kind: "paint"; delta: SurfaceDelta; selection: string[] };
+
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession {
   let state: EditorSessionState = {
     document: cloneEditorDocument(initial),
     selection: [],
   };
-  const past: EditorSessionState[] = [];
-  const future: EditorSessionState[] = [];
+  const past: HistoryEntry[] = [];
+  const future: HistoryEntry[] = [];
   let lastCoalesce: string | null = null;
   const listeners = new Set<(state: EditorSessionState) => void>();
 
   const emit = () => {
     for (const listener of listeners) listener(state);
+  };
+
+  const sculptWith = (
+    delta: TerraformDelta,
+    direction: "apply" | "revert",
+    selection: string[],
+  ): EditorSessionState => {
+    const terrain = state.document.terrain;
+    if (terrain === undefined) return state;
+    const next = direction === "apply" ? applyDeltaToSnapshot(terrain, delta) : revertDeltaFromSnapshot(terrain, delta);
+    return { document: { ...state.document, terrain: next }, selection };
+  };
+
+  const paintWith = (
+    delta: SurfaceDelta,
+    direction: "apply" | "revert",
+    selection: string[],
+  ): EditorSessionState => {
+    const terrain = state.document.terrain;
+    if (terrain === undefined) return state;
+    const next =
+      direction === "apply"
+        ? applySurfaceDeltaToSnapshot(terrain, delta)
+        : revertSurfaceDeltaFromSnapshot(terrain, delta);
+    return { document: { ...state.document, terrain: next }, selection };
   };
 
   return {
@@ -366,20 +493,58 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
     canRedo: () => future.length > 0,
     dispatch(command, options) {
       if (command.type === "undo") {
-        const previous = past.pop();
-        if (previous === undefined) return state;
-        future.push(snapshotState(state));
-        state = previous;
+        const entry = past.pop();
+        if (entry === undefined) return state;
+        if (entry.kind === "sculpt") {
+          future.push({ kind: "sculpt", delta: entry.delta, selection: state.selection });
+          state = sculptWith(entry.delta, "revert", entry.selection);
+        } else if (entry.kind === "paint") {
+          future.push({ kind: "paint", delta: entry.delta, selection: state.selection });
+          state = paintWith(entry.delta, "revert", entry.selection);
+        } else {
+          future.push({ kind: "snapshot", state: snapshotState(state) });
+          state = entry.state;
+        }
         lastCoalesce = null;
         emit();
         return state;
       }
       if (command.type === "redo") {
-        const next = future.pop();
-        if (next === undefined) return state;
-        past.push(snapshotState(state));
-        state = next;
+        const entry = future.pop();
+        if (entry === undefined) return state;
+        if (entry.kind === "sculpt") {
+          past.push({ kind: "sculpt", delta: entry.delta, selection: state.selection });
+          state = sculptWith(entry.delta, "apply", entry.selection);
+        } else if (entry.kind === "paint") {
+          past.push({ kind: "paint", delta: entry.delta, selection: state.selection });
+          state = paintWith(entry.delta, "apply", entry.selection);
+        } else {
+          past.push({ kind: "snapshot", state: snapshotState(state) });
+          state = entry.state;
+        }
         lastCoalesce = null;
+        emit();
+        return state;
+      }
+
+      if (command.type === "sculptTerrain") {
+        if (state.document.terrain === undefined || command.delta.indices.length === 0) return state;
+        past.push({ kind: "sculpt", delta: command.delta, selection: [...state.selection] });
+        if (past.length > historyLimit) past.shift();
+        future.length = 0;
+        lastCoalesce = null;
+        state = sculptWith(command.delta, "apply", state.selection);
+        emit();
+        return state;
+      }
+
+      if (command.type === "paintTerrain") {
+        if (state.document.terrain === undefined || command.delta.indices.length === 0) return state;
+        past.push({ kind: "paint", delta: command.delta, selection: [...state.selection] });
+        if (past.length > historyLimit) past.shift();
+        future.length = 0;
+        lastCoalesce = null;
+        state = paintWith(command.delta, "apply", state.selection);
         emit();
         return state;
       }
@@ -390,7 +555,7 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         const coalesce = options?.coalesce;
         const merge = coalesce !== undefined && coalesce === lastCoalesce && past.length > 0;
         if (!merge) {
-          past.push(snapshotState(state));
+          past.push({ kind: "snapshot", state: snapshotState(state) });
           if (past.length > historyLimit) past.shift();
         }
         future.length = 0;

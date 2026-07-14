@@ -171,4 +171,134 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     description: "Frame-time breakdown from engine devtools: fps, sim phases, and lag culprit hints.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
+  {
+    name: "create_terrain",
+    description: "Create an editable sculpt heightfield over the scene (width/depth/cellSize).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        width: { type: "number" },
+        depth: { type: "number" },
+        cellSize: { type: "number" },
+        centerX: { type: "number" },
+        centerZ: { type: "number" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "sculpt_terrain",
+    description: "Apply one sculpt brush (raise/lower/smooth/flatten/noise/ramp) at x/z as an undoable stroke.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        mode: { type: "string", enum: ["raise", "lower", "smooth", "flatten", "noise", "ramp"] },
+        x: { type: "number" },
+        z: { type: "number" },
+        radius: { type: "number" },
+        strength: { type: "number" },
+        target: { type: "number" },
+        toX: { type: "number" },
+        toZ: { type: "number" },
+        seed: { type: "number" },
+        shape: { type: "string", enum: ["circle", "square"] },
+      },
+      required: ["mode", "x", "z"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "terrain_summary",
+    description: "Report the sculpt heightfield's grid size, bounds, min/max offset, edited vertices, and painted cells.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "paint_terrain",
+    description: "Paint a terrain material (grass/dirt/rock/…) at x/z as an undoable stroke.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        surface: { type: "string" },
+        x: { type: "number" },
+        z: { type: "number" },
+        radius: { type: "number" },
+        shape: { type: "string", enum: ["circle", "square"] },
+      },
+      required: ["surface", "x", "z"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "fill_terrain",
+    description: "Fill the whole terrain with one material, or null to clear all painted surfaces.",
+    inputSchema: {
+      type: "object",
+      properties: { surface: { type: ["string", "null"] } },
+      required: ["surface"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "auto_paint",
+    description: "Paint a material into every cell matching a slope/height rule (e.g. rock on steep, snow up high).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        surface: { type: "string" },
+        minSlope: { type: "number" },
+        maxSlope: { type: "number" },
+        minHeight: { type: "number" },
+        maxHeight: { type: "number" },
+      },
+      required: ["surface"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "terrain_materials",
+    description: "List the terrain paint palette (material id, label, color).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "add_foliage",
+    description: "Add a foliage/scatter region from a closed polygon (≥3 x/z points) with density and item.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        points: {
+          type: "array",
+          items: { type: "object", properties: { x: { type: "number" }, z: { type: "number" } }, required: ["x", "z"], additionalProperties: false },
+        },
+        density: { type: "number" },
+        item: { type: "string" },
+        seed: { type: "string" },
+        minSpacing: { type: "number" },
+      },
+      required: ["points"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "scatter_summary",
+    description: "Count foliage/scatter regions and their total deterministic instance placements.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "set_parent",
+    description: "Parent objects under another (or null to unparent); cycles are refused. Moving a parent moves its subtree.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ids: { type: "array", items: { type: "string" } },
+        parentId: { type: ["string", "null"] },
+      },
+      required: ["ids", "parentId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "hierarchy",
+    description: "The scene's parent/child tree: root ids and each root's direct children.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
 ];

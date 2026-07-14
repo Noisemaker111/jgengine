@@ -13,7 +13,17 @@ import {
   mergeEditorDocuments,
   normalizeEditorLayers,
   summarizeEditorSession,
+  editorParentOf,
+  editorChildren,
+  editorRoots,
+  collectDescendants,
+  wouldCreateCycle,
 } from "./index";
+import {
+  createTerrainSnapshot,
+  editableTerrainFromSnapshot,
+} from "../world/terraform";
+import { flatField } from "../world/terrain";
 
 describe("editor document", () => {
   test("normalize fills empty arrays", () => {
@@ -307,5 +317,144 @@ describe("editor clipboard fragments", () => {
       }),
     });
     expect(session.getState().document.markers[0]?.id).toBe("fresh");
+  });
+});
+
+describe("editor terrain sculpting", () => {
+  const bounds = { minX: -16, minZ: -16, maxX: 16, maxZ: 16 };
+
+  test("setTerrain then sculptTerrain raises the stored offsets, undo/redo restores", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    const snapshot = createTerrainSnapshot({ bounds, cellSize: 1 });
+    session.dispatch({ type: "setTerrain", terrain: snapshot });
+    expect(session.getState().document.terrain).toBeDefined();
+
+    const live = editableTerrainFromSnapshot(session.getState().document.terrain!, flatField());
+    const delta = live.editDelta({ mode: "raise", center: [0, 0], radius: 4, strength: 3 });
+    session.dispatch({ type: "sculptTerrain", delta });
+    const raised = session.getState().document.terrain!;
+    expect(Math.max(...raised.offsets)).toBeGreaterThan(0);
+    expect(session.canUndo()).toBe(true);
+
+    session.dispatch({ type: "undo" });
+    expect(Math.max(...session.getState().document.terrain!.offsets)).toBe(0);
+    session.dispatch({ type: "redo" });
+    expect(Math.max(...session.getState().document.terrain!.offsets)).toBeGreaterThan(0);
+  });
+
+  test("sculpt history is compact — undo of a stroke does not touch a snapshot copy", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds, cellSize: 1 }) });
+    const before = session.getState().document.terrain!;
+    const live = editableTerrainFromSnapshot(before, flatField());
+    const delta = live.editDelta({ mode: "raise", center: [2, 2], radius: 3, strength: 2 });
+    session.dispatch({ type: "sculptTerrain", delta });
+    // Copy-on-write: the pre-stroke snapshot object is untouched.
+    expect(Math.max(...before.offsets)).toBe(0);
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.terrain!.offsets).toEqual(before.offsets);
+  });
+
+  test("terrain survives export/import round-trip and non-terrain edits", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds, cellSize: 2 }) });
+    session.dispatch({ type: "addMarker", marker: { id: "m", kind: "poi", position: { x: 0, y: 0, z: 0 } } });
+    expect(session.getState().document.terrain).toBeDefined();
+    session.dispatch({ type: "removeMany", ids: ["m"] });
+    expect(session.getState().document.terrain).toBeDefined();
+
+    const json = session.exportJson(true);
+    const reloaded = importEditorDocumentJson(json);
+    expect(reloaded.terrain).toBeDefined();
+    expect(reloaded.terrain!.cols).toBe(session.getState().document.terrain!.cols);
+  });
+
+  test("clearTerrain drops the overlay", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds, cellSize: 1 }) });
+    session.dispatch({ type: "clearTerrain" });
+    expect(session.getState().document.terrain).toBeUndefined();
+  });
+
+  test("paintTerrain paints surfaces with compact undo, interleaved with sculpt strokes", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds, cellSize: 1 }) });
+    const before = session.getState().document.terrain!;
+    const live = editableTerrainFromSnapshot(before, flatField());
+
+    const sculpt = live.editDelta({ mode: "raise", center: [0, 0], radius: 4, strength: 3 });
+    session.dispatch({ type: "sculptTerrain", delta: sculpt });
+    const paint = live.paintDelta({ mode: "paint", center: [0, 0], radius: 4, surface: "rock" });
+    session.dispatch({ type: "paintTerrain", delta: paint });
+
+    const painted = session.getState().document.terrain!;
+    expect(painted.surfaces.some((s) => s === "rock")).toBe(true);
+    expect(Math.max(...painted.offsets)).toBeGreaterThan(0);
+    // Pre-stroke snapshot untouched (copy-on-write).
+    expect(before.surfaces.every((s) => s === null)).toBe(true);
+
+    // Undo paint only — heights stay sculpted.
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.terrain!.surfaces.every((s) => s === null)).toBe(true);
+    expect(Math.max(...session.getState().document.terrain!.offsets)).toBeGreaterThan(0);
+    // Redo restores the paint.
+    session.dispatch({ type: "redo" });
+    expect(session.getState().document.terrain!.surfaces.some((s) => s === "rock")).toBe(true);
+  });
+});
+
+describe("editor hierarchy / parenting", () => {
+  function scene() {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "addMarker", marker: { id: "parent", kind: "poi", position: { x: 0, y: 0, z: 0 } } });
+    session.dispatch({ type: "addMarker", marker: { id: "child", kind: "prop", position: { x: 10, y: 0, z: 0 } } });
+    session.dispatch({ type: "addMarker", marker: { id: "grandchild", kind: "prop", position: { x: 20, y: 0, z: 0 } } });
+    return session;
+  }
+
+  test("setParent builds a tree and roots/children/descendants report it", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    session.dispatch({ type: "setParent", ids: ["grandchild"], parentId: "child" });
+    const doc = session.getState().document;
+    expect(editorParentOf(doc, "child")).toBe("parent");
+    expect(editorChildren(doc, "parent")).toEqual(["child"]);
+    expect(editorRoots(doc)).toEqual(["parent"]);
+    expect([...collectDescendants(doc, ["parent"])].sort()).toEqual(["child", "grandchild"]);
+  });
+
+  test("setParent rejects cycles", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    session.dispatch({ type: "setParent", ids: ["parent"], parentId: "child" });
+    // parent stays a root — the cycle was refused.
+    expect(editorParentOf(session.getState().document, "parent")).toBeUndefined();
+    expect(wouldCreateCycle(session.getState().document, "parent", "child")).toBe(true);
+  });
+
+  test("moving a parent carries its whole subtree by the same delta", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    session.dispatch({ type: "setParent", ids: ["grandchild"], parentId: "child" });
+    session.dispatch({ type: "setTransform", id: "parent", position: { x: 5, y: 0, z: 5 } });
+    const doc = session.getState().document;
+    expect(doc.markers.find((m) => m.id === "child")!.position).toEqual({ x: 15, y: 0, z: 5 });
+    expect(doc.markers.find((m) => m.id === "grandchild")!.position).toEqual({ x: 25, y: 0, z: 5 });
+  });
+
+  test("translate also carries descendants, and undo restores the tree", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    session.dispatch({ type: "translate", ids: ["parent"], delta: { x: 0, y: 0, z: 10 } });
+    expect(session.getState().document.markers.find((m) => m.id === "child")!.position.z).toBe(10);
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.markers.find((m) => m.id === "child")!.position.z).toBe(0);
+  });
+
+  test("parentId survives export/import", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    const reloaded = importEditorDocumentJson(session.exportJson(true));
+    expect(editorParentOf(reloaded, "child")).toBe("parent");
   });
 });

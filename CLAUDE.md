@@ -78,6 +78,7 @@ Delegation policy lives in the **`fan-out`** skill (`.claude/skills/fan-out`) �
 
 ## Style
 
+- **Repetitive edits are one command, never N manual edits.** The same small change across ≥3 files (or ≥5 spots in one file) means build one regex find-and-replace and run it everywhere: `rg -l '<pattern>' | xargs sed -i -E 's/<pattern>/<replacement>/g'` (or `perl -pi -e` for multiline/lookarounds). Dry-run with `rg '<pattern>'` first to see every hit, run the replace, then `git diff --stat` to confirm scope. Hand-editing the same character in five files is the smell.
 - No code comments. Rename, extract, or encode in types instead.
 - Dense files: catalogs and content tables stay one file per domain, not scattered micro-modules.
 - Agent-invokable skill descriptions: ~10 words (cap 15), lead with *why*. Triggers and mechanics live in the skill body.

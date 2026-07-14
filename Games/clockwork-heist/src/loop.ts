@@ -12,6 +12,7 @@ import {
   beginGrab,
   cancelGrab,
   elapsedSecondsFor,
+  heistStore,
   initialHeistState,
   pruneToasts,
   resolveGrabFail,
@@ -21,23 +22,8 @@ import {
   startHeist,
   type HeistState,
 } from "./game/state/heistState";
-import { initialUiState, type HeistUiState } from "./game/uiState";
+import { initialUiState, uiStore } from "./game/uiState";
 import { lootInstanceId, treasureInstanceId } from "./game/mansion/catalog";
-
-const HEIST_KEY = "heist";
-const UI_KEY = "ui";
-
-function readHeist(ctx: GameContext): HeistState {
-  return (ctx.game.store.get(HEIST_KEY) as HeistState | undefined) ?? initialHeistState();
-}
-
-function writeHeist(ctx: GameContext, next: HeistState): void {
-  ctx.game.store.set(HEIST_KEY, next);
-}
-
-function readUi(ctx: GameContext): HeistUiState {
-  return (ctx.game.store.get(UI_KEY) as HeistUiState | undefined) ?? initialUiState();
-}
 
 function syncPhase(ctx: GameContext, status: HeistState["status"]): void {
   setGamePhase(ctx, status === "playing" ? "playing" : status === "intro" ? "menu" : "ended");
@@ -46,16 +32,16 @@ function syncPhase(ctx: GameContext, status: HeistState["status"]): void {
 export function onInit(ctx: GameContext): void {
   placeStaticWorld(ctx);
   ensureCollectiblesPlaced(ctx, [], []);
-  ctx.game.store.set(HEIST_KEY, initialHeistState());
-  ctx.game.store.set(UI_KEY, initialUiState());
+  heistStore.write(ctx, initialHeistState());
+  uiStore.write(ctx, initialUiState());
   syncPhase(ctx, "intro");
 
   ctx.game.commands.define("startHeist", {
     apply(state: GameContext) {
-      const current = readHeist(state);
+      const current = heistStore.read(state);
       const next = startHeist(current, state.time.now());
       if (next !== current) {
-        writeHeist(state, next);
+        heistStore.write(state, next);
         syncPhase(state, next.status);
       }
       return state;
@@ -64,24 +50,24 @@ export function onInit(ctx: GameContext): void {
 
   ctx.game.commands.define("restart", {
     apply(state: GameContext) {
-      const current = readHeist(state);
+      const current = heistStore.read(state);
       const next = restartHeist(current, state.time.now());
-      writeHeist(state, next);
+      heistStore.write(state, next);
       syncPhase(state, next.status);
       ensureCollectiblesPlaced(state, next.collectedTreasureIds, next.collectedLootIds);
       state.scene.entity.setPose(state.player.userId, { position: SERVANT_DOOR_SPAWN, rotationY: 0 });
       state.scene.entity.update(state.player.userId, { movement: { walkSpeed: NORMAL_WALK_SPEED } });
-      state.game.store.set(UI_KEY, initialUiState());
+      uiStore.write(state, initialUiState());
       return state;
     },
   });
 
   ctx.game.commands.define("heist.exit", {
     apply(state: GameContext) {
-      const current = readHeist(state);
+      const current = heistStore.read(state);
       const next = attemptExit(current, state.time.now());
       if (next !== current) {
-        writeHeist(state, next);
+        heistStore.write(state, next);
         if (next.status !== current.status) syncPhase(state, next.status);
       }
       return state;
@@ -90,28 +76,27 @@ export function onInit(ctx: GameContext): void {
 
   ctx.game.commands.define("ui.schedule", {
     apply(state: GameContext) {
-      const current = readUi(state);
-      state.game.store.set(UI_KEY, { ...current, scheduleOpen: !current.scheduleOpen });
+      uiStore.update(state, (current) => ({ ...current, scheduleOpen: !current.scheduleOpen }));
       return state;
     },
   });
 
   ctx.game.commands.define("ui.minimapScrub", {
     apply(state: GameContext) {
-      const current = readUi(state);
-      const heist = readHeist(state);
+      const heist = heistStore.read(state);
       const elapsed = elapsedSecondsFor(heist, state.time.now());
-      const nextScrubT = current.scrubT === null ? elapsed : null;
-      state.game.store.set(UI_KEY, { ...current, scrubT: nextScrubT });
+      uiStore.update(state, (current) => ({
+        ...current,
+        scrubT: current.scrubT === null ? elapsed : null,
+      }));
       return state;
     },
   });
 
   ctx.game.commands.define("ui.setScrub", {
     apply(state: GameContext, input: { t: number | null }) {
-      const current = readUi(state);
       const clamped = input.t === null ? null : Math.max(0, Math.min(RUN_SECONDS, input.t));
-      state.game.store.set(UI_KEY, { ...current, scrubT: clamped });
+      uiStore.update(state, (current) => ({ ...current, scrubT: clamped }));
       return state;
     },
   });
@@ -152,7 +137,7 @@ function nearestGrabTarget(heist: HeistState, playerX: number, playerZ: number):
 
 export function onTick(ctx: GameContext, _dt: number): void {
   const now = ctx.time.now();
-  let heist = readHeist(ctx);
+  let heist = heistStore.read(ctx);
   const sneakHeld = ctx.input.isDown("sneak");
 
   if (heist.sneaking !== sneakHeld) {
@@ -209,5 +194,5 @@ export function onTick(ctx: GameContext, _dt: number): void {
   }
 
   heist = pruneToasts(heist, now);
-  writeHeist(ctx, heist);
+  heistStore.write(ctx, heist);
 }

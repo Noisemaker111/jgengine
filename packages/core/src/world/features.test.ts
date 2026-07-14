@@ -196,6 +196,9 @@ describe("world features", () => {
       zenithColor: "#1a2b4a",
       sunIntensity: 0.7,
       ambientIntensity: 0.4,
+      radius: 2600,
+      hazeStrength: 0.62,
+      sunGlowStrength: 0.6,
       fog: { color: "#ffb37a", near: 40, far: 220 },
     });
     expect(descriptor).toEqual({
@@ -206,6 +209,9 @@ describe("world features", () => {
       zenithColor: "#1a2b4a",
       sunIntensity: 0.7,
       ambientIntensity: 0.4,
+      radius: 2600,
+      hazeStrength: 0.62,
+      sunGlowStrength: 0.6,
       fog: { color: "#ffb37a", near: 40, far: 220 },
     });
 

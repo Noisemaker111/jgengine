@@ -16,7 +16,7 @@ import {
   ROADS,
   districtAt,
 } from "../../world/districts";
-import { RACE_STORE_KEY, WANTED_STORE_KEY, type RaceSnapshot, type WantedSnapshot } from "../../handroll";
+import { raceStore, wantedStore } from "../../handroll";
 
 const SIZE = 176;
 const RADIUS = 130;
@@ -37,10 +37,10 @@ function readMap(ctx: GameContext): MapSnapshot | null {
     .list()
     .filter((e) => e.name.startsWith("cop_"))
     .map((e) => [e.position[0], e.position[2]] as const);
-  const quests = ctx.game.quest.list(ctx.player.userId);
+  const quests = ctx.game.quest!.list(ctx.player.userId);
   const active = quests.find((q) => q.status === "active");
-  const wanted = ctx.game.store.get(WANTED_STORE_KEY) as WantedSnapshot | undefined;
-  const race = ctx.game.store.get(RACE_STORE_KEY) as RaceSnapshot | undefined;
+  const wanted = wantedStore.read(ctx);
+  const race = raceStore.read(ctx);
   return {
     player: player.position,
     heading: player.rotationY,

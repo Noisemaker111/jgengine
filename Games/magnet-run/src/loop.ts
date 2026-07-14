@@ -2,13 +2,13 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { BOT_ENTITY_ID } from "./game/entities/catalog";
-import { RunController } from "./game/systems/runController";
+import { controllerStore, RunController } from "./game/systems/runController";
 import { botPoseFor } from "./game/systems/pose";
-import type { RunPhase } from "./game/systems/runState";
+import { runStore, type RunPhase } from "./game/systems/runState";
 import { setupWorld } from "./game/world/setup";
 
 function controllerOf(ctx: GameContext): RunController {
-  const existing = ctx.game.store.get("controller") as RunController | undefined;
+  const existing = controllerStore.peek(ctx);
   if (existing !== undefined) return existing;
   throw new Error("run controller accessed before onInit");
 }
@@ -19,8 +19,8 @@ function syncPhase(ctx: GameContext, phase: RunPhase): void {
 
 export function onInit(ctx: GameContext): void {
   const controller = new RunController();
-  ctx.game.store.set("controller", controller);
-  ctx.game.store.set("run", controller.snapshot());
+  controllerStore.write(ctx, controller);
+  runStore.write(ctx, controller.snapshot());
   syncPhase(ctx, controller.snapshot().phase);
 
   setupWorld(ctx);
@@ -68,7 +68,7 @@ export function onTick(ctx: GameContext, dt: number): void {
 
   const snapshot = controller.snapshot();
   if (snapshot.phase !== previousPhase) syncPhase(ctx, snapshot.phase);
-  ctx.game.store.set("run", snapshot);
+  runStore.write(ctx, snapshot);
 
   const pose = botPoseFor(snapshot);
   ctx.scene.entity.setPose(ctx.player.userId, {

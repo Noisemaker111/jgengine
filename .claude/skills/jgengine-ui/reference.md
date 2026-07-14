@@ -458,7 +458,7 @@ Require revision when any of these are true:
 
 ## 15. Compact implementation API appendix
 
-Use the main `jgengine` skill for the authoritative engine API routing. The React package exposes `GameProvider`, hooks, and headless primitives from `@jgengine/react` and its documented subpaths. Common hooks include player/game state, entities, stats, inventory, quests, prompts, clocks, markers, fog, and engine stores. The shell provides `GamePlayerShell`, input integration, devtools, and `GameUiPreview`.
+Use the main `jgengine` skill for the authoritative engine API routing. The React package exposes `GameProvider`, hooks, and headless primitives from `@jgengine/react` and its documented subpaths. Common hooks include player/game state, entities, stats, inventory, quests, prompts, clocks, markers, fog, and engine stores. The shell provides `GamePlayerShell`, input integration, devtools, and `GameUiPreview`; `@jgengine/shell/GamePlayerShell` also re-exports the movement primitives it wires up internally (`applyMotionImpulses`, `nearbyObstacles`, `resolvePhysicsTuning`, `hasEnvironmentTerrain`) for a host that needs to replicate its physics loop, and `@jgengine/shell/terrain` re-exports the `jgengine-world` field builders (`arenaField`, `flatField`, `fractalNoise`, `resolveGroundStep`, `valueNoise`, `withNormal`) alongside its own `CarvedTerrain`/`GrassField` components so a shell consumer never needs a second import from core.
 
 Use these APIs to bind state; do not let API wiring dictate visual composition. Keybind labels should derive from the game’s binding table, and UI actions should dispatch through game commands rather than existing only as click handlers.
 

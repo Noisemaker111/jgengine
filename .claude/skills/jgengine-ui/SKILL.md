@@ -42,6 +42,7 @@ Read [reference.md](reference.md) when building or reviewing a game interface. I
 - Mobile controls share input mechanics but not one universal visual skin.
 - Themes change geometry, composition, typography roles, icons, motion, materials, sound, and density—not only colors.
 - Ordinary rounded cards, pill buttons, generic dark modals, and dashboard grids are fallback failures, not defaults.
+- HUD numbers go through `@jgengine/core/format` — `formatDuration`/`formatDelta`/`formatOrdinal` (clocks, splits, ranks), `formatSpeed` (m/s → km/h/mph/knots), `formatDistance` (m/km) — never a hand-rolled `Math.round(x * 3.6)` or `mm:ss` string. Two games once diverged on the m/s→km/h factor (3.2 vs 3.6) because each hand-rolled its own conversion; the shared functions are the one correct table.
 
 ## Preview states ship with the UI
 

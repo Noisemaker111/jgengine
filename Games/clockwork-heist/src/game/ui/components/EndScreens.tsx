@@ -1,16 +1,13 @@
 import type { ReactNode } from "react";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import type { HeistState } from "../../state/heistState";
+import { useGame } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
+import { heistStore } from "../../state/heistState";
 import { mansionClockAt, secondsUntilDawn } from "../../schedule/mansionClock";
 
-function useHeist(): HeistState | undefined {
-  return useGameStore((ctx) => ctx.game.store.get("heist") as HeistState | undefined);
-}
-
 export function EndScreens(): ReactNode {
-  const heist = useHeist();
+  const heist = useStore(heistStore);
   const { commands } = useGame();
-  if (heist === undefined || (heist.status !== "lost" && heist.status !== "won")) return null;
+  if (heist.status !== "lost" && heist.status !== "won") return null;
 
   const restart = () => commands.run("restart", {});
 

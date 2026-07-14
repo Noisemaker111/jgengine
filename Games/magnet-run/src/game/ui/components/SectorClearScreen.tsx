@@ -1,7 +1,8 @@
 import { useGame } from "@jgengine/react/hooks";
 import { sectors } from "../../course/sectors";
 import { keyLabel } from "../keyLabel";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -11,7 +12,7 @@ function formatTime(seconds: number): string {
 
 export function SectorClearScreen() {
   const { commands } = useGame();
-  const run = useRunState();
+  const run = useStore(runStore);
   const clearedSector = sectors[run.sectorIndex]!;
   const splitTime = run.sectorTimes[run.sectorTimes.length - 1] ?? run.totalElapsed;
   const nextSector = sectors[run.sectorIndex + 1];

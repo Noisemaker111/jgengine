@@ -90,9 +90,9 @@ export const loop: GameLoop<GameContext> = {
     ctx.item.use.register(useHandlers);
     ctx.player.loadout.register(loadouts);
     for (const table of buildLootTables()) ctx.game.loot.register(table);
-    ctx.game.quest.register([...QUESTS]);
-    ctx.game.quest.bind("entity.died");
-    ctx.game.quest.bind("inventory.added");
+    ctx.game.quest!.register([...QUESTS]);
+    ctx.game.quest!.bind("entity.died");
+    ctx.game.quest!.bind("inventory.added");
     ctx.game.feed.bind("entity.died");
     ctx.game.feed.bind("loot.granted");
     registerCommands(ctx);

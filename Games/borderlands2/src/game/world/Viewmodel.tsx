@@ -1,6 +1,6 @@
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { BackSide, Color, Group, ShaderMaterial, Vector3 } from "three";
+import { Group, Vector3 } from "three";
 import { equippedGun, gameNow, lastShot } from "../feel";
 import { gunById, magState, type GunDef, type GunFamily } from "../handroll";
 import { ELEMENT_COLORS, RARITY_COLORS } from "../palette";
@@ -70,67 +70,8 @@ function GunMesh({ gun }: { gun: GunDef }) {
   );
 }
 
-const SKY_VERTEX = `
-varying vec3 vWorld;
-void main() {
-  vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`;
-
-const SKY_FRAGMENT = `
-varying vec3 vWorld;
-uniform vec3 uZenith;
-uniform vec3 uHorizon;
-uniform vec3 uHaze;
-uniform vec3 uSunDir;
-uniform vec3 uSunColor;
-void main() {
-  vec3 dir = normalize(vWorld - vec3(0.0, -60.0, 0.0));
-  float h = dir.y;
-  float t = clamp(h * 1.5, 0.0, 1.0);
-  vec3 col = mix(uHorizon, uZenith, pow(t, 0.55));
-  float haze = smoothstep(0.22, 0.0, h);
-  col = mix(col, uHaze, haze * 0.65);
-  float sun = pow(max(dot(dir, normalize(uSunDir)), 0.0), 320.0);
-  float glow = pow(max(dot(dir, normalize(uSunDir)), 0.0), 10.0);
-  col += uSunColor * (sun * 1.2 + glow * 0.22);
-  gl_FragColor = vec4(col, 1.0);
-}
-`;
-
-function PandoraSkyDome() {
-  const material = useMemo(() => {
-    const shader = new ShaderMaterial({
-      vertexShader: SKY_VERTEX,
-      fragmentShader: SKY_FRAGMENT,
-      uniforms: {
-        uZenith: { value: new Color("#6f9cbb") },
-        uHorizon: { value: new Color("#e8c98f") },
-        uHaze: { value: new Color("#d8ac74") },
-        uSunDir: { value: new Vector3(0.55, 0.62, 0.32) },
-        uSunColor: { value: new Color("#fff0cf") },
-      },
-      side: BackSide,
-      depthWrite: false,
-      fog: false,
-    });
-    return shader;
-  }, []);
-  return (
-    <mesh material={material} position={[0, -60, 0]} renderOrder={-100} frustumCulled={false}>
-      <sphereGeometry args={[2600, 32, 16]} />
-    </mesh>
-  );
-}
-
 export function PandoraWorldOverlay() {
-  return (
-    <>
-      <PandoraSkyDome />
-      <PandoraViewmodel />
-    </>
-  );
+  return <PandoraViewmodel />;
 }
 
 export function PandoraViewmodel() {

@@ -127,6 +127,25 @@ describe("social party", () => {
     expect(social.party.list("bob")).toEqual([]);
   });
 
+  test("whole-social snapshot replicates party membership and pending invites to a mirror", () => {
+    const { social } = createParty();
+    social.party.accept("bob", inviteId(social.party.invite("alice", "bob")));
+    const pending = inviteId(social.party.invite("alice", "carol"));
+
+    const mirror = createSocial({ events: createGameEvents() });
+    mirror.party.register({ maxMembers: 3 });
+    mirror.hydrate(social.snapshot());
+
+    expect(mirror.party.list("bob")).toEqual([
+      { userId: "alice", role: "leader" },
+      { userId: "bob", role: "member" },
+    ]);
+    expect(mirror.party.membersOf("alice")).toEqual(["alice", "bob"]);
+    expect(mirror.party.invitesFor("carol")).toEqual([
+      { inviteId: pending, fromUserId: "alice", createdAt: expect.any(Number) },
+    ]);
+  });
+
   test("invitesFor lists pending invites, prunes expired, and decline is addressee-only", () => {
     const nowRef = { value: 0 };
     const { social } = createParty(nowRef, 1000);

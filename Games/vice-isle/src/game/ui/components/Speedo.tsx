@@ -1,11 +1,12 @@
 import { useGameStore } from "@jgengine/react/hooks";
-import { DRIVING_STORE_KEY, handroll } from "../../handroll";
+import { useStore } from "@jgengine/react/store";
+import { drivingStore, handroll } from "../../handroll";
 import { vehicleById } from "../../entities/vehicles/catalog";
 
 export function Speedo() {
-  const drivingId = useGameStore((ctx) => (ctx.game.store.get(DRIVING_STORE_KEY) as string | null | undefined) ?? null);
+  const drivingId = useStore(drivingStore, (v) => v ?? null);
   const vehicleName = useGameStore((ctx) => {
-    const id = ctx.game.store.get(DRIVING_STORE_KEY) as string | null | undefined;
+    const id = drivingStore.read(ctx);
     if (id === null || id === undefined) return null;
     return ctx.scene.entity.get(id)?.name ?? null;
   });

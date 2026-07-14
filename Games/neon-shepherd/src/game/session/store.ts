@@ -1,3 +1,4 @@
+import { defineStore } from "@jgengine/core/store/defineStore";
 import { PARK_Z } from "../constants";
 import type { TierId } from "../difficulty/tiers";
 import { CREATURES } from "../entities/creatures/catalog";
@@ -26,7 +27,7 @@ export interface RunState {
   mapOpen: boolean;
 }
 
-export const RUN_STORE_KEY = "run";
+export const runStore = defineStore<RunState>("run", () => createInitialRunState());
 
 export function createInitialCreatures(): Record<string, CreaturePos> {
   const out: Record<string, CreaturePos> = {};

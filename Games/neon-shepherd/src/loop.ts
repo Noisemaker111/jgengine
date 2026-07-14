@@ -10,7 +10,7 @@ import { hasLost, hasWon, resolveMedal, type Phase } from "./game/session/runSta
 import {
   aliveCount,
   createInitialRunState,
-  RUN_STORE_KEY,
+  runStore,
   type RunState,
   type ToastEntry,
 } from "./game/session/store";
@@ -30,15 +30,11 @@ function pushToast(run: RunState, text: string, now: number): RunState {
 }
 
 function readRun(ctx: GameContext): RunState {
-  const existing = ctx.game.store.get(RUN_STORE_KEY) as RunState | undefined;
-  if (existing !== undefined) return existing;
-  const fresh = createInitialRunState();
-  ctx.game.store.set(RUN_STORE_KEY, fresh);
-  return fresh;
+  return runStore.read(ctx);
 }
 
 function writeRun(ctx: GameContext, run: RunState): void {
-  ctx.game.store.set(RUN_STORE_KEY, run);
+  runStore.write(ctx, run);
 }
 
 export function onInit(ctx: GameContext): void {

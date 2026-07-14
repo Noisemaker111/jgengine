@@ -1,4 +1,5 @@
 import { SettingsTrigger } from "@jgengine/react";
+import { useStore } from "@jgengine/react/store";
 
 import { LaneIndicator } from "./components/LaneIndicator";
 import { LoseScreen } from "./components/LoseScreen";
@@ -10,10 +11,10 @@ import { SpeedReadout } from "./components/SpeedReadout";
 import { StartScreen } from "./components/StartScreen";
 import { TelemetryToasts } from "./components/TelemetryToasts";
 import { WinScreen } from "./components/WinScreen";
-import { useRunState } from "./useRunState";
+import { runStore } from "../systems/runState";
 
 export function GameUI() {
-  const run = useRunState();
+  const run = useStore(runStore);
   const running = run.phase === "running";
 
   return (

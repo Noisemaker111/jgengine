@@ -13,6 +13,7 @@ import { loadouts } from "./game/loadouts";
 import { grantXp } from "./game/progression/curves";
 import { challenges } from "./game/quests/catalog";
 import { session } from "./game/run/session";
+import { recordsStore } from "./game/run/stores";
 import { PLAYER_SPAWN, setupWorld } from "./game/world/setup";
 
 const LEVEL_HEALTH_BONUS = 6;
@@ -45,15 +46,15 @@ function onInit(ctx: GameContext): void {
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
   for (const table of lootTables) ctx.game.loot.register(table);
-  ctx.game.quest.register(challenges);
-  ctx.game.quest.bind("entity.died");
+  ctx.game.quest!.register(challenges);
+  ctx.game.quest!.bind("entity.died");
   registerCommands(ctx);
 
   ctx.game.feed.bind("entity.died");
   ctx.game.feed.bind("loot.granted");
 
   ctx.game.events.on("quest.completed", (event) => {
-    ctx.game.quest.turnIn(event.userId, event.questId);
+    ctx.game.quest!.turnIn(event.userId, event.questId);
     ctx.game.events.emit("audio.play", { sound: SOUND_IDS.levelUp });
     const reward = challenges.find((challenge) => challenge.id === event.questId)?.rewards?.economy?.scrap;
     ctx.scene.entity.floatText({
@@ -72,7 +73,7 @@ function onInit(ctx: GameContext): void {
   });
 
   setupWorld(ctx);
-  ctx.game.store.set("records", { ...session.records().best() });
+  recordsStore.write(ctx, { ...session.records().best() });
   setPlayControlsActive(ctx, false);
   setGamePhase(ctx, "menu");
 }

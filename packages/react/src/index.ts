@@ -5,6 +5,7 @@ export * from "./chatBubbles";
 export * from "./voice";
 export * from "./social";
 export * from "./hooks";
+export * from "./store";
 export * from "./settings";
 export * from "./components";
 export * from "./keyHint";

@@ -10,7 +10,10 @@ export interface TerraformBrushCursorProps {
 const MODE_COLOR: Record<TerraformMode, string> = {
   raise: "#38bdf8",
   lower: "#fb923c",
+  smooth: "#c084fc",
   flatten: "#a3e635",
+  noise: "#facc15",
+  ramp: "#2dd4bf",
   paint: "#e879f9",
 };
 

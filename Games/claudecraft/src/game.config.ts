@@ -60,7 +60,7 @@ const objectStyles = {
 export const game = defineGame({
   capture: { play: [{ name: "class.select", input: { classId: "warrior" } }] },
   name: "World of ClaudeCraft",
-  features: { players: true },
+  features: { players: true, quest: true, trade: true },
   multiplayer: ws({ authority: "server" }),
   assets,
   world,

@@ -1,5 +1,5 @@
 import { SkillCheckBar } from "@jgengine/react/components";
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 
 import { FISHING_CHECK, RECIPES, RECIPE_SKILL, fishingKey } from "../../crafting/systems";
@@ -47,7 +47,7 @@ export function CraftingPanel() {
                 }`}
               >
                 <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded border border-stone-700 bg-stone-950 ${QUALITY_COLORS[output.quality]}`}>
-                  <GameIcon name={output.icon as GameIconName} size={22} />
+                  <GameIcon name={output.icon} size={22} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className={`block truncate text-sm font-semibold ${QUALITY_COLORS[output.quality]}`}>

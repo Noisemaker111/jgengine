@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  collectDescendants,
   editorDocumentSize,
+  editorParentOf,
   extractEditorFragment,
   findEditorNote,
   findEditorPath,
   listEditorKinds,
   WELL_KNOWN_MARKER_KINDS,
   type EditorDocument,
+  type EditorPath,
   type EditorSession,
   type EditorVolume,
 } from "@jgengine/core/editor/index";
@@ -16,11 +19,29 @@ import {
   vegetationFootprint,
   VEGETATION_VOLUME_KIND,
 } from "@jgengine/core/world/vegetation";
+import { editorDocumentBounds } from "@jgengine/core/editor/index";
+import type { Aabb } from "@jgengine/core/world/geometry";
+import {
+  createTerrainSnapshot,
+  editableTerrainFromSnapshot,
+  type EditableTerrain,
+  type SurfaceDelta,
+  type TerrainSurfaceRule,
+} from "@jgengine/core/world/terraform";
+import {
+  readScatterPalette,
+  readScatterRules,
+  scatterRegionEstimate,
+  SCATTER_PATH_KIND,
+  type ScatterPaletteEntry,
+} from "@jgengine/core/world/scatterRegion";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
+import { OutlinerPanel } from "./OutlinerPanel";
+import { buildOutlinerGroups } from "./outlinerModel";
 import type { EditorHostApi, EditorPerfSample } from "./session";
-import type { EditorUiStore, PlacementTool, SnapMode } from "./uiStore";
+import { TERRAIN_MATERIALS, type EditorUiStore, type PlacementTool, type SnapMode, type TerrainBrushKind } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 
 const PERF_POLL_MS = 500;
@@ -66,64 +87,11 @@ function formatTriangles(count: number): string {
   return String(count);
 }
 
-interface OutlinerRow {
-  label: string;
-  ids: string[];
-}
-
-interface OutlinerGroup {
-  kind: string;
-  rows: OutlinerRow[];
-  total: number;
-}
-
-function buildOutlinerGroups(document: {
-  markers: readonly { id: string; kind: string; label?: string }[];
-  volumes: readonly { id: string; kind: string; label?: string }[];
-  paths: readonly { id: string; kind: string; label?: string }[];
-  annotations: readonly { id: string; text: string }[];
-}): OutlinerGroup[] {
-  const byKind = new Map<string, Map<string, OutlinerRow>>();
-  const push = (kind: string, label: string, id: string) => {
-    let labels = byKind.get(kind);
-    if (labels === undefined) {
-      labels = new Map();
-      byKind.set(kind, labels);
-    }
-    const row = labels.get(label);
-    if (row === undefined) labels.set(label, { label, ids: [id] });
-    else row.ids.push(id);
-  };
-  for (const marker of document.markers) push(marker.kind, marker.label ?? marker.id, marker.id);
-  for (const volume of document.volumes) push(volume.kind, volume.label ?? volume.id, volume.id);
-  for (const path of document.paths) push(path.kind, path.label ?? path.id, path.id);
-  for (const note of document.annotations) push("note", note.text.slice(0, 40) || note.id, note.id);
-  return [...byKind.entries()]
-    .map(([kind, labels]) => {
-      const rows = [...labels.values()];
-      return { kind, rows, total: rows.reduce((sum, row) => sum + row.ids.length, 0) };
-    })
-    .sort((a, b) => a.kind.localeCompare(b.kind));
-}
-
-function filterOutlinerGroups(groups: readonly OutlinerGroup[], query: string): OutlinerGroup[] {
-  const normalized = query.trim().toLowerCase();
-  if (normalized.length === 0) return [...groups];
-  return groups
-    .map((group) => {
-      const kindMatches = group.kind.toLowerCase().includes(normalized);
-      const rows = kindMatches
-        ? group.rows
-        : group.rows.filter((row) => row.label.toLowerCase().includes(normalized));
-      return { ...group, rows, total: rows.reduce((sum, row) => sum + row.ids.length, 0) };
-    })
-    .filter((group) => group.rows.length > 0);
-}
-
 let clipboardFragment: EditorDocument | null = null;
 
 const SHORTCUTS: readonly { keys: string; action: string }[] = [
   { keys: "W / E / R", action: "Move · rotate · scale gizmo" },
+  { keys: "T", action: "Toggle terrain sculpt tool" },
   { keys: "F", action: "Frame selection (or whole scene)" },
   { keys: "G", action: "Toggle reference grid" },
   { keys: "N", action: "Cycle instances of selected row" },
@@ -239,6 +207,293 @@ function VegetationFields({
   );
 }
 
+const TERRAIN_BRUSHES: readonly { kind: TerrainBrushKind; label: string; hint: string }[] = [
+  { kind: "raise", label: "Raise", hint: "Push terrain up" },
+  { kind: "lower", label: "Lower", hint: "Dig terrain down" },
+  { kind: "smooth", label: "Smooth", hint: "Average toward neighbors" },
+  { kind: "flatten", label: "Flatten", hint: "Level to a target height" },
+  { kind: "noise", label: "Noise", hint: "Roughen with fractal detail" },
+  { kind: "ramp", label: "Ramp", hint: "Drag a straight grade A→B" },
+];
+
+function SliderRow({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  format,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+  format?: (value: number) => string;
+}) {
+  return (
+    <label className="block space-y-1">
+      <span className="flex items-center justify-between">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">{label}</span>
+        <span className="text-cyan-200">{format ? format(value) : value.toFixed(2)}</span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="w-full accent-amber-400"
+      />
+    </label>
+  );
+}
+
+/** Sensible sculpt area when none is authored yet: the document footprint padded, or a 200m square. */
+function defaultTerrainBounds(document: Parameters<typeof editorDocumentBounds>[0]): Aabb {
+  const bounds = editorDocumentBounds(document);
+  if (bounds === null) return { minX: -100, minZ: -100, maxX: 100, maxZ: 100 };
+  const pad = 40;
+  const minX = bounds.min.x - pad;
+  const minZ = bounds.min.z - pad;
+  const maxX = bounds.max.x + pad;
+  const maxZ = bounds.max.z + pad;
+  const span = Math.max(80, Math.min(400, Math.max(maxX - minX, maxZ - minZ)));
+  const cx = (minX + maxX) / 2;
+  const cz = (minZ + maxZ) / 2;
+  return { minX: cx - span / 2, minZ: cz - span / 2, maxX: cx + span / 2, maxZ: cz + span / 2 };
+}
+
+function SculptControls({ ui }: { ui: EditorUiStore }) {
+  const sculpt = ui.getState().sculpt;
+  return (
+    <>
+      <div className="grid grid-cols-3 gap-1">
+        {TERRAIN_BRUSHES.map((brush) => (
+          <button
+            key={brush.kind}
+            type="button"
+            title={brush.hint}
+            className={`rounded-md px-1.5 py-1 text-[11px] transition-colors ${sculpt.brush === brush.kind ? "bg-amber-500/90 text-white shadow-sm shadow-amber-950/50" : "bg-white/[0.04] text-neutral-300 ring-1 ring-inset ring-white/[0.06] hover:bg-white/10"}`}
+            onClick={() => ui.patchSculpt({ brush: brush.kind })}
+          >
+            {brush.label}
+          </button>
+        ))}
+      </div>
+      {sculpt.brush === "ramp" ? <div className="text-[10px] text-neutral-500">Drag from the low end to the high end to grade a slope.</div> : null}
+      <SliderRow label="radius" value={sculpt.radius} min={1} max={60} step={0.5} onChange={(value) => ui.patchSculpt({ radius: value })} format={(v) => `${v.toFixed(1)}m`} />
+      <SliderRow label="strength" value={sculpt.strength} min={0.05} max={5} step={0.05} onChange={(value) => ui.patchSculpt({ strength: value })} />
+      <SliderRow label="spacing" value={sculpt.spacing} min={0.25} max={12} step={0.25} onChange={(value) => ui.patchSculpt({ spacing: value })} format={(v) => `${v.toFixed(2)}m`} />
+      <div className="flex items-center gap-1">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">falloff</span>
+        <div className="ml-auto flex gap-0.5 rounded-md bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
+          {(["smooth", "linear", "none"] as const).map((mode) => (
+            <button key={mode} type="button" className={`rounded px-1.5 py-0.5 text-[10px] capitalize transition-colors ${sculpt.falloff === mode ? "bg-amber-500/80 text-white" : "text-neutral-400 hover:text-neutral-200"}`} onClick={() => ui.patchSculpt({ falloff: mode })}>{mode}</button>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">shape</span>
+        <button type="button" className="ml-auto rounded-md bg-white/[0.04] px-2 py-0.5 text-[11px] capitalize ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => ui.patchSculpt({ shape: sculpt.shape === "circle" ? "square" : "circle" })}>{sculpt.shape}</button>
+        <label className="flex items-center gap-1 text-[10px] text-neutral-400">
+          <input type="checkbox" className="accent-amber-400" checked={sculpt.invert} onChange={(event) => ui.patchSculpt({ invert: event.target.checked })} />
+          invert
+        </label>
+      </div>
+      {sculpt.brush === "flatten" ? (
+        <label className="flex items-center justify-between gap-2">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">flatten to</span>
+          <input type="number" step={0.5} placeholder="sample" className={`w-24 ${INPUT}`} value={sculpt.flattenHeight ?? ""} onChange={(event) => ui.patchSculpt({ flattenHeight: event.target.value === "" ? null : Number(event.target.value) })} />
+        </label>
+      ) : null}
+      {sculpt.brush === "noise" ? (
+        <label className="flex items-center justify-between gap-2">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">seed</span>
+          <input type="number" step={1} className={`w-24 ${INPUT}`} value={sculpt.noiseSeed} onChange={(event) => ui.patchSculpt({ noiseSeed: Math.round(Number(event.target.value)) || 0 })} />
+        </label>
+      ) : null}
+    </>
+  );
+}
+
+function PaintControls({ session, ui }: { session: EditorSession; ui: EditorUiStore }) {
+  const paint = ui.getState().paint;
+  const document = session.getState().document;
+
+  const paintDelta = (build: (terrain: EditableTerrain) => SurfaceDelta) => {
+    if (document.terrain === undefined) return;
+    const delta = build(editableTerrainFromSnapshot(document.terrain));
+    if (delta.indices.length > 0) session.dispatch({ type: "paintTerrain", delta });
+  };
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-1">
+        {TERRAIN_MATERIALS.map((material) => (
+          <button
+            key={material.id}
+            type="button"
+            className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] transition-colors ${paint.material === material.id ? "bg-amber-500/90 text-white shadow-sm shadow-amber-950/50" : "bg-white/[0.04] text-neutral-300 ring-1 ring-inset ring-white/[0.06] hover:bg-white/10"}`}
+            onClick={() => ui.patchPaint({ material: material.id })}
+          >
+            <span className="h-3 w-3 shrink-0 rounded-sm ring-1 ring-inset ring-black/40" style={{ backgroundColor: material.color }} />
+            {material.label}
+          </button>
+        ))}
+      </div>
+      <div className="text-[10px] text-neutral-500">Click/drag to paint · Alt-click to sample.</div>
+      <SliderRow label="radius" value={paint.radius} min={1} max={60} step={0.5} onChange={(value) => ui.patchPaint({ radius: value })} format={(v) => `${v.toFixed(1)}m`} />
+      <div className="flex items-center gap-2">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">shape</span>
+        <button type="button" className="ml-auto rounded-md bg-white/[0.04] px-2 py-0.5 text-[11px] capitalize ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => ui.patchPaint({ shape: paint.shape === "circle" ? "square" : "circle" })}>{paint.shape}</button>
+      </div>
+      <div className="grid grid-cols-2 gap-1">
+        <button type="button" className="rounded-md bg-white/[0.04] px-2 py-1 text-[11px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => paintDelta((terrain) => terrain.fillSurfaceDelta(paint.material))}>Fill all</button>
+        <button type="button" className="rounded-md bg-white/[0.04] px-2 py-1 text-[11px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => paintDelta((terrain) => terrain.fillSurfaceDelta(null))}>Clear paint</button>
+      </div>
+      <div className="space-y-1 rounded-lg border border-white/[0.06] p-2">
+        <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">Auto rules</div>
+        <div className="grid grid-cols-2 gap-1">
+          <button type="button" className="rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" title="Paint the selected material onto slopes steeper than ~30°" onClick={() => paintDelta((terrain) => terrain.autoPaintDelta({ surface: paint.material, minSlope: 0.6 } satisfies TerrainSurfaceRule))}>On steep slopes</button>
+          <button type="button" className="rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" title="Paint the selected material above height 15" onClick={() => paintDelta((terrain) => terrain.autoPaintDelta({ surface: paint.material, minHeight: 15 } satisfies TerrainSurfaceRule))}>On high ground</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls. */
+function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiStore }) {
+  const [, setTick] = useState(0);
+  useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
+  useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
+  const uiState = ui.getState();
+  const document = session.getState().document;
+  const hasTerrain = document.terrain !== undefined;
+
+  const createTerrain = () => {
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds: defaultTerrainBounds(document), cellSize: 2 }) });
+  };
+
+  return (
+    <div className="pointer-events-auto absolute right-3 top-3 z-40 max-h-[calc(100%-1.5rem)] w-64 space-y-2.5 overflow-auto rounded-xl border border-amber-400/20 bg-[#0d0f13]/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-md">
+      <div className="flex items-center">
+        <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-amber-300">Terrain</div>
+        <button type="button" className="ml-auto rounded-md px-2 py-0.5 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={() => ui.setTool("select")} title="Back to select tool">×</button>
+      </div>
+      {!hasTerrain ? (
+        <div className="space-y-2">
+          <p className="text-[11px] leading-relaxed text-neutral-400">No terrain yet. Create an editable heightfield over the scene, then sculpt its shape and paint material layers on it.</p>
+          <button type="button" className="w-full rounded-md bg-gradient-to-b from-amber-500 to-amber-600 px-2.5 py-1.5 font-semibold text-white shadow-md shadow-amber-950/50 transition-colors hover:from-amber-400 hover:to-amber-500" onClick={createTerrain}>Create terrain</button>
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-0.5 rounded-lg bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
+            {(["sculpt", "paint"] as const).map((mode) => (
+              <button key={mode} type="button" className={`flex-1 rounded-md px-2 py-1 text-[11px] capitalize transition-colors ${uiState.terrainMode === mode ? "bg-amber-500/90 text-white shadow-sm shadow-amber-950/50" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => ui.setTerrainMode(mode)}>{mode}</button>
+            ))}
+          </div>
+          {uiState.terrainMode === "paint" ? <PaintControls session={session} ui={ui} /> : <SculptControls ui={ui} />}
+          <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] pt-2">
+            <button type="button" className="rounded-md bg-white/[0.04] px-2 py-1 text-[11px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10 disabled:opacity-40" onClick={() => session.dispatch({ type: "undo" })} disabled={!session.canUndo()}>Undo</button>
+            <button type="button" className="rounded-md bg-rose-500/15 px-2 py-1 text-[11px] text-rose-200 ring-1 ring-inset ring-rose-400/25 transition-colors hover:bg-rose-500/25" onClick={() => session.dispatch({ type: "clearTerrain" })}>Clear terrain</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ScatterFields({
+  path,
+  onMeta,
+}: {
+  path: EditorPath;
+  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
+}) {
+  const rules = readScatterRules(path);
+  if (rules === null) return null;
+  const palette = readScatterPalette(path.meta);
+  const estimate = scatterRegionEstimate(path);
+  const setPalette = (next: ScatterPaletteEntry[]) => onMeta({ palette: next, item: "" }, "scatter:palette");
+  return (
+    <div className="space-y-2 rounded-lg border border-emerald-400/15 bg-emerald-500/[0.06] p-2.5">
+      <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-300">Foliage / scatter</div>
+      {path.points.length < 3 ? <div className="text-[10px] text-amber-300">Draw at least 3 points to close the region.</div> : null}
+      <label className="block space-y-1">
+        <span className="flex items-center justify-between">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">density /m²</span>
+          <span className="text-cyan-200">{rules.density.toFixed(2)}</span>
+        </span>
+        <input type="range" min={0} max={2} step={0.01} className="w-full accent-emerald-400" value={Math.min(rules.density, 2)} onChange={(event) => onMeta({ density: Number(event.target.value) }, "scatter:density")} />
+      </label>
+      <NumberField label="density" step={0.01} value={rules.density} onCommit={(value) => onMeta({ density: Math.max(0, value) }, "scatter:density")} />
+      <NumberField label="spacing" step={0.25} value={rules.minSpacing} onCommit={(value) => onMeta({ minSpacing: Math.max(0, value) }, "scatter:minSpacing")} />
+      <NumberField label="min scale" step={0.05} value={rules.minScale} onCommit={(value) => onMeta({ minScale: value }, "scatter:minScale")} />
+      <NumberField label="max scale" step={0.05} value={rules.maxScale} onCommit={(value) => onMeta({ maxScale: value }, "scatter:maxScale")} />
+      <NumberField label="max slope" step={0.05} value={rules.maxSlope} onCommit={(value) => onMeta({ maxSlope: Math.max(0, value) }, "scatter:maxSlope")} />
+      <NumberField label="edge fade" step={0.5} value={rules.edgeFalloff} onCommit={(value) => onMeta({ edgeFalloff: Math.max(0, value) }, "scatter:edgeFalloff")} />
+      <label className="flex items-center gap-1.5 text-[10px] text-neutral-400">
+        <input type="checkbox" className="accent-emerald-400" checked={rules.alignToNormal} onChange={(event) => onMeta({ alignToNormal: event.target.checked }, "scatter:align")} />
+        align to slope
+      </label>
+      <div className="space-y-1">
+        <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">species (weighted)</div>
+        {palette.map((entry, index) => (
+          <div key={index} className="flex items-center gap-1">
+            <input className={`min-w-0 flex-1 ${INPUT}`} value={entry.item} placeholder="grass / tree id" onChange={(event) => setPalette(palette.map((e, i) => (i === index ? { ...e, item: event.target.value } : e)))} />
+            <input type="number" step={1} min={0} className={`w-14 ${INPUT}`} value={entry.weight} onChange={(event) => setPalette(palette.map((e, i) => (i === index ? { ...e, weight: Math.max(0, Number(event.target.value)) } : e)))} />
+            <button type="button" className="rounded-md bg-white/[0.04] px-1.5 py-1 text-neutral-400 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-rose-500/20 hover:text-rose-200" disabled={palette.length <= 1} onClick={() => setPalette(palette.filter((_, i) => i !== index))}>×</button>
+          </div>
+        ))}
+        <button type="button" className="w-full rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => setPalette([...palette, { item: "tree", weight: 1 }])}>+ species</button>
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">seed</span>
+          <input className={`w-full min-w-0 ${INPUT}`} value={rules.seed} placeholder="reroll…" onChange={(event) => onMeta({ seed: event.target.value }, "scatter:seed")} />
+        </label>
+        <button type="button" className="shrink-0 rounded-md bg-white/[0.04] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" title="Reroll seed" onClick={() => onMeta({ seed: `r${path.points.length}${rules.seed.length}${Math.round(rules.density * 1000)}` }, "scatter:seed")}>⟳</button>
+      </div>
+      <div className="text-[10px] text-neutral-500">≈ {estimate.count.toLocaleString()} placements over {Math.round(estimate.area).toLocaleString()} m²</div>
+    </div>
+  );
+}
+
+/** Inspector row to parent the selected object under another (excludes itself and its descendants). */
+function ParentField({ session, id }: { session: EditorSession; id: string }) {
+  const document = session.getState().document;
+  const current = editorParentOf(document, id) ?? "";
+  const banned = collectDescendants(document, [id]);
+  banned.add(id);
+  const labelOf = (node: { id: string; label?: string }) => node.label ?? node.id;
+  const candidates = [
+    ...document.markers.map((m) => ({ id: m.id, label: labelOf(m) })),
+    ...document.volumes.map((v) => ({ id: v.id, label: labelOf(v) })),
+    ...document.paths.map((p) => ({ id: p.id, label: labelOf(p) })),
+    ...document.annotations.map((n) => ({ id: n.id, label: n.text.slice(0, 30) || n.id })),
+  ].filter((entry) => !banned.has(entry.id));
+  return (
+    <label className="flex items-center justify-between gap-2">
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">parent</span>
+      <select
+        className={`w-40 ${INPUT}`}
+        value={current}
+        onChange={(event) => session.dispatch({ type: "setParent", ids: [id], parentId: event.target.value === "" ? null : event.target.value })}
+      >
+        <option value="">— none (root) —</option>
+        {candidates.map((entry) => (
+          <option key={entry.id} value={entry.id}>{entry.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function KindColorFields({
   kind,
   color,
@@ -330,8 +585,6 @@ export function EditorChrome({
   const [bottomOpen, setBottomOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [outlinerQuery, setOutlinerQuery] = useState("");
-  const [collapsedKinds, setCollapsedKinds] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<{ text: string; tone: "info" | "error" } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notify = useCallback((text: string, tone: "info" | "error" = "info") => {
@@ -356,23 +609,16 @@ export function EditorChrome({
   docSaveRef.current = docSave;
 
   const outlinerGroups = useMemo(() => buildOutlinerGroups(state.document), [state.document]);
-  const visibleOutlinerGroups = useMemo(
-    () => filterOutlinerGroups(outlinerGroups, outlinerQuery),
-    [outlinerGroups, outlinerQuery],
-  );
   const outlinerGroupsRef = useRef(outlinerGroups);
   outlinerGroupsRef.current = outlinerGroups;
 
-  const selectRow = (id: string, additive: boolean) => {
-    if (additive) {
-      const selection = session.getState().selection;
-      const next = selection.includes(id) ? selection.filter((s) => s !== id) : [...selection, id];
-      session.dispatch({ type: "select", ids: next });
-      return;
-    }
-    session.dispatch({ type: "select", ids: [id] });
-    api.handle({ method: "camera_goto", id });
-  };
+  const sceneStats = useMemo(() => {
+    const doc = state.document;
+    const objects = doc.markers.length + doc.volumes.length + doc.paths.length + doc.annotations.length;
+    let foliage = 0;
+    for (const path of doc.paths) if (path.kind === SCATTER_PATH_KIND) foliage += scatterRegionEstimate(path).count;
+    return { objects, foliage };
+  }, [state.document]);
 
   const showPanel = (panel: WorkspacePanel) => {
     setActivePanel(panel);
@@ -538,6 +784,7 @@ export function EditorChrome({
       if (event.key === "e" || event.key === "E") ui.patch({ gizmoMode: "rotate" });
       if (event.key === "r" || event.key === "R") ui.patch({ gizmoMode: "scale" });
       if (event.key === "g" || event.key === "G") ui.patch({ showGrid: !ui.getState().showGrid });
+      if (event.key === "t" || event.key === "T") ui.setTool(ui.getState().tool === "terrain" ? "select" : "terrain");
       if (event.key === "n" || event.key === "N") {
         const selected = session.getState().selection[0];
         if (selected === undefined) return;
@@ -648,6 +895,12 @@ export function EditorChrome({
         </span>
         <div className="mx-1 h-5 w-px bg-white/[0.07]" />
         <div className="flex items-center gap-0.5 rounded-lg bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
+          {(["select", "terrain"] as const).map((tool) => (
+            <button key={tool} type="button" className={`rounded-md px-2.5 py-1 capitalize transition-colors ${uiState.tool === tool ? "bg-amber-500/90 text-white shadow-sm shadow-amber-950/50" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => ui.setTool(tool)}>{tool}</button>
+          ))}
+        </div>
+        <div className="h-5 w-px bg-white/[0.07]" />
+        <div className={`flex items-center gap-0.5 rounded-lg bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06] ${uiState.tool === "terrain" ? "opacity-40" : ""}`}>
           {(["translate", "rotate", "scale"] as const).map((mode) => (
             <button key={mode} type="button" className={`rounded-md px-2.5 py-1 capitalize transition-colors ${gizmoMode === mode ? "bg-cyan-500/90 text-white shadow-sm shadow-cyan-950/50" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => ui.patch({ gizmoMode: mode })}>
               {mode} <kbd className={`ml-0.5 font-sans text-[9px] ${gizmoMode === mode ? "text-cyan-100/80" : "text-neutral-500"}`}>{mode === "translate" ? "W" : mode === "rotate" ? "E" : "R"}</kbd>
@@ -670,6 +923,7 @@ export function EditorChrome({
               <div className={`px-2 pb-1 pt-2 ${MICRO}`}>Other</div>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "path", kind: "route" })}>Draw path (route)</button>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "path", kind: "road" })}>Draw road</button>
+              <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-emerald-300 transition-colors hover:bg-emerald-500/15 hover:text-emerald-100" onClick={() => startPlacement({ tool: "path", kind: SCATTER_PATH_KIND })}>Foliage region (lasso)</button>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "note" })}>Note</button>
             </div>
           ) : null}
@@ -748,9 +1002,6 @@ export function EditorChrome({
               <button type="button" className="ml-auto rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={() => setLeftOpen(false)} aria-label="Close hierarchy panel">×</button>
             </div>
             <div className="border-b border-white/[0.08] p-2">
-              <input type="search" value={outlinerQuery} onChange={(event) => setOutlinerQuery(event.target.value)} placeholder="Search objects and kinds…" className={`w-full ${INPUT} px-2.5 py-1.5`} />
-            </div>
-            <div className="border-b border-white/[0.08] p-2">
               <div className={`mb-1.5 ${MICRO}`}>Layers</div>
               <div className="flex max-h-24 flex-wrap gap-1 overflow-auto">
                 {allKinds.map((kind) => (
@@ -762,32 +1013,12 @@ export function EditorChrome({
                 {allKinds.length === 0 ? <span className="text-neutral-600">No authored layers</span> : null}
               </div>
             </div>
-            <div className="min-h-0 flex-1 space-y-0.5 overflow-auto p-2">
-              {visibleOutlinerGroups.map((group) => {
-                const collapsed = collapsedKinds[group.kind] === true;
-                return (
-                  <div key={group.kind}>
-                    <button type="button" className="flex w-full items-center gap-1 rounded-md px-1.5 py-1 text-left font-semibold text-neutral-300 transition-colors hover:bg-white/[0.06]" onClick={() => setCollapsedKinds((previous) => ({ ...previous, [group.kind]: !collapsed }))}>
-                      <span className="w-3 text-neutral-500">{collapsed ? "▸" : "▾"}</span><span>{group.kind}</span><span className="ml-auto text-neutral-500">{group.total}</span>
-                    </button>
-                    {collapsed ? null : group.rows.map((row) => {
-                      const rowSelected = selectedId !== undefined && row.ids.includes(selectedId);
-                      const cycleIndex = rowSelected ? row.ids.indexOf(selectedId) + 1 : 0;
-                      return (
-                        <button key={`${group.kind}:${row.label}`} type="button" className={`block w-full truncate rounded-md py-1 pl-5 pr-1.5 text-left transition-colors ${rowSelected ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/20" : "text-neutral-300 hover:bg-white/[0.06]"}`} onClick={(event) => selectRow(row.ids[0]!, event.ctrlKey || event.metaKey || event.shiftKey)}>
-                          {row.label}{row.ids.length > 1 ? <span className="text-neutral-500"> ×{row.ids.length}{rowSelected ? ` · ${cycleIndex}/${row.ids.length} · N next` : ""}</span> : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-              {visibleOutlinerGroups.length === 0 ? <div className="p-3 text-center text-neutral-600">No matching objects</div> : null}
-            </div>
+            <OutlinerPanel session={session} api={api} />
           </aside>
         ) : null}
 
         <main className="pointer-events-none relative min-w-0 flex-1">
+          {uiState.tool === "terrain" ? <TerrainPanel session={session} ui={ui} /> : null}
           {placementHint !== null ? (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 whitespace-nowrap rounded-full border border-cyan-400/30 bg-cyan-950/85 px-4 py-1.5 text-[11px] text-cyan-100 shadow-lg shadow-cyan-950/40 backdrop-blur-md">{placementHint}</div>
           ) : null}
@@ -814,6 +1045,7 @@ export function EditorChrome({
           ) : null}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/[0.08] bg-black/70 px-4 py-1.5 text-[11px] text-neutral-400 shadow-lg shadow-black/40 backdrop-blur-md">
             <span>Orbit · click select · W/E/R transform · Ctrl+C/V copy/paste · F frame · ? help · F2+E play</span>
+            <span className="ml-3 text-neutral-500">{sceneStats.objects} objs{sceneStats.foliage > 0 ? ` · ≈${formatTriangles(sceneStats.foliage)} foliage` : ""}</span>
             {perf !== null ? <span className={`ml-3 ${perf.fps < 30 ? "text-rose-400" : "text-emerald-400"}`}>{perf.fps.toFixed(0)} fps · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris</span> : null}
           </div>
         </main>
@@ -848,6 +1080,7 @@ export function EditorChrome({
                     <NumberField key={axis} label={axis} value={selectedMarker.position[axis]} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, position: { ...selectedMarker.position, [axis]: value } }, { coalesce: `pos:${axis}:${selectedMarker.id}` })} />
                   ))}
                   <NumberField label="rot°" step={5} value={Math.round(((selectedMarker.rotationY ?? 0) * 180) / Math.PI)} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, rotationY: (value * Math.PI) / 180 }, { coalesce: `rot:${selectedMarker.id}` })} />
+                  <ParentField session={session} id={selectedMarker.id} />
                   {selectedMarker.meta !== undefined ? <pre className="max-h-48 overflow-auto rounded-md border border-white/[0.06] bg-black/40 p-2 text-[10px] text-neutral-400">{JSON.stringify(selectedMarker.meta, null, 2)}</pre> : null}
                 </div>
               ) : null}
@@ -875,6 +1108,7 @@ export function EditorChrome({
                       <NumberField key={axis} label={`half ${axis}`} value={selectedVolume.halfExtents?.[axis] ?? 5} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { halfExtents: { x: selectedVolume.halfExtents?.x ?? 5, y: selectedVolume.halfExtents?.y ?? 5, z: selectedVolume.halfExtents?.z ?? 5, [axis]: Math.max(0.5, value) } } }, { coalesce: `he:${axis}:${selectedVolume.id}` })} />
                     ))
                   ) : null}
+                  <ParentField session={session} id={selectedVolume.id} />
                   <VegetationFields
                     volume={selectedVolume}
                     onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
@@ -901,6 +1135,13 @@ export function EditorChrome({
                       </div>
                     </div>
                   ) : <div className="text-[10px] text-neutral-500">Click a vertex sphere to edit points.</div>}
+                  {selectedPath.kind === SCATTER_PATH_KIND ? (
+                    <ScatterFields
+                      path={selectedPath}
+                      onMeta={(patch, coalesce) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { meta: { ...selectedPath.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedPath.id}` })}
+                    />
+                  ) : null}
+                  <ParentField session={session} id={selectedPath.id} />
                 </div>
               ) : null}
               {selection.length <= 1 && selectedNote !== undefined ? (

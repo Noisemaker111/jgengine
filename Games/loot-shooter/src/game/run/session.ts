@@ -13,6 +13,7 @@ import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import { AMMO_POOLS, AMMO_START, AMMO_STAT_IDS } from "../ammo";
+import { recordsStore, runStore, selectedSlotStore } from "./stores";
 import { SOUND_IDS } from "../audio/catalog";
 import { resetAiState } from "../entities/enemies/ai";
 import { enemyById } from "../entities/enemies/catalog";
@@ -90,10 +91,6 @@ export function accuracyPercent(snapshot: RunSnapshot): number {
   return snapshot.shotsFired === 0 ? 0 : Math.round((snapshot.shotsHit / snapshot.shotsFired) * 100);
 }
 
-function safeStorage(): Storage | null {
-  return typeof localStorage === "undefined" ? null : localStorage;
-}
-
 export interface RunSession {
   snapshot(): RunSnapshot;
   status(): RunStatus;
@@ -129,7 +126,6 @@ export function createRunSession(): RunSession {
   const records = createRecordBook<RecordField>({
     key: "loot-shooter-records",
     fields: { score: "higher", wave: "higher", accuracy: "higher" },
-    storage: safeStorage(),
   });
 
   function syncPhase(ctx: GameContext): void {
@@ -144,17 +140,17 @@ export function createRunSession(): RunSession {
   }
 
   function publish(ctx: GameContext): void {
-    ctx.game.store.set("run", { ...snapshot });
+    runStore.write(ctx, { ...snapshot });
     setPlayControlsActive(ctx, snapshot.status === "wave" || snapshot.status === "intermission");
     syncPhase(ctx);
   }
 
   function publishRecords(ctx: GameContext): void {
-    ctx.game.store.set("records", { ...records.best() });
+    recordsStore.write(ctx, { ...records.best() });
   }
 
   function noteWaveStarted(ctx: GameContext): void {
-    ctx.game.quest.progress(ctx.player.userId, CHALLENGE_IDS.midfield, "wave", 1);
+    ctx.game.quest!.progress(ctx.player.userId, CHALLENGE_IDS.midfield, "wave", 1);
   }
 
   function submitRecords(ctx: GameContext): void {
@@ -217,8 +213,8 @@ export function createRunSession(): RunSession {
   function resetChallenges(ctx: GameContext): void {
     const userId = ctx.player.userId;
     for (const challenge of challenges) {
-      ctx.game.quest.revoke(userId, challenge.id);
-      ctx.game.quest.grant(userId, challenge.id);
+      ctx.game.quest!.revoke(userId, challenge.id);
+      ctx.game.quest!.grant(userId, challenge.id);
     }
   }
 
@@ -270,7 +266,7 @@ export function createRunSession(): RunSession {
       snapshot = freshSnapshot();
       snapshot.status = "wave";
       slot = 0;
-      ctx.game.store.set("selectedSlot", 0);
+      selectedSlotStore.write(ctx, 0);
       ctx.game.events.emit("audio.play", { sound: SOUND_IDS.waveHorn });
       noteWaveStarted(ctx);
       publishRecords(ctx);
@@ -325,8 +321,8 @@ export function createRunSession(): RunSession {
       snapshot.kills += 1;
       snapshot.score += enemy.score;
       const userId = ctx.player.userId;
-      if (enemy.rank === "elite") ctx.game.quest.progress(userId, CHALLENGE_IDS.eliteHunter, "kills", 1);
-      if (enemy.rank === "boss") ctx.game.quest.progress(userId, CHALLENGE_IDS.bossSlayer, "kills", 1);
+      if (enemy.rank === "elite") ctx.game.quest!.progress(userId, CHALLENGE_IDS.eliteHunter, "kills", 1);
+      if (enemy.rank === "boss") ctx.game.quest!.progress(userId, CHALLENGE_IDS.bossSlayer, "kills", 1);
       publish(ctx);
     },
 
@@ -342,7 +338,7 @@ export function createRunSession(): RunSession {
 
     selectSlot(ctx, next) {
       slot = next;
-      ctx.game.store.set("selectedSlot", next);
+      selectedSlotStore.write(ctx, next);
     },
 
     rng: () => roll(),
