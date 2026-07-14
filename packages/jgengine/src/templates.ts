@@ -92,6 +92,7 @@ const indexHtml = (name: string) => `<!doctype html>
 
 const viteConfig = `import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { standaloneSavePlugin } from "@jgengine/node/devSavePlugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -99,7 +100,7 @@ import { defineConfig } from "vite";
 const engineSrc = (pkg: string) => fileURLToPath(new URL(\`../../packages/\${pkg}/src\`, import.meta.url));
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), standaloneSavePlugin()],
   clearScreen: false,
   build: { target: "es2022" },
   resolve: {
@@ -134,14 +135,17 @@ const standalonePackageJson = (id: string, engineVersion: string) => `${JSON.str
     },
     dependencies: {
       "@jgengine/core": `^${engineVersion}`,
+      "@jgengine/editor": `^${engineVersion}`,
       "@jgengine/react": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
+      "@react-three/drei": "^10.7.7",
       "@react-three/fiber": "^9.5.0",
       react: "19.2.3",
       "react-dom": "19.2.3",
       three: "^0.182.0",
     },
     devDependencies: {
+      "@jgengine/node": `^${engineVersion}`,
       "@tailwindcss/vite": "^4.0.15",
       "@types/react": "^19",
       "@types/react-dom": "^19",
@@ -172,14 +176,17 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
     },
     dependencies: {
       "@jgengine/core": "workspace:*",
+      "@jgengine/editor": "workspace:*",
       "@jgengine/react": "workspace:*",
       "@jgengine/shell": "workspace:*",
+      "@react-three/drei": "^10.7.7",
       "@react-three/fiber": "^9.5.0",
       react: "19.2.3",
       "react-dom": "19.2.3",
       three: "^0.182.0",
     },
     devDependencies: {
+      "@jgengine/node": "workspace:*",
       "@tailwindcss/vite": "^4.0.15",
       "@types/react": "^19",
       "@types/react-dom": "^19",
@@ -251,17 +258,64 @@ body,
 }
 `;
 
-const mainTsx = `import "./index.css";
+const mainTsx = (id: string) => `import "./index.css";
 
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 
+import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { GameHost } from "@jgengine/shell/GameHost";
 
 import { game } from "./game.config";
 
+const GAME_ID = "${id}";
+if (import.meta.env.DEV) installSaveEndpoint("/__jgengine/save", GAME_ID);
+
+// Editor mode (F2+E / ?mode=editor) loads as a lazy chunk — never bundled into gameplay.
+const EditorApp = lazy(async () => {
+  const mod = await import("@jgengine/editor");
+  return { default: mod.EditorApp as ComponentType<{ gameId: string; playable: typeof game }> };
+});
+
+function App() {
+  const [editor, setEditor] = useState(
+    new URLSearchParams(window.location.search).get("mode") === "editor",
+  );
+  useEffect(() => {
+    if (editor) return;
+    const summon = () => setEditor(true);
+    (window as { __jgengineSummonEditor?: () => void }).__jgengineSummonEditor = summon;
+    let f2Held = false;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code === "F2") f2Held = true;
+      else if (event.code === "KeyE" && f2Held) {
+        event.preventDefault();
+        summon();
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code === "F2") f2Held = false;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      const host = window as { __jgengineSummonEditor?: () => void };
+      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
+    };
+  }, [editor]);
+  if (!editor) return <GameHost playable={game} />;
+  return (
+    <Suspense fallback={null}>
+      <EditorApp gameId={GAME_ID} playable={game} />
+    </Suspense>
+  );
+}
+
 const root = document.getElementById("root");
 if (root === null) throw new Error("main: missing #root mount element");
-createRoot(root).render(<GameHost playable={game} />);
+createRoot(root).render(<App />);
 `;
 
 const indexTsx = `export { game } from "./game.config";
@@ -428,6 +482,16 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 - Dev: \`bun dev\` / \`npm run dev\`
 - Windows installer: \`bun run desktop\` / \`npx jgengine desktop\` (or \`--url https://…\` for a hosted game)
 
+## Built-in modes — every game ships them, use them
+
+The F2 chord family is in every JGengine game, and it is **your** toolkit, not just the player's:
+
+- **F2+D — debug mode**: engine devtools overlay (perf, logs, net, keybinds, live tunables with Save-to-source).
+- **F2+C — canvas mode**: drag HUD panels live to fix layout.
+- **F2+E — editor mode** (also \`?mode=editor\`): the Blender/Unity-style scene editor — place spawns, zones, paths, vegetation; Save writes \`src/editor.scene.json\`.
+
+Prefer these over guessing: tune numbers in debug mode, fix HUD layout in canvas mode, and place/move world content in editor mode instead of hand-editing \`x,y,z\` in tables. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — run \`bun dev\`, open the page in your browser tool, and call the bridge. See the \`jgengine-editor\` skill.
+
 ## Project rules
 
 - Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`index.css\`; everything else under \`src/game/\`.
@@ -458,7 +522,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "tsconfig.json", contents: tsconfigJson(variant) },
     { path: "AGENTS.md", contents: agentsMd(name, variant) },
     { path: "src/index.css", contents: indexCss(variant) },
-    { path: "src/main.tsx", contents: mainTsx },
+    { path: "src/main.tsx", contents: mainTsx(id) },
     { path: "src/index.tsx", contents: indexTsx },
     { path: "src/game.config.ts", contents: gameConfigTs(name) },
     { path: "src/loop.ts", contents: loopTs },
