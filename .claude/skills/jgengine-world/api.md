@@ -1426,6 +1426,9 @@
 
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `EditableTerrainConfig` (interface): interface EditableTerrainConfig — ⚠ undocumented
+- `SurfaceDelta` (interface): interface SurfaceDelta — A compact record of the surface-material cells a paint stroke touched: parallel `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint undo history small.
+- `SurfaceDeltaRecorder` (type): type SurfaceDeltaRecorder = (index: number, before: string | null, after: string | null) => void — Reports each changed cell during a recorded paint: grid index, prior surface id, new surface id.
+- `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `TerraformBrush` (interface): interface TerraformBrush — ⚠ undocumented
 - `TerraformBrushConfig` (interface): interface TerraformBrushConfig — ⚠ undocumented
 - `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
@@ -1437,7 +1440,10 @@
 - `TerraformShape` (type): type TerraformShape = "circle" | "square" — A brush footprint: a round disc or an axis-aligned square.
 - `TerraformSnapshot` (interface): interface TerraformSnapshot — ⚠ undocumented
 - `TerraformStroke` (interface): interface TerraformStroke — Accumulates a whole drag — many brush stamps — into one compact {@link TerraformDelta}. Keeps each vertex's first `before` and latest `after`, so undo replays the stroke as a single step even though the pointer fired dozens of moves.
+- `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
 - `applyDeltaToSnapshot` (function): function applyDeltaToSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
+- `applySurfaceDeltaToSnapshot` (function): function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `after` ids applied (copy-on-write).
+- `beginSurfaceStroke` (function): function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke — Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta.
 - `beginTerraformStroke` (function): function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke — Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta.
 - `brushWeight` (function): function brushWeight(distance: number, radius: number, falloff: TerraformFalloff): number — Smooth/linear/hard brush weight for a sample `distance` from the brush center.
 - `createEditableTerrain` (function): function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain — ⚠ undocumented
@@ -1445,6 +1451,7 @@
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `editableTerrainFromSnapshot` (function): function editableTerrainFromSnapshot(snapshot: TerraformSnapshot, base?: TerrainField): EditableTerrain — Rebuilds a live {@link EditableTerrain} from a snapshot, layered over `base` ground.
 - `revertDeltaFromSnapshot` (function): function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `before` offsets restored (copy-on-write undo).
+- `revertSurfaceDeltaFromSnapshot` (function): function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo).
 
 ## @jgengine/core/world/terrain
 

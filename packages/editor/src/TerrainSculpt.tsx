@@ -5,9 +5,11 @@ import * as THREE from "three";
 import type { EditorSession } from "@jgengine/core/editor/index";
 import type { Aabb } from "@jgengine/core/world/geometry";
 import {
+  beginSurfaceStroke,
   beginTerraformStroke,
   editableTerrainFromSnapshot,
   type EditableTerrain,
+  type SurfaceStroke,
   type TerraformEdit,
   type TerraformSnapshot,
   type TerraformStroke,
@@ -16,7 +18,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { TerraformBrushCursor } from "@jgengine/shell/terrain";
 
 import type { EditorHostApi } from "./session";
-import type { EditorUiStore, SculptSettings, TerrainBrushKind } from "./uiStore";
+import { TERRAIN_MATERIAL_COLORS, type EditorUiStore, type SculptSettings, type TerrainBrushKind } from "./uiStore";
 
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const LOW = new THREE.Color("#3f5d34");
@@ -67,7 +69,12 @@ function editFromSettings(
   };
 }
 
-/** Re-samples every vertex Y and vertex color from the live terrain (in place — no reallocation). */
+const PAINT_TINT = new THREE.Color();
+
+/**
+ * Re-samples every vertex Y and vertex color from the live terrain (in place — no reallocation).
+ * A painted surface material wins the vertex color; unpainted ground keeps the height gradient.
+ */
 function displace(geometry: THREE.BufferGeometry, terrain: EditableTerrain, bounds: Aabb): void {
   const position = geometry.attributes.position as THREE.BufferAttribute;
   const cx = (bounds.minX + bounds.maxX) / 2;
@@ -83,8 +90,14 @@ function displace(geometry: THREE.BufferGeometry, terrain: EditableTerrain, boun
     const z = position.getZ(index) + cz;
     const height = terrain.sampleHeight(x, z);
     position.setY(index, height);
-    const t = Math.max(0, Math.min(1, (height + COLOR_SPAN * 0.25) / COLOR_SPAN));
-    tone.copy(LOW).lerp(HIGH, t);
+    const surface = terrain.surfaceAt(x, z);
+    const painted = surface === null ? undefined : TERRAIN_MATERIAL_COLORS[surface];
+    if (painted !== undefined) {
+      tone.copy(PAINT_TINT.set(painted));
+    } else {
+      const t = Math.max(0, Math.min(1, (height + COLOR_SPAN * 0.25) / COLOR_SPAN));
+      tone.copy(LOW).lerp(HIGH, t);
+    }
     colors.setXYZ(index, tone.r, tone.g, tone.b);
   }
   position.needsUpdate = true;
@@ -193,7 +206,10 @@ export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiSto
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
     const planeHit = new THREE.Vector3();
-    let stroke: TerraformStroke | null = null;
+    type ActiveStroke =
+      | { kind: "sculpt"; stroke: TerraformStroke }
+      | { kind: "paint"; stroke: SurfaceStroke };
+    let active: ActiveStroke | null = null;
     let rampFrom: [number, number] | null = null;
     let clickHeight = 0;
     let last: [number, number] | null = null;
@@ -217,10 +233,27 @@ export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiSto
       if (controls !== null && "enabled" in controls) controls.enabled = enabled;
     };
 
+    const stampSpacing = (): number => {
+      const state = ui.getState();
+      return state.terrainMode === "paint"
+        ? Math.max(0.5, state.paint.radius * 0.4)
+        : Math.max(0.25, state.sculpt.spacing);
+    };
+
     const stamp = (point: { x: number; z: number }) => {
-      const terrain = editableRef.current;
-      if (terrain === null || stroke === null) return;
-      stroke.stamp(editFromSettings(ui.getState().sculpt, [point.x, point.z], clickHeight));
+      if (active === null) return;
+      if (active.kind === "sculpt") {
+        active.stroke.stamp(editFromSettings(ui.getState().sculpt, [point.x, point.z], clickHeight));
+      } else {
+        const paint = ui.getState().paint;
+        active.stroke.stamp({
+          mode: "paint",
+          center: [point.x, point.z],
+          radius: paint.radius,
+          surface: paint.material,
+          shape: paint.shape,
+        });
+      }
       last = [point.x, point.z];
       refresh();
     };
@@ -231,9 +264,8 @@ export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiSto
       const terrain = editableRef.current;
       const y = terrain === null ? 0 : terrain.sampleHeight(point.x, point.z);
       setCursor({ x: point.x, y, z: point.z });
-      if (stroke === null || rampFrom !== null) return;
-      const spacing = Math.max(0.25, ui.getState().sculpt.spacing);
-      if (last === null || Math.hypot(point.x - last[0], point.z - last[1]) >= spacing) stamp(point);
+      if (active === null || rampFrom !== null) return;
+      if (last === null || Math.hypot(point.x - last[0], point.z - last[1]) >= stampSpacing()) stamp(point);
     };
 
     const onDown = (event: PointerEvent) => {
@@ -243,36 +275,50 @@ export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiSto
       const terrain = editableRef.current;
       if (terrain === null) return;
       event.preventDefault();
+      const mode = ui.getState().terrainMode;
+      // Alt-click in paint mode is the eyedropper — sample the material under the cursor.
+      if (mode === "paint" && event.altKey) {
+        const sampled = terrain.surfaceAt(point.x, point.z);
+        if (sampled !== null) ui.patchPaint({ material: sampled });
+        return;
+      }
       setControls(false);
       clickHeight = terrain.sampleHeight(point.x, point.z);
-      stroke = beginTerraformStroke(terrain);
       last = null;
-      if (ui.getState().sculpt.brush === "ramp") {
+      if (mode === "paint") {
+        active = { kind: "paint", stroke: beginSurfaceStroke(terrain) };
+        stamp(point);
+      } else if (ui.getState().sculpt.brush === "ramp") {
+        active = { kind: "sculpt", stroke: beginTerraformStroke(terrain) };
         rampFrom = [point.x, point.z];
       } else {
+        active = { kind: "sculpt", stroke: beginTerraformStroke(terrain) };
         stamp(point);
       }
     };
 
     const commit = () => {
       setControls(true);
-      const active = stroke;
-      stroke = null;
+      const current = active;
+      active = null;
       rampFrom = null;
       last = null;
-      if (active === null) return;
-      const delta = active.delta();
-      if (delta.indices.length === 0) return;
-      session.dispatch({ type: "sculptTerrain", delta });
+      if (current === null) return;
+      if (current.kind === "sculpt") {
+        const delta = current.stroke.delta();
+        if (delta.indices.length > 0) session.dispatch({ type: "sculptTerrain", delta });
+      } else {
+        const delta = current.stroke.delta();
+        if (delta.indices.length > 0) session.dispatch({ type: "paintTerrain", delta });
+      }
     };
 
     const onUp = (event: PointerEvent) => {
-      if (event.button !== 0 || stroke === null) return;
-      if (rampFrom !== null) {
+      if (event.button !== 0 || active === null) return;
+      if (rampFrom !== null && active.kind === "sculpt") {
         const point = pick(event.clientX, event.clientY);
-        const terrain = editableRef.current;
-        if (point !== null && terrain !== null) {
-          stroke.stamp({
+        if (point !== null) {
+          active.stroke.stamp({
             ...editFromSettings(ui.getState().sculpt, rampFrom, clickHeight),
             mode: "ramp",
             to: [point.x, point.z],
@@ -284,7 +330,7 @@ export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiSto
     };
 
     const onLeave = () => {
-      if (stroke !== null) commit();
+      if (active !== null) commit();
       setCursor(null);
     };
 
@@ -293,7 +339,7 @@ export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiSto
     canvas.addEventListener("pointerup", onUp);
     canvas.addEventListener("pointerleave", onLeave);
     return () => {
-      if (stroke !== null) commit();
+      if (active !== null) commit();
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
@@ -317,8 +363,8 @@ export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiSto
         <TerraformBrushCursor
           center={[cursor.x, cursor.z]}
           y={cursor.y + 0.1}
-          radius={uiState.sculpt.radius}
-          mode={effectiveBrush(uiState.sculpt.brush, uiState.sculpt.invert)}
+          radius={uiState.terrainMode === "paint" ? uiState.paint.radius : uiState.sculpt.radius}
+          mode={uiState.terrainMode === "paint" ? "paint" : effectiveBrush(uiState.sculpt.brush, uiState.sculpt.invert)}
         />
       ) : null}
     </>

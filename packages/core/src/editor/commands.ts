@@ -1,4 +1,11 @@
-import { applyDeltaToSnapshot, revertDeltaFromSnapshot, type TerraformDelta } from "../world/terraform";
+import {
+  applyDeltaToSnapshot,
+  applySurfaceDeltaToSnapshot,
+  revertDeltaFromSnapshot,
+  revertSurfaceDeltaFromSnapshot,
+  type SurfaceDelta,
+  type TerraformDelta,
+} from "../world/terraform";
 import {
   cloneEditorDocument,
   extractEditorFragment,
@@ -39,6 +46,7 @@ export type EditorCommand =
   | { type: "replaceDocument"; document: EditorDocument }
   | { type: "setTerrain"; terrain: EditorTerrain }
   | { type: "sculptTerrain"; delta: TerraformDelta }
+  | { type: "paintTerrain"; delta: SurfaceDelta }
   | { type: "clearTerrain" }
   | { type: "undo" }
   | { type: "redo" };
@@ -351,6 +359,13 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         document: { ...state.document, terrain: applyDeltaToSnapshot(state.document.terrain, command.delta) },
       };
     }
+    case "paintTerrain": {
+      if (state.document.terrain === undefined) return state;
+      return {
+        ...state,
+        document: { ...state.document, terrain: applySurfaceDeltaToSnapshot(state.document.terrain, command.delta) },
+      };
+    }
     case "undo":
     case "redo":
       return null;
@@ -372,7 +387,8 @@ function isStructural(command: EditorCommand): boolean {
  */
 type HistoryEntry =
   | { kind: "snapshot"; state: EditorSessionState }
-  | { kind: "sculpt"; delta: TerraformDelta; selection: string[] };
+  | { kind: "sculpt"; delta: TerraformDelta; selection: string[] }
+  | { kind: "paint"; delta: SurfaceDelta; selection: string[] };
 
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession {
@@ -400,6 +416,20 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
     return { document: { ...state.document, terrain: next }, selection };
   };
 
+  const paintWith = (
+    delta: SurfaceDelta,
+    direction: "apply" | "revert",
+    selection: string[],
+  ): EditorSessionState => {
+    const terrain = state.document.terrain;
+    if (terrain === undefined) return state;
+    const next =
+      direction === "apply"
+        ? applySurfaceDeltaToSnapshot(terrain, delta)
+        : revertSurfaceDeltaFromSnapshot(terrain, delta);
+    return { document: { ...state.document, terrain: next }, selection };
+  };
+
   return {
     getState: () => state,
     subscribe(listener) {
@@ -417,6 +447,9 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         if (entry.kind === "sculpt") {
           future.push({ kind: "sculpt", delta: entry.delta, selection: state.selection });
           state = sculptWith(entry.delta, "revert", entry.selection);
+        } else if (entry.kind === "paint") {
+          future.push({ kind: "paint", delta: entry.delta, selection: state.selection });
+          state = paintWith(entry.delta, "revert", entry.selection);
         } else {
           future.push({ kind: "snapshot", state: snapshotState(state) });
           state = entry.state;
@@ -431,6 +464,9 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         if (entry.kind === "sculpt") {
           past.push({ kind: "sculpt", delta: entry.delta, selection: state.selection });
           state = sculptWith(entry.delta, "apply", entry.selection);
+        } else if (entry.kind === "paint") {
+          past.push({ kind: "paint", delta: entry.delta, selection: state.selection });
+          state = paintWith(entry.delta, "apply", entry.selection);
         } else {
           past.push({ kind: "snapshot", state: snapshotState(state) });
           state = entry.state;
@@ -447,6 +483,17 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         future.length = 0;
         lastCoalesce = null;
         state = sculptWith(command.delta, "apply", state.selection);
+        emit();
+        return state;
+      }
+
+      if (command.type === "paintTerrain") {
+        if (state.document.terrain === undefined || command.delta.indices.length === 0) return state;
+        past.push({ kind: "paint", delta: command.delta, selection: [...state.selection] });
+        if (past.length > historyLimit) past.shift();
+        future.length = 0;
+        lastCoalesce = null;
+        state = paintWith(command.delta, "apply", state.selection);
         emit();
         return state;
       }

@@ -154,8 +154,18 @@ const delta = stroke.delta();                       // one undoable step
 const next = applyDeltaToSnapshot(snapshot, delta); // serializable, back to document.terrain
 ```
 
-Headless: `create_terrain`, `sculpt_terrain {mode,x,z,radius,strength,…}`, and `terrain_summary`
-RPC verbs drive and assert sculpting without WebGL (`bun packages/editor/src/mcp/cli.ts`).
+### Material painting
+
+The terrain tool's **Paint** sub-mode paints material layers (grass/dirt/rock/sand/mud/snow/road/gravel)
+onto the same heightfield — the surface id is stored per cell in `document.terrain.surfaces` and colors the
+mesh. Click/drag paints the selected material; **Alt-click** samples (eyedropper); **Fill all** / **Clear
+paint** blanket the terrain; **Auto rules** paint by slope ("on steep slopes") or height ("on high ground").
+Each stroke/fill is one undoable `paintTerrain` command (compact `SurfaceDelta`). Consume with
+`beginSurfaceStroke`, `fillSurfaceDelta`, `autoPaintDelta`, and `surfaceAt` from `@jgengine/core/world/terraform`.
+
+Headless: `create_terrain`, `sculpt_terrain {mode,x,z,radius,strength,…}`, `paint_terrain {surface,x,z,radius}`,
+`fill_terrain {surface}`, `auto_paint {surface,minSlope,minHeight,…}`, `terrain_materials`, and `terrain_summary`
+RPC verbs drive and assert terrain authoring without WebGL (`bun packages/editor/src/mcp/cli.ts`).
 
 ## Core APIs (`editor/`)
 

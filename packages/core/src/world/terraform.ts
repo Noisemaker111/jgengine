@@ -1,5 +1,5 @@
 import type { Aabb, Vec2 } from "./geometry";
-import { fractalNoise, FLAT_FIELD, withNormal, type FractalNoiseConfig, type TerrainField } from "./terrain";
+import { fractalNoise, FLAT_FIELD, withNormal, type FractalNoiseConfig, type TerrainField, type TerrainNormal } from "./terrain";
 
 /** A sculpt operation kind: heightfield brushes plus the surface-paint brush. */
 export type TerraformMode = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" | "paint";
@@ -66,6 +66,30 @@ export interface TerraformDelta {
 /** Reports each changed vertex during a recorded edit: grid index, prior offset, new offset. */
 export type TerraformDeltaRecorder = (index: number, before: number, after: number) => void;
 
+/**
+ * A compact record of the surface-material cells a paint stroke touched: parallel
+ * `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint
+ * undo history small.
+ */
+export interface SurfaceDelta {
+  indices: readonly number[];
+  before: readonly (string | null)[];
+  after: readonly (string | null)[];
+}
+
+/** Reports each changed cell during a recorded paint: grid index, prior surface id, new surface id. */
+export type SurfaceDeltaRecorder = (index: number, before: string | null, after: string | null) => void;
+
+/** A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high). */
+export interface TerrainSurfaceRule {
+  surface: string | null;
+  /** Minimum slope (rise/run) a cell must have to be painted. */
+  minSlope?: number;
+  maxSlope?: number;
+  minHeight?: number;
+  maxHeight?: number;
+}
+
 export interface EditableTerrain extends TerrainField {
   readonly cols: number;
   readonly rows: number;
@@ -79,6 +103,18 @@ export interface EditableTerrain extends TerrainField {
   applyDelta(delta: TerraformDelta): void;
   /** Restore a delta's `before` offsets (undo). */
   revertDelta(delta: TerraformDelta): void;
+  /** Paint a surface brush while reporting every changed cell to `record` — surface strokes record deltas through. */
+  paintRecording(edit: TerraformEdit, record: SurfaceDeltaRecorder): number;
+  /** Paint a surface brush and return the compact delta it produced. */
+  paintDelta(edit: TerraformEdit): SurfaceDelta;
+  /** Fill every cell with one surface (or `null` to clear) and return the compact delta. */
+  fillSurfaceDelta(surface: string | null): SurfaceDelta;
+  /** Paint a surface into every cell matching a height/slope rule and return the compact delta. */
+  autoPaintDelta(rule: TerrainSurfaceRule): SurfaceDelta;
+  /** Re-apply a surface delta's `after` ids (redo). */
+  applySurfaceDelta(delta: SurfaceDelta): void;
+  /** Restore a surface delta's `before` ids (undo). */
+  revertSurfaceDelta(delta: SurfaceDelta): void;
   heightOffsetAt(x: number, z: number): number;
   surfaceAt(x: number, z: number): string | null;
   reset(): void;
@@ -288,8 +324,24 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     return changed;
   }
 
-  function paintSurface(edit: TerraformEdit): number {
+  function cellWorldX(gx: number): number {
+    return bounds.minX + ((gx + 0.5) / cols) * spanX;
+  }
+  function cellWorldZ(gz: number): number {
+    return bounds.minZ + ((gz + 0.5) / rows) * spanZ;
+  }
+
+  function writeSurface(index: number, surface: string | null, record: SurfaceDeltaRecorder | null): boolean {
+    const before = surfaces[index] ?? null;
+    if (before === surface) return false;
+    surfaces[index] = surface;
+    record?.(index, before, surface);
+    return true;
+  }
+
+  function paintSurface(edit: TerraformEdit, record: SurfaceDeltaRecorder | null): number {
     const surface = edit.surface ?? null;
+    const shape = edit.shape ?? "circle";
     const rCells = Math.ceil(edit.radius / cellSize) + 1;
     const cx = gridX(edit.center[0]);
     const cz = gridZ(edit.center[1]);
@@ -300,12 +352,52 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
       for (let ix = -rCells; ix <= rCells; ix += 1) {
         const gx = Math.floor(cx) + ix;
         if (gx < 0 || gx >= cols) continue;
-        const wx = bounds.minX + ((gx + 0.5) / cols) * spanX;
-        const wz = bounds.minZ + ((gz + 0.5) / rows) * spanZ;
-        if (Math.hypot(wx - edit.center[0], wz - edit.center[1]) > edit.radius) continue;
-        surfaces[gz * cols + gx] = surface;
-        painted += 1;
+        const dx = cellWorldX(gx) - edit.center[0];
+        const dz = cellWorldZ(gz) - edit.center[1];
+        const dist = shape === "square" ? Math.max(Math.abs(dx), Math.abs(dz)) : Math.hypot(dx, dz);
+        if (dist > edit.radius) continue;
+        if (writeSurface(gz * cols + gx, surface, record)) painted += 1;
       }
+    }
+    return painted;
+  }
+
+  function localNormal(wx: number, wz: number): TerrainNormal {
+    const eps = Math.max(cellSize, 0.5);
+    const hx = sampleHeight(wx + eps, wz) - sampleHeight(wx - eps, wz);
+    const hz = sampleHeight(wx, wz + eps) - sampleHeight(wx, wz - eps);
+    const nx = -hx;
+    const nz = -hz;
+    const ny = 2 * eps;
+    const length = Math.hypot(nx, ny, nz) || 1;
+    return [nx / length, ny / length, nz / length] as const;
+  }
+
+  function autoPaint(rule: TerrainSurfaceRule, record: SurfaceDeltaRecorder | null): number {
+    let painted = 0;
+    for (let gz = 0; gz < rows; gz += 1) {
+      for (let gx = 0; gx < cols; gx += 1) {
+        const wx = cellWorldX(gx);
+        const wz = cellWorldZ(gz);
+        const height = sampleHeight(wx, wz);
+        if (rule.minHeight !== undefined && height < rule.minHeight) continue;
+        if (rule.maxHeight !== undefined && height > rule.maxHeight) continue;
+        if (rule.minSlope !== undefined || rule.maxSlope !== undefined) {
+          const [nx, ny, nz] = localNormal(wx, wz);
+          const slope = Math.hypot(nx, nz) / Math.max(ny, 1e-9);
+          if (rule.minSlope !== undefined && slope < rule.minSlope) continue;
+          if (rule.maxSlope !== undefined && slope > rule.maxSlope) continue;
+        }
+        if (writeSurface(gz * cols + gx, rule.surface, record)) painted += 1;
+      }
+    }
+    return painted;
+  }
+
+  function fillSurface(surface: string | null, record: SurfaceDeltaRecorder | null): number {
+    let painted = 0;
+    for (let index = 0; index < surfaces.length; index += 1) {
+      if (writeSurface(index, surface, record)) painted += 1;
     }
     return painted;
   }
@@ -317,10 +409,21 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     return surfaces[gz * cols + gx] ?? null;
   }
 
-  function runEdit(edit: TerraformEdit, record: TerraformDeltaRecorder | null): number {
-    if (edit.mode === "paint") return paintSurface(edit);
+  function runHeightEdit(edit: TerraformEdit, record: TerraformDeltaRecorder | null): number {
     if (edit.mode === "ramp") return editRamp(edit, record);
     return editHeight(edit, record);
+  }
+
+  function surfaceDeltaFrom(run: (record: SurfaceDeltaRecorder) => void): SurfaceDelta {
+    const indices: number[] = [];
+    const before: (string | null)[] = [];
+    const after: (string | null)[] = [];
+    run((index, prev, next) => {
+      indices.push(index);
+      before.push(prev);
+      after.push(next);
+    });
+    return { indices, before, after };
   }
 
   const field: EditableTerrain = {
@@ -332,16 +435,16 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
     ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
     apply(edit) {
-      return runEdit(edit, null);
+      return edit.mode === "paint" ? paintSurface(edit, null) : runHeightEdit(edit, null);
     },
     applyRecording(edit, record) {
-      return runEdit(edit, record);
+      return runHeightEdit(edit, record);
     },
     editDelta(edit) {
       const indices: number[] = [];
       const before: number[] = [];
       const after: number[] = [];
-      runEdit(edit, (index, prev, next) => {
+      runHeightEdit(edit, (index, prev, next) => {
         indices.push(index);
         before.push(prev);
         after.push(next);
@@ -353,6 +456,24 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     },
     revertDelta(delta) {
       for (let i = 0; i < delta.indices.length; i += 1) offsets[delta.indices[i]!] = delta.before[i]!;
+    },
+    paintRecording(edit, record) {
+      return paintSurface(edit, record);
+    },
+    paintDelta(edit) {
+      return surfaceDeltaFrom((record) => paintSurface(edit, record));
+    },
+    fillSurfaceDelta(surface) {
+      return surfaceDeltaFrom((record) => fillSurface(surface, record));
+    },
+    autoPaintDelta(rule) {
+      return surfaceDeltaFrom((record) => autoPaint(rule, record));
+    },
+    applySurfaceDelta(delta) {
+      for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.after[i] ?? null;
+    },
+    revertSurfaceDelta(delta) {
+      for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.before[i] ?? null;
     },
     heightOffsetAt,
     surfaceAt,
@@ -419,6 +540,60 @@ export function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecord
       return latest.size === 0;
     },
   };
+}
+
+/**
+ * Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}.
+ * Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
+ */
+export interface SurfaceStroke {
+  stamp(edit: TerraformEdit): number;
+  delta(): SurfaceDelta;
+  isEmpty(): boolean;
+}
+
+/** Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta. */
+export function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke {
+  const first = new Map<number, string | null>();
+  const latest = new Map<number, string | null>();
+  return {
+    stamp(edit) {
+      return terrain.paintRecording(edit, (index, before, after) => {
+        if (!first.has(index)) first.set(index, before);
+        latest.set(index, after);
+      });
+    },
+    delta() {
+      const indices: number[] = [];
+      const before: (string | null)[] = [];
+      const after: (string | null)[] = [];
+      for (const [index, next] of latest) {
+        const prev = first.get(index) ?? null;
+        if (next === prev) continue;
+        indices.push(index);
+        before.push(prev);
+        after.push(next);
+      }
+      return { indices, before, after };
+    },
+    isEmpty() {
+      return latest.size === 0;
+    },
+  };
+}
+
+/** Returns a new snapshot with a surface delta's `after` ids applied (copy-on-write). */
+export function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot {
+  const surfaces = snapshot.surfaces.slice();
+  for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.after[i] ?? null;
+  return { ...snapshot, surfaces };
+}
+
+/** Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo). */
+export function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot {
+  const surfaces = snapshot.surfaces.slice();
+  for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.before[i] ?? null;
+  return { ...snapshot, surfaces };
 }
 
 /** A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document. */

@@ -209,7 +209,54 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
   },
   {
     name: "terrain_summary",
-    description: "Report the sculpt heightfield's grid size, bounds, min/max offset, and edited vertex count.",
+    description: "Report the sculpt heightfield's grid size, bounds, min/max offset, edited vertices, and painted cells.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "paint_terrain",
+    description: "Paint a terrain material (grass/dirt/rock/…) at x/z as an undoable stroke.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        surface: { type: "string" },
+        x: { type: "number" },
+        z: { type: "number" },
+        radius: { type: "number" },
+        shape: { type: "string", enum: ["circle", "square"] },
+      },
+      required: ["surface", "x", "z"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "fill_terrain",
+    description: "Fill the whole terrain with one material, or null to clear all painted surfaces.",
+    inputSchema: {
+      type: "object",
+      properties: { surface: { type: ["string", "null"] } },
+      required: ["surface"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "auto_paint",
+    description: "Paint a material into every cell matching a slope/height rule (e.g. rock on steep, snow up high).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        surface: { type: "string" },
+        minSlope: { type: "number" },
+        maxSlope: { type: "number" },
+        minHeight: { type: "number" },
+        maxHeight: { type: "number" },
+      },
+      required: ["surface"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "terrain_materials",
+    description: "List the terrain paint palette (material id, label, color).",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
 ];

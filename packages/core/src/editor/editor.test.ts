@@ -370,4 +370,30 @@ describe("editor terrain sculpting", () => {
     session.dispatch({ type: "clearTerrain" });
     expect(session.getState().document.terrain).toBeUndefined();
   });
+
+  test("paintTerrain paints surfaces with compact undo, interleaved with sculpt strokes", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds, cellSize: 1 }) });
+    const before = session.getState().document.terrain!;
+    const live = editableTerrainFromSnapshot(before, flatField());
+
+    const sculpt = live.editDelta({ mode: "raise", center: [0, 0], radius: 4, strength: 3 });
+    session.dispatch({ type: "sculptTerrain", delta: sculpt });
+    const paint = live.paintDelta({ mode: "paint", center: [0, 0], radius: 4, surface: "rock" });
+    session.dispatch({ type: "paintTerrain", delta: paint });
+
+    const painted = session.getState().document.terrain!;
+    expect(painted.surfaces.some((s) => s === "rock")).toBe(true);
+    expect(Math.max(...painted.offsets)).toBeGreaterThan(0);
+    // Pre-stroke snapshot untouched (copy-on-write).
+    expect(before.surfaces.every((s) => s === null)).toBe(true);
+
+    // Undo paint only — heights stay sculpted.
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.terrain!.surfaces.every((s) => s === null)).toBe(true);
+    expect(Math.max(...session.getState().document.terrain!.offsets)).toBeGreaterThan(0);
+    // Redo restores the paint.
+    session.dispatch({ type: "redo" });
+    expect(session.getState().document.terrain!.surfaces.some((s) => s === "rock")).toBe(true);
+  });
 });

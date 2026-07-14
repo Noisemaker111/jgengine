@@ -6,14 +6,20 @@ export {
   createEditorUiStore,
   newPlacementId,
   DEFAULT_SCULPT_SETTINGS,
+  DEFAULT_PAINT_SETTINGS,
+  TERRAIN_MATERIALS,
+  TERRAIN_MATERIAL_COLORS,
   type EditorTool,
   type EditorUiState,
   type EditorUiStore,
   type GizmoMode,
+  type PaintSettings,
   type PlacementTool,
   type SculptSettings,
   type SnapMode,
   type TerrainBrushKind,
+  type TerrainMaterial,
+  type TerrainMode,
 } from "./uiStore";
 export { TerrainSculpt } from "./TerrainSculpt";
 export { EditorCameraDriver } from "./EditorCameraDriver";

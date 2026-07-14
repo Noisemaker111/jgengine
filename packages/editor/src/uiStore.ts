@@ -4,8 +4,49 @@ import type { TerraformFalloff, TerraformShape } from "@jgengine/core/world/terr
 /** Which top-level editor tool is active: object placement/selection, or terrain sculpting. */
 export type EditorTool = "select" | "terrain";
 
-/** A heightfield sculpt brush the terrain tool can apply (surface paint is Phase 3). */
+/** A heightfield sculpt brush the terrain tool can apply. */
 export type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp";
+
+/** The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it. */
+export type TerrainMode = "sculpt" | "paint";
+
+/** A paintable terrain material layer — a surface id plus the color it renders as. */
+export interface TerrainMaterial {
+  id: string;
+  label: string;
+  color: string;
+}
+
+/** The default terrain paint palette (surface id → color) shared by the panel and the mesh. */
+export const TERRAIN_MATERIALS: readonly TerrainMaterial[] = [
+  { id: "grass", label: "Grass", color: "#4b7f3f" },
+  { id: "dirt", label: "Dirt", color: "#6b4f34" },
+  { id: "rock", label: "Rock", color: "#7c7f86" },
+  { id: "sand", label: "Sand", color: "#c2b283" },
+  { id: "mud", label: "Mud", color: "#574433" },
+  { id: "snow", label: "Snow", color: "#eef3f7" },
+  { id: "road", label: "Road", color: "#3a3a3d" },
+  { id: "gravel", label: "Gravel", color: "#8d8d84" },
+];
+
+/** Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint. */
+export const TERRAIN_MATERIAL_COLORS: Record<string, string> = Object.fromEntries(
+  TERRAIN_MATERIALS.map((material) => [material.id, material.color]),
+);
+
+/** Live terrain material-paint controls driven by the terrain tool panel. */
+export interface PaintSettings {
+  material: string;
+  radius: number;
+  shape: TerraformShape;
+}
+
+/** The terrain tool's default paint controls. */
+export const DEFAULT_PAINT_SETTINGS: PaintSettings = {
+  material: "grass",
+  radius: 12,
+  shape: "circle",
+};
 
 /** Live terrain-brush controls driven by the terrain tool panel. */
 export interface SculptSettings {
@@ -61,7 +102,9 @@ export interface EditorUiState {
   pathDraft: readonly EditorVec3[];
   pathPoint: { pathId: string; index: number } | null;
   tool: EditorTool;
+  terrainMode: TerrainMode;
   sculpt: SculptSettings;
+  paint: PaintSettings;
 }
 
 /** Subscribable store for the editor's transient UI state (gizmo, snapping, placement). */
@@ -74,7 +117,9 @@ export interface EditorUiStore {
   pushDraftPoint(point: EditorVec3): void;
   commitPathDraft(session: EditorSession): void;
   setTool(tool: EditorTool): void;
+  setTerrainMode(mode: TerrainMode): void;
   patchSculpt(partial: Partial<SculptSettings>): void;
+  patchPaint(partial: Partial<PaintSettings>): void;
 }
 
 function placementId(prefix: string): string {
@@ -92,7 +137,9 @@ export function createEditorUiStore(): EditorUiStore {
     pathDraft: [],
     pathPoint: null,
     tool: "select",
+    terrainMode: "sculpt",
     sculpt: { ...DEFAULT_SCULPT_SETTINGS },
+    paint: { ...DEFAULT_PAINT_SETTINGS },
   };
   const listeners = new Set<() => void>();
   const emit = () => {
@@ -150,6 +197,15 @@ export function createEditorUiStore(): EditorUiStore {
     },
     patchSculpt(partial) {
       state = { ...state, sculpt: { ...state.sculpt, ...partial } };
+      emit();
+    },
+    setTerrainMode(mode) {
+      if (state.terrainMode === mode) return;
+      state = { ...state, terrainMode: mode };
+      emit();
+    },
+    patchPaint(partial) {
+      state = { ...state, paint: { ...state.paint, ...partial } };
       emit();
     },
   };

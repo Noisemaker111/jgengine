@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import {
   applyDeltaToSnapshot,
+  applySurfaceDeltaToSnapshot,
+  beginSurfaceStroke,
   beginTerraformStroke,
   brushWeight,
   createEditableTerrain,
@@ -9,6 +11,7 @@ import {
   createTerrainSnapshot,
   editableTerrainFromSnapshot,
   revertDeltaFromSnapshot,
+  revertSurfaceDeltaFromSnapshot,
 } from "./terraform";
 import { flatField, noiseField } from "./terrain";
 
@@ -171,5 +174,61 @@ describe("terraform deltas and strokes", () => {
     expect(Math.max(...snapshot.offsets)).toBe(0);
     const reverted = revertDeltaFromSnapshot(raised, delta);
     expect(Math.max(...reverted.offsets.map((v) => Math.abs(v)))).toBeCloseTo(0);
+  });
+});
+
+describe("surface painting", () => {
+  const bounds = { minX: -16, minZ: -16, maxX: 16, maxZ: 16 };
+
+  test("paintDelta records changed cells and round-trips via apply/revert", () => {
+    const terrain = createEditableTerrain({ bounds, cellSize: 1 });
+    const delta = terrain.paintDelta({ mode: "paint", center: [0, 0], radius: 3, surface: "rock" });
+    expect(delta.indices.length).toBeGreaterThan(0);
+    expect(terrain.surfaceAt(0, 0)).toBe("rock");
+    terrain.revertSurfaceDelta(delta);
+    expect(terrain.surfaceAt(0, 0)).toBeNull();
+    terrain.applySurfaceDelta(delta);
+    expect(terrain.surfaceAt(0, 0)).toBe("rock");
+  });
+
+  test("a paint stroke of many stamps collapses into one net delta", () => {
+    const terrain = createEditableTerrain({ bounds, cellSize: 1 });
+    const stroke = beginSurfaceStroke(terrain);
+    for (let i = 0; i < 4; i += 1) stroke.stamp({ mode: "paint", center: [i - 1, 0], radius: 2, surface: "sand" });
+    const delta = stroke.delta();
+    expect(stroke.isEmpty()).toBe(false);
+    expect(new Set(delta.indices).size).toBe(delta.indices.length);
+    terrain.revertSurfaceDelta(delta);
+    expect(terrain.surfaceAt(0, 0)).toBeNull();
+  });
+
+  test("fillSurfaceDelta paints every cell and clears with null", () => {
+    const terrain = createEditableTerrain({ bounds, cellSize: 2 });
+    terrain.fillSurfaceDelta("grass");
+    expect(terrain.surfaceAt(0, 0)).toBe("grass");
+    expect(terrain.surfaceAt(10, -10)).toBe("grass");
+    const clear = terrain.fillSurfaceDelta(null);
+    expect(clear.indices.length).toBeGreaterThan(0);
+    expect(terrain.surfaceAt(0, 0)).toBeNull();
+  });
+
+  test("autoPaintDelta assigns a surface by height threshold", () => {
+    const terrain = createEditableTerrain({ bounds, base: flatField(), cellSize: 1 });
+    terrain.apply({ mode: "raise", center: [0, 0], radius: 6, strength: 10, falloff: "none" });
+    terrain.autoPaintDelta({ surface: "snow", minHeight: 3 });
+    expect(terrain.surfaceAt(0, 0)).toBe("snow");
+    expect(terrain.surfaceAt(15, 15)).toBeNull();
+  });
+
+  test("surface snapshot deltas are copy-on-write", () => {
+    const snapshot = createTerrainSnapshot({ bounds, cellSize: 2 });
+    const live = editableTerrainFromSnapshot(snapshot);
+    const delta = live.paintDelta({ mode: "paint", center: [0, 0], radius: 4, surface: "dirt" });
+    const painted = applySurfaceDeltaToSnapshot(snapshot, delta);
+    expect(snapshot.surfaces).not.toBe(painted.surfaces);
+    expect(painted.surfaces.some((s) => s === "dirt")).toBe(true);
+    expect(snapshot.surfaces.every((s) => s === null)).toBe(true);
+    const reverted = revertSurfaceDeltaFromSnapshot(painted, delta);
+    expect(reverted.surfaces.every((s) => s === null)).toBe(true);
   });
 });

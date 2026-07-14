@@ -114,6 +114,31 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("paint_terrain, fill_terrain, auto_paint, and terrain_materials drive undoable surface paint", () => {
+    const { api, dispose } = createEditorHost({ gameId: "test", layers: {} });
+    api.handle({ method: "create_terrain", width: 64, depth: 64, cellSize: 2 });
+
+    const materials = api.handle({ method: "terrain_materials" });
+    expect((materials.result as { materials: { id: string }[] }).materials.length).toBeGreaterThan(0);
+
+    const painted = api.handle({ method: "paint_terrain", surface: "rock", x: 0, z: 0, radius: 12 });
+    expect(painted.ok).toBe(true);
+    expect((painted.result as { changed: number }).changed).toBeGreaterThan(0);
+    expect((api.handle({ method: "terrain_summary" }).result as { paintedCells: number }).paintedCells).toBeGreaterThan(0);
+
+    api.handle({ method: "undo" });
+    expect((api.handle({ method: "terrain_summary" }).result as { paintedCells: number }).paintedCells).toBe(0);
+
+    const filled = api.handle({ method: "fill_terrain", surface: "grass" });
+    expect((filled.result as { changed: number }).changed).toBeGreaterThan(0);
+    const cleared = api.handle({ method: "fill_terrain", surface: null });
+    expect((cleared.result as { changed: number }).changed).toBeGreaterThan(0);
+
+    const auto = api.handle({ method: "auto_paint", surface: "sand", maxHeight: 100 });
+    expect((auto.result as { changed: number }).changed).toBeGreaterThan(0);
+    dispose();
+  });
+
   test("subscribeFocus fires on camera_goto", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",

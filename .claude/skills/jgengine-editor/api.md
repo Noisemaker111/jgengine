@@ -85,6 +85,7 @@
 ## @jgengine/editor
 
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
+- `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
 - `EditorApp` (function): function EditorApp({ gameId, playable, layers, save }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
@@ -107,13 +108,18 @@
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
+- `PaintSettings` (interface): interface PaintSettings — Live terrain material-paint controls driven by the terrain tool panel.
 - `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
 - `PerfProbe` (function): function PerfProbe({ api }: { api: EditorHostApi }): null — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SelectionGizmo` (function): function SelectionGizmo({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
 - `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
-- `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply (surface paint is Phase 3).
+- `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
+- `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
+- `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.
+- `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
+- `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
 - `ViewportSelect` (function): function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }): null — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
@@ -198,15 +204,21 @@
 
 ## @jgengine/editor/uiStore
 
+- `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
 - `EditorTool` (type): type EditorTool = "select" | "terrain" — Which top-level editor tool is active: object placement/selection, or terrain sculpting.
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
+- `PaintSettings` (interface): interface PaintSettings — Live terrain material-paint controls driven by the terrain tool panel.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
-- `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply (surface paint is Phase 3).
+- `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
+- `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
+- `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.
+- `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
+- `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
 

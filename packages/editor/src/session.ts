@@ -16,7 +16,10 @@ import {
   editableTerrainFromSnapshot,
   type TerraformEdit,
   type TerraformMode,
+  type TerrainSurfaceRule,
 } from "@jgengine/core/world/terraform";
+
+import { TERRAIN_MATERIALS } from "./uiStore";
 
 /** How the editor hosts the game: frozen placement view, roamable world, or the real game. */
 export type EditorRunMode = "edit" | "walk" | "play";
@@ -60,7 +63,18 @@ export type EditorBridgeRequest =
       seed?: number;
       shape?: "circle" | "square";
     }
-  | { method: "terrain_summary" };
+  | { method: "terrain_summary" }
+  | { method: "paint_terrain"; surface: string; x: number; z: number; radius?: number; shape?: "circle" | "square" }
+  | { method: "fill_terrain"; surface: string | null }
+  | {
+      method: "auto_paint";
+      surface: string;
+      minSlope?: number;
+      maxSlope?: number;
+      minHeight?: number;
+      maxHeight?: number;
+    }
+  | { method: "terrain_materials" };
 
 /** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
@@ -450,9 +464,52 @@ export function createEditorHost(options: {
                 minOffset: terrain.offsets.length === 0 ? 0 : min,
                 maxOffset: terrain.offsets.length === 0 ? 0 : max,
                 editedVertices: nonZero,
+                paintedCells: terrain.surfaces.filter((surface) => surface !== null).length,
               },
             };
           }
+          case "paint_terrain": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            const live = editableTerrainFromSnapshot(terrain);
+            const delta = live.paintDelta({
+              mode: "paint",
+              center: [request.x, request.z],
+              radius: request.radius ?? 8,
+              surface: request.surface,
+              ...(request.shape === undefined ? {} : { shape: request.shape }),
+            });
+            if (delta.indices.length === 0) return { ok: false, error: "paint touched no cells (check radius/position)" };
+            session.dispatch({ type: "paintTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length, canUndo: session.canUndo() } };
+          }
+          case "fill_terrain": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            const live = editableTerrainFromSnapshot(terrain);
+            const delta = live.fillSurfaceDelta(request.surface);
+            if (delta.indices.length === 0) return { ok: true, result: { changed: 0 } };
+            session.dispatch({ type: "paintTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length } };
+          }
+          case "auto_paint": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            const live = editableTerrainFromSnapshot(terrain);
+            const rule: TerrainSurfaceRule = {
+              surface: request.surface,
+              ...(request.minSlope === undefined ? {} : { minSlope: request.minSlope }),
+              ...(request.maxSlope === undefined ? {} : { maxSlope: request.maxSlope }),
+              ...(request.minHeight === undefined ? {} : { minHeight: request.minHeight }),
+              ...(request.maxHeight === undefined ? {} : { maxHeight: request.maxHeight }),
+            };
+            const delta = live.autoPaintDelta(rule);
+            if (delta.indices.length === 0) return { ok: true, result: { changed: 0 } };
+            session.dispatch({ type: "paintTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length } };
+          }
+          case "terrain_materials":
+            return { ok: true, result: { materials: TERRAIN_MATERIALS } };
         }
       } catch (error) {
         return {
