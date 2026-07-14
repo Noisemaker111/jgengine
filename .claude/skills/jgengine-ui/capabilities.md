@@ -9,6 +9,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/format/duration"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/format/duration"`
 
+## controls-list — keybind-derived control legend that hides on touch
+
+- `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
@@ -24,3 +28,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/format/duration"`
+
+## start-screen — headless title/attract overlay the game fills and skins
+
+- `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`

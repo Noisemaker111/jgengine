@@ -8,6 +8,7 @@ export * from "./hooks";
 export * from "./settings";
 export * from "./components";
 export * from "./keyHint";
+export * from "./startScreen";
 export * from "./engineStore";
 export * from "./dragLayer";
 export * from "./cards";
