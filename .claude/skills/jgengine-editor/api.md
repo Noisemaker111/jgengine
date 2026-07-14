@@ -4,7 +4,7 @@
 
 ## @jgengine/core/editor
 
-- `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "addMarker"; marker: EditorMarker } | { type: … — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
+- `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "setParent"; ids: readonly string[]; parentId:… — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
@@ -23,10 +23,14 @@
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
 - `applyEditorDocumentOverlay` (function): function applyEditorDocumentOverlay(base: EditorDocument, overlay: EditorDocument): EditorDocument — Applies a saved editor document on top of a game's derived layers: overlay objects replace same-id base objects and new overlay objects are appended, so editor saves win over source data until they are folded back in.
 - `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source. The terrain snapshot is shared by reference: sculpt commands replace it wholesale (copy-on-write), never mutate it in place, so history snapshots stay cheap even on large heightfields.
+- `collectDescendants` (function): function collectDescendants(doc: EditorDocument, ids: Iterable<string>): Set<string> — Every descendant id of the given ids (children, grandchildren, …), excluding the inputs.
 - `createEditorSession` (function): function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession — Creates an editor session with undo/redo history seeded from an initial document.
 - `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
+- `editorChildren` (function): function editorChildren(doc: EditorDocument, parentId: string): string[] — The direct child ids of an object (empty when it has none).
 - `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
 - `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
+- `editorParentOf` (function): function editorParentOf(doc: EditorDocument, id: string): string | undefined — The id of an object's parent, or undefined when it is a root (or unknown).
+- `editorRoots` (function): function editorRoots(doc: EditorDocument): string[] — Object ids with no parent (or whose parent no longer exists) — the roots of the hierarchy.
 - `exportEditorDocumentJson` (function): function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string — Serializes an editor document to JSON text for saving or export.
 - `extractEditorFragment` (function): function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument — Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
 - `findEditorMarker` (function): function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined — Looks up a marker by id in an editor document.
@@ -38,10 +42,11 @@
 - `mergeEditorDocuments` (function): function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument — Combines multiple editor documents' markers, volumes, paths, and notes into one.
 - `normalizeEditorLayers` (function): function normalizeEditorLayers(input: EditorLayersInput | undefined | null): EditorDocument — Resolves a game's `editorLayers` export — document, partial data, or factory — into a full document.
 - `summarizeEditorSession` (function): function summarizeEditorSession(state: EditorSessionState): { markers: number; volumes: number; paths: number; annotations: number; selection: string[]; selectedMarker?: EditorMarker; selectedVolume?: EditorVolume; } — Compact snapshot of a session state — counts, selection, and the selected object.
+- `wouldCreateCycle` (function): function wouldCreateCycle(doc: EditorDocument, id: string, parentId: string | null): boolean — True when parenting `id` under `parentId` would form a cycle (or parent itself to itself).
 
 ## @jgengine/core/editor/commands
 
-- `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "addMarker"; marker: EditorMarker } | { type: … — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
+- `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "setParent"; ids: readonly string[]; parentId:… — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
@@ -52,9 +57,13 @@
 
 - `applyEditorDocumentOverlay` (function): function applyEditorDocumentOverlay(base: EditorDocument, overlay: EditorDocument): EditorDocument — Applies a saved editor document on top of a game's derived layers: overlay objects replace same-id base objects and new overlay objects are appended, so editor saves win over source data until they are folded back in.
 - `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source. The terrain snapshot is shared by reference: sculpt commands replace it wholesale (copy-on-write), never mutate it in place, so history snapshots stay cheap even on large heightfields.
+- `collectDescendants` (function): function collectDescendants(doc: EditorDocument, ids: Iterable<string>): Set<string> — Every descendant id of the given ids (children, grandchildren, …), excluding the inputs.
 - `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
+- `editorChildren` (function): function editorChildren(doc: EditorDocument, parentId: string): string[] — The direct child ids of an object (empty when it has none).
 - `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
 - `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
+- `editorParentOf` (function): function editorParentOf(doc: EditorDocument, id: string): string | undefined — The id of an object's parent, or undefined when it is a root (or unknown).
+- `editorRoots` (function): function editorRoots(doc: EditorDocument): string[] — Object ids with no parent (or whose parent no longer exists) — the roots of the hierarchy.
 - `exportEditorDocumentJson` (function): function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string — Serializes an editor document to JSON text for saving or export.
 - `extractEditorFragment` (function): function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument — Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
 - `findEditorMarker` (function): function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined — Looks up a marker by id in an editor document.
@@ -65,6 +74,7 @@
 - `listEditorKinds` (function): function listEditorKinds(doc: EditorDocument): { markers: string[]; volumes: string[]; paths: string[]; } — Lists the distinct marker, volume, and path kinds authored in a document.
 - `mergeEditorDocuments` (function): function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument — Combines multiple editor documents' markers, volumes, paths, and notes into one.
 - `normalizeEditorLayers` (function): function normalizeEditorLayers(input: EditorLayersInput | undefined | null): EditorDocument — Resolves a game's `editorLayers` export — document, partial data, or factory — into a full document.
+- `wouldCreateCycle` (function): function wouldCreateCycle(doc: EditorDocument, id: string, parentId: string | null): boolean — True when parenting `id` under `parentId` would form a cycle (or parent itself to itself).
 
 ## @jgengine/core/editor/types
 

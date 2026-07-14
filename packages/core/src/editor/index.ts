@@ -26,9 +26,13 @@ export {
 export {
   applyEditorDocumentOverlay,
   cloneEditorDocument,
+  collectDescendants,
   createEmptyEditorDocument,
+  editorChildren,
   editorDocumentBounds,
   editorDocumentSize,
+  editorParentOf,
+  editorRoots,
   exportEditorDocumentJson,
   extractEditorFragment,
   findEditorMarker,
@@ -39,6 +43,7 @@ export {
   listEditorKinds,
   mergeEditorDocuments,
   normalizeEditorLayers,
+  wouldCreateCycle,
 } from "./document";
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export { createEditorSession } from "./commands";

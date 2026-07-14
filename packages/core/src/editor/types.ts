@@ -14,6 +14,8 @@ export interface EditorMarker {
   rotationY?: number;
   color?: string;
   label?: string;
+  /** Id of the object this one is parented under; moving the parent moves this with it. */
+  parentId?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -28,6 +30,8 @@ export interface EditorVolume {
   halfExtents?: EditorVec3;
   color?: string;
   label?: string;
+  /** Id of the object this one is parented under; moving the parent moves this with it. */
+  parentId?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -39,6 +43,8 @@ export interface EditorPath {
   width?: number;
   color?: string;
   label?: string;
+  /** Id of the object this one is parented under; moving the parent moves this with it. */
+  parentId?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -48,6 +54,8 @@ export interface EditorNote {
   text: string;
   position: EditorVec3;
   color?: string;
+  /** Id of the object this one is parented under; moving the parent moves this with it. */
+  parentId?: string;
   meta?: Record<string, unknown>;
 }
 

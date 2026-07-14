@@ -13,6 +13,11 @@ import {
   mergeEditorDocuments,
   normalizeEditorLayers,
   summarizeEditorSession,
+  editorParentOf,
+  editorChildren,
+  editorRoots,
+  collectDescendants,
+  wouldCreateCycle,
 } from "./index";
 import {
   createTerrainSnapshot,
@@ -395,5 +400,61 @@ describe("editor terrain sculpting", () => {
     // Redo restores the paint.
     session.dispatch({ type: "redo" });
     expect(session.getState().document.terrain!.surfaces.some((s) => s === "rock")).toBe(true);
+  });
+});
+
+describe("editor hierarchy / parenting", () => {
+  function scene() {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "addMarker", marker: { id: "parent", kind: "poi", position: { x: 0, y: 0, z: 0 } } });
+    session.dispatch({ type: "addMarker", marker: { id: "child", kind: "prop", position: { x: 10, y: 0, z: 0 } } });
+    session.dispatch({ type: "addMarker", marker: { id: "grandchild", kind: "prop", position: { x: 20, y: 0, z: 0 } } });
+    return session;
+  }
+
+  test("setParent builds a tree and roots/children/descendants report it", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    session.dispatch({ type: "setParent", ids: ["grandchild"], parentId: "child" });
+    const doc = session.getState().document;
+    expect(editorParentOf(doc, "child")).toBe("parent");
+    expect(editorChildren(doc, "parent")).toEqual(["child"]);
+    expect(editorRoots(doc)).toEqual(["parent"]);
+    expect([...collectDescendants(doc, ["parent"])].sort()).toEqual(["child", "grandchild"]);
+  });
+
+  test("setParent rejects cycles", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    session.dispatch({ type: "setParent", ids: ["parent"], parentId: "child" });
+    // parent stays a root — the cycle was refused.
+    expect(editorParentOf(session.getState().document, "parent")).toBeUndefined();
+    expect(wouldCreateCycle(session.getState().document, "parent", "child")).toBe(true);
+  });
+
+  test("moving a parent carries its whole subtree by the same delta", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    session.dispatch({ type: "setParent", ids: ["grandchild"], parentId: "child" });
+    session.dispatch({ type: "setTransform", id: "parent", position: { x: 5, y: 0, z: 5 } });
+    const doc = session.getState().document;
+    expect(doc.markers.find((m) => m.id === "child")!.position).toEqual({ x: 15, y: 0, z: 5 });
+    expect(doc.markers.find((m) => m.id === "grandchild")!.position).toEqual({ x: 25, y: 0, z: 5 });
+  });
+
+  test("translate also carries descendants, and undo restores the tree", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    session.dispatch({ type: "translate", ids: ["parent"], delta: { x: 0, y: 0, z: 10 } });
+    expect(session.getState().document.markers.find((m) => m.id === "child")!.position.z).toBe(10);
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.markers.find((m) => m.id === "child")!.position.z).toBe(0);
+  });
+
+  test("parentId survives export/import", () => {
+    const session = scene();
+    session.dispatch({ type: "setParent", ids: ["child"], parentId: "parent" });
+    const reloaded = importEditorDocumentJson(session.exportJson(true));
+    expect(editorParentOf(reloaded, "child")).toBe("parent");
   });
 });

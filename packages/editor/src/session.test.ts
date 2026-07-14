@@ -166,6 +166,29 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("set_parent builds a hierarchy, refuses cycles, and carries the subtree on move", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [
+          { id: "parent", kind: "poi", position: { x: 0, y: 0, z: 0 } },
+          { id: "child", kind: "prop", position: { x: 10, y: 0, z: 0 } },
+        ],
+      },
+    });
+    const parented = api.handle({ method: "set_parent", ids: ["child"], parentId: "parent" });
+    expect(parented.ok).toBe(true);
+    expect((api.handle({ method: "hierarchy" }).result as { roots: string[] }).roots).toEqual(["parent"]);
+
+    // Cycle refused: parent stays a root.
+    api.handle({ method: "set_parent", ids: ["parent"], parentId: "child" });
+    expect((api.handle({ method: "hierarchy" }).result as { roots: string[] }).roots).toEqual(["parent"]);
+
+    api.handle({ method: "set_transform", id: "parent", x: 5, z: 5 });
+    expect((api.handle({ method: "get_marker", id: "child" }).result as { position: { x: number } }).position.x).toBe(15);
+    dispose();
+  });
+
   test("subscribeFocus fires on camera_goto", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",

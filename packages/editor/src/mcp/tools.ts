@@ -283,4 +283,22 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     description: "Count foliage/scatter regions and their total deterministic instance placements.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
+  {
+    name: "set_parent",
+    description: "Parent objects under another (or null to unparent); cycles are refused. Moving a parent moves its subtree.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ids: { type: "array", items: { type: "string" } },
+        parentId: { type: ["string", "null"] },
+      },
+      required: ["ids", "parentId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "hierarchy",
+    description: "The scene's parent/child tree: root ids and each root's direct children.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
 ];

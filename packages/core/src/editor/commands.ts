@@ -8,10 +8,12 @@ import {
 } from "../world/terraform";
 import {
   cloneEditorDocument,
+  collectDescendants,
   extractEditorFragment,
   findEditorMarker,
   findEditorVolume,
   importEditorDocumentJson,
+  wouldCreateCycle,
 } from "./document";
 import type {
   EditorDocument,
@@ -29,6 +31,7 @@ export type EditorCommand =
   | { type: "clearSelection" }
   | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number }
   | { type: "translate"; ids: readonly string[]; delta: EditorVec3 }
+  | { type: "setParent"; ids: readonly string[]; parentId: string | null }
   | { type: "addMarker"; marker: EditorMarker }
   | { type: "addVolume"; volume: EditorVolume }
   | { type: "addPath"; path: EditorPath }
@@ -186,34 +189,82 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
     case "clearSelection":
       return { ...state, selection: [] };
     case "setTransform": {
-      const markers = state.document.markers.map((marker) => {
-        if (marker.id !== command.id) return marker;
-        return {
-          ...marker,
-          position: command.position === undefined ? marker.position : { ...command.position },
-          ...(command.rotationY === undefined ? {} : { rotationY: command.rotationY }),
-        };
+      const marker = findEditorMarker(state.document, command.id);
+      const volume = findEditorVolume(state.document, command.id);
+      const note = state.document.annotations.find((n) => n.id === command.id);
+      const previous = marker?.position ?? volume?.center ?? note?.position;
+      // Moving a parent to a new position carries its whole subtree by the same delta.
+      const childDelta =
+        command.position === undefined || previous === undefined
+          ? null
+          : {
+              x: command.position.x - previous.x,
+              y: command.position.y - previous.y,
+              z: command.position.z - previous.z,
+            };
+      const descendants =
+        childDelta === null ? new Set<string>() : collectDescendants(state.document, [command.id]);
+      const shift = (point: EditorVec3): EditorVec3 =>
+        childDelta === null ? point : shifted(point, childDelta);
+      const markers = state.document.markers.map((entry) => {
+        if (entry.id === command.id) {
+          return {
+            ...entry,
+            position: command.position === undefined ? entry.position : { ...command.position },
+            ...(command.rotationY === undefined ? {} : { rotationY: command.rotationY }),
+          };
+        }
+        return descendants.has(entry.id) ? { ...entry, position: shift(entry.position) } : entry;
       });
-      const volumes = state.document.volumes.map((volume) => {
-        if (volume.id !== command.id) return volume;
-        if (command.position === undefined) return volume;
-        return { ...volume, center: { ...command.position } };
+      const volumes = state.document.volumes.map((entry) => {
+        if (entry.id === command.id) return command.position === undefined ? entry : { ...entry, center: { ...command.position } };
+        return descendants.has(entry.id) ? { ...entry, center: shift(entry.center) } : entry;
       });
-      const annotations = state.document.annotations.map((note) => {
-        if (note.id !== command.id) return note;
-        if (command.position === undefined) return note;
-        return { ...note, position: { ...command.position } };
+      const paths = state.document.paths.map((entry) =>
+        descendants.has(entry.id) ? { ...entry, points: entry.points.map(shift) } : entry,
+      );
+      const annotations = state.document.annotations.map((entry) => {
+        if (entry.id === command.id) return command.position === undefined ? entry : { ...entry, position: { ...command.position } };
+        return descendants.has(entry.id) ? { ...entry, position: shift(entry.position) } : entry;
       });
       return {
         ...state,
-        document: { ...state.document, markers, volumes, annotations },
+        document: { ...state.document, markers, volumes, paths, annotations },
       };
     }
-    case "translate":
+    case "translate": {
+      const ids = new Set(command.ids);
+      for (const descendant of collectDescendants(state.document, command.ids)) ids.add(descendant);
       return {
         ...state,
-        document: translateByIds(state.document, new Set(command.ids), command.delta),
+        document: translateByIds(state.document, ids, command.delta),
       };
+    }
+    case "setParent": {
+      const targets = command.ids.filter((id) => !wouldCreateCycle(state.document, id, command.parentId));
+      if (targets.length === 0) return state;
+      const wanted = new Set(targets);
+      const reparent = <T extends { id: string; parentId?: string }>(entry: T): T => {
+        if (!wanted.has(entry.id)) return entry;
+        if (command.parentId === null) {
+          if (entry.parentId === undefined) return entry;
+          const next = { ...entry };
+          delete next.parentId;
+          return next;
+        }
+        return { ...entry, parentId: command.parentId };
+      };
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          markers: state.document.markers.map(reparent),
+          volumes: state.document.volumes.map(reparent),
+          paths: state.document.paths.map(reparent),
+          annotations: state.document.annotations.map(reparent),
+        },
+      };
+    }
     case "addMarker":
       return {
         ...state,

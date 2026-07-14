@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  collectDescendants,
+  editorChildren,
   editorDocumentSize,
+  editorParentOf,
+  editorRoots,
   extractEditorFragment,
   findEditorNote,
   findEditorPath,
@@ -121,6 +125,34 @@ function buildOutlinerGroups(document: {
       return { kind, rows, total: rows.reduce((sum, row) => sum + row.ids.length, 0) };
     })
     .sort((a, b) => a.kind.localeCompare(b.kind));
+}
+
+interface HierarchyRow {
+  id: string;
+  label: string;
+  kind: string;
+  depth: number;
+  hasChildren: boolean;
+}
+
+/** Builds a flat list of hierarchy rows (roots then nested children) honoring collapsed nodes. */
+function flattenHierarchy(document: EditorDocument, collapsed: Record<string, boolean>): HierarchyRow[] {
+  const label = new Map<string, { label: string; kind: string }>();
+  for (const marker of document.markers) label.set(marker.id, { label: marker.label ?? marker.id, kind: marker.kind });
+  for (const volume of document.volumes) label.set(volume.id, { label: volume.label ?? volume.id, kind: volume.kind });
+  for (const path of document.paths) label.set(path.id, { label: path.label ?? path.id, kind: path.kind });
+  for (const note of document.annotations) label.set(note.id, { label: note.text.slice(0, 40) || note.id, kind: "note" });
+
+  const rows: HierarchyRow[] = [];
+  const visit = (id: string, depth: number) => {
+    const info = label.get(id) ?? { label: id, kind: "?" };
+    const children = editorChildren(document, id).sort((a, b) => (label.get(a)?.label ?? a).localeCompare(label.get(b)?.label ?? b));
+    rows.push({ id, label: info.label, kind: info.kind, depth, hasChildren: children.length > 0 });
+    if (collapsed[id] === true) return;
+    for (const child of children) visit(child, depth + 1);
+  };
+  for (const root of editorRoots(document)) visit(root, 0);
+  return rows;
 }
 
 function filterOutlinerGroups(groups: readonly OutlinerGroup[], query: string): OutlinerGroup[] {
@@ -514,6 +546,36 @@ function ScatterFields({
   );
 }
 
+/** Inspector row to parent the selected object under another (excludes itself and its descendants). */
+function ParentField({ session, id }: { session: EditorSession; id: string }) {
+  const document = session.getState().document;
+  const current = editorParentOf(document, id) ?? "";
+  const banned = collectDescendants(document, [id]);
+  banned.add(id);
+  const labelOf = (node: { id: string; label?: string }) => node.label ?? node.id;
+  const candidates = [
+    ...document.markers.map((m) => ({ id: m.id, label: labelOf(m) })),
+    ...document.volumes.map((v) => ({ id: v.id, label: labelOf(v) })),
+    ...document.paths.map((p) => ({ id: p.id, label: labelOf(p) })),
+    ...document.annotations.map((n) => ({ id: n.id, label: n.text.slice(0, 30) || n.id })),
+  ].filter((entry) => !banned.has(entry.id));
+  return (
+    <label className="flex items-center justify-between gap-2">
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">parent</span>
+      <select
+        className={`w-40 ${INPUT}`}
+        value={current}
+        onChange={(event) => session.dispatch({ type: "setParent", ids: [id], parentId: event.target.value === "" ? null : event.target.value })}
+      >
+        <option value="">— none (root) —</option>
+        {candidates.map((entry) => (
+          <option key={entry.id} value={entry.id}>{entry.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function KindColorFields({
   kind,
   color,
@@ -607,6 +669,8 @@ export function EditorChrome({
   const [helpOpen, setHelpOpen] = useState(false);
   const [outlinerQuery, setOutlinerQuery] = useState("");
   const [collapsedKinds, setCollapsedKinds] = useState<Record<string, boolean>>({});
+  const [collapsedNodes, setCollapsedNodes] = useState<Record<string, boolean>>({});
+  const [outlinerView, setOutlinerView] = useState<"kind" | "tree">("kind");
   const [toast, setToast] = useState<{ text: string; tone: "info" | "error" } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notify = useCallback((text: string, tone: "info" | "error" = "info") => {
@@ -1030,8 +1094,13 @@ export function EditorChrome({
               <button type="button" className="rounded-md px-2 py-1 text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-neutral-200" onClick={() => showPanel("assets")}>Assets {assets.length}</button>
               <button type="button" className="ml-auto rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={() => setLeftOpen(false)} aria-label="Close hierarchy panel">×</button>
             </div>
-            <div className="border-b border-white/[0.08] p-2">
+            <div className="space-y-1.5 border-b border-white/[0.08] p-2">
               <input type="search" value={outlinerQuery} onChange={(event) => setOutlinerQuery(event.target.value)} placeholder="Search objects and kinds…" className={`w-full ${INPUT} px-2.5 py-1.5`} />
+              <div className="flex gap-0.5 rounded-md bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
+                {(["kind", "tree"] as const).map((view) => (
+                  <button key={view} type="button" className={`flex-1 rounded px-2 py-0.5 text-[10px] capitalize transition-colors ${outlinerView === view ? "bg-cyan-500/80 text-white" : "text-neutral-400 hover:text-neutral-200"}`} onClick={() => setOutlinerView(view)}>{view === "kind" ? "By kind" : "Hierarchy"}</button>
+                ))}
+              </div>
             </div>
             <div className="border-b border-white/[0.08] p-2">
               <div className={`mb-1.5 ${MICRO}`}>Layers</div>
@@ -1046,7 +1115,25 @@ export function EditorChrome({
               </div>
             </div>
             <div className="min-h-0 flex-1 space-y-0.5 overflow-auto p-2">
-              {visibleOutlinerGroups.map((group) => {
+              {outlinerView === "tree" ? (
+                <>
+                  {flattenHierarchy(state.document, collapsedNodes).map((node) => {
+                    const rowSelected = selection.includes(node.id);
+                    return (
+                      <div key={node.id} className="flex items-center" style={{ paddingLeft: `${node.depth * 12}px` }}>
+                        {node.hasChildren ? (
+                          <button type="button" className="w-4 shrink-0 text-neutral-500 transition-colors hover:text-neutral-200" onClick={() => setCollapsedNodes((previous) => ({ ...previous, [node.id]: !(previous[node.id] === true) }))}>{collapsedNodes[node.id] === true ? "▸" : "▾"}</button>
+                        ) : <span className="w-4 shrink-0" />}
+                        <button type="button" className={`flex-1 truncate rounded-md px-1.5 py-1 text-left transition-colors ${rowSelected ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/20" : "text-neutral-300 hover:bg-white/[0.06]"}`} onClick={(event) => selectRow(node.id, event.ctrlKey || event.metaKey || event.shiftKey)} title={node.id}>
+                          {node.label}<span className="ml-1 text-[9px] text-neutral-600">{node.kind}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {state.document.markers.length + state.document.volumes.length + state.document.paths.length + state.document.annotations.length === 0 ? <div className="p-3 text-center text-neutral-600">No objects yet</div> : null}
+                </>
+              ) : (
+              visibleOutlinerGroups.map((group) => {
                 const collapsed = collapsedKinds[group.kind] === true;
                 return (
                   <div key={group.kind}>
@@ -1064,8 +1151,9 @@ export function EditorChrome({
                     })}
                   </div>
                 );
-              })}
-              {visibleOutlinerGroups.length === 0 ? <div className="p-3 text-center text-neutral-600">No matching objects</div> : null}
+              })
+              )}
+              {outlinerView === "kind" && visibleOutlinerGroups.length === 0 ? <div className="p-3 text-center text-neutral-600">No matching objects</div> : null}
             </div>
           </aside>
         ) : null}
@@ -1132,6 +1220,7 @@ export function EditorChrome({
                     <NumberField key={axis} label={axis} value={selectedMarker.position[axis]} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, position: { ...selectedMarker.position, [axis]: value } }, { coalesce: `pos:${axis}:${selectedMarker.id}` })} />
                   ))}
                   <NumberField label="rot°" step={5} value={Math.round(((selectedMarker.rotationY ?? 0) * 180) / Math.PI)} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, rotationY: (value * Math.PI) / 180 }, { coalesce: `rot:${selectedMarker.id}` })} />
+                  <ParentField session={session} id={selectedMarker.id} />
                   {selectedMarker.meta !== undefined ? <pre className="max-h-48 overflow-auto rounded-md border border-white/[0.06] bg-black/40 p-2 text-[10px] text-neutral-400">{JSON.stringify(selectedMarker.meta, null, 2)}</pre> : null}
                 </div>
               ) : null}
@@ -1159,6 +1248,7 @@ export function EditorChrome({
                       <NumberField key={axis} label={`half ${axis}`} value={selectedVolume.halfExtents?.[axis] ?? 5} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { halfExtents: { x: selectedVolume.halfExtents?.x ?? 5, y: selectedVolume.halfExtents?.y ?? 5, z: selectedVolume.halfExtents?.z ?? 5, [axis]: Math.max(0.5, value) } } }, { coalesce: `he:${axis}:${selectedVolume.id}` })} />
                     ))
                   ) : null}
+                  <ParentField session={session} id={selectedVolume.id} />
                   <VegetationFields
                     volume={selectedVolume}
                     onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
@@ -1191,6 +1281,7 @@ export function EditorChrome({
                       onMeta={(patch, coalesce) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { meta: { ...selectedPath.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedPath.id}` })}
                     />
                   ) : null}
+                  <ParentField session={session} id={selectedPath.id} />
                 </div>
               ) : null}
               {selection.length <= 1 && selectedNote !== undefined ? (

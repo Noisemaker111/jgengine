@@ -138,6 +138,65 @@ export function listEditorKinds(doc: EditorDocument): {
   };
 }
 
+/** Every object in a document that carries an id and optional parent, across all four collections. */
+interface EditorNode {
+  id: string;
+  parentId?: string;
+}
+
+function editorNodes(doc: EditorDocument): EditorNode[] {
+  return [...doc.markers, ...doc.volumes, ...doc.paths, ...doc.annotations];
+}
+
+/** The id of an object's parent, or undefined when it is a root (or unknown). */
+export function editorParentOf(doc: EditorDocument, id: string): string | undefined {
+  return editorNodes(doc).find((node) => node.id === id)?.parentId;
+}
+
+/** The direct child ids of an object (empty when it has none). */
+export function editorChildren(doc: EditorDocument, parentId: string): string[] {
+  return editorNodes(doc)
+    .filter((node) => node.parentId === parentId)
+    .map((node) => node.id);
+}
+
+/** Object ids with no parent (or whose parent no longer exists) — the roots of the hierarchy. */
+export function editorRoots(doc: EditorDocument): string[] {
+  const ids = new Set(editorNodes(doc).map((node) => node.id));
+  return editorNodes(doc)
+    .filter((node) => node.parentId === undefined || !ids.has(node.parentId))
+    .map((node) => node.id);
+}
+
+/** Every descendant id of the given ids (children, grandchildren, …), excluding the inputs. */
+export function collectDescendants(doc: EditorDocument, ids: Iterable<string>): Set<string> {
+  const childrenByParent = new Map<string, string[]>();
+  for (const node of editorNodes(doc)) {
+    if (node.parentId === undefined) continue;
+    const bucket = childrenByParent.get(node.parentId);
+    if (bucket === undefined) childrenByParent.set(node.parentId, [node.id]);
+    else bucket.push(node.id);
+  }
+  const out = new Set<string>();
+  const stack = [...ids];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    for (const child of childrenByParent.get(current) ?? []) {
+      if (out.has(child)) continue;
+      out.add(child);
+      stack.push(child);
+    }
+  }
+  return out;
+}
+
+/** True when parenting `id` under `parentId` would form a cycle (or parent itself to itself). */
+export function wouldCreateCycle(doc: EditorDocument, id: string, parentId: string | null): boolean {
+  if (parentId === null) return false;
+  if (parentId === id) return true;
+  return collectDescendants(doc, [id]).has(parentId);
+}
+
 /** Serializes an editor document to JSON text for saving or export. */
 export function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string {
   return JSON.stringify(doc, null, pretty ? 2 : undefined);

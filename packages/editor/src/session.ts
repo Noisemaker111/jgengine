@@ -1,6 +1,9 @@
 import {
   createEditorSession,
+  editorChildren,
   editorDocumentBounds,
+  editorParentOf,
+  editorRoots,
   listEditorKinds,
   normalizeEditorLayers,
   summarizeEditorSession,
@@ -89,7 +92,9 @@ export type EditorBridgeRequest =
       seed?: string;
       minSpacing?: number;
     }
-  | { method: "scatter_summary" };
+  | { method: "scatter_summary" }
+  | { method: "set_parent"; ids: string[]; parentId: string | null }
+  | { method: "hierarchy" };
 
 /** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
@@ -551,6 +556,22 @@ export function createEditorHost(options: {
             const regions = doc.paths.filter((path) => path.kind === SCATTER_PATH_KIND).length;
             const instances = resolveScatter(doc).length;
             return { ok: true, result: { regions, instances } };
+          }
+          case "set_parent": {
+            session.dispatch({ type: "setParent", ids: request.ids, parentId: request.parentId });
+            const doc = session.getState().document;
+            return {
+              ok: true,
+              result: { roots: editorRoots(doc), parents: request.ids.map((id) => ({ id, parentId: editorParentOf(doc, id) ?? null })) },
+            };
+          }
+          case "hierarchy": {
+            const doc = session.getState().document;
+            const roots = editorRoots(doc);
+            return {
+              ok: true,
+              result: { roots, tree: roots.map((id) => ({ id, children: editorChildren(doc, id) })) },
+            };
           }
         }
       } catch (error) {

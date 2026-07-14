@@ -178,6 +178,15 @@ Headless: `create_terrain`, `sculpt_terrain {mode,x,z,radius,strength,…}`, `pa
 `add_foliage {points,density,item}`, and `scatter_summary` RPC verbs drive and assert terrain + foliage
 authoring without WebGL (`bun packages/editor/src/mcp/cli.ts`).
 
+## Scene hierarchy — parent / child
+
+The outliner has a **By kind** and a **Hierarchy** view (nested tree, expand/collapse). Any object can be
+**parented** under another via the inspector's *parent* dropdown (or the `set_parent` RPC) — moving or
+translating a parent carries its whole subtree by the same delta, and cycles are refused. Parenting rides
+`parentId` on the object itself, so it serializes, undoes, and translates through the existing commands.
+Helpers in `@jgengine/core/editor/index`: `editorRoots`, `editorChildren`, `editorParentOf`,
+`collectDescendants`, `wouldCreateCycle`. Headless: `set_parent {ids, parentId}` and `hierarchy`.
+
 ## Core APIs (`editor/`)
 
 - `@jgengine/core/editor/index` — document, session, commands, undo
