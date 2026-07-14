@@ -154,6 +154,37 @@ describe("slope-slide (heightfield)", () => {
   });
 });
 
+describe("smoothed body-turn", () => {
+  const HEAD = Math.PI / 2;
+
+  test("default (turnSpeed unset): body facing snaps to the movement heading", () => {
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", ["moveForward"], 1, tuning({ ground: FLAT_GROUND }), HEAD);
+    expect(ctx.scene.entity.get("a")!.rotationY).toBeCloseTo(HEAD, 5);
+  });
+
+  test("turnSpeed set: a single frame rotates at most turnSpeed * dt toward the heading", () => {
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", ["moveForward"], 1, tuning({ movement: { turnSpeed: 1 }, ground: FLAT_GROUND }), HEAD);
+    expect(ctx.scene.entity.get("a")!.rotationY).toBeCloseTo(1 / 60, 4);
+  });
+
+  test("turnSpeed set: facing converges on the heading over time without overshoot", () => {
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", ["moveForward"], 240, tuning({ movement: { turnSpeed: 1 }, ground: FLAT_GROUND }), HEAD);
+    expect(ctx.scene.entity.get("a")!.rotationY).toBeCloseTo(HEAD, 4);
+  });
+
+  test("turnSpeed set: smoothed facing lags the instant heading mid-turn", () => {
+    const smooth = context(["a"]);
+    driveWith(smooth, "a", ["moveForward"], 20, tuning({ movement: { turnSpeed: 1 }, ground: FLAT_GROUND }), HEAD);
+    const snap = context(["b"]);
+    driveWith(snap, "b", ["moveForward"], 20, tuning({ ground: FLAT_GROUND }), HEAD);
+    expect(smooth.scene.entity.get("a")!.rotationY).toBeLessThan(snap.scene.entity.get("b")!.rotationY);
+    expect(smooth.scene.entity.get("a")!.rotationY).toBeGreaterThan(0);
+  });
+});
+
 describe("per-player motion queues", () => {
   test("motionFor isolates each player's pending impulses", () => {
     const ctx = context(["a", "b"]);
