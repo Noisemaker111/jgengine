@@ -1,4 +1,4 @@
-import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { ControlsList, StartScreen as MenuScreen } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 
 import { keybinds } from "../../keybinds";
@@ -6,21 +6,11 @@ import type { CourseDef } from "../../world/courses";
 import type { SessionState } from "../../session/sessionState";
 import { panelClass, primaryButtonClass } from "../theme";
 
-const KEY_LEGEND: readonly [string, string][] = [
-  [actionLabel(keybinds, "hook") ?? "LMB", "Fire / release hook"],
-  [actionLabel(keybinds, "steerLeft") ?? "A", "Steer left"],
-  [actionLabel(keybinds, "steerRight") ?? "D", "Steer right"],
-  [actionLabel(keybinds, "pitchUp") ?? "W", "Nose up"],
-  [actionLabel(keybinds, "pitchDown") ?? "S", "Nose down"],
-  [actionLabel(keybinds, "restartCourse") ?? "R", "Restart course"],
-  ["Mouse", "Look / aim"],
-];
-
 export function StartScreen({ courses, session }: { courses: readonly CourseDef[]; session: SessionState }) {
   const { commands } = useGame();
 
   return (
-    <div data-jg-menu className="pointer-events-auto flex h-full w-full items-center justify-center bg-gradient-to-b from-[#f7c59f]/25 via-transparent to-[#2b2118]/60 px-4">
+    <MenuScreen className="pointer-events-auto flex h-full w-full items-center justify-center bg-gradient-to-b from-[#f7c59f]/25 via-transparent to-[#2b2118]/60 px-4">
       <div className={`${panelClass} w-full max-w-xl`}>
         <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#b08d57]">Sunrise Brass Archipelago</p>
         <h1 className="mt-1 text-3xl font-black tracking-tight text-[#f4efe6]">Skyhook Rally</h1>
@@ -56,16 +46,26 @@ export function StartScreen({ courses, session }: { courses: readonly CourseDef[
           })}
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-lg border border-[#b08d57]/30 bg-[#2b2118]/40 p-3 text-xs">
-          {KEY_LEGEND.map(([key, label]) => (
-            <div key={label} className="flex items-center gap-2">
-              <span className="inline-flex min-w-[2.2em] items-center justify-center rounded border border-[#f4efe6]/40 bg-[#f4efe6]/10 px-1.5 py-0.5 font-bold text-[#f4efe6]">
-                {key}
-              </span>
-              <span className="text-[#f4efe6]/80">{label}</span>
-            </div>
-          ))}
-        </div>
+        <ControlsList
+          bindings={keybinds}
+          controls={[
+            { action: "hook", label: "Fire / release hook" },
+            { action: "steerLeft", label: "Steer left" },
+            { action: "steerRight", label: "Steer right" },
+            { action: "pitchUp", label: "Nose up" },
+            { action: "pitchDown", label: "Nose down" },
+            { action: "restartCourse", label: "Restart course" },
+            { keys: "Mouse", label: "Look / aim" },
+          ]}
+          className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-lg border border-[#b08d57]/30 bg-[#2b2118]/40 p-3 text-xs"
+          rowClassName="flex items-center gap-2"
+          labelClassName="text-[#f4efe6]/80"
+          renderKey={(key) => (
+            <span className="inline-flex min-w-[2.2em] items-center justify-center rounded border border-[#f4efe6]/40 bg-[#f4efe6]/10 px-1.5 py-0.5 font-bold text-[#f4efe6]">
+              {key}
+            </span>
+          )}
+        />
 
         <div className="mt-5 flex items-center justify-between">
           <span className="text-xs text-[#f4efe6]/60">Press Enter or click Start</span>
@@ -74,6 +74,6 @@ export function StartScreen({ courses, session }: { courses: readonly CourseDef[
           </button>
         </div>
       </div>
-    </div>
+    </MenuScreen>
   );
 }

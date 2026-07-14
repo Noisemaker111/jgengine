@@ -1,4 +1,5 @@
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
 import {
   Component,
   Suspense,
@@ -75,6 +76,7 @@ import type {
   EntitySpriteConfig,
   LightingConfig,
   ModelConfig,
+  ModelMaterialMaps,
   ObjectStyle,
   PointerConfig,
 } from "@jgengine/core/game/playableGame";
@@ -506,6 +508,23 @@ function resolveEntityModel(
   };
 }
 
+function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps: ModelMaterialMaps }) {
+  const entries = useMemo(() => {
+    const record: Record<string, string> = {};
+    if (maps.color !== undefined) record.color = maps.color;
+    if (maps.normal !== undefined) record.normal = maps.normal;
+    if (maps.roughness !== undefined) record.roughness = maps.roughness;
+    if (maps.ao !== undefined) record.ao = maps.ao;
+    return record;
+  }, [maps.color, maps.normal, maps.roughness, maps.ao]);
+  const textures = useTexture(entries) as Partial<Record<"color" | "normal" | "roughness" | "ao", THREE.Texture>>;
+  useEffect(() => {
+    if (textures.color !== undefined) textures.color.colorSpace = THREE.SRGBColorSpace;
+    applyMaterialOverride(scene, {}, { clone: false, textures });
+  }, [scene, textures]);
+  return null;
+}
+
 function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
   const gltf = useLoader(GLTFLoader, model.url, (loader) => {
     loader.setMeshoptDecoder(MeshoptDecoder);
@@ -765,6 +784,7 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   return (
     <>
       <primitive object={scene} position={position} scale={[scale, scale, scale]} />
+      {material?.maps !== undefined ? <ModelMaterialMapsApplier scene={scene} maps={material.maps} /> : null}
       {(model.attachments ?? []).map((attachment, index) =>
         typeof attachment.model === "string" ? null : (
           <BoneAttachment

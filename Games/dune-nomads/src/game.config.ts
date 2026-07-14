@@ -6,7 +6,7 @@ import { GameUI } from "./game/ui/GameUI";
 import { renderCaravanEntity } from "./game/world/renderCamels";
 import { renderDuneObject } from "./game/world/renderProps";
 import { oasisPrompts } from "./game/world/prompts";
-import { onInit, onNewPlayer, onTick } from "./loop";
+import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { world } from "./world";
 
 export const game = defineGame({
@@ -15,6 +15,7 @@ export const game = defineGame({
   content,
   input: keybinds,
   loop: { onInit, onNewPlayer, onTick },
+  lifecycle,
   GameUI,
   capture: { play: ["start"] },
   settings: {

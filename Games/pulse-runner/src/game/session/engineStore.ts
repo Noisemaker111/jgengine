@@ -1,9 +1,9 @@
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { useStore } from "@jgengine/react/store";
 
-import type { RunnerEngine, RunnerSnapshot } from "./runnerEngine";
+import { createRunnerEngine, type RunnerEngine, type RunnerSnapshot } from "./runnerEngine";
 
-export const engineStore = defineStore<RunnerEngine | undefined>("pulse-runner:engine", undefined);
+export const engineStore = defineStore<RunnerEngine>("pulse-runner:engine", () => createRunnerEngine());
 
 export function useRunnerSnapshot(): RunnerSnapshot | undefined {
   return useStore(engineStore, (engine) => engine?.snapshot());

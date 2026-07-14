@@ -4,6 +4,7 @@ import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
 
 import { game } from "../game.config";
 import { loop } from "../loop";
+import type { AuctionView } from "./auction/systems";
 import { classById } from "./classes/catalog";
 import { applyMobCc, isMobInstance, mobCount, mobRuntimeOf } from "./ai/mobs";
 import { buildLootTables, content } from "./content";
@@ -432,6 +433,52 @@ describe("claudecraft gameplay (headless)", () => {
     expect(buy.status).toBe("applied");
     expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(before + 1);
     ctx.game.commands.run("shop.close", {});
+  });
+
+  test("world market lists, sells through the seller's collection box with a house cut, and sweeps unsold goods", () => {
+    const SELLER = "market-seller-test";
+    ctx.game.loot.grantToPlayer(SELLER, [{ item: "baked_bread", count: 2 }]);
+    ctx.game.commands.runAs(SELLER, "auction.open", {});
+    const posted = ctx.game.commands.runAs(SELLER, "auction.list", {
+      itemId: "baked_bread",
+      count: 1,
+      price: 100,
+    });
+    expect(posted.status).toBe("applied");
+    let sellerView = ctx.game.store.get(`auctionView:${SELLER}`) as AuctionView;
+    expect(sellerView.mine).toHaveLength(1);
+    const listingId = sellerView.mine[0]?.id;
+    expect(listingId).toBeDefined();
+
+    ctx.game.economy.grant(USER, COPPER, 200);
+    const buyerCopperBefore = ctx.game.economy.balance(USER, COPPER);
+    const breadBefore = ctx.player.inventory.count("bags", "baked_bread");
+    const bought = ctx.game.commands.run("auction.buy", { listingId });
+    expect(bought.status).toBe("applied");
+    expect(ctx.player.inventory.count("bags", "baked_bread")).toBe(breadBefore + 1);
+    expect(ctx.game.economy.balance(USER, COPPER)).toBe(buyerCopperBefore - 100);
+    expect(ctx.game.economy.balance(SELLER, COPPER)).toBe(0);
+
+    ctx.game.commands.runAs(SELLER, "auction.collect", {});
+    expect(ctx.game.economy.balance(SELLER, COPPER)).toBe(95);
+
+    const expiring = ctx.game.commands.runAs(SELLER, "auction.list", {
+      itemId: "baked_bread",
+      count: 1,
+      price: 50,
+    });
+    expect(expiring.status).toBe("applied");
+    step(ctx, 172_860, 6000);
+    ctx.game.commands.runAs(SELLER, "auction.open", {});
+    sellerView = ctx.game.store.get(`auctionView:${SELLER}`) as AuctionView;
+    expect(sellerView.mine).toHaveLength(0);
+    expect(sellerView.collection.items).toEqual([{ itemId: "baked_bread", count: 1 }]);
+
+    ctx.game.commands.runAs(SELLER, "auction.collect", {});
+    sellerView = ctx.game.store.get(`auctionView:${SELLER}`) as AuctionView;
+    expect(sellerView.collection.items).toEqual([]);
+    ctx.game.commands.runAs(SELLER, "auction.close", {});
+    ctx.game.commands.run("auction.close", {});
   });
 
   test("vale cup match starts and records a kick", () => {

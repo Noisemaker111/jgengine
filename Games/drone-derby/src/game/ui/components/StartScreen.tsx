@@ -1,29 +1,22 @@
-import { SettingsTrigger } from "@jgengine/react";
+import { ControlsList, SettingsTrigger, StartScreen as MenuScreen } from "@jgengine/react";
 import { HudLabel } from "@/components/ui/hud-label";
 import { HudPanel } from "@/components/ui/hud-panel";
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 import { MenuButton } from "@/components/ui/menu-button";
 
+import { keybinds } from "../../keybinds";
 import { COURSES, COURSE_ORDER, type CourseId } from "../../race/courses";
 import { requestCourse, requestStart } from "../../drone/menuIntent";
 
-const CONTROLS: readonly [string, string][] = [
-  ["W / S", "Throttle up / down"],
-  ["A / D", "Yaw left / right"],
-  ["↑ / ↓", "Pitch forward / back"],
-  ["← / →", "Strafe left / right"],
-  ["Space", "Boost"],
-  ["E", "Land / charge toggle"],
-  ["R", "Restart"],
-];
-
 export function StartScreen({ courseId }: { courseId: CourseId }) {
   return (
-    <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-8 overflow-y-auto py-8">
-      <div className="absolute top-5 right-5">
+    <MenuScreen
+      className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-8 overflow-y-auto py-8"
+      settings={
         <SettingsTrigger className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#3a4048] bg-[#20242b]/90 text-[#9ef01a] transition-colors hover:bg-[#2a2f37]/90" />
-      </div>
-
+      }
+      settingsWrapperClassName="absolute top-5 right-5"
+    >
       <div className="flex flex-col items-center gap-2">
         <h1
           className="m-0 text-[clamp(30px,5vw,46px)] font-extrabold uppercase tracking-[0.22em]"
@@ -86,20 +79,26 @@ export function StartScreen({ courseId }: { courseId: CourseId }) {
       <MenuButton label="Launch" keybind="Enter" onActivate={() => requestStart()} width={220} />
 
       <HudPanel title="Controls" width={420}>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-          {CONTROLS.map(([key, label]) => (
-            <span key={label} className="flex items-center gap-2.5">
-              <KeybindBadge label={key} size="sm" />
-              <span className="text-[11px]" style={{ color: "var(--jg-text-dim)" }}>
-                {label}
-              </span>
-            </span>
-          ))}
-        </div>
+        <ControlsList
+          bindings={keybinds}
+          controls={[
+            { action: ["throttleUp", "throttleDown"], label: "Throttle up / down" },
+            { action: ["yawLeft", "yawRight"], label: "Yaw left / right" },
+            { action: ["pitchForward", "pitchBack"], label: "Pitch forward / back" },
+            { action: ["strafeLeft", "strafeRight"], label: "Strafe left / right" },
+            { action: "boost", label: "Boost" },
+            { action: "chargeToggle", label: "Land / charge toggle" },
+            { action: "restart", label: "Restart" },
+          ]}
+          className="grid grid-cols-2 gap-x-6 gap-y-2"
+          rowClassName="flex items-center gap-2.5"
+          labelClassName="text-[11px] [color:var(--jg-text-dim)]"
+          renderKey={(key) => <KeybindBadge label={key} size="sm" />}
+        />
         <div className="mt-2">
           <HudLabel>Mouse-drag also steers pitch / strafe</HudLabel>
         </div>
       </HudPanel>
-    </div>
+    </MenuScreen>
   );
 }

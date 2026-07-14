@@ -481,6 +481,18 @@ export interface ModelAnimationConfig {
   oneShots?: Record<string, string | readonly string[]>;
 }
 
+/**
+ * Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`)
+ * layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any
+ * role may be omitted to keep the model's own map.
+ */
+export interface ModelMaterialMaps {
+  color?: string;
+  normal?: string;
+  roughness?: string;
+  ao?: string;
+}
+
 /** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */
 export interface ModelMaterialOverride {
   color?: string;
@@ -488,6 +500,8 @@ export interface ModelMaterialOverride {
   roughness?: number;
   emissive?: string;
   emissiveIntensity?: number;
+  /** Real PBR texture maps applied over the model's material — see {@link ModelMaterialMaps}. */
+  maps?: ModelMaterialMaps;
 }
 
 /** Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame. */

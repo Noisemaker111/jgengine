@@ -13,6 +13,7 @@ import { craftingPrompts, FISHING_SPOT, FORGE } from "./game/crafting/systems";
 import { GATHER_NODES } from "./game/professions/catalog";
 import { gatherPrompts } from "./game/professions/gathering";
 import {
+  AUCTION_BOARD,
   contentPrompts,
   DELVE_PORTAL,
   dungeonPrompts,
@@ -49,6 +50,7 @@ const objectStyles = {
   [FORGE]: { color: "#5a4a3a" },
   [FISHING_SPOT]: { color: "#3a6a8a" },
   [MAILBOX]: { color: "#6b8cae" },
+  [AUCTION_BOARD]: { color: "#b5651d" },
   [DELVE_PORTAL]: { color: "#8b5cf6" },
   [VALE_CUP_STADIUM]: { color: "#c4a35a" },
   [YUMI_SHRINE]: { color: "#e8a0bf" },

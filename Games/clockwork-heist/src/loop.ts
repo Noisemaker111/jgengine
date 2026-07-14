@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
 import { NORMAL_WALK_SPEED, PLAYER_CATALOG_KIND, SERVANT_DOOR_SPAWN, SNEAK_WALK_SPEED } from "./game/entities/player";
@@ -29,38 +30,27 @@ function syncPhase(ctx: GameContext, status: HeistState["status"]): void {
   setGamePhase(ctx, status === "playing" ? "playing" : status === "intro" ? "menu" : "ended");
 }
 
+export const lifecycle: LifecycleConfig<HeistState> = {
+  store: heistStore,
+  start: (state, ctx) => startHeist(state, ctx.time.now()),
+  restart(state, ctx) {
+    const next = restartHeist(state, ctx.time.now());
+    ensureCollectiblesPlaced(ctx, next.collectedTreasureIds, next.collectedLootIds);
+    ctx.scene.entity.setPose(ctx.player.userId, { position: SERVANT_DOOR_SPAWN, rotationY: 0 });
+    ctx.scene.entity.update(ctx.player.userId, { movement: { walkSpeed: NORMAL_WALK_SPEED } });
+    uiStore.write(ctx, initialUiState());
+    return next;
+  },
+  phaseOf: (state) => (state.status === "playing" ? "playing" : state.status === "intro" ? "menu" : "ended"),
+  commands: { start: "startHeist" },
+};
+
 export function onInit(ctx: GameContext): void {
   placeStaticWorld(ctx);
   ensureCollectiblesPlaced(ctx, [], []);
   heistStore.write(ctx, initialHeistState());
   uiStore.write(ctx, initialUiState());
   syncPhase(ctx, "intro");
-
-  ctx.game.commands.define("startHeist", {
-    apply(state: GameContext) {
-      const current = heistStore.read(state);
-      const next = startHeist(current, state.time.now());
-      if (next !== current) {
-        heistStore.write(state, next);
-        syncPhase(state, next.status);
-      }
-      return state;
-    },
-  });
-
-  ctx.game.commands.define("restart", {
-    apply(state: GameContext) {
-      const current = heistStore.read(state);
-      const next = restartHeist(current, state.time.now());
-      heistStore.write(state, next);
-      syncPhase(state, next.status);
-      ensureCollectiblesPlaced(state, next.collectedTreasureIds, next.collectedLootIds);
-      state.scene.entity.setPose(state.player.userId, { position: SERVANT_DOOR_SPAWN, rotationY: 0 });
-      state.scene.entity.update(state.player.userId, { movement: { walkSpeed: NORMAL_WALK_SPEED } });
-      uiStore.write(state, initialUiState());
-      return state;
-    },
-  });
 
   ctx.game.commands.define("heist.exit", {
     apply(state: GameContext) {
