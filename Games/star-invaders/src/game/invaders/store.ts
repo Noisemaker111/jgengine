@@ -1,4 +1,4 @@
-import { createRecordBook, type RecordStorage } from "@jgengine/core/game/recordBook";
+import { createRecordBook } from "@jgengine/core/game/recordBook";
 import { seededRng } from "@jgengine/core/random/rng";
 
 import {
@@ -156,15 +156,6 @@ export interface StarInvadersStore {
   preview(): void;
 }
 
-function resolveStorage(): RecordStorage | null {
-  try {
-    if (typeof localStorage !== "undefined") return localStorage;
-  } catch {
-    return null;
-  }
-  return null;
-}
-
 function fullGrid(): boolean[][] {
   const grid: boolean[][] = [];
   for (let r = 0; r < ROWS; r += 1) {
@@ -180,7 +171,6 @@ export function createStarInvadersStore(seed: string | number = "star-invaders")
   const records = createRecordBook<"score" | "wave">({
     key: RECORD_KEY,
     fields: { score: "higher", wave: "higher" },
-    storage: resolveStorage(),
   });
 
   const state: MutableState = {
