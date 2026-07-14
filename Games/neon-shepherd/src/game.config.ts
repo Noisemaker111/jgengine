@@ -5,7 +5,7 @@ import { keybinds } from "./game/keybinds";
 import { renderEntity } from "./game/render/renderEntity";
 import { renderObject } from "./game/render/renderObject";
 import { GameUI } from "./game/ui/GameUI";
-import { onInit, onNewPlayer, onTick } from "./loop";
+import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 const MOVE_MARGIN = 0.6;
@@ -20,6 +20,7 @@ export const game = defineGame({
   save: "none",
   content,
   loop: { onInit, onNewPlayer, onTick },
+  lifecycle,
   GameUI,
   capture: { play: ["start"] },
   settings: {

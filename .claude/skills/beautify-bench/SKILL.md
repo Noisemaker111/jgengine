@@ -30,9 +30,9 @@ Default: **"Make the starter area, terrain and environment of the `borderlands2`
 
 Tracked in [issue #710](https://github.com/Noisemaker111/jgengine/issues/710). Test one at a time:
 
-- **Warm loop**: background `bun run dev:runner` before the worker starts (drive/shoot reuse a live server); persistent Chrome / HMR re-shot
-- **Half-res judge shots** mid-loop; full-res only for final evidence
-- **Scoped typecheck** (`tsgo -p Games/<id>`) instead of full `check-types` per tweak
+- **Warm loop**: `shoot`/`drive --keep` once (dev server + Chrome on fixed debug port 9223 survive the process exit), `--connect 9223` every re-shot after — <10s per re-shot instead of a ~90s vite+Chrome reboot (`jgengine-verify` → "The warm loop")
+- **Half-res judge shots**: `--size half` mid-loop (~1/4 the image tokens); drop it for full-res final evidence
+- **Scoped typecheck**: `bun run --cwd Games/<id> check-types` (`tsgo -p Games/<id>/tsconfig.json`, ~5s) instead of full `check-types` per tweak
 - **Read/edit discipline**: offset reads, read-before-edit, batch edits per re-shoot
 - Skill wording changes (sharper rejection test, spawn-camera-first rule, art-stack ordering)
 - Model/effort mix for the worker

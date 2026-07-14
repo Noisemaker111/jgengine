@@ -44,7 +44,7 @@ const gameModules = import.meta.glob<{
   editorLayers?: import("@jgengine/core/editor/index").EditorLayersInput;
 }>("../../../Games/*/src/index.tsx");
 
-const gameStyleModules = import.meta.glob<Record<string, unknown>>("../../../Games/*/src/index.css");
+const gameStyleModules = import.meta.glob<Record<string, unknown>>("../../../Games/*/src/style.css");
 
 const gameSourceModules = import.meta.glob<Record<string, unknown>>([
   "../../../Games/*/src/**/*.{ts,tsx}",
@@ -428,7 +428,7 @@ function DevApp({ gameId }: { gameId: string }) {
     }
     void load()
       .then(async (loaded) => {
-        await gameStyleModules[`../../../Games/${gameId}/src/index.css`]?.();
+        await gameStyleModules[`../../../Games/${gameId}/src/style.css`]?.();
         await discoverGameTunables(gameId, loaded.game.name);
         if (MODE === "poster" || MODE === "editor") {
           setMultiplayer(null);

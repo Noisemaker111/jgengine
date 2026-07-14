@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createDecayMeterSet, type DecayMeterSet } from "@jgengine/core/survival/decayMeter";
 import { createRaceState, type RaceState } from "@jgengine/core/game/race";
+import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
@@ -48,17 +49,22 @@ function setRun(ctx: GameContext, next: RunState): void {
   setGamePhase(ctx, next.phase === "playing" ? "playing" : next.phase === "start" ? "menu" : "ended");
 }
 
+export const lifecycle: LifecycleConfig<RunState> = {
+  store: runStore,
+  start: (state) => beginRun(state),
+  restart(state, ctx) {
+    waterMeterStore.write(ctx, freshWaterMeter());
+    raceEngineStore.write(ctx, freshRaceEngine());
+    return initialRunState("playing", RIVAL_WAYPOINTS);
+  },
+  phaseOf: (state) => (state.phase === "playing" ? "playing" : state.phase === "start" ? "menu" : "ended"),
+};
+
 export function onInit(ctx: GameContext): void {
   placeDuneProps(ctx);
   waterMeterStore.write(ctx, freshWaterMeter());
   raceEngineStore.write(ctx, freshRaceEngine());
   setRun(ctx, initialRunState("start", RIVAL_WAYPOINTS));
-
-  ctx.game.commands.define<void>("start", {
-    apply(state) {
-      setRun(state, beginRun(getRun(state)));
-    },
-  });
 
   ctx.game.commands.define<void>("toggleMap", {
     apply(state) {
@@ -96,13 +102,6 @@ export function onInit(ctx: GameContext): void {
     },
   });
 
-  ctx.game.commands.define<void>("restart", {
-    apply(state) {
-      waterMeterStore.write(state, freshWaterMeter());
-      raceEngineStore.write(state, freshRaceEngine());
-      setRun(state, initialRunState("playing", RIVAL_WAYPOINTS));
-    },
-  });
 }
 
 export function onNewPlayer(ctx: GameContext): void {
