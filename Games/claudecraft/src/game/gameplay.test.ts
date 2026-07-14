@@ -98,7 +98,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("auto-attack kills a wolf, grants xp, copper, and quest credit", () => {
-    expect(ctx.game.quest.accept(USER, "q_wolves")).toBeNull();
+    expect(ctx.game.quest!.accept(USER, "q_wolves")).toBeNull();
     const wolfId = firstMobOf(ctx, "forest_wolf");
     const startCopper = ctx.game.economy.balance(USER, COPPER);
     const startXp = ctx.scene.entity.stats.get(USER, "xp")?.current ?? 0;
@@ -119,7 +119,7 @@ describe("claudecraft gameplay (headless)", () => {
     expect(mobRuntimeOf(wolfId)).toBeNull();
     expect(ctx.scene.entity.stats.get(USER, "xp")?.current ?? 0).toBeGreaterThan(startXp - 1);
     expect(ctx.game.economy.balance(USER, COPPER)).toBeGreaterThan(startCopper);
-    const journal = ctx.game.quest.list(USER).find((quest) => quest.questId === "q_wolves");
+    const journal = ctx.game.quest!.list(USER).find((quest) => quest.questId === "q_wolves");
     expect(journal).toBeDefined();
     const killObjective = journal?.objectives.find((objective) => objective.kind === "kill");
     expect(killObjective?.progress ?? 0).toBeGreaterThan(0);
@@ -149,7 +149,7 @@ describe("claudecraft gameplay (headless)", () => {
   test("vendor buys and sells against the eastbrook shop", () => {
     ctx.game.commands.run("shop.open", { shopId: "shop_eastbrook" });
     ctx.game.economy.grant(USER, COPPER, 5000);
-    const stock = ctx.game.trade.tradableAt(
+    const stock = ctx.game.trade!.tradableAt(
       "shop_eastbrook",
       ["baked_bread", CLASS_ENTITY_ID],
     );

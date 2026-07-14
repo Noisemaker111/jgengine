@@ -212,7 +212,7 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ itemId?: string }>("vendor.buyGear", {
     apply(state: GameContext, input) {
       if (input.itemId === undefined) return;
-      const rejection = state.game.trade.buy(input.itemId, 1, { shop: "shop_pandora", inventoryId: "backpack" });
+      const rejection = state.game.trade!.buy(input.itemId, 1, { shop: "shop_pandora", inventoryId: "backpack" });
       if (rejection !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: "NOT ENOUGH CASH", kind: "warn" });
       }

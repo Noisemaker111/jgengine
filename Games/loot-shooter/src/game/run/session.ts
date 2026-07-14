@@ -149,7 +149,7 @@ export function createRunSession(): RunSession {
   }
 
   function noteWaveStarted(ctx: GameContext): void {
-    ctx.game.quest.progress(ctx.player.userId, CHALLENGE_IDS.midfield, "wave", 1);
+    ctx.game.quest!.progress(ctx.player.userId, CHALLENGE_IDS.midfield, "wave", 1);
   }
 
   function submitRecords(ctx: GameContext): void {
@@ -212,8 +212,8 @@ export function createRunSession(): RunSession {
   function resetChallenges(ctx: GameContext): void {
     const userId = ctx.player.userId;
     for (const challenge of challenges) {
-      ctx.game.quest.revoke(userId, challenge.id);
-      ctx.game.quest.grant(userId, challenge.id);
+      ctx.game.quest!.revoke(userId, challenge.id);
+      ctx.game.quest!.grant(userId, challenge.id);
     }
   }
 
@@ -320,8 +320,8 @@ export function createRunSession(): RunSession {
       snapshot.kills += 1;
       snapshot.score += enemy.score;
       const userId = ctx.player.userId;
-      if (enemy.rank === "elite") ctx.game.quest.progress(userId, CHALLENGE_IDS.eliteHunter, "kills", 1);
-      if (enemy.rank === "boss") ctx.game.quest.progress(userId, CHALLENGE_IDS.bossSlayer, "kills", 1);
+      if (enemy.rank === "elite") ctx.game.quest!.progress(userId, CHALLENGE_IDS.eliteHunter, "kills", 1);
+      if (enemy.rank === "boss") ctx.game.quest!.progress(userId, CHALLENGE_IDS.bossSlayer, "kills", 1);
       publish(ctx);
     },
 

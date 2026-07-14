@@ -437,7 +437,7 @@ src/
 
 **Smart defaults** — omit any of these and the call still resolves: `multiplayer` → `offline()`; `assets` → an empty asset catalog; `loop` hooks (`onInit`/`onNewPlayer`/`onTick`) → no-ops; `content` → `{}`; `GameUI` → an empty component; `camera` → third-person orbit; `feed` → 20-entry ring buffers per action; a `world` of kind `environment()` auto-renders as the backdrop with no `environment` component supplied — a non-`environment()` world (`flat()`, `voxel()`, …) still needs the game to hand it one.
 
-**Opt-in `ctx.game.*` subsystems (`features`)** — core is genre-agnostic: the always-on base is `commands` / `events` / `store` / `feed` (plus `audio`), and genre subsystems are opt-in via `defineGame({ features: { roster, cards, turn, race, leaderboard, social, chat } })`. Omit one and `ctx.game.<name>` is `undefined` — a puzzle game isn't handed a card pile, race state, or party/chat it never asked for. Declare only what the game uses (`chat` implies `social`). (The content cluster — economy/quest/loot/trade — joins this manifest in a later slim-core phase.)
+**Opt-in `ctx.game.*` subsystems (`features`)** — core is genre-agnostic: the always-on base is `commands` / `events` / `store` / `feed` / `loot` / `economy` (plus `audio`), and genre subsystems are opt-in via `defineGame({ features: { quest, trade, unlocks, cosmetics, roster, cards, turn, race, leaderboard, social, chat } })`. Omit one and `ctx.game.<name>` is `undefined` (`cosmetics` hangs off `ctx.player`) — a puzzle game isn't handed a quest journal, a shop, a card pile, or party/chat it never asked for. Declare only what the game uses (`chat` implies `social`).
 
 ```ts
 // game.config.ts — imports only, nothing inline
