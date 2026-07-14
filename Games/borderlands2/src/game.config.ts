@@ -13,7 +13,7 @@ import { session } from "./game/session";
 import { GameUI } from "./game/ui/GameUI";
 import { renderPandoraEntity } from "./game/world/renderEntity";
 import { renderPandoraObject } from "./game/world/renderObject";
-import { PandoraViewmodel } from "./game/world/Viewmodel";
+import { PandoraWorldOverlay } from "./game/world/Viewmodel";
 import { NPC_PLACEMENTS } from "./game/world/level";
 import { AMMO_CHESTS, RED_CHESTS } from "./game/world/setup";
 import {
@@ -151,21 +151,20 @@ export const game = defineGame({
   entitySprites,
   renderEntity: renderPandoraEntity,
   renderObject: renderPandoraObject,
-  WorldOverlay: PandoraViewmodel,
+  WorldOverlay: PandoraWorldOverlay,
   worldHealthBars: { roles: ["enemy"] },
   worldItem: { rarityStyle, pickupRadius: 2.8 },
   prompts,
   hotbarSelection: () => session.selectedSlot(),
   backdrop: {
-    background: PANDORA.sky,
     fog: { color: PANDORA.fog, near: 160, far: 680 },
   },
   lighting: {
-    ambient: { color: "#c9b8a0", intensity: 1.4 },
-    hemisphere: { skyColor: "#b8d2de", groundColor: "#7a5638", intensity: 1.2 },
+    ambient: { color: "#c9b8a0", intensity: 0.5 },
+    hemisphere: { skyColor: "#b8d2de", groundColor: "#7a5638", intensity: 0.55 },
     directional: [
-      { color: "#fff2d8", intensity: 2.6, position: [40, 60, 20], castShadow: true },
-      { color: "#d9915c", intensity: 0.8, position: [-30, 30, -25] },
+      { color: "#fff2d8", intensity: 1.7, position: [40, 60, 20], castShadow: true },
+      { color: "#d9915c", intensity: 0.45, position: [-30, 30, -25] },
     ],
   },
   movement: {
@@ -186,7 +185,7 @@ export const game = defineGame({
   camera: {
     perspective: "first",
     firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
-    frustum: { far: 800 },
+    frustum: { far: 4200 },
   },
   orientation: "landscape",
 });

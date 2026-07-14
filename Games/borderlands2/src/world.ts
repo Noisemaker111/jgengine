@@ -36,6 +36,37 @@ const rawField = resolveTerrainField(terrain(TERRAIN_BASE));
 const roadPoints = (points: readonly { x: number; z: number }[]) =>
   points.map((point) => [point.x, point.z] as const);
 
+const speckleRegions = (
+  cx: number,
+  cz: number,
+  spread: number,
+  count: number,
+  seed: string,
+): TerrainMaterialRegion[] => {
+  const rng = seededRng(seed);
+  const tones = [
+    { low: "#8f6e3e", high: "#a3854c" },
+    { low: "#ccae6e", high: "#e0c888" },
+    { low: "#7c5c34", high: "#8f7042" },
+    { low: "#b8935a", high: "#c9ac70" },
+    { low: "#9a7c52", high: "#b09262" },
+  ] as const;
+  const regions: TerrainMaterialRegion[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const angle = rng() * Math.PI * 2;
+    const distance = spread * Math.sqrt(rng());
+    const radius = 3 + rng() * 9;
+    regions.push({
+      shape: "circle",
+      center: [cx + Math.cos(angle) * distance, cz + Math.sin(angle) * distance],
+      radius,
+      colors: tones[Math.floor(rng() * tones.length)]!,
+      falloff: radius * 0.5,
+    });
+  }
+  return regions;
+};
+
 const materialRegions: readonly TerrainMaterialRegion[] = [
   ...ZONES.map(
     (zone): TerrainMaterialRegion => ({
@@ -64,6 +95,16 @@ const materialRegions: readonly TerrainMaterialRegion[] = [
       falloff: 9,
     }),
   ),
+  ...ZONES.flatMap((zone) =>
+    speckleRegions(
+      zone.center.x,
+      zone.center.z,
+      zone.flattenRadius * 1.6,
+      zone.id === "windshear_waste" ? 90 : 36,
+      `bl2-speckle-${zone.id}`,
+    ),
+  ),
+  ...speckleRegions(ZONES[0]!.center.x + 18, ZONES[0]!.center.z + 34, 40, 40, "bl2-speckle-spawn"),
 ];
 
 const terrainDescriptor = terrain({
@@ -73,12 +114,13 @@ const terrainDescriptor = terrain({
     rockColor: "#6f4f34",
     sandColor: "#caa568",
     snowColor: "#d8cbb0",
-    rockSlopeStart: 0.36,
+    rockSlopeStart: 0.34,
     snowHeight: 999,
-    detailScale: 4.5,
-    macroScale: 60,
+    waterLevel: -999,
+    detailScale: 12,
+    macroScale: 24,
     roughness: 0.95,
-    strength: 1,
+    strength: 4,
   },
   flatten: [
     ...ZONES.map((zone) => ({
@@ -115,13 +157,16 @@ const scrubClumps = (
     const angle = rng() * Math.PI * 2;
     const distance = spread * (0.15 + rng() * 0.85);
     clumps.push(
-      scrubClump(cx + Math.cos(angle) * distance, cz + Math.sin(angle) * distance, 22, `${seed}-${index}`),
+      scrubClump(cx + Math.cos(angle) * distance, cz + Math.sin(angle) * distance, 9 + rng() * 6, `${seed}-${index}`),
     );
   }
   return clumps;
 };
 
+const windshear = ZONES[0]!;
+
 const vegetation: readonly GrassEnvironmentDescriptor[] = [
+  ...scrubClumps(windshear.center.x + 18, windshear.center.z + 34, 18, 4, "bl2-scrub-spawn"),
   ...ZONES.flatMap((zone) => scrubClumps(zone.center.x, zone.center.z, zone.flattenRadius * 1.3, 6, `bl2-scrub-${zone.id}`)),
   ...SIDE_POIS.flatMap((poi) => scrubClumps(poi.x, poi.z, poi.radius, 3, `bl2-scrub-${poi.id}`)),
 ];
