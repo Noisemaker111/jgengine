@@ -56,6 +56,62 @@ export function collectWorldBarSamples(
   return into.length;
 }
 
+/** One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player. */
+export interface NameplateSample {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  /** Health-stat fraction 0..1, or `null` when the entity carries no `statId` stat (name-only nameplate). */
+  percent: number | null;
+  distance: number;
+}
+
+/**
+ * Projects every non-local, role/distance-filtered entity into `into` as a
+ * `NameplateSample`. Pure data step powering `WorldNameplates` — swap in your
+ * own renderer by calling this directly instead of the component.
+ * @internal
+ */
+export function collectNameplateSamples(
+  ctx: GameContext,
+  statId: string,
+  height: number,
+  roles: readonly CatalogEntityRole[] | undefined,
+  resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined,
+  camera: { matrixWorldInverse: unknown; projectionMatrix: unknown },
+  viewport: { width: number; height: number },
+  into: NameplateSample[],
+  project: Projectable,
+  maxDistance = 40,
+): number {
+  into.length = 0;
+  const playerId = ctx.player.userId;
+  const player = ctx.scene.entity.get(playerId);
+  for (const entity of ctx.scene.entity.list()) {
+    if (entity.id === playerId) continue;
+    if (!worldHealthBarAllowsRole(roles, resolveRole?.(entity))) continue;
+    const distance =
+      player === null
+        ? 0
+        : Math.hypot(entity.position[0] - player.position[0], entity.position[2] - player.position[2]);
+    if (player !== null && distance > maxDistance) continue;
+    const stat = ctx.scene.entity.stats.get(entity.id, statId);
+    let percent: number | null = null;
+    if (stat !== null) {
+      const range = stat.max - stat.min;
+      percent = range <= 0 ? 0 : Math.max(0, Math.min(1, (stat.current - stat.min) / range));
+    }
+    project.set(entity.position[0], entity.position[1] + height, entity.position[2]);
+    project.project(camera);
+    if (project.z < -1 || project.z > 1) continue;
+    const x = (project.x * 0.5 + 0.5) * viewport.width;
+    const y = (-project.y * 0.5 + 0.5) * viewport.height;
+    into.push({ id: entity.id, name: entity.name, x, y, percent, distance });
+  }
+  return into.length;
+}
+
 export function paintWorldBarSamples(
   canvas: { width: number; height: number; getContext(kind: "2d"): CanvasRenderingContext2D | null },
   samples: readonly WorldBarSample[],

@@ -41,6 +41,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `MinimapChrome` (function) · `import { MinimapChrome } from "@jgengine/react"`
 
+## minimap-panel — circular minimap with zone label, clock, and compass composed together
+
+- `MinimapPanel` (function) · `import { MinimapPanel } from "@jgengine/react"`
+
+## nameplates — billboarded name + HP bar over nearby entities
+
+- `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
+
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/format/duration"`
