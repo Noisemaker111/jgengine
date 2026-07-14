@@ -60,4 +60,39 @@ describe("applyMaterialOverride", () => {
     expect(`#${(materials[0] as THREE.MeshStandardMaterial).color.getHexString()}`).toBe("#ff0000");
     expect(materials[1]).toBe(basic);
   });
+
+  test("applies loaded PBR textures onto map/normalMap/roughnessMap/aoMap", () => {
+    const mesh = meshWithStandardMaterial();
+    const versionBefore = (mesh.material as THREE.MeshStandardMaterial).version;
+    const textures = {
+      color: new THREE.Texture(),
+      normal: new THREE.Texture(),
+      roughness: new THREE.Texture(),
+      ao: new THREE.Texture(),
+    };
+    applyMaterialOverride(mesh, {}, { textures });
+    const applied = mesh.material as THREE.MeshStandardMaterial;
+    expect(applied.map).toBe(textures.color);
+    expect(applied.normalMap).toBe(textures.normal);
+    expect(applied.roughnessMap).toBe(textures.roughness);
+    expect(applied.aoMap).toBe(textures.ao);
+    expect(applied.version).toBeGreaterThan(versionBefore);
+  });
+
+  test("textures compose with a tint override on the same material", () => {
+    const mesh = meshWithStandardMaterial();
+    applyMaterialOverride(mesh, { roughness: 0.1 }, { textures: { color: new THREE.Texture() } });
+    const applied = mesh.material as THREE.MeshStandardMaterial;
+    expect(applied.roughness).toBeCloseTo(0.1, 5);
+    expect(applied.map).not.toBeNull();
+    expect(applied.normalMap).toBeNull();
+  });
+
+  test("without a textures option, map/normalMap/roughnessMap/aoMap are left alone", () => {
+    const mesh = meshWithStandardMaterial();
+    applyMaterialOverride(mesh, { color: "#ff0000" });
+    const applied = mesh.material as THREE.MeshStandardMaterial;
+    expect(applied.map).toBeNull();
+    expect(applied.normalMap).toBeNull();
+  });
 });
