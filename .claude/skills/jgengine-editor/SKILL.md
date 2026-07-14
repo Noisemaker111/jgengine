@@ -120,6 +120,84 @@ for (const p of resolveVegetation(sceneDoc))          // everything else → det
 
 Same volume, same seed → same field every run; drag the slider, save, done.
 
+## Terrain sculpting — brushes on the live heightfield
+
+Toolbar **Terrain** (or press `T`) enters the sculpt tool. **Create terrain** lays an editable
+heightfield over the scene; brushes then reshape it with live feedback:
+
+- **Raise / Lower** — push ground up or dig it down · **Smooth** — average toward neighbours ·
+  **Flatten** — level to a sampled or numeric height · **Noise** — fractal roughening (seeded, repeatable) ·
+  **Ramp** — drag low→high to grade a straight slope.
+- Live controls: radius, strength, falloff (smooth/linear/none), shape (circle/square), spacing,
+  invert modifier, flatten height, noise seed. A preview ring tracks the cursor.
+- A whole drag commits as **one** undoable stroke (compact vertex delta — the terrain document is
+  never copied per move). `Ctrl+Z` / `Ctrl+Y` undo/redo strokes like any edit; strokes serialize with
+  the scene under `document.terrain`.
+
+The sculpt engine is the reusable `@jgengine/core/world/terraform` seam — build, edit, and consume it
+outside the editor too:
+
+```ts
+import {
+  createTerrainSnapshot,          // fresh flat heightfield over an Aabb
+  editableTerrainFromSnapshot,    // rebuild a live EditableTerrain over the game's ground
+  beginTerraformStroke,           // batch many stamps into one compact TerraformDelta
+  applyDeltaToSnapshot,           // redo a stroke onto a snapshot (copy-on-write)
+  revertDeltaFromSnapshot,        // undo a stroke onto a snapshot (copy-on-write)
+} from "@jgengine/core/world/terraform";
+
+const snapshot = createTerrainSnapshot({ bounds: { minX: -100, minZ: -100, maxX: 100, maxZ: 100 }, cellSize: 2 });
+const terrain = editableTerrainFromSnapshot(snapshot, ctx.world.ground);
+const stroke = beginTerraformStroke(terrain);
+stroke.stamp({ mode: "raise", center: [0, 0], radius: 12, strength: 1 });
+const delta = stroke.delta();                       // one undoable step
+const next = applyDeltaToSnapshot(snapshot, delta); // serializable, back to document.terrain
+```
+
+### Material painting
+
+The terrain tool's **Paint** sub-mode paints material layers (grass/dirt/rock/sand/mud/snow/road/gravel)
+onto the same heightfield — the surface id is stored per cell in `document.terrain.surfaces` and colors the
+mesh. Click/drag paints the selected material; **Alt-click** samples (eyedropper); **Fill all** / **Clear
+paint** blanket the terrain; **Auto rules** paint by slope ("on steep slopes") or height ("on high ground").
+Each stroke/fill is one undoable `paintTerrain` command (compact `SurfaceDelta`). Consume with
+`beginSurfaceStroke`, `fillSurfaceDelta`, `autoPaintDelta`, and `surfaceAt` from `@jgengine/core/world/terraform`.
+
+## Foliage / scatter regions
+
+**+ Add → Foliage region (lasso)** draws a closed polygon on the terrain (click points, Enter to finish) —
+a scatter path of `kind: "scatter"`. Its inspector drives deterministic, **GPU-instanced** scatter that
+previews live in the viewport as you drag: **density /m²**, spacing, a weighted **species palette**
+(add/remove rows of item id + weight), scale range, **max slope** and **height** masks, **edge fade**
+(feather the border), align-to-slope, and a seed with a reroll button. Same seed → same field. Rules ride
+`path.meta`; consume in a game with `resolveScatter(doc, terrain)` from `@jgengine/core/world/scatterRegion`,
+instancing each placement's `item` from the render catalog (never one node per plant).
+
+Headless: `create_terrain`, `sculpt_terrain {mode,x,z,radius,strength,…}`, `paint_terrain {surface,x,z,radius}`,
+`fill_terrain {surface}`, `auto_paint {surface,minSlope,minHeight,…}`, `terrain_materials`, `terrain_summary`,
+`add_foliage {points,density,item}`, and `scatter_summary` RPC verbs drive and assert terrain + foliage
+authoring without WebGL (`bun packages/editor/src/mcp/cli.ts`).
+
+## Scene hierarchy — parent / child
+
+The outliner has a **By kind** and a **Hierarchy** view (nested tree, expand/collapse). Any object can be
+**parented** under another via the inspector's *parent* dropdown (or the `set_parent` RPC) — moving or
+translating a parent carries its whole subtree by the same delta, and cycles are refused. Parenting rides
+`parentId` on the object itself, so it serializes, undoes, and translates through the existing commands.
+Helpers in `@jgengine/core/editor/index`: `editorRoots`, `editorChildren`, `editorParentOf`,
+`collectDescendants`, `wouldCreateCycle`. Headless: `set_parent {ids, parentId}` and `hierarchy`.
+
+## Responsiveness — selector subscriptions + virtualization
+
+The editor stays smooth on large scenes via two seams (`@jgengine/editor`):
+- `useStoreSelector(store, selector, isEqual?)` subscribes a component to a **slice** of the session/UI
+  store through `useSyncExternalStore`, so it rerenders only when that slice changes — UI-only churn
+  (gizmo mode, snapping, active tool) no longer rerenders the outliner/inspector. `shallowArrayEqual`
+  is the selection-list comparator.
+- `virtualWindow(scrollTop, viewportHeight, rowHeight, rowCount, overscan?)` is the pure windowing math
+  behind the outliner's fixed-height virtual list — a scene with thousands of objects only mounts the
+  visible handful of rows. The status bar shows live object + foliage-instance counts next to the fps pill.
+
 ## Core APIs (`editor/`)
 
 - `@jgengine/core/editor/index` — document, session, commands, undo
