@@ -1,4 +1,5 @@
 import { compassBearing, headingToBearing, projectToMinimap } from "@jgengine/core/world/minimap";
+import { MinimapChrome } from "@jgengine/react/map";
 
 const SIZE = 176;
 const WORLD_RADIUS = 130;
@@ -38,7 +39,6 @@ export function DroneMinimap({
   const clampedRange = Number.isFinite(rangeMeters) ? rangeMeters : WORLD_RADIUS;
   const rangeRadiusPx = Math.min(SIZE / 2, clampedRange * (SIZE / 2 / WORLD_RADIUS));
   const windBearingDeg = (compassBearing([0, 0], windVector) * 180) / Math.PI;
-  const playerBearingDeg = (headingToBearing(heading) * 180) / Math.PI;
 
   return (
     <div
@@ -94,10 +94,9 @@ export function DroneMinimap({
             />
           );
         })}
-        <polygon
-          points={`${SIZE / 2},${SIZE / 2 - 7} ${SIZE / 2 - 5},${SIZE / 2 + 6} ${SIZE / 2 + 5},${SIZE / 2 + 6}`}
-          fill="var(--jg-text)"
-          transform={`rotate(${playerBearingDeg} ${SIZE / 2} ${SIZE / 2})`}
+        <MinimapChrome
+          view={view}
+          markers={[{ id: "player", position: center, heading: headingToBearing(heading), color: "var(--jg-text)", radius: 7 }]}
         />
       </svg>
       <div

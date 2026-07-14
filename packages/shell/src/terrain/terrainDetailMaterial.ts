@@ -7,6 +7,18 @@ export interface TerrainDetailMaterialHandle {
   material: THREE.MeshStandardMaterial;
 }
 
+/**
+ * Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller
+ * (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches
+ * `THREE.Texture` and this shell function never fetches a URL itself.
+ */
+export interface TerrainDetailMaterialTextures {
+  color: THREE.Texture;
+  normal: THREE.Texture;
+  roughness: THREE.Texture;
+  ao: THREE.Texture;
+}
+
 const NOISE_GLSL = /* glsl */ `
 uint jgHashUint(uvec2 v){
   uint x = v.x * 1664525u + v.y * 1013904223u;
@@ -41,8 +53,20 @@ float jgFbm(vec2 p){
  * sand (by waterline), and snow (by height) over it — textured-reading terrain
  * with no image assets. Full PBR: lit, shadowed, and fogged like any standard
  * material, so it composes with the post-processing chain.
+ *
+ * When `detail.material` is set, pass the matching loaded `textures` (color/normal/roughness/ao):
+ * they tile by world position at `detail.material.repeat` world units per tile and blend over the
+ * procedural result at `detail.material.strength` — the real-texture seam layers onto the existing
+ * look instead of replacing it.
  */
-export function createTerrainDetailMaterial(detail: ResolvedTerrainDetail): TerrainDetailMaterialHandle {
+export function createTerrainDetailMaterial(
+  detail: ResolvedTerrainDetail,
+  textures?: TerrainDetailMaterialTextures,
+): TerrainDetailMaterialHandle {
+  const hasTexture = textures !== undefined && detail.material !== undefined;
+  const repeat = detail.material?.repeat ?? 4;
+  const strength = detail.material?.strength ?? 1;
+
   const uniforms = {
     uRockColor: { value: new THREE.Color(detail.rockColor) },
     uSandColor: { value: new THREE.Color(detail.sandColor) },
@@ -53,6 +77,16 @@ export function createTerrainDetailMaterial(detail: ResolvedTerrainDetail): Terr
     uDetailScale: { value: Math.max(0.5, detail.detailScale) },
     uMacroScale: { value: Math.max(0.5, detail.macroScale) },
     uStrength: { value: detail.strength },
+    ...(hasTexture
+      ? {
+          uMatColor: { value: textures.color },
+          uMatNormal: { value: textures.normal },
+          uMatRoughness: { value: textures.roughness },
+          uMatAo: { value: textures.ao },
+          uMatRepeat: { value: Math.max(0.01, repeat) },
+          uMatStrength: { value: strength },
+        }
+      : {}),
   };
 
   const material = new THREE.MeshStandardMaterial({
@@ -82,6 +116,41 @@ vJgWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`,
 vJgWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
       );
 
+    const materialUniformsGlsl = hasTexture
+      ? `
+uniform sampler2D uMatColor;
+uniform sampler2D uMatNormal;
+uniform sampler2D uMatRoughness;
+uniform sampler2D uMatAo;
+uniform float uMatRepeat;
+uniform float uMatStrength;`
+      : "";
+
+    const materialColorGlsl = hasTexture
+      ? `
+vec2 jgMatUv = jgWp / uMatRepeat;
+vec3 jgMatColor = texture2D(uMatColor, jgMatUv).rgb;
+jgCol = mix(jgCol, jgMatColor, uMatStrength);`
+      : "";
+
+    const materialRoughnessGlsl = hasTexture
+      ? `
+float jgMatRough = texture2D(uMatRoughness, jgMatUv).g;
+roughnessFactor = mix(roughnessFactor, jgMatRough, uMatStrength);`
+      : "";
+
+    const materialNormalGlsl = hasTexture
+      ? `
+vec2 jgMatNormalXy = texture2D(uMatNormal, jgMatUv).rg * 2.0 - 1.0;
+normal = normalize(normal + vec3(jgMatNormalXy.x, 0.0, jgMatNormalXy.y) * uMatStrength * 0.6);`
+      : "";
+
+    const materialAoGlsl = hasTexture
+      ? `
+float jgMatAo = texture2D(uMatAo, jgMatUv).r;
+reflectedLight.indirectDiffuse *= mix(1.0, jgMatAo, uMatStrength);`
+      : "";
+
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
@@ -97,6 +166,7 @@ uniform float uWaterLevel;
 uniform float uDetailScale;
 uniform float uMacroScale;
 uniform float uStrength;
+${materialUniformsGlsl}
 ${NOISE_GLSL}`,
       )
       .replace(
@@ -119,10 +189,27 @@ jgCol = mix(jgCol, jgSand, jgSandW);
 vec3 jgSnow = uSnowColor * mix(0.94, 1.04, jgFine);
 float jgSnowW = smoothstep(uSnowHeight, uSnowHeight + 8.0, jgH) * (1.0 - jgRockW * 0.6) * uStrength;
 jgCol = mix(jgCol, jgSnow, jgSnowW);
+${materialColorGlsl}
 diffuseColor.rgb = jgCol;`,
+      )
+      .replace(
+        "#include <roughnessmap_fragment>",
+        `#include <roughnessmap_fragment>
+${materialRoughnessGlsl}`,
+      )
+      .replace(
+        "#include <normal_fragment_maps>",
+        `#include <normal_fragment_maps>
+${materialNormalGlsl}`,
+      )
+      .replace(
+        "#include <aomap_fragment>",
+        `#include <aomap_fragment>
+${materialAoGlsl}`,
       );
   };
 
-  material.customProgramCacheKey = () => `jgengine-terrain-detail-${detail.rockSlopeStart}-${detail.snowHeight}`;
+  material.customProgramCacheKey = () =>
+    `jgengine-terrain-detail-${detail.rockSlopeStart}-${detail.snowHeight}-${hasTexture ? "tex" : "flat"}`;
   return { material };
 }

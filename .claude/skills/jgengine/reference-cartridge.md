@@ -33,11 +33,13 @@ export const game = cartridge(config);
 
 The run is a phase machine every game gets for free: `start → countdown → playing → won | lost`. `flow.start: "gate"` renders `screens.start` (TitleScreen binding) until begin; `flow.countdownSeconds` renders the big-number countdown; `flow.restart: true` registers a `restart` command that resets the run in place, clears cartridge entities, and restores player stats — no hand-rolled session store, phase union, or reset function. `run.playingSeconds` is the run clock (drives the survive rule and the timer panel), so pauses and pre-game phases never skew timing.
 
-## Core surface (`@jgengine/core/cartridge/`)
+## Cartridge surface (`@jgengine/shell/cartridge/`)
 
-- `@jgengine/core/cartridge/spec` — the `CartridgeSpec` types, `Leveled` values (`number | { base, perLevel, min?, max? } | { table }` resolved by `leveled(value, level)`), `WASD_KEYBINDS` (the default when `input` is omitted).
-- `@jgengine/core/cartridge/runtime` — `createCartridge(spec)` → `{ content, loop, run(ctx), weaponKit(ctx), chooseUpgrade(ctx, offerId) }`. Owns the run store (outcome/kills/fields/weapon levels, subscribe/notify), spawn director advance + ring placement, chase + contact-damage enemies (terrain-grounded), the three weapon archetypes with auto-targeting, magnet xp-gem pickups feeding `leveling()`, pause-and-draft level-ups, kill → gem drop + leaderboard, and win/lose rules.
-- `@jgengine/core/cartridge/validate` — `validateCartridge(spec)` → problem list: spawn waves must reference declared enemies, upgrades must reference declared weapons/fields, stacks can't exceed weapon `maxLevel`, tuning must be positive, rarity thresholds descending. The game's test asserts it returns `[]`.
+The survivor-shaped defaults (XP gems, contact-radius melee, orbit/pulse/projectile weapons) are a genre archetype, not a core primitive — the whole cartridge implementation lives in `@jgengine/shell` (opt-in, alongside its React binding), never in `@jgengine/core`. `core` only supplies the generic pieces it composes: `spawnDirector`, `abilityKit`, `leveling`/`progression`, `runDraft`, `autoTarget`. A puzzle or tactics game imports none of this.
+
+- `@jgengine/shell/cartridge/spec` — the `CartridgeSpec` types, `Leveled` values (`number | { base, perLevel, min?, max? } | { table }` resolved by `leveled(value, level)`), `WASD_KEYBINDS` (the default when `input` is omitted).
+- `@jgengine/shell/cartridge/runtime` — `createCartridge(spec)` → `{ content, loop, run(ctx), weaponKit(ctx), chooseUpgrade(ctx, offerId) }`. Owns the run store (outcome/kills/fields/weapon levels, subscribe/notify), spawn director advance + ring placement, chase + contact-damage enemies (terrain-grounded), the three weapon archetypes with auto-targeting, magnet xp-gem pickups feeding `leveling()`, pause-and-draft level-ups, kill → gem drop + leaderboard, and win/lose rules.
+- `@jgengine/shell/cartridge/validate` — `validateCartridge(spec)` → problem list: spawn waves must reference declared enemies, upgrades must reference declared weapons/fields, stacks can't exceed weapon `maxLevel`, tuning must be positive, rarity thresholds descending. The game's test asserts it returns `[]`.
 
 Weapon archetypes: `projectile` (auto-target nearest in `range`, travel-time bolt fx), `orbit` (leveled blade count/radius sweeping `hitRadius`), `pulse` (radial AoE with linear falloff and an expanding-ring fx). Upgrade effects: `weaponLevel` (+1 level per stack), `statBonus` (+max and +current on pick), `fieldAdd` / `fieldMultiply` (recomputed from stacks). Weapon damage is multiplied by the `damageMultiplier` field when declared.
 
@@ -58,11 +60,11 @@ A game that is *mostly* bespoke simulation (custom physics, session machines) sh
 
 ## Testing
 
-Cartridge behaviors are engine-tested once (`packages/core/src/cartridge/runtime.test.ts`); the game test is one call plus any game-specific assertions:
+Cartridge behaviors are engine-tested once (`packages/shell/src/cartridge/runtime.test.ts`); the game test is one call plus any game-specific assertions:
 
 ```ts
-import { bootCartridge, cartridgeSmokeTest, tickCartridge } from "@jgengine/core/cartridge/testkit";
+import { bootCartridge, cartridgeSmokeTest, tickCartridge } from "@jgengine/shell/cartridge/testkit";
 cartridgeSmokeTest(config);   // validate + world summary + headless run/spawn/kill/gem smoke
 ```
 
-`bootCartridge`/`tickCartridge` build a headless `GameContext` and drive the loop (auto-choosing drafts) for custom assertions — see `@jgengine/core/cartridge/testkit`. The testkit imports `bun:test`; import it from test files only.
+`bootCartridge`/`tickCartridge` build a headless `GameContext` and drive the loop (auto-choosing drafts) for custom assertions — see `@jgengine/shell/cartridge/testkit`. The testkit imports `bun:test`; import it from test files only.

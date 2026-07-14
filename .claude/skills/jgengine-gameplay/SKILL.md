@@ -122,6 +122,10 @@ A capture item's `item.use` handler composes the primitives instead of forking t
 
 `@jgengine/core/game/recordBook` — `createRecordBook({ key, fields, storage? })` is a personal-best record book: named numeric fields racing toward `"lower"` (times) or `"higher"` (scores, streaks), with `best()` / `bestOf(field)` / `submit(run)` / `clear()`. `@jgengine/core/game/keyValueStore` — `createKeyValueStore({ key, initial, storage? })` is a single persisted mutable cell (`get` / `set` / `update` / `clear`) for single-player state a `recordBook` can't hold: a credit bank, a settings blob, level progress. `recordBook` is monotonic — it keeps only improved values; reach for the KV store when the value moves both ways. Both target the DOM-free `KeyValueStorage` seam and both default `storage` to the browser's `localStorage` when omitted — pass a stub in tests, or `storage: null` to force memory-only. That default already no-ops when `localStorage` is missing or throws (private mode, quota, SSR): adopters pass a `key`, never a hand-rolled `typeof localStorage` guard. Corrupt or unavailable storage degrades to in-memory and never throws into a tick. Author any core-side persistence against `KeyValueStorage`, never the DOM `Storage` type — core has no DOM lib, so copying shell's `fovPreference.ts` shape into core fails the build.
 
+## Race sessions
+
+`@jgengine/core/game/race` layers a start-line lifecycle and results math over the existing `createRaceState`/`createLapTimer` position tracker. `idleRaceSession()` is the pre-race grid state; `startRaceCountdown({ seconds? })` drops the lights into a `countdown` phase (or straight to `racing` for a standing start); `tickRaceSession(session, dt)` bleeds the countdown and accumulates `elapsed` while racing; `finishRaceSession(session)` freezes it at the flag. Once a finish order exists, `racePlacements(finishOrder, options?)` turns it into every racer's 1-based `place` + win/lose `outcome`, `placementOf(finishOrder, racerId, options?)` reads one racer's placement, and `raceOutcomeOf(finishOrder, racerId, options?)` is the plain win/lose shortcut — all three share a `winningPlaces` cutoff (default 1, pass 3 for a podium finish) instead of a hand-rolled `ranking[0] === player` check.
+
 ## Combat — effects, projectiles, death, feel, abilities
 ## Card, board & shaped-inventory primitives
 Pure, renderer-free structures for card, board, and deckbuilder games — they sit **beside** the slot inventory, not in place of it. All are immutable-reducer + thin-controller pairs, mirroring the two-tier ctx/factory model: use the `create*` controller in game code, reach for the exported pure functions (`draw`, `moveCards`, `tickTimeline`, `laneAggregate`, `runPipeline`, `placeShaped`) for unit tests and headless servers.
@@ -316,6 +320,19 @@ ctx.game.feed.recent(action, { limit? })
 ctx.game.leaderboard.track({ stat, scope: "global" | "server" | "profile" })   // onInit
 ctx.game.leaderboard.increment(userId, stat, { scope, by? }) / getTop / getProfile
 ```
+
+### Toasts — a self-expiring message queue
+
+`@jgengine/core/game/toasts` (`toast-feed` capability) is a capped, TTL-evicting queue for transient one-off HUD messages — the append-with-limit-plus-prune list every game hand-rolls under a local `Toast`/`pushToast`/expiry reimplementation. Reach for it instead of `ctx.game.feed` when the message is a game-raised announcement with its own lifetime (a boss-intro banner, an objective callout, a rate-limited warning), not a log of an engine event that already has a feed binding (kill feed, loot log, quest updates — those stay on `ctx.game.feed.bind(action)`).
+
+```ts
+const queue = createToastQueue({ cap: 4, ttlSeconds: 3 });   // @jgengine/core/game/toasts
+queue.push("The clock begins. Mind the count.", ctx.time.now());
+queue.prune(ctx.time.now());                                 // call once per tick alongside your other tickers
+queue.list();                                                 // oldest-first, feed straight to a HUD stack
+```
+
+`appendToast(toasts, toast, cap)` / `pruneToasts(toasts, now)` are the pure functions behind `createToastQueue` — reach for them directly only when the queue's state must live in an existing reducer/snapshot instead of its own instance. React rendering: `@jgengine/react`'s `ToastStack` renders `ctx.game.feed` entries, not this queue — pair a `createToastQueue` with your own list render (`queue.list().map(...)`) or a `useSyncExternalStore` wrapper, the same pattern `useFeed` uses over the feed ring buffer.
 
 `ctx.game.commands.define(name, { validate?(ctx, input), apply(ctx, input) })` registers a verb (`has`/`names`/`run` round it out); `run(name, input)` returns `{ status: "applied", state } | { status: "rejected", reason } | { status: "unknown-command" }`. `apply` may either **return** the next state (the classic reducer shape) or mutate `ctx` in place and return **nothing** — `run` keeps the current `ctx` as `state` when `apply` returns `void`, so a handler that only calls other `ctx` methods (spawn, effect, loot.grantToPlayer, …) doesn't need a pointless `return ctx`. **Event handlers use `ctx` directly** the same way (side effects: leaderboard, economy, scheduling) and never reassign state. One feed primitive for kill feeds, loot logs, quest updates — no per-domain feed hooks.
 
