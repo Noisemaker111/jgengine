@@ -66,6 +66,40 @@ export interface EditorNote {
  */
 export type EditorTerrain = TerraformSnapshot;
 
+/** The four placeable-object collections a prefab fragment or clipboard fragment carries. */
+export interface EditorFragmentContent {
+  markers: readonly EditorMarker[];
+  volumes: readonly EditorVolume[];
+  paths: readonly EditorPath[];
+  annotations: readonly EditorNote[];
+}
+
+/**
+ * A serializable, reusable stamp of authored objects — markers/volumes/paths/notes centered on
+ * their own centroid so the same prefab inserts consistently anywhere, in this scene or another
+ * game's. `insertPrefab` tags every inserted object's `meta.prefabId`/`meta.prefabInstanceId`;
+ * `detachPrefabInstance` strips those tags to break the link without touching the content.
+ */
+export interface EditorPrefab {
+  id: string;
+  name: string;
+  fragment: EditorFragmentContent;
+}
+
+/**
+ * A named, persisted list of object ids — a selection bookmark (restore, add-to) that can also
+ * double as a production group: `locked` blocks `translate`/`setTransform`/`remove`/`removeMany`
+ * on its members, `color`/`visible` are UI-only hints for the collections panel.
+ */
+export interface EditorCollection {
+  id: string;
+  name: string;
+  memberIds: string[];
+  color?: string;
+  locked?: boolean;
+  visible?: boolean;
+}
+
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
   version: 1;
@@ -75,6 +109,10 @@ export interface EditorDocument {
   annotations: EditorNote[];
   /** Optional sculpted heightfield overlay; absent until terrain is created in the editor. */
   terrain?: EditorTerrain;
+  /** Reusable object stamps authored with "make prefab", inserted anywhere with "insert prefab". */
+  prefabs: EditorPrefab[];
+  /** Named selection sets / production groups — restore, add-to, lock, color, visibility. */
+  collections: EditorCollection[];
 }
 
 /** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */
