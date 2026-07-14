@@ -1,3 +1,4 @@
+import { migrateTerrainSnapshot } from "../world/terraform";
 import type {
   EditorCollection,
   EditorDocument,
@@ -82,7 +83,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     annotations: asArray(resolved.annotations),
     prefabs: asArray(resolved.prefabs),
     collections: asArray(resolved.collections),
-    ...(resolved.terrain === undefined ? {} : { terrain: resolved.terrain }),
+    ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
   };
 }
 

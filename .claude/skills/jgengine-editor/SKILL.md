@@ -42,7 +42,7 @@ Toolbar buttons, `F2+E` (edit ↔ play, same chord family as F2+D devtools), chi
 
 - Toolbar shows a live `fps · draws · tris` pill (red under 30fps).
 - `F2+D` opens the engine devtools panel (debug mode) — sim phase bars name the exact lag culprit.
-- Agents: `{ method: "editor_status" }` includes a `perf` sample and current `mode`; `{ method: "perf_report" }` returns the devtools snapshot (fps, sim phases, culprit hints). Never guess at lag — pull the report.
+- Agents: `{ method: "editor_status" }` includes a `perf` sample and current `mode`; `{ method: "perf_report" }` returns the devtools snapshot (fps, sim phases, culprit hints). The perf sample separates **editor-authoring cost** from frame/sim cost — `raycastMs` (viewport picks), `rebuildMs` (preview-mesh rebuilds), `authoringMs` (their sum) — so "the editor feels laggy" resolves to a number. Sculpt/paint rebuilds only the stroke's **dirty region**, not the whole mesh. Never guess at lag — pull the report.
 
 ## Game opt-in (optional, thin)
 
@@ -163,6 +163,34 @@ paint** blanket the terrain; **Auto rules** paint by slope ("on steep slopes") o
 Each stroke/fill is one undoable `paintTerrain` command (compact `SurfaceDelta`). Consume with
 `beginSurfaceStroke`, `fillSurfaceDelta`, `autoPaintDelta`, and `surfaceAt` from `@jgengine/core/world/terraform`.
 
+### Material layer stack + weighted blend
+
+Beyond one dominant surface per cell, terrain carries a reorderable **material layer stack**
+(`document.terrain.layers: TerrainMaterialLayer[]`), each layer a palette `surface` plus render params
+(`roughness`, `tiling`, `triplanar`, `tint`, `opacity`) — carried as data so a runtime game reads them
+straight off the snapshot. Per-cell **weighted blend** lets a cell mix layers (0.6 grass + 0.4 dirt);
+weights live in `document.terrain.weights` (flat `cols*rows*layers.length`, **lazy** — absent until a blend
+is painted, so single-layer terrains stay compact). Pre-2.0 documents auto-upgrade via
+`migrateTerrainSnapshot` (derives layers from painted surfaces). Undo is compact: `setTerrainLayers`
+(snapshot) and `blendTerrain` (`WeightDelta`). Consume with `setLayers`, `blendPaintDelta`,
+`beginBlendStroke`, `weightsAt`, and `migrateTerrainSnapshot` from `@jgengine/core/world/terraform`.
+
+```ts
+import { editableTerrainFromSnapshot, beginBlendStroke } from "@jgengine/core/world/terraform";
+session.dispatch({ type: "setTerrainLayers", layers: [{ id: "grass", surface: "grass", roughness: 0.9 }, { id: "dirt", surface: "dirt" }] });
+const live = editableTerrainFromSnapshot(session.getState().document.terrain);
+const stroke = beginBlendStroke(live);
+stroke.stamp({ mode: "paint", center: [0, 0], radius: 8, surface: "dirt", strength: 1 });
+session.dispatch({ type: "blendTerrain", delta: stroke.delta() });   // one undoable weighted-blend step
+```
+
+### Runtime consumption — the sculpt seam
+
+An authored heightfield drives a game's live ground through `environment({ sculpt })`: pass the
+`document.terrain` snapshot and its offsets layer over the base terrain in `resolveEnvironmentField`, so
+**both the rendered mesh and player collision** reflect the sculpt through the one field every consumer
+already reads (see `Games/tower-guard`). `sculptedField(base, snapshot)` composes them directly.
+
 ## Foliage / scatter regions
 
 **+ Add → Foliage region (lasso)** draws a closed polygon on the terrain (click points, Enter to finish) —
@@ -171,12 +199,17 @@ previews live in the viewport as you drag: **density /m²**, spacing, a weighted
 (add/remove rows of item id + weight), scale range, **max slope** and **height** masks, **edge fade**
 (feather the border), align-to-slope, and a seed with a reroll button. Same seed → same field. Rules ride
 `path.meta`; consume in a game with `resolveScatter(doc, terrain)` from `@jgengine/core/world/scatterRegion`,
-instancing each placement's `item` from the render catalog (never one node per plant).
+then render the instances with `<InstancedScatter instances={…} />` from `@jgengine/shell/scatter` — real
+per-species proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts) grouped
+into per-chunk GPU-instanced draws that frustum-cull independently (`chunkScatterInstances`). The same
+renderer powers the editor preview. **Convert to objects**: `convertScatterToObjects` (RPC `convert_scatter`)
+detaches a region into individually-editable placed prop markers.
 
 Headless: `create_terrain`, `sculpt_terrain {mode,x,z,radius,strength,…}`, `paint_terrain {surface,x,z,radius}`,
-`fill_terrain {surface}`, `auto_paint {surface,minSlope,minHeight,…}`, `terrain_materials`, `terrain_summary`,
-`add_foliage {points,density,item}`, and `scatter_summary` RPC verbs drive and assert terrain + foliage
-authoring without WebGL (`bun packages/editor/src/mcp/cli.ts`).
+`fill_terrain {surface}`, `auto_paint {surface,minSlope,minHeight,…}`, `terrain_materials`, `terrain_layers`,
+`set_terrain_layers {layers}`, `blend_terrain {surface,x,z,radius?}`, `terrain_summary`,
+`add_foliage {points,density,item}`, `convert_scatter {pathId}`, and `scatter_summary` RPC verbs drive and
+assert terrain + foliage authoring without WebGL (`bun packages/editor/src/mcp/cli.ts`).
 
 ## Prefabs — reusable object stamps
 

@@ -1453,6 +1453,7 @@
 
 - `SCATTER_DEFAULTS` (const): const SCATTER_DEFAULTS: ScatterRegionRules — Defaults a bare scatter region fills with: sparse grass, lightly spaced.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
+- `ScatterChunk` (interface): interface ScatterChunk — A spatial bucket of scatter instances — one draw unit the renderer can frustum-cull as a whole.
 - `ScatterInstance` (interface): interface ScatterInstance — A single placed scatter instance — grounded world position plus per-instance variation.
 - `ScatterPaletteEntry` (interface): interface ScatterPaletteEntry — One species/prop in a scatter region's palette, with a relative spawn weight.
 - `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
@@ -1504,6 +1505,7 @@
 
 ## @jgengine/core/world/terraform
 
+- `BlendStroke` (interface): interface BlendStroke — Accumulates a whole blend-paint drag into one compact {@link WeightDelta}. Keeps each weight slot's first `before` and latest `after`, so undo replays the blend as a single step.
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `EditableTerrainConfig` (interface): interface EditableTerrainConfig — ⚠ undocumented
 - `SurfaceDelta` (interface): interface SurfaceDelta — A compact record of the surface-material cells a paint stroke touched: parallel `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint undo history small.
@@ -1520,7 +1522,10 @@
 - `TerraformShape` (type): type TerraformShape = "circle" | "square" — A brush footprint: a round disc or an axis-aligned square.
 - `TerraformSnapshot` (interface): interface TerraformSnapshot — ⚠ undocumented
 - `TerraformStroke` (interface): interface TerraformStroke — Accumulates a whole drag — many brush stamps — into one compact {@link TerraformDelta}. Keeps each vertex's first `before` and latest `after`, so undo replays the stroke as a single step even though the pointer fired dozens of moves.
+- `TerrainMaterialLayer` (interface): interface TerrainMaterialLayer — One material layer in a terrain's reorderable stack: a palette `surface` id (drives the base color) plus its render parameters. Array order is the stack order — lower index paints under higher. `roughness`/`tiling`/`triplanar`/`tint`/`opacity` are carried as data so a runtime game reads them straight off the snapshot.
 - `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
+- `WeightDelta` (interface): interface WeightDelta — A compact record of the blend weights a blend-paint stroke touched: parallel `indices`/`before`/ `after` arrays into the flat `weights` grid (`cell*layerCount + layer`). `layerCount` guards the delta against being replayed after the layer stack changed shape.
+- `WeightDeltaRecorder` (type): type WeightDeltaRecorder = (index: number, before: number, after: number) => void — Reports each changed weight slot during a recorded blend: flat index, prior weight, new weight.
 - `applyDeltaToSnapshot` (function): function applyDeltaToSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
 - `applySurfaceDeltaToSnapshot` (function): function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `after` ids applied (copy-on-write).
 - `beginSurfaceStroke` (function): function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke — Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta.
@@ -1530,6 +1535,7 @@
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `editableTerrainFromSnapshot` (function): function editableTerrainFromSnapshot(snapshot: TerraformSnapshot, base?: TerrainField): EditableTerrain — Rebuilds a live {@link EditableTerrain} from a snapshot, layered over `base` ground.
+- `migrateTerrainSnapshot` (function): function migrateTerrainSnapshot(snapshot: TerraformSnapshot): TerraformSnapshot — Upgrades a pre-2.0 snapshot in place-safe (copy-on-write) form: derives a {@link TerrainMaterialLayer} stack from the distinct painted surfaces (first-seen order, default params) when none exists. Leaves the lazy `weights` buffer absent — a single-layer terrain stays compact until blended. Idempotent: a snapshot that already carries `layers` is returned unchanged.
 - `revertDeltaFromSnapshot` (function): function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `before` offsets restored (copy-on-write undo).
 - `revertSurfaceDeltaFromSnapshot` (function): function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo).
 
@@ -1568,7 +1574,7 @@
 - `hasEnvironmentTerrain` (function): function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean — Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
 - `heightMapField` (function): function heightMapField(config: HeightMapFieldConfig): TerrainField — ⚠ undocumented
 - `noiseField` (function): function noiseField(config: NoiseFieldConfig = {}): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
-- `resolveEnvironmentField` (function): function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField — The full ground field for an environment world: base `terrain` composed with any `islands`.
+- `resolveEnvironmentField` (function): function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField — The full ground field for an environment world: base `terrain` composed with any `islands`, then any authored `sculpt` snapshot layered on top — so an editor-sculpted heightfield drives both the rendered mesh and player collision through the one seam every consumer already reads.
 - `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope = DEFAULT_MAX_WALK_SLOPE): { stepX: number; stepZ: number } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
 - `resolveTerrainDetail` (function): function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail — Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level.
 - `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.

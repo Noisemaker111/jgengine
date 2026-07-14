@@ -316,3 +316,41 @@ export function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain): S
   }
   return out;
 }
+
+/** A spatial bucket of scatter instances — one draw unit the renderer can frustum-cull as a whole. */
+export interface ScatterChunk {
+  /** `gx:gz` grid key of the chunk. */
+  key: string;
+  /** Chunk minimum XZ corner in world space. */
+  min: Vec2;
+  /** Chunk edge length in meters. */
+  size: number;
+  instances: ScatterInstance[];
+}
+
+/**
+ * Buckets scatter instances into a uniform XZ grid of `chunkSize`-meter cells, so a dense region
+ * renders as many small draw units instead of one huge mesh — each chunk carries its own bounds and
+ * is frustum-culled independently, and offscreen chunks cost nothing. Empty chunks are omitted;
+ * order is deterministic (row-major by grid coordinate).
+ * @internal — the chunking behind the `InstancedScatter` renderer; not called directly by games.
+ */
+export function chunkScatterInstances(
+  instances: readonly ScatterInstance[],
+  chunkSize: number,
+): ScatterChunk[] {
+  const size = chunkSize > 0 ? chunkSize : 32;
+  const byKey = new Map<string, ScatterChunk>();
+  for (const instance of instances) {
+    const gx = Math.floor(instance.x / size);
+    const gz = Math.floor(instance.z / size);
+    const key = `${gx}:${gz}`;
+    let chunk = byKey.get(key);
+    if (chunk === undefined) {
+      chunk = { key, min: [gx * size, gz * size], size, instances: [] };
+      byKey.set(key, chunk);
+    }
+    chunk.instances.push(instance);
+  }
+  return [...byKey.values()].sort((a, b) => a.key.localeCompare(b.key));
+}

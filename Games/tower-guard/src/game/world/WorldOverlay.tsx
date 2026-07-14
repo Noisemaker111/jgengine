@@ -1,13 +1,24 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGameContext } from "@jgengine/react/provider";
 import { useGameStore } from "@jgengine/react/hooks";
+import { resolveScatter } from "@jgengine/core/world/scatterRegion";
+import { InstancedScatter } from "@jgengine/shell/scatter";
 
+import { editorLayers } from "../../editorLayers";
 import { GOLD_CURRENCY } from "../entities/base/catalog";
 import { towerDef } from "../entities/towers/catalog";
 import { session } from "../session";
 import { activeProjectiles } from "../combat/pendingProjectiles";
 import { BUILD_PLOTS, PATH_WAYPOINTS_XZ, groundHeightAt } from "./path";
+
+/** Instances the authored foliage regions at runtime — the editor document driving the live scene. */
+function AuthoredFoliage() {
+  const ctx = useGameContext();
+  // ctx.world.ground already carries the authored `sculpt`, so ground foliage on it directly.
+  const instances = useMemo(() => resolveScatter(editorLayers, ctx.world.ground), [ctx.world.ground]);
+  return <InstancedScatter instances={instances} />;
+}
 
 function PathRibbon() {
   return (
@@ -87,6 +98,7 @@ function ProjectileBolts() {
 export function TowerGuardWorldOverlay() {
   return (
     <>
+      <AuthoredFoliage />
       <PathRibbon />
       <BuildPlots />
       <ProjectileBolts />

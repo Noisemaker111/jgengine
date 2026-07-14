@@ -1285,6 +1285,16 @@
 - `RecordedPose` (interface): interface RecordedPose — ⚠ undocumented
 - `useSessionRecorder` (function): function useSessionRecorder(entityId: string, options?: RecordingBufferOptions): RecordingBuffer<RecordedPose> — Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffer`, which a game can then `seek()` to scrub, drive an observer cam ghost, or export a kill-cam clip. Recording rides on `ctx.time.now()`, so pause/fast-forward scrub the recording exactly like the live sim.
 
+## @jgengine/shell/scatter
+
+- `InstancedScatter` (function): function InstancedScatter({ instances, chunkSize = DEFAULT_CHUNK_SIZE, maxInstances = DEFAULT_MAX_INSTANCES }: InstancedScatterProps): React.JSX.Element | null — Renders resolved {@link ScatterInstance}s as GPU-instanced per-species proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts), grouped into per-chunk draws that frustum-cull independently. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
+- `InstancedScatterProps` (interface): interface InstancedScatterProps — Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs.
+
+## @jgengine/shell/scatter/InstancedScatter
+
+- `InstancedScatter` (function): function InstancedScatter({ instances, chunkSize = DEFAULT_CHUNK_SIZE, maxInstances = DEFAULT_MAX_INSTANCES }: InstancedScatterProps): React.JSX.Element | null — Renders resolved {@link ScatterInstance}s as GPU-instanced per-species proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts), grouped into per-chunk draws that frustum-cull independently. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
+- `InstancedScatterProps` (interface): interface InstancedScatterProps — Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs.
+
 ## @jgengine/shell/settings/QuickControls
 
 - `QuickControls` (function): function QuickControls({ controller }: { controller: SettingsController }): React.JSX.Element | null — ⚠ undocumented

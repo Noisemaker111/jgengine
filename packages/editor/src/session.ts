@@ -21,14 +21,19 @@ import {
   editableTerrainFromSnapshot,
   type TerraformEdit,
   type TerraformMode,
+  type TerrainMaterialLayer,
   type TerrainSurfaceRule,
 } from "@jgengine/core/world/terraform";
 
 import {
   resolveScatter,
+  resolveScatterRegion,
   scatterRegionEstimate,
+  scatterRegionFromPath,
   SCATTER_PATH_KIND,
+  type ScatterTerrain,
 } from "@jgengine/core/world/scatterRegion";
+import type { EditorMarker } from "@jgengine/core/editor/index";
 
 import { TERRAIN_MATERIALS } from "./uiStore";
 
@@ -86,6 +91,18 @@ export type EditorBridgeRequest =
       maxHeight?: number;
     }
   | { method: "terrain_materials" }
+  | { method: "terrain_layers" }
+  | { method: "set_terrain_layers"; layers: TerrainMaterialLayer[] }
+  | {
+      method: "blend_terrain";
+      surface: string;
+      x: number;
+      z: number;
+      radius?: number;
+      strength?: number;
+      shape?: "circle" | "square";
+    }
+  | { method: "convert_scatter"; pathId: string }
   | {
       method: "add_foliage";
       points: { x: number; z: number }[];
@@ -136,6 +153,12 @@ export interface EditorPerfSample {
   drawCalls: number;
   triangles: number;
   sampledAt: number;
+  /** Avg viewport raycast (pick) time this window — editor-authoring cost, not sim cost. */
+  raycastMs?: number;
+  /** Avg preview-mesh rebuild (displace) time this window — editor-authoring cost, not sim cost. */
+  rebuildMs?: number;
+  /** raycastMs + rebuildMs — total authoring overhead separated from the frame/sim budget. */
+  authoringMs?: number;
 }
 
 /** The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC. */
@@ -548,6 +571,59 @@ export function createEditorHost(options: {
           }
           case "terrain_materials":
             return { ok: true, result: { materials: TERRAIN_MATERIALS } };
+          case "terrain_layers": {
+            const terrain = session.getState().document.terrain;
+            return { ok: true, result: { layers: terrain?.layers ?? [] } };
+          }
+          case "set_terrain_layers": {
+            if (session.getState().document.terrain === undefined) {
+              return { ok: false, error: "no terrain — call create_terrain first" };
+            }
+            session.dispatch({ type: "setTerrainLayers", layers: request.layers });
+            return { ok: true, result: { layers: session.getState().document.terrain?.layers ?? [] } };
+          }
+          case "blend_terrain": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            // Auto-add the surface as a layer if the stack does not carry it yet.
+            const layers = terrain.layers ?? [];
+            if (!layers.some((layer) => layer.surface === request.surface)) {
+              const next: TerrainMaterialLayer[] = [...layers, { id: request.surface, surface: request.surface }];
+              session.dispatch({ type: "setTerrainLayers", layers: next });
+            }
+            const live = editableTerrainFromSnapshot(session.getState().document.terrain!);
+            const delta = live.blendPaintDelta({
+              mode: "paint",
+              center: [request.x, request.z],
+              radius: request.radius ?? 8,
+              surface: request.surface,
+              strength: request.strength ?? 1,
+              ...(request.shape === undefined ? {} : { shape: request.shape }),
+            });
+            if (delta.indices.length === 0) return { ok: false, error: "blend touched no cells (check radius/position)" };
+            session.dispatch({ type: "blendTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length, layers: session.getState().document.terrain?.layers ?? [] } };
+          }
+          case "convert_scatter": {
+            const doc = session.getState().document;
+            const path = doc.paths.find((entry) => entry.id === request.pathId);
+            if (path === undefined) return { ok: false, error: `path not found: ${request.pathId}` };
+            const region = scatterRegionFromPath(path);
+            if (region === null) return { ok: false, error: `not a scatter region: ${request.pathId}` };
+            const terrainSnapshot = doc.terrain;
+            const terrain: ScatterTerrain | undefined =
+              terrainSnapshot === undefined ? undefined : editableTerrainFromSnapshot(terrainSnapshot);
+            const instances = resolveScatterRegion(region, terrain);
+            const markers: EditorMarker[] = instances.map((instance) => ({
+              id: instance.id.replace(/[^a-zA-Z0-9_]/g, "_"),
+              kind: "prop",
+              position: { x: instance.x, y: instance.y, z: instance.z },
+              rotationY: instance.rotationY,
+              meta: { item: instance.item, scale: instance.scale, fromScatter: request.pathId },
+            }));
+            session.dispatch({ type: "convertScatterToObjects", pathId: request.pathId, markers });
+            return { ok: true, result: { created: markers.length, removedPath: request.pathId } };
+          }
           case "add_foliage": {
             if (request.points.length < 3) return { ok: false, error: "add_foliage needs at least 3 polygon points" };
             const id = `foliage_${Date.now().toString(36)}`;

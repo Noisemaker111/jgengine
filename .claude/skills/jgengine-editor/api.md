@@ -121,7 +121,7 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (function): function EditorCameraDriver({ api }: { api: EditorHostApi }): null — Smoothly pans the orbit camera to the editor host's focus target when it changes.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The editor's dockable workspace chrome: hierarchy, assets, inspector, toolbar, and save.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; }): React.JSX.Element — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
@@ -182,7 +182,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The editor's dockable workspace chrome: hierarchy, assets, inspector, toolbar, and save.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 
 ## @jgengine/editor/PerfProbe
 
@@ -222,6 +222,13 @@
 - `OutlinerGroup` (interface): interface OutlinerGroup — A kind group in the "By kind" outliner view.
 - `OutlinerRow` (interface): interface OutlinerRow — A distinct label under a kind, backing one or more object ids (×N dedup rows).
 - `OutlinerViewState` (interface): interface OutlinerViewState — How the outliner is displayed and folded — the state a flat row list is built from.
+
+## @jgengine/editor/perfMarks
+
+- `PerfAccumulator` (interface): interface PerfAccumulator — Accumulates editor-authoring timings (viewport raycasts, preview-mesh rebuilds) and flushes them as rolling averages — so the perf probe can report authoring cost apart from frame/sim cost, and "the editor feels laggy" resolves to a number instead of a guess.
+- `PerfMarkKind` (type): type PerfMarkKind = "raycast" | "rebuild" — Editor-authoring cost the {@link PerfProbe} folds into its sample, separate from frame/sim cost.
+- `PerfMarkSummary` (interface): interface PerfMarkSummary — Rolling averages (ms) of the authoring marks recorded since the last flush.
+- `editorPerfMarks` (const): const editorPerfMarks: PerfAccumulator — Shared accumulator the sculpt/paint layer records into and the perf probe flushes each window.
 
 ## @jgengine/editor/session
 

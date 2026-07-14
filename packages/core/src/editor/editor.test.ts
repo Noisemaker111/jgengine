@@ -26,8 +26,10 @@ import {
 import {
   createTerrainSnapshot,
   editableTerrainFromSnapshot,
+  migrateTerrainSnapshot,
 } from "../world/terraform";
 import { flatField } from "../world/terrain";
+import { resolveScatter, SCATTER_PATH_KIND } from "../world/scatterRegion";
 
 describe("editor document", () => {
   test("normalize fills empty arrays", () => {
@@ -660,5 +662,108 @@ describe("editor prefab/fragment helper", () => {
     });
     const fragment = createPrefabFragment(doc, ["solo"]);
     expect(fragment.markers[0]?.position).toEqual({ x: 0, y: 0, z: 0 });
+  });
+});
+
+describe("terrain material layers + blend commands", () => {
+  const bounds = { minX: -16, minZ: -16, maxX: 16, maxZ: 16 };
+
+  test("setTerrainLayers stores the stack; a params-only edit keeps blend weights", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds, cellSize: 2 }) });
+    session.dispatch({
+      type: "setTerrainLayers",
+      layers: [
+        { id: "grass", surface: "grass" },
+        { id: "dirt", surface: "dirt" },
+      ],
+    });
+    const live = editableTerrainFromSnapshot(session.getState().document.terrain!);
+    const delta = live.blendPaintDelta({ mode: "paint", center: [0, 0], radius: 6, surface: "dirt", strength: 1 });
+    session.dispatch({ type: "blendTerrain", delta });
+    expect(session.getState().document.terrain!.weights).toBeDefined();
+
+    // Params-only edit (same ids/order) preserves weights.
+    session.dispatch({
+      type: "setTerrainLayers",
+      layers: [
+        { id: "grass", surface: "grass", roughness: 0.5 },
+        { id: "dirt", surface: "dirt", tint: "#ff0000" },
+      ],
+    });
+    expect(session.getState().document.terrain!.weights).toBeDefined();
+    expect(session.getState().document.terrain!.layers?.[1]?.tint).toBe("#ff0000");
+  });
+
+  test("blendTerrain undo/redo round-trips the dominant surface", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds, cellSize: 2 }) });
+    session.dispatch({
+      type: "setTerrainLayers",
+      layers: [
+        { id: "grass", surface: "grass" },
+        { id: "dirt", surface: "dirt" },
+      ],
+    });
+    // Seed all-grass so a dominant exists before blending.
+    const seed = editableTerrainFromSnapshot(session.getState().document.terrain!);
+    session.dispatch({ type: "paintTerrain", delta: seed.fillSurfaceDelta("grass") });
+
+    const live = editableTerrainFromSnapshot(session.getState().document.terrain!);
+    const delta = live.blendPaintDelta({ mode: "paint", center: [0, 0], radius: 6, surface: "dirt", strength: 1 });
+    session.dispatch({ type: "blendTerrain", delta });
+    const blended = editableTerrainFromSnapshot(session.getState().document.terrain!);
+    expect(blended.surfaceAt(0, 0)).toBe("dirt");
+
+    session.dispatch({ type: "undo" });
+    const undone = editableTerrainFromSnapshot(session.getState().document.terrain!);
+    expect(undone.surfaceAt(0, 0)).toBe("grass");
+  });
+
+  test("layers survive export/import via migration", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    const painted = editableTerrainFromSnapshot(createTerrainSnapshot({ bounds, cellSize: 2 }));
+    painted.applySurfaceDelta(painted.fillSurfaceDelta("sand"));
+    session.dispatch({ type: "setTerrain", terrain: migrateTerrainSnapshot(painted.snapshot()) });
+    const reloaded = importEditorDocumentJson(session.exportJson(true));
+    expect(reloaded.terrain?.layers?.map((l) => l.surface)).toEqual(["sand"]);
+  });
+});
+
+describe("convertScatterToObjects command", () => {
+  test("detaches a scatter region into individual markers and removes the path", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({
+      type: "addPath",
+      path: {
+        id: "grove",
+        kind: SCATTER_PATH_KIND,
+        points: [
+          { x: -8, y: 0, z: -8 },
+          { x: 8, y: 0, z: -8 },
+          { x: 8, y: 0, z: 8 },
+          { x: -8, y: 0, z: 8 },
+        ],
+        meta: { density: 0.3, item: "tree" },
+      },
+    });
+    const instances = resolveScatter(session.getState().document, flatField());
+    expect(instances.length).toBeGreaterThan(0);
+    const markers = instances.map((instance) => ({
+      id: instance.id.replace(/[^a-zA-Z0-9_]/g, "_"),
+      kind: "prop",
+      position: { x: instance.x, y: instance.y, z: instance.z },
+      rotationY: instance.rotationY,
+      meta: { item: instance.item, scale: instance.scale },
+    }));
+    session.dispatch({ type: "convertScatterToObjects", pathId: "grove", markers });
+    const doc = session.getState().document;
+    expect(doc.paths.find((p) => p.id === "grove")).toBeUndefined();
+    expect(doc.markers.length).toBe(instances.length);
+    expect(doc.markers.every((m) => m.meta?.item === "tree")).toBe(true);
+    // Undo restores the region.
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.paths.find((p) => p.id === "grove")).toBeDefined();
+    expect(session.getState().document.markers.length).toBe(0);
   });
 });
