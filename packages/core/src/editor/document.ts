@@ -18,7 +18,11 @@ export function createEmptyEditorDocument(): EditorDocument {
   };
 }
 
-/** Deep-copies an editor document so edits never mutate the source. */
+/**
+ * Deep-copies an editor document so edits never mutate the source. The terrain snapshot is
+ * shared by reference: sculpt commands replace it wholesale (copy-on-write), never mutate it in
+ * place, so history snapshots stay cheap even on large heightfields.
+ */
 export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
   return {
     version: 1,
@@ -43,6 +47,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
       position: { ...note.position },
       ...(note.meta === undefined ? {} : { meta: { ...note.meta } }),
     })),
+    ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
 
@@ -60,6 +65,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     volumes: asArray(resolved.volumes),
     paths: asArray(resolved.paths),
     annotations: asArray(resolved.annotations),
+    ...(resolved.terrain === undefined ? {} : { terrain: resolved.terrain }),
   };
 }
 
@@ -71,6 +77,7 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     out.volumes.push(...doc.volumes);
     out.paths.push(...doc.paths);
     out.annotations.push(...doc.annotations);
+    if (doc.terrain !== undefined) out.terrain = doc.terrain;
   }
   return out;
 }
@@ -165,6 +172,9 @@ export function applyEditorDocumentOverlay(
     volumes: upsertById(base.volumes, overlay.volumes),
     paths: upsertById(base.paths, overlay.paths),
     annotations: upsertById(base.annotations, overlay.annotations),
+    ...(overlay.terrain ?? base.terrain) === undefined
+      ? {}
+      : { terrain: overlay.terrain ?? base.terrain },
   };
 }
 

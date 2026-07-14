@@ -5,12 +5,17 @@ export { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";
 export {
   createEditorUiStore,
   newPlacementId,
+  DEFAULT_SCULPT_SETTINGS,
+  type EditorTool,
   type EditorUiState,
   type EditorUiStore,
   type GizmoMode,
   type PlacementTool,
+  type SculptSettings,
   type SnapMode,
+  type TerrainBrushKind,
 } from "./uiStore";
+export { TerrainSculpt } from "./TerrainSculpt";
 export { EditorCameraDriver } from "./EditorCameraDriver";
 export { AssetBrowser, assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
 export {

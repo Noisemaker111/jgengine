@@ -85,6 +85,35 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("create_terrain, sculpt_terrain, and terrain_summary drive an undoable heightfield", () => {
+    const { api, dispose } = createEditorHost({ gameId: "test", layers: {} });
+
+    const empty = api.handle({ method: "terrain_summary" });
+    expect((empty.result as { terrain: null }).terrain).toBeNull();
+
+    const created = api.handle({ method: "create_terrain", width: 64, depth: 64, cellSize: 2 });
+    expect(created.ok).toBe(true);
+
+    const sculpted = api.handle({ method: "sculpt_terrain", mode: "raise", x: 0, z: 0, radius: 10, strength: 4 });
+    expect(sculpted.ok).toBe(true);
+    expect((sculpted.result as { changed: number }).changed).toBeGreaterThan(0);
+
+    const summary = api.handle({ method: "terrain_summary" });
+    expect((summary.result as { maxOffset: number }).maxOffset).toBeGreaterThan(0);
+    expect((summary.result as { editedVertices: number }).editedVertices).toBeGreaterThan(0);
+
+    const undone = api.handle({ method: "undo" });
+    expect(undone.ok).toBe(true);
+    expect((api.handle({ method: "terrain_summary" }).result as { maxOffset: number }).maxOffset).toBe(0);
+
+    // Sculpting before creating terrain fails cleanly.
+    const { api: bare, dispose: disposeBare } = createEditorHost({ gameId: "test2", layers: {} });
+    const noTerrain = bare.handle({ method: "sculpt_terrain", mode: "raise", x: 0, z: 0 });
+    expect(noTerrain.ok).toBe(false);
+    disposeBare();
+    dispose();
+  });
+
   test("subscribeFocus fires on camera_goto", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",

@@ -1,5 +1,7 @@
 /** The full authored scene: every marker, volume, path, and note for a game. */
 export type { EditorDocument } from "./types";
+/** A sculpted heightfield overlay stored on a document — the terraform snapshot of offset deltas. */
+export type { EditorTerrain } from "./types";
 /** Per-kind show/hide flags for the editor's layer panel. */
 export type { EditorKindVisibility } from "./types";
 /** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */

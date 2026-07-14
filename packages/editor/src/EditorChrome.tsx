@@ -16,11 +16,14 @@ import {
   vegetationFootprint,
   VEGETATION_VOLUME_KIND,
 } from "@jgengine/core/world/vegetation";
+import { editorDocumentBounds } from "@jgengine/core/editor/index";
+import type { Aabb } from "@jgengine/core/world/geometry";
+import { createTerrainSnapshot } from "@jgengine/core/world/terraform";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
 import type { EditorHostApi, EditorPerfSample } from "./session";
-import type { EditorUiStore, PlacementTool, SnapMode } from "./uiStore";
+import type { EditorUiStore, PlacementTool, SnapMode, TerrainBrushKind } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 
 const PERF_POLL_MS = 500;
@@ -124,6 +127,7 @@ let clipboardFragment: EditorDocument | null = null;
 
 const SHORTCUTS: readonly { keys: string; action: string }[] = [
   { keys: "W / E / R", action: "Move · rotate · scale gizmo" },
+  { keys: "T", action: "Toggle terrain sculpt tool" },
   { keys: "F", action: "Frame selection (or whole scene)" },
   { keys: "G", action: "Toggle reference grid" },
   { keys: "N", action: "Cycle instances of selected row" },
@@ -235,6 +239,154 @@ function VegetationFields({
         />
       </label>
       <div className="text-[10px] text-neutral-500">≈ {estimated.toLocaleString()} {settings.item === "grass" ? "blades" : "placements"} over {Math.round(areaM2).toLocaleString()} m²</div>
+    </div>
+  );
+}
+
+const TERRAIN_BRUSHES: readonly { kind: TerrainBrushKind; label: string; hint: string }[] = [
+  { kind: "raise", label: "Raise", hint: "Push terrain up" },
+  { kind: "lower", label: "Lower", hint: "Dig terrain down" },
+  { kind: "smooth", label: "Smooth", hint: "Average toward neighbors" },
+  { kind: "flatten", label: "Flatten", hint: "Level to a target height" },
+  { kind: "noise", label: "Noise", hint: "Roughen with fractal detail" },
+  { kind: "ramp", label: "Ramp", hint: "Drag a straight grade A→B" },
+];
+
+function SliderRow({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  format,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+  format?: (value: number) => string;
+}) {
+  return (
+    <label className="block space-y-1">
+      <span className="flex items-center justify-between">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">{label}</span>
+        <span className="text-cyan-200">{format ? format(value) : value.toFixed(2)}</span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="w-full accent-amber-400"
+      />
+    </label>
+  );
+}
+
+/** Sensible sculpt area when none is authored yet: the document footprint padded, or a 200m square. */
+function defaultTerrainBounds(document: Parameters<typeof editorDocumentBounds>[0]): Aabb {
+  const bounds = editorDocumentBounds(document);
+  if (bounds === null) return { minX: -100, minZ: -100, maxX: 100, maxZ: 100 };
+  const pad = 40;
+  const minX = bounds.min.x - pad;
+  const minZ = bounds.min.z - pad;
+  const maxX = bounds.max.x + pad;
+  const maxZ = bounds.max.z + pad;
+  const span = Math.max(80, Math.min(400, Math.max(maxX - minX, maxZ - minZ)));
+  const cx = (minX + maxX) / 2;
+  const cz = (minZ + maxZ) / 2;
+  return { minX: cx - span / 2, minZ: cz - span / 2, maxX: cx + span / 2, maxZ: cz + span / 2 };
+}
+
+/** The terrain-tool panel: create/clear the heightfield and drive the live sculpt brush controls. */
+function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiStore }) {
+  const [, setTick] = useState(0);
+  useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
+  useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
+  const sculpt = ui.getState().sculpt;
+  const document = session.getState().document;
+  const hasTerrain = document.terrain !== undefined;
+
+  const createTerrain = () => {
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds: defaultTerrainBounds(document), cellSize: 2 }) });
+  };
+
+  return (
+    <div className="pointer-events-auto absolute right-3 top-3 z-40 w-64 space-y-2.5 rounded-xl border border-amber-400/20 bg-[#0d0f13]/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-md">
+      <div className="flex items-center">
+        <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-amber-300">Terrain sculpt</div>
+        <button type="button" className="ml-auto rounded-md px-2 py-0.5 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={() => ui.setTool("select")} title="Back to select tool">×</button>
+      </div>
+      {!hasTerrain ? (
+        <div className="space-y-2">
+          <p className="text-[11px] leading-relaxed text-neutral-400">No sculpt heightfield yet. Create one over the scene, then paint raise/lower/smooth/flatten/noise/ramp brushes on it.</p>
+          <button type="button" className="w-full rounded-md bg-gradient-to-b from-amber-500 to-amber-600 px-2.5 py-1.5 font-semibold text-white shadow-md shadow-amber-950/50 transition-colors hover:from-amber-400 hover:to-amber-500" onClick={createTerrain}>Create terrain</button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-1">
+            {TERRAIN_BRUSHES.map((brush) => (
+              <button
+                key={brush.kind}
+                type="button"
+                title={brush.hint}
+                className={`rounded-md px-1.5 py-1 text-[11px] transition-colors ${sculpt.brush === brush.kind ? "bg-amber-500/90 text-white shadow-sm shadow-amber-950/50" : "bg-white/[0.04] text-neutral-300 ring-1 ring-inset ring-white/[0.06] hover:bg-white/10"}`}
+                onClick={() => ui.patchSculpt({ brush: brush.kind })}
+              >
+                {brush.label}
+              </button>
+            ))}
+          </div>
+          {sculpt.brush === "ramp" ? <div className="text-[10px] text-neutral-500">Drag from the low end to the high end to grade a slope.</div> : null}
+          <SliderRow label="radius" value={sculpt.radius} min={1} max={60} step={0.5} onChange={(value) => ui.patchSculpt({ radius: value })} format={(v) => `${v.toFixed(1)}m`} />
+          <SliderRow label="strength" value={sculpt.strength} min={0.05} max={5} step={0.05} onChange={(value) => ui.patchSculpt({ strength: value })} />
+          <SliderRow label="spacing" value={sculpt.spacing} min={0.25} max={12} step={0.25} onChange={(value) => ui.patchSculpt({ spacing: value })} format={(v) => `${v.toFixed(2)}m`} />
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">falloff</span>
+            <div className="ml-auto flex gap-0.5 rounded-md bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
+              {(["smooth", "linear", "none"] as const).map((mode) => (
+                <button key={mode} type="button" className={`rounded px-1.5 py-0.5 text-[10px] capitalize transition-colors ${sculpt.falloff === mode ? "bg-amber-500/80 text-white" : "text-neutral-400 hover:text-neutral-200"}`} onClick={() => ui.patchSculpt({ falloff: mode })}>{mode}</button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">shape</span>
+            <button type="button" className="ml-auto rounded-md bg-white/[0.04] px-2 py-0.5 text-[11px] capitalize ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => ui.patchSculpt({ shape: sculpt.shape === "circle" ? "square" : "circle" })}>{sculpt.shape}</button>
+            <label className="flex items-center gap-1 text-[10px] text-neutral-400">
+              <input type="checkbox" className="accent-amber-400" checked={sculpt.invert} onChange={(event) => ui.patchSculpt({ invert: event.target.checked })} />
+              invert
+            </label>
+          </div>
+          {sculpt.brush === "flatten" ? (
+            <label className="flex items-center justify-between gap-2">
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">flatten to</span>
+              <input
+                type="number"
+                step={0.5}
+                placeholder="sample"
+                className={`w-24 ${INPUT}`}
+                value={sculpt.flattenHeight ?? ""}
+                onChange={(event) => ui.patchSculpt({ flattenHeight: event.target.value === "" ? null : Number(event.target.value) })}
+              />
+            </label>
+          ) : null}
+          {sculpt.brush === "noise" ? (
+            <label className="flex items-center justify-between gap-2">
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">seed</span>
+              <input type="number" step={1} className={`w-24 ${INPUT}`} value={sculpt.noiseSeed} onChange={(event) => ui.patchSculpt({ noiseSeed: Math.round(Number(event.target.value)) || 0 })} />
+            </label>
+          ) : null}
+          <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] pt-2">
+            <button type="button" className="rounded-md bg-white/[0.04] px-2 py-1 text-[11px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => session.dispatch({ type: "undo" })} disabled={!session.canUndo()}>Undo</button>
+            <button type="button" className="rounded-md bg-rose-500/15 px-2 py-1 text-[11px] text-rose-200 ring-1 ring-inset ring-rose-400/25 transition-colors hover:bg-rose-500/25" onClick={() => session.dispatch({ type: "clearTerrain" })}>Clear terrain</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -538,6 +690,7 @@ export function EditorChrome({
       if (event.key === "e" || event.key === "E") ui.patch({ gizmoMode: "rotate" });
       if (event.key === "r" || event.key === "R") ui.patch({ gizmoMode: "scale" });
       if (event.key === "g" || event.key === "G") ui.patch({ showGrid: !ui.getState().showGrid });
+      if (event.key === "t" || event.key === "T") ui.setTool(ui.getState().tool === "terrain" ? "select" : "terrain");
       if (event.key === "n" || event.key === "N") {
         const selected = session.getState().selection[0];
         if (selected === undefined) return;
@@ -648,6 +801,12 @@ export function EditorChrome({
         </span>
         <div className="mx-1 h-5 w-px bg-white/[0.07]" />
         <div className="flex items-center gap-0.5 rounded-lg bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
+          {(["select", "terrain"] as const).map((tool) => (
+            <button key={tool} type="button" className={`rounded-md px-2.5 py-1 capitalize transition-colors ${uiState.tool === tool ? "bg-amber-500/90 text-white shadow-sm shadow-amber-950/50" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => ui.setTool(tool)}>{tool}</button>
+          ))}
+        </div>
+        <div className="h-5 w-px bg-white/[0.07]" />
+        <div className={`flex items-center gap-0.5 rounded-lg bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06] ${uiState.tool === "terrain" ? "opacity-40" : ""}`}>
           {(["translate", "rotate", "scale"] as const).map((mode) => (
             <button key={mode} type="button" className={`rounded-md px-2.5 py-1 capitalize transition-colors ${gizmoMode === mode ? "bg-cyan-500/90 text-white shadow-sm shadow-cyan-950/50" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => ui.patch({ gizmoMode: mode })}>
               {mode} <kbd className={`ml-0.5 font-sans text-[9px] ${gizmoMode === mode ? "text-cyan-100/80" : "text-neutral-500"}`}>{mode === "translate" ? "W" : mode === "rotate" ? "E" : "R"}</kbd>
@@ -788,6 +947,7 @@ export function EditorChrome({
         ) : null}
 
         <main className="pointer-events-none relative min-w-0 flex-1">
+          {uiState.tool === "terrain" ? <TerrainPanel session={session} ui={ui} /> : null}
           {placementHint !== null ? (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 whitespace-nowrap rounded-full border border-cyan-400/30 bg-cyan-950/85 px-4 py-1.5 text-[11px] text-cyan-100 shadow-lg shadow-cyan-950/40 backdrop-blur-md">{placementHint}</div>
           ) : null}

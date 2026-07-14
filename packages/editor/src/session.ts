@@ -11,6 +11,12 @@ import {
   type EditorSession,
   type EditorSessionState,
 } from "@jgengine/core/editor/index";
+import {
+  createTerrainSnapshot,
+  editableTerrainFromSnapshot,
+  type TerraformEdit,
+  type TerraformMode,
+} from "@jgengine/core/world/terraform";
 
 /** How the editor hosts the game: frozen placement view, roamable world, or the real game. */
 export type EditorRunMode = "edit" | "walk" | "play";
@@ -39,7 +45,22 @@ export type EditorBridgeRequest =
   | { method: "undo" }
   | { method: "redo" }
   | { method: "list_assets" }
-  | { method: "place_asset"; id: string; kind?: string; x?: number; y?: number; z?: number };
+  | { method: "place_asset"; id: string; kind?: string; x?: number; y?: number; z?: number }
+  | { method: "create_terrain"; width?: number; depth?: number; cellSize?: number; centerX?: number; centerZ?: number }
+  | {
+      method: "sculpt_terrain";
+      mode: TerraformMode;
+      x: number;
+      z: number;
+      radius?: number;
+      strength?: number;
+      target?: number;
+      toX?: number;
+      toZ?: number;
+      seed?: number;
+      shape?: "circle" | "square";
+    }
+  | { method: "terrain_summary" };
 
 /** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
@@ -374,6 +395,61 @@ export function createEditorHost(options: {
                 id,
                 position,
                 marker: session.getState().document.markers.find((marker) => marker.id === id),
+              },
+            };
+          }
+          case "create_terrain": {
+            const width = request.width ?? 200;
+            const depth = request.depth ?? 200;
+            const cx = request.centerX ?? 0;
+            const cz = request.centerZ ?? 0;
+            const terrain = createTerrainSnapshot({
+              bounds: { minX: cx - width / 2, minZ: cz - depth / 2, maxX: cx + width / 2, maxZ: cz + depth / 2 },
+              cellSize: request.cellSize ?? 2,
+            });
+            session.dispatch({ type: "setTerrain", terrain });
+            return { ok: true, result: { cols: terrain.cols, rows: terrain.rows, cellSize: terrain.cellSize } };
+          }
+          case "sculpt_terrain": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            const live = editableTerrainFromSnapshot(terrain);
+            const edit: TerraformEdit = {
+              mode: request.mode,
+              center: [request.x, request.z],
+              radius: request.radius ?? 8,
+              strength: request.strength ?? 1,
+              ...(request.target === undefined ? {} : { target: request.target }),
+              ...(request.toX === undefined || request.toZ === undefined ? {} : { to: [request.toX, request.toZ] }),
+              ...(request.seed === undefined ? {} : { seed: request.seed }),
+              ...(request.shape === undefined ? {} : { shape: request.shape }),
+            };
+            const delta = live.editDelta(edit);
+            if (delta.indices.length === 0) return { ok: false, error: "brush touched no vertices (check radius/position)" };
+            session.dispatch({ type: "sculptTerrain", delta });
+            return { ok: true, result: { changed: delta.indices.length, canUndo: session.canUndo() } };
+          }
+          case "terrain_summary": {
+            const terrain = session.getState().document.terrain;
+            if (terrain === undefined) return { ok: true, result: { terrain: null } };
+            let min = Infinity;
+            let max = -Infinity;
+            let nonZero = 0;
+            for (const value of terrain.offsets) {
+              if (value < min) min = value;
+              if (value > max) max = value;
+              if (value !== 0) nonZero += 1;
+            }
+            return {
+              ok: true,
+              result: {
+                cols: terrain.cols,
+                rows: terrain.rows,
+                cellSize: terrain.cellSize,
+                bounds: terrain.bounds,
+                minOffset: terrain.offsets.length === 0 ? 0 : min,
+                maxOffset: terrain.offsets.length === 0 ? 0 : max,
+                editedVertices: nonZero,
               },
             };
           }

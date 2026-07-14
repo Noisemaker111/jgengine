@@ -171,4 +171,45 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     description: "Frame-time breakdown from engine devtools: fps, sim phases, and lag culprit hints.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
+  {
+    name: "create_terrain",
+    description: "Create an editable sculpt heightfield over the scene (width/depth/cellSize).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        width: { type: "number" },
+        depth: { type: "number" },
+        cellSize: { type: "number" },
+        centerX: { type: "number" },
+        centerZ: { type: "number" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "sculpt_terrain",
+    description: "Apply one sculpt brush (raise/lower/smooth/flatten/noise/ramp) at x/z as an undoable stroke.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        mode: { type: "string", enum: ["raise", "lower", "smooth", "flatten", "noise", "ramp"] },
+        x: { type: "number" },
+        z: { type: "number" },
+        radius: { type: "number" },
+        strength: { type: "number" },
+        target: { type: "number" },
+        toX: { type: "number" },
+        toZ: { type: "number" },
+        seed: { type: "number" },
+        shape: { type: "string", enum: ["circle", "square"] },
+      },
+      required: ["mode", "x", "z"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "terrain_summary",
+    description: "Report the sculpt heightfield's grid size, bounds, min/max offset, and edited vertex count.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
 ];
