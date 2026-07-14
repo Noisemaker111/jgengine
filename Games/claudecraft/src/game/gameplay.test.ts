@@ -29,7 +29,7 @@ function step(ctx: GameContext, seconds: number, dt = 0.1): void {
 }
 
 function firstMobOf(ctx: GameContext, catalogId: string): string {
-  const mob = ctx.scene.entity.list().find((entity) => entity.name === catalogId && isMobInstance(entity.id));
+  const mob = ctx.scene.entity.list().find((entity) => entity.name === catalogId && isMobInstance(ctx, entity.id));
   if (mob === undefined) throw new Error(`no ${catalogId} spawned`);
   return mob.id;
 }
@@ -66,7 +66,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("world boots with a populated roster", () => {
-    expect(mobCount()).toBeGreaterThan(120);
+    expect(mobCount(ctx)).toBeGreaterThan(120);
     expect(ctx.scene.entity.get(USER)).not.toBeNull();
     for (const npc of NPCS) expect(ctx.scene.entity.get(`npc:${npc.id}`)).not.toBeNull();
   });
@@ -116,7 +116,7 @@ describe("claudecraft gameplay (headless)", () => {
       guard += 1;
     }
     expect(ctx.scene.entity.get(wolfId)).toBeNull();
-    expect(mobRuntimeOf(wolfId)).toBeNull();
+    expect(mobRuntimeOf(ctx, wolfId)).toBeNull();
     expect(ctx.scene.entity.stats.get(USER, "xp")?.current ?? 0).toBeGreaterThan(startXp - 1);
     expect(ctx.game.economy.balance(USER, COPPER)).toBeGreaterThan(startCopper);
     const journal = ctx.game.quest!.list(USER).find((quest) => quest.questId === "q_wolves");
@@ -203,7 +203,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("gathering nodes are placed and gathering grants materials and profession skill", () => {
-    expect(gatherNodeCount()).toBeGreaterThan(50);
+    expect(gatherNodeCount(ctx)).toBeGreaterThan(50);
     const valeStarterIds = new Set(
       GATHER_NODES.filter((node) => node.zone === "vale" && node.skillReq === 0).map((node) => node.id),
     );
@@ -282,7 +282,7 @@ describe("claudecraft gameplay (headless)", () => {
   test("every dungeon has at least one of its catalog mobs spawned within its radius", () => {
     for (const dungeon of DUNGEONS) {
       const inhabited = ctx.scene.entity.list().some((entity) => {
-        const runtime = mobRuntimeOf(entity.id);
+        const runtime = mobRuntimeOf(ctx, entity.id);
         if (runtime === null) return false;
         if (mobById(runtime.defId)?.dungeonId !== dungeon.id) return false;
         const dist = Math.hypot(entity.position[0] - dungeon.center[0], entity.position[2] - dungeon.center[1]);
@@ -323,7 +323,7 @@ describe("claudecraft gameplay (headless)", () => {
     const before = new Set(
       ctx.scene.entity
         .list()
-        .filter((entity) => mobRuntimeOf(entity.id)?.defId === "raised_bonewalker")
+        .filter((entity) => mobRuntimeOf(ctx, entity.id)?.defId === "raised_bonewalker")
         .map((entity) => entity.id),
     );
     ctx.scene.entity.stats.set(USER, "health", { max: 100000, current: 100000 });
@@ -333,7 +333,7 @@ describe("claudecraft gameplay (headless)", () => {
     step(ctx, 26);
     const newBonewalkers = ctx.scene.entity
       .list()
-      .filter((entity) => mobRuntimeOf(entity.id)?.defId === "raised_bonewalker" && !before.has(entity.id));
+      .filter((entity) => mobRuntimeOf(ctx, entity.id)?.defId === "raised_bonewalker" && !before.has(entity.id));
     expect(newBonewalkers.length).toBeGreaterThan(0);
     ctx.scene.entity.setTarget(USER, null);
     const exit = ctx.game.commands.run("dungeon.exit", { dungeonId: "gravewyrm_sanctum" });
@@ -460,7 +460,7 @@ describe("claudecraft gameplay (headless)", () => {
 
   test("hunter call_pet ability summons a living pet frame", () => {
     ensureHeroPresent(ctx);
-    resetHero(USER);
+    resetHero(ctx, USER);
     ctx.game.store.delete(`class:${USER}`);
     ctx.game.store.delete(`spec:${USER}`);
     ctx.game.store.delete(`talents:${USER}`);
@@ -479,7 +479,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("talent ability mods retune slot cost for rank-only nodes", () => {
-    resetHero(USER);
+    resetHero(ctx, USER);
     ctx.game.store.delete(`class:${USER}`);
     ctx.game.store.delete(`spec:${USER}`);
     ctx.game.store.delete(`talents:${USER}`);
@@ -493,7 +493,7 @@ describe("claudecraft gameplay (headless)", () => {
     expect(ctx.game.commands.run("talent.allocate", { nodeId: "arms_imp_overpower" }).status).toBe("applied");
     const allocate = ctx.game.commands.run("talent.allocate", { nodeId: "arms_imp_slam" });
     expect(allocate.status).toBe("applied");
-    const hero = heroOf(USER);
+    const hero = heroOf(ctx, USER);
     expect(hero).not.toBeNull();
     const slam = hero?.kit.config("slam");
     expect(slam).not.toBeNull();
@@ -503,7 +503,7 @@ describe("claudecraft gameplay (headless)", () => {
   });
 
   test("equipping a full tier set grants its haste and proc on the hero sheet", () => {
-    resetHero(USER);
+    resetHero(ctx, USER);
     ctx.game.store.delete(`class:${USER}`);
     ctx.game.store.delete(`spec:${USER}`);
     ctx.game.store.delete(`talents:${USER}`);

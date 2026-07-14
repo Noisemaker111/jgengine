@@ -1,5 +1,6 @@
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 import { createRing, type Ring, type RingPhase } from "@jgengine/core/session/ring";
 
 import { addThreat, despawnMob, spawnMobAt } from "../ai/mobs";
@@ -125,8 +126,8 @@ interface FiestaSession {
   roll: () => number;
 }
 
-const sessions = new Map<string, FiestaSession>();
-let matchCounter = 0;
+const sessionsOf = perContext(() => new Map<string, FiestaSession>());
+const matchCounterOf = perContext(() => ({ value: 0 }));
 
 export interface FiestaFighterView {
   name: string;
@@ -168,8 +169,8 @@ export function fiestaRecordKey(userId: string): string {
   return `arenaFiesta:${userId}`;
 }
 
-export function fiestaActive(userId: string): boolean {
-  return sessions.has(userId);
+export function fiestaActive(ctx: GameContext, userId: string): boolean {
+  return sessionsOf(ctx).has(userId);
 }
 
 function say(ctx: GameContext, userId: string, text: string): void {
@@ -250,7 +251,7 @@ function spawnEnemy(ctx: GameContext, session: FiestaSession, fighter: Fighter):
       ctx.scene.entity.stats.set(id, "health", { max: boosted, current: boosted });
     }
   }
-  addThreat(id, ctx.player.userId, 1);
+  addThreat(ctx, id, ctx.player.userId, 1);
   fighter.entityId = id;
   fighter.respawnAt = null;
 }
@@ -258,7 +259,7 @@ function spawnEnemy(ctx: GameContext, session: FiestaSession, fighter: Fighter):
 function spawnAlly(ctx: GameContext, session: FiestaSession, fighter: Fighter): void {
   const [x, z] = fighter.spawn;
   const id = ctx.scene.entity.spawn(FIESTA_ALLY_CATALOG, {
-    id: `fiesta-ally:${matchCounter}:${fighter.deaths}`,
+    id: `fiesta-ally:${matchCounterOf(ctx).value}:${fighter.deaths}`,
     position: [x, ctx.world.groundHeightAt(x, z), z],
   });
   ctx.scene.entity.stats.set(id, "health", { max: ALLY_MAX_HP, current: ALLY_MAX_HP });
@@ -268,10 +269,10 @@ function spawnAlly(ctx: GameContext, session: FiestaSession, fighter: Fighter): 
 }
 
 export function startFiesta(ctx: GameContext, userId: string): boolean {
-  if (sessions.has(userId)) return false;
+  if (sessionsOf(ctx).has(userId)) return false;
   const hero = ctx.scene.entity.get(userId);
   if (hero === null || ctx.game.store.get(storeKeys.dead(userId)) === true) return false;
-  matchCounter += 1;
+  matchCounterOf(ctx).value += 1;
   const now = ctx.time.now();
   const level = ctx.scene.entity.stats.get(userId, "level");
   const xp = ctx.scene.entity.stats.get(userId, "xp");
@@ -311,9 +312,9 @@ export function startFiesta(ctx: GameContext, userId: string): boolean {
     pop: null,
     nextAllyHealAt: now + FIESTA_COUNTDOWN + ALLY_HEAL_EVERY,
     nextAllySwingAt: 0,
-    roll: seededRng(`fiesta:${matchCounter}`),
+    roll: seededRng(`fiesta:${matchCounterOf(ctx).value}`),
   };
-  sessions.set(userId, session);
+  sessionsOf(ctx).set(userId, session);
   placeArena(ctx, session);
   teleportHero(ctx, userId, session.fighters[0].spawn[0], session.fighters[0].spawn[1]);
   applySheet(ctx, userId, { fill: true });
@@ -347,7 +348,7 @@ function applyAugments(ctx: GameContext, userId: string, session: FiestaSession)
     mods.armorAdd += aug.armor ?? 0;
     mods.lifestealPct += aug.lifestealPct ?? 0;
   }
-  setExternalCombatMods(userId, mods);
+  setExternalCombatMods(ctx, userId, mods);
   applySheet(ctx, userId);
   updatePlayerSpeed(ctx, userId, session);
 }
@@ -363,7 +364,7 @@ function updatePlayerSpeed(ctx: GameContext, userId: string, session: FiestaSess
 }
 
 export function pickAugment(ctx: GameContext, userId: string, augmentId: string): boolean {
-  const session = sessions.get(userId);
+  const session = sessionsOf(ctx).get(userId);
   if (session === undefined || session.offer === null || !session.offer.includes(augmentId)) return false;
   const aug = augmentById(augmentId);
   if (aug === null) return false;
@@ -376,7 +377,7 @@ export function pickAugment(ctx: GameContext, userId: string, augmentId: string)
 }
 
 export function leaveFiesta(ctx: GameContext, userId: string): boolean {
-  const session = sessions.get(userId);
+  const session = sessionsOf(ctx).get(userId);
   if (session === undefined) return false;
   if (session.status !== "over") {
     session.result = "defeat";
@@ -400,7 +401,7 @@ export function onFiestaEntityDied(
   evt: { instanceId: string; reason: { kind: string } },
 ): boolean {
   const userId = ctx.player.userId;
-  const session = sessions.get(userId);
+  const session = sessionsOf(ctx).get(userId);
   if (session === undefined || session.status === "over") return false;
   const now = ctx.time.now();
   const elapsed = now - session.fightAt;
@@ -412,7 +413,7 @@ export function onFiestaEntityDied(
     session.playerStreak = 0;
     addScore(session, "b", 1);
     clearAuras(ctx, userId);
-    const hero = heroOf(userId);
+    const hero = heroOf(ctx, userId);
     if (hero !== null) {
       hero.casting = null;
       hero.autoAttack = false;
@@ -508,8 +509,8 @@ function cleanupAndReturn(ctx: GameContext, userId: string, session: FiestaSessi
   }
   for (const powerup of session.powerups) ctx.scene.object.remove(powerup.objectId);
   for (const objectId of session.arenaObjects) ctx.scene.object.remove(objectId);
-  sessions.delete(userId);
-  setExternalCombatMods(userId, null);
+  sessionsOf(ctx).delete(userId);
+  setExternalCombatMods(ctx, userId, null);
   ctx.game.store.delete(fiestaStoreKey(userId));
   const alive = ctx.scene.entity.get(userId) !== null;
   if (!alive) {
@@ -575,7 +576,7 @@ function grabPowerup(ctx: GameContext, userId: string, session: FiestaSession, s
   session.playerPowerups = session.playerPowerups.filter((entry) => now < entry.expiresAt);
   session.playerPowerups.push({ def: spawn.def, expiresAt: now + spawn.def.duration });
   if (spawn.def.attackPower !== undefined) {
-    const list = aurasOf(userId);
+    const list = aurasOf(ctx, userId);
     const auraId = `powerup:${spawn.def.id}`;
     const existing = list.findIndex((aura) => aura.id === auraId);
     if (existing >= 0) list.splice(existing, 1);
@@ -671,7 +672,7 @@ function tickAlly(ctx: GameContext, userId: string, session: FiestaSession, dt: 
       effect: "damage",
       via: { amount: ALLY_SWING_DAMAGE },
     });
-    addThreat(target.entityId, ally.entityId, ALLY_SWING_DAMAGE);
+    addThreat(ctx, target.entityId, ally.entityId, ALLY_SWING_DAMAGE);
   }
 }
 
@@ -694,7 +695,7 @@ function ringDamage(ctx: GameContext, session: FiestaSession, now: number): void
 }
 
 export function tickFiesta(ctx: GameContext, userId: string, dt: number): void {
-  const session = sessions.get(userId);
+  const session = sessionsOf(ctx).get(userId);
   if (session === undefined) return;
   const now = ctx.time.now();
 
@@ -789,7 +790,7 @@ export function tickFiesta(ctx: GameContext, userId: string, dt: number): void {
 }
 
 function sync(ctx: GameContext, userId: string): void {
-  const session = sessions.get(userId);
+  const session = sessionsOf(ctx).get(userId);
   if (session === undefined) {
     ctx.game.store.delete(fiestaStoreKey(userId));
     return;

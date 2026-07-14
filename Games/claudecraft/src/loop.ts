@@ -53,7 +53,7 @@ function onPlayerDied(
   });
   ctx.game.store.set(`corpse:${userId}`, [position[0], position[2]] as const);
   ctx.game.store.set(storeKeys.dead(userId), true);
-  const hero = heroOf(userId);
+  const hero = heroOf(ctx, userId);
   if (hero !== null) {
     hero.casting = null;
     hero.autoAttack = false;
@@ -62,7 +62,7 @@ function onPlayerDied(
 }
 
 function onKill(ctx: GameContext, killerUserId: string, victimInstanceId: string): void {
-  const runtime = mobRuntimeOf(victimInstanceId);
+  const runtime = mobRuntimeOf(ctx, victimInstanceId);
   onMobDied(ctx, victimInstanceId);
   if (runtime === null) return;
   const userId = killerUserId;
@@ -108,7 +108,7 @@ export const loop: GameLoop<GameContext> = {
         return;
       }
       clearAuras(ctx, evt.instanceId);
-      const wasWorldBoss = isWorldBoss(evt.instanceId);
+      const wasWorldBoss = isWorldBoss(ctx, evt.instanceId);
       const killerUserId = evt.reason.kind === "player_kill" ? evt.reason.killerUserId : ctx.player.userId;
       if (evt.reason.kind === "player_kill") onKill(ctx, killerUserId, evt.instanceId);
       else onMobDied(ctx, evt.instanceId);

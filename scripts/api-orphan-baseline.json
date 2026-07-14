@@ -506,7 +506,6 @@
   "@jgengine/core/runtime/motionIntents#applyHorizontalImpulses",
   "@jgengine/core/runtime/motionIntents#applyMotionImpulses",
   "@jgengine/core/runtime/motionIntents#createMotionIntents",
-  "@jgengine/core/runtime/perContext#perContext",
   "@jgengine/core/runtime/save#isSaveEnabled",
   "@jgengine/core/runtime/save#parseSaveAutoMs",
   "@jgengine/core/runtime/save#saveScopeIncludesChunks",

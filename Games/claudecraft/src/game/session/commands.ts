@@ -69,7 +69,7 @@ export function registerCommands(ctx: GameContext): void {
   }
   commands.define("attack", {
     apply(state) {
-      const hero = heroOf(state.player.userId);
+      const hero = heroOf(state, state.player.userId);
       if (hero === null) return;
       hero.autoAttack = !hero.autoAttack;
       state.game.store.set(storeKeys.autoAttack(state.player.userId), hero.autoAttack);
@@ -259,7 +259,7 @@ export function registerCommands(ctx: GameContext): void {
       }
       clearAuras(state, userId);
       state.game.store.set(storeKeys.dead(userId), false);
-      const hero = heroOf(userId);
+      const hero = heroOf(state, userId);
       if (hero !== null) {
         hero.casting = null;
         hero.autoAttack = false;

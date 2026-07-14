@@ -28,7 +28,7 @@ export function Minimap() {
     markers.clear();
     for (const entity of ctx.scene.entity.list()) {
       if (entity.id === ctx.player.userId) continue;
-      if (isMobInstance(entity.id)) {
+      if (isMobInstance(ctx, entity.id)) {
         markers.add({ kind: "enemy", position: entity.position });
       } else if (entity.role === "npc") {
         markers.add({
