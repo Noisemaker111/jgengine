@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
+import * as THREE from "three";
 import type { Group } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 
@@ -20,6 +22,7 @@ import {
   resolveEnvironmentField,
   resolveTerrainDetail,
   resolveTerrainPalette,
+  type ResolvedTerrainDetail,
   type TerrainField,
 } from "@jgengine/core/world/terrain";
 
@@ -27,7 +30,7 @@ import { GroundPad } from "./GroundPad";
 import { RoadRibbons } from "./RoadRibbons";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
-import { CarvedTerrain } from "../terrain/CarvedTerrain";
+import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { Ocean } from "../water/Ocean";
 import { RainField } from "../weather/RainField";
@@ -36,6 +39,55 @@ import { WeatherUniformProvider } from "../weather/weatherUniforms";
 
 export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;
+}
+
+interface TerrainGroundLayout {
+  field: TerrainField;
+  size: readonly [number, number];
+  segments: TerrainEnvironmentDescriptor["segments"];
+  colors: CarvedTerrainProps["colors"];
+  heightRange: readonly [number, number];
+  paletteAt: CarvedTerrainProps["paletteAt"];
+  center?: readonly [number, number];
+}
+
+function TexturedTerrainGround({
+  detail,
+  layout,
+}: {
+  detail: ResolvedTerrainDetail;
+  layout: TerrainGroundLayout;
+}) {
+  const maps = detail.material!.maps;
+  const textures = useTexture({
+    color: maps.color,
+    normal: maps.normal,
+    roughness: maps.roughness,
+    ao: maps.ao,
+  });
+  useEffect(() => {
+    textures.color.colorSpace = THREE.SRGBColorSpace;
+    for (const texture of Object.values(textures)) {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.needsUpdate = true;
+    }
+  }, [textures]);
+  const material = useMemo(() => createTerrainDetailMaterial(detail, textures).material, [detail, textures]);
+  useEffect(() => () => material.dispose(), [material]);
+  return (
+    <CarvedTerrain
+      field={layout.field}
+      size={layout.size}
+      segments={layout.segments}
+      colors={layout.colors}
+      heightRange={layout.heightRange}
+      paletteAt={layout.paletteAt}
+      center={layout.center}
+      roughness={0.94}
+      surfaceMaterial={material}
+    />
+  );
 }
 
 function TerrainGround({
@@ -70,14 +122,28 @@ function TerrainGround({
     const swing = terrain.height * 1.2;
     return [base - swing, base + swing] as const;
   }, [terrain.baseHeight, terrain.height]);
-  const detailMaterial = useMemo(
-    () =>
-      terrain.detail === undefined
-        ? undefined
-        : createTerrainDetailMaterial(resolveTerrainDetail(terrain.detail, terrain.waterLevel)).material,
+  const resolvedDetail = useMemo(
+    () => (terrain.detail === undefined ? undefined : resolveTerrainDetail(terrain.detail, terrain.waterLevel)),
     [terrain.detail, terrain.waterLevel],
   );
-  useEffect(() => () => detailMaterial?.dispose(), [detailMaterial]);
+  const proceduralMaterial = useMemo(
+    () =>
+      resolvedDetail === undefined || resolvedDetail.material !== undefined
+        ? undefined
+        : createTerrainDetailMaterial(resolvedDetail).material,
+    [resolvedDetail],
+  );
+  useEffect(() => () => proceduralMaterial?.dispose(), [proceduralMaterial]);
+
+  if (resolvedDetail?.material !== undefined) {
+    return (
+      <TexturedTerrainGround
+        detail={resolvedDetail}
+        layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, center }}
+      />
+    );
+  }
+
   return (
     <CarvedTerrain
       field={field}
@@ -88,7 +154,7 @@ function TerrainGround({
       paletteAt={paletteAt}
       center={center}
       roughness={0.94}
-      surfaceMaterial={detailMaterial}
+      surfaceMaterial={proceduralMaterial}
     />
   );
 }

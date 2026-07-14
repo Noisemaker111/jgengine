@@ -1195,6 +1195,7 @@
 ## @jgengine/shell/materialOverride
 
 - `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions — ⚠ undocumented
+- `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
 - `applyMaterialOverride` (function): function applyMaterialOverride(root: THREE.Object3D, override: ModelMaterialOverride, options?: MaterialOverrideOptions): void — ⚠ undocumented
 
 ## @jgengine/shell/multiplayer
@@ -1520,7 +1521,8 @@
 ## @jgengine/shell/terrain/terrainDetailMaterial
 
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
-- `createTerrainDetailMaterial` (function): function createTerrainDetailMaterial(detail: ResolvedTerrainDetail): TerrainDetailMaterialHandle — A `MeshStandardMaterial` whose fragment shader keeps the biome-tinted vertex colour as the base ground and blends procedural, noise-broken rock (by slope), sand (by waterline), and snow (by height) over it — textured-reading terrain with no image assets. Full PBR: lit, shadowed, and fogged like any standard material, so it composes with the post-processing chain.
+- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself.
+- `createTerrainDetailMaterial` (function): function createTerrainDetailMaterial(detail: ResolvedTerrainDetail, textures?: TerrainDetailMaterialTextures): TerrainDetailMaterialHandle — A `MeshStandardMaterial` whose fragment shader keeps the biome-tinted vertex colour as the base ground and blends procedural, noise-broken rock (by slope), sand (by waterline), and snow (by height) over it — textured-reading terrain with no image assets. Full PBR: lit, shadowed, and fogged like any standard material, so it composes with the post-processing chain.
 
 ## @jgengine/shell/terrain/terrainMath
 
