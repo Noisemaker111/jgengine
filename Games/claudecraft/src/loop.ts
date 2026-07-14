@@ -17,7 +17,8 @@ import { CLASS_ENTITY_ID } from "./game/model";
 import { tickPets } from "./game/pets/systems";
 import { killXp, levelTrack } from "./game/progression/curves";
 import { registerCommands } from "./game/session/commands";
-import { applySheet, clearAuras, grantTalentPoint, heroOf, storeKeys } from "./game/session/hero";
+import { applySheet, clearAuras, grantTalentPoint, heroOf } from "./game/session/hero";
+import { castStore, corpseStore, deadStore, deathStatsStore, restedStore } from "./game/session/stores";
 import { QUESTS } from "./game/quests/catalog";
 import { setupWorld } from "./game/world/setup";
 import { isWorldBoss, onWorldBossKilled, tickWorldBoss } from "./game/world/worldBoss";
@@ -46,19 +47,19 @@ function onPlayerDied(
 ): void {
   const level = ctx.scene.entity.stats.get(userId, "level");
   const xp = ctx.scene.entity.stats.get(userId, "xp");
-  ctx.game.store.set(`deathstats:${userId}`, {
+  deathStatsStore.write(ctx, userId, {
     level: level?.current ?? 1,
     xp: xp?.current ?? 0,
     xpMax: xp?.max ?? 400,
   });
-  ctx.game.store.set(`corpse:${userId}`, [position[0], position[2]] as const);
-  ctx.game.store.set(storeKeys.dead(userId), true);
+  corpseStore.write(ctx, userId, [position[0], position[2]]);
+  deadStore.write(ctx, userId, true);
   const hero = heroOf(userId);
   if (hero !== null) {
     hero.casting = null;
     hero.autoAttack = false;
   }
-  ctx.game.store.delete(storeKeys.cast(userId));
+  castStore.clear(ctx, userId);
 }
 
 function onKill(ctx: GameContext, killerUserId: string, victimInstanceId: string): void {
@@ -69,9 +70,9 @@ function onKill(ctx: GameContext, killerUserId: string, victimInstanceId: string
   const playerLevel = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
   const baseAmount = killXp(playerLevel, runtime.level);
   if (baseAmount <= 0) return;
-  const pool = (ctx.game.store.get(storeKeys.rested(userId)) as number | undefined) ?? 0;
+  const pool = restedStore.read(ctx, userId);
   const restedBonus = Math.min(pool, baseAmount);
-  if (restedBonus > 0) ctx.game.store.set(storeKeys.rested(userId), pool - restedBonus);
+  if (restedBonus > 0) restedStore.write(ctx, userId, pool - restedBonus);
   const amount = baseAmount + restedBonus;
   levelTrack.grantXp(ctx.scene.entity.stats, userId, amount, (newLevel) => {
     applySheet(ctx, userId, { fill: true });

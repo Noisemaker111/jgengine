@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_STAT_IDS, type AmmoPool } from "./ammo";
 import { bonus } from "./characters";
+import { ffylStore } from "./stores";
 
 export type GunFamily = "pistol" | "smg" | "shotgun" | "rifle" | "sniper" | "launcher";
 export type GunElement = "none" | "incendiary" | "shock" | "corrosive" | "explosive" | "slag";
@@ -489,7 +490,6 @@ export interface FfylState {
 const ffyl: FfylState = { phase: "up", downedUntilMs: 0 };
 
 export const FFYL_WINDOW_MS = 12000;
-export const FFYL_STORE_KEY = "ffyl";
 export const SECOND_WIND_HEALTH_FRACTION = 0.4;
 export const RESPAWN_CASH_FRACTION = 0.07;
 
@@ -500,7 +500,7 @@ export function ffylPhase(): FfylPhase {
 export function enterDowned(ctx: GameContext, nowMs: number): void {
   ffyl.phase = "downed";
   ffyl.downedUntilMs = nowMs + FFYL_WINDOW_MS * (1 + bonus("ffylTime"));
-  ctx.game.store.set(FFYL_STORE_KEY, { phase: "downed", untilMs: ffyl.downedUntilMs });
+  ffylStore.write(ctx, { phase: "downed", untilMs: ffyl.downedUntilMs });
 }
 
 export function secondWind(ctx: GameContext): void {
@@ -513,7 +513,7 @@ export function secondWind(ctx: GameContext): void {
   }
   const shield = ctx.scene.entity.stats.get(userId, "shield");
   if (shield !== null) ctx.scene.entity.stats.delta(userId, "shield", Math.round(shield.max * 0.5));
-  ctx.game.store.set(FFYL_STORE_KEY, { phase: "up", untilMs: 0 });
+  ffylStore.write(ctx, { phase: "up", untilMs: 0 });
 }
 
 export function ffylExpired(nowMs: number): boolean {
@@ -522,7 +522,7 @@ export function ffylExpired(nowMs: number): boolean {
 
 export function markRespawned(ctx: GameContext): void {
   ffyl.phase = "up";
-  ctx.game.store.set(FFYL_STORE_KEY, { phase: "up", untilMs: 0 });
+  ffylStore.write(ctx, { phase: "up", untilMs: 0 });
 }
 
 export function resetHandrollState(): void {

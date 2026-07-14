@@ -9,6 +9,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { despawnMob, isMobInstance, spawnMobAt } from "../ai/mobs";
 import { mobById } from "../entities/enemies/catalog";
 import { teleportHero } from "../session/hero";
+import { yumiStore } from "../session/stores";
 
 export const YUMI_ENTRANCE: readonly [number, number] = [48, -310];
 export const YUMI_ARENA: readonly [number, number] = [80, -340];
@@ -119,7 +120,7 @@ export function leaveProtectYumi(ctx: GameContext, userId: string): boolean {
   cleanup(ctx, session);
   teleportHero(ctx, userId, session.returnPos[0], session.returnPos[1]);
   sessions.delete(userId);
-  ctx.game.store.delete(`yumi:${userId}`);
+  yumiStore.clear(ctx, userId);
   return true;
 }
 
@@ -213,7 +214,7 @@ export function tickProtectYumi(ctx: GameContext, userId: string, dt: number): v
 function sync(ctx: GameContext, userId: string): void {
   const session = sessions.get(userId);
   if (session === undefined) {
-    ctx.game.store.delete(`yumi:${userId}`);
+    yumiStore.clear(ctx, userId);
     return;
   }
   const hp = ctx.scene.entity.stats.get(session.yumiId, "health");
@@ -225,7 +226,7 @@ function sync(ctx: GameContext, userId: string): void {
     alive: session.spawned.filter((id) => isMobInstance(id)).length,
     status: session.status,
   };
-  ctx.game.store.set(`yumi:${userId}`, view);
+  yumiStore.write(ctx, userId, view);
 }
 
 export function yumiActive(userId: string): boolean {

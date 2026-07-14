@@ -8,6 +8,7 @@ import {
   usePlayer,
   useQuestJournal,
 } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 import type { ReactNode } from "react";
 
 import { classById } from "../../classes/catalog";
@@ -17,6 +18,7 @@ import { equippedSetStatus } from "../../items/sets";
 import { PROFESSIONS } from "../../professions/catalog";
 import { professionsOf } from "../../professions/gathering";
 import type { EquipSlot } from "../../model";
+import { classStore, equipStore, shopStore } from "../../session/stores";
 import { QUESTS } from "../../quests/catalog";
 import { heroSheet } from "../../session/hero";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE, QUALITY_COLORS, copperLabel } from "../theme";
@@ -97,7 +99,7 @@ export function BagsPanel() {
   const { userId } = usePlayer();
   const slots = useInventory("bags");
   const copper = useCurrency("copper");
-  const shopId = useGameStore((ctx) => ctx.game.store.get(`shop:${userId}`)) as string | undefined;
+  const shopId = useKeyedStore(shopStore, userId);
   const close = () => commands.run("openBags", {});
   return (
     <Window title={<span>Backpack · <span className="text-amber-400">{copperLabel(copper)}</span></span>} onClose={close}>
@@ -112,14 +114,14 @@ export function BagsPanel() {
                 itemId={slot.itemId}
                 count={slot.count}
                 action={
-                  shopId !== undefined
+                  shopId !== null
                     ? () => commands.run("shop.sell", { itemId: slot.itemId })
                     : itemDefById(slot.itemId)?.kind === "consumable" || itemDefById(slot.itemId)?.slot !== undefined
                       ? () => commands.run("bags.use", { itemId: slot.itemId })
                       : undefined
                 }
                 actionLabel={
-                  shopId !== undefined
+                  shopId !== null
                     ? "Sell"
                     : itemDefById(slot.itemId)?.kind === "consumable"
                       ? "Use"
@@ -137,14 +139,12 @@ export function BagsPanel() {
 export function CharacterPanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
+  const classId = useKeyedStore(classStore, userId);
   const level = useEntityStat(userId, "level")?.current ?? 1;
   const sheet = useGameStore((ctx) => heroSheet(ctx, userId));
-  const equips = useGameStore(
-    (ctx) => (ctx.game.store.get(`equip:${userId}`) as Partial<Record<EquipSlot, string>> | undefined) ?? {},
-  );
+  const equips = useKeyedStore(equipStore, userId);
   const profs = useGameStore((ctx) => professionsOf(ctx, userId));
-  if (classId === undefined || sheet === null) return null;
+  if (classId === null || sheet === null) return null;
   const cls = classById(classId);
   return (
     <Window title={`${cls.name} · Level ${level}`} onClose={() => commands.run("openCharacter", {})}>
@@ -271,12 +271,12 @@ function objectiveLabel(questId: string, objectiveId: string): string {
 export function VendorPanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const shopId = useGameStore((ctx) => ctx.game.store.get(`shop:${userId}`)) as string | undefined;
+  const shopId = useKeyedStore(shopStore, userId);
   const copper = useCurrency("copper");
   const stock = useGameStore((ctx) =>
-    shopId === undefined ? [] : ctx.game.trade!.tradableAt(shopId, ITEMS.map((item) => item.id)),
+    shopId === null ? [] : ctx.game.trade!.tradableAt(shopId, ITEMS.map((item) => item.id)),
   );
-  if (shopId === undefined) return null;
+  if (shopId === null) return null;
   const vendor = NPCS.find((npc) => npc.shopId === shopId);
   return (
     <Window

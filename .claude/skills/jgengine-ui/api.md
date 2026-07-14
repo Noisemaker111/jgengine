@@ -307,6 +307,7 @@
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; }): HudLayoutStore — ⚠ undocumented
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
+- `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
 - `useLayoutCollisions` (function): function useLayoutCollisions(): readonly LayoutCollision[] — Live forbidden/warned region collisions (empty outside a provider).
 - `useLeaderboard` (function): function useLeaderboard(stat: string, options: { scope: LeaderboardScope; limit?: number }): { userId: string; value: number }[] — ⚠ undocumented
 - `useLocalPlayerDead` (function): function useLocalPlayerDead(healthStatId = "health"): boolean — ⚠ undocumented
@@ -609,6 +610,7 @@
 
 ## @jgengine/react/store
 
+- `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
 
 ## @jgengine/react/voice

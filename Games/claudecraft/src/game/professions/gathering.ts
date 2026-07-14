@@ -5,7 +5,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { GATHER_NODES, PROFESSIONS } from "./catalog";
 import type { GatherNodeDef, ProfessionId } from "../model";
-import { storeKeys } from "../session/hero";
+import { professionsStore } from "../session/stores";
 import { CRYPT, zoneById } from "../world/zones";
 
 interface NodeRuntime {
@@ -17,10 +17,7 @@ const nodes = new Map<string, NodeRuntime>();
 const GATHER_RADIUS = 4;
 
 export function professionsOf(ctx: GameContext, userId: string): Record<ProfessionId, number> {
-  const raw = ctx.game.store.get(storeKeys.professions(userId)) as
-    | Record<ProfessionId, number>
-    | undefined;
-  return { mining: 1, logging: 1, herbalism: 1, fishing: 1, crafting: 1, ...raw };
+  return professionsStore.read(ctx, userId);
 }
 
 function nodePlacement(def: GatherNodeDef, roll: () => number): readonly [number, number] {
@@ -97,7 +94,7 @@ export function gather(ctx: GameContext, userId: string, instanceId: string): vo
   }
   const maxSkill = PROFESSIONS.find((entry) => entry.id === def.profession)?.maxSkill ?? 300;
   if (skill < def.skillUpTo && skill < maxSkill) {
-    ctx.game.store.set(storeKeys.professions(userId), { ...skills, [def.profession]: skill + 1 });
+    professionsStore.write(ctx, userId, { ...skills, [def.profession]: skill + 1 });
     ctx.scene.entity.floatText({
       instanceId: userId,
       text: `${def.profession} ${skill + 1}`,

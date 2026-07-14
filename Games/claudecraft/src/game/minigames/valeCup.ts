@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { COPPER } from "../model";
 import { teleportHero } from "../session/hero";
+import { valeCupStore } from "../session/stores";
 
 export const VALE_CUP_ENTRANCE: readonly [number, number] = [-38, -288];
 export const VALE_CUP_PITCH: readonly [number, number] = [-70, -260];
@@ -97,7 +98,7 @@ export function leaveValeCup(ctx: GameContext, userId: string): boolean {
   if (match === undefined) return false;
   teleportHero(ctx, userId, match.returnPos[0], match.returnPos[1]);
   matches.delete(userId);
-  ctx.game.store.delete(`valecup:${userId}`);
+  valeCupStore.clear(ctx, userId);
   return true;
 }
 
@@ -182,7 +183,7 @@ function finish(ctx: GameContext, userId: string, match: MatchState): void {
 function sync(ctx: GameContext, userId: string): void {
   const match = matches.get(userId);
   if (match === undefined) {
-    ctx.game.store.delete(`valecup:${userId}`);
+    valeCupStore.clear(ctx, userId);
     return;
   }
   const view: ValeCupView = {
@@ -194,7 +195,7 @@ function sync(ctx: GameContext, userId: string): void {
     wager: match.wager,
     result: match.result,
   };
-  ctx.game.store.set(`valecup:${userId}`, view);
+  valeCupStore.write(ctx, userId, view);
 }
 
 export function valeCupActive(userId: string): boolean {

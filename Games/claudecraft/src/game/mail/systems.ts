@@ -6,6 +6,7 @@ import {
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { COPPER } from "../model";
+import { mailOpenStore, mailViewStore, marketOpenStore, shopStore } from "../session/stores";
 import { ZONES } from "../world/zones";
 
 export const MAILBOX = "waystation_post";
@@ -43,19 +44,19 @@ export function placeMailboxes(ctx: GameContext): void {
 
 export function openMail(ctx: GameContext, userId: string): void {
   deliverDue(ctx, userId);
-  ctx.game.store.set(`mail:${userId}`, true);
+  mailOpenStore.write(ctx, userId, true);
   syncMail(ctx, userId);
 }
 
 export function closeMail(ctx: GameContext, userId: string): void {
-  ctx.game.store.delete(`mail:${userId}`);
-  ctx.game.store.delete(`market:${userId}`);
+  mailOpenStore.clear(ctx, userId);
+  marketOpenStore.clear(ctx, userId);
 }
 
 export function openMarket(ctx: GameContext, userId: string): void {
-  ctx.game.store.set(`market:${userId}`, true);
-  ctx.game.store.set(`shop:${userId}`, MARKET_SHOP);
-  ctx.game.store.delete(`mail:${userId}`);
+  marketOpenStore.write(ctx, userId, true);
+  shopStore.write(ctx, userId, MARKET_SHOP);
+  mailOpenStore.clear(ctx, userId);
 }
 
 export function sendToSelf(
@@ -64,7 +65,7 @@ export function sendToSelf(
   itemId: string,
   count = 1,
 ): string | null {
-  if (ctx.game.store.get(`mail:${userId}`) !== true) return "mailbox-closed";
+  if (!mailOpenStore.read(ctx, userId)) return "mailbox-closed";
   if (count < 1) return "invalid-count";
   if (ctx.player.inventory.take("bags", itemId, count).status !== "ok") return "missing-item";
   const deliverAt = ctx.time.now() + MAIL_DELAY_SEC;
@@ -84,7 +85,7 @@ export function sendToSelf(
 }
 
 export function sendCopperToSelf(ctx: GameContext, userId: string, amount: number): string | null {
-  if (ctx.game.store.get(`mail:${userId}`) !== true) return "mailbox-closed";
+  if (!mailOpenStore.read(ctx, userId)) return "mailbox-closed";
   if (amount < 1) return "invalid-amount";
   if (ctx.game.economy.charge(userId, COPPER, amount) !== null) return "not-enough-copper";
   const deliverAt = ctx.time.now() + MAIL_DELAY_SEC;
@@ -132,7 +133,7 @@ function applyDelivery(ctx: GameContext, entry: DeliveryEntry): void {
 }
 
 export function tickMail(ctx: GameContext, userId: string): void {
-  if (ctx.game.store.get(`mail:${userId}`) === true) {
+  if (mailOpenStore.read(ctx, userId)) {
     deliverDue(ctx, userId);
     syncMail(ctx, userId);
   } else {
@@ -152,17 +153,15 @@ function syncMail(ctx: GameContext, userId: string): void {
     ready: entry.deliverAt <= now,
   }));
   const view: MailView = { pending, inbox: [] };
-  ctx.game.store.set(`mailView:${userId}`, view);
+  mailViewStore.write(ctx, userId, view);
 }
 
 export function marketBuy(ctx: GameContext, userId: string, itemId: string): string | null {
-  if (ctx.game.store.get(`market:${userId}`) !== true && typeof ctx.game.store.get(`shop:${userId}`) !== "string") {
+  const openShopId = shopStore.read(ctx, userId);
+  if (!marketOpenStore.read(ctx, userId) && openShopId === null) {
     return "market-closed";
   }
-  const shopId =
-    typeof ctx.game.store.get(`shop:${userId}`) === "string"
-      ? (ctx.game.store.get(`shop:${userId}`) as string)
-      : MARKET_SHOP;
+  const shopId = openShopId ?? MARKET_SHOP;
   const rejection = ctx.game.trade!.buy(itemId, 1, { shop: shopId, inventoryId: "bags" });
   return rejection?.reason ?? null;
 }

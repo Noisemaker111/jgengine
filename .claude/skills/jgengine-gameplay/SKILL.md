@@ -341,6 +341,21 @@ ctx.game.store.get("health")           // unknown
 ctx.game.store.has("health") / delete("health") / subscribe(listener) / mapSnapshot() / arraySnapshot()
 ```
 
+**Per-owner keyed state (per-user, per-instance) is `defineKeyedStore` (`@jgengine/core/store/defineKeyedStore`) + `useKeyedStore` (`@jgengine/react/store`)** — the sibling for when the owning id varies at runtime and one fixed `defineStore` key can't express it. Never hand-roll a `` `prefix:${id}` `` accessor module casting `store.get(key) as T` per family.
+
+```ts
+export const heroClass = defineKeyedStore<string>((userId) => `class:${userId}`, "none");
+
+heroClass.read(ctx, userId)                // value, or the initial before any write for this userId
+heroClass.peek(ctx, userId)                // T | undefined — distinguishes "never written"
+heroClass.write(ctx, userId, "mage")       // bumps ctx.version(), notifies ctx.subscribe
+heroClass.update(ctx, userId, (c) => c)
+heroClass.keyFor(userId)                   // the composed store key, for snapshot/debug tooling
+const cls = useKeyedStore(heroClass, userId)   // React; useKeyedStore(handle, userId, (c) => c.length) for a slice
+```
+
+A factory initial runs at most once **per id** and is reused, so an unwritten id's slot keeps a stable identity. Reach for `defineStore` for a single fixed slot; reach for `defineKeyedStore` the moment the key depends on an id you don't know until runtime.
+
 ## `ctx.game.cards` / `ctx.game.turn` — lazily-created piles and turn loops
 
 `ctx.game.cards.pile(id, config?)` and `ctx.game.turn.loop(id, config?)` lazily create (config required on first call) or return the existing notify-wrapped `CardPile`/`TurnLoop` for `id` — call with just the id after the first `onInit` seed to fetch the same instance; every mutating method is wrapped so it bumps `ctx.version()`/notifies `ctx.subscribe` automatically, same as every other `ctx` surface. This replaces manually constructing `createCardPile`/`createTurnLoop` and wiring notification yourself.

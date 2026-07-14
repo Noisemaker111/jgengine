@@ -1,8 +1,9 @@
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useGame, usePlayer } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 
 import { specsForClass } from "../../talents/catalog";
-import type { TalentsView } from "../../session/hero";
+import { classStore, talentsStore } from "../../session/stores";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE } from "../theme";
 
 function pretty(nodeId: string): string {
@@ -13,12 +14,12 @@ function pretty(nodeId: string): string {
 export function TalentPanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
-  const view = useGameStore((ctx) => ctx.game.store.get(`talents:${userId}`)) as TalentsView | undefined;
-  if (classId === undefined) return null;
+  const classId = useKeyedStore(classStore, userId);
+  const view = useKeyedStore(talentsStore, userId);
+  if (classId === null) return null;
   const specs = specsForClass(classId);
   const close = () => commands.run("openTalents", {});
-  if (view === undefined) {
+  if (view === null) {
     return (
       <div className={`${PANEL} pointer-events-auto w-[440px]`}>
         <div className={PANEL_TITLE}>

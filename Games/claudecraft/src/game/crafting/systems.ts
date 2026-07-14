@@ -6,7 +6,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { FISH_TABLE, FISHING_SPOTS, RECIPES, RECIPE_SKILL } from "./catalog";
 import { INTERACT_RANGE } from "../math/combat";
 import { professionsOf } from "../professions/gathering";
-import { storeKeys } from "../session/hero";
+import { fishingStore, professionsStore } from "../session/stores";
 import { ZONES } from "../world/zones";
 
 export { RECIPES, RECIPE_SKILL };
@@ -23,10 +23,6 @@ export const FISHING_CHECK: SkillCheckConfig = {
 
 const fishingSessions = new Map<string, number>();
 const fishRoll = seededRng("claudecraft-fishing");
-
-export function fishingKey(userId: string): string {
-  return `fishing:${userId}`;
-}
 
 export function placeCraftingWorld(ctx: GameContext): void {
   for (const zone of ZONES) {
@@ -87,7 +83,7 @@ export function craftRecipe(ctx: GameContext, userId: string, recipeId: string):
     if (rejection !== null) say("Bags are full");
   }
   if (skills.crafting < Math.min(300, skillReq + 40)) {
-    ctx.game.store.set(storeKeys.professions(userId), { ...skills, crafting: skills.crafting + 1 });
+    professionsStore.write(ctx, userId, { ...skills, crafting: skills.crafting + 1 });
   }
   say("Crafted!");
 }
@@ -97,11 +93,11 @@ export function castFishing(ctx: GameContext, userId: string): void {
   const startedAt = fishingSessions.get(userId);
   if (startedAt === undefined) {
     fishingSessions.set(userId, now);
-    ctx.game.store.set(fishingKey(userId), { startedAt: now });
+    fishingStore.write(ctx, userId, { startedAt: now });
     return;
   }
   fishingSessions.delete(userId);
-  ctx.game.store.delete(fishingKey(userId));
+  fishingStore.clear(ctx, userId);
   const result = evaluateSkillCheck(FISHING_CHECK, now - startedAt);
   const say = (text: string) => ctx.scene.entity.floatText({ instanceId: userId, text, kind: "info" });
   if (!result.success) {
@@ -124,6 +120,6 @@ export function castFishing(ctx: GameContext, userId: string): void {
   ctx.player.inventory.put("bags", caught.itemId, 1);
   say(`Caught ${caught.itemId.replaceAll("_", " ")}!`);
   if (skills.fishing < 300) {
-    ctx.game.store.set(storeKeys.professions(userId), { ...skills, fishing: skills.fishing + 1 });
+    professionsStore.write(ctx, userId, { ...skills, fishing: skills.fishing + 1 });
   }
 }

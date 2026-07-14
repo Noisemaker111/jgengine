@@ -1,7 +1,7 @@
-import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useGame, usePlayer } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 
-import type { FiestaRecord, FiestaView } from "../../arena/fiesta";
-import { fiestaRecordKey, fiestaStoreKey } from "../../arena/fiesta";
+import { fiestaRecordStore, fiestaStore } from "../../session/stores";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE } from "../theme";
 
 const TIER_COLORS: Record<string, string> = {
@@ -13,12 +13,8 @@ const TIER_COLORS: Record<string, string> = {
 export function ArenaPanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const record = useGameStore(
-    (ctx) => ctx.game.store.get(fiestaRecordKey(userId)) as FiestaRecord | undefined,
-  );
-  const fiesta = useGameStore(
-    (ctx) => ctx.game.store.get(fiestaStoreKey(userId)) as FiestaView | undefined,
-  );
+  const record = useKeyedStore(fiestaRecordStore, userId);
+  const fiesta = useKeyedStore(fiestaStore, userId);
   return (
     <div className={`${PANEL} pointer-events-auto w-[360px]`}>
       <div className={PANEL_TITLE}>
@@ -78,9 +74,7 @@ export function ArenaPanel() {
 
 export function FiestaBanner() {
   const { userId } = usePlayer();
-  const view = useGameStore(
-    (ctx) => ctx.game.store.get(fiestaStoreKey(userId)) as FiestaView | undefined,
-  );
+  const view = useKeyedStore(fiestaStore, userId);
   if (view?.active !== true) return null;
   const minutes = Math.floor(view.timeLeft / 60);
   const seconds = Math.floor(view.timeLeft % 60);
@@ -123,9 +117,7 @@ export function FiestaBanner() {
 export function FiestaHud() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const view = useGameStore(
-    (ctx) => ctx.game.store.get(fiestaStoreKey(userId)) as FiestaView | undefined,
-  );
+  const view = useKeyedStore(fiestaStore, userId);
   if (view?.active !== true) return null;
   return (
     <div className="pointer-events-auto flex w-64 flex-col gap-2">

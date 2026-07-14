@@ -25,10 +25,10 @@ import {
   gainRage,
   heroOf,
   heroSheet,
-  storeKeys,
   syncAuras,
   type HeroSheet,
 } from "../session/hero";
+import { autoAttackStore, castStore, deadStore, restedStore } from "../session/stores";
 import { addThreat, applyMobCc, armorOfMob, isMobInstance } from "../ai/mobs";
 import { handlePetAbility, isPetAbility } from "../pets/systems";
 import {
@@ -228,7 +228,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
       );
       if (crit && ability.school === "physical") fireWeaponCritProcs(ctx, userId, sheet, targetId);
       hero.autoAttack = true;
-      ctx.game.store.set(storeKeys.autoAttack(userId), true);
+      autoAttackStore.write(ctx, userId, true);
       break;
     }
     case "heal": {
@@ -355,7 +355,7 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
   const cls = classOf(ctx, userId);
   const hero = heroOf(userId);
   if (cls === null || hero === null) return;
-  if (ctx.game.store.get(storeKeys.dead(userId)) === true) return;
+  if (deadStore.read(ctx, userId)) return;
   const level = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
   const abilityId = barOf(ctx, userId)[slot];
   const ability = cls.abilities.find((entry) => entry.id === abilityId);
@@ -401,7 +401,7 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
       startedAt: now,
       endAt: now + castTime,
     };
-    ctx.game.store.set(storeKeys.cast(userId), { ...hero.casting });
+    castStore.write(ctx, userId, { ...hero.casting });
     cue(ctx, "cast_start");
     return;
   }
@@ -446,12 +446,12 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
         Math.abs(self.position[2] - hero.lastPos[2]) > 0.04);
     if (moved) {
       hero.casting = null;
-      ctx.game.store.delete(storeKeys.cast(userId));
+      castStore.clear(ctx, userId);
       say(ctx, userId, "Interrupted");
     } else if (now >= hero.casting.endAt) {
       const ability = classById(hero.classId).abilities.find((a) => a.id === hero.casting?.abilityId);
       hero.casting = null;
-      ctx.game.store.delete(storeKeys.cast(userId));
+      castStore.clear(ctx, userId);
       if (ability !== undefined) commitCast(ctx, userId, ability);
     }
   }
@@ -460,7 +460,7 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
     const targetId = hostileTarget(ctx, userId);
     if (targetId === null) {
       hero.autoAttack = false;
-      ctx.game.store.set(storeKeys.autoAttack(userId), false);
+      autoAttackStore.write(ctx, userId, false);
     } else if (now >= hero.nextSwingAt) {
       const sheet = heroSheet(ctx, userId);
       const distance = ctx.scene.entity.distance(userId, targetId);
@@ -488,13 +488,13 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
     );
     if (inHub) {
       const xpMax = ctx.scene.entity.stats.get(userId, "xp")?.max ?? 400;
-      const pool = (ctx.game.store.get(storeKeys.rested(userId)) as number | undefined) ?? 0;
+      const pool = restedStore.read(ctx, userId);
       if (pool < xpMax * 1.5) {
-        ctx.game.store.set(storeKeys.rested(userId), Math.min(xpMax * 1.5, pool + 4));
+        restedStore.write(ctx, userId, Math.min(xpMax * 1.5, pool + 4));
       }
     }
     const sheet = heroSheet(ctx, userId);
-    if (sheet !== null && ctx.game.store.get(storeKeys.dead(userId)) !== true) {
+    if (sheet !== null && !deadStore.read(ctx, userId)) {
       const stats = ctx.scene.entity.stats;
       const fighting = now < hero.combatUntil;
       if (cls.resource === "mana") {

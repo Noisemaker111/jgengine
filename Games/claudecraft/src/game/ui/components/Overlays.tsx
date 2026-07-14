@@ -1,17 +1,19 @@
 import { LevelUpFlash, ToastStack } from "@jgengine/react/components";
 import { useGame, useGameStore, usePlayer, useQuestJournal } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 
 import { DUNGEONS } from "../../dungeons/catalog";
 import { mobById } from "../../entities/enemies/catalog";
 import { itemDefById } from "../../items/catalog";
 import { QUESTS } from "../../quests/catalog";
+import { deadStore } from "../../session/stores";
 import { inCrypt, zoneAt } from "../../world/zones";
 import { QUALITY_COLORS } from "../theme";
 
 export function DeathOverlay() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const dead = useGameStore((ctx) => ctx.game.store.get(`dead:${userId}`) === true);
+  const dead = useKeyedStore(deadStore, userId);
   if (!dead) return null;
   return (
     <div

@@ -1,10 +1,12 @@
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 import { useEffect, useState } from "react";
 
 import { classById } from "../../classes/catalog";
 import type { AbilityDef } from "../../model";
-import { heroOf, type CastState } from "../../session/hero";
+import { heroOf } from "../../session/hero";
+import { barStore, castStore, classStore, restedStore } from "../../session/stores";
 
 function useHudTicker(): number {
   const [tick, setTick] = useState(0);
@@ -94,15 +96,12 @@ export function ActionBar() {
   useHudTicker();
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
+  const classId = useKeyedStore(classStore, userId);
   const gameNow = useGameStore((ctx) => ctx.time.now());
   const level = useEntityStat(userId, "level")?.current ?? 1;
   const resource = useEntityStat(userId, "resource")?.current ?? 0;
-  const bar = useGameStore((ctx) => {
-    const raw = ctx.game.store.get(`bar:${userId}`);
-    return Array.isArray(raw) ? (raw as string[]) : [];
-  });
-  if (classId === undefined) return null;
+  const bar = useKeyedStore(barStore, userId);
+  if (classId === null) return null;
   const cls = classById(classId);
   return (
     <div className="wcc-panel flex items-end gap-1 p-1.5">
@@ -147,9 +146,9 @@ export function ActionBar() {
 export function CastBar() {
   useHudTicker();
   const { userId } = usePlayer();
-  const cast = useGameStore((ctx) => ctx.game.store.get(`cast:${userId}`)) as CastState | undefined;
+  const cast = useKeyedStore(castStore, userId);
   const now = useGameStore((ctx) => ctx.time.now());
-  if (cast === undefined) return null;
+  if (cast === null) return null;
   const fraction = Math.max(0, Math.min(1, (now - cast.startedAt) / (cast.endAt - cast.startedAt)));
   return (
     <div className="w-[300px]">
@@ -173,9 +172,9 @@ export function XpBar() {
   const { userId } = usePlayer();
   const xp = useEntityStat(userId, "xp");
   const level = useEntityStat(userId, "level");
-  const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
-  const rested = useGameStore((ctx) => (ctx.game.store.get(`rested:${userId}`) as number | undefined) ?? 0);
-  if (classId === undefined || xp === null) return null;
+  const classId = useKeyedStore(classStore, userId);
+  const rested = useKeyedStore(restedStore, userId);
+  if (classId === null || xp === null) return null;
   const capped = (level?.current ?? 1) >= 20;
   const fraction = capped ? 1 : xp.max > 0 ? xp.current / xp.max : 0;
   const restedFraction = capped || xp.max <= 0 ? 0 : Math.min(1, (xp.current + rested) / xp.max);

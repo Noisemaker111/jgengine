@@ -1,21 +1,20 @@
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useEntityStat, useGame, usePlayer } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 import { useState } from "react";
 
 import { classById } from "../../classes/catalog";
+import { barStore, classStore } from "../../session/stores";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE } from "../theme";
 
 export function SpellbookPanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
   const [pickedSlot, setPickedSlot] = useState(0);
-  const classId = useGameStore((ctx) => ctx.game.store.get(`class:${userId}`)) as string | undefined;
+  const classId = useKeyedStore(classStore, userId);
   const level = useEntityStat(userId, "level")?.current ?? 1;
-  const bar = useGameStore((ctx) => {
-    const raw = ctx.game.store.get(`bar:${userId}`);
-    return Array.isArray(raw) ? (raw as string[]) : [];
-  });
-  if (classId === undefined) return null;
+  const bar = useKeyedStore(barStore, userId);
+  if (classId === null) return null;
   const cls = classById(classId);
   const abilities = [...cls.abilities].sort((a, b) => a.levelReq - b.levelReq);
   return (

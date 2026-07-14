@@ -1,8 +1,10 @@
 import { DialogueBox, type DialogueChoice, type DialogueDef } from "@jgengine/react/components";
 import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 
 import { NPCS } from "../../entities/npcs/catalog";
 import { DIALOGUES } from "../../entities/npcs/dialogues";
+import { dialogueStore } from "../../session/stores";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE } from "../theme";
 
 function questArgs(choice: DialogueChoice): { command: string; questId: string } | null {
@@ -15,9 +17,9 @@ function questArgs(choice: DialogueChoice): { command: string; questId: string }
 export function DialoguePanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
-  const npcId = useGameStore((ctx) => ctx.game.store.get(`dialogue:${userId}`)) as string | undefined;
+  const npcId = useKeyedStore(dialogueStore, userId);
   const filtered = useGameStore((ctx): DialogueDef | null => {
-    if (npcId === undefined) return null;
+    if (npcId === null) return null;
     const npc = NPCS.find((entry) => entry.id === npcId);
     const dialogue = DIALOGUES.find((entry) => entry.id === npc?.dialogueId);
     if (npc === undefined || dialogue === undefined) return null;
@@ -38,7 +40,7 @@ export function DialoguePanel() {
         .filter((line) => !("choices" in line) || line.choices.length > 0),
     };
   });
-  if (npcId === undefined || filtered === null) return null;
+  if (npcId === null || filtered === null) return null;
   const npc = NPCS.find((entry) => entry.id === npcId);
   return (
     <div className={`${PANEL} pointer-events-auto w-96`}>

@@ -1,10 +1,12 @@
 import { SkillCheckBar } from "@jgengine/react/components";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useKeyedStore } from "@jgengine/react/store";
 
-import { FISHING_CHECK, RECIPES, RECIPE_SKILL, fishingKey } from "../../crafting/systems";
+import { FISHING_CHECK, RECIPES, RECIPE_SKILL } from "../../crafting/systems";
 import { itemDefById } from "../../items/catalog";
 import { professionsOf } from "../../professions/gathering";
+import { fishingStore } from "../../session/stores";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE, QUALITY_COLORS } from "../theme";
 
 export function CraftingPanel() {
@@ -85,10 +87,8 @@ export function CraftingPanel() {
 
 export function FishingOverlay() {
   const { userId } = usePlayer();
-  const session = useGameStore((ctx) => ctx.game.store.get(fishingKey(userId))) as
-    | { startedAt: number }
-    | undefined;
-  if (session === undefined) return null;
+  const session = useKeyedStore(fishingStore, userId);
+  if (session === null) return null;
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-[200px] z-20 flex flex-col items-center gap-1">
       <p className="text-sm font-semibold text-sky-200 [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">

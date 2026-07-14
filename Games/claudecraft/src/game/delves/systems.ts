@@ -5,6 +5,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { despawnMob, isMobInstance, spawnMobAt } from "../ai/mobs";
 import { mobById } from "../entities/enemies/catalog";
 import { teleportHero } from "../session/hero";
+import { delveStore } from "../session/stores";
 import { DELVES, delveById, levelForTier, type DelveDef, type DelveTier } from "./catalog";
 
 const COMPANION_CATALOG = "delve_companion";
@@ -198,7 +199,7 @@ export function exitDelve(ctx: GameContext, userId: string): boolean {
   const [x, z] = session.returnPos;
   teleportHero(ctx, userId, x, z);
   active.delete(userId);
-  ctx.game.store.delete(`delve:${userId}`);
+  delveStore.clear(ctx, userId);
   return true;
 }
 
@@ -290,10 +291,10 @@ function tickCompanion(ctx: GameContext, userId: string, session: ActiveDelve, d
 function syncDelveStore(ctx: GameContext, userId: string): void {
   const view = delveSessionOf(userId);
   if (view === null) {
-    ctx.game.store.delete(`delve:${userId}`);
+    delveStore.clear(ctx, userId);
     return;
   }
-  ctx.game.store.set(`delve:${userId}`, view);
+  delveStore.write(ctx, userId, view);
 }
 
 export function placeDelveWorld(ctx: GameContext): void {
