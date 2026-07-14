@@ -437,6 +437,10 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
 }, or the HUD is silently unstyled.
 - Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; \`onTick\` \`dt\` is game time.
+
+## Visual quality bar
+
+"Make it look better" work is screenshot-judged, by you, harshly. Take a shot of live gameplay first and call it honestly — flat untextured ground, default lighting, and an empty horizon "doesn't look like a game" and fails. Then use the whole art stack (terrain texture/variation, materials, lighting/daylight, sky/fog, post-processing, vegetation density, props and landmarks — see the \`jgengine-ui\` skill's "Visual quality bar") and re-shoot at each milestone until the frame reads like a shipped game. Data tests prove content exists; only your eyes prove it looks good.
 `;
 
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {

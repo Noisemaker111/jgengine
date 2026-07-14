@@ -49,3 +49,14 @@ Every game ships `src/preview.tsx`: a static default frame plus a `states` named
 ## Rejection test
 
 Reject and revise the UI when it could be mistaken for a SaaS dashboard, landing page, admin panel, documentation page, or generic emulator overlay.
+
+## Visual quality bar — the world, not just the UI
+
+"Make the starter area / terrain / environment look better" is a screenshot-judged loop, not a data task:
+
+1. **Look first.** `bun run shoot <id> --mode play` (or `bun run drive <id> --click ... --shot before` for menu-gated games). Judge the shot like a player seeing a store page: flat single-color ground, default-grey materials, no sky treatment, empty horizon = "doesn't look like a game" — say so plainly and treat it as failing.
+2. **Use the whole art stack, not one knob.** Sweep every layer before declaring done: terrain texture + height/color variation · materials on props and buildings · lighting + daylight cycle (`@jgengine/shell` environment) · sky, fog, and distance treatment · post-processing chain (composer seam) · vegetation volumes (density slider, tree/bush/grass items) · props, landmarks, and silhouettes that give the space identity. Asset catalogs (`jgengine-assets`) before hand-rolled geometry.
+3. **Re-shoot and re-judge at milestones** — after each layer lands, not per-tweak. Stop only when the shot reads like a shipped game in the target art direction.
+4. **Prove content in data, beauty by eye.** `summarizeEnvironment` assertions still gate that trees/props/zones exist; screenshots are the only gate for whether they look right. Before/after shots go in the PR body.
+
+Reject test for worlds: if the screenshot could be mistaken for a physics-demo sandbox or an untextured prototype, it fails the bar.
