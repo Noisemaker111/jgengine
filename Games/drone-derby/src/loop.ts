@@ -20,9 +20,9 @@ import { DRONE_ENTITY_KIND } from "./game/entities/catalog";
 import {
   applyRingEvents,
   beginCountdownForCourse,
-  createRunStore,
   crashDnf,
   finishRun,
+  runStore,
   type RunPhase,
   type RunState,
   selectCourse,
@@ -33,20 +33,16 @@ import {
 import { createAmbientWind, generateGustSchedule, windAt, type GustEvent } from "./game/wind/wind";
 import { placeCourseRings, placeStaticProps, type ResolvedPad } from "./game/world/setup";
 
-const DEFAULT_COURSE: CourseId = "short";
 const LANDING_TOLERANCE = 3;
-
-export const runStore = createRunStore(DEFAULT_COURSE);
 
 function syncPhase(ctx: GameContext, phase: RunPhase): void {
   setGamePhase(ctx, phase === "menu" ? "menu" : phase === "countdown" || phase === "flying" ? "playing" : "ended");
 }
 
 function setRunState(ctx: GameContext, updater: (state: RunState) => RunState): void {
-  const previousPhase = runStore.getState().phase;
-  runStore.setState(updater);
-  const nextPhase = runStore.getState().phase;
-  if (nextPhase !== previousPhase) syncPhase(ctx, nextPhase);
+  const previousPhase = runStore.read(ctx).phase;
+  const next = runStore.update(ctx, updater);
+  if (next.phase !== previousPhase) syncPhase(ctx, next.phase);
 }
 
 interface Sim {
@@ -137,16 +133,16 @@ function reachablePad(position: readonly [number, number, number]): ResolvedPad 
 
 export function onInit(ctx: GameContext): void {
   ctx.game.commands.define("start", {
-    validate: () => (runStore.getState().phase === "menu" ? null : { reason: "race already underway" }),
+    validate: (state) => (runStore.read(state).phase === "menu" ? null : { reason: "race already underway" }),
     apply: () => requestStart(),
   });
 }
 
 export function onNewPlayer(ctx: GameContext): void {
   setRunState(ctx, (state) => selectCourse(state.courseId));
-  syncPhase(ctx, runStore.getState().phase);
+  syncPhase(ctx, runStore.read(ctx).phase);
   resolvedPads = placeStaticProps(ctx);
-  const courseId = runStore.getState().courseId;
+  const courseId = runStore.read(ctx).courseId;
   sim = createSim(courseId, ctx);
   placeCourseRings(ctx, courseId, ctx.world.groundHeightAt);
   ctx.scene.entity.spawn(DRONE_ENTITY_KIND, {
@@ -159,7 +155,7 @@ export function onNewPlayer(ctx: GameContext): void {
 
 export function onTick(ctx: GameContext, dt: number): void {
   if (sim === null) return;
-  const state = runStore.getState();
+  const state = runStore.read(ctx);
 
   const clickedCourse = consumeCourseRequest();
   const keyCourse = ctx.input.justPressed("courseShort")

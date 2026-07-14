@@ -19,6 +19,10 @@ export interface SkyDomeProps {
   sunColor?: string;
   /** Sun disc/glow intensity multiplier. Default 1. */
   sunIntensity?: number;
+  /** Horizon haze-band strength: 0 removes the dusty band, ~1 makes it heavy. Default 0.5. */
+  hazeStrength?: number;
+  /** Sun-glow brightness multiplier around the sun disc. Default 1. */
+  sunGlowStrength?: number;
   /** Exposes the created shader material so a time-of-day driver can mutate its uniforms per frame without recreating it. */
   materialRef?: MutableRefObject<THREE.ShaderMaterial | null>;
 }
@@ -89,8 +93,11 @@ export function SkyDome({
   sunDirection,
   sunColor = "#fff4d6",
   sunIntensity = 1,
+  hazeStrength = 0.5,
+  sunGlowStrength = 1,
   materialRef,
 }: SkyDomeProps = {}) {
+  const meshRef = useRef<THREE.Mesh>(null);
   const material = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
@@ -101,6 +108,8 @@ export function SkyDome({
         uSunColor: { value: new THREE.Color(sunColor) },
         uSunDirection: { value: sunDirection === undefined ? new THREE.Vector3(0, 1, 0) : normalizeVec3(sunDirection) },
         uSunIntensity: { value: sunDirection === undefined ? 0 : sunIntensity },
+        uHazeStrength: { value: hazeStrength },
+        uSunGlow: { value: sunGlowStrength },
       },
       vertexShader: `
         varying vec3 vWorldPosition;
@@ -116,6 +125,8 @@ export function SkyDome({
         uniform vec3 uSunColor;
         uniform vec3 uSunDirection;
         uniform float uSunIntensity;
+        uniform float uHazeStrength;
+        uniform float uSunGlow;
         uniform float offset;
         uniform float exponent;
         varying vec3 vWorldPosition;
@@ -130,7 +141,7 @@ export function SkyDome({
           vec3 dir = normalize(vWorldPosition + vec3(0.0, offset, 0.0));
           float h = max(dir.y, 0.0);
           vec3 col = mix(bottomColor, topColor, pow(h, exponent));
-          col = mix(col, bottomColor * 1.12, pow(1.0 - h, 6.0) * 0.5);
+          col = mix(col, bottomColor * 1.12, pow(1.0 - h, 6.0) * uHazeStrength);
           vec3 vd = normalize(vWorldPosition);
           vec2 cuv = vd.xz / (max(vd.y, 0.06) + 0.15) * 1.2;
           float clouds = smoothstep(0.52, 0.82, sFbm(cuv));
@@ -138,7 +149,7 @@ export function SkyDome({
           col = mix(col, mix(topColor, vec3(1.0), 0.6), clouds * band * 0.35);
           float sd = max(dot(vd, normalize(uSunDirection)), 0.0);
           float glow = pow(sd, 8.0) * 0.35 + pow(sd, 128.0) * 2.6;
-          col += uSunColor * glow * uSunIntensity;
+          col += uSunColor * glow * uSunIntensity * uSunGlow;
           gl_FragColor = vec4(col, 1.0);
         }
       `,
@@ -146,7 +157,7 @@ export function SkyDome({
       depthWrite: false,
       fog: false,
     });
-  }, [topColor, horizonColor, offset, exponent, sunColor, sunDirection, sunIntensity]);
+  }, [topColor, horizonColor, offset, exponent, sunColor, sunDirection, sunIntensity, hazeStrength, sunGlowStrength]);
   useEffect(() => {
     if (materialRef !== undefined) materialRef.current = material;
     return () => {
@@ -154,8 +165,14 @@ export function SkyDome({
       if (materialRef !== undefined) materialRef.current = null;
     };
   }, [material, materialRef]);
+  useFrame((state) => {
+    const mesh = meshRef.current;
+    if (mesh === null) return;
+    mesh.position.x = state.camera.position.x;
+    mesh.position.z = state.camera.position.z;
+  });
   return (
-    <mesh material={material} renderOrder={-1}>
+    <mesh ref={meshRef} material={material} renderOrder={-1} frustumCulled={false}>
       <sphereGeometry args={[radius, 32, 16]} />
     </mesh>
   );
@@ -219,11 +236,22 @@ export function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps) {
   return <StaticSkyDaylight sky={sky} lights={lights} />;
 }
 
+/** Dome-shape overrides (radius, haze, sun-glow) carried by the sky descriptor, spread onto `SkyDome`; unset fields keep the dome defaults. */
+function skyDomeShape(
+  sky: SkyEnvironmentDescriptor,
+): Pick<SkyDomeProps, "radius" | "hazeStrength" | "sunGlowStrength"> {
+  return {
+    ...(sky.radius === undefined ? {} : { radius: sky.radius }),
+    ...(sky.hazeStrength === undefined ? {} : { hazeStrength: sky.hazeStrength }),
+    ...(sky.sunGlowStrength === undefined ? {} : { sunGlowStrength: sky.sunGlowStrength }),
+  };
+}
+
 function StaticSkyDaylight({ sky, lights }: { sky: SkyEnvironmentDescriptor; lights: boolean }) {
   const state = useMemo(() => daylightStateAt(SKY_PRESET_DAY_FRACTION[sky.preset], sky), [sky]);
   return (
     <Daylight
-      sky={{ topColor: state.skyTop, horizonColor: state.skyBottom }}
+      sky={{ topColor: state.skyTop, horizonColor: state.skyBottom, ...skyDomeShape(sky) }}
       fog={{ color: sky.fog?.color ?? state.background, near: sky.fog?.near, far: sky.fog?.far }}
       sun={{ position: state.sunPosition, intensity: state.sunIntensity }}
       ambient={{ intensity: state.ambientIntensity }}
@@ -324,7 +352,7 @@ function BiomeDaylight({
 
   return (
     <>
-      <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} />
+      <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} {...skyDomeShape(sky)} />
       <fog attach="fog" ref={fogRef} args={[fogFallback.color, fogFallback.near, fogFallback.far]} />
       {lights ? (
         <>
@@ -377,7 +405,7 @@ function DrivenDaylight({
 
   return (
     <>
-      <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} />
+      <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} {...skyDomeShape(sky)} />
       <fog attach="fog" ref={fogRef} args={[sky.fog?.color ?? initial.background, sky.fog?.near ?? 70, sky.fog?.far ?? 260]} />
       {lights ? (
         <>

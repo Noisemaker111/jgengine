@@ -1,3 +1,5 @@
+import { defineStore } from "@jgengine/core/store/defineStore";
+
 import type { FloorSurfaceKind, Lane } from "./course";
 import type { Medal } from "./medals";
 import type { Polarity } from "./polarity";
@@ -60,3 +62,5 @@ export function createInitialRunState(): RunState {
     sectorTimes: [],
   };
 }
+
+export const runStore = defineStore<RunState>("run", () => createInitialRunState());

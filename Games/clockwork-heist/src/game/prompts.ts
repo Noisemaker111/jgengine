@@ -2,11 +2,11 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { command, gauge, label, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { SIDE_LOOT_DEFS, TREASURE_DEFS } from "./items/treasures";
 import { SERVANT_DOOR_SPAWN } from "./entities/player";
-import type { HeistState } from "./state/heistState";
+import { heistStore } from "./state/heistState";
 
 export function heistPrompts(ctx: GameContext): PositionedPrompt[] {
-  const heist = ctx.game.store.get("heist") as HeistState | undefined;
-  if (heist === undefined || heist.status !== "playing") return [];
+  const heist = heistStore.read(ctx);
+  if (heist.status !== "playing") return [];
 
   const prompts: PositionedPrompt[] = [];
   for (const treasure of TREASURE_DEFS) {

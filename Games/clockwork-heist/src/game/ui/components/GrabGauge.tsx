@@ -1,14 +1,12 @@
 import type { ReactNode } from "react";
 import { SkillCheckBar } from "@jgengine/react/components";
 import { useGameStore } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { treasureById, sideLootById } from "../../items/treasures";
-import type { HeistState } from "../../state/heistState";
+import { heistStore } from "../../state/heistState";
 
 export function GrabGauge(): ReactNode {
-  const grab = useGameStore((ctx) => {
-    const heist = ctx.game.store.get("heist") as HeistState | undefined;
-    return heist?.activeGrab ?? null;
-  });
+  const grab = useStore(heistStore, (heist) => heist.activeGrab);
   if (grab === null) return null;
 
   if (grab.kind === "treasure") {

@@ -5,7 +5,8 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import { content } from "./content";
 import { keybinds } from "./keybinds";
-import { onNewPlayer, onTick, runStore } from "../loop";
+import { onNewPlayer, onTick } from "../loop";
+import { runStore } from "./race/run";
 import { COURSE_ORDER } from "./race/courses";
 import { world } from "../world";
 
@@ -31,8 +32,8 @@ function tickWithHeld(ctx: GameContext, held: readonly string[], dt: number = ST
 describe("drone-derby loop — boot and menu", () => {
   test("onNewPlayer resets the run store to a fresh menu state and spawns the drone", () => {
     const ctx = boot();
-    expect(runStore.getState().phase).toBe("menu");
-    expect(runStore.getState().attempts).toBe(0);
+    expect(runStore.read(ctx).phase).toBe("menu");
+    expect(runStore.read(ctx).attempts).toBe(0);
     const drone = ctx.scene.entity.get("p1");
     expect(drone).not.toBeNull();
     expect(drone?.position[1]).toBeGreaterThan(0);
@@ -41,9 +42,9 @@ describe("drone-derby loop — boot and menu", () => {
   test("pressing startRace moves the run through countdown into flying", () => {
     const ctx = boot();
     tickWithHeld(ctx, ["startRace"]);
-    expect(runStore.getState().phase).toBe("countdown");
+    expect(runStore.read(ctx).phase).toBe("countdown");
     tickWithHeld(ctx, [], 5);
-    expect(runStore.getState().phase).toBe("flying");
+    expect(runStore.read(ctx).phase).toBe("flying");
   });
 });
 
@@ -52,11 +53,11 @@ describe("drone-derby loop — flight and battery", () => {
     const ctx = boot();
     tickWithHeld(ctx, ["startRace"]);
     tickWithHeld(ctx, [], 5);
-    expect(runStore.getState().phase).toBe("flying");
+    expect(runStore.read(ctx).phase).toBe("flying");
 
-    const startCells = runStore.getState().telemetry.batteryCells;
+    const startCells = runStore.read(ctx).telemetry.batteryCells;
     for (let i = 0; i < 120; i += 1) tickWithHeld(ctx, ["throttleUp", "boost"]);
-    const afterCells = runStore.getState().telemetry.batteryCells;
+    const afterCells = runStore.read(ctx).telemetry.batteryCells;
     expect(afterCells).toBeLessThan(startCells);
   });
 
@@ -79,24 +80,24 @@ describe("drone-derby loop — restart purity", () => {
     tickWithHeld(ctx, [], 5);
     for (let i = 0; i < 60; i += 1) tickWithHeld(ctx, ["throttleUp", "boost"]);
 
-    const drainedCells = runStore.getState().telemetry.batteryCells;
+    const drainedCells = runStore.read(ctx).telemetry.batteryCells;
     expect(drainedCells).toBeLessThan(100);
 
     tickWithHeld(ctx, ["restart"]);
-    const afterRestart = runStore.getState();
+    const afterRestart = runStore.read(ctx);
     expect(afterRestart.phase).toBe("countdown");
     expect(afterRestart.attempts).toBe(2);
     expect(afterRestart.ringIndex).toBe(0);
     expect(afterRestart.elapsed).toBe(0);
 
     tickWithHeld(ctx, [], 5);
-    expect(runStore.getState().telemetry.batteryCells).toBeCloseTo(100, 0);
+    expect(runStore.read(ctx).telemetry.batteryCells).toBeCloseTo(100, 0);
   });
 
   test("switching course from the menu resets attempts to zero", () => {
     const ctx = boot();
     tickWithHeld(ctx, ["courseEndurance"]);
-    const state = runStore.getState();
+    const state = runStore.read(ctx);
     expect(state.courseId).toBe("endurance");
     expect(state.attempts).toBe(0);
     expect(state.phase).toBe("menu");
@@ -104,14 +105,14 @@ describe("drone-derby loop — restart purity", () => {
 
   test("course keys are ignored mid-flight so an accidental press cannot interrupt a run", () => {
     const ctx = boot();
-    const startingCourse = runStore.getState().courseId;
+    const startingCourse = runStore.read(ctx).courseId;
     tickWithHeld(ctx, ["startRace"]);
     tickWithHeld(ctx, [], 5);
-    expect(runStore.getState().phase).toBe("flying");
+    expect(runStore.read(ctx).phase).toBe("flying");
 
     const otherCourse = COURSE_ORDER.find((id) => id !== startingCourse)!;
     tickWithHeld(ctx, [COURSE_KEY_ACTION[otherCourse]]);
-    expect(runStore.getState().courseId).toBe(startingCourse);
-    expect(runStore.getState().phase).toBe("flying");
+    expect(runStore.read(ctx).courseId).toBe(startingCourse);
+    expect(runStore.read(ctx).phase).toBe("flying");
   });
 });

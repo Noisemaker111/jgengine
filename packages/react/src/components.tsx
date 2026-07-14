@@ -397,6 +397,12 @@ function defaultToast(entry: FeedEntry): ReactNode {
   return typeof entry.data === "string" ? entry.data : JSON.stringify(entry.data);
 }
 
+/**
+ * Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of
+ * `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine
+ * event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the
+ * game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
+ */
 export function ToastStack({
   action,
   limit = 4,

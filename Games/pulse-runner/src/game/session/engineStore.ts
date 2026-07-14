@@ -1,18 +1,10 @@
-import { useGameStore } from "@jgengine/react/hooks";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineStore } from "@jgengine/core/store/defineStore";
+import { useStore } from "@jgengine/react/store";
 
 import type { RunnerEngine, RunnerSnapshot } from "./runnerEngine";
 
-const ENGINE_KEY = "pulse-runner:engine";
-
-export function installEngine(ctx: GameContext, engine: RunnerEngine): void {
-  ctx.game.store.set(ENGINE_KEY, engine);
-}
-
-export function readEngine(ctx: GameContext): RunnerEngine | undefined {
-  return ctx.game.store.get(ENGINE_KEY) as RunnerEngine | undefined;
-}
+export const engineStore = defineStore<RunnerEngine | undefined>("pulse-runner:engine", undefined);
 
 export function useRunnerSnapshot(): RunnerSnapshot | undefined {
-  return useGameStore((ctx) => readEngine(ctx)?.snapshot());
+  return useStore(engineStore, (engine) => engine?.snapshot());
 }

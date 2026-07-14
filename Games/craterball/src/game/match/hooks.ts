@@ -1,20 +1,17 @@
-import { useGameStore } from "@jgengine/react/hooks";
-import { createCraterFieldState, type CraterFieldState } from "../craters/craterField";
-import { DEFAULT_DIFFICULTY, type DifficultyId } from "./difficulty";
-import { createIdleSnapshot, type MatchSnapshot } from "./snapshot";
+import { useStore } from "@jgengine/react/store";
+import type { CraterFieldState } from "../craters/craterField";
+import type { DifficultyId } from "./difficulty";
+import { craterStore, difficultyStore, matchStore } from "./snapshot";
+import type { MatchSnapshot } from "./snapshot";
 
 export function useMatchSnapshot(): MatchSnapshot {
-  return useGameStore(
-    (ctx) => (ctx.game.store.get("match") as MatchSnapshot | undefined) ?? createIdleSnapshot(DEFAULT_DIFFICULTY),
-  );
+  return useStore(matchStore);
 }
 
 export function useCraterField(): CraterFieldState {
-  return useGameStore((ctx) => (ctx.game.store.get("craters") as CraterFieldState | undefined) ?? createCraterFieldState());
+  return useStore(craterStore);
 }
 
 export function useSelectedDifficulty(): DifficultyId {
-  return useGameStore(
-    (ctx) => (ctx.game.store.get("selectedDifficulty") as DifficultyId | undefined) ?? DEFAULT_DIFFICULTY,
-  );
+  return useStore(difficultyStore);
 }

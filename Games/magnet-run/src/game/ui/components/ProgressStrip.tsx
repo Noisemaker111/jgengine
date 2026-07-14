@@ -5,7 +5,8 @@ import { trainLineList } from "../../course/trainLines";
 import { sectorWorldStart } from "../../systems/constants";
 import { POLARITY_COLOR } from "../../systems/palette";
 import { secondsUntilHeadReaches, trainWindowAt } from "../../systems/trains";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 function clamp01(n: number): number {
   return Math.min(1, Math.max(0, n));
@@ -13,7 +14,7 @@ function clamp01(n: number): number {
 
 export function ProgressStrip() {
   const ctx = useGameContext();
-  const run = useRunState();
+  const run = useStore(runStore);
   const now = ctx.time.now();
   const sector = sectors[run.sectorIndex]!;
   const sectorStart = sectorWorldStart(run.sectorIndex);

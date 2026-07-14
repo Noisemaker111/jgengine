@@ -1,7 +1,6 @@
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import { puzzleById } from "./puzzles/catalog";
-import { STORE_KEY } from "./state/store";
-import type { AppState } from "./state/types";
+import { appStore } from "./state/store";
 
 // Stage the FULL playing HUD mid-solve: a partially filled board with visible
 // clues, a running clock, controls, and the credit footer.
@@ -29,6 +28,6 @@ export const uiScenario: UiPreviewScenario = (ctx, playable) => {
   }
   for (let second = 0; second < 47; second += 1) playable.loop.onTick(ctx, 1);
 
-  const state = ctx.game.store.get(STORE_KEY) as AppState | undefined;
-  if (state !== undefined) ctx.game.store.set(STORE_KEY, { ...state, bestMs: 61_000 });
+  const state = appStore.peek(ctx);
+  if (state !== undefined) appStore.write(ctx, { ...state, bestMs: 61_000 });
 };

@@ -6,6 +6,7 @@ import {
   type RacePhase,
   type RaceSessionState,
 } from "@jgengine/core/game/race";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 import { COURSES, type CourseId } from "./courses";
 
@@ -162,29 +163,7 @@ export function crashDnf(
   return { ...state, phase: "dnf", dnfReason: reason, dnfPosition: position, cellsUsed };
 }
 
-export interface RunStore {
-  getState(): RunState;
-  subscribe(listener: () => void): () => void;
-  setState(updater: (state: RunState) => RunState): void;
-}
-
-export function createRunStore(courseId: CourseId = "short"): RunStore {
-  let state = initialRunState(courseId);
-  const listeners = new Set<() => void>();
-  return {
-    getState() {
-      return state;
-    },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    setState(updater) {
-      state = updater(state);
-      for (const listener of listeners) listener();
-    },
-  };
-}
+export const runStore = defineStore<RunState>("run", () => initialRunState());
 
 export function formatRaceTime(totalSeconds: number): string {
   const clamped = Math.max(0, totalSeconds);

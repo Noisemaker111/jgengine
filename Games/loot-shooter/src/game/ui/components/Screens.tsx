@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { useGame } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
+import type { RunSnapshot } from "../../run/session";
+import { recordsStore, runStore } from "../../run/stores";
 import { WAVE_COUNT } from "../../waves/manifest";
-import { useRecords, useRun } from "./useRun";
 
 function ScreenShell({ children }: { children: ReactNode }) {
   return (
@@ -26,7 +28,7 @@ function ActionButton({ label, onClick }: { label: string; onClick: () => void }
   );
 }
 
-function StatLine({ run }: { run: ReturnType<typeof useRun> }) {
+function StatLine({ run }: { run: RunSnapshot }) {
   const accuracy = run.shotsFired === 0 ? 0 : Math.round((run.shotsHit / run.shotsFired) * 100);
   return (
     <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold uppercase tracking-wider text-slate-300">
@@ -47,7 +49,7 @@ function StatLine({ run }: { run: ReturnType<typeof useRun> }) {
 }
 
 function RecordsLine() {
-  const records = useRecords();
+  const records = useStore(recordsStore);
   if (records.score === undefined) return null;
   return (
     <div className="mt-3 flex gap-5 text-xs font-semibold uppercase tracking-widest text-slate-400">
@@ -69,7 +71,7 @@ function RecordsLine() {
 }
 
 export function RunScreens() {
-  const run = useRun();
+  const run = useStore(runStore);
   const { commands } = useGame();
   const start = () => commands.run("run.start", {});
   const endless = () => commands.run("run.endless", {});
