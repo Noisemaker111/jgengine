@@ -1,9 +1,12 @@
 import type {
+  EditorCollection,
   EditorDocument,
+  EditorFragmentContent,
   EditorLayersInput,
   EditorMarker,
   EditorNote,
   EditorPath,
+  EditorPrefab,
   EditorVolume,
 } from "./types";
 
@@ -15,6 +18,8 @@ export function createEmptyEditorDocument(): EditorDocument {
     volumes: [],
     paths: [],
     annotations: [],
+    prefabs: [],
+    collections: [],
   };
 }
 
@@ -47,6 +52,16 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
       position: { ...note.position },
       ...(note.meta === undefined ? {} : { meta: { ...note.meta } }),
     })),
+    prefabs: doc.prefabs.map((prefab) => ({
+      ...prefab,
+      fragment: {
+        markers: prefab.fragment.markers.map((marker) => ({ ...marker, position: { ...marker.position } })),
+        volumes: prefab.fragment.volumes.map((volume) => ({ ...volume, center: { ...volume.center } })),
+        paths: prefab.fragment.paths.map((path) => ({ ...path, points: path.points.map((point) => ({ ...point })) })),
+        annotations: prefab.fragment.annotations.map((note) => ({ ...note, position: { ...note.position } })),
+      },
+    })),
+    collections: doc.collections.map((collection) => ({ ...collection, memberIds: [...collection.memberIds] })),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
@@ -65,11 +80,13 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     volumes: asArray(resolved.volumes),
     paths: asArray(resolved.paths),
     annotations: asArray(resolved.annotations),
+    prefabs: asArray(resolved.prefabs),
+    collections: asArray(resolved.collections),
     ...(resolved.terrain === undefined ? {} : { terrain: resolved.terrain }),
   };
 }
 
-/** Combines multiple editor documents' markers, volumes, paths, and notes into one. */
+/** Combines multiple editor documents' markers, volumes, paths, notes, prefabs, and collections into one. */
 export function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument {
   const out = createEmptyEditorDocument();
   for (const doc of docs) {
@@ -77,6 +94,8 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     out.volumes.push(...doc.volumes);
     out.paths.push(...doc.paths);
     out.annotations.push(...doc.annotations);
+    out.prefabs.push(...doc.prefabs);
+    out.collections.push(...doc.collections);
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
   }
   return out;
@@ -91,12 +110,56 @@ export function extractEditorFragment(doc: EditorDocument, ids: readonly string[
     volumes: doc.volumes.filter((volume) => wanted.has(volume.id)),
     paths: doc.paths.filter((path) => wanted.has(path.id)),
     annotations: doc.annotations.filter((note) => wanted.has(note.id)),
+    prefabs: [],
+    collections: [],
   });
 }
 
 /** Counts every object in a document across markers, volumes, paths, and notes. */
 export function editorDocumentSize(doc: EditorDocument): number {
   return doc.markers.length + doc.volumes.length + doc.paths.length + doc.annotations.length;
+}
+
+/** Looks up a prefab by id in an editor document. */
+export function findEditorPrefab(doc: EditorDocument, id: string): EditorPrefab | undefined {
+  return doc.prefabs.find((prefab) => prefab.id === id);
+}
+
+/** Looks up a named collection / selection set by id in an editor document. */
+export function findEditorCollection(doc: EditorDocument, id: string): EditorCollection | undefined {
+  return doc.collections.find((collection) => collection.id === id);
+}
+
+/** True when an object id is a member of any locked collection — blocks move/delete on it. */
+export function isEditorObjectLocked(doc: EditorDocument, id: string): boolean {
+  return doc.collections.some((collection) => collection.locked === true && collection.memberIds.includes(id));
+}
+
+/**
+ * Extracts the selected ids into a prefab fragment centered on their own bounds centroid, so the
+ * same prefab reinserts consistently regardless of where in the scene (or which game) it lands.
+ */
+export function createPrefabFragment(doc: EditorDocument, ids: readonly string[]): EditorFragmentContent {
+  const extracted = extractEditorFragment(doc, ids);
+  const bounds = editorDocumentBounds(extracted);
+  const origin = bounds === null
+    ? { x: 0, y: 0, z: 0 }
+    : {
+        x: (bounds.min.x + bounds.max.x) / 2,
+        y: (bounds.min.y + bounds.max.y) / 2,
+        z: (bounds.min.z + bounds.max.z) / 2,
+      };
+  const shift = (point: { x: number; y: number; z: number }) => ({
+    x: point.x - origin.x,
+    y: point.y - origin.y,
+    z: point.z - origin.z,
+  });
+  return {
+    markers: extracted.markers.map((marker) => ({ ...marker, position: shift(marker.position) })),
+    volumes: extracted.volumes.map((volume) => ({ ...volume, center: shift(volume.center) })),
+    paths: extracted.paths.map((path) => ({ ...path, points: path.points.map(shift) })),
+    annotations: extracted.annotations.map((note) => ({ ...note, position: shift(note.position) })),
+  };
 }
 
 /** Looks up a marker by id in an editor document. */
@@ -231,6 +294,8 @@ export function applyEditorDocumentOverlay(
     volumes: upsertById(base.volumes, overlay.volumes),
     paths: upsertById(base.paths, overlay.paths),
     annotations: upsertById(base.annotations, overlay.annotations),
+    prefabs: upsertById(base.prefabs, overlay.prefabs),
+    collections: upsertById(base.collections, overlay.collections),
     ...(overlay.terrain ?? base.terrain) === undefined
       ? {}
       : { terrain: overlay.terrain ?? base.terrain },

@@ -25,7 +25,6 @@
     "src"
   ],
   "exclude": [
-    "src/**/*.test.ts",
-    "src/cartridge/testkit.ts"
+    "src/**/*.test.ts"
   ]
 }

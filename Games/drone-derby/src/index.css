@@ -1,3 +1,4 @@
 @import "tailwindcss";
+@import "./style.css";
 @source "../../../packages/react/src";
 @source "../../../packages/shell/src";

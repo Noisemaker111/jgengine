@@ -121,7 +121,7 @@
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
-- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds.
+- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
@@ -146,47 +146,6 @@
 - `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
-
-## @jgengine/core/cartridge/runtime
-
-- `CartridgeRuntime` (interface): interface CartridgeRuntime — ⚠ undocumented
-- `createCartridge` (function): function createCartridge(spec: CartridgeSpec): CartridgeRuntime — ⚠ undocumented
-
-## @jgengine/core/cartridge/spec
-
-- `BoltFx` (interface): interface BoltFx — ⚠ undocumented
-- `CartridgeEnemy` (interface): interface CartridgeEnemy — ⚠ undocumented
-- `CartridgeFlow` (interface): interface CartridgeFlow — ⚠ undocumented
-- `CartridgePhase` (type): type CartridgePhase = "start" | "countdown" | "playing" | "won" | "lost" — ⚠ undocumented
-- `CartridgePlayer` (interface): interface CartridgePlayer — ⚠ undocumented
-- `CartridgeProgression` (interface): interface CartridgeProgression — ⚠ undocumented
-- `CartridgeRules` (interface): interface CartridgeRules — ⚠ undocumented
-- `CartridgeRun` (interface): interface CartridgeRun — ⚠ undocumented
-- `CartridgeSpawning` (interface): interface CartridgeSpawning — ⚠ undocumented
-- `CartridgeSpec` (interface): interface CartridgeSpec — ⚠ undocumented
-- `CartridgeUpgrade` (interface): interface CartridgeUpgrade — ⚠ undocumented
-- `CartridgeWeapon` (type): type CartridgeWeapon = | (WeaponCommon & { kind: "projectile"; range: number; speed: number }) | (WeaponCommon & { kind: "orbit"; blades: Leveled; radius: Leveled; hitRadius: number; angularSpeed: number; }) | (WeaponCommon & { kind: "pulse"; radius: Leveled; durationSeconds: number }) | (WeaponComm… — ⚠ undocumented
-- `CartridgeXpGems` (interface): interface CartridgeXpGems — ⚠ undocumented
-- `HIT_EFFECT` (const): const HIT_EFFECT: "hit" — ⚠ undocumented
-- `Leveled` (type): type Leveled = | number | { base: number; perLevel: number; min?: number; max?: number } | { table: readonly number[] } — ⚠ undocumented
-- `PulseFx` (interface): interface PulseFx — ⚠ undocumented
-- `UpgradeEffect` (type): type UpgradeEffect = | { kind: "weaponLevel"; weapon: string } | { kind: "statBonus"; stat: string; amount: number } | { kind: "fieldAdd"; field: string; amount: number } | { kind: "fieldMultiply"; field: string; factor: number } | { kind: "custom"; apply(ctx: GameContext, run: CartridgeRun, stacks:… — ⚠ undocumented
-- `WASD_KEYBINDS` (const): const WASD_KEYBINDS: ActionCodesMap — ⚠ undocumented
-- `WeaponCommon` (interface): interface WeaponCommon — ⚠ undocumented
-- `WeaponFireArgs` (interface): interface WeaponFireArgs — ⚠ undocumented
-- `XP_GEM_BASE_TYPE` (const): const XP_GEM_BASE_TYPE: "xp_gem" — ⚠ undocumented
-- `leveled` (function): function leveled(value: Leveled, level: number): number — ⚠ undocumented
-
-## @jgengine/core/cartridge/testkit
-
-- `CartridgeSmokeOptions` (interface): interface CartridgeSmokeOptions — ⚠ undocumented
-- `bootCartridge` (function): function bootCartridge(spec: CartridgeSpec & { name?: string; world?: WorldFeature; physics?: PhysicsConfig }): { ctx: GameContext; cart: CartridgeRuntime } — ⚠ undocumented
-- `cartridgeSmokeTest` (function): function cartridgeSmokeTest(spec: CartridgeSpec & { name?: string; world?: WorldFeature; physics?: PhysicsConfig }, options?: CartridgeSmokeOptions): void — ⚠ undocumented
-- `tickCartridge` (function): function tickCartridge(ctx: GameContext, cart: CartridgeRuntime, seconds: number, step = 0.1): void — ⚠ undocumented
-
-## @jgengine/core/cartridge/validate
-
-- `validateCartridge` (function): function validateCartridge(spec: CartridgeSpec): string[] — ⚠ undocumented
 
 ## @jgengine/core/commands/commandRegistry
 
@@ -849,3 +808,55 @@
 - `gameTemplate` (function): function gameTemplate(options: TemplateOptions): TemplateFile[] — ⚠ undocumented
 - `packageIdFromFolder` (function): function packageIdFromFolder(folder: string): string — ⚠ undocumented
 - `parseCreateName` (function): function parseCreateName(input: string): { displayName: string; folderName: string; id: string } — ⚠ undocumented
+
+## @jgengine/shell/cartridge
+
+- `CartridgeAbilitySlot` (interface): interface CartridgeAbilitySlot — ⚠ undocumented
+- `CartridgeConfig` (type): type CartridgeConfig = CartridgeSpec & { name: string; panels: CartridgePanels; hud: { storageKey?: string; panels: readonly CartridgeHudPanelSpec[] }; screens: CartridgeScreens; theme?: Record<string, string>; world?: GameConfig["world"]; physics?: GameConfig["physics"]; assets?: GameConfig["assets… — ⚠ undocumented
+- `CartridgeHudPanelSpec` (interface): interface CartridgeHudPanelSpec — ⚠ undocumented
+- `CartridgePanelItem` (type): type CartridgePanelItem = | { kind: "vital"; stat: string; label: string; tone?: string; width?: number } | { kind: "xp"; width?: number } | { kind: "timer"; label: string } | { kind: "score"; source: "kills"; label: string; digits?: number } | { kind: "abilityBar"; icons: Record<string, string> } |… — ⚠ undocumented
+- `CartridgePanels` (interface): interface CartridgePanels — ⚠ undocumented
+- `CartridgeResultLine` (type): type CartridgeResultLine = { label: string; accent?: boolean } & ( | { source: "kills" | "level" } | { value: string | number } ) — ⚠ undocumented
+- `CartridgeScreens` (interface): interface CartridgeScreens — ⚠ undocumented
+- `cartridge` (function): function cartridge(config: CartridgeConfig): PlayableGame — ⚠ undocumented
+
+## @jgengine/shell/cartridge/runtime
+
+- `CartridgeRuntime` (interface): interface CartridgeRuntime — ⚠ undocumented
+- `createCartridge` (function): function createCartridge(spec: CartridgeSpec): CartridgeRuntime — ⚠ undocumented
+
+## @jgengine/shell/cartridge/spec
+
+- `BoltFx` (interface): interface BoltFx — ⚠ undocumented
+- `CartridgeEnemy` (interface): interface CartridgeEnemy — ⚠ undocumented
+- `CartridgeFlow` (interface): interface CartridgeFlow — ⚠ undocumented
+- `CartridgePhase` (type): type CartridgePhase = "start" | "countdown" | "playing" | "won" | "lost" — ⚠ undocumented
+- `CartridgePlayer` (interface): interface CartridgePlayer — ⚠ undocumented
+- `CartridgeProgression` (interface): interface CartridgeProgression — ⚠ undocumented
+- `CartridgeRules` (interface): interface CartridgeRules — ⚠ undocumented
+- `CartridgeRun` (interface): interface CartridgeRun — ⚠ undocumented
+- `CartridgeSpawning` (interface): interface CartridgeSpawning — ⚠ undocumented
+- `CartridgeSpec` (interface): interface CartridgeSpec — ⚠ undocumented
+- `CartridgeUpgrade` (interface): interface CartridgeUpgrade — ⚠ undocumented
+- `CartridgeWeapon` (type): type CartridgeWeapon = | (WeaponCommon & { kind: "projectile"; range: number; speed: number }) | (WeaponCommon & { kind: "orbit"; blades: Leveled; radius: Leveled; hitRadius: number; angularSpeed: number; }) | (WeaponCommon & { kind: "pulse"; radius: Leveled; durationSeconds: number }) | (WeaponComm… — ⚠ undocumented
+- `CartridgeXpGems` (interface): interface CartridgeXpGems — ⚠ undocumented
+- `HIT_EFFECT` (const): const HIT_EFFECT: "hit" — ⚠ undocumented
+- `Leveled` (type): type Leveled = | number | { base: number; perLevel: number; min?: number; max?: number } | { table: readonly number[] } — ⚠ undocumented
+- `PulseFx` (interface): interface PulseFx — ⚠ undocumented
+- `UpgradeEffect` (type): type UpgradeEffect = | { kind: "weaponLevel"; weapon: string } | { kind: "statBonus"; stat: string; amount: number } | { kind: "fieldAdd"; field: string; amount: number } | { kind: "fieldMultiply"; field: string; factor: number } | { kind: "custom"; apply(ctx: GameContext, run: CartridgeRun, stacks:… — ⚠ undocumented
+- `WASD_KEYBINDS` (const): const WASD_KEYBINDS: ActionCodesMap — ⚠ undocumented
+- `WeaponCommon` (interface): interface WeaponCommon — ⚠ undocumented
+- `WeaponFireArgs` (interface): interface WeaponFireArgs — ⚠ undocumented
+- `XP_GEM_BASE_TYPE` (const): const XP_GEM_BASE_TYPE: "xp_gem" — ⚠ undocumented
+- `leveled` (function): function leveled(value: Leveled, level: number): number — ⚠ undocumented
+
+## @jgengine/shell/cartridge/testkit
+
+- `CartridgeSmokeOptions` (interface): interface CartridgeSmokeOptions — ⚠ undocumented
+- `bootCartridge` (function): function bootCartridge(spec: CartridgeSpec & { name?: string; world?: WorldFeature; physics?: PhysicsConfig }): { ctx: GameContext; cart: CartridgeRuntime } — ⚠ undocumented
+- `cartridgeSmokeTest` (function): function cartridgeSmokeTest(spec: CartridgeSpec & { name?: string; world?: WorldFeature; physics?: PhysicsConfig }, options?: CartridgeSmokeOptions): void — ⚠ undocumented
+- `tickCartridge` (function): function tickCartridge(ctx: GameContext, cart: CartridgeRuntime, seconds: number, step = 0.1): void — ⚠ undocumented
+
+## @jgengine/shell/cartridge/validate
+
+- `validateCartridge` (function): function validateCartridge(spec: CartridgeSpec): string[] — ⚠ undocumented

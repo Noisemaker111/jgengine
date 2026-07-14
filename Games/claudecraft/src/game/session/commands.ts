@@ -1,5 +1,14 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
+import {
+  buyAuctionListing,
+  cancelAuctionListing,
+  closeAuction,
+  collectAuction,
+  listAuction,
+  openAuction,
+  searchAuction,
+} from "../auction/systems";
 import { castSlot } from "../combat/engine";
 import { NPCS } from "../entities/npcs/catalog";
 import { CLASS_ENTITY_ID } from "../model";
@@ -326,6 +335,50 @@ export function registerCommands(ctx: GameContext): void {
       if (reason !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: reason, kind: "info" });
       }
+    },
+  });
+  commands.define("auction.open", {
+    apply(state) {
+      openAuction(state, state.player.userId);
+    },
+  });
+  commands.define("auction.close", {
+    apply(state) {
+      closeAuction(state, state.player.userId);
+    },
+  });
+  commands.define<{ query: string }>("auction.search", {
+    apply(state, input) {
+      searchAuction(state, state.player.userId, input.query);
+    },
+  });
+  commands.define<{ itemId: string; count: number; price: number }>("auction.list", {
+    apply(state, input) {
+      const reason = listAuction(state, state.player.userId, input.itemId, input.count, input.price);
+      if (reason !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: reason, kind: "info" });
+      }
+    },
+  });
+  commands.define<{ listingId: string }>("auction.cancel", {
+    apply(state, input) {
+      const reason = cancelAuctionListing(state, state.player.userId, input.listingId);
+      if (reason !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: reason, kind: "info" });
+      }
+    },
+  });
+  commands.define<{ listingId: string }>("auction.buy", {
+    apply(state, input) {
+      const reason = buyAuctionListing(state, state.player.userId, input.listingId);
+      if (reason !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: reason, kind: "info" });
+      }
+    },
+  });
+  commands.define("auction.collect", {
+    apply(state) {
+      collectAuction(state, state.player.userId);
     },
   });
   commands.define<{ wager?: number }>("valecup.start", {

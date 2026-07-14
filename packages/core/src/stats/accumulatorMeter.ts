@@ -37,6 +37,7 @@ function sortedTiers(tiers: readonly MeterTier[] | undefined): readonly MeterTie
   return [...tiers].sort((a, b) => a.at - b.at);
 }
 
+/** The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`. */
 export function tierAt(value: number, tiers: readonly MeterTier[]): string | null {
   let current: string | null = null;
   for (const tier of tiers) {

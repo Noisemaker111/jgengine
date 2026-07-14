@@ -1,8 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { COMPACTOR_ENTITY, KART_PLAYER_ENTITY } from "./game/entities/catalog";
-import { createRunSession, runSessionStore, type RunPhase } from "./game/run/session";
+import { createRunSession, runSessionStore, type RunPhase, type RunSession } from "./game/run/session";
 import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
 import { createDriveInput } from "./game/vehicle/input";
 import { placeExitGate, placeGateBarricades, placePickupMarkers, placeZoneDressing, syncCompactorRow, syncPickupMarkers } from "./game/world/setup";
@@ -10,6 +11,23 @@ import { placeExitGate, placeGateBarricades, placePickupMarkers, placeZoneDressi
 function syncPhase(ctx: GameContext, phase: RunPhase): void {
   setGamePhase(ctx, phase === "running" ? "playing" : phase === "start" ? "menu" : "ended");
 }
+
+export const lifecycle: LifecycleConfig<RunSession> = {
+  store: runSessionStore,
+  start(session) {
+    session.start();
+    return session;
+  },
+  restart(session) {
+    session.restart();
+    return session;
+  },
+  phaseOf(session) {
+    const phase = session.snapshot().phase;
+    return phase === "running" ? "playing" : phase === "start" ? "menu" : "ended";
+  },
+  commands: { start: "startRun" },
+};
 
 export function onInit(ctx: GameContext): void {
   const previousInput = driveInputStore.peek(ctx);
@@ -28,17 +46,6 @@ export function onInit(ctx: GameContext): void {
   const input = createDriveInput();
   input.attach();
   driveInputStore.write(ctx, input);
-
-  if (!ctx.game.commands.has("startRun")) {
-    ctx.game.commands.define("startRun", {
-      apply: (state) => runSessionStore.peek(state)?.start(),
-    });
-  }
-  if (!ctx.game.commands.has("restart")) {
-    ctx.game.commands.define("restart", {
-      apply: (state) => runSessionStore.peek(state)?.restart(),
-    });
-  }
 }
 
 export function onNewPlayer(ctx: GameContext): void {

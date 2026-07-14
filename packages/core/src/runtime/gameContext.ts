@@ -40,6 +40,7 @@ import type { GameDefinition } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
 import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
+import { setGamePhase } from "../game/gamePhase";
 import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
@@ -678,6 +679,23 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   }
   const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
   const commandRegistry = createCommandRegistry<GameContext>();
+  if (definition.lifecycle !== undefined) {
+    const lifecycle = definition.lifecycle;
+    commandRegistry.define(lifecycle.commands?.start ?? "start", {
+      apply(state, input) {
+        const next = lifecycle.start(lifecycle.store.read(state), state, input);
+        lifecycle.store.write(state, next);
+        setGamePhase(state, lifecycle.phaseOf(next));
+      },
+    });
+    commandRegistry.define(lifecycle.commands?.restart ?? "restart", {
+      apply(state) {
+        const next = lifecycle.restart(lifecycle.store.read(state), state);
+        lifecycle.store.write(state, next);
+        setGamePhase(state, lifecycle.phaseOf(next));
+      },
+    });
+  }
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
   const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);

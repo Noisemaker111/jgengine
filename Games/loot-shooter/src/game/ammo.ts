@@ -22,3 +22,5 @@ export const AMMO_START: Record<AmmoPool, { max: number; current: number }> = {
 };
 
 export const AMMO_POOLS: readonly AmmoPool[] = ["light", "heavy", "shell", "energy"];
+
+export const MAGAZINE_STAT_ID = "mag";

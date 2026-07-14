@@ -13,6 +13,12 @@
  * then dispatch a raw CDP mouse press at that center — no actionability
  * checks to time out on hover overlays. Keys dispatch
  * keyDown/keyUp with the given code, held for the given milliseconds.
+ *
+ * Warm loop: `--keep` on the first drive leaves the dev server and Chrome
+ * (fixed debug port) running after this process exits; later drives in the
+ * same edit/re-shoot loop pass `--connect <port>` to reuse both, skipping
+ * vite's ~60-90s boot and Chrome's cold launch. `--size half` halves both
+ * dimensions (~1/4 the pixels) for cheap mid-loop judge shots.
  */
 import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -20,12 +26,15 @@ import type { ChildProcess } from "node:child_process";
 import {
   CdpSession,
   DEV_BASE,
+  WARM_CHROME_PORT,
+  applyDevice,
   ensureDevServer,
   killProcessTree,
   launchChrome,
   openPageSession,
   pickDebugPort,
   waitForDebugger,
+  type SizeMode,
 } from "./browser-lib";
 
 type Step =
@@ -38,16 +47,58 @@ type Step =
 type Args = {
   game: string;
   mode: string;
+  size: SizeMode;
+  connect?: number;
+  keep: boolean;
+  help: boolean;
   timeoutMs: number;
   steps: Step[];
 };
 
+const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
+
+  --mode <ui|play>    capture mode (default play)
+  --size <full|half>  half halves both dimensions (~1/4 the pixels) for cheap
+                      mid-loop judge shots — use full (default) for final/PR shots
+  --click "<text>"    click the first visible element containing this text
+  --wait <ms>         pause before the next step
+  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds
+  --shot <name>       screenshot to shots/<game>-<name>.png (default step if none given)
+  --rpc <json>        call the page's agent/editor bridge with this JSON payload
+  --connect <port>    attach to an already-running Chrome (skips launch/kill)
+  --keep              leave the dev server + Chrome (fixed port ${WARM_CHROME_PORT})
+                      running after this drive — pair with --connect ${WARM_CHROME_PORT}
+                      on every following drive in the loop (warm-loop pattern)
+  --timeout <s>       page-ready timeout in seconds (default 60)
+  --help              show this text
+
+Warm loop:
+  bun run drive <game> --click START --shot before --keep                       # first: cold boot, stays warm
+  bun run drive <game> --click START --shot after --connect ${WARM_CHROME_PORT} --size half   # <10s, cheap judge PNG
+  bun run drive <game> --click START --shot final --connect ${WARM_CHROME_PORT}               # final full-res shot for the PR
+`;
+
 function parseArgs(argv: string[]): Args {
-  const args: Args = { game: "", mode: "play", timeoutMs: 60_000, steps: [] };
+  const args: Args = {
+    game: "",
+    mode: "play",
+    size: "full",
+    connect: undefined,
+    keep: false,
+    help: false,
+    timeoutMs: 60_000,
+    steps: [],
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === "--mode") args.mode = argv[++index] ?? args.mode;
-    else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
+    else if (value === "--size") {
+      const size = argv[++index] as SizeMode | undefined;
+      if (size !== "full" && size !== "half") {
+        throw new Error(`--size must be full or half (got ${size ?? "nothing"})`);
+      }
+      args.size = size;
+    } else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
     else if (value === "--click") args.steps.push({ kind: "click", text: argv[++index] ?? "" });
     else if (value === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++index] ?? 500) });
     else if (value === "--key") {
@@ -58,8 +109,12 @@ function parseArgs(argv: string[]): Args {
       args.steps.push({ kind: "key", code, holdMs });
     } else if (value === "--shot") args.steps.push({ kind: "shot", name: argv[++index] ?? "drive" });
     else if (value === "--rpc") args.steps.push({ kind: "rpc", json: argv[++index] ?? "{}" });
+    else if (value === "--connect") args.connect = Number(argv[++index]);
+    else if (value === "--keep") args.keep = true;
+    else if (value === "--help" || value === "-h") args.help = true;
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
+  if (args.help) return args;
   if (args.game === "") throw new Error("drive: pass a game id, e.g. bun run drive borderlands2 --click START");
   if (!args.steps.some((step) => step.kind === "shot" || step.kind === "rpc")) {
     args.steps.push({ kind: "shot", name: "drive" });
@@ -181,8 +236,17 @@ async function waitReady(session: CdpSession, timeoutMs: number): Promise<void> 
 }
 
 const args = parseArgs(process.argv.slice(2));
+if (args.help) {
+  console.log(HELP);
+  process.exit(0);
+}
+
 const outDir = resolve(import.meta.dir, "../shots");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+
+function sizeSuffix(size: SizeMode): string {
+  return size === "half" ? "-half" : "";
+}
 
 let server: ChildProcess | null = null;
 let chrome: ChildProcess | null = null;
@@ -198,19 +262,18 @@ watchdog.unref();
 
 try {
   server = await ensureDevServer();
-  const debugPort = pickDebugPort();
-  chrome = launchChrome(debugPort);
-  await waitForDebugger(debugPort, 30_000);
+  const debugPort = args.connect ?? (args.keep ? WARM_CHROME_PORT : pickDebugPort());
+  if (args.connect === undefined) {
+    chrome = launchChrome(debugPort, "jg-drive-");
+    await waitForDebugger(debugPort, 30_000);
+  } else {
+    await waitForDebugger(debugPort, 5_000);
+  }
   const session = await openPageSession(debugPort);
   try {
     await session.send("Page.enable");
     await session.send("Runtime.enable");
-    await session.send("Emulation.setDeviceMetricsOverride", {
-      width: 1600,
-      height: 900,
-      deviceScaleFactor: 1,
-      mobile: false,
-    });
+    await applyDevice(session, "desktop", args.size);
     const url = new URL(DEV_BASE);
     url.searchParams.set("game", args.game);
     url.searchParams.set("mode", args.mode);
@@ -224,7 +287,11 @@ try {
       else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
       else if (step.kind === "wait") await new Promise((r) => setTimeout(r, step.ms));
       else if (step.kind === "rpc") await rpc(session, step.json);
-      else await screenshot(session, join(outDir, `${args.game}-${step.name}.png`));
+      else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
+    }
+    if (args.keep) {
+      console.error(`drive: kept warm — chrome debug port ${debugPort}, dev server on ${DEV_BASE}`);
+      console.error(`drive: next drive → bun run drive ${args.game} --mode ${args.mode} --connect ${debugPort} --size half ...`);
     }
   } finally {
     session.close();
@@ -233,7 +300,9 @@ try {
   exitCode = 1;
   console.error(error instanceof Error ? error.message : error);
 } finally {
-  killProcessTree(chrome);
-  killProcessTree(server);
+  if (!args.keep) {
+    killProcessTree(chrome);
+    killProcessTree(server);
+  }
 }
 process.exit(exitCode);

@@ -9,6 +9,7 @@ const SKELETON_FILES = new Set([
   "loop.ts",
   "world.ts",
   "index.css",
+  "style.css",
   "editorLayers.ts",
   "editorLayers.test.ts",
 ]);
@@ -83,6 +84,9 @@ for (const name of readdirSync(gamesDir)) {
   if (!existsSync(join(srcDir, "index.css"))) {
     problems.push(`${rel(srcDir)}: missing index.css for the standalone dev harness`);
   }
+  if (!existsSync(join(srcDir, "style.css"))) {
+    problems.push(`${rel(srcDir)}: missing style.css — game-specific CSS, imported by index.css, lazy-loaded standalone from the /play runner`);
+  }
 
   const configPath = join(srcDir, "game.config.ts");
   if (!existsSync(configPath)) {
@@ -114,13 +118,15 @@ if (problems.length > 0) {
     `\ncheck-game-shape: ${problems.length} issue(s) off the canonical shape:\n` +
       problems.map((p) => `  ${p}`).join("\n") +
       `\n\nEvery game is one shape: src/ holds only the skeleton\n` +
-      `  game.config.ts  index.tsx  main.tsx  loop.ts  world.ts  index.css\n` +
+      `  game.config.ts  index.tsx  main.tsx  loop.ts  world.ts  index.css  style.css\n` +
       `and all game-specific modules, ui, and tests live under src/game/.\n` +
       `game.config.ts is the single entry — defineGame({...}) from "@jgengine/shell/defineGame",\n` +
       `or cartridge({...}) from "@jgengine/shell/cartridge" for declarative cartridge games\n` +
       `(which drop loop.ts/world.ts entirely — the spec carries the whole game).\n` +
       `Every game is also a standalone dev harness: index.html and vite.config.ts at the game root,\n` +
-      `src/index.css for Tailwind, and a "dev" script in package.json to launch it.\n` +
+      `src/index.css for Tailwind (importing "./style.css") and a "dev" script in package.json to launch it.\n` +
+      `src/style.css holds the game-specific CSS only — no "@import \\"tailwindcss\\"" — so the /play\n` +
+      `runner's per-game lazy CSS chunk stays small instead of re-shipping the shared Tailwind base.\n` +
       `The root package.json exposes each harness as "games:<id>": "bun run --cwd Games/<id> dev".\n`,
   );
   process.exit(1);
