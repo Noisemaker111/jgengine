@@ -11,7 +11,7 @@ import {
 } from "../auction/systems";
 import { castSlot } from "../combat/engine";
 import { NPCS } from "../entities/npcs/catalog";
-import { CLASS_ENTITY_ID } from "../model";
+import { CLASS_ENTITY_ID, type EquipSlot } from "../model";
 import {
   allocateTalent,
   applySheet,
@@ -40,10 +40,14 @@ import {
   sendToSelf,
 } from "../mail/systems";
 import { leaveFiesta, pickAugment, startFiesta } from "../arena/fiesta";
+import type { LockAction } from "@jgengine/core/interaction/lockpick";
+import { closeLockpick, engageLockpick, pickLock, type LockAnte } from "../minigames/lockpick";
 import { kickValeCup, leaveValeCup, startValeCup } from "../minigames/valeCup";
 import { leaveProtectYumi, startProtectYumi } from "../minigames/yumi";
 import { dismissPet, revivePet, summonPet } from "../pets/systems";
+import { applyEnchant, disenchantItem } from "../professions/enchanting";
 import { gather } from "../professions/gathering";
+import { salvageItem } from "../professions/salvage";
 import { graveyardOf } from "../world/setup";
 
 type Panel = "bags" | "character" | "quests" | "spellbook" | "talents" | "crafting" | "arena";
@@ -435,6 +439,42 @@ export function registerCommands(ctx: GameContext): void {
   commands.define("pet.revive", {
     apply(state) {
       revivePet(state, state.player.userId);
+    },
+  });
+  commands.define<{ itemId: string }>("item.salvage", {
+    apply(state, input) {
+      const result = salvageItem(state, state.player.userId, input.itemId);
+      if (!result.ok) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: "Cannot salvage that", kind: "info" });
+      }
+    },
+  });
+  commands.define<{ itemId: string }>("item.disenchant", {
+    apply(state, input) {
+      const result = disenchantItem(state, state.player.userId, input.itemId);
+      if (!result.ok) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: "Cannot disenchant that", kind: "info" });
+      }
+    },
+  });
+  commands.define<{ slot: EquipSlot; enchantId: string }>("item.applyEnchant", {
+    apply(state, input) {
+      applyEnchant(state, state.player.userId, input.slot, input.enchantId);
+    },
+  });
+  commands.define<{ instanceId: string; ante?: LockAnte }>("lockpick.engage", {
+    apply(state, input) {
+      engageLockpick(state, state.player.userId, input.instanceId, input.ante ?? 2);
+    },
+  });
+  commands.define<{ action: LockAction }>("lockpick.pick", {
+    apply(state, input) {
+      pickLock(state, state.player.userId, input.action);
+    },
+  });
+  commands.define("lockpick.close", {
+    apply(state) {
+      closeLockpick(state, state.player.userId);
     },
   });
 }

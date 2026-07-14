@@ -10,7 +10,7 @@ import { DialoguePanel } from "./components/Dialogue";
 import { BankPanel } from "./components/Bank";
 import { CraftingPanel, FishingOverlay } from "./components/Crafting";
 import { Minimap } from "./components/Minimap";
-import { BagsPanel, CharacterPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
+import { BagsPanel, CharacterPanel, LockpickPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
 import { SpellbookPanel } from "./components/Spellbook";
 import { SwingTimer } from "./components/SwingTimer";
 import { TalentPanel } from "./components/Talents";
@@ -64,6 +64,7 @@ export function GameUI() {
   const dialogueOpen = useGameStore((ctx) => typeof ctx.game.store.get(`dialogue:${userId}`) === "string");
   const bankOpen = useGameStore((ctx) => ctx.game.store.get(`bank:${userId}`) === true);
   const mailOpen = useGameStore((ctx) => ctx.game.store.get(`mail:${userId}`) === true);
+  const lockpickOpen = useGameStore((ctx) => ctx.game.store.get(`lockpick:${userId}`) !== undefined);
   const auctionOpen = useGameStore((ctx) => ctx.game.store.get(`auction:${userId}`) === true);
   if (classId === undefined) return <ClassSelect />;
   return (
@@ -125,12 +126,14 @@ export function GameUI() {
         dialogueOpen ||
         bankOpen ||
         mailOpen ||
+        lockpickOpen ||
         auctionOpen) && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-4">
           {dialogueOpen && <DialoguePanel />}
           {shopOpen && <VendorPanel />}
           {bankOpen && <BankPanel />}
           {mailOpen && <MailPanel />}
+          {lockpickOpen && <LockpickPanel />}
           {auctionOpen && <AuctionPanel />}
           {panel === "bags" && <BagsPanel />}
           {panel === "character" && <CharacterPanel />}

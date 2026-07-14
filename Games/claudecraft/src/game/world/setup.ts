@@ -10,6 +10,7 @@ import { DUNGEONS } from "../dungeons/catalog";
 import { NPCS } from "../entities/npcs/catalog";
 import { MAILBOX, placeMailboxes } from "../mail/systems";
 import { INTERACT_RANGE } from "../math/combat";
+import { placeLockboxes } from "../minigames/lockpick";
 import { placeValeCup, VALE_CUP_ENTRANCE, VALE_CUP_STADIUM } from "../minigames/valeCup";
 import { placeYumiShrine, YUMI_ENTRANCE, YUMI_SHRINE } from "../minigames/yumi";
 import { placeGatherNodes } from "../professions/gathering";
@@ -36,6 +37,7 @@ export function setupWorld(ctx: GameContext): void {
   placeDelveWorld(ctx);
   placeValeCup(ctx);
   placeYumiShrine(ctx);
+  placeLockboxes(ctx);
   spawnAllMobs(ctx);
   placeGatherNodes(ctx);
   placeCraftingWorld(ctx);

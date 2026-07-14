@@ -28,6 +28,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/movement/grappleSwing"`
 
+## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
+
+- `generateLock` (function) · `import { generateLock } from "@jgengine/core/interaction/lockpick"`
+
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"`

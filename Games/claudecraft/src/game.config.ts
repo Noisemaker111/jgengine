@@ -10,6 +10,7 @@ import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
 import { craftingPrompts, FISHING_SPOT, FORGE } from "./game/crafting/systems";
+import { LOCKBOX_CATALOG, lockboxPrompts } from "./game/minigames/lockpick";
 import { GATHER_NODES } from "./game/professions/catalog";
 import { gatherPrompts } from "./game/professions/gathering";
 import {
@@ -36,6 +37,7 @@ function prompts(ctx: GameContext): readonly PositionedPrompt[] {
     ...dungeonPrompts(ctx),
     ...craftingPrompts(ctx),
     ...contentPrompts(ctx),
+    ...lockboxPrompts(ctx),
   ];
 }
 
@@ -54,6 +56,7 @@ const objectStyles = {
   [DELVE_PORTAL]: { color: "#8b5cf6" },
   [VALE_CUP_STADIUM]: { color: "#c4a35a" },
   [YUMI_SHRINE]: { color: "#e8a0bf" },
+  [LOCKBOX_CATALOG]: { color: "#8a6d2f" },
   ...Object.fromEntries(
     GATHER_NODES.map((node) => [node.id, { color: NODE_COLORS[node.profession] ?? "#888888" }]),
   ),
