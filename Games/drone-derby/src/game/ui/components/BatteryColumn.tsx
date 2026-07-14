@@ -1,3 +1,5 @@
+import { formatDistance } from "@jgengine/core/format/distance";
+
 import { ChargeMeter } from "@/components/ui/charge-meter";
 import { HudLabel } from "@/components/ui/hud-label";
 
@@ -36,7 +38,7 @@ export function BatteryColumn({
           DRAW {drawRate >= 0 ? `${drawRate.toFixed(1)}/s` : `+${Math.abs(drawRate).toFixed(1)}/s`}
         </span>
         <span className="font-mono text-[11px]" style={{ color: "var(--jg-text-dim)" }}>
-          RANGE {Number.isFinite(rangeMeters) ? `${Math.round(rangeMeters)}m` : "∞"}
+          RANGE {Number.isFinite(rangeMeters) ? formatDistance(rangeMeters) : "∞"}
         </span>
       </div>
       {showLowAlert && (
@@ -44,7 +46,7 @@ export function BatteryColumn({
           className="text-right text-[10px] font-bold uppercase tracking-[0.16em]"
           style={{ color: "var(--jg-warning)", textShadow: "0 1px 2px rgba(0,0,0,0.9)", animation: "jg-pulse 1s infinite" }}
         >
-          CELL LOW — PAD AHEAD {Math.round(nearestPadDistance ?? 0)}m
+          CELL LOW — PAD AHEAD {formatDistance(nearestPadDistance ?? 0)}
         </span>
       )}
     </div>
