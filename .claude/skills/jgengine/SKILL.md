@@ -186,7 +186,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Context menu | `interaction/contextMenu` | `contextVerb`, `buildContextMenu`, `contextVerbInput`, `ContextVerb`, `ContextMenu` |
 | Shared / group wallet | `economy/sharedWallet` | `createWalletBook`, `WalletBook`, `WalletScope`, `userScope`, `groupScope`, `balanceIn`, `grantTo`, `chargeFrom`, `contributionOf`, `contributorsOf` |
 | Analog axis input | `input/axisInput` | `AxisInput`, `AxisChannel`, `AxisBindingMap`, `DRIVE_AXIS_BINDINGS`, `clampAxis`, `rampToward`, `NEUTRAL_AXIS` |
-| Raw control polling | `runtime/inputSnapshot` | `createInputSnapshot`, `InputSnapshot` — backs `ctx.input` |
+| Raw control polling | `runtime/inputSnapshot` | `createInputSnapshot`, `InputSnapshot` (`isDown`, `justPressed`, `justReleased`, `held`, `axis`) — backs `ctx.input` |
 | Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` (`{ shape: "box", halfExtents }` \| `{ shape: "sphere", radius }`), `JointOptions`, `JointKind`, `CollisionEvent` |
 | Ballistic collision sweep | `physics/ballisticSweep` | `createBallisticSweep`, `BallisticSweep`, `BallisticSweepHit`, `BallisticSweepOptions` |
 | Tweening / easing | `anim/easing` | `Easing`, `lerp`, `clamp01`, `smoothstep`, `easeInQuad`, `easeOutQuad`, `easeInOutQuad`, `easeInCubic`, `easeOutCubic`, `easeInOutCubic`, `easeOutBack`, `easeOutElastic`, `tween`, `timedProgress` |
@@ -630,7 +630,9 @@ ctx.player.motion   impulse(vy), setVerticalVelocity(vy), setY(y), takePending()
                     before gravity, so a jump pad or grapple release calls this from
                     onTick/commands instead of touching y directly
 ctx.item            use, weapon
-ctx.input           publish(held), isDown(action), held() — per-frame held-action snapshot, polled from onTick
+ctx.input           publish(held), isDown(action), held(), justPressed(action), justReleased(action)
+                    — per-frame held-action snapshot, polled from onTick; justPressed/justReleased
+                    fire exactly once on the up/down transition frame, replay-safe
 ctx.world           ground (TerrainField), groundHeightAt(x, z) — the canonical
                     sampler for the game's declared world; environment worlds
                     resolve their terrain field, every other world kind is 0.

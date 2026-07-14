@@ -18,6 +18,8 @@ Poses (`standing/crouch/prone/running`) change the collision capsule (`POSE_HITB
 
 `ctx.input` (`@jgengine/core/runtime/inputSnapshot`) is a per-frame held-action snapshot for `onTick` to poll, distinct from the command-dispatch path (bound actions still run commands the normal way): `publish(held: readonly string[])` (the shell calls this once per frame before `onTick`), `isDown(action)`, `held()` for the full list. Publishing never bumps `ctx.version()` — it's a poll surface, not reactive state.
 
+**Rising-edge polling** — `justPressed(action)` / `justReleased(action)` are true only on the frame `publish` rolls the action's held state from up→down (or down→up); derived purely from the last two published held sets, so replay/rewind stays deterministic. Use these for once-per-press logic (menu toggles, jump, restart) in `onTick` instead of hand-rolling an `edgeState` object + per-tick reset — `justPressed` is a pure read, safe to call from multiple branches in the same tick.
+
 **`repeatMs`** — bind an action as `{ hold: [...], repeatMs: 150 }` (`input/actionBindings`) and the shell fires its command on the down edge, then again every `repeatMs` while held, resetting on release (hotbar-style repeat-fire without a per-game timer).
 
 **Aim on generic commands** — every command resolved from a bound action now runs with `{ yaw, pitch, aim: { yaw, pitch } }` in its payload, so a handler can read the camera-relative aim without going through `pointer.worldHit()`.

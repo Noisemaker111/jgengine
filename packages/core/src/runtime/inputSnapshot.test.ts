@@ -23,6 +23,60 @@ describe("createInputSnapshot", () => {
   });
 });
 
+describe("InputSnapshot.justPressed / justReleased", () => {
+  test("fires exactly one frame on press", () => {
+    const input = createInputSnapshot();
+    input.publish([]);
+    input.publish(["jump"]);
+    expect(input.justPressed("jump")).toBe(true);
+    input.publish(["jump"]);
+    expect(input.justPressed("jump")).toBe(false);
+  });
+
+  test("stays false while the action is held across many frames", () => {
+    const input = createInputSnapshot();
+    input.publish(["jump"]);
+    for (let frame = 0; frame < 5; frame += 1) {
+      input.publish(["jump"]);
+      expect(input.justPressed("jump")).toBe(false);
+    }
+  });
+
+  test("refires after release and repress", () => {
+    const input = createInputSnapshot();
+    input.publish(["jump"]);
+    input.publish([]);
+    input.publish(["jump"]);
+    expect(input.justPressed("jump")).toBe(true);
+  });
+
+  test("justReleased fires exactly one frame after release", () => {
+    const input = createInputSnapshot();
+    input.publish(["jump"]);
+    input.publish([]);
+    expect(input.justReleased("jump")).toBe(true);
+    input.publish([]);
+    expect(input.justReleased("jump")).toBe(false);
+  });
+
+  test("first published frame counts as a press when it starts held", () => {
+    const input = createInputSnapshot();
+    input.publish(["jump"]);
+    expect(input.justPressed("jump")).toBe(true);
+    expect(input.justReleased("jump")).toBe(false);
+  });
+
+  test("justPressed and justReleased are independent per action", () => {
+    const input = createInputSnapshot();
+    input.publish(["jump"]);
+    input.publish(["sprint"]);
+    expect(input.justPressed("sprint")).toBe(true);
+    expect(input.justReleased("jump")).toBe(true);
+    expect(input.justPressed("jump")).toBe(false);
+    expect(input.justReleased("sprint")).toBe(false);
+  });
+});
+
 describe("InputSnapshot.axis", () => {
   test("samples axis bindings against the held-action set (action names, not key codes)", () => {
     const input = createInputSnapshot();
