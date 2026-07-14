@@ -1098,7 +1098,7 @@ export function EditorChrome({
               <input type="search" value={outlinerQuery} onChange={(event) => setOutlinerQuery(event.target.value)} placeholder="Search objects and kinds…" className={`w-full ${INPUT} px-2.5 py-1.5`} />
               <div className="flex gap-0.5 rounded-md bg-black/40 p-0.5 ring-1 ring-inset ring-white/[0.06]">
                 {(["kind", "tree"] as const).map((view) => (
-                  <button key={view} type="button" className={`flex-1 rounded px-2 py-0.5 text-[10px] capitalize transition-colors ${outlinerView === view ? "bg-cyan-500/80 text-white" : "text-neutral-400 hover:text-neutral-200"}`} onClick={() => setOutlinerView(view)}>{view === "kind" ? "By kind" : "Hierarchy"}</button>
+                  <button key={view} type="button" className={`flex-1 rounded px-2 py-0.5 text-[10px] capitalize transition-colors ${outlinerView === view ? "bg-cyan-500/80 text-white" : "text-neutral-400 hover:text-neutral-200"}`} onClick={() => setOutlinerView(view)}>{view === "kind" ? "By kind" : "Tree"}</button>
                 ))}
               </div>
             </div>
