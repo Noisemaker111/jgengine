@@ -61,6 +61,10 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   jgengine: MAIN,
 };
 
+export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {
+  shell: { cartridge: MAIN },
+};
+
 export const SKILL_DIRS = [
   MAIN,
   "jgengine-world",
@@ -74,7 +78,11 @@ export const SKILL_DIRS = [
 ] as const;
 
 export function skillForModule(pkg: string, modulePath: string): string | null {
-  if (pkg !== "core") return PACKAGE_SKILLS[pkg] ?? null;
+  if (pkg !== "core") {
+    const domain = modulePath.split("/")[0];
+    const override = domain === undefined ? undefined : PACKAGE_DOMAIN_OVERRIDES[pkg]?.[domain];
+    return override ?? PACKAGE_SKILLS[pkg] ?? null;
+  }
   const domain = modulePath.split("/")[0];
   if (domain === undefined || CORE_INTERNAL_DOMAINS.has(domain)) return null;
   if (!modulePath.includes("/")) return MAIN;

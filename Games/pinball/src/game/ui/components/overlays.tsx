@@ -1,5 +1,6 @@
+import { useGameContext } from "@jgengine/react";
 import { PALETTE } from "../../palette";
-import { pinballStore } from "../../store";
+import { pinballHandle } from "../../store";
 import type { PinballSnapshot } from "../../types";
 import { ScoreDisplay } from "./backglass";
 
@@ -99,6 +100,7 @@ function BestStat({ label, value, color }: { label: string; value: number | null
 }
 
 export function GameOverScreen({ snap }: { snap: PinballSnapshot }) {
+  const ctx = useGameContext();
   if (snap.phase !== "gameover") return null;
   const newRecord = snap.bestScore !== null && snap.score >= snap.bestScore;
   return (
@@ -122,7 +124,7 @@ export function GameOverScreen({ snap }: { snap: PinballSnapshot }) {
         </div>
         <button
           type="button"
-          onClick={() => pinballStore.newGame()}
+          onClick={() => pinballHandle.read(ctx).newGame()}
           className="mt-1 select-none rounded-xl px-8 py-3 text-sm font-black tracking-[0.14em] transition active:scale-95"
           style={{ background: `linear-gradient(160deg, ${PALETTE.orangeLight}, ${PALETTE.orangeDark})`, border: `1px solid ${PALETTE.bulb}`, color: "#241009" }}
         >

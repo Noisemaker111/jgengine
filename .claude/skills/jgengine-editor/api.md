@@ -4,14 +4,17 @@
 
 ## @jgengine/core/editor
 
+- `EditorCollection` (interface): interface EditorCollection — A named, persisted list of object ids — a selection bookmark (restore, add-to) that can also double as a production group: `locked` blocks `translate`/`setTransform`/`remove`/`removeMany` on its members, `color`/`visible` are UI-only hints for the collections panel.
 - `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "setParent"; ids: readonly string[]; parentId:… — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
+- `EditorFragmentContent` (interface): interface EditorFragmentContent — The four placeable-object collections a prefab fragment or clipboard fragment carries.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorLayersInput` (type): type EditorLayersInput = | EditorDocument | Partial<Omit<EditorDocument, "version">> | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>) — Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory.
 - `EditorMarker` (interface): interface EditorMarker — A placeable point object in the scene — spawn, mob, chest, POI, etc.
 - `EditorNote` (interface): interface EditorNote — A free-text annotation pinned to a world position for designers.
 - `EditorPath` (interface): interface EditorPath — A polyline of points — road, corridor, patrol route — placed in the scene.
+- `EditorPrefab` (interface): interface EditorPrefab — A serializable, reusable stamp of authored objects — markers/volumes/paths/notes centered on their own centroid so the same prefab inserts consistently anywhere, in this scene or another game's. `insertPrefab` tags every inserted object's `meta.prefabId`/`meta.prefabInstanceId`; `detachPrefabInstance` strips those tags to break the link without touching the content.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `EditorTerrain` (type): type EditorTerrain = TerraformSnapshot — A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas over the game's base ground. Serializes with the scene; a game rebuilds the field with `editableTerrainFromSnapshot`.
@@ -26,6 +29,7 @@
 - `collectDescendants` (function): function collectDescendants(doc: EditorDocument, ids: Iterable<string>): Set<string> — Every descendant id of the given ids (children, grandchildren, …), excluding the inputs.
 - `createEditorSession` (function): function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession — Creates an editor session with undo/redo history seeded from an initial document.
 - `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
+- `createPrefabFragment` (function): function createPrefabFragment(doc: EditorDocument, ids: readonly string[]): EditorFragmentContent — Extracts the selected ids into a prefab fragment centered on their own bounds centroid, so the same prefab reinserts consistently regardless of where in the scene (or which game) it lands.
 - `editorChildren` (function): function editorChildren(doc: EditorDocument, parentId: string): string[] — The direct child ids of an object (empty when it has none).
 - `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
 - `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
@@ -33,13 +37,16 @@
 - `editorRoots` (function): function editorRoots(doc: EditorDocument): string[] — Object ids with no parent (or whose parent no longer exists) — the roots of the hierarchy.
 - `exportEditorDocumentJson` (function): function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string — Serializes an editor document to JSON text for saving or export.
 - `extractEditorFragment` (function): function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument — Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
+- `findEditorCollection` (function): function findEditorCollection(doc: EditorDocument, id: string): EditorCollection | undefined — Looks up a named collection / selection set by id in an editor document.
 - `findEditorMarker` (function): function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined — Looks up a marker by id in an editor document.
 - `findEditorNote` (function): function findEditorNote(doc: EditorDocument, id: string): EditorNote | undefined — Looks up an annotation note by id in an editor document.
 - `findEditorPath` (function): function findEditorPath(doc: EditorDocument, id: string): EditorPath | undefined — Looks up a path by id in an editor document.
+- `findEditorPrefab` (function): function findEditorPrefab(doc: EditorDocument, id: string): EditorPrefab | undefined — Looks up a prefab by id in an editor document.
 - `findEditorVolume` (function): function findEditorVolume(doc: EditorDocument, id: string): EditorVolume | undefined — Looks up a volume by id in an editor document.
 - `importEditorDocumentJson` (function): function importEditorDocumentJson(raw: string): EditorDocument — Parses JSON text back into a normalized editor document.
+- `isEditorObjectLocked` (function): function isEditorObjectLocked(doc: EditorDocument, id: string): boolean — True when an object id is a member of any locked collection — blocks move/delete on it.
 - `listEditorKinds` (function): function listEditorKinds(doc: EditorDocument): { markers: string[]; volumes: string[]; paths: string[]; } — Lists the distinct marker, volume, and path kinds authored in a document.
-- `mergeEditorDocuments` (function): function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument — Combines multiple editor documents' markers, volumes, paths, and notes into one.
+- `mergeEditorDocuments` (function): function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument — Combines multiple editor documents' markers, volumes, paths, notes, prefabs, and collections into one.
 - `normalizeEditorLayers` (function): function normalizeEditorLayers(input: EditorLayersInput | undefined | null): EditorDocument — Resolves a game's `editorLayers` export — document, partial data, or factory — into a full document.
 - `summarizeEditorSession` (function): function summarizeEditorSession(state: EditorSessionState): { markers: number; volumes: number; paths: number; annotations: number; selection: string[]; selectedMarker?: EditorMarker; selectedVolume?: EditorVolume; } — Compact snapshot of a session state — counts, selection, and the selected object.
 - `wouldCreateCycle` (function): function wouldCreateCycle(doc: EditorDocument, id: string, parentId: string | null): boolean — True when parenting `id` under `parentId` would form a cycle (or parent itself to itself).
@@ -59,6 +66,7 @@
 - `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source. The terrain snapshot is shared by reference: sculpt commands replace it wholesale (copy-on-write), never mutate it in place, so history snapshots stay cheap even on large heightfields.
 - `collectDescendants` (function): function collectDescendants(doc: EditorDocument, ids: Iterable<string>): Set<string> — Every descendant id of the given ids (children, grandchildren, …), excluding the inputs.
 - `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
+- `createPrefabFragment` (function): function createPrefabFragment(doc: EditorDocument, ids: readonly string[]): EditorFragmentContent — Extracts the selected ids into a prefab fragment centered on their own bounds centroid, so the same prefab reinserts consistently regardless of where in the scene (or which game) it lands.
 - `editorChildren` (function): function editorChildren(doc: EditorDocument, parentId: string): string[] — The direct child ids of an object (empty when it has none).
 - `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
 - `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
@@ -66,24 +74,30 @@
 - `editorRoots` (function): function editorRoots(doc: EditorDocument): string[] — Object ids with no parent (or whose parent no longer exists) — the roots of the hierarchy.
 - `exportEditorDocumentJson` (function): function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string — Serializes an editor document to JSON text for saving or export.
 - `extractEditorFragment` (function): function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument — Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
+- `findEditorCollection` (function): function findEditorCollection(doc: EditorDocument, id: string): EditorCollection | undefined — Looks up a named collection / selection set by id in an editor document.
 - `findEditorMarker` (function): function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined — Looks up a marker by id in an editor document.
 - `findEditorNote` (function): function findEditorNote(doc: EditorDocument, id: string): EditorNote | undefined — Looks up an annotation note by id in an editor document.
 - `findEditorPath` (function): function findEditorPath(doc: EditorDocument, id: string): EditorPath | undefined — Looks up a path by id in an editor document.
+- `findEditorPrefab` (function): function findEditorPrefab(doc: EditorDocument, id: string): EditorPrefab | undefined — Looks up a prefab by id in an editor document.
 - `findEditorVolume` (function): function findEditorVolume(doc: EditorDocument, id: string): EditorVolume | undefined — Looks up a volume by id in an editor document.
 - `importEditorDocumentJson` (function): function importEditorDocumentJson(raw: string): EditorDocument — Parses JSON text back into a normalized editor document.
+- `isEditorObjectLocked` (function): function isEditorObjectLocked(doc: EditorDocument, id: string): boolean — True when an object id is a member of any locked collection — blocks move/delete on it.
 - `listEditorKinds` (function): function listEditorKinds(doc: EditorDocument): { markers: string[]; volumes: string[]; paths: string[]; } — Lists the distinct marker, volume, and path kinds authored in a document.
-- `mergeEditorDocuments` (function): function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument — Combines multiple editor documents' markers, volumes, paths, and notes into one.
+- `mergeEditorDocuments` (function): function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument — Combines multiple editor documents' markers, volumes, paths, notes, prefabs, and collections into one.
 - `normalizeEditorLayers` (function): function normalizeEditorLayers(input: EditorLayersInput | undefined | null): EditorDocument — Resolves a game's `editorLayers` export — document, partial data, or factory — into a full document.
 - `wouldCreateCycle` (function): function wouldCreateCycle(doc: EditorDocument, id: string, parentId: string | null): boolean — True when parenting `id` under `parentId` would form a cycle (or parent itself to itself).
 
 ## @jgengine/core/editor/types
 
+- `EditorCollection` (interface): interface EditorCollection — A named, persisted list of object ids — a selection bookmark (restore, add-to) that can also double as a production group: `locked` blocks `translate`/`setTransform`/`remove`/`removeMany` on its members, `color`/`visible` are UI-only hints for the collections panel.
 - `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
+- `EditorFragmentContent` (interface): interface EditorFragmentContent — The four placeable-object collections a prefab fragment or clipboard fragment carries.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorLayersInput` (type): type EditorLayersInput = | EditorDocument | Partial<Omit<EditorDocument, "version">> | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>) — Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory.
 - `EditorMarker` (interface): interface EditorMarker — A placeable point object in the scene — spawn, mob, chest, POI, etc.
 - `EditorNote` (interface): interface EditorNote — A free-text annotation pinned to a world position for designers.
 - `EditorPath` (interface): interface EditorPath — A polyline of points — road, corridor, patrol route — placed in the scene.
+- `EditorPrefab` (interface): interface EditorPrefab — A serializable, reusable stamp of authored objects — markers/volumes/paths/notes centered on their own centroid so the same prefab inserts consistently anywhere, in this scene or another game's. `insertPrefab` tags every inserted object's `meta.prefabId`/`meta.prefabInstanceId`; `detachPrefabInstance` strips those tags to break the link without touching the content.
 - `EditorTerrain` (type): type EditorTerrain = TerraformSnapshot — A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas over the game's base ground. Serializes with the scene; a game rebuilds the field with `editableTerrainFromSnapshot`.
 - `EditorVec3` (type): type EditorVec3 = { x: number; y: number; z: number } — A world-space point used across editor markers, volumes, and paths.
 - `EditorVolume` (interface): interface EditorVolume — A spatial region — zone, aggro range, capture area — placed in the scene.
@@ -148,6 +162,7 @@
 
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
+- `MATERIAL_DRAG_MIME` (const): const MATERIAL_DRAG_MIME: "application/x-jgengine-material" — Custom drag mime carrying a material id — read by `OutlinerPanel` rows and the viewport drop zone.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 
 ## @jgengine/editor/DebugDraw

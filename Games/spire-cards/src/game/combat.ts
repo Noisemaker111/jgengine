@@ -1,5 +1,6 @@
 import { createCardPile, type CardPile } from "@jgengine/core/cards/cardPile";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineStore } from "@jgengine/core/store/defineStore";
 import { createTurnLoop, type TurnLoop } from "@jgengine/core/turn/turnLoop";
 
 import { buildStartingDeck, cardOf, type CardData } from "./cards";
@@ -145,7 +146,7 @@ export interface CombatStore {
   onEntityDied(ctx: GameContext, instanceId: string): void;
 }
 
-function createCombatStore(): CombatStore {
+export function createCombatStore(): CombatStore {
   const listeners = new Set<() => void>();
   let state: CombatState | null = null;
   let snapshot: CombatSnapshot = EMPTY_SNAPSHOT;
@@ -389,4 +390,4 @@ function createCombatStore(): CombatStore {
   };
 }
 
-export const combat: CombatStore = createCombatStore();
+export const combatHandle = defineStore<CombatStore>("spire.combat", () => createCombatStore());

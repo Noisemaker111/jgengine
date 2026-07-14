@@ -3,6 +3,7 @@ import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { mobRuntimeOf, onMobDied, tickMobs } from "./game/ai/mobs";
+import { startAuctionSweep, tickAuction } from "./game/auction/systems";
 import { setupAudioCues, tickMusic } from "./game/audio/setup";
 import { onFiestaEntityDied, tickFiesta } from "./game/arena/fiesta";
 import { tickAuras, tickHero } from "./game/combat/engine";
@@ -33,6 +34,7 @@ function tickPlayerSystems(ctx: GameContext, userId: string, dt: number): void {
   tickPets(ctx, userId, dt);
   tickDelve(ctx, userId, dt);
   tickMail(ctx, userId);
+  tickAuction(ctx, userId);
   tickValeCup(ctx, userId, dt);
   tickProtectYumi(ctx, userId, dt);
   tickFiesta(ctx, userId, dt);
@@ -97,6 +99,7 @@ export const loop: GameLoop<GameContext> = {
     ctx.game.feed.bind("loot.granted");
     registerCommands(ctx);
     setupAudioCues(ctx);
+    startAuctionSweep(ctx);
     setGamePhase(ctx, "menu");
     ctx.game.events.on("entity.died", (evt) => {
       if (onFiestaEntityDied(ctx, evt)) {

@@ -1,7 +1,8 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 
+import { MATERIAL_DRAG_MIME } from "./AssetBrowser";
 import { flattenOutliner } from "./outlinerModel";
 import type { EditorHostApi } from "./session";
 import { shallowArrayEqual, useStoreSelector, virtualWindow } from "./useStoreSelector";
@@ -66,6 +67,24 @@ export const OutlinerPanel = memo(function OutlinerPanel({
     api.handle({ method: "camera_goto", id });
   };
 
+  const [materialDropTarget, setMaterialDropTarget] = useState<string | null>(null);
+  const materialDropProps = (ids: readonly string[], key: string) => ({
+    onDragOver: (event: DragEvent) => {
+      if (!event.dataTransfer.types.includes(MATERIAL_DRAG_MIME)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      if (materialDropTarget !== key) setMaterialDropTarget(key);
+    },
+    onDragLeave: () => setMaterialDropTarget((current) => (current === key ? null : current)),
+    onDrop: (event: DragEvent) => {
+      const materialId = event.dataTransfer.getData(MATERIAL_DRAG_MIME);
+      if (materialId.length === 0) return;
+      event.preventDefault();
+      setMaterialDropTarget(null);
+      api.handle({ method: "assign_material", ids: [...ids], materialId });
+    },
+  });
+
   return (
     <>
       <div className="space-y-1.5 border-b border-white/[0.08] p-2">
@@ -93,19 +112,34 @@ export const OutlinerPanel = memo(function OutlinerPanel({
                 if (row.type === "kindItem") {
                   const rowSelected = selectedId !== undefined && row.ids.includes(selectedId);
                   const cycleIndex = rowSelected ? row.ids.indexOf(selectedId) + 1 : 0;
+                  const dropActive = materialDropTarget === row.key;
                   return (
-                    <button key={row.key} type="button" style={{ height: ROW_HEIGHT }} className={`block w-full truncate rounded-md pl-5 pr-1.5 text-left transition-colors ${rowSelected ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/20" : "text-neutral-300 hover:bg-white/[0.06]"}`} onClick={(event) => selectRow(row.ids[0]!, event.ctrlKey || event.metaKey || event.shiftKey)}>
+                    <button
+                      key={row.key}
+                      type="button"
+                      style={{ height: ROW_HEIGHT }}
+                      className={`block w-full truncate rounded-md pl-5 pr-1.5 text-left transition-colors ${dropActive ? "bg-cyan-500/25 ring-1 ring-inset ring-cyan-300/50" : rowSelected ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/20" : "text-neutral-300 hover:bg-white/[0.06]"}`}
+                      onClick={(event) => selectRow(row.ids[0]!, event.ctrlKey || event.metaKey || event.shiftKey)}
+                      {...materialDropProps(row.ids, row.key)}
+                    >
                       {row.label}{row.ids.length > 1 ? <span className="text-neutral-500"> ×{row.ids.length}{rowSelected ? ` · ${cycleIndex}/${row.ids.length} · N next` : ""}</span> : null}
                     </button>
                   );
                 }
                 const rowSelected = selection.includes(row.id);
+                const dropActive = materialDropTarget === row.key;
                 return (
                   <div key={row.key} style={{ height: ROW_HEIGHT, paddingLeft: `${row.depth * 12}px` }} className="flex items-center">
                     {row.hasChildren ? (
                       <button type="button" className="w-4 shrink-0 text-neutral-500 transition-colors hover:text-neutral-200" onClick={() => setCollapsedNodes((previous) => ({ ...previous, [row.id]: !(previous[row.id] === true) }))}>{collapsedNodes[row.id] === true ? "▸" : "▾"}</button>
                     ) : <span className="w-4 shrink-0" />}
-                    <button type="button" className={`flex-1 truncate rounded-md px-1.5 text-left transition-colors ${rowSelected ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/20" : "text-neutral-300 hover:bg-white/[0.06]"}`} onClick={(event) => selectRow(row.id, event.ctrlKey || event.metaKey || event.shiftKey)} title={row.id}>
+                    <button
+                      type="button"
+                      className={`flex-1 truncate rounded-md px-1.5 text-left transition-colors ${dropActive ? "bg-cyan-500/25 ring-1 ring-inset ring-cyan-300/50" : rowSelected ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/20" : "text-neutral-300 hover:bg-white/[0.06]"}`}
+                      onClick={(event) => selectRow(row.id, event.ctrlKey || event.metaKey || event.shiftKey)}
+                      title={row.id}
+                      {...materialDropProps([row.id], row.key)}
+                    >
                       {row.label}<span className="ml-1 text-[9px] text-neutral-600">{row.kind}</span>
                     </button>
                   </div>

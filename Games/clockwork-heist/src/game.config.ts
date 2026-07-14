@@ -5,7 +5,7 @@ import { heistPrompts } from "./game/prompts";
 import { MansionEnvironment, renderMansionEntity } from "./game/render/MansionRender";
 import { GameUI } from "./game/ui/GameUI";
 import { PALETTE } from "./game/ui/palette";
-import { onInit, onNewPlayer, onTick } from "./loop";
+import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
@@ -17,6 +17,7 @@ export const game = defineGame({
   save: "none",
   content,
   loop: { onInit, onNewPlayer, onTick },
+  lifecycle,
   GameUI,
   capture: { play: ["startHeist"] },
   environment: MansionEnvironment,

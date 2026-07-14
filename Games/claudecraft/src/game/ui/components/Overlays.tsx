@@ -76,15 +76,19 @@ export function QuestTracker() {
   );
 }
 
-export function ZoneLabel() {
+export function useZoneName(): string | null {
   const { userId } = usePlayer();
   const position = useGameStore((ctx) => ctx.scene.entity.get(userId)?.position ?? null);
   if (position === null) return null;
   const dungeon = DUNGEONS.find(
     (entry) => Math.hypot(position[0] - entry.center[0], position[2] - entry.center[1]) <= entry.radius,
   );
-  const label =
-    dungeon?.name ?? (inCrypt(position[0], position[2]) ? "The Hollow Crypt" : zoneAt(position[2]).name);
+  return dungeon?.name ?? (inCrypt(position[0], position[2]) ? "The Hollow Crypt" : zoneAt(position[2]).name);
+}
+
+export function ZoneLabel() {
+  const label = useZoneName();
+  if (label === null) return null;
   return (
     <p className="wcc-title text-center text-lg font-semibold tracking-wide">
       {label}

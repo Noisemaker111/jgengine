@@ -9,17 +9,24 @@ import {
 import {
   cloneEditorDocument,
   collectDescendants,
+  createPrefabFragment,
   extractEditorFragment,
+  findEditorCollection,
   findEditorMarker,
+  findEditorPrefab,
   findEditorVolume,
   importEditorDocumentJson,
+  isEditorObjectLocked,
   wouldCreateCycle,
 } from "./document";
 import type {
+  EditorCollection,
   EditorDocument,
+  EditorFragmentContent,
   EditorMarker,
   EditorNote,
   EditorPath,
+  EditorPrefab,
   EditorTerrain,
   EditorVec3,
   EditorVolume,
@@ -51,6 +58,28 @@ export type EditorCommand =
   | { type: "sculptTerrain"; delta: TerraformDelta }
   | { type: "paintTerrain"; delta: SurfaceDelta }
   | { type: "clearTerrain" }
+  | { type: "createPrefab"; id: string; name: string; ids: readonly string[] }
+  | { type: "insertPrefab"; prefabId: string; at: EditorVec3; instanceId?: string }
+  | { type: "detachPrefabInstance"; instanceId: string }
+  | { type: "deletePrefab"; prefabId: string }
+  | { type: "createCollection"; id: string; name: string; memberIds?: readonly string[] }
+  | { type: "renameCollection"; id: string; name: string }
+  | { type: "deleteCollection"; id: string }
+  | { type: "setCollectionMembers"; id: string; memberIds: readonly string[] }
+  | { type: "addToCollection"; id: string; ids: readonly string[] }
+  | { type: "removeFromCollection"; id: string; ids: readonly string[] }
+  | {
+      type: "setCollectionFlags";
+      id: string;
+      patch: { color?: string; locked?: boolean; visible?: boolean };
+    }
+  | { type: "selectCollection"; id: string }
+  | {
+      type: "batchSetProperties";
+      ids: readonly string[];
+      patch: { color?: string; label?: string; meta?: Record<string, unknown> };
+    }
+  | { type: "assignMaterial"; ids: readonly string[]; materialId: string }
   | { type: "undo" }
   | { type: "redo" };
 
@@ -89,6 +118,11 @@ function removeByIds(doc: EditorDocument, ids: ReadonlySet<string>): EditorDocum
     volumes: doc.volumes.filter((volume) => !ids.has(volume.id)),
     paths: doc.paths.filter((path) => !ids.has(path.id)),
     annotations: doc.annotations.filter((note) => !ids.has(note.id)),
+    prefabs: doc.prefabs,
+    collections: doc.collections.map((collection) => ({
+      ...collection,
+      memberIds: collection.memberIds.filter((id) => !ids.has(id)),
+    })),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
@@ -116,6 +150,8 @@ function translateByIds(
     annotations: doc.annotations.map((note) =>
       ids.has(note.id) ? { ...note, position: shifted(note.position, delta) } : note,
     ),
+    prefabs: doc.prefabs,
+    collections: doc.collections,
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
@@ -176,10 +212,32 @@ function insertFragment(
       volumes: [...doc.volumes, ...volumes],
       paths: [...doc.paths, ...paths],
       annotations: [...doc.annotations, ...annotations],
+      prefabs: doc.prefabs,
+      collections: doc.collections,
       ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     },
     selection: newIds,
   };
+}
+
+function fragmentAsDocument(fragment: EditorFragmentContent): EditorDocument {
+  return {
+    version: 1,
+    markers: [...fragment.markers],
+    volumes: [...fragment.volumes],
+    paths: [...fragment.paths],
+    annotations: [...fragment.annotations],
+    prefabs: [],
+    collections: [],
+  };
+}
+
+function tagWithInstance<T extends { meta?: Record<string, unknown> }>(
+  item: T,
+  prefabId: string,
+  instanceId: string,
+): T {
+  return { ...item, meta: { ...item.meta, prefabId, prefabInstanceId: instanceId } };
 }
 
 function applyMutating(state: EditorSessionState, command: EditorCommand): EditorSessionState | null {
@@ -189,6 +247,7 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
     case "clearSelection":
       return { ...state, selection: [] };
     case "setTransform": {
+      if (isEditorObjectLocked(state.document, command.id)) return null;
       const marker = findEditorMarker(state.document, command.id);
       const volume = findEditorVolume(state.document, command.id);
       const note = state.document.annotations.find((n) => n.id === command.id);
@@ -233,8 +292,10 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
       };
     }
     case "translate": {
-      const ids = new Set(command.ids);
-      for (const descendant of collectDescendants(state.document, command.ids)) ids.add(descendant);
+      const movable = command.ids.filter((id) => !isEditorObjectLocked(state.document, id));
+      if (movable.length === 0) return null;
+      const ids = new Set(movable);
+      for (const descendant of collectDescendants(state.document, movable)) ids.add(descendant);
       return {
         ...state,
         document: translateByIds(state.document, ids, command.delta),
@@ -360,12 +421,14 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
       return { ...state, document: { ...state.document, annotations } };
     }
     case "remove":
+      if (isEditorObjectLocked(state.document, command.id)) return null;
       return {
         document: removeByIds(state.document, new Set([command.id])),
         selection: state.selection.filter((id) => id !== command.id),
       };
     case "removeMany": {
-      const gone = new Set(command.ids);
+      const gone = new Set(command.ids.filter((id) => !isEditorObjectLocked(state.document, id)));
+      if (gone.size === 0) return null;
       return {
         document: removeByIds(state.document, gone),
         selection: state.selection.filter((id) => !gone.has(id)),
@@ -400,6 +463,8 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         volumes: state.document.volumes,
         paths: state.document.paths,
         annotations: state.document.annotations,
+        prefabs: state.document.prefabs,
+        collections: state.document.collections,
       };
       return { ...state, document: nextDoc };
     }
@@ -417,6 +482,181 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         document: { ...state.document, terrain: applySurfaceDeltaToSnapshot(state.document.terrain, command.delta) },
       };
     }
+    case "createPrefab": {
+      if (command.ids.length === 0) return state;
+      const fragment = createPrefabFragment(state.document, command.ids);
+      const prefab: EditorPrefab = { id: command.id, name: command.name, fragment };
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          prefabs: [...state.document.prefabs.filter((entry) => entry.id !== command.id), prefab],
+        },
+      };
+    }
+    case "deletePrefab":
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          prefabs: state.document.prefabs.filter((entry) => entry.id !== command.prefabId),
+        },
+      };
+    case "insertPrefab": {
+      const prefab = findEditorPrefab(state.document, command.prefabId);
+      if (prefab === undefined) return state;
+      const instanceId =
+        command.instanceId ??
+        `${prefab.id}_inst_${Date.now().toString(36)}_${Math.floor(Math.random() * 1_296_000).toString(36)}`;
+      const tagged = fragmentAsDocument({
+        markers: prefab.fragment.markers.map((marker) => tagWithInstance(marker, prefab.id, instanceId)),
+        volumes: prefab.fragment.volumes.map((volume) => tagWithInstance(volume, prefab.id, instanceId)),
+        paths: prefab.fragment.paths.map((path) => tagWithInstance(path, prefab.id, instanceId)),
+        annotations: prefab.fragment.annotations.map((note) => tagWithInstance(note, prefab.id, instanceId)),
+      });
+      return insertFragment(state, tagged, command.at, true);
+    }
+    case "detachPrefabInstance": {
+      const strip = <T extends { meta?: Record<string, unknown> }>(item: T): T => {
+        if (item.meta?.prefabInstanceId !== command.instanceId) return item;
+        const meta = { ...item.meta };
+        delete meta.prefabId;
+        delete meta.prefabInstanceId;
+        return { ...item, meta };
+      };
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          markers: state.document.markers.map(strip),
+          volumes: state.document.volumes.map(strip),
+          paths: state.document.paths.map(strip),
+          annotations: state.document.annotations.map(strip),
+        },
+      };
+    }
+    case "createCollection": {
+      const collection: EditorCollection = {
+        id: command.id,
+        name: command.name,
+        memberIds: [...(command.memberIds ?? [])],
+      };
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          collections: [...state.document.collections.filter((entry) => entry.id !== command.id), collection],
+        },
+      };
+    }
+    case "renameCollection": {
+      const collections = state.document.collections.map((collection) =>
+        collection.id === command.id ? { ...collection, name: command.name } : collection,
+      );
+      return { ...state, document: { ...state.document, collections } };
+    }
+    case "deleteCollection":
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          collections: state.document.collections.filter((entry) => entry.id !== command.id),
+        },
+      };
+    case "setCollectionMembers": {
+      const collections = state.document.collections.map((collection) =>
+        collection.id === command.id ? { ...collection, memberIds: [...command.memberIds] } : collection,
+      );
+      return { ...state, document: { ...state.document, collections } };
+    }
+    case "addToCollection": {
+      const adding = new Set(command.ids);
+      const collections = state.document.collections.map((collection) => {
+        if (collection.id !== command.id) return collection;
+        const merged = new Set(collection.memberIds);
+        for (const id of adding) merged.add(id);
+        return { ...collection, memberIds: [...merged] };
+      });
+      return { ...state, document: { ...state.document, collections } };
+    }
+    case "removeFromCollection": {
+      const removing = new Set(command.ids);
+      const collections = state.document.collections.map((collection) =>
+        collection.id === command.id
+          ? { ...collection, memberIds: collection.memberIds.filter((id) => !removing.has(id)) }
+          : collection,
+      );
+      return { ...state, document: { ...state.document, collections } };
+    }
+    case "setCollectionFlags": {
+      const collections = state.document.collections.map((collection) =>
+        collection.id === command.id ? { ...collection, ...command.patch } : collection,
+      );
+      return { ...state, document: { ...state.document, collections } };
+    }
+    case "selectCollection": {
+      const collection = findEditorCollection(state.document, command.id);
+      if (collection === undefined) return null;
+      return { ...state, selection: [...collection.memberIds] };
+    }
+    case "batchSetProperties": {
+      const ids = new Set(command.ids);
+      const patch = command.patch;
+      const markers = state.document.markers.map((marker) =>
+        ids.has(marker.id)
+          ? {
+              ...marker,
+              ...(patch.color === undefined ? {} : { color: patch.color }),
+              ...(patch.label === undefined ? {} : { label: patch.label }),
+              ...(patch.meta === undefined ? {} : { meta: { ...marker.meta, ...patch.meta } }),
+            }
+          : marker,
+      );
+      const volumes = state.document.volumes.map((volume) =>
+        ids.has(volume.id)
+          ? {
+              ...volume,
+              ...(patch.color === undefined ? {} : { color: patch.color }),
+              ...(patch.label === undefined ? {} : { label: patch.label }),
+              ...(patch.meta === undefined ? {} : { meta: { ...volume.meta, ...patch.meta } }),
+            }
+          : volume,
+      );
+      const paths = state.document.paths.map((path) =>
+        ids.has(path.id)
+          ? {
+              ...path,
+              ...(patch.color === undefined ? {} : { color: patch.color }),
+              ...(patch.label === undefined ? {} : { label: patch.label }),
+              ...(patch.meta === undefined ? {} : { meta: { ...path.meta, ...patch.meta } }),
+            }
+          : path,
+      );
+      const annotations = state.document.annotations.map((note) =>
+        ids.has(note.id)
+          ? {
+              ...note,
+              ...(patch.color === undefined ? {} : { color: patch.color }),
+              ...(patch.meta === undefined ? {} : { meta: { ...note.meta, ...patch.meta } }),
+            }
+          : note,
+      );
+      return { ...state, document: { ...state.document, markers, volumes, paths, annotations } };
+    }
+    case "assignMaterial": {
+      const ids = new Set(command.ids);
+      const stamp = (meta: Record<string, unknown> | undefined) => ({ ...meta, materialId: command.materialId });
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          markers: state.document.markers.map((marker) => (ids.has(marker.id) ? { ...marker, meta: stamp(marker.meta) } : marker)),
+          volumes: state.document.volumes.map((volume) => (ids.has(volume.id) ? { ...volume, meta: stamp(volume.meta) } : volume)),
+          paths: state.document.paths.map((path) => (ids.has(path.id) ? { ...path, meta: stamp(path.meta) } : path)),
+          annotations: state.document.annotations.map((note) => (ids.has(note.id) ? { ...note, meta: stamp(note.meta) } : note)),
+        },
+      };
+    }
     case "undo":
     case "redo":
       return null;
@@ -427,6 +667,7 @@ function isStructural(command: EditorCommand): boolean {
   return (
     command.type !== "select" &&
     command.type !== "clearSelection" &&
+    command.type !== "selectCollection" &&
     command.type !== "undo" &&
     command.type !== "redo"
   );

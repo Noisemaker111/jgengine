@@ -45,6 +45,11 @@ export interface CameraFollowState {
   distance: number;
 }
 
+/** Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround. */
+export interface WorldOverlayProps {
+  ctx: GameContext;
+}
+
 export interface FirstPersonCameraConfig {
   /** Camera height above the followed entity's origin. Default 1.6. */
   eyeHeight?: number;
@@ -54,7 +59,7 @@ export interface FirstPersonCameraConfig {
   maxPitch?: number;
   /** Show the centered crosshair overlay. Default true. */
   reticle?: boolean;
-  /** Render a simple first-person weapon in view. Default true. */
+  /** Render a viewmodel in view: the built-in three-mesh gun, or `PlayableGame.viewmodel` when set (#542). `false` renders no viewmodel regardless of `PlayableGame.viewmodel`. Default true. */
   viewmodel?: boolean;
 }
 
@@ -476,6 +481,18 @@ export interface ModelAnimationConfig {
   oneShots?: Record<string, string | readonly string[]>;
 }
 
+/**
+ * Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`)
+ * layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any
+ * role may be omitted to keep the model's own map.
+ */
+export interface ModelMaterialMaps {
+  color?: string;
+  normal?: string;
+  roughness?: string;
+  ao?: string;
+}
+
 /** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */
 export interface ModelMaterialOverride {
   color?: string;
@@ -483,6 +500,8 @@ export interface ModelMaterialOverride {
   roughness?: number;
   emissive?: string;
   emissiveIntensity?: number;
+  /** Real PBR texture maps applied over the model's material — see {@link ModelMaterialMaps}. */
+  maps?: ModelMaterialMaps;
 }
 
 /** Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame. */
@@ -615,17 +634,26 @@ export interface GameCaptureConfig {
   settleMs?: number;
 }
 
-export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> {
+export interface PlayableGame<
+  TUi = unknown,
+  TWorldOverlay = unknown,
+  TRenderEntity = never,
+  TRenderObject = never,
+  TViewmodel = unknown,
+  TOverlay = TWorldOverlay,
+> {
   game: GameDefinition;
   content: GameContextContent;
   loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">;
   GameUI: TUi;
   /** Which shell mount to use. Default `"3d"` (canvas, camera rig, pointer, world rendering). `"hud"` mounts no 3D canvas, camera rig, or pointer — the game is `GameUI` plus the command/input loop, for board/card/menu games. */
   presentation?: "3d" | "hud";
-  /** Optional canvas-layer VFX component (e.g. traveling projectiles). */
-  WorldOverlay?: TWorldOverlay;
+  /** Optional canvas-layer VFX component (e.g. traveling projectiles); receives `{ ctx }` (#542) so overlay VFX read live engine state without a separate hook or a module-global workaround. */
+  WorldOverlay?: TOverlay;
   /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. When unset and `game.world` is an `environment()` descriptor, the shell auto-renders that world here — no manual wiring needed. */
   environment?: TWorldOverlay;
+  /** Custom first-person viewmodel (#542), read when the active rig is first-person. Rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun; receives a live `cuesRef` (velocity/bob/firing/reloading/recoil) driven from the followed entity — see `@jgengine/shell/camera`'s `ViewmodelProps`. Set `camera.firstPerson.viewmodel: false` to render no viewmodel at all regardless of this field. */
+  viewmodel?: TViewmodel;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
   renderEntity?: TRenderEntity;
   /** Per-object visual override: return your own mesh for a placed scene object and the shell still positions it and drives picking. Return null/undefined to fall back to objectModels → styled box. */
@@ -660,6 +688,15 @@ export interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEnt
   hudFit?: HudViewportConfig;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the player (default 60). */
   worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
+  /**
+   * Opt in to billboarded nameplates (name + optional HP bar) floating over non-local entities — the
+   * MMO "who's this and how hurt are they" readout. `roles` restricts to entities whose catalog entry
+   * declares one of the given roles (default: all); `maxDistance` hides nameplates beyond this many
+   * world units from the player (default 40). Headless: skin every part via `className`/`data-*` hooks
+   * on `WorldNameplates` (`@jgengine/shell/world/WorldHud`) — this flag only turns the readout on and
+   * scopes which entities it covers.
+   */
+  nameplates?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. `sounds` may be sample (`url`) or procedural (`synth`); `music` holds procedural themes crossfaded via `ctx.game.audio.music(id)`. */
   audio?: {
     sounds: Record<string, SoundDef>;

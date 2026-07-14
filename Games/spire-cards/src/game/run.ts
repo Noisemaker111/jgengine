@@ -1,8 +1,9 @@
 import { pileRng, shuffleWithRng } from "@jgengine/core/cards/cardPile";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 import { CARD_CATALOG, type CardData } from "./cards";
-import { combat, type CombatSnapshot } from "./combat";
+import { createCombatStore, type CombatSnapshot, type CombatStore } from "./combat";
 import { ENCOUNTERS, type EnemyDef } from "./enemy";
 
 export type RunPhase = "combat" | "reward" | "victory" | "defeat";
@@ -30,7 +31,7 @@ export interface RunStore {
   skipReward(ctx: GameContext): void;
 }
 
-function createRunStore(): RunStore {
+export function createRunStore(combat: CombatStore): RunStore {
   const listeners = new Set<() => void>();
   let phase: RunPhase = "combat";
   let encounterIndex = 0;
@@ -131,4 +132,4 @@ function createRunStore(): RunStore {
   };
 }
 
-export const run: RunStore = createRunStore();
+export const runHandle = defineStore<RunStore>("spire.run", () => createRunStore(createCombatStore()));

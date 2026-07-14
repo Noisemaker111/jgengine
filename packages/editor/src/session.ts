@@ -4,6 +4,8 @@ import {
   editorDocumentBounds,
   editorParentOf,
   editorRoots,
+  findEditorCollection,
+  findEditorPrefab,
   listEditorKinds,
   normalizeEditorLayers,
   summarizeEditorSession,
@@ -94,7 +96,23 @@ export type EditorBridgeRequest =
     }
   | { method: "scatter_summary" }
   | { method: "set_parent"; ids: string[]; parentId: string | null }
-  | { method: "hierarchy" };
+  | { method: "hierarchy" }
+  | { method: "list_prefabs" }
+  | { method: "create_prefab"; id: string; name: string; ids: string[] }
+  | { method: "insert_prefab"; prefabId: string; x?: number; y?: number; z?: number }
+  | { method: "detach_prefab_instance"; instanceId: string }
+  | { method: "delete_prefab"; prefabId: string }
+  | { method: "list_collections" }
+  | { method: "create_collection"; id: string; name: string; memberIds?: string[] }
+  | { method: "rename_collection"; id: string; name: string }
+  | { method: "delete_collection"; id: string }
+  | { method: "set_collection_members"; id: string; memberIds: string[] }
+  | { method: "add_to_collection"; id: string; ids: string[] }
+  | { method: "remove_from_collection"; id: string; ids: string[] }
+  | { method: "set_collection_flags"; id: string; color?: string; locked?: boolean; visible?: boolean }
+  | { method: "select_collection"; id: string }
+  | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
+  | { method: "assign_material"; ids: string[]; materialId: string };
 
 /** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
@@ -573,6 +591,89 @@ export function createEditorHost(options: {
               result: { roots, tree: roots.map((id) => ({ id, children: editorChildren(doc, id) })) },
             };
           }
+          case "list_prefabs":
+            return { ok: true, result: { prefabs: session.getState().document.prefabs } };
+          case "create_prefab": {
+            if (request.ids.length === 0) return { ok: false, error: "create_prefab needs at least one id" };
+            session.dispatch({ type: "createPrefab", id: request.id, name: request.name, ids: request.ids });
+            const prefab = findEditorPrefab(session.getState().document, request.id);
+            return prefab === undefined
+              ? { ok: false, error: `prefab not created: ${request.id}` }
+              : { ok: true, result: prefab };
+          }
+          case "insert_prefab": {
+            const prefab = findEditorPrefab(session.getState().document, request.prefabId);
+            if (prefab === undefined) return { ok: false, error: `prefab not found: ${request.prefabId}` };
+            const at = focusTarget ?? { x: 0, y: 0, z: 0 };
+            session.dispatch({
+              type: "insertPrefab",
+              prefabId: request.prefabId,
+              at: { x: request.x ?? at.x, y: request.y ?? at.y, z: request.z ?? at.z },
+            });
+            return { ok: true, result: summarizeEditorSession(session.getState()) };
+          }
+          case "detach_prefab_instance":
+            session.dispatch({ type: "detachPrefabInstance", instanceId: request.instanceId });
+            return { ok: true, result: summarizeEditorSession(session.getState()) };
+          case "delete_prefab":
+            session.dispatch({ type: "deletePrefab", prefabId: request.prefabId });
+            return { ok: true, result: { prefabs: session.getState().document.prefabs } };
+          case "list_collections":
+            return { ok: true, result: { collections: session.getState().document.collections } };
+          case "create_collection":
+            session.dispatch({
+              type: "createCollection",
+              id: request.id,
+              name: request.name,
+              ...(request.memberIds === undefined ? {} : { memberIds: request.memberIds }),
+            });
+            return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
+          case "rename_collection":
+            session.dispatch({ type: "renameCollection", id: request.id, name: request.name });
+            return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
+          case "delete_collection":
+            session.dispatch({ type: "deleteCollection", id: request.id });
+            return { ok: true, result: { collections: session.getState().document.collections } };
+          case "set_collection_members":
+            session.dispatch({ type: "setCollectionMembers", id: request.id, memberIds: request.memberIds });
+            return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
+          case "add_to_collection":
+            session.dispatch({ type: "addToCollection", id: request.id, ids: request.ids });
+            return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
+          case "remove_from_collection":
+            session.dispatch({ type: "removeFromCollection", id: request.id, ids: request.ids });
+            return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
+          case "set_collection_flags":
+            session.dispatch({
+              type: "setCollectionFlags",
+              id: request.id,
+              patch: {
+                ...(request.color === undefined ? {} : { color: request.color }),
+                ...(request.locked === undefined ? {} : { locked: request.locked }),
+                ...(request.visible === undefined ? {} : { visible: request.visible }),
+              },
+            });
+            return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
+          case "select_collection": {
+            const collection = findEditorCollection(session.getState().document, request.id);
+            if (collection === undefined) return { ok: false, error: `collection not found: ${request.id}` };
+            session.dispatch({ type: "selectCollection", id: request.id });
+            return { ok: true, result: { selection: session.getState().selection } };
+          }
+          case "batch_set_properties":
+            session.dispatch({
+              type: "batchSetProperties",
+              ids: request.ids,
+              patch: {
+                ...(request.color === undefined ? {} : { color: request.color }),
+                ...(request.label === undefined ? {} : { label: request.label }),
+                ...(request.meta === undefined ? {} : { meta: request.meta }),
+              },
+            });
+            return { ok: true, result: summarizeEditorSession(session.getState()) };
+          case "assign_material":
+            session.dispatch({ type: "assignMaterial", ids: request.ids, materialId: request.materialId });
+            return { ok: true, result: summarizeEditorSession(session.getState()) };
         }
       } catch (error) {
         return {

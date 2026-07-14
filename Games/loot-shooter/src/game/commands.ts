@@ -2,6 +2,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "./ammo";
 import { SOUND_IDS } from "./audio/catalog";
 import { gearById } from "./items/gear/catalog";
+import { relicById } from "./items/relics/catalog";
+import { reloadWeapon } from "./items/use-handlers";
 import { weaponById, type AmmoPool } from "./items/weapons/catalog";
 import { AMMO_PRICES, MYSTERY_CRATE, SHOP_ID, stationById } from "./objects/stations";
 import { CHALLENGE_IDS } from "./quests/catalog";
@@ -14,7 +16,7 @@ interface AimPayload {
   aim?: { yaw: number; pitch: number };
 }
 
-function selectedWeaponId(ctx: GameContext): string | null {
+export function selectedWeaponId(ctx: GameContext): string | null {
   const slots = ctx.player.inventory.state("hotbar").slots;
   const stack = slots[session.selectedSlot()];
   return stack?.itemId ?? null;
@@ -53,6 +55,20 @@ function pickupWorldItem(ctx: GameContext): void {
     if (weapon.rarity === "legendary") {
       ctx.game.quest!.progress(userId, CHALLENGE_IDS.legendaryFind, "pickup", 1);
     }
+    return;
+  }
+
+  const relic = relicById(record.itemId);
+  if (relic !== undefined) {
+    const result = ctx.player.inventory.put("backpack", record.itemId, record.count);
+    if (result.status !== "ok") {
+      ctx.scene.entity.floatText({ instanceId: userId, text: "PACK FULL", kind: "warn" });
+      return;
+    }
+    ctx.scene.worldItem.consume(record.instanceId);
+    ctx.game.events.emit("audio.play", { sound: SOUND_IDS.pickupGear });
+    ctx.scene.entity.floatText({ instanceId: userId, text: relic.name.toUpperCase(), kind: "pickup" });
+    ctx.game.feed.push("loot.pickup", { itemId: record.itemId, rarity: relic.rarity });
     return;
   }
 
@@ -103,6 +119,15 @@ export function registerCommands(ctx: GameContext): void {
         inventoryId: "hotbar",
         aim: input.aim,
       });
+    },
+  });
+
+  ctx.game.commands.define("reload", {
+    apply(state: GameContext) {
+      if (session.status() !== "wave" && session.status() !== "intermission") return;
+      const itemId = selectedWeaponId(state);
+      if (itemId === null) return;
+      reloadWeapon(state, state.player.userId, itemId);
     },
   });
 
