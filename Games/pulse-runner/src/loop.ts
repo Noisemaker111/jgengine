@@ -1,11 +1,11 @@
 import { cameraShake } from "@jgengine/shell/camera";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
-import type { GameLoop } from "@jgengine/core/game/defineGame";
+import type { GameLoop, LifecycleConfig } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { RUNNER_CATALOG_ID, RUNNER_HOVER_OFFSET } from "./game/entities/catalog";
 import { engineStore } from "./game/session/engineStore";
-import { createRunnerEngine, type RunnerPhase } from "./game/session/runnerEngine";
+import { createRunnerEngine, type RunnerEngine, type RunnerPhase } from "./game/session/runnerEngine";
 import { placeWorldDressing } from "./game/world/setup";
 
 const BEAT_SHAKE_AMPLITUDE = 0.035;
@@ -25,22 +25,28 @@ function syncPhase(ctx: GameContext, phase: RunnerPhase): void {
   setGamePhase(ctx, phase === "playing" ? "playing" : phase === "idle" ? "menu" : "ended");
 }
 
+export const lifecycle: LifecycleConfig<RunnerEngine> = {
+  store: engineStore,
+  start(engine) {
+    engine.start();
+    return engine;
+  },
+  restart(engine) {
+    engine.restart();
+    return engine;
+  },
+  phaseOf(engine) {
+    const phase = engine.snapshot().phase;
+    return phase === "playing" ? "playing" : phase === "idle" ? "menu" : "ended";
+  },
+};
+
 function onInit(ctx: GameContext): void {
   const engine = createRunnerEngine();
   engineStore.write(ctx, engine);
   placeWorldDressing(ctx);
   syncPhase(ctx, "idle");
 
-  ctx.game.commands.define("start", {
-    apply(_state: GameContext, _input: unknown) {
-      engine.start();
-    },
-  });
-  ctx.game.commands.define("restart", {
-    apply(_state: GameContext, _input: unknown) {
-      engine.restart();
-    },
-  });
   ctx.game.commands.define("strideBeat", {
     apply(_state: GameContext, _input: unknown) {
       engine.tapStride();

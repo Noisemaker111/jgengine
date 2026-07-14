@@ -48,6 +48,37 @@ export interface TerrainDetailConfig {
   roughness?: number;
   /** Overall detail intensity 0..1. Default 1. */
   strength?: number;
+  /** Real PBR texture maps blended over the procedural detail — the seam for `@jgengine/assets` `buildMaterialCatalog` output. Omit to keep the procedural-only look. */
+  material?: TerrainDetailMaterialConfig;
+}
+
+/**
+ * PBR map URLs for a real ground texture — the same shape
+ * `buildMaterialCatalog({ basePath }).resolve(id)!.maps` from `@jgengine/assets` returns. Kept
+ * dependency-free here so `core` never imports the assets package; any URLs (pulled maps, a CDN, a
+ * data URI) satisfy it.
+ */
+export interface TerrainMaterialMaps {
+  color: string;
+  normal: string;
+  roughness: string;
+  ao: string;
+  displacement: string;
+}
+
+/**
+ * Real PBR texture applied over the ground surface — the seam that lets a game put a
+ * `buildMaterialCatalog` material on terrain. Blends with, never replaces, the procedural detail
+ * shader: color/roughness/ao tile the maps by world position, `strength` fades them over the
+ * existing vertex-colour + noise look.
+ */
+export interface TerrainDetailMaterialConfig {
+  /** e.g. `buildMaterialCatalog({ basePath: "/materials" }).resolve("material/grass")!.maps`. */
+  maps: TerrainMaterialMaps;
+  /** World units per texture tile; smaller tiles the texture more densely. Default 4. */
+  repeat?: number;
+  /** Blend strength of the texture over the procedural/vertex-colour base, 0..1. Default 1. */
+  strength?: number;
 }
 
 export interface TerrainFlattenMask {

@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { BodySnapshot } from "@jgengine/core/scene/bodyBind";
 import { CREATURE_RADIUS, PARK_Z, SANCTUARY_Z } from "./game/constants";
@@ -38,6 +39,25 @@ function writeRun(ctx: GameContext, run: RunState): void {
   runStore.write(ctx, run);
 }
 
+export const lifecycle: LifecycleConfig<RunState> = {
+  store: runStore,
+  start(state, ctx, input) {
+    if (state.phase !== "start") return state;
+    const tierInput = (input as { tier?: string } | undefined)?.tier;
+    const tier: TierId = tierInput !== undefined && isTierId(tierInput) ? tierInput : state.tier;
+    resetCreatureEntities(ctx);
+    const next = createInitialRunState(tier);
+    next.phase = "playing";
+    next.playStartedAt = ctx.time.now();
+    return next;
+  },
+  restart(state, ctx) {
+    resetCreatureEntities(ctx);
+    return createInitialRunState(state.tier);
+  },
+  phaseOf: (state) => (state.phase === "playing" ? "playing" : state.phase === "start" ? "menu" : "ended"),
+};
+
 export function onInit(ctx: GameContext): void {
   placeProps(ctx);
   spawnVehiclePool(ctx);
@@ -49,30 +69,6 @@ export function onInit(ctx: GameContext): void {
       const run = readRun(state);
       if (run.phase !== "start" || input.tier === undefined || !isTierId(input.tier)) return;
       writeRun(state, { ...run, tier: input.tier });
-    },
-  });
-
-  ctx.game.commands.define<{ tier?: string }>("start", {
-    apply(state, input) {
-      const run = readRun(state);
-      if (run.phase !== "start") return;
-      const tier: TierId = input.tier !== undefined && isTierId(input.tier) ? input.tier : run.tier;
-      const next = createInitialRunState(tier);
-      next.phase = "playing";
-      next.playStartedAt = state.time.now();
-      resetCreatureEntities(state);
-      writeRun(state, next);
-      syncPhase(state, next.phase);
-    },
-  });
-
-  ctx.game.commands.define("restart", {
-    apply(state) {
-      const run = readRun(state);
-      resetCreatureEntities(state);
-      const next = createInitialRunState(run.tier);
-      writeRun(state, next);
-      syncPhase(state, next.phase);
     },
   });
 

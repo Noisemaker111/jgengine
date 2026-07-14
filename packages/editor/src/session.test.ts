@@ -189,6 +189,97 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("create_prefab / insert_prefab / detach_prefab_instance / delete_prefab", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [
+          { id: "tent", kind: "prop", position: { x: 10, y: 0, z: 10 } },
+          { id: "fire", kind: "prop", position: { x: 14, y: 0, z: 10 } },
+        ],
+      },
+    });
+
+    const created = api.handle({ method: "create_prefab", id: "camp", name: "Camp", ids: ["tent", "fire"] });
+    expect(created.ok).toBe(true);
+    expect((created.result as { name: string }).name).toBe("Camp");
+
+    api.setFocusTarget({ x: 100, y: 0, z: 0 });
+    const inserted = api.handle({ method: "insert_prefab", prefabId: "camp" });
+    expect(inserted.ok).toBe(true);
+    expect((inserted.result as { markers: number }).markers).toBe(4);
+
+    const doc = api.getSession().getState().document;
+    const instanceId = doc.markers.find((m) => m.meta?.prefabId === "camp")?.meta?.prefabInstanceId as string;
+    expect(instanceId).toBeDefined();
+
+    const detached = api.handle({ method: "detach_prefab_instance", instanceId });
+    expect(detached.ok).toBe(true);
+    expect(api.getSession().getState().document.markers.every((m) => m.meta?.prefabId === undefined)).toBe(true);
+
+    const listed = api.handle({ method: "list_prefabs" });
+    expect((listed.result as { prefabs: { id: string }[] }).prefabs).toHaveLength(1);
+    const deleted = api.handle({ method: "delete_prefab", prefabId: "camp" });
+    expect((deleted.result as { prefabs: unknown[] }).prefabs).toHaveLength(0);
+    dispose();
+  });
+
+  test("collections: create, membership, flags, select_collection, and locked members", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [
+          { id: "a", kind: "mob", position: { x: 0, y: 0, z: 0 } },
+          { id: "b", kind: "mob", position: { x: 1, y: 0, z: 0 } },
+        ],
+      },
+    });
+
+    api.handle({ method: "create_collection", id: "pack", name: "Pack", memberIds: ["a"] });
+    api.handle({ method: "add_to_collection", id: "pack", ids: ["b"] });
+    const list = api.handle({ method: "list_collections" });
+    expect((list.result as { collections: { memberIds: string[] }[] }).collections[0]?.memberIds).toEqual(["a", "b"]);
+
+    const selected = api.handle({ method: "select_collection", id: "pack" });
+    expect((selected.result as { selection: string[] }).selection).toEqual(["a", "b"]);
+
+    api.handle({ method: "set_collection_flags", id: "pack", locked: true });
+    const moved = api.handle({ method: "set_transform", id: "a", x: 50 });
+    expect(moved.ok).toBe(true);
+    expect(api.getSession().getState().document.markers.find((m) => m.id === "a")?.position.x).toBe(0);
+
+    api.handle({ method: "set_collection_flags", id: "pack", locked: false });
+    api.handle({ method: "delete_collection", id: "pack" });
+    expect((api.handle({ method: "list_collections" }).result as { collections: unknown[] }).collections).toHaveLength(0);
+    dispose();
+  });
+
+  test("batch_set_properties and assign_material", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [{ id: "m", kind: "mob", position: { x: 0, y: 0, z: 0 } }],
+        volumes: [{ id: "v", kind: "zone", shape: "sphere", center: { x: 0, y: 0, z: 0 }, radius: 4 }],
+      },
+    });
+
+    const batch = api.handle({
+      method: "batch_set_properties",
+      ids: ["m", "v"],
+      color: "#0ff",
+      meta: { tier: 3 },
+    });
+    expect(batch.ok).toBe(true);
+    const doc = api.getSession().getState().document;
+    expect(doc.markers[0]?.color).toBe("#0ff");
+    expect(doc.volumes[0]?.meta?.tier).toBe(3);
+
+    const assigned = api.handle({ method: "assign_material", ids: ["m"], materialId: "granite" });
+    expect(assigned.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.meta?.materialId).toBe("granite");
+    dispose();
+  });
+
   test("subscribeFocus fires on camera_goto", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",

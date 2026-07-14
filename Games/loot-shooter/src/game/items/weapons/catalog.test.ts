@@ -45,4 +45,12 @@ describe("weapon catalog", () => {
       expect(weapon.weapon.critChance).toBeLessThan(1);
     }
   });
+
+  test("every weapon declares a magazine size and reload delay", () => {
+    for (const weapon of weapons) {
+      expect(weapon.magazineSize).toBeGreaterThan(0);
+      expect(weapon.reloadMs).toBeGreaterThan(0);
+      expect(weapon.magazineSize).toBeGreaterThanOrEqual(weapon.ammoPerShot);
+    }
+  });
 });

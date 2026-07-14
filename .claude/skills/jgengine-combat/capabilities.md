@@ -44,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/stats/eventMeter"`
 
+## magazine — a weapon magazine with capacity, timed reload, and reserve-pool interaction
+
+- `createMagazine` (function) · `import { createMagazine } from "@jgengine/core/combat/magazine"`
+
 ## parry-window — time a block/parry/i-frame defensive window against incoming hits
 
 - `createDefensiveWindow` (function) · `import { createDefensiveWindow } from "@jgengine/core/combat/defensiveWindow"`

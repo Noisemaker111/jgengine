@@ -32,7 +32,7 @@ export function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}
   ].join("\n");
 }
 
-/** Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog. */
+/** Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model. */
 export function materialWiringSnippet(id: string, basePath = "/materials"): string {
   return [
     `// src/game/assets.ts`,
@@ -41,6 +41,12 @@ export function materialWiringSnippet(id: string, basePath = "/materials"): stri
     ``,
     `const material = materials.resolve(${JSON.stringify(id)})!;`,
     `// material.maps => { color, normal, roughness, ao, displacement } URLs under ${basePath}/${id}/`,
+    ``,
+    `// onto the ground (terrain() in defineGame({ world: environment({ terrain: ... }) })):`,
+    `terrain({ detail: { material: { maps: material.maps, repeat: 4 } } })`,
+    ``,
+    `// onto a model (entityModels / objectModels ModelConfig):`,
+    `{ url: ..., material: { maps: material.maps } }`,
   ].join("\n");
 }
 

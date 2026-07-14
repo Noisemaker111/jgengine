@@ -94,7 +94,9 @@ export function Overlays({
       {snapshot.paused && snapshot.status === "playing" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 backdrop-blur-sm">
           <div className="text-3xl font-black uppercase tracking-[0.35em] text-cyan-300">Paused</div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-slate-400">Press P to resume</div>
+          {!coarsePointer && (
+            <div className="text-[10px] uppercase tracking-[0.25em] text-slate-400">Press P to resume</div>
+          )}
         </div>
       )}
 

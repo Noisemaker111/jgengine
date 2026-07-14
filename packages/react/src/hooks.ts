@@ -326,6 +326,7 @@ export function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: nu
   return false;
 }
 
+/** True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat. */
 export function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean {
   const next: EventMeterView = {
     value: meter.value(),
@@ -378,6 +379,7 @@ export function useAbilitySlot(
   return kit.state(slotId, resourceAvailable);
 }
 
+/** A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag. */
 export interface EventMeterView {
   value: number;
   fraction: number;
@@ -385,6 +387,13 @@ export interface EventMeterView {
   ready: boolean;
 }
 
+/**
+ * Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render
+ * half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render
+ * on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
+ *
+ * @capability event-meter-hud render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
+ */
 export function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView {
   const previous = useRef<EventMeterView | null>(null);
   useEngineHeartbeat(options?.intervalMs ?? 80, () => {

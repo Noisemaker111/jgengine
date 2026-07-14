@@ -1,3 +1,5 @@
+import { defineStore } from "@jgengine/core/store/defineStore";
+
 import { DEFAULT_SEED, BALLS_PER_GAME, ROLLOVER_LABELS, TILT_LIMIT } from "./config";
 import { browserStorage, createRecords, type PinballRecords } from "./records";
 import { PinballSim } from "./sim";
@@ -163,4 +165,4 @@ export class PinballStore {
   }
 }
 
-export const pinballStore = new PinballStore();
+export const pinballHandle = defineStore<PinballStore>("pinball", () => new PinballStore());

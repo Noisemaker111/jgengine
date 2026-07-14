@@ -178,6 +178,63 @@ Headless: `create_terrain`, `sculpt_terrain {mode,x,z,radius,strength,…}`, `pa
 `add_foliage {points,density,item}`, and `scatter_summary` RPC verbs drive and assert terrain + foliage
 authoring without WebGL (`bun packages/editor/src/mcp/cli.ts`).
 
+## Prefabs — reusable object stamps
+
+**Prefabs** tab (left aside) makes reuse across a scene, or across games, a first-class op:
+select objects, name them, **Make prefab** extracts them into a serializable fragment centered
+on its own bounds centroid (so it drops in consistently anywhere). **Insert** stamps a fresh,
+freshly-id'd instance at the camera focus point, tagging every inserted object's
+`meta.prefabId`/`meta.prefabInstanceId`. **Detach** breaks the link (content stays, tags clear)
+without touching anything else. Prefabs live in `document.prefabs` — export/import the document,
+or lift just that array, to reuse a prefab library in another game.
+
+```ts
+import { createPrefabFragment, findEditorPrefab } from "@jgengine/core/editor/index";
+
+session.dispatch({ type: "createPrefab", id: "camp", name: "Camp", ids: ["tent", "fire"] });
+session.dispatch({ type: "insertPrefab", prefabId: "camp", at: { x: 100, y: 0, z: 0 } });
+session.dispatch({ type: "detachPrefabInstance", instanceId }); // breaks the link, keeps content
+session.dispatch({ type: "deletePrefab", prefabId: "camp" });   // library entry only; placed instances unaffected
+```
+
+Headless: `create_prefab {id,name,ids}`, `insert_prefab {prefabId,x?,y?,z?}` (defaults to camera
+focus), `detach_prefab_instance {instanceId}`, `delete_prefab {prefabId}`, `list_prefabs`.
+
+## Collections — named selection sets and locked production groups
+
+**Sets** tab bookmarks the current selection under a name for later restore/add-to/remove-from —
+and doubles as a production group with **lock** (blocks `translate`/`setTransform`/`remove`/
+`removeMany` on its members — moving or deleting a locked group is refused at the session level,
+not just the UI), **color**, and **visible** flags. Collections live in `document.collections` and
+survive export/import; removing a member object prunes it from every collection automatically.
+
+```ts
+import { findEditorCollection, isEditorObjectLocked } from "@jgengine/core/editor/index";
+
+session.dispatch({ type: "createCollection", id: "pack", name: "Wolf pack", memberIds: ["a", "b"] });
+session.dispatch({ type: "setCollectionFlags", id: "pack", patch: { locked: true, color: "#f59e0b" } });
+session.dispatch({ type: "selectCollection", id: "pack" }); // restores the selection
+```
+
+Headless: `list_collections`, `create_collection {id,name,memberIds?}`, `rename_collection`,
+`delete_collection`, `set_collection_members`, `add_to_collection`, `remove_from_collection`,
+`set_collection_flags {id,color?,locked?,visible?}`, `select_collection {id}`.
+
+## Batch property edit and drag-drop material assignment
+
+Multi-select then dispatch `batchSetProperties` to patch color/label/meta across every kind in
+one undo step — the primitive behind "replace selected, edit once":
+
+```ts
+session.dispatch({ type: "batchSetProperties", ids: selection, patch: { color: "#0ff", meta: { tier: 2 } } });
+```
+
+The asset browser's **Materials** palette (top of the Assets panel) is drag-source-only chips —
+drop one onto an outliner row to `assignMaterial` (stamps `meta.materialId`) that object, or drop
+it in the viewport: hits a tagged object → assigns; hits bare terrain → paints that material at
+the drop point (same undoable stroke as the Paint tool). Headless: `batch_set_properties
+{ids,color?,label?,meta?}`, `assign_material {ids,materialId}`.
+
 ## Scene hierarchy — parent / child
 
 The outliner has a **By kind** and a **Hierarchy** view (nested tree, expand/collapse). Any object can be

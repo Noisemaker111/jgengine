@@ -1,7 +1,8 @@
 import type { ReceiveMap } from "@jgengine/core/combat/effects";
 import type { MovementPose } from "@jgengine/core/movement/poseState";
 import type { StatCatalog } from "@jgengine/core/scene/entityStats";
-import { AMMO_START } from "../../ammo";
+import { AMMO_START, MAGAZINE_STAT_ID } from "../../ammo";
+import { STARTER_WEAPON_ID, weaponById } from "../../items/weapons/catalog";
 import { xpRequiredForLevel } from "../../progression/curves";
 
 export interface PlayerDef {
@@ -28,6 +29,7 @@ export const player: PlayerDef = {
     ammo_heavy: { max: AMMO_START.heavy.max, current: AMMO_START.heavy.current },
     ammo_shell: { max: AMMO_START.shell.max, current: AMMO_START.shell.current },
     ammo_energy: { max: AMMO_START.energy.max, current: AMMO_START.energy.current },
+    [MAGAZINE_STAT_ID]: { max: weaponById(STARTER_WEAPON_ID)?.magazineSize ?? 12 },
   },
   receive: {
     damage: { order: ["health"] },

@@ -25,12 +25,23 @@ ctx.scene.entity.vfx({ kind: "glow", color: SCHOOL.frost, from: healedId });
 ## Loot
 
 ```ts
-lootTable({ id, rolls?, entries: [{ item? | currency?, count: n | [min,max], weight }] })
+lootTable({ id, rolls?, entries: [{ item? | currency? | generate?, count: n | [min,max], weight }] })
 ctx.game.loot.register(table)        // in onInit
 ctx.game.loot.has(id) / roll(id, rng?) / grantToPlayer(userId, drops, source?)
 ```
 
 Tables colocate with their domain (`entities/enemies/loot-tables.ts`, `objects/loot-tables.ts`). Entities reference them via `onDeath.drops`; chests via a `loot.open` command arg. `grantToPlayer` fills declared inventories, grants currencies, and emits `loot.granted`.
+
+**Procedural loot.** An entry's `generate` (instead of `item`/`currency`) rolls a runtime item instead of naming a static catalog id — the primitive behind "runtime-rolled items need a hand-rolled registry" (#536.1). `item/itemInstanceRegistry`'s `createItemInstanceRegistry<TDef>()` stores rolled instances behind a generated id (`"<prefix>:<baseId>:<n>"`); `proceduralLootEntry(registry, roll)` wraps any roller (e.g. `item/affix`'s `createAffixRoller`) into a `generate` callback. The game's `content.itemById` checks the registry for ids it doesn't recognize as static — inventories, loot rolls, and world-item drops then treat a generated id exactly like a catalog one, no parallel plumbing.
+
+```ts
+const registry = createItemInstanceRegistry<RelicInstance>("relic");
+const rollRelic = proceduralLootEntry(registry, (rng) => {
+  const rolled = affixRoller.rollRandom(RELIC_BASE, rng);
+  return { baseId: rolled.baseId, def: { name: rolled.name, rarity: rolled.rarity, stats: rolled.stats } };
+});
+lootTable({ id: "drops_elite", entries: [{ generate: rollRelic, count: 1, weight: 6 }, ...] });
+```
 
 ## Card, board & shaped-inventory primitives
 

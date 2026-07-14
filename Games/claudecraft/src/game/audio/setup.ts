@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { inCombat, storeKeys } from "../session/hero";
 import { ZONES, zoneAt } from "../world/zones";
@@ -6,7 +7,7 @@ import { cue } from "./cues";
 
 const ZONE_TRANSPOSE: Record<string, number> = { vale: 0, marsh: -2, peaks: 3 };
 
-let lastTheme: string | null | undefined;
+const lastThemeOf = perContext(() => ({ theme: null as string | null | undefined }));
 
 function hubTheme(x: number, z: number): string | null {
   for (const zone of ZONES) {
@@ -41,7 +42,8 @@ export function tickMusic(ctx: GameContext, userId: string): void {
   } else {
     theme = hubTheme(x, z) ?? zoneAt(z).id;
   }
-  if (theme === lastTheme) return;
-  lastTheme = theme;
+  const lastTheme = lastThemeOf(ctx);
+  if (theme === lastTheme.theme) return;
+  lastTheme.theme = theme;
   ctx.game.audio.music(theme, transpose);
 }

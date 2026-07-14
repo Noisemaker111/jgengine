@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { BOT_ENTITY_ID } from "./game/entities/catalog";
@@ -17,6 +18,24 @@ function syncPhase(ctx: GameContext, phase: RunPhase): void {
   setGamePhase(ctx, phase === "menu" ? "menu" : phase === "running" ? "playing" : "ended");
 }
 
+export const lifecycle: LifecycleConfig<RunController> = {
+  store: controllerStore,
+  start(controller) {
+    if (controller.snapshot().phase === "sectorClear") controller.continueAfterClear();
+    else controller.start();
+    return controller;
+  },
+  restart(controller) {
+    controller.restartSector();
+    return controller;
+  },
+  phaseOf(controller) {
+    const phase = controller.snapshot().phase;
+    return phase === "menu" ? "menu" : phase === "running" ? "playing" : "ended";
+  },
+  commands: { start: "startRun", restart: "restartSector" },
+};
+
 export function onInit(ctx: GameContext): void {
   const controller = new RunController();
   controllerStore.write(ctx, controller);
@@ -34,17 +53,9 @@ export function onInit(ctx: GameContext): void {
     };
   }
 
-  ctx.game.commands.define("startRun", {
-    apply: withPhaseSync(() => {
-      const phase = controller.snapshot().phase;
-      if (phase === "sectorClear") controller.continueAfterClear();
-      else controller.start();
-    }),
-  });
   ctx.game.commands.define("laneLeft", { apply: withPhaseSync(() => controller.moveLane(-1)) });
   ctx.game.commands.define("laneRight", { apply: withPhaseSync(() => controller.moveLane(1)) });
   ctx.game.commands.define("polarityFlip", { apply: withPhaseSync(() => controller.flip()) });
-  ctx.game.commands.define("restartSector", { apply: withPhaseSync(() => controller.restartSector()) });
 }
 
 export function onNewPlayer(ctx: GameContext): void {

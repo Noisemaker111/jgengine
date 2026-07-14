@@ -1,5 +1,6 @@
 import { createRecordBook } from "@jgengine/core/game/recordBook";
 import { seededRng } from "@jgengine/core/random/rng";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 import {
   BOMB_BASE_INTERVAL,
@@ -752,4 +753,4 @@ export function createStarInvadersStore(seed: string | number = "star-invaders")
   };
 }
 
-export const starInvadersStore = createStarInvadersStore();
+export const starInvadersHandle = defineStore<StarInvadersStore>("starInvaders", () => createStarInvadersStore());

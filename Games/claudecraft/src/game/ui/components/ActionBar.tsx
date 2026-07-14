@@ -1,5 +1,7 @@
+import { KeyHint } from "@jgengine/react";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 import { useEffect, useState } from "react";
 
 import { classById } from "../../classes/catalog";
@@ -30,8 +32,9 @@ function Slot({
   resource: number;
   now: number;
 }) {
+  const ctx = useGameContext();
   const { commands } = useGame();
-  const hero = heroOf(userId);
+  const hero = heroOf(ctx, userId);
   const snapshot = hero?.kit.state(ability.id, resource) ?? null;
   const locked = ability.levelReq > level;
   const onGcd = hero !== null && hero.gcdUntil > now;
@@ -83,9 +86,9 @@ function Slot({
           Lv {ability.levelReq}
         </span>
       )}
-      <kbd className="absolute right-0.5 top-0.5 text-[9px] font-bold text-[#c8a838] [text-shadow:1px_1px_1px_#000]">
+      <KeyHint className="absolute right-0.5 top-0.5 text-[9px] font-bold text-[#c8a838] [text-shadow:1px_1px_1px_#000]">
         {index + 1}
-      </kbd>
+      </KeyHint>
     </button>
   );
 }
@@ -122,9 +125,9 @@ export function ActionBar() {
               }}
               className="wcc-slot relative flex h-[46px] w-[46px] items-center justify-center opacity-50"
             >
-              <kbd className="absolute right-0.5 top-0.5 text-[9px] font-bold text-stone-600">
+              <KeyHint className="absolute right-0.5 top-0.5 text-[9px] font-bold text-stone-600">
                 {index + 1}
-              </kbd>
+              </KeyHint>
             </span>
           );
         }

@@ -1,5 +1,8 @@
+import { actionLabel } from "@jgengine/core/input/actionBindings";
+import { KeyHint } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 
+import { keybinds } from "../../keybinds";
 import type { CourseDef } from "../../world/courses";
 import { panelClass, primaryButtonClass, secondaryButtonClass } from "../theme";
 
@@ -19,7 +22,8 @@ export function LoseScreen({ course }: { course: CourseDef }) {
             Course select
           </button>
           <button type="button" className={primaryButtonClass} onClick={() => commands.run("restartCourse", {})}>
-            Restart (R)
+            Restart
+            <KeyHint> ({actionLabel(keybinds, "restartCourse") ?? "R"})</KeyHint>
           </button>
         </div>
       </div>
