@@ -1,7 +1,8 @@
-import { useRun } from "./useRun";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../run/stores";
 
 export function WaveStatus() {
-  const run = useRun();
+  const run = useStore(runStore);
   if (run.status === "ready") return null;
   return (
     <div className="flex flex-col items-center">
@@ -26,7 +27,7 @@ export function WaveStatus() {
 }
 
 export function IntermissionBanner() {
-  const run = useRun();
+  const run = useStore(runStore);
   if (run.status !== "intermission") return null;
   return (
     <div className="pointer-events-none absolute inset-x-0 top-[22%] z-30 flex flex-col items-center">

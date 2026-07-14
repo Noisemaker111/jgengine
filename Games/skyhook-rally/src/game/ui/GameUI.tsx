@@ -1,5 +1,7 @@
 import { SettingsTrigger } from "@jgengine/react";
+import { useStore } from "@jgengine/react/store";
 
+import { courseStore, sessionStore } from "../runtime/store";
 import { archipelago, courses } from "../../world";
 import { AltitudeTick } from "./components/AltitudeTick";
 import { ApexCrosshair } from "./components/ApexCrosshair";
@@ -10,7 +12,6 @@ import { MarshalToasts } from "./components/MarshalToasts";
 import { ResultsScreen } from "./components/ResultsScreen";
 import { StartScreen } from "./components/StartScreen";
 import { StreakBadge } from "./components/StreakBadge";
-import { useActiveCourse, useSession } from "./selectors";
 import { panelClass } from "./theme";
 import { useLiveHud } from "./useLiveHud";
 
@@ -23,8 +24,8 @@ function SettingsGear() {
 }
 
 export function GameUI() {
-  const session = useSession();
-  const course = useActiveCourse();
+  const session = useStore(sessionStore);
+  const course = useStore(courseStore);
   const live = useLiveHud();
 
   if (session === undefined) return null;

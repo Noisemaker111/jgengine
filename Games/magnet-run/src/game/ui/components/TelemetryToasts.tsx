@@ -1,7 +1,8 @@
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 export function TelemetryToasts() {
-  const run = useRunState();
+  const run = useStore(runStore);
   const active = run.toasts.filter((toast) => toast.expiresAt > run.totalElapsed);
   return (
     <div className="flex flex-col gap-1">

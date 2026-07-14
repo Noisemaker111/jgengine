@@ -2,7 +2,9 @@ import { advancePathFollow, createPathFollow, type PathFollowState, type Waypoin
 import { raceOutcomeOf } from "@jgengine/core/game/race";
 import type { DecayMeterSet } from "@jgengine/core/survival/decayMeter";
 import type { TerrainField } from "@jgengine/core/world/terrain";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
+import { RIVAL_WAYPOINTS } from "./deps";
 import {
   FOLLOWER_CATCHUP_MULTIPLIER,
   FOLLOWER_SPACING,
@@ -78,6 +80,8 @@ export function initialRunState(phase: GamePhase, rivalWaypoints: readonly Waypo
     finishWaterFraction: null,
   };
 }
+
+export const runStore = defineStore<RunState>("run", () => initialRunState("start", RIVAL_WAYPOINTS));
 
 export interface RunInput {
   urge: boolean;

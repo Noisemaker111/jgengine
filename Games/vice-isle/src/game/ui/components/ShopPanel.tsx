@@ -1,6 +1,7 @@
-import { useCurrency, useGame, useGameStore } from "@jgengine/react/hooks";
-import { SHOP_STORE_KEY } from "../../commands";
-import { WANTED_STORE_KEY, type WantedSnapshot } from "../../handroll";
+import { useCurrency, useGame } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
+import { shopStore } from "../../commands";
+import { wantedStore } from "../../handroll";
 import { GEAR, WEAPONS } from "../../items/weapons/catalog";
 import { ITEM_LABELS } from "../../content";
 
@@ -8,7 +9,7 @@ const STOCK = [...WEAPONS, ...GEAR].filter((item) => item.trade?.buy !== undefin
 
 function BribeButton() {
   const { commands } = useGame();
-  const stars = useGameStore((ctx) => (ctx.game.store.get(WANTED_STORE_KEY) as WantedSnapshot | undefined)?.stars ?? 0);
+  const stars = useStore(wantedStore, (wanted) => wanted?.stars ?? 0);
   if (stars === 0) return null;
   return (
     <button
@@ -23,7 +24,7 @@ function BribeButton() {
 
 export function ShopPanel() {
   const { commands } = useGame();
-  const open = useGameStore((ctx) => (ctx.game.store.get(SHOP_STORE_KEY) as string | undefined) ?? null);
+  const open = useStore(shopStore, (v) => v ?? null);
   const cash = useCurrency("cash");
   if (open === null) return null;
   return (

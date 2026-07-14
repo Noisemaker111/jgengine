@@ -1,11 +1,12 @@
 import { useGame } from "@jgengine/react/hooks";
 import { sectors } from "../../course/sectors";
 import { keyLabel } from "../keyLabel";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 export function LoseScreen() {
   const { commands } = useGame();
-  const run = useRunState();
+  const run = useStore(runStore);
   const sector = sectors[run.loseSectorIndex ?? 0]!;
 
   return (

@@ -1,12 +1,13 @@
-import { useCurrency, useGame, useGameStore } from "@jgengine/react/hooks";
-import { GARAGE_STORE_KEY } from "../../commands";
+import { useCurrency, useGame } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
+import { garageStore } from "../../commands";
 import { VEHICLES } from "../../entities/vehicles/catalog";
 
 const STOCK = VEHICLES.filter((v) => v.price > 0);
 
 export function GaragePanel() {
   const { commands } = useGame();
-  const open = useGameStore((ctx) => (ctx.game.store.get(GARAGE_STORE_KEY) as boolean | undefined) ?? false);
+  const open = useStore(garageStore, (v) => v ?? false);
   const cash = useCurrency("cash");
   if (!open) return null;
   return (

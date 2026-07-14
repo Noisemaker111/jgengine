@@ -1,11 +1,12 @@
 import { DialogueBox, resolveDialogueInvoke } from "@jgengine/react/components";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { DIALOGUES } from "../../entities/npcs/dialogues";
-import { DIALOGUE_STORE_KEY } from "../../commands";
+import { dialogueStore } from "../../commands";
 
 export function DialoguePanel() {
   const { commands } = useGame();
-  const dialogueId = useGameStore((ctx) => (ctx.game.store.get(DIALOGUE_STORE_KEY) as string | undefined) ?? null);
+  const dialogueId = useStore(dialogueStore, (v) => v ?? null);
   if (dialogueId === null) return null;
   const dialogue = DIALOGUES[dialogueId];
   if (dialogue === undefined) return null;

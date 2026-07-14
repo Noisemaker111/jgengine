@@ -2,12 +2,13 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import type { Mesh } from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { useStore } from "@jgengine/react/store";
 import { creatureById } from "../entities/creatures/catalog";
-import { useRunState } from "../session/useRunState";
+import { runStore } from "../session/store";
 
 export function CreatureMesh({ entity }: { entity: SceneEntity }): React.ReactNode {
   const def = creatureById(entity.name);
-  const run = useRunState();
+  const run = useStore(runStore);
   const straggler = run.creatures[entity.id]?.straggler ?? false;
   const coreRef = useRef<Mesh>(null);
   const seed = entity.id.length;

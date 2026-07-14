@@ -234,6 +234,12 @@ export interface SkyEnvironmentConfig {
   zenithColor?: string;
   sunIntensity?: number;
   ambientIntensity?: number;
+  /** Sky-dome sphere radius in world units. Enlarge for a playfield sited far from the origin so the viewer never exits the dome. Default 260. */
+  radius?: number;
+  /** Horizon haze-band strength: 0 removes the dusty band, ~1 makes it heavy. Default 0.5. */
+  hazeStrength?: number;
+  /** Sun-glow brightness multiplier around the sun disc. Default 1. */
+  sunGlowStrength?: number;
   fog?: { color?: string; near?: number; far?: number };
 }
 
@@ -557,6 +563,9 @@ export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor
       ...(config.zenithColor === undefined ? {} : { zenithColor: config.zenithColor }),
       ...(config.sunIntensity === undefined ? {} : { sunIntensity: config.sunIntensity }),
       ...(config.ambientIntensity === undefined ? {} : { ambientIntensity: config.ambientIntensity }),
+      ...(config.radius === undefined ? {} : { radius: config.radius }),
+      ...(config.hazeStrength === undefined ? {} : { hazeStrength: config.hazeStrength }),
+      ...(config.sunGlowStrength === undefined ? {} : { sunGlowStrength: config.sunGlowStrength }),
       ...(config.fog === undefined ? {} : { fog: config.fog }),
     },
   );

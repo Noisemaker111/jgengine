@@ -542,6 +542,8 @@ const DEFAULT_COUNTDOWN_SECONDS = 3;
 /**
  * The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to
  * light the lights, or hold here until the field is ready.
+ *
+ * @capability race-session pure idle→countdown→racing→finished clock every racer wraps around its state
  */
 export function idleRaceSession(): RaceSessionState {
   return { phase: "idle", countdown: 0, elapsed: 0 };
@@ -600,13 +602,19 @@ function outcomeForPlace(place: number, winningPlaces: number): RaceOutcome {
 /**
  * Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into
  * per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
+ *
+ * @capability race-placements finish order into per-racer place + win/lose for a results screen
  */
 export function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] {
   const winningPlaces = Math.max(0, Math.floor(options?.winningPlaces ?? 1));
   return finishOrder.map((racerId, index) => ({ racerId, place: index + 1, outcome: outcomeForPlace(index + 1, winningPlaces) }));
 }
 
-/** One racer's {@link RacePlacement} within a finish order, or `null` if they never crossed the line. */
+/**
+ * One racer's {@link RacePlacement} within a finish order, or `null` if they never crossed the line.
+ *
+ * @capability race-placements look up one racer's place + win/lose within a finish order
+ */
 export function placementOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RacePlacement | null {
   const index = finishOrder.indexOf(racerId);
   if (index < 0) return null;

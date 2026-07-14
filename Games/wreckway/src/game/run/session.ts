@@ -1,4 +1,5 @@
 import type { InstalledPart } from "@jgengine/core/item/modularItem";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 import { activeSurge, compactorGap, compactorZAt, type CompactorSurge } from "../compactor/schedule";
 import { resolveCrusherContact } from "../compactor/contact";
@@ -9,8 +10,6 @@ import { gateSatisfied, inLane, ROUTE_GATES } from "../route/gates";
 import { createVehicleController, type DriveAxis, type VehicleController, type VehiclePose } from "../vehicle/controller";
 import { EXIT_Z, NEAR_MISS_ENTER, NEAR_MISS_EXIT, SPAWN_Z } from "./constants";
 import { zoneAt, zoneProgress, type ZoneDef } from "../zones/catalog";
-
-export const RUN_STORE_KEY = "runSession";
 
 export type RunPhase = "start" | "running" | "won" | "crushed";
 
@@ -56,6 +55,8 @@ export interface RunSession {
   restart(): void;
   tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean }): void;
 }
+
+export const runSessionStore = defineStore<RunSession | undefined>("runSession", undefined);
 
 const SPAWN_POSITION: readonly [number, number, number] = [0, 0, SPAWN_Z];
 const SPAWN_HEADING = 0;

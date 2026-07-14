@@ -2,9 +2,9 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { COMPACTOR_ENTITY, KART_PLAYER_ENTITY } from "./game/entities/catalog";
-import { createRunSession, RUN_STORE_KEY, type RunPhase, type RunSession } from "./game/run/session";
-import { createWorldRuntime, INPUT_STORE_KEY, WORLD_STORE_KEY, type WorldRuntime } from "./game/run/store";
-import { createDriveInput, type DriveInput } from "./game/vehicle/input";
+import { createRunSession, runSessionStore, type RunPhase } from "./game/run/session";
+import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
+import { createDriveInput } from "./game/vehicle/input";
 import { placeExitGate, placeGateBarricades, placePickupMarkers, placeZoneDressing, syncCompactorRow, syncPickupMarkers } from "./game/world/setup";
 
 function syncPhase(ctx: GameContext, phase: RunPhase): void {
@@ -12,31 +12,31 @@ function syncPhase(ctx: GameContext, phase: RunPhase): void {
 }
 
 export function onInit(ctx: GameContext): void {
-  const previousInput = ctx.game.store.get(INPUT_STORE_KEY) as DriveInput | undefined;
+  const previousInput = driveInputStore.peek(ctx);
   previousInput?.detach();
 
   const propRows = placeZoneDressing(ctx);
   placeGateBarricades(ctx);
   placePickupMarkers(ctx);
   placeExitGate(ctx);
-  ctx.game.store.set(WORLD_STORE_KEY, createWorldRuntime(propRows));
+  worldRuntimeStore.write(ctx, createWorldRuntime(propRows));
 
   const session = createRunSession(ctx.world.groundHeightAt);
-  ctx.game.store.set(RUN_STORE_KEY, session);
+  runSessionStore.write(ctx, session);
   syncPhase(ctx, "start");
 
   const input = createDriveInput();
   input.attach();
-  ctx.game.store.set(INPUT_STORE_KEY, input);
+  driveInputStore.write(ctx, input);
 
   if (!ctx.game.commands.has("startRun")) {
     ctx.game.commands.define("startRun", {
-      apply: (state) => (state.game.store.get(RUN_STORE_KEY) as RunSession | undefined)?.start(),
+      apply: (state) => runSessionStore.peek(state)?.start(),
     });
   }
   if (!ctx.game.commands.has("restart")) {
     ctx.game.commands.define("restart", {
-      apply: (state) => (state.game.store.get(RUN_STORE_KEY) as RunSession | undefined)?.restart(),
+      apply: (state) => runSessionStore.peek(state)?.restart(),
     });
   }
 }
@@ -50,9 +50,9 @@ export function onNewPlayer(ctx: GameContext): void {
 }
 
 export function onTick(ctx: GameContext, dt: number): void {
-  const session = ctx.game.store.get(RUN_STORE_KEY) as RunSession | undefined;
-  const input = ctx.game.store.get(INPUT_STORE_KEY) as DriveInput | undefined;
-  const world = ctx.game.store.get(WORLD_STORE_KEY) as WorldRuntime | undefined;
+  const session = runSessionStore.peek(ctx);
+  const input = driveInputStore.peek(ctx);
+  const world = worldRuntimeStore.peek(ctx);
   if (session === undefined || input === undefined || world === undefined) return;
 
   const previousPhase = session.snapshot().phase;
@@ -81,5 +81,5 @@ export function onTick(ctx: GameContext, dt: number): void {
   syncPickupMarkers(ctx, snapshot.collectedIds, world.removedMarkers);
   syncCompactorRow(ctx, snapshot.compactorZ, world.propRows, world.cursor);
 
-  ctx.game.store.set(RUN_STORE_KEY, session);
+  runSessionStore.write(ctx, session);
 }
