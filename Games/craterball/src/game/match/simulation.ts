@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createDashState, type DashState } from "@jgengine/core/movement/dash";
 import { seededStreams } from "@jgengine/core/random/rng";
+import { defineStore } from "@jgengine/core/store/defineStore";
 import {
   CENTER_CIRCLE_RADIUS,
   clampToPitch,
@@ -43,6 +44,7 @@ import {
   winningTeam,
   type MatchState,
 } from "./matchState";
+import { craterStore, difficultyStore, matchStore } from "./snapshot";
 import type { ChargeSlotView, MatchSnapshot } from "./snapshot";
 
 const BLAST_RADIUS = 6.5;
@@ -388,20 +390,22 @@ export class MatchSimulation {
       announcerId: this.announcer.id,
       dodgeFraction: this.dash.staminaFraction(),
     };
-    ctx.game.store.set("match", snapshot);
-    ctx.game.store.set("craters", this.craters);
+    matchStore.write(ctx, snapshot);
+    craterStore.write(ctx, this.craters);
     setGamePhase(ctx, this.match.phase === "fulltime" ? "ended" : "playing");
   }
 
   setSelectedDifficulty(ctx: GameContext, id: DifficultyId): void {
-    ctx.game.store.set("selectedDifficulty", id);
+    difficultyStore.write(ctx, id);
   }
 }
 
+export const simStore = defineStore<MatchSimulation | undefined>("sim", undefined);
+
 export function getSimulation(ctx: GameContext): MatchSimulation {
-  const existing = ctx.game.store.get("sim") as MatchSimulation | undefined;
+  const existing = simStore.peek(ctx);
   if (existing !== undefined) return existing;
   const created = new MatchSimulation();
-  ctx.game.store.set("sim", created);
+  simStore.write(ctx, created);
   return created;
 }

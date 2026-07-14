@@ -314,16 +314,25 @@ ctx.game.leaderboard.increment(userId, stat, { scope, by? }) / getTop / getProfi
 
 ## `ctx.game.store` — reactive game state
 
+**Default to a typed handle: `defineStore` (`@jgengine/core/store/defineStore`) + `useStore` (`@jgengine/react/store`).** One handle per key, one type parameter, no `as T` at any call site — the blessed way to hold run state. Never re-author a per-game `store.get(KEY) as T` accessor or a byte-identical `useGameStore(... as T)` hook, and never fork run state into a module-level singleton read via `useSyncExternalStore` (that state escapes replay/host authority).
+
 ```ts
-ctx.game.store.set("health", 100)      // any key, any value type
-ctx.game.store.get("health")           // T | undefined
-ctx.game.store.has("health")
-ctx.game.store.delete("health")
-ctx.game.store.subscribe(listener)     // change-signal fires on set/delete
-ctx.game.store.mapSnapshot() / arraySnapshot()
+export const runStore = defineStore<RunState>("run", () => createInitialRunState());
+
+runStore.read(ctx)                         // value, or the initial before any write (no cast, no undefined)
+runStore.peek(ctx)                         // T | undefined — distinguishes "never written"
+runStore.write(ctx, next)                  // bumps ctx.version(), notifies ctx.subscribe
+runStore.update(ctx, (r) => ({ ...r }))
+const run = useStore(runStore)             // React; useStore(runStore, (r) => r.status) for a slice
 ```
 
-A reactive per-game keyed store (`ObservableKeyedStore<unknown>`) attached to `GameContext` — reach for it instead of a module-level singleton store for ad-hoc reactive game state (turn trackers, deck UIs, anything that doesn't already have a `ctx` surface). `set`/`delete` bump `ctx.version()` and notify `ctx.subscribe` listeners; `get`/`has` are plain reads. Unlike a per-slot handle, there is no `define`/seed step — a key simply doesn't exist until the first `set`.
+A factory initial runs at most once and is reused, so an unwritten slot keeps a stable identity. The raw keyed store (`ObservableKeyedStore<unknown>`, below) sits under `defineStore`; reach past the handle only for one-off ad-hoc scratch state where `get` returns `unknown` and you cast at the call site — the smell `defineStore` removes.
+
+```ts
+ctx.game.store.set("health", 100)      // any key, any value type
+ctx.game.store.get("health")           // unknown
+ctx.game.store.has("health") / delete("health") / subscribe(listener) / mapSnapshot() / arraySnapshot()
+```
 
 ## `ctx.game.cards` / `ctx.game.turn` — lazily-created piles and turn loops
 

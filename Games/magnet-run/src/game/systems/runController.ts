@@ -1,5 +1,6 @@
 import type { LevelSequence } from "@jgengine/core/game/levelSequence";
 import type { SpawnPoints } from "@jgengine/core/game/spawnPoints";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 import { sectors as defaultSectors } from "../course/sectors";
 import { speedTuningPerSector as defaultSpeedTuning } from "../course/speedTuning";
@@ -287,4 +288,6 @@ export class RunController {
     }
   }
 }
+
+export const controllerStore = defineStore<RunController | undefined>("controller", undefined);
 

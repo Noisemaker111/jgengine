@@ -1,11 +1,12 @@
 import { useQuestJournal } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { challenges } from "../../quests/catalog";
-import { useRun } from "./useRun";
+import { runStore } from "../../run/stores";
 
 const titleById = new Map(challenges.map((challenge) => [challenge.id, challenge.title]));
 
 export function ChallengeTracker() {
-  const run = useRun();
+  const run = useStore(runStore);
   const journal = useQuestJournal();
   if (run.status === "ready") return null;
   const active = journal.filter((quest) => quest.status === "active").slice(0, 4);

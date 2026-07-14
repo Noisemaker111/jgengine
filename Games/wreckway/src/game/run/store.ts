@@ -1,7 +1,7 @@
-import type { PropRow } from "../world/setup";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
-export const WORLD_STORE_KEY = "worldRuntime";
-export const INPUT_STORE_KEY = "driveInput";
+import type { PropRow } from "../world/setup";
+import type { DriveInput } from "../vehicle/input";
 
 export interface WorldRuntime {
   propRows: readonly PropRow[];
@@ -12,3 +12,6 @@ export interface WorldRuntime {
 export function createWorldRuntime(propRows: readonly PropRow[]): WorldRuntime {
   return { propRows, cursor: { index: 0 }, removedMarkers: new Set<string>() };
 }
+
+export const worldRuntimeStore = defineStore<WorldRuntime | undefined>("worldRuntime", undefined);
+export const driveInputStore = defineStore<DriveInput | undefined>("driveInput", undefined);

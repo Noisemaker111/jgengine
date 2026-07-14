@@ -98,7 +98,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `CameraProjection`, `SideScrollCameraConfig`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |
 | Behaviour lifecycle | `behaviour/behaviour` | `Behaviour` (`onAwake`→`onEnable`→`onStart`→`onUpdate(dt)`→`onDisable`→`onDestroy`), `BehaviourModule`, `createBehaviourWorld`, `BehaviourWorld`, `JGEngineRegister`, `RegisterField`, `BehaviourModules` — Unity-style lifecycle over an id-keyed node tree (`setActive` cascade, lazy update dispatch); key nodes by entity instance ids. Games augment `JGEngineRegister` via `declare module "@jgengine/core/behaviour/behaviour"` for typed `world.modules`. Three.js binding: `Object3DBehaviour`, `attachObject3D`, `useBehaviourWorld` from `@jgengine/shell/behaviour` |
-| Reactive keyed store | `store/observableKeyedStore` | `createObservableKeyedStore`, `ObservableKeyedStore` — backs `ctx.game.store` |
+| Typed store handle | `store/defineStore` | `defineStore<T>(key, initial)` → `StoreHandle<T>` (`read`/`peek`/`write`/`update`/`clear`); pair with `useStore` (`@jgengine/react/store`). The cast-free default for run state |
+| Reactive keyed store | `store/observableKeyedStore` | `createObservableKeyedStore`, `ObservableKeyedStore` — backs `ctx.game.store`, sits under `defineStore` |
 | Scene instance role | `scene/entityStore` | `EntityRole`, `SceneEntity`, `SpawnOptions`, `EntityPose` |
 | Object spatial queries | `scene/objectQuery` | `raycastObjects`, `raycastObjectsAll`, `ObjectRaycastInput`, `ObjectRaycastHit` — backs `ctx.scene.object.raycast`/`raycastAll` |
 | Runtime paint layer | `scene/paintLayer` | `createPaintLayer`, `PaintLayer`, `PaintStroke` — backs `ctx.scene.entity.paint` |
@@ -617,7 +618,8 @@ ctx.game            commands, events, feed, loot, trade, quest, social, chat,
                     unlocks, economy, leaderboard, roster, store, cards, turn
 ctx.game.social     friends, party, presence, emotes.play, worldInvites
 ctx.game.store      set, delete, get, has, subscribe, mapSnapshot, arraySnapshot — game-defined
-                    keyed reactive store slot (any value type); mutations bump ctx.version()
+                    keyed reactive store slot (any value type); mutations bump ctx.version().
+                    Prefer a typed defineStore handle over raw get/set — see below
 ctx.game.cards      pile(id, config?) — lazily creates (config required on first call) or returns
                     the existing notify-wrapped CardPile for id
 ctx.game.turn       loop(id, config?) — lazily creates (config required on first call) or returns
@@ -694,16 +696,33 @@ export function onTick(ctx: GameContext, dt: number) {
 ## Content catalogs
 ## `ctx.game.store` — reactive game state
 
+**Default to a typed handle — `defineStore` (`@jgengine/core/store/defineStore`) + `useStore` (`@jgengine/react/store`).** One handle per key, one type parameter, zero casts at any call site. This is the blessed run-state pattern — never re-author a `store.get(KEY) as T` accessor trio or a `useGameStore((ctx) => ctx.game.store.get(KEY) as T)` hook per game, and never fork run state into a module-level singleton read via `useSyncExternalStore`.
+
 ```ts
-ctx.game.store.set("health", 100)      // any key, any value type
-ctx.game.store.get("health")           // T | undefined
-ctx.game.store.has("health")
-ctx.game.store.delete("health")
-ctx.game.store.subscribe(listener)     // change-signal fires on set/delete
-ctx.game.store.mapSnapshot() / arraySnapshot()
+// stores.ts
+export const runStore = defineStore<RunState>("run", () => createInitialRunState());
+
+// loop.ts / commands (no cast, no undefined)
+runStore.read(ctx)                    // value, or the initial before any write
+runStore.peek(ctx)                    // T | undefined — distinguishes "never written"
+runStore.write(ctx, next)             // bumps ctx.version(), notifies ctx.subscribe
+runStore.update(ctx, (r) => ({ ...r, score: r.score + 1 }))
+runStore.clear(ctx)
+
+// a React HUD
+const run = useStore(runStore)                 // whole value
+const status = useStore(runStore, (r) => r.status)   // derived slice, own equality
 ```
 
-A reactive per-game keyed store (`ObservableKeyedStore<unknown>`) attached to `GameContext` — reach for it instead of a module-level singleton store for ad-hoc reactive game state (turn trackers, deck UIs, anything that doesn't already have a `ctx` surface). `set`/`delete` bump `ctx.version()` and notify `ctx.subscribe` listeners; `get`/`has` are plain reads. Unlike a per-slot handle, there is no `define`/seed step — a key simply doesn't exist until the first `set`.
+Pass a factory for the initial when the fallback is a fresh mutable object; it runs at most once and its result is reused, so an unwritten slot keeps a stable identity (no per-read churn). Writes flow through the engine store, so run state stays replayable and host-authoritative — the guarantees a module singleton gives up.
+
+The raw keyed store (`ctx.game.store`, `ObservableKeyedStore<unknown>`) sits under `defineStore` — reach past the handle only for genuinely ad-hoc, one-off reactive scratch state (a transient UI flag) where a named handle would be overkill:
+
+```ts
+ctx.game.store.set("health", 100)      // any key, any value type
+ctx.game.store.get("health")           // unknown — cast at the call site (the smell defineStore removes)
+ctx.game.store.has("health") / delete("health") / subscribe(listener)
+```
 
 ## `ctx.game.cards` / `ctx.game.turn` — lazily-created piles and turn loops
 

@@ -1,5 +1,7 @@
+import { defineStore } from "@jgengine/core/store/defineStore";
 import type { Team } from "../arena/geometry";
-import type { DifficultyId } from "./difficulty";
+import { createCraterFieldState, type CraterFieldState } from "../craters/craterField";
+import { DEFAULT_DIFFICULTY, type DifficultyId } from "./difficulty";
 import type { MatchPhase } from "./matchState";
 
 export interface ChargeSlotView {
@@ -52,3 +54,9 @@ export function createIdleSnapshot(difficulty: DifficultyId): MatchSnapshot {
     dodgeFraction: 1,
   };
 }
+
+export const matchStore = defineStore<MatchSnapshot>("match", () => createIdleSnapshot(DEFAULT_DIFFICULTY));
+
+export const craterStore = defineStore<CraterFieldState>("craters", () => createCraterFieldState());
+
+export const difficultyStore = defineStore<DifficultyId>("selectedDifficulty", DEFAULT_DIFFICULTY);

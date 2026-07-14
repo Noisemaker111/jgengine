@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createDecayMeterSet, type DecayMeterSet } from "@jgengine/core/survival/decayMeter";
 import { createRaceState, type RaceState } from "@jgengine/core/game/race";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 import { PACK_ENTITY_IDS, placeDuneProps, spawnCaravan } from "./game/world/setup";
 import { RIVAL_WAYPOINTS, WIND_SCHEDULE } from "./game/run/deps";
@@ -16,6 +17,7 @@ import {
   openDockChoice,
   pinFlag,
   racerPositions,
+  runStore,
   stepRun,
   toggleMap,
   unpinFlag,
@@ -34,19 +36,22 @@ function freshRaceEngine(): RaceState {
   return engine;
 }
 
+const waterMeterStore = defineStore<DecayMeterSet>("waterMeter", () => freshWaterMeter());
+const raceEngineStore = defineStore<RaceState>("raceEngine", () => freshRaceEngine());
+
 function getRun(ctx: GameContext): RunState {
-  return ctx.game.store.get("run") as RunState;
+  return runStore.read(ctx);
 }
 
 function setRun(ctx: GameContext, next: RunState): void {
-  ctx.game.store.set("run", next);
+  runStore.write(ctx, next);
   setGamePhase(ctx, next.phase === "playing" ? "playing" : next.phase === "start" ? "menu" : "ended");
 }
 
 export function onInit(ctx: GameContext): void {
   placeDuneProps(ctx);
-  ctx.game.store.set("waterMeter", freshWaterMeter());
-  ctx.game.store.set("raceEngine", freshRaceEngine());
+  waterMeterStore.write(ctx, freshWaterMeter());
+  raceEngineStore.write(ctx, freshRaceEngine());
   setRun(ctx, initialRunState("start", RIVAL_WAYPOINTS));
 
   ctx.game.commands.define<void>("start", {
@@ -93,8 +98,8 @@ export function onInit(ctx: GameContext): void {
 
   ctx.game.commands.define<void>("restart", {
     apply(state) {
-      state.game.store.set("waterMeter", freshWaterMeter());
-      state.game.store.set("raceEngine", freshRaceEngine());
+      waterMeterStore.write(state, freshWaterMeter());
+      raceEngineStore.write(state, freshRaceEngine());
       setRun(state, initialRunState("playing", RIVAL_WAYPOINTS));
     },
   });
@@ -121,7 +126,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     steerRight: ctx.input.isDown("steerRight"),
   };
 
-  const waterMeter = ctx.game.store.get("waterMeter") as DecayMeterSet;
+  const waterMeter = waterMeterStore.read(ctx);
   let next = stepRun(run, dt, input, {
     terrainField,
     windSchedule: WIND_SCHEDULE,
@@ -154,7 +159,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   });
 
   if (next.phase === "playing") {
-    const raceEngine = ctx.game.store.get("raceEngine") as RaceState;
+    const raceEngine = raceEngineStore.read(ctx);
     const events = raceEngine.update(next.elapsed, racerPositions(next));
     for (const event of events) {
       if (event.type === "race.finished") {

@@ -3,10 +3,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createMarkerSet } from "@jgengine/core/world/markers";
 
 import { COURIER_ENTITY } from "./game/content";
-import { CLOUD_TRIGGER_Y, type Archipelago } from "./game/world/archipelago";
+import { CLOUD_TRIGGER_Y } from "./game/world/archipelago";
 import { beginCourse, registerCommands, settleFlight } from "./game/runtime/commands";
 import { getBridge, resetBridge } from "./game/runtime/bridge";
-import { storeGet, storeSet } from "./game/runtime/store";
+import { archipelagoStore, courseStore, markersStore, raceStore, sessionStore, spawnPointsStore } from "./game/runtime/store";
 import {
   applyCheckpoint,
   applyFinish,
@@ -14,14 +14,10 @@ import {
   applyTimeCap,
   initialSession,
   type GamePhase as SessionPhase,
-  type SessionState,
 } from "./game/session/sessionState";
 import type { CourseDef } from "./game/world/courses";
 import { spawnPoseId } from "./game/world/spawnIds";
 import { archipelago, courses } from "./world";
-import type { RaceState } from "@jgengine/core/game/race";
-import type { SpawnPoints } from "@jgengine/core/game/spawnPoints";
-import type { MarkerSet } from "@jgengine/core/world/markers";
 
 function syncPhase(ctx: GameContext, phase: SessionPhase): void {
   setGamePhase(ctx, phase === "playing" ? "playing" : phase === "menu" ? "menu" : "ended");
@@ -29,15 +25,15 @@ function syncPhase(ctx: GameContext, phase: SessionPhase): void {
 
 export function onInit(ctx: GameContext): void {
   resetBridge();
-  storeSet<SessionState>(ctx, "session", initialSession(courses[0]!.id));
-  storeSet<Archipelago>(ctx, "archipelago", archipelago);
+  sessionStore.write(ctx, initialSession(courses[0]!.id));
+  archipelagoStore.write(ctx, archipelago);
   syncPhase(ctx, "menu");
 
   const markers = createMarkerSet(() => ctx.time.now());
   archipelago.islets.forEach((islet) => {
     markers.add({ id: `islet-${islet.id}`, kind: "location", position: [islet.position.x, islet.position.y, islet.position.z] });
   });
-  storeSet<MarkerSet>(ctx, "markers", markers);
+  markersStore.write(ctx, markers);
 
   registerCommands(ctx, archipelago, courses);
 }
@@ -62,7 +58,7 @@ function beginMenuPark(ctx: GameContext, course: CourseDef): void {
 
 export function onTick(ctx: GameContext, dt: number): void {
   void dt;
-  const session = storeGet<SessionState>(ctx, "session");
+  const session = sessionStore.peek(ctx);
   if (session === undefined) return;
   syncPhase(ctx, session.phase);
   const bridge = getBridge();
@@ -77,8 +73,8 @@ export function onTick(ctx: GameContext, dt: number): void {
   const entity = ctx.scene.entity.get(userId);
   if (entity === null) return;
 
-  const race = storeGet<RaceState>(ctx, "race");
-  const course = storeGet<CourseDef>(ctx, "course");
+  const race = raceStore.peek(ctx);
+  const course = courseStore.peek(ctx);
   if (race === undefined || course === undefined) return;
 
   const now = ctx.time.now();
@@ -93,7 +89,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     nextSession = settleFlight(ctx, nextSession, entity.position);
     const progress = race.progressOf(userId);
     const spawnId = progress !== null && progress.lastCheckpoint >= 0 ? spawnPoseId(course.id, progress.lastCheckpoint) : spawnPoseId(course.id, -1);
-    const spawnPoints = storeGet<SpawnPoints>(ctx, "spawnPoints");
+    const spawnPoints = spawnPointsStore.peek(ctx);
     spawnPoints?.respawn(ctx.scene.entity, userId, spawnId);
     bridge.velocity = { x: 0, y: 0, z: 0 };
     bridge.attached = false;
@@ -107,7 +103,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   }
 
   if (nextSession !== session) {
-    storeSet(ctx, "session", nextSession);
+    sessionStore.write(ctx, nextSession);
     syncPhase(ctx, nextSession.phase);
   }
 }

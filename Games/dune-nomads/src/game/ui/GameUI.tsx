@@ -1,10 +1,11 @@
 import { SettingsTrigger } from "@jgengine/react";
-import { useActivePrompt, useGame, useGameStore } from "@jgengine/react/hooks";
+import { useActivePrompt, useGame } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 
 import { WIND_SHIFT_SECONDS, windStateAt } from "../wind/schedule";
 import { WIND_SCHEDULE } from "../run/deps";
-import type { RunState } from "../run/runState";
+import { runStore, type RunState } from "../run/runState";
 import { PROVERBS } from "../proverbs";
 import { OASIS_PROMPTS } from "../world/prompts";
 import { CaravanStrip } from "./components/CaravanStrip";
@@ -100,7 +101,7 @@ function PlayingHud({ state }: { state: RunState }) {
 }
 
 function HudLayer() {
-  const state = useGameStore((ctx) => ctx.game.store.get("run") as RunState);
+  const state = useStore(runStore);
   const { commands } = useGame();
 
   if (state.phase === "start") {

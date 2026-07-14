@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { useGameContext } from "@jgengine/react/provider";
-import { useActivePrompt, useGameStore } from "@jgengine/react/hooks";
+import { useActivePrompt } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { SettingsTrigger, useDisplayProfile } from "@jgengine/react";
 import { heistPrompts } from "../prompts";
-import type { HeistState } from "../state/heistState";
+import { heistStore } from "../state/heistState";
 import { StartScreen } from "./components/StartScreen";
 import { EndScreens } from "./components/EndScreens";
 import { DawnClockHud } from "./components/DawnClockHud";
@@ -35,7 +36,7 @@ function ActivePromptHint(): ReactNode {
 }
 
 export function GameUI(): ReactNode {
-  const status = useGameStore((ctx) => (ctx.game.store.get("heist") as HeistState | undefined)?.status ?? "intro");
+  const status = useStore(heistStore, (heist) => heist.status);
 
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col text-[#f2e3c2]">

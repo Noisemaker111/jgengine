@@ -13,6 +13,7 @@ import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import { AMMO_POOLS, AMMO_START, AMMO_STAT_IDS } from "../ammo";
+import { recordsStore, runStore, selectedSlotStore } from "./stores";
 import { SOUND_IDS } from "../audio/catalog";
 import { resetAiState } from "../entities/enemies/ai";
 import { enemyById } from "../entities/enemies/catalog";
@@ -144,13 +145,13 @@ export function createRunSession(): RunSession {
   }
 
   function publish(ctx: GameContext): void {
-    ctx.game.store.set("run", { ...snapshot });
+    runStore.write(ctx, { ...snapshot });
     setPlayControlsActive(ctx, snapshot.status === "wave" || snapshot.status === "intermission");
     syncPhase(ctx);
   }
 
   function publishRecords(ctx: GameContext): void {
-    ctx.game.store.set("records", { ...records.best() });
+    recordsStore.write(ctx, { ...records.best() });
   }
 
   function noteWaveStarted(ctx: GameContext): void {
@@ -270,7 +271,7 @@ export function createRunSession(): RunSession {
       snapshot = freshSnapshot();
       snapshot.status = "wave";
       slot = 0;
-      ctx.game.store.set("selectedSlot", 0);
+      selectedSlotStore.write(ctx, 0);
       ctx.game.events.emit("audio.play", { sound: SOUND_IDS.waveHorn });
       noteWaveStarted(ctx);
       publishRecords(ctx);
@@ -342,7 +343,7 @@ export function createRunSession(): RunSession {
 
     selectSlot(ctx, next) {
       slot = next;
-      ctx.game.store.set("selectedSlot", next);
+      selectedSlotStore.write(ctx, next);
     },
 
     rng: () => roll(),

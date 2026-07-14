@@ -1,8 +1,9 @@
 import { keyLabel } from "../keyLabel";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 export function SpeedReadout() {
-  const run = useRunState();
+  const run = useStore(runStore);
   const kmh = Math.round(run.speed * 3.2);
   return (
     <div className="flex flex-col items-start gap-0.5 rounded bg-[#2b2f36]/85 px-3 py-1.5 shadow-lg">

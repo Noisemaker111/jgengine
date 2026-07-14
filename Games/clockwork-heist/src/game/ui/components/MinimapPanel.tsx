@@ -8,8 +8,8 @@ import { TREASURE_DEFS } from "../../items/treasures";
 import { guardPositionAt } from "../../schedule/guardSchedule";
 import { cameraAngleAt } from "../../schedule/cameraSchedule";
 import { doorStateAt } from "../../schedule/doorSchedule";
-import { elapsedSecondsFor, type HeistState } from "../../state/heistState";
-import type { HeistUiState } from "../../uiState";
+import { elapsedSecondsFor, heistStore } from "../../state/heistState";
+import { uiStore } from "../../uiState";
 import { PALETTE } from "../palette";
 
 const SIZE = 232;
@@ -17,18 +17,15 @@ const VIEW: MinimapView = { center: [15, 10], worldRadius: 27, size: SIZE };
 
 export function MinimapPanel(): ReactNode {
   const { commands } = useGame();
-  const data = useGameStore((ctx) => {
-    const heist = ctx.game.store.get("heist") as HeistState | undefined;
-    const ui = ctx.game.store.get("ui") as HeistUiState | undefined;
-    if (heist === undefined) return null;
+  const { t, scrubbing, player, collected } = useGameStore((ctx) => {
+    const heist = heistStore.read(ctx);
+    const ui = uiStore.read(ctx);
     const liveElapsed = elapsedSecondsFor(heist, ctx.time.now());
-    const scrubbing = ui !== undefined && ui.scrubT !== null;
-    const t = scrubbing ? ui!.scrubT! : liveElapsed;
+    const scrubbing = ui.scrubT !== null;
+    const t = ui.scrubT === null ? liveElapsed : ui.scrubT;
     const player = ctx.scene.entity.get(ctx.player.userId);
     return { t, scrubbing, player, collected: heist.collectedTreasureIds };
   });
-  if (data === null) return null;
-  const { t, scrubbing, player, collected } = data;
 
   return (
     <div className="pointer-events-auto flex flex-col items-end gap-1">
