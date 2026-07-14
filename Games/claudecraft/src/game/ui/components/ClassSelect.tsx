@@ -1,4 +1,4 @@
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/react/gameIcons";
 import { SettingsTrigger } from "@jgengine/react";
 import { useGame, usePlayer } from "@jgengine/react/hooks";
 import { useState } from "react";
@@ -60,7 +60,7 @@ export function ClassSelect() {
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 bg-[radial-gradient(circle_at_35%_30%,#2c2c3a,#15151f)]"
                   style={{ color: cls.color, borderColor: sel ? cls.color : "#4a3d1d" }}
                 >
-                  <GameIcon name={cls.icon as GameIconName} size={30} />
+                  <GameIcon name={cls.icon} size={30} />
                 </span>
                 <span>
                   <span

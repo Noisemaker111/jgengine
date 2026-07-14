@@ -2,9 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { GAME_ICON_NAMES } from "@jgengine/react/gameIcons";
 import { CLASSES } from "./classes/catalog";
 import { itemDefById, ITEMS } from "./items/catalog";
+import { ITEM_SETS } from "./items/sets";
 import { MOBS, mobById } from "./entities/enemies/catalog";
+import { PROFESSIONS } from "./professions/catalog";
 import { QUESTS } from "./quests/catalog";
 import { NPCS } from "./entities/npcs/catalog";
+import { SPECS } from "./talents/catalog";
 
 const ICON_SET = new Set<string>(GAME_ICON_NAMES);
 
@@ -127,5 +130,41 @@ describe("catalogs", () => {
         ).toBe(true);
       }
     }
+  });
+
+  test("no two abilities within the same class share an icon", () => {
+    for (const cls of CLASSES) {
+      expect(
+        duplicates(cls.abilities.map((ability) => ability.icon)),
+        `class "${cls.id}" reuses an icon across abilities`,
+      ).toEqual([]);
+    }
+  });
+
+  test("no two specs within the same class share an icon", () => {
+    const byClass = new Map<string, string[]>();
+    for (const spec of SPECS) {
+      const icons = byClass.get(spec.classId) ?? [];
+      icons.push(spec.icon);
+      byClass.set(spec.classId, icons);
+    }
+    for (const [classId, icons] of byClass) {
+      expect(duplicates(icons), `class "${classId}" reuses an icon across specs`).toEqual([]);
+    }
+  });
+
+  test("all profession icons are unique", () => {
+    expect(duplicates(PROFESSIONS.map((profession) => profession.icon))).toEqual([]);
+  });
+
+  test("all item-set proc icons are unique", () => {
+    const procs = new Map<string, string>();
+    for (const set of Object.values(ITEM_SETS)) {
+      for (const tier of set.bonuses) {
+        if (tier.effect.proc === undefined) continue;
+        procs.set(tier.effect.proc.id, tier.effect.proc.icon);
+      }
+    }
+    expect(duplicates([...procs.values()])).toEqual([]);
   });
 });

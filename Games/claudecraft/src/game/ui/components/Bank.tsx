@@ -1,4 +1,4 @@
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame, useInventory } from "@jgengine/react/hooks";
 
 import { itemDefById } from "../../items/catalog";
@@ -37,7 +37,7 @@ function Column({
                 className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left hover:bg-stone-800/70"
               >
                 <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded border border-stone-700 bg-stone-900 ${QUALITY_COLORS[item.quality]}`}>
-                  <GameIcon name={item.icon as GameIconName} size={16} />
+                  <GameIcon name={item.icon} size={16} />
                 </span>
                 <span className={`min-w-0 flex-1 truncate text-xs ${QUALITY_COLORS[item.quality]}`}>
                   {item.name}

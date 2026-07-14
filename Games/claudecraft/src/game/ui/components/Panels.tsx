@@ -1,4 +1,4 @@
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/react/gameIcons";
 import {
   useCurrency,
   useEntityStat,
@@ -63,7 +63,7 @@ function ItemRow({
   return (
     <div className="flex items-center gap-2 rounded px-1.5 py-1 hover:bg-stone-800/60">
       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded border border-stone-700 bg-stone-900 ${QUALITY_COLORS[item.quality]}`}>
-        <GameIcon name={item.icon as GameIconName} size={20} />
+        <GameIcon name={item.icon} size={20} />
       </span>
       <span className="min-w-0 flex-1">
         <span className={`block truncate text-sm ${QUALITY_COLORS[item.quality]}`}>
@@ -173,7 +173,7 @@ export function CharacterPanel() {
       <div className="grid grid-cols-3 gap-2 text-sm">
         {PROFESSIONS.map((profession) => (
           <div key={profession.id} className="flex items-center gap-1.5 rounded border border-stone-800 px-2 py-1">
-            <GameIcon name={profession.icon as GameIconName} size={16} className="text-amber-300" />
+            <GameIcon name={profession.icon} size={16} className="text-amber-300" />
             <span className="capitalize text-stone-300">{profession.name}</span>
             <span className="ml-auto font-semibold text-amber-100">
               {profs[profession.id]}/{profession.maxSkill}

@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
+import type { GameIconName } from "@jgengine/react/gameIcons";
 
 import { cue, schoolCue } from "../audio/cues";
 import { classById } from "../classes/catalog";
@@ -310,7 +311,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
 export function applyFood(
   ctx: GameContext,
   userId: string,
-  item: { id: string; name: string; icon: string; heal?: number; restore?: number },
+  item: { id: string; name: string; icon: GameIconName; heal?: number; restore?: number },
 ): void {
   const now = ctx.time.now();
   const list = aurasOf(userId);
