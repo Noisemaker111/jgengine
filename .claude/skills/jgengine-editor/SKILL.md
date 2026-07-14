@@ -19,6 +19,17 @@ bun run dev:runner
 
 The editor ships everywhere as a **lazy chunk** — production `/play` (and the public `/games/<id>` pages) download it only when summoned with F2+E or `?mode=editor`. In the dev runner, **Save (Ctrl+S)** writes the scene straight to `Games/<id>/src/editor.scene.json` through the dev server's `/__jgengine/save` endpoint; the file auto-loads on the next editor open as an overlay (same-id objects win over the game's derived `editorLayers`, new objects append) and is plain JSON a game can import as runtime data. Fold long-lived edits back into source tables when they stabilize. Outside the dev server (production pages) the Save button hides and Export JSON remains the only exit. The F2+D Tune tab has the same seam: **Save to source** rewrites changed tunable literals directly in `Games/<id>/src/*.ts`.
 
+## Standalone games ship the editor too
+
+`npx jgengine create` scaffolds all of this outside the monorepo: the game's `main.tsx` summons the editor on F2+E or `?mode=editor` as a lazy `@jgengine/editor` chunk, and `vite.config.ts` mounts the published save middleware so Save (Ctrl+S) writes `src/editor.scene.json` and Tune's Save-to-source rewrites literals:
+
+```ts
+import { standaloneSavePlugin } from "@jgengine/node/devSavePlugin";
+export default defineConfig({ plugins: [react(), tailwindcss(), standaloneSavePlugin()] });
+```
+
+Monorepo-shaped hosts use the general form — `devSavePlugin((gameId) => srcDirFor(gameId))` — and `handleSaveRequest` is the transport-free core for a non-Vite dev server.
+
 ## Modes: edit · walk · play
 
 - **edit** — frozen sim, orbit inspection camera, gizmos and chrome.
@@ -119,5 +130,5 @@ Same volume, same seed → same field every run; drag the slider, save, done.
 
 ## Do not
 
-- Import `@jgengine/editor` from `GameHost` or game `main.tsx`
+- Statically import `@jgengine/editor` from `GameHost` or game entry code — summon it only as a lazy chunk (`await import("@jgengine/editor")`), the pattern the scaffolded `main.tsx` ships
 - Treat mesh modeling as in-scope (placement/world tools only)
