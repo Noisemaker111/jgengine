@@ -7,8 +7,10 @@ import {
 } from "@jgengine/core/ui/hudLayout";
 import { buildFullReport, buildLeanReport } from "./DevtoolsOverlay";
 
+/** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
 
+/** Result of an agent bridge call: `ok: true` with verb payload, or `ok: false` with a reason. */
 export type AgentBridgeResponse =
   | { ok: true; [key: string]: unknown }
   | { ok: false; error: string };
@@ -66,6 +68,7 @@ function canvasPanels() {
 }
 
 /**
+ * @internal
  * Headless control plane spanning the F2 chord family: debug mode (F2+D),
  * canvas mode (F2+C), and editor mode (F2+E). Installed on every
  * GamePlayerShell mount as `window.__jgengineAgent`; unknown verbs delegate
