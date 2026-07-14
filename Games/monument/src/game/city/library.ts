@@ -1,3 +1,5 @@
+import { defaultKeyValueStorage } from "@jgengine/core/game/keyValueStore";
+
 import { CELL, DESIGN_LANGUAGES, makeBuilding, type Building, type DecisionRecord, type DesignLanguage, type DistrictCharter, type DistrictMood, type Plaza, type PlazaKind, type Program, type Typology } from "../catalog";
 
 export const CITY_LIBRARY_KEY = "jg-monument-city-library-v1";
@@ -188,7 +190,7 @@ export const CITY_TEMPLATES: CityTemplate[] = [
 const validSnapshot = (value: unknown): value is SavedCity =>
   Boolean(value && typeof value === "object" && Array.isArray((value as SavedCity).buildings) && Array.isArray((value as SavedCity).plazas));
 
-const defaultStorage = (): LibraryStorage | null => (typeof localStorage === "undefined" ? null : localStorage);
+const defaultStorage = (): LibraryStorage | null => defaultKeyValueStorage();
 
 export function readCityLibrary(storage: LibraryStorage | null = defaultStorage()): CitySaveRecord[] {
   if (storage === null) return [];

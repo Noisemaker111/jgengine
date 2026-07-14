@@ -1390,6 +1390,27 @@
 - `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `scatterItems` (function): function scatterItems<T>(field: RegionField<T>, area: Aabb, layersFor: (sample: RegionSample<T>) => readonly ScatterLayer[], options: { cell?: number; max?: number; saltKey?: number } = {}): ScatterInstance[] — Deterministically place opaque items across `area`, grounded on a region field. For each grid cell it asks `layersFor` which items may appear in that region and rolls one against their densities. The engine never interprets `item` — a game maps it to a mesh or entity. Content scatter (region-driven density) as opposed to `scatter` in `./scatter`, which is renderer-free geometric point distribution.
 
+## @jgengine/core/world/scatterRegion
+
+- `SCATTER_DEFAULTS` (const): const SCATTER_DEFAULTS: ScatterRegionRules — Defaults a bare scatter region fills with: sparse grass, lightly spaced.
+- `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
+- `ScatterInstance` (interface): interface ScatterInstance — A single placed scatter instance — grounded world position plus per-instance variation.
+- `ScatterPaletteEntry` (interface): interface ScatterPaletteEntry — One species/prop in a scatter region's palette, with a relative spawn weight.
+- `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
+- `ScatterRegionRules` (interface): interface ScatterRegionRules — How a scatter region fills its polygon: density, spacing, variation, and masking rules.
+- `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
+- `distanceToPolygonEdge` (function): function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number — Shortest distance from a point to a polygon's boundary.
+- `isScatterPath` (function): function isScatterPath(path: EditorPath): boolean — True when an editor path is a foliage/scatter region.
+- `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
+- `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
+- `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
+- `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
+- `readScatterRules` (function): function readScatterRules(path: EditorPath): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
+- `resolveScatter` (function): function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided.
+- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
+- `scatterRegionEstimate` (function): function scatterRegionEstimate(path: EditorPath): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
+- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: EditorPath): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
+
 ## @jgengine/core/world/segment
 
 - `CircleSegmentHit` (interface): interface CircleSegmentHit — A resolved circle-vs-segment contact.
@@ -1426,15 +1447,32 @@
 
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `EditableTerrainConfig` (interface): interface EditableTerrainConfig — ⚠ undocumented
+- `SurfaceDelta` (interface): interface SurfaceDelta — A compact record of the surface-material cells a paint stroke touched: parallel `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint undo history small.
+- `SurfaceDeltaRecorder` (type): type SurfaceDeltaRecorder = (index: number, before: string | null, after: string | null) => void — Reports each changed cell during a recorded paint: grid index, prior surface id, new surface id.
+- `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `TerraformBrush` (interface): interface TerraformBrush — ⚠ undocumented
 - `TerraformBrushConfig` (interface): interface TerraformBrushConfig — ⚠ undocumented
-- `TerraformEdit` (interface): interface TerraformEdit — ⚠ undocumented
-- `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — ⚠ undocumented
-- `TerraformMode` (type): type TerraformMode = "raise" | "lower" | "flatten" | "paint" — ⚠ undocumented
+- `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
+- `TerraformDeltaRecorder` (type): type TerraformDeltaRecorder = (index: number, before: number, after: number) => void — Reports each changed vertex during a recorded edit: grid index, prior offset, new offset.
+- `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
+- `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — How a brush's strength fades from its center to its rim.
+- `TerraformHeightLimit` (interface): interface TerraformHeightLimit — Clamp bounds applied to the resulting terrain height after a heightfield edit.
+- `TerraformMode` (type): type TerraformMode = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" | "paint" — A sculpt operation kind: heightfield brushes plus the surface-paint brush.
+- `TerraformShape` (type): type TerraformShape = "circle" | "square" — A brush footprint: a round disc or an axis-aligned square.
 - `TerraformSnapshot` (interface): interface TerraformSnapshot — ⚠ undocumented
-- `brushWeight` (function): function brushWeight(distance: number, radius: number, falloff: TerraformFalloff): number — ⚠ undocumented
+- `TerraformStroke` (interface): interface TerraformStroke — Accumulates a whole drag — many brush stamps — into one compact {@link TerraformDelta}. Keeps each vertex's first `before` and latest `after`, so undo replays the stroke as a single step even though the pointer fired dozens of moves.
+- `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
+- `applyDeltaToSnapshot` (function): function applyDeltaToSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
+- `applySurfaceDeltaToSnapshot` (function): function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `after` ids applied (copy-on-write).
+- `beginSurfaceStroke` (function): function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke — Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta.
+- `beginTerraformStroke` (function): function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke — Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta.
+- `brushWeight` (function): function brushWeight(distance: number, radius: number, falloff: TerraformFalloff): number — Smooth/linear/hard brush weight for a sample `distance` from the brush center.
 - `createEditableTerrain` (function): function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain — ⚠ undocumented
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
+- `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
+- `editableTerrainFromSnapshot` (function): function editableTerrainFromSnapshot(snapshot: TerraformSnapshot, base?: TerrainField): EditableTerrain — Rebuilds a live {@link EditableTerrain} from a snapshot, layered over `base` ground.
+- `revertDeltaFromSnapshot` (function): function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `before` offsets restored (copy-on-write undo).
+- `revertSurfaceDeltaFromSnapshot` (function): function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo).
 
 ## @jgengine/core/world/terrain
 

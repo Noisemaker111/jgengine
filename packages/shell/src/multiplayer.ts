@@ -61,15 +61,26 @@ export function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): Shel
   if (args.force === true) return build(args.url ?? DEFAULT_WS_URL);
 
   const adapter = adapterOf(args.game.multiplayer);
-  if (adapter === null) return null;
+  if (adapter === null || adapter.kind === "offline") return null;
 
   if (adapter.kind === "ws") {
     const url = args.url ?? adapter.url;
-    if (url === undefined && isServerAuthoritative(args.game.multiplayer)) return null;
+    if (url === undefined && isServerAuthoritative(args.game.multiplayer)) {
+      console.warn(
+        `[jgengine:multiplayer] ${args.gameId}: ws({ authority: "server" }) has no url; falling back to single-player. ` +
+          `Pass a url (or set adapter.url) so the shell can reach the host.`,
+      );
+      return null;
+    }
     return build(url ?? DEFAULT_WS_URL);
   }
   if (adapter.kind === "lan") return build(args.url ?? lanUrl(adapter));
 
+  console.warn(
+    `[jgengine:multiplayer] ${args.gameId}: multiplayer adapter "${adapter.kind}" needs its own session bootstrap ` +
+      `(e.g. resolvePeerShellMultiplayer for p2p()); resolveShellMultiplayer cannot build a ws backend for it, ` +
+      `so the game shipped single-player. Wire up the ${adapter.kind} transport or switch to ws()/lan().`,
+  );
   return null;
 }
 

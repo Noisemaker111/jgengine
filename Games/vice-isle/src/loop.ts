@@ -56,14 +56,14 @@ function tickGangers(ctx: GameContext, dt: number): void {
 function tickMissions(ctx: GameContext): void {
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return;
-  const quests = ctx.game.quest.list(ctx.player.userId);
+  const quests = ctx.game.quest!.list(ctx.player.userId);
 
   const welcome = quests.find((q) => q.questId === "m1_welcome" && q.status === "active");
   if (welcome !== undefined) {
     const dist = Math.hypot(player.position[0] - MARCO_POS[0], player.position[2] - MARCO_POS[2]);
     if (dist < 5) {
-      ctx.game.quest.progress(ctx.player.userId, "m1_welcome", "meet_marco", 1);
-      ctx.game.quest.turnIn(ctx.player.userId, "m1_welcome");
+      ctx.game.quest!.progress(ctx.player.userId, "m1_welcome", "meet_marco", 1);
+      ctx.game.quest!.turnIn(ctx.player.userId, "m1_welcome");
       ctx.game.store.set("vice.dialogue", "dlg_marco");
     }
   }
@@ -72,8 +72,8 @@ function tickMissions(ctx: GameContext): void {
   if (shake !== undefined) {
     const wanted = handroll.wanted();
     if (wanted.peakStars >= 3 && wanted.stars === 0) {
-      ctx.game.quest.progress(ctx.player.userId, "m4_shake_the_heat", "lose_wanted", 1);
-      ctx.game.quest.turnIn(ctx.player.userId, "m4_shake_the_heat");
+      ctx.game.quest!.progress(ctx.player.userId, "m4_shake_the_heat", "lose_wanted", 1);
+      ctx.game.quest!.turnIn(ctx.player.userId, "m4_shake_the_heat");
       ctx.game.feed.push("vice.log", { text: "You shook the heat. Vice Isle is yours." });
     }
   }
@@ -82,7 +82,7 @@ function tickMissions(ctx: GameContext): void {
   if (race !== undefined) {
     const snapshot = ctx.game.store.get(RACE_STORE_KEY) as RaceSnapshot | undefined;
     if (snapshot !== undefined && snapshot.finished && snapshot.won) {
-      ctx.game.quest.progress(ctx.player.userId, "m5_ocean_loop", "win_race", 1);
+      ctx.game.quest!.progress(ctx.player.userId, "m5_ocean_loop", "win_race", 1);
       ctx.game.store.delete(RACE_STORE_KEY);
     }
   }
@@ -94,7 +94,7 @@ function tickMissions(ctx: GameContext): void {
     if (vehicle !== null && vehicle.name === "car_sport") {
       const dist = Math.hypot(vehicle.position[0] - GARAGE_POS[0], vehicle.position[2] - GARAGE_POS[2]);
       if (dist < 9) {
-        ctx.game.quest.progress(ctx.player.userId, "m6_hot_wheels", "deliver_cicada", 1);
+        ctx.game.quest!.progress(ctx.player.userId, "m6_hot_wheels", "deliver_cicada", 1);
         handroll.exitVehicle(ctx);
         ctx.game.feed.push("vice.log", { text: "Cicada GT delivered." });
       }
@@ -104,15 +104,15 @@ function tickMissions(ctx: GameContext): void {
   for (const quest of quests) {
     if (quest.status !== "active") continue;
     if (quest.questId !== "m1_welcome" && quest.questId !== "m4_shake_the_heat") {
-      if (ctx.game.quest.canTurnIn(ctx.player.userId, quest.questId) === null) {
-        ctx.game.quest.turnIn(ctx.player.userId, quest.questId);
+      if (ctx.game.quest!.canTurnIn(ctx.player.userId, quest.questId) === null) {
+        ctx.game.quest!.turnIn(ctx.player.userId, quest.questId);
       }
     }
   }
 }
 
 function tickMissionSpawns(ctx: GameContext, dt: number): void {
-  const quests = ctx.game.quest.list(ctx.player.userId);
+  const quests = ctx.game.quest!.list(ctx.player.userId);
 
   const convoy = quests.find((q) => q.questId === "m7_carmine_convoy" && q.status === "active");
   if (convoy !== undefined && convoySpawned < 10) {
@@ -179,9 +179,9 @@ function onInit(ctx: GameContext): void {
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
   for (const table of lootTables) ctx.game.loot.register(table);
-  ctx.game.quest.register(QUESTS);
-  ctx.game.quest.bind("entity.died");
-  ctx.game.quest.bind("inventory.added");
+  ctx.game.quest!.register(QUESTS);
+  ctx.game.quest!.bind("entity.died");
+  ctx.game.quest!.bind("inventory.added");
   ctx.game.feed.bind("entity.died");
   ctx.game.feed.bind("loot.granted");
 
@@ -214,7 +214,7 @@ function onNewPlayer(ctx: GameContext): void {
   });
   if (ctx.player.isNew) {
     ctx.player.applyLoadout(ctx.player.userId, "starterKit");
-    ctx.game.quest.grant(ctx.player.userId, "m1_welcome");
+    ctx.game.quest!.grant(ctx.player.userId, "m1_welcome");
   }
 }
 

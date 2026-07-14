@@ -4,6 +4,7 @@ import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useThree } from "@react-three/fiber";
 
+import { formatDistance } from "@jgengine/core/format/distance";
 import { useGame } from "@jgengine/react/hooks";
 
 import type { Building } from "../catalog";
@@ -401,7 +402,7 @@ export function MassingGizmo({ building }: { building: Building }): ReactNode {
       </mesh>
       <GizmoHandle
         position={[0, b.height + 3.4, 0]}
-        label={`HEIGHT ${Math.round(b.height)}m`}
+        label={`HEIGHT ${formatDistance(b.height)}`}
         cursor="ns-resize"
         shape="diamond"
         onStart={beginDrag}
@@ -419,7 +420,7 @@ export function MassingGizmo({ building }: { building: Building }): ReactNode {
       </mesh>
       <GizmoHandle
         position={[b.width / 2 + 2.1, lowY, 0]}
-        label={`SPAN ${b.width.toFixed(1)}m`}
+        label={`SPAN ${formatDistance(b.width, { decimals: 1 })}`}
         color="#ffb35c"
         onStart={beginDrag}
         onManipulating={handleManipulating}
@@ -441,7 +442,7 @@ export function MassingGizmo({ building }: { building: Building }): ReactNode {
       </mesh>
       <GizmoHandle
         position={[0, lowY, b.depth / 2 + 2.1]}
-        label={`DEPTH ${b.depth.toFixed(1)}m`}
+        label={`DEPTH ${formatDistance(b.depth, { decimals: 1 })}`}
         shape="sphere"
         color="#69d8d0"
         onStart={beginDrag}
@@ -466,7 +467,7 @@ export function MassingGizmo({ building }: { building: Building }): ReactNode {
           )}
           <GizmoHandle
             position={[b.cantilever + b.width * 0.18, b.height * 0.73, b.depth / 2 + 1]}
-            label={`CANTILEVER ${b.cantilever.toFixed(1)}m`}
+            label={`CANTILEVER ${formatDistance(b.cantilever, { decimals: 1 })}`}
             shape="diamond"
             color="#f18ac2"
             onStart={beginDrag}

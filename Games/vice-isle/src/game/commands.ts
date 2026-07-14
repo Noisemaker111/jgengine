@@ -113,7 +113,7 @@ export function registerCommands(ctx: GameContext): void {
       const itemId = (input as { item?: string }).item;
       if (itemId === undefined) return;
       const isWeapon = itemId.startsWith("pistol") || itemId.startsWith("smg") || itemId.startsWith("shotgun");
-      const result = state.game.trade.buy(itemId, 1, {
+      const result = state.game.trade!.buy(itemId, 1, {
         shop: "shop_ammunation",
         inventoryId: isWeapon ? "hotbar" : "backpack",
       });

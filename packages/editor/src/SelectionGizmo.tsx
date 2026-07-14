@@ -149,9 +149,11 @@ export function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiSt
     };
 
     const onDown = (event: PointerEvent) => {
+      if (ui.getState().tool === "terrain") return;
       if (event.button === 0) down = { x: event.clientX, y: event.clientY };
     };
     const onUp = (event: PointerEvent) => {
+      if (ui.getState().tool === "terrain") return;
       if (event.button !== 0 || down === null) return;
       const start = down;
       down = null;

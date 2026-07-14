@@ -1,6 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { createRecordBook, type RecordStorage } from "./recordBook";
 
+function withGlobalLocalStorage<T>(descriptor: PropertyDescriptor, run: () => T): T {
+  Object.defineProperty(globalThis, "localStorage", { ...descriptor, configurable: true });
+  try {
+    return run();
+  } finally {
+    delete (globalThis as { localStorage?: unknown }).localStorage;
+  }
+}
+
 function memoryStorage(initial: Record<string, string> = {}): RecordStorage & { data: Record<string, string> } {
   const data = { ...initial };
   return {
@@ -104,5 +113,44 @@ describe("createRecordBook", () => {
     book.clear();
     expect(storage.data["pb"]).toBeUndefined();
     expect(book.best()).toEqual({});
+  });
+
+  test("an omitted storage falls back to memory-only when no global localStorage exists", () => {
+    const book = createRecordBook({ key: "pb", fields: FIELDS });
+    book.submit({ time: 60 });
+    expect(book.bestOf("time")).toBe(60);
+  });
+
+  test("an omitted storage auto-wires to a global localStorage when one exists", () => {
+    withGlobalLocalStorage({ value: memoryStorage() }, () => {
+      const first = createRecordBook({ key: "pb", fields: FIELDS });
+      first.submit({ time: 55 });
+      const second = createRecordBook({ key: "pb", fields: FIELDS });
+      expect(second.bestOf("time")).toBe(55);
+    });
+  });
+
+  test("an omitted storage degrades to memory-only when the global localStorage throws on access", () => {
+    withGlobalLocalStorage(
+      {
+        get() {
+          throw new Error("SecurityError: access denied");
+        },
+      },
+      () => {
+        const book = createRecordBook({ key: "pb", fields: FIELDS });
+        expect(book.submit({ time: 60 }).improved).toEqual(["time"]);
+        expect(book.bestOf("time")).toBe(60);
+      },
+    );
+  });
+
+  test("passing storage: null forces memory-only even when a global localStorage exists", () => {
+    withGlobalLocalStorage({ value: memoryStorage() }, () => {
+      const book = createRecordBook({ key: "pb", fields: FIELDS, storage: null });
+      book.submit({ time: 45 });
+      const reopened = createRecordBook({ key: "pb", fields: FIELDS, storage: null });
+      expect(reopened.bestOf("time")).toBeNull();
+    });
   });
 });

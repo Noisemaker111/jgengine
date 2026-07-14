@@ -186,7 +186,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Context menu | `interaction/contextMenu` | `contextVerb`, `buildContextMenu`, `contextVerbInput`, `ContextVerb`, `ContextMenu` |
 | Shared / group wallet | `economy/sharedWallet` | `createWalletBook`, `WalletBook`, `WalletScope`, `userScope`, `groupScope`, `balanceIn`, `grantTo`, `chargeFrom`, `contributionOf`, `contributorsOf` |
 | Analog axis input | `input/axisInput` | `AxisInput`, `AxisChannel`, `AxisBindingMap`, `DRIVE_AXIS_BINDINGS`, `clampAxis`, `rampToward`, `NEUTRAL_AXIS` |
-| Raw control polling | `runtime/inputSnapshot` | `createInputSnapshot`, `InputSnapshot` — backs `ctx.input` |
+| Raw control polling | `runtime/inputSnapshot` | `createInputSnapshot`, `InputSnapshot` (`isDown`, `justPressed`, `justReleased`, `held`, `axis`) — backs `ctx.input` |
 | Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` (`{ shape: "box", halfExtents }` \| `{ shape: "sphere", radius }`), `JointOptions`, `JointKind`, `CollisionEvent` |
 | Ballistic collision sweep | `physics/ballisticSweep` | `createBallisticSweep`, `BallisticSweep`, `BallisticSweepHit`, `BallisticSweepOptions` |
 | Tweening / easing | `anim/easing` | `Easing`, `lerp`, `clamp01`, `smoothstep`, `easeInQuad`, `easeOutQuad`, `easeInOutQuad`, `easeInCubic`, `easeOutCubic`, `easeInOutCubic`, `easeOutBack`, `easeOutElastic`, `tween`, `timedProgress` |
@@ -237,6 +237,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Chat filter | `game/chatFilter` | `createChatFilter`, `normalizeChatText`, `ChatFilter`, `ChatFilterConfig`, `ChatFilterResult` — mask/reject blocked words (leet-normalized token match); wire via `ChatDeps.filter` (word lists are game data, the engine ships the mechanism) |
 | Voice seam | `multiplayer/voiceContract` | `VoiceTransport`, `VoiceParticipant`, `VoiceRoute`, `createLocalVoiceTransport`, `createPushToTalk`, `PushToTalkMode` |
 | Race state | `game/race` | `raceTrack`, `RaceTrack`, `createRaceState`, `RaceState`, `RaceEvent`, `RaceWinCondition`, `firstPastPost`, `topK`, `lastStanding`, `everyoneFinishes` |
+| Race session | `game/race` | `RacePhase`, `RaceSessionState`, `idleRaceSession`, `startRaceCountdown`, `tickRaceSession`, `finishRaceSession` — pure `idle→countdown→racing→finished` clock; `racePlacements`, `placementOf`, `raceOutcomeOf` derive placement/win-lose from a finish order |
 | Reveal query | `sensor/revealQuery` | `createRevealQuery`, `RevealQuery`, `RevealQueryOptions`, `RevealHit` |
 | Hidden-state probe | `sensor/hiddenStateProbe` | `probeHiddenState`, `probeHiddenStateAll`, `HiddenStateSource`, `HiddenStateValue`, `SensorProbeOptions`, `SensorReading` |
 | View-frustum sensor | `sensor/frustumSensor` | `createFrustumSensor`, `projectToView`, `framingScore`, `FrustumCamera`, `FrustumTarget`, `FrustumProjection`, `FrustumSample`, `FrustumSensor`, `FramingConfig` |
@@ -436,7 +437,7 @@ src/
 
 **Smart defaults** — omit any of these and the call still resolves: `multiplayer` → `offline()`; `assets` → an empty asset catalog; `loop` hooks (`onInit`/`onNewPlayer`/`onTick`) → no-ops; `content` → `{}`; `GameUI` → an empty component; `camera` → third-person orbit; `feed` → 20-entry ring buffers per action; a `world` of kind `environment()` auto-renders as the backdrop with no `environment` component supplied — a non-`environment()` world (`flat()`, `voxel()`, …) still needs the game to hand it one.
 
-**Opt-in `ctx.game.*` subsystems (`features`)** — core is genre-agnostic: the always-on base is `commands` / `events` / `store` / `feed` (plus `audio`), and genre subsystems are opt-in via `defineGame({ features: { roster, cards, turn, race, leaderboard, social, chat } })`. Omit one and `ctx.game.<name>` is `undefined` — a puzzle game isn't handed a card pile, race state, or party/chat it never asked for. Declare only what the game uses (`chat` implies `social`). (The content cluster — economy/quest/loot/trade — joins this manifest in a later slim-core phase.)
+**Opt-in `ctx.game.*` subsystems (`features`)** — core is genre-agnostic: the always-on base is `commands` / `events` / `store` / `feed` / `loot` / `economy` (plus `audio`), and genre subsystems are opt-in via `defineGame({ features: { quest, trade, unlocks, cosmetics, roster, cards, turn, race, leaderboard, social, chat } })`. Omit one and `ctx.game.<name>` is `undefined` (`cosmetics` hangs off `ctx.player`) — a puzzle game isn't handed a quest journal, a shop, a card pile, or party/chat it never asked for. Declare only what the game uses (`chat` implies `social`).
 
 ```ts
 // game.config.ts — imports only, nothing inline
@@ -630,7 +631,9 @@ ctx.player.motion   impulse(vy), setVerticalVelocity(vy), setY(y), takePending()
                     before gravity, so a jump pad or grapple release calls this from
                     onTick/commands instead of touching y directly
 ctx.item            use, weapon
-ctx.input           publish(held), isDown(action), held() — per-frame held-action snapshot, polled from onTick
+ctx.input           publish(held), isDown(action), held(), justPressed(action), justReleased(action)
+                    — per-frame held-action snapshot, polled from onTick; justPressed/justReleased
+                    fire exactly once on the up/down transition frame, replay-safe
 ctx.world           ground (TerrainField), groundHeightAt(x, z) — the canonical
                     sampler for the game's declared world; environment worlds
                     resolve their terrain field, every other world kind is 0.

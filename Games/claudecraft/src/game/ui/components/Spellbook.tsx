@@ -1,4 +1,4 @@
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/react/gameIcons";
 import { useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 import { useState } from "react";
 
@@ -63,7 +63,7 @@ export function SpellbookPanel() {
               }`}
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-stone-700 bg-stone-900 text-amber-200">
-                <GameIcon name={ability.icon as GameIconName} size={22} />
+                <GameIcon name={ability.icon} size={22} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-amber-100">

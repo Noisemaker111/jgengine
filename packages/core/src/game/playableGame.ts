@@ -587,7 +587,7 @@ export interface PlayerMovementConfig {
   canSprint?: (ctx: GameContext) => boolean;
   /** Fraction of walk speed while backpedalling (holding `moveBack`). Overrides the engine default (0.65). */
   backpedalMult?: number;
-  /** Radians/second the internally-integrated heading turns under `turnLeft`/`turnRight` (only used when the shell doesn't own yaw). Default 2.4. */
+  /** Radians/second the rendered body rotates toward its movement heading (shortest arc), so strafing/backpedalling read as a turn rather than an instant flip; also the rate the internally-integrated `turnLeft`/`turnRight` heading turns when the shell doesn't own yaw. Unset = body facing snaps instantly (no change to existing feel). */
   turnSpeed?: number;
   /** On-foot swimming when the terrain declares a `waterLevel` and the player is submerged: caps speed and floats them at the surface. `true` uses defaults; default off. */
   swim?: { speedMultiplier?: number } | boolean;

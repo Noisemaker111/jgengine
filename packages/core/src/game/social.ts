@@ -129,12 +129,39 @@ export interface WorldInvites {
   listFor(userId: string): WorldInvite[];
 }
 
+/** One party's replicated membership — id, current leader, and ordered member ids. */
+export interface SocialPartySnapshot {
+  id: string;
+  leader: string;
+  members: string[];
+}
+
+/**
+ * Full friends/party/world-invite state as one serializable baseline — the host→client replication
+ * payload behind the `social` snapshot module. Presence and emotes are derived from live deps, not stored.
+ */
+export interface SocialSnapshot {
+  friendships: Record<string, string[]>;
+  blocked: Record<string, string[]>;
+  friendRequests: Record<string, { from: string; to: string }>;
+  requestCounter: number;
+  partyConfig: PartyConfig | null;
+  parties: SocialPartySnapshot[];
+  partyInvites: Record<string, { from: string; to: string; createdAt: number }>;
+  partyCounter: number;
+  inviteCounter: number;
+  worldInvites: WorldInvite[];
+  worldInviteCounter: number;
+}
+
 export interface Social {
   friends: Friends;
   party: Party;
   presence: { get(userId: string): PresenceInfo };
   emotes: Emotes;
   worldInvites: WorldInvites;
+  snapshot(): SocialSnapshot;
+  hydrate(data: SocialSnapshot): void;
 }
 
 interface FriendRequest {
@@ -499,6 +526,65 @@ export function createSocial(deps: SocialDeps): Social {
     },
   };
 
+  function snapshot(): SocialSnapshot {
+    const friendshipsOut: Record<string, string[]> = {};
+    for (const [userId, set] of friendships) friendshipsOut[userId] = Array.from(set);
+    const blockedOut: Record<string, string[]> = {};
+    for (const [userId, set] of blocked) blockedOut[userId] = Array.from(set);
+    const friendRequestsOut: Record<string, { from: string; to: string }> = {};
+    for (const [id, request] of friendRequests) friendRequestsOut[id] = { from: request.from, to: request.to };
+    const partyInvitesOut: Record<string, { from: string; to: string; createdAt: number }> = {};
+    for (const [id, invite] of partyInvites) {
+      partyInvitesOut[id] = { from: invite.from, to: invite.to, createdAt: invite.createdAt };
+    }
+    return {
+      friendships: friendshipsOut,
+      blocked: blockedOut,
+      friendRequests: friendRequestsOut,
+      requestCounter,
+      partyConfig,
+      parties: Array.from(parties.values(), (state) => ({
+        id: state.id,
+        leader: state.leader,
+        members: state.members.slice(),
+      })),
+      partyInvites: partyInvitesOut,
+      partyCounter,
+      inviteCounter,
+      worldInvites: Array.from(worldInviteEntries.values(), (entry) => ({ ...entry })),
+      worldInviteCounter,
+    };
+  }
+
+  function hydrate(data: SocialSnapshot): void {
+    friendships.clear();
+    for (const [userId, list] of Object.entries(data.friendships)) friendships.set(userId, new Set(list));
+    blocked.clear();
+    for (const [userId, list] of Object.entries(data.blocked)) blocked.set(userId, new Set(list));
+    friendRequests.clear();
+    for (const [id, request] of Object.entries(data.friendRequests)) {
+      friendRequests.set(id, { from: request.from, to: request.to });
+    }
+    requestCounter = data.requestCounter;
+    partyConfig = data.partyConfig;
+    parties.clear();
+    memberToParty.clear();
+    for (const state of data.parties) {
+      const restored: PartyState = { id: state.id, leader: state.leader, members: state.members.slice() };
+      parties.set(restored.id, restored);
+      for (const member of restored.members) memberToParty.set(member, restored.id);
+    }
+    partyInvites.clear();
+    for (const [id, invite] of Object.entries(data.partyInvites)) {
+      partyInvites.set(id, { from: invite.from, to: invite.to, createdAt: invite.createdAt });
+    }
+    partyCounter = data.partyCounter;
+    inviteCounter = data.inviteCounter;
+    worldInviteEntries.clear();
+    for (const entry of data.worldInvites) worldInviteEntries.set(entry.id, { ...entry });
+    worldInviteCounter = data.worldInviteCounter;
+  }
+
   return {
     friends,
     party,
@@ -509,5 +595,7 @@ export function createSocial(deps: SocialDeps): Social {
     },
     emotes,
     worldInvites,
+    snapshot,
+    hydrate,
   };
 }
