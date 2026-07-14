@@ -180,6 +180,9 @@ export const world: WorldFeature = environment({
     zenithColor: "#7fa9c4",
     sunIntensity: 1.55,
     ambientIntensity: 0.82,
+    radius: 2600,
+    hazeStrength: 0.62,
+    sunGlowStrength: 0.6,
     fog: { color: PANDORA.fog, near: 260, far: 1200 },
   }),
   structures: ZONES.filter((zone) => zone.settlement !== undefined).map((zone) => {
