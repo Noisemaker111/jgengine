@@ -17,6 +17,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
 
+## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
+
+- `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
