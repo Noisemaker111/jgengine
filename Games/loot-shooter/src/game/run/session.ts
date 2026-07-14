@@ -90,10 +90,6 @@ export function accuracyPercent(snapshot: RunSnapshot): number {
   return snapshot.shotsFired === 0 ? 0 : Math.round((snapshot.shotsHit / snapshot.shotsFired) * 100);
 }
 
-function safeStorage(): Storage | null {
-  return typeof localStorage === "undefined" ? null : localStorage;
-}
-
 export interface RunSession {
   snapshot(): RunSnapshot;
   status(): RunStatus;
@@ -129,7 +125,6 @@ export function createRunSession(): RunSession {
   const records = createRecordBook<RecordField>({
     key: "loot-shooter-records",
     fields: { score: "higher", wave: "higher", accuracy: "higher" },
-    storage: safeStorage(),
   });
 
   function syncPhase(ctx: GameContext): void {

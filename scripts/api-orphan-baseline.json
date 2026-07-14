@@ -297,7 +297,6 @@
   "@jgengine/core/game/feed#recentFeedEntries",
   "@jgengine/core/game/gamePhase#gamePhase",
   "@jgengine/core/game/gamePhase#isPlaying",
-  "@jgengine/core/game/keyValueStore#defaultKeyValueStorage",
   "@jgengine/core/game/lootTable#grantDrops",
   "@jgengine/core/game/modelAnimation#resolveOneShotClip",
   "@jgengine/core/game/objectives#evaluateObjectives",

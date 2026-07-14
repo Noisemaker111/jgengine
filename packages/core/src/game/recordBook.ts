@@ -1,4 +1,4 @@
-import type { KeyValueStorage } from "./keyValueStore";
+import { defaultKeyValueStorage, type KeyValueStorage } from "./keyValueStore";
 
 /** The structural storage backend a record book persists through — an alias of the shared {@link KeyValueStorage} seam (browser `localStorage`, a test stub, or `null`). */
 export type RecordStorage = KeyValueStorage;
@@ -57,7 +57,7 @@ function loadStored<K extends string>(config: RecordBookConfig<K>, storage: Reco
  * @capability best-record persist personal-best times/scores with safe storage fallback
  */
 export function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> {
-  const storage = config.storage ?? null;
+  const storage = config.storage === undefined ? defaultKeyValueStorage() : config.storage;
   let best = loadStored(config, storage);
 
   function persist(): void {
