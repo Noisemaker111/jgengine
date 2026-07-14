@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { terrainField, world } from "../../world";
 import { MAIN_QUEST_IDS, quests } from "../quests/catalog";
+import { ROUTES, SPUR_ROUTES } from "./level";
 import { PLAYER_SPAWN } from "./sites";
 import { ZONES, zoneAt, zoneLevelAt } from "./zones";
 
@@ -10,6 +11,13 @@ describe("borderlands2 world", () => {
 
   test("renders a populated scene", () => {
     expect(summary.isEmpty).toBe(false);
+  });
+
+  test("routes and spurs render as draped road geometry, not just color", () => {
+    expect(summary.counts.roads).toBe(ROUTES.length + SPUR_ROUTES.length);
+    const totalLength = summary.roads.reduce((sum, entry) => sum + entry.length, 0);
+    expect(totalLength).toBeGreaterThan(1000);
+    for (const entry of summary.roads) expect(entry.points).toBeGreaterThanOrEqual(2);
   });
 
   test("every settlement zone contributes a structure group", () => {
