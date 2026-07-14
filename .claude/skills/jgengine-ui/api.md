@@ -2,6 +2,12 @@
 
 # jgengine-ui — exported API surface
 
+## @jgengine/core/format/distance
+
+- `DistanceFormat` (interface): interface DistanceFormat — Options for {@link formatDistance}.
+- `DistanceUnit` (type): type DistanceUnit = "m" | "km" | "auto" — Target unit for {@link formatDistance}: meters, kilometers, or `"auto"` (km past 1000m).
+- `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
+
 ## @jgengine/core/format/duration
 
 - `DurationFormat` (interface): interface DurationFormat — Options for {@link formatDuration}.
@@ -9,6 +15,12 @@
 - `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
 - `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
 - `padNumber` (function): function padNumber(value: number, width: number): string — Left-pad a non-negative integer to `width` digits with leading zeros.
+
+## @jgengine/core/format/speed
+
+- `SpeedFormat` (interface): interface SpeedFormat — Options for {@link formatSpeed}.
+- `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
+- `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
 ## @jgengine/core/render/color
 
@@ -322,6 +334,7 @@
 - `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
+- `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
@@ -605,6 +618,10 @@
 - `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
 - `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
 
+## @jgengine/react/store
+
+- `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
+
 ## @jgengine/react/voice
 
 - `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -628,12 +645,8 @@
 ## @jgengine/shell/GamePlayerShell
 
 - `GamePlayerShell` (function): function GamePlayerShell({ playable, multiplayer: rawMultiplayer = null, poster = false, onContextReady, }: { playable: PlayableGame; multiplayer?: ShellMultiplayer | null; poster?: boolean; /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots,… — ⚠ undocumented
-- `applyMotionImpulses` (function): function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number — Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}.
 - `dispatchBoundAction` (function): function dispatchBoundAction(ctx: GameContext, action: string, yaw: number, pitch: number, aim: Aim, reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS, sink: CommandSink = localCommandSink(ctx)): void — Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`).
-- `hasEnvironmentTerrain` (function): function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean — Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
 - `heldActionsFor` (function): function heldActionsFor(tracker: Pick<ActionStateTracker<string>, "isDown">, actions: readonly string[]): string[] — Actions from `input` currently held down, for `ctx.input.publish` (#164.1); includes reserved movement/jump actions.
-- `nearbyObstacles` (function): function nearbyObstacles(objects: readonly { position: readonly [number, number, number]; }[], center: readonly [number, number, number], radius?: number): CollisionObstacle[] — Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}.
-- `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
 - `resolveWorldSky` (function): function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironmentDescriptor | undefined — The world's declared sky, when its world feature is an environment with one (#196.1).
 - `shouldFireBoundAction` (function): function shouldFireBoundAction(tracker: Pick<ActionStateTracker<string>, "isDown" | "wasPressed">, action: string, input: PlayableGame["game"]["input"], repeatFiredAt: ReadonlyMap<string, number>, now: number): boolean — Whether a bound action should fire this frame: on press, or on repeat interval while held (shared by `FrameDriver` and `HudOnlyDriver`).
 
@@ -710,14 +723,12 @@
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
 - `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — ⚠ undocumented
-- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
-- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `LockOnRig` (function): function LockOnRig(props: RigProps): null — ⚠ undocumented
 - `ORBIT_CAMERA_FRAME_PRIORITY` (const): const ORBIT_CAMERA_FRAME_PRIORITY: -1 — Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY.
 - `ObserverRig` (function): function ObserverRig(props: RigProps): null — Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / photo-mode / kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
 - `OrbitCameraConfig` (interface): interface OrbitCameraConfig — ⚠ undocumented
 - `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState — ⚠ undocumented
-- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — ⚠ undocumented
+- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: any — ⚠ undocumented
 - `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — ⚠ undocumented
 - `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
 - `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
@@ -862,7 +873,7 @@
 
 ## @jgengine/shell/camera/fovPreference
 
-- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — ⚠ undocumented
+- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: any — ⚠ undocumented
 - `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — ⚠ undocumented
 - `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
 - `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
@@ -875,8 +886,6 @@
 
 ## @jgengine/shell/camera/inspectionCameraMath
 
-- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
-- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig — ⚠ undocumented
 - `resolveInspectionCameraConfig` (function): function resolveInspectionCameraConfig(config?: InspectionCameraConfig): ResolvedInspectionCameraConfig — ⚠ undocumented
 - `resolveInspectionZoomToCursor` (function): function resolveInspectionZoomToCursor(anchor: InspectionZoomAnchor): boolean — Maps the anchor mode onto three-stdlib OrbitControls' native `zoomToCursor` flag.
@@ -1009,7 +1018,7 @@
 - `DevtoolsRendererProbe` (function): function DevtoolsRendererProbe(): null — ⚠ undocumented
 - `applyStoredDevtoolsOverrides` (function): function applyStoredDevtoolsOverrides(gameName: string): void — ⚠ undocumented
 - `buildFullReport` (function): function buildFullReport(playable: PlayableGame): DevtoolsSnapshot & { game: string } — ⚠ undocumented
-- `buildLeanReport` (function): function buildLeanReport(playable: PlayableGame): { game: string; at: number; why: string | null; frame: { fps: number; avgFrameMs: number; p95FrameMs: number; maxFrameMs: number; avgSimMs: number; maxSimMs: number; avgOutsideMs: number; maxOutsideMs: number; longFrames: number; samples: number; pha… — ⚠ undocumented
+- `buildLeanReport` (function): function buildLeanReport(playable: PlayableGame): { game: any; at: any; why: string | null; frame: { fps: number; avgFrameMs: number; p95FrameMs: number; maxFrameMs: number; avgSimMs: number; maxSimMs: number; avgOutsideMs: number; maxOutsideMs: number; longFrames: any; samples: any; phases: any; } … — ⚠ undocumented
 - `persistDevtoolsOverrides` (function): function persistDevtoolsOverrides(gameName: string): DevtoolsOverrides — ⚠ undocumented
 - `withDevtoolsLatency` (function): function withDevtoolsLatency(multiplayer: ShellMultiplayer): ShellMultiplayer — ⚠ undocumented
 
@@ -1068,7 +1077,7 @@
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
@@ -1089,7 +1098,7 @@
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
@@ -1105,7 +1114,7 @@
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
@@ -1285,13 +1294,7 @@
 
 ## @jgengine/shell/settings/settingsController
 
-- `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
-- `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
 - `SettingsControllerInput` (interface): interface SettingsControllerInput — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
-- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
-- `bindingLabel` (function): function bindingLabel(code: string): string — Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
 - `useSettingsCategories` (function): function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] — ⚠ undocumented
 
 ## @jgengine/shell/structures
@@ -1347,7 +1350,6 @@
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
-- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1356,7 +1358,6 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
@@ -1366,34 +1367,24 @@
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
-- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
-- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
-- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
 - `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
 - `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
 - `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
 - `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
 - `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
 - `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
-- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
-- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
 - `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
-- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
 - `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
 - `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 - `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
 - `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
-- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
-- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
 - `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
 - `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
 - `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
 - `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
-- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
-- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/shell/terrain
 
@@ -1403,7 +1394,6 @@
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
-- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1412,7 +1402,6 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
@@ -1422,34 +1411,24 @@
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
-- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
-- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
-- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
 - `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
 - `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
 - `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
 - `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
 - `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
 - `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
-- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
-- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
 - `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
-- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
 - `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
 - `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 - `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
 - `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
-- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
-- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
 - `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
 - `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
 - `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
 - `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
-- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
-- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/shell/terrain/CarvedTerrain
 
@@ -1464,10 +1443,10 @@
 ## @jgengine/shell/terrain/GrassField
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
-- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 1 — ⚠ undocumented
+- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, budget?: number): number — ⚠ undocumented
+- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/ProceduralGround
 
@@ -1482,8 +1461,8 @@
 ## @jgengine/shell/terrain/grassBudget
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
-- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 1 — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, budget?: number): number — ⚠ undocumented
+- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
+- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/grassGeometry
 
@@ -1562,7 +1541,7 @@
 
 - `SensorReadoutMeter` (function): function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps): React.JSX.Element — A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
 - `SensorReadoutMeterProps` (interface): interface SensorReadoutMeterProps — ⚠ undocumented
-- `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): SensorReading | null — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
+- `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): any — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 
 ## @jgengine/shell/vision/RevealVision
 
