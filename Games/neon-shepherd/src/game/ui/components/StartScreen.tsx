@@ -1,13 +1,6 @@
+import { ControlsList, StartScreen as MenuScreen } from "@jgengine/react";
 import { TIER_ORDER, TIERS, type TierId } from "../../difficulty/tiers";
-
-const CONTROLS: readonly { key: string; label: string }[] = [
-  { key: "WASD", label: "walk" },
-  { key: "SPACE", label: "gather-pulse" },
-  { key: "SHIFT", label: "hold the herd" },
-  { key: "M", label: "corridor map" },
-  { key: "R", label: "restart" },
-  { key: "ENTER", label: "start" },
-];
+import { keybinds } from "../../keybinds";
 
 export function StartScreen({
   tier,
@@ -19,7 +12,7 @@ export function StartScreen({
   onStart: () => void;
 }): React.ReactNode {
   return (
-    <div data-jg-menu className="pointer-events-auto flex h-full w-full flex-col items-center justify-center gap-6 bg-[#101318]/90 px-6 text-center backdrop-blur-md">
+    <MenuScreen className="pointer-events-auto flex h-full w-full flex-col items-center justify-center gap-6 bg-[#101318]/90 px-6 text-center backdrop-blur-md">
       <div className="flex flex-col items-center gap-2">
         <h1 className="text-4xl font-semibold tracking-wide text-[#eef4f0]">Neon Shepherd</h1>
         <p className="max-w-md text-sm italic text-[#7ef9c8]">
@@ -52,14 +45,24 @@ export function StartScreen({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-x-6 gap-y-2 rounded-xl bg-[#161a20]/80 px-6 py-4">
-        {CONTROLS.map((control) => (
-          <div key={control.key} className="flex items-center gap-2 text-left">
-            <span className="rounded bg-[#0c0e12] px-2 py-1 text-[10px] font-semibold text-[#f5c56b]">{control.key}</span>
-            <span className="text-[11px] text-[#eef4f0]/75">{control.label}</span>
+      <ControlsList
+        bindings={keybinds}
+        controls={[
+          { action: ["moveForward", "moveLeft", "moveBack", "moveRight"], label: "walk" },
+          { action: "gatherPulse", label: "gather-pulse" },
+          { action: "holdHerd", label: "hold the herd" },
+          { action: "toggleMap", label: "corridor map" },
+          { action: "restart", label: "restart" },
+          { action: "start", label: "start" },
+        ]}
+        className="grid grid-cols-3 gap-x-6 gap-y-2 rounded-xl bg-[#161a20]/80 px-6 py-4"
+        renderRow={(row) => (
+          <div className="flex items-center gap-2 text-left">
+            <span className="rounded bg-[#0c0e12] px-2 py-1 text-[10px] font-semibold text-[#f5c56b]">{row.keys.join("")}</span>
+            <span className="text-[11px] text-[#eef4f0]/75">{row.label}</span>
           </div>
-        ))}
-      </div>
+        )}
+      />
 
       <button
         type="button"
@@ -68,6 +71,6 @@ export function StartScreen({
       >
         Start · Enter
       </button>
-    </div>
+    </MenuScreen>
   );
 }

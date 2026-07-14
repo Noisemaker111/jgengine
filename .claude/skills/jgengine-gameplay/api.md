@@ -193,6 +193,20 @@
 - `resolveCurrencyDelta` (function): function resolveCurrencyDelta(current: number, delta: number): { operation: CurrencyOperation; amount: number } — Deducts clamp to the available balance (a delta can never overdraw); adds apply in full.
 - `sanitizeCurrencyAmount` (function): function sanitizeCurrencyAmount(amount: number): number — ⚠ undocumented
 
+## @jgengine/core/economy/listingBook
+
+- `BuyListingOutcome` (interface): interface BuyListingOutcome — The financial split of a completed sale: total price, the house's cut, and what the seller's collection box was credited.
+- `BuyListingResult` (type): type BuyListingResult = | { status: "ok"; outcome: BuyListingOutcome } | { status: "rejected"; reason: "not-found" | "expired" | "own-listing" } — Result of {@link ListingBook.buy}.
+- `CancelListingResult` (type): type CancelListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: "not-found" | "not-owner" } — Result of {@link ListingBook.cancel}.
+- `CollectionBoxSnapshot` (interface): interface CollectionBoxSnapshot — A read-only view of a seller's collection box — currency and item stacks waiting to be claimed.
+- `Listing` (interface): interface Listing — One active post in a {@link ListingBook}: an item stack a seller offered at a fixed price until it expires.
+- `ListingBook` (interface): interface ListingBook — A player-driven marketplace of {@link Listing}s plus the per-seller collection boxes behind it. See {@link createListingBook}.
+- `ListingBookConfig` (interface): interface ListingBookConfig — Tunables for {@link createListingBook} — per-seller listing cap, expiry window, house cut, and optional price bounds.
+- `PostListingInput` (interface): interface PostListingInput — Input to {@link ListingBook.post} — the goods, asking price, and current game-time to stamp the listing with.
+- `PostListingReason` (type): type PostListingReason = | "invalid-count" | "invalid-price" | "price-too-low" | "price-too-high" | "listing-cap-reached" — Why {@link ListingBook.post} refused a listing.
+- `PostListingResult` (type): type PostListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: PostListingReason } — Result of {@link ListingBook.post}.
+- `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
+
 ## @jgengine/core/economy/sharedWallet
 
 - `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
@@ -292,6 +306,7 @@
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
+- `LifecycleConfig` (interface): interface LifecycleConfig<TState = unknown> — Declarative start/restart run lifecycle: the state transitions a game's run phase every genre repeats (title screen → live run → live run → title screen again), expressed as pure functions over one typed {@link StoreHandle} slot instead of hand-rolled `commands.define("start"/"restart")` glue that re-derives phase after every mutation. `start`/`restart` receive the store's own value type — the store's `TState`, never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and derives {@link GamePhase} from it via `phaseOf` in one place, so every adopting game gets identical, correct phase-sync for free.
 - `LoopPlayer` (interface): interface LoopPlayer — Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks.
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`.
@@ -401,7 +416,7 @@
 ## @jgengine/core/game/lootTable
 
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
-- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds.
+- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
 - `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
@@ -466,11 +481,12 @@
 - `ModelAnimationStates` (interface): interface ModelAnimationStates — Movement-state clip set for `ModelAnimationConfig.states`: the shell reads the entity's live speed each frame and crossfades between these clips, so a walking mob animates without any game-side driver.
 - `ModelAttachment` (interface): interface ModelAttachment — Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame.
 - `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
+- `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph.
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
 - `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
-- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never> — ⚠ undocumented
+- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — ⚠ undocumented
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
 - `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
@@ -481,6 +497,7 @@
 - `TurntableCameraConfig` (interface): interface TurntableCameraConfig — Turntable / showcase rig — slowly auto-orbits a fixed world point (no player input), the way a museum turntable rotates an object on display. A flat, self-describing spelling of `observer`'s point-orbit mode: `target` names the point directly instead of `bind: { kind: "point", position }`. Set `camera.turntable` and the rig is inferred — you don't also write `rig`.
 - `VoxelCollisionConfig` (interface): interface VoxelCollisionConfig — Player-vs-world collision for the first-person controller. Without this the shell keeps the player on flat ground at y=0. With `voxel: true` the shell resolves the player as a box against placed scene objects (each treated as a solid unit cell), so they stand on blocks, fall into holes, and are stopped by walls — the controller a block-building/mining game needs.
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
+- `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
 
 ## @jgengine/core/game/progression
@@ -926,6 +943,12 @@
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
+
+## @jgengine/core/item/itemInstanceRegistry
+
+- `ItemInstanceRegistry` (interface): interface ItemInstanceRegistry<TDef> — A runtime store for procedurally generated item instances — a rolled unique gun, a rolled affixed relic — keyed by a generated id distinct from any static catalog id. The counterpart a game's `content.itemById` consults for ids `lootTable`'s `generate` entries hand back, so runtime rolls never need a hand-rolled parallel registry (#536.1).
+- `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
+- `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 
 ## @jgengine/core/item/modularItem
 

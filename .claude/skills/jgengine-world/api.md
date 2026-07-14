@@ -1191,12 +1191,14 @@
 - `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
 - `TerrainColors` (interface): interface TerrainColors — ⚠ undocumented
 - `TerrainDetailConfig` (interface): interface TerrainDetailConfig — Procedural detail-surface layer for terrain: a noise-driven shader that keeps the biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock, sand, and snow over it by slope, height, and waterline — turning a flat vertex-colour surface into varied, textured-reading ground with no image assets.
+- `TerrainDetailMaterialConfig` (interface): interface TerrainDetailMaterialConfig — Real PBR texture applied over the ground surface — the seam that lets a game put a `buildMaterialCatalog` material on terrain. Blends with, never replaces, the procedural detail shader: color/roughness/ao tile the maps by world position, `strength` fades them over the existing vertex-colour + noise look.
 - `TerrainEnvironmentConfig` (interface): interface TerrainEnvironmentConfig — ⚠ undocumented
 - `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented
 - `TerrainFlattenMask` (interface): interface TerrainFlattenMask — ⚠ undocumented
 - `TerrainIslandConfig` (interface): interface TerrainIslandConfig extends TerrainEnvironmentConfig — A bounded terrain patch floating at its own altitude — sky islands, arena platforms, split landmasses with void between.
 - `TerrainIslandDescriptor` (type): type TerrainIslandDescriptor = Omit<TerrainEnvironmentDescriptor, "kind"> & { kind: "island"; origin: EnvironmentVec2; } — ⚠ undocumented
 - `TerrainMaterial` (type): type TerrainMaterial = "grass" | "sand" | "snow" | "rock" | "ash" | "highland" | "slate" — ⚠ undocumented
+- `TerrainMaterialMaps` (interface): interface TerrainMaterialMaps — PBR map URLs for a real ground texture — the same shape `buildMaterialCatalog({ basePath }).resolve(id)!.maps` from `@jgengine/assets` returns. Kept dependency-free here so `core` never imports the assets package; any URLs (pulled maps, a CDN, a data URI) satisfy it.
 - `TerrainMaterialRegion` (type): type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion — A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given), `polyline` ribbons for roads/rivers, and rotatable `rect` districts all paint fully inside their core and blend back across `falloff`; later regions in the list win overlaps.
 - `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
 - `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
@@ -1521,7 +1523,8 @@
 - `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — ⚠ undocumented
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
-- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel">> & { waterLevel: number } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetailMaterial` (interface): interface ResolvedTerrainDetailMaterial — A resolved {@link TerrainDetailMaterialConfig} — `repeat`/`strength` filled with defaults, `maps` passed through.
 - `RollingFieldConfig` (interface): interface RollingFieldConfig — ⚠ undocumented
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.

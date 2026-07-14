@@ -1,6 +1,6 @@
-import { HudCanvas, HudPanel, SettingsTrigger, useEngineState, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, SettingsTrigger, useEngineState, useGameContext, useHudLayout } from "@jgengine/react";
 import { PALETTE } from "../palette";
-import { pinballStore } from "../store";
+import { pinballHandle } from "../store";
 import { Backglass } from "./components/backglass";
 import { GameOverScreen, MessageBanner, PlungePrompt, SaverBadge, TiltBanner } from "./components/overlays";
 import { ControlBar, ScoreFeed, StatusReadout, Title } from "./components/panels";
@@ -16,7 +16,8 @@ const frameStyle: React.CSSProperties = {
 };
 
 export function GameUI() {
-  const snap = useEngineState(pinballStore);
+  const ctx = useGameContext();
+  const snap = useEngineState(pinballHandle.read(ctx));
   const layout = useHudLayout({ storageKey: "pinball", snap: 8 });
 
   return (

@@ -4,7 +4,7 @@ import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
 import { GameUI } from "./game/ui/GameUI";
 import { renderPulseRunnerEntity, renderPulseRunnerObject } from "./game/world/render";
-import { loop } from "./loop";
+import { lifecycle, loop } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
@@ -16,6 +16,7 @@ export const game = defineGame({
   save: "none",
   content,
   loop,
+  lifecycle,
   GameUI,
   capture: { play: ["start"] },
   camera: {

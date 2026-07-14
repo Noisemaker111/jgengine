@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from "react";
+import { useGameContext } from "@jgengine/react";
 
 import {
   BUNKER_BLOCK,
@@ -12,7 +13,7 @@ import {
   SHOT_W,
 } from "../../invaders/constants";
 import type { StarInvadersSnapshot } from "../../invaders/store";
-import { starInvadersStore } from "../../invaders/store";
+import { starInvadersHandle } from "../../invaders/store";
 import {
   CANNON,
   drawSprite,
@@ -134,6 +135,7 @@ function render(canvas: HTMLCanvasElement, snapshot: StarInvadersSnapshot): void
 }
 
 function PlayfieldImpl() {
+  const ctx = useGameContext();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -141,8 +143,9 @@ function PlayfieldImpl() {
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
     if (canvas === null || wrap === null) return;
+    const store = starInvadersHandle.read(ctx);
 
-    const draw = () => render(canvas, starInvadersStore.getState());
+    const draw = () => render(canvas, store.getState());
 
     const fit = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
@@ -160,12 +163,12 @@ function PlayfieldImpl() {
     fit();
     const observer = new ResizeObserver(fit);
     observer.observe(wrap);
-    const unsubscribe = starInvadersStore.subscribe(draw);
+    const unsubscribe = store.subscribe(draw);
     return () => {
       observer.disconnect();
       unsubscribe();
     };
-  }, []);
+  }, [ctx]);
 
   const pointerToField = (clientX: number): number => {
     const canvas = canvasRef.current;
@@ -182,12 +185,13 @@ function PlayfieldImpl() {
         className="pointer-events-auto touch-none rounded-md"
         style={{ boxShadow: "0 0 30px rgba(84,255,159,0.18), inset 0 0 40px rgba(0,0,0,0.6)" }}
         onPointerMove={(event) => {
-          if (event.pressure > 0 || event.buttons > 0) starInvadersStore.setPointerX(pointerToField(event.clientX));
+          if (event.pressure > 0 || event.buttons > 0) starInvadersHandle.read(ctx).setPointerX(pointerToField(event.clientX));
         }}
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture?.(event.pointerId);
-          starInvadersStore.setPointerX(pointerToField(event.clientX));
-          starInvadersStore.fire();
+          const store = starInvadersHandle.read(ctx);
+          store.setPointerX(pointerToField(event.clientX));
+          store.fire();
         }}
       />
       <div
