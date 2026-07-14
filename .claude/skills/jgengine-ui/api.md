@@ -999,17 +999,6 @@
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `createCameraShakeChannel` (function): function createCameraShakeChannel(defaultDecayPerSecond = 1.6): CameraShakeChannel — ⚠ undocumented
 
-## @jgengine/shell/cartridge
-
-- `CartridgeAbilitySlot` (interface): interface CartridgeAbilitySlot — ⚠ undocumented
-- `CartridgeConfig` (type): type CartridgeConfig = CartridgeSpec & { name: string; panels: CartridgePanels; hud: { storageKey?: string; panels: readonly CartridgeHudPanelSpec[] }; screens: CartridgeScreens; theme?: Record<string, string>; world?: GameConfig["world"]; physics?: GameConfig["physics"]; assets?: GameConfig["assets… — ⚠ undocumented
-- `CartridgeHudPanelSpec` (interface): interface CartridgeHudPanelSpec — ⚠ undocumented
-- `CartridgePanelItem` (type): type CartridgePanelItem = | { kind: "vital"; stat: string; label: string; tone?: string; width?: number } | { kind: "xp"; width?: number } | { kind: "timer"; label: string } | { kind: "score"; source: "kills"; label: string; digits?: number } | { kind: "abilityBar"; icons: Record<string, string> } |… — ⚠ undocumented
-- `CartridgePanels` (interface): interface CartridgePanels — ⚠ undocumented
-- `CartridgeResultLine` (type): type CartridgeResultLine = { label: string; accent?: boolean } & ( | { source: "kills" | "level" } | { value: string | number } ) — ⚠ undocumented
-- `CartridgeScreens` (interface): interface CartridgeScreens — ⚠ undocumented
-- `cartridge` (function): function cartridge(config: CartridgeConfig): PlayableGame — ⚠ undocumented
-
 ## @jgengine/shell/commandSink
 
 - `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
