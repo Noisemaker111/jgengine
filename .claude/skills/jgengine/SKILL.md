@@ -338,7 +338,7 @@ export default defineConfig({
 @source "../node_modules/@jgengine/shell/dist";
 ```
 
-Inside the engine repo the two `@source` lines point at `../../../packages/react/src` and `../../../packages/shell/src` instead (see any `Games/*/src/index.css`) — same file, different `@source` targets depending on where dist lives.
+Inside the engine repo the two `@source` lines point at `../../../packages/react/src` and `../../../packages/shell/src` instead (see any `Games/*/src/index.css`) — same file, different `@source` targets depending on where dist lives. In-repo, `index.css` also does `@import "./style.css";` and carries no game-specific rules itself — those live in a sibling `src/style.css` (no Tailwind import), which is what the `/play` runner lazy-loads per game so it isn't re-shipping the shared Tailwind base on every game switch.
 
 ```tsx
 // main.tsx

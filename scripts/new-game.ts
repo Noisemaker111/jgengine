@@ -140,10 +140,11 @@ export default defineConfig({
 });
 `,
   "src/index.css": `@import "tailwindcss";
+@import "./style.css";
 @source "../../../packages/react/src";
 @source "../../../packages/shell/src";
-
-html,
+`,
+  "src/style.css": `html,
 body,
 #root {
   height: 100%;
