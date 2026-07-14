@@ -47,4 +47,20 @@ export function steerToward(yaw: number, desiredYaw: number): number {
   return -delta;
 }
 
+/**
+ * @internal Rotate `yaw` toward `targetYaw` by at most `turnRatePerSecond * dt`
+ * radians, always along the shortest arc, snapping exactly onto the target once
+ * within a single step so it converges without overshoot or jitter — the
+ * smoothing behind a rendered body-turn (`PlayerMovementConfig.turnSpeed`). A
+ * large enough rate (or `dt`) reaches the target in one call, matching a snap.
+ */
+export function approachYaw(yaw: number, targetYaw: number, turnRatePerSecond: number, dt: number): number {
+  let delta = (targetYaw - yaw) % TWO_PI;
+  if (delta > Math.PI) delta -= TWO_PI;
+  if (delta <= -Math.PI) delta += TWO_PI;
+  const maxStep = turnRatePerSecond * dt;
+  if (maxStep <= 0 || Math.abs(delta) <= maxStep) return targetYaw;
+  return yaw + Math.sign(delta) * maxStep;
+}
+
 const TWO_PI = Math.PI * 2;
