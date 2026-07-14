@@ -99,7 +99,7 @@ export interface LifecycleConfig<TState = unknown> {
   start(state: TState, ctx: GameContext, input?: unknown): TState;
   /** Pure transition back into a fresh live run — same shape as `start` but never re-shows the menu first. */
   restart(state: TState, ctx: GameContext): TState;
-  /** Derive the canonical {@link GamePhase} from the post-transition state; the runtime calls `setGamePhase` with the result. */
+  /** Derive the canonical {@link GamePhase} from the run state. The runtime calls this after every loop hook (`onInit`/`onNewPlayer`/`onTick`) as well as after `start`/`restart`, publishing the result only when it changed — so a game never hand-writes a per-tick `setGamePhase` ternary or its own previous-phase diff. */
   phaseOf(state: TState): GamePhase;
   /** Override the registered command names — default `"start"`/`"restart"` — for games whose input bindings already name them differently. */
   commands?: {

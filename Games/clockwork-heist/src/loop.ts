@@ -1,6 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
-import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
 import { NORMAL_WALK_SPEED, PLAYER_CATALOG_KIND, SERVANT_DOOR_SPAWN, SNEAK_WALK_SPEED } from "./game/entities/player";
 import { ensureCollectiblesPlaced, placeStaticWorld, tickWorld } from "./game/mansion/setup";
@@ -26,10 +25,6 @@ import {
 import { initialUiState, uiStore } from "./game/uiState";
 import { lootInstanceId, treasureInstanceId } from "./game/mansion/catalog";
 
-function syncPhase(ctx: GameContext, status: HeistState["status"]): void {
-  setGamePhase(ctx, status === "playing" ? "playing" : status === "intro" ? "menu" : "ended");
-}
-
 export const lifecycle: LifecycleConfig<HeistState> = {
   store: heistStore,
   start: (state, ctx) => startHeist(state, ctx.time.now()),
@@ -50,7 +45,6 @@ export function onInit(ctx: GameContext): void {
   ensureCollectiblesPlaced(ctx, [], []);
   heistStore.write(ctx, initialHeistState());
   uiStore.write(ctx, initialUiState());
-  syncPhase(ctx, "intro");
 
   ctx.game.commands.define("heist.exit", {
     apply(state: GameContext) {
@@ -58,7 +52,6 @@ export function onInit(ctx: GameContext): void {
       const next = attemptExit(current, state.time.now());
       if (next !== current) {
         heistStore.write(state, next);
-        if (next.status !== current.status) syncPhase(state, next.status);
       }
       return state;
     },
@@ -143,7 +136,6 @@ export function onTick(ctx: GameContext, _dt: number): void {
   if (heist.status === "playing") {
     heist = applyDetectionTick(heist, worldResult.detected, worldResult.source, now);
     heist = applyDawnCheck(heist, now);
-    if (heist.status !== "playing") syncPhase(ctx, heist.status);
   }
 
   if (heist.status === "playing") {

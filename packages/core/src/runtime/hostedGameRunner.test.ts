@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGame } from "../game/defineGame";
+import { gamePhase } from "../game/gamePhase";
+import { defineStore } from "../store/defineStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { applyWorldDiff } from "./worldReplication";
 import { createHostedGameRunner, type HostedGameRunner } from "./hostedGameRunner";
@@ -179,5 +181,64 @@ describe("hosted game runner", () => {
 
     restored.command("alice", "bump", { by: 5 });
     expect(restored.context().game.store.get("bumped")).toBe(7);
+  });
+});
+
+describe("hosted runner lifecycle phase sync", () => {
+  interface RunState {
+    phase: "menu" | "playing" | "ended";
+    elapsed: number;
+  }
+  const runStore = defineStore<RunState>("run", () => ({ phase: "menu", elapsed: 0 }));
+
+  function phaseRunner(): HostedGameRunner {
+    return createHostedGameRunner({
+      definition: defineGame({
+        name: "PhaseHosted",
+        multiplayer: "off",
+        lifecycle: {
+          store: runStore,
+          start: (state) => ({ ...state, phase: "playing" }),
+          restart: (state) => ({ ...state, phase: "playing", elapsed: 0 }),
+          phaseOf: (state) => state.phase,
+        },
+        loop: {
+          onInit(ctx: GameContext) {
+            runStore.write(ctx, { phase: "menu", elapsed: 0 });
+          },
+          onTick(ctx: GameContext, dt) {
+            const next = runStore.update(ctx, (s) => ({ ...s, elapsed: s.elapsed + dt }));
+            if (next.elapsed >= 2 && next.phase === "playing") {
+              runStore.write(ctx, { ...next, phase: "ended" });
+            }
+          },
+        },
+      }),
+      content: {},
+    });
+  }
+
+  test("onInit derives the initial phase from lifecycle.phaseOf", () => {
+    const host = phaseRunner();
+    expect(gamePhase(host.context())).toBe("menu");
+  });
+
+  test("start command flips phase to playing", () => {
+    const host = phaseRunner();
+    host.command("host", "start", {});
+    expect(gamePhase(host.context())).toBe("playing");
+  });
+
+  test("a mid-tick phase transition is published without a per-game setGamePhase call", () => {
+    const host = phaseRunner();
+    host.command("host", "start", {});
+    expect(gamePhase(host.context())).toBe("playing");
+
+    host.tick(1);
+    expect(gamePhase(host.context())).toBe("playing");
+
+    host.tick(1.5);
+    expect(runStore.read(host.context()).phase).toBe("ended");
+    expect(gamePhase(host.context())).toBe("ended");
   });
 });

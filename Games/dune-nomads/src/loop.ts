@@ -2,7 +2,6 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createDecayMeterSet, type DecayMeterSet } from "@jgengine/core/survival/decayMeter";
 import { createRaceState, type RaceState } from "@jgengine/core/game/race";
 import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
-import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
 import type { BodySnapshot } from "@jgengine/core/scene/bodyBind";
@@ -49,7 +48,6 @@ function getRun(ctx: GameContext): RunState {
 
 function setRun(ctx: GameContext, next: RunState): void {
   runStore.write(ctx, next);
-  setGamePhase(ctx, next.phase === "playing" ? "playing" : next.phase === "start" ? "menu" : "ended");
 }
 
 export const lifecycle: LifecycleConfig<RunState> = {

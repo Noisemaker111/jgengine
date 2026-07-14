@@ -1,5 +1,6 @@
 import type { CommandResult } from "../commands/commandRegistry";
 import type { GameDefinition, LoopPlayer } from "../game/defineGame";
+import { syncLifecyclePhase } from "../game/gamePhase";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
 import { type InputFrame } from "./inputSnapshot";
@@ -67,6 +68,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   const inputs = new Map<string, InputFrame>();
 
   loop.onInit?.(ctx);
+  syncLifecyclePhase(ctx, definition.lifecycle);
   if (restore !== undefined) ctx.hydrate(restore);
 
   return {
@@ -75,6 +77,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       members.set(userId, player);
       ctx.game.players?.join(userId, isNew);
       loop.onNewPlayer?.(ctx, player);
+      syncLifecyclePhase(ctx, definition.lifecycle);
     },
     resume(userId) {
       members.set(userId, { userId, isNew: false });
@@ -100,6 +103,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     },
     tick(dt) {
       loop.onTick?.(ctx, dt);
+      syncLifecyclePhase(ctx, definition.lifecycle);
       return replicator.commit();
     },
     diff: (sinceRevision) => replicator.diff(sinceRevision),
