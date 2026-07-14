@@ -42,6 +42,7 @@ const files: Record<string, string> = {
       },
       dependencies: {
         "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
@@ -50,6 +51,7 @@ const files: Record<string, string> = {
         three: "^0.182.0",
       },
       devDependencies: {
+        "@react-three/drei": "^10.7.7",
         "@tailwindcss/vite": "^4.0.15",
         "@types/react": "^19",
         "@types/react-dom": "^19",
@@ -83,6 +85,8 @@ const files: Record<string, string> = {
           "@jgengine/react/*": ["../../packages/react/src/*"],
           "@jgengine/ws/*": ["../../packages/ws/src/*"],
           "@jgengine/shell/*": ["../../packages/shell/src/*"],
+          "@jgengine/editor": ["../../packages/editor/src/index.ts"],
+          "@jgengine/editor/*": ["../../packages/editor/src/*"],
           "@jgengine/assets": ["../../packages/assets/src/index.ts"],
           "@jgengine/assets/*": ["../../packages/assets/src/*"],
         },
@@ -112,10 +116,13 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+import { devSavePlugin } from "../../apps/dev/devSavePlugin";
+
 const engineSrc = (pkg: string) => fileURLToPath(new URL(\`../../packages/\${pkg}/src\`, import.meta.url));
+const gamesDir = fileURLToPath(new URL("..", import.meta.url));
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), devSavePlugin(gamesDir)],
   resolve: {
     alias: existsSync(engineSrc("core"))
       ? [
@@ -123,6 +130,8 @@ export default defineConfig({
           { find: /^@jgengine\\/react\\/(.*)$/, replacement: \`\${engineSrc("react")}/$1\` },
           { find: /^@jgengine\\/ws\\/(.*)$/, replacement: \`\${engineSrc("ws")}/$1\` },
           { find: /^@jgengine\\/shell\\/(.*)$/, replacement: \`\${engineSrc("shell")}/$1\` },
+          { find: /^@jgengine\\/editor$/, replacement: \`\${engineSrc("editor")}/index.ts\` },
+          { find: /^@jgengine\\/editor\\/(.*)$/, replacement: \`\${engineSrc("editor")}/$1\` },
           { find: /^@jgengine\\/assets$/, replacement: \`\${engineSrc("assets")}/index.ts\` },
           { find: /^@jgengine\\/assets\\/(.*)$/, replacement: \`\${engineSrc("assets")}/$1\` },
         ]
@@ -144,13 +153,60 @@ body,
 `,
   "src/main.tsx": `import "./index.css";
 
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
+import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { GameHost } from "@jgengine/shell/GameHost";
 import { game } from "./game.config";
 
+const GAME_ID = "${id}";
+if (import.meta.env.DEV) installSaveEndpoint("/__jgengine/save", GAME_ID);
+
+// Editor mode (F2+E / ?mode=editor) loads as a lazy chunk — never bundled into gameplay.
+const EditorApp = lazy(async () => {
+  const mod = await import("@jgengine/editor");
+  return { default: mod.EditorApp as ComponentType<{ gameId: string; playable: typeof game }> };
+});
+
+function App() {
+  const [editor, setEditor] = useState(
+    new URLSearchParams(window.location.search).get("mode") === "editor",
+  );
+  useEffect(() => {
+    if (editor) return;
+    const summon = () => setEditor(true);
+    (window as { __jgengineSummonEditor?: () => void }).__jgengineSummonEditor = summon;
+    let f2Held = false;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code === "F2") f2Held = true;
+      else if (event.code === "KeyE" && f2Held) {
+        event.preventDefault();
+        summon();
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code === "F2") f2Held = false;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      const host = window as { __jgengineSummonEditor?: () => void };
+      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
+    };
+  }, [editor]);
+  if (!editor) return <GameHost playable={game} />;
+  return (
+    <Suspense fallback={null}>
+      <EditorApp gameId={GAME_ID} playable={game} />
+    </Suspense>
+  );
+}
+
 const root = document.getElementById("root");
 if (root === null) throw new Error("main: missing #root mount element");
-createRoot(root).render(<GameHost playable={game} />);
+createRoot(root).render(<App />);
 `,
   "src/index.tsx": `export { game } from "./game.config";
 `,

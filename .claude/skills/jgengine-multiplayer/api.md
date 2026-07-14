@@ -261,6 +261,14 @@
 - `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
 - `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
 
+## @jgengine/node/devSavePlugin
+
+- `EDITOR_SCENE_FILENAME` (const): const EDITOR_SCENE_FILENAME: "editor.scene.json" — Filename editor scene documents are saved under inside a game's `src/`.
+- `SAVE_ENDPOINT_PATH` (const): const SAVE_ENDPOINT_PATH: "/__jgengine/save" — Route the dev save middleware answers on; matches `installSaveEndpoint` defaults.
+- `devSavePlugin` (function): function devSavePlugin(resolveSrcDir: SrcDirResolver): DevSavePluginShape — Dev-only Vite middleware that gives the F2 chord family its write path: editor mode's Save (Ctrl+S / `save_scene`) writes `editor.scene.json` and debug mode's Tune "Save to source" rewrites tunable literals, both into the directory `resolveSrcDir(gameId)` returns.
+- `handleSaveRequest` (function): function handleSaveRequest(resolveSrcDir: SrcDirResolver, body: string): SaveEndpointResponse — Applies one parsed save request against a resolved game `src/` directory.
+- `standaloneSavePlugin` (function): function standaloneSavePlugin(rootDir: string = process.cwd()): DevSavePluginShape — `devSavePlugin` preset for a standalone game project (one game, `src/` at the project root): every gameId maps to `<rootDir>/src`. Drop into the scaffolded `vite.config.ts` plugins array.
+
 ## @jgengine/node/host
 
 - `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.

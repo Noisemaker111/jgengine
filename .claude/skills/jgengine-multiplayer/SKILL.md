@@ -15,3 +15,17 @@ One host process serves many worlds, so authoritative runtime state (heroes, mob
 
 ## UI — `@jgengine/react`
 
+
+## Dev save middleware — `@jgengine/node/devSavePlugin`
+
+The published write path behind editor Save (Ctrl+S / `save_scene`) and the Tune tab's Save-to-source. Mount it on the game's dev server:
+
+```ts
+import { devSavePlugin, standaloneSavePlugin, handleSaveRequest } from "@jgengine/node/devSavePlugin";
+
+standaloneSavePlugin()                       // scaffolded standalone game: saves into <root>/src
+devSavePlugin((gameId) => srcDirFor(gameId)) // multi-game host: resolve each game's src dir
+handleSaveRequest(resolveSrcDir, body)       // transport-free core for a non-Vite dev server
+```
+
+Dev-only (`apply: "serve"`); writes `editor.scene.json` and rewrites tunable literals under the resolved `src/`. See `jgengine-editor` for the editing workflow.

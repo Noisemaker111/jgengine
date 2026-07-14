@@ -194,7 +194,9 @@
 - `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
 - `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
 - `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
 - `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
+- `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
 - `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
 - `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -507,6 +509,11 @@
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
 - `useSession` (function): function useSession(): IdentitySource — ⚠ undocumented
+
+## @jgengine/react/keyHint
+
+- `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
+- `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
 
 ## @jgengine/react/liveBind
 
