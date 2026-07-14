@@ -157,6 +157,13 @@
 - `applyImpulse` (function): function applyImpulse(position: EntityPosition, impulse: [number, number, number]): EntityPosition — ⚠ undocumented
 - `resolveHitReaction` (function): function resolveHitReaction(config: HitReactionConfig, input: HitReactionInput): HitReaction — ⚠ undocumented
 
+## @jgengine/core/combat/magazine
+
+- `Magazine` (interface): interface Magazine — A per-weapon magazine: discrete loaded rounds, a timed reload that refills from a reserve pool, and the reserve-pool interaction itself — the primitive that replaces hand-rolling mag size, reload delay, and reserve bookkeeping per game (#536.2).
+- `MagazineConfig` (interface): interface MagazineConfig — Tuning for `createMagazine`: mag capacity, reload delay, and where reserve ammo is drawn from.
+- `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
+- `createMagazine` (function): function createMagazine(config: MagazineConfig): Magazine — Builds a {@link Magazine}: discrete loaded ammo, a timed reload, and reserve-pool interaction.
+
 ## @jgengine/core/combat/projectiles
 
 - `EntityRaycastHit` (interface): interface EntityRaycastHit — ⚠ undocumented

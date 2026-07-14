@@ -7,6 +7,7 @@ import type {
 import { enemies, enemyWeapons } from "./entities/enemies/catalog";
 import { players } from "./entities/players/catalog";
 import { gearItems } from "./items/gear/catalog";
+import { relicById } from "./items/relics/catalog";
 import { weapons, type WeaponStats } from "./items/weapons/catalog";
 import { coverObjects } from "./objects/catalog";
 
@@ -52,6 +53,10 @@ function itemById(itemId: string): GameContextItemEntry | null {
   if (bolt !== undefined) {
     return { weapon: toWeaponRecord(bolt.weapon) };
   }
+  const relic = relicById(itemId);
+  if (relic !== undefined) {
+    return { rarity: relic.rarity, baseType: "relic" };
+  }
   return null;
 }
 
@@ -80,5 +85,5 @@ function objectById(catalogId: string): GameContextObjectEntry | null {
 export const content: GameContextContent = { itemById, entityById, objectById };
 
 export function itemNameById(itemId: string): string {
-  return weaponsById.get(itemId)?.name ?? gearItemsById.get(itemId)?.name ?? itemId;
+  return weaponsById.get(itemId)?.name ?? gearItemsById.get(itemId)?.name ?? relicById(itemId)?.name ?? itemId;
 }

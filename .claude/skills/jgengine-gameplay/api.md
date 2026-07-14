@@ -402,7 +402,7 @@
 ## @jgengine/core/game/lootTable
 
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
-- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item or currency, its count range, and its odds.
+- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
 - `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
@@ -928,6 +928,12 @@
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
+
+## @jgengine/core/item/itemInstanceRegistry
+
+- `ItemInstanceRegistry` (interface): interface ItemInstanceRegistry<TDef> — A runtime store for procedurally generated item instances — a rolled unique gun, a rolled affixed relic — keyed by a generated id distinct from any static catalog id. The counterpart a game's `content.itemById` consults for ids `lootTable`'s `generate` entries hand back, so runtime rolls never need a hand-rolled parallel registry (#536.1).
+- `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
+- `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 
 ## @jgengine/core/item/modularItem
 
