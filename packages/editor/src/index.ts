@@ -22,6 +22,7 @@ export {
   type TerrainMode,
 } from "./uiStore";
 export { TerrainSculpt } from "./TerrainSculpt";
+export { ScatterPreview } from "./ScatterPreview";
 export { EditorCameraDriver } from "./EditorCameraDriver";
 export { AssetBrowser, assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
 export {

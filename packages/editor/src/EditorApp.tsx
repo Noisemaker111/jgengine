@@ -12,6 +12,7 @@ import { EditorCameraDriver } from "./EditorCameraDriver";
 import { EditorChrome } from "./EditorChrome";
 import { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
 import { PerfProbe } from "./PerfProbe";
+import { ScatterPreview } from "./ScatterPreview";
 import { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";
 import { TerrainSculpt } from "./TerrainSculpt";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
@@ -115,6 +116,7 @@ function EditorWorldOverlay({ api, ui }: { api: EditorHostApi; ui: EditorUiStore
       <EditorCameraDriver api={api} />
       <ViewportSelect api={api} ui={ui} />
       <TerrainSculpt api={api} ui={ui} />
+      <ScatterPreview api={api} />
       {uiState.showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
       <EditorLayerOverlays
         document={state.document}

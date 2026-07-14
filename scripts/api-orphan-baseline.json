@@ -741,7 +741,6 @@
   "@jgengine/core/world/walls#autoRoof",
   "@jgengine/core/world/walls#enclosePath",
   "@jgengine/core/world/walls#footprintFromWalls",
-  "@jgengine/core/world/walls#polygonArea",
   "@jgengine/core/world/walls#wallSegmentBounds",
   "@jgengine/core/world/walls#wallSegments",
   "@jgengine/core/world/water#synthesizeWaves",

@@ -19,6 +19,12 @@ import {
   type TerrainSurfaceRule,
 } from "@jgengine/core/world/terraform";
 
+import {
+  resolveScatter,
+  scatterRegionEstimate,
+  SCATTER_PATH_KIND,
+} from "@jgengine/core/world/scatterRegion";
+
 import { TERRAIN_MATERIALS } from "./uiStore";
 
 /** How the editor hosts the game: frozen placement view, roamable world, or the real game. */
@@ -74,7 +80,16 @@ export type EditorBridgeRequest =
       minHeight?: number;
       maxHeight?: number;
     }
-  | { method: "terrain_materials" };
+  | { method: "terrain_materials" }
+  | {
+      method: "add_foliage";
+      points: { x: number; z: number }[];
+      density?: number;
+      item?: string;
+      seed?: string;
+      minSpacing?: number;
+    }
+  | { method: "scatter_summary" };
 
 /** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
@@ -510,6 +525,33 @@ export function createEditorHost(options: {
           }
           case "terrain_materials":
             return { ok: true, result: { materials: TERRAIN_MATERIALS } };
+          case "add_foliage": {
+            if (request.points.length < 3) return { ok: false, error: "add_foliage needs at least 3 polygon points" };
+            const id = `foliage_${Date.now().toString(36)}`;
+            session.dispatch({
+              type: "addPath",
+              path: {
+                id,
+                kind: SCATTER_PATH_KIND,
+                points: request.points.map((point) => ({ x: point.x, y: 0, z: point.z })),
+                label: "foliage",
+                meta: {
+                  density: request.density ?? 0.15,
+                  ...(request.item === undefined ? {} : { item: request.item }),
+                  ...(request.seed === undefined ? {} : { seed: request.seed }),
+                  ...(request.minSpacing === undefined ? {} : { minSpacing: request.minSpacing }),
+                },
+              },
+            });
+            const path = session.getState().document.paths.find((p) => p.id === id)!;
+            return { ok: true, result: { id, estimate: scatterRegionEstimate(path) } };
+          }
+          case "scatter_summary": {
+            const doc = session.getState().document;
+            const regions = doc.paths.filter((path) => path.kind === SCATTER_PATH_KIND).length;
+            const instances = resolveScatter(doc).length;
+            return { ok: true, result: { regions, instances } };
+          }
         }
       } catch (error) {
         return {

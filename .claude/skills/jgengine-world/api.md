@@ -1390,6 +1390,27 @@
 - `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `scatterItems` (function): function scatterItems<T>(field: RegionField<T>, area: Aabb, layersFor: (sample: RegionSample<T>) => readonly ScatterLayer[], options: { cell?: number; max?: number; saltKey?: number } = {}): ScatterInstance[] — Deterministically place opaque items across `area`, grounded on a region field. For each grid cell it asks `layersFor` which items may appear in that region and rolls one against their densities. The engine never interprets `item` — a game maps it to a mesh or entity. Content scatter (region-driven density) as opposed to `scatter` in `./scatter`, which is renderer-free geometric point distribution.
 
+## @jgengine/core/world/scatterRegion
+
+- `SCATTER_DEFAULTS` (const): const SCATTER_DEFAULTS: ScatterRegionRules — Defaults a bare scatter region fills with: sparse grass, lightly spaced.
+- `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
+- `ScatterInstance` (interface): interface ScatterInstance — A single placed scatter instance — grounded world position plus per-instance variation.
+- `ScatterPaletteEntry` (interface): interface ScatterPaletteEntry — One species/prop in a scatter region's palette, with a relative spawn weight.
+- `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
+- `ScatterRegionRules` (interface): interface ScatterRegionRules — How a scatter region fills its polygon: density, spacing, variation, and masking rules.
+- `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
+- `distanceToPolygonEdge` (function): function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number — Shortest distance from a point to a polygon's boundary.
+- `isScatterPath` (function): function isScatterPath(path: EditorPath): boolean — True when an editor path is a foliage/scatter region.
+- `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
+- `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
+- `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
+- `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
+- `readScatterRules` (function): function readScatterRules(path: EditorPath): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
+- `resolveScatter` (function): function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided.
+- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
+- `scatterRegionEstimate` (function): function scatterRegionEstimate(path: EditorPath): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
+- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: EditorPath): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
+
 ## @jgengine/core/world/segment
 
 - `CircleSegmentHit` (interface): interface CircleSegmentHit — A resolved circle-vs-segment contact.

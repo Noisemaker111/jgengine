@@ -259,4 +259,28 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     description: "List the terrain paint palette (material id, label, color).",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
+  {
+    name: "add_foliage",
+    description: "Add a foliage/scatter region from a closed polygon (≥3 x/z points) with density and item.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        points: {
+          type: "array",
+          items: { type: "object", properties: { x: { type: "number" }, z: { type: "number" } }, required: ["x", "z"], additionalProperties: false },
+        },
+        density: { type: "number" },
+        item: { type: "string" },
+        seed: { type: "string" },
+        minSpacing: { type: "number" },
+      },
+      required: ["points"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "scatter_summary",
+    description: "Count foliage/scatter regions and their total deterministic instance placements.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
 ];

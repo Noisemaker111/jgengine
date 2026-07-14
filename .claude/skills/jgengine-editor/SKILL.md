@@ -163,9 +163,20 @@ paint** blanket the terrain; **Auto rules** paint by slope ("on steep slopes") o
 Each stroke/fill is one undoable `paintTerrain` command (compact `SurfaceDelta`). Consume with
 `beginSurfaceStroke`, `fillSurfaceDelta`, `autoPaintDelta`, and `surfaceAt` from `@jgengine/core/world/terraform`.
 
+## Foliage / scatter regions
+
+**+ Add → Foliage region (lasso)** draws a closed polygon on the terrain (click points, Enter to finish) —
+a scatter path of `kind: "scatter"`. Its inspector drives deterministic, **GPU-instanced** scatter that
+previews live in the viewport as you drag: **density /m²**, spacing, a weighted **species palette**
+(add/remove rows of item id + weight), scale range, **max slope** and **height** masks, **edge fade**
+(feather the border), align-to-slope, and a seed with a reroll button. Same seed → same field. Rules ride
+`path.meta`; consume in a game with `resolveScatter(doc, terrain)` from `@jgengine/core/world/scatterRegion`,
+instancing each placement's `item` from the render catalog (never one node per plant).
+
 Headless: `create_terrain`, `sculpt_terrain {mode,x,z,radius,strength,…}`, `paint_terrain {surface,x,z,radius}`,
-`fill_terrain {surface}`, `auto_paint {surface,minSlope,minHeight,…}`, `terrain_materials`, and `terrain_summary`
-RPC verbs drive and assert terrain authoring without WebGL (`bun packages/editor/src/mcp/cli.ts`).
+`fill_terrain {surface}`, `auto_paint {surface,minSlope,minHeight,…}`, `terrain_materials`, `terrain_summary`,
+`add_foliage {points,density,item}`, and `scatter_summary` RPC verbs drive and assert terrain + foliage
+authoring without WebGL (`bun packages/editor/src/mcp/cli.ts`).
 
 ## Core APIs (`editor/`)
 

@@ -139,6 +139,33 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("add_foliage creates a scatter region and scatter_summary counts placements", () => {
+    const { api, dispose } = createEditorHost({ gameId: "test", layers: {} });
+    expect((api.handle({ method: "scatter_summary" }).result as { regions: number }).regions).toBe(0);
+
+    const added = api.handle({
+      method: "add_foliage",
+      points: [
+        { x: -20, z: -20 },
+        { x: 20, z: -20 },
+        { x: 20, z: 20 },
+        { x: -20, z: 20 },
+      ],
+      density: 0.3,
+      item: "tree",
+    });
+    expect(added.ok).toBe(true);
+    expect((added.result as { estimate: { count: number } }).estimate.count).toBeGreaterThan(0);
+
+    const summary = api.handle({ method: "scatter_summary" });
+    expect((summary.result as { regions: number }).regions).toBe(1);
+    expect((summary.result as { instances: number }).instances).toBeGreaterThan(0);
+
+    const tooFew = api.handle({ method: "add_foliage", points: [{ x: 0, z: 0 }, { x: 1, z: 1 }] });
+    expect(tooFew.ok).toBe(false);
+    dispose();
+  });
+
   test("subscribeFocus fires on camera_goto", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",

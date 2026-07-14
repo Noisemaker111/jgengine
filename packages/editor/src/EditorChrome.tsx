@@ -8,6 +8,7 @@ import {
   listEditorKinds,
   WELL_KNOWN_MARKER_KINDS,
   type EditorDocument,
+  type EditorPath,
   type EditorSession,
   type EditorVolume,
 } from "@jgengine/core/editor/index";
@@ -25,6 +26,13 @@ import {
   type SurfaceDelta,
   type TerrainSurfaceRule,
 } from "@jgengine/core/world/terraform";
+import {
+  readScatterPalette,
+  readScatterRules,
+  scatterRegionEstimate,
+  SCATTER_PATH_KIND,
+  type ScatterPaletteEntry,
+} from "@jgengine/core/world/scatterRegion";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
@@ -446,6 +454,62 @@ function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiSto
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function ScatterFields({
+  path,
+  onMeta,
+}: {
+  path: EditorPath;
+  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
+}) {
+  const rules = readScatterRules(path);
+  if (rules === null) return null;
+  const palette = readScatterPalette(path.meta);
+  const estimate = scatterRegionEstimate(path);
+  const setPalette = (next: ScatterPaletteEntry[]) => onMeta({ palette: next, item: "" }, "scatter:palette");
+  return (
+    <div className="space-y-2 rounded-lg border border-emerald-400/15 bg-emerald-500/[0.06] p-2.5">
+      <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-300">Foliage / scatter</div>
+      {path.points.length < 3 ? <div className="text-[10px] text-amber-300">Draw at least 3 points to close the region.</div> : null}
+      <label className="block space-y-1">
+        <span className="flex items-center justify-between">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">density /m²</span>
+          <span className="text-cyan-200">{rules.density.toFixed(2)}</span>
+        </span>
+        <input type="range" min={0} max={2} step={0.01} className="w-full accent-emerald-400" value={Math.min(rules.density, 2)} onChange={(event) => onMeta({ density: Number(event.target.value) }, "scatter:density")} />
+      </label>
+      <NumberField label="density" step={0.01} value={rules.density} onCommit={(value) => onMeta({ density: Math.max(0, value) }, "scatter:density")} />
+      <NumberField label="spacing" step={0.25} value={rules.minSpacing} onCommit={(value) => onMeta({ minSpacing: Math.max(0, value) }, "scatter:minSpacing")} />
+      <NumberField label="min scale" step={0.05} value={rules.minScale} onCommit={(value) => onMeta({ minScale: value }, "scatter:minScale")} />
+      <NumberField label="max scale" step={0.05} value={rules.maxScale} onCommit={(value) => onMeta({ maxScale: value }, "scatter:maxScale")} />
+      <NumberField label="max slope" step={0.05} value={rules.maxSlope} onCommit={(value) => onMeta({ maxSlope: Math.max(0, value) }, "scatter:maxSlope")} />
+      <NumberField label="edge fade" step={0.5} value={rules.edgeFalloff} onCommit={(value) => onMeta({ edgeFalloff: Math.max(0, value) }, "scatter:edgeFalloff")} />
+      <label className="flex items-center gap-1.5 text-[10px] text-neutral-400">
+        <input type="checkbox" className="accent-emerald-400" checked={rules.alignToNormal} onChange={(event) => onMeta({ alignToNormal: event.target.checked }, "scatter:align")} />
+        align to slope
+      </label>
+      <div className="space-y-1">
+        <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">species (weighted)</div>
+        {palette.map((entry, index) => (
+          <div key={index} className="flex items-center gap-1">
+            <input className={`min-w-0 flex-1 ${INPUT}`} value={entry.item} placeholder="grass / tree id" onChange={(event) => setPalette(palette.map((e, i) => (i === index ? { ...e, item: event.target.value } : e)))} />
+            <input type="number" step={1} min={0} className={`w-14 ${INPUT}`} value={entry.weight} onChange={(event) => setPalette(palette.map((e, i) => (i === index ? { ...e, weight: Math.max(0, Number(event.target.value)) } : e)))} />
+            <button type="button" className="rounded-md bg-white/[0.04] px-1.5 py-1 text-neutral-400 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-rose-500/20 hover:text-rose-200" disabled={palette.length <= 1} onClick={() => setPalette(palette.filter((_, i) => i !== index))}>×</button>
+          </div>
+        ))}
+        <button type="button" className="w-full rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => setPalette([...palette, { item: "tree", weight: 1 }])}>+ species</button>
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">seed</span>
+          <input className={`w-full min-w-0 ${INPUT}`} value={rules.seed} placeholder="reroll…" onChange={(event) => onMeta({ seed: event.target.value }, "scatter:seed")} />
+        </label>
+        <button type="button" className="shrink-0 rounded-md bg-white/[0.04] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" title="Reroll seed" onClick={() => onMeta({ seed: `r${path.points.length}${rules.seed.length}${Math.round(rules.density * 1000)}` }, "scatter:seed")}>⟳</button>
+      </div>
+      <div className="text-[10px] text-neutral-500">≈ {estimate.count.toLocaleString()} placements over {Math.round(estimate.area).toLocaleString()} m²</div>
     </div>
   );
 }
@@ -888,6 +952,7 @@ export function EditorChrome({
               <div className={`px-2 pb-1 pt-2 ${MICRO}`}>Other</div>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "path", kind: "route" })}>Draw path (route)</button>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "path", kind: "road" })}>Draw road</button>
+              <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-emerald-300 transition-colors hover:bg-emerald-500/15 hover:text-emerald-100" onClick={() => startPlacement({ tool: "path", kind: SCATTER_PATH_KIND })}>Foliage region (lasso)</button>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "note" })}>Note</button>
             </div>
           ) : null}
@@ -1120,6 +1185,12 @@ export function EditorChrome({
                       </div>
                     </div>
                   ) : <div className="text-[10px] text-neutral-500">Click a vertex sphere to edit points.</div>}
+                  {selectedPath.kind === SCATTER_PATH_KIND ? (
+                    <ScatterFields
+                      path={selectedPath}
+                      onMeta={(patch, coalesce) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { meta: { ...selectedPath.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedPath.id}` })}
+                    />
+                  ) : null}
                 </div>
               ) : null}
               {selection.length <= 1 && selectedNote !== undefined ? (
