@@ -95,6 +95,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/game/quest"`
 
+## race-placements — look up one racer's place + win/lose within a finish order
+
+- `placementOf` (function) · `import { placementOf } from "@jgengine/core/game/race"`
+- `racePlacements` (function) · `import { racePlacements } from "@jgengine/core/game/race"`
+
+## race-session — pure idle→countdown→racing→finished clock every racer wraps around its state
+
+- `idleRaceSession` (function) · `import { idleRaceSession } from "@jgengine/core/game/race"`
+
 ## race-track — a checkpoint race with laps, standings, splits, and win conditions
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/game/race"`

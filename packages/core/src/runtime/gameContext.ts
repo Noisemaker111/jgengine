@@ -38,7 +38,7 @@ import {
 import { createCosmetics, type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
-import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
+import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
 import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
 import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
@@ -53,7 +53,7 @@ import {
   type WorldItemSpawnInput,
 } from "../game/worldItem";
 import { createChat, type Chat, type ChatSnapshot } from "../game/chat";
-import { createSocial, type Social } from "../game/social";
+import { createSocial, type Social, type SocialSnapshot } from "../game/social";
 import { createTradeSystem, type TradeField, type TradeSystem } from "../game/trade";
 import { createUnlocks, type Unlocks } from "../game/unlocks";
 import {
@@ -201,6 +201,16 @@ export interface FloatTextInput {
   scale?: number;
 }
 
+/** Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`. */
+export interface VfxInput {
+  kind: VfxKind;
+  color: number;
+  from?: string | readonly [number, number, number];
+  to?: string | readonly [number, number, number];
+  radius?: number;
+  durationMs?: number;
+}
+
 export interface TelegraphInput {
   from: string;
   shape: TelegraphShape;
@@ -240,6 +250,7 @@ export interface SceneEntityContext {
   blackboard: EntityBlackboard;
   stats: EntityStatsApi;
   floatText(input: FloatTextInput): void;
+  vfx(input: VfxInput): void;
   telegraph(input: TelegraphInput): () => void;
   hitReaction(input: HitReactionInput): HitReaction | null;
   setTarget(fromId: string, toId: string | null): void;
@@ -362,13 +373,16 @@ export interface GameContext {
     playEntityAnimation(instanceId: string, event: string): void;
     feed: GameContextFeed;
     loot: GameContextLoot;
-    trade: TradeSystem;
-    quest: QuestJournal;
+    /** Shop/vendor barter — present only when `features.trade` is set. */
+    trade?: TradeSystem;
+    /** Quest/mission journal — present only when `features.quest` is set. */
+    quest?: QuestJournal;
     /** Friends/party/presence/emotes/world-invites — present only when `features.social` is set. */
     social?: Social;
     /** Channels + messages — present only when `features.chat` is set (implies `social`). */
     chat?: Chat;
-    unlocks: Unlocks;
+    /** Earned unlockable content — present only when `features.unlocks` is set. */
+    unlocks?: Unlocks;
     economy: GameContextEconomy;
     /** Competitive score tracking — present only when `features.leaderboard` is set. */
     leaderboard?: Leaderboard;
@@ -401,7 +415,8 @@ export interface GameContext {
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
     possession: Possession;
-    cosmetics: Cosmetics;
+    /** Cosmetic skins/customization — present only when `features.cosmetics` is set. */
+    cosmetics?: Cosmetics;
     /** Motion seam into the movement integrator (#162.4); routes to the command actor's queue (or the local player outside a command), so a command's impulse lands on whoever ran it. See `MotionIntents`. */
     motion: MotionIntents;
     /** A specific player's motion queue — how the host-side per-player movement integrator drains each connected player's impulses. */
@@ -587,8 +602,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   };
   const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry();
-  const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify);
   const features = definition.features ?? {};
+  const unlocks = features.unlocks
+    ? notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify)
+    : undefined;
   const rawSocial =
     features.social || features.chat
       ? createSocial({
@@ -620,6 +637,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         ["invite", "accept", "decline"],
         signal.notify,
       ),
+      snapshot: rawSocial.snapshot,
+      hydrate: (data) => {
+        rawSocial.hydrate(data);
+        signal.notify();
+      },
     };
   }
   let chat: Chat | undefined;
@@ -659,7 +681,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
   const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
-  const cosmetics = notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify);
+  const cosmetics = features.cosmetics
+    ? notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify)
+    : undefined;
   const paintLayer = notifyAfter(createPaintLayer(), ["paint", "clear"], signal.notify);
 
   const inventoryDeclarations = definition.inventories ?? {};
@@ -720,7 +744,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
   };
 
-  const trade = createTradeSystem({
+  const trade = features.trade
+    ? createTradeSystem({
     resolveTrade: (itemId) => content.itemById?.(itemId)?.trade,
     wallet: {
       canAfford: (costs) => (walletCanAfford(walletOf(activeUserId()), costs) ? null : "insufficient-funds"),
@@ -750,7 +775,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       },
       count: (inventoryId, itemId) => inventoryFor(activeUserId()).count(inventoryId, itemId),
     },
-  });
+      })
+    : undefined;
 
   function seedUserPool(
     userId: string,
@@ -762,29 +788,30 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     map[statId] = next[statId]!;
   }
 
-  const rawQuest = createQuestJournal({
-    events,
-    rewards: {
-      grantXp(userId, amount) {
-        const existing = ensureInstanceStats(userId)["xp"];
-        const current = (existing?.current ?? 0) + amount;
-        seedUserPool(userId, "xp", { current, max: Math.max(existing?.max ?? 0, current) });
-      },
-      grantEconomy: (userId, currencyId, amount) => economy.grant(userId, currencyId, amount),
-      grantItem(userId, inventoryId, itemId, count) {
-        if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventoryFor(userId).put(inventoryId, itemId, count);
-        return result.status === "ok" ? null : { reason: result.reason };
-      },
-      grantUnlock: (userId, unlockId) => unlocks.grant(userId, unlockId),
-    },
-    hasUnlock: (userId, id) => unlocks.has(userId, id),
-  });
-  const quest = notifyAfter(
-    rawQuest,
-    ["accept", "abandon", "progress", "turnIn", "grant", "revoke", "hydrate"],
-    signal.notify,
-  );
+  const quest = features.quest
+    ? notifyAfter(
+        createQuestJournal({
+          events,
+          rewards: {
+            grantXp(userId, amount) {
+              const existing = ensureInstanceStats(userId)["xp"];
+              const current = (existing?.current ?? 0) + amount;
+              seedUserPool(userId, "xp", { current, max: Math.max(existing?.max ?? 0, current) });
+            },
+            grantEconomy: (userId, currencyId, amount) => economy.grant(userId, currencyId, amount),
+            grantItem(userId, inventoryId, itemId, count) {
+              if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
+              const result = inventoryFor(userId).put(inventoryId, itemId, count);
+              return result.status === "ok" ? null : { reason: result.reason };
+            },
+            grantUnlock: (userId, unlockId) => unlocks?.grant(userId, unlockId),
+          },
+          hasUnlock: (userId, id) => unlocks?.has(userId, id) ?? false,
+        }),
+        ["accept", "abandon", "progress", "turnIn", "grant", "revoke", "hydrate"],
+        signal.notify,
+      )
+    : undefined;
 
   const loadouts = notifyAfter(
     createLoadouts({
@@ -810,7 +837,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
       stats: { seed: seedUserPool },
       economy: { grant: economy.grant },
-      unlocks: { grant: unlocks.grant },
+      unlocks: { grant: (userId, unlockId) => unlocks?.grant(userId, unlockId) },
     }),
     ["applyLoadout"],
     signal.notify,
@@ -965,6 +992,43 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     if (input.crit !== undefined) event.crit = input.crit;
     if (input.scale !== undefined) event.scale = input.scale;
     events.emit("entity.floatText", event);
+  }
+
+  const vfxDefaultDurationMs: Record<VfxKind, number> = {
+    projectile: 380,
+    beam: 260,
+    nova: 520,
+    glow: 700,
+    spark: 240,
+  };
+  let vfxSeq = 0;
+
+  function resolveVfxPoint(
+    ref: string | readonly [number, number, number] | undefined,
+  ): [number, number, number] | undefined {
+    if (ref === undefined) return undefined;
+    if (typeof ref === "string") {
+      const entity = entities.get(ref);
+      if (entity === null) return undefined;
+      return [entity.position[0], entity.position[1], entity.position[2]];
+    }
+    return [ref[0], ref[1], ref[2]];
+  }
+
+  function emitVfx(input: VfxInput): void {
+    const to = resolveVfxPoint(input.to);
+    const from = resolveVfxPoint(input.from) ?? to;
+    if (from === undefined) return;
+    const event: GameEventMap["combat.vfx"] = {
+      id: vfxSeq++,
+      kind: input.kind,
+      color: input.color,
+      from,
+      durationMs: input.durationMs ?? vfxDefaultDurationMs[input.kind],
+    };
+    if (to !== undefined) event.to = to;
+    if (input.radius !== undefined) event.radius = input.radius;
+    events.emit("combat.vfx", event);
   }
 
   let telegraphSeq = 0;
@@ -1288,6 +1352,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       hydrate: (data) => chat.hydrate(data as ChatSnapshot),
     });
   }
+  if (social) {
+    const socialModule = social;
+    snapshotModules.push({
+      key: "social",
+      snapshot: () => socialModule.snapshot(),
+      hydrate: (data) => socialModule.hydrate(data as SocialSnapshot),
+    });
+  }
 
   const ctx: GameContext = {
     scene: {
@@ -1308,6 +1380,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         blackboard: entities.blackboard,
         stats: entityStats,
         floatText: emitFloatText,
+        vfx: emitVfx,
         telegraph: fireTelegraph,
         hitReaction: applyHitReaction,
         setTarget: targeting.setTarget,

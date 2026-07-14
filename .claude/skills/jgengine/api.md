@@ -387,6 +387,7 @@
 - `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
 - `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
 - `TelegraphInput` (interface): interface TelegraphInput — ⚠ undocumented
+- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 - `createGameContext` (function): function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(options: GameContextOptions<TAssetRef, TMultiplayer>): GameContext — ⚠ undocumented
 

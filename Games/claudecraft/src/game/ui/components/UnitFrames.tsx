@@ -49,7 +49,7 @@ function AuraRow({ instanceId }: { instanceId: string }) {
               : "border-[#3a6ea8] bg-[#0a1520] text-[#9fc4e0]"
           }`}
         >
-          <GameIcon name={aura.icon as GameIconName} size={17} />
+          <GameIcon name={aura.icon} size={17} />
         </span>
       ))}
     </div>
@@ -103,7 +103,7 @@ export function PlayerFrame() {
   return (
     <div>
       <div className="flex items-center">
-        <Portrait icon={cls.icon as GameIconName} color={cls.color} level={level?.current ?? 1} />
+        <Portrait icon={cls.icon} color={cls.color} level={level?.current ?? 1} />
         <div className="wcc-panel w-[190px] rounded-l-none px-2 py-1.5">
           <div className="wcc-title truncate text-xs">{name ?? cls.name}</div>
           <div className="mt-0.5 space-y-0.5">

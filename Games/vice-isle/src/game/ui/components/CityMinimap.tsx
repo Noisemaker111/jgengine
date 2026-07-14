@@ -1,11 +1,7 @@
 import { useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { MinimapChrome, type MinimapChromeMarker } from "@jgengine/react/map";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import {
-  clampToMinimapEdge,
-  headingToBearing,
-  projectToMinimap,
-  type MinimapView,
-} from "@jgengine/core/world/minimap";
+import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/world/minimap";
 import {
   BRIEFCASE_POS,
   DOCK_FIGHT_CENTER,
@@ -16,7 +12,7 @@ import {
   ROADS,
   districtAt,
 } from "../../world/districts";
-import { RACE_STORE_KEY, WANTED_STORE_KEY, type RaceSnapshot, type WantedSnapshot } from "../../handroll";
+import { raceStore, wantedStore } from "../../handroll";
 
 const SIZE = 176;
 const RADIUS = 130;
@@ -37,10 +33,10 @@ function readMap(ctx: GameContext): MapSnapshot | null {
     .list()
     .filter((e) => e.name.startsWith("cop_"))
     .map((e) => [e.position[0], e.position[2]] as const);
-  const quests = ctx.game.quest.list(ctx.player.userId);
+  const quests = ctx.game.quest!.list(ctx.player.userId);
   const active = quests.find((q) => q.status === "active");
-  const wanted = ctx.game.store.get(WANTED_STORE_KEY) as WantedSnapshot | undefined;
-  const race = ctx.game.store.get(RACE_STORE_KEY) as RaceSnapshot | undefined;
+  const wanted = wantedStore.read(ctx);
+  const race = raceStore.read(ctx);
   return {
     player: player.position,
     heading: player.rotationY,
@@ -78,6 +74,27 @@ export function CityMinimap() {
         ? QUEST_TARGETS[snapshot.activeQuest]
         : undefined;
   const district = districtAt(snapshot.player[0], snapshot.player[2]);
+  const markers: MinimapChromeMarker[] = snapshot.cops.map((cop, i) => ({
+    id: `cop-${i}`,
+    position: cop,
+    color: "#4f7de8",
+    radius: 4,
+    strokeColor: "#000",
+    strokeWidth: 1,
+  }));
+  if (target !== undefined) {
+    markers.push({ id: "target", position: target, color: "#ffb020", radius: 5.5, strokeColor: "#000", strokeWidth: 1.5 });
+  }
+  markers.push({
+    id: "player",
+    position: [snapshot.player[0], snapshot.player[2]],
+    heading: headingToBearing(snapshot.heading),
+    color: "#f2599b",
+    radius: 9,
+    strokeColor: "#000",
+    strokeWidth: 1.5,
+    clampToEdge: false,
+  });
 
   return (
     <div className="flex flex-col items-start gap-1">
@@ -92,22 +109,7 @@ export function CityMinimap() {
             const b = projectToMinimap(seg.to, view);
             return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#dfe6ee" strokeWidth={4} strokeOpacity={0.75} strokeLinecap="round" />;
           })}
-          {snapshot.cops.map((cop, i) => {
-            const proj = clampToMinimapEdge(projectToMinimap(cop, view), SIZE);
-            return <circle key={`cop-${i}`} cx={proj.x} cy={proj.y} r={4} fill="#4f7de8" stroke="#000" strokeWidth={1} />;
-          })}
-          {target !== undefined ? (
-            (() => {
-              const proj = clampToMinimapEdge(projectToMinimap(target, view), SIZE);
-              return <circle cx={proj.x} cy={proj.y} r={5.5} fill="#ffb020" stroke="#000" strokeWidth={1.5} />;
-            })()
-          ) : null}
-          <polygon
-            points={`${SIZE / 2},${SIZE / 2 - 9} ${SIZE / 2 - 6},${SIZE / 2 + 6} ${SIZE / 2},${SIZE / 2 + 3} ${SIZE / 2 + 6},${SIZE / 2 + 6}`}
-            fill="#f2599b"
-            stroke="#000"
-            strokeWidth={1.5}
-          />
+          <MinimapChrome view={view} markers={markers} />
         </svg>
         <div className="absolute right-1 top-0.5 text-[10px] font-black text-white/70">N</div>
       </div>

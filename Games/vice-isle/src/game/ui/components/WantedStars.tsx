@@ -1,8 +1,8 @@
-import { useGameStore } from "@jgengine/react/hooks";
-import { MAX_STARS, WANTED_STORE_KEY, type WantedSnapshot } from "../../handroll";
+import { useStore } from "@jgengine/react/store";
+import { MAX_STARS, wantedStore } from "../../handroll";
 
 export function WantedStars() {
-  const wanted = useGameStore((ctx) => (ctx.game.store.get(WANTED_STORE_KEY) as WantedSnapshot | undefined) ?? null);
+  const wanted = useStore(wantedStore);
   const stars = wanted?.stars ?? 0;
   return (
     <div

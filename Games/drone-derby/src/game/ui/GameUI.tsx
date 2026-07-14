@@ -1,9 +1,9 @@
-import { useSyncExternalStore } from "react";
 import { SettingsTrigger } from "@jgengine/react";
+import { useStore } from "@jgengine/react/store";
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 import { CountdownPips } from "@/components/ui/match-timer";
 
-import { runStore } from "../../loop";
+import { runStore } from "../race/run";
 import { beginPointerDrag, endPointerDrag, updatePointerDrag } from "../drone/pointerInput";
 import { ringsForCourse } from "../race/courses";
 import { BatteryColumn } from "./components/BatteryColumn";
@@ -16,7 +16,7 @@ import { TelemetryStrip } from "./components/TelemetryStrip";
 import { voltNeonVars } from "./theme";
 
 function FlightHud() {
-  const state = useSyncExternalStore(runStore.subscribe, runStore.getState);
+  const state = useStore(runStore);
   const rings = ringsForCourse(state.courseId);
   const nextRing = rings[state.ringIndex] ?? null;
 
@@ -102,7 +102,7 @@ function FlightHud() {
 }
 
 function HudLayer() {
-  const state = useSyncExternalStore(runStore.subscribe, runStore.getState);
+  const state = useStore(runStore);
 
   if (state.phase === "menu") return <StartScreen courseId={state.courseId} />;
 

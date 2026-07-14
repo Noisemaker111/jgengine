@@ -1,4 +1,4 @@
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 
 import { specsForClass } from "../../talents/catalog";
@@ -39,7 +39,7 @@ export function TalentPanel() {
               className="flex w-full items-center gap-3 rounded border border-stone-700 bg-stone-900/80 px-3 py-2.5 text-left hover:border-amber-500"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded border border-stone-600 text-amber-300">
-                <GameIcon name={spec.icon as GameIconName} size={24} />
+                <GameIcon name={spec.icon} size={24} />
               </span>
               <span>
                 <span className="block font-semibold text-amber-100">{spec.name}</span>

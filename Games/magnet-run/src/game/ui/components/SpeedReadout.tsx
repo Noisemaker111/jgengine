@@ -1,9 +1,11 @@
+import { formatSpeed } from "@jgengine/core/format/speed";
 import { keyLabel } from "../keyLabel";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 export function SpeedReadout() {
-  const run = useRunState();
-  const kmh = Math.round(run.speed * 3.2);
+  const run = useStore(runStore);
+  const kmh = formatSpeed(run.speed, { showUnit: false });
   return (
     <div className="flex flex-col items-start gap-0.5 rounded bg-[#2b2f36]/85 px-3 py-1.5 shadow-lg">
       <span className="text-[10px] font-semibold tracking-widest text-[#dfe6ee]/60">SPEED</span>

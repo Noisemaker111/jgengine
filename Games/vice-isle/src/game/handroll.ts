@@ -1,5 +1,6 @@
 import { cameraShake } from "@jgengine/shell/camera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineStore } from "@jgengine/core/store/defineStore";
 import { steerYaw } from "@jgengine/core/movement/steering";
 import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "@jgengine/core/physics/vehicleBody";
 import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFollowState } from "@jgengine/core/nav/pathFollow";
@@ -105,9 +106,6 @@ export interface WantedSnapshot {
   peakStars: number;
 }
 
-export const WANTED_STORE_KEY = "vice.wanted";
-export const DRIVING_STORE_KEY = "vice.driving";
-export const RACE_STORE_KEY = "vice.race";
 export const HEAT_PER_STAR = 100;
 export const MAX_STARS = 5;
 export const PURSUIT_STARS = 3;
@@ -122,6 +120,10 @@ export interface RaceSnapshot {
   finished: boolean;
   won: boolean;
 }
+
+export const wantedStore = defineStore<WantedSnapshot | undefined>("vice.wanted", undefined);
+export const drivingStore = defineStore<string | null | undefined>("vice.driving", undefined);
+export const raceStore = defineStore<RaceSnapshot | undefined>("vice.race", undefined);
 
 interface TrafficCar {
   entityId: string;
@@ -167,7 +169,7 @@ export function createHandroll(): Handroll {
   }
 
   function publishWanted(ctx: GameContext): void {
-    ctx.game.store.set(WANTED_STORE_KEY, { heat, stars: stars(), peakStars } satisfies WantedSnapshot);
+    wantedStore.write(ctx, { heat, stars: stars(), peakStars } satisfies WantedSnapshot);
   }
 
   function carStateFor(ctx: GameContext, vehicleId: string): CarState {
@@ -318,7 +320,7 @@ export function createHandroll(): Handroll {
   }
 
   function publishRace(ctx: GameContext, snapshot: RaceSnapshot): void {
-    ctx.game.store.set(RACE_STORE_KEY, snapshot);
+    raceStore.write(ctx, snapshot);
   }
 
   function endRace(ctx: GameContext, won: boolean): void {
@@ -393,7 +395,7 @@ export function createHandroll(): Handroll {
       driving = vehicleId;
       carStateFor(ctx, vehicleId);
       ctx.camera.follow(vehicleId);
-      ctx.game.store.set(DRIVING_STORE_KEY, vehicleId);
+      drivingStore.write(ctx, vehicleId);
     },
     exitVehicle(ctx) {
       if (driving === null) return;
@@ -401,7 +403,7 @@ export function createHandroll(): Handroll {
       driving = null;
       lastSpeedKmh = 0;
       ctx.camera.follow(null);
-      ctx.game.store.set(DRIVING_STORE_KEY, null);
+      drivingStore.write(ctx, null);
       if (vehicle !== null) {
         const side = vehicle.rotationY + Math.PI / 2;
         const x = vehicle.position[0] + Math.sin(side) * 2.2;
@@ -471,7 +473,7 @@ export function createHandroll(): Handroll {
         driving = null;
         lastSpeedKmh = 0;
         ctx.camera.follow(null);
-        ctx.game.store.set(DRIVING_STORE_KEY, null);
+        drivingStore.write(ctx, null);
         heat = Math.min(MAX_STARS * HEAT_PER_STAR, heat + 60);
         publishWanted(ctx);
       }

@@ -8,7 +8,17 @@ export interface TerrainDetailMaterialHandle {
 }
 
 const NOISE_GLSL = /* glsl */ `
-float jgHash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+uint jgHashUint(uvec2 v){
+  uint x = v.x * 1664525u + v.y * 1013904223u;
+  x = (x ^ (x >> 16u)) * 2246822519u;
+  x = (x ^ (x >> 13u)) * 3266489917u;
+  x = x ^ (x >> 16u);
+  return x;
+}
+float jgHash(vec2 p){
+  ivec2 i = ivec2(floor(p));
+  return float(jgHashUint(uvec2(i))) * (1.0 / 4294967296.0);
+}
 float jgVNoise(vec2 p){
   vec2 i = floor(p); vec2 f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);

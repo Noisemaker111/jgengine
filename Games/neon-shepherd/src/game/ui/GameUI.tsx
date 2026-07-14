@@ -1,10 +1,10 @@
 import { SettingsTrigger } from "@jgengine/react";
 import { useGame, useGameClock, usePlayer, useSceneEntities } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { PARK_Z, ROAD_Z } from "../constants";
 import type { TierId } from "../difficulty/tiers";
 import { nearestRoadIndex, nextRoadAhead } from "../session/runState";
-import { aliveCount } from "../session/store";
-import { useRunState } from "../session/useRunState";
+import { aliveCount, runStore } from "../session/store";
 import { BreathBar } from "./components/BreathBar";
 import { CaretakerToast } from "./components/CaretakerToast";
 import { CorridorMap } from "./components/CorridorMap";
@@ -19,7 +19,7 @@ export function GameUI(): React.ReactNode {
   const { commands } = useGame();
   const entities = useSceneEntities();
   const clock = useGameClock();
-  const run = useRunState();
+  const run = useStore(runStore);
 
   const playerEntity = entities.find((entity) => entity.id === userId);
   const shepherd =

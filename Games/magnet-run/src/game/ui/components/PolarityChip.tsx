@@ -1,11 +1,12 @@
 import { keyLabel } from "../keyLabel";
-import { useRunState } from "../useRunState";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../systems/runState";
 
 const LABEL = { red: "+", blue: "−" } as const;
 const COLOR = { red: "#ff4b3e", blue: "#3e7bff" } as const;
 
 export function PolarityChip() {
-  const run = useRunState();
+  const run = useStore(runStore);
   const flashing = run.flipFlashUntil > run.totalElapsed;
   const color = COLOR[run.polarity];
 

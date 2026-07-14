@@ -1,16 +1,18 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineStore } from "@jgengine/core/store/defineStore";
 import { handroll } from "./handroll";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { GARAGE_POS } from "./world/districts";
 
-export const DIALOGUE_STORE_KEY = "vice.dialogue";
-export const SHOP_STORE_KEY = "vice.shop";
-export const GARAGE_STORE_KEY = "vice.garage";
-export const STARTED_STORE_KEY = "vice.started";
+export const dialogueStore = defineStore<string | undefined>("vice.dialogue", undefined);
+export const shopStore = defineStore<string | undefined>("vice.shop", undefined);
+export const garageStore = defineStore<boolean | undefined>("vice.garage", undefined);
+export const startedStore = defineStore<boolean | undefined>("vice.started", undefined);
+export const slotStore = defineStore<number | undefined>("vice.slot", undefined);
 
 function selectedHotbarItem(ctx: GameContext): string | null {
   const slots = ctx.player.inventory.state("hotbar").slots;
-  const selected = (ctx.game.store.get("vice.slot") as number | undefined) ?? 0;
+  const selected = slotStore.read(ctx) ?? 0;
   const slot = slots[selected];
   return slot?.itemId ?? null;
 }
@@ -40,8 +42,8 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("game.start", {
     apply(state) {
-      if ((state.game.store.get(STARTED_STORE_KEY) as boolean | undefined) === true) return;
-      state.game.store.set(STARTED_STORE_KEY, true);
+      if (startedStore.read(state) === true) return;
+      startedStore.write(state, true);
       const player = state.scene.entity.get(state.player.userId);
       const px = player?.position[0] ?? -176;
       const pz = player?.position[2] ?? 24;
@@ -80,31 +82,31 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("contact.talk", {
     apply(state, input) {
       const dialogue = (input as { dialogue?: string }).dialogue;
-      if (dialogue !== undefined) state.game.store.set(DIALOGUE_STORE_KEY, dialogue);
+      if (dialogue !== undefined) dialogueStore.write(state, dialogue);
     },
   });
 
   ctx.game.commands.define("dialogue.close", {
     apply(state) {
-      state.game.store.delete(DIALOGUE_STORE_KEY);
+      dialogueStore.clear(state);
     },
   });
 
   ctx.game.commands.define("mission.acknowledge", {
     apply(state) {
-      state.game.store.delete(DIALOGUE_STORE_KEY);
+      dialogueStore.clear(state);
     },
   });
 
   ctx.game.commands.define("shop.open", {
     apply(state) {
-      state.game.store.set(SHOP_STORE_KEY, "shop_ammunation");
+      shopStore.write(state, "shop_ammunation");
     },
   });
 
   ctx.game.commands.define("shop.close", {
     apply(state) {
-      state.game.store.delete(SHOP_STORE_KEY);
+      shopStore.clear(state);
     },
   });
 
@@ -113,7 +115,7 @@ export function registerCommands(ctx: GameContext): void {
       const itemId = (input as { item?: string }).item;
       if (itemId === undefined) return;
       const isWeapon = itemId.startsWith("pistol") || itemId.startsWith("smg") || itemId.startsWith("shotgun");
-      const result = state.game.trade.buy(itemId, 1, {
+      const result = state.game.trade!.buy(itemId, 1, {
         shop: "shop_ammunation",
         inventoryId: isWeapon ? "hotbar" : "backpack",
       });
@@ -125,13 +127,13 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("garage.open", {
     apply(state) {
-      state.game.store.set(GARAGE_STORE_KEY, true);
+      garageStore.write(state, true);
     },
   });
 
   ctx.game.commands.define("garage.close", {
     apply(state) {
-      state.game.store.delete(GARAGE_STORE_KEY);
+      garageStore.clear(state);
     },
   });
 
@@ -152,7 +154,7 @@ export function registerCommands(ctx: GameContext): void {
         position: [x, state.world.groundHeightAt(x, z), z],
         role: "prop",
       });
-      state.game.store.delete(GARAGE_STORE_KEY);
+      garageStore.clear(state);
       state.game.feed.push("vice.log", { text: `Bought a ${def.label}` });
     },
   });
@@ -185,7 +187,7 @@ export function registerCommands(ctx: GameContext): void {
   for (let slot = 1; slot <= 4; slot += 1) {
     ctx.game.commands.define(`selectSlot${slot}`, {
       apply(state) {
-        state.game.store.set("vice.slot", slot - 1);
+        slotStore.write(state, slot - 1);
       },
     });
   }

@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
+import type { GameIconName } from "@jgengine/react/gameIcons";
 
 import { cue, schoolCue } from "../audio/cues";
 import { classById } from "../classes/catalog";
@@ -35,6 +36,7 @@ import {
   fireSpellCastProcs,
   fireWeaponCritProcs,
 } from "./setProcs";
+import { playMeleeVfx, playSpellVfx } from "./vfx";
 import { ZONES } from "../world/zones";
 
 const rng = seededRng("claudecraft-combat");
@@ -214,6 +216,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
     case "damage": {
       const targetId = hostileTarget(ctx, userId);
       if (targetId === null) return;
+      playSpellVfx(ctx, ability, { casterId: userId, targetId });
       dealDamage(
         ctx,
         userId,
@@ -232,6 +235,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
       const targetId = targetOf(ctx, userId);
       const to = targetId !== null && !isMobInstance(targetId) ? targetId : userId;
       const amount = abilityAmount(ctx, userId, ability, sheet) * (crit ? CRIT_MULTIPLIER : 1);
+      playSpellVfx(ctx, ability, { casterId: userId, targetId: to });
       ctx.scene.entity.effect({
         from: userId,
         to,
@@ -244,6 +248,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
     case "dot": {
       const targetId = hostileTarget(ctx, userId);
       if (targetId === null) return;
+      playSpellVfx(ctx, ability, { casterId: userId, targetId });
       const total = abilityAmount(ctx, userId, ability, sheet);
       const ticks = Math.max(1, Math.floor((ability.duration ?? 12) / (ability.tickInterval ?? 3)));
       applyAura(ctx, targetId, userId, ability, Math.max(1, Math.round(total / ticks)), {});
@@ -253,6 +258,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
     case "hot": {
       const targetId = targetOf(ctx, userId);
       const to = targetId !== null && !isMobInstance(targetId) ? targetId : userId;
+      playSpellVfx(ctx, ability, { casterId: userId, targetId: to });
       const total = abilityAmount(ctx, userId, ability, sheet);
       const ticks = Math.max(1, Math.floor((ability.duration ?? 12) / (ability.tickInterval ?? 3)));
       applyAura(ctx, to, userId, ability, Math.max(1, Math.round(total / ticks)), {});
@@ -271,6 +277,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
               )
             : [targetId];
         for (const debuffed of targets) {
+          playSpellVfx(ctx, ability, { casterId: userId, targetId: debuffed });
           applyAura(ctx, debuffed, userId, ability, 0, {
             ...(ability.buffStat === undefined ? {} : { stat: ability.buffStat }),
             amount: -Math.abs(ability.buffAmount ?? ability.base),
@@ -280,6 +287,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
         enterCombat(ctx, userId);
         break;
       }
+      playSpellVfx(ctx, ability, { casterId: userId });
       applyAura(ctx, userId, userId, ability, 0, buffFlatAmount(sheet, ability));
       break;
     }
@@ -291,6 +299,11 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
           : ctx.scene.entity.get(userId)?.position;
       if (center === undefined || center === null) return;
       const amount = abilityAmount(ctx, userId, ability, sheet);
+      playSpellVfx(ctx, ability, {
+        casterId: userId,
+        at: [center[0], center[1], center[2]],
+        radius: ability.aoeRadius ?? 8,
+      });
       ctx.scene.entity.effect({
         from: userId,
         effect: "damage",
@@ -310,7 +323,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
 export function applyFood(
   ctx: GameContext,
   userId: string,
-  item: { id: string; name: string; icon: string; heal?: number; restore?: number },
+  item: { id: string; name: string; icon: GameIconName; heal?: number; restore?: number },
 ): void {
   const now = ctx.time.now();
   const list = aurasOf(userId);
@@ -456,6 +469,7 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
         const meleePct = externalCombatModsOf(userId)?.meleeDmgPct ?? 0;
         const raw = rollWeaponDamage(rng, sheet.weapon, sheet.attackPower) * (1 + meleePct);
         dealDamage(ctx, userId, targetId, raw, crit);
+        playMeleeVfx(ctx, userId, targetId);
         cue(ctx, crit ? "melee_crit" : "melee_hit");
         if (crit) fireWeaponCritProcs(ctx, userId, sheet, targetId);
         gainRage(ctx, userId, SWING_RAGE);

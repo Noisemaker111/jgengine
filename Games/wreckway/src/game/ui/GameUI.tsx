@@ -1,8 +1,8 @@
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { SettingsTrigger } from "@jgengine/react";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { RUN_STORE_KEY, type RunSession, type SessionSnapshot } from "../run/session";
+import { runSessionStore, type RunSession, type SessionSnapshot } from "../run/session";
 import { CompactorBar } from "./components/CompactorBar";
 import { CorridorMinimap } from "./components/CorridorMinimap";
 import { CrushedScreen } from "./components/CrushedScreen";
@@ -12,13 +12,12 @@ import { PitRadioTicker } from "./components/PitRadioTicker";
 import { StartScreen } from "./components/StartScreen";
 import { WinScreen } from "./components/WinScreen";
 
-function readSnapshot(ctx: GameContext): SessionSnapshot | null {
-  const session = ctx.game.store.get(RUN_STORE_KEY) as RunSession | undefined;
+function toSnapshot(session: RunSession | undefined): SessionSnapshot | null {
   return session === undefined ? null : session.snapshot();
 }
 
 export function GameUI() {
-  const snapshot = useGameStore(readSnapshot);
+  const snapshot = useStore(runSessionStore, toSnapshot);
   const { commands } = useGame();
 
   if (snapshot === null) return null;

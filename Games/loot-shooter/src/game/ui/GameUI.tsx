@@ -1,6 +1,8 @@
 import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
 import { LevelUpFlash, ToastStack } from "@jgengine/react/components";
+import { useStore } from "@jgengine/react/store";
 import { itemNameById } from "../content";
+import { runStore } from "../run/stores";
 import { AmmoPanel } from "./components/AmmoPanel";
 import { ChallengeTracker } from "./components/ChallengeTracker";
 import { GearRow } from "./components/GearRow";
@@ -12,11 +14,10 @@ import { PickupPrompt } from "./components/PickupPrompt";
 import { ScorePanel } from "./components/ScorePanel";
 import { RunScreens } from "./components/Screens";
 import { IntermissionBanner, WaveStatus } from "./components/WaveStatus";
-import { useRun } from "./components/useRun";
 
 export function GameUI() {
   const layout = useHudLayout({ storageKey: "loot-shooter" });
-  const run = useRun();
+  const run = useStore(runStore);
   const inPlay = run.status === "wave" || run.status === "intermission";
   return (
     <HudCanvas layout={layout} className="z-20 font-sans text-slate-100">

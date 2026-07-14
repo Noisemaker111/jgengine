@@ -1,8 +1,9 @@
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { STARTED_STORE_KEY } from "../../commands";
+import { useGame } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
+import { startedStore } from "../../commands";
 
 export function useGameStarted(): boolean {
-  return useGameStore((ctx) => (ctx.game.store.get(STARTED_STORE_KEY) as boolean | undefined) ?? false);
+  return useStore(startedStore, (v) => v ?? false);
 }
 
 export function TitleScreen() {

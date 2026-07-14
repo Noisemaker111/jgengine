@@ -52,6 +52,14 @@ export interface GameLoop<TContext = unknown> {
  * leaderboard/roster/turn plumbing it never asked for.
  */
 export interface GameFeatures {
+  /** Quest/mission journal (`ctx.game.quest`) — quest-driven games. */
+  quest?: boolean;
+  /** Shop/vendor barter (`ctx.game.trade`) — games with buy/sell economies. */
+  trade?: boolean;
+  /** Earned unlockable content (`ctx.game.unlocks`) — progression-gated games. */
+  unlocks?: boolean;
+  /** Cosmetic skins/customization (`ctx.player.cosmetics`) — appearance-customization games. */
+  cosmetics?: boolean;
   /** Owned/captured entity roster (`ctx.game.roster`) — pet/monster collection games. */
   roster?: boolean;
   /** Card pile zones (`ctx.game.cards`) — deckbuilders, card games. */

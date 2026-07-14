@@ -29,8 +29,8 @@ export function DialoguePanel() {
           const choices = line.choices.filter((choice) => {
             const quest = questArgs(choice);
             if (quest === null) return true;
-            if (quest.command === "quest.accept") return ctx.game.quest.canAccept(userId, quest.questId) === null;
-            if (quest.command === "quest.turnIn") return ctx.game.quest.canTurnIn(userId, quest.questId) === null;
+            if (quest.command === "quest.accept") return ctx.game.quest!.canAccept(userId, quest.questId) === null;
+            if (quest.command === "quest.turnIn") return ctx.game.quest!.canTurnIn(userId, quest.questId) === null;
             return true;
           });
           return { choices };

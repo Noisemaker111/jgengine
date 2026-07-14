@@ -1,8 +1,9 @@
 import { useCurrency } from "@jgengine/react/hooks";
-import { useRun } from "./useRun";
+import { useStore } from "@jgengine/react/store";
+import { runStore } from "../../run/stores";
 
 export function ScorePanel() {
-  const run = useRun();
+  const run = useStore(runStore);
   const scrap = useCurrency("scrap");
   if (run.status === "ready") return null;
   return (

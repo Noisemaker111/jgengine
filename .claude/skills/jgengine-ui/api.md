@@ -2,6 +2,12 @@
 
 # jgengine-ui — exported API surface
 
+## @jgengine/core/format/distance
+
+- `DistanceFormat` (interface): interface DistanceFormat — Options for {@link formatDistance}.
+- `DistanceUnit` (type): type DistanceUnit = "m" | "km" | "auto" — Target unit for {@link formatDistance}: meters, kilometers, or `"auto"` (km past 1000m).
+- `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
+
 ## @jgengine/core/format/duration
 
 - `DurationFormat` (interface): interface DurationFormat — Options for {@link formatDuration}.
@@ -9,6 +15,12 @@
 - `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
 - `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
 - `padNumber` (function): function padNumber(value: number, width: number): string — Left-pad a non-negative integer to `width` digits with leading zeros.
+
+## @jgengine/core/format/speed
+
+- `SpeedFormat` (interface): interface SpeedFormat — Options for {@link formatSpeed}.
+- `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
+- `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
 ## @jgengine/core/render/color
 
@@ -157,6 +169,8 @@
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips (bearing to each `MarkerSet` entry).
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
+- `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
+- `ControlsList` (function): function ControlsList({ bindings, controls, hideOnCoarsePointer = true, separator = " / ", className, rowClassName, keysClassName, keyClassName, separatorClassName, labelClassName, renderKey, renderRow, }: { bindings?: ActionCodesMap; controls: readonly ControlHint[]; hideOnCoarsePointer?: boolean; … — Renders a controls legend whose key glyphs come from the game's keybind map, so bindings live in one place and never drift from a hand-typed table. Hides itself on coarse-pointer devices (a touchscreen has no keyboard) via the same `data-jg-kbd-hint` marker as `KeyHint`. Headless: every part carries a `className` slot and `data-*` hook; pass `renderKey`/`renderRow` to fully own the markup.
 - `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): React.JSX.Element — ⚠ undocumented
 - `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
@@ -173,7 +187,7 @@
 - `DropInfo` (interface): interface DropInfo<T> — ⚠ undocumented
 - `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
-- `EventMeterView` (interface): interface EventMeterView — ⚠ undocumented
+- `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
 - `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> — ⚠ undocumented
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
 - `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -203,6 +217,9 @@
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
 - `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads a core `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers = [], markerColor = "#e2e8f0", markerRadius = 5, className, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
+- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
 - `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
 - `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -234,8 +251,10 @@
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `StackedPile` (function): function StackedPile({ cards, faceDown, offsetX = 0, offsetY = 20, cardWidth = 64, cardHeight = 90, layer, dropId, draggableFrom = 0, className, cardClassName, onCardClick, renderOverlay, }: { cards: readonly PlayingCard[]; faceDown?: boolean; offsetX?: number; offsetY?: number; cardWidth?: number; … — An overlapping fan of `CardFace`s. Plain-props: pass `cards`. Optional drag: pass a `layer` to make each card a `DraggableCard`, and `dropId` to wrap the pile in a `DropZone`.
+- `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
+- `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
 - `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
 - `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -252,7 +271,7 @@
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 - `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
-- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — ⚠ undocumented
+- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
@@ -276,7 +295,7 @@
 - `useEngineStore` (function): function useEngineStore<TState, TSelected>(store: ReadableEngineStore<TState>, selector: (state: TState) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
-- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — ⚠ undocumented
+- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useFriendRequests` (function): function useFriendRequests(): FriendRequestEntry[] — ⚠ undocumented
@@ -318,6 +337,7 @@
 - `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
+- `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
@@ -371,7 +391,7 @@
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
 - `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
@@ -434,12 +454,12 @@
 ## @jgengine/react/hooks
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
-- `EventMeterView` (interface): interface EventMeterView — ⚠ undocumented
+- `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `WorldBrowserState` (interface): interface WorldBrowserState — ⚠ undocumented
 - `abilityKitNeedsHeartbeat` (function): function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: number): boolean — ⚠ undocumented
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
-- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — ⚠ undocumented
+- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
@@ -448,7 +468,7 @@
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
-- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — ⚠ undocumented
+- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
 - `useFriendRequests` (function): function useFriendRequests(): FriendRequestEntry[] — ⚠ undocumented
 - `useFriends` (function): function useFriends(): FriendEntry[] — ⚠ undocumented
@@ -528,6 +548,9 @@
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads a core `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers = [], markerColor = "#e2e8f0", markerRadius = 5, className, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
+- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
 - `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
 - `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`.
 - `WorldMapProps` (interface): interface WorldMapProps — ⚠ undocumented
@@ -593,6 +616,17 @@
 - `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
 - `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
+
+## @jgengine/react/startScreen
+
+- `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
+- `ControlsList` (function): function ControlsList({ bindings, controls, hideOnCoarsePointer = true, separator = " / ", className, rowClassName, keysClassName, keyClassName, separatorClassName, labelClassName, renderKey, renderRow, }: { bindings?: ActionCodesMap; controls: readonly ControlHint[]; hideOnCoarsePointer?: boolean; … — Renders a controls legend whose key glyphs come from the game's keybind map, so bindings live in one place and never drift from a hand-typed table. Hides itself on coarse-pointer devices (a touchscreen has no keyboard) via the same `data-jg-kbd-hint` marker as `KeyHint`. Headless: every part carries a `className` slot and `data-*` hook; pass `renderKey`/`renderRow` to fully own the markup.
+- `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
+- `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
+
+## @jgengine/react/store
+
+- `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
 
 ## @jgengine/react/voice
 
@@ -1057,7 +1091,7 @@
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
@@ -1078,7 +1112,7 @@
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
@@ -1094,7 +1128,7 @@
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
+- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
@@ -1453,10 +1487,10 @@
 ## @jgengine/shell/terrain/GrassField
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
-- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 1 — ⚠ undocumented
+- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, budget?: number): number — ⚠ undocumented
+- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/ProceduralGround
 
@@ -1471,8 +1505,8 @@
 ## @jgengine/shell/terrain/grassBudget
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
-- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 1 — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, budget?: number): number — ⚠ undocumented
+- `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
+- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/grassGeometry
 

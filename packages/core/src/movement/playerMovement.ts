@@ -18,7 +18,7 @@ import {
   type MovementTuningOverrides,
   type PlayerMotionState,
 } from "./movementModel";
-import { steerYaw } from "./steering";
+import { approachYaw, steerYaw } from "./steering";
 import {
   advanceVoxelPlayer,
   createVoxelPlayerBody,
@@ -82,6 +82,7 @@ export function resolvePlayerMovementTuning(opts: {
 
 interface PlayerMovementState {
   heading: number;
+  facing: number | null;
   voxelBody: VoxelPlayerBody | null;
   motion: PlayerMotionState | null;
 }
@@ -105,7 +106,7 @@ function storeFor(ctx: GameContext): CtxMovementStore {
 function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState {
   let state = store.players.get(userId);
   if (state === undefined) {
-    state = { heading: 0, voxelBody: null, motion: null };
+    state = { heading: 0, facing: null, voxelBody: null, motion: null };
     store.players.set(userId, state);
   }
   return state;
@@ -119,6 +120,34 @@ export function playerMovementHeading(ctx: GameContext, userId: string): number 
 /** Drop a player's retained movement state (heading + kinematic body) — call on leave so a rejoin starts fresh instead of resuming stale velocity. */
 export function forgetPlayerMovement(ctx: GameContext, userId: string): void {
   stores.get(ctx)?.players.delete(userId);
+}
+
+/**
+ * Rendered body yaw to commit this frame. With `turnSpeed` unset the body snaps
+ * to its movement heading exactly as before (no opt-in, no behavior change); with
+ * `turnSpeed` set it rotates toward that heading at `turnSpeed` rad/s along the
+ * shortest arc, so strafing and backpedalling read as a turning body rather than
+ * an instant flip. Retained per player so the smoothing is continuous across frames.
+ */
+function resolveBodyFacing(
+  state: PlayerMovementState,
+  moving: boolean,
+  velocityX: number,
+  velocityZ: number,
+  fallbackYaw: number,
+  turnSpeed: number | undefined,
+  dt: number,
+): number {
+  if (turnSpeed === undefined) {
+    const snapped = moving ? Math.atan2(velocityX, velocityZ) : fallbackYaw;
+    state.facing = snapped;
+    return snapped;
+  }
+  const from = state.facing ?? fallbackYaw;
+  const target = moving ? Math.atan2(velocityX, velocityZ) : from;
+  const next = approachYaw(from, target, turnSpeed, dt);
+  state.facing = next;
+  return next;
 }
 
 /**
@@ -203,7 +232,15 @@ export function stepPlayerMovement(
     if (motionBatch !== null && motionBatch.y !== null) body.y = motionBatch.y;
     ctx.scene.entity.setPose(playerId, {
       position: [body.x, body.y, body.z],
-      rotationY: intent.moving ? Math.atan2(body.velocityX, body.velocityZ) : player.rotationY,
+      rotationY: resolveBodyFacing(
+        state,
+        intent.moving,
+        body.velocityX,
+        body.velocityZ,
+        player.rotationY,
+        tuning.movement?.turnSpeed,
+        dt,
+      ),
       dt,
     });
     return;
@@ -293,7 +330,15 @@ export function stepPlayerMovement(
   }
   ctx.scene.entity.setPose(playerId, {
     position: [nextX, nextY, nextZ],
-    rotationY: intent.moving ? Math.atan2(motion.horizontalVelocityX, motion.horizontalVelocityZ) : player.rotationY,
+    rotationY: resolveBodyFacing(
+      state,
+      intent.moving,
+      motion.horizontalVelocityX,
+      motion.horizontalVelocityZ,
+      player.rotationY,
+      tuning.movement?.turnSpeed,
+      dt,
+    ),
     dt,
   });
 }

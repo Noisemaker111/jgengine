@@ -1,4 +1,12 @@
-import type { RaceEvent } from "@jgengine/core/game/race";
+import {
+  finishRaceSession,
+  startRaceCountdown,
+  tickRaceSession,
+  type RaceEvent,
+  type RacePhase,
+  type RaceSessionState,
+} from "@jgengine/core/game/race";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 import { COURSES, type CourseId } from "./courses";
 
@@ -58,14 +66,20 @@ export interface RunState {
   telemetry: Telemetry;
 }
 
-const COUNTDOWN_SECONDS = 3;
+function runPhaseToSession(phase: RunPhase): RacePhase {
+  return phase === "menu" ? "idle" : phase === "countdown" ? "countdown" : phase === "flying" ? "racing" : "finished";
+}
+
+function toSession(state: RunState): RaceSessionState {
+  return { phase: runPhaseToSession(state.phase), countdown: state.countdown, elapsed: state.elapsed };
+}
 
 export function initialRunState(courseId: CourseId = "short"): RunState {
   return {
     phase: "menu",
     courseId,
     attempts: 0,
-    countdown: COUNTDOWN_SECONDS,
+    countdown: startRaceCountdown().countdown,
     elapsed: 0,
     ringIndex: 0,
     ringTotal: COURSES[courseId].ringIds.length,
@@ -83,23 +97,25 @@ export function selectCourse(courseId: CourseId): RunState {
 }
 
 export function beginCountdown(state: RunState): RunState {
-  return { ...initialRunState(state.courseId), phase: "countdown", attempts: state.attempts + 1 };
+  const session = startRaceCountdown();
+  return { ...initialRunState(state.courseId), phase: "countdown", countdown: session.countdown, attempts: state.attempts + 1 };
 }
 
 export function beginCountdownForCourse(state: RunState, courseId: CourseId): RunState {
   const attempts = state.courseId === courseId ? state.attempts + 1 : 1;
-  return { ...initialRunState(courseId), phase: "countdown", attempts };
+  const session = startRaceCountdown();
+  return { ...initialRunState(courseId), phase: "countdown", countdown: session.countdown, attempts };
 }
 
 export function tickCountdown(state: RunState, dt: number): RunState {
   if (state.phase !== "countdown") return state;
-  const countdown = state.countdown - dt;
-  return countdown <= 0 ? { ...state, phase: "flying", countdown: 0 } : { ...state, countdown };
+  const session = tickRaceSession(toSession(state), dt);
+  return session.phase === "racing" ? { ...state, phase: "flying", countdown: 0 } : { ...state, countdown: session.countdown };
 }
 
 export function tickFlying(state: RunState, dt: number): RunState {
   if (state.phase !== "flying") return state;
-  return { ...state, elapsed: state.elapsed + dt };
+  return { ...state, elapsed: tickRaceSession(toSession(state), dt).elapsed };
 }
 
 export function applyRingEvents(state: RunState, events: readonly RaceEvent[]): RunState {
@@ -131,9 +147,10 @@ export function assignMedal(time: number, course: CourseParTimes): Medal {
 
 export function finishRun(state: RunState, cellsUsed: number): RunState {
   if (state.phase !== "flying") return state;
+  const session = finishRaceSession(toSession(state));
   const course = COURSES[state.courseId];
-  const medal = assignMedal(state.elapsed, course);
-  return { ...state, phase: "finished", finishTime: state.elapsed, medal, cellsUsed };
+  const medal = assignMedal(session.elapsed, course);
+  return { ...state, phase: "finished", elapsed: session.elapsed, finishTime: session.elapsed, medal, cellsUsed };
 }
 
 export function crashDnf(
@@ -146,29 +163,7 @@ export function crashDnf(
   return { ...state, phase: "dnf", dnfReason: reason, dnfPosition: position, cellsUsed };
 }
 
-export interface RunStore {
-  getState(): RunState;
-  subscribe(listener: () => void): () => void;
-  setState(updater: (state: RunState) => RunState): void;
-}
-
-export function createRunStore(courseId: CourseId = "short"): RunStore {
-  let state = initialRunState(courseId);
-  const listeners = new Set<() => void>();
-  return {
-    getState() {
-      return state;
-    },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    setState(updater) {
-      state = updater(state);
-      for (const listener of listeners) listener();
-    },
-  };
-}
+export const runStore = defineStore<RunState>("run", () => initialRunState());
 
 export function formatRaceTime(totalSeconds: number): string {
   const clamped = Math.max(0, totalSeconds);

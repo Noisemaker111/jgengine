@@ -137,6 +137,7 @@ function prompts(ctx: GameContext): readonly PositionedPrompt[] {
 export const game = defineGame({
   capture: { play: [{ name: "character.pick", input: { characterId: "salvador" } }] },
   name: "Borderlands 2 Demake",
+  features: { quest: true, trade: true },
   assets,
   world,
   physics,

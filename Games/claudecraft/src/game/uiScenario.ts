@@ -5,7 +5,7 @@ import { isMobInstance } from "./ai/mobs";
 export const uiScenario: UiPreviewScenario = (ctx, playable) => {
   const userId = ctx.player.userId;
   ctx.game.commands.run("class.select", { classId: "warrior" });
-  ctx.game.quest.accept(userId, "q_wolves");
+  ctx.game.quest!.accept(userId, "q_wolves");
   const wolf = ctx.scene.entity.list().find((entity) => entity.name === "forest_wolf" && isMobInstance(entity.id));
   if (wolf !== undefined) {
     ctx.scene.entity.setPose(userId, {

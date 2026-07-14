@@ -120,7 +120,11 @@ A capture item's `item.use` handler composes the primitives instead of forking t
 
 ### Local saves — mutable single-player state
 
-`@jgengine/core/game/keyValueStore` — `createKeyValueStore({ key, initial, storage? })` is a single persisted mutable cell (`get` / `set` / `update` / `clear`) for single-player state a `recordBook` can't hold: a credit bank, a settings blob, level progress. `recordBook` is monotonic — it keeps only improved values; reach for the KV store when the value moves both ways. It targets the DOM-free `KeyValueStorage` seam (defaults to `localStorage`, pass a stub in tests or `null` for memory-only); corrupt or unavailable storage degrades to in-memory and never throws into a tick. Author any core-side persistence against `KeyValueStorage`, never the DOM `Storage` type — core has no DOM lib, so copying shell's `fovPreference.ts` shape into core fails the build.
+`@jgengine/core/game/recordBook` — `createRecordBook({ key, fields, storage? })` is a personal-best record book: named numeric fields racing toward `"lower"` (times) or `"higher"` (scores, streaks), with `best()` / `bestOf(field)` / `submit(run)` / `clear()`. `@jgengine/core/game/keyValueStore` — `createKeyValueStore({ key, initial, storage? })` is a single persisted mutable cell (`get` / `set` / `update` / `clear`) for single-player state a `recordBook` can't hold: a credit bank, a settings blob, level progress. `recordBook` is monotonic — it keeps only improved values; reach for the KV store when the value moves both ways. Both target the DOM-free `KeyValueStorage` seam and both default `storage` to the browser's `localStorage` when omitted — pass a stub in tests, or `storage: null` to force memory-only. That default already no-ops when `localStorage` is missing or throws (private mode, quota, SSR): adopters pass a `key`, never a hand-rolled `typeof localStorage` guard. Corrupt or unavailable storage degrades to in-memory and never throws into a tick. Author any core-side persistence against `KeyValueStorage`, never the DOM `Storage` type — core has no DOM lib, so copying shell's `fovPreference.ts` shape into core fails the build.
+
+## Race sessions
+
+`@jgengine/core/game/race` layers a start-line lifecycle and results math over the existing `createRaceState`/`createLapTimer` position tracker. `idleRaceSession()` is the pre-race grid state; `startRaceCountdown({ seconds? })` drops the lights into a `countdown` phase (or straight to `racing` for a standing start); `tickRaceSession(session, dt)` bleeds the countdown and accumulates `elapsed` while racing; `finishRaceSession(session)` freezes it at the flag. Once a finish order exists, `racePlacements(finishOrder, options?)` turns it into every racer's 1-based `place` + win/lose `outcome`, `placementOf(finishOrder, racerId, options?)` reads one racer's placement, and `raceOutcomeOf(finishOrder, racerId, options?)` is the plain win/lose shortcut — all three share a `winningPlaces` cutoff (default 1, pass 3 for a podium finish) instead of a hand-rolled `ranking[0] === player` check.
 
 ## Combat — effects, projectiles, death, feel, abilities
 ## Card, board & shaped-inventory primitives
@@ -171,6 +175,7 @@ Four pure primitives that hang off item **instances** (not the stackable catalog
 **Storage tiers + insurance** (`inventory/storageTier`) — the extraction-economy inventory half. Inventory containers carry a `tier: "carried" | "banked"` (`InventoryDeclaration.tier`; a Tarkov secure container is just a `banked` container on the body). `partitionOnDeath(containers)` splits a death snapshot into `{ kept, lost }` (banked survives, carried is dropped, stacks merged). `createDeliveryQueue()` is the delayed-delivery (insurance) hook: `schedule` a `ScheduledDelivery` with a game-time `deliverAt`, then `due(now)` / `claimDue(now)` drain it on the tick clock. `insureLost(lost, policy, userId, now, rng?)` filters the lost set to insured items and stamps a delayed `deliverAt` → feed straight into the queue. `resolveConsolation(policy, partition)` returns a baseline loadout id (apply via `applyLoadout`) — the death consolation grant, optionally gated on `if-carried-empty`. *(Session/round machines — extraction hold-to-leave, raid banking — consume this tier; see the objective-machine group.)*
 ## Objective, round & session machines
 Content-agnostic state machines for competitive/session shapes — plant/defuse, buy/live/end rounds, downed/revive, the battle-royale ring, extraction raids, run-vs-meta persistence. All pure `core`; every timer takes a **game-time** `dt`/`now` (`ctx.time`), so pause and fast-forward apply for free. Drive them from `loop.onTick` and pipe their events into `ctx.game.feed`/`events`; render their snapshots as HUD (per the UI quality bar in [`../jgengine-ui/reference.md`](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-ui/reference.md) — the downed banner, ring warning, and extraction timer are required HUD).
+**Race session & placements** (`game/race`) — the grid→countdown→racing→finished lifecycle and results-screen math riding alongside `RaceState`/`createRaceState`. `idleRaceSession()` starts a session at the grid (`phase: "idle"`); `startRaceCountdown({ seconds? })` drops the lights into `countdown` (or straight to `racing` at `seconds: 0`); `tickRaceSession(session, dt)` bleeds the countdown and accumulates `elapsed` while racing; `finishRaceSession(session)` freezes it at the flag. Once a `race.finished` event hands back a finish-order ranking, `racePlacements(finishOrder, { winningPlaces? })` turns it into every racer's `{ place, outcome }`, `placementOf(finishOrder, racerId, options?)` reads one racer's placement, and `raceOutcomeOf` is the win/lose-only shortcut — the `1st/2nd/3rd` + win/lose a results screen shows.
 **Contested channel** (`session/contestedChannel`) — the interrupt-on-damage progress objective behind plant/defuse, cash-out, urn deposit, banishing, and hold-to-extract. `createContestedChannel({ duration, interruptOnDamage?, resetOnInterrupt?, favorability?, ratePerOccupant?, contested?, decayRate? })`: `start(team)` begins the channel, `tick(dt, occupants)` advances it against per-team occupancy (`Record<teamId, count>`) and emits `start`/`tick`/`contested`/`paused`/`complete` events, `damage(reason?)` interrupts (keeps or zeroes progress per `resetOnInterrupt`). `favorability[team]` scales fill rate (Deadlock deposit); `ratePerOccupant` fills faster with more owners present; `contested: "pause" | "decay"` chooses whether an opposing occupant freezes or reverses progress (The Finals contest). The owner leaving pauses it. Extraction hold-to-leave reuses this primitive verbatim.
 **Round state** (`session/roundState`) — the buy→live→end match machine (Valorant/CS). `createRoundState({ phases, teams, phaseOrder?, winCondition?, maxRounds?, winReward?, lossBonus? })`: `tick(dt)` runs the phase timer and auto-advances (emitting `phase.start`/`phase.end`, rolling the last phase back into the next round's first), `concludeRound(winner)` records the win on any "conclude-eligible" phase (any phase but the first/last in the cycle), settles `round.economy` (winner gets `winReward`, losers get an escalating `lossBonus` via `lossBonusFor(rule, streak)` clamped to `max`), and moves to the next phase. `onPhaseEnd(hook)` fires commerce/spawn gates on each transition; `match.end` fires at `maxRounds`. `server.mode` stays a game string — this is the timer/economy engine under it.
 
@@ -183,7 +188,7 @@ Two extras beyond the default buy/live/end cycle: `phaseOrder?: string[]` overri
 
 ## Trade
 
-Catalog `trade` fields drive everything — no duplicate price lists.
+Opt-in: `defineGame({ features: { trade: true } })` — else `ctx.game.trade` is `undefined`. Catalog `trade` fields drive everything — no duplicate price lists.
 
 ```ts
 ctx.game.trade.canBuy(itemId, shopId, count?)   // → reason | null
@@ -194,6 +199,8 @@ ctx.game.trade.tradableAt(shopId, allItemIds)   // derive stock from catalogs
 ```
 
 ## Economy and unlocks
+
+`economy` is always on; `ctx.game.unlocks` is opt-in via `features: { unlocks: true }` (else `undefined`).
 
 ```ts
 ctx.game.economy.balance(userId, currencyId) / grant(...) / charge(...)  // charge → { reason } | null
@@ -224,6 +231,8 @@ ctx.player.applyLoadout(userId, loadoutId)               // → null | { reason 
 `LoadoutDef = { inventories?: { hotbar: [{ item, count, slot? }], … }, stats?, economy?, unlocks? }`. Application is **all-or-nothing**: every inventory put dry-runs first; any rejection applies nothing. Starter kits gate on `ctx.player.isNew`; class/respawn kits run from commands. Never scatter raw `put`/`grant` calls for a kit.
 
 ## Quests
+
+Opt-in: `defineGame({ features: { quest: true } })` — else `ctx.game.quest` is `undefined`.
 
 ```ts
 ctx.game.quest.register(catalog)                          // onInit
@@ -268,6 +277,8 @@ Built-in channels: `global` (everyone), `party` (reuses `social.party.membersOf`
 
 ## Cosmetic loadout
 
+Opt-in: `defineGame({ features: { cosmetics: true } })` — else `ctx.player.cosmetics` is `undefined`.
+
 ```ts
 ctx.player.cosmetics.register(defs)                       // onInit — Record<loadoutId, { slots: Record<slot, cosmeticId> }>
 ctx.player.cosmetics.apply(userId, loadoutId)              // merges the preset's slots
@@ -310,20 +321,42 @@ ctx.game.leaderboard.track({ stat, scope: "global" | "server" | "profile" })   /
 ctx.game.leaderboard.increment(userId, stat, { scope, by? }) / getTop / getProfile
 ```
 
+### Toasts — a self-expiring message queue
+
+`@jgengine/core/game/toasts` (`toast-feed` capability) is a capped, TTL-evicting queue for transient one-off HUD messages — the append-with-limit-plus-prune list every game hand-rolls under a local `Toast`/`pushToast`/expiry reimplementation. Reach for it instead of `ctx.game.feed` when the message is a game-raised announcement with its own lifetime (a boss-intro banner, an objective callout, a rate-limited warning), not a log of an engine event that already has a feed binding (kill feed, loot log, quest updates — those stay on `ctx.game.feed.bind(action)`).
+
+```ts
+const queue = createToastQueue({ cap: 4, ttlSeconds: 3 });   // @jgengine/core/game/toasts
+queue.push("The clock begins. Mind the count.", ctx.time.now());
+queue.prune(ctx.time.now());                                 // call once per tick alongside your other tickers
+queue.list();                                                 // oldest-first, feed straight to a HUD stack
+```
+
+`appendToast(toasts, toast, cap)` / `pruneToasts(toasts, now)` are the pure functions behind `createToastQueue` — reach for them directly only when the queue's state must live in an existing reducer/snapshot instead of its own instance. React rendering: `@jgengine/react`'s `ToastStack` renders `ctx.game.feed` entries, not this queue — pair a `createToastQueue` with your own list render (`queue.list().map(...)`) or a `useSyncExternalStore` wrapper, the same pattern `useFeed` uses over the feed ring buffer.
+
 `ctx.game.commands.define(name, { validate?(ctx, input), apply(ctx, input) })` registers a verb (`has`/`names`/`run` round it out); `run(name, input)` returns `{ status: "applied", state } | { status: "rejected", reason } | { status: "unknown-command" }`. `apply` may either **return** the next state (the classic reducer shape) or mutate `ctx` in place and return **nothing** — `run` keeps the current `ctx` as `state` when `apply` returns `void`, so a handler that only calls other `ctx` methods (spawn, effect, loot.grantToPlayer, …) doesn't need a pointless `return ctx`. **Event handlers use `ctx` directly** the same way (side effects: leaderboard, economy, scheduling) and never reassign state. One feed primitive for kill feeds, loot logs, quest updates — no per-domain feed hooks.
 
 ## `ctx.game.store` — reactive game state
 
+**Default to a typed handle: `defineStore` (`@jgengine/core/store/defineStore`) + `useStore` (`@jgengine/react/store`).** One handle per key, one type parameter, no `as T` at any call site — the blessed way to hold run state. Never re-author a per-game `store.get(KEY) as T` accessor or a byte-identical `useGameStore(... as T)` hook, and never fork run state into a module-level singleton read via `useSyncExternalStore` (that state escapes replay/host authority).
+
 ```ts
-ctx.game.store.set("health", 100)      // any key, any value type
-ctx.game.store.get("health")           // T | undefined
-ctx.game.store.has("health")
-ctx.game.store.delete("health")
-ctx.game.store.subscribe(listener)     // change-signal fires on set/delete
-ctx.game.store.mapSnapshot() / arraySnapshot()
+export const runStore = defineStore<RunState>("run", () => createInitialRunState());
+
+runStore.read(ctx)                         // value, or the initial before any write (no cast, no undefined)
+runStore.peek(ctx)                         // T | undefined — distinguishes "never written"
+runStore.write(ctx, next)                  // bumps ctx.version(), notifies ctx.subscribe
+runStore.update(ctx, (r) => ({ ...r }))
+const run = useStore(runStore)             // React; useStore(runStore, (r) => r.status) for a slice
 ```
 
-A reactive per-game keyed store (`ObservableKeyedStore<unknown>`) attached to `GameContext` — reach for it instead of a module-level singleton store for ad-hoc reactive game state (turn trackers, deck UIs, anything that doesn't already have a `ctx` surface). `set`/`delete` bump `ctx.version()` and notify `ctx.subscribe` listeners; `get`/`has` are plain reads. Unlike a per-slot handle, there is no `define`/seed step — a key simply doesn't exist until the first `set`.
+A factory initial runs at most once and is reused, so an unwritten slot keeps a stable identity. The raw keyed store (`ObservableKeyedStore<unknown>`, below) sits under `defineStore`; reach past the handle only for one-off ad-hoc scratch state where `get` returns `unknown` and you cast at the call site — the smell `defineStore` removes.
+
+```ts
+ctx.game.store.set("health", 100)      // any key, any value type
+ctx.game.store.get("health")           // unknown
+ctx.game.store.has("health") / delete("health") / subscribe(listener) / mapSnapshot() / arraySnapshot()
+```
 
 ## `ctx.game.cards` / `ctx.game.turn` — lazily-created piles and turn loops
 
