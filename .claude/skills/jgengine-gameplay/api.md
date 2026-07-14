@@ -193,6 +193,20 @@
 - `resolveCurrencyDelta` (function): function resolveCurrencyDelta(current: number, delta: number): { operation: CurrencyOperation; amount: number } — Deducts clamp to the available balance (a delta can never overdraw); adds apply in full.
 - `sanitizeCurrencyAmount` (function): function sanitizeCurrencyAmount(amount: number): number — ⚠ undocumented
 
+## @jgengine/core/economy/listingBook
+
+- `BuyListingOutcome` (interface): interface BuyListingOutcome — The financial split of a completed sale: total price, the house's cut, and what the seller's collection box was credited.
+- `BuyListingResult` (type): type BuyListingResult = | { status: "ok"; outcome: BuyListingOutcome } | { status: "rejected"; reason: "not-found" | "expired" | "own-listing" } — Result of {@link ListingBook.buy}.
+- `CancelListingResult` (type): type CancelListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: "not-found" | "not-owner" } — Result of {@link ListingBook.cancel}.
+- `CollectionBoxSnapshot` (interface): interface CollectionBoxSnapshot — A read-only view of a seller's collection box — currency and item stacks waiting to be claimed.
+- `Listing` (interface): interface Listing — One active post in a {@link ListingBook}: an item stack a seller offered at a fixed price until it expires.
+- `ListingBook` (interface): interface ListingBook — A player-driven marketplace of {@link Listing}s plus the per-seller collection boxes behind it. See {@link createListingBook}.
+- `ListingBookConfig` (interface): interface ListingBookConfig — Tunables for {@link createListingBook} — per-seller listing cap, expiry window, house cut, and optional price bounds.
+- `PostListingInput` (interface): interface PostListingInput — Input to {@link ListingBook.post} — the goods, asking price, and current game-time to stamp the listing with.
+- `PostListingReason` (type): type PostListingReason = | "invalid-count" | "invalid-price" | "price-too-low" | "price-too-high" | "listing-cap-reached" — Why {@link ListingBook.post} refused a listing.
+- `PostListingResult` (type): type PostListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: PostListingReason } — Result of {@link ListingBook.post}.
+- `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
+
 ## @jgengine/core/economy/sharedWallet
 
 - `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented

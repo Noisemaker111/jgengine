@@ -172,6 +172,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Capture check | `scene/captureCheck` | `captureChance`, `rollCapture`, `CaptureCheckInput` |
 | Owned roster | `scene/roster` | `createRoster`, `Roster`, `RosterEntry`, `RosterCaptureOptions` |
 | Economy wallet | `economy/wallet` | `createEmptyWallet`, `balance`, `grant`, `charge`, `canAfford`, `chargeAll` |
+| Player listing marketplace | `economy/listingBook` | `createListingBook`, `ListingBook`, `ListingBookConfig`, `Listing`, `PostListingInput`, `PostListingResult`, `CancelListingResult`, `BuyListingResult`, `BuyListingOutcome`, `CollectionBoxSnapshot` — post/cancel/buy against a shared listing book with a house cut, an expiry sweep, and a per-seller collection box for proceeds/returns |
 | Tech tree | `economy/techTree` | `createTechTree`, `TechTree`, `TechNodeDef`, `canUnlockTech`, `availableTech`, `unlockedRecipes`, `grantTech`, `techPrerequisitesMet` |
 | Recipe graph | `crafting/recipe` | `createRecipeGraph`, `RecipeGraph`, `RecipeDef`, `RecipeItem`, `canCraft`, `craft`, `missingInputs`, `stationSatisfied`, `craftSeconds` |
 | Production building | `crafting/production` | `productionBuilding`, `ProductionBuildingDef`, `createProductionState`, `tickProduction`, `feedProduction`, `drainOutput`, `advanceTransport`, `resolvePowerGrid` |

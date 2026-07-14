@@ -63,6 +63,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `LifecycleConfig` (interface) · `import { LifecycleConfig } from "@jgengine/core/game/defineGame"`
 
+## listing-book — player-driven marketplace listings with a house cut, expiry sweep, and seller collection box
+
+- `createListingBook` (function) · `import { createListingBook } from "@jgengine/core/economy/listingBook"`
+
 ## loadouts — save and swap named equipment loadouts
 
 - `createLoadouts` (function) · `import { createLoadouts } from "@jgengine/core/game/loadout"`

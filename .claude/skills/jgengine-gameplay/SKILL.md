@@ -199,6 +199,25 @@ ctx.game.trade.sell(itemId, count, { shop, inventoryId })
 ctx.game.trade.tradableAt(shopId, allItemIds)   // derive stock from catalogs
 ```
 
+## Player listing marketplace (auction house)
+
+`@jgengine/core/economy/listingBook` — a player-driven marketplace distinct from `trade` (fixed vendor buy/sell): players post their own goods, other players buy them, a house cut is taken on every sale, unsold listings expire and return to the seller, and sale proceeds/returns sit in a per-seller collection box until claimed. Not wired onto `ctx.game` as a feature — like `inventory/storageTier`'s delivery queue (mail), a game builds one `createListingBook` instance and wires post/buy/cancel/collect through its own `ctx.player.inventory`/`ctx.game.economy` calls (see `Games/claudecraft/src/game/auction/systems.ts` for the full wiring: escrow-on-list, put-then-charge-then-finalize-with-rollback on buy, a `ctx.time.every` sweep, and a browse/search view synced into `ctx.game.store`).
+
+```ts
+const book = createListingBook({ maxListingsPerSeller: 12, expirySeconds: 48 * 3600, cutRate: 0.05, minPrice?, maxPrice? });
+
+book.post({ sellerId, itemId, count, price, currency, now })   // → { status: "ok", listing } | { status: "rejected", reason }
+book.cancel(listingId, sellerId)                               // owner-only; caller returns the item to bags
+book.buy(listingId, buyerId, now)                               // removes the listing, credits the seller's box with price minus cutRate — never the seller's wallet directly
+book.sweepExpired(now)                                          // moves every past-expiry listing's goods into its seller's box as items, never currency
+book.active() / book.listingsOf(sellerId) / book.countOf(sellerId) / book.get(listingId)
+book.collectionOf(sellerId)                                     // { currency, items } snapshot, non-mutating
+book.claimCurrency(sellerId)                                    // drains + returns the box's currency (always collectible)
+book.claimItem(sellerId, itemId, count)                          // removes only what the caller actually placed in inventory (partial claims leave the remainder boxed)
+```
+
+The buyer/seller wallet and inventory movement is the caller's job, same split as `game/trade`: the primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it, so it stays reusable across genres (MMO auction house, survival-sim trading post, city-builder marketplace) without pulling in any one game's inventory shape.
+
 ## Economy and unlocks
 
 `economy` is always on; `ctx.game.unlocks` is opt-in via `features: { unlocks: true }` (else `undefined`).
