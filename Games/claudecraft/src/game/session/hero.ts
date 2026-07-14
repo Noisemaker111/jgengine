@@ -2,11 +2,13 @@ import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/ability
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createTalentTree, type TalentTree } from "@jgengine/core/game/talents";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameIconName } from "@jgengine/react/gameIcons";
 
 import { classById } from "../classes/catalog";
 import { classEntityId } from "../model";
 import { itemDefById } from "../items/catalog";
+import { aggregateEnchantBonuses } from "../items/enchanting";
 import { aggregateSetBonuses, equippedSetCounts, type SetProc } from "../items/sets";
 import { resolveAbilityMods } from "../talents/abilityMods";
 import { SPECS, TALENT_POINTS_RULE } from "../talents/catalog";
@@ -71,8 +73,8 @@ export interface HeroRuntime {
   talents: TalentTree<HeroStatId> | null;
 }
 
-const heroes = new Map<string, HeroRuntime>();
-const auras = new Map<string, AuraState[]>();
+const heroesOf = perContext(() => new Map<string, HeroRuntime>());
+const aurasOf_ = perContext(() => new Map<string, AuraState[]>());
 
 export interface ExternalCombatMods {
   meleeDmgPct: number;
@@ -84,20 +86,45 @@ export interface ExternalCombatMods {
   lifestealPct: number;
 }
 
-const externalMods = new Map<string, ExternalCombatMods>();
+const externalModsOf = perContext(() => new Map<string, ExternalCombatMods>());
 
-export function setExternalCombatMods(userId: string, mods: ExternalCombatMods | null): void {
-  if (mods === null) externalMods.delete(userId);
-  else externalMods.set(userId, mods);
+export function setExternalCombatMods(
+  ctx: GameContext,
+  userId: string,
+  mods: ExternalCombatMods | null,
+): void {
+  if (mods === null) externalModsOf(ctx).delete(userId);
+  else externalModsOf(ctx).set(userId, mods);
 }
 
-export function externalCombatModsOf(userId: string): ExternalCombatMods | null {
-  return externalMods.get(userId) ?? null;
+export function externalCombatModsOf(ctx: GameContext, userId: string): ExternalCombatMods | null {
+  return externalModsOf(ctx).get(userId) ?? null;
 }
+
+export const storeKeys = {
+  class: (userId: string) => `class:${userId}`,
+  equip: (userId: string) => `equip:${userId}`,
+  dead: (userId: string) => `dead:${userId}`,
+  cast: (userId: string) => `cast:${userId}`,
+  panel: (userId: string) => `panel:${userId}`,
+  shop: (userId: string) => `shop:${userId}`,
+  dialogue: (userId: string) => `dialogue:${userId}`,
+  autoAttack: (userId: string) => `autoattack:${userId}`,
+  auras: (instanceId: string) => `auras:${instanceId}`,
+  bar: (userId: string) => `bar:${userId}`,
+  spec: (userId: string) => `spec:${userId}`,
+  talents: (userId: string) => `talents:${userId}`,
+  rested: (userId: string) => `rested:${userId}`,
+  bank: (userId: string) => `bank:${userId}`,
+  professions: (userId: string) => `profs:${userId}`,
+  enchants: (userId: string) => `enchants:${userId}`,
+  name: (userId: string) => `name:${userId}`,
+  cinematic: (userId: string) => `cinematic:${userId}`,
+} as const;
 
 const NAME_PATTERN = /^[A-Za-z][A-Za-z' -]{1,15}$/;
 
-const cinematicTimers = new Map<string, () => void>();
+const cinematicTimersOf = perContext(() => new Map<string, () => void>());
 
 export function talentPointsForLevel(level: number): number {
   if (level < TALENT_POINTS_RULE.firstLevel) return 0;
@@ -113,7 +140,7 @@ export interface TalentsView {
 }
 
 export function syncTalents(ctx: GameContext, userId: string): void {
-  const hero = heroes.get(userId);
+  const hero = heroesOf(ctx).get(userId);
   const specId = specStore.read(ctx, userId);
   if (hero?.talents == null || specId === null) return;
   const spec = SPECS.find((entry) => entry.id === specId);
@@ -130,7 +157,7 @@ export function syncTalents(ctx: GameContext, userId: string): void {
 }
 
 export function chooseSpec(ctx: GameContext, userId: string, specId: string): boolean {
-  const hero = heroes.get(userId);
+  const hero = heroesOf(ctx).get(userId);
   const spec = SPECS.find((entry) => entry.id === specId);
   if (hero === undefined || spec === undefined || spec.classId !== hero.classId) return false;
   if (specStore.peek(ctx, userId) !== undefined) return false;
@@ -145,7 +172,7 @@ export function chooseSpec(ctx: GameContext, userId: string, specId: string): bo
 }
 
 export function allocateTalent(ctx: GameContext, userId: string, nodeId: string): boolean {
-  const hero = heroes.get(userId);
+  const hero = heroesOf(ctx).get(userId);
   if (hero?.talents == null) return false;
   const result = hero.talents.allocate(nodeId);
   if (!result.ok) return false;
@@ -158,7 +185,7 @@ export function allocateTalent(ctx: GameContext, userId: string, nodeId: string)
 export function abilityModsOf(ctx: GameContext, userId: string) {
   const view = talentsStore.read(ctx, userId);
   const mods = resolveAbilityMods(view?.ranks ?? {});
-  const external = externalMods.get(userId);
+  const external = externalModsOf(ctx).get(userId);
   if (external === undefined) return mods;
   return {
     ...mods,
@@ -172,7 +199,7 @@ export function abilityModsOf(ctx: GameContext, userId: string) {
 }
 
 export function applyAbilityTalentRetunes(ctx: GameContext, userId: string): void {
-  const hero = heroes.get(userId);
+  const hero = heroesOf(ctx).get(userId);
   const cls = classOf(ctx, userId);
   if (hero === undefined || cls === null) return;
   const mods = abilityModsOf(ctx, userId);
@@ -188,7 +215,7 @@ export function applyAbilityTalentRetunes(ctx: GameContext, userId: string): voi
 }
 
 export function grantTalentPoint(ctx: GameContext, userId: string, level: number): void {
-  const hero = heroes.get(userId);
+  const hero = heroesOf(ctx).get(userId);
   if (hero?.talents == null || level < TALENT_POINTS_RULE.firstLevel) return;
   hero.talents.grantPoints(TALENT_POINTS_RULE.perLevel);
   syncTalents(ctx, userId);
@@ -198,8 +225,8 @@ export function barOf(ctx: GameContext, userId: string): readonly string[] {
   return barStore.read(ctx, userId);
 }
 
-export function heroOf(userId: string): HeroRuntime | null {
-  return heroes.get(userId) ?? null;
+export function heroOf(ctx: GameContext, userId: string): HeroRuntime | null {
+  return heroesOf(ctx).get(userId) ?? null;
 }
 
 export function classOf(ctx: GameContext, userId: string): ClassDef | null {
@@ -211,25 +238,31 @@ export function equipsOf(ctx: GameContext, userId: string): Partial<Record<Equip
   return equipStore.read(ctx, userId);
 }
 
-export function auraEntries(): IterableIterator<[string, AuraState[]]> {
-  return auras.entries();
+export function enchantsOf(ctx: GameContext, userId: string): Partial<Record<EquipSlot, string>> {
+  const raw = ctx.game.store.get(storeKeys.enchants(userId));
+  return (raw as Partial<Record<EquipSlot, string>> | undefined) ?? {};
 }
 
-export function aurasOf(instanceId: string): AuraState[] {
-  let list = auras.get(instanceId);
+export function auraEntries(ctx: GameContext): IterableIterator<[string, AuraState[]]> {
+  return aurasOf_(ctx).entries();
+}
+
+export function aurasOf(ctx: GameContext, instanceId: string): AuraState[] {
+  const map = aurasOf_(ctx);
+  let list = map.get(instanceId);
   if (list === undefined) {
     list = [];
-    auras.set(instanceId, list);
+    map.set(instanceId, list);
   }
   return list;
 }
 
 export function syncAuras(ctx: GameContext, instanceId: string): void {
-  aurasStore.write(ctx, instanceId, aurasOf(instanceId).map((aura) => ({ ...aura })));
+  aurasStore.write(ctx, instanceId, aurasOf(ctx, instanceId).map((aura) => ({ ...aura })));
 }
 
 export function clearAuras(ctx: GameContext, instanceId: string): void {
-  auras.delete(instanceId);
+  aurasOf_(ctx).delete(instanceId);
   aurasStore.clear(ctx, instanceId);
 }
 
@@ -283,7 +316,16 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
   bonusAp += setBonus.ap;
   bonusSp += setBonus.sp;
   let bonusHaste = setBonus.hastePct;
-  for (const aura of aurasOf(userId)) {
+  const enchantBonus = aggregateEnchantBonuses(equips, enchantsOf(ctx, userId));
+  attributes.str += enchantBonus.str;
+  attributes.agi += enchantBonus.agi;
+  attributes.sta += enchantBonus.sta;
+  attributes.int += enchantBonus.int;
+  attributes.spi += enchantBonus.spi;
+  bonusAp += enchantBonus.attackPower;
+  bonusSp += enchantBonus.spellPower;
+  bonusHaste += enchantBonus.hastePct;
+  for (const aura of aurasOf(ctx, userId)) {
     if (aura.kind !== "buff" || aura.buffStat === undefined || aura.buffAmount === undefined) continue;
     if (aura.buffStat === "armor") armor += aura.buffAmount;
     else if (aura.buffStat === "attackPower") bonusAp += aura.buffAmount;
@@ -292,7 +334,7 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
     else if (aura.buffStat === "next_cast_free") continue;
     else attributes[aura.buffStat as AttributeId] += aura.buffAmount;
   }
-  const talentStats = heroes.get(userId)?.talents?.resolved().stats;
+  const talentStats = heroesOf(ctx).get(userId)?.talents?.resolved().stats;
   const talented = (stat: string, value: number): number => {
     const modifier = talentStats?.[stat as keyof typeof talentStats];
     if (modifier === undefined) return value;
@@ -306,7 +348,7 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
     cls.resource === "mana"
       ? cls.baseResource + cls.resourcePerLevel * (level - 1) + attributes.int * MANA_PER_INT
       : 100;
-  const external = externalMods.get(userId);
+  const external = externalModsOf(ctx).get(userId);
   return {
     attributes,
     maxHp: Math.round(talented("maxHp", maxHp) * (1 + (external?.maxHpPct ?? 0))),
@@ -320,7 +362,8 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
     critPct:
       talented("critPct", BASE_CRIT_PCT + attributes.agi * 0.05) +
       (external?.critAdd ?? 0) +
-      setBonus.critPct,
+      setBonus.critPct +
+      enchantBonus.critPct,
     hastePct: Math.max(0, bonusHaste),
     weapon,
     setProcs: setBonus.procs,
@@ -367,10 +410,11 @@ function respawnAsClassEntity(ctx: GameContext, userId: string): void {
 export function endSpawnCinematic(ctx: GameContext, userId: string): void {
   ctx.camera.setCinematic(null);
   cinematicStore.clear(ctx, userId);
-  const cancel = cinematicTimers.get(userId);
+  const timers = cinematicTimersOf(ctx);
+  const cancel = timers.get(userId);
   if (cancel !== undefined) {
     cancel();
-    cinematicTimers.delete(userId);
+    timers.delete(userId);
   }
 }
 
@@ -386,7 +430,7 @@ function startSpawnCinematic(ctx: GameContext, userId: string): void {
     ],
   });
   cinematicStore.write(ctx, userId, true);
-  cinematicTimers.set(userId, ctx.time.after(9, () => endSpawnCinematic(ctx, userId)));
+  cinematicTimersOf(ctx).set(userId, ctx.time.after(9, () => endSpawnCinematic(ctx, userId)));
 }
 
 export function selectClass(
@@ -421,7 +465,7 @@ export function selectClass(
     regenAt: 0,
     talents: null,
   };
-  heroes.set(userId, hero);
+  heroesOf(ctx).set(userId, hero);
   const stats = ctx.scene.entity.stats;
   stats.set(userId, "level", { max: MAX_LEVEL, current: 1 });
   stats.set(userId, "xp", { max: 400, current: 0 });
@@ -442,13 +486,13 @@ export function selectClass(
 }
 
 export function enterCombat(ctx: GameContext, userId: string): void {
-  const hero = heroes.get(userId);
+  const hero = heroesOf(ctx).get(userId);
   if (hero === null || hero === undefined) return;
   hero.combatUntil = ctx.time.now() + 5;
 }
 
 export function inCombat(ctx: GameContext, userId: string): boolean {
-  const hero = heroes.get(userId);
+  const hero = heroesOf(ctx).get(userId);
   return hero !== undefined && ctx.time.now() < hero.combatUntil;
 }
 
@@ -473,7 +517,7 @@ export function teleportHero(ctx: GameContext, userId: string, x: number, z: num
     if (value !== null) stats.set(userId, statId, { max: value.max, current: value.current });
   }
   applySheet(ctx, userId);
-  const hero = heroes.get(userId);
+  const hero = heroesOf(ctx).get(userId);
   if (hero !== undefined) {
     hero.casting = null;
     hero.autoAttack = false;
@@ -484,6 +528,6 @@ export function teleportHero(ctx: GameContext, userId: string, x: number, z: num
   return true;
 }
 
-export function resetHero(userId: string): void {
-  heroes.delete(userId);
+export function resetHero(ctx: GameContext, userId: string): void {
+  heroesOf(ctx).delete(userId);
 }

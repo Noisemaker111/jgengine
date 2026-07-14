@@ -112,6 +112,8 @@ Banned in the engine: `weapon.fire`, `consumable.use`, `game.combat.*`, per-weap
 
 `@jgengine/react` ships matching headless UI: `SkillCheckBar({ config, startedAt })` and `QteTrack({ steps, startedAt })` self-tick via `requestAnimationFrame` and read `ctx.time.now()` each frame — pass `className`/`trackClassName`/`zoneClassName`/`markerClassName` (or `stepClassName`/`activeClassName`/`doneClassName` for `QteTrack`) for the moving-zone/timing visuals the UI quality bar requires.
 
+`@jgengine/core/interaction/lockpick` models a solvable grid depth-puzzle ("thread a hidden path through a lock"): `generateLock(seed, tier: LockTierSpec)` carves a guaranteed solution path first (so any `tier` is always fair), then wraps an open-row forgiveness `width`, tumbler `gateCount` columns that pinch to one exact row, and optional `trapCount` ward-traps that look open but jam on contact — never on the solution. `stepLock(spec, col, row, action)` is the authoritative per-move resolver (`hardSet`/`set`/`steady`/`ease`/`drop`, mapped to a `-2..+2` row delta via `LOCK_ACTION_DELTA`), returning `advanced`/`success` (pick moves) or `slip`/`bind`/`trap` (pick doesn't move — the caller's session owns the lives economy, same pattern as an ante/tries counter). `visibleCells(spec, col, window)` is the fog-of-war and anti-cheat boundary: only cells within `col + window` of the current position are ever revealed, so a server never serializes the full board. `solveLock(spec)`/`solveLockPath(spec)` verify or compute a concrete solution — useful for a "give up and reveal it" hint, or for driving a bot/test through a session deterministically (walk the row deltas as actions). The board itself is pure data (`LockSpec`): a game owns session state (position, lives, ante) as a small `Map<userId, session>`, the same shape as a skill-check session map.
+
 ### Capture and owned roster
 
 `@jgengine/core/scene/captureCheck` — `captureChance({ hpFraction, catchPower, difficulty? })` returns a 0..1 probability (lower `hpFraction` and higher `catchPower` raise it, higher `difficulty` lowers it); `rollCapture(input, rng?)` rolls it. `@jgengine/core/scene/roster` — `createRoster()` is a persisted, per-owner store (`capture`, `release`, `list`, `get`, `setEquipped`, `equippedList`, `snapshot`/`hydrate`) wired onto the runtime as `ctx.game.roster`, distinct from `game.social.party` (session-ephemeral) — roster entries persist and are optionally equipped (deployed) independent of party membership.
@@ -121,6 +123,10 @@ A capture item's `item.use` handler composes the primitives instead of forking t
 ### Local saves — mutable single-player state
 
 `@jgengine/core/game/recordBook` — `createRecordBook({ key, fields, storage? })` is a personal-best record book: named numeric fields racing toward `"lower"` (times) or `"higher"` (scores, streaks), with `best()` / `bestOf(field)` / `submit(run)` / `clear()`. `@jgengine/core/game/keyValueStore` — `createKeyValueStore({ key, initial, storage? })` is a single persisted mutable cell (`get` / `set` / `update` / `clear`) for single-player state a `recordBook` can't hold: a credit bank, a settings blob, level progress. `recordBook` is monotonic — it keeps only improved values; reach for the KV store when the value moves both ways. Both target the DOM-free `KeyValueStorage` seam and both default `storage` to the browser's `localStorage` when omitted — pass a stub in tests, or `storage: null` to force memory-only. That default already no-ops when `localStorage` is missing or throws (private mode, quota, SSR): adopters pass a `key`, never a hand-rolled `typeof localStorage` guard. Corrupt or unavailable storage degrades to in-memory and never throws into a tick. Author any core-side persistence against `KeyValueStorage`, never the DOM `Storage` type — core has no DOM lib, so copying shell's `fovPreference.ts` shape into core fails the build.
+
+## Race sessions
+
+`@jgengine/core/game/race` layers a start-line lifecycle and results math over the existing `createRaceState`/`createLapTimer` position tracker. `idleRaceSession()` is the pre-race grid state; `startRaceCountdown({ seconds? })` drops the lights into a `countdown` phase (or straight to `racing` for a standing start); `tickRaceSession(session, dt)` bleeds the countdown and accumulates `elapsed` while racing; `finishRaceSession(session)` freezes it at the flag. Once a finish order exists, `racePlacements(finishOrder, options?)` turns it into every racer's 1-based `place` + win/lose `outcome`, `placementOf(finishOrder, racerId, options?)` reads one racer's placement, and `raceOutcomeOf(finishOrder, racerId, options?)` is the plain win/lose shortcut — all three share a `winningPlaces` cutoff (default 1, pass 3 for a podium finish) instead of a hand-rolled `ranking[0] === player` check.
 
 ## Combat — effects, projectiles, death, feel, abilities
 ## Card, board & shaped-inventory primitives
@@ -167,6 +173,7 @@ Presentation is a two-layer render binding, both engine-owned (rendered by `@jge
 Four pure primitives that hang off item **instances** (not the stackable catalog id) — all catalog-first (specs are game-supplied config) and renderer-free. Item instances that carry durability/affix/modular state key off a game-assigned instance id, the same way targeting keys off entity instance ids.
 **Durability** (`item/durability`) — per-instance wear + repair. `DurabilitySpec` (`{ max, wearPerUse?, wearPerHit?, disableAtZero?, repair? }`) is catalog data; `createDurability(spec)` seeds a `DurabilityState`, `wear(spec, state, "use" | "hit", times?)` decrements (floors at 0), `isDisabled(spec, state)` gates use at zero, `durabilityFraction` feeds a HUD bar. Repair is quote-then-apply: `repairQuote(spec, state, { station?, to? })` returns the `{ item, count }[]` material cost (scaled by points restored) + the post-repair state (optional `qualityLossPerRepair` shrinks `max` each repair, Tarkov-style) — the game charges the materials through inventory, then commits the quote's `state`. `createDurabilityTracker()` keeps `DurabilityState` per instance id for the runtime.
 **Affix roller** (`item/affix`) — procgen `base × rarity → { rolled affixes, computed stats, name }`. `createAffixRoller({ pools, rarities })` over rarity-weighted `AffixPool`s. `roll(base, rarityId, rng)` draws `affixCount` distinct affixes without replacement (weighted, via the engine's `pickWeighted`), computes stats (base × `rarity.statScale`, then `op: "add"` affixes, then `op: "mul"`), and composes a name from `rarity.namePart` + prefix/suffix parts. `rollRarity(rng)` picks a weighted tier; `rollRandom(base, rng)` chains both. Pass `seededRng(seed)` for deterministic drops; any `() => number` rng works (same contract as `loot.roll`). `seededRng` lives in `random/rng` (re-exported here) alongside `seededStreams(seed)`, which derives independent named streams from one seed — `streams("worldgen")` vs `streams("history")` — so simulation draws never perturb generation (intervening in a run cannot change the map).
+**Item instance registry** (`item/itemInstanceRegistry`) — the runtime home a rolled item needs once it leaves the roller (#536.1). `createItemInstanceRegistry<TDef>(prefix?)` stores any def shape behind a generated id (`"<prefix>:<baseId>:<n>"`, unique per registry); `get`/`has`/`release`/`count` round it out. `proceduralLootEntry(registry, roll)` wraps a roller into a `lootTable` `generate` callback (see `jgengine-combat`'s Loot section) so a drop table can hand back a freshly rolled instance instead of a static catalog id — the game's `content.itemById` checks the registry for ids it doesn't otherwise recognize, and every existing id-based system (inventories, world-item pickup, trade) keeps working unchanged.
 **Modular item** (`item/modularItem`) — a whole assembled from parts in typed mount slots (guns, mechs). `ModularItemDef` has `slots: MountSlotDef[]` (`{ id, accepts, required? }`); `install(def, installed, slotId, part)` validates the slot exists, accepts the part's `category`, and is empty; `computeEffectiveStats(def, installed)` rolls part `stats` (additive) then `multipliers` over `baseStats`; `missingRequiredSlots`/`isComplete` gate a buildable whole. `createModularItem(def)` is the stateful wrapper (`install`/`uninstall`/`effectiveStats`/`partInSlot`).
 **Storage tiers + insurance** (`inventory/storageTier`) — the extraction-economy inventory half. Inventory containers carry a `tier: "carried" | "banked"` (`InventoryDeclaration.tier`; a Tarkov secure container is just a `banked` container on the body). `partitionOnDeath(containers)` splits a death snapshot into `{ kept, lost }` (banked survives, carried is dropped, stacks merged). `createDeliveryQueue()` is the delayed-delivery (insurance) hook: `schedule` a `ScheduledDelivery` with a game-time `deliverAt`, then `due(now)` / `claimDue(now)` drain it on the tick clock. `insureLost(lost, policy, userId, now, rng?)` filters the lost set to insured items and stamps a delayed `deliverAt` → feed straight into the queue. `resolveConsolation(policy, partition)` returns a baseline loadout id (apply via `applyLoadout`) — the death consolation grant, optionally gated on `if-carried-empty`. *(Session/round machines — extraction hold-to-leave, raid banking — consume this tier; see the objective-machine group.)*
 ## Objective, round & session machines
@@ -193,6 +200,25 @@ ctx.game.trade.buy(itemId, count, { shop, inventoryId })   // charge → put, ro
 ctx.game.trade.sell(itemId, count, { shop, inventoryId })
 ctx.game.trade.tradableAt(shopId, allItemIds)   // derive stock from catalogs
 ```
+
+## Player listing marketplace (auction house)
+
+`@jgengine/core/economy/listingBook` — a player-driven marketplace distinct from `trade` (fixed vendor buy/sell): players post their own goods, other players buy them, a house cut is taken on every sale, unsold listings expire and return to the seller, and sale proceeds/returns sit in a per-seller collection box until claimed. Not wired onto `ctx.game` as a feature — like `inventory/storageTier`'s delivery queue (mail), a game builds one `createListingBook` instance and wires post/buy/cancel/collect through its own `ctx.player.inventory`/`ctx.game.economy` calls (see `Games/claudecraft/src/game/auction/systems.ts` for the full wiring: escrow-on-list, put-then-charge-then-finalize-with-rollback on buy, a `ctx.time.every` sweep, and a browse/search view synced into `ctx.game.store`).
+
+```ts
+const book = createListingBook({ maxListingsPerSeller: 12, expirySeconds: 48 * 3600, cutRate: 0.05, minPrice?, maxPrice? });
+
+book.post({ sellerId, itemId, count, price, currency, now })   // → { status: "ok", listing } | { status: "rejected", reason }
+book.cancel(listingId, sellerId)                               // owner-only; caller returns the item to bags
+book.buy(listingId, buyerId, now)                               // removes the listing, credits the seller's box with price minus cutRate — never the seller's wallet directly
+book.sweepExpired(now)                                          // moves every past-expiry listing's goods into its seller's box as items, never currency
+book.active() / book.listingsOf(sellerId) / book.countOf(sellerId) / book.get(listingId)
+book.collectionOf(sellerId)                                     // { currency, items } snapshot, non-mutating
+book.claimCurrency(sellerId)                                    // drains + returns the box's currency (always collectible)
+book.claimItem(sellerId, itemId, count)                          // removes only what the caller actually placed in inventory (partial claims leave the remainder boxed)
+```
+
+The buyer/seller wallet and inventory movement is the caller's job, same split as `game/trade`: the primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it, so it stays reusable across genres (MMO auction house, survival-sim trading post, city-builder marketplace) without pulling in any one game's inventory shape.
 
 ## Economy and unlocks
 
@@ -317,7 +343,36 @@ ctx.game.leaderboard.track({ stat, scope: "global" | "server" | "profile" })   /
 ctx.game.leaderboard.increment(userId, stat, { scope, by? }) / getTop / getProfile
 ```
 
+### Toasts — a self-expiring message queue
+
+`@jgengine/core/game/toasts` (`toast-feed` capability) is a capped, TTL-evicting queue for transient one-off HUD messages — the append-with-limit-plus-prune list every game hand-rolls under a local `Toast`/`pushToast`/expiry reimplementation. Reach for it instead of `ctx.game.feed` when the message is a game-raised announcement with its own lifetime (a boss-intro banner, an objective callout, a rate-limited warning), not a log of an engine event that already has a feed binding (kill feed, loot log, quest updates — those stay on `ctx.game.feed.bind(action)`).
+
+```ts
+const queue = createToastQueue({ cap: 4, ttlSeconds: 3 });   // @jgengine/core/game/toasts
+queue.push("The clock begins. Mind the count.", ctx.time.now());
+queue.prune(ctx.time.now());                                 // call once per tick alongside your other tickers
+queue.list();                                                 // oldest-first, feed straight to a HUD stack
+```
+
+`appendToast(toasts, toast, cap)` / `pruneToasts(toasts, now)` are the pure functions behind `createToastQueue` — reach for them directly only when the queue's state must live in an existing reducer/snapshot instead of its own instance. React rendering: `@jgengine/react`'s `ToastStack` renders `ctx.game.feed` entries, not this queue — pair a `createToastQueue` with your own list render (`queue.list().map(...)`) or a `useSyncExternalStore` wrapper, the same pattern `useFeed` uses over the feed ring buffer.
+
 `ctx.game.commands.define(name, { validate?(ctx, input), apply(ctx, input) })` registers a verb (`has`/`names`/`run` round it out); `run(name, input)` returns `{ status: "applied", state } | { status: "rejected", reason } | { status: "unknown-command" }`. `apply` may either **return** the next state (the classic reducer shape) or mutate `ctx` in place and return **nothing** — `run` keeps the current `ctx` as `state` when `apply` returns `void`, so a handler that only calls other `ctx` methods (spawn, effect, loot.grantToPlayer, …) doesn't need a pointless `return ctx`. **Event handlers use `ctx` directly** the same way (side effects: leaderboard, economy, scheduling) and never reassign state. One feed primitive for kill feeds, loot logs, quest updates — no per-domain feed hooks.
+
+**Start/restart is a declarative `lifecycle`, never a hand-rolled command pair.** Every genre repeats the same shape — pull the run state out of the store, transition it, re-derive `GamePhase`, write it back — so `defineGame` owns it: pass `lifecycle` and the runtime registers the `start`/`restart` commands itself.
+
+```ts
+export const lifecycle: LifecycleConfig<RunState> = {
+  store: runStore,                                    // the StoreHandle holding this game's run state
+  start(state, ctx, input) { return beginRun(state); },   // pure transition; input is whatever "start" was run with
+  restart(state, ctx) { return createInitialRunState(); }, // same shape, skips the menu
+  phaseOf: (state) => (state.phase === "playing" ? "playing" : state.phase === "menu" ? "menu" : "ended"),
+  commands: { start: "startHeist" },                  // optional — default names are "start"/"restart"
+};
+
+defineGame({ ..., lifecycle });
+```
+
+`start`/`restart` receive the store's own `TState` — never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and calls `setGamePhase(ctx, phaseOf(next))` in one place, so every adopting game gets identical phase-sync for free. Take a `ctx` inside `start`/`restart` for side effects beyond the one store slot (reset a second store, re-pose the player, replant world dressing) the same way the pure transition functions already do. Skip `lifecycle` only when start/restart genuinely isn't a store transition (e.g. a full scene rebuild) — keep hand-rolling `commands.define("start"/"restart")` there.
 
 ## `ctx.game.store` — reactive game state
 

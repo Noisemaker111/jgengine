@@ -1,6 +1,7 @@
 import { createThreatTable, type ThreatTable } from "@jgengine/core/ai/threat";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { LEASH_DISTANCE, mitigate, mobDamage, mobHp } from "../math/combat";
 import type { MobDef } from "../model";
@@ -31,39 +32,42 @@ interface MobRuntime {
   noRespawn?: boolean;
 }
 
-const runtimes = new Map<string, MobRuntime>();
+const runtimesOf = perContext(() => new Map<string, MobRuntime>());
 const CRYPT_MOB_IDS = new Set(["crypt_shambler", "hollow_acolyte", "sexton_marrow", "morthen"]);
 const AGGRO_INTEREST = 130;
 const MELEE_REACH = 2.6;
 const RESPAWN_SEC = 35;
 
-export function isMobInstance(instanceId: string): boolean {
-  return runtimes.has(instanceId);
+export function isMobInstance(ctx: GameContext, instanceId: string): boolean {
+  return runtimesOf(ctx).has(instanceId);
 }
 
-export function mobRuntimeOf(instanceId: string): { defId: string; level: number } | null {
-  const runtime = runtimes.get(instanceId);
+export function mobRuntimeOf(
+  ctx: GameContext,
+  instanceId: string,
+): { defId: string; level: number } | null {
+  const runtime = runtimesOf(ctx).get(instanceId);
   return runtime === undefined ? null : { defId: runtime.defId, level: runtime.level };
 }
 
-export function levelOfMob(instanceId: string): number {
-  return runtimes.get(instanceId)?.level ?? 1;
+export function levelOfMob(ctx: GameContext, instanceId: string): number {
+  return runtimesOf(ctx).get(instanceId)?.level ?? 1;
 }
 
-export function armorOfMob(instanceId: string): number {
-  const runtime = runtimes.get(instanceId);
+export function armorOfMob(ctx: GameContext, instanceId: string): number {
+  const runtime = runtimesOf(ctx).get(instanceId);
   if (runtime === undefined) return 0;
   const def = mobById(runtime.defId);
   const base = def === null ? 0 : def.armorPerLevel * runtime.level;
-  const shred = aurasOf(instanceId).reduce(
+  const shred = aurasOf(ctx, instanceId).reduce(
     (sum, aura) => (aura.buffStat === "armor" ? sum + (aura.buffAmount ?? 0) : sum),
     0,
   );
   return Math.max(0, base + shred);
 }
 
-export function addThreat(instanceId: string, sourceId: string, amount: number): void {
-  const runtime = runtimes.get(instanceId);
+export function addThreat(ctx: GameContext, instanceId: string, sourceId: string, amount: number): void {
+  const runtime = runtimesOf(ctx).get(instanceId);
   if (runtime === undefined || runtime.evading) return;
   runtime.threat.add(sourceId, amount);
 }
@@ -107,7 +111,7 @@ export function spawnMobAt(
   ctx.scene.entity.stats.set(instanceId, "level", { current: level });
   const hp = mobHp(def.hpBase, def.hpPerLevel, level);
   ctx.scene.entity.stats.set(instanceId, "health", { max: hp, current: hp });
-  runtimes.set(instanceId, {
+  runtimesOf(ctx).set(instanceId, {
     defId: def.id,
     level,
     spawn: [position[0], y, position[1]],
@@ -139,7 +143,7 @@ export function applyMobCc(
   sourceId: string,
   cc: { kind: "stun" | "root" | "taunt" | "armorShred"; durationSec: number },
 ): boolean {
-  const runtime = runtimes.get(instanceId);
+  const runtime = runtimesOf(ctx).get(instanceId);
   if (runtime === undefined || runtime.evading) return false;
   const now = ctx.time.now();
   if (cc.kind === "stun") {
@@ -168,9 +172,9 @@ export function spawnAllMobs(ctx: GameContext): number {
 }
 
 export function onMobDied(ctx: GameContext, instanceId: string): { defId: string; level: number } | null {
-  const runtime = runtimes.get(instanceId);
+  const runtime = runtimesOf(ctx).get(instanceId);
   if (runtime === undefined) return null;
-  runtimes.delete(instanceId);
+  runtimesOf(ctx).delete(instanceId);
   const def = mobById(runtime.defId);
   if (def !== null && def.rare !== true && def.boss !== true && runtime.noRespawn !== true) {
     const respawnAt: readonly [number, number] = [runtime.spawn[0], runtime.spawn[2]];
@@ -182,6 +186,7 @@ export function onMobDied(ctx: GameContext, instanceId: string): { defId: string
 }
 
 export function despawnMob(ctx: GameContext, instanceId: string): void {
+  const runtimes = runtimesOf(ctx);
   if (!runtimes.has(instanceId)) return;
   runtimes.delete(instanceId);
   if (ctx.scene.entity.get(instanceId) !== null) ctx.scene.entity.despawn(instanceId);
@@ -192,9 +197,9 @@ function socialPull(ctx: GameContext, def: MobDef, instanceId: string, targetId:
   if (self === null) return;
   const radius = def.packFrenzy?.radius ?? (def.family === "humanoid" || def.family === "undead" ? 10 : 0);
   if (radius === 0) return;
-  for (const allyId of ctx.scene.entity.inRadius(self.position, radius, isMobInstance)) {
+  for (const allyId of ctx.scene.entity.inRadius(self.position, radius, (id) => isMobInstance(ctx, id))) {
     if (allyId === instanceId) continue;
-    const ally = runtimes.get(allyId);
+    const ally = runtimesOf(ctx).get(allyId);
     if (ally === undefined || ally.defId !== def.id || ally.evading) continue;
     if (ally.threat.highest() === null) ally.threat.add(targetId, 1);
     if (def.packFrenzy !== undefined) ally.frenzyUntil = ctx.time.now() + def.packFrenzy.duration;
@@ -205,7 +210,7 @@ function swingAtPlayer(ctx: GameContext, def: MobDef, runtime: MobRuntime, insta
   const now = ctx.time.now();
   if (now < runtime.nextSwingAt) return;
   const sheet = heroSheet(ctx, targetId);
-  const weakenPct = aurasOf(instanceId).reduce(
+  const weakenPct = aurasOf(ctx, instanceId).reduce(
     (sum, aura) => (aura.buffStat === "attackPower" && (aura.buffAmount ?? 0) < 0 ? sum + (aura.buffAmount ?? 0) : sum),
     0,
   );
@@ -288,7 +293,7 @@ function runBossMechanics(
           [self.position[0] + Math.cos(angle) * 3, self.position[2] + Math.sin(angle) * 3],
           Math.max(addDef.minLevel, runtime.level - 1),
         );
-        const addRuntime = runtimes.get(addId);
+        const addRuntime = runtimesOf(ctx).get(addId);
         addRuntime?.threat.add(targetId, 5);
         runtime.summonedIds.push(addId);
       }
@@ -325,7 +330,7 @@ export function tickMobs(ctx: GameContext, dt: number): void {
   const playerDead = deadStore.read(ctx, playerId);
   const player = ctx.scene.entity.get(playerId);
   const now = ctx.time.now();
-  for (const [instanceId, runtime] of runtimes) {
+  for (const [instanceId, runtime] of runtimesOf(ctx)) {
     const def = mobById(runtime.defId);
     const self = ctx.scene.entity.get(instanceId);
     if (def === null || self === null) continue;
@@ -399,10 +404,10 @@ export function tickMobs(ctx: GameContext, dt: number): void {
   }
 }
 
-export function mobCount(): number {
-  return runtimes.size;
+export function mobCount(ctx: GameContext): number {
+  return runtimesOf(ctx).size;
 }
 
-export function resetMobs(): void {
-  runtimes.clear();
+export function resetMobs(ctx: GameContext): void {
+  runtimesOf(ctx).clear();
 }

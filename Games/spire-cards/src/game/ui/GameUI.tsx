@@ -1,6 +1,6 @@
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { useGame } from "@jgengine/react/hooks";
-import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
+import { HudCanvas, HudPanel, KeyHint, SettingsTrigger, useHudLayout } from "@jgengine/react";
 
 import type { CardData, CardKind } from "../cards";
 import type { CombatSnapshot, HandCard, Phase } from "../combat";
@@ -332,7 +332,7 @@ function ResultOverlay({
         className="flex items-center gap-2 rounded-lg border border-amber-300/60 bg-amber-600/90 px-6 py-2 text-lg font-bold text-stone-950 transition-colors hover:bg-amber-500"
       >
         New Run
-        <span className="rounded bg-stone-950/40 px-1.5 text-sm font-mono">{restartKey}</span>
+        <KeyHint className="rounded bg-stone-950/40 px-1.5 text-sm font-mono">{restartKey}</KeyHint>
       </button>
     </div>
   );
@@ -406,7 +406,7 @@ export function GameUI() {
                 ].join(" ")}
               >
                 End Turn
-                <span className="rounded bg-stone-950/40 px-1.5 text-sm font-mono">{endTurnKey}</span>
+                <KeyHint className="rounded bg-stone-950/40 px-1.5 text-sm font-mono">{endTurnKey}</KeyHint>
               </button>
             </div>
           </HudPanel>

@@ -1,6 +1,7 @@
 import { createLevelSequence, type LevelSequence } from "@jgengine/core/game/levelSequence";
 import { seededStreams } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { despawnMob, isMobInstance, spawnMobAt } from "../ai/mobs";
 import { mobById } from "../entities/enemies/catalog";
@@ -39,10 +40,10 @@ interface ActiveDelve {
   returnPos: readonly [number, number];
 }
 
-const active = new Map<string, ActiveDelve>();
+const activeOf = perContext(() => new Map<string, ActiveDelve>());
 
-export function delveSessionOf(userId: string): DelveSessionView | null {
-  const session = active.get(userId);
+export function delveSessionOf(ctx: GameContext, userId: string): DelveSessionView | null {
+  const session = activeOf(ctx).get(userId);
   if (session === undefined) return null;
   const current = session.sequence.current();
   const progress = session.sequence.progress();
@@ -52,7 +53,7 @@ export function delveSessionOf(userId: string): DelveSessionView | null {
     chamberIndex: progress.index,
     chamberName: current?.config.name ?? session.def.name,
     totalChambers: progress.total,
-    remaining: session.spawned.filter((id) => isMobInstance(id)).length,
+    remaining: session.spawned.filter((id) => isMobInstance(ctx, id)).length,
     companionId: session.companionId,
     status:
       session.sequence.status() === "complete"
@@ -150,7 +151,7 @@ export function enterDelve(
 ): boolean {
   const def = delveById(delveId);
   if (def === null) return false;
-  if (active.has(userId)) exitDelve(ctx, userId);
+  if (activeOf(ctx).has(userId)) exitDelve(ctx, userId);
   const hero = ctx.scene.entity.get(userId);
   if (hero === null) return false;
   const seed = `${delveId}:${tier}:${Math.floor(ctx.time.now() * 1000)}`;
@@ -165,7 +166,7 @@ export function enterDelve(
     companionId: null,
     returnPos: [hero.position[0], hero.position[2]],
   };
-  active.set(userId, session);
+  activeOf(ctx).set(userId, session);
   teleportHero(ctx, userId, def.center[0], def.center[1] - def.radius * 0.55);
   spawnCompanion(ctx, session, userId);
   spawnChamber(ctx, session);
@@ -174,7 +175,7 @@ export function enterDelve(
 }
 
 export function advanceDelve(ctx: GameContext, userId: string): boolean {
-  const session = active.get(userId);
+  const session = activeOf(ctx).get(userId);
   if (session === undefined) return false;
   if (session.sequence.status() !== "cleared") return false;
   if (!session.sequence.advance()) {
@@ -192,21 +193,21 @@ export function advanceDelve(ctx: GameContext, userId: string): boolean {
 }
 
 export function exitDelve(ctx: GameContext, userId: string): boolean {
-  const session = active.get(userId);
+  const session = activeOf(ctx).get(userId);
   if (session === undefined) return false;
   clearSpawned(ctx, session);
   despawnCompanion(ctx, session);
   const [x, z] = session.returnPos;
   teleportHero(ctx, userId, x, z);
-  active.delete(userId);
+  activeOf(ctx).delete(userId);
   delveStore.clear(ctx, userId);
   return true;
 }
 
 export function tickDelve(ctx: GameContext, userId: string, dt: number): void {
-  const session = active.get(userId);
+  const session = activeOf(ctx).get(userId);
   if (session === undefined) return;
-  session.spawned = session.spawned.filter((id) => isMobInstance(id));
+  session.spawned = session.spawned.filter((id) => isMobInstance(ctx, id));
   if (session.sequence.status() === "playing" && session.spawned.length === 0) {
     session.sequence.clear();
     ctx.scene.entity.floatText({
@@ -237,9 +238,9 @@ function tickCompanion(ctx: GameContext, userId: string, session: ActiveDelve, d
   }
   let targetId: string | null = null;
   const ownerTarget = ctx.scene.entity.getTarget(userId);
-  if (ownerTarget !== null && isMobInstance(ownerTarget)) targetId = ownerTarget;
+  if (ownerTarget !== null && isMobInstance(ctx, ownerTarget)) targetId = ownerTarget;
   if (targetId === null) {
-    const nearby = ctx.scene.entity.inRadius(companion.position, 14, isMobInstance);
+    const nearby = ctx.scene.entity.inRadius(companion.position, 14, (id) => isMobInstance(ctx, id));
     targetId = nearby[0] ?? null;
   }
   if (targetId !== null) {
@@ -289,7 +290,7 @@ function tickCompanion(ctx: GameContext, userId: string, session: ActiveDelve, d
 }
 
 function syncDelveStore(ctx: GameContext, userId: string): void {
-  const view = delveSessionOf(userId);
+  const view = delveSessionOf(ctx, userId);
   if (view === null) {
     delveStore.clear(ctx, userId);
     return;

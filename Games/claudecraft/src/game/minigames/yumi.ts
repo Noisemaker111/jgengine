@@ -5,6 +5,7 @@ import {
   type SpawnDirectorState,
 } from "@jgengine/core/ai/spawnDirector";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { despawnMob, isMobInstance, spawnMobAt } from "../ai/mobs";
 import { mobById } from "../entities/enemies/catalog";
@@ -36,7 +37,7 @@ interface YumiSession {
   teleportAt: number;
 }
 
-const sessions = new Map<string, YumiSession>();
+const sessionsOf = perContext(() => new Map<string, YumiSession>());
 
 const WAVE_CONFIG: SpawnDirectorConfig = {
   waves: [
@@ -84,7 +85,7 @@ export function placeYumiShrine(ctx: GameContext): void {
 }
 
 export function startProtectYumi(ctx: GameContext, userId: string): boolean {
-  if (sessions.has(userId)) return false;
+  if (sessionsOf(ctx).has(userId)) return false;
   const hero = ctx.scene.entity.get(userId);
   if (hero === null) return false;
   const [ax, az] = YUMI_ARENA;
@@ -103,7 +104,7 @@ export function startProtectYumi(ctx: GameContext, userId: string): boolean {
     status: "playing",
     teleportAt: ctx.time.now() + 12,
   };
-  sessions.set(userId, session);
+  sessionsOf(ctx).set(userId, session);
   teleportHero(ctx, userId, ax - 4, az + 4);
   sync(ctx, userId);
   ctx.scene.entity.floatText({
@@ -115,11 +116,11 @@ export function startProtectYumi(ctx: GameContext, userId: string): boolean {
 }
 
 export function leaveProtectYumi(ctx: GameContext, userId: string): boolean {
-  const session = sessions.get(userId);
+  const session = sessionsOf(ctx).get(userId);
   if (session === undefined) return false;
   cleanup(ctx, session);
   teleportHero(ctx, userId, session.returnPos[0], session.returnPos[1]);
-  sessions.delete(userId);
+  sessionsOf(ctx).delete(userId);
   yumiStore.clear(ctx, userId);
   return true;
 }
@@ -131,7 +132,7 @@ function cleanup(ctx: GameContext, session: YumiSession): void {
 }
 
 export function tickProtectYumi(ctx: GameContext, userId: string, dt: number): void {
-  const session = sessions.get(userId);
+  const session = sessionsOf(ctx).get(userId);
   if (session === undefined || session.status !== "playing") return;
 
   const yumi = ctx.scene.entity.get(session.yumiId);
@@ -162,7 +163,7 @@ export function tickProtectYumi(ctx: GameContext, userId: string, dt: number): v
     ctx.scene.entity.floatText({ instanceId: session.yumiId, text: "Yumi dashes!", kind: "info" });
   }
 
-  session.spawned = session.spawned.filter((id) => isMobInstance(id));
+  session.spawned = session.spawned.filter((id) => isMobInstance(ctx, id));
   const step = advanceSpawnDirector(session.config, session.director, dt, {
     alive: session.spawned.length,
     players: 1,
@@ -212,7 +213,7 @@ export function tickProtectYumi(ctx: GameContext, userId: string, dt: number): v
 }
 
 function sync(ctx: GameContext, userId: string): void {
-  const session = sessions.get(userId);
+  const session = sessionsOf(ctx).get(userId);
   if (session === undefined) {
     yumiStore.clear(ctx, userId);
     return;
@@ -223,12 +224,12 @@ function sync(ctx: GameContext, userId: string): void {
     yumiHp: hp?.current ?? 0,
     yumiMaxHp: hp?.max ?? YUMI_MAX_HP,
     wave: session.director.wave + 1,
-    alive: session.spawned.filter((id) => isMobInstance(id)).length,
+    alive: session.spawned.filter((id) => isMobInstance(ctx, id)).length,
     status: session.status,
   };
   yumiStore.write(ctx, userId, view);
 }
 
-export function yumiActive(userId: string): boolean {
-  return sessions.has(userId);
+export function yumiActive(ctx: GameContext, userId: string): boolean {
+  return sessionsOf(ctx).has(userId);
 }

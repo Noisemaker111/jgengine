@@ -4,6 +4,7 @@ import {
   type DeliveryQueue,
 } from "@jgengine/core/inventory/storageTier";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { COPPER } from "../model";
 import { mailOpenStore, mailViewStore, marketOpenStore, shopStore } from "../session/stores";
@@ -13,7 +14,7 @@ export const MAILBOX = "waystation_post";
 export const MAIL_DELAY_SEC = 8;
 export const MARKET_SHOP = "shop_eastbrook";
 
-const queues = new Map<string, DeliveryQueue>();
+const queuesOf = perContext(() => new Map<string, DeliveryQueue>());
 
 export interface MailView {
   pending: readonly {
@@ -25,7 +26,8 @@ export interface MailView {
   inbox: readonly { itemId: string; count: number }[];
 }
 
-function queueOf(userId: string): DeliveryQueue {
+function queueOf(ctx: GameContext, userId: string): DeliveryQueue {
+  const queues = queuesOf(ctx);
   let queue = queues.get(userId);
   if (queue === undefined) {
     queue = createDeliveryQueue();
@@ -69,7 +71,7 @@ export function sendToSelf(
   if (count < 1) return "invalid-count";
   if (ctx.player.inventory.take("bags", itemId, count).status !== "ok") return "missing-item";
   const deliverAt = ctx.time.now() + MAIL_DELAY_SEC;
-  queueOf(userId).schedule({
+  queueOf(ctx, userId).schedule({
     userId,
     inventoryId: "bags",
     items: [{ itemId, count }],
@@ -89,7 +91,7 @@ export function sendCopperToSelf(ctx: GameContext, userId: string, amount: numbe
   if (amount < 1) return "invalid-amount";
   if (ctx.game.economy.charge(userId, COPPER, amount) !== null) return "not-enough-copper";
   const deliverAt = ctx.time.now() + MAIL_DELAY_SEC;
-  queueOf(userId).schedule({
+  queueOf(ctx, userId).schedule({
     userId,
     inventoryId: "bags",
     items: [{ itemId: `__copper__`, count: amount }],
@@ -108,7 +110,7 @@ export function codStub(ctx: GameContext, userId: string): void {
 }
 
 function deliverDue(ctx: GameContext, userId: string): void {
-  const due = queueOf(userId).claimDue(ctx.time.now());
+  const due = queueOf(ctx, userId).claimDue(ctx.time.now());
   for (const entry of due) applyDelivery(ctx, entry);
 }
 
@@ -137,7 +139,7 @@ export function tickMail(ctx: GameContext, userId: string): void {
     deliverDue(ctx, userId);
     syncMail(ctx, userId);
   } else {
-    const pending = queueOf(userId).due(ctx.time.now());
+    const pending = queueOf(ctx, userId).due(ctx.time.now());
     if (pending.length > 0) {
       deliverDue(ctx, userId);
     }
@@ -146,7 +148,7 @@ export function tickMail(ctx: GameContext, userId: string): void {
 
 function syncMail(ctx: GameContext, userId: string): void {
   const now = ctx.time.now();
-  const pending = queueOf(userId).pending(userId).map((entry) => ({
+  const pending = queueOf(ctx, userId).pending(userId).map((entry) => ({
     id: entry.id,
     items: entry.items,
     deliverAt: entry.deliverAt,

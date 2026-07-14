@@ -80,26 +80,30 @@ function createSim(courseId: CourseId, ctx: GameContext): Sim {
   };
 }
 
+function poseDrone(
+  ctx: GameContext,
+  position: readonly [number, number, number],
+  rotationY: number,
+  rotationX: number,
+  rotationZ: number,
+  dt?: number,
+): void {
+  ctx.scene.entity.bind("drone").sync(
+    [{ id: ctx.player.userId, kind: DRONE_ENTITY_KIND, position, rotationY, rotationX, rotationZ, role: "player" }],
+    dt,
+  );
+}
+
 function holdSpawnPose(ctx: GameContext): void {
   if (sim === null) return;
-  ctx.scene.entity.setPose(ctx.player.userId, {
-    position: sim.spawn.position,
-    rotationY: sim.spawn.heading,
-    rotationX: 0,
-    rotationZ: 0,
-  });
+  poseDrone(ctx, sim.spawn.position, sim.spawn.heading, 0, 0);
 }
 
 function beginRun(ctx: GameContext, courseId: CourseId): void {
   setRunState(ctx, (state) => beginCountdownForCourse(state, courseId));
   sim = createSim(courseId, ctx);
   placeCourseRings(ctx, courseId, ctx.world.groundHeightAt);
-  ctx.scene.entity.setPose(ctx.player.userId, {
-    position: sim.spawn.position,
-    rotationY: sim.spawn.heading,
-    rotationX: 0,
-    rotationZ: 0,
-  });
+  poseDrone(ctx, sim.spawn.position, sim.spawn.heading, 0, 0);
 }
 
 function switchCourse(ctx: GameContext, courseId: CourseId): void {
@@ -145,12 +149,7 @@ export function onNewPlayer(ctx: GameContext): void {
   const courseId = runStore.read(ctx).courseId;
   sim = createSim(courseId, ctx);
   placeCourseRings(ctx, courseId, ctx.world.groundHeightAt);
-  ctx.scene.entity.spawn(DRONE_ENTITY_KIND, {
-    id: ctx.player.userId,
-    position: sim.spawn.position,
-    rotationY: sim.spawn.heading,
-    role: "player",
-  });
+  poseDrone(ctx, sim.spawn.position, sim.spawn.heading, 0, 0);
 }
 
 export function onTick(ctx: GameContext, dt: number): void {
@@ -249,13 +248,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     drainBattery(sim.battery, dt, load);
   }
 
-  ctx.scene.entity.setPose(ctx.player.userId, {
-    position,
-    rotationY: heading,
-    rotationX: pitchVisual,
-    rotationZ: rollVisual,
-    dt,
-  });
+  poseDrone(ctx, position, heading, pitchVisual, rollVisual, dt);
 
   const events = sim.raceState.update(now, { [ctx.player.userId]: position });
   let nextState = tickFlying(state, dt);

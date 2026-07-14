@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame, type PhysicsConfig } from "../game/defineGame";
-import { offline } from "../runtime/adapter";
-import { createGameContext, type GameContext } from "../runtime/gameContext";
-import { summarizeEnvironment } from "../world/environmentSummary";
-import type { WorldFeature } from "../world/features";
+import { defineGame, type PhysicsConfig } from "@jgengine/core/game/defineGame";
+import { offline } from "@jgengine/core/runtime/adapter";
+import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
+import type { WorldFeature } from "@jgengine/core/world/features";
 import { createCartridge, type CartridgeRuntime } from "./runtime";
 import { XP_GEM_BASE_TYPE, type CartridgeSpec } from "./spec";
 import { validateCartridge } from "./validate";

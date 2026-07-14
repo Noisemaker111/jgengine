@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentType } from "react"
 import type { EditorDocument, EditorLayersInput } from "@jgengine/core/editor/index";
 import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/index";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { useGameContext } from "@jgengine/react/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -11,6 +12,7 @@ import { assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
 import { EditorCameraDriver } from "./EditorCameraDriver";
 import { EditorChrome } from "./EditorChrome";
 import { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
+import { MaterialDropZone } from "./MaterialDropZone";
 import { PerfProbe } from "./PerfProbe";
 import { ScatterPreview } from "./ScatterPreview";
 import { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";
@@ -115,6 +117,7 @@ function EditorWorldOverlay({ api, ui }: { api: EditorHostApi; ui: EditorUiStore
       <PerfProbe api={api} />
       <EditorCameraDriver api={api} />
       <ViewportSelect api={api} ui={ui} />
+      <MaterialDropZone api={api} />
       <TerrainSculpt api={api} ui={ui} />
       <ScatterPreview api={api} />
       {uiState.showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
@@ -326,10 +329,10 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
             </>
           );
         },
-        WorldOverlay: function EditorPlayOverlay() {
+        WorldOverlay: function EditorPlayOverlay({ ctx }: WorldOverlayProps) {
           return (
             <>
-              {BaseOverlay !== undefined ? <BaseOverlay /> : null}
+              {BaseOverlay !== undefined ? <BaseOverlay ctx={ctx} /> : null}
               <PerfProbe api={host.api} />
             </>
           );

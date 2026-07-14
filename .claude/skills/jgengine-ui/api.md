@@ -164,11 +164,13 @@
 - `ChatBubblesOptions` (interface): interface ChatBubblesOptions — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
 - `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ChatPanel` (function): function ChatPanel({ channels, initialChannel, limit, className, tabsClassName, tabClassName, activeTabClassName, logClassName, messageClassName, inputClassName, inputFieldClassName, sendButtonClassName, placeholder, renderMessage, onRejected, }: { channels?: readonly string[]; initialChannel?: stri… — ⚠ undocumented
+- `ChatPanel` (function): function ChatPanel({ channels, initialChannel, limit, className, tabsClassName, tabClassName, activeTabClassName, logClassName, messageClassName, inputClassName, inputFieldClassName, sendButtonClassName, placeholder, renderMessage, renderTab, onRejected, }: { channels?: readonly string[]; initialCha… — ⚠ undocumented
 - `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips (bearing to each `MarkerSet` entry).
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
+- `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
+- `ControlsList` (function): function ControlsList({ bindings, controls, hideOnCoarsePointer = true, separator = " / ", className, rowClassName, keysClassName, keyClassName, separatorClassName, labelClassName, renderKey, renderRow, }: { bindings?: ActionCodesMap; controls: readonly ControlHint[]; hideOnCoarsePointer?: boolean; … — Renders a controls legend whose key glyphs come from the game's keybind map, so bindings live in one place and never drift from a hand-typed table. Hides itself on coarse-pointer devices (a touchscreen has no keyboard) via the same `data-jg-kbd-hint` marker as `KeyHint`. Headless: every part carries a `className` slot and `data-*` hook; pass `renderKey`/`renderRow` to fully own the markup.
 - `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): React.JSX.Element — ⚠ undocumented
 - `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
@@ -185,7 +187,7 @@
 - `DropInfo` (interface): interface DropInfo<T> — ⚠ undocumented
 - `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
-- `EventMeterView` (interface): interface EventMeterView — ⚠ undocumented
+- `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
 - `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> — ⚠ undocumented
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
 - `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -215,6 +217,11 @@
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
 - `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads a core `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers = [], markerColor = "#e2e8f0", markerRadius = 5, className, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
+- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
+- `MinimapPanel` (function): function MinimapPanel({ zoneLabel, clock, showCompass = true, compassProps, headerClassName, zoneLabelClassName, clockClassName, compassClassName, children, ...minimapProps }: MinimapPanelProps): ReactNode — Composed circular-minimap chrome: optional zone-label + clock header above the `Minimap`, optional `Compass` strip below. Purely a wiring layer over the existing primitives — the game supplies the zone name and clock text, this only places them; omit either slot and the header disappears.
+- `MinimapPanelProps` (interface): interface MinimapPanelProps extends MinimapProps — Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots.
 - `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
 - `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -246,8 +253,10 @@
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `StackedPile` (function): function StackedPile({ cards, faceDown, offsetX = 0, offsetY = 20, cardWidth = 64, cardHeight = 90, layer, dropId, draggableFrom = 0, className, cardClassName, onCardClick, renderOverlay, }: { cards: readonly PlayingCard[]; faceDown?: boolean; offsetX?: number; offsetY?: number; cardWidth?: number; … — An overlapping fan of `CardFace`s. Plain-props: pass `cards`. Optional drag: pass a `layer` to make each card a `DraggableCard`, and `dropId` to wrap the pile in a `DropZone`.
+- `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
+- `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
 - `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
 - `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -264,7 +273,7 @@
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 - `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
-- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — ⚠ undocumented
+- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
@@ -288,7 +297,7 @@
 - `useEngineStore` (function): function useEngineStore<TState, TSelected>(store: ReadableEngineStore<TState>, selector: (state: TState) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
-- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — ⚠ undocumented
+- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useFriendRequests` (function): function useFriendRequests(): FriendRequestEntry[] — ⚠ undocumented
@@ -356,7 +365,7 @@
 - `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
 - `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ChatPanel` (function): function ChatPanel({ channels, initialChannel, limit, className, tabsClassName, tabClassName, activeTabClassName, logClassName, messageClassName, inputClassName, inputFieldClassName, sendButtonClassName, placeholder, renderMessage, onRejected, }: { channels?: readonly string[]; initialChannel?: stri… — ⚠ undocumented
+- `ChatPanel` (function): function ChatPanel({ channels, initialChannel, limit, className, tabsClassName, tabClassName, activeTabClassName, logClassName, messageClassName, inputClassName, inputFieldClassName, sendButtonClassName, placeholder, renderMessage, renderTab, onRejected, }: { channels?: readonly string[]; initialCha… — ⚠ undocumented
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 
 ## @jgengine/react/chatBubbles
@@ -385,7 +394,7 @@
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
 - `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
@@ -448,12 +457,12 @@
 ## @jgengine/react/hooks
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
-- `EventMeterView` (interface): interface EventMeterView — ⚠ undocumented
+- `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `WorldBrowserState` (interface): interface WorldBrowserState — ⚠ undocumented
 - `abilityKitNeedsHeartbeat` (function): function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: number): boolean — ⚠ undocumented
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
-- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — ⚠ undocumented
+- `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
@@ -462,7 +471,7 @@
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
-- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — ⚠ undocumented
+- `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
 - `useFriendRequests` (function): function useFriendRequests(): FriendRequestEntry[] — ⚠ undocumented
 - `useFriends` (function): function useFriends(): FriendEntry[] — ⚠ undocumented
@@ -542,6 +551,11 @@
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads a core `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers = [], markerColor = "#e2e8f0", markerRadius = 5, className, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
+- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
+- `MinimapPanel` (function): function MinimapPanel({ zoneLabel, clock, showCompass = true, compassProps, headerClassName, zoneLabelClassName, clockClassName, compassClassName, children, ...minimapProps }: MinimapPanelProps): ReactNode — Composed circular-minimap chrome: optional zone-label + clock header above the `Minimap`, optional `Compass` strip below. Purely a wiring layer over the existing primitives — the game supplies the zone name and clock text, this only places them; omit either slot and the header disappears.
+- `MinimapPanelProps` (interface): interface MinimapPanelProps extends MinimapProps — Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots.
 - `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
 - `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`.
 - `WorldMapProps` (interface): interface WorldMapProps — ⚠ undocumented
@@ -607,6 +621,13 @@
 - `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
 - `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
+
+## @jgengine/react/startScreen
+
+- `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
+- `ControlsList` (function): function ControlsList({ bindings, controls, hideOnCoarsePointer = true, separator = " / ", className, rowClassName, keysClassName, keyClassName, separatorClassName, labelClassName, renderKey, renderRow, }: { bindings?: ActionCodesMap; controls: readonly ControlHint[]; hideOnCoarsePointer?: boolean; … — Renders a controls legend whose key glyphs come from the game's keybind map, so bindings live in one place and never drift from a hand-typed table. Hides itself on coarse-pointer devices (a touchscreen has no keyboard) via the same `data-jg-kbd-hint` marker as `KeyHint`. Headless: every part carries a `className` slot and `data-*` hook; pass `renderKey`/`renderRow` to fully own the markup.
+- `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
+- `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
 
 ## @jgengine/react/store
 
@@ -710,9 +731,9 @@
 - `DEFAULT_ORBIT_CAMERA` (const): const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig — ⚠ undocumented
 - `DirectorCameraValues` (interface): interface DirectorCameraValues — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
 - `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
@@ -750,6 +771,7 @@
 - `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented
 - `TraumaState` (interface): interface TraumaState — ⚠ undocumented
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
+- `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `addTrauma` (function): function addTrauma(state: TraumaState, amount: number): void — Add trauma (0..1) and clamp; larger hits raise the ceiling toward 1.
 - `angleDelta` (function): function angleDelta(a: number, b: number): number — Shortest signed angular delta from `a` to `b`, wrapped to (-PI, PI].
 - `applyCameraBlendStep` (function): function applyCameraBlendStep(scratch: CameraBlendScratch, camera: Camera, targetFov: number, dt: number): boolean — ⚠ undocumented
@@ -778,6 +800,7 @@
 - `observerPose` (function): function observerPose(subject: Vec3, angle: number, resolved: ResolvedObserver, fov: number): CameraPose — Detached spectator pose: orbits `subject` at a fixed distance/height, never reading player input.
 - `orbitFollowStep` (function): function orbitFollowStep(input: { state: OrbitFollowRuntimeState; desiredTarget: Vec3; deltaSeconds: number; config: ResolvedOrbitCameraConfig; dragging: boolean; }): OrbitFollowRuntimeState & { distance: number } — Pure orbit follow step — smooth target tracking, camera carries target delta (OrbitControls alone keeps camera fixed when only target moves), optional distance lock. Call each frame before OrbitControls.update() in the shell.
 - `orbitYawFromCamera` (function): function orbitYawFromCamera(cameraX: number, cameraZ: number, targetX: number, targetZ: number): number — Horizontal facing derived from an orbit camera orbiting a target on the XZ plane.
+- `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 - `resolveChase` (function): function resolveChase(config: ChaseCameraConfig | undefined): ResolvedChase — ⚠ undocumented
 - `resolveDirectedCamera` (function): function resolveDirectedCamera(director: DirectorCameraValues | undefined, staticConfig: StaticCameraValues): ResolvedDirectedCamera — Merges a `CameraDirector` runtime snapshot over the static `GameCameraConfig` (#196.2). `director` omitted, or its fields `undefined`/`null`, is a pure passthrough to `staticConfig` so mounting a director with no active override changes nothing.
 - `resolveFollowTargetFromPosition` (function): function resolveFollowTargetFromPosition(position: readonly [number, number, number], config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset">): Vec3 — ⚠ undocumented
@@ -814,14 +837,15 @@
 
 ## @jgengine/shell/camera/GameCameraRig
 
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
 - `resolveRigKind` (function): function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind — Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to least specific: an explicit `rig` field always wins; then `perspective: "first"` (the historical shorthand for `rig: "orbit" | "first"`); then the mere presence of a rig's own config block selects that rig, checked in the fixed order below (#207.8) so a config carrying more than one block resolves deterministically instead of depending on object key order. Set `rig` explicitly to break a tie.
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
 
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
+- `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 
 ## @jgengine/shell/camera/GameInspectionCamera
@@ -983,17 +1007,6 @@
 
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `createCameraShakeChannel` (function): function createCameraShakeChannel(defaultDecayPerSecond = 1.6): CameraShakeChannel — ⚠ undocumented
-
-## @jgengine/shell/cartridge
-
-- `CartridgeAbilitySlot` (interface): interface CartridgeAbilitySlot — ⚠ undocumented
-- `CartridgeConfig` (type): type CartridgeConfig = CartridgeSpec & { name: string; panels: CartridgePanels; hud: { storageKey?: string; panels: readonly CartridgeHudPanelSpec[] }; screens: CartridgeScreens; theme?: Record<string, string>; world?: GameConfig["world"]; physics?: GameConfig["physics"]; assets?: GameConfig["assets… — ⚠ undocumented
-- `CartridgeHudPanelSpec` (interface): interface CartridgeHudPanelSpec — ⚠ undocumented
-- `CartridgePanelItem` (type): type CartridgePanelItem = | { kind: "vital"; stat: string; label: string; tone?: string; width?: number } | { kind: "xp"; width?: number } | { kind: "timer"; label: string } | { kind: "score"; source: "kills"; label: string; digits?: number } | { kind: "abilityBar"; icons: Record<string, string> } |… — ⚠ undocumented
-- `CartridgePanels` (interface): interface CartridgePanels — ⚠ undocumented
-- `CartridgeResultLine` (type): type CartridgeResultLine = { label: string; accent?: boolean } & ( | { source: "kills" | "level" } | { value: string | number } ) — ⚠ undocumented
-- `CartridgeScreens` (interface): interface CartridgeScreens — ⚠ undocumented
-- `cartridge` (function): function cartridge(config: CartridgeConfig): PlayableGame — ⚠ undocumented
 
 ## @jgengine/shell/commandSink
 
@@ -1197,6 +1210,7 @@
 ## @jgengine/shell/materialOverride
 
 - `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions — ⚠ undocumented
+- `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
 - `applyMaterialOverride` (function): function applyMaterialOverride(root: THREE.Object3D, override: ModelMaterialOverride, options?: MaterialOverrideOptions): void — ⚠ undocumented
 
 ## @jgengine/shell/multiplayer
@@ -1236,7 +1250,7 @@
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
-- `PlayableGame` (type): type PlayableGame = EnginePlayableGame<ComponentType, ComponentType, RenderEntity, RenderObject> — ⚠ undocumented
+- `PlayableGame` (type): type PlayableGame = EnginePlayableGame< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > — ⚠ undocumented
 - `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
@@ -1261,6 +1275,10 @@
 - `ModelResolveContext` (interface): interface ModelResolveContext — ⚠ undocumented
 - `resolveModel` (function): function resolveModel(value: string | ModelConfig | undefined, assets: AssetCatalog, context?: ModelResolveContext): ModelConfig | undefined — Resolve a string asset id or a direct ModelConfig. Missing/misspelled catalog ids throw — silent generic-primitive fallback only happens when the mapping omits the key entirely (or uses tryResolveCatalogModel for optional ids).
 - `tryResolveCatalogModel` (function): function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelConfig | undefined — Soft lookup used when an object catalog id may double as a model asset id.
+
+## @jgengine/shell/render/useEntityRenderCues
+
+- `useEntityRenderCues` (function): function useEntityRenderCues(instanceId: string | undefined, tuning?: RenderCueTuning): MutableRefObject<EntityRenderCues> — Live motion + animation cues for one entity, read from a mutable ref inside your own `useFrame` — no re-render per frame, no diffing the parent group's position, no game-side module map for attack/hit timing. Backs both custom `renderEntity` rigs and a custom first-person viewmodel (#542): call it with `entity.id` / the local player's userId and drive bob/recoil/reload poses from `cuesRef.current` inside the calling component's own `useFrame`.
 
 ## @jgengine/shell/replay/useSessionRecorder
 
@@ -1522,7 +1540,8 @@
 ## @jgengine/shell/terrain/terrainDetailMaterial
 
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
-- `createTerrainDetailMaterial` (function): function createTerrainDetailMaterial(detail: ResolvedTerrainDetail): TerrainDetailMaterialHandle — A `MeshStandardMaterial` whose fragment shader keeps the biome-tinted vertex colour as the base ground and blends procedural, noise-broken rock (by slope), sand (by waterline), and snow (by height) over it — textured-reading terrain with no image assets. Full PBR: lit, shadowed, and fogged like any standard material, so it composes with the post-processing chain.
+- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself.
+- `createTerrainDetailMaterial` (function): function createTerrainDetailMaterial(detail: ResolvedTerrainDetail, textures?: TerrainDetailMaterialTextures): TerrainDetailMaterialHandle — A `MeshStandardMaterial` whose fragment shader keeps the biome-tinted vertex colour as the base ground and blends procedural, noise-broken rock (by slope), sand (by waterline), and snow (by height) over it — textured-reading terrain with no image assets. Full PBR: lit, shadowed, and fogged like any standard material, so it composes with the post-processing chain.
 
 ## @jgengine/shell/terrain/terrainMath
 
@@ -1777,11 +1796,14 @@
 ## @jgengine/shell/world/WorldHud
 
 - `CombatCameraShake` (function): function CombatCameraShake(): null — ⚠ undocumented
+- `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
 - `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
 - `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from the player (world… — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
+- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, tickMs = 120, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
+- `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
 - `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
 - `collectWorldBarSamples` (function): function collectWorldBarSamples(ctx: GameContext, statId: string, height: number, roles: readonly CatalogEntityRole[] | undefined, resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined, camera: { matrixWorldInverse: unknown; projectionMatrix: unknown }, viewport: { width:… — ⚠ undocumented
 - `paintWorldBarSamples` (function): function paintWorldBarSamples(canvas: { width: number; height: number; getContext(kind: "2d"): CanvasRenderingContext2D | null }, samples: readonly WorldBarSample[], dpr: number, barWidthPx = 112, barHeightPx = 10): void — ⚠ undocumented
@@ -1810,6 +1832,7 @@
 
 ## @jgengine/shell/world/worldBarSamples
 
+- `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
 - `Projectable` (interface): interface Projectable — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
 - `collectWorldBarSamples` (function): function collectWorldBarSamples(ctx: GameContext, statId: string, height: number, roles: readonly CatalogEntityRole[] | undefined, resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined, camera: { matrixWorldInverse: unknown; projectionMatrix: unknown }, viewport: { width:… — ⚠ undocumented

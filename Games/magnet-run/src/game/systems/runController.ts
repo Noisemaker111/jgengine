@@ -289,5 +289,5 @@ export class RunController {
   }
 }
 
-export const controllerStore = defineStore<RunController | undefined>("controller", undefined);
+export const controllerStore = defineStore<RunController>("controller", () => new RunController());
 

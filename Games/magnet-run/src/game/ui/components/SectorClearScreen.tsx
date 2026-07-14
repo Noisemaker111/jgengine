@@ -1,3 +1,4 @@
+import { KeyHint } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 import { sectors } from "../../course/sectors";
 import { keyLabel } from "../keyLabel";
@@ -31,7 +32,8 @@ export function SectorClearScreen() {
         onClick={() => commands.run("startRun", {})}
         className="w-full rounded bg-[#3e7bff] py-2.5 text-sm font-black tracking-widest text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-95"
       >
-        CONTINUE — {keyLabel("startRun")}
+        CONTINUE
+        <KeyHint> — {keyLabel("startRun")}</KeyHint>
       </button>
     </div>
   );

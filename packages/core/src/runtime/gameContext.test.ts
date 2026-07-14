@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import { defineGame } from "../game/defineGame";
 import type { CombatVfxEvent, EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
+import { gamePhase } from "../game/gamePhase";
 import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { defineStore } from "../store/defineStore";
 import { environment, terrain } from "../world/features";
 import { resolveTerrainField } from "../world/terrain";
 import { createGameContext, type GameContextContent } from "./gameContext";
@@ -628,6 +630,90 @@ describe("game.store", () => {
     ctx.game.store.delete("flag");
     expect(ctx.game.store.has("flag")).toBe(false);
     expect(calls).toBe(1);
+  });
+});
+
+describe("lifecycle", () => {
+  interface RunState {
+    phase: "menu" | "playing" | "ended";
+    runs: number;
+  }
+  const runStore = defineStore<RunState>("run", () => ({ phase: "menu", runs: 0 }));
+
+  function lifecycleContext() {
+    const definition = defineGame({
+      name: "LifecycleGame",
+      multiplayer: "off",
+      lifecycle: {
+        store: runStore,
+        start(state, _ctx, input) {
+          if (state.phase !== "menu") return state;
+          const tier = (input as { tier?: number } | undefined)?.tier ?? 1;
+          return { phase: "playing", runs: state.runs + tier };
+        },
+        restart(state) {
+          return { phase: "playing", runs: state.runs + 1 };
+        },
+        phaseOf: (state) => state.phase,
+      },
+    });
+    return createGameContext({ definition, content: {}, player: { userId: "p1", isNew: true } });
+  }
+
+  test("registers a default start command that derives phase from the returned state", () => {
+    const ctx = lifecycleContext();
+    expect(ctx.game.commands.has("start")).toBe(true);
+
+    ctx.game.commands.run("start", { tier: 3 });
+
+    expect(runStore.read(ctx)).toEqual({ phase: "playing", runs: 3 });
+    expect(gamePhase(ctx)).toBe("playing");
+  });
+
+  test("registers a default restart command usable mid-run", () => {
+    const ctx = lifecycleContext();
+    ctx.game.commands.run("start", {});
+    ctx.game.commands.run("restart", {});
+
+    expect(runStore.read(ctx)).toEqual({ phase: "playing", runs: 2 });
+    expect(gamePhase(ctx)).toBe("playing");
+  });
+
+  test("start is a no-op transition once already playing", () => {
+    const ctx = lifecycleContext();
+    ctx.game.commands.run("start", { tier: 5 });
+    ctx.game.commands.run("start", { tier: 5 });
+
+    expect(runStore.read(ctx)).toEqual({ phase: "playing", runs: 5 });
+  });
+
+  test("honors overridden command names", () => {
+    const namedStore = defineStore<RunState>("namedRun", () => ({ phase: "menu", runs: 0 }));
+    const definition = defineGame({
+      name: "NamedLifecycleGame",
+      multiplayer: "off",
+      lifecycle: {
+        store: namedStore,
+        start: (state) => ({ ...state, phase: "playing" }),
+        restart: (state) => ({ ...state, runs: state.runs + 1 }),
+        phaseOf: (state) => state.phase,
+        commands: { start: "startHeist", restart: "restartHeist" },
+      },
+    });
+    const ctx = createGameContext({ definition, content: {}, player: { userId: "p1", isNew: true } });
+
+    expect(ctx.game.commands.has("start")).toBe(false);
+    expect(ctx.game.commands.has("startHeist")).toBe(true);
+    ctx.game.commands.run("startHeist", {});
+    expect(gamePhase(ctx)).toBe("playing");
+    ctx.game.commands.run("restartHeist", {});
+    expect(namedStore.read(ctx).runs).toBe(1);
+  });
+
+  test("omitted lifecycle registers no start/restart command", () => {
+    const ctx = makeContext();
+    expect(ctx.game.commands.has("start")).toBe(false);
+    expect(ctx.game.commands.has("restart")).toBe(false);
   });
 });
 

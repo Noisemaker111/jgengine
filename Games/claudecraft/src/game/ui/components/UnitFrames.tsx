@@ -1,6 +1,7 @@
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { useEntityStat, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { classById } from "../../classes/catalog";
 import { mobById } from "../../entities/enemies/catalog";
@@ -130,13 +131,14 @@ export function PlayerFrame() {
 }
 
 export function TargetFrame() {
+  const ctx = useGameContext();
   const { userId } = usePlayer();
   const targetId = useTarget(userId);
   const health = useEntityStat(targetId ?? "", "health");
   const targetName = useGameStore((ctx) => (targetId === null ? null : (ctx.scene.entity.get(targetId)?.name ?? null)));
   const autoAttack = useKeyedStore(autoAttackStore, userId);
   if (targetId === null || targetName === null || health === null) return null;
-  const runtime = mobRuntimeOf(targetId);
+  const runtime = mobRuntimeOf(ctx, targetId);
   const mob = mobById(runtime?.defId ?? targetName);
   const npc = NPCS.find((entry) => `npc:${entry.id}` === targetId);
   const display = mob?.name ?? npc?.name ?? targetName;

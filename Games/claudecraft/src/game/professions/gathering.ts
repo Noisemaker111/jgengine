@@ -2,6 +2,7 @@ import { keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/
 import { command } from "@jgengine/core/interaction/proximityPrompt";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { GATHER_NODES, PROFESSIONS } from "./catalog";
 import type { GatherNodeDef, ProfessionId } from "../model";
@@ -13,7 +14,7 @@ interface NodeRuntime {
   position: readonly [number, number, number];
 }
 
-const nodes = new Map<string, NodeRuntime>();
+const nodesOf = perContext(() => new Map<string, NodeRuntime>());
 const GATHER_RADIUS = 4;
 
 export function professionsOf(ctx: GameContext, userId: string): Record<ProfessionId, number> {
@@ -35,7 +36,7 @@ function nodePlacement(def: GatherNodeDef, roll: () => number): readonly [number
 function placeNode(ctx: GameContext, def: GatherNodeDef, position: readonly [number, number]): void {
   const y = ctx.world.groundHeightAt(position[0], position[1]);
   const instanceId = ctx.scene.object.place(def.id, position[0], y, position[1]);
-  nodes.set(instanceId, { defId: def.id, position: [position[0], y, position[1]] });
+  nodesOf(ctx).set(instanceId, { defId: def.id, position: [position[0], y, position[1]] });
 }
 
 export function placeGatherNodes(ctx: GameContext): number {
@@ -54,7 +55,7 @@ export function gatherPrompts(ctx: GameContext): readonly PositionedPrompt[] {
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return [];
   const prompts: PositionedPrompt[] = [];
-  for (const [instanceId, runtime] of nodes) {
+  for (const [instanceId, runtime] of nodesOf(ctx)) {
     const dx = runtime.position[0] - player.position[0];
     const dz = runtime.position[2] - player.position[2];
     if (dx * dx + dz * dz > 40 * 40) continue;
@@ -74,7 +75,7 @@ export function gatherPrompts(ctx: GameContext): readonly PositionedPrompt[] {
 }
 
 export function gather(ctx: GameContext, userId: string, instanceId: string): void {
-  const runtime = nodes.get(instanceId);
+  const runtime = nodesOf(ctx).get(instanceId);
   const def = runtime === undefined ? undefined : GATHER_NODES.find((entry) => entry.id === runtime.defId);
   if (runtime === undefined || def === undefined) return;
   const skills = professionsOf(ctx, userId);
@@ -102,11 +103,11 @@ export function gather(ctx: GameContext, userId: string, instanceId: string): vo
     });
   }
   ctx.scene.object.remove(instanceId);
-  nodes.delete(instanceId);
+  nodesOf(ctx).delete(instanceId);
   const respawnAt: readonly [number, number] = [runtime.position[0], runtime.position[2]];
   ctx.time.after(def.respawnSec, () => placeNode(ctx, def, respawnAt));
 }
 
-export function gatherNodeCount(): number {
-  return nodes.size;
+export function gatherNodeCount(ctx: GameContext): number {
+  return nodesOf(ctx).size;
 }

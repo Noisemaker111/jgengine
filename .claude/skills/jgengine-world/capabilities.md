@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
+
+- `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/scene/bodyBind"`
+
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/movement/poseState"`
@@ -23,6 +27,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## grapple-swing — grappling-hook rope swing physics with reel-in
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/movement/grappleSwing"`
+
+## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
+
+- `generateLock` (function) · `import { generateLock } from "@jgengine/core/interaction/lockpick"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 

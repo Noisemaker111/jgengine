@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, type MutableRefObject } from "react";
+import { useEffect, useMemo, useReducer, type ComponentType, type MutableRefObject } from "react";
 
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import type { CameraDirector } from "@jgengine/core/runtime/cameraDirector";
@@ -13,7 +13,7 @@ import {
   SideScrollRig,
   TopDownRig,
 } from "./cameraRigs";
-import { GameFirstPersonCamera } from "./GameFirstPersonCamera";
+import { GameFirstPersonCamera, type ViewmodelProps } from "./GameFirstPersonCamera";
 import { GameInspectionCamera } from "./GameInspectionCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
 import { resolveDirectedCamera } from "./rigMath";
@@ -32,6 +32,8 @@ export interface GameCameraRigProps {
   panKeysEnabled?: boolean;
   /** Runtime follow/cinematic override (#196.2). While present it wins over the static `config` for any field it reports non-`undefined`/non-`null`; absent (or an all-`undefined` snapshot) is a no-op. */
   director?: CameraDirector;
+  /** Custom first-person viewmodel (#542); read only when the resolved rig is `"first"`. */
+  viewmodel?: ComponentType<ViewmodelProps>;
 }
 
 export function GameCameraRig({
@@ -42,6 +44,7 @@ export function GameCameraRig({
   pointerControls,
   panKeysEnabled,
   director,
+  viewmodel,
 }: GameCameraRigProps) {
   const channel = useMemo(
     () => createCameraShakeChannel(config?.shake?.decayPerSecond),
@@ -83,6 +86,7 @@ export function GameCameraRig({
             pitchRef={pitchRef}
             config={config?.firstPerson}
             followEntityId={followEntityId ?? undefined}
+            viewmodel={viewmodel}
           />
         );
       case "topDown":

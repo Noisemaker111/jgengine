@@ -1,3 +1,4 @@
+import { KeyHint } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 import { sectors } from "../../course/sectors";
 import { keyLabel } from "../keyLabel";
@@ -22,7 +23,8 @@ export function LoseScreen() {
         onClick={() => commands.run("startRun", {})}
         className="w-full rounded bg-[#ff4b3e] py-2.5 text-sm font-black tracking-widest text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-95"
       >
-        RESTART — {keyLabel("startRun")}
+        RESTART
+        <KeyHint> — {keyLabel("startRun")}</KeyHint>
       </button>
     </div>
   );

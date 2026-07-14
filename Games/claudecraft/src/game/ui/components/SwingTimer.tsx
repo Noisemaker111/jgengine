@@ -24,7 +24,7 @@ export function SwingTimer() {
   const prevPeriodRef = useRef(0);
   const prevTimerRef = useRef(0);
 
-  const hero = heroOf(userId);
+  const hero = heroOf(ctx, userId);
   const sheet = heroSheet(ctx, userId);
   const target: SwingTargetInput | null =
     targetId === null
@@ -33,7 +33,7 @@ export function SwingTimer() {
           const health = ctx.scene.entity.stats.get(targetId, "health");
           return {
             dead: health !== null && health.current <= health.min,
-            kind: isMobInstance(targetId) ? "enemy" : "npc",
+            kind: isMobInstance(ctx, targetId) ? "enemy" : "npc",
           };
         })();
 

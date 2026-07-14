@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { COPPER } from "../model";
 import { teleportHero } from "../session/hero";
@@ -30,7 +31,7 @@ interface MatchState {
   result: ValeCupView["result"];
 }
 
-const matches = new Map<string, MatchState>();
+const matchesOf = perContext(() => new Map<string, MatchState>());
 
 const PITCH_HALF_W = 14;
 const PITCH_HALF_D = 22;
@@ -43,7 +44,7 @@ export function placeValeCup(ctx: GameContext): void {
 }
 
 export function startValeCup(ctx: GameContext, userId: string, wager = 0): boolean {
-  if (matches.has(userId)) return false;
+  if (matchesOf(ctx).has(userId)) return false;
   const hero = ctx.scene.entity.get(userId);
   if (hero === null) return false;
   const spend = Math.max(0, Math.floor(wager));
@@ -61,7 +62,7 @@ export function startValeCup(ctx: GameContext, userId: string, wager = 0): boole
     returnPos: [hero.position[0], hero.position[2]],
     result: "playing",
   };
-  matches.set(userId, state);
+  matchesOf(ctx).set(userId, state);
   teleportHero(ctx, userId, px, pz + 8);
   sync(ctx, userId);
   ctx.scene.entity.floatText({ instanceId: userId, text: "Vale Cup kickoff!", kind: "info" });
@@ -69,7 +70,7 @@ export function startValeCup(ctx: GameContext, userId: string, wager = 0): boole
 }
 
 export function kickValeCup(ctx: GameContext, userId: string, dirX: number, dirZ: number): boolean {
-  const match = matches.get(userId);
+  const match = matchesOf(ctx).get(userId);
   if (match === undefined || match.result !== "playing") return false;
   const hero = ctx.scene.entity.get(userId);
   if (hero === null) return false;
@@ -94,16 +95,16 @@ export function kickValeCup(ctx: GameContext, userId: string, dirX: number, dirZ
 }
 
 export function leaveValeCup(ctx: GameContext, userId: string): boolean {
-  const match = matches.get(userId);
+  const match = matchesOf(ctx).get(userId);
   if (match === undefined) return false;
   teleportHero(ctx, userId, match.returnPos[0], match.returnPos[1]);
-  matches.delete(userId);
+  matchesOf(ctx).delete(userId);
   valeCupStore.clear(ctx, userId);
   return true;
 }
 
 export function tickValeCup(ctx: GameContext, userId: string, dt: number): void {
-  const match = matches.get(userId);
+  const match = matchesOf(ctx).get(userId);
   if (match === undefined || match.result !== "playing") return;
   const [cx, cz] = VALE_CUP_PITCH;
   match.ball.x += match.ball.vx * dt;
@@ -181,7 +182,7 @@ function finish(ctx: GameContext, userId: string, match: MatchState): void {
 }
 
 function sync(ctx: GameContext, userId: string): void {
-  const match = matches.get(userId);
+  const match = matchesOf(ctx).get(userId);
   if (match === undefined) {
     valeCupStore.clear(ctx, userId);
     return;
@@ -198,6 +199,6 @@ function sync(ctx: GameContext, userId: string): void {
   valeCupStore.write(ctx, userId, view);
 }
 
-export function valeCupActive(userId: string): boolean {
-  return matches.has(userId);
+export function valeCupActive(ctx: GameContext, userId: string): boolean {
+  return matchesOf(ctx).has(userId);
 }

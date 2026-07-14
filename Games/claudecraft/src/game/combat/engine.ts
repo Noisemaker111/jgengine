@@ -61,7 +61,7 @@ export function targetOf(ctx: GameContext, userId: string): string | null {
 function hostileTarget(ctx: GameContext, userId: string): string | null {
   const targetId = targetOf(ctx, userId);
   if (targetId === null) return null;
-  return isMobInstance(targetId) ? targetId : null;
+  return isMobInstance(ctx, targetId) ? targetId : null;
 }
 
 function applyAura(
@@ -73,7 +73,7 @@ function applyAura(
   buff: { stat?: string; amount?: number },
 ): void {
   const now = ctx.time.now();
-  const list = aurasOf(targetId);
+  const list = aurasOf(ctx, targetId);
   const existing = list.findIndex((aura) => aura.id === ability.id);
   if (existing >= 0) list.splice(existing, 1);
   const duration = ability.duration ?? (ability.kind === "buff" ? 300 : 12);
@@ -121,7 +121,7 @@ function dealDamage(
   const attackerLevel = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
   const critted = crit ? rawAmount * CRIT_MULTIPLIER : rawAmount;
   const amount = physical
-    ? mitigate(critted, armorOfMob(targetId), attackerLevel)
+    ? mitigate(critted, armorOfMob(ctx, targetId), attackerLevel)
     : Math.max(1, Math.round(critted));
   ctx.scene.entity.effect({ from: userId, to: targetId, effect: "damage", via: { amount } });
   ctx.scene.entity.floatText({
@@ -131,9 +131,9 @@ function dealDamage(
     crit,
     ...(school !== undefined && school !== "physical" ? { element: school } : {}),
   });
-  addThreat(targetId, userId, amount);
+  addThreat(ctx, targetId, userId, amount);
   enterCombat(ctx, userId);
-  const lifesteal = externalCombatModsOf(userId)?.lifestealPct ?? 0;
+  const lifesteal = externalCombatModsOf(ctx, userId)?.lifestealPct ?? 0;
   if (lifesteal > 0) {
     ctx.scene.entity.effect({
       from: userId,
@@ -188,12 +188,12 @@ function applyCc(ctx: GameContext, userId: string, targetId: string, ability: Ab
       0,
       { stat: "armor", amount: -Math.abs(cc.amount ?? ability.base) },
     );
-    addThreat(targetId, userId, 12);
+    addThreat(ctx, targetId, userId, 12);
     enterCombat(ctx, userId);
     return;
   }
   if (applyMobCc(ctx, targetId, userId, cc)) {
-    addThreat(targetId, userId, cc.kind === "taunt" ? 1 : 8);
+    addThreat(ctx, targetId, userId, cc.kind === "taunt" ? 1 : 8);
     enterCombat(ctx, userId);
   }
 }
@@ -201,7 +201,7 @@ function applyCc(ctx: GameContext, userId: string, targetId: string, ability: Ab
 function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): void {
   const sheet = heroSheet(ctx, userId);
   if (sheet === null) return;
-  const hero = heroOf(userId);
+  const hero = heroOf(ctx, userId);
   if (hero === null) return;
   if (ability.selfResource !== undefined && ability.selfResource > 0) {
     ctx.scene.entity.stats.delta(userId, "resource", ability.selfResource);
@@ -233,7 +233,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
     }
     case "heal": {
       const targetId = targetOf(ctx, userId);
-      const to = targetId !== null && !isMobInstance(targetId) ? targetId : userId;
+      const to = targetId !== null && !isMobInstance(ctx, targetId) ? targetId : userId;
       const amount = abilityAmount(ctx, userId, ability, sheet) * (crit ? CRIT_MULTIPLIER : 1);
       playSpellVfx(ctx, ability, { casterId: userId, targetId: to });
       ctx.scene.entity.effect({
@@ -257,7 +257,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
     }
     case "hot": {
       const targetId = targetOf(ctx, userId);
-      const to = targetId !== null && !isMobInstance(targetId) ? targetId : userId;
+      const to = targetId !== null && !isMobInstance(ctx, targetId) ? targetId : userId;
       playSpellVfx(ctx, ability, { casterId: userId, targetId: to });
       const total = abilityAmount(ctx, userId, ability, sheet);
       const ticks = Math.max(1, Math.floor((ability.duration ?? 12) / (ability.tickInterval ?? 3)));
@@ -273,7 +273,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
             ? ctx.scene.entity.inRadius(
                 ctx.scene.entity.get(targetId)?.position ?? [0, 0, 0],
                 ability.aoeRadius,
-                isMobInstance,
+                (id) => isMobInstance(ctx, id),
               )
             : [targetId];
         for (const debuffed of targets) {
@@ -282,7 +282,7 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
             ...(ability.buffStat === undefined ? {} : { stat: ability.buffStat }),
             amount: -Math.abs(ability.buffAmount ?? ability.base),
           });
-          addThreat(debuffed, userId, 10);
+          addThreat(ctx, debuffed, userId, 10);
         }
         enterCombat(ctx, userId);
         break;
@@ -311,8 +311,8 @@ function executeAbility(ctx: GameContext, userId: string, ability: AbilityDef): 
         at: [center[0], center[1], center[2]],
         radius: ability.aoeRadius ?? 8,
       });
-      for (const hit of ctx.scene.entity.inRadius(center, ability.aoeRadius ?? 8, isMobInstance)) {
-        addThreat(hit, userId, amount);
+      for (const hit of ctx.scene.entity.inRadius(center, ability.aoeRadius ?? 8, (id) => isMobInstance(ctx, id))) {
+        addThreat(ctx, hit, userId, amount);
       }
       enterCombat(ctx, userId);
       break;
@@ -326,7 +326,7 @@ export function applyFood(
   item: { id: string; name: string; icon: GameIconName; heal?: number; restore?: number },
 ): void {
   const now = ctx.time.now();
-  const list = aurasOf(userId);
+  const list = aurasOf(ctx, userId);
   for (const [auraId, kind] of [
     [`food:${item.id}`, "hot"],
     [`drink:${item.id}`, "drink"],
@@ -353,7 +353,7 @@ export function applyFood(
 
 export function castSlot(ctx: GameContext, userId: string, slot: number): void {
   const cls = classOf(ctx, userId);
-  const hero = heroOf(userId);
+  const hero = heroOf(ctx, userId);
   if (cls === null || hero === null) return;
   if (deadStore.read(ctx, userId)) return;
   const level = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
@@ -409,7 +409,7 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
 }
 
 function commitCast(ctx: GameContext, userId: string, ability: AbilityDef): void {
-  const hero = heroOf(userId);
+  const hero = heroOf(ctx, userId);
   if (hero === null) return;
   const resource = ctx.scene.entity.stats.get(userId, "resource")?.current ?? 0;
   const result = hero.kit.cast(ability.id, resource);
@@ -432,7 +432,7 @@ function commitCast(ctx: GameContext, userId: string, ability: AbilityDef): void
 }
 
 export function tickHero(ctx: GameContext, userId: string, dt: number): void {
-  const hero = heroOf(userId);
+  const hero = heroOf(ctx, userId);
   const cls = classOf(ctx, userId);
   if (hero === null || cls === null) return;
   hero.kit.tick(dt);
@@ -466,7 +466,7 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
       const distance = ctx.scene.entity.distance(userId, targetId);
       if (sheet !== null && distance !== null && distance <= MELEE_RANGE + 0.8) {
         const crit = rollCrit(rng, sheet.critPct);
-        const meleePct = externalCombatModsOf(userId)?.meleeDmgPct ?? 0;
+        const meleePct = externalCombatModsOf(ctx, userId)?.meleeDmgPct ?? 0;
         const raw = rollWeaponDamage(rng, sheet.weapon, sheet.attackPower) * (1 + meleePct);
         dealDamage(ctx, userId, targetId, raw, crit);
         playMeleeVfx(ctx, userId, targetId);
@@ -511,7 +511,7 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
 
 export function tickAuras(ctx: GameContext): void {
   const now = ctx.time.now();
-  for (const [instanceId, list] of auraEntries()) {
+  for (const [instanceId, list] of auraEntries(ctx)) {
     if (list.length === 0) continue;
     if (ctx.scene.entity.get(instanceId) === null) {
       list.length = 0;
@@ -530,7 +530,7 @@ export function tickAuras(ctx: GameContext): void {
             effect: "damage",
             via: { amount: aura.amount },
           });
-          addThreat(instanceId, aura.sourceId, aura.amount);
+          addThreat(ctx, instanceId, aura.sourceId, aura.amount);
         } else if (aura.kind === "drink") {
           ctx.scene.entity.stats.delta(instanceId, "resource", aura.amount);
         } else {

@@ -14,14 +14,21 @@ import type { ReactNode } from "react";
 import { classById } from "../../classes/catalog";
 import { NPCS } from "../../entities/npcs/catalog";
 import { ITEMS, itemDefById } from "../../items/catalog";
+import { enchantsForSlot } from "../../items/enchanting";
 import { equippedSetStatus } from "../../items/sets";
+import type { LockboxView } from "../../minigames/lockpick";
 import { PROFESSIONS } from "../../professions/catalog";
 import { professionsOf } from "../../professions/gathering";
 import type { EquipSlot } from "../../model";
 import { classStore, equipStore, shopStore } from "../../session/stores";
 import { QUESTS } from "../../quests/catalog";
-import { heroSheet } from "../../session/hero";
+import { enchantsOf, heroSheet } from "../../session/hero";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE, QUALITY_COLORS, copperLabel } from "../theme";
+
+function isSalvageOrDisenchantable(itemId: string): boolean {
+  const item = itemDefById(itemId);
+  return item !== null && (item.kind === "weapon" || item.kind === "armor") && item.quality !== "poor";
+}
 
 function Window({
   title,
@@ -53,12 +60,14 @@ function ItemRow({
   action,
   actionLabel,
   price,
+  extraActions,
 }: {
   itemId: string;
   count?: number;
   action?: () => void;
   actionLabel?: string;
   price?: number;
+  extraActions?: readonly { label: string; onClick: () => void }[];
 }) {
   const item = itemDefById(itemId);
   if (item === null) return null;
@@ -81,6 +90,16 @@ function ItemRow({
           {price !== undefined ? ` · ${copperLabel(price)}` : ""}
         </span>
       </span>
+      {extraActions?.map((extra) => (
+        <button
+          key={extra.label}
+          type="button"
+          onClick={extra.onClick}
+          className="rounded border border-stone-700 bg-stone-900/70 px-2 py-0.5 text-xs text-stone-300 hover:bg-stone-800"
+        >
+          {extra.label}
+        </button>
+      ))}
       {action !== undefined && (
         <button
           type="button"
@@ -126,6 +145,14 @@ export function BagsPanel() {
                     : itemDefById(slot.itemId)?.kind === "consumable"
                       ? "Use"
                       : "Equip"
+                }
+                extraActions={
+                  shopId !== undefined || !isSalvageOrDisenchantable(slot.itemId)
+                    ? undefined
+                    : [
+                        { label: "Salvage", onClick: () => commands.run("item.salvage", { itemId: slot.itemId }) },
+                        { label: "Disenchant", onClick: () => commands.run("item.disenchant", { itemId: slot.itemId }) },
+                      ]
                 }
               />
             ),
@@ -192,7 +219,62 @@ export function CharacterPanel() {
         </div>
       )}
       <SetBonuses equips={equips} />
+      <Enchants equips={equips} />
     </Window>
+  );
+}
+
+function Enchants({ equips }: { equips: Partial<Record<EquipSlot, string>> }) {
+  const { commands } = useGame();
+  const { userId } = usePlayer();
+  const enchants = useGameStore((ctx) => enchantsOf(ctx, userId));
+  const counts = useInventory("bags");
+  const held = (itemId: string): number =>
+    counts.reduce((sum, slot) => sum + (slot !== null && slot.itemId === itemId ? slot.count : 0), 0);
+  const slots = (Object.keys(equips) as EquipSlot[]).filter((slot) => equips[slot] !== undefined);
+  const enchantable = slots.filter((slot) => enchantsForSlot(slot).length > 0);
+  if (enchantable.length === 0) return null;
+  return (
+    <>
+      <h3 className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wider text-amber-500/80">Enchants</h3>
+      <div className="space-y-2">
+        {enchantable.map((slot) => {
+          const activeId = enchants[slot];
+          return (
+            <div key={slot} className="rounded border border-stone-800 px-2 py-1.5">
+              <p className="mb-1 text-xs capitalize text-stone-400">
+                {slot}
+                {activeId !== undefined && <span className="ml-1 text-emerald-300">— applied</span>}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {enchantsForSlot(slot).map((enchant) => {
+                  const affordable = enchant.reagents.every((reagent) => held(reagent.itemId) >= reagent.count);
+                  const active = activeId === enchant.id;
+                  return (
+                    <button
+                      key={enchant.id}
+                      type="button"
+                      disabled={!affordable || active}
+                      onClick={() => commands.run("item.applyEnchant", { slot, enchantId: enchant.id })}
+                      title={enchant.reagents.map((r) => `${r.count} ${r.itemId.replaceAll("_", " ")}`).join(", ")}
+                      className={`rounded border px-2 py-0.5 text-[11px] ${
+                        active
+                          ? "border-emerald-700 bg-emerald-950/50 text-emerald-300"
+                          : affordable
+                            ? "border-amber-800 bg-amber-950/60 text-amber-200 hover:bg-amber-900/60"
+                            : "border-stone-800 text-stone-600"
+                      }`}
+                    >
+                      {enchant.name.replace("Enchant Weapon: ", "").replace("Enchant ", "")}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -266,6 +348,74 @@ function objectiveLabel(questId: string, objectiveId: string): string {
   if (objective === undefined) return objectiveId;
   if (objective.kind === "kill") return `Slay ${objective.target?.replaceAll("_", " ") ?? "foes"}`;
   return `Collect ${objective.item?.replaceAll("_", " ") ?? "items"}`;
+}
+
+const PICK_LABEL: Record<string, string> = {
+  hardSet: "Hard Set",
+  set: "Set",
+  steady: "Steady",
+  ease: "Ease",
+  drop: "Drop",
+};
+
+export function LockpickPanel() {
+  const { commands } = useGame();
+  const { userId } = usePlayer();
+  const session = useGameStore((ctx) => ctx.game.store.get(`lockpick:${userId}`) as LockboxView | undefined);
+  if (session === undefined) return null;
+  const close = () => commands.run("lockpick.close", {});
+  return (
+    <Window
+      title={`Tumbler's Path · Ante ${session.ante} · ${session.livesLeft} ${session.livesLeft === 1 ? "life" : "lives"}`}
+      onClose={close}
+    >
+      {session.result !== "playing" && (
+        <p className={`mb-2 text-sm font-semibold ${session.result === "success" ? "text-emerald-300" : "text-rose-300"}`}>
+          {session.result === "success" ? "The lock clicks open!" : "The lock jams shut."}
+        </p>
+      )}
+      <div
+        className="mx-auto grid gap-0.5"
+        style={{ gridTemplateColumns: `repeat(${session.cols}, 1.15rem)` }}
+      >
+        {Array.from({ length: session.rows }).map((_, row) =>
+          Array.from({ length: session.cols }).map((_, col) => {
+            const cell = session.visible.find((c) => c.col === col && c.row === row);
+            const isPick = col === session.col && row === session.row;
+            const bg =
+              cell === undefined
+                ? "bg-stone-950"
+                : cell.kind === "seat"
+                  ? "bg-amber-500"
+                  : cell.kind === "gate"
+                    ? "bg-sky-500"
+                    : cell.kind === "trap"
+                      ? "bg-rose-600"
+                      : "bg-stone-600";
+            return (
+              <div
+                key={`${col}-${row}`}
+                className={`h-[1.15rem] w-[1.15rem] rounded-sm ${bg} ${isPick ? "ring-2 ring-amber-200" : ""}`}
+              />
+            );
+          }),
+        )}
+      </div>
+      <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+        {session.allowedActions.map((action) => (
+          <button
+            key={action}
+            type="button"
+            disabled={session.result !== "playing"}
+            onClick={() => commands.run("lockpick.pick", { action })}
+            className="rounded border border-amber-800 bg-amber-950/60 px-2.5 py-1 text-xs font-semibold text-amber-200 hover:bg-amber-900/60 disabled:opacity-40"
+          >
+            {PICK_LABEL[action] ?? action}
+          </button>
+        ))}
+      </div>
+    </Window>
+  );
 }
 
 export function VendorPanel() {

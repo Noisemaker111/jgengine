@@ -1,16 +1,18 @@
 import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
-import { useGame, usePlayer } from "@jgengine/react/hooks";
+import { useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
 import { useEffect } from "react";
 
 import { bankStore, cinematicStore, classStore, dialogueStore, mailOpenStore, panelStore, shopStore } from "../session/stores";
 import { ActionBar, CastBar, XpBar } from "./components/ActionBar";
+import { ChatLog } from "./components/ChatLog";
+import { AuctionPanel } from "./components/Auction";
 import { ClassSelect } from "./components/ClassSelect";
 import { DialoguePanel } from "./components/Dialogue";
 import { BankPanel } from "./components/Bank";
 import { CraftingPanel, FishingOverlay } from "./components/Crafting";
 import { Minimap } from "./components/Minimap";
-import { BagsPanel, CharacterPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
+import { BagsPanel, CharacterPanel, LockpickPanel, QuestLogPanel, VendorPanel } from "./components/Panels";
 import { SpellbookPanel } from "./components/Spellbook";
 import { SwingTimer } from "./components/SwingTimer";
 import { TalentPanel } from "./components/Talents";
@@ -64,6 +66,8 @@ export function GameUI() {
   const dialogueOpen = useKeyedStore(dialogueStore, userId, (id) => id !== null);
   const bankOpen = useKeyedStore(bankStore, userId);
   const mailOpen = useKeyedStore(mailOpenStore, userId);
+  const lockpickOpen = useGameStore((ctx) => ctx.game.store.get(`lockpick:${userId}`) !== undefined);
+  const auctionOpen = useGameStore((ctx) => ctx.game.store.get(`auction:${userId}`) === true);
   if (classId === null) return <ClassSelect />;
   return (
     <>
@@ -94,7 +98,10 @@ export function GameUI() {
             <FiestaHud />
           </div>
         </HudPanel>
-        <HudPanel id="feed" anchor="bottom-left" inset={{ x: 16, y: 60 }}>
+        <HudPanel id="chat" anchor="bottom-left" inset={{ x: 16, y: 60 }}>
+          <ChatLog />
+        </HudPanel>
+        <HudPanel id="feed" anchor="bottom-left" inset={{ x: 16, y: 270 }}>
           <KillLootToasts />
         </HudPanel>
         <HudPanel id="bottom-bar" anchor="bottom" inset={{ x: 0, y: 10 }}>
@@ -120,12 +127,16 @@ export function GameUI() {
         shopOpen ||
         dialogueOpen ||
         bankOpen ||
-        mailOpen) && (
+        mailOpen ||
+        lockpickOpen ||
+        auctionOpen) && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-4">
           {dialogueOpen && <DialoguePanel />}
           {shopOpen && <VendorPanel />}
           {bankOpen && <BankPanel />}
           {mailOpen && <MailPanel />}
+          {lockpickOpen && <LockpickPanel />}
+          {auctionOpen && <AuctionPanel />}
           {panel === "bags" && <BagsPanel />}
           {panel === "character" && <CharacterPanel />}
           {panel === "quests" && <QuestLogPanel />}

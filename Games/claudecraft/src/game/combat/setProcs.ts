@@ -1,20 +1,22 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { aurasOf, syncAuras, type HeroSheet } from "../session/hero";
 import type { SetProc } from "../items/sets";
 
 const rng = seededRng("claudecraft-setprocs");
-const icd = new Map<string, Map<string, number>>();
+const icdOf = perContext(() => new Map<string, Map<string, number>>());
 
-function ready(userId: string, procId: string, now: number, icdSec: number): boolean {
+function ready(ctx: GameContext, userId: string, procId: string, now: number, icdSec: number): boolean {
   if (icdSec <= 0) return true;
-  const readyAt = icd.get(userId)?.get(procId) ?? 0;
+  const readyAt = icdOf(ctx).get(userId)?.get(procId) ?? 0;
   return now >= readyAt;
 }
 
-function arm(userId: string, procId: string, now: number, icdSec: number): void {
+function arm(ctx: GameContext, userId: string, procId: string, now: number, icdSec: number): void {
   if (icdSec <= 0) return;
+  const icd = icdOf(ctx);
   let map = icd.get(userId);
   if (map === undefined) {
     map = new Map();
@@ -30,7 +32,7 @@ function selfBuff(
   now: number,
 ): void {
   const stat = proc.effect.buffStat;
-  const list = aurasOf(userId);
+  const list = aurasOf(ctx, userId);
   const existing = list.findIndex((aura) => aura.id === proc.id);
   if (existing >= 0) list.splice(existing, 1);
   list.push({
@@ -56,7 +58,7 @@ function nextCastFree(
   proc: SetProc & { effect: { kind: "nextCastFree" } },
   now: number,
 ): void {
-  const list = aurasOf(userId);
+  const list = aurasOf(ctx, userId);
   const existing = list.findIndex((aura) => aura.id === proc.id);
   if (existing >= 0) list.splice(existing, 1);
   list.push({
@@ -83,7 +85,7 @@ function targetDot(
   proc: SetProc & { effect: { kind: "targetDot" } },
   now: number,
 ): void {
-  const list = aurasOf(targetId);
+  const list = aurasOf(ctx, targetId);
   const e = proc.effect;
   const existing = list.find((aura) => aura.id === proc.id);
   if (existing !== undefined) {
@@ -120,7 +122,7 @@ function fire(
   const now = ctx.time.now();
   for (const proc of procs) {
     if (proc.trigger !== trigger) continue;
-    if (!ready(userId, proc.id, now, proc.icdSec)) continue;
+    if (!ready(ctx, userId, proc.id, now, proc.icdSec)) continue;
     if (proc.chance < 1 && rng() >= proc.chance) continue;
     if (proc.effect.kind === "selfBuff") {
       selfBuff(ctx, userId, proc as SetProc & { effect: { kind: "selfBuff" } }, now);
@@ -130,7 +132,7 @@ function fire(
       if (targetId === null) continue;
       targetDot(ctx, userId, targetId, proc as SetProc & { effect: { kind: "targetDot" } }, now);
     }
-    arm(userId, proc.id, now, proc.icdSec);
+    arm(ctx, userId, proc.id, now, proc.icdSec);
   }
 }
 
@@ -150,7 +152,7 @@ export function fireSpellCastProcs(ctx: GameContext, userId: string, sheet: Hero
 }
 
 export function consumeNextCastFree(ctx: GameContext, userId: string): boolean {
-  const list = aurasOf(userId);
+  const list = aurasOf(ctx, userId);
   const index = list.findIndex((aura) => aura.buffStat === "next_cast_free");
   if (index < 0) return false;
   list.splice(index, 1);

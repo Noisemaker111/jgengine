@@ -30,6 +30,18 @@
 - `AssistNetworkConfig` (interface): interface AssistNetworkConfig — ⚠ undocumented
 - `createAssistNetwork` (function): function createAssistNetwork(config: AssistNetworkConfig = {}): AssistNetwork — ⚠ undocumented
 
+## @jgengine/core/ai/heatSystem
+
+- `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
+- `HeatGain` (interface): interface HeatGain — One crime tick's contribution — only `witnessed` gains raise heat (unseen crimes are free, GTA-style).
+- `HeatLevelDef` (interface): interface HeatLevelDef — One escalation tier — the heat threshold it begins at and the pursuer count it wants active.
+- `HeatPoint` (type): type HeatPoint = readonly [number, number] — A world-space `[x, z]` used for the heat system's spawn ring and witness proximity checks.
+- `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
+- `HeatStep` (interface): interface HeatStep — One `advanceHeat` tick's result — updated state plus what the caller should spawn/despawn.
+- `HeatTickContext` (interface): interface HeatTickContext — Per-tick world facts {@link advanceHeat} needs but can't derive itself — witness proximity, pursuer count, origin.
+- `advanceHeat` (function): function advanceHeat(config: HeatConfig, state: HeatState, dt: number, gains: readonly HeatGain[], ctx: HeatTickContext): HeatStep — Advances {@link HeatState} by one tick: sums this tick's witnessed gains, bleeds heat once clear of witnesses past `decayDelaySeconds`, resolves the current {@link HeatLevelDef}, and reports how many pursuers to spawn (with ring points) or whether to stand pursuit down entirely.
+- `createHeatState` (function): function createHeatState(config: HeatConfig): HeatState — Escalating crime/heat/pursuit state machine (#533.4) — the star-meter every open-world crime sandbox hand-rolls: witness-scoped gain (unseen crimes don't raise heat), proximity-gated decay (still hot while a witness or pursuer is close), tiered pursuer budgets, ring-shaped spawn points around the player, and a stand-down countdown once heat clears so pursuit doesn't vanish instantly. Pure and seeded like `ai/spawnDirector` — the caller owns spawning/despawning the actual entities.
+
 ## @jgengine/core/ai/jobBoard
 
 - `Job` (interface): interface Job — ⚠ undocumented
@@ -174,6 +186,22 @@
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
+
+## @jgengine/core/interaction/lockpick
+
+- `LOCK_ACTIONS` (const): const LOCK_ACTIONS: readonly LockAction[] — The five pick actions, in display order (shallow → deep).
+- `LOCK_ACTION_DELTA` (const): const LOCK_ACTION_DELTA: Readonly<Record<LockAction, number>> — Vertical row delta applied to the pick for each action. Row 0 is the shallow/top row.
+- `LockAction` (type): type LockAction = "hardSet" | "set" | "steady" | "ease" | "drop" — One discrete pick move: how far the pick drives into the lock this step.
+- `LockCell` (interface): interface LockCell — One cell inside the fogged {@link visibleCells} window: its board position and kind.
+- `LockCellKind` (type): type LockCellKind = "open" | "gate" | "seat" | "trap" — What a revealed cell renders as: a plain open notch, an exact tumbler gate, the bolt seat (win condition), or a ward-trap that looks open but jams on contact.
+- `LockSpec` (interface): interface LockSpec — A generated lock board. `open[col]` holds every enterable row in that column.
+- `LockStepResult` (type): type LockStepResult = "advanced" | "slip" | "bind" | "trap" | "success" — Outcome of one {@link stepLock} call: `advanced`/`success` move the pick, `slip`/`bind`/`trap` do not and should cost a life.
+- `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
+- `generateLock` (function): function generateLock(seed: string | number, tier: LockTierSpec): LockSpec — Generate a solvable depth-puzzle lock: a "Tumbler's Path" board with a guaranteed solution path carved first, an open-row forgiveness band wrapped around it, tumbler gate columns that pinch to a single exact row, and optional ward-traps that look open but jam on contact. Deterministic: the same (seed, tier) always yields the same board.
+- `solveLock` (function): function solveLock(spec: LockSpec): boolean — Whether the board has a path from the start row to the bolt seat at all.
+- `solveLockPath` (function): function solveLockPath(spec: LockSpec): number[] | null — Return a concrete row-per-column solution, or null if the board is unsolvable.
+- `stepLock` (function): function stepLock(spec: LockSpec, col: number, row: number, action: LockAction): { result: LockStepResult; col: number; row: number } — Authoritative single step. The caller owns the lives economy: a slip/bind/trap does not advance the pick and should cost a life; advanced/success move the pick.
+- `visibleCells` (function): function visibleCells(spec: LockSpec, col: number, window: number): LockCell[] — The render-safe slice: every open cell in columns [0, col + window]. The single source of truth for fog and the anti-cheat boundary — never serialize the full spec to a client.
 
 ## @jgengine/core/interaction/proximityPrompt
 
@@ -437,6 +465,14 @@
 - `DamageZoneState` (interface): interface DamageZoneState — ⚠ undocumented
 - `createDamageModel` (function): function createDamageModel(config: DamageModelConfig): DamageModel — ⚠ undocumented
 
+## @jgengine/core/physics/drivableVehicle
+
+- `DrivableVehicleOptions` (interface): interface DrivableVehicleOptions — Options for {@link tickDrivableVehicle} — ground snapping and per-tick tuning modifiers.
+- `DrivableVehiclePose` (interface): interface DrivableVehiclePose — A `setPose`-ready patch — spread straight into `entities.setPose(vehicleId, drive.pose)`.
+- `DrivableVehiclePosition` (type): type DrivableVehiclePosition = readonly [number, number, number] — World-space `[x, y, z]` for a drivable vehicle's resolved pose.
+- `DrivableVehicleStep` (interface): interface DrivableVehicleStep — {@link tickDrivableVehicle}'s result — the ready-to-apply pose patch plus the raw sim step for HUD/telemetry reads.
+- `tickDrivableVehicle` (function): function tickDrivableVehicle(vehicle: KinematicVehicle, dt: number, axis: AxisInput, options: DrivableVehicleOptions = {}): DrivableVehicleStep — Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points; this function only steps the sim and shapes the pose patch, nothing else.
+
 ## @jgengine/core/physics/flowTube
 
 - `FlowTube` (interface): interface FlowTube — An axial corridor of directional flow with radial core falloff and a spool scalar — fan tunnels, updraft shafts, river narrows, thruster wash. Pure math: sample `velocityAt(point, spool)` and add it to whatever integrator moves the body (walk controller drift, `BuoyantBody`, a custom sim).
@@ -571,6 +607,15 @@
 - `promptable` (function): function promptable(prompt: ProximityPrompt): PromptableBehavior — ⚠ undocumented
 - `talkable` (function): function talkable(dialogueId: string): PromptableBehavior — ⚠ undocumented
 - `wander` (function): function wander({ radius }: { radius: number }): WanderBehavior — ⚠ undocumented
+
+## @jgengine/core/scene/bodyBind
+
+- `BodyBind` (interface): interface BodyBind — The lazily-keyed handle `ctx.scene.entity.bind(key)` returns.
+- `BodyBindDeps` (interface): interface BodyBindDeps — Structural entity-store seam a {@link BodyBind} mirrors onto — satisfied by `ctx.scene.entity` itself.
+- `BodyBindPose` (interface): interface BodyBindPose — The pose a {@link BodyBindDeps.setPose} call receives for an id already bound.
+- `BodyBindSpawnInput` (interface): interface BodyBindSpawnInput — The options a {@link BodyBindDeps.spawn} call receives for an id seen for the first time.
+- `BodySnapshot` (interface): interface BodySnapshot — One sim body's per-tick pose, as the game's simulation computed it — the shape a game already builds to hand to `setPose`, just declared instead of imperatively pushed. `kind` is the entity catalog name used only the first time `id` is seen (a respawn/despawn never re-reads it).
+- `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 
 ## @jgengine/core/scene/captureCheck
 
@@ -762,6 +807,18 @@
 - `Targeting` (interface): interface Targeting — ⚠ undocumented
 - `TargetingOptions` (interface): interface TargetingOptions — ⚠ undocumented
 - `createTargeting` (function): function createTargeting(options: TargetingOptions): Targeting — ⚠ undocumented
+
+## @jgengine/core/scene/vehicleSeat
+
+- `DismountOffset` (interface): interface DismountOffset — Where {@link VehicleSeats.exit} steps the rider out, relative to the vehicle's heading.
+- `EnterVehicleOptions` (interface): interface EnterVehicleOptions — Options for {@link VehicleSeats.enter}.
+- `EnterVehicleResult` (type): type EnterVehicleResult = | { ok: true; seat: MountSeat; /** Feed straight into `ctx.camera.follow(...)` — the vehicle while a control seat is taken, else the rider's own id. */ cameraTarget: string; /** Entity this rider's axis input should now drive (`scene/mount`'s `driveTarget`); `null` for a pa… — Result of {@link VehicleSeats.enter} — the resolved seat plus the camera/drive/movement patches to apply.
+- `ExitVehicleResult` (type): type ExitVehicleResult = | { ok: true; vehicleId: string; /** Where to `setPose` the rider — alongside the vehicle's side door, facing its heading. */ placement: VehiclePose; cameraTarget: string; riderMovementPatch: RiderMovementPatch; } | { ok: false; reason: "not_seated" } — Result of {@link VehicleSeats.exit} — the side-door placement plus the camera/movement patches to apply.
+- `RiderMovementPatch` (interface): interface RiderMovementPatch — Movement-lock patch for `entities.update(riderId, { movement: { ...current, ...patch } })` (#286.gameplay `movement.frozen`).
+- `VehiclePose` (interface): interface VehiclePose — A vehicle's world-space position and heading, used for {@link VehicleSeats.exit}'s dismount placement math.
+- `VehiclePosition` (type): type VehiclePosition = readonly [number, number, number] — World-space `[x, y, z]` for a vehicle's current position.
+- `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
+- `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
 
 ## @jgengine/core/sensor/concealment
 
@@ -1159,12 +1216,14 @@
 - `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
 - `TerrainColors` (interface): interface TerrainColors — ⚠ undocumented
 - `TerrainDetailConfig` (interface): interface TerrainDetailConfig — Procedural detail-surface layer for terrain: a noise-driven shader that keeps the biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock, sand, and snow over it by slope, height, and waterline — turning a flat vertex-colour surface into varied, textured-reading ground with no image assets.
+- `TerrainDetailMaterialConfig` (interface): interface TerrainDetailMaterialConfig — Real PBR texture applied over the ground surface — the seam that lets a game put a `buildMaterialCatalog` material on terrain. Blends with, never replaces, the procedural detail shader: color/roughness/ao tile the maps by world position, `strength` fades them over the existing vertex-colour + noise look.
 - `TerrainEnvironmentConfig` (interface): interface TerrainEnvironmentConfig — ⚠ undocumented
 - `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented
 - `TerrainFlattenMask` (interface): interface TerrainFlattenMask — ⚠ undocumented
 - `TerrainIslandConfig` (interface): interface TerrainIslandConfig extends TerrainEnvironmentConfig — A bounded terrain patch floating at its own altitude — sky islands, arena platforms, split landmasses with void between.
 - `TerrainIslandDescriptor` (type): type TerrainIslandDescriptor = Omit<TerrainEnvironmentDescriptor, "kind"> & { kind: "island"; origin: EnvironmentVec2; } — ⚠ undocumented
 - `TerrainMaterial` (type): type TerrainMaterial = "grass" | "sand" | "snow" | "rock" | "ash" | "highland" | "slate" — ⚠ undocumented
+- `TerrainMaterialMaps` (interface): interface TerrainMaterialMaps — PBR map URLs for a real ground texture — the same shape `buildMaterialCatalog({ basePath }).resolve(id)!.maps` from `@jgengine/assets` returns. Kept dependency-free here so `core` never imports the assets package; any URLs (pulled maps, a CDN, a data URI) satisfy it.
 - `TerrainMaterialRegion` (type): type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion — A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given), `polyline` ribbons for roads/rivers, and rotatable `rect` districts all paint fully inside their core and blend back across `falloff`; later regions in the list win overlaps.
 - `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
 - `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
@@ -1489,7 +1548,8 @@
 - `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — ⚠ undocumented
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
-- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel">> & { waterLevel: number } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetailMaterial` (interface): interface ResolvedTerrainDetailMaterial — A resolved {@link TerrainDetailMaterialConfig} — `repeat`/`strength` filled with defaults, `maps` passed through.
 - `RollingFieldConfig` (interface): interface RollingFieldConfig — ⚠ undocumented
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
