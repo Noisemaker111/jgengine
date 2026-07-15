@@ -136,6 +136,7 @@ function EditorWorldOverlay({
         selection={state.selection}
         onSelect={(id) => session.dispatch({ type: "select", ids: [id] })}
         activePathPoint={uiState.pathPoint}
+        groundHeightAt={(x, z) => ctx.world.groundHeightAt(x, z)}
       />
       {uiState.pathDraft.length > 0 ? <PathDraftPreview points={uiState.pathDraft} /> : null}
       <SelectionGizmo
@@ -356,6 +357,7 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
           return <EditorModeChip api={host.api} mode="walk" />;
         },
         WorldOverlay: function EditorWalkOverlay() {
+          const ctx = useGameContext();
           return (
             <>
               <PerfProbe api={host.api} />
@@ -364,6 +366,7 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
                 visibility={host.api.getVisibility()}
                 selection={host.api.getSession().getState().selection}
                 onSelect={() => {}}
+                groundHeightAt={(x, z) => ctx.world.groundHeightAt(x, z)}
               />
             </>
           );
