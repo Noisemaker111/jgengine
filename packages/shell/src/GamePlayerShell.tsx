@@ -100,6 +100,7 @@ import {
 } from "@jgengine/core/ui/orientation";
 import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
+import { resolveGameLook } from "@jgengine/core/render/lookPreset";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { VERSION } from "@jgengine/core/meta/changelog";
@@ -2006,11 +2007,18 @@ export function GamePlayerShell({
       : world?.kind === "biomes" || world?.kind === "voxel" || world?.kind === "plots" || world?.kind === "tilemap"
         ? () => <GridWorldScene feature={world} />
         : undefined);
-  const backdrop = playable.backdrop;
+  const resolvedLook = resolveGameLook({
+    look: playable.look,
+    lighting: playable.lighting,
+    backdrop: playable.backdrop,
+    postProcessing: playable.postProcessing,
+    hasWorldSky: worldSky !== undefined,
+  });
+  const backdrop = resolvedLook.backdrop;
   const backdropSky = backdrop?.sky !== undefined ? resolveSkyDescriptor(backdrop.sky) : undefined;
   const effectiveSky = backdropSky ?? worldSky;
   const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
-  const lighting = playable.lighting;
+  const lighting = resolvedLook.lighting;
   const orthographic = playable.camera?.projection === "orthographic";
 
   const localXY = (event: { clientX: number; clientY: number }) => {
@@ -2386,8 +2394,8 @@ export function GamePlayerShell({
           }}
         />
         <DevtoolsRendererProbe />
-        {playable.postProcessing !== undefined && playable.postProcessing.enabled !== false ? (
-          <PostProcessing config={playable.postProcessing} />
+        {resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
+          <PostProcessing config={resolvedLook.postProcessing} />
         ) : null}
       </Canvas>
       {!poster && !orientationGate && coarsePointer && controlsActive && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (

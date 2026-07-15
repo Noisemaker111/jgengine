@@ -259,7 +259,9 @@ Focus must look authored while remaining accessible. Menus should support keyboa
 
 ## Rendering — post-processing, lighting, shadows
 
-A cinematic look is opt-in engine config, never hand-wired render passes. Set `defineGame({ postProcessing })` (`PostProcessingConfig` from `@jgengine/core/render/postProcessing`) and the shell mounts an `EffectComposer` and owns the render: RenderPass → AO → Bloom → tone-map output → Grade. Absent means the renderer draws directly (unchanged), so it never imposes a look on games that don't ask. Each stage is a config object, `false` to skip, or omitted for its tuned default:
+**Default look is cinematic (#773).** A 3D game reads lit-like-a-shipped-game out of the box: unset `look` (or `look: "cinematic"`) composes the existing sky/lighting/post knobs — a real day sky with a view-following shadow-casting sun + hemisphere fill, and a tuned tone-map/bloom/gentle-SSAO/vignette post stack. One field opts out: `defineGame({ look: "flat" })` restores the bare ambient+directional rig (the old default) with no post. The preset only fills knobs you didn't set — any explicit `lighting`/`backdrop`/`postProcessing` always wins, and it never adds a sky when the world already declares one. `resolveGameLook` (`@jgengine/core/render/lookPreset`) is the pure resolver behind it — expand a `look` into concrete `{ lighting, backdrop, postProcessing }` and assert on the result in a `bun test` (the post/sky layers are not visible to `summarizeEnvironment`). HUD-presentation and no-camera games are unaffected.
+
+The post chain itself is never hand-wired render passes. Set `defineGame({ postProcessing })` (`PostProcessingConfig` from `@jgengine/core/render/postProcessing`) and the shell mounts an `EffectComposer` and owns the render: RenderPass → AO → Bloom → tone-map output → Grade. Each stage is a config object, `false` to skip, or omitted for its tuned default:
 
 - `toneMapping: "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none"` (default `aces`) + `exposure`.
 - `bloom: { strength, radius, threshold }` — HDR glow around bright pixels (defaults 0.32 / 0.55 / 0.85).
