@@ -99,3 +99,17 @@ proxy. Same `resolveModel` machinery as `entityModels`/`objectModels` (missing/m
 throw), factored into `createModelMapResolver(map, assets, seam)` — `InstancedScatter`'s own
 `resolveItem?: (item) => ModelConfig | null` prop is the lower-level seam if you're not going through
 `<AuthoredScene>`.
+
+## HUD components — blank baseline, opt-in widgets
+
+The engine imposes **no** HUD. Every game's HUD is its own `GameUI`; a bare game renders nothing. `new:game` scaffolds an **empty** `GameUI` (a commented `HudCanvas`), and a game opts into drop-in widgets from `@jgengine/react` — each self-styled (inline CSS, no Tailwind `@source` needed), cohesive dark-glass look, reads the local player by default, override via `style`/`className`:
+
+- `<StatBar statId tone label />` — health/mana/stamina/shield/xp bar (tone-colored).
+- `<Hotbar inventoryId activeSlot keys />` — numbered slots + active highlight.
+- `<Speedometer scale unit max />` — SVG arc gauge of an entity's ground speed.
+- `<Clock format showDay controls />` — Day N · HH:MM; `controls` adds pause + speed pills.
+- `<WaveBanner wave subtitle />` — a round/wave callout.
+- `<Coins currencyId icon />` — live currency counter.
+- `<Crosshair />` — center reticle.
+
+Place them in `<HudPanel anchor="…">` inside the `<HudCanvas>` (see `apps/dev/src/demo/hudDemo.tsx`). Don't reach for a per-game hand-rolled health pill — use `StatBar`. Never mount a fixed overlay onto every game (composable, never imposed).
