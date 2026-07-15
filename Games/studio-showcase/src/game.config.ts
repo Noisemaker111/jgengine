@@ -1,4 +1,5 @@
 import { offline } from "@jgengine/core/runtime/adapter";
+import { STUDIO_STAGE_POST } from "@jgengine/core/render/postProcessing";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { content } from "./game/content";
@@ -20,5 +21,6 @@ export const game = defineGame({
   loop,
   GameUI,
   WorldOverlay: StudioShowcaseOverlay,
+  postProcessing: STUDIO_STAGE_POST,
   camera: { perspective: "third" },
 });

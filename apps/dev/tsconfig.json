@@ -16,6 +16,7 @@
     "types": ["vite/client"],
     "paths": {
       "@/components/ui/*": ["../../registry/jgengine/*"],
+      "@jgengine-examples/studios": ["../../examples/studios/src/index.ts"],
       "@jgengine/shell/*": ["../../packages/shell/src/*"],
       "@jgengine/assets": ["../../packages/assets/src/index.ts"],
       "@jgengine/assets/*": ["../../packages/assets/src/*"],

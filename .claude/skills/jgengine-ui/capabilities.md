@@ -73,6 +73,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
 
+## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
+
+- `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
+
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
 - `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/shell/world/WorldHud"`
