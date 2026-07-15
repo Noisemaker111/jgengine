@@ -43,11 +43,11 @@ describe("vice-isle world", () => {
     expect(roadPoints(20).length).toBeGreaterThan(100);
   });
 
-  test("a tropical rain system rolls in over downtown", () => {
+  test("a tropical rain system rolls in over Ocean Drive", () => {
     expect(summary.counts.weatherSystems).toBe(1);
     const [rain] = summary.weather;
     expect(rain?.kind).toBe("rain");
-    expect(rain?.area.position).toEqual([40, -60]);
+    expect(rain?.area.position).toEqual([-170, 0]);
     expect(rain?.density).toBeGreaterThan(0);
   });
 });

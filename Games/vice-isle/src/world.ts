@@ -57,12 +57,12 @@ export const world: EnvironmentWorldFeature = environment({
   }),
   sky: sky({ preset: "day", timeOfDay: true }),
   weather: rain({
-    area: { w: 220, d: 220, h: 70, position: [40, -60] },
-    density: 0.32,
-    speed: 15,
-    dropLength: 0.7,
+    area: { w: 70, d: 70, h: 45, position: [-170, 0] },
+    density: 0.9,
+    speed: 17,
+    dropLength: 1.4,
     wind: [1.5, 0.5],
-    color: "#bfe0ff",
+    color: "#4a6f96",
   }),
   roads: streets,
   water: [
