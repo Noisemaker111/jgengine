@@ -91,6 +91,8 @@ describe("world features", () => {
           dropLength: 0.8,
           wind: [0, 0],
           color: "#9ec8ff",
+          width: 0.018,
+          opacity: 0.48,
         },
         {
           kind: "snow",
@@ -101,6 +103,7 @@ describe("world features", () => {
           drift: 0.4,
           wind: [0, 0],
           color: "#ffffff",
+          opacity: 0.86,
         },
       ],
       vegetation: [
@@ -141,17 +144,23 @@ describe("world features", () => {
   });
 
   test("biomeBand weather expands into positioned strips alongside explicit weather", () => {
-    const world = environment({
-      terrain: terrain({
-        bounds: { w: 400, d: 600 },
-        biomeBands: [
-          { z: -150, fade: 50, material: "grass", weather: "rain" },
-          { z: 150, material: "snow", weather: "snow" },
-          { z: 0, material: "sand" },
-        ],
-      }),
-      weather: rain({ density: 0.9 }),
-    });
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    let world;
+    try {
+      world = environment({
+        terrain: terrain({
+          bounds: { w: 400, d: 600 },
+          biomeBands: [
+            { z: -150, fade: 50, material: "grass", weather: "rain" },
+            { z: 150, material: "snow", weather: "snow" },
+            { z: 0, material: "sand" },
+          ],
+        }),
+        weather: rain({ density: 0.9 }),
+      });
+    } finally {
+      warn.mockRestore();
+    }
 
     expect(world.weather).toHaveLength(3);
     expect(world.weather![0]).toMatchObject({ kind: "rain", density: 0.9 });
@@ -180,8 +189,8 @@ describe("world features", () => {
 
   test("individual environment builders apply conservative defaults", () => {
     expect(terrain()).toEqual({ kind: "terrain", bounds: { w: 512, d: 512 }, height: 0 });
-    expect(rain()).toMatchObject({ kind: "rain", density: 0.65, speed: 18 });
-    expect(snow()).toMatchObject({ kind: "snow", density: 0.35, drift: 0.4 });
+    expect(rain()).toMatchObject({ kind: "rain", density: 0.65, speed: 18, width: 0.018, opacity: 0.48 });
+    expect(snow()).toMatchObject({ kind: "snow", density: 0.35, drift: 0.4, opacity: 0.86 });
     expect(grass()).toMatchObject({ kind: "grass", density: 4, bladeHeight: [0.25, 0.9] });
     expect(ocean()).toMatchObject({ kind: "ocean", bounds: { w: 1024, d: 1024 }, waveHeight: 1.2 });
     expect(building()).toMatchObject({ kind: "building", count: 1, stories: [1, 4], style: "generic" });
@@ -324,6 +333,38 @@ describe("world features", () => {
     try {
       terrain({ baseHeight: 5, height: 0 });
       terrain({ baseHeight: 5, heightField: () => 1 });
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("rain/snow expose width/opacity knobs independent of area size", () => {
+    expect(rain({ area: { w: 60, d: 60, h: 45 }, width: 0.03, opacity: 0.7 })).toMatchObject({
+      width: 0.03,
+      opacity: 0.7,
+    });
+    expect(snow({ area: { w: 60, d: 60, h: 45 }, opacity: 0.95 })).toMatchObject({ opacity: 0.95 });
+  });
+
+  test("rain/snow warn when an explicit area is far larger than camera scale", () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      rain({ area: { w: 260, d: 260, h: 70 } });
+      snow({ area: { w: 260, d: 260, h: 70 } });
+      expect(warn).toHaveBeenCalledTimes(2);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("rain/snow do not warn for camera-scale areas or the implicit default", () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      rain({ area: { w: 70, d: 70, h: 45 } });
+      snow({ area: { w: 70, d: 70, h: 45 } });
+      rain();
+      snow();
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();

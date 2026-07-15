@@ -207,6 +207,8 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
           density={weather.density}
           speed={weather.speed}
           length={weather.dropLength}
+          width={weather.width}
+          opacity={weather.opacity}
           color={weather.color}
           wind={[weather.wind[0], 0, weather.wind[1]]}
           volume={weatherVolume(weather.area)}
@@ -221,6 +223,7 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
         speed={weather.speed}
         size={weather.flakeSize}
         sway={weather.drift}
+        opacity={weather.opacity}
         color={weather.color}
         wind={[weather.wind[0], 0, weather.wind[1]]}
         volume={weatherVolume(weather.area)}
