@@ -84,3 +84,11 @@ ground-draped ribbons via `AuthoredPaths`) and instance its foliage (`<Instanced
 the editor document — no bespoke per-segment path meshes or hardcoded coordinates. Gameplay reads the
 same document (waypoints from a `route` path, plots from markers). See CLAUDE.md → "Author scenes in the
 editor, render them generically".
+
+Scatter regions default to `InstancedScatter`'s 7 stylized proxy species (tree/pine/oak/bush/shrub/rock/
+stone/grass) — pass `scatterModels={{ pine: "kenney-nature/tree_pineDefaultA" }} assets={assets}` to
+`<AuthoredScene>` to GPU-instance a real catalog GLB for a palette item instead; unmapped items keep the
+proxy. Same `resolveModel` machinery as `entityModels`/`objectModels` (missing/misspelled catalog ids
+throw), factored into `createModelMapResolver(map, assets, seam)` — `InstancedScatter`'s own
+`resolveItem?: (item) => ModelConfig | null` prop is the lower-level seam if you're not going through
+`<AuthoredScene>`.

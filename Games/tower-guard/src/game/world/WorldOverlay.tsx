@@ -6,16 +6,18 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { AuthoredScene } from "@jgengine/shell/scene";
 
 import { editorLayers } from "../../editorLayers";
+import { assets } from "../assets";
 import { GOLD_CURRENCY } from "../entities/base/catalog";
 import { towerDef } from "../entities/towers/catalog";
+import { scatterModels } from "../models";
 import { session } from "../session";
 import { activeProjectiles } from "../combat/pendingProjectiles";
 import { BUILD_PLOTS, SPAWN_POINT } from "./path";
 
-/** Renders the authored scene — draped creep path + instanced foliage — straight from the document. */
+/** Renders the authored scene — draped creep path + instanced foliage — straight from the document; `pine` placements resolve to a real catalog GLB via `scatterModels`. */
 function Scene() {
   const ctx = useGameContext();
-  return <AuthoredScene document={editorLayers} field={ctx.world.ground} />;
+  return <AuthoredScene document={editorLayers} field={ctx.world.ground} assets={assets} scatterModels={scatterModels} />;
 }
 
 function BuildPlots() {
