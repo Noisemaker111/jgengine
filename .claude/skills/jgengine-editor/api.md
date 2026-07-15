@@ -123,7 +123,7 @@
 - `EditorCameraDriver` (function): function EditorCameraDriver({ api }: { api: EditorHostApi }): null — Smoothly pans the orbit camera to the editor host's focus target when it changes.
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
-- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; }): React.JSX.Element — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
+- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; ground… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" — How the editor hosts the game: frozen placement view, roamable world, or the real game.
@@ -167,7 +167,7 @@
 
 ## @jgengine/editor/DebugDraw
 
-- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; }): React.JSX.Element — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
+- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; ground… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
 
 ## @jgengine/editor/EditorApp
