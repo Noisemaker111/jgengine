@@ -26,9 +26,26 @@ export const game = defineGame({
   WorldOverlay: TowerGuardWorldOverlay,
   worldHealthBars: { statId: "health" },
   pointer: { moveCommand: "tower.build" },
+  shadows: true,
+  // Warm low sun rakes the relief so mounds, towers, and the keep cast long readable shadows; a cool
+  // hemisphere fill keeps the shadow sides from going muddy black.
+  lighting: {
+    ambient: { color: "#9fb4cc", intensity: 0.4 },
+    hemisphere: { skyColor: "#cfe0f2", groundColor: "#4a5a2e", intensity: 0.55 },
+    directional: [
+      {
+        color: "#ffeccb",
+        intensity: 1.35,
+        position: [-34, 46, 22],
+        castShadow: true,
+        shadowMapSize: 2048,
+        shadowCameraSize: 58,
+      },
+    ],
+  },
   camera: {
     rig: "topDown",
     followEntityId: null,
-    topDown: { height: 34, pitch: 1.05, yaw: Math.PI / 4, zoom: { min: 0.6, max: 1.8 } },
+    topDown: { height: 38, pitch: 1.08, yaw: Math.PI / 4, zoom: { min: 0.6, max: 1.8 } },
   },
 });

@@ -10,11 +10,26 @@ export const world: WorldFeature = environment({
   sculpt: TERRAIN_SCULPT,
   // Flatten the ground under spawns, plots, and the creep path (the terrain half of each clearance zone).
   clearings: CLEARINGS,
-  sky: sky({ preset: "day", horizonColor: "#d8e8c4", zenithColor: "#5fa0d0" }),
+  // Golden-hour sky with a hazy warm horizon and blue zenith; fog melts the far terrain edge into the
+  // haze so the arena reads as open country instead of a floating slab with a hard silhouette.
+  sky: sky({
+    preset: "day",
+    horizonColor: "#cfdcc2",
+    zenithColor: "#5b93c9",
+    sunIntensity: 1.1,
+    ambientIntensity: 0.55,
+    hazeStrength: 0.4,
+    sunGlowStrength: 1.2,
+    radius: 240,
+    fog: { color: "#c2d3cb", near: 110, far: 230 },
+  }),
+  // Ground-hugging grass tufts, denser and multi-toned so the meadow reads as living turf.
   vegetation: grass({
-    area: { w: 70, d: 70 },
-    density: 3.5,
-    colors: ["#33502a", "#6f9a45"],
+    area: { w: 76, d: 76 },
+    density: 5,
+    bladeHeight: [0.35, 0.8],
+    windStrength: 0.5,
+    colors: ["#39561f", "#5c8a33", "#7ba548", "#93b256"],
     seed: "tower-guard",
   }),
 });

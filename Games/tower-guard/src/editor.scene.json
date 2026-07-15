@@ -28,12 +28,12 @@
         { "x": 30, "y": 0, "z": 24 }
       ],
       "width": 4,
-      "color": "#7a6444",
+      "color": "#6f5636",
       "label": "Creep path",
       "meta": { "clearance": 2.5 }
     },
     {
-      "id": "arena-foliage",
+      "id": "meadow-scatter",
       "kind": "scatter",
       "points": [
         { "x": -40, "y": 0, "z": -40 },
@@ -41,20 +41,129 @@
         { "x": 40, "y": 0, "z": 40 },
         { "x": -40, "y": 0, "z": 40 }
       ],
-      "label": "Arena foliage",
+      "label": "Meadow foliage",
       "meta": {
-        "density": 0.16,
-        "minSpacing": 2,
-        "seed": "tower-guard-arena",
-        "maxSlope": 3,
-        "edgeFalloff": 5,
-        "minScale": 0.85,
+        "density": 0.06,
+        "minSpacing": 3.4,
+        "seed": "tower-guard-meadow",
+        "maxSlope": 5,
+        "edgeFalloff": 4,
+        "minScale": 0.8,
         "maxScale": 1.7,
+        "jitter": 1,
         "palette": [
-          { "item": "pine", "weight": 3 },
+          { "item": "bush", "weight": 4 },
+          { "item": "oak", "weight": 3 },
           { "item": "tree", "weight": 2 },
-          { "item": "bush", "weight": 2 },
+          { "item": "pine", "weight": 2 },
+          { "item": "grass", "weight": 3 },
           { "item": "rock", "weight": 1 }
+        ]
+      }
+    },
+    {
+      "id": "forest-sw",
+      "kind": "scatter",
+      "points": [
+        { "x": -40, "y": 0, "z": 16 },
+        { "x": -16, "y": 0, "z": 16 },
+        { "x": -16, "y": 0, "z": 40 },
+        { "x": -40, "y": 0, "z": 40 }
+      ],
+      "label": "Southwest woods",
+      "meta": {
+        "density": 0.24,
+        "minSpacing": 2.2,
+        "seed": "tower-guard-forest-sw",
+        "maxSlope": 6,
+        "edgeFalloff": 5,
+        "minScale": 0.9,
+        "maxScale": 1.9,
+        "jitter": 1,
+        "palette": [
+          { "item": "pine", "weight": 5 },
+          { "item": "tree", "weight": 3 },
+          { "item": "oak", "weight": 2 },
+          { "item": "bush", "weight": 2 }
+        ]
+      }
+    },
+    {
+      "id": "forest-ne",
+      "kind": "scatter",
+      "points": [
+        { "x": 16, "y": 0, "z": -40 },
+        { "x": 40, "y": 0, "z": -40 },
+        { "x": 40, "y": 0, "z": -16 },
+        { "x": 16, "y": 0, "z": -16 }
+      ],
+      "label": "Northeast woods",
+      "meta": {
+        "density": 0.24,
+        "minSpacing": 2.2,
+        "seed": "tower-guard-forest-ne",
+        "maxSlope": 6,
+        "edgeFalloff": 5,
+        "minScale": 0.9,
+        "maxScale": 1.9,
+        "jitter": 1,
+        "palette": [
+          { "item": "pine", "weight": 5 },
+          { "item": "tree", "weight": 3 },
+          { "item": "oak", "weight": 2 },
+          { "item": "bush", "weight": 2 }
+        ]
+      }
+    },
+    {
+      "id": "outcrop-nw",
+      "kind": "scatter",
+      "points": [
+        { "x": -39, "y": 0, "z": 19 },
+        { "x": -25, "y": 0, "z": 19 },
+        { "x": -25, "y": 0, "z": 33 },
+        { "x": -39, "y": 0, "z": 33 }
+      ],
+      "label": "Highland rocks NW",
+      "meta": {
+        "density": 0.12,
+        "minSpacing": 2.4,
+        "seed": "tower-guard-rock-nw",
+        "maxSlope": 0,
+        "edgeFalloff": 3,
+        "minScale": 0.9,
+        "maxScale": 2.2,
+        "jitter": 1,
+        "palette": [
+          { "item": "rock", "weight": 4 },
+          { "item": "stone", "weight": 3 },
+          { "item": "bush", "weight": 1 }
+        ]
+      }
+    },
+    {
+      "id": "outcrop-se",
+      "kind": "scatter",
+      "points": [
+        { "x": 25, "y": 0, "z": -33 },
+        { "x": 39, "y": 0, "z": -33 },
+        { "x": 39, "y": 0, "z": -19 },
+        { "x": 25, "y": 0, "z": -19 }
+      ],
+      "label": "Highland rocks SE",
+      "meta": {
+        "density": 0.12,
+        "minSpacing": 2.4,
+        "seed": "tower-guard-rock-se",
+        "maxSlope": 0,
+        "edgeFalloff": 3,
+        "minScale": 0.9,
+        "maxScale": 2.2,
+        "jitter": 1,
+        "palette": [
+          { "item": "rock", "weight": 4 },
+          { "item": "stone", "weight": 3 },
+          { "item": "bush", "weight": 1 }
         ]
       }
     }
