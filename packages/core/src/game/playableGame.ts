@@ -647,6 +647,8 @@ export interface GameCaptureConfig {
   states?: Record<string, readonly (string | { name: string; input?: unknown })[]>;
   /** Extra milliseconds the capture host waits after `play` commands before taking the play-mode screenshot — cover an intro cinematic or spawn-in fade. Default 2500. */
   settleMs?: number;
+  /** Bot-playtest read hook: maps live game state to a flat vector of numeric progress metrics the `drive --playtest` harness samples over time (e.g. `{ x, z, score, phase }`). Genre-agnostic — "progress" is whatever the game reports; the engine stays neutral. The harness watches these numbers move under scripted input: any metric changing beyond an epsilon counts as forward progress, all metrics flat past the softlock threshold under active input flags a softlock. Return every value that should count as advancing; omit to opt the game out of the playtest rung. */
+  probe?: (ctx: GameContext) => Record<string, number>;
 }
 
 export interface PlayableGame<

@@ -36,6 +36,7 @@ import {
   waitForDebugger,
   type SizeMode,
 } from "./browser-lib";
+import { summarizePlaytest, type ProbeSample } from "./playtest";
 
 type Step =
   | { kind: "click"; text: string }
@@ -53,6 +54,12 @@ type Args = {
   help: boolean;
   timeoutMs: number;
   steps: Step[];
+  playtest: boolean;
+  strict: boolean;
+  seed: number;
+  sampleMs: number;
+  softlockMs: number;
+  epsilon: number;
 };
 
 const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
@@ -70,6 +77,16 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       running after this drive — pair with --connect ${WARM_CHROME_PORT}
                       on every following drive in the loop (warm-loop pattern)
   --timeout <s>       page-ready timeout in seconds (default 60)
+  --playtest          bot-playtest rung: drive input, sample the game's
+                      capture.probe over time, print a progress/softlock verdict
+                      as JSON (needs a --key hold to drive; game must expose
+                      capture.probe). No screenshot unless one is asked for.
+  --strict            with --playtest, exit nonzero on a softlock or missing probe
+  --seed <n>          playtest seed, forwarded as ?seed=n and echoed (default 1)
+  --sample <ms>       playtest probe sampling interval (default 250; lower over-samples
+                      and can starve a heavy scene's render thread into a false softlock)
+  --softlock <ms>     flat-progress span under input that counts as a softlock (default 2000)
+  --epsilon <n>       smallest metric change that counts as progress (default 0.001)
   --help              show this text
 
 Warm loop:
@@ -88,6 +105,12 @@ function parseArgs(argv: string[]): Args {
     help: false,
     timeoutMs: 60_000,
     steps: [],
+    playtest: false,
+    strict: false,
+    seed: 1,
+    sampleMs: 250,
+    softlockMs: 2000,
+    epsilon: 1e-3,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
@@ -111,12 +134,18 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--rpc") args.steps.push({ kind: "rpc", json: argv[++index] ?? "{}" });
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--keep") args.keep = true;
+    else if (value === "--playtest") args.playtest = true;
+    else if (value === "--strict") args.strict = true;
+    else if (value === "--seed") args.seed = Number(argv[++index] ?? args.seed);
+    else if (value === "--sample") args.sampleMs = Number(argv[++index] ?? args.sampleMs);
+    else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
+    else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
   if (args.help) return args;
   if (args.game === "") throw new Error("drive: pass a game id, e.g. bun run drive the-robots --click START");
-  if (!args.steps.some((step) => step.kind === "shot" || step.kind === "rpc")) {
+  if (!args.playtest && !args.steps.some((step) => step.kind === "shot" || step.kind === "rpc")) {
     args.steps.push({ kind: "shot", name: "drive" });
   }
   return args;
@@ -209,6 +238,29 @@ async function rpc(session: CdpSession, json: string): Promise<void> {
   console.log(value ?? JSON.stringify({ ok: false, error: "rpc evaluation returned nothing" }));
 }
 
+async function readProbe(session: CdpSession): Promise<Record<string, number> | null> {
+  const result = await session.send("Runtime.evaluate", {
+    expression: `(() => {
+      const probe = globalThis.__jgProbe;
+      if (typeof probe !== "function") return null;
+      try {
+        const value = probe();
+        if (value === null || typeof value !== "object") return null;
+        const out = {};
+        for (const key of Object.keys(value)) {
+          const n = value[key];
+          if (typeof n === "number" && Number.isFinite(n)) out[key] = n;
+        }
+        return out;
+      } catch {
+        return null;
+      }
+    })()`,
+    returnByValue: true,
+  });
+  return (result.result as { value?: Record<string, number> | null } | undefined)?.value ?? null;
+}
+
 async function screenshot(session: CdpSession, outPath: string): Promise<void> {
   const shot = await session.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const data = shot.data;
@@ -278,9 +330,23 @@ try {
     url.searchParams.set("game", args.game);
     url.searchParams.set("mode", args.mode);
     url.searchParams.set("capture", "1");
+    if (args.playtest) url.searchParams.set("seed", String(args.seed));
     await session.send("Page.navigate", { url: url.toString() });
     await waitReady(session, args.timeoutMs);
     await new Promise((r) => setTimeout(r, 500));
+
+    const samples: ProbeSample[] = [];
+    let sampling = args.playtest;
+    const sampleStart = Date.now();
+    const sampler = args.playtest
+      ? (async () => {
+          while (sampling) {
+            const metrics = await readProbe(session);
+            if (metrics !== null) samples.push({ t: Date.now() - sampleStart, metrics });
+            await new Promise((r) => setTimeout(r, args.sampleMs));
+          }
+        })()
+      : Promise.resolve();
 
     for (const step of args.steps) {
       if (step.kind === "click") await click(session, step.text);
@@ -288,6 +354,30 @@ try {
       else if (step.kind === "wait") await new Promise((r) => setTimeout(r, step.ms));
       else if (step.kind === "rpc") await rpc(session, step.json);
       else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
+    }
+
+    if (args.playtest) {
+      sampling = false;
+      await sampler;
+      const result = summarizePlaytest(samples, {
+        seed: args.seed,
+        softlockThresholdMs: args.softlockMs,
+        epsilon: args.epsilon,
+      });
+      console.log(JSON.stringify(result));
+      if (!result.probed) {
+        console.error(
+          `drive: no progress probe read — ${args.game} exposes no capture.probe (or it returned no metrics). Declare capture.probe to run the playtest rung.`,
+        );
+        if (args.strict) exitCode = 1;
+      } else if (result.softlocked) {
+        console.error(
+          `drive: SOFTLOCK — progress stayed flat for ${result.softlockWindowMs}ms under active input (threshold ${args.softlockMs}ms, seed ${args.seed}). The loop did not advance.`,
+        );
+        if (args.strict) exitCode = 1;
+      } else if (args.steps.every((step) => step.kind !== "key")) {
+        console.error("drive: --playtest ran with no --key hold — nothing drove input, so progress is unproven.");
+      }
     }
     if (args.keep) {
       console.error(`drive: kept warm — chrome debug port ${debugPort}, dev server on ${DEV_BASE}`);

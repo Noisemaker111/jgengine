@@ -24,6 +24,24 @@ export function captureArmed(): boolean {
   return new URLSearchParams(window.location.search).get("capture") === "1";
 }
 
+/**
+ * Bot-playtest read hook, part of the capture handshake: exposes the game's
+ * `capture.probe` as `window.__jgProbe`, a live read the `drive --playtest`
+ * host samples over time to prove the loop advances under input. Returns `{}`
+ * on any error so a probe throw never softlocks the whole harness.
+ */
+export function installPlaytestProbe(read: () => Record<string, number>): void {
+  if (typeof window === "undefined") return;
+  (window as { __jgProbe?: () => Record<string, number> }).__jgProbe = () => {
+    try {
+      const value = read();
+      return value !== null && typeof value === "object" ? value : {};
+    } catch {
+      return {};
+    }
+  };
+}
+
 export function readCaptureQuery(): { game: string; mode: string; device: string; settle: number | null } {
   const params = new URLSearchParams(window.location.search);
   const settleRaw = params.get("settle");

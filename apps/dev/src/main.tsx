@@ -17,7 +17,7 @@ import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 
-import { armCaptureReady, captureArmed, setCaptureStatus } from "./captureReady";
+import { armCaptureReady, captureArmed, installPlaytestProbe, setCaptureStatus } from "./captureReady";
 import "./index.css";
 
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
@@ -514,9 +514,11 @@ function DevApp({ gameId }: { gameId: string }) {
   } else if (captureArmed() && MODE === "play") {
     captureRun = playable.capture?.play ?? [];
   }
+  const probe = playable.capture?.probe;
   const onContextReady =
-    stageScenario !== undefined || captureRun.length > 0
+    stageScenario !== undefined || captureRun.length > 0 || probe !== undefined
       ? (ctx: GameContext) => {
+          if (probe !== undefined) installPlaytestProbe(() => probe(ctx));
           stageScenario?.(ctx);
           for (const entry of captureRun) {
             const name = typeof entry === "string" ? entry : entry.name;
