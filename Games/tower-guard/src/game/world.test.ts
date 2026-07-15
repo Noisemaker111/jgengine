@@ -3,6 +3,7 @@ import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/world/terrain";
 
 import { world } from "../world";
+import { TERRAIN } from "./world/terrain";
 
 describe("tower-guard world", () => {
   test("world is an environment feature", () => {
@@ -25,7 +26,14 @@ describe("tower-guard world", () => {
     expect(summary.terrain?.height.max).toBeGreaterThan(summary.terrain?.height.min ?? 0);
   });
 
-  test("terrain uses the highland palette, not the default grass", () => {
-    expect(summary.terrain?.palette).toEqual(TERRAIN_MATERIAL_PALETTES.highland);
+  test("terrain uses this game's own warm palette, not an engine default", () => {
+    expect(summary.terrain?.palette.low).toBe("#4d6a33");
+    expect(summary.terrain?.palette).not.toEqual(TERRAIN_MATERIAL_PALETTES.grass);
+    expect(summary.terrain?.palette).not.toEqual(TERRAIN_MATERIAL_PALETTES.highland);
+  });
+
+  test("terrain declares a textured detail surface and painted regions", () => {
+    expect(TERRAIN.detail).toBeDefined();
+    expect(TERRAIN.materialRegions?.length ?? 0).toBeGreaterThan(0);
   });
 });

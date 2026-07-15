@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
+import type { TerrainEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { Aabb } from "@jgengine/core/world/geometry";
+import { createTerrainPaletteSampler, type TerrainPalette } from "@jgengine/core/world/terrain";
 import {
   beginSurfaceStroke,
   beginTerraformStroke,
@@ -15,7 +17,7 @@ import {
   type TerraformStroke,
 } from "@jgengine/core/world/terraform";
 import { useGameContext } from "@jgengine/react/provider";
-import { TerraformBrushCursor } from "@jgengine/shell/terrain";
+import { normalizeHeightBlend, TerraformBrushCursor } from "@jgengine/shell/terrain";
 
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
@@ -26,9 +28,23 @@ const LOW = new THREE.Color("#3f5d34");
 const HIGH = new THREE.Color("#8f9c66");
 const COLOR_SPAN = 24;
 
+type PaletteSampler = (x: number, z: number) => TerrainPalette;
+
 /** Resolves a material layer to its render color (its tint, else its palette surface color). */
 function layerColor(layer: { surface: string; tint?: string }): string {
   return layer.tint ?? TERRAIN_MATERIAL_COLORS[layer.surface] ?? "#7c7f86";
+}
+
+/** The game's `environment({ terrain })` descriptor, when the world it declares carries one — the same descriptor `TerrainGround` samples at runtime via `createTerrainPaletteSampler`. */
+function terrainDescriptorOf(world: WorldFeature | undefined): TerrainEnvironmentDescriptor | undefined {
+  return world?.kind === "environment" ? world.terrain : undefined;
+}
+
+/** The `[min, max]` height band `TerrainGround` blends `low`→`high` across for this descriptor (mirrors `EnvironmentScene.tsx`'s `TerrainGround` heightRange). */
+function heightRangeOf(descriptor: TerrainEnvironmentDescriptor): readonly [number, number] {
+  const base = descriptor.baseHeight ?? 0;
+  const swing = descriptor.height * 1.2;
+  return [base - swing, base + swing];
 }
 
 function segmentsFor(snapshot: TerraformSnapshot): number {
@@ -79,8 +95,22 @@ const PAINT_TINT = new THREE.Color();
 const BLEND_A = new THREE.Color();
 const BLEND_B = new THREE.Color();
 
-/** The vertex tone under a world point: weighted layer blend, painted surface, or height gradient. */
-function toneAt(terrain: EditableTerrain, x: number, z: number, height: number, out: THREE.Color): void {
+/**
+ * The vertex tone under a world point: weighted layer blend, painted surface, or a height gradient.
+ * With no painted layer/surface at the point, `paletteAt` (the game's runtime terrain palette
+ * sampler, when the world declares one) supplies the low/high colors instead of the flat editor
+ * default — so `materialRegions`/base `colors`/`material` (worn paths, rock outcrops, biome tint)
+ * show through in the editor the same way `TerrainGround` renders them at runtime.
+ */
+function toneAt(
+  terrain: EditableTerrain,
+  x: number,
+  z: number,
+  height: number,
+  out: THREE.Color,
+  paletteAt: PaletteSampler | null,
+  heightRange: readonly [number, number],
+): void {
   const layers = terrain.layers;
   if (layers.length > 0) {
     const weights = terrain.weightsAt(x, z);
@@ -110,6 +140,12 @@ function toneAt(terrain: EditableTerrain, x: number, z: number, height: number, 
     out.copy(PAINT_TINT.set(painted));
     return;
   }
+  if (paletteAt !== null) {
+    const palette = paletteAt(x, z);
+    const blend = normalizeHeightBlend(height, heightRange[0], heightRange[1]);
+    out.copy(BLEND_A.set(palette.low).lerp(BLEND_B.set(palette.high), blend));
+    return;
+  }
   const t = Math.max(0, Math.min(1, (height + COLOR_SPAN * 0.25) / COLOR_SPAN));
   out.copy(BLEND_A.copy(LOW).lerp(HIGH, t));
 }
@@ -118,9 +154,17 @@ function toneAt(terrain: EditableTerrain, x: number, z: number, height: number, 
  * Re-samples vertex Y and vertex color from the live terrain (in place — no reallocation). When a
  * dirty `region` is given, only vertices inside it re-sample — the whole-mesh resample per stamp is
  * the sculpt hot path — while normals recompute across the mesh for seamless shading. Painted/blended
- * layers win the vertex color; unpainted ground keeps the height gradient. Records rebuild time.
+ * layers win the vertex color; unpainted ground falls back to the runtime terrain palette (or the
+ * flat height gradient with no descriptor). Records rebuild time.
  */
-function displace(geometry: THREE.BufferGeometry, terrain: EditableTerrain, bounds: Aabb, region: Aabb | null): void {
+function displace(
+  geometry: THREE.BufferGeometry,
+  terrain: EditableTerrain,
+  bounds: Aabb,
+  region: Aabb | null,
+  paletteAt: PaletteSampler | null,
+  heightRange: readonly [number, number],
+): void {
   const started = performance.now();
   const position = geometry.attributes.position as THREE.BufferAttribute;
   const cx = (bounds.minX + bounds.maxX) / 2;
@@ -138,7 +182,7 @@ function displace(geometry: THREE.BufferGeometry, terrain: EditableTerrain, boun
     if (!full && (x < region!.minX || x > region!.maxX || z < region!.minZ || z > region!.maxZ)) continue;
     const height = terrain.sampleHeight(x, z);
     position.setY(index, height);
-    toneAt(terrain, x, z, height, tone);
+    toneAt(terrain, x, z, height, tone, paletteAt, heightRange);
     colors.setXYZ(index, tone.r, tone.g, tone.b);
   }
   position.needsUpdate = true;
@@ -155,6 +199,8 @@ function SculptMesh({
   revision,
   regionRef,
   meshRef,
+  paletteAt,
+  heightRange,
 }: {
   terrain: EditableTerrain;
   bounds: Aabb;
@@ -162,6 +208,8 @@ function SculptMesh({
   revision: number;
   regionRef: React.MutableRefObject<Aabb | null>;
   meshRef: React.MutableRefObject<THREE.Mesh | null>;
+  paletteAt: PaletteSampler | null;
+  heightRange: readonly [number, number];
 }) {
   const geometry = useMemo(() => {
     const width = Math.max(1, bounds.maxX - bounds.minX);
@@ -174,9 +222,9 @@ function SculptMesh({
 
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => {
-    displace(geometry, terrain, bounds, regionRef.current);
+    displace(geometry, terrain, bounds, regionRef.current, paletteAt, heightRange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geometry, terrain, revision]);
+  }, [geometry, terrain, revision, paletteAt, heightRange]);
 
   return (
     <mesh ref={meshRef} geometry={geometry} receiveShadow>
@@ -191,12 +239,30 @@ function SculptMesh({
  * `sculptTerrain` command committed on release, so undo replays the stroke as a single step.
  * @internal — mounted by `EditorApp`; not a game-author entry point.
  */
-export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }) {
+export function TerrainSculpt({
+  api,
+  ui,
+  world,
+}: {
+  api: EditorHostApi;
+  ui: EditorUiStore;
+  world?: WorldFeature;
+}) {
   const ctx = useGameContext();
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
   const controls = useThree((state) => state.controls) as { enabled?: boolean } | null;
   const session: EditorSession = api.getSession();
+
+  const terrainDescriptor = useMemo(() => terrainDescriptorOf(world), [world]);
+  const paletteAt = useMemo<PaletteSampler | null>(
+    () => (terrainDescriptor === undefined ? null : createTerrainPaletteSampler(terrainDescriptor)),
+    [terrainDescriptor],
+  );
+  const heightRange = useMemo<readonly [number, number]>(
+    () => (terrainDescriptor === undefined ? [0, 1] : heightRangeOf(terrainDescriptor)),
+    [terrainDescriptor],
+  );
 
   const [, setTick] = useState(0);
   useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
@@ -419,6 +485,8 @@ export function TerrainSculpt({ api, ui }: { api: EditorHostApi; ui: EditorUiSto
         revision={revision}
         regionRef={regionRef}
         meshRef={meshRef}
+        paletteAt={paletteAt}
+        heightRange={heightRange}
       />
       {toolActive && cursor !== null ? (
         <TerraformBrushCursor

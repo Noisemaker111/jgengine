@@ -112,18 +112,21 @@ const MarkerMesh = memo(function MarkerMesh({
   onSelect,
   sharedSphere,
   sharedCone,
+  groundHeightAt,
 }: {
   marker: EditorMarker;
   selected: boolean;
   onSelect: (id: string) => void;
   sharedSphere: THREE.SphereGeometry;
   sharedCone: THREE.ConeGeometry;
+  groundHeightAt?: (x: number, z: number) => number;
 }) {
   const color = colorFor(marker.kind, marker.color);
   const scale = selected ? 1.25 : 1;
+  const baseY = groundHeightAt !== undefined ? groundHeightAt(marker.position.x, marker.position.z) : marker.position.y;
   return (
     <group
-      position={[marker.position.x, marker.position.y + 1.2, marker.position.z]}
+      position={[marker.position.x, baseY + 1.2, marker.position.z]}
       rotation-y={marker.rotationY ?? 0}
       scale={scale}
       userData={{ jgEditorId: marker.id }}
@@ -200,13 +203,17 @@ const PathRibbon = memo(function PathRibbon({
   selected,
   activePointIndex,
   onSelect,
+  groundHeightAt,
 }: {
   path: EditorPath;
   selected: boolean;
   activePointIndex: number | null;
   onSelect: (id: string) => void;
+  groundHeightAt?: (x: number, z: number) => number;
 }) {
   const color = colorFor(path.kind, path.color);
+  const yAt = (point: { x: number; y: number; z: number }): number =>
+    groundHeightAt !== undefined ? groundHeightAt(point.x, point.z) : point.y;
   const object = useMemo(() => {
     if (path.points.length < 2) return null;
     const stride = !selected && path.points.length > 80 ? 2 : 1;
@@ -221,7 +228,7 @@ const PathRibbon = memo(function PathRibbon({
     const positions = new Float32Array(picked.length * 3);
     picked.forEach((point, index) => {
       positions[index * 3] = point.x;
-      positions[index * 3 + 1] = point.y + 0.8;
+      positions[index * 3 + 1] = yAt(point) + 0.8;
       positions[index * 3 + 2] = point.z;
     });
     const geometry = new THREE.BufferGeometry();
@@ -232,7 +239,7 @@ const PathRibbon = memo(function PathRibbon({
       opacity: selected ? 1 : 0.85,
     });
     return new THREE.Line(geometry, material);
-  }, [path.points, color, selected]);
+  }, [path.points, color, selected, groundHeightAt]);
 
   useEffect(
     () => () => {
@@ -255,7 +262,7 @@ const PathRibbon = memo(function PathRibbon({
       <primitive object={object} />
       {selected
         ? path.points.map((point, index) => (
-            <mesh key={index} position={[point.x, point.y + 0.8, point.z]}>
+            <mesh key={index} position={[point.x, yAt(point) + 0.8, point.z]}>
               <sphereGeometry args={[index === activePointIndex ? 0.7 : 0.45, 8, 8]} />
               <meshBasicMaterial color={index === activePointIndex ? "#22d3ee" : "#ffffff"} />
             </mesh>
@@ -269,15 +276,18 @@ const NotePin = memo(function NotePin({
   note,
   selected,
   onSelect,
+  groundHeightAt,
 }: {
   note: EditorNote;
   selected: boolean;
   onSelect: (id: string) => void;
+  groundHeightAt?: (x: number, z: number) => number;
 }) {
   const color = colorFor("note", note.color);
+  const baseY = groundHeightAt !== undefined ? groundHeightAt(note.position.x, note.position.z) : note.position.y;
   return (
     <group
-      position={[note.position.x, note.position.y + 1, note.position.z]}
+      position={[note.position.x, baseY + 1, note.position.z]}
       userData={{ jgEditorId: note.id }}
       onClick={(event) => {
         event.stopPropagation();
@@ -355,12 +365,14 @@ export function EditorLayerOverlays({
   selection,
   onSelect,
   activePathPoint,
+  groundHeightAt,
 }: {
   document: EditorDocument;
   visibility: EditorKindVisibility;
   selection: readonly string[];
   onSelect: (id: string) => void;
   activePathPoint?: { pathId: string; index: number } | null;
+  groundHeightAt?: (x: number, z: number) => number;
 }) {
   const selected = useMemo(() => new Set(selection), [selection]);
   const sharedSphere = useMemo(
@@ -413,6 +425,7 @@ export function EditorLayerOverlays({
             activePathPoint != null && activePathPoint.pathId === path.id ? activePathPoint.index : null
           }
           onSelect={onSelect}
+          groundHeightAt={groundHeightAt}
         />
       ))}
       {markers.map((marker) => (
@@ -423,10 +436,17 @@ export function EditorLayerOverlays({
           onSelect={onSelect}
           sharedSphere={sharedSphere}
           sharedCone={sharedCone}
+          groundHeightAt={groundHeightAt}
         />
       ))}
       {notes.map((note) => (
-        <NotePin key={note.id} note={note} selected={selected.has(note.id)} onSelect={onSelect} />
+        <NotePin
+          key={note.id}
+          note={note}
+          selected={selected.has(note.id)}
+          onSelect={onSelect}
+          groundHeightAt={groundHeightAt}
+        />
       ))}
     </group>
   );
