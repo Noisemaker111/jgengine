@@ -807,6 +807,8 @@ This is a gate, not a suggestion — every box, in one pass (workflow: **`jgengi
 - [ ] Co-located bun tests for pure game math (curves, cooldowns, spawn logic)
 - [ ] Multiplayer via adapter config only; no direct backend calls
 
+Report the above as the done-ledger (`jgengine-verify` → "The done-ledger"), not adjectives — a "done"/"premium"/"shipped" claim is the compacted `pass`/`fail`/`skipped(reason)` block, never "looks great."
+
 ## Quick reference
 
 ```

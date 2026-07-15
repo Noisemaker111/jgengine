@@ -77,6 +77,8 @@ Reject and revise the UI when it could be mistaken for a SaaS dashboard, landing
 
 Reject test for worlds: if the screenshot could be mistaken for a physics-demo sandbox or an untextured prototype, it fails the bar.
 
+A "premium"/"shipped" verdict on this bar reports as the done-ledger (`jgengine-verify` → "The done-ledger"), `score`/`pixel` rows present — never "looks great" alone.
+
 ## Render authored scenes, don't hand-roll them
 
 Scene content authored in the editor renders at runtime through `@jgengine/shell/scene`: mount
