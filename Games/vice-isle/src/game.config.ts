@@ -4,10 +4,8 @@ import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
-import { OBJECTS } from "./game/objects/catalog";
 import { prompts } from "./game/prompts";
-import { renderEntity } from "./game/world/renderEntity";
-import { renderObject } from "./game/world/renderObject";
+import { entityModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { physics, world } from "./world";
@@ -28,9 +26,8 @@ export const game = defineGame({
   GameUI,
   capture: { play: ["game.start"] },
   prompts,
-  renderEntity,
-  renderObject,
-  objectStyles: Object.fromEntries(OBJECTS.map((o) => [o.id, { color: o.color }])),
+  entityModels,
+  objectModels,
   lighting: {
     ambient: { color: "#ffe6c4", intensity: 0.85 },
     hemisphere: { skyColor: "#ffe9c0", groundColor: "#7a8560", intensity: 0.75 },

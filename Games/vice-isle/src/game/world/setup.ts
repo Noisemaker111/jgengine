@@ -99,11 +99,11 @@ export function setupWorld(ctx: GameContext): void {
     role: "npc",
   });
 
-  ctx.scene.object.place("obj_gunshop_sign", GUNSHOP_POS[0], ctx.world.groundHeightAt(GUNSHOP_POS[0], GUNSHOP_POS[2]) + 2, GUNSHOP_POS[2]);
+  ctx.scene.object.place("obj_gunshop_sign", GUNSHOP_POS[0], ctx.world.groundHeightAt(GUNSHOP_POS[0], GUNSHOP_POS[2]), GUNSHOP_POS[2]);
   for (let i = 0; i < 8; i += 1) {
     const x = DOCK_FIGHT_CENTER[0] - 20 + rng() * 40;
     const z = DOCK_FIGHT_CENTER[2] - 20 + rng() * 40;
-    ctx.scene.object.place("obj_crate_dock", Math.round(x), Math.round(ctx.world.groundHeightAt(x, z) + 0.5), Math.round(z));
+    ctx.scene.object.place("obj_crate_dock", Math.round(x), Math.round(ctx.world.groundHeightAt(x, z)), Math.round(z));
   }
 
   streets.forEach((street, roadIndex) => {
@@ -111,7 +111,7 @@ export function setupWorld(ctx: GameContext): void {
       ctx.scene.object.place(
         "obj_streetlight",
         spot.position[0],
-        ctx.world.groundHeightAt(spot.position[0], spot.position[1]) + 2,
+        ctx.world.groundHeightAt(spot.position[0], spot.position[1]),
         spot.position[1],
         { rotation: spot.heading },
       );
@@ -121,7 +121,7 @@ export function setupWorld(ctx: GameContext): void {
         ctx.scene.object.place(
           "obj_palm_planter",
           spot.position[0],
-          ctx.world.groundHeightAt(spot.position[0], spot.position[1]) + 0.5,
+          ctx.world.groundHeightAt(spot.position[0], spot.position[1]),
           spot.position[1],
         );
       }
