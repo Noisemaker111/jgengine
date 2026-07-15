@@ -4,6 +4,7 @@ import type { EditorDocument, EditorLayersInput } from "@jgengine/core/editor/in
 import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/index";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import type { WorldFeature } from "@jgengine/core/world/features";
 import { useGameContext } from "@jgengine/react/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -102,7 +103,15 @@ function savePrefs(gameId: string, prefs: StoredEditorPrefs): void {
   }
 }
 
-function EditorWorldOverlay({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }) {
+function EditorWorldOverlay({
+  api,
+  ui,
+  world,
+}: {
+  api: EditorHostApi;
+  ui: EditorUiStore;
+  world?: WorldFeature;
+}) {
   const session = api.getSession();
   const ctx = useGameContext();
   const [, setTick] = useState(0);
@@ -118,7 +127,7 @@ function EditorWorldOverlay({ api, ui }: { api: EditorHostApi; ui: EditorUiStore
       <EditorCameraDriver api={api} />
       <ViewportSelect api={api} ui={ui} />
       <MaterialDropZone api={api} />
-      <TerrainSculpt api={api} ui={ui} />
+      <TerrainSculpt api={api} ui={ui} world={world} />
       <ScatterPreview api={api} />
       {uiState.showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
       <EditorLayerOverlays
@@ -364,7 +373,7 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
     }
 
     const WorldOverlay: ComponentType = function EditorOverlay() {
-      return <EditorWorldOverlay api={host.api} ui={ui} />;
+      return <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} />;
     };
     const GameUI: ComponentType = function EditorUi() {
       return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} baselineJson={host.baselineJson} save={saveFn} />;
