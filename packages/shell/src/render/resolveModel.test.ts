@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-import { resolveModel, tryResolveCatalogModel } from "./resolveModel";
+import { createModelMapResolver, resolveModel, tryResolveCatalogModel } from "./resolveModel";
 
 describe("resolveModel", () => {
   const assets = createAssetCatalog();
@@ -54,5 +54,30 @@ describe("tryResolveCatalogModel", () => {
 
   test("returns undefined without throwing when the catalog id is not a model", () => {
     expect(tryResolveCatalogModel("spawn-pad", assets)).toBeUndefined();
+  });
+});
+
+describe("createModelMapResolver", () => {
+  const assets = createAssetCatalog();
+  assets.register("scatter/pine", { url: "/models/kenney-nature/tree_pine.glb" });
+
+  test("undefined when either the map or the catalog is missing", () => {
+    expect(createModelMapResolver(undefined, assets, "scatterModels")).toBeUndefined();
+    expect(createModelMapResolver({ pine: "scatter/pine" }, undefined, "scatterModels")).toBeUndefined();
+  });
+
+  test("unmapped key resolves to null — the deliberate proxy fallback", () => {
+    const resolveItem = createModelMapResolver({ pine: "scatter/pine" }, assets, "scatterModels")!;
+    expect(resolveItem("grass")).toBeNull();
+  });
+
+  test("mapped key resolves through the catalog", () => {
+    const resolveItem = createModelMapResolver({ pine: "scatter/pine" }, assets, "scatterModels")!;
+    expect(resolveItem("pine")).toEqual({ url: "/models/kenney-nature/tree_pine.glb" });
+  });
+
+  test("mapped key with a missing catalog id throws, naming the seam and key", () => {
+    const resolveItem = createModelMapResolver({ pine: "typo/pine" }, assets, "scatterModels")!;
+    expect(() => resolveItem("pine")).toThrow(/scatterModels\["pine"\] → "typo\/pine"/);
   });
 });

@@ -34,3 +34,8 @@ export const entityModels: Record<string, ModelConfig> = {
   ...TOWER_MODEL,
   ...Object.fromEntries(Object.values(CREEP_CATALOG).map((def) => [def.id, raiderModel(def)])),
 };
+
+/** Scatter palette item id → asset catalog id; the forest/meadow regions' `pine` placements GPU-instance this real GLB instead of the stylized proxy conifer. */
+export const scatterModels: Record<string, string> = {
+  pine: "scatter/pine",
+};

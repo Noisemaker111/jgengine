@@ -2,10 +2,13 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
 import type { EditorDocument } from "@jgengine/core/editor/index";
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { buildRoadRibbon, roundPathCorners } from "@jgengine/core/world/roads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/world/scatterRegion";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
+import { createModelMapResolver } from "../render/resolveModel";
 import { InstancedScatter } from "../scatter/InstancedScatter";
 
 const DEFAULT_PATH_COLOR = "#7a6444";
@@ -88,6 +91,14 @@ export interface AuthoredSceneProps {
   field: TerrainField;
   /** Restrict rendered path kinds; default renders every non-scatter path. */
   pathKinds?: readonly string[];
+  /**
+   * Scatter palette item id → model asset id or `ModelConfig`; a mapped item GPU-instances the real
+   * catalog GLB instead of the stylized proxy. Keyed by scatter `item` (not entity name — pass a
+   * dedicated map even if it shares entries with `entityModels`). Requires `assets`.
+   */
+  scatterModels?: Record<string, string | ModelConfig>;
+  /** Catalog `scatterModels` string ids resolve through; required together with `scatterModels`. */
+  assets?: AssetCatalog;
 }
 
 /**
@@ -95,14 +106,19 @@ export interface AuthoredSceneProps {
  * mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor:
  * drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke
  * render code. Terrain/collision come from the world's ground field (`environment({ sculpt })`);
- * place markers with your own entity spawns.
+ * place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to
+ * real catalog GLBs; unmapped items keep the stylized proxy.
  */
-export function AuthoredScene({ document, field, pathKinds }: AuthoredSceneProps) {
+export function AuthoredScene({ document, field, pathKinds, scatterModels, assets }: AuthoredSceneProps) {
   const instances = useMemo(() => resolveScatter(document, field), [document, field]);
+  const resolveItem = useMemo(
+    () => createModelMapResolver(scatterModels, assets, "scatterModels"),
+    [scatterModels, assets],
+  );
   return (
     <>
       <AuthoredPaths document={document} field={field} {...(pathKinds === undefined ? {} : { kinds: pathKinds })} />
-      <InstancedScatter instances={instances} />
+      <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
     </>
   );
 }

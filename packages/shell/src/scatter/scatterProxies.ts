@@ -1,10 +1,11 @@
 import * as THREE from "three";
 
 /**
- * Stylized per-species proxy meshes for the scatter preview — real, distinct silhouettes (trunked
- * trees, stacked pines, round bushes, faceted rocks, grass tufts) instead of one cone for every
- * item. Editor-preview fidelity: the running game still instances the real render-catalog model via
- * `resolveScatter`; these prove the layout and read like foliage at a glance.
+ * Stylized per-species proxy meshes — real, distinct silhouettes (trunked trees, stacked pines, round
+ * bushes, faceted rocks, grass tufts) instead of one cone for every item. This is the fallback
+ * `InstancedScatter` draws for any species without a `resolveItem` override (or the editor preview,
+ * which never resolves a game's catalog); a game wanting real GLBs registers the item in its
+ * `resolveItem`/asset catalog instead.
  * @internal
  */
 

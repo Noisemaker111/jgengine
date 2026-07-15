@@ -1295,7 +1295,6 @@
   "@jgengine/shell/render/modelRender#drawPaintStrokes",
   "@jgengine/shell/render/modelRender#standardMaterialsOf",
   "@jgengine/shell/render/modelRender#syncPaintCanvas",
-  "@jgengine/shell/render/resolveModel#resolveModel",
   "@jgengine/shell/render/resolveModel#tryResolveCatalogModel",
   "@jgengine/shell/settings/QuickControls#QuickControls",
   "@jgengine/shell/settings/SettingsChrome#SettingsChrome",

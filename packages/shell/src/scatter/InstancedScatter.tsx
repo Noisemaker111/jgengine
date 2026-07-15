@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
+import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { chunkScatterInstances, type ScatterInstance } from "@jgengine/core/world/scatterRegion";
 
 import { buildScatterProxy } from "./scatterProxies";
+import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
 
 /** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */
 const DEFAULT_CHUNK_SIZE = 24;
@@ -59,6 +64,42 @@ function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: 
   );
 }
 
+/** One GLB-backed draw source instanced across every chunk of one species. */
+function ScatterModelSourceInstances({ source, matrices }: { source: ScatterModelSource; matrices: THREE.Matrix4[] }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (mesh === null) return;
+    const composed = new THREE.Matrix4();
+    for (let i = 0; i < matrices.length; i += 1) {
+      composed.multiplyMatrices(matrices[i]!, source.localMatrix);
+      mesh.setMatrixAt(i, composed);
+    }
+    mesh.count = matrices.length;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [matrices, source]);
+  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow receiveShadow />;
+}
+
+/** Loads one species' real catalog GLB once, harvests its instanceable draw sources, then GPU-instances them across every chunk that species appears in. */
+function ScatterModelSpecies({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }) {
+  const gltf = useLoader(GLTFLoader, model.url, (loader) => {
+    loader.setMeshoptDecoder(MeshoptDecoder);
+  });
+  const { sources, root } = useMemo(() => buildScatterModelSources(gltf.scene, model), [gltf, model]);
+  useEffect(() => () => disposeScatterModelSources(root), [root]);
+  return (
+    <>
+      {sources.map((source, sourceIndex) =>
+        batches.map((batch) => (
+          <ScatterModelSourceInstances key={`${batch.key}:${sourceIndex}`} source={source} matrices={batch.matrices} />
+        )),
+      )}
+    </>
+  );
+}
+
 /** Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs. */
 export interface InstancedScatterProps {
   instances: readonly ScatterInstance[];
@@ -66,35 +107,77 @@ export interface InstancedScatterProps {
   chunkSize?: number;
   /** Hard cap on rendered instances. Default 20000. */
   maxInstances?: number;
+  /**
+   * Per-species override: return a real catalog `ModelConfig` for an item to GPU-instance the actual
+   * GLB instead of the stylized proxy; return `null` (or omit the prop) to keep `buildScatterProxy`.
+   */
+  resolveItem?: (item: string) => ModelConfig | null;
 }
 
 /**
- * Renders resolved {@link ScatterInstance}s as GPU-instanced per-species proxy models (trunked trees,
- * stacked pines, round bushes, faceted rocks, grass tufts), grouped into per-chunk draws that
- * frustum-cull independently. The one runtime foliage renderer shared by the editor's scatter preview
- * and games that consume `resolveScatter` — never one node per placement.
+ * Renders resolved {@link ScatterInstance}s grouped into per-chunk, per-species GPU-instanced draws
+ * that frustum-cull independently. Species with no `resolveItem` mapping (or a `null` result) render
+ * as stylized proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts);
+ * species `resolveItem` resolves to a `ModelConfig` GPU-instance the real catalog GLB instead. The one
+ * runtime foliage renderer shared by the editor's scatter preview and games that consume
+ * `resolveScatter` — never one node per placement.
  */
-export function InstancedScatter({ instances, chunkSize = DEFAULT_CHUNK_SIZE, maxInstances = DEFAULT_MAX_INSTANCES }: InstancedScatterProps) {
+export function InstancedScatter({
+  instances,
+  chunkSize = DEFAULT_CHUNK_SIZE,
+  maxInstances = DEFAULT_MAX_INSTANCES,
+  resolveItem,
+}: InstancedScatterProps) {
   const batches = useMemo(
     () => batchInstances(instances.length > maxInstances ? instances.slice(0, maxInstances) : instances, chunkSize),
     [instances, chunkSize, maxInstances],
   );
 
+  const { proxyBatches, modelSpecies } = useMemo(() => {
+    const proxy: ScatterBatch[] = [];
+    const bySpecies = new Map<string, { model: ModelConfig; batches: ScatterBatch[] }>();
+    const knownProxy = new Set<string>();
+    for (const batch of batches) {
+      const species = bySpecies.get(batch.item);
+      if (species !== undefined) {
+        species.batches.push(batch);
+        continue;
+      }
+      if (knownProxy.has(batch.item)) {
+        proxy.push(batch);
+        continue;
+      }
+      const resolved = resolveItem?.(batch.item) ?? null;
+      if (resolved === null) {
+        knownProxy.add(batch.item);
+        proxy.push(batch);
+        continue;
+      }
+      bySpecies.set(batch.item, { model: resolved, batches: [batch] });
+    }
+    return { proxyBatches: proxy, modelSpecies: [...bySpecies.entries()] };
+  }, [batches, resolveItem]);
+
   const geometries = useMemo(() => {
-    const items = new Set(batches.map((batch) => batch.item));
+    const items = new Set(proxyBatches.map((batch) => batch.item));
     const map = new Map<string, THREE.BufferGeometry>();
     for (const item of items) map.set(item, buildScatterProxy(item));
     return map;
-  }, [batches]);
+  }, [proxyBatches]);
   useEffect(() => () => geometries.forEach((geometry) => geometry.dispose()), [geometries]);
 
   if (batches.length === 0) return null;
   return (
     <>
-      {batches.map((batch) => {
+      {proxyBatches.map((batch) => {
         const geometry = geometries.get(batch.item);
         return geometry === undefined ? null : <ScatterBatchMesh key={batch.key} batch={batch} geometry={geometry} />;
       })}
+      {modelSpecies.map(([item, species]) => (
+        <Suspense key={item} fallback={null}>
+          <ScatterModelSpecies model={species.model} batches={species.batches} />
+        </Suspense>
+      ))}
     </>
   );
 }
