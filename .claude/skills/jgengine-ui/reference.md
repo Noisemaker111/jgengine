@@ -316,6 +316,8 @@ Motion should be brief, readable, interruptible when necessary, coordinated, con
 
 Do not animate everything constantly. Motion communicates hierarchy, cause and effect, urgency, and state changes.
 
+**Camera shake.** `@jgengine/shell/camera`'s trauma channel (`useCameraShake`/`cameraShake`) is amplitude/decay by default (`.shake(amplitude, decayPerSecond?)`, sampled with `shakeOffset`'s `maxOffset`/`maxRoll`/`exponent`/`frequency`). `traumaShake(trauma, time?)` is the calibrated trauma² curve (offset ∝ trauma²) behind `@jgengine/core/combat/hitReaction`'s `impactPresets` — decay 1.4/s, max offset 0.55, max roll 0.1 rad, noise freq 32×t (`CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND`/`_MAX_OFFSET`/`_MAX_ROLL`/`_FREQUENCY`). `CombatCameraShake` (mounted once per world) already wires `combat.hitReaction`'s `trauma` field into the channel at that calibrated decay automatically — a preset-driven hit reaction shakes the camera with zero extra setup.
+
 ## 9. Mobile controls are genre-authored
 
 Shared input mechanics may remain shared. Their visual treatment and arrangement must match the game.

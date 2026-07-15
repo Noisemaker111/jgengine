@@ -15,6 +15,7 @@ import {
   resolveHitReaction,
   type HitReaction,
   type HitReactionConfig,
+  type ImpactPresetName,
 } from "../combat/hitReaction";
 import {
   pointInTelegraph,
@@ -245,7 +246,7 @@ export interface TelegraphInput {
 export interface HitReactionInput {
   from: string;
   to: string;
-  config: HitReactionConfig;
+  config: HitReactionConfig | ImpactPresetName;
   power?: number;
 }
 
@@ -1194,6 +1195,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       hitstopMs: reaction.hitstopMs,
     };
     if (reaction.shake !== null) reactionEvent.shake = reaction.shake;
+    if (reaction.trauma !== null) reactionEvent.trauma = reaction.trauma;
     events.emit("combat.hitReaction", reactionEvent);
     return reaction;
   }

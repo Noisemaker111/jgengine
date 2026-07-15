@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## camera-shake — calibrated trauma² camera kick with zero tuning
+
+- `traumaShake` (function) · `import { traumaShake } from "@jgengine/shell/camera"`
+
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/format/duration"`

@@ -143,6 +143,8 @@ export interface CombatHitReactionEvent {
   position: [number, number, number];
   hitstopMs: number;
   shake?: CameraShake;
+  /** Trauma (0..1) for a trauma² shake channel — set when the reaction resolved from `trauma` instead of `shake`. */
+  trauma?: number;
 }
 
 export interface ProjectileSettledEvent {

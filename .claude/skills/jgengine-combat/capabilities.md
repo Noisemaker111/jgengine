@@ -44,6 +44,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/stats/eventMeter"`
 
+## impact-feel — calibrated hitstop + trauma preset for a named impact event
+
+- `impactPresets` (const) · `import { impactPresets } from "@jgengine/core/combat/hitReaction"`
+- `resolveHitReaction` (function) · `import { resolveHitReaction } from "@jgengine/core/combat/hitReaction"`
+
 ## magazine — a weapon magazine with capacity, timed reload, and reserve-pool interaction
 
 - `createMagazine` (function) · `import { createMagazine } from "@jgengine/core/combat/magazine"`
