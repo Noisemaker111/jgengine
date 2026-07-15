@@ -207,6 +207,12 @@ shoot/drive dev server reuse (ensureDevServer's isUp(DEV_BASE) check on fixed po
 
 bun run pr-shots inside a git worktree → EFAULT rm .git/pr-shots-index-<pid> — script hardcodes indexFile relative to .git assuming it's a directory, but a worktree's .git is a pointer file
 
+<<<<<<< HEAD
 2026-07-15T15:06:23.372Z — opus — Claude
 
 bun run pr-shots crashed in a git worktree — hardcoded relative '.git/pr-shots-index-PID' path fails because .git is a file not a dir in a worktree; should use git rev-parse --absolute-git-dir
+=======
+2026-07-15T15:13:00.664Z — sonnet-4.5 — Claude
+
+shoot --keep leaves a fixed-port (4517) dev server running; a different worktree session's server squatting that port makes bun run shoot silently serve THAT session's code with no error — before/after screenshots looked identical until I noticed the PID's cwd was a different worktree
+>>>>>>> c5f4a5b3 (feat(the-robots): real GLB assets + material pass)

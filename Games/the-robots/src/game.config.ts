@@ -4,15 +4,14 @@ import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPromp
 import type { RarityStyle } from "@jgengine/core/game/worldItem";
 import { defineGame } from "@jgengine/shell/defineGame";
 
-import { assets, entitySprites } from "./game/assets";
+import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
 import { FERRALON, RARITY_COLORS } from "./game/palette";
 import { session } from "./game/session";
 import { GameUI } from "./game/ui/GameUI";
-import { renderFerralonEntity } from "./game/world/renderEntity";
-import { renderFerralonObject } from "./game/world/renderObject";
+import { entityModels, objectModels } from "./game/world/models";
 import { FerralonWorldOverlay } from "./game/world/Viewmodel";
 import { NPC_PLACEMENTS } from "./game/world/level";
 import { AMMO_CHESTS, RED_CHESTS } from "./game/world/setup";
@@ -150,9 +149,8 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
-  entitySprites,
-  renderEntity: renderFerralonEntity,
-  renderObject: renderFerralonObject,
+  entityModels,
+  objectModels,
   WorldOverlay: FerralonWorldOverlay,
   worldHealthBars: { roles: ["enemy"] },
   worldItem: { rarityStyle, pickupRadius: 2.8 },

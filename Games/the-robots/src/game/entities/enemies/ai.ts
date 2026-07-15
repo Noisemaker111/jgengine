@@ -8,7 +8,6 @@ import { enemyById, levelDamageMult, type EnemyDef } from "./catalog";
 
 const nextAttackAt = new Map<string, number>();
 const nextNovaAt = new Map<string, number>();
-export const attackAnimAt = new Map<string, number>();
 const homes = new Map<string, EntityPosition>();
 const wanderTargets = new Map<string, { target: EntityPosition; untilMs: number }>();
 
@@ -97,7 +96,7 @@ function tickMelee(
   const readyAt = nextAttackAt.get(enemyId) ?? 0;
   if (nowMs < readyAt) return;
   nextAttackAt.set(enemyId, nowMs + def.attack.intervalMs);
-  attackAnimAt.set(enemyId, nowMs);
+  ctx.game.playEntityAnimation(enemyId, "attack");
   const damage = Math.round(def.attack.damage * levelDamageMult(zoneLevelAt(enemyPos[0], enemyPos[2])));
   ctx.scene.entity.effect({ from: enemyId, to: playerId, effect: "damage", via: { amount: damage } });
   cameraShake(Math.min(0.5, damage / 60));
@@ -122,7 +121,7 @@ function tickRanged(
   const readyAt = nextAttackAt.get(enemyId) ?? 0;
   if (nowMs < readyAt) return;
   nextAttackAt.set(enemyId, nowMs + attack.intervalMs);
-  attackAnimAt.set(enemyId, nowMs);
+  ctx.game.playEntityAnimation(enemyId, "attack");
   const origin: EntityPosition = [enemyPos[0], enemyPos[1] + attack.eyeHeight, enemyPos[2]];
   const targetPoint: EntityPosition = [playerPos[0], playerPos[1] + 1.1, playerPos[2]];
   const shotId = ctx.scene.entity.fireProjectile({

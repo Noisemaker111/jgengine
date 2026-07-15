@@ -215,6 +215,7 @@ export interface PlacedPiece {
   x: number;
   z: number;
   instanceId: string;
+  rotation?: number;
 }
 
 function ringPieces(
@@ -239,6 +240,7 @@ function ringPieces(
       x: center.x + Math.cos(angle) * radius,
       z: center.z + Math.sin(angle) * radius,
       instanceId: `${idPrefix}_${index}`,
+      rotation: angle + Math.PI / 2,
     });
   }
   return pieces;
@@ -253,12 +255,15 @@ function scatterPieces(
   seed: string,
 ): PlacedPiece[] {
   const rng = seededRng(seed);
+  const rotationRng = seededRng(`${seed}-rot`);
   const pieces: PlacedPiece[] = [];
   for (let index = 0; index < count; index += 1) {
     const angle = rng() * Math.PI * 2;
     const distance = radius * (0.25 + rng() * 0.75);
+    const rotation = rotationRng() * Math.PI * 2;
     pieces.push({
       catalogId,
+      rotation,
       x: center.x + Math.cos(angle) * distance,
       z: center.z + Math.sin(angle) * distance,
       instanceId: `${idPrefix}_${index}`,
@@ -388,6 +393,7 @@ export function roadsidePieces(): PlacedPiece[] {
   const pieces: PlacedPiece[] = [];
   [...ROUTES, ...SPUR_ROUTES].forEach((route, routeIndex) => {
     const rng = seededRng(`bl2-roadside-${routeIndex}`);
+    const rotationRng = seededRng(`bl2-roadside-${routeIndex}-rot`);
     for (let index = 2; index < route.points.length - 2; index += 3) {
       const point = route.points[index]!;
       const next = route.points[index + 1]!;
@@ -401,6 +407,7 @@ export function roadsidePieces(): PlacedPiece[] {
         x: point.x + (-dz / length) * 11 * side,
         z: point.z + (dx / length) * 11 * side,
         instanceId: `roadside_${routeIndex}_${index}`,
+        rotation: rotationRng() * Math.PI * 2,
       });
     }
   });
@@ -419,7 +426,10 @@ export const NPC_PLACEMENTS: readonly { id: string; name: string; x: number; z: 
 export function placeLevel(ctx: GameContext): void {
   const place = (piece: PlacedPiece) => {
     const y = ctx.world.groundHeightAt(piece.x, piece.z);
-    ctx.scene.object.place(piece.catalogId, piece.x, y + 0.5, piece.z, { instanceId: piece.instanceId });
+    ctx.scene.object.place(piece.catalogId, piece.x, y + 0.5, piece.z, {
+      instanceId: piece.instanceId,
+      rotation: piece.rotation ?? 0,
+    });
   };
   for (const zone of ZONES) for (const piece of zoneSetPieces(zone)) place(piece);
   for (const piece of poiSetPieces()) place(piece);
