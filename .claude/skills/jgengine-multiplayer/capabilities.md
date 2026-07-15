@@ -2,4 +2,8 @@
 
 # jgengine-multiplayer — capability index
 
-No capabilities tagged in this domain yet.
+Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
+
+## convex-save — save a game to Convex (cloud) through the SaveBackend seam
+
+- `createConvexSaveBackend` (function) · `import { createConvexSaveBackend } from "@jgengine/convex"`

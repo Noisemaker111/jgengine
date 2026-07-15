@@ -16,6 +16,10 @@ One host process serves many worlds, so authoritative runtime state (heroes, mob
 ## UI — `@jgengine/react`
 
 
+## Cloud game saves — `@jgengine/convex/convexSaveBackend`
+
+For single-player (or per-user) game saves that live on the server instead of `localStorage`, pair the pluggable `@jgengine/core/game/saveStore` (`createSaveStore` — see `jgengine-gameplay` → "Whole-game save") with a Convex backend: `createConvexSaveBackend({ client, functions?, namespace? })` returns a `SaveBackend` whose reads/writes go through Convex. `defaultConvexSaveFunctions()` assumes a `saves.read`/`saves.write`/`saves.remove` module (a `key`→`value` string table keyed per user); pass your own `functions` refs to point at a different module, and a `namespace` to share one table across games/users. The game code is identical to the offline path — only the backend swaps from `localSaveBackend` to `createConvexSaveBackend`, so offline and cloud saves are one code path with autosave, slots, and versioned migration intact.
+
 ## Dev save middleware — `@jgengine/node/devSavePlugin`
 
 The published write path behind editor Save (Ctrl+S / `save_scene`) and the Tune tab's Save-to-source. Mount it on the game's dev server:

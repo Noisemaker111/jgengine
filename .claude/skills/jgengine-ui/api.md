@@ -248,6 +248,7 @@
 - `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 - `SUITS` (const): const SUITS: readonly Suit[] — Suits in canonical order (clubs, diamonds, hearts, spades).
+- `SaveStoreView` (interface): interface SaveStoreView<T> — The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change.
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
 - `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
@@ -343,6 +344,7 @@
 - `useRegisterLayoutRegion` (function): function useRegisterLayoutRegion(spec: LayoutRegionSpec, ref: RefObject<HTMLElement | null>, enabled = true): void — Register the element behind `ref` as a layout region and keep its measured rectangle live (ResizeObserver + viewport changes). No-op outside a `GameViewportProvider`, so a component using it still works in isolation.
 - `useReservedControlZones` (function): function useReservedControlZones(): readonly LayoutRect[] — Rectangles reserved by touch controls and system UI — HUD placement should avoid these.
 - `useRoster` (function): function useRoster(userId?: string): readonly RosterEntry[] — ⚠ undocumented
+- `useSaveStore` (function): function useSaveStore<T>(store: SaveStore<T>, options?: { load?: boolean }): SaveStoreView<T> — Bind a {@link SaveStore} to React: returns the live `value` and `status` and re-renders whenever either changes. By default it calls `load()` once on mount (pass `{ load: false }` to hydrate yourself). The same hook works for offline (localStorage) and cloud (Convex/DB) saves — only the store's backend differs.
 - `useSceneEntities` (function): function useSceneEntities(): readonly SceneEntity[] — ⚠ undocumented
 - `useSceneEntityIds` (function): function useSceneEntityIds(): readonly string[] — Membership-only entity id list: the returned array keeps a stable identity across per-frame pose writes and only changes when an entity spawns, despawns, or the store is hydrated (#625). A marker mapped from these ids reads its own live pose imperatively (useFrame), so the actor tree no longer re-reconciles every frame. Prefer this over {@link useSceneEntities} for large scenes.
 - `useSceneObjectIds` (function): function useSceneObjectIds(): readonly string[] — Membership-only object id list — the object counterpart of {@link useSceneEntityIds}; stable across move/rotate/setVisual, changes only on place/remove.
@@ -590,6 +592,11 @@
 ## @jgengine/react/rotateDevice
 
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
+
+## @jgengine/react/save
+
+- `SaveStoreView` (interface): interface SaveStoreView<T> — The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change.
+- `useSaveStore` (function): function useSaveStore<T>(store: SaveStore<T>, options?: { load?: boolean }): SaveStoreView<T> — Bind a {@link SaveStore} to React: returns the live `value` and `status` and re-renders whenever either changes. By default it calls `load()` once on mount (pass `{ load: false }` to hydrate yourself). The same hook works for offline (localStorage) and cloud (Convex/DB) saves — only the store's backend differs.
 
 ## @jgengine/react/selectSnapshot
 
