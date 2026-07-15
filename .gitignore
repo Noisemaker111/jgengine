@@ -12,6 +12,8 @@ shots/
 !apps/dev/public/models/kenney-racing/
 !apps/dev/public/models/kenney-nature/
 !apps/dev/public/models/kenney-city-roads/
+!apps/dev/public/models/kenney-city-commercial/
+!apps/dev/public/models/kenney-city-suburban/
 !apps/dev/public/models/kenney-mini-characters/
 !apps/dev/public/models/kenney-survival/
 **/.jgengine-assets-tmp/

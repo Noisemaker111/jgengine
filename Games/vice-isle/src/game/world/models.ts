@@ -1,5 +1,6 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { assets } from "../assets";
+import { BUILDING_SPECS } from "./buildings";
 
 const CHAR = "kenney-mini-characters";
 const RACING = "kenney-racing";
@@ -37,4 +38,5 @@ export const objectModels: Record<string, ModelConfig> = {
   obj_streetlight: model(`${ROADS}/light-curved`, 4.3),
   obj_gunshop_sign: model(`${RACING}/billboard`, 2.4),
   obj_crate_dock: model(`${SURVIVAL}/box`, 1),
+  ...Object.fromEntries(BUILDING_SPECS.map((b) => [b.id, model(b.glb, b.targetHeight)])),
 };

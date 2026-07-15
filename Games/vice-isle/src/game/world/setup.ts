@@ -3,8 +3,10 @@ import { seededRng } from "@jgengine/core/random/rng";
 import { furnitureSpots, laneCenters, parkingSpots, sidewalkPoint } from "@jgengine/core/world/streets";
 import { streets } from "../../world";
 import { handroll } from "../handroll";
+import { buildingsByStyle, type BuildingStyle } from "./buildings";
 import {
   BRIEFCASE_POS,
+  districtAt,
   DOCK_FIGHT_CENTER,
   GUNSHOP_POS,
   MARCO_POS,
@@ -26,8 +28,42 @@ const PED_KIND_BY_ROAD: readonly string[] = [
   "ped_beach",
 ];
 
+const STREET_BLOCKERS: readonly (readonly [number, number])[] = [
+  [MARCO_POS[0], MARCO_POS[2]],
+  [GUNSHOP_POS[0], GUNSHOP_POS[2]],
+  [-68, 116],
+  [DOCK_FIGHT_CENTER[0], DOCK_FIGHT_CENTER[2]],
+  [-176, 24],
+];
+
+function styleAt(x: number, z: number, rng: () => number): BuildingStyle {
+  const district = districtAt(x, z);
+  if (district?.id === "downtown") return rng() < 0.45 ? "tower" : "commercial";
+  if (district?.id === "port_carmine") return "commercial";
+  return "suburban";
+}
+
+function placeBuildings(ctx: GameContext, rng: () => number): void {
+  for (const street of streets) {
+    const vertical = street.path[0]![0] === street.path[1]![0];
+    if (!vertical) continue;
+    for (const spot of furnitureSpots(street, { spacing: 27, outset: 11, sides: "both", stagger: false })) {
+      const [x, z] = spot.position;
+      if (STREET_BLOCKERS.some(([bx, bz]) => Math.hypot(x - bx, z - bz) < 22)) continue;
+      const options = buildingsByStyle(styleAt(x, z, rng));
+      const pick = options[Math.floor(rng() * options.length)];
+      if (pick === undefined) continue;
+      ctx.scene.object.place(pick.id, Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
+        rotation: spot.heading + Math.PI,
+      });
+    }
+  }
+}
+
 export function setupWorld(ctx: GameContext): void {
   const rng = seededRng("vice-isle-setup");
+
+  placeBuildings(ctx, rng);
 
   ctx.scene.entity.spawn("contact_marco", { id: "npc_marco", position: ground(ctx, MARCO_POS[0], MARCO_POS[2]), role: "npc" });
 
