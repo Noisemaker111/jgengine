@@ -17,7 +17,14 @@ export const game = defineGame({
   loop: { onInit, onNewPlayer, onTick },
   lifecycle,
   GameUI,
-  capture: { play: ["startRun"] },
+  capture: {
+    play: ["startRun"],
+    probe: (ctx): Record<string, number> => {
+      const car = ctx.scene.entity.get(ctx.player.userId);
+      if (car === null) return {};
+      return { x: car.position[0], y: car.position[1], z: car.position[2] };
+    },
+  },
   renderEntity: renderVehicle,
   renderObject: renderProp,
   shadows: true,
