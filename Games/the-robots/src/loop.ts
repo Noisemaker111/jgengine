@@ -1,9 +1,8 @@
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
-import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { activeCharacter, talentTree } from "./game/characters";
-import { registerCommands } from "./game/commands";
+import { registerCommands, restoreSavedBuild } from "./game/commands";
 import { noteEquipped, noteGameNow, noteLevelUp } from "./game/feel";
 import { tickEnemies } from "./game/entities/enemies/ai";
 import { enemyById, levelXpFor } from "./game/entities/enemies/catalog";
@@ -240,7 +239,7 @@ function onNewPlayer(ctx: GameContext): void {
   ctx.game.quest!.accept(ctx.player.userId, QUEST_IDS.skagDogDays);
   session.reset(ctx);
   noteEquipped(ctx.player.inventory.state("hotbar").slots[0]?.itemId ?? null);
-  if (activeCharacter() === null) setGamePhase(ctx, "menu");
+  restoreSavedBuild(ctx);
 }
 
 function onTick(ctx: GameContext, dt: number): void {
