@@ -17,29 +17,109 @@ export const Route = createFileRoute("/why")({
   component: Why,
 });
 
-const WORLD_BEFORE = `// Flat ground, a sky, some grass — by hand, in three.js
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x9ec7ff, 60, 900);
+const WORLD_BEFORE = `// The whole thing, by hand, in three.js — nothing elided.
+import * as THREE from "three";
 
-const geo = new THREE.PlaneGeometry(256, 256, 128, 128);
+// --- renderer + camera + resize ---
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.5, 2000);
+camera.position.set(0, 40, 90);
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x9ec7ff, 120, 900);
+
+// --- value noise: three ships none, so write it ---
+function hash(x, z) {
+  const n = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
+  return n - Math.floor(n);
+}
+function noise2D(x, z) {
+  const xi = Math.floor(x), zi = Math.floor(z);
+  const xf = x - xi, zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const a = hash(xi, zi), b = hash(xi + 1, zi);
+  const c = hash(xi, zi + 1), d = hash(xi + 1, zi + 1);
+  return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+}
+function heightAt(x, z) {
+  // fbm — and this same fn must feed collision AND grass grounding
+  let h = 0, amp = 8, freq = 0.01;
+  for (let o = 0; o < 4; o++) { h += noise2D(x * freq, z * freq) * amp; amp *= 0.5; freq *= 2; }
+  return h;
+}
+
+// --- terrain mesh: displace, recompute normals ---
+const SIZE = 256, SEG = 200;
+const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
 geo.rotateX(-Math.PI / 2);
 const pos = geo.attributes.position;
-for (let i = 0; i < pos.count; i++) {
-  const x = pos.getX(i), z = pos.getZ(i);
-  pos.setY(i, noise2D(x * 0.01, z * 0.01) * 8); // pick a noise lib
-}
+for (let i = 0; i < pos.count; i++) pos.setY(i, heightAt(pos.getX(i), pos.getZ(i)));
 geo.computeVertexNormals();
-const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x3f7d2d }));
+const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x3f7d2d, roughness: 1 }));
+ground.receiveShadow = true;
 scene.add(ground);
 
+// --- lighting + shadow frustum ---
 scene.add(new THREE.HemisphereLight(0xbfe3ff, 0x2a3d1a, 0.9));
-const sun = new THREE.DirectionalLight(0xffffff, 2);
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
 sun.position.set(80, 120, 40);
+sun.castShadow = true;
+sun.shadow.camera.left = sun.shadow.camera.bottom = -SIZE / 2;
+sun.shadow.camera.right = sun.shadow.camera.top = SIZE / 2;
+sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun);
 
-// …now instance thousands of grass blades, ground-snap them,
-// cull them per chunk, and wire collision to the same heightfield.
-// Then do it again for the next game.`;
+// --- grass: one InstancedMesh, grounded to the heightfield ---
+const COUNT = 200 * 200 * 2; // density 2 /m² over 200×200
+const blade = new THREE.PlaneGeometry(0.06, 0.6).translate(0, 0.3, 0);
+const grass = new THREE.InstancedMesh(
+  blade,
+  new THREE.MeshStandardMaterial({ color: 0x6bbf4a, side: THREE.DoubleSide }),
+  COUNT,
+);
+const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+let rng = 1337;
+const rand = () => ((rng = (rng * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+for (let i = 0; i < COUNT; i++) {
+  const x = (rand() - 0.5) * 200, z = (rand() - 0.5) * 200;
+  q.setFromAxisAngle(up, rand() * Math.PI * 2);
+  const s = 0.7 + rand() * 0.6;
+  m.compose(new THREE.Vector3(x, heightAt(x, z), z), q, new THREE.Vector3(s, s, s));
+  grass.setMatrixAt(i, m);
+}
+grass.instanceMatrix.needsUpdate = true;
+grass.castShadow = true;
+scene.add(grass);
+
+// --- per-chunk frustum culling so 80k blades don't tank the GPU ---
+grass.computeBoundingSphere();
+const frustum = new THREE.Frustum(), pv = new THREE.Matrix4();
+
+// --- render loop: wind, collision clamp, cull, draw ---
+const clock = new THREE.Clock();
+function frame() {
+  const t = clock.getElapsedTime();
+  grass.material.userData.wind = Math.sin(t); // and rewire the shader for it…
+  camera.position.y = heightAt(camera.position.x, camera.position.z) + 6; // "collision"
+  pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  frustum.setFromProjectionMatrix(pv);
+  grass.visible = frustum.intersectsSphere(grass.boundingSphere);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+frame();
+
+// …and you rewrite all of it for the next game.`;
 
 const WORLD_AFTER = `import { environment, terrain, sky, grass } from "@jgengine/core/world/features";
 
@@ -129,7 +209,7 @@ function Why() {
             <VersusBlock
               before={WORLD_BEFORE}
               after={WORLD_AFTER}
-              beforeNote="~30 lines, and that's before grass"
+              beforeNote="~90 lines — the whole thing, nothing elided"
               afterNote="8 lines, reusable"
             />
           </div>
