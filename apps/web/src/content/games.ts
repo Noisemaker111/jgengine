@@ -124,6 +124,16 @@ const GAME_DETAILS: Record<string, GameDetails> = {
       },
     },
   },
+  loopline: {
+    title: "Loopline",
+    tagline: "Lay the track, price the tickets, keep the crowds grinning.",
+    description:
+      "A 3D park-builder management tycoon. Lay coaster track piece by piece, drop rides, food stalls, and scenery onto an open plot, then set ticket prices and keep hundreds of guests fed, thrilled, and spending. Revenue funds upkeep and restocks; rising park rating unlocks bigger attractions — let the cash run dry and the gates close for good.",
+    genre: "Management tycoon",
+    category: "Sandbox & Simulation",
+    controls: "Drag/edge-scroll pan · click build · 1-6 quick tools · X cancel · P pause",
+    hue: "#33b1c9",
+  },
   "clockwork-heist": {
     tagline: "Five treasures, one clockwork night, zero mistakes.",
     description:
