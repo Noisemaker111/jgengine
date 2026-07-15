@@ -1266,6 +1266,8 @@
 ## @jgengine/core/world/geometry
 
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
+- `AvoidCorridor` (interface): interface AvoidCorridor — A clearance *corridor* along a polyline (a path/road): scatter is repelled within `halfWidth` of the centerline, feathered over the outer band. Clean straight edges — unlike approximating a corridor with a scalloped chain of discs.
+- `AvoidMasks` (interface): interface AvoidMasks — A clearance region: point discs (spawns/plots) plus centerline corridors (paths).
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `Ellipse` (interface): interface Ellipse — An axis-aligned ellipse: `center` with semi-axes `radiusX` and `radiusY`.
 - `Footprint` (interface): interface Footprint — ⚠ undocumented
@@ -1452,10 +1454,10 @@
 
 ## @jgengine/core/world/scatterRegion
 
-- `ClearanceOptions` (interface): interface ClearanceOptions — Controls which gameplay objects auto-repel scatter (and flatten terrain) in {@link clearanceZonesFrom}.
+- `ClearanceOptions` (interface): interface ClearanceOptions — Controls which gameplay objects auto-repel scatter (and, for markers, flatten terrain).
 - `DEFAULT_CLEARANCE_KINDS` (const): const DEFAULT_CLEARANCE_KINDS: readonly string[] — Marker/volume kinds that repel scatter and flatten terrain by default (spawns, objectives, vendors).
 - `DEFAULT_MARKER_CLEARANCE` (const): const DEFAULT_MARKER_CLEARANCE: 3.5 — Default clearance radius (m) for an auto-avoided gameplay marker with no explicit `meta.clearance`.
-- `ResolveScatterOptions` (interface): interface ResolveScatterOptions extends ClearanceOptions — Extra inputs for {@link resolveScatter}: manual zones plus the auto-clearance toggle/scoping.
+- `ResolveScatterOptions` (interface): interface ResolveScatterOptions extends ClearanceOptions — Extra inputs for {@link resolveScatter}: manual discs plus the auto-clearance toggle/scoping.
 - `SCATTER_DEFAULTS` (const): const SCATTER_DEFAULTS: ScatterRegionRules — Defaults a bare scatter region fills with: sparse grass, lightly spaced.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
 - `ScatterChunk` (interface): interface ScatterChunk — A spatial bucket of scatter instances — one draw unit the renderer can frustum-cull as a whole.
@@ -1464,7 +1466,7 @@
 - `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
 - `ScatterRegionRules` (interface): interface ScatterRegionRules — How a scatter region fills its polygon: density, spacing, variation, and masking rules.
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
-- `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: EditorDocument, options: ClearanceOptions = {}): AvoidZone[] — Collects clearance discs from a document's gameplay objects — the auto-avoid set. A marker/volume contributes a zone when it carries `meta.clearance` or its kind is in `kinds` (default gameplay kinds); non-scatter paths contribute a corridor. This is the "tag a POI and scatter clears it" seam — pass `ids`/`kinds` to scope it, or an empty result to opt out entirely.
+- `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: EditorDocument, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
 - `distanceToPolygonEdge` (function): function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number — Shortest distance from a point to a polygon's boundary.
 - `isScatterPath` (function): function isScatterPath(path: EditorPath): boolean — True when an editor path is a foliage/scatter region.
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
@@ -1472,8 +1474,8 @@
 - `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
 - `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
 - `readScatterRules` (function): function readScatterRules(path: EditorPath): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
-- `resolveScatter` (function): function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance zones: their own manual `avoid`, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide zones from {@link clearanceZonesFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
-- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: readonly AvoidZone[]): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
+- `resolveScatter` (function): function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
+- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: EditorPath): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
 - `scatterRegionFromPath` (function): function scatterRegionFromPath(path: EditorPath): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
 

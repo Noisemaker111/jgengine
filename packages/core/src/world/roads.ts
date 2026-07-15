@@ -14,6 +14,7 @@ export interface RoadRibbon {
  * road instead of overlapping/notching rectangles at each bend. Each interior vertex is replaced by a
  * quadratic-bezier arc of `radius` (clamped to half the shorter adjacent segment) sampled at
  * `cornerSegments` steps; endpoints and near-straight vertices pass through unchanged.
+ * @internal — the corner-smoothing behind `<AuthoredPaths>`; games get it for free through the render.
  */
 export function roundPathCorners(
   points: readonly RoadPoint[],
