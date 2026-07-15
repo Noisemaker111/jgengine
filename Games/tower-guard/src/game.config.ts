@@ -3,7 +3,7 @@ import { defineGame } from "@jgengine/shell/defineGame";
 import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
-import { renderTowerGuardEntity } from "./game/render/entityMeshes";
+import { entityModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { TowerGuardWorldOverlay } from "./game/world/WorldOverlay";
 import { loop } from "./loop";
@@ -22,7 +22,7 @@ export const game = defineGame({
   settings: {
     variant: "panel",
   },
-  renderEntity: renderTowerGuardEntity,
+  entityModels,
   WorldOverlay: TowerGuardWorldOverlay,
   worldHealthBars: { statId: "health" },
   pointer: { moveCommand: "tower.build" },
