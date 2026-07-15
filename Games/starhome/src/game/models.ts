@@ -1,7 +1,9 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { assets } from "./assets";
-import { DECOR, FURNITURE, type DecorDef, type FurnitureDef } from "./objects/catalog";
+import { DECOR, FURNITURE, STRUCTURE, type DecorDef, type FurnitureDef, type StructureDef } from "./objects/catalog";
+
+export const HAB_WALL_SCALE = 3;
 
 function resolvedUrl(id: string): string {
   const entry = assets.resolve(id);
@@ -46,9 +48,27 @@ function decorModel(def: DecorDef): ModelConfig {
   };
 }
 
+const STRUCTURE_ASSET: Record<string, string> = {
+  hab_wall: "kenney-space/corridor_windowClosed",
+  hab_wall_window: "kenney-space/corridor_window",
+  hab_corner: "kenney-space/corridor_wallCorner",
+  hab_gate: "kenney-space/gate_complex",
+};
+
+function structureModel(def: StructureDef): ModelConfig {
+  const assetId = STRUCTURE_ASSET[def.id];
+  if (assetId === undefined) throw new Error(`starhome/models: no model mapped for structure "${def.id}"`);
+  return {
+    url: resolvedUrl(assetId),
+    scale: HAB_WALL_SCALE,
+    material: { color: "#9d93bd", metalness: 0.35, roughness: 0.45 },
+  };
+}
+
 export const objectModels: Record<string, ModelConfig> = {
   ...Object.fromEntries(FURNITURE.map((def) => [def.id, furnitureModel(def)])),
   ...Object.fromEntries(DECOR.map((def) => [def.id, decorModel(def)])),
+  ...Object.fromEntries(STRUCTURE.map((def) => [def.id, structureModel(def)])),
 };
 
 export const ALIEN_MESH_IDS: readonly string[] = [

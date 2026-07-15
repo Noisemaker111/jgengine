@@ -113,6 +113,27 @@ export const DECOR: DecorDef[] = [
 
 export const DECOR_BY_ID: Record<string, DecorDef> = Object.fromEntries(DECOR.map((def) => [def.id, def]));
 
+export type StructureKind = "wall" | "wall_window" | "corner" | "gate";
+
+export interface StructureDef {
+  id: string;
+  kind: StructureKind;
+}
+
+export const STRUCTURE: StructureDef[] = [
+  { id: "hab_wall", kind: "wall" },
+  { id: "hab_wall_window", kind: "wall_window" },
+  { id: "hab_corner", kind: "corner" },
+  { id: "hab_gate", kind: "gate" },
+];
+
+export const STRUCTURE_BY_ID: Record<string, StructureDef> = Object.fromEntries(
+  STRUCTURE.map((def) => [def.id, def]),
+);
+
 export const objectEntries: Record<string, GameContextObjectEntry> = Object.fromEntries(
-  [...FURNITURE.map((def) => def.id), ...DECOR.map((def) => def.id)].map((id) => [id, {} as GameContextObjectEntry]),
+  [...FURNITURE.map((def) => def.id), ...DECOR.map((def) => def.id), ...STRUCTURE.map((def) => def.id)].map((id) => [
+    id,
+    {} as GameContextObjectEntry,
+  ]),
 );
