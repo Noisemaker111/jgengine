@@ -4,12 +4,25 @@ import type { GamePhase } from "./gamePhase";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { GameContext } from "../runtime/gameContext";
+import type { RuntimeSaveMode } from "../runtime/runtimeSave";
 import type { SaveConfig } from "../runtime/save";
 import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../scene/assetCatalog";
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
 import type { StoreHandle } from "../store/defineStore";
 import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
+
+/** Tunes offline whole-world save (`defineGame({ persist })`). Defaults: continuous `autosave` to `localStorage`, one slot, no version. */
+export interface PersistConfig {
+  /** `"autosave"` (default) writes on a debounce after any change; `"manual"` writes only on `ctx.game.save.checkpoint()` (save points / quest triggers). */
+  mode?: RuntimeSaveMode;
+  /** `"local"` (default) persists to `localStorage`; `"memory"` keeps saves in-session only (tests, "no persistence" mode). */
+  storage?: "local" | "memory";
+  /** Save-format version; bump when the world shape changes in a save-breaking way. */
+  version?: number;
+  /** Autosave debounce in ms (autosave mode). Default 3000. */
+  autosaveMs?: number;
+}
 
 /** World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step. */
 export interface PhysicsConfig {
@@ -132,6 +145,8 @@ export interface GameDefinition<
   input?: ActionCodesMap;
   server?: GameServerConfig;
   save?: SaveConfig;
+  /** Offline/single-player whole-world save. `true` autosaves the entire game to `localStorage`; a config object tunes the mode/cadence/target. Binds `ctx.game.save` — the game drives save points and restore. Ignored for multiplayer worlds (the host persists). */
+  persist?: boolean | PersistConfig;
   ui?: unknown;
   loop?: GameLoop<any>;
   /** Declarative start/restart run lifecycle — see {@link LifecycleConfig}. Omitted games keep hand-rolling their own commands. */

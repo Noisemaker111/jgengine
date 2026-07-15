@@ -39,7 +39,7 @@ import {
   type WalletState,
 } from "../economy/wallet";
 import { createCosmetics, type Cosmetics } from "../game/cosmetics";
-import type { GameDefinition } from "../game/defineGame";
+import type { GameDefinition, PersistConfig } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
 import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
@@ -128,6 +128,9 @@ import {
   type SnapshotModule,
   type WorldSnapshot,
 } from "./worldSnapshot";
+import { createRuntimeSave, type RuntimeSave, type RuntimeSaveOptions } from "./runtimeSave";
+import { isOffline } from "./adapter";
+import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock, type SimClock } from "../time/simClock";
 import { createTurnLoop, type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
 import { RaceState, type RaceEvent, type RaceStateConfig } from "../game/race";
@@ -186,6 +189,8 @@ export interface GameContextOptions<
   player: { userId: string; isNew: boolean };
   now?: () => number;
   occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
+  /** Bind `ctx.game.save` to a pluggable backend (offline/single-player whole-world save). The shell resolves this from `defineGame({ save })`; multiplayer leaves it off (the host persists). */
+  save?: RuntimeSaveOptions;
 }
 
 export interface SceneObjectContext extends ObjectStore {
@@ -445,6 +450,8 @@ export interface GameContext {
     race?: GameContextRace;
     /** Connected-player set for a shared world — present only when `features.players` is set. */
     players?: ConnectedPlayers;
+    /** Whole-world save/load bound to a pluggable backend — present only when `defineGame({ save })` is set (offline/single-player). Drive save points and quest/area checkpoints with `checkpoint()`, restore on boot with `load()`. */
+    save?: RuntimeSave;
   };
   player: {
     /** The acting player's id — the command actor inside `runAs`, the local player everywhere else. */
@@ -1668,5 +1675,35 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
   };
 
+  const saveOptions = resolveSaveOptions(definition, options);
+  if (saveOptions !== undefined) {
+    ctx.game.save = createRuntimeSave({ target: ctx, ...saveOptions });
+  }
+
   return ctx;
+}
+
+function saveKey(name: string): string {
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return `jgengine:save:${slug === "" ? "game" : slug}`;
+}
+
+/** Explicit `options.save` wins (the shell can inject any backend, e.g. cloud); otherwise `defineGame({ persist })` auto-wires a localStorage save for offline/single-player worlds only. */
+function resolveSaveOptions<TAssetRef extends ModelAssetRef, TMultiplayer>(
+  definition: GameDefinition<TAssetRef, TMultiplayer>,
+  options: GameContextOptions<TAssetRef, TMultiplayer>,
+): RuntimeSaveOptions | undefined {
+  if (options.save !== undefined) return options.save;
+  const persist = definition.persist;
+  if (persist === undefined || persist === false) return undefined;
+  if (!isOffline(definition.multiplayer)) return undefined;
+  const config: PersistConfig = persist === true ? {} : persist;
+  return {
+    backend: config.storage === "memory" ? memorySaveBackend() : localSaveBackend(),
+    mode: config.mode,
+    key: saveKey(definition.name),
+    version: config.version,
+    autosaveMs: config.autosaveMs,
+    now: options.now,
+  };
 }
