@@ -131,6 +131,17 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "↑/W throttle · ↓/S brake · ←/→ steer · Space hop · Shift plow brace · R restart",
     hue: "#16a34a",
   },
+  "duet-keys": {
+    title: "Duet Keys",
+    tagline: "Two heroes, two powers, one locked door.",
+    description:
+      "A co-op paired-ability puzzle. Lumen bends a beam of light; Anchor drops a weight that holds a plate down. Neither can clear a room alone — cross four escalating chambers of gates, receivers, and spike fields, each door answering to the other hero. Play solo by swapping control between the pair, or bring a partner over the engine transport; a room is only cleared when both stand on their exits at once.",
+    genre: "co-op puzzle",
+    category: "Puzzle",
+    controls: "WASD/Arrows move · Q swap hero · E ability · R reset",
+    hue: "#38f0ff",
+    platforms: ["web"],
+  },
 };
 
 const FALLBACK_DETAILS: GameDetails = {
