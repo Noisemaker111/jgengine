@@ -123,6 +123,8 @@ const gameRegistry: GameRegistry = {
     import("./demo/builderDemo").then((module) => module.builderDemoGame),
   "hud-showcase": () =>
     import("./demo/hudDemo").then((module) => module.hudShowcaseGame),
+  "bookcase-stage": () =>
+    import("./demo/bookcaseStageDemo").then((module) => module.bookcaseStageGame),
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
   "sensor-showcase": () =>
     import("./demo/sensorShowcase").then((module) => module.sensorShowcaseGame),

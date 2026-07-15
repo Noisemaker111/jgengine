@@ -72,3 +72,25 @@ export interface PostProcessingConfig {
   dof?: DofConfig | false;
   grade?: GradeConfig | false;
 }
+
+/**
+ * A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film
+ * grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a
+ * single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF
+ * is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
+ */
+export const STUDIO_STAGE_POST: PostProcessingConfig = {
+  toneMapping: "aces",
+  exposure: 1.05,
+  bloom: { strength: 0.28, radius: 0.6, threshold: 0.8 },
+  ao: { radius: 1.4, intensity: 2.2, distanceFalloff: 3, blend: 1 },
+  grade: {
+    lift: [0.008, 0.008, 0.014],
+    gain: [1.05, 1.02, 0.98],
+    gamma: 0.96,
+    saturation: 1.12,
+    vignette: 0,
+    grain: 0.006,
+    chromaticAberration: 0.001,
+  },
+};

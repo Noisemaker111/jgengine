@@ -7,7 +7,9 @@ import {
   listSceneKinds,
   parseParams,
   parseSceneKindParams,
+  randomizeGroupParams,
   registerSceneKind,
+  resetGroupParams,
   validateParams,
   type ParamSchema,
 } from "./sceneKinds";
@@ -77,6 +79,42 @@ describe("registry", () => {
   test("defaultParamMeta produces a fresh, valid patch", () => {
     const meta = defaultParamMeta(TEST_SCHEMA);
     expect(validateParams(TEST_SCHEMA, meta)).toEqual([]);
+  });
+});
+
+describe("group randomize / reset", () => {
+  const GROUPED: ParamSchema = {
+    groups: [
+      { id: "shape", label: "Shape" },
+      { id: "look", label: "Look" },
+    ],
+    fields: [
+      { type: "range", key: "width", min: 1, max: 4, step: 0.1, default: 2, group: "shape" },
+      { type: "range", key: "shelves", min: 1, max: 8, step: 1, default: 4, group: "shape" },
+      { type: "color", key: "tint", default: "#7a5230", group: "look" },
+      { type: "seed", key: "seed", default: "", group: "shape" },
+      { type: "action", key: "rand", action: "randomize", group: "shape" },
+    ],
+  };
+
+  test("randomizeGroupParams only touches the group and stays in range", () => {
+    const patch = randomizeGroupParams(GROUPED, "shape", () => 0.5);
+    expect(Object.keys(patch).sort()).toEqual(["seed", "shelves", "width"]);
+    expect(patch["width"]).toBeGreaterThanOrEqual(1);
+    expect(patch["width"]).toBeLessThanOrEqual(4);
+    expect(patch["shelves"]).toBe(5); // 1 + 0.5*7 = 4.5 → round 5, integer step
+    expect(patch["tint"]).toBeUndefined();
+    // The generated patch is always schema-valid.
+    expect(validateParams(GROUPED, patch)).toEqual([]);
+  });
+
+  test("resetGroupParams restores the group's defaults", () => {
+    expect(resetGroupParams(GROUPED, "shape")).toEqual({ width: 2, shelves: 4, seed: "" });
+  });
+
+  test("action fields carry no value and no default", () => {
+    expect(parseParams(GROUPED, {})["rand"]).toBeUndefined();
+    expect(defaultParamMeta(GROUPED)["rand"]).toBeUndefined();
   });
 });
 

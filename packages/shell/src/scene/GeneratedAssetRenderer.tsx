@@ -51,7 +51,7 @@ function ColorBatch({ color, parts }: { color: string; parts: readonly Generated
   }, [parts]);
   return (
     <instancedMesh ref={meshRef} args={[UNIT_BOX, undefined, Math.max(1, parts.length)]} castShadow receiveShadow>
-      <meshStandardMaterial color={color} roughness={0.85} metalness={0} />
+      <meshStandardMaterial color={color} roughness={0.62} metalness={0.04} />
     </instancedMesh>
   );
 }

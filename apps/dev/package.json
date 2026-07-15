@@ -11,6 +11,7 @@
     "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@jgengine-examples/studios": "workspace:*",
     "@jgengine/convex": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "@react-three/drei": "^10.7.7",

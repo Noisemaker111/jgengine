@@ -113,3 +113,14 @@ The engine imposes **no** HUD. Every game's HUD is its own `GameUI`; a bare game
 - `<Crosshair />` — center reticle.
 
 Place them in `<HudPanel anchor="…">` inside the `<HudCanvas>` (see `apps/dev/src/demo/hudDemo.tsx`). Don't reach for a per-game hand-rolled health pill — use `StatBar`. Never mount a fixed overlay onto every game (composable, never imposed).
+
+## Cinematic studio shots — StudioStage + film grade
+
+A parametric studio (a generator asset, a scene kind) reads as shipped, not intern-tier, only with lighting + a film grade — the geometry alone under default light looks like a proxy. Two reusable pieces:
+
+- **`STUDIO_STAGE_POST`** (`@jgengine/core/render/postProcessing`) — a tuned post preset (soft bloom, contact AO, warm grade, faint grain; vignette off) for a product/cinematic shot. Set `PlayableGame.postProcessing = STUDIO_STAGE_POST` (add `dof` for background blur).
+- **`<StudioStage mood backdrop turntable environment>`** (`@jgengine/shell/scene/StudioStage`) — a 3-point lighting rig (key/fill/rim + ambient) + seamless backdrop + optional turntable. Wrap studio content in it for a hero shot; `environment={false}` uses it as a lighting rig over an open-world scene. Moods: `studio | daylight | dusk | night`.
+
+Product shot = a **bare** game (no `content`/`stats`/`inventories`/`time` → no gameplay HUD; chrome is data-driven and composable, never imposed) + a `turntable` camera + `StudioStage` + `STUDIO_STAGE_POST`. See `apps/dev/src/demo/bookcaseStageDemo.tsx`.
+
+The schema inspector (#809) supports **collapsible groups** (`schema.groups` + `field.group`) and per-group **randomize / reset action buttons** (`{ type: "action", action: "randomize", group }`) — a studio panel reads like a pro tool (Carcass / Books sections with 🎲 randomize), not a flat slider dump.
