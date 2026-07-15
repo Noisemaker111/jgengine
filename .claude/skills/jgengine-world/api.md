@@ -1209,13 +1209,13 @@
 - `PadSize` (type): type PadSize = readonly [number, number] | { radius: number } — ⚠ undocumented
 - `PlotsWorldConfig` (interface): interface PlotsWorldConfig extends WorldGridConfig — ⚠ undocumented
 - `RainEnvironmentConfig` (interface): interface RainEnvironmentConfig — ⚠ undocumented
-- `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color"> > — ⚠ undocumented
+- `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented
 - `RoadEnvironmentConfig` (interface): interface RoadEnvironmentConfig — Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline.
 - `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. */ sidewalk: { width: number; color: string } | false; } — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
 - `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig — ⚠ undocumented
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented
 - `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig — ⚠ undocumented
-- `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color"> > — ⚠ undocumented
+- `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented
 - `StructureEnvironmentDescriptor` (type): type StructureEnvironmentDescriptor = BuildingEnvironmentDescriptor — ⚠ undocumented
 - `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
 - `TerrainColors` (interface): interface TerrainColors — ⚠ undocumented
@@ -1251,10 +1251,10 @@
 - `pad` (function): function pad(config: PadEnvironmentConfig): PadEnvironmentDescriptor — ⚠ undocumented
 - `padFlattenMasks` (function): function padFlattenMasks(pads: readonly PadEnvironmentDescriptor[]): readonly TerrainFlattenMask[] — Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it. Elevated pads (absolute `elevation`) float free and carve nothing.
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
-- `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, and wind.
+- `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
 - `sky` (function): function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor — ⚠ undocumented
-- `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, and wind.
+- `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.

@@ -137,12 +137,12 @@
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 - `ocean` (function): function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor — Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
-- `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, and wind.
+- `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 - `selectSpawnPoint` (function): function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a spawn point by game intent while keeping weighting mechanics internal.
-- `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, and wind.
+- `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.

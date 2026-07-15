@@ -206,19 +206,45 @@ export interface TerrainEnvironmentConfig {
 }
 
 export interface RainEnvironmentConfig {
+  /**
+   * `w`/`d`/`h` size a wrap-volume of raindrops **anchored to and re-centered on the camera every
+   * frame** — not a world-space region. `area.position` (and the `position` sugar below) has **no
+   * visual effect** on rain/snow: the shell's `RainField`/`SnowField` always run `followCamera` and
+   * never apply the mesh's transform, only `camera.position`. Keep `w`/`d`/`h` near camera scale
+   * (roughly 50-120 per axis) so drops stay a visible size at normal view distance — sizing the
+   * volume to a world region (e.g. matching a district's footprint) spreads the same drop count
+   * across that much more space until they're sub-pixel and the storm reads as empty sky, even
+   * though `summarizeEnvironment` shows the layer exists. Reach for `density`, `width`, and `opacity`
+   * to make a storm read heavier/taller instead of enlarging `area`.
+   */
   area?: EnvironmentArea;
-  /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own weather away from the origin. */
+  /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`. No visual effect on rain/snow (see `area`); kept for API symmetry with other weather-adjacent features. */
   position?: EnvironmentVec2;
   density?: number;
   speed?: number;
   dropLength?: number;
   wind?: EnvironmentVec2;
   color?: string;
+  /** Streak width of each raindrop quad, in world units. Default 0.018 — raise for a heavier-reading storm without enlarging `area`. */
+  width?: number;
+  /** Drop opacity, 0-1. Default 0.48 — raise for a denser-reading storm without enlarging `area`. */
+  opacity?: number;
 }
 
 export interface SnowEnvironmentConfig {
+  /**
+   * `w`/`d`/`h` size a wrap-volume of snowflakes **anchored to and re-centered on the camera every
+   * frame** — not a world-space region. `area.position` (and the `position` sugar below) has **no
+   * visual effect** on rain/snow: the shell's `RainField`/`SnowField` always run `followCamera` and
+   * never apply the mesh's transform, only `camera.position`. Keep `w`/`d`/`h` near camera scale
+   * (roughly 50-120 per axis) so flakes stay a visible size at normal view distance — sizing the
+   * volume to a world region (e.g. matching a district's footprint) spreads the same flake count
+   * across that much more space until they're sub-pixel and the storm reads as empty sky, even
+   * though `summarizeEnvironment` shows the layer exists. Reach for `density`, `flakeSize`, and
+   * `opacity` to make a storm read heavier instead of enlarging `area`.
+   */
   area?: EnvironmentArea;
-  /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own weather away from the origin. */
+  /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`. No visual effect on rain/snow (see `area`); kept for API symmetry with other weather-adjacent features. */
   position?: EnvironmentVec2;
   density?: number;
   speed?: number;
@@ -226,6 +252,8 @@ export interface SnowEnvironmentConfig {
   drift?: number;
   wind?: EnvironmentVec2;
   color?: string;
+  /** Flake opacity, 0-1. Default 0.86 — raise for a denser-reading storm without enlarging `area`. */
+  opacity?: number;
 }
 
 export interface GrassEnvironmentConfig {
@@ -321,11 +349,11 @@ export type TerrainIslandDescriptor = Omit<TerrainEnvironmentDescriptor, "kind">
 };
 
 export type RainEnvironmentDescriptor = { kind: "rain" } & Required<
-  Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color">
+  Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity">
 >;
 
 export type SnowEnvironmentDescriptor = { kind: "snow" } & Required<
-  Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color">
+  Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity">
 >;
 
 export type GrassEnvironmentDescriptor = { kind: "grass" } & Required<
@@ -626,30 +654,58 @@ function withAreaPosition(area: EnvironmentArea, position: EnvironmentVec2 | und
   return position !== undefined && area.position === undefined ? { ...area, position } : area;
 }
 
-/** Declares a rainfall weather effect for `environment()` — area, density, speed, and wind. */
+/**
+ * Practical ceiling (world units per axis) past which an author-specified rain/snow `area` is almost
+ * certainly a world-region size mistakenly handed to the camera-anchored wrap-volume — see the
+ * `area` doc on `RainEnvironmentConfig`/`SnowEnvironmentConfig`.
+ */
+const WEATHER_AREA_CAMERA_SCALE_HINT = 120;
+
+function warnIfOversizedWeatherArea(kind: "rain" | "snow", area: EnvironmentArea): void {
+  if (typeof console === "undefined") return;
+  if (
+    area.w <= WEATHER_AREA_CAMERA_SCALE_HINT &&
+    area.d <= WEATHER_AREA_CAMERA_SCALE_HINT &&
+    (area.h ?? 0) <= WEATHER_AREA_CAMERA_SCALE_HINT
+  ) {
+    return;
+  }
+  console.warn(
+    `[jgengine:${kind}] area ${area.w}x${area.d}x${area.h ?? "default"} is far larger than the camera-anchored wrap-volume ${kind}() actually renders — area.position is ignored, and an oversized area.w/d/h just spreads drops/flakes thinner until they're sub-pixel at normal view distance, not wider visible coverage. Keep area near camera scale (~50-120 per axis); use density/width/opacity (or flakeSize for snow) to make a storm read heavier instead.`,
+  );
+}
+
+/** Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity. */
 export function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor {
+  const area = withAreaPosition(config.area ?? { w: 256, d: 256, h: 80 }, config.position);
+  if (config.area !== undefined) warnIfOversizedWeatherArea("rain", area);
   return {
     kind: "rain",
-    area: withAreaPosition(config.area ?? { w: 256, d: 256, h: 80 }, config.position),
+    area,
     density: config.density ?? 0.65,
     speed: config.speed ?? 18,
     dropLength: config.dropLength ?? 0.8,
     wind: config.wind ?? [0, 0],
     color: config.color ?? "#9ec8ff",
+    width: config.width ?? 0.018,
+    opacity: config.opacity ?? 0.48,
   };
 }
 
-/** Declares a snowfall weather effect for `environment()` — area, density, drift, and wind. */
+/** Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity. */
 export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor {
+  const area = withAreaPosition(config.area ?? { w: 256, d: 256, h: 80 }, config.position);
+  if (config.area !== undefined) warnIfOversizedWeatherArea("snow", area);
   return {
     kind: "snow",
-    area: withAreaPosition(config.area ?? { w: 256, d: 256, h: 80 }, config.position),
+    area,
     density: config.density ?? 0.35,
     speed: config.speed ?? 2.4,
     flakeSize: config.flakeSize ?? 0.08,
     drift: config.drift ?? 0.4,
     wind: config.wind ?? [0, 0],
     color: config.color ?? "#ffffff",
+    opacity: config.opacity ?? 0.86,
   };
 }
 
