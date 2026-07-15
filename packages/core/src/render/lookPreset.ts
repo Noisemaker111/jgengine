@@ -5,8 +5,11 @@ import type { PostProcessingConfig } from "./postProcessing";
 /**
  * Named default-look preset composing the existing lighting/sky/fog/post knobs into one field.
  * `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky
- * with a view-following shadow-casting sun + hemisphere fill and a tuned tone-map/bloom/AO/vignette
- * post stack. `"flat"` opts out to the bare ambient+directional rig (the pre-#773 default).
+ * with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting
+ * environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post
+ * stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773).
+ * The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface
+ * detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
  * @capability default-look one field that lights a scene like a shipped game (opt out with "flat")
  */
 export type LookPreset = "cinematic" | "flat";

@@ -731,7 +731,7 @@ export interface PlayableGame<
   collision?: VoxelCollisionConfig;
   /** Movement-control levers (axis/grid constraints, object collision, pre-commit hook) for the shell-driven walk controller. */
   movement?: PlayerMovementConfig;
-  /** Default-look preset (#773). Unset/`"cinematic"` composes a real sky, a shadow-casting sun+hemisphere rig, and a tuned tone-map/bloom/AO/vignette post stack, so a scene reads lit-like-a-game out of the box; `"flat"` opts out to the bare ambient+directional default. Any explicit `lighting`/`backdrop`/`postProcessing` always wins. */
+  /** Default-look preset (#773). Unset/`"cinematic"` composes a real sky, a shadow-casting sun+hemisphere rig, a network-free image-based-lighting environment (soft PBR reflections), and a tuned tone-map/bloom/AO/vignette post stack, so a scene reads lit-like-a-game out of the box; `"flat"` opts out to the bare ambient+directional default. Upgraded default primitive materials (tuned PBR + subtle procedural surface detail) apply under both presets. Any explicit `lighting`/`backdrop`/`postProcessing` always wins. */
   look?: LookPreset;
   /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
   lighting?: LightingConfig;

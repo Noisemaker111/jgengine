@@ -108,6 +108,8 @@ import { VERSION } from "@jgengine/core/meta/changelog";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
 import { PostProcessing } from "./postfx/PostProcessing";
+import { DefaultSurface, detailMaps } from "./render/defaultSurface";
+import { EnvironmentLighting } from "./render/EnvironmentLighting";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { collisionDebug } from "./devtools/collisionDebug";
 import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
@@ -912,15 +914,15 @@ function EntityMarker({
       ) : sprite !== undefined ? (
         <EntitySprite sprite={sprite} />
       ) : role === "prop" ? (
-        <mesh position-y={0.5}>
-          <sphereGeometry args={[0.45, 16, 16]} />
-          <meshStandardMaterial color={color} />
+        <mesh position-y={0.5} castShadow receiveShadow>
+          <sphereGeometry args={[0.45, 24, 24]} />
+          <DefaultSurface color={color} />
         </mesh>
       ) : (
         <group scale={ctx.scene.entity.visualScaleOf(entityId)}>
-          <mesh position-y={0.95}>
+          <mesh position-y={0.95} castShadow receiveShadow>
             <capsuleGeometry args={[0.35, 1.1, 6, 14]} />
-            <meshStandardMaterial color={color} />
+            <DefaultSurface color={color} roughness={0.6} />
           </mesh>
           <mesh position={[0, 1.35, 0.32]}>
             <boxGeometry args={[0.16, 0.16, 0.16]} />
@@ -973,9 +975,9 @@ function ObjectMarker({
       ) : model !== undefined ? (
         <IsolatedEntityModel model={model} instanceId={instanceId} />
       ) : style?.hidden === true ? null : (
-        <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]}>
+        <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} />
+          <DefaultSurface color={color} transparent={opacity < 1} opacity={opacity} />
         </mesh>
       )}
     </group>
@@ -986,6 +988,10 @@ function GroundPlane() {
   const geometry = useMemo(() => {
     const next = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, GROUND_SEGMENTS, GROUND_SEGMENTS);
     const positions = next.attributes.position;
+    const base = new THREE.Color("#33452f");
+    const high = new THREE.Color("#4a5c3a");
+    const colors = new Float32Array(positions.count * 3);
+    const tmp = new THREE.Color();
     for (let index = 0; index < positions.count; index += 1) {
       const x = positions.getX(index);
       const y = positions.getY(index);
@@ -994,16 +1000,32 @@ function GroundPlane() {
         Math.cos(y * 0.11) * 0.1 +
         Math.sin((x + y) * 0.05) * 0.16;
       positions.setZ(index, height);
+      const blend = 0.5 + Math.sin(x * 0.21) * 0.25 + Math.cos(y * 0.17) * 0.25;
+      tmp.copy(base).lerp(high, Math.min(1, Math.max(0, blend)));
+      colors[index * 3] = tmp.r;
+      colors[index * 3 + 1] = tmp.g;
+      colors[index * 3 + 2] = tmp.b;
     }
+    next.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     next.computeVertexNormals();
     return next;
   }, []);
+  const material = useMemo(() => {
+    const normal = detailMaps().normal.clone();
+    normal.repeat.set(48, 48);
+    normal.needsUpdate = true;
+    return new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.95,
+      metalness: 0,
+      normalMap: normal,
+      normalScale: new THREE.Vector2(0.8, 0.8),
+      envMapIntensity: 0.4,
+    });
+  }, []);
+  useEffect(() => () => material.dispose(), [material]);
 
-  return (
-    <mesh rotation-x={-Math.PI / 2} geometry={geometry}>
-      <meshStandardMaterial color="#283729" roughness={0.9} metalness={0} />
-    </mesh>
-  );
+  return <mesh rotation-x={-Math.PI / 2} geometry={geometry} material={material} receiveShadow />;
 }
 
 function RockField() {
@@ -1031,9 +1053,11 @@ function RockField() {
           position={[rock.x, 0.25 * rock.scale, rock.z]}
           rotation={[0.1, rock.rotation, -0.08]}
           scale={[rock.scale * 1.4, rock.scale * 0.7, rock.scale]}
+          castShadow
+          receiveShadow
         >
-          <dodecahedronGeometry args={[0.8, 0]} />
-          <meshStandardMaterial color="#6b6f63" roughness={1} />
+          <dodecahedronGeometry args={[0.8, 1]} />
+          <DefaultSurface color="#6b6f63" roughness={0.95} />
         </mesh>
       ))}
     </>
@@ -1045,7 +1069,6 @@ function WorldEnvironment({ environment: Environment }: { environment: Component
   return (
     <>
       <GroundPlane />
-      <gridHelper args={[160, 80, "#3a3f4a", "#2b2f38"]} position-y={0.01} />
       <RockField />
     </>
   );
@@ -2057,6 +2080,7 @@ export function GamePlayerShell({
     postProcessing: playable.postProcessing,
     hasWorldSky: worldSky !== undefined,
   });
+  const cinematicLook = (playable.look ?? "cinematic") !== "flat";
   const backdrop = resolvedLook.backdrop;
   const backdropSky = backdrop?.sky !== undefined ? resolveSkyDescriptor(backdrop.sky) : undefined;
   const effectiveSky = backdropSky ?? worldSky;
@@ -2332,6 +2356,7 @@ export function GamePlayerShell({
         style={{ touchAction: "none" }}
       >
         {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
+        {cinematicLook ? <EnvironmentLighting /> : null}
         {lighting !== undefined ? (
           <ConfiguredLighting lighting={lighting} />
         ) : effectiveSky === undefined ? (
