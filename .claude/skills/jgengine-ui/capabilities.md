@@ -13,6 +13,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
 
+## default-look — one field that lights a scene like a shipped game (opt out with "flat")
+
+- `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/render/lookPreset"`
+
 ## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
@@ -52,6 +56,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/format/duration"`
+
+## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
+
+- `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/render/lookPreset"`
 
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 

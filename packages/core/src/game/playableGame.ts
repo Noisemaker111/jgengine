@@ -1,6 +1,7 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
 import type { PostProcessingConfig } from "../render/postProcessing";
+import type { LookPreset } from "../render/lookPreset";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GameOrientation } from "../ui/orientation";
@@ -714,6 +715,8 @@ export interface PlayableGame<
   collision?: VoxelCollisionConfig;
   /** Movement-control levers (axis/grid constraints, object collision, pre-commit hook) for the shell-driven walk controller. */
   movement?: PlayerMovementConfig;
+  /** Default-look preset (#773). Unset/`"cinematic"` composes a real sky, a shadow-casting sun+hemisphere rig, and a tuned tone-map/bloom/AO/vignette post stack, so a scene reads lit-like-a-game out of the box; `"flat"` opts out to the bare ambient+directional default. Any explicit `lighting`/`backdrop`/`postProcessing` always wins. */
+  look?: LookPreset;
   /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
   lighting?: LightingConfig;
   /** Generic background/sky/fog (#207.6), applied for any world kind including a custom `environment` component. */

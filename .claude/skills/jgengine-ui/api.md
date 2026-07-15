@@ -28,6 +28,15 @@
 - `mixHex` (function): function mixHex(from: string, to: string, t: number): string — Interpolate between two `#rrggbb` colors by fraction `t`, clamped to the endpoints.
 - `rgbToHex` (function): function rgbToHex(r: number, g: number, b: number): string — Combine `[r, g, b]` channels (0–255, rounded) into a `#rrggbb` hex string.
 
+## @jgengine/core/render/lookPreset
+
+- `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look.
+- `CINEMATIC_SKY` (const): const CINEMATIC_SKY: SkyEnvironmentConfig — A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill.
+- `GameLookInput` (interface): interface GameLookInput — Explicit graphics knobs a game may set; the preset only fills the ones left undefined.
+- `LookPreset` (type): type LookPreset = "cinematic" | "flat" — Named default-look preset composing the existing lighting/sky/fog/post knobs into one field. `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill and a tuned tone-map/bloom/AO/vignette post stack. `"flat"` opts out to the bare ambient+directional rig (the pre-#773 default).
+- `ResolvedGameLook` (interface): interface ResolvedGameLook — Concrete lighting/backdrop/post the shell renders after the preset has filled unset knobs.
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"cinematic"`, so a scene reads lit-like-a-game out of the box; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig).
+
 ## @jgengine/core/render/postProcessing
 
 - `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
