@@ -22,7 +22,7 @@ A genre-agnostic, pure-TypeScript game engine SDK built for AI coding agents. Ag
 | [`@jgengine/convex`](packages/convex) | Convex adapters: game transport, presence transport. |
 | [`@jgengine/shell`](packages/shell) | Game player shell: R3F canvas, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
 | [`@jgengine/assets`](packages/assets) | Self-generating, license-verified index of CC0 3D models: ships the typed index + pull CLI, not the GLB bytes. |
-| [`@jgengine/editor`](packages/editor) | Scene/world/asset editor, loaded lazily by the runner; agent bridge via `jgengine editor-mcp`. |
+| [`@jgengine/editor`](packages/editor) | Scene/world/asset editor, loaded lazily by the runner; runs standalone on any folder via `npx jgengine editor` or the desktop app (`StandaloneEditor`); agent bridge via `jgengine editor-mcp`. |
 | [`@jgengine/github`](packages/github) | GitHub data source: contribution calendar fetch for games that render real profile data. Zero dependencies. |
 | [`jgengine`](packages/jgengine) | Agent-side CLI (`npx jgengine`) — create, skills, doctor, desktop. **People** do not start here; they tell an agent *Make a game that … with jgengine*. |
 

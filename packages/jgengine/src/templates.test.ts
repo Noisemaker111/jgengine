@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   displayNameFromId,
+  editorScaffold,
   folderNameFromTitle,
   gameTemplate,
   IN_REPO_TSCONFIG_PATHS,
@@ -122,6 +123,21 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
 
   test("displayNameFromId title-cases", () => {
     expect(displayNameFromId("maze-muncher")).toBe("Maze Muncher");
+  });
+
+  test("editorScaffold mounts StandaloneEditor over the node editor host plugin", () => {
+    const files = editorScaffold("0.10.0");
+    const paths = new Set(files.map((file) => file.path));
+    for (const path of ["index.html", "package.json", "vite.config.ts", "src/index.css", "src/main.tsx"]) {
+      expect(paths.has(path)).toBe(true);
+    }
+    expect(fileOf(files, "src/main.tsx")).toContain("StandaloneEditor");
+    expect(fileOf(files, "src/main.tsx")).toContain("/__jgengine/manifest");
+    expect(fileOf(files, "vite.config.ts")).toContain("editorHostPlugin");
+    expect(fileOf(files, "vite.config.ts")).toContain("JG_EDITOR_DIR");
+    const pkg = JSON.parse(fileOf(files, "package.json")) as { dependencies: Record<string, string> };
+    expect(pkg.dependencies["@jgengine/editor"]).toBe("^0.10.0");
+    expect(pkg.dependencies["@jgengine/node"]).toBe("^0.10.0");
   });
 
   test("folderNameFromTitle dashes spaces and keeps casing", () => {

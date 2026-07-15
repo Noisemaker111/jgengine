@@ -1,7 +1,7 @@
 ﻿#!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
@@ -10,6 +10,7 @@ import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
 import { cliVersion, findUp, readPackageJson } from "../pkg";
 import { runSkills } from "../skills";
+import { editorScaffold } from "../templates";
 
 const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets", "editor"];
 
@@ -36,6 +37,9 @@ usage: jgengine <command> [...args]
                         [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]
   desktop [dir]         ship a Windows NSIS installer (local project or --url https://…)
                         [--url] [--name] [--id] [--version] [--icon] [--out] [--dry-run]
+  editor [dir]          open the standalone 3D scene editor on a folder (default cwd) —
+                        loads its editor.scene.json + models, Ctrl+S writes back
+                        [--assets <dir>] [--port <n>] [--out <workspace-dir>]
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
@@ -73,6 +77,52 @@ function runAssets(argv: string[]): number {
   return result.status ?? 1;
 }
 
+function runEditor(argv: string[]): number {
+  const positional: string[] = [];
+  let assetsDir: string | undefined;
+  let port: string | undefined;
+  let outDir: string | undefined;
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "--assets") assetsDir = argv[(i += 1)];
+    else if (arg === "--port") port = argv[(i += 1)];
+    else if (arg === "--out") outDir = argv[(i += 1)];
+    else if (!arg.startsWith("-")) positional.push(arg);
+  }
+
+  const targetDir = resolve(positional[0] ?? ".");
+  if (!existsSync(targetDir)) {
+    console.error(`error: folder not found: ${targetDir}`);
+    return 1;
+  }
+  const workspace = resolve(outDir ?? join(targetDir, ".jgengine-editor"));
+
+  for (const file of editorScaffold(cliVersion())) {
+    const dest = join(workspace, file.path);
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, file.contents);
+  }
+
+  if (!existsSync(join(workspace, "node_modules"))) {
+    console.error("jgengine editor: installing the editor workspace (first run only)…");
+    const install = spawnSync("bun", ["install"], { cwd: workspace, stdio: "inherit" });
+    if ((install.status ?? 1) !== 0) {
+      console.error("error: workspace install failed — is `bun` on PATH?");
+      return install.status ?? 1;
+    }
+  }
+
+  console.error(`jgengine editor: authoring ${targetDir} — Ctrl+S saves editor.scene.json`);
+  const env = {
+    ...process.env,
+    JG_EDITOR_DIR: targetDir,
+    ...(assetsDir === undefined ? {} : { JG_EDITOR_ASSETS: resolve(assetsDir) }),
+  };
+  const devArgs = ["run", "dev", ...(port === undefined ? [] : ["--", "--port", port])];
+  const result = spawnSync("bun", devArgs, { cwd: workspace, stdio: "inherit", env });
+  return result.status ?? 1;
+}
+
 function runEditorMcp(argv: string[]): number {
   const here = dirname(fileURLToPath(import.meta.url));
   const monorepoCli = join(here, "..", "..", "..", "editor", "src", "mcp", "cli.ts");
@@ -102,8 +152,10 @@ switch (command) {
   case "assets":
     process.exit(runAssets(rest));
     break;
-  case "editor-mcp":
   case "editor":
+    process.exit(runEditor(rest));
+    break;
+  case "editor-mcp":
     process.exit(runEditorMcp(rest));
     break;
   case "versions":

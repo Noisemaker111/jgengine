@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
@@ -7,6 +7,11 @@ import { resolveShellMultiplayer, type ShellMultiplayer } from "@jgengine/shell/
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import "./index.css";
+
+// Standalone scene editor — the same @jgengine/editor games ship, mounted over a blank world.
+const StandaloneEditor = lazy(async () => ({
+  default: (await import("@jgengine/editor")).StandaloneEditor,
+}));
 
 const gameModules = import.meta.glob<{ game: PlayableGame }>("../../../Games/*/src/index.tsx");
 
@@ -73,4 +78,21 @@ function DesktopApp() {
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} />;
 }
 
-createRoot(document.getElementById("root")!).render(<DesktopApp />);
+function Root() {
+  if (MODE === "editor") {
+    return (
+      <Suspense
+        fallback={
+          <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
+            Loading editor…
+          </div>
+        }
+      >
+        <StandaloneEditor sceneId={GAME_ID} />
+      </Suspense>
+    );
+  }
+  return <DesktopApp />;
+}
+
+createRoot(document.getElementById("root")!).render(<Root />);

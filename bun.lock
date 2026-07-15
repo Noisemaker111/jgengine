@@ -233,6 +233,7 @@
       "name": "@jgengine-apps/desktop",
       "version": "0.1.0",
       "dependencies": {
+        "@jgengine/editor": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
         "react-dom": "19.2.3",

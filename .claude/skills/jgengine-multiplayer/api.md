@@ -269,6 +269,12 @@
 - `handleSaveRequest` (function): function handleSaveRequest(resolveSrcDir: SrcDirResolver, body: string): SaveEndpointResponse — Applies one parsed save request against a resolved game `src/` directory.
 - `standaloneSavePlugin` (function): function standaloneSavePlugin(rootDir: string = process.cwd()): DevSavePluginShape — `devSavePlugin` preset for a standalone game project (one game, `src/` at the project root): every gameId maps to `<rootDir>/src`. Drop into the scaffolded `vite.config.ts` plugins array.
 
+## @jgengine/node/editorHostPlugin
+
+- `EditorHostOptions` (interface): interface EditorHostOptions — Where the standalone editor reads and writes: the scene folder and the model folder it scans.
+- `EditorManifest` (interface): interface EditorManifest — What the standalone editor loads on boot: the on-disk scene document (if any) and every model in the asset folder.
+- `EditorManifestAsset` (interface): interface EditorManifestAsset — One placeable model the standalone editor lists — a stable id and a URL the dev server serves it from.
+
 ## @jgengine/node/host
 
 - `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: { userId: strin… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
