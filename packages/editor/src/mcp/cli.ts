@@ -3,9 +3,9 @@
  * Headless editor control plane for agents.
  *
  * Usage:
- *   bun packages/editor/src/mcp/cli.ts --game borderlands2 --rpc '{"method":"scene_summary"}'
- *   bun packages/editor/src/mcp/cli.ts --game borderlands2 --serve
- *   bun packages/editor/src/mcp/cli.ts --game borderlands2 --stdio
+ *   bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"scene_summary"}'
+ *   bun packages/editor/src/mcp/cli.ts --game the-robots --serve
+ *   bun packages/editor/src/mcp/cli.ts --game the-robots --stdio
  */
 
 import { createEditorHost } from "../session";
@@ -17,7 +17,7 @@ import { EDITOR_MCP_TOOLS } from "./tools";
 function printHelp(): void {
   console.log(`jgengine editor-mcp
 
-  --game <id>          game id under Games/ (default borderlands2)
+  --game <id>          game id under Games/ (default the-robots)
   --port <n>           HTTP bridge port (default 17373)
   --rpc '<json>'       run one RPC and exit
   --stdio              MCP JSON-RPC over stdin/stdout
@@ -38,7 +38,7 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  let gameId = "borderlands2";
+  let gameId = "the-robots";
   let port = 17373;
   let rpcRaw: string | null = null;
   let serve = true;

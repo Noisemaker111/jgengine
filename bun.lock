@@ -11,29 +11,6 @@
         "typescript": "^5.9.3",
       },
     },
-    "Games/borderlands2": {
-      "name": "@games/borderlands2",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "^4.0.15",
-        "@types/react": "^19",
-        "@types/react-dom": "^19",
-        "@types/three": "^0.182.0",
-        "@vitejs/plugin-react": "^4.3.4",
-        "tailwindcss": "^4.0.15",
-        "typescript": "^5",
-        "vite": "^6.2.2",
-      },
-    },
     "Games/claudecraft": {
       "name": "@games/claudecraft",
       "version": "0.1.0",
@@ -418,6 +395,29 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/the-robots": {
+      "name": "@games/the-robots",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/tower-guard": {
       "name": "@games/tower-guard",
       "version": "0.1.0",
@@ -676,7 +676,7 @@
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.1.0",
+      "version": "0.10.0",
       "dependencies": {
         "@jgengine/core": "^0.9.0",
         "@jgengine/react": "^0.9.0",
@@ -736,7 +736,7 @@
       "name": "@jgengine/react",
       "version": "0.10.0",
       "dependencies": {
-        "@jgengine/core": "^0.9.0",
+        "@jgengine/core": "^0.10.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -753,9 +753,9 @@
       "name": "@jgengine/shell",
       "version": "0.10.0",
       "dependencies": {
-        "@jgengine/core": "^0.9.0",
-        "@jgengine/react": "^0.9.0",
-        "@jgengine/ws": "^0.9.0",
+        "@jgengine/core": "^0.10.0",
+        "@jgengine/react": "^0.10.0",
+        "@jgengine/ws": "^0.10.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -788,7 +788,7 @@
       "name": "@jgengine/ws",
       "version": "0.10.0",
       "dependencies": {
-        "@jgengine/core": "^0.9.0",
+        "@jgengine/core": "^0.10.0",
       },
     },
     "registry": {
@@ -913,8 +913,6 @@
 
     "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.2.8", "", {}, "sha512-WBA9elru6Jdp5df2mES55wuOO0WIrn3kpXnI4+W2ek5u3ZgLS9XS4gmIlcQhiZOWEKl95meYdvK7xI+ETLCq/Q=="],
 
-    "@games/borderlands2": ["@games/borderlands2@workspace:Games/borderlands2"],
-
     "@games/claudecraft": ["@games/claudecraft@workspace:Games/claudecraft"],
 
     "@games/clockwork-heist": ["@games/clockwork-heist@workspace:Games/clockwork-heist"],
@@ -946,6 +944,8 @@
     "@games/spire-cards": ["@games/spire-cards@workspace:Games/spire-cards"],
 
     "@games/star-invaders": ["@games/star-invaders@workspace:Games/star-invaders"],
+
+    "@games/the-robots": ["@games/the-robots@workspace:Games/the-robots"],
 
     "@games/tower-guard": ["@games/tower-guard@workspace:Games/tower-guard"],
 

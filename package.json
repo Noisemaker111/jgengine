@@ -37,7 +37,7 @@
     "host": "bun scripts/host-game.ts",
     "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
     "papercut": "bun scripts/papercut.ts",
-    "games:borderlands2": "bun run --cwd Games/borderlands2 dev",
+    "games:the-robots": "bun run --cwd Games/the-robots dev",
     "games:claudecraft": "bun run --cwd Games/claudecraft dev",
     "games:clockwork-heist": "bun run --cwd Games/clockwork-heist dev",
     "games:craterball": "bun run --cwd Games/craterball dev",

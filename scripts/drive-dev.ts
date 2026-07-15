@@ -115,7 +115,7 @@ function parseArgs(argv: string[]): Args {
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
   if (args.help) return args;
-  if (args.game === "") throw new Error("drive: pass a game id, e.g. bun run drive borderlands2 --click START");
+  if (args.game === "") throw new Error("drive: pass a game id, e.g. bun run drive the-robots --click START");
   if (!args.steps.some((step) => step.kind === "shot" || step.kind === "rpc")) {
     args.steps.push({ kind: "shot", name: "drive" });
   }

@@ -13,7 +13,7 @@ Authoring or inspecting spatial game data: terrain context, player/mob/boss spaw
 
 ```
 bun run dev:runner
-# http://localhost:<port>/?game=borderlands2&mode=editor
+# http://localhost:<port>/?game=the-robots&mode=editor
 # http://localhost:<port>/?game=vice-isle&mode=editor
 ```
 
@@ -88,16 +88,16 @@ window.__jgengineEditorHost.handle({ method: "export_document" })
 Headless against the live rendered editor (screenshots + RPC in one run):
 
 ```
-bun run drive borderlands2 --mode editor --wait 3000 --rpc '{"method":"editor_status"}' --shot check
-bun run drive borderlands2 --mode editor --rpc '{"method":"set_mode","mode":"play"}' --wait 2000 --shot playing
+bun run drive the-robots --mode editor --wait 3000 --rpc '{"method":"editor_status"}' --shot check
+bun run drive the-robots --mode editor --rpc '{"method":"set_mode","mode":"play"}' --wait 2000 --shot playing
 ```
 
 Headless document tools (no WebGL — document verbs only, no camera/perf):
 
 ```
-bun packages/editor/src/mcp/cli.ts --game borderlands2 --rpc '{"method":"list_layers"}'
-bun packages/editor/src/mcp/cli.ts --game borderlands2 --serve   # POST localhost:17373/rpc
-bun packages/editor/src/mcp/cli.ts --game borderlands2 --stdio   # MCP JSON-RPC on stdin/stdout
+bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"list_layers"}'
+bun packages/editor/src/mcp/cli.ts --game the-robots --serve   # POST localhost:17373/rpc
+bun packages/editor/src/mcp/cli.ts --game the-robots --stdio   # MCP JSON-RPC on stdin/stdout
 ```
 
 Viewport: click anything to select — editor gizmos hit directly, world geometry snaps to the nearest marker/volume/path/note, repeat-click cycles stacked candidates, shift/ctrl-click multi-selects — then TransformControls (W move / E rotate marker / R scale volume: radius, cylinder height, or box half-extents). Multi-selection drags move every selected object. Snap button cycles ground / grid / off (grid also snaps rotation to 15°); `G` toggles the reference grid. Outliner groups by kind (notes included) with ×N dedup rows; `N` cycles instances of the selected row; ctrl-click adds to selection.
