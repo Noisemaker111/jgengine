@@ -1,4 +1,13 @@
 export { EditorApp, type EditorAppProps, type EditorSaveFn } from "./EditorApp";
+export {
+  StandaloneEditor,
+  createBlankPlayable,
+  blankWorld,
+  downloadSaver,
+  type StandaloneEditorProps,
+  type StandaloneAsset,
+  type BlankPlayableOptions,
+} from "./StandaloneEditor";
 export { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
 export { EditorChrome } from "./EditorChrome";
 export { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";

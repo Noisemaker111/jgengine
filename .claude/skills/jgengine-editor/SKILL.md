@@ -30,6 +30,38 @@ export default defineConfig({ plugins: [react(), tailwindcss(), standaloneSavePl
 
 Monorepo-shaped hosts use the general form — `devSavePlugin((gameId) => srcDirFor(gameId))` — and `handleSaveRequest` is the transport-free core for a non-Vite dev server.
 
+## Standalone — the editor without a game (any project)
+
+The same editor runs **gameless**, on any folder, for people who aren't building a jgengine game. Two zero-config entry points, one shared seam:
+
+```
+npx jgengine editor [dir]     # open the 3D editor on a folder (default cwd); Ctrl+S writes dir/editor.scene.json
+                              # [--assets <dir>] pick the model folder · [--port <n>] · [--out <workspace>]
+```
+
+`jgengine editor` scaffolds a tiny Vite workspace (`.jgengine-editor/`) and serves the target folder: its `editor.scene.json` opens as the scene and every `.glb`/`.gltf` under it (or `--assets`) becomes a placeable asset. The **desktop app** exposes the identical editor at `?mode=editor` — no game loaded, blank world. Both mount `@jgengine/editor`'s `StandaloneEditor`, which drops the editor over a blank flat world instead of a game (a slim strip also lets you **📂 Open scene** / **🧊 Add assets** at runtime):
+
+```tsx
+import { StandaloneEditor, createBlankPlayable, blankWorld, downloadSaver } from "@jgengine/editor";
+
+// Turn-key: blank world, built-in pickers, Save → dev-server endpoint or a browser download.
+<StandaloneEditor sceneId="my-scene" save={downloadSaver("scene.json")} />;
+
+// Or build the gameless host yourself and mount EditorApp over it:
+const playable = createBlankPlayable({ assets: [{ id: "tree", url: "/models/tree.glb" }], world: blankWorld("seed") });
+```
+
+The server half is `@jgengine/node/editorHostPlugin` — a Vite plugin that serves the folder's scene + models at `/__jgengine/manifest`, streams model bytes, and writes Save back. `buildEditorManifest(sceneDir, assetsDir)` is its pure core (read the scene, scan the folder); `editorScaffold(engineVersion)` (from `@jgengine/jgengine/templates`) emits the workspace files:
+
+```ts
+import { editorHostPlugin, buildEditorManifest } from "@jgengine/node/editorHostPlugin";
+import { editorScaffold } from "@jgengine/jgengine/templates";
+
+export default defineConfig({ plugins: [react(), editorHostPlugin({ dir: process.cwd() })] });
+const manifest = buildEditorManifest(sceneDir, assetsDir); // { scene, assets: [{ id, url, label }] }
+const files = editorScaffold("0.10.0");                    // index.html, vite.config.ts, src/main.tsx, …
+```
+
 ## Modes: edit · walk · play
 
 - **edit** — frozen sim, orbit inspection camera, gizmos and chrome.

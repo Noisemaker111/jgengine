@@ -34,6 +34,8 @@ export default defineConfig({
       { find: /^@jgengine\/ws\/(.*)$/, replacement: `${src("ws")}/$1` },
       { find: /^@jgengine\/convex\/(.*)$/, replacement: `${src("convex")}/$1` },
       { find: /^@jgengine\/shell\/(.*)$/, replacement: `${src("shell")}/$1` },
+      { find: /^@jgengine\/editor$/, replacement: `${src("editor")}/index.ts` },
+      { find: /^@jgengine\/editor\/(.*)$/, replacement: `${src("editor")}/$1` },
       { find: /^@jgengine\/github$/, replacement: `${src("github")}/index.ts` },
       { find: /^@jgengine\/github\/(.*)$/, replacement: `${src("github")}/$1` },
       { find: /^@jgengine\/assets$/, replacement: `${src("assets")}/index.ts` },
