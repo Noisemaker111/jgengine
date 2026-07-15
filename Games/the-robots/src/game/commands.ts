@@ -5,6 +5,7 @@ import { gearById, AMMO_PRICES } from "./items/gear/catalog";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { activeCharacter, characterById, pickCharacter, talentTree, bonus } from "./characters";
 import { noteEquipped } from "./feel";
+import { currentSaveStore } from "./save";
 import { gunById, rollGun, startReload, ffylPhase } from "./handroll";
 import { player } from "./entities/players/catalog";
 import { session } from "./session";
@@ -372,6 +373,7 @@ export function registerCommands(ctx: GameContext): void {
       characterIdStore.write(state, def.id);
       applyPassiveEffects(state);
       setGamePhase(state, "playing");
+      persistBuild();
       state.scene.entity.floatText({
         instanceId: state.player.userId,
         text: `${def.name.toUpperCase()} — ${def.className.toUpperCase()}`,
@@ -393,8 +395,39 @@ export function registerCommands(ctx: GameContext): void {
       talentRanksStore.write(state, tree.snapshot().ranks);
       state.scene.entity.stats.set(state.player.userId, "skillPoints", { current: tree.pointsAvailable() });
       applyPassiveEffects(state, before);
+      persistBuild();
     },
   });
+}
+
+function persistBuild(): void {
+  const tree = talentTree();
+  currentSaveStore().set({
+    characterId: activeCharacter()?.id ?? null,
+    talents: tree === null ? null : tree.snapshot(),
+  });
+}
+
+/** Load the selected slot and, if it holds a build, restore the character + talent tree and drop straight into play; otherwise open character select. Called once per boot from the loop. */
+export function restoreSavedBuild(ctx: GameContext): void {
+  void currentSaveStore()
+    .load()
+    .then((save) => {
+      if (save.characterId !== null && activeCharacter() === null) {
+        const def = pickCharacter(save.characterId);
+        const tree = talentTree();
+        if (def !== null && tree !== null) {
+          if (save.talents !== null) tree.hydrate(save.talents);
+          characterIdStore.write(ctx, def.id);
+          talentRanksStore.write(ctx, tree.snapshot().ranks);
+          ctx.scene.entity.stats.set(ctx.player.userId, "skillPoints", { current: tree.pointsAvailable() });
+          applyPassiveEffects(ctx);
+          setGamePhase(ctx, "playing");
+          return;
+        }
+      }
+      if (activeCharacter() === null) setGamePhase(ctx, "menu");
+    });
 }
 
 function applyPassiveEffects(ctx: GameContext, previousHealthMult = 1): void {
