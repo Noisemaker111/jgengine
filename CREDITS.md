@@ -57,17 +57,6 @@ credit the originators here, in the game's on-screen HUD, and on its page at
 jgengine.com/games/&lt;id&gt; (via the `credit` field in
 [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts)).
 
-### Gearbox Software — *Borderlands 2 Demake*
-
-**[Borderlands 2 Demake](Games/borderlands2)** is a fan demake homage to
-**[Gearbox Software](https://www.borderlands.com)**'s *Borderlands 2* (2012).
-The procedurally generated guns (manufacturer × rarity × element), shield/health
-split, elemental damage matrix, slag, Fight For Your Life second winds, New-U
-respawn fee, Fyrestone, Claptrap, and Captain Flynt are all their design
-vocabulary, re-implemented from scratch on the engine with no Gearbox assets or
-code. Borderlands is a trademark of Gearbox Enterprises; this demake is
-unaffiliated fan work.
-
 ### Ethan Mollick — *Monument*
 
 **[Monument](Games/monument)** is a full port of

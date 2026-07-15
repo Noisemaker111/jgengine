@@ -45,23 +45,15 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "WASD · mouse fire · E grab/shop · G frag · Q medkit · 1-3 weapons",
     hue: "#f87171",
   },
-  borderlands2: {
-    title: "Borderlands 2 Demake",
-    tagline: "Bazillions of procedurally generated guns, one dusty demake of Pandora.",
+  "the-robots": {
+    title: "The Robots",
+    tagline: "Salvage a bazillion procedurally-forged guns from a dead machine-world.",
     description:
-      "A fan demake homage to Gearbox's Borderlands 2. Pick one of three Vault Hunters — Salvador, Maya, or Zer0, each with a unique three-branch skill tree — and follow the campaign across six zones of Pandora, from Windshear Waste to The Warrior at Hero's Pass. Every gun is procedurally rolled (manufacturer, rarity, element), shields recharge, elements burn, shock, and corrode, and going down starts Fight For Your Life: get a kill for a Second Wind or pay the New-U station its cut.",
+      "A first-person looter-shooter on the scrap-world of Ferralon. Reactivate one of three rogue Reclaimer units — the brawler GUNK, the warden NYX, or the ghost CIPHER, each with a three-branch skill tree — and fight the derelict foundries' war-frames across the wastes to the Colossus. Every gun is procedurally forged (foundry, rarity, element), shields recharge, rounds burn, shock, and corrode, and going down opens a Reboot Window: land a kill for a Power Surge or pay the Rebuild terminal its cut.",
     genre: "First-person looter-shooter",
     category: "Action & Arcade",
     controls: "WASD · mouse fire · R reload · E interact · G grenade · Q heal · K skills · 1-4 weapons",
     hue: "#ff9a00",
-    credit: {
-      name: "Gearbox Software",
-      label: "Original game",
-      handle: "GearboxOfficial",
-      href: "https://www.borderlands.com",
-      avatar: "https://unavatar.io/x/GearboxOfficial",
-      source: { name: "Borderlands 2", href: "https://www.borderlands.com" },
-    },
   },
   claudecraft: {
     title: "World of ClaudeCraft",

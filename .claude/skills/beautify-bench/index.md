@@ -1,6 +1,6 @@
 # Beautify bench — run log
 
-Task: borderlands2 starter area (see SKILL.md). Append-only; one row per run. `tokens`/`minutes` include all worker resumes. `quality` judged by the orchestrator on the default spawn `--mode play` shot (0-5).
+Task: the-robots starter area (see SKILL.md). Append-only; one row per run. `tokens`/`minutes` include all worker resumes. `quality` judged by the orchestrator on the default spawn `--mode play` shot (0-5).
 
 | run | date | main commit | model | lever tested | tokens | minutes | iterations | quality | comment |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

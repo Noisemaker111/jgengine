@@ -11,7 +11,7 @@ A repeatable harness for improving the **process** behind "make this game look b
 
 ## The benchmark task
 
-Default: **"Make the starter area, terrain and environment of the `borderlands2` game look a lot better. Materials, textures, assets, models, icons — do it all."** Runs may build on the previous run's world state — the task is judged on *delta and cost*, not on starting from zero. Swap in another game only with a new index section, never mid-series.
+Default: **"Make the starter area, terrain and environment of the `the-robots` game look a lot better. Materials, textures, assets, models, icons — do it all."** Runs may build on the previous run's world state — the task is judged on *delta and cost*, not on starting from zero. Swap in another game only with a new index section, never mid-series.
 
 ## Protocol (one run)
 

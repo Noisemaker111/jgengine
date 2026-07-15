@@ -151,7 +151,7 @@ const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 const P2P_ROLE = urlParams.get("p2p");
 
-const FEATURED_GAMES = ["borderlands2", "monument", "claudecraft", "loot-shooter"] as const;
+const FEATURED_GAMES = ["the-robots", "monument", "claudecraft", "loot-shooter"] as const;
 
 function GamePicker() {
   const ids = Object.keys(gameRegistry).sort();
@@ -205,8 +205,8 @@ function GamePicker() {
           </div>
         </div>
         <p className="mt-8 text-[11px] text-neutral-500">
-          Direct URLs: <code className="text-neutral-400">?game=borderlands2</code> ·{" "}
-          <code className="text-neutral-400">?game=borderlands2&amp;mode=editor</code>
+          Direct URLs: <code className="text-neutral-400">?game=the-robots</code> ·{" "}
+          <code className="text-neutral-400">?game=the-robots&amp;mode=editor</code>
         </p>
       </div>
     </div>
