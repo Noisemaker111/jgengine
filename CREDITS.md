@@ -50,6 +50,10 @@ documents gaps (reparenting and mid-bootstrap deactivation re-check effective
 activity). The lifecycle model, its ordering guarantees, and the lazy-dispatch
 idea are his. three-start is MIT-licensed; go star it.
 
+## Majid Manzarpour (threejs-game-skills)
+
+The **[`references/visual-scorecard.md`](.claude/skills/jgengine-ui/references/visual-scorecard.md)** rubric in the `jgengine-ui` skill adapts the structure — a 0–3 scale, ten scored categories, premium/showcase pass thresholds, an automatic-failure list, and a fresh-eyes take-the-lower-score reconciliation — of `visual-scorecard.md` from **[threejs-game-skills](https://github.com/majidmanzarpour/threejs-game-skills)** by **[Majid Manzarpour](https://x.com/majidmanzarpour)** (MIT License). Every category, threshold, and example is reworded for this engine's own terms (`environment()`, `AuthoredScene`, `InstancedScatter`, `summarizeEnvironment`) and none of the source repo's prose or assets were copied — only the rubric shape.
+
 ## Game concepts
 
 Some of the games in `Games/*` are our own take on someone else's idea. We
