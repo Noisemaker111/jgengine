@@ -24,6 +24,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createLeaderTrail` (function) · `import { createLeaderTrail } from "@jgengine/core/movement/leaderTrail"`
 
+## footprint-grid — multi-cell footprint occupancy/reservation on a shared build grid
+
+- `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world/footprintGrid"`
+
 ## glide — gliding/wingsuit descent control from a launch
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/movement/glideModel"`
@@ -51,3 +55,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## skill-check — a timing-bar skill check where you release inside a zone
 
 - `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/interaction/skillCheck"`
+
+## visitor-loop — many-agent seek/travel/dwell/depart state machine over weighted POIs
+
+- `createVisitorLoop` (function) · `import { createVisitorLoop } from "@jgengine/core/ai/crowd"`

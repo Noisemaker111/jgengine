@@ -232,6 +232,62 @@ export function WorldNameplates({
   );
 }
 
+/** Props for {@link WorldObjectHighlights}. */
+export interface WorldObjectHighlightsProps {
+  /** Ring tint. Default a construction-select amber. */
+  color?: string;
+  /** Fixed ring radius; omitted derives one from the object's catalog `halfExtents` (falls back to 1.2). */
+  radius?: number;
+  /** Ground offset so the ring doesn't z-fight the object's base. Default 0.05. */
+  y?: number;
+}
+
+/**
+ * Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart
+ * to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are
+ * imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay`
+ * against external state.
+ *
+ * @capability world-object-highlights ground-ring highlight over every selected placed object
+ */
+export function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps) {
+  const ctx = useGameContext();
+  const [ids, setIds] = useState<readonly string[]>(() => ctx.scene.object.selection.list());
+  useEffect(() => {
+    setIds(ctx.scene.object.selection.list());
+    return ctx.subscribe(() => setIds(ctx.scene.object.selection.list()));
+  }, [ctx]);
+  return (
+    <>
+      {ids.map((id) => {
+        const object = ctx.scene.object.get(id);
+        if (object === null) return null;
+        const halfExtents = ctx.scene.object.catalog(id)?.halfExtents;
+        const ringRadius =
+          radius ?? (halfExtents === undefined ? 1.2 : Math.max(halfExtents[0], halfExtents[2]) * 1.35);
+        return (
+          <mesh
+            key={id}
+            position={[object.position[0], object.position[1] + y, object.position[2]]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            renderOrder={998}
+          >
+            <ringGeometry args={[ringRadius * 0.82, ringRadius, 40]} />
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={0.85}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        );
+      })}
+    </>
+  );
+}
+
 interface Floater {
   id: number;
   position: [number, number, number];

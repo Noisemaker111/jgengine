@@ -701,7 +701,6 @@
   "@jgengine/core/economy/wallet#WalletState",
   "@jgengine/core/economy/wallet#balance",
   "@jgengine/core/economy/wallet#canAfford",
-  "@jgengine/core/economy/wallet#charge",
   "@jgengine/core/economy/wallet#chargeAll",
   "@jgengine/core/economy/wallet#grant",
   "@jgengine/core/faction/factions#FactionDef",

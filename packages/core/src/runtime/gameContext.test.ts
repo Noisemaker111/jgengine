@@ -314,6 +314,56 @@ describe("createGameContext", () => {
     unsubscribe();
   });
 
+  test("ctx.touch bumps version and notifies subscribers without touching any subsystem", () => {
+    const ctx = makeContext();
+    let notified = 0;
+    const unsubscribe = ctx.subscribe(() => {
+      notified += 1;
+    });
+    const before = ctx.version();
+    ctx.touch();
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(notified).toBe(1);
+    unsubscribe();
+  });
+
+  test("scene.entity.moveTowardCommit steps and commits the pose in one call", () => {
+    const ctx = makeContext();
+    const id = ctx.scene.entity.spawn("villager", { position: [0, 0, 0], rotationY: 0 });
+    const next = ctx.scene.entity.moveTowardCommit(id, [10, 0, 0], { speed: 2, dt: 1 });
+    expect(next).toEqual([2, 0, 0]);
+    expect(ctx.scene.entity.get(id)?.position).toEqual([2, 0, 0]);
+    expect(ctx.scene.entity.get(id)?.rotationY).toBe(0);
+  });
+
+  test("scene.entity.moveTowardCommit with face turns the entity toward its travel direction", () => {
+    const ctx = makeContext();
+    const north = ctx.scene.entity.spawn("villager", { position: [0, 0, 0], rotationY: 1 });
+    ctx.scene.entity.moveTowardCommit(north, [0, 0, 10], { speed: 2, dt: 1, face: true });
+    expect(ctx.scene.entity.get(north)?.rotationY).toBeCloseTo(0);
+
+    const east = ctx.scene.entity.spawn("villager", { position: [0, 0, 0], rotationY: 1 });
+    ctx.scene.entity.moveTowardCommit(east, [10, 0, 0], { speed: 2, dt: 1, face: true });
+    expect(ctx.scene.entity.get(east)?.rotationY).toBeCloseTo(Math.PI / 2);
+  });
+
+  test("scene.entity.moveTowardCommit returns null and commits nothing for an unknown instance", () => {
+    const ctx = makeContext();
+    expect(ctx.scene.entity.moveTowardCommit("missing", [1, 0, 0], { speed: 1, dt: 1 })).toBeNull();
+  });
+
+  test("scene.object.selection is reactive and clears a removed instance", () => {
+    const ctx = makeContext();
+    const crate = ctx.scene.object.place("crate", 0, 0, 0);
+    const before = ctx.version();
+    ctx.scene.object.selection.add(crate);
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(ctx.scene.object.selection.list()).toEqual([crate]);
+
+    ctx.scene.object.remove(crate);
+    expect(ctx.scene.object.selection.has(crate)).toBe(false);
+  });
+
   test("item use fires a lethal effect and entity.died reaches a bound feed", () => {
     const ctx = makeContext();
     const unbind = ctx.game.feed.bind("entity.died");
@@ -437,6 +487,20 @@ describe("createGameContext", () => {
     expect(ctx.player.inventory.count("backpack", "potion")).toBe(3);
     expect(ctx.scene.entity.stats.get("user_a", "health")).toEqual({ current: 80, max: 100, min: 0 });
     expect(ctx.game.economy.balance("user_a", "gold")).toBe(25);
+  });
+
+  test("economy.charge rejects into the red by default, then succeeds with overdraft opted in", () => {
+    const ctx = makeContext();
+    expect(ctx.game.economy.charge("user_a", "gold", 50)).toEqual({ reason: "insufficient-funds" });
+    expect(ctx.game.economy.isOverdrawn("user_a", "gold")).toBe(false);
+
+    expect(ctx.game.economy.charge("user_a", "gold", 50, { overdraft: true })).toBeNull();
+    expect(ctx.game.economy.balance("user_a", "gold")).toBe(-50);
+    expect(ctx.game.economy.isOverdrawn("user_a", "gold")).toBe(true);
+
+    ctx.game.economy.grant("user_a", "gold", 60);
+    expect(ctx.game.economy.balance("user_a", "gold")).toBe(10);
+    expect(ctx.game.economy.isOverdrawn("user_a", "gold")).toBe(false);
   });
 
   test("rejected loadout leaves inventory untouched", () => {

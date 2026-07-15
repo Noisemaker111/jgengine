@@ -68,3 +68,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## start-screen — headless title/attract overlay the game fills and skins
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
+
+## world-object-highlights — ground-ring highlight over every selected placed object
+
+- `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/shell/world/WorldHud"`

@@ -342,6 +342,7 @@
 - `GameContextTurn` (interface): interface GameContextTurn — ⚠ undocumented
 - `GameContextWorld` (interface): interface GameContextWorld — ⚠ undocumented
 - `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented
+- `MoveTowardCommitOptions` (interface): interface MoveTowardCommitOptions extends MoveTowardOptions — Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn.
 - `SceneEntityContext` (interface): interface SceneEntityContext — ⚠ undocumented
 - `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
 - `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
