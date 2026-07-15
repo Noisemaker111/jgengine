@@ -4,6 +4,7 @@ import {
   environment,
   grass,
   ocean,
+  rain,
   road,
   sky,
   terrain,
@@ -55,6 +56,14 @@ export const world: EnvironmentWorldFeature = environment({
     flatten: cityFlatten,
   }),
   sky: sky({ preset: "day", timeOfDay: true }),
+  weather: rain({
+    area: { w: 220, d: 220, h: 70, position: [40, -60] },
+    density: 0.32,
+    speed: 15,
+    dropLength: 0.7,
+    wind: [1.5, 0.5],
+    color: "#bfe0ff",
+  }),
   roads: streets,
   water: [
     ocean({

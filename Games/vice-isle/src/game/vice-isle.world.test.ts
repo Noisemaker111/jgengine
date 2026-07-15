@@ -42,4 +42,12 @@ describe("vice-isle world", () => {
     expect(districtAt(500, 500)).toBeNull();
     expect(roadPoints(20).length).toBeGreaterThan(100);
   });
+
+  test("a tropical rain system rolls in over downtown", () => {
+    expect(summary.counts.weatherSystems).toBe(1);
+    const [rain] = summary.weather;
+    expect(rain?.kind).toBe("rain");
+    expect(rain?.area.position).toEqual([40, -60]);
+    expect(rain?.density).toBeGreaterThan(0);
+  });
 });
