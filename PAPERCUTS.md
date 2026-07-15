@@ -202,3 +202,7 @@ uploading PR screenshots to pr-shots via GitHub MCP create_or_update_file → ba
 2026-07-15T03:25:12.661Z — Claude Sonnet 5 — Claude
 
 shoot/drive dev server reuse (ensureDevServer's isUp(DEV_BASE) check on fixed port 4517) silently attaches to ANY already-running vite server, including a sibling worktree's — screenshots showed a different worktree's unmodified game code with zero indication of the mismatch
+
+2026-07-15T03:32:50.141Z — Claude Sonnet 5 — Claude
+
+bun run pr-shots inside a git worktree → EFAULT rm .git/pr-shots-index-<pid> — script hardcodes indexFile relative to .git assuming it's a directory, but a worktree's .git is a pointer file
