@@ -40,6 +40,7 @@
     "papercut": "bun scripts/papercut.ts",
     "games:the-robots": "bun run --cwd Games/the-robots dev",
     "games:claudecraft": "bun run --cwd Games/claudecraft dev",
+    "games:duet-keys": "bun run --cwd Games/duet-keys dev",
     "games:loopline": "bun run --cwd Games/loopline dev",
     "games:spire-cards": "bun run --cwd Games/spire-cards dev",
     "games:starhome": "bun run --cwd Games/starhome dev",
