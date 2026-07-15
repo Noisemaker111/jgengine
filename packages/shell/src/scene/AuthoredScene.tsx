@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
 import type { EditorDocument } from "@jgengine/core/editor/index";
-import { buildRoadRibbon } from "@jgengine/core/world/roads";
+import { buildRoadRibbon, roundPathCorners } from "@jgengine/core/world/roads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/world/scatterRegion";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
@@ -23,9 +23,11 @@ function DrapedPath({
   field: TerrainField;
 }) {
   const geometry = useMemo(() => {
-    const ribbon = buildRoadRibbon(points, width, (x, z) => field.sampleHeight(x, z), {
-      elevation: 0.06,
-      maxSegmentLength: 2,
+    // Fillet sharp turns first so bends read as smooth arcs, not overlapping rectangles.
+    const rounded = roundPathCorners(points, Math.max(1.5, width * 0.9), 6);
+    const ribbon = buildRoadRibbon(rounded, width, (x, z) => field.sampleHeight(x, z), {
+      elevation: 0.18,
+      maxSegmentLength: 1,
     });
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(ribbon.positions, 3));

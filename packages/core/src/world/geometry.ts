@@ -30,6 +30,39 @@ export interface AvoidZone {
 }
 
 /**
+ * A clearance *corridor* along a polyline (a path/road): scatter is repelled within `halfWidth` of
+ * the centerline, feathered over the outer band. Clean straight edges — unlike approximating a
+ * corridor with a scalloped chain of discs.
+ */
+export interface AvoidCorridor {
+  points: readonly Vec2[];
+  halfWidth: number;
+  feather?: number;
+}
+
+/** A clearance region: point discs (spawns/plots) plus centerline corridors (paths). */
+export interface AvoidMasks {
+  discs: readonly AvoidZone[];
+  corridors: readonly AvoidCorridor[];
+}
+
+function bandInfluence(dist: number, radius: number, feather: number): number {
+  if (dist >= radius) return 0;
+  const inner = radius - Math.max(0, feather);
+  return dist <= inner || feather <= 0 ? 1 : (radius - dist) / feather;
+}
+
+/** Perpendicular distance from a point to a polyline segment [a,b] on the XZ plane. */
+function distanceToSegment(px: number, pz: number, a: Vec2, b: Vec2): number {
+  const dx = b[0] - a[0];
+  const dz = b[1] - a[1];
+  const lenSq = dx * dx + dz * dz || 1;
+  let t = ((px - a[0]) * dx + (pz - a[1]) * dz) / lenSq;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  return Math.hypot(px - (a[0] + dx * t), pz - (a[1] + dz * t));
+}
+
+/**
  * How strongly a point falls inside a clearance zone: 1 at/inside the solid core, ramping to 0 at
  * the zone's outer `radius` across its `feather` band, 0 outside. The max over all zones.
  * @internal — the falloff math behind scatter avoid and terrain flatten.
@@ -37,11 +70,29 @@ export interface AvoidZone {
 export function zoneInfluence(x: number, z: number, zones: readonly AvoidZone[]): number {
   let best = 0;
   for (const zone of zones) {
-    const dist = Math.hypot(x - zone.x, z - zone.z);
-    if (dist >= zone.radius) continue;
-    const feather = zone.feather ?? 0;
-    const inner = zone.radius - Math.max(0, feather);
-    const t = dist <= inner || feather <= 0 ? 1 : (zone.radius - dist) / feather;
+    const t = bandInfluence(Math.hypot(x - zone.x, z - zone.z), zone.radius, zone.feather ?? 0);
+    if (t > best) best = t;
+  }
+  return best;
+}
+
+/** Clearance influence of a corridor: nearest-segment distance vs `halfWidth`, feathered. @internal */
+export function corridorInfluence(x: number, z: number, corridor: AvoidCorridor): number {
+  const { points, halfWidth } = corridor;
+  const feather = corridor.feather ?? 0;
+  let best = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    const t = bandInfluence(distanceToSegment(x, z, points[i - 1]!, points[i]!), halfWidth, feather);
+    if (t > best) best = t;
+  }
+  return best;
+}
+
+/** Combined clearance influence of discs + corridors — the max over every mask. @internal */
+export function masksInfluence(x: number, z: number, masks: AvoidMasks): number {
+  let best = zoneInfluence(x, z, masks.discs);
+  for (const corridor of masks.corridors) {
+    const t = corridorInfluence(x, z, corridor);
     if (t > best) best = t;
   }
   return best;

@@ -288,3 +288,35 @@ describe("clearance zones — scatter avoid", () => {
     expect(clearanceZonesFrom(doc, { kinds: [] }).length).toBe(1);
   });
 });
+
+describe("path corridor clearance", () => {
+  test("a non-scatter path clears a clean straight corridor of foliage", () => {
+    const doc = {
+      version: 1 as const,
+      markers: [],
+      volumes: [],
+      paths: [
+        { id: "road", kind: "route", points: [{ x: -20, y: 0, z: 0 }, { x: 20, y: 0, z: 0 }], width: 4, meta: { clearance: 2 } },
+        {
+          id: "field",
+          kind: SCATTER_PATH_KIND,
+          points: [
+            { x: -20, y: 0, z: -20 },
+            { x: 20, y: 0, z: -20 },
+            { x: 20, y: 0, z: 20 },
+            { x: -20, y: 0, z: 20 },
+          ],
+          meta: { density: 1, minSpacing: 1 },
+        },
+      ],
+      annotations: [],
+    };
+    const instances = resolveScatter(doc, flatField());
+    expect(instances.length).toBeGreaterThan(0);
+    // Corridor half-width = 4/2 + 2 = 4; nothing lands within the solid core (halfWidth - feather 2 = 2) of z=0.
+    const inCore = instances.filter((i) => Math.abs(i.x) <= 18 && Math.abs(i.z) < 1.9);
+    expect(inCore.length).toBe(0);
+    // Foliage still fills away from the corridor.
+    expect(instances.some((i) => Math.abs(i.z) > 8)).toBe(true);
+  });
+});
