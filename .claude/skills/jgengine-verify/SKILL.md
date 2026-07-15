@@ -102,8 +102,35 @@ Hosts prerender registry widgets (jgengine.com does this for `/components`), so 
 
 ## PR evidence — visual work ships its pixels
 
-Any PR that changes what a player sees (world look, HUD, menus, previews, art direction) embeds its final screenshots in the PR body — the reviewer judges pixels, not prose. Mechanism: **`bun run pr-shots <file.png> [more.png ...]`** — it hashes each PNG straight into the object store and pushes a commit to the `pr-shots` archive branch (created from `main` the first time; never merged) with a detached index, so HEAD, the task branch's checkout, and the working tree never move. It prints the ready-to-paste `![name](https://raw.githubusercontent.com/…)` embed lines; drop them in the PR body. Defaults the archive subdir to the current branch name (override with `--branch`/`--dir`); `--dry` prints the URLs without pushing. **Never** upload shots with GitHub MCP `create_or_update_file`/`push_files` — those take file content as a JSON string, so a binary PNG must be base64-encoded into the request and every byte of that encoding lands in your context as literal tokens (one screenshot easily runs tens of thousands of tokens; a batch of them has hung a session for 20+ minutes). Run `pr-shots` directly in the main session — never a subagent, and never one subagent per file (a hung/dropped "upload worker" per screenshot is the exact failure this replaces). Desktop + mobile when the HUD is the point. Non-visual PRs skip this entirely.
+Any PR that changes what a player sees (world look, HUD, menus, previews, art direction) embeds its final screenshots in the PR body — the reviewer judges pixels, not prose. Mechanism: **`bun run pr-shots <file.png> [more.png ...]`** — it hashes each PNG straight into the object store and pushes a commit to the `pr-shots` archive branch (created from `main` the first time; never merged) with a detached index, so HEAD, the task branch's checkout, and the working tree never move. It prints the ready-to-paste `![name](https://raw.githubusercontent.com/…)` embed lines; drop them in the PR body. Defaults the archive subdir to the current branch name (override with `--branch`/`--dir`); `--dry` prints the URLs without pushing. **Never** upload shots with GitHub MCP `create_or_update_file`/`push_files` — those take file content as a JSON string, so a binary PNG must be base64-encoded into the request and every byte of that encoding lands in your context as literal tokens (one screenshot easily runs tens of thousands of tokens; a batch of them has hung a session for 20+ minutes). Run `pr-shots` directly in the main session — never a subagent, and never one subagent per file (a hung/dropped "upload worker" per screenshot is the exact failure this replaces). Desktop + mobile when the HUD is the point. Non-visual PRs skip this entirely. Any PR whose body or chat report claims done/premium/shipped carries the done-ledger (below) alongside the screenshots — the ledger is the evidence, the pixels are the proof.
+
+## The done-ledger — report what you verified, not adjectives
+
+A "done"/"premium"/"shipped" claim **is** the ledger below, compacted — never prose adjectives. Each rung reports `pass` / `fail` / `skipped(reason)` + evidence (test name, shot path, metrics JSON). Consecutive `skipped`/`not-needed` rows collapse into one line. This is what the *author* proves before the PR; CI proves the rest — same contract as "Silence is green."
+
+| Rung | Reports |
+| --- | --- |
+| `types` | `bun run check-types` clean |
+| `tests` | `bun test packages` pass count |
+| `world` | `summarizeEnvironment` / voxel-summary assertion name + key counts |
+| `shoot` | shot path(s) under `shots/` |
+| `pixel` | `shots/.metrics.json` values — pixel-metrics rung, [#788](https://github.com/Noisemaker111/jgengine/issues/788); until shipped, report `skipped(#788 unshipped)` |
+| `score` | scorecard category scores — visual scorecard, [#789](https://github.com/Noisemaker111/jgengine/issues/789); until shipped, report `skipped(#789 unshipped)` |
+| `bot` | playtest progress/softlock JSON — bot-playtest rung, [#790](https://github.com/Noisemaker111/jgengine/issues/790); until shipped, report `skipped(#790 unshipped)` |
+
+A rung that doesn't apply to this game (no declared world, no visual claim) reports `not-needed`, never a silent gap. A **visual/premium** claim requires the `score` and `pixel` rows present in the ledger — filled once #788/#789 ship, `skipped(#788/#789 unshipped)` until then — never just "looks good."
+
+Compact form — one block, no prose, this is the whole chat "done" report and the PR-body ledger:
+
+```
+done-ledger
+types  pass  check-types clean
+tests  pass  bun test packages 42/42
+world  pass  <game>.world.test.ts isEmpty=false buildings=6
+shoot  pass  shots/<game>-play.png
+pixel/score/bot  skipped (#788/#789/#790 unshipped)
+```
 
 ## Definition of done references this
 
-The numbered `jgengine` intake defines the observable target; this skill proves it after implementation.
+The numbered `jgengine` intake defines the observable target; this skill proves it after implementation, and the done-ledger above is how that proof gets reported — see also the `jgengine` skill's "New-game definition of done."
