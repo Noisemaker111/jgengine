@@ -1,17 +1,38 @@
-import { useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import { Group, Vector3 } from "three";
+import { Suspense, useEffect, useMemo, useRef } from "react";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { Color, Group, MeshStandardMaterial, Vector3, type Object3D } from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { cloneModelScene, disposeClonedMaterials } from "@jgengine/shell/render/modelRender";
+import { assets } from "../assets";
 import { equippedGun, gameNow, lastShot } from "../feel";
 import { gunById, magState, type GunDef, type GunFamily } from "../handroll";
 import { ELEMENT_COLORS, RARITY_COLORS } from "../palette";
 
-const FAMILY_SHAPE: Record<GunFamily, { barrelLen: number; barrelR: number; bodyLen: number; bodyH: number; magH: number; scopeH: number }> = {
-  pistol: { barrelLen: 0.22, barrelR: 0.022, bodyLen: 0.2, bodyH: 0.1, magH: 0.1, scopeH: 0 },
-  smg: { barrelLen: 0.26, barrelR: 0.02, bodyLen: 0.3, bodyH: 0.11, magH: 0.16, scopeH: 0.03 },
-  shotgun: { barrelLen: 0.42, barrelR: 0.035, bodyLen: 0.3, bodyH: 0.12, magH: 0.05, scopeH: 0 },
-  rifle: { barrelLen: 0.4, barrelR: 0.024, bodyLen: 0.34, bodyH: 0.12, magH: 0.17, scopeH: 0.04 },
-  sniper: { barrelLen: 0.58, barrelR: 0.02, bodyLen: 0.32, bodyH: 0.11, magH: 0.1, scopeH: 0.07 },
-  launcher: { barrelLen: 0.5, barrelR: 0.07, bodyLen: 0.3, bodyH: 0.16, magH: 0.08, scopeH: 0.05 },
+const FAMILY_MUZZLE_Z: Record<GunFamily, number> = {
+  pistol: 0.32,
+  smg: 0.42,
+  shotgun: 0.5,
+  rifle: 0.52,
+  sniper: 0.62,
+  launcher: 0.56,
+};
+
+const FAMILY_BLASTER: Record<GunFamily, string> = {
+  pistol: "kenney-blaster/blaster-a",
+  smg: "kenney-blaster/blaster-e",
+  shotgun: "kenney-blaster/blaster-j",
+  rifle: "kenney-blaster/blaster-m",
+  sniper: "kenney-blaster/blaster-p",
+  launcher: "kenney-blaster/blaster-r",
+};
+
+const FAMILY_SCALE: Record<GunFamily, number> = {
+  pistol: 0.6,
+  smg: 0.44,
+  shotgun: 0.62,
+  rifle: 0.6,
+  sniper: 0.52,
+  launcher: 0.58,
 };
 
 const MANUFACTURER_COLORS: Record<string, string> = {
@@ -25,47 +46,41 @@ const MANUFACTURER_COLORS: Record<string, string> = {
   Scrapjack: "#5a5248",
 };
 
+function tintScene(scene: Object3D, body: string, glow: string | null): void {
+  const bodyColor = new Color(body);
+  const glowColor = glow === null ? null : new Color(glow);
+  scene.traverse((node) => {
+    const mesh = node as { isMesh?: boolean; material?: unknown };
+    if (mesh.isMesh !== true) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      if (!(material instanceof MeshStandardMaterial)) continue;
+      material.color.lerp(bodyColor, 0.55);
+      material.metalness = 0.65;
+      material.roughness = 0.42;
+      if (glowColor !== null) {
+        material.emissive.copy(glowColor);
+        material.emissiveIntensity = 0.35;
+      }
+    }
+  });
+}
+
 function GunMesh({ gun }: { gun: GunDef }) {
-  const shape = FAMILY_SHAPE[gun.family];
-  const body = MANUFACTURER_COLORS[gun.manufacturer] ?? "#3a4048";
-  const accent = RARITY_COLORS[gun.rarity];
+  const url = assets.resolve(FAMILY_BLASTER[gun.family])?.url ?? assets.resolve(FAMILY_BLASTER.pistol)!.url;
+  const gltf = useLoader(GLTFLoader, url);
+  const body = MANUFACTURER_COLORS[gun.manufacturer] ?? "#7a6a58";
   const glow = gun.element !== "none" ? ELEMENT_COLORS[gun.element] : null;
+  const scene = useMemo(() => {
+    const cloned = cloneModelScene(gltf.scene);
+    tintScene(cloned, body, glow);
+    return cloned;
+  }, [gltf, body, glow]);
+  useEffect(() => () => disposeClonedMaterials(scene), [scene]);
+  const scale = FAMILY_SCALE[gun.family];
   return (
-    <group>
-      <mesh position={[0, 0, -(shape.bodyLen / 2)]}>
-        <boxGeometry args={[0.075, shape.bodyH, shape.bodyLen]} />
-        <meshStandardMaterial color={body} flatShading />
-      </mesh>
-      <mesh position={[0, -0.005, -(shape.bodyLen + shape.barrelLen / 2)]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[shape.barrelR, shape.barrelR * 1.15, shape.barrelLen, 8]} />
-        <meshStandardMaterial color="#22262c" flatShading />
-      </mesh>
-      <mesh position={[0, -(shape.bodyH / 2 + 0.05), -0.06]} rotation={[0.25, 0, 0]}>
-        <boxGeometry args={[0.05, 0.14, 0.06]} />
-        <meshStandardMaterial color="#2c2620" flatShading />
-      </mesh>
-      {shape.magH > 0 ? (
-        <mesh position={[0, -(shape.bodyH / 2 + shape.magH / 2), -(shape.bodyLen * 0.72)]}>
-          <boxGeometry args={[0.05, shape.magH, 0.07]} />
-          <meshStandardMaterial color="#33373f" flatShading />
-        </mesh>
-      ) : null}
-      {shape.scopeH > 0 ? (
-        <mesh position={[0, shape.bodyH / 2 + shape.scopeH, -(shape.bodyLen * 0.6)]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.02, 0.02, 0.14, 8]} />
-          <meshStandardMaterial color="#171a1f" flatShading />
-        </mesh>
-      ) : null}
-      <mesh position={[0.04, 0, -(shape.bodyLen * 0.55)]}>
-        <boxGeometry args={[0.008, shape.bodyH * 0.55, shape.bodyLen * 0.5]} />
-        <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.35} />
-      </mesh>
-      {glow !== null ? (
-        <mesh position={[0, shape.bodyH / 2 + 0.012, -(shape.bodyLen * 0.3)]}>
-          <boxGeometry args={[0.03, 0.012, 0.08]} />
-          <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.6} />
-        </mesh>
-      ) : null}
+    <group rotation={[0, Math.PI, 0]} scale={scale} position={[0, -0.02, -0.1]}>
+      <primitive object={scene} />
     </group>
   );
 }
@@ -120,11 +135,12 @@ export function FerralonViewmodel() {
   });
 
   if (gun === undefined) return null;
-  const shape = FAMILY_SHAPE[gun.family];
-  const muzzleZ = -(shape.bodyLen + shape.barrelLen + 0.03);
+  const muzzleZ = -FAMILY_MUZZLE_Z[gun.family];
   return (
     <group ref={rig} renderOrder={999}>
-      <GunMesh gun={gun} />
+      <Suspense fallback={null}>
+        <GunMesh gun={gun} />
+      </Suspense>
       <group ref={flash} position={[0, -0.005, muzzleZ]} visible={false}>
         <mesh>
           <planeGeometry args={[0.16, 0.16]} />
