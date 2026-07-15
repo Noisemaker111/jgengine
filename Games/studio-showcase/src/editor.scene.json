@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "bookcase_1",
+      "kind": "prop",
+      "position": { "x": 0, "y": 0, "z": 10 },
+      "rotationY": 3.14159,
+      "label": "Bookcase (generator)",
+      "meta": {
+        "assetId": "bookcase",
+        "width": 1.8,
+        "height": 2.2,
+        "depth": 0.32,
+        "shelves": 5,
+        "boardThickness": 0.04,
+        "bookDensity": 0.9,
+        "lean": 0.14,
+        "tint": "#7a5230",
+        "seed": "bc"
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "id": "pond_1",
+      "kind": "water",
+      "shape": "box",
+      "center": { "x": -20, "y": -0.3, "z": 14 },
+      "halfExtents": { "x": 9, "y": 0.5, "z": 8 },
+      "label": "Pond (water studio)",
+      "meta": {
+        "color": "#1c6c86",
+        "shallowColor": "#4bb6bf",
+        "waveHeight": 0.18,
+        "waveSpeed": 0.7,
+        "waveScale": 0.35,
+        "foam": 1.4,
+        "opacity": 0.88,
+        "reflectivity": 0.45
+      }
+    },
+    {
+      "id": "meadow_1",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": { "x": 20, "y": 0.5, "z": 14 },
+      "halfExtents": { "x": 9, "y": 0.5, "z": 8 },
+      "label": "Meadow (grass studio)",
+      "meta": {
+        "density": 6,
+        "bladeHeight": 0.7,
+        "colorBase": "#3f6f37",
+        "colorTip": "#9ac25a",
+        "colorVariation": 0.35,
+        "windStrength": 0.3,
+        "windSpeed": 1.8,
+        "windGust": 0.18,
+        "roughness": 0.85,
+        "seed": "meadow"
+      }
+    }
+  ],
+  "paths": [
+    {
+      "id": "powerline_1",
+      "kind": "pole_line",
+      "width": 4,
+      "label": "Power line (pole studio)",
+      "points": [
+        { "x": -26, "y": 0, "z": 22 },
+        { "x": -9, "y": 0, "z": 20 },
+        { "x": 9, "y": 0, "z": 20 },
+        { "x": 26, "y": 0, "z": 22 }
+      ],
+      "meta": {
+        "spacing": 8,
+        "poleHeight": 6,
+        "wireCount": 3,
+        "wireSpacing": 0.6,
+        "cableRadius": 0.06,
+        "sag": 1.2,
+        "sagPerMeter": 0.04,
+        "cableSegments": 14,
+        "snapToTerrain": true,
+        "seed": "demo"
+      }
+    }
+  ],
+  "annotations": [],
+  "prefabs": [],
+  "collections": []
+}

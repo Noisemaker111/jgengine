@@ -1,15 +1,92 @@
-import { useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo } from "react";
 import * as THREE from "three";
 
-import type { EditorDocument } from "@jgengine/core/editor/index";
+import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { buildRoadRibbon, roundPathCorners } from "@jgengine/core/world/roads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/world/scatterRegion";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
+import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
+
 import { createModelMapResolver } from "../render/resolveModel";
 import { InstancedScatter } from "../scatter/InstancedScatter";
+import { GeneratedAssetInstance } from "./GeneratedAssetRenderer";
+import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers";
+import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+
+registerBuiltinSceneKindRenderers();
+
+function markerToKindObject(marker: EditorMarker): SceneKindObject {
+  return { id: marker.id, kind: marker.kind, position: marker.position, ...(marker.rotationY === undefined ? {} : { rotationY: marker.rotationY }), ...(marker.meta === undefined ? {} : { meta: marker.meta }) };
+}
+
+function volumeToKindObject(volume: EditorVolume): SceneKindObject {
+  return {
+    id: volume.id,
+    kind: volume.kind,
+    center: volume.center,
+    ...(volume.halfExtents === undefined ? {} : { halfExtents: volume.halfExtents }),
+    ...(volume.radius === undefined ? {} : { radius: volume.radius }),
+    ...(volume.meta === undefined ? {} : { meta: volume.meta }),
+  };
+}
+
+function pathToKindObject(path: EditorPath): SceneKindObject {
+  return { id: path.id, kind: path.kind, points: path.points.map((point) => ({ x: point.x, y: point.y, z: point.z })), ...(path.meta === undefined ? {} : { meta: path.meta }) };
+}
+
+/** Renders every marker placed as a parametric generator asset, re-resolved from its `meta` + seed. */
+function AuthoredGenerators({ document, field }: { document: EditorDocument; field: TerrainField }) {
+  const markers = useMemo(
+    () => document.markers.filter((marker) => typeof marker.meta?.["assetId"] === "string" && getAssetGenerator(marker.meta["assetId"] as string) !== undefined),
+    [document.markers],
+  );
+  return (
+    <>
+      {markers.map((marker) => (
+        <GeneratedAssetInstance
+          key={marker.id}
+          meta={marker.meta}
+          position={[marker.position.x, field.sampleHeight(marker.position.x, marker.position.z), marker.position.z]}
+          rotationY={marker.rotationY ?? 0}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Mounts every registered studio renderer for the kinds present in a document — water and any
+ * game/example-registered kind — grouping objects by kind and handing each renderer its slice.
+ * Scatter stays on the batched {@link InstancedScatter} path (its cross-region avoid masks need the
+ * whole document), so it is skipped here.
+ */
+function AuthoredStudios({ document, context }: { document: EditorDocument; context: SceneKindRenderContext }) {
+  const byKind = useMemo(() => {
+    const groups = new Map<string, SceneKindObject[]>();
+    const add = (kind: string, object: SceneKindObject) => {
+      if (isScatterPath({ kind } as EditorPath) || getSceneKindRenderer(kind) === undefined) return;
+      const bucket = groups.get(kind);
+      if (bucket === undefined) groups.set(kind, [object]);
+      else bucket.push(object);
+    };
+    for (const marker of document.markers) add(marker.kind, markerToKindObject(marker));
+    for (const volume of document.volumes) add(volume.kind, volumeToKindObject(volume));
+    for (const path of document.paths) add(path.kind, pathToKindObject(path));
+    return groups;
+  }, [document]);
+  return (
+    <>
+      {[...byKind.entries()].map(([kind, objects]) => {
+        const renderer = getSceneKindRenderer(kind);
+        return renderer === undefined ? null : <Fragment key={kind}>{renderer({ objects, context })}</Fragment>;
+      })}
+    </>
+  );
+}
 
 const DEFAULT_PATH_COLOR = "#7a6444";
 
@@ -68,7 +145,7 @@ export interface AuthoredPathsProps {
  */
 export function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps) {
   const paths = document.paths.filter(
-    (path) => !isScatterPath(path) && (kinds === undefined || kinds.includes(path.kind)),
+    (path) => !isScatterPath(path) && getSceneKindRenderer(path.kind) === undefined && (kinds === undefined || kinds.includes(path.kind)),
   );
   return (
     <>
@@ -119,6 +196,8 @@ export function AuthoredScene({ document, field, pathKinds, scatterModels, asset
     <>
       <AuthoredPaths document={document} field={field} {...(pathKinds === undefined ? {} : { kinds: pathKinds })} />
       <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
+      <AuthoredStudios document={document} context={{ document, field, ...(assets === undefined ? {} : { assets }) }} />
+      <AuthoredGenerators document={document} field={field} />
     </>
   );
 }

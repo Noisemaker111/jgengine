@@ -37,6 +37,18 @@ export interface GradeConfig {
   vignette?: number;
   /** Animated film-grain amplitude. Default 0.012. */
   grain?: number;
+  /** Chromatic-aberration RGB split, in fractions of the frame (~0..0.01), scaled toward the edges. Default 0 (off). */
+  chromaticAberration?: number;
+}
+
+/** Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance. */
+export interface DofConfig {
+  /** Focus distance from the camera in world units. Default 18. */
+  focus?: number;
+  /** Aperture — larger blurs a shallower slice more aggressively. Default 0.00025. */
+  aperture?: number;
+  /** Maximum blur radius, 0..1. Default 0.01. */
+  maxBlur?: number;
 }
 
 /**
@@ -56,5 +68,7 @@ export interface PostProcessingConfig {
   bloom?: BloomConfig | false;
   /** Ambient occlusion. Heavier than the other stages — omit or `false` on low-end targets. Default off (omitted). */
   ao?: AoConfig | false;
+  /** Depth-of-field / bokeh. Heavier stage — omit or `false` to skip. Default off (omitted). */
+  dof?: DofConfig | false;
   grade?: GradeConfig | false;
 }

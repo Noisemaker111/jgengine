@@ -76,6 +76,60 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     },
   },
   {
+    name: "set_path",
+    description: "Patch a path's kind/width/color/label and merge-patch its meta (studio sliders: scatter density, pole spacing, …). Validated against the kind schema.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        kind: { type: "string" },
+        width: { type: "number" },
+        color: { type: "string" },
+        label: { type: "string" },
+        meta: { type: "object" },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "set_marker",
+    description: "Patch a marker's kind/color/label/rotationY and merge-patch its meta. Validated against the kind schema when registered.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        kind: { type: "string" },
+        color: { type: "string" },
+        label: { type: "string" },
+        rotationY: { type: "number" },
+        meta: { type: "object" },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "set_note",
+    description: "Patch a note's text and merge-patch its meta.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" }, text: { type: "string" }, meta: { type: "object" } },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "set_meta",
+    description: "Merge-patch the meta bag of any document object (marker/volume/path/note) by id — the generic studio-slider primitive. Rejected if it violates the kind's param schema.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" }, patch: { type: "object" } },
+      required: ["id", "patch"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "select",
     description: "Select editor object ids.",
     inputSchema: {

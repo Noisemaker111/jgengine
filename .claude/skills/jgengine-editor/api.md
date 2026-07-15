@@ -195,6 +195,10 @@
 
 - `PerfProbe` (function): function PerfProbe({ api }: { api: EditorHostApi }): null — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
 
+## @jgengine/editor/SchemaInspector
+
+- `MetaPatch` (type): type MetaPatch = (patch: Record<string, unknown>, coalesce: string) => void — A patch to a single meta key, coalesced under a stable undo key.
+
 ## @jgengine/editor/SelectionGizmo
 
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.

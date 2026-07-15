@@ -1,0 +1,25 @@
+{
+  "name": "@jgengine-examples/studios",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "check-types": "tsgo --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*",
+    "@jgengine/shell": "workspace:*",
+    "@react-three/fiber": "^9.5.0",
+    "react": "19.2.3",
+    "three": "^0.182.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/three": "^0.182.0",
+    "typescript": "^5"
+  }
+}

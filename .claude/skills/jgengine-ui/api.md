@@ -41,6 +41,7 @@
 
 - `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
 - `BloomConfig` (interface): interface BloomConfig — UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive).
+- `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
 - `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
@@ -1343,6 +1344,16 @@
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
 - `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
+
+## @jgengine/shell/scene/GeneratedAssetRenderer
+
+- `GeneratedAssetProps` (interface): interface GeneratedAssetProps — Props for {@link GeneratedAsset}: the placed instance's `meta` (assetId + params + seed) and transform.
+
+## @jgengine/shell/scene/sceneKindRenderers
+
+- `SceneKindRenderContext` (interface): interface SceneKindRenderContext — Context a scene-kind renderer receives alongside the matching document objects.
+- `SceneKindRenderer` (type): type SceneKindRenderer = (props: { objects: readonly SceneKindObject[]; context: SceneKindRenderContext }) => ReactElement | null — A registered renderer: given every document object of its kind, returns the render tree for them.
+- `registerSceneKindRenderer` (function): function registerSceneKindRenderer(kind: string, renderer: SceneKindRenderer): void — Register the runtime renderer for a scene kind — the shell half of the #809 seam. `AuthoredScene` groups a document's objects by kind and mounts the registered renderer for each, so a new studio renders from the document with no fork of `AuthoredScene`. Idempotent per kind (last wins).
 
 ## @jgengine/shell/settings/QuickControls
 

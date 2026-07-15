@@ -28,14 +28,18 @@ import {
   type SurfaceDelta,
   type TerrainSurfaceRule,
 } from "@jgengine/core/world/terraform";
+import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/world/scatterRegion";
 import {
-  readScatterPalette,
-  readScatterRules,
-  scatterRegionEstimate,
-  SCATTER_PATH_KIND,
-  type ScatterPaletteEntry,
-} from "@jgengine/core/world/scatterRegion";
+  getSceneKind,
+  isSceneKind,
+  listSceneKinds,
+  parseParams,
+  type SceneKindObject,
+} from "@jgengine/core/scene/sceneKinds";
+import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import { useGameContext } from "@jgengine/react/provider";
+
+import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
 import { CollectionsPanel } from "./CollectionsPanel";
@@ -411,64 +415,49 @@ function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiSto
   );
 }
 
-function ScatterFields({
-  path,
-  onMeta,
-}: {
-  path: EditorPath;
-  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
-}) {
-  const rules = readScatterRules(path);
-  if (rules === null) return null;
-  const palette = readScatterPalette(path.meta);
-  const estimate = scatterRegionEstimate(path);
-  const setPalette = (next: ScatterPaletteEntry[]) => onMeta({ palette: next, item: "" }, "scatter:palette");
+/** Builds the resolver-facing view of a document object for a registered scene kind's inspector. */
+function markerObject(marker: { id: string; kind: string; position: { x: number; y: number; z: number }; rotationY?: number; meta?: Record<string, unknown> }): SceneKindObject {
+  return { id: marker.id, kind: marker.kind, position: marker.position, ...(marker.rotationY === undefined ? {} : { rotationY: marker.rotationY }), ...(marker.meta === undefined ? {} : { meta: marker.meta }) };
+}
+
+function volumeObject(volume: EditorVolume): SceneKindObject {
+  return {
+    id: volume.id,
+    kind: volume.kind,
+    center: volume.center,
+    ...(volume.halfExtents === undefined ? {} : { halfExtents: volume.halfExtents }),
+    ...(volume.radius === undefined ? {} : { radius: volume.radius }),
+    ...(volume.meta === undefined ? {} : { meta: volume.meta }),
+  };
+}
+
+function pathObject(path: EditorPath): SceneKindObject {
+  return { id: path.id, kind: path.kind, points: path.points.map((point) => ({ x: point.x, y: point.y, z: point.z })), ...(path.meta === undefined ? {} : { meta: path.meta }) };
+}
+
+/** Auto-generated inspector for a registered scene kind's params (schema-driven, no per-kind JSX). */
+function KindInspector({ object, meta, onMeta }: { object: SceneKindObject; meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
+  const definition = getSceneKind(object.kind);
+  if (definition === undefined) return null;
+  const note = definition.note?.(object, parseParams(definition.schema, object.meta));
   return (
-    <div className="space-y-2 rounded-lg border border-emerald-400/15 bg-emerald-500/[0.06] p-2.5">
-      <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-300">Foliage / scatter</div>
-      {path.points.length < 3 ? <div className="text-[10px] text-amber-300">Draw at least 3 points to close the region.</div> : null}
-      <label className="block space-y-1">
-        <span className="flex items-center justify-between">
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">density /m²</span>
-          <span className="text-cyan-200">{rules.density.toFixed(2)}</span>
-        </span>
-        <input type="range" min={0} max={2} step={0.01} className="w-full accent-emerald-400" value={Math.min(rules.density, 2)} onChange={(event) => onMeta({ density: Number(event.target.value) }, "scatter:density")} />
-      </label>
-      <NumberField label="density" step={0.01} value={rules.density} onCommit={(value) => onMeta({ density: Math.max(0, value) }, "scatter:density")} />
-      <NumberField label="spacing" step={0.25} value={rules.minSpacing} onCommit={(value) => onMeta({ minSpacing: Math.max(0, value) }, "scatter:minSpacing")} />
-      <NumberField label="min scale" step={0.05} value={rules.minScale} onCommit={(value) => onMeta({ minScale: value }, "scatter:minScale")} />
-      <NumberField label="max scale" step={0.05} value={rules.maxScale} onCommit={(value) => onMeta({ maxScale: value }, "scatter:maxScale")} />
-      <NumberField label="max slope" step={0.05} value={rules.maxSlope} onCommit={(value) => onMeta({ maxSlope: Math.max(0, value) }, "scatter:maxSlope")} />
-      <NumberField label="edge fade" step={0.5} value={rules.edgeFalloff} onCommit={(value) => onMeta({ edgeFalloff: Math.max(0, value) }, "scatter:edgeFalloff")} />
-      <label className="flex items-center gap-1.5 text-[10px] text-neutral-400">
-        <input type="checkbox" className="accent-emerald-400" checked={rules.alignToNormal} onChange={(event) => onMeta({ alignToNormal: event.target.checked }, "scatter:align")} />
-        align to slope
-      </label>
-      <label className="flex items-center gap-1.5 text-[10px] text-neutral-400" title="Keep foliage off spawns, plots, and paths (markers/paths tagged with a clearance)">
-        <input type="checkbox" className="accent-emerald-400" checked={rules.autoAvoid} onChange={(event) => onMeta({ autoAvoid: event.target.checked }, "scatter:autoAvoid")} />
-        auto-avoid gameplay spots
-      </label>
-      <div className="space-y-1">
-        <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">species (weighted)</div>
-        {palette.map((entry, index) => (
-          <div key={index} className="flex items-center gap-1">
-            <input className={`min-w-0 flex-1 ${INPUT}`} value={entry.item} placeholder="grass / tree id" onChange={(event) => setPalette(palette.map((e, i) => (i === index ? { ...e, item: event.target.value } : e)))} />
-            <input type="number" step={1} min={0} className={`w-14 ${INPUT}`} value={entry.weight} onChange={(event) => setPalette(palette.map((e, i) => (i === index ? { ...e, weight: Math.max(0, Number(event.target.value)) } : e)))} />
-            <button type="button" className="rounded-md bg-white/[0.04] px-1.5 py-1 text-neutral-400 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-rose-500/20 hover:text-rose-200" disabled={palette.length <= 1} onClick={() => setPalette(palette.filter((_, i) => i !== index))}>×</button>
-          </div>
-        ))}
-        <button type="button" className="w-full rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => setPalette([...palette, { item: "tree", weight: 1 }])}>+ species</button>
-      </div>
-      <div className="flex items-center gap-2">
-        <label className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">seed</span>
-          <input className={`w-full min-w-0 ${INPUT}`} value={rules.seed} placeholder="reroll…" onChange={(event) => onMeta({ seed: event.target.value }, "scatter:seed")} />
-        </label>
-        <button type="button" className="shrink-0 rounded-md bg-white/[0.04] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" title="Reroll seed" onClick={() => onMeta({ seed: `r${path.points.length}${rules.seed.length}${Math.round(rules.density * 1000)}` }, "scatter:seed")}>⟳</button>
-      </div>
-      <div className="text-[10px] text-neutral-500">≈ {estimate.count.toLocaleString()} placements over {Math.round(estimate.area).toLocaleString()} m²</div>
-    </div>
+    <SchemaInspector
+      schema={definition.schema}
+      label={definition.label}
+      meta={meta}
+      onMeta={onMeta}
+      {...(definition.accent === undefined ? {} : { accent: definition.accent })}
+      {...(note === undefined ? {} : { note })}
+    />
   );
+}
+
+/** Auto-generated inspector for a placed generator asset's params (building/bookcase/…). */
+function GeneratorInspector({ meta, onMeta }: { meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
+  const assetId = typeof meta?.["assetId"] === "string" ? (meta["assetId"] as string) : undefined;
+  const generator = assetId === undefined ? undefined : getAssetGenerator(assetId);
+  if (generator === undefined) return null;
+  return <SchemaInspector schema={generator.schema} label={`${generator.label} (generator)`} accent="#a78bfa" meta={meta} onMeta={onMeta} />;
 }
 
 /**
@@ -645,6 +634,17 @@ function InspectorPanel({ session, ui, onClose }: { session: EditorSession; ui: 
             <NumberField label="rot°" step={5} value={Math.round(((selectedMarker.rotationY ?? 0) * 180) / Math.PI)} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, rotationY: (value * Math.PI) / 180 }, { coalesce: `rot:${selectedMarker.id}` })} />
             <ClearanceField meta={selectedMarker.meta} onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })} />
             <ParentField session={session} id={selectedMarker.id} />
+            {isSceneKind(selectedMarker.kind) ? (
+              <KindInspector
+                object={markerObject(selectedMarker)}
+                meta={selectedMarker.meta}
+                onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })}
+              />
+            ) : null}
+            <GeneratorInspector
+              meta={selectedMarker.meta}
+              onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })}
+            />
             {selectedMarker.meta !== undefined ? <pre className="max-h-48 overflow-auto rounded-md border border-white/[0.06] bg-black/40 p-2 text-[10px] text-neutral-400">{JSON.stringify(selectedMarker.meta, null, 2)}</pre> : null}
           </div>
         ) : null}
@@ -678,6 +678,13 @@ function InspectorPanel({ session, ui, onClose }: { session: EditorSession; ui: 
               volume={selectedVolume}
               onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
             />
+            {isSceneKind(selectedVolume.kind) ? (
+              <KindInspector
+                object={volumeObject(selectedVolume)}
+                meta={selectedVolume.meta}
+                onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
+              />
+            ) : null}
           </div>
         ) : null}
         {selection.length <= 1 && selectedPath !== undefined ? (
@@ -700,9 +707,10 @@ function InspectorPanel({ session, ui, onClose }: { session: EditorSession; ui: 
                 </div>
               </div>
             ) : <div className="text-[10px] text-neutral-500">Click a vertex sphere to edit points.</div>}
-            {selectedPath.kind === SCATTER_PATH_KIND ? (
-              <ScatterFields
-                path={selectedPath}
+            {isSceneKind(selectedPath.kind) ? (
+              <KindInspector
+                object={pathObject(selectedPath)}
+                meta={selectedPath.meta}
                 onMeta={(patch, coalesce) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { meta: { ...selectedPath.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedPath.id}` })}
               />
             ) : null}
@@ -987,6 +995,8 @@ export function EditorChrome({
     [kinds, state.document.annotations.length],
   );
 
+  const studioKinds = useMemo(() => listSceneKinds().filter((definition) => definition.addCategory !== undefined), []);
+
   const placeAsset = (entry: EditorAssetEntry) => {
     const focus = api.getFocusTarget();
     const focused = session.getState();
@@ -1080,10 +1090,30 @@ export function EditorChrome({
               {ADD_VOLUME_ENTRIES.map((entry) => (
                 <button key={entry.label} type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement(entry.tool)}>{entry.label}</button>
               ))}
+              <div className={`px-2 pb-1 pt-2 ${MICRO}`}>Studios</div>
+              {studioKinds.map((definition) => (
+                <button
+                  key={definition.kind}
+                  type="button"
+                  className="block w-full rounded-md px-2 py-1 text-left transition-colors hover:bg-emerald-500/15 hover:text-emerald-100"
+                  style={{ color: definition.accent ?? "#34d399" }}
+                  onClick={() =>
+                    startPlacement(
+                      definition.target === "path"
+                        ? { tool: "path", kind: definition.kind }
+                        : definition.target === "volume"
+                          ? { tool: "volume", kind: definition.kind, shape: "box" }
+                          : { tool: "marker", kind: definition.kind },
+                    )
+                  }
+                >
+                  {definition.label}
+                  {definition.target === "path" ? (definition.pathShape === "line" ? " (draw line)" : " (lasso)") : ""}
+                </button>
+              ))}
               <div className={`px-2 pb-1 pt-2 ${MICRO}`}>Other</div>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "path", kind: "route" })}>Draw path (route)</button>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "path", kind: "road" })}>Draw road</button>
-              <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-emerald-300 transition-colors hover:bg-emerald-500/15 hover:text-emerald-100" onClick={() => startPlacement({ tool: "path", kind: SCATTER_PATH_KIND })}>Foliage region (lasso)</button>
               <button type="button" className="block w-full rounded-md px-2 py-1 text-left text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100" onClick={() => startPlacement({ tool: "note" })}>Note</button>
             </div>
           ) : null}

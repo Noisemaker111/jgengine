@@ -97,6 +97,39 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
       return { method: "set_mode", mode: String(args.mode ?? "") as EditorRunMode };
     case "perf_report":
       return { method: "perf_report" };
+    case "set_path":
+      return {
+        method: "set_path",
+        id: String(args.id ?? ""),
+        ...(typeof args.kind === "string" ? { kind: args.kind } : {}),
+        ...(typeof args.width === "number" ? { width: args.width } : {}),
+        ...(typeof args.color === "string" ? { color: args.color } : {}),
+        ...(typeof args.label === "string" ? { label: args.label } : {}),
+        ...(typeof args.meta === "object" && args.meta !== null ? { meta: args.meta as Record<string, unknown> } : {}),
+      };
+    case "set_marker":
+      return {
+        method: "set_marker",
+        id: String(args.id ?? ""),
+        ...(typeof args.kind === "string" ? { kind: args.kind } : {}),
+        ...(typeof args.color === "string" ? { color: args.color } : {}),
+        ...(typeof args.label === "string" ? { label: args.label } : {}),
+        ...(typeof args.rotationY === "number" ? { rotationY: args.rotationY } : {}),
+        ...(typeof args.meta === "object" && args.meta !== null ? { meta: args.meta as Record<string, unknown> } : {}),
+      };
+    case "set_note":
+      return {
+        method: "set_note",
+        id: String(args.id ?? ""),
+        ...(typeof args.text === "string" ? { text: args.text } : {}),
+        ...(typeof args.meta === "object" && args.meta !== null ? { meta: args.meta as Record<string, unknown> } : {}),
+      };
+    case "set_meta":
+      return {
+        method: "set_meta",
+        id: String(args.id ?? ""),
+        patch: (typeof args.patch === "object" && args.patch !== null ? args.patch : {}) as Record<string, unknown>,
+      };
     default:
       throw new Error(`unknown tool: ${name}`);
   }

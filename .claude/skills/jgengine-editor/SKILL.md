@@ -342,6 +342,26 @@ The editor stays smooth on large scenes via two seams (`@jgengine/editor`):
   behind the outliner's fixed-height virtual list — a scene with thousands of objects only mounts the
   visible handful of rows. The status bar shows live object + foliage-instance counts next to the fps pill.
 
+## Parametric studios — the editor is an extension seam
+
+The editor is not a fixed tool: **anyone can register a new "studio"** (a parametric asset with a
+slider inspector) with one call and **zero engine edits**. Two seams, one inspector generator.
+
+**Scene kind** — geometry authored as a path / volume / marker. `registerSceneKind` (`@jgengine/core/scene/sceneKinds`) supplies a `schema`, an optional pure `resolve`, and `+ Add` metadata; the editor **auto-generates the whole slider inspector** from the schema (`range | number | bool | select | color | text | seed | weightedList`) — no per-kind JSX. Pair it with `registerSceneKindRenderer` (`@jgengine/shell/scene/sceneKindRenderers`) and `AuthoredScene` renders it. Built-in kinds: `scatter`, `water`, `grass_field`. Generic primitives to compose (never re-roll): `placeAlongPath` (`world/pathInstances`), `sagCurve`/`catenaryCurve` (`world/catenary`), `readNamedSockets` (`scene/modelSockets`).
+
+**Generator asset** — a slider-driven prop placed as a marker. `registerAssetGenerator` (`@jgengine/core/scene/assetGenerator`) turns `(params, seed) → parts`; a placed instance stores only `{ assetId, params, seed }` and `resolveGeneratorAsset` re-resolves it at runtime (never baked). Built-in: `building`. The inspector shows the generator's schema on any marker whose `meta.assetId` names one.
+
+Full copyable walkthrough (pole-line + bookcase, zero engine edits): **`examples/studios/README.md`**; enforced by `scripts/studioSeam.test.ts`.
+
+### Drive studio sliders headlessly (agents)
+
+Parametric params live in `meta`; patch them via the RPC/CLI — `set_meta` (any object), `set_path` / `set_marker` / `set_note` (fuller patches). Patches **merge** into `meta` and are **validated against the kind schema** (out-of-range/unknown values are rejected):
+
+```
+bun run drive <id> --mode editor --rpc '{"method":"set_meta","id":"grove","patch":{"density":0.6,"seed":"r2"}}'
+bun run drive <id> --mode editor --rpc '{"method":"set_path","id":"wires","meta":{"spacing":6,"wireCount":4}}'
+```
+
 ## Core APIs (`editor/`)
 
 - `@jgengine/core/editor/index` — document, session, commands, undo

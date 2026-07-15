@@ -132,6 +132,32 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/studio-showcase": {
+      "name": "@games/studio-showcase",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine-examples/studios": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@react-three/drei": "^10.7.7",
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/the-robots": {
       "name": "@games/the-robots",
       "version": "0.1.0",
@@ -349,6 +375,22 @@
         "@types/react": "^19",
         "@types/react-dom": "19.2.3",
         "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+      },
+    },
+    "examples/studios": {
+      "name": "@jgengine-examples/studios",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
         "typescript": "^5",
       },
     },
@@ -662,6 +704,8 @@
 
     "@games/starhome": ["@games/starhome@workspace:Games/starhome"],
 
+    "@games/studio-showcase": ["@games/studio-showcase@workspace:Games/studio-showcase"],
+
     "@games/the-robots": ["@games/the-robots@workspace:Games/the-robots"],
 
     "@games/tower-guard": ["@games/tower-guard@workspace:Games/tower-guard"],
@@ -731,6 +775,8 @@
     "@jgengine-examples/express-host": ["@jgengine-examples/express-host@workspace:examples/express-host"],
 
     "@jgengine-examples/next-host": ["@jgengine-examples/next-host@workspace:examples/next-host"],
+
+    "@jgengine-examples/studios": ["@jgengine-examples/studios@workspace:examples/studios"],
 
     "@jgengine-examples/tanstack-host": ["@jgengine-examples/tanstack-host@workspace:examples/tanstack-host"],
 
