@@ -15,7 +15,7 @@ Main's job is orchestration: decompose into independent units, launch the batch 
 
 - **N independent tasks → N subagents → N PRs.** Each issue/bug/feature is its own subagent: branch off `origin/main`, do the work, ship its own PR. "One task, one PR" still holds — per subagent.
 - **A large task's parallel legs** — investigate M subsystems, sweep K files, review D dimensions, shoot G games.
-- **Substantial mechanical legs** — the verify ladder (gate, tests, build), `bun run shoot`/Playwright rounds, bulk reads, multi-file renames, doc sweeps, research sweeps.
+- **Substantial mechanical legs** — the verify ladder (gate, tests, build), bulk reads, multi-file renames, doc sweeps, research sweeps.
 
 ## Ship in isolation — worktree per task
 
@@ -35,9 +35,9 @@ A single small task is one agent: this session. Don't spawn a subagent to do wha
 
 ## Set `model` explicitly on every subagent
 
-Omitting it inherits the session model. **Haiku** — pure run-and-report legs: lint, typecheck, test, build, `shoot`, the verify ladder, screenshots, "all the bs testing". **Sonnet** — a substantial ship motion, or diagnosing/fixing what Haiku's run turned up red. **Opus** — scouts and legs needing real judgment. Fable never runs a leg; a Sonnet grinding a too-hard task escalates to Opus, not upward.
+Omitting it inherits the session model. **Haiku** — pure run-and-report legs: lint, typecheck, test, build, the verify ladder, "all the bs testing". **Sonnet** — a substantial ship motion, or diagnosing/fixing what Haiku's run turned up red. **Opus** — scouts and legs needing real judgment. Fable never runs a leg; a Sonnet grinding a too-hard task escalates to Opus, not upward. Screenshots (`shoot`/`drive`) aren't a fan-out leg — run them directly, no subagent.
 
-The common shape: **Sonnet** worktree subagents run the N parallel ships; **Haiku** runs the verify/shoot legs and reports back; **Opus** scouts unmapped territory. Main (frontier) decomposes and judges.
+The common shape: **Sonnet** worktree subagents run the N parallel ships; **Haiku** runs the verify legs and reports back; **Opus** scouts unmapped territory. Main (frontier) decomposes and judges.
 
 ## Prompts are briefs, not scripts
 
