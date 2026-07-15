@@ -399,38 +399,25 @@ export const keybinds: ActionCodesMap = {
 };
 `;
 
-const gameUiTsx = (name: string) => `import { useEntityStat, usePlayer } from "@jgengine/react/hooks";
-
-import { MAX_HEALTH } from "../tuning";
-
-function Hearts({ userId }: { userId: string }) {
-  const health = useEntityStat(userId, "health");
-  const current = health === null ? MAX_HEALTH : Math.round(health.current);
-  const max = health === null ? MAX_HEALTH : Math.round(health.max);
-  return (
-    <div className="flex items-center gap-1" aria-label="health">
-      {Array.from({ length: max }, (_, index) => (
-        <span
-          key={index}
-          className={index < current ? "text-lg leading-none text-rose-400" : "text-lg leading-none text-white/20"}
-        >
-          {index < current ? "\\u2665" : "\\u2661"}
-        </span>
-      ))}
-    </div>
-  );
-}
+const gameUiTsx = (name: string) => `// ${name} — your HUD starts BLANK. The engine imposes nothing; this is the whole HUD.
+// Opt into drop-in widgets from "@jgengine/react" as you need them (each is self-styled and reads
+// the local player by default), or write your own — anything you return here is your HUD:
+//
+//   import { StatBar, Hotbar, Speedometer, Clock, WaveBanner, Coins, Crosshair } from "@jgengine/react";
+//
+//   export function GameUI() {
+//     return (
+//       <div className="pointer-events-none absolute inset-0 p-4">
+//         <StatBar statId="health" tone="health" style={{ position: "absolute", left: 16, bottom: 16 }} />
+//         <Hotbar inventoryId="hotbar" style={{ position: "absolute", left: "50%", bottom: 16, transform: "translateX(-50%)" }} />
+//         <Clock style={{ position: "absolute", left: 16, top: 16 }} />
+//         <Coins currencyId="gold" style={{ position: "absolute", right: 16, top: 16 }} />
+//       </div>
+//     );
+//   }
 
 export function GameUI() {
-  const { userId } = usePlayer();
-  return (
-    <div className="pointer-events-none absolute inset-0 p-4 text-white">
-      <div className="flex w-fit items-center gap-4 rounded-lg bg-black/40 px-3 py-2 backdrop-blur">
-        <span className="text-sm font-semibold tracking-wide">${name}</span>
-        <Hearts userId={userId} />
-      </div>
-    </div>
-  );
+  return null;
 }
 `;
 
