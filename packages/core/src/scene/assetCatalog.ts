@@ -11,6 +11,27 @@ export interface ModelAssetRef {
   dims?: ModelDims;
 }
 
+/**
+ * A catalog entry backed by a registered {@link registerAssetGenerator} instead of a GLB URL — a
+ * slider-driven parametric prop (bookcase, building). `defaults` seeds a fresh placement's params.
+ * Placed instances persist `{ assetId, params, seed }` in the scene and re-resolve at runtime.
+ */
+export interface GeneratorAssetRef {
+  kind: "generator";
+  /** Id of the registered generator this asset resolves through. */
+  generatorId: string;
+  /** Default params stamped onto a fresh placement's meta. */
+  defaults?: Record<string, unknown>;
+}
+
+/** A catalog entry: a static GLB model, or a parametric generator. */
+export type AssetRef = ModelAssetRef | GeneratorAssetRef;
+
+/** True when a catalog entry is a parametric generator rather than a static GLB. @internal */
+export function isGeneratorAsset(ref: AssetRef): ref is GeneratorAssetRef {
+  return (ref as GeneratorAssetRef).kind === "generator";
+}
+
 export interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> {
   register(id: string, asset: TMeta): void;
   resolve(id: string): TMeta | null;

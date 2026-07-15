@@ -140,5 +140,17 @@ Procedural terrain is a canvas, never the level. A world with only `terrain()` +
 - **Density budget.** Inside a site's flatten radius aim for roughly one placed object per 6–10 units of radius; along roads one prop per ~60 units; open wilderness stays sparse so sites contrast. Frustum/distance culling is automatic — err toward more dressing, not less.
 - **Guided openness, never invisible walls.** Total freedom reads as emptiness: herd the player physically. Raise terrain amplitude so off-road relief is genuinely unclimbable, gate slope in `movement.beforeCommit` (block a step whose ground rises past a climb limit, with per-axis slide so it feels like a wall of rock, not a script), and carve the intended route as the one low path. Then buy the openness back deliberately: side pockets (a den, a cache, a wreck field) hang off the main road on short spur routes, each with its own reward, so exploration branches from the path instead of dissolving it. Test the herding the same way you test the road: assert off-road samples rise above the climb limit while every route and spur stays under it.
 
+## Parametric studios — generic primitives + environment kinds
+
+The editor is an **extension seam**: register a new authorable "studio" (a slider-driven parametric asset) with one call, zero engine edits. Full walkthrough in the `jgengine-editor` skill and `examples/studios/`. The genre-agnostic primitives a studio composes live here in `world/`:
+
+- **`placeAlongPath(points, { spacing, sampleHeight?, minCount? })`** (`world/pathInstances`) — evenly spaced, ground-snapped, yaw-along transforms down a polyline. Fence posts, streetlights, pylons, zipline anchors.
+- **`sagCurve(a, b, sag, segments)`** and **`catenaryCurve(a, b, slack, segments)`** (`world/catenary`) — a hanging cable's point string, ready to loft into a tube. `sagCurve` is a cheap quadratic-Bézier droop; `catenaryCurve` is the true hyperbolic cable (uneven anchor heights supported). Power lines, ropes, suspension cables, festoon lights.
+- **`readNamedSockets(model)`** (`scene/modelSockets`) — named attachment offsets read off a loaded GLB (socket/wire/attach/anchor/mount). Wire anchors, hardpoints, hand mounts.
+
+Built-in **environment kinds** (registered automatically, authored as editor volumes): `water` (parametric water surface, drives the Ocean shader — `WATER_SCHEMA`) and `grass_field` (GPU vertex-wind grass — `GRASS_SCHEMA`). Both persist in `editor.scene.json` and render via `AuthoredScene`.
+
+Generator assets (`scene/assetGenerator`): `registerAssetGenerator({ id, schema, generate })` turns `(params, seed) → parts` — a placed marker stores `{ assetId, ...params, seed }` and re-resolves at runtime, never baked. The `building` generator (`world/buildingGenerator`) is the engine adopter; bookcase is the example adopter.
+
 ## Turn-based & tactics (renderer-free)
 

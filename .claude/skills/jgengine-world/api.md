@@ -583,9 +583,19 @@
 ## @jgengine/core/scene/assetCatalog
 
 - `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
+- `AssetRef` (type): type AssetRef = ModelAssetRef | GeneratorAssetRef — A catalog entry: a static GLB model, or a parametric generator.
+- `GeneratorAssetRef` (interface): interface GeneratorAssetRef — A catalog entry backed by a registered {@link registerAssetGenerator} instead of a GLB URL — a slider-driven parametric prop (bookcase, building). `defaults` seeds a fresh placement's params. Placed instances persist `{ assetId, params, seed }` in the scene and re-resolve at runtime.
 - `ModelAssetRef` (interface): interface ModelAssetRef — ⚠ undocumented
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
+
+## @jgengine/core/scene/assetGenerator
+
+- `AssetGeneratorDefinition` (interface): interface AssetGeneratorDefinition — A registered asset generator — schema drives the inspector; `generate` is a pure seeded function.
+- `GeneratedAsset` (interface): interface GeneratedAsset — A resolved generator asset: its parts plus the overall local-space bounds (min/max corners).
+- `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.
+- `partsBounds` (function): function partsBounds(parts: readonly GeneratedPart[]): GeneratedAsset["bounds"] — Compute bounds from parts (each part is an axis-aligned box at its center) — a helper generators return so callers can frame/ground the asset without re-deriving it.
+- `registerAssetGenerator` (function): function registerAssetGenerator(definition: AssetGeneratorDefinition): void — Register a parametric asset generator. Idempotent per id (last wins); call at module load.
 
 ## @jgengine/core/scene/assetPreload
 
@@ -625,6 +635,10 @@
 - `BodyBindSpawnInput` (interface): interface BodyBindSpawnInput — The options a {@link BodyBindDeps.spawn} call receives for an id seen for the first time.
 - `BodySnapshot` (interface): interface BodySnapshot — One sim body's per-tick pose, as the game's simulation computed it — the shape a game already builds to hand to `setPose`, just declared instead of imperatively pushed. `kind` is the entity catalog name used only the first time `id` is seen (a respawn/despawn never re-reads it).
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
+
+## @jgengine/core/scene/builtinSceneKinds
+
+- `SCATTER_SCHEMA` (const): const SCATTER_SCHEMA: ParamSchema — The scatter/foliage region schema — the fields the inspector exposed as hand-written `ScatterFields`.
 
 ## @jgengine/core/scene/captureCheck
 
@@ -698,6 +712,13 @@
 - `FormsDeps` (interface): interface FormsDeps — ⚠ undocumented
 - `createForms` (function): function createForms(deps: FormsDeps): Forms — ⚠ undocumented
 
+## @jgengine/core/scene/modelSockets
+
+- `ModelNode` (interface): interface ModelNode — Generic named-socket reader for loaded 3D models. Walks a node tree (any object with `.name`, `.position`, and `.children` — structurally satisfied by `THREE.Object3D`) and collects the local offsets of nodes whose name marks an attachment point. Genre-agnostic: wire anchors on a pylon, muzzle/hand mounts on a character, hardpoints on a ship, seat/decal slots on furniture — anything an artist tags with an empty in the GLB. Pure data (no three.js import), so it lives in core.
+- `ModelSocket` (interface): interface ModelSocket — One resolved socket: its node name and local-space offset from the model origin.
+- `SOCKET_PATTERN` (const): const SOCKET_PATTERN: RegExp — Default socket-name matcher: "socket", "wire", "attach", "anchor", "mount", "hardpoint" (any case).
+- `readNamedSockets` (function): function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] — Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X so socket indices are stable across loads (top first, left-to-right). Empty when the model tags none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming convention.
+
 ## @jgengine/core/scene/mount
 
 - `MountController` (class): class MountController — Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to route that rider's {@link import("../physics/vehicleBody").AxisInput}-driven input at the mount's movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
@@ -761,6 +782,29 @@
 - `RosterDeps` (interface): interface RosterDeps — ⚠ undocumented
 - `RosterEntry` (interface): interface RosterEntry — ⚠ undocumented
 - `createRoster` (function): function createRoster(deps: RosterDeps = {}): Roster — ⚠ undocumented
+
+## @jgengine/core/scene/sceneKinds
+
+- `BoolParamField` (interface): interface BoolParamField — A checkbox.
+- `ColorParamField` (interface): interface ColorParamField — A hex color picker.
+- `NumberParamField` (interface): interface NumberParamField — A free numeric input, optionally clamped.
+- `ParamField` (type): type ParamField = | RangeParamField | NumberParamField | BoolParamField | SelectParamField | ColorParamField | TextParamField | SeedParamField | WeightedListParamField — One row in a kind's parameter schema — the union the generic inspector knows how to render.
+- `ParamIssue` (interface): interface ParamIssue — One validation problem found by {@link validateParams}: which field and why.
+- `ParamSchema` (interface): interface ParamSchema — A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom.
+- `ParsedParams` (type): type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]> — Parsed params after `parseParams`: every schema field present with a validated, defaulted value.
+- `RangeParamField` (interface): interface RangeParamField — A numeric slider row: bounded range with a live readout.
+- `SceneKindDefinition` (interface): interface SceneKindDefinition<TResolved = unknown> — A registered scene kind — everything the editor/engine need to author and render a studio without bespoke code. `schema` drives the inspector + parse; `resolve` (optional) turns one document object into pure renderable data a matching `shell` renderer consumes; `add*` fields build the `+ Add` menu.
+- `SceneKindObject` (interface): interface SceneKindObject — The raw document object a resolver receives — shape shared by markers, volumes, and paths.
+- `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
+- `SceneKindTarget` (type): type SceneKindTarget = "path" | "marker" | "volume" — The parametric-studio seam: a registry that maps an editor object `kind` to a typed parameter schema (drives the inspector + `meta` parse/validation), an optional pure-data `resolve` (turns a document object into renderable data), and `+ Add` menu metadata. Registering a kind lets a third party ship a new authorable "studio" (pole line, water, bookcase) — schema + resolver here, a matching renderer in `shell` — without editing editor or engine files. Scatter is the proof adopter.
+- `ScenePathShape` (type): type ScenePathShape = "area" | "line" — A closed-polygon area vs an open polyline, for path-target kinds. Ignored for marker/volume kinds.
+- `SeedParamField` (interface): interface SeedParamField — A seed string with a reroll button — same seed reproduces the same generated result.
+- `SelectParamField` (interface): interface SelectParamField — A dropdown of fixed string options.
+- `TextParamField` (interface): interface TextParamField — A free string input.
+- `WeightedListParamField` (interface): interface WeightedListParamField — A repeatable list of weighted `{ item, weight }` rows (species palette, book set, …).
+- `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
+- `parseParams` (function): function parseParams(schema: ParamSchema, meta: Record<string, unknown> | undefined): ParsedParams — Parse a raw `meta` bag against a schema into typed params — every field present, invalid/missing values replaced by the field default, numbers clamped to their range. The single parser every studio shares instead of hand-writing its own `metaNumber`/`metaBool` ladder.
+- `registerSceneKind` (function): function registerSceneKind<TResolved>(definition: SceneKindDefinition<TResolved>): void — Register a scene kind — the plug-in point for a new parametric studio. Idempotent per `kind` (last registration wins), so a game's registration overrides a default. Call at module load; the editor inspector, `+ Add` menu, and `AuthoredScene` renderer lookup all read this registry.
 
 ## @jgengine/core/scene/sceneRaycast
 
@@ -1094,6 +1138,11 @@
 - `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
 
+## @jgengine/core/world/buildingGenerator
+
+- `BUILDING_GENERATOR_ID` (const): const BUILDING_GENERATOR_ID: "building" — The generator id a catalog entry / placed marker references.
+- `BUILDING_GENERATOR_SCHEMA` (const): const BUILDING_GENERATOR_SCHEMA: ParamSchema — The building generator's slider schema — drives the inspector via #809.
+
 ## @jgengine/core/world/buildingIndex
 
 - `BuildingHit` (interface): interface BuildingHit — ⚠ undocumented
@@ -1142,6 +1191,12 @@
 - `VoxelVolume` (class): class VoxelVolume — A runtime-editable dense voxel grid — the carve/deposit op behind destructible dig worlds (Deep Rock Galactic tunnels, Astroneer terrain). Cells hold a material id (0 = empty); `carve` clears a sphere of solid cells that a tool is strong enough to break and returns how many it removed (feed that to a loot roll), `deposit` fills a sphere with a material. World↔cell mapping is `origin`+`scale`.
 - `VoxelVolumeConfig` (interface): interface VoxelVolumeConfig — ⚠ undocumented
 - `carvableTerrain` (function): function carvableTerrain(base: TerrainField): CarvableField — ⚠ undocumented
+
+## @jgengine/core/world/catenary
+
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — Generic sag/catenary curve → point string, ready to loft into a tube. Genre-agnostic — power lines, suspension-bridge cables, ziplines, ropes, hanging chains, festoon lights all hang the same way. `sagCurve` is a cheap quadratic-Bézier droop; `catenaryCurve` is the true cosh hyperbolic cable.
+- `catenaryCurve` (function): function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] — True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10% longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable. Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
+- `sagCurve` (function): function sagCurve(a: Vec3, b: Vec3, sag: number, segments: number): Vec3[] — Quadratic-Bézier sag between two anchors: the control point is pulled straight down so the mid-span lowest point droops by exactly `sag` meters below the chord. Cheap and stable; the go-to for cables where exact catenary physics don't matter. Returns `segments + 1` points.
 
 ## @jgengine/core/world/cellStates
 
@@ -1306,6 +1361,14 @@
 - `resolveMove` (function): function resolveMove(from: Vec2, delta: Vec2, blockers: readonly Aabb[], options: MoveOptions = {}): Vec2 — ⚠ undocumented
 - `snapToGrid` (function): function snapToGrid(point: Vec2, size: number): Vec2 — ⚠ undocumented
 
+## @jgengine/core/world/grassKind
+
+- `GRASS_DEFAULTS` (const): const GRASS_DEFAULTS: GrassRules — Grass defaults: a lush, lightly-swaying meadow.
+- `GRASS_FIELD_KIND` (const): const GRASS_FIELD_KIND: "grass_field" — The editor volume kind marking a box as a GPU grass patch.
+- `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema — The grass parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `GrassRules` (interface): interface GrassRules — Fully-defaulted grass params parsed from a volume's `meta`.
+- `ResolvedGrass` (interface): interface ResolvedGrass — A resolved grass patch: world-space area center at ground height, footprint size (XZ), and rules.
+
 ## @jgengine/core/world/gridInstances
 
 - `GridInstanceTransform` (interface): interface GridInstanceTransform — ⚠ undocumented
@@ -1381,6 +1444,12 @@
 - `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
 - `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
 - `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
+
+## @jgengine/core/world/pathInstances
+
+- `PathInstance` (interface): interface PathInstance — One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance.
+- `PlaceAlongPathOptions` (interface): interface PlaceAlongPathOptions — Options for {@link placeAlongPath}.
+- `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
 
 ## @jgengine/core/world/placedStructureStore
 
@@ -1696,6 +1765,14 @@
 - `synthesizeWaves` (function): function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[] — ⚠ undocumented
 - `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
 - `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
+
+## @jgengine/core/world/waterKind
+
+- `ResolvedWater` (interface): interface ResolvedWater — A resolved water surface: world-space plane center/size (XZ) at surface height `y`, plus its params.
+- `WATER_DEFAULTS` (const): const WATER_DEFAULTS: WaterRules — Water defaults: a calm blue-green pond with a soft foam edge.
+- `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `WATER_VOLUME_KIND` (const): const WATER_VOLUME_KIND: "water" — The editor volume kind marking a box as a water surface.
+- `WaterRules` (interface): interface WaterRules — Fully-defaulted water surface params parsed from a volume's `meta`.
 
 ## @jgengine/core/world/weather
 

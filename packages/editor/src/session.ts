@@ -35,7 +35,37 @@ import {
 } from "@jgengine/core/world/scatterRegion";
 import type { EditorMarker } from "@jgengine/core/editor/index";
 
+import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
+import { getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
+
 import { TERRAIN_MATERIALS } from "./uiStore";
+
+registerBuiltinSceneKinds();
+
+/** Which document collection an object lives in, plus its current kind + meta — for generic `set_meta`. */
+function findMetaTarget(
+  doc: EditorDocument,
+  id: string,
+): { target: "marker" | "volume" | "path" | "note"; kind: string; meta: Record<string, unknown> | undefined } | null {
+  const marker = doc.markers.find((m) => m.id === id);
+  if (marker !== undefined) return { target: "marker", kind: marker.kind, meta: marker.meta };
+  const volume = doc.volumes.find((v) => v.id === id);
+  if (volume !== undefined) return { target: "volume", kind: volume.kind, meta: volume.meta };
+  const path = doc.paths.find((p) => p.id === id);
+  if (path !== undefined) return { target: "path", kind: path.kind, meta: path.meta };
+  const note = doc.annotations.find((n) => n.id === id);
+  if (note !== undefined) return { target: "note", kind: "note", meta: note.meta };
+  return null;
+}
+
+/** Validates a merged meta bag against a registered kind's schema; returns an error string or null. */
+function validateMetaForKind(kind: string, meta: Record<string, unknown> | undefined): string | null {
+  const definition = getSceneKind(kind);
+  if (definition === undefined || meta === undefined) return null;
+  const issues = validateParams(definition.schema, meta);
+  if (issues.length === 0) return null;
+  return `invalid ${kind} params: ${issues.map((issue) => `${issue.key} (${issue.message})`).join(", ")}`;
+}
 
 /** How the editor hosts the game: frozen placement view, roamable world, or the real game. */
 export type EditorRunMode = "edit" | "walk" | "play";
@@ -53,6 +83,10 @@ export type EditorBridgeRequest =
   | { method: "get_volume"; id: string }
   | { method: "set_transform"; id: string; x?: number; y?: number; z?: number; rotationY?: number }
   | { method: "set_volume"; id: string; radius?: number; height?: number; x?: number; y?: number; z?: number }
+  | { method: "set_path"; id: string; kind?: string; width?: number; color?: string; label?: string; meta?: Record<string, unknown> }
+  | { method: "set_marker"; id: string; kind?: string; color?: string; label?: string; rotationY?: number; meta?: Record<string, unknown> }
+  | { method: "set_note"; id: string; text?: string; meta?: Record<string, unknown> }
+  | { method: "set_meta"; id: string; patch: Record<string, unknown> }
   | { method: "select"; ids: string[] }
   | { method: "clear_selection" }
   | { method: "camera_goto"; id?: string; x?: number; y?: number; z?: number }
@@ -379,6 +413,80 @@ export function createEditorHost(options: {
               },
             });
             return { ok: true, result: session.getState().document.volumes.find((v) => v.id === request.id) };
+          }
+          case "set_path": {
+            const doc = session.getState().document;
+            const path = doc.paths.find((p) => p.id === request.id);
+            if (path === undefined) return { ok: false, error: `path not found: ${request.id}` };
+            const merged = request.meta === undefined ? undefined : { ...path.meta, ...request.meta };
+            const kind = request.kind ?? path.kind;
+            const invalid = validateMetaForKind(kind, merged);
+            if (invalid !== null) return { ok: false, error: invalid };
+            session.dispatch({
+              type: "setPath",
+              id: request.id,
+              patch: {
+                ...(request.kind === undefined ? {} : { kind: request.kind }),
+                ...(request.width === undefined ? {} : { width: request.width }),
+                ...(request.color === undefined ? {} : { color: request.color }),
+                ...(request.label === undefined ? {} : { label: request.label }),
+                ...(merged === undefined ? {} : { meta: merged }),
+              },
+            });
+            return { ok: true, result: session.getState().document.paths.find((p) => p.id === request.id) };
+          }
+          case "set_marker": {
+            const doc = session.getState().document;
+            const marker = doc.markers.find((m) => m.id === request.id);
+            if (marker === undefined) return { ok: false, error: `marker not found: ${request.id}` };
+            const merged = request.meta === undefined ? undefined : { ...marker.meta, ...request.meta };
+            const kind = request.kind ?? marker.kind;
+            const invalid = validateMetaForKind(kind, merged);
+            if (invalid !== null) return { ok: false, error: invalid };
+            session.dispatch({
+              type: "setMarker",
+              id: request.id,
+              patch: {
+                ...(request.kind === undefined ? {} : { kind: request.kind }),
+                ...(request.color === undefined ? {} : { color: request.color }),
+                ...(request.label === undefined ? {} : { label: request.label }),
+                ...(request.rotationY === undefined ? {} : { rotationY: request.rotationY }),
+                ...(merged === undefined ? {} : { meta: merged }),
+              },
+            });
+            return { ok: true, result: session.getState().document.markers.find((m) => m.id === request.id) };
+          }
+          case "set_note": {
+            const doc = session.getState().document;
+            const note = doc.annotations.find((n) => n.id === request.id);
+            if (note === undefined) return { ok: false, error: `note not found: ${request.id}` };
+            const merged = request.meta === undefined ? undefined : { ...note.meta, ...request.meta };
+            session.dispatch({
+              type: "setNote",
+              id: request.id,
+              patch: {
+                ...(request.text === undefined ? {} : { text: request.text }),
+                ...(merged === undefined ? {} : { meta: merged }),
+              },
+            });
+            return { ok: true, result: session.getState().document.annotations.find((n) => n.id === request.id) };
+          }
+          case "set_meta": {
+            const target = findMetaTarget(session.getState().document, request.id);
+            if (target === null) return { ok: false, error: `object not found: ${request.id}` };
+            const merged = { ...target.meta, ...request.patch };
+            const invalid = validateMetaForKind(target.kind, merged);
+            if (invalid !== null) return { ok: false, error: invalid };
+            session.dispatch(
+              target.target === "marker"
+                ? { type: "setMarker", id: request.id, patch: { meta: merged } }
+                : target.target === "volume"
+                  ? { type: "setVolume", id: request.id, patch: { meta: merged } }
+                  : target.target === "path"
+                    ? { type: "setPath", id: request.id, patch: { meta: merged } }
+                    : { type: "setNote", id: request.id, patch: { meta: merged } },
+            );
+            return { ok: true, result: { id: request.id, kind: target.kind, meta: merged } };
           }
           case "select":
             session.dispatch({ type: "select", ids: request.ids });

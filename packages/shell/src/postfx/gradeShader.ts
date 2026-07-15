@@ -9,6 +9,7 @@ const DEFAULT_GAMMA = 0.96;
 const DEFAULT_SATURATION = 1.12;
 const DEFAULT_VIGNETTE = 0.2;
 const DEFAULT_GRAIN = 0.012;
+const DEFAULT_CHROMA = 0;
 
 const fragmentShader = /* glsl */ `
   uniform sampler2D tDiffuse;
@@ -18,6 +19,7 @@ const fragmentShader = /* glsl */ `
   uniform float uSaturation;
   uniform float uVignette;
   uniform float uGrain;
+  uniform float uChroma;
   uniform float uTime;
   varying vec2 vUv;
 
@@ -26,7 +28,12 @@ const fragmentShader = /* glsl */ `
   }
 
   void main() {
-    vec3 c = texture2D(tDiffuse, vUv).rgb;
+    vec2 dir = vUv - 0.5;
+    // Chromatic aberration: split RGB along the radial direction, growing toward the edges.
+    vec2 shift = uChroma > 0.0 ? dir * uChroma * dot(dir, dir) * 4.0 : vec2(0.0);
+    vec3 c = uChroma > 0.0
+      ? vec3(texture2D(tDiffuse, vUv + shift).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - shift).b)
+      : texture2D(tDiffuse, vUv).rgb;
     c = c + uLift;
     c = c * uGain;
     c = pow(max(c, 0.0), vec3(uGamma));
@@ -62,6 +69,7 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
       uSaturation: { value: config.saturation ?? DEFAULT_SATURATION },
       uVignette: { value: config.vignette ?? DEFAULT_VIGNETTE },
       uGrain: { value: config.grain ?? DEFAULT_GRAIN },
+      uChroma: { value: config.chromaticAberration ?? DEFAULT_CHROMA },
       uTime: { value: 0 },
     },
     vertexShader,

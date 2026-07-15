@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { EffectComposer, RenderPass, UnrealBloomPass, type ShaderPass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
+import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 
 import type { PostProcessingConfig, ToneMappingMode } from "@jgengine/core/render/postProcessing";
 
@@ -62,6 +63,17 @@ export function PostProcessing({ config }: { config: PostProcessingConfig }) {
           b.radius ?? 0.55,
           b.threshold ?? 0.85,
         ),
+      );
+    }
+
+    if (config.dof !== undefined && config.dof !== false) {
+      const dof = config.dof;
+      composer.addPass(
+        new BokehPass(scene, camera, {
+          focus: dof.focus ?? 18,
+          aperture: dof.aperture ?? 0.00025,
+          maxblur: dof.maxBlur ?? 0.01,
+        }),
       );
     }
 

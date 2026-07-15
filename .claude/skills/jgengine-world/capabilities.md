@@ -12,6 +12,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/scene/bodyBind"`
 
+## catenary — sagging cable curve between two anchors
+
+- `Vec3` (type) · `import { Vec3 } from "@jgengine/core/world/catenary"`
+
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/movement/poseState"`
@@ -39,6 +43,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/interaction/lockpick"`
+
+## model-sockets — named attachment points read from a model
+
+- `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/scene/modelSockets"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 

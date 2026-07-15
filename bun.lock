@@ -352,6 +352,22 @@
         "typescript": "^5",
       },
     },
+    "examples/studios": {
+      "name": "@jgengine-examples/studios",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19",
+        "@types/three": "^0.182.0",
+        "typescript": "^5",
+      },
+    },
     "examples/tanstack-host": {
       "name": "@jgengine-examples/tanstack-host",
       "version": "0.1.0",
@@ -731,6 +747,8 @@
     "@jgengine-examples/express-host": ["@jgengine-examples/express-host@workspace:examples/express-host"],
 
     "@jgengine-examples/next-host": ["@jgengine-examples/next-host@workspace:examples/next-host"],
+
+    "@jgengine-examples/studios": ["@jgengine-examples/studios@workspace:examples/studios"],
 
     "@jgengine-examples/tanstack-host": ["@jgengine-examples/tanstack-host@workspace:examples/tanstack-host"],
 
