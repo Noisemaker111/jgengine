@@ -10,7 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@games/nonogram": "workspace:*",
+    "@games/spire-cards": "workspace:*",
     "@jgengine/core": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/sql": "workspace:*",

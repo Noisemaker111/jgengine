@@ -34,7 +34,7 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | 15 Puzzle | ❌ | |
 | Sokoban | ❌ | |
 | Sudoku | ❌ | |
-| Nonogram / Picross | ✅ | `nonogram` |
+| Nonogram / Picross | ❌ | |
 | Lights Out | ❌ | |
 | Peg Solitaire | ❌ | |
 | Mastermind | ❌ | |
@@ -67,7 +67,7 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | Columns | W2 | |
 | Chain-drop (Puyo lineage) | W2 | |
 | Bubble shooter | ❌ | |
-| Space Invaders | ✅ | `star-invaders` |
+| Space Invaders | ❌ | |
 | Asteroids | ❌ | |
 | Missile Command | W2 | |
 | Lunar Lander | W2 | |
@@ -81,7 +81,7 @@ Status: ✅ shipped · 🔨 in flight · W2/W3 queued wave.
 | Game | Status | id |
 | --- | --- | --- |
 | Pachinko | ❌ | |
-| Pinball | ✅ | `pinball` |
+| Pinball | ❌ | |
 | Peg-bounce scorer (Peggle lineage) | W2 | |
 | Mahjong Solitaire | ❌ | |
 | Yahtzee | ❌ | |

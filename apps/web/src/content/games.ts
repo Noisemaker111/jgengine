@@ -36,15 +36,6 @@ export type Game = {
 type GameDetails = Omit<Game, "id" | "title" | "href"> & { title?: string };
 
 const GAME_DETAILS: Record<string, GameDetails> = {
-  "loot-shooter": {
-    tagline: "Ten waves, forty guns, one salvage yard.",
-    description:
-      "A first-person arena looter. Fight ten escalating waves of scav machines, crack their rarity-beamed weapon drops, swap whatever outguns your kit into a three-slot hotbar, and spend scrap at requisition stations between firefights. Bosses telegraph mortars, challenges pay out, and victory unlocks endless mode.",
-    genre: "First-person looter",
-    category: "Action & Arcade",
-    controls: "WASD · mouse fire · E grab/shop · G frag · Q medkit · 1-3 weapons",
-    hue: "#f87171",
-  },
   "the-robots": {
     title: "The Robots",
     tagline: "Salvage a bazillion procedurally-forged guns from a dead machine-world.",
@@ -76,14 +67,25 @@ const GAME_DETAILS: Record<string, GameDetails> = {
       },
     },
   },
-  "grid-tactics": {
-    tagline: "Deploy the squad, breach the outpost.",
+  loopline: {
+    title: "Loopline",
+    tagline: "Lay the track, price the tickets, keep the crowds grinning.",
     description:
-      "Turn-based tactics on a gridded battlefield. Deploy your squad, spend each unit's actions on movement, attacks, and ability plays around cover, then end the turn and weather the enemy's counterattack.",
-    genre: "Turn-based tactics",
-    category: "Strategy & Tactics",
-    controls: "Click units & tiles · Enter end turn · Esc cancel",
-    hue: "#fbbf24",
+      "A 3D park-builder management tycoon. Lay coaster track piece by piece, drop rides, food stalls, and scenery onto an open plot, then set ticket prices and keep hundreds of guests fed, thrilled, and spending. Revenue funds upkeep and restocks; rising park rating unlocks bigger attractions — let the cash run dry and the gates close for good.",
+    genre: "Management tycoon",
+    category: "Sandbox & Simulation",
+    controls: "Drag/edge-scroll pan · click build · 1-6 quick tools · X cancel · P pause",
+    hue: "#33b1c9",
+  },
+  starhome: {
+    title: "Starhome",
+    tagline: "Direct a household of alien beings — no fail state, just life.",
+    description:
+      "An open-ended alien life sim. Guide a household of procedurally shaped beings — each with its own body plan of limbs, size, and form — as they chase hunger, rest, bonds, and play. Furnish the habitat, send them to careers, watch relationships bloom into lifelong bonds, and let free-will behavior play out across a day-night cycle. No fail state, just emergent lives.",
+    genre: "Life-sim sandbox",
+    category: "Sandbox & Simulation",
+    controls: "Drag to pan · click a being to select · 1–6 furnish · Space pause · T speed",
+    hue: "#c9a6e0",
   },
   "spire-cards": {
     tagline: "Draft a deck, out-turn escalating enemies.",
@@ -103,65 +105,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "Click to place · 1–3 pick tower",
     hue: "#c084fc",
   },
-  starhome: {
-    title: "Starhome",
-    tagline: "Direct a household of alien beings — no fail state, just life.",
-    description:
-      "An open-ended alien life sim. Guide a household of procedurally shaped beings — each with its own body plan of limbs, size, and form — as they chase hunger, rest, bonds, and play. Furnish the habitat, send them to careers, watch relationships bloom into lifelong bonds, and let free-will behavior play out across a day-night cycle. No fail state, just emergent lives.",
-    genre: "Life-sim sandbox",
-    category: "Sandbox & Simulation",
-    controls: "Drag to pan · click a being to select · 1–6 furnish · Space pause · T speed",
-    hue: "#c9a6e0",
-  },
-  monument: {
-    title: "Monument",
-    tagline: "Sculpt a brutalist district and watch it live.",
-    description:
-      "A brutalist architecture toy. Cast slabs, towers, megastructures, and capsule spines onto an open site, sculpt each one through nine compositions and six profiles, and watch the concrete district live through day and night — no economy, no fail state, just consequences.",
-    genre: "City-building toy",
-    category: "Sandbox & Simulation",
-    controls: "1–6 build tools · V select · X demolish · Space pause",
-    hue: "#d7ff43",
-    credit: {
-      name: "Ethan Mollick",
-      label: "A port of Monument by",
-      handle: "@emollick",
-      href: "https://x.com/emollick",
-      avatar: "https://unavatar.io/x/emollick",
-      source: {
-        name: "monument-brutalist-city-builder",
-        href: "https://github.com/emollick/monument-brutalist-city-builder",
-      },
-    },
-  },
-  loopline: {
-    title: "Loopline",
-    tagline: "Lay the track, price the tickets, keep the crowds grinning.",
-    description:
-      "A 3D park-builder management tycoon. Lay coaster track piece by piece, drop rides, food stalls, and scenery onto an open plot, then set ticket prices and keep hundreds of guests fed, thrilled, and spending. Revenue funds upkeep and restocks; rising park rating unlocks bigger attractions — let the cash run dry and the gates close for good.",
-    genre: "Management tycoon",
-    category: "Sandbox & Simulation",
-    controls: "Drag/edge-scroll pan · click build · 1-6 quick tools · X cancel · P pause",
-    hue: "#33b1c9",
-  },
-  "clockwork-heist": {
-    tagline: "Five treasures, one clockwork night, zero mistakes.",
-    description:
-      "A top-down stealth heist through a mansion patrolled by guards with vision cones and roaming cameras. Sneak between wings to crack five signature treasures and grab bonus loot through timing skill-checks, then slip out before three strikes or the dawn clock ends the job.",
-    genre: "Top-down stealth heist",
-    category: "Action & Arcade",
-    controls: "WASD move · Shift sneak · E interact · Tab schedule",
-    hue: "#b45309",
-  },
-  craterball: {
-    tagline: "Arm the charges, blast the ball, bury the pitch in craters.",
-    description:
-      "A two-team explosive sports match on a crater-scarred pitch: arm timed charges near the ball, detonate them to blast it toward the opposing goal, and dodge-roll clear of the blast radius. Every explosion permanently craters the terrain, and first to five goals wins.",
-    genre: "Explosive arena sports",
-    category: "Action & Arcade",
-    controls: "WASD move · F throw charge · Space detonate · Shift dodge roll",
-    hue: "#d946ef",
-  },
   "vice-isle": {
     tagline: "Steal it, drive it, shake the heat.",
     description:
@@ -179,60 +122,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
       source: { name: "Grand Theft Auto × Borderlands", href: "https://www.rockstargames.com/VI" },
     },
   },
-  "drone-derby": {
-    tagline: "Thread the rings before the cell runs dry.",
-    description:
-      "An FPV drone race through a dusk shipping yard, dodging gusts of wind while chasing gold, silver, and bronze splits across three courses. Push the throttle hard and the battery drains faster — land on a charge pad to top up before you're stranded mid-course.",
-    genre: "FPV drone racing",
-    category: "Action & Arcade",
-    controls: "W/S throttle · A/D yaw · Arrows pitch/strafe · Space boost · E charge · 1–3 pick course",
-    hue: "#7dd3fc",
-  },
-  "dune-nomads": {
-    tagline: "Lead the caravan across the dunes before the water runs dry.",
-    description:
-      "A desert caravan trek where you steer a lead camel while four followers trail behind, racing a rival caravan toward the far city of Meridaan. Dock at oases to gamble a quick top-up or a full refill, read the wind before every dune, and keep the water from running out before you reach the gates.",
-    genre: "Desert caravan survival trek",
-    category: "Sandbox & Simulation",
-    controls: "W urge · S ease · A/D steer · E dock · M map",
-    hue: "#a16207",
-  },
-  "magnet-run": {
-    tagline: "Flip polarity, stick the wall, don't get thrown.",
-    description:
-      "An auto-running freight-tunnel dash where flipping magnetic polarity decides whether floor, wall, or train roof holds you or throws you off. Switch lanes, board rolling trains, and boost through all three sectors before three crashes end the run.",
-    genre: "Polarity runner",
-    category: "Action & Arcade",
-    controls: "A/D lanes · Space flip polarity · W boost · S brake",
-    hue: "#3b82f6",
-  },
-  "neon-shepherd": {
-    tagline: "Twenty lights follow you home. Lose none.",
-    description:
-      "A neon night-city herding run where a flock of glowing creatures trails you from the park to the sanctuary. Pulse to gather strays, hold the herd steady at the curb, and time every road crossing between passing traffic.",
-    genre: "Night-city herding",
-    category: "Action & Arcade",
-    controls: "WASD · Space gather-pulse · Shift hold herd",
-    hue: "#2dd4bf",
-  },
-  "pulse-runner": {
-    tagline: "Stay on the beat or fall behind.",
-    description:
-      "A rhythm-driven endless runner through a three-lane cathedral aisle. Tap in time to swap lanes past gaps, swinging censers, and beat-gated doors, chain perfect hits into a resonance streak for a speed bonus, and lean forward to push the pace before your pulse meter runs out of strikes.",
-    genre: "Rhythm runner",
-    category: "Action & Arcade",
-    controls: "Space tap beat · A/D lane · W lean",
-    hue: "#f472b6",
-  },
-  "skyhook-rally": {
-    tagline: "Grapple, swing, and release at the apex.",
-    description:
-      "A grappling-hook flight race over a floating sky archipelago. Fire the hook to swing pendulum-style between brass pylons, release right at the apex for maximum distance, and chain true swings into a streak bonus as you chase gold across looping, climbing, and diving courses.",
-    genre: "Grapple-swing racer",
-    category: "Action & Arcade",
-    controls: "Mouse/Space hook · W/S pitch · A/D steer",
-    hue: "#818cf8",
-  },
   wreckway: {
     tagline: "Bolt on parts, outrun the compactor eating the yard.",
     description:
@@ -241,36 +130,6 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     category: "Action & Arcade",
     controls: "↑/W throttle · ↓/S brake · ←/→ steer · Space hop · Shift plow brace · R restart",
     hue: "#16a34a",
-  },
-  nonogram: {
-    title: "Nonogram",
-    tagline: "Paint by logic",
-    description:
-      "Twenty original picture puzzles from 5×5 to 15×15, each provably solvable by pure line logic — reveal the pixel art.",
-    genre: "picture/logic",
-    category: "Puzzle",
-    controls: "Click fill · right-click cross · drag paint · Z undo · C clear",
-    hue: "#0d9488",
-  },
-  "star-invaders": {
-    title: "Star Invaders",
-    tagline: "The wall descends",
-    description:
-      "Fifty-five marching aliens, eroding bunkers, a bonus saucer, and one shot on screen — hold the line.",
-    genre: "arcade/shooter",
-    category: "Action & Arcade",
-    controls: "A/D/Arrows or mouse aim · Space/click fire · P pause · R restart",
-    hue: "#00ff41",
-  },
-  pinball: {
-    title: "Pinball",
-    tagline: "Flippers up, table live",
-    description:
-      "A golden-age solid-state table with real flipper physics, pop bumpers, drop targets, multipliers, and TILT.",
-    genre: "pinball/arcade",
-    category: "Others",
-    controls: "Z/← left flipper · Slash/→ right flipper · ↓/Enter plunge · Space nudge · N new game",
-    hue: "#fb8500",
   },
 };
 
