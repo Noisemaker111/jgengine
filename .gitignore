@@ -6,27 +6,14 @@ shots/
 .turbo/
 **/public/models/*
 !apps/dev/public/models/claudecraft/
-!apps/dev/public/models/kenney-castle/
-!apps/dev/public/models/kenney-tower-defense/
-!apps/dev/public/models/kenney-mini-arena/
-!apps/dev/public/models/kenney-racing/
-!apps/dev/public/models/kenney-nature/
-!apps/dev/public/models/kenney-city-roads/
-!apps/dev/public/models/kenney-city-commercial/
-!apps/dev/public/models/kenney-city-suburban/
-!apps/dev/public/models/kenney-mini-characters/
-!apps/dev/public/models/kenney-survival/
-!apps/dev/public/models/kenney-blaster/
-!apps/dev/public/models/kenney-space/
-!apps/dev/public/models/kenney-furniture/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
 
 # CHANGELOG.md is authored once at the repo root and copied into each package
-# at publish time (see publish.yml) — the per-package copies are build artifacts.
+# at publish time (see publish.yml) â€” the per-package copies are build artifacts.
 packages/*/CHANGELOG.md
 
-# Compiled output must never sit beside TS source — Vite resolves .js over .ts,
+# Compiled output must never sit beside TS source â€” Vite resolves .js over .ts,
 # so a stray src/*.js silently shadows its .ts sibling and breaks dev/shoot.
 # Source dirs are pure TypeScript; emit only ever goes to dist/.
 packages/*/src/**/*.js
@@ -36,11 +23,11 @@ packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts.map
 
 # Packaged skills and the API-surface JSON are staged from .claude/skills and
-# packages/*/src by scripts/stage-skills.ts and scripts/gen-api-docs.ts —
+# packages/*/src by scripts/stage-skills.ts and scripts/gen-api-docs.ts â€”
 # never author or commit these by hand.
 packages/*/skills/
 apps/web/src/generated/
 
 # Ephemeral git worktrees created by fan-out shipping subagents
-# (Agent({ isolation: "worktree" })) — transient, never committed.
+# (Agent({ isolation: "worktree" })) â€” transient, never committed.
 .claude/worktrees/

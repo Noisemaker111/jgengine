@@ -93,7 +93,7 @@ same document (waypoints from a `route` path, plots from markers). See CLAUDE.md
 editor, render them generically".
 
 Scatter regions default to `InstancedScatter`'s 7 stylized proxy species (tree/pine/oak/bush/shrub/rock/
-stone/grass) — pass `scatterModels={{ pine: "kenney-nature/tree_pineDefaultA" }} assets={assets}` to
+stone/grass) — pass `scatterModels={{ pine: "quaternius-stylized-nature/tree_pineDefaultA" }} assets={assets}` to
 `<AuthoredScene>` to GPU-instance a real catalog GLB for a palette item instead; unmapped items keep the
 proxy. Same `resolveModel` machinery as `entityModels`/`objectModels` (missing/misspelled catalog ids
 throw), factored into `createModelMapResolver(map, assets, seam)` — `InstancedScatter`'s own

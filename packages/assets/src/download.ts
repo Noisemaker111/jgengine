@@ -63,7 +63,7 @@ export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch)
 /**
  * Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the
  * archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g.
- * `https://my-mirror.example.com/kenney/kenney-nature.zip`.
+ * `https://my-mirror.example.com/quaternius/quaternius-stylized-nature.zip`.
  */
 export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string {
   const base = baseUrl.replace(/\/+$/, "");

@@ -8,7 +8,7 @@
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
 - `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
-- `AssetProvider` (type): type AssetProvider = | "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
+- `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
@@ -55,13 +55,11 @@
 - `indexSpriteSourceDir` (function): function indexSpriteSourceDir(source: AssetSource, dir: string): IndexEntry[] — Walks a pulled sprite-pack directory and returns one `IndexEntry` per SVG/PNG, deduped by filename.
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
-- `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
-- `kenneySpriteSources` (const): const kenneySpriteSources: readonly AssetSource[] — Kenney's CC0 2D icon/UI packs — `kind: "sprite"` counterpart of `kenneySources`.
 - `keyFromSpriteFile` (function): function keyFromSpriteFile(file: string): string — Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix.
 - `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
 - `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
 - `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
-- `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Kenney, Quaternius, KayKit packs).
+- `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Quaternius, KayKit packs).
 - `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
 - `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
@@ -133,7 +131,7 @@
 - `extractSpriteFiles` (function): function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] — Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth.
 - `extractTextures` (function): function extractTextures(archive: Uint8Array): ExtractedTexture[] — ⚠ undocumented
 - `findArchiveUrl` (function): function findArchiveUrl(html: string, pageUrl: string): string | null — ⚠ undocumented
-- `mirrorOverrideUrl` (function): function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string — Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g. `https://my-mirror.example.com/kenney/kenney-nature.zip`.
+- `mirrorOverrideUrl` (function): function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string — Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g. `https://my-mirror.example.com/quaternius/quaternius-stylized-nature.zip`.
 - `resolveArchiveUrl` (function): function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<string> — ⚠ undocumented
 - `sha256Hex` (function): function sha256Hex(bytes: Uint8Array): Promise<string> — ⚠ undocumented
 
@@ -168,7 +166,7 @@
 
 - `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
-- `AssetProvider` (type): type AssetProvider = | "kenney" | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
+- `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
@@ -216,10 +214,8 @@
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 - `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
-- `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
-- `kenneySpriteSources` (const): const kenneySpriteSources: readonly AssetSource[] — Kenney's CC0 2D icon/UI packs — `kind: "sprite"` counterpart of `kenneySources`.
 - `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
-- `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Kenney, Quaternius, KayKit packs).
+- `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Quaternius, KayKit packs).
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
 - `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
 - `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
@@ -237,11 +233,6 @@
 ## @jgengine/assets/sources/kaykit
 
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
-
-## @jgengine/assets/sources/kenney
-
-- `kenneySources` (const): const kenneySources: readonly AssetSource[] — ⚠ undocumented
-- `kenneySpriteSources` (const): const kenneySpriteSources: readonly AssetSource[] — Kenney's CC0 2D icon/UI packs — `kind: "sprite"` counterpart of `kenneySources`.
 
 ## @jgengine/assets/sources/quaternius
 

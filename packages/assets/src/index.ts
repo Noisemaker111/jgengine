@@ -7,8 +7,6 @@ export {
   spriteSources,
   ambientcgSources,
   gameiconsSources,
-  kenneySources,
-  kenneySpriteSources,
   quaterniusSources,
   kaykitSources,
 } from "./sources";

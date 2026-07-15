@@ -12,9 +12,9 @@ import {
 } from "./download";
 import type { AssetSource } from "./manifest";
 
-const PRIMARY_URL = "https://kenney.nl/pinned/pack.zip";
+const PRIMARY_URL = "https://quaternius.com/pinned/pack.zip";
 const MIRROR_BASE = "https://mirror.example.com";
-const PACK_MIRROR_URL = "https://backup.example.com/kenney-nature-archive.zip";
+const PACK_MIRROR_URL = "https://backup.example.com/quaternius-stylized-nature-archive.zip";
 
 function noDefaultMirror<T>(run: () => Promise<T>): Promise<T> {
   const prior = process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR;
@@ -26,11 +26,11 @@ function noDefaultMirror<T>(run: () => Promise<T>): Promise<T> {
 }
 
 const baseSource: AssetSource = {
-  id: "kenney-nature",
-  provider: "kenney",
+  id: "quaternius-stylized-nature",
+  provider: "quaternius",
   title: "Nature Kit",
   license: "CC0-1.0",
-  author: "Kenney",
+  author: "Quaternius",
   categories: ["nature"],
   download: { url: PRIMARY_URL },
 };
@@ -79,11 +79,11 @@ describe("extractSpriteFiles", () => {
 
 describe("mirrorOverrideUrl", () => {
   test("lays out the archive at <baseUrl>/<provider>/<packId>.zip", () => {
-    expect(mirrorOverrideUrl(MIRROR_BASE, baseSource)).toBe(`${MIRROR_BASE}/kenney/kenney-nature.zip`);
+    expect(mirrorOverrideUrl(MIRROR_BASE, baseSource)).toBe(`${MIRROR_BASE}/quaternius/quaternius-stylized-nature.zip`);
   });
 
   test("trims trailing slashes from the base url", () => {
-    expect(mirrorOverrideUrl(`${MIRROR_BASE}/`, baseSource)).toBe(`${MIRROR_BASE}/kenney/kenney-nature.zip`);
+    expect(mirrorOverrideUrl(`${MIRROR_BASE}/`, baseSource)).toBe(`${MIRROR_BASE}/quaternius/quaternius-stylized-nature.zip`);
   });
 });
 
@@ -144,14 +144,14 @@ describe("downloadPackArchive", () => {
     noDefaultMirror(async () => {
       const scrapeSource: AssetSource = {
         ...baseSource,
-        download: { scrape: "https://kenney.nl/assets/nature-kit" },
+        download: { scrape: "https://quaternius.com/assets/nature-kit" },
         mirror: PACK_MIRROR_URL,
       };
       const calls: string[] = [];
       const archive = zipWithGlb("from-pack-mirror-after-scrape");
       const fetchImpl = fetchFrom(
         {
-          "https://kenney.nl/assets/nature-kit": () =>
+          "https://quaternius.com/assets/nature-kit": () =>
             new Response("<html>no zip link here</html>", { status: 200 }),
           [PACK_MIRROR_URL]: () => new Response(archive, { status: 200 }),
         },
@@ -161,7 +161,7 @@ describe("downloadPackArchive", () => {
       const result = await downloadPackArchive(scrapeSource, { fetchImpl });
 
       expect(result.url).toBe(PACK_MIRROR_URL);
-      expect(calls).toEqual(["https://kenney.nl/assets/nature-kit", PACK_MIRROR_URL]);
+      expect(calls).toEqual(["https://quaternius.com/assets/nature-kit", PACK_MIRROR_URL]);
     }));
 
   test("rejects bytes from a mirror that don't match the pinned sha256 and falls through to a source that does", () =>
@@ -192,7 +192,7 @@ describe("downloadPackArchive", () => {
       const fetchImpl = fetchFrom({});
 
       await expect(downloadPackArchive(source, { mirrorBase: MIRROR_BASE, fetchImpl })).rejects.toThrow(
-        /failed to download kenney-nature from all 3 source\(s\)/,
+        /failed to download quaternius-stylized-nature from all 3 source\(s\)/,
       );
 
       try {
