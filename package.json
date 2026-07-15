@@ -55,6 +55,7 @@
     "games:skyhook-rally": "bun run --cwd Games/skyhook-rally dev",
     "games:spire-cards": "bun run --cwd Games/spire-cards dev",
     "games:star-invaders": "bun run --cwd Games/star-invaders dev",
+    "games:starhome": "bun run --cwd Games/starhome dev",
     "games:tower-guard": "bun run --cwd Games/tower-guard dev",
     "games:vice-isle": "bun run --cwd Games/vice-isle dev",
     "games:wreckway": "bun run --cwd Games/wreckway dev"
