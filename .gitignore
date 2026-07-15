@@ -27,3 +27,7 @@ packages/*/src/**/*.d.ts.map
 # never author or commit these by hand.
 packages/*/skills/
 apps/web/src/generated/
+
+# Ephemeral git worktrees created by fan-out shipping subagents
+# (Agent({ isolation: "worktree" })) — transient, never committed.
+.claude/worktrees/
