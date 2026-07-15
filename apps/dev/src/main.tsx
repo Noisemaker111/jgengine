@@ -137,6 +137,8 @@ const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario
 const urlParams = new URLSearchParams(window.location.search);
 /** Explicit game only — bare `/` shows the picker so demo is never a silent surprise. */
 const GAME_ID = urlParams.get("game") ?? (import.meta.env.VITE_GAME_ID as string | undefined) ?? null;
+/** Gameless scene editor — the site embeds this at /editor via /play/?editor=standalone. */
+const EDITOR_STANDALONE = urlParams.get("editor") === "standalone";
 const STATE_PARAM = urlParams.get("state");
 const MODE = STATE_PARAM !== null ? "play" : (urlParams.get("mode") ?? "play");
 if (import.meta.env.DEV && GAME_ID !== null) installSaveEndpoint("/__jgengine/save", GAME_ID);
@@ -204,9 +206,18 @@ function GamePicker() {
             ))}
           </div>
         </div>
-        <p className="mt-8 text-[11px] text-neutral-500">
+        <div className="mt-8">
+          <a
+            className="inline-flex items-center gap-2 rounded border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200 hover:bg-emerald-500/20"
+            href="?editor=standalone"
+          >
+            🧊 Open the standalone scene editor
+          </a>
+        </div>
+        <p className="mt-6 text-[11px] text-neutral-500">
           Direct URLs: <code className="text-neutral-400">?game=the-robots</code> ·{" "}
-          <code className="text-neutral-400">?game=the-robots&amp;mode=editor</code>
+          <code className="text-neutral-400">?game=the-robots&amp;mode=editor</code> ·{" "}
+          <code className="text-neutral-400">?editor=standalone</code>
         </p>
       </div>
     </div>
@@ -304,6 +315,25 @@ function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: string }) 
       <Preview className="h-full w-full" />
     </div>
   );
+}
+
+function StandaloneEditorApp() {
+  const [Editor, setEditor] = useState<ComponentType<Record<string, never>> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    void import("@jgengine/editor")
+      .then((mod) => setEditor(() => mod.StandaloneEditor as ComponentType<Record<string, never>>))
+      .catch((err: unknown) => setError(formatLoadError(err)));
+  }, []);
+  if (error !== null) return <ErrorPanel title="Editor failed to load" detail={error} />;
+  if (Editor === null) {
+    return (
+      <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
+        Loading editor…
+      </div>
+    );
+  }
+  return <Editor />;
 }
 
 function EditorModeApp({ gameId, playable }: { gameId: string; playable: PlayableGame }) {
@@ -538,7 +568,9 @@ function DevApp({ gameId }: { gameId: string }) {
 }
 
 createRoot(document.getElementById("root")!).render(
-  PREVIEW !== null && GAME_ID !== null ? (
+  EDITOR_STANDALONE ? (
+    <StandaloneEditorApp />
+  ) : PREVIEW !== null && GAME_ID !== null ? (
     <PreviewApp gameId={GAME_ID} stateKey={PREVIEW} />
   ) : GAME_ID === null ? (
     <GamePicker />

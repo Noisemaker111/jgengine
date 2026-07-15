@@ -46,18 +46,65 @@ function Editor() {
   return (
     <Page>
       <PageHero
-        eyebrow="The editor"
-        title="A 3D scene editor, in the box."
-        blurb="Place spawns, sculpt terrain, scatter foliage, and lay paths in a Blender/Unity-style viewport — then render it generically at runtime. It ships inside every JGengine game, and now runs fully standalone on any folder you point it at."
+        eyebrow="The editor · live, in your browser"
+        title="A 3D scene editor, right here."
+        blurb="This is the real editor — not a video. It runs entirely in your browser: place spawns, sculpt terrain, scatter foliage, drop in your own .glb models, and export the scene. Nothing uploads; everything stays local to you."
       >
-        <div className="max-w-xl">
-          <CommandBlock command="npx jgengine editor" />
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href="/play/?editor=standalone"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 px-5 py-2.5 text-sm font-semibold text-ink-deep shadow-[0_0_36px_-8px_rgba(52,211,153,0.7)] transition hover:shadow-[0_0_48px_-8px_rgba(52,211,153,0.9)]"
+          >
+            Open fullscreen ↗
+          </a>
+          <span className="text-sm text-slate-500">or use it right below</span>
         </div>
       </PageHero>
 
       <section className="relative">
+        <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-ink-deep/60 shadow-[0_24px_80px_-24px_rgba(2,3,8,0.95)]">
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-4 py-2.5">
+              <div className="flex items-center gap-2 font-mono text-[11px] text-slate-400">
+                <span className="flex gap-1.5" aria-hidden>
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                </span>
+                jgengine editor — runs entirely in your browser
+              </div>
+              <a
+                href="/play/?editor=standalone"
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-[11px] text-emerald-300/90 transition hover:text-emerald-200"
+              >
+                fullscreen ↗
+              </a>
+            </div>
+            <iframe
+              src="/play/?editor=standalone"
+              title="JGengine scene editor"
+              loading="lazy"
+              allow="fullscreen; xr-spatial-tracking"
+              className="h-[78vh] min-h-[520px] w-full border-0 bg-neutral-950"
+            />
+          </div>
+          <p className="mt-3 text-center text-xs text-slate-500">
+            Tip: <span className="text-slate-400">📂 Open scene</span> loads an{" "}
+            <code className="text-slate-400">editor.scene.json</code>, <span className="text-slate-400">🧊 Add assets</span>{" "}
+            pulls in your own models, and <span className="text-slate-400">Export / Ctrl+S</span> saves the scene back to your machine.
+          </p>
+        </div>
+      </section>
+
+      <section className="relative">
+        <div className="hairline mx-auto max-w-4xl" />
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <SectionHeading eyebrow="What's in it" title="A full authoring toolset, not a toy" />
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(([glyph, title, body]) => (
               <FeatureCard key={title} glyph={glyph} title={title}>
                 {body}

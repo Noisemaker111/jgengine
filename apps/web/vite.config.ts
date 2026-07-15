@@ -107,7 +107,10 @@ export default defineConfig({
       prerender: {
         enabled: true,
         crawlLinks: true,
-        filter: (page: { path: string }) => !page.path.replace(/[?#].*$/, "").endsWith(".md"),
+        filter: (page: { path: string }) => {
+          const path = page.path.replace(/[?#].*$/, "");
+          return !path.endsWith(".md") && !path.startsWith("/play");
+        },
       },
     } as Parameters<typeof tanstackStart>[0]),
     nitro({ devServer: { runner: "self" } }),
