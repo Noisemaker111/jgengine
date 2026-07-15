@@ -103,6 +103,16 @@ const GAME_DETAILS: Record<string, GameDetails> = {
     controls: "Click to place · 1–3 pick tower",
     hue: "#c084fc",
   },
+  starhome: {
+    title: "Starhome",
+    tagline: "Direct a household of alien beings — no fail state, just life.",
+    description:
+      "An open-ended alien life sim. Guide a household of procedurally shaped beings — each with its own body plan of limbs, size, and form — as they chase hunger, rest, bonds, and play. Furnish the habitat, send them to careers, watch relationships bloom into lifelong bonds, and let free-will behavior play out across a day-night cycle. No fail state, just emergent lives.",
+    genre: "Life-sim sandbox",
+    category: "Sandbox & Simulation",
+    controls: "Drag to pan · click a being to select · 1–6 furnish · Space pause · T speed",
+    hue: "#c9a6e0",
+  },
   monument: {
     title: "Monument",
     tagline: "Sculpt a brutalist district and watch it live.",
