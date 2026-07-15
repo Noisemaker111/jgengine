@@ -1,15 +1,17 @@
-import type { EditorDocument, EditorMarker } from "@jgengine/core/editor/index";
+import { normalizeEditorLayers, type EditorDocument, type EditorLayersInput } from "@jgengine/core/editor/index";
 import type { AvoidZone } from "@jgengine/core/world/geometry";
-import { clearanceZonesFrom, SCATTER_PATH_KIND } from "@jgengine/core/world/scatterRegion";
+import { clearanceZonesFrom } from "@jgengine/core/world/scatterRegion";
 import { createEditableTerrain, migrateTerrainSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
 
-import { BUILD_PLOT_XZ, PATH_WAYPOINTS_XZ } from "./game/world/layout";
+import sceneJson from "./editor.scene.json";
+
+type Vec2 = readonly [number, number];
 
 const BOUNDS = { minX: -42, minZ: -42, maxX: 42, maxZ: 42 };
 
 /**
- * Authored rolling terrain for the arena. The clearance zones (spawn, keep, plots, path) flatten
- * their own spots on top of this, so the mounds add relief everywhere gameplay isn't.
+ * Sculpted arena relief. Authored with the terraform API (equivalent to editor brush strokes); the
+ * clearance zones flatten their own spots on top, so the mounds add relief everywhere gameplay isn't.
  */
 function buildSculpt(): TerraformSnapshot {
   const terrain = createEditableTerrain({ bounds: BOUNDS, cellSize: 2 });
@@ -29,73 +31,29 @@ function buildSculpt(): TerraformSnapshot {
   return migrateTerrainSnapshot(terrain.snapshot());
 }
 
+/**
+ * The game's scene — the `editor.scene.json` authored in the 3D editor (creep path, build plots,
+ * spawn/keep, arena foliage) plus the sculpted terrain. Everything downstream (enemy pathing, plot
+ * placement, path + foliage rendering) reads from this one document; nothing is hardcoded in game
+ * code. Open F2+E to edit it live and Ctrl+S to save it back.
+ */
+/** The sculpted heightfield layered into the runtime ground via `environment({ sculpt })`. */
 export const TERRAIN_SCULPT: TerraformSnapshot = buildSculpt();
 
-// Gameplay spots authored as editor markers: each carries a clearance so foliage keeps off it and
-// the ground is flattened under it. Spawn/keep auto-clear by kind; plots opt in via meta.clearance.
-const GAMEPLAY_MARKERS: readonly EditorMarker[] = [
-  { id: "creep-spawn", kind: "player_spawn", position: { x: PATH_WAYPOINTS_XZ[0]![0], y: 0, z: PATH_WAYPOINTS_XZ[0]![1] }, label: "Spawn", meta: { clearance: 5 } },
-  { id: "keep", kind: "goal", position: { x: PATH_WAYPOINTS_XZ.at(-1)![0], y: 0, z: PATH_WAYPOINTS_XZ.at(-1)![1] }, label: "Keep", meta: { clearance: 6 } },
-  ...BUILD_PLOT_XZ.map((plot): EditorMarker => ({
-    id: plot.id,
-    kind: "prop",
-    position: { x: plot.xz[0], y: 0, z: plot.xz[1] },
-    label: "Build plot",
-    meta: { clearance: 3 },
-  })),
-];
-
-/**
- * One arena-wide foliage region. It is NOT hand-carved around the path — `resolveScatter` clears the
- * gameplay markers and the creep path automatically (their clearance zones), so foliage fills the
- * whole arena except spawns, plots, and the corridor. Draw an area, set density, done.
- */
 export const editorLayers: EditorDocument = {
-  version: 1,
-  markers: [...GAMEPLAY_MARKERS],
-  volumes: [],
-  paths: [
-    {
-      id: "creep-path",
-      kind: "route",
-      points: PATH_WAYPOINTS_XZ.map(([x, z]) => ({ x, y: 0, z })),
-      width: 4,
-      label: "Creep path",
-      meta: { clearance: 2.5 },
-    },
-    {
-      id: "arena-foliage",
-      kind: SCATTER_PATH_KIND,
-      points: [
-        [-40, -40],
-        [40, -40],
-        [40, 40],
-        [-40, 40],
-      ].map(([x, z]) => ({ x: x!, y: 0, z: z! })),
-      label: "Arena foliage",
-      meta: {
-        density: 0.16,
-        minSpacing: 2,
-        seed: "tower-guard-arena",
-        maxSlope: 3,
-        edgeFalloff: 5,
-        minScale: 0.85,
-        maxScale: 1.7,
-        palette: [
-          { item: "pine", weight: 3 },
-          { item: "tree", weight: 2 },
-          { item: "bush", weight: 2 },
-          { item: "rock", weight: 1 },
-        ],
-        // autoAvoid defaults on — the region honors every gameplay clearance zone in this document.
-      },
-    },
-  ],
-  annotations: [],
+  ...normalizeEditorLayers(sceneJson as unknown as EditorLayersInput),
   terrain: TERRAIN_SCULPT,
-  prefabs: [],
-  collections: [],
 };
 
 /** Clearance discs derived from the authored gameplay spots — flattened into the runtime ground. */
 export const CLEARINGS: readonly AvoidZone[] = clearanceZonesFrom(editorLayers);
+
+/** The creep-path polyline (XZ), read from the authored document — the single source for enemy nav. */
+export const PATH_WAYPOINTS_XZ: readonly Vec2[] = (
+  editorLayers.paths.find((path) => path.id === "creep-path")?.points ?? []
+).map((point) => [point.x, point.z] as const);
+
+/** Build-plot centers (XZ), read from the authored plot markers — the single source for tower placement. */
+export const BUILD_PLOT_XZ: readonly { id: string; xz: Vec2 }[] = editorLayers.markers
+  .filter((marker) => marker.id.startsWith("plot-"))
+  .map((marker) => ({ id: marker.id, xz: [marker.position.x, marker.position.z] as const }));

@@ -54,6 +54,19 @@ export { editorLayers } from "./editorLayers";
 
 `editorLayers` returns an `EditorDocument` (markers, volumes, paths). Live entities from `onInit` still render without it.
 
+## Author the scene, don't hardcode it — render it at runtime
+
+Scene content (paths, foliage, terrain, gameplay spots) belongs in the **editor document**, not in
+bespoke render code with hardcoded coordinates. Author it in the 3D editor, save `editor.scene.json`,
+and render it generically at runtime with **`<AuthoredScene document={doc} field={ctx.world.ground} />`**
+from `@jgengine/shell/scene` — it draws every non-scatter path as a **ground-draped ribbon**
+(`buildRoadRibbon`, so a path hugs the terrain instead of clipping through it) and instances the foliage
+(`resolveScatter` → `InstancedScatter`), all from the document. `<AuthoredPaths>` renders just the paths.
+Terrain/collision come from `environment({ sculpt, clearings })`. **Gameplay reads the same document** —
+derive enemy waypoints from a `route` path and tower plots from markers, so there is one source of truth
+(`Games/tower-guard`: `editor.scene.json` drives rendering *and* pathing; no hand-rolled path meshes, no
+duplicated coordinates). Never draw a path or scatter field with hand-written per-segment meshes.
+
 ## The F2 chord family — three modes, all agent-usable headless
 
 - **F2+D — debug mode**: engine devtools overlay (Perf/Tune/Logs/Net/Keys/Col). A plain F2 tap does nothing; F2 is only the chord holder.
