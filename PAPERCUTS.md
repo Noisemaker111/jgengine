@@ -194,3 +194,7 @@ check-game-shape gate: origin/main had 3 new race primitives (idleRaceSession/pl
 2026-07-14T22:29:14.727Z — sonnet-5 — Claude
 
 fresh cloud session: bun run dev:runner / drive failed first try (vite: command not found) → node_modules wasn't installed at session start, had to bun install before any dev server/screenshot command worked
+
+2026-07-15T02:36:13.372Z — opus — Claude
+
+uploading PR screenshots to pr-shots via GitHub MCP create_or_update_file → base64 of each PNG floods context and hand-transcribing it across subagents corrupts the bytes (truncated/garbled uploads); needed a bun run pr-shots script that hashes PNGs into git and pushes with a detached index
