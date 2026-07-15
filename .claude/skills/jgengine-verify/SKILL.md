@@ -115,11 +115,11 @@ A "done"/"premium"/"shipped" claim **is** the ledger below, compacted — never 
 | `tests` | `bun test packages` pass count |
 | `world` | `summarizeEnvironment` / voxel-summary assertion name + key counts |
 | `shoot` | shot path(s) under `shots/` |
-| `pixel` | `shots/.metrics.json` values — pixel-metrics rung, [#788](https://github.com/Noisemaker111/jgengine/issues/788); until shipped, report `skipped(#788 unshipped)` |
-| `score` | scorecard category scores — visual scorecard, [#789](https://github.com/Noisemaker111/jgengine/issues/789); until shipped, report `skipped(#789 unshipped)` |
+| `pixel` | `shots/<name>.metrics.json` values from `bun run shoot --inspect` — pixel-metrics rung ([#788](https://github.com/Noisemaker111/jgengine/issues/788), shipped) |
+| `score` | scorecard category scores against `jgengine-ui` → [`references/visual-scorecard.md`](../jgengine-ui/references/visual-scorecard.md) — premium/showcase verdict, take-the-lower fresh-eyes reconciliation ([#789](https://github.com/Noisemaker111/jgengine/issues/789), shipped) |
 | `bot` | playtest progress/softlock JSON — bot-playtest rung, [#790](https://github.com/Noisemaker111/jgengine/issues/790); until shipped, report `skipped(#790 unshipped)` |
 
-A rung that doesn't apply to this game (no declared world, no visual claim) reports `not-needed`, never a silent gap. A **visual/premium** claim requires the `score` and `pixel` rows present in the ledger — filled once #788/#789 ship, `skipped(#788/#789 unshipped)` until then — never just "looks good."
+A rung that doesn't apply to this game (no declared world, no visual claim) reports `not-needed`, never a silent gap. A **visual/premium** claim requires the `score` and `pixel` rows present in the ledger — never just "looks good."
 
 Compact form — one block, no prose, this is the whole chat "done" report and the PR-body ledger:
 
@@ -129,7 +129,9 @@ types  pass  check-types clean
 tests  pass  bun test packages 42/42
 world  pass  <game>.world.test.ts isEmpty=false buildings=6
 shoot  pass  shots/<game>-play.png
-pixel/score/bot  skipped (#788/#789/#790 unshipped)
+pixel  pass  shots/<game>-play.metrics.json entropy=4.1 dominantShare=0.31 edge=0.09 contrast=88
+score  pass  premium avg=2.4, all categories >=2 (fresh-eyes reconciled)
+bot    skipped (#790 unshipped)
 ```
 
 ## Definition of done references this

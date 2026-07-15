@@ -77,7 +77,7 @@ Reject and revise the UI when it could be mistaken for a SaaS dashboard, landing
 
 Reject test for worlds: if the screenshot could be mistaken for a physics-demo sandbox or an untextured prototype, it fails the bar.
 
-A "premium"/"shipped" verdict on this bar reports as the done-ledger (`jgengine-verify` → "The done-ledger"), `score`/`pixel` rows present — never "looks great" alone.
+A "premium"/"shipped" verdict on this bar reports as the done-ledger (`jgengine-verify` → "The done-ledger"), `score`/`pixel` rows present — never "looks great" alone. The `score` row is [`references/visual-scorecard.md`](references/visual-scorecard.md): a fixed 0–3 rubric across 10 categories (art direction, hero/player, obstacles/enemies, rewards/interactables, world layering, materials, lighting, VFX/motion, UI/HUD, performance evidence), premium/showcase pass thresholds, an automatic-failure list, and the fresh-eyes take-the-lower-score reconciliation — apply it at milestones and carry the reconciled table into the done-ledger and PR body.
 
 ## Render authored scenes, don't hand-roll them
 
