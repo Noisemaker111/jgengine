@@ -198,3 +198,7 @@ fresh cloud session: bun run dev:runner / drive failed first try (vite: command 
 2026-07-15T02:36:13.372Z — opus — Claude
 
 uploading PR screenshots to pr-shots via GitHub MCP create_or_update_file → base64 of each PNG floods context and hand-transcribing it across subagents corrupts the bytes (truncated/garbled uploads); needed a bun run pr-shots script that hashes PNGs into git and pushes with a detached index
+
+2026-07-15T03:25:12.661Z — Claude Sonnet 5 — Claude
+
+shoot/drive dev server reuse (ensureDevServer's isUp(DEV_BASE) check on fixed port 4517) silently attaches to ANY already-running vite server, including a sibling worktree's — screenshots showed a different worktree's unmodified game code with zero indication of the mismatch

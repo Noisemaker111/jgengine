@@ -519,6 +519,18 @@ export interface ModelAttachment {
   scale?: number;
 }
 
+/** Static child model stacked at a fixed local offset under its parent's transform — no bone/rig resolution, unlike `ModelAttachment`. Assembles a compound entity (e.g. a modular castle wall + tower + roof) from several single-mesh kit pieces. */
+export interface ModelPart {
+  /** The child model — a catalog asset id or an inline `ModelConfig`; resolves through the catalog exactly like the top-level model and gets its own `dims`/anchor centering. */
+  model: string | ModelConfig;
+  /** Local position offset under the parent's transform. */
+  position?: [number, number, number];
+  /** Local Euler rotation (radians) under the parent's transform. */
+  rotation?: [number, number, number];
+  /** Uniform scale of the part under the parent's transform. Default 1. */
+  scale?: number;
+}
+
 export interface ModelConfig {
   url: string;
   scale?: number;
@@ -535,6 +547,8 @@ export interface ModelConfig {
   animation?: ModelAnimationConfig;
   /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
   attachments?: readonly ModelAttachment[];
+  /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. */
+  parts?: readonly ModelPart[];
 }
 
 export interface ObjectStyle {

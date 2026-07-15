@@ -494,20 +494,52 @@ function BoneAttachment({
   return null;
 }
 
-/** Resolves an entity model plus any bone attachments' models through the asset catalog, so `EntityModel` receives fully-resolved `ModelConfig`s. */
+/** Renders a static kit-of-parts child at a fixed local offset under the parent model — no bone/rig lookup, unlike `BoneAttachment`. The nested `EntityModel` still applies its own `dims`/anchor centering, so scale/pivot sanity carries over per part. */
+function ModelPartGroup({
+  model,
+  position,
+  rotation,
+  scale,
+}: {
+  model: ModelConfig;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: number;
+}) {
+  return (
+    <group position={position ?? [0, 0, 0]} rotation={rotation ?? [0, 0, 0]} scale={scale ?? 1}>
+      <EntityModel model={model} />
+    </group>
+  );
+}
+
+/** Resolves an entity model plus any bone attachments' or kit-of-parts' models through the asset catalog, so `EntityModel` receives fully-resolved `ModelConfig`s. */
 function resolveEntityModel(
   value: string | ModelConfig | undefined,
   assets: AssetCatalog,
   key: string,
 ): ModelConfig | undefined {
   const model = resolveModel(value, assets, { seam: "entityModels", key });
-  if (model?.attachments === undefined) return model;
+  if (model === undefined) return model;
+  if (model.attachments === undefined && model.parts === undefined) return model;
   return {
     ...model,
-    attachments: model.attachments.map((attachment) => ({
-      ...attachment,
-      model: resolveModel(attachment.model, assets) ?? attachment.model,
-    })),
+    ...(model.attachments === undefined
+      ? {}
+      : {
+          attachments: model.attachments.map((attachment) => ({
+            ...attachment,
+            model: resolveModel(attachment.model, assets) ?? attachment.model,
+          })),
+        }),
+    ...(model.parts === undefined
+      ? {}
+      : {
+          parts: model.parts.map((part) => ({
+            ...part,
+            model: resolveModel(part.model, assets) ?? part.model,
+          })),
+        }),
   };
 }
 
@@ -798,6 +830,17 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
             position={attachment.position}
             rotation={attachment.rotation}
             scale={attachment.scale}
+          />
+        ),
+      )}
+      {(model.parts ?? []).map((part, index) =>
+        typeof part.model === "string" ? null : (
+          <ModelPartGroup
+            key={index}
+            model={part.model}
+            position={part.position}
+            rotation={part.rotation}
+            scale={part.scale}
           />
         ),
       )}

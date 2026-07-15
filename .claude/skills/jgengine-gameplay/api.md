@@ -493,6 +493,7 @@
 - `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph.
+- `ModelPart` (interface): interface ModelPart — Static child model stacked at a fixed local offset under its parent's transform — no bone/rig resolution, unlike `ModelAttachment`. Assembles a compound entity (e.g. a modular castle wall + tower + roof) from several single-mesh kit pieces.
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
 - `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
