@@ -33,6 +33,8 @@ import {
   chargeAll as walletChargeAll,
   createEmptyWallet,
   grant as walletGrant,
+  isOverdrawn as walletIsOverdrawn,
+  type ChargeOptions as WalletChargeOptions,
   type WalletState,
 } from "../economy/wallet";
 import { createCosmetics, type Cosmetics } from "../game/cosmetics";
@@ -105,6 +107,7 @@ import { scaledEntityColliders, scaledObjectColliders, type EntityColliderSet } 
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene/objectStore";
 import { createRoster, type Roster } from "../scene/roster";
+import { createSelectionSet, type SelectionSet } from "../scene/selection";
 import { createConnectedPlayers, type ConnectedPlayers } from "../game/connectedPlayers";
 import { createPossession, type Possession } from "../scene/possession";
 import {
@@ -113,7 +116,7 @@ import {
   type SceneRaycastHit,
   type SceneRaycastInput,
 } from "../scene/sceneRaycast";
-import { createSpatialApi, type SpatialApi } from "../scene/spatial";
+import { createSpatialApi, type MoveTowardOptions, type SpatialApi } from "../scene/spatial";
 import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
 import { createStats, type Stats } from "../stats/statModifiers";
 import { createChangeSignal, notifyAfter } from "../store/changeSignal";
@@ -190,6 +193,15 @@ export interface SceneObjectContext extends ObjectStore {
   raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[];
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
+  /**
+   * Per-instance selection/highlight state for placed objects — the reactive counterpart to
+   * `worldHealthBars`/`nameplates` (entities), so a build-mode or RTS selection ring reads
+   * `ctx.scene.object.selection` instead of hand-rolling one through `WorldOverlay` against external
+   * state. Mutations (`add`/`remove`/`toggle`/`replace`/`clear`) bump `ctx.version()`/notify
+   * `ctx.subscribe` like every other `ctx` surface. Render it with `WorldObjectHighlights`
+   * (`@jgengine/shell/world/WorldHud`).
+   */
+  selection: SelectionSet;
 }
 
 export interface FloatTextInput {
@@ -237,6 +249,12 @@ export interface HitReactionInput {
   power?: number;
 }
 
+/** Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn. */
+export interface MoveTowardCommitOptions extends MoveTowardOptions {
+  /** Rotate the entity to face its direction of travel instead of preserving its current `rotationY`. Default false. */
+  face?: boolean;
+}
+
 export interface SceneEntityContext {
   spawn(name: string, options?: SpawnOptions): string;
   despawn(instanceId: string): boolean;
@@ -270,6 +288,18 @@ export interface SceneEntityContext {
   hasLineOfSight: SpatialApi["hasLineOfSight"];
   queryArc: SpatialApi["queryArc"];
   moveToward: SpatialApi["moveToward"];
+  /**
+   * `moveToward` plus commit: steps `instanceId` toward `target` and immediately `setPose`s the
+   * result, so a per-tick mover no longer pairs `moveToward` with a hand-written `setPose`.
+   * `options.face` turns the entity to its direction of travel; omitted preserves the current
+   * `rotationY`. Returns the committed position (`null`, committing nothing, when `moveToward` would
+   * — unknown instance/target).
+   */
+  moveTowardCommit(
+    instanceId: string,
+    target: EntityPosition | string,
+    options: MoveTowardCommitOptions,
+  ): EntityPosition | null;
   invalidateSpatial: SpatialApi["invalidate"];
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
@@ -329,7 +359,10 @@ export interface GameContextLoot {
 export interface GameContextEconomy {
   balance(userId: string, currencyId: string): number;
   grant(userId: string, currencyId: string, amount: number): void;
-  charge(userId: string, currencyId: string, amount: number): { reason: string } | null;
+  /** `options.overdraft` opts this charge into carrying a negative balance (`true` unlimited, `{ max }` capped) — omitted keeps the strict no-debt default. */
+  charge(userId: string, currencyId: string, amount: number, options?: WalletChargeOptions): { reason: string } | null;
+  /** True once `balance(userId, currencyId)` has gone negative under an overdraft-enabled charge. */
+  isOverdrawn(userId: string, currencyId: string): boolean;
 }
 
 export interface GameContextItemUse {
@@ -446,6 +479,12 @@ export interface GameContext {
   input: InputSnapshot;
   subscribe(listener: () => void): () => void;
   version(): number;
+  /**
+   * Bump {@link version}/notify {@link subscribe} directly — the escape hatch for a command that only
+   * mutates game-owned state outside the entity/object/economy/store layers (an external session map,
+   * a plain closure variable) and needs to force a reactive HUD refresh without faking a `ctx.game.store.set`.
+   */
+  touch(): void;
   /**
    * Gather every opted-in live subsystem into one {@link WorldSnapshot} — entities, entity stats, the
    * keyed store, the action feed, plus leaderboard/chat when those features are on. The full-world
@@ -743,13 +782,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       wallets.set(userId, walletGrant(walletOf(userId), currencyId, amount));
       signal.notify();
     },
-    charge(userId, currencyId, amount) {
-      const result = walletCharge(walletOf(userId), currencyId, amount);
+    charge(userId, currencyId, amount, options) {
+      const result = walletCharge(walletOf(userId), currencyId, amount, options);
       if (result.status === "rejected") return { reason: result.reason };
       wallets.set(userId, result.state);
       signal.notify();
       return null;
     },
+    isOverdrawn: (userId, currencyId) => walletIsOverdrawn(walletOf(userId), currencyId),
   };
 
   function putIntoAnyInventory(userId: string, itemId: string, count: number): void {
@@ -893,6 +933,25 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     pose.clear(instanceId);
     entityColliders.delete(instanceId);
     return existed;
+  }
+
+  function moveEntityTowardCommit(
+    instanceId: string,
+    target: EntityPosition | string,
+    options: MoveTowardCommitOptions,
+  ): EntityPosition | null {
+    const next = spatial.moveToward(instanceId, target, options);
+    if (next === null) return null;
+    const current = entities.get(instanceId);
+    if (current === null) return null;
+    let rotationY = current.rotationY;
+    if (options.face === true) {
+      const dx = next[0] - current.position[0];
+      const dz = next[2] - current.position[2];
+      if (Math.hypot(dx, dz) > 1e-9) rotationY = Math.atan2(dx, dz);
+    }
+    entities.setPose(instanceId, { position: next, rotationY });
+    return next;
   }
 
   function resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number {
@@ -1229,8 +1288,19 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     signal.notify,
   );
 
+  const objectSelection = notifyAfter(
+    createSelectionSet(),
+    ["add", "remove", "toggle", "replace", "clear"],
+    signal.notify,
+  );
+
   const sceneObjects: SceneObjectContext = {
     ...objects,
+    remove(instanceId) {
+      const existed = objects.remove(instanceId);
+      if (existed) objectSelection.remove(instanceId);
+      return existed;
+    },
     catalog: (instanceId) => catalogObject(instanceId) ?? null,
     raycast: (input) => raycastObjects(objects, input),
     raycastAll: (input) => raycastObjectsAll(objects, input),
@@ -1240,6 +1310,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       signal.notify();
     },
     collidersOf: objectCollidersOf,
+    selection: objectSelection,
   };
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
@@ -1457,6 +1528,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         hasLineOfSight: spatial.hasLineOfSight,
         queryArc: spatial.queryArc,
         moveToward: spatial.moveToward,
+        moveTowardCommit: moveEntityTowardCommit,
         invalidateSpatial: spatial.invalidate,
         setColliders(instanceId, colliders) {
           if (colliders === null) entityColliders.delete(instanceId);
@@ -1586,6 +1658,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     input,
     subscribe: signal.subscribe,
     version: signal.version,
+    touch: signal.notify,
     snapshot: () => composeWorldSnapshot(snapshotModules),
     hydrate(snapshot) {
       applyWorldSnapshot(snapshotModules, snapshot);

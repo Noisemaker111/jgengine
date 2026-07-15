@@ -239,14 +239,17 @@
 
 ## @jgengine/core/economy/wallet
 
+- `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
 - `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
+- `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
 - `WalletState` (interface): interface WalletState — ⚠ undocumented
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
 - `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — ⚠ undocumented
-- `charge` (function): function charge(state: WalletState, currency: string, amount: number): ChargeResult — ⚠ undocumented
-- `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>): ChargeResult — ⚠ undocumented
+- `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
+- `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
+- `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 
 ## @jgengine/core/game/chat
 

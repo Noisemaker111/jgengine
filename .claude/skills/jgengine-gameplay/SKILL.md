@@ -228,8 +228,11 @@ The buyer/seller wallet and inventory movement is the caller's job, same split a
 
 ```ts
 ctx.game.economy.balance(userId, currencyId) / grant(...) / charge(...)  // charge → { reason } | null
+ctx.game.economy.isOverdrawn(userId, currencyId)
 ctx.game.unlocks.has(userId, id) / grant(userId, id) / list(userId) / tree(categoryId)
 ```
+
+`charge`/`chargeAll` (`economy/wallet`) reject once a deduction would go negative by default — the strict no-debt rule. Opt one call into carrying a negative balance with a 4th `options` arg: `charge(state, currency, amount, { overdraft: true })` (unlimited debt) or `{ overdraft: { max } }` (capped — rejects once `balance - amount` would fall below `-max`). `ctx.game.economy.charge(userId, currencyId, amount, options?)` threads the same options through; `isOverdrawn(state, currency)` (pure) / `ctx.game.economy.isOverdrawn(userId, currencyId)` (ctx) read whether a wallet is currently negative. `grant` is unaffected — it always tolerates paying a negative balance back up, overdraft or not.
 
 Catalog `requires: [unlockId]` gates validate at command time.
 

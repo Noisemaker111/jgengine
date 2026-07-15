@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { computeFlowField, createCrowdField, selectPoi, spreadOffset, type Poi } from "@jgengine/core/ai/crowd";
+import {
+  computeFlowField,
+  createCrowdField,
+  createVisitorLoop,
+  selectPoi,
+  spreadOffset,
+  type Poi,
+} from "@jgengine/core/ai/crowd";
 import { createNavGrid, findPath, type NavPoint } from "@jgengine/core/nav/navGrid";
 
 function openGrid(size = 20) {
@@ -140,6 +147,102 @@ describe("spreadOffset", () => {
   test("collapses to the origin at radius 0", () => {
     const o = spreadOffset("x", 0);
     expect(Math.hypot(o[0], o[1])).toBe(0);
+  });
+});
+
+describe("visitor loop", () => {
+  const pois: Poi[] = [{ id: "stall", point: [10, 0], appeal: 1 }];
+
+  test("runs seek → travel → dwell → depart → done, honoring arriveRadius and dwellMs", () => {
+    const loop = createVisitorLoop({ pois, dwellMs: () => 100, exitPoint: [0, 0], arriveRadius: 0.5 });
+    const roll = () => 0;
+
+    const seeking = loop.tick("visitor-1", [0, 0], 0, roll);
+    expect(seeking.phase).toBe("traveling");
+    expect(seeking.poiId).toBe("stall");
+    expect(seeking.target).toEqual([10, 0]);
+
+    const stillTraveling = loop.tick("visitor-1", [9, 0], 16, roll);
+    expect(stillTraveling.phase).toBe("traveling");
+
+    const arrived = loop.tick("visitor-1", [10, 0], 16, roll);
+    expect(arrived.phase).toBe("dwelling");
+
+    const stillDwelling = loop.tick("visitor-1", [10, 0], 50, roll);
+    expect(stillDwelling.phase).toBe("dwelling");
+
+    const departing = loop.tick("visitor-1", [10, 0], 60, roll);
+    expect(departing.phase).toBe("departing");
+    expect(departing.target).toEqual([0, 0]);
+
+    const stillDeparting = loop.tick("visitor-1", [5, 0], 16, roll);
+    expect(stillDeparting.phase).toBe("departing");
+
+    const done = loop.tick("visitor-1", [0, 0], 16, roll);
+    expect(done.phase).toBe("done");
+    expect(done.target).toBeNull();
+  });
+
+  test("fires onArrive/onDepart exactly once at the dwelling boundary transitions", () => {
+    const arrivals: string[] = [];
+    const departures: string[] = [];
+    const loop = createVisitorLoop({
+      pois,
+      dwellMs: () => 40,
+      exitPoint: [0, 0],
+      arriveRadius: 0.5,
+      onArrive: (agentId, poiId) => arrivals.push(`${agentId}:${poiId}`),
+      onDepart: (agentId, poiId) => departures.push(`${agentId}:${poiId}`),
+    });
+    const roll = () => 0;
+    loop.tick("visitor-1", [0, 0], 0, roll);
+    loop.tick("visitor-1", [10, 0], 16, roll);
+    loop.tick("visitor-1", [10, 0], 16, roll);
+    expect(arrivals).toEqual(["visitor-1:stall"]);
+    expect(departures).toEqual([]);
+    loop.tick("visitor-1", [10, 0], 30, roll);
+    expect(departures).toEqual(["visitor-1:stall"]);
+    loop.tick("visitor-1", [10, 0], 5, roll);
+    expect(arrivals).toEqual(["visitor-1:stall"]);
+    expect(departures).toEqual(["visitor-1:stall"]);
+  });
+
+  test("stays seeking when every POI is at capacity, no crash on an unmatched roll", () => {
+    const capped: Poi[] = [{ id: "full", point: [10, 0], capacity: 1 }];
+    const loop = createVisitorLoop({
+      pois: capped,
+      dwellMs: () => 10,
+      exitPoint: [0, 0],
+      occupancy: () => 1,
+    });
+    const step = loop.tick("visitor-1", [0, 0], 16, () => 0);
+    expect(step.phase).toBe("seeking");
+    expect(step.target).toBeNull();
+  });
+
+  test("exitPoint resolved per agent supports multiple gates", () => {
+    const loop = createVisitorLoop({
+      pois,
+      dwellMs: () => 0,
+      exitPoint: (agentId) => (agentId === "north" ? [0, 0] : [20, 0]),
+      arriveRadius: 0.5,
+    });
+    loop.tick("north", [10, 0], 0, () => 0);
+    loop.tick("north", [10, 0], 16, () => 0);
+    const departing = loop.tick("north", [10, 0], 16, () => 0);
+    expect(departing.phase).toBe("departing");
+    expect(departing.target).toEqual([0, 0]);
+  });
+
+  test("remove/clear drop tracked agents", () => {
+    const loop = createVisitorLoop({ pois, dwellMs: () => 10, exitPoint: [0, 0] });
+    loop.spawn("visitor-1");
+    expect(loop.get("visitor-1")).not.toBeNull();
+    loop.remove("visitor-1");
+    expect(loop.get("visitor-1")).toBeNull();
+    loop.spawn("visitor-2");
+    loop.clear();
+    expect(loop.get("visitor-2")).toBeNull();
   });
 });
 

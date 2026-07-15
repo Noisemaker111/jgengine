@@ -9,8 +9,13 @@
 - `FlowFieldOptions` (interface): interface FlowFieldOptions — ⚠ undocumented
 - `Poi` (interface): interface Poi — ⚠ undocumented
 - `SelectPoiOptions` (interface): interface SelectPoiOptions — ⚠ undocumented
+- `VisitorLoop` (interface): interface VisitorLoop — Handle returned by {@link createVisitorLoop}: per-agent seek/travel/dwell/depart state machine.
+- `VisitorLoopOptions` (interface): interface VisitorLoopOptions — Config for {@link createVisitorLoop}: the POI catalog, dwell duration, and exit point every agent shares.
+- `VisitorPhase` (type): type VisitorPhase = "seeking" | "traveling" | "dwelling" | "departing" | "done" — A many-agent visitor's current step of the seek→travel→arrive→dwell→depart loop.
+- `VisitorStep` (interface): interface VisitorStep — One tick's result from a {@link VisitorLoop}: current phase, where to steer, and which POI it concerns.
 - `computeFlowField` (function): function computeFlowField(grid: NavGrid, goals: readonly NavPoint[], options: FlowFieldOptions = {}): FlowField — ⚠ undocumented
 - `createCrowdField` (function): function createCrowdField(grid: NavGrid): CrowdField — ⚠ undocumented
+- `createVisitorLoop` (function): function createVisitorLoop(options: VisitorLoopOptions): VisitorLoop — A many-agent seek→travel→arrive→dwell→depart loop over weighted points of interest (park visitors, shoppers, tavern patrons) — `ai/crowd`'s `selectPoi` covers only the weighted-pick step; this owns the per-agent phase machine around it so the caller only supplies positions and drives movement.
 - `selectPoi` (function): function selectPoi(pois: readonly Poi[], from: NavPoint, options: SelectPoiOptions): Poi | null — ⚠ undocumented
 - `spreadOffset` (function): function spreadOffset(id: string, radius: number): readonly [number, number] — Deterministic 2D offset uniformly within a disc of `radius`, stable per `id` — so a crowd converging on one target (a flank point, a rally banner, a boss) fans out to distinct spots instead of all stacking on the same coordinate. Same `id` always yields the same offset, no per-entity state to store.
 
@@ -1266,6 +1271,18 @@
 - `FogConfig` (interface): interface FogConfig — ⚠ undocumented
 - `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
 - `createFogField` (function): function createFogField(config: FogConfig): FogField — ⚠ undocumented
+
+## @jgengine/core/world/footprintGrid
+
+- `AdjacentCell` (interface): interface AdjacentCell — One occupied neighbor cell reported by {@link boundaryNeighbors}.
+- `FootprintGrid` (interface): interface FootprintGrid — Handle returned by {@link createFootprintGrid}.
+- `FootprintGridOptions` (interface): interface FootprintGridOptions — Config for {@link createFootprintGrid}.
+- `FootprintReservation` (interface): interface FootprintReservation — A live claim on a {@link FootprintGrid}: which cells `id` (a `kind` tag for adjacency checks) holds.
+- `GridCell` (interface): interface GridCell — One integer cell address on a {@link FootprintGrid}.
+- `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
+- `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
+- `footprintObstacles` (function): function footprintObstacles(grid: FootprintGrid): PlacementObstacle[] — Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the grid's committed footprints unchanged.
+- `hasValidAdjacency` (function): function hasValidAdjacency(grid: FootprintGrid, cells: readonly GridCell[], accepts: (neighborKind: string) => boolean, requireConnection = false): boolean — Connective-piece adjacency validity: every occupied neighbor of `cells` must satisfy `accepts` (no incompatible piece touching), and when `requireConnection` is true at least one neighbor must (a road/pipe/belt segment placed with nothing to connect to is invalid). An empty-bordered footprint (no occupied neighbors at all) passes unless `requireConnection` demands one.
 
 ## @jgengine/core/world/geometry
 

@@ -6,6 +6,7 @@ import {
   chargeAll,
   createEmptyWallet,
   grant,
+  isOverdrawn,
 } from "@jgengine/core/economy/wallet";
 
 describe("wallet", () => {
@@ -101,5 +102,63 @@ describe("wallet", () => {
     expect(result).toEqual({ status: "rejected", reason: "insufficient-funds" });
     expect(balance(wallet, "money")).toBe(100);
     expect(balance(wallet, "coins")).toBe(3);
+  });
+});
+
+describe("wallet overdraft", () => {
+  test("charge without overdraft still rejects into the red (strict default unchanged)", () => {
+    const wallet = createEmptyWallet();
+    expect(charge(wallet, "money", 10)).toEqual({ status: "rejected", reason: "insufficient-funds" });
+  });
+
+  test("charge with overdraft: true carries an unlimited debt balance", () => {
+    const wallet = createEmptyWallet();
+    const result = charge(wallet, "money", 250, { overdraft: true });
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(balance(result.state, "money")).toBe(-250);
+      expect(isOverdrawn(result.state, "money")).toBe(true);
+    }
+  });
+
+  test("charge with a capped overdraft rejects once the debt limit would be exceeded", () => {
+    let wallet = createEmptyWallet();
+    const first = charge(wallet, "money", 80, { overdraft: { max: 100 } });
+    expect(first.status).toBe("ok");
+    if (first.status === "ok") wallet = first.state;
+    expect(balance(wallet, "money")).toBe(-80);
+
+    const second = charge(wallet, "money", 50, { overdraft: { max: 100 } });
+    expect(second).toEqual({ status: "rejected", reason: "insufficient-funds" });
+    expect(balance(wallet, "money")).toBe(-80);
+  });
+
+  test("grant tolerates and repays a negative balance", () => {
+    let wallet = createEmptyWallet();
+    const charged = charge(wallet, "money", 40, { overdraft: true });
+    if (charged.status === "ok") wallet = charged.state;
+    expect(balance(wallet, "money")).toBe(-40);
+
+    wallet = grant(wallet, "money", 100);
+    expect(balance(wallet, "money")).toBe(60);
+    expect(isOverdrawn(wallet, "money")).toBe(false);
+  });
+
+  test("chargeAll with overdraft lets one currency go negative while another stays solvent", () => {
+    let wallet = createEmptyWallet();
+    wallet = grant(wallet, "coins", 5);
+    const result = chargeAll(wallet, { money: 30, coins: 5 }, { overdraft: true });
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(balance(result.state, "money")).toBe(-30);
+      expect(balance(result.state, "coins")).toBe(0);
+    }
+  });
+
+  test("chargeAll with a capped overdraft rejects (and deducts nothing) when any currency would exceed its limit", () => {
+    const wallet = createEmptyWallet();
+    const result = chargeAll(wallet, { money: 200 }, { overdraft: { max: 50 } });
+    expect(result).toEqual({ status: "rejected", reason: "insufficient-funds" });
+    expect(balance(wallet, "money")).toBe(0);
   });
 });

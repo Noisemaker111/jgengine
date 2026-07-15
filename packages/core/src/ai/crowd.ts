@@ -263,3 +263,147 @@ export function selectPoi(pois: readonly Poi[], from: NavPoint, options: SelectP
   }
   return eligible[eligible.length - 1]!;
 }
+
+/** A many-agent visitor's current step of the seek→travel→arrive→dwell→depart loop. */
+export type VisitorPhase = "seeking" | "traveling" | "dwelling" | "departing" | "done";
+
+/** One tick's result from a {@link VisitorLoop}: current phase, where to steer, and which POI it concerns. */
+export interface VisitorStep {
+  phase: VisitorPhase;
+  /** Where to steer this tick (feed `scene.entity.moveToward`/`moveTowardCommit`), or `null` once `done` or stuck `seeking` with no eligible POI. */
+  target: NavPoint | null;
+  poiId: string | null;
+}
+
+/** Config for {@link createVisitorLoop}: the POI catalog, dwell duration, and exit point every agent shares. */
+export interface VisitorLoopOptions {
+  pois: readonly Poi[];
+  /** How long (ms, sim time) a visitor lingers once it arrives at a POI. */
+  dwellMs: (poi: Poi) => number;
+  /** Where a visitor heads once its dwell ends — a fixed exit/despawn point, or one resolved per agent (multiple gates). */
+  exitPoint: NavPoint | ((agentId: string) => NavPoint);
+  /** Distance under which "traveling"/"departing" counts as arrived. Default 1. */
+  arriveRadius?: number;
+  occupancy?: (poiId: string) => number;
+  distanceBias?: number;
+  distance?: (from: NavPoint, poi: Poi) => number;
+  /** Fires once, on the traveling→dwelling transition (e.g. `crowdField.enter(poi.point)`). */
+  onArrive?: (agentId: string, poiId: string) => void;
+  /** Fires once, on the dwelling→departing transition (e.g. `crowdField.leave(poi.point)`). */
+  onDepart?: (agentId: string, poiId: string) => void;
+}
+
+/** Handle returned by {@link createVisitorLoop}: per-agent seek/travel/dwell/depart state machine. */
+export interface VisitorLoop {
+  /** Registers `agentId` in the `"seeking"` phase; `tick` also auto-spawns on first call. */
+  spawn(agentId: string): VisitorStep;
+  /** Advances one agent by `dtMs` from its current `position`; `roll()` feeds `selectPoi`'s weighted pick. */
+  tick(agentId: string, position: NavPoint, dtMs: number, roll: () => number): VisitorStep;
+  get(agentId: string): VisitorStep | null;
+  remove(agentId: string): void;
+  clear(): void;
+}
+
+interface VisitorAgentState {
+  phase: VisitorPhase;
+  poiId: string | null;
+  dwellRemaining: number;
+}
+
+function toStep(state: VisitorAgentState, poiOf: (id: string) => Poi | undefined, exitOf: (agentId: string) => NavPoint, agentId: string): VisitorStep {
+  if (state.phase === "seeking" || state.phase === "done") {
+    return { phase: state.phase, target: null, poiId: null };
+  }
+  if (state.phase === "departing") {
+    return { phase: "departing", target: exitOf(agentId), poiId: state.poiId };
+  }
+  const poi = state.poiId === null ? undefined : poiOf(state.poiId);
+  return { phase: state.phase, target: poi?.point ?? null, poiId: state.poiId };
+}
+
+/**
+ * A many-agent seek→travel→arrive→dwell→depart loop over weighted points of interest (park visitors,
+ * shoppers, tavern patrons) — `ai/crowd`'s `selectPoi` covers only the weighted-pick step; this owns
+ * the per-agent phase machine around it so the caller only supplies positions and drives movement.
+ *
+ * @capability visitor-loop many-agent seek/travel/dwell/depart state machine over weighted POIs
+ */
+export function createVisitorLoop(options: VisitorLoopOptions): VisitorLoop {
+  const { pois, dwellMs, exitPoint, occupancy, distanceBias, distance } = options;
+  const arriveRadius = options.arriveRadius ?? 1;
+  const agents = new Map<string, VisitorAgentState>();
+  const poiById = new Map(pois.map((poi) => [poi.id, poi] as const));
+
+  function poiOf(id: string): Poi | undefined {
+    return poiById.get(id);
+  }
+
+  function exitOf(agentId: string): NavPoint {
+    return typeof exitPoint === "function" ? exitPoint(agentId) : exitPoint;
+  }
+
+  function ensure(agentId: string): VisitorAgentState {
+    let state = agents.get(agentId);
+    if (state === undefined) {
+      state = { phase: "seeking", poiId: null, dwellRemaining: 0 };
+      agents.set(agentId, state);
+    }
+    return state;
+  }
+
+  return {
+    spawn(agentId) {
+      const state = ensure(agentId);
+      return toStep(state, poiOf, exitOf, agentId);
+    },
+    tick(agentId, position, dtMs, roll) {
+      const state = ensure(agentId);
+      if (state.phase === "seeking") {
+        const poi = selectPoi(pois, position, {
+          roll: roll(),
+          ...(occupancy === undefined ? {} : { occupancy }),
+          ...(distanceBias === undefined ? {} : { distanceBias }),
+          ...(distance === undefined ? {} : { distance }),
+        });
+        if (poi !== null) {
+          state.poiId = poi.id;
+          state.phase = "traveling";
+        }
+      } else if (state.phase === "traveling") {
+        const poi = state.poiId === null ? undefined : poiOf(state.poiId);
+        if (poi === undefined) {
+          state.phase = "departing";
+          state.poiId = null;
+        } else if ((distance ?? euclidean)(position, poi) <= arriveRadius) {
+          state.phase = "dwelling";
+          state.dwellRemaining = dwellMs(poi);
+          options.onArrive?.(agentId, poi.id);
+        }
+      } else if (state.phase === "dwelling") {
+        state.dwellRemaining -= dtMs;
+        if (state.dwellRemaining <= 0) {
+          const poiId = state.poiId;
+          state.phase = "departing";
+          if (poiId !== null) options.onDepart?.(agentId, poiId);
+        }
+      } else if (state.phase === "departing") {
+        const exit = exitOf(agentId);
+        if (Math.hypot(exit[0] - position[0], exit[1] - position[1]) <= arriveRadius) {
+          state.phase = "done";
+          state.poiId = null;
+        }
+      }
+      return toStep(state, poiOf, exitOf, agentId);
+    },
+    get(agentId) {
+      const state = agents.get(agentId);
+      return state === undefined ? null : toStep(state, poiOf, exitOf, agentId);
+    },
+    remove(agentId) {
+      agents.delete(agentId);
+    },
+    clear() {
+      agents.clear();
+    },
+  };
+}
