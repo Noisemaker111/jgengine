@@ -9,56 +9,37 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WhyRouteImport } from './routes/why'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as EditorRouteImport } from './routes/editor'
+import { Route as CapabilitiesRouteImport } from './routes/capabilities'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SkillsIndexRouteImport } from './routes/skills.index'
-import { Route as GamesIndexRouteImport } from './routes/games.index'
-import { Route as ComponentsIndexRouteImport } from './routes/components.index'
-import { Route as ApiIndexRouteImport } from './routes/api.index'
-import { Route as SkillsNameRouteImport } from './routes/skills.$name'
-import { Route as GamesGameIdRouteImport } from './routes/games.$gameId'
 import { Route as ApiGithubProxyRouteImport } from './routes/api/github-proxy'
 import { Route as ApiGithubContributionsRouteImport } from './routes/api/github-contributions'
-import { Route as ApiPkgRouteImport } from './routes/api.$pkg'
 
+const WhyRoute = WhyRouteImport.update({
+  id: '/why',
+  path: '/why',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditorRoute = EditorRouteImport.update({
+  id: '/editor',
+  path: '/editor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CapabilitiesRoute = CapabilitiesRouteImport.update({
+  id: '/capabilities',
+  path: '/capabilities',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SkillsIndexRoute = SkillsIndexRouteImport.update({
-  id: '/skills/',
-  path: '/skills/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GamesIndexRoute = GamesIndexRouteImport.update({
-  id: '/games/',
-  path: '/games/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComponentsIndexRoute = ComponentsIndexRouteImport.update({
-  id: '/components/',
-  path: '/components/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiIndexRoute = ApiIndexRouteImport.update({
-  id: '/api/',
-  path: '/api/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SkillsNameRoute = SkillsNameRouteImport.update({
-  id: '/skills/$name',
-  path: '/skills/$name',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GamesGameIdRoute = GamesGameIdRouteImport.update({
-  id: '/games/$gameId',
-  path: '/games/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGithubProxyRoute = ApiGithubProxyRouteImport.update({
@@ -71,110 +52,84 @@ const ApiGithubContributionsRoute = ApiGithubContributionsRouteImport.update({
   path: '/api/github-contributions',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPkgRoute = ApiPkgRouteImport.update({
-  id: '/api/$pkg',
-  path: '/api/$pkg',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/capabilities': typeof CapabilitiesRoute
+  '/editor': typeof EditorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/api/$pkg': typeof ApiPkgRoute
+  '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
-  '/games/$gameId': typeof GamesGameIdRoute
-  '/skills/$name': typeof SkillsNameRoute
-  '/api/': typeof ApiIndexRoute
-  '/components/': typeof ComponentsIndexRoute
-  '/games/': typeof GamesIndexRoute
-  '/skills/': typeof SkillsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/capabilities': typeof CapabilitiesRoute
+  '/editor': typeof EditorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/api/$pkg': typeof ApiPkgRoute
+  '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
-  '/games/$gameId': typeof GamesGameIdRoute
-  '/skills/$name': typeof SkillsNameRoute
-  '/api': typeof ApiIndexRoute
-  '/components': typeof ComponentsIndexRoute
-  '/games': typeof GamesIndexRoute
-  '/skills': typeof SkillsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/capabilities': typeof CapabilitiesRoute
+  '/editor': typeof EditorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/api/$pkg': typeof ApiPkgRoute
+  '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
-  '/games/$gameId': typeof GamesGameIdRoute
-  '/skills/$name': typeof SkillsNameRoute
-  '/api/': typeof ApiIndexRoute
-  '/components/': typeof ComponentsIndexRoute
-  '/games/': typeof GamesIndexRoute
-  '/skills/': typeof SkillsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/capabilities'
+    | '/editor'
     | '/sitemap.xml'
-    | '/api/$pkg'
+    | '/why'
     | '/api/github-contributions'
     | '/api/github-proxy'
-    | '/games/$gameId'
-    | '/skills/$name'
-    | '/api/'
-    | '/components/'
-    | '/games/'
-    | '/skills/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/capabilities'
+    | '/editor'
     | '/sitemap.xml'
-    | '/api/$pkg'
+    | '/why'
     | '/api/github-contributions'
     | '/api/github-proxy'
-    | '/games/$gameId'
-    | '/skills/$name'
-    | '/api'
-    | '/components'
-    | '/games'
-    | '/skills'
   id:
     | '__root__'
     | '/'
+    | '/capabilities'
+    | '/editor'
     | '/sitemap.xml'
-    | '/api/$pkg'
+    | '/why'
     | '/api/github-contributions'
     | '/api/github-proxy'
-    | '/games/$gameId'
-    | '/skills/$name'
-    | '/api/'
-    | '/components/'
-    | '/games/'
-    | '/skills/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CapabilitiesRoute: typeof CapabilitiesRoute
+  EditorRoute: typeof EditorRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  ApiPkgRoute: typeof ApiPkgRoute
+  WhyRoute: typeof WhyRoute
   ApiGithubContributionsRoute: typeof ApiGithubContributionsRoute
   ApiGithubProxyRoute: typeof ApiGithubProxyRoute
-  GamesGameIdRoute: typeof GamesGameIdRoute
-  SkillsNameRoute: typeof SkillsNameRoute
-  ApiIndexRoute: typeof ApiIndexRoute
-  ComponentsIndexRoute: typeof ComponentsIndexRoute
-  GamesIndexRoute: typeof GamesIndexRoute
-  SkillsIndexRoute: typeof SkillsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/why': {
+      id: '/why'
+      path: '/why'
+      fullPath: '/why'
+      preLoaderRoute: typeof WhyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -182,53 +137,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/editor': {
+      id: '/editor'
+      path: '/editor'
+      fullPath: '/editor'
+      preLoaderRoute: typeof EditorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capabilities': {
+      id: '/capabilities'
+      path: '/capabilities'
+      fullPath: '/capabilities'
+      preLoaderRoute: typeof CapabilitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/skills/': {
-      id: '/skills/'
-      path: '/skills'
-      fullPath: '/skills/'
-      preLoaderRoute: typeof SkillsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/games/': {
-      id: '/games/'
-      path: '/games'
-      fullPath: '/games/'
-      preLoaderRoute: typeof GamesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/components/': {
-      id: '/components/'
-      path: '/components'
-      fullPath: '/components/'
-      preLoaderRoute: typeof ComponentsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/': {
-      id: '/api/'
-      path: '/api'
-      fullPath: '/api/'
-      preLoaderRoute: typeof ApiIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/skills/$name': {
-      id: '/skills/$name'
-      path: '/skills/$name'
-      fullPath: '/skills/$name'
-      preLoaderRoute: typeof SkillsNameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/games/$gameId': {
-      id: '/games/$gameId'
-      path: '/games/$gameId'
-      fullPath: '/games/$gameId'
-      preLoaderRoute: typeof GamesGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/github-proxy': {
@@ -245,28 +172,17 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGithubContributionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/$pkg': {
-      id: '/api/$pkg'
-      path: '/api/$pkg'
-      fullPath: '/api/$pkg'
-      preLoaderRoute: typeof ApiPkgRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CapabilitiesRoute: CapabilitiesRoute,
+  EditorRoute: EditorRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  ApiPkgRoute: ApiPkgRoute,
+  WhyRoute: WhyRoute,
   ApiGithubContributionsRoute: ApiGithubContributionsRoute,
   ApiGithubProxyRoute: ApiGithubProxyRoute,
-  GamesGameIdRoute: GamesGameIdRoute,
-  SkillsNameRoute: SkillsNameRoute,
-  ApiIndexRoute: ApiIndexRoute,
-  ComponentsIndexRoute: ComponentsIndexRoute,
-  GamesIndexRoute: GamesIndexRoute,
-  SkillsIndexRoute: SkillsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

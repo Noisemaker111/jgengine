@@ -2,18 +2,18 @@
 
 The landing page for JGengine and the front door for agents. TanStack Start (SSR) on **Vercel** via Nitro.
 
-- **Humans** get a rendered landing page (`/`), a skills index (`/skills`), and rendered skill pages (`/skills/<name>`) to explore what each skill does.
-- **Humans** have one interface: `Make a game that … with jgengine` (to any coding agent). The site shows that prompt; the CLI is for agents underneath. The intake skill routes into focused API domains; the site renders skill sources rather than maintaining separate copies.
+- **Humans** get a marketing-plus-docs site: the landing (`/`), **Why JGengine** (`/why` — the honest pitch, pros/cons, a hand-rolled-vs-authored diff), **Capabilities** (`/capabilities` — every system shown as the real code you write), and **Editor** (`/editor` — the standalone 3D scene editor).
+- **Humans** have one interface: `Make a game that … with jgengine` (to any coding agent). The site shows that prompt; the CLI is for agents underneath. Each page markets *and* documents — code snippets are real API, not decoration.
 
-## The site is generated from the engine — deploying the engine updates the site
+## Pages market and document at once
 
-The skill pages are rendered straight from the repo's `.claude/skills/jgengine-*/SKILL.md` (bundled at build via Vite `?raw` in [`src/content/skills.ts`](src/content/skills.ts)). The per-skill "grab this when…" guidance lives in [`src/lib/site.ts`](src/lib/site.ts). Nothing on this site is a hand-copied duplicate of a skill.
+The marketing pages ([`src/routes/why.tsx`](src/routes/why.tsx), [`capabilities.tsx`](src/routes/capabilities.tsx), [`editor.tsx`](src/routes/editor.tsx)) sell the engine while showing the actual primitives — worlds, entities, combat, netcode, authored scenes. Shared surfaces (`CodeBlock`, `VersusBlock`, `ProsCons`, `FeatureCard`) live in [`src/components/marketing.tsx`](src/components/marketing.tsx). Keep snippets grounded in the real API so the pages stay honest as the engine moves.
 
-Because of that, **any push to `main` that touches `.claude/skills/` or `packages/` rebuilds and redeploys the site with the current engine** (the paths are listed in [`vercel.json`](vercel.json)'s `ignoreCommand`). Editing a skill or shipping an engine change *is* a website update — there is no separate content step.
+Because the site ships with the engine, **any push to `main` that touches `.claude/skills/` or `packages/` rebuilds and redeploys** (the paths are listed in [`vercel.json`](vercel.json)'s `ignoreCommand`). Shipping an engine change *is* a website update — there is no separate content step.
 
-### Games are built from `apps/dev`, not authored here
+### The game runner still builds (`/play`)
 
-`vite build` also builds the game player: the `games-player` plugin in [`vite.config.ts`](vite.config.ts) shells out to `apps/dev`'s `build:site` script, which runs the same Vite app used for local game dev with `--base /play/` into `public/play`. Players visit `/games/<id>` ([`src/routes/games.$gameId.tsx`](src/routes/games.$gameId.tsx)), which embeds the runner from its internal `/play` mount. In dev, the `games-player-dev` plugin spawns `apps/dev`'s `dev:site` server and nitro's `devProxy` forwards `/play` to it, so `/games/<id>` is playable from the local site too. The header's Games dropdown ([`src/components/Layout.tsx`](src/components/Layout.tsx)) is generated at build time from [`src/content/games.ts`](src/content/games.ts), which globs `Games/*/package.json` — add a game under `Games/` and it appears in the dropdown and at `/games/<id>` with no other wiring.
+`vite build` builds the game player: the `games-player` plugin in [`vite.config.ts`](vite.config.ts) shells out to `apps/dev`'s `build:site` script into `public/play`, and the `/api/github-*` server routes back games that render real GitHub data. Individual game pages are not currently surfaced in the site nav.
 
 ## Develop
 

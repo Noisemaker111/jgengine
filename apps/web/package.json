@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun ../../scripts/gen-api-docs.ts && vite dev",
-    "build": "bun ../../scripts/gen-api-docs.ts && vite build",
+    "dev": "vite dev",
+    "build": "vite build",
     "check-types": "tsgo --noEmit -p tsconfig.json",
     "start": "node .output/server/index.mjs"
   },

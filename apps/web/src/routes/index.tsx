@@ -1,11 +1,9 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { CommandBlock } from "../components/Copy";
-import { GameCard } from "../components/GameCard";
 import { HeroTerminal } from "../components/HeroTerminal";
 import { Backdrop, GitHubIcon, Page, SectionHeading } from "../components/Layout";
-import { GAMES } from "../content/games";
-import { SKILL_SLUGS } from "../content/skills";
+import { CodeBlock } from "../components/marketing";
 import { seo } from "../lib/seo";
 import {
   ASSETS_PACKAGE_NAME,
@@ -15,7 +13,6 @@ import {
   REPO_URL,
   SITE_DESCRIPTION,
   SITE_TITLE,
-  SKILL_GUIDE,
 } from "../lib/site";
 
 export const Route = createFileRoute("/")({
@@ -30,20 +27,49 @@ const STEPS = [
   },
   {
     title: "Say the line",
-    body: 'Make a game that … with jgengine. That is the whole interface. The agent uses the CLI and skills underneath.',
+    body: "Make a game that … with jgengine. That is the whole interface. The agent uses the CLI and skills underneath.",
   },
   {
     title: "Play the result",
-    body: "A complete, verified game on the SDK — not a demo slice. Every game below shipped this way.",
+    body: "A complete, verified game on the SDK — not a demo slice — built from the same skills this site documents.",
   },
 ];
 
 const STATS = [
   { value: String(PACKAGES.length), label: "published packages" },
-  { value: String(SKILL_SLUGS.length), label: "agent skills" },
-  { value: String(GAMES.length), label: "playable games" },
+  { value: "0", label: "core dependencies" },
+  { value: "1", label: "prompt to build" },
   { value: "0", label: "lines of boilerplate" },
 ];
+
+const EXPLORE = [
+  {
+    to: "/why" as const,
+    eyebrow: "Why JGengine",
+    title: "The pitch, honestly",
+    body: "What it's great at, what it isn't, and a side-by-side of hand-rolling a world versus authoring one on the SDK.",
+  },
+  {
+    to: "/capabilities" as const,
+    eyebrow: "Capabilities",
+    title: "Every system, with the code",
+    body: "Worlds, entities, combat, multiplayer, authored scenes, HUDs, assets — each shown as the few lines you actually write.",
+  },
+  {
+    to: "/editor" as const,
+    eyebrow: "Editor",
+    title: "A 3D editor in the box",
+    body: "Place spawns, sculpt terrain, scatter foliage. Embedded in every game — and now standalone on any folder.",
+  },
+];
+
+const HERO_SNIPPET = `import { environment, terrain, sky, grass } from "@jgengine/core/world/features";
+
+export const world = environment({
+  terrain: terrain({ bounds: { w: 256, d: 256 }, height: 8, material: "grass" }),
+  sky: sky({ preset: "day" }),
+  vegetation: grass({ area: { w: 200, d: 200 }, density: 2, seed: "meadow" }),
+});`;
 
 const packageBlurb = (name: string) => PACKAGES.find((pkg) => pkg.name === name)?.blurb ?? "";
 
@@ -77,7 +103,7 @@ function Home() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
               </span>
-              Pure TypeScript · Eight packages · AGPL-3.0
+              Pure TypeScript · Multiplayer-ready · AGPL-3.0
             </p>
             <h1
               className="animate-fade-up mt-7 text-balance text-[2.6rem] font-bold leading-[1.05] tracking-tighter text-slate-50 sm:text-7xl"
@@ -98,26 +124,23 @@ function Home() {
               style={{ animationDelay: "180ms" }}
             >
               <Link
-                to="/games"
+                to="/capabilities"
                 className="group rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 px-6 py-3 text-sm font-semibold text-ink-deep shadow-[0_0_36px_-8px_rgba(52,211,153,0.7)] transition hover:shadow-[0_0_48px_-8px_rgba(52,211,153,0.9)]"
               >
-                Play the games
+                See the capabilities
                 <span className="ml-2 inline-block transition-transform group-hover:translate-x-0.5" aria-hidden>
                   →
                 </span>
               </Link>
               <Link
-                to="/skills"
+                to="/why"
                 className="rounded-xl border border-white/12 bg-white/[0.03] px-6 py-3 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.06]"
               >
-                Browse the skills
+                Why JGengine?
               </Link>
             </div>
           </div>
-          <div
-            className="animate-fade-up mx-auto mt-14 max-w-3xl"
-            style={{ animationDelay: "260ms" }}
-          >
+          <div className="animate-fade-up mx-auto mt-14 max-w-3xl" style={{ animationDelay: "260ms" }}>
             <HeroTerminal />
           </div>
           <dl
@@ -160,70 +183,33 @@ function Home() {
       <section className="relative">
         <div className="hairline mx-auto max-w-4xl" />
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <SectionHeading
-              eyebrow="The skills"
-              title="One intake, focused engine knowledge"
-              blurb="The main skill records a short numbered build blueprint and routes the agent to only the relevant API domains."
-            />
-            <Link
-              to="/skills"
-              className="group text-sm font-medium text-emerald-300 transition hover:text-emerald-200"
-            >
-              All skills{" "}
-              <span className="inline-block transition-transform group-hover:translate-x-0.5" aria-hidden>
-                →
-              </span>
-            </Link>
-          </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {SKILL_SLUGS.map((slug, i) => (
-              <Link
-                key={slug}
-                to="/skills/$name"
-                params={{ name: slug }}
-                className="card-hover panel shine group flex flex-col rounded-2xl p-6 hover:border-emerald-400/35"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs text-slate-600">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300" aria-hidden>
-                    →
-                  </span>
-                </div>
-                <span className="mt-3 font-mono text-sm font-semibold text-emerald-300">{slug}</span>
-                <p className="mt-2.5 text-sm leading-relaxed text-slate-400">{SKILL_GUIDE[slug]}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden">
-        <div className="hairline mx-auto max-w-4xl" />
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          <div className="orb orb-emerald bottom-0 left-[30%] h-96 w-96 opacity-60" />
-        </div>
-        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <SectionHeading
-              eyebrow="Proof, not promises"
-              title="Games built by agents, playable now"
-              blurb="Every one of these was built from the skills on this site — no hand-written boilerplate. They run right here in your browser."
-            />
-            <Link
-              to="/games"
-              className="group text-sm font-medium text-emerald-300 transition hover:text-emerald-200"
-            >
-              All games{" "}
-              <span className="inline-block transition-transform group-hover:translate-x-0.5" aria-hidden>
-                →
-              </span>
-            </Link>
-          </div>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {GAMES.map((game) => (
-              <GameCard key={game.id} game={game} />
-            ))}
+          <SectionHeading
+            eyebrow="Intent, not boilerplate"
+            title="You write what your game is. The SDK handles the rest."
+            blurb="A world with terrain, a day sky, and GPU-instanced grass — mesh, fog, lighting, and collision included — is a few lines of intent that every consumer reads from one field."
+          />
+          <div className="mt-10 grid items-center gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
+            <CodeBlock code={HERO_SNIPPET} filename="world.ts" />
+            <div className="grid gap-3">
+              {EXPLORE.map((card) => (
+                <Link
+                  key={card.to}
+                  to={card.to}
+                  className="card-hover panel shine group flex flex-col rounded-2xl p-5 hover:border-emerald-400/35"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-400/90">
+                      {card.eyebrow}
+                    </span>
+                    <span className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300" aria-hidden>
+                      →
+                    </span>
+                  </div>
+                  <span className="mt-2.5 font-semibold tracking-tight text-slate-100">{card.title}</span>
+                  <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{card.body}</p>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>

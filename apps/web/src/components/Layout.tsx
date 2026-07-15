@@ -88,32 +88,25 @@ export function Header() {
         </Link>
         <nav className="flex min-w-0 flex-wrap items-center justify-end gap-0.5 text-sm text-slate-400 sm:gap-1">
           <Link
-            to="/skills"
+            to="/why"
             className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
             activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
           >
-            Skills
+            Why JGengine
           </Link>
           <Link
-            to="/api"
+            to="/capabilities"
             className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
             activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
           >
-            API
+            Capabilities
           </Link>
           <Link
-            to="/games"
+            to="/editor"
             className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
             activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
           >
-            Games
-          </Link>
-          <Link
-            to="/components"
-            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
-            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
-          >
-            Components
+            Editor
           </Link>
           <a
             href={REPO_URL}
@@ -146,23 +139,18 @@ export function Footer() {
               <p className="font-mono text-xs uppercase tracking-widest text-slate-600">Explore</p>
               <ul className="mt-3 space-y-2 text-slate-400">
                 <li>
-                  <Link to="/skills" className="transition hover:text-emerald-300">
-                    Skills
+                  <Link to="/why" className="transition hover:text-emerald-300">
+                    Why JGengine
                   </Link>
                 </li>
                 <li>
-                  <Link to="/api" className="transition hover:text-emerald-300">
-                    API
+                  <Link to="/capabilities" className="transition hover:text-emerald-300">
+                    Capabilities
                   </Link>
                 </li>
                 <li>
-                  <Link to="/games" className="transition hover:text-emerald-300">
-                    Games
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/components" className="transition hover:text-emerald-300">
-                    Components
+                  <Link to="/editor" className="transition hover:text-emerald-300">
+                    Editor
                   </Link>
                 </li>
                 <li>
