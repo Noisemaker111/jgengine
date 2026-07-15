@@ -38,7 +38,7 @@ function DrapedPath({
   if (points.length < 2) return null;
   return (
     <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color={color} roughness={1} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
+      <meshStandardMaterial color={color} roughness={1} metalness={0} side={THREE.DoubleSide} />
     </mesh>
   );
 }
