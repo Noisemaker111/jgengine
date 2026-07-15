@@ -121,6 +121,8 @@ const gameRegistry: GameRegistry = {
     import("./demo/survivalDemo").then((module) => module.survivalDemoGame),
   "builder-sandbox": () =>
     import("./demo/builderDemo").then((module) => module.builderDemoGame),
+  "hud-showcase": () =>
+    import("./demo/hudDemo").then((module) => module.hudShowcaseGame),
   "bookcase-stage": () =>
     import("./demo/bookcaseStageDemo").then((module) => module.bookcaseStageGame),
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
