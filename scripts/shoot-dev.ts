@@ -29,6 +29,8 @@ import {
   type Device,
   type SizeMode,
 } from "./browser-lib";
+import { decodePng } from "./png-reader";
+import { computeShotMetrics, evaluateThresholds } from "./shot-metrics";
 
 type Mode = "ui" | "play" | "poster" | "preview";
 type DeviceArg = Device | "both";
@@ -47,6 +49,7 @@ type Args = {
   url?: string;
   connect?: number;
   keep: boolean;
+  inspect: boolean;
   help: boolean;
   timeoutMs: number;
 };
@@ -71,6 +74,9 @@ const HELP = `bun run shoot [game] [options]
   --keep              leave the dev server + Chrome (fixed port ${WARM_CHROME_PORT})
                       running after this shot — pair with --connect ${WARM_CHROME_PORT}
                       on every following shot in the loop (warm-loop pattern)
+  --inspect           run the pixel-metrics pass on the PNG we already have
+                      in memory (no second browser launch) and write
+                      shots/<name>.metrics.json beside it
   --timeout <s>       per-shot timeout in seconds (default 60)
   --help              show this text
 
@@ -88,6 +94,7 @@ function parseArgs(argv: string[]): Args {
     size: "full",
     connect: undefined,
     keep: false,
+    inspect: false,
     help: false,
     timeoutMs: 60_000,
   };
@@ -128,6 +135,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--url") args.url = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--keep") args.keep = true;
+    else if (value === "--inspect") args.inspect = true;
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
     else if (!value.startsWith("--")) args.game = value;
@@ -270,6 +278,25 @@ async function shootOne(debugPort: number, args: Args, device: Device, outPath: 
     if (collision !== null) {
       console.error(`MOBILE LAYOUT COLLISION [${label}]: ${formatCollisionReport(collision)}`);
       ok = false;
+    }
+    if (args.inspect) {
+      try {
+        const decoded = decodePng(bytes);
+        const metrics = computeShotMetrics(decoded.width, decoded.height, decoded.data);
+        const metricsPath = outPath.replace(/\.png$/, ".metrics.json");
+        writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
+        console.log(metricsPath);
+        if (!metrics.nonblank) {
+          console.error(`inspect-shot [${label}]: blank or broken screenshot`);
+          ok = false;
+        }
+        for (const warning of evaluateThresholds(metrics)) {
+          console.error(`inspect-shot [${label}]: ${warning.message}`);
+        }
+      } catch (error) {
+        console.error(`inspect-shot [${label}]: failed — ${error instanceof Error ? error.message : error}`);
+        ok = false;
+      }
     }
     return ok;
   } finally {
