@@ -132,6 +132,32 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/studio-showcase": {
+      "name": "@games/studio-showcase",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine-examples/studios": "workspace:*",
+        "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@react-three/drei": "^10.7.7",
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/the-robots": {
       "name": "@games/the-robots",
       "version": "0.1.0",
@@ -677,6 +703,8 @@
     "@games/spire-cards": ["@games/spire-cards@workspace:Games/spire-cards"],
 
     "@games/starhome": ["@games/starhome@workspace:Games/starhome"],
+
+    "@games/studio-showcase": ["@games/studio-showcase@workspace:Games/studio-showcase"],
 
     "@games/the-robots": ["@games/the-robots@workspace:Games/the-robots"],
 
