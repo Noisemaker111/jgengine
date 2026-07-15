@@ -443,6 +443,8 @@ src/
 
 **Opt-in `ctx.game.*` subsystems (`features`)** — core is genre-agnostic: the always-on base is `commands` / `events` / `store` / `feed` / `loot` / `economy` (plus `audio`), and genre subsystems are opt-in via `defineGame({ features: { quest, trade, unlocks, cosmetics, roster, cards, turn, race, leaderboard, social, chat } })`. Omit one and `ctx.game.<name>` is `undefined` (`cosmetics` hangs off `ctx.player`) — a puzzle game isn't handed a quest journal, a shop, a card pile, or party/chat it never asked for. Declare only what the game uses (`chat` implies `social`).
 
+**Offline whole-world save (`persist`)** — `defineGame({ persist: true })` binds `ctx.game.save` for a single-player/offline game (auto-wired only when `isOffline(multiplayer)` — never for a host-authoritative world). It autosaves the *entire* world to `localStorage` through the same `ctx.snapshot()`/`ctx.hydrate()` seam multiplayer replicates over — every `defineStore` slot, all entities/stats/inventories — no per-field code. `createRuntimeSave` is the underlying bridge (any `{ snapshot, hydrate, subscribe }` target + a swappable `SaveBackend`). Modes/save-points/slots and cloud-swap: `jgengine-gameplay` → "Save the *whole* game automatically".
+
 ```ts
 // game.config.ts — imports only, nothing inline
 import { defineGame } from "@jgengine/shell/defineGame";

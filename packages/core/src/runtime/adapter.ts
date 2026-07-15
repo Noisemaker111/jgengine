@@ -55,6 +55,12 @@ export function isServerAuthoritative(multiplayer: unknown): boolean {
   return adapter !== null && "authority" in adapter && adapter.authority === "server";
 }
 
+/** True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save. */
+export function isOffline(multiplayer: unknown): boolean {
+  const adapter = adapterOf(multiplayer);
+  return adapter === null || adapter.kind === "offline";
+}
+
 export function offline(): MultiplayerAdapterConfig {
   return { kind: "offline" };
 }

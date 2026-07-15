@@ -93,6 +93,7 @@
 - `createWorldReplicator` (function): function createWorldReplicator(takeSnapshot: () => WorldSnapshot): { commit: () => number; diff: (sinceRevision: number) => WorldDiff; revision: () => number; } — Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)` then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per commit; dirty-hint acceleration is a later optimization behind the same seam.
 - `diffSnapshots` (function): function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff — Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
 - `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `isOffline` (function): function isOffline(multiplayer: unknown): boolean — True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save.
 - `isSaveEnabled` (function): function isSaveEnabled(config: SaveConfig): config is Exclude<SaveConfig, "none"> — ⚠ undocumented
 - `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
 - `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
@@ -299,6 +300,7 @@
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
 - `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `isOffline` (function): function isOffline(multiplayer: unknown): boolean — True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save.
 - `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
 - `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
 - `multiplayerAdapterKind` (function): function multiplayerAdapterKind(multiplayer: unknown): string | null — ⚠ undocumented
@@ -444,6 +446,15 @@
 - `partitionScopes` (function): function partitionScopes<T extends Record<string, unknown>>(state: T, schema: ScopeSchema): ScopedState<T> — ⚠ undocumented
 - `planScenarioReset` (function): function planScenarioReset(reset: ScenarioReset): NormalizedScenarioReset — ⚠ undocumented
 - `resetRun` (function): function resetRun<T extends Record<string, unknown>>(scoped: ScopedState<T>): ScopedState<T> — ⚠ undocumented
+
+## @jgengine/core/runtime/runtimeSave
+
+- `RuntimeSave` (interface): interface RuntimeSave — Whole-world save/load bound to a live world and a pluggable backend. `save()` captures `target.snapshot()` and writes it; `load()` reads it back and `target.hydrate()`s the whole world. In `autosave` mode it also writes on a debounce after any change. Named slots, versioned migration, and offline↔cloud (backend swap) all come for free from the underlying save store.
+- `RuntimeSaveConfig` (interface): interface RuntimeSaveConfig — How {@link createRuntimeSave} is wired — the live world `target`, the `backend` it persists through, and optional mode/slot/versioning/cadence knobs.
+- `RuntimeSaveMode` (type): type RuntimeSaveMode = "autosave" | "manual" — `"autosave"` writes a fresh capture on a debounce after any world change; `"manual"` writes only on an explicit `save()`/`checkpoint()` — the save-point / quest-trigger model.
+- `RuntimeSaveOptions` (type): type RuntimeSaveOptions = Omit<RuntimeSaveConfig, "target"> — {@link RuntimeSaveConfig} without `target` — what a host (`createGameContext`) accepts to build `ctx.game.save` and bind it to the context itself.
+- `RuntimeSaveTarget` (interface): interface RuntimeSaveTarget — The narrow slice of a live `GameContext` a runtime save reads and writes — a `GameContext` satisfies it directly (`ctx.snapshot`/`ctx.hydrate`/`ctx.subscribe`). Depending on this instead of the full context keeps the save controller a deep, decoupled module: it captures and restores the *whole* opted-in world without knowing any subsystem.
+- `createRuntimeSave` (function): function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave — Bridge a live world to a pluggable save backend: whole-state capture/restore with autosave, save points, named slots, and versioned migration — the same call for offline (localStorage) and cloud (Convex), only the `backend` differs. The game keeps control of *when* it saves (the `mode` plus explicit `checkpoint()` calls from quests/areas) and *when* it restores (`load()` on boot), so any save mechanic — continuous autosave, manual save points, checkpoint triggers — is expressible without new engine code.
 
 ## @jgengine/core/runtime/save
 

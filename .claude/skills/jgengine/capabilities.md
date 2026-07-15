@@ -7,3 +7,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## loot-table — validate a loot table definition for use with the registry
 
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/authoring"`
+
+## runtime-save — save/load the whole game world through a pluggable backend, autosave or save points
+
+- `createRuntimeSave` (function) · `import { createRuntimeSave } from "@jgengine/core/runtime/runtimeSave"`
