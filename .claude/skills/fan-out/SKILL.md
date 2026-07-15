@@ -26,6 +26,7 @@ The main session stays on its assigned branch and does **not** juggle worktrees 
 ## Stays inline — never fan these
 
 - one small thing: a small edit, a small ship, a quick grep, direct Q&A
+- pushing/uploading artifacts (screenshots to `pr-shots`, any single-branch commit) — a `git push`, never a subagent, and never one subagent per file
 - planning, decomposition, engine/API/layering design, gnarly types
 - synthesizing subagent results into the user-facing answer
 - waiting on CI or anything else — silence is green, ship and end the turn
@@ -35,7 +36,7 @@ A single small task is one agent: this session. Don't spawn a subagent to do wha
 
 ## Set `model` explicitly on every subagent
 
-Omitting it inherits the session model. **Haiku** — pure run-and-report legs: lint, typecheck, test, build, the verify ladder, "all the bs testing". **Sonnet** — a substantial ship motion, or diagnosing/fixing what Haiku's run turned up red. **Opus** — scouts and legs needing real judgment. Fable never runs a leg; a Sonnet grinding a too-hard task escalates to Opus, not upward. Screenshots (`shoot`/`drive`) aren't a fan-out leg — run them directly, no subagent.
+Omitting it inherits the session model. **Haiku** — pure run-and-report legs: lint, typecheck, test, build, the verify ladder, "all the bs testing". **Sonnet** — a substantial ship motion, or diagnosing/fixing what Haiku's run turned up red. **Opus** — scouts and legs needing real judgment. Fable never runs a leg; a Sonnet grinding a too-hard task escalates to Opus, not upward. Screenshots (`shoot`/`drive`) and pushing them to `pr-shots` aren't a fan-out leg — run both directly, no subagent.
 
 The common shape: **Sonnet** worktree subagents run the N parallel ships; **Haiku** runs the verify legs and reports back; **Opus** scouts unmapped territory. Main (frontier) decomposes and judges.
 
