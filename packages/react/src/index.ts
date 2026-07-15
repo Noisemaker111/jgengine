@@ -7,6 +7,7 @@ export * from "./social";
 export * from "./hooks";
 export * from "./store";
 export * from "./settings";
+export * from "./save";
 export * from "./components";
 export * from "./keyHint";
 export * from "./startScreen";

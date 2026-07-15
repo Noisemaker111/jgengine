@@ -1,6 +1,7 @@
 export * from "./convexChatTransport";
 export * from "./convexPresenceTransport";
 export * from "./createConvexBackend";
+export * from "./convexSaveBackend";
 export * from "./createConvexGameTransport";
 export * from "./hostedServer";
 export * from "./occ";

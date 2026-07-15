@@ -36,6 +36,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGameFeed` (function) · `import { createGameFeed } from "@jgengine/core/game/feed"`
 
+## game-save — save/load game state with a pluggable backend, autosave, slots, and migration
+
+- `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/game/saveStore"`
+
 ## inventory-grid — a bag of stackable items with add, remove, and move
 
 - `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
@@ -74,6 +78,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## loadouts — save and swap named equipment loadouts
 
 - `createLoadouts` (function) · `import { createLoadouts } from "@jgengine/core/game/loadout"`
+
+## local-save — persist a game to on-device localStorage (offline)
+
+- `localSaveBackend` (function) · `import { localSaveBackend } from "@jgengine/core/game/saveStore"`
 
 ## loot-filter — filter and highlight drops by rarity/name rules
 
