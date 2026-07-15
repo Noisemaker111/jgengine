@@ -59,6 +59,7 @@ import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
 import { DEFAULT_PICKUP_RADIUS, WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
@@ -1293,6 +1294,7 @@ function FrameDriver({
       devtools.profile.measure("onTick", () => {
         playable.loop.onTick(ctx, gameDt);
       });
+      advanceBehaviors(ctx, gameDt);
     }
 
     endPhase = devtools.profile.begin("actions");
@@ -1442,6 +1444,7 @@ function HudOnlyDriver({
         devtools.profile.measure("onTick", () => {
           playable.loop.onTick(ctx, gameDt);
         });
+        advanceBehaviors(ctx, gameDt);
         endPhase = devtools.profile.begin("actions");
         const nowMs = performance.now();
         for (const action of inputActions) {

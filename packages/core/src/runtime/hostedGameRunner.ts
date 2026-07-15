@@ -1,6 +1,7 @@
 import type { CommandResult } from "../commands/commandRegistry";
 import type { GameDefinition, LoopPlayer } from "../game/defineGame";
 import { syncLifecyclePhase } from "../game/gamePhase";
+import { advanceBehaviors } from "../scene/behaviorRuntime";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
 import { type InputFrame } from "./inputSnapshot";
@@ -103,6 +104,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     },
     tick(dt) {
       loop.onTick?.(ctx, dt);
+      advanceBehaviors(ctx, dt);
       syncLifecyclePhase(ctx, definition.lifecycle);
       return replicator.commit();
     },

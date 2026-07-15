@@ -14,7 +14,7 @@ import { physics, world } from "./world";
 
 export const game = defineGame({
   name: "Vice Isle",
-  features: { quest: true, trade: true },
+  features: { quest: true, trade: true, dialogue: true },
   assets,
   world,
   physics,

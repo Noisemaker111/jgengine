@@ -311,6 +311,13 @@
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`.
 
+## @jgengine/core/game/dialogue
+
+- `DIALOGUE_STORE_KEY` (const): const DIALOGUE_STORE_KEY: "jg.dialogue" — Store slot holding the id of the dialogue currently open, or absent when none is showing.
+- `GameDialogue` (interface): interface GameDialogue — `ctx.game.dialogue` — the blessed open/close bridge for the `talkable`/`dialogue.open` prompt flow. A game opts in with `features.dialogue`, and the runtime both builds this surface and auto-registers the `dialogue.open`/`dialogue.close` commands a `talkable(id)` prompt dispatches, so no game re-implements the store, the command pair, or the open/close bookkeeping. React reads the open id via `useOpenDialogueId`.
+- `createGameDialogue` (function): function createGameDialogue(store: DialogueStore): GameDialogue — Build a {@link GameDialogue} over one keyed-store slot. Writes flow through the reactive store, so opening or closing bumps `ctx.version()` and a `useOpenDialogueId` selector re-renders.
+- `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
+
 ## @jgengine/core/game/events
 
 - `AudioMusicEvent` (interface): interface AudioMusicEvent — Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones.

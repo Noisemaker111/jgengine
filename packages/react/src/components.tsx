@@ -10,8 +10,10 @@ import { pendingQteStep, type QteStep } from "@jgengine/core/interaction/qte";
 import type { FeedEntry } from "@jgengine/core/game/feed";
 import type { StatLevelUpEvent } from "@jgengine/core/game/events";
 import { rollCheck, type CheckAdvantage, type CheckResult } from "@jgengine/core/stats/rollCheck";
+import { dialogueSlot } from "@jgengine/core/game/dialogue";
 import { useGameContext } from "./provider";
 import { useCurrency, useEntityStat, useFeed, useInventory, useLocalPlayerDead } from "./hooks";
+import { useStore } from "./store";
 import { paintQteStepDom, paintSkillCheckDom } from "./skillCheckPaint";
 
 export { paintQteStepDom, paintSkillCheckDom } from "./skillCheckPaint";
@@ -234,6 +236,30 @@ export function DialogueBox({
       )}
     </div>
   );
+}
+
+/**
+ * The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`.
+ * The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and
+ * renders {@link DialogueBox}, with no per-game open/close store.
+ */
+export function useOpenDialogueId(): string | null {
+  return useStore(dialogueSlot, (value) => value ?? null);
+}
+
+/**
+ * Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke
+ * (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that
+ * replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
+ */
+export function runDialogueChoice(
+  commands: { run(name: string, input?: unknown): unknown },
+  choice: DialogueChoice,
+  result: CheckResult | null,
+): void {
+  const invoke = resolveDialogueInvoke(choice, result);
+  if (invoke !== null && invoke !== undefined) commands.run(invoke.command, invoke.args ?? {});
+  else commands.run("dialogue.close", {});
 }
 
 export function SkillCheckBar({

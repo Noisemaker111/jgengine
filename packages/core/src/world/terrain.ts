@@ -477,7 +477,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLe
     detailScale: config.detailScale ?? DEFAULT_TERRAIN_DETAIL.detailScale,
     macroScale: config.macroScale ?? DEFAULT_TERRAIN_DETAIL.macroScale,
     roughness: config.roughness ?? DEFAULT_TERRAIN_DETAIL.roughness,
-    strength: config.strength ?? DEFAULT_TERRAIN_DETAIL.strength,
+    strength: clamp01(config.strength ?? DEFAULT_TERRAIN_DETAIL.strength),
     waterLevel: config.waterLevel ?? terrainWaterLevel,
     ...(config.material === undefined
       ? {}
@@ -485,7 +485,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLe
           material: {
             maps: config.material.maps,
             repeat: config.material.repeat ?? DEFAULT_TERRAIN_MATERIAL_REPEAT,
-            strength: config.material.strength ?? DEFAULT_TERRAIN_MATERIAL_STRENGTH,
+            strength: clamp01(config.material.strength ?? DEFAULT_TERRAIN_MATERIAL_STRENGTH),
           },
         }),
   };

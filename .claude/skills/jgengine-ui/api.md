@@ -282,6 +282,7 @@
 - `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
 - `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
+- `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
@@ -322,6 +323,7 @@
 - `useLocalPlayerDead` (function): function useLocalPlayerDead(healthStatId = "health"): boolean — ⚠ undocumented
 - `useMarkers` (function): function useMarkers(markers: MarkerSet): readonly MapMarker[] — ⚠ undocumented
 - `useNearestWorldItem` (function): function useNearestWorldItem(radius: number): WorldItemRecord | null — Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
 - `useOptionalGamePhase` (function): function useOptionalGamePhase(): GamePhase — Live run phase that degrades to `"playing"` when rendered outside a `GameProvider` (component showcases, previews), so phase-gated chrome never throws.
 - `useParty` (function): function useParty(): PartyMemberEntry[] — ⚠ undocumented
@@ -398,6 +400,8 @@
 - `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
 - `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
+- `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
+- `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
 
 ## @jgengine/react/display
 

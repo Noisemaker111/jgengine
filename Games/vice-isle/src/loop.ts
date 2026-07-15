@@ -1,5 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { dialogueStore, registerCommands } from "./game/commands";
+import { registerCommands } from "./game/commands";
 import { enemyById } from "./game/entities/enemies/catalog";
 import { lootTables } from "./game/entities/enemies/loot-tables";
 import { raceStore, resetHandroll, handroll } from "./game/handroll";
@@ -64,7 +64,7 @@ function tickMissions(ctx: GameContext): void {
     if (dist < 5) {
       ctx.game.quest!.progress(ctx.player.userId, "m1_welcome", "meet_marco", 1);
       ctx.game.quest!.turnIn(ctx.player.userId, "m1_welcome");
-      dialogueStore.write(ctx, "dlg_marco");
+      ctx.game.dialogue!.open("dlg_marco");
     }
   }
 

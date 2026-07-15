@@ -595,6 +595,10 @@
 - `createAutoTargeter` (function): function createAutoTargeter(policy: AutoTargetPolicy, deps: AutoTargetDeps): AutoTargeter — ⚠ undocumented
 - `selectAutoTarget` (function): function selectAutoTarget(policy: AutoTargetPolicy, fromId: string, deps: AutoTargetDeps): string | null — ⚠ undocumented
 
+## @jgengine/core/scene/behaviorRuntime
+
+- `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. The shell/host call this each frame; a game never does.
+
 ## @jgengine/core/scene/behaviors
 
 - `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior — ⚠ undocumented

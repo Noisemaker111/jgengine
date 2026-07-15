@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   collectDescendants,
@@ -10,11 +10,8 @@ import {
   listEditorKinds,
   WELL_KNOWN_MARKER_KINDS,
   type EditorDocument,
-  type EditorMarker,
-  type EditorNote,
   type EditorPath,
   type EditorSession,
-  type EditorSessionState,
   type EditorVolume,
 } from "@jgengine/core/editor/index";
 import {
@@ -589,71 +586,32 @@ function useDocumentSave(
   return { available: save !== undefined, dirty, saveState, saveError, doSave };
 }
 
-/** The editor's dockable workspace chrome: hierarchy, assets, inspector, toolbar, and save. */
-/** The selected-object slice the inspector reads — isolated so UI-only churn never rerenders it. */
-interface InspectorSlice {
-  selection: readonly string[];
-  marker: EditorMarker | undefined;
-  volume: EditorVolume | undefined;
-  path: EditorPath | undefined;
-  note: EditorNote | undefined;
-}
-
-function selectInspector(state: EditorSessionState): InspectorSlice {
-  const id = state.selection[0];
-  return {
-    selection: state.selection,
-    marker: id === undefined ? undefined : state.document.markers.find((m) => m.id === id),
-    volume: id === undefined ? undefined : state.document.volumes.find((v) => v.id === id),
-    path: id === undefined ? undefined : findEditorPath(state.document, id),
-    note: id === undefined ? undefined : findEditorNote(state.document, id),
-  };
-}
-
-/** Stable while the selected object refs are unchanged — edits to other objects don't rerender. */
-function inspectorEqual(a: InspectorSlice, b: InspectorSlice): boolean {
-  return (
-    shallowArrayEqual(a.selection, b.selection) &&
-    a.marker === b.marker &&
-    a.volume === b.volume &&
-    a.path === b.path &&
-    a.note === b.note
-  );
-}
-
 /**
- * The right-hand inspector, subscribed via `useStoreSelector` to just the selected-object slice and
- * `React.memo`'d — so gizmo drags, tool switches, and edits to unrelated objects no longer rerender
- * it (only a selection change or an edit to the selected object does). In edit mode the sim is
- * frozen, so live-entity readouts stay current without a per-tick subscription.
+ * The right-hand inspector as an isolated, selector-subscribed panel. It reads only the
+ * document + selection slices (via `useStoreSelector`) and the ui store's `pathPoint` slice, so
+ * UI-only churn (gizmo mode, snapping, active tool) or unrelated document edits outside the
+ * selected object's slice no longer rerender it on `EditorChrome`'s own render tick.
+ * @internal — mounted by `EditorChrome` as a right-aside panel.
  */
-const InspectorPanel = memo(function InspectorPanel({
-  api,
-  ui,
-  onClose,
-}: {
-  api: EditorHostApi;
-  ui: EditorUiStore;
-  onClose: () => void;
-}) {
-  const session = api.getSession();
+function InspectorPanel({ session, ui, onClose }: { session: EditorSession; ui: EditorUiStore; onClose: () => void }) {
+  const document = useStoreSelector(session, (state) => state.document);
+  const selection = useStoreSelector(session, (state) => state.selection, shallowArrayEqual);
+  const pathPoint = useStoreSelector(ui, (state) => state.pathPoint);
   const ctx = useGameContext();
-  const { selection, marker: selectedMarker, volume: selectedVolume, path: selectedPath, note: selectedNote } =
-    useStoreSelector(session, selectInspector, inspectorEqual);
-  const pathPoint = useStoreSelector(
-    ui,
-    (s) => s.pathPoint,
-    (a, b) => a === b || (a?.pathId === b?.pathId && a?.index === b?.index),
-  );
 
+  const selectedId = selection[0];
+  const selectedMarker = document.markers.find((marker) => marker.id === selectedId);
+  const selectedVolume = document.volumes.find((volume) => volume.id === selectedId);
+  const selectedPath = selectedId === undefined ? undefined : findEditorPath(document, selectedId);
+  const selectedNote = selectedId === undefined ? undefined : findEditorNote(document, selectedId);
   const documentMiss =
-    selection[0] !== undefined &&
+    selectedId !== undefined &&
     selectedMarker === undefined &&
     selectedVolume === undefined &&
     selectedPath === undefined &&
     selectedNote === undefined;
-  const liveEntity = documentMiss ? ctx.scene.entity.get(selection[0]!) : null;
-  const liveObject = documentMiss && liveEntity === null ? ctx.scene.object.get(selection[0]!) : null;
+  const liveEntity = documentMiss ? ctx.scene.entity.get(selectedId) : null;
+  const liveObject = documentMiss && liveEntity === null ? ctx.scene.object.get(selectedId) : null;
 
   return (
     <aside className="pointer-events-auto flex w-72 min-w-56 max-w-[42vw] resize-x flex-col overflow-auto border-l border-white/[0.08] bg-[#0d0f13]/95 p-3 backdrop-blur-md" style={{ direction: "rtl" }}>
@@ -737,8 +695,8 @@ const InspectorPanel = memo(function InspectorPanel({
               <div className="space-y-2">
                 <div className="text-neutral-400">Point {pathPoint.index + 1}/{selectedPath.points.length}</div>
                 <div className="flex gap-2">
-                  <button type="button" className="rounded-md bg-white/[0.07] px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15" onClick={() => { const at = pathPoint.index; const points = [...selectedPath.points.slice(0, at + 1), { ...selectedPath.points[at]! }, ...selectedPath.points.slice(at + 1)]; session.dispatch({ type: "setPath", id: selectedPath.id, patch: { points } }); }}>Insert point</button>
-                  <button type="button" className="rounded-md bg-rose-500/15 px-2 py-1 text-rose-200 ring-1 ring-inset ring-rose-400/25 transition-colors hover:bg-rose-500/25 disabled:opacity-40" disabled={selectedPath.points.length <= 2} onClick={() => { const points = selectedPath.points.filter((_, index) => index !== pathPoint.index); ui.patch({ pathPoint: null }); session.dispatch({ type: "setPath", id: selectedPath.id, patch: { points } }); }}>Delete point</button>
+                  <button type="button" className="rounded-md bg-white/[0.07] px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15" onClick={() => { const at = pathPoint!.index; const points = [...selectedPath.points.slice(0, at + 1), { ...selectedPath.points[at]! }, ...selectedPath.points.slice(at + 1)]; session.dispatch({ type: "setPath", id: selectedPath.id, patch: { points } }); }}>Insert point</button>
+                  <button type="button" className="rounded-md bg-rose-500/15 px-2 py-1 text-rose-200 ring-1 ring-inset ring-rose-400/25 transition-colors hover:bg-rose-500/25 disabled:opacity-40" disabled={selectedPath.points.length <= 2} onClick={() => { const points = selectedPath.points.filter((_, index) => index !== pathPoint!.index); ui.patch({ pathPoint: null }); session.dispatch({ type: "setPath", id: selectedPath.id, patch: { points } }); }}>Delete point</button>
                 </div>
               </div>
             ) : <div className="text-[10px] text-neutral-500">Click a vertex sphere to edit points.</div>}
@@ -766,7 +724,8 @@ const InspectorPanel = memo(function InspectorPanel({
       </div>
     </aside>
   );
-});
+}
+
 
 /**
  * The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays,
@@ -794,7 +753,6 @@ export function EditorChrome({
   const [activePanel, setActivePanel] = useState<WorkspacePanel>("outliner");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
-  const closeInspector = useCallback(() => setRightOpen(false), []);
   const [bottomOpen, setBottomOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -1015,10 +973,6 @@ export function EditorChrome({
   }, [session, ui, api, notify]);
 
   const kinds = useMemo(() => listEditorKinds(state.document), [state.document]);
-  const selection = state.selection;
-  const selectedId = selection[0];
-  const selectedMarker = state.document.markers.find((marker) => marker.id === selectedId);
-  const selectedVolume = state.document.volumes.find((volume) => volume.id === selectedId);
 
   const allKinds = useMemo(
     () =>
@@ -1035,7 +989,11 @@ export function EditorChrome({
 
   const placeAsset = (entry: EditorAssetEntry) => {
     const focus = api.getFocusTarget();
-    const selected = selectedMarker?.position ?? selectedVolume?.center;
+    const focused = session.getState();
+    const focusedId = focused.selection[0];
+    const selected =
+      focused.document.markers.find((marker) => marker.id === focusedId)?.position ??
+      focused.document.volumes.find((volume) => volume.id === focusedId)?.center;
     const position = focus ?? selected ?? { x: 0, y: 0, z: 0 };
     api.handle({
       method: "place_asset",
@@ -1262,7 +1220,7 @@ export function EditorChrome({
           </div>
         </main>
 
-        {rightOpen ? <InspectorPanel api={api} ui={ui} onClose={closeInspector} /> : null}
+        {rightOpen ? <InspectorPanel session={session} ui={ui} onClose={() => setRightOpen(false)} /> : null}
       </div>
 
       {bottomOpen ? (

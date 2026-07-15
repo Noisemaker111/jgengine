@@ -5,9 +5,11 @@ import {
   building,
   environment,
   grass,
+  road,
   sky,
   terrain,
   type GrassEnvironmentDescriptor,
+  type RoadEnvironmentDescriptor,
   type TerrainMaterialRegion,
   type WorldFeature,
 } from "@jgengine/core/world/features";
@@ -120,7 +122,7 @@ const terrainDescriptor = terrain({
     detailScale: 12,
     macroScale: 24,
     roughness: 0.95,
-    strength: 4,
+    strength: 1,
   },
   flatten: [
     ...ZONES.map((zone) => ({
@@ -171,8 +173,26 @@ const vegetation: readonly GrassEnvironmentDescriptor[] = [
   ...SIDE_POIS.flatMap((poi) => scrubClumps(poi.x, poi.z, poi.radius, 3, `bl2-scrub-${poi.id}`)),
 ];
 
+const PANDORA_DIRT_ROAD = "#5c4529";
+
+const roadRibbon = (route: { points: readonly { x: number; z: number }[] }, width: number, elevation: number): RoadEnvironmentDescriptor =>
+  road({
+    path: roadPoints(route.points),
+    width,
+    color: PANDORA_DIRT_ROAD,
+    markings: false,
+    sidewalk: false,
+    elevation,
+  });
+
+const roads: readonly RoadEnvironmentDescriptor[] = [
+  ...ROUTES.map((route) => roadRibbon(route, 13, 0.18)),
+  ...SPUR_ROUTES.map((route) => roadRibbon(route, 9, 0.24)),
+];
+
 export const world: WorldFeature = environment({
   terrain: terrainDescriptor,
+  roads,
   vegetation,
   sky: sky({
     preset: "day",
