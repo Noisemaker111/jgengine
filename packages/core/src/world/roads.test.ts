@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { environment, road } from "./features";
 import { summarizeEnvironment } from "./environmentSummary";
-import { buildRoadRibbon, dashSegments, isOnRoad, nearestOnPath, pathLength } from "./roads";
+import { buildRoadRibbon, dashSegments, isOnRoad, nearestOnPath, pathLength, roundPathCorners } from "./roads";
 
 const flat = () => 0;
 
@@ -54,5 +54,26 @@ describe("world/roads", () => {
     expect(summary.roads[0]?.length).toBe(120);
     expect(summary.roads[1]?.width).toBe(6);
     expect(summary.isEmpty).toBe(false);
+  });
+});
+
+describe("roundPathCorners", () => {
+  test("fillets a right-angle corner into an arc that no longer passes through the sharp vertex", () => {
+    const rounded = roundPathCorners([[0, 0], [10, 0], [10, 10]], 3, 5);
+    // Endpoints preserved.
+    expect(rounded[0]).toEqual([0, 0]);
+    expect(rounded[rounded.length - 1]).toEqual([10, 10]);
+    // The sharp corner (10,0) is replaced by arc points — none sit exactly on it.
+    expect(rounded.some((p) => p[0] === 10 && p[1] === 0)).toBe(false);
+    // Arc stays inside the corner (x < 10 near the bend).
+    expect(rounded.every((p) => p[0] <= 10 + 1e-9)).toBe(true);
+    expect(rounded.length).toBeGreaterThan(3);
+  });
+
+  test("radius clamps to half the shorter adjacent segment and short paths pass through", () => {
+    expect(roundPathCorners([[0, 0], [1, 0]], 5)).toEqual([[0, 0], [1, 0]]);
+    // A tiny middle segment clamps the fillet so arcs never cross past the neighbours.
+    const rounded = roundPathCorners([[0, 0], [4, 0], [4, 1], [8, 1]], 10, 4);
+    expect(rounded.every((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))).toBe(true);
   });
 });

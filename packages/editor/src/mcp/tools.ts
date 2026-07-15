@@ -260,6 +260,66 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
+    name: "terrain_layers",
+    description: "List the terrain material layer stack (id, surface, roughness/tiling/triplanar/tint/opacity).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "set_terrain_layers",
+    description: "Replace the reorderable terrain material layer stack; a params-only edit keeps painted blends.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        layers: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              surface: { type: "string" },
+              roughness: { type: "number" },
+              tiling: { type: "number" },
+              triplanar: { type: "boolean" },
+              tint: { type: "string" },
+              opacity: { type: "number" },
+            },
+            required: ["id", "surface"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["layers"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "blend_terrain",
+    description: "Blend-paint a material layer's weight at x/z (weighted multi-layer blend); auto-adds the layer.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        surface: { type: "string" },
+        x: { type: "number" },
+        z: { type: "number" },
+        radius: { type: "number" },
+        strength: { type: "number" },
+        shape: { type: "string", enum: ["circle", "square"] },
+      },
+      required: ["surface", "x", "z"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "convert_scatter",
+    description: "Detach a foliage/scatter region into individually-editable placed prop markers, removing the region.",
+    inputSchema: {
+      type: "object",
+      properties: { pathId: { type: "string" } },
+      required: ["pathId"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "add_foliage",
     description: "Add a foliage/scatter region from a closed polygon (≥3 x/z points) with density and item.",
     inputSchema: {

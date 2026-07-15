@@ -12,6 +12,7 @@ const SKELETON_FILES = new Set([
   "style.css",
   "editorLayers.ts",
   "editorLayers.test.ts",
+  "editor.scene.json",
 ]);
 const SKELETON_DIRS = new Set(["game"]);
 

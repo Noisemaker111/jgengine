@@ -75,3 +75,12 @@ Reject and revise the UI when it could be mistaken for a SaaS dashboard, landing
 5. **Keep the mechanics of iterating cheap; keep the judgment at milestones.** Re-shooting per milestone (not per tweak) already caps iteration count — cut what each iteration costs too: scope typecheck to the touched game (`bun run --cwd Games/<id> check-types`, ~5s, not the full `check-types` gate), keep the dev server and Chrome warm across the loop (`shoot`/`drive --keep` once, then `--connect 9223` every re-shot — <10s instead of a ~90s reboot), and take mid-loop judge shots at half-res (`--size half`, ~1/4 the image tokens); reserve full-res, no `--connect`, for the milestone/PR shot. Full flag recipe and rationale: `jgengine-verify` → "The warm loop".
 
 Reject test for worlds: if the screenshot could be mistaken for a physics-demo sandbox or an untextured prototype, it fails the bar.
+
+## Render authored scenes, don't hand-roll them
+
+Scene content authored in the editor renders at runtime through `@jgengine/shell/scene`: mount
+`<AuthoredScene document={doc} field={ctx.world.ground} />` to draw the document's paths (as
+ground-draped ribbons via `AuthoredPaths`) and instance its foliage (`<InstancedScatter>`), all from
+the editor document — no bespoke per-segment path meshes or hardcoded coordinates. Gameplay reads the
+same document (waypoints from a `route` path, plots from markers). See CLAUDE.md → "Author scenes in the
+editor, render them generically".

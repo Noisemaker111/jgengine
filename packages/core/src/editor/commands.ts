@@ -1,10 +1,14 @@
 import {
   applyDeltaToSnapshot,
   applySurfaceDeltaToSnapshot,
+  applyWeightDeltaToSnapshot,
   revertDeltaFromSnapshot,
   revertSurfaceDeltaFromSnapshot,
+  revertWeightDeltaFromSnapshot,
   type SurfaceDelta,
   type TerraformDelta,
+  type TerrainMaterialLayer,
+  type WeightDelta,
 } from "../world/terraform";
 import {
   cloneEditorDocument,
@@ -57,7 +61,10 @@ export type EditorCommand =
   | { type: "setTerrain"; terrain: EditorTerrain }
   | { type: "sculptTerrain"; delta: TerraformDelta }
   | { type: "paintTerrain"; delta: SurfaceDelta }
+  | { type: "setTerrainLayers"; layers: readonly TerrainMaterialLayer[] }
+  | { type: "blendTerrain"; delta: WeightDelta }
   | { type: "clearTerrain" }
+  | { type: "convertScatterToObjects"; pathId: string; markers: readonly EditorMarker[] }
   | { type: "createPrefab"; id: string; name: string; ids: readonly string[] }
   | { type: "insertPrefab"; prefabId: string; at: EditorVec3; instanceId?: string }
   | { type: "detachPrefabInstance"; instanceId: string }
@@ -482,6 +489,50 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         document: { ...state.document, terrain: applySurfaceDeltaToSnapshot(state.document.terrain, command.delta) },
       };
     }
+    case "blendTerrain": {
+      if (state.document.terrain === undefined) return state;
+      return {
+        ...state,
+        document: { ...state.document, terrain: applyWeightDeltaToSnapshot(state.document.terrain, command.delta) },
+      };
+    }
+    case "setTerrainLayers": {
+      if (state.document.terrain === undefined) return state;
+      const terrain = state.document.terrain;
+      const layers = command.layers.map((layer) => ({ ...layer }));
+      const before = terrain.layers ?? [];
+      // Keep hand-painted weights only when the layer id sequence is unchanged (a params-only edit).
+      const sameSequence =
+        before.length === layers.length && before.every((layer, i) => layer.id === layers[i]!.id);
+      const next: EditorTerrain =
+        sameSequence
+          ? { ...terrain, layers }
+          : (() => {
+              const copy = { ...terrain, layers };
+              delete copy.weights;
+              return copy;
+            })();
+      return { ...state, document: { ...state.document, terrain: next } };
+    }
+    case "convertScatterToObjects": {
+      const path = state.document.paths.find((entry) => entry.id === command.pathId);
+      if (path === undefined) return state;
+      const taken = collectIds(state.document);
+      const markers = command.markers.map((marker) => {
+        let id = marker.id;
+        while (taken.has(id)) id = copyId(marker.id, taken);
+        taken.add(id);
+        return { ...marker, id };
+      });
+      return {
+        document: {
+          ...state.document,
+          markers: [...state.document.markers, ...markers],
+          paths: state.document.paths.filter((entry) => entry.id !== command.pathId),
+        },
+        selection: markers.map((marker) => marker.id),
+      };
+    }
     case "createPrefab": {
       if (command.ids.length === 0) return state;
       const fragment = createPrefabFragment(state.document, command.ids);
@@ -680,7 +731,8 @@ function isStructural(command: EditorCommand): boolean {
 type HistoryEntry =
   | { kind: "snapshot"; state: EditorSessionState }
   | { kind: "sculpt"; delta: TerraformDelta; selection: string[] }
-  | { kind: "paint"; delta: SurfaceDelta; selection: string[] };
+  | { kind: "paint"; delta: SurfaceDelta; selection: string[] }
+  | { kind: "blend"; delta: WeightDelta; selection: string[] };
 
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession {
@@ -722,6 +774,20 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
     return { document: { ...state.document, terrain: next }, selection };
   };
 
+  const blendWith = (
+    delta: WeightDelta,
+    direction: "apply" | "revert",
+    selection: string[],
+  ): EditorSessionState => {
+    const terrain = state.document.terrain;
+    if (terrain === undefined) return state;
+    const next =
+      direction === "apply"
+        ? applyWeightDeltaToSnapshot(terrain, delta)
+        : revertWeightDeltaFromSnapshot(terrain, delta);
+    return { document: { ...state.document, terrain: next }, selection };
+  };
+
   return {
     getState: () => state,
     subscribe(listener) {
@@ -742,6 +808,9 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         } else if (entry.kind === "paint") {
           future.push({ kind: "paint", delta: entry.delta, selection: state.selection });
           state = paintWith(entry.delta, "revert", entry.selection);
+        } else if (entry.kind === "blend") {
+          future.push({ kind: "blend", delta: entry.delta, selection: state.selection });
+          state = blendWith(entry.delta, "revert", entry.selection);
         } else {
           future.push({ kind: "snapshot", state: snapshotState(state) });
           state = entry.state;
@@ -759,6 +828,9 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         } else if (entry.kind === "paint") {
           past.push({ kind: "paint", delta: entry.delta, selection: state.selection });
           state = paintWith(entry.delta, "apply", entry.selection);
+        } else if (entry.kind === "blend") {
+          past.push({ kind: "blend", delta: entry.delta, selection: state.selection });
+          state = blendWith(entry.delta, "apply", entry.selection);
         } else {
           past.push({ kind: "snapshot", state: snapshotState(state) });
           state = entry.state;
@@ -786,6 +858,17 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         future.length = 0;
         lastCoalesce = null;
         state = paintWith(command.delta, "apply", state.selection);
+        emit();
+        return state;
+      }
+
+      if (command.type === "blendTerrain") {
+        if (state.document.terrain === undefined || command.delta.indices.length === 0) return state;
+        past.push({ kind: "blend", delta: command.delta, selection: [...state.selection] });
+        if (past.length > historyLimit) past.shift();
+        future.length = 0;
+        lastCoalesce = null;
+        state = blendWith(command.delta, "apply", state.selection);
         emit();
         return state;
       }

@@ -1,4 +1,6 @@
 import type { BuildingPaletteOverrides, BuildingStyle } from "./buildings";
+import type { AvoidZone } from "./geometry";
+import type { TerraformSnapshot } from "./terraform";
 
 export interface WorldBounds {
   w: number;
@@ -397,6 +399,18 @@ export interface EnvironmentWorldConfig {
   roads?: EnvironmentDescriptorList<RoadEnvironmentDescriptor>;
   /** Ground pads, e.g. platforms or paved patches; each implicitly flattens the terrain beneath it. */
   pads?: readonly PadEnvironmentDescriptor[];
+  /**
+   * An authored editor {@link TerraformSnapshot} whose offsets layer over the base terrain — the
+   * editor-to-runtime ground seam. The same snapshot in a game's `editorLayers.terrain` renders and
+   * collides identically at runtime.
+   */
+  sculpt?: TerraformSnapshot;
+  /**
+   * Clearance discs flattened into the ground (spawns, plots, paths) — the terrain half of a
+   * clearance zone whose foliage half is scatter's `avoid`. Derive them from a document with
+   * `clearanceZonesFrom`.
+   */
+  clearings?: readonly AvoidZone[];
 }
 
 export interface EnvironmentWorldFeature {
@@ -410,6 +424,10 @@ export interface EnvironmentWorldFeature {
   structures?: readonly StructureEnvironmentDescriptor[];
   roads?: readonly RoadEnvironmentDescriptor[];
   pads?: readonly PadEnvironmentDescriptor[];
+  /** Authored sculpt snapshot layered over the base terrain — see {@link EnvironmentWorldConfig.sculpt}. */
+  sculpt?: TerraformSnapshot;
+  /** Clearance discs flattened into the ground — see {@link EnvironmentWorldConfig.clearings}. */
+  clearings?: readonly AvoidZone[];
 }
 
 export interface WorldGridCell {
@@ -541,6 +559,8 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
     ...(structures === undefined ? {} : { structures }),
     ...(roads === undefined ? {} : { roads }),
     ...(config.pads === undefined ? {} : { pads: config.pads }),
+    ...(config.sculpt === undefined ? {} : { sculpt: config.sculpt }),
+    ...(config.clearings === undefined || config.clearings.length === 0 ? {} : { clearings: config.clearings }),
   };
 }
 

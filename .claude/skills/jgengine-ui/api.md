@@ -1289,6 +1289,30 @@
 - `RecordedPose` (interface): interface RecordedPose — ⚠ undocumented
 - `useSessionRecorder` (function): function useSessionRecorder(entityId: string, options?: RecordingBufferOptions): RecordingBuffer<RecordedPose> — Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffer`, which a game can then `seek()` to scrub, drive an observer cam ghost, or export a kill-cam clip. Recording rides on `ctx.time.now()`, so pause/fast-forward scrub the recording exactly like the live sim.
 
+## @jgengine/shell/scatter
+
+- `InstancedScatter` (function): function InstancedScatter({ instances, chunkSize = DEFAULT_CHUNK_SIZE, maxInstances = DEFAULT_MAX_INSTANCES }: InstancedScatterProps): React.JSX.Element | null — Renders resolved {@link ScatterInstance}s as GPU-instanced per-species proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts), grouped into per-chunk draws that frustum-cull independently. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
+- `InstancedScatterProps` (interface): interface InstancedScatterProps — Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs.
+
+## @jgengine/shell/scatter/InstancedScatter
+
+- `InstancedScatter` (function): function InstancedScatter({ instances, chunkSize = DEFAULT_CHUNK_SIZE, maxInstances = DEFAULT_MAX_INSTANCES }: InstancedScatterProps): React.JSX.Element | null — Renders resolved {@link ScatterInstance}s as GPU-instanced per-species proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts), grouped into per-chunk draws that frustum-cull independently. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
+- `InstancedScatterProps` (interface): interface InstancedScatterProps — Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs.
+
+## @jgengine/shell/scene
+
+- `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
+- `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
+- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns.
+- `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
+
+## @jgengine/shell/scene/AuthoredScene
+
+- `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
+- `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
+- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns.
+- `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
+
 ## @jgengine/shell/settings/QuickControls
 
 - `QuickControls` (function): function QuickControls({ controller }: { controller: SettingsController }): React.JSX.Element | null — ⚠ undocumented

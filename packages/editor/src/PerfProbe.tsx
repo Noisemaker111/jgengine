@@ -1,6 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
 
+import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
 
 const SAMPLE_WINDOW_MS = 500;
@@ -18,12 +19,16 @@ export function PerfProbe({ api }: { api: EditorHostApi }) {
     const elapsed = now - windowStartRef.current;
     if (elapsed < SAMPLE_WINDOW_MS) return;
     const fps = (framesRef.current * 1000) / elapsed;
+    const authoring = editorPerfMarks.flush();
     api.setPerf({
       fps: Math.round(fps * 10) / 10,
       frameMs: Math.round((elapsed / framesRef.current) * 100) / 100,
       drawCalls: gl.info.render.calls,
       triangles: gl.info.render.triangles,
       sampledAt: now,
+      raycastMs: authoring.raycastMs,
+      rebuildMs: authoring.rebuildMs,
+      authoringMs: authoring.authoringMs,
     });
     framesRef.current = 0;
     windowStartRef.current = now;

@@ -444,6 +444,10 @@ function ScatterFields({
         <input type="checkbox" className="accent-emerald-400" checked={rules.alignToNormal} onChange={(event) => onMeta({ alignToNormal: event.target.checked }, "scatter:align")} />
         align to slope
       </label>
+      <label className="flex items-center gap-1.5 text-[10px] text-neutral-400" title="Keep foliage off spawns, plots, and paths (markers/paths tagged with a clearance)">
+        <input type="checkbox" className="accent-emerald-400" checked={rules.autoAvoid} onChange={(event) => onMeta({ autoAvoid: event.target.checked }, "scatter:autoAvoid")} />
+        auto-avoid gameplay spots
+      </label>
       <div className="space-y-1">
         <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">species (weighted)</div>
         {palette.map((entry, index) => (
@@ -463,6 +467,25 @@ function ScatterFields({
         <button type="button" className="shrink-0 rounded-md bg-white/[0.04] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" title="Reroll seed" onClick={() => onMeta({ seed: `r${path.points.length}${rules.seed.length}${Math.round(rules.density * 1000)}` }, "scatter:seed")}>⟳</button>
       </div>
       <div className="text-[10px] text-neutral-500">≈ {estimate.count.toLocaleString()} placements over {Math.round(estimate.area).toLocaleString()} m²</div>
+    </div>
+  );
+}
+
+/**
+ * Tags an object as a gameplay spot with a clearance radius: scatter keeps foliage off it and the
+ * runtime ground flattens under it (via `clearanceZonesFrom` → `environment({ clearings })`). 0 = untagged.
+ */
+function ClearanceField({
+  meta,
+  onMeta,
+}: {
+  meta: Record<string, unknown> | undefined;
+  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
+}) {
+  const value = typeof meta?.["clearance"] === "number" ? (meta["clearance"] as number) : 0;
+  return (
+    <div className="space-y-1" title="Radius (m) foliage stays clear of and terrain flattens under; 0 = no clearance">
+      <NumberField label="clearance m" step={0.5} value={value} onCommit={(next) => onMeta({ clearance: Math.max(0, next) }, "clearance")} />
     </div>
   );
 }
@@ -620,6 +643,7 @@ function InspectorPanel({ session, ui, onClose }: { session: EditorSession; ui: 
               <NumberField key={axis} label={axis} value={selectedMarker.position[axis]} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, position: { ...selectedMarker.position, [axis]: value } }, { coalesce: `pos:${axis}:${selectedMarker.id}` })} />
             ))}
             <NumberField label="rot°" step={5} value={Math.round(((selectedMarker.rotationY ?? 0) * 180) / Math.PI)} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, rotationY: (value * Math.PI) / 180 }, { coalesce: `rot:${selectedMarker.id}` })} />
+            <ClearanceField meta={selectedMarker.meta} onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })} />
             <ParentField session={session} id={selectedMarker.id} />
             {selectedMarker.meta !== undefined ? <pre className="max-h-48 overflow-auto rounded-md border border-white/[0.06] bg-black/40 p-2 text-[10px] text-neutral-400">{JSON.stringify(selectedMarker.meta, null, 2)}</pre> : null}
           </div>
@@ -648,6 +672,7 @@ function InspectorPanel({ session, ui, onClose }: { session: EditorSession; ui: 
                 <NumberField key={axis} label={`half ${axis}`} value={selectedVolume.halfExtents?.[axis] ?? 5} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { halfExtents: { x: selectedVolume.halfExtents?.x ?? 5, y: selectedVolume.halfExtents?.y ?? 5, z: selectedVolume.halfExtents?.z ?? 5, [axis]: Math.max(0.5, value) } } }, { coalesce: `he:${axis}:${selectedVolume.id}` })} />
               ))
             ) : null}
+            <ClearanceField meta={selectedVolume.meta} onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })} />
             <ParentField session={session} id={selectedVolume.id} />
             <VegetationFields
               volume={selectedVolume}
@@ -701,7 +726,12 @@ function InspectorPanel({ session, ui, onClose }: { session: EditorSession; ui: 
   );
 }
 
-/** The editor's dockable workspace chrome: hierarchy, assets, inspector, toolbar, and save. */
+
+/**
+ * The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays,
+ * the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI
+ * store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+ */
 export function EditorChrome({
   gameId,
   session,

@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "markers": [
+    { "id": "creep-spawn", "kind": "player_spawn", "position": { "x": -30, "y": 0, "z": -24 }, "label": "Spawn", "meta": { "clearance": 5 } },
+    { "id": "keep", "kind": "goal", "position": { "x": 30, "y": 0, "z": 24 }, "label": "Keep", "meta": { "clearance": 6 } },
+    { "id": "plot-1", "kind": "prop", "position": { "x": -36, "y": 0, "z": -15.2 }, "label": "Build plot", "meta": { "clearance": 3 } },
+    { "id": "plot-2", "kind": "prop", "position": { "x": -24, "y": 0, "z": -15.2 }, "label": "Build plot", "meta": { "clearance": 3 } },
+    { "id": "plot-3", "kind": "prop", "position": { "x": -18, "y": 0, "z": -14 }, "label": "Build plot", "meta": { "clearance": 3 } },
+    { "id": "plot-4", "kind": "prop", "position": { "x": -12, "y": 0, "z": -3.2 }, "label": "Build plot", "meta": { "clearance": 3 } },
+    { "id": "plot-5", "kind": "prop", "position": { "x": 0, "y": 0, "z": 4 }, "label": "Build plot", "meta": { "clearance": 3 } },
+    { "id": "plot-6", "kind": "prop", "position": { "x": 6, "y": 0, "z": 14 }, "label": "Build plot", "meta": { "clearance": 3 } },
+    { "id": "plot-7", "kind": "prop", "position": { "x": 24, "y": 0, "z": 16 }, "label": "Build plot", "meta": { "clearance": 3 } },
+    { "id": "plot-8", "kind": "prop", "position": { "x": 12, "y": 0, "z": 16 }, "label": "Build plot", "meta": { "clearance": 3 } },
+    { "id": "plot-9", "kind": "prop", "position": { "x": 24, "y": 0, "z": 18 }, "label": "Build plot", "meta": { "clearance": 3 } }
+  ],
+  "volumes": [],
+  "paths": [
+    {
+      "id": "creep-path",
+      "kind": "route",
+      "points": [
+        { "x": -30, "y": 0, "z": -24 },
+        { "x": -30, "y": 0, "z": -8 },
+        { "x": -6, "y": 0, "z": -8 },
+        { "x": -6, "y": 0, "z": 8 },
+        { "x": 18, "y": 0, "z": 8 },
+        { "x": 18, "y": 0, "z": 24 },
+        { "x": 30, "y": 0, "z": 24 }
+      ],
+      "width": 4,
+      "color": "#7a6444",
+      "label": "Creep path",
+      "meta": { "clearance": 2.5 }
+    },
+    {
+      "id": "arena-foliage",
+      "kind": "scatter",
+      "points": [
+        { "x": -40, "y": 0, "z": -40 },
+        { "x": 40, "y": 0, "z": -40 },
+        { "x": 40, "y": 0, "z": 40 },
+        { "x": -40, "y": 0, "z": 40 }
+      ],
+      "label": "Arena foliage",
+      "meta": {
+        "density": 0.16,
+        "minSpacing": 2,
+        "seed": "tower-guard-arena",
+        "maxSlope": 3,
+        "edgeFalloff": 5,
+        "minScale": 0.85,
+        "maxScale": 1.7,
+        "palette": [
+          { "item": "pine", "weight": 3 },
+          { "item": "tree", "weight": 2 },
+          { "item": "bush", "weight": 2 },
+          { "item": "rock", "weight": 1 }
+        ]
+      }
+    }
+  ],
+  "annotations": [],
+  "prefabs": [],
+  "collections": []
+}

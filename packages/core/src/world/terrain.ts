@@ -13,7 +13,9 @@ import type {
   WorldBounds,
   WorldFeature,
 } from "./features";
+import type { AvoidZone } from "./geometry";
 import { nearestOnPath } from "./roads";
+import type { TerraformSnapshot } from "./terraform";
 
 /** A surface normal vector at a terrain sample point. */
 export type TerrainNormal = readonly [number, number, number];
@@ -302,11 +304,92 @@ export function composeIslandFields(
   };
 }
 
-/** The full ground field for an environment world: base `terrain` composed with any `islands`. */
+/** Bilinear offset sampled from an editor {@link TerraformSnapshot}'s vertex grid at a world point. */
+function sampleSnapshotOffset(snapshot: TerraformSnapshot, x: number, z: number): number {
+  const { bounds, cols, rows, offsets } = snapshot;
+  const vertsX = cols + 1;
+  const spanX = Math.max(bounds.maxX - bounds.minX, snapshot.cellSize);
+  const spanZ = Math.max(bounds.maxZ - bounds.minZ, snapshot.cellSize);
+  const fx = clamp01((x - bounds.minX) / spanX) * cols;
+  const fz = clamp01((z - bounds.minZ) / spanZ) * rows;
+  const x0 = Math.min(cols, Math.floor(fx));
+  const z0 = Math.min(rows, Math.floor(fz));
+  const x1 = Math.min(cols, x0 + 1);
+  const z1 = Math.min(rows, z0 + 1);
+  const tx = fx - x0;
+  const tz = fz - z0;
+  const v00 = offsets[z0 * vertsX + x0] ?? 0;
+  const v10 = offsets[z0 * vertsX + x1] ?? 0;
+  const v01 = offsets[z1 * vertsX + x0] ?? 0;
+  const v11 = offsets[z1 * vertsX + x1] ?? 0;
+  const top = v00 + (v10 - v00) * tx;
+  const bottom = v01 + (v11 - v01) * tx;
+  return top + (bottom - top) * tz;
+}
+
+/**
+ * Layers an authored sculpt snapshot's offsets over a base field — the editor-to-runtime ground seam.
+ * @internal — reached through `environment({ sculpt })`; not called directly by games.
+ */
+export function sculptedField(base: TerrainField, snapshot: TerraformSnapshot): TerrainField {
+  const sampleHeight = (x: number, z: number): number => base.sampleHeight(x, z) + sampleSnapshotOffset(snapshot, x, z);
+  return {
+    sampleHeight,
+    sampleNormal: withNormal(sampleHeight),
+    ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
+    ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
+  };
+}
+
+/**
+ * Levels a base field toward each clearance zone's center height within its radius (feathered) — so
+ * spawns, plots, and paths sit on flat ground even when a mound is nearby. The strongest overlapping
+ * zone wins. Pairs with scatter's avoid: one clearance zone both flattens ground and repels foliage.
+ * @internal — reached through `environment({ clearings })`; not called directly by games.
+ */
+export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone[]): TerrainField {
+  if (zones.length === 0) return base;
+  const sampleHeight = (x: number, z: number): number => {
+    let best = 0;
+    let target = 0;
+    for (const zone of zones) {
+      const dist = Math.hypot(x - zone.x, z - zone.z);
+      if (dist >= zone.radius) continue;
+      const feather = Math.max(0, zone.feather ?? 0);
+      const inner = zone.radius - feather;
+      const t = dist <= inner || feather <= 0 ? 1 : (zone.radius - dist) / feather;
+      if (t > best) {
+        best = t;
+        target = base.sampleHeight(zone.x, zone.z);
+      }
+    }
+    const height = base.sampleHeight(x, z);
+    return best > 0 ? height + (target - height) * best : height;
+  };
+  return {
+    sampleHeight,
+    sampleNormal: withNormal(sampleHeight),
+    ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
+    ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
+  };
+}
+
+/**
+ * The full ground field for an environment world: base `terrain` composed with any `islands`, then
+ * any authored `sculpt` snapshot, then any `clearings` flattened on top — so an editor-sculpted
+ * heightfield drives both the rendered mesh and player collision, and gameplay spots stay level,
+ * through the one seam every consumer already reads.
+ */
 export function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField {
   const base = feature.terrain === undefined ? null : resolveTerrainField(feature.terrain);
-  if (feature.islands === undefined || feature.islands.length === 0) return base ?? flatField();
-  return composeIslandFields(base, feature.islands);
+  const composed =
+    feature.islands === undefined || feature.islands.length === 0
+      ? base ?? flatField()
+      : composeIslandFields(base, feature.islands);
+  const sculpted = feature.sculpt === undefined ? composed : sculptedField(composed, feature.sculpt);
+  return feature.clearings === undefined || feature.clearings.length === 0
+    ? sculpted
+    : flattenFieldAround(sculpted, feature.clearings);
 }
 
 export interface TerrainSlopeSample {

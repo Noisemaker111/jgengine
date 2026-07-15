@@ -9,6 +9,48 @@ export interface RoadRibbon {
   indices: Uint32Array;
 }
 
+/**
+ * Fillets sharp corners of a centerline into short arcs so a ribbon built from it reads as a smooth
+ * road instead of overlapping/notching rectangles at each bend. Each interior vertex is replaced by a
+ * quadratic-bezier arc of `radius` (clamped to half the shorter adjacent segment) sampled at
+ * `cornerSegments` steps; endpoints and near-straight vertices pass through unchanged.
+ * @internal — the corner-smoothing behind `<AuthoredPaths>`; games get it for free through the render.
+ */
+export function roundPathCorners(
+  points: readonly RoadPoint[],
+  radius: number,
+  cornerSegments = 5,
+): RoadPoint[] {
+  if (points.length < 3 || radius <= 0) return points.map((point) => [point[0], point[1]] as RoadPoint);
+  const out: RoadPoint[] = [[points[0]![0], points[0]![1]]];
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const a = points[i - 1]!;
+    const v = points[i]!;
+    const b = points[i + 1]!;
+    const ax = a[0] - v[0];
+    const az = a[1] - v[1];
+    const bx = b[0] - v[0];
+    const bz = b[1] - v[1];
+    const la = Math.hypot(ax, az) || 1;
+    const lb = Math.hypot(bx, bz) || 1;
+    const r = Math.min(radius, la / 2, lb / 2);
+    const p0: RoadPoint = [v[0] + (ax / la) * r, v[1] + (az / la) * r];
+    const p1: RoadPoint = [v[0] + (bx / lb) * r, v[1] + (bz / lb) * r];
+    out.push(p0);
+    for (let s = 1; s < cornerSegments; s += 1) {
+      const t = s / cornerSegments;
+      const u = 1 - t;
+      out.push([
+        u * u * p0[0] + 2 * u * t * v[0] + t * t * p1[0],
+        u * u * p0[1] + 2 * u * t * v[1] + t * t * p1[1],
+      ]);
+    }
+    out.push(p1);
+  }
+  out.push([points[points.length - 1]![0], points[points.length - 1]![1]]);
+  return out;
+}
+
 /** Options for {@link buildRoadRibbon}. */
 export interface RoadRibbonOptions {
   /** Lift above the sampled ground so the ribbon never z-fights the terrain. Default 0.08. */

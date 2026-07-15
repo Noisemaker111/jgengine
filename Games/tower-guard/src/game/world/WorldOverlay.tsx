@@ -2,34 +2,19 @@ import { useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGameContext } from "@jgengine/react/provider";
 import { useGameStore } from "@jgengine/react/hooks";
+import { AuthoredScene } from "@jgengine/shell/scene";
 
+import { editorLayers } from "../../editorLayers";
 import { GOLD_CURRENCY } from "../entities/base/catalog";
 import { towerDef } from "../entities/towers/catalog";
 import { session } from "../session";
 import { activeProjectiles } from "../combat/pendingProjectiles";
-import { BUILD_PLOTS, PATH_WAYPOINTS_XZ, groundHeightAt } from "./path";
+import { BUILD_PLOTS } from "./path";
 
-function PathRibbon() {
-  return (
-    <>
-      {PATH_WAYPOINTS_XZ.slice(0, -1).map((a, index) => {
-        const b = PATH_WAYPOINTS_XZ[index + 1]!;
-        const dx = b[0] - a[0];
-        const dz = b[1] - a[1];
-        const length = Math.hypot(dx, dz);
-        const midX = (a[0] + b[0]) / 2;
-        const midZ = (a[1] + b[1]) / 2;
-        const angle = Math.atan2(dx, dz);
-        const y = groundHeightAt(midX, midZ) + 0.03;
-        return (
-          <mesh key={index} position={[midX, y, midZ]} rotation={[-Math.PI / 2, 0, angle]}>
-            <planeGeometry args={[3.4, length + 3.4]} />
-            <meshStandardMaterial color="#7a6444" roughness={1} />
-          </mesh>
-        );
-      })}
-    </>
-  );
+/** Renders the authored scene — draped creep path + instanced foliage — straight from the document. */
+function Scene() {
+  const ctx = useGameContext();
+  return <AuthoredScene document={editorLayers} field={ctx.world.ground} />;
 }
 
 function BuildPlots() {
@@ -87,7 +72,7 @@ function ProjectileBolts() {
 export function TowerGuardWorldOverlay() {
   return (
     <>
-      <PathRibbon />
+      <Scene />
       <BuildPlots />
       <ProjectileBolts />
     </>
