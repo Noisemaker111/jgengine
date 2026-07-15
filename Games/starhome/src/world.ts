@@ -17,6 +17,17 @@ const terrainDescriptor = terrain({
   octaves: 4,
   colors: { low: HABITAT.groundLow, high: HABITAT.groundHigh, waterline: HABITAT.flora },
   flatten: [{ center: [0, 0], radius: 46 }],
+  materialRegions: [
+    {
+      shape: "circle",
+      center: [0, 0],
+      radius: 22,
+      falloff: 9,
+      material: "rock",
+      colors: { low: "#8a80a8", high: "#9d93bd" },
+    },
+  ],
+  segments: 120,
 });
 
 export const world: WorldFeature = environment({
