@@ -44,6 +44,7 @@
     "games:drone-derby": "bun run --cwd Games/drone-derby dev",
     "games:dune-nomads": "bun run --cwd Games/dune-nomads dev",
     "games:grid-tactics": "bun run --cwd Games/grid-tactics dev",
+    "games:loopline": "bun run --cwd Games/loopline dev",
     "games:loot-shooter": "bun run --cwd Games/loot-shooter dev",
     "games:magnet-run": "bun run --cwd Games/magnet-run dev",
     "games:monument": "bun run --cwd Games/monument dev",

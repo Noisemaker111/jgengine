@@ -180,6 +180,31 @@
         "vite": "^6.2.2",
       },
     },
+    "Games/loopline": {
+      "name": "@games/loopline",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
+        "@jgengine/react": "workspace:*",
+        "@jgengine/shell": "workspace:*",
+        "@react-three/fiber": "^9.5.0",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "three": "^0.182.0",
+      },
+      "devDependencies": {
+        "@react-three/drei": "^10.7.7",
+        "@tailwindcss/vite": "^4.0.15",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.182.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.15",
+        "typescript": "^5",
+        "vite": "^6.2.2",
+      },
+    },
     "Games/loot-shooter": {
       "name": "@games/loot-shooter",
       "version": "0.1.0",
@@ -676,11 +701,11 @@
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.1.0",
+      "version": "0.10.0",
       "dependencies": {
-        "@jgengine/core": "^0.9.0",
-        "@jgengine/react": "^0.9.0",
-        "@jgengine/shell": "^0.9.0",
+        "@jgengine/core": "^0.10.0",
+        "@jgengine/react": "^0.10.0",
+        "@jgengine/shell": "^0.10.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -736,7 +761,7 @@
       "name": "@jgengine/react",
       "version": "0.10.0",
       "dependencies": {
-        "@jgengine/core": "^0.9.0",
+        "@jgengine/core": "^0.10.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -753,9 +778,9 @@
       "name": "@jgengine/shell",
       "version": "0.10.0",
       "dependencies": {
-        "@jgengine/core": "^0.9.0",
-        "@jgengine/react": "^0.9.0",
-        "@jgengine/ws": "^0.9.0",
+        "@jgengine/core": "^0.10.0",
+        "@jgengine/react": "^0.10.0",
+        "@jgengine/ws": "^0.10.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -788,7 +813,7 @@
       "name": "@jgengine/ws",
       "version": "0.10.0",
       "dependencies": {
-        "@jgengine/core": "^0.9.0",
+        "@jgengine/core": "^0.10.0",
       },
     },
     "registry": {
@@ -926,6 +951,8 @@
     "@games/dune-nomads": ["@games/dune-nomads@workspace:Games/dune-nomads"],
 
     "@games/grid-tactics": ["@games/grid-tactics@workspace:Games/grid-tactics"],
+
+    "@games/loopline": ["@games/loopline@workspace:Games/loopline"],
 
     "@games/loot-shooter": ["@games/loot-shooter@workspace:Games/loot-shooter"],
 
