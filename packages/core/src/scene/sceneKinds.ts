@@ -23,6 +23,8 @@ export interface RangeParamField {
   type: "range";
   key: string;
   label?: string;
+  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
+  group?: string;
   min: number;
   max: number;
   step?: number;
@@ -36,6 +38,8 @@ export interface NumberParamField {
   type: "number";
   key: string;
   label?: string;
+  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
+  group?: string;
   step?: number;
   default: number;
   min?: number;
@@ -47,6 +51,8 @@ export interface BoolParamField {
   type: "bool";
   key: string;
   label?: string;
+  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
+  group?: string;
   default: boolean;
 }
 
@@ -55,6 +61,8 @@ export interface SelectParamField {
   type: "select";
   key: string;
   label?: string;
+  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
+  group?: string;
   options: readonly { value: string; label?: string }[];
   default: string;
 }
@@ -64,6 +72,8 @@ export interface ColorParamField {
   type: "color";
   key: string;
   label?: string;
+  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
+  group?: string;
   default: string;
 }
 
@@ -72,6 +82,8 @@ export interface TextParamField {
   type: "text";
   key: string;
   label?: string;
+  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
+  group?: string;
   default: string;
 }
 
@@ -80,6 +92,8 @@ export interface SeedParamField {
   type: "seed";
   key: string;
   label?: string;
+  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
+  group?: string;
   default: string;
 }
 
@@ -88,9 +102,24 @@ export interface WeightedListParamField {
   type: "weightedList";
   key: string;
   label?: string;
+  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
+  group?: string;
   /** Placeholder for the item id input. */
   itemLabel?: string;
   default: readonly WeightedParamEntry[];
+}
+
+/**
+ * A button row that runs a built-in inspector action on its group — currently `"randomize"` (reroll
+ * the group's numeric/seed/bool/select fields within their bounds) or `"reset"` (restore group
+ * defaults). Carries no persisted value; purely a control.
+ */
+export interface ActionParamField {
+  type: "action";
+  key: string;
+  label?: string;
+  group?: string;
+  action: "randomize" | "reset";
 }
 
 /** One row in a kind's parameter schema — the union the generic inspector knows how to render. */
@@ -102,11 +131,22 @@ export type ParamField =
   | ColorParamField
   | TextParamField
   | SeedParamField
-  | WeightedListParamField;
+  | WeightedListParamField
+  | ActionParamField;
+
+/** A named, optionally-collapsed section the inspector groups fields under (by `field.group === id`). */
+export interface ParamGroup {
+  id: string;
+  label: string;
+  /** Start collapsed. Default expanded. */
+  collapsed?: boolean;
+}
 
 /** A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom. */
 export interface ParamSchema {
   fields: readonly ParamField[];
+  /** Optional named sections; fields reference one by `group`. Ungrouped fields render first, headerless. */
+  groups?: readonly ParamGroup[];
 }
 
 /** Parsed params after `parseParams`: every schema field present with a validated, defaulted value. */
@@ -163,6 +203,8 @@ export function parseParams(schema: ParamSchema, meta: Record<string, unknown> |
       case "weightedList":
         out[field.key] = readWeightedList(raw, field.default);
         break;
+      case "action":
+        break;
     }
   }
   return out;
@@ -210,15 +252,79 @@ export function validateParams(schema: ParamSchema, meta: Record<string, unknown
       case "weightedList":
         if (!Array.isArray(raw)) issues.push({ key: field.key, message: "expected an array" });
         break;
+      case "action":
+        break;
     }
   }
   return issues;
+}
+
+function randomHex(random: () => number): string {
+  const channel = () =>
+    Math.floor(60 + random() * 180)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${channel()}${channel()}${channel()}`;
+}
+
+/**
+ * A `meta` patch that randomizes every field in `groupId` within its bounds — the "randomize" button's
+ * behavior, pure and injectable so it's deterministic in tests. Ranges/numbers land in `[min, max]`
+ * (integer-rounded when `step >= 1`), bools/selects pick uniformly, seeds get a fresh token, colors a
+ * random mid-tone. Text and weighted lists are left untouched.
+ * @internal
+ */
+export function randomizeGroupParams(schema: ParamSchema, groupId: string | undefined, random: () => number): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  for (const field of schema.fields) {
+    if (field.group !== groupId) continue;
+    switch (field.type) {
+      case "range": {
+        const value = field.min + random() * (field.max - field.min);
+        patch[field.key] = field.step !== undefined && field.step >= 1 ? Math.round(value) : Math.round(value * 1000) / 1000;
+        break;
+      }
+      case "number": {
+        if (field.min !== undefined && field.max !== undefined) patch[field.key] = Math.round((field.min + random() * (field.max - field.min)) * 1000) / 1000;
+        else patch[field.key] = Math.round(field.default * (0.5 + random()) * 1000) / 1000;
+        break;
+      }
+      case "bool":
+        patch[field.key] = random() < 0.5;
+        break;
+      case "select":
+        patch[field.key] = field.options[Math.floor(random() * field.options.length)]!.value;
+        break;
+      case "seed":
+        patch[field.key] = `r${Math.floor(random() * 1_000_000).toString(36)}`;
+        break;
+      case "color":
+        patch[field.key] = randomHex(random);
+        break;
+      case "text":
+      case "weightedList":
+      case "action":
+        break;
+    }
+  }
+  return patch;
+}
+
+/** A `meta` patch restoring every field in `groupId` to its schema default — the "reset" button. @internal */
+export function resetGroupParams(schema: ParamSchema, groupId: string | undefined): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  for (const field of schema.fields) {
+    if (field.group !== groupId || field.type === "action") continue;
+    patch[field.key] = field.type === "weightedList" ? field.default.map((entry) => ({ ...entry })) : field.default;
+  }
+  return patch;
 }
 
 /** The `meta` patch that fills a fresh object of a kind with its schema defaults. @internal */
 export function defaultParamMeta(schema: ParamSchema): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const field of schema.fields) {
+    if (field.type === "action") continue;
     out[field.key] = field.type === "weightedList" ? field.default.map((entry) => ({ ...entry })) : field.default;
   }
   return out;

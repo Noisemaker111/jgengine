@@ -45,17 +45,23 @@ export interface ResolvedPoleLine {
 /** The slider schema — the editor auto-generates the whole inspector from this. */
 export const POLE_LINE_SCHEMA: ParamSchema = {
   fields: [
-    { type: "text", key: "poleAsset", label: "pole asset", default: "" },
-    { type: "range", key: "spacing", label: "spacing", min: 2, max: 40, step: 0.5, default: 8, unit: "m" },
-    { type: "range", key: "poleHeight", label: "pole height", min: 1, max: 20, step: 0.25, default: 6, unit: "m" },
-    { type: "range", key: "wireCount", label: "wires", min: 0, max: 8, step: 1, default: 3 },
-    { type: "range", key: "wireSpacing", label: "wire spread", min: 0, max: 3, step: 0.05, default: 0.5, unit: "m" },
-    { type: "range", key: "cableRadius", label: "cable radius", min: 0.01, max: 0.5, step: 0.01, default: 0.05, unit: "m" },
-    { type: "range", key: "sag", label: "sag", min: 0, max: 6, step: 0.1, default: 0.8, unit: "m" },
-    { type: "range", key: "sagPerMeter", label: "sag / m", min: 0, max: 0.3, step: 0.005, default: 0.04 },
-    { type: "range", key: "cableSegments", label: "cable smoothness", min: 2, max: 48, step: 1, default: 12 },
-    { type: "bool", key: "snapToTerrain", label: "snap to ground", default: true },
-    { type: "seed", key: "seed", label: "seed", default: "" },
+    { type: "text", key: "poleAsset", label: "pole asset", default: "", group: "poles" },
+    { type: "range", key: "spacing", label: "spacing", min: 2, max: 40, step: 0.5, default: 8, unit: "m", group: "poles" },
+    { type: "range", key: "poleHeight", label: "pole height", min: 1, max: 20, step: 0.25, default: 6, unit: "m", group: "poles" },
+    { type: "bool", key: "snapToTerrain", label: "snap to ground", default: true, group: "poles" },
+    { type: "action", key: "randomizePoles", label: "randomize poles", action: "randomize", group: "poles" },
+    { type: "range", key: "wireCount", label: "wires", min: 0, max: 8, step: 1, default: 3, group: "cables" },
+    { type: "range", key: "wireSpacing", label: "wire spread", min: 0, max: 3, step: 0.05, default: 0.5, unit: "m", group: "cables" },
+    { type: "range", key: "cableRadius", label: "cable radius", min: 0.01, max: 0.5, step: 0.01, default: 0.05, unit: "m", group: "cables" },
+    { type: "range", key: "sag", label: "sag", min: 0, max: 6, step: 0.1, default: 0.8, unit: "m", group: "cables" },
+    { type: "range", key: "sagPerMeter", label: "sag / m", min: 0, max: 0.3, step: 0.005, default: 0.04, group: "cables" },
+    { type: "range", key: "cableSegments", label: "cable smoothness", min: 2, max: 48, step: 1, default: 12, group: "cables" },
+    { type: "seed", key: "seed", label: "seed", default: "", group: "cables" },
+    { type: "action", key: "randomizeCables", label: "randomize cables", action: "randomize", group: "cables" },
+  ],
+  groups: [
+    { id: "poles", label: "Poles" },
+    { id: "cables", label: "Cables" },
   ],
 };
 

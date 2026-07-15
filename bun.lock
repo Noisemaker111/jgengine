@@ -279,6 +279,7 @@
       "name": "@jgengine-apps/dev",
       "version": "0.1.0",
       "dependencies": {
+        "@jgengine-examples/studios": "workspace:*",
         "@jgengine/convex": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@react-three/drei": "^10.7.7",

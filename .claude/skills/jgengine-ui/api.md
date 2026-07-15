@@ -44,6 +44,7 @@
 - `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
 - `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
+- `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
 
 ## @jgengine/core/settings/settingsModel
@@ -1348,6 +1349,12 @@
 ## @jgengine/shell/scene/GeneratedAssetRenderer
 
 - `GeneratedAssetProps` (interface): interface GeneratedAssetProps — Props for {@link GeneratedAsset}: the placed instance's `meta` (assetId + params + seed) and transform.
+
+## @jgengine/shell/scene/StudioStage
+
+- `StudioMood` (type): type StudioMood = "studio" | "daylight" | "dusk" | "night" — Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette.
+- `StudioStage` (function): function StudioStage({ mood = "studio", backdrop, turntable = 0, environment = true, children }: StudioStageProps): React.JSX.Element — A reusable cinematic "product-shot" stage — a 3-point lighting rig (key/fill/rim + ambient), a seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like a hero shot instead of a flat proxy under default light. Pair with `PlayableGame.postProcessing = STUDIO_STAGE_POST` for the full film grade. Set `environment: false` to keep an open-world sky/ground and use it purely as a lighting rig.
+- `StudioStageProps` (interface): interface StudioStageProps — Props for {@link StudioStage}.
 
 ## @jgengine/shell/scene/sceneKindRenderers
 

@@ -19,15 +19,21 @@ export const BOOKCASE_GENERATOR_ID = "bookcase";
 /** The bookcase slider schema — the editor auto-generates the inspector from this. */
 export const BOOKCASE_SCHEMA: ParamSchema = {
   fields: [
-    { type: "range", key: "width", label: "width", min: 0.6, max: 3, step: 0.05, default: 1.2, unit: "m" },
-    { type: "range", key: "height", label: "height", min: 0.8, max: 3, step: 0.05, default: 2, unit: "m" },
-    { type: "range", key: "depth", label: "depth", min: 0.2, max: 0.6, step: 0.02, default: 0.3, unit: "m" },
-    { type: "range", key: "shelves", label: "shelves", min: 1, max: 8, step: 1, default: 4 },
-    { type: "range", key: "boardThickness", label: "board", min: 0.02, max: 0.1, step: 0.005, default: 0.04, unit: "m" },
-    { type: "range", key: "bookDensity", label: "book density", min: 0, max: 1, step: 0.02, default: 0.8 },
-    { type: "range", key: "lean", label: "leaning", min: 0, max: 0.4, step: 0.02, default: 0.12 },
-    { type: "color", key: "tint", label: "wood tint", default: "#7a5230" },
-    { type: "seed", key: "seed", label: "seed", default: "" },
+    { type: "range", key: "width", label: "width", min: 0.6, max: 3, step: 0.05, default: 1.2, unit: "m", group: "carcass" },
+    { type: "range", key: "height", label: "height", min: 0.8, max: 3, step: 0.05, default: 2, unit: "m", group: "carcass" },
+    { type: "range", key: "depth", label: "depth", min: 0.2, max: 0.6, step: 0.02, default: 0.3, unit: "m", group: "carcass" },
+    { type: "range", key: "shelves", label: "shelves", min: 1, max: 8, step: 1, default: 4, group: "carcass" },
+    { type: "range", key: "boardThickness", label: "board", min: 0.02, max: 0.1, step: 0.005, default: 0.04, unit: "m", group: "carcass" },
+    { type: "color", key: "tint", label: "wood tint", default: "#7a5230", group: "carcass" },
+    { type: "action", key: "randomizeCarcass", label: "randomize carcass", action: "randomize", group: "carcass" },
+    { type: "range", key: "bookDensity", label: "book density", min: 0, max: 1, step: 0.02, default: 0.8, group: "books" },
+    { type: "range", key: "lean", label: "leaning", min: 0, max: 0.4, step: 0.02, default: 0.12, group: "books" },
+    { type: "seed", key: "seed", label: "seed", default: "", group: "books" },
+    { type: "action", key: "randomizeBooks", label: "randomize books", action: "randomize", group: "books" },
+  ],
+  groups: [
+    { id: "carcass", label: "Carcass" },
+    { id: "books", label: "Books" },
   ],
 };
 

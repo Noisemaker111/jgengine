@@ -1,5 +1,9 @@
+import { useState } from "react";
+
 import {
   parseParams,
+  randomizeGroupParams,
+  resetGroupParams,
   type ParamField,
   type ParamSchema,
   type WeightedParamEntry,
@@ -148,7 +152,72 @@ function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<str
         </div>
       );
     }
+    case "action":
+      return null; // Action buttons are rendered by the group section, which owns the whole schema.
   }
+}
+
+/** A schema action button (randomize / reset a group) — computed patches from the core helpers. */
+function ActionButton({ field, schema, onMeta }: { field: Extract<ParamField, { type: "action" }>; schema: ParamSchema; onMeta: MetaPatch }) {
+  const run = () =>
+    onMeta(
+      field.action === "randomize" ? randomizeGroupParams(schema, field.group, Math.random) : resetGroupParams(schema, field.group),
+      `${field.action}:${field.group ?? "all"}`,
+    );
+  return (
+    <button
+      type="button"
+      className="w-full rounded-md bg-white/[0.06] px-2 py-1 text-[10px] font-medium text-neutral-200 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/12"
+      onClick={run}
+    >
+      {field.action === "randomize" ? "🎲 " : "↺ "}
+      {labelOf(field)}
+    </button>
+  );
+}
+
+/** A collapsible group section: header (click to toggle) + its fields + any action buttons. */
+function GroupSection({
+  title,
+  accent,
+  fields,
+  schema,
+  meta,
+  onMeta,
+  defaultCollapsed,
+}: {
+  title: string;
+  accent: string;
+  fields: readonly ParamField[];
+  schema: ParamSchema;
+  meta: Record<string, unknown> | undefined;
+  onMeta: MetaPatch;
+  defaultCollapsed: boolean;
+}) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  return (
+    <div className="rounded-md border border-white/[0.06]">
+      <button
+        type="button"
+        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[9px] font-semibold uppercase tracking-[0.12em] text-neutral-300 transition-colors hover:bg-white/[0.04]"
+        onClick={() => setCollapsed((value) => !value)}
+      >
+        <span className="text-neutral-500">{collapsed ? "▸" : "▾"}</span>
+        <span style={{ color: accent }}>{title}</span>
+      </button>
+      {collapsed ? null : (
+        <div className="space-y-2 px-2 pb-2">
+          {fields.map((field) =>
+            field.type === "action" ? (
+              <ActionButton key={field.key} field={field} schema={schema} onMeta={onMeta} />
+            ) : (
+              <FieldRow key={field.key} field={field} meta={meta} onMeta={onMeta} />
+            ),
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -174,13 +243,33 @@ export function SchemaInspector({
   meta: Record<string, unknown> | undefined;
   onMeta: MetaPatch;
 }) {
+  const groups = schema.groups ?? [];
+  const grouped = new Set(groups.map((group) => group.id));
+  // Fields with no group (or a group not declared in schema.groups) render first, headerless.
+  const ungrouped = schema.fields.filter((field) => field.group === undefined || !grouped.has(field.group));
   return (
     <div className="space-y-2 rounded-lg border p-2.5" style={{ borderColor: `${accent}26`, backgroundColor: `${accent}10` }}>
       <div className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>
         {label}
       </div>
-      {schema.fields.map((field) => (
-        <FieldRow key={field.key} field={field} meta={meta} onMeta={onMeta} />
+      {ungrouped.map((field) =>
+        field.type === "action" ? (
+          <ActionButton key={field.key} field={field} schema={schema} onMeta={onMeta} />
+        ) : (
+          <FieldRow key={field.key} field={field} meta={meta} onMeta={onMeta} />
+        ),
+      )}
+      {groups.map((group) => (
+        <GroupSection
+          key={group.id}
+          title={group.label}
+          accent={accent}
+          fields={schema.fields.filter((field) => field.group === group.id)}
+          schema={schema}
+          meta={meta}
+          onMeta={onMeta}
+          defaultCollapsed={group.collapsed ?? false}
+        />
       ))}
       {note !== undefined && note.length > 0 ? <div className="text-[10px] text-neutral-500">{note}</div> : null}
     </div>

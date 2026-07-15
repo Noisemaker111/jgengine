@@ -785,10 +785,12 @@
 
 ## @jgengine/core/scene/sceneKinds
 
+- `ActionParamField` (interface): interface ActionParamField — A button row that runs a built-in inspector action on its group — currently `"randomize"` (reroll the group's numeric/seed/bool/select fields within their bounds) or `"reset"` (restore group defaults). Carries no persisted value; purely a control.
 - `BoolParamField` (interface): interface BoolParamField — A checkbox.
 - `ColorParamField` (interface): interface ColorParamField — A hex color picker.
 - `NumberParamField` (interface): interface NumberParamField — A free numeric input, optionally clamped.
-- `ParamField` (type): type ParamField = | RangeParamField | NumberParamField | BoolParamField | SelectParamField | ColorParamField | TextParamField | SeedParamField | WeightedListParamField — One row in a kind's parameter schema — the union the generic inspector knows how to render.
+- `ParamField` (type): type ParamField = | RangeParamField | NumberParamField | BoolParamField | SelectParamField | ColorParamField | TextParamField | SeedParamField | WeightedListParamField | ActionParamField — One row in a kind's parameter schema — the union the generic inspector knows how to render.
+- `ParamGroup` (interface): interface ParamGroup — A named, optionally-collapsed section the inspector groups fields under (by `field.group === id`).
 - `ParamIssue` (interface): interface ParamIssue — One validation problem found by {@link validateParams}: which field and why.
 - `ParamSchema` (interface): interface ParamSchema — A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom.
 - `ParsedParams` (type): type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]> — Parsed params after `parseParams`: every schema field present with a validated, defaulted value.
