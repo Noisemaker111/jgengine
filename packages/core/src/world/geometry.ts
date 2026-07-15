@@ -17,6 +17,36 @@ export interface MoveOptions {
   radius?: number;
 }
 
+/**
+ * A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled
+ * from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band —
+ * full effect within `radius - feather`, ramping to zero at `radius`.
+ */
+export interface AvoidZone {
+  x: number;
+  z: number;
+  radius: number;
+  feather?: number;
+}
+
+/**
+ * How strongly a point falls inside a clearance zone: 1 at/inside the solid core, ramping to 0 at
+ * the zone's outer `radius` across its `feather` band, 0 outside. The max over all zones.
+ * @internal — the falloff math behind scatter avoid and terrain flatten.
+ */
+export function zoneInfluence(x: number, z: number, zones: readonly AvoidZone[]): number {
+  let best = 0;
+  for (const zone of zones) {
+    const dist = Math.hypot(x - zone.x, z - zone.z);
+    if (dist >= zone.radius) continue;
+    const feather = zone.feather ?? 0;
+    const inner = zone.radius - Math.max(0, feather);
+    const t = dist <= inner || feather <= 0 ? 1 : (zone.radius - dist) / feather;
+    if (t > best) best = t;
+  }
+  return best;
+}
+
 export function snapToGrid(point: Vec2, size: number): Vec2 {
   if (!(size > 0)) return point;
   return [Math.round(point[0] / size) * size, Math.round(point[1] / size) * size];

@@ -1266,6 +1266,7 @@
 ## @jgengine/core/world/geometry
 
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
+- `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `Ellipse` (interface): interface Ellipse — An axis-aligned ellipse: `center` with semi-axes `radiusX` and `radiusY`.
 - `Footprint` (interface): interface Footprint — ⚠ undocumented
 - `MoveOptions` (interface): interface MoveOptions — ⚠ undocumented
@@ -1451,6 +1452,10 @@
 
 ## @jgengine/core/world/scatterRegion
 
+- `ClearanceOptions` (interface): interface ClearanceOptions — Controls which gameplay objects auto-repel scatter (and flatten terrain) in {@link clearanceZonesFrom}.
+- `DEFAULT_CLEARANCE_KINDS` (const): const DEFAULT_CLEARANCE_KINDS: readonly string[] — Marker/volume kinds that repel scatter and flatten terrain by default (spawns, objectives, vendors).
+- `DEFAULT_MARKER_CLEARANCE` (const): const DEFAULT_MARKER_CLEARANCE: 3.5 — Default clearance radius (m) for an auto-avoided gameplay marker with no explicit `meta.clearance`.
+- `ResolveScatterOptions` (interface): interface ResolveScatterOptions extends ClearanceOptions — Extra inputs for {@link resolveScatter}: manual zones plus the auto-clearance toggle/scoping.
 - `SCATTER_DEFAULTS` (const): const SCATTER_DEFAULTS: ScatterRegionRules — Defaults a bare scatter region fills with: sparse grass, lightly spaced.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
 - `ScatterChunk` (interface): interface ScatterChunk — A spatial bucket of scatter instances — one draw unit the renderer can frustum-cull as a whole.
@@ -1459,6 +1464,7 @@
 - `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
 - `ScatterRegionRules` (interface): interface ScatterRegionRules — How a scatter region fills its polygon: density, spacing, variation, and masking rules.
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
+- `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: EditorDocument, options: ClearanceOptions = {}): AvoidZone[] — Collects clearance discs from a document's gameplay objects — the auto-avoid set. A marker/volume contributes a zone when it carries `meta.clearance` or its kind is in `kinds` (default gameplay kinds); non-scatter paths contribute a corridor. This is the "tag a POI and scatter clears it" seam — pass `ids`/`kinds` to scope it, or an empty result to opt out entirely.
 - `distanceToPolygonEdge` (function): function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number — Shortest distance from a point to a polygon's boundary.
 - `isScatterPath` (function): function isScatterPath(path: EditorPath): boolean — True when an editor path is a foliage/scatter region.
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
@@ -1466,8 +1472,8 @@
 - `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
 - `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
 - `readScatterRules` (function): function readScatterRules(path: EditorPath): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
-- `resolveScatter` (function): function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided.
-- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
+- `resolveScatter` (function): function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance zones: their own manual `avoid`, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide zones from {@link clearanceZonesFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
+- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: readonly AvoidZone[]): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: EditorPath): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
 - `scatterRegionFromPath` (function): function scatterRegionFromPath(path: EditorPath): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
 
@@ -1574,7 +1580,7 @@
 - `hasEnvironmentTerrain` (function): function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean — Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
 - `heightMapField` (function): function heightMapField(config: HeightMapFieldConfig): TerrainField — ⚠ undocumented
 - `noiseField` (function): function noiseField(config: NoiseFieldConfig = {}): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
-- `resolveEnvironmentField` (function): function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField — The full ground field for an environment world: base `terrain` composed with any `islands`, then any authored `sculpt` snapshot layered on top — so an editor-sculpted heightfield drives both the rendered mesh and player collision through the one seam every consumer already reads.
+- `resolveEnvironmentField` (function): function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField — The full ground field for an environment world: base `terrain` composed with any `islands`, then any authored `sculpt` snapshot, then any `clearings` flattened on top — so an editor-sculpted heightfield drives both the rendered mesh and player collision, and gameplay spots stay level, through the one seam every consumer already reads.
 - `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope = DEFAULT_MAX_WALK_SLOPE): { stepX: number; stepZ: number } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
 - `resolveTerrainDetail` (function): function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail — Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level.
 - `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.

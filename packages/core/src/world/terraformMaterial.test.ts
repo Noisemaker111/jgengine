@@ -12,7 +12,7 @@ import {
   type TerrainMaterialLayer,
 } from "./terraform";
 import { environment, terrain as terrainDescriptor } from "./features";
-import { groundFieldFor, resolveEnvironmentField } from "./terrain";
+import { flattenFieldAround, groundFieldFor, resolveEnvironmentField } from "./terrain";
 
 const bounds = { minX: -16, minZ: -16, maxX: 16, maxZ: 16 };
 
@@ -134,5 +134,43 @@ describe("sculpt runtime seam", () => {
     expect(raised - baseHeight).toBeGreaterThan(3);
     // Far outside the mound the offset is ~0.
     expect(Math.abs(resolveEnvironmentField(sculpted).sampleHeight(15, 15) - baseHeight)).toBeLessThan(0.5);
+  });
+});
+
+describe("clearance flatten seam", () => {
+  test("flattenFieldAround levels a mound toward the zone center height", () => {
+    const editable = createEditableTerrain({ bounds, cellSize: 2 });
+    editable.apply({ mode: "raise", center: [0, 0], radius: 10, strength: 6, falloff: "smooth" });
+    const mound = editableTerrainFromSnapshot(editable.snapshot());
+    const peak = mound.sampleHeight(0, 0);
+    expect(peak).toBeGreaterThan(3);
+    // A clearance disc at the peak flattens it back toward the (raised) center height, but the ramp
+    // means a point partway out is pulled down from the un-flattened mound height there.
+    const flattened = flattenFieldAround(mound, [{ x: 0, z: 0, radius: 8, feather: 3 }]);
+    // At the very center the target IS the peak, so it stays; just inside the rim it is leveled up/flat.
+    expect(flattened.sampleHeight(6, 0)).toBeGreaterThan(mound.sampleHeight(6, 0) - 0.01);
+    expect(Math.abs(flattened.sampleHeight(1, 0) - peak)).toBeLessThan(0.5);
+    // Outside the zone the mound is untouched.
+    expect(flattened.sampleHeight(15, 0)).toBeCloseTo(mound.sampleHeight(15, 0), 5);
+  });
+
+  test("environment({ clearings }) flattens the ground under a spawn even with a nearby sculpt mound", () => {
+    const editable = createEditableTerrain({ bounds, cellSize: 2 });
+    editable.apply({ mode: "raise", center: [6, 0], radius: 10, strength: 6, falloff: "smooth" });
+    const snapshot = editable.snapshot();
+    const withMound = resolveEnvironmentField(
+      environment({ terrain: terrainDescriptor({ bounds: { w: 32, d: 32 }, height: 0 }), sculpt: snapshot }),
+    );
+    const cleared = resolveEnvironmentField(
+      environment({
+        terrain: terrainDescriptor({ bounds: { w: 32, d: 32 }, height: 0 }),
+        sculpt: snapshot,
+        clearings: [{ x: 0, z: 0, radius: 5, feather: 2 }],
+      }),
+    );
+    // The clearing cuts a level shelf at the spawn: flat across its core...
+    expect(Math.abs(cleared.sampleHeight(0, 0) - cleared.sampleHeight(3, 0))).toBeLessThan(0.4);
+    // ...and off-center (toward the mound) it is leveled down from the un-cleared sloped ground.
+    expect(withMound.sampleHeight(3, 0)).toBeGreaterThan(cleared.sampleHeight(3, 0) + 0.2);
   });
 });

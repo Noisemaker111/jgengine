@@ -13,6 +13,7 @@ import type {
   WorldBounds,
   WorldFeature,
 } from "./features";
+import type { AvoidZone } from "./geometry";
 import { nearestOnPath } from "./roads";
 import type { TerraformSnapshot } from "./terraform";
 
@@ -341,9 +342,43 @@ export function sculptedField(base: TerrainField, snapshot: TerraformSnapshot): 
 }
 
 /**
+ * Levels a base field toward each clearance zone's center height within its radius (feathered) — so
+ * spawns, plots, and paths sit on flat ground even when a mound is nearby. The strongest overlapping
+ * zone wins. Pairs with scatter's avoid: one clearance zone both flattens ground and repels foliage.
+ * @internal — reached through `environment({ clearings })`; not called directly by games.
+ */
+export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone[]): TerrainField {
+  if (zones.length === 0) return base;
+  const sampleHeight = (x: number, z: number): number => {
+    let best = 0;
+    let target = 0;
+    for (const zone of zones) {
+      const dist = Math.hypot(x - zone.x, z - zone.z);
+      if (dist >= zone.radius) continue;
+      const feather = Math.max(0, zone.feather ?? 0);
+      const inner = zone.radius - feather;
+      const t = dist <= inner || feather <= 0 ? 1 : (zone.radius - dist) / feather;
+      if (t > best) {
+        best = t;
+        target = base.sampleHeight(zone.x, zone.z);
+      }
+    }
+    const height = base.sampleHeight(x, z);
+    return best > 0 ? height + (target - height) * best : height;
+  };
+  return {
+    sampleHeight,
+    sampleNormal: withNormal(sampleHeight),
+    ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
+    ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
+  };
+}
+
+/**
  * The full ground field for an environment world: base `terrain` composed with any `islands`, then
- * any authored `sculpt` snapshot layered on top — so an editor-sculpted heightfield drives both the
- * rendered mesh and player collision through the one seam every consumer already reads.
+ * any authored `sculpt` snapshot, then any `clearings` flattened on top — so an editor-sculpted
+ * heightfield drives both the rendered mesh and player collision, and gameplay spots stay level,
+ * through the one seam every consumer already reads.
  */
 export function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField {
   const base = feature.terrain === undefined ? null : resolveTerrainField(feature.terrain);
@@ -351,7 +386,10 @@ export function resolveEnvironmentField(feature: EnvironmentWorldFeature): Terra
     feature.islands === undefined || feature.islands.length === 0
       ? base ?? flatField()
       : composeIslandFields(base, feature.islands);
-  return feature.sculpt === undefined ? composed : sculptedField(composed, feature.sculpt);
+  const sculpted = feature.sculpt === undefined ? composed : sculptedField(composed, feature.sculpt);
+  return feature.clearings === undefined || feature.clearings.length === 0
+    ? sculpted
+    : flattenFieldAround(sculpted, feature.clearings);
 }
 
 export interface TerrainSlopeSample {

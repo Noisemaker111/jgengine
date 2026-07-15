@@ -1,4 +1,5 @@
 import type { BuildingPaletteOverrides, BuildingStyle } from "./buildings";
+import type { AvoidZone } from "./geometry";
 import type { TerraformSnapshot } from "./terraform";
 
 export interface WorldBounds {
@@ -404,6 +405,12 @@ export interface EnvironmentWorldConfig {
    * collides identically at runtime.
    */
   sculpt?: TerraformSnapshot;
+  /**
+   * Clearance discs flattened into the ground (spawns, plots, paths) — the terrain half of a
+   * clearance zone whose foliage half is scatter's `avoid`. Derive them from a document with
+   * `clearanceZonesFrom`.
+   */
+  clearings?: readonly AvoidZone[];
 }
 
 export interface EnvironmentWorldFeature {
@@ -419,6 +426,8 @@ export interface EnvironmentWorldFeature {
   pads?: readonly PadEnvironmentDescriptor[];
   /** Authored sculpt snapshot layered over the base terrain — see {@link EnvironmentWorldConfig.sculpt}. */
   sculpt?: TerraformSnapshot;
+  /** Clearance discs flattened into the ground — see {@link EnvironmentWorldConfig.clearings}. */
+  clearings?: readonly AvoidZone[];
 }
 
 export interface WorldGridCell {
@@ -551,6 +560,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
     ...(roads === undefined ? {} : { roads }),
     ...(config.pads === undefined ? {} : { pads: config.pads }),
     ...(config.sculpt === undefined ? {} : { sculpt: config.sculpt }),
+    ...(config.clearings === undefined || config.clearings.length === 0 ? {} : { clearings: config.clearings }),
   };
 }
 

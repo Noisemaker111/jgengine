@@ -1,5 +1,5 @@
 import type { EditorDocument, EditorPath } from "../editor/types";
-import { type Aabb, type Vec2 } from "./geometry";
+import { zoneInfluence, type Aabb, type AvoidZone, type Vec2 } from "./geometry";
 import { scatter } from "./scatter";
 import type { TerrainNormal } from "./terrain";
 
@@ -39,6 +39,10 @@ export interface ScatterRegionRules {
   jitter: number;
   /** Weighted species palette; falls back to a single `grass` entry. */
   palette: readonly ScatterPaletteEntry[];
+  /** Explicit no-scatter clearance discs this region always honors (manual exclusion). */
+  avoid: readonly AvoidZone[];
+  /** Honor document-wide clearance zones (tagged markers/paths) too; false = manual `avoid` only. */
+  autoAvoid: boolean;
 }
 
 /** Defaults a bare scatter region fills with: sparse grass, lightly spaced. */
@@ -58,7 +62,24 @@ export const SCATTER_DEFAULTS: ScatterRegionRules = {
   edgeFalloff: 0,
   jitter: 1,
   palette: [{ item: "grass", weight: 1 }],
+  avoid: [],
+  autoAvoid: true,
 };
+
+/** Default clearance radius (m) for an auto-avoided gameplay marker with no explicit `meta.clearance`. */
+export const DEFAULT_MARKER_CLEARANCE = 3.5;
+
+/** Marker/volume kinds that repel scatter and flatten terrain by default (spawns, objectives, vendors). */
+export const DEFAULT_CLEARANCE_KINDS: readonly string[] = [
+  "player_spawn",
+  "spawn",
+  "boss",
+  "goal",
+  "keep",
+  "vendor",
+  "chest",
+  "travel",
+];
 
 /** A resolvable scatter region: a closed polygon footprint plus its fill rules. */
 export interface ScatterRegion {
@@ -174,10 +195,16 @@ function pickWeighted(palette: readonly ScatterPaletteEntry[], roll: number): st
  * outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same
  * saved region always grows the same field. Grounds each instance on `terrain` when provided.
  */
-export function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain): ScatterInstance[] {
+export function resolveScatterRegion(
+  region: ScatterRegion,
+  terrain?: ScatterTerrain,
+  avoid?: readonly AvoidZone[],
+): ScatterInstance[] {
   const rules = region.rules;
   const bounds = polygonBounds(region.polygon);
   if (bounds === null || region.polygon.length < 3 || rules.density <= 0) return [];
+  const own = rules.avoid ?? [];
+  const zones = avoid === undefined ? own : own.length === 0 ? avoid : [...own, ...avoid];
   const points = scatter({
     area: bounds,
     density: rules.density,
@@ -189,6 +216,13 @@ export function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTer
   for (const point of points) {
     const p: Vec2 = [point.x, point.z];
     if (!pointInPolygon(p, region.polygon)) continue;
+
+    // Clearance zones repel scatter: hard reject in the solid core, thin probabilistically in the feather.
+    if (zones.length > 0) {
+      const influence = zoneInfluence(point.x, point.z, zones);
+      if (influence >= 1) continue;
+      if (influence > 0 && hash(`${region.id}:avoid:${point.index}`) < influence) continue;
+    }
 
     if (rules.edgeFalloff > 0) {
       const edge = distanceToPolygonEdge(p, region.polygon);
@@ -285,7 +319,31 @@ export function readScatterRules(path: EditorPath): ScatterRegionRules | null {
     edgeFalloff: Math.max(0, metaNumber(meta, "edgeFalloff", SCATTER_DEFAULTS.edgeFalloff)),
     jitter: metaNumber(meta, "jitter", SCATTER_DEFAULTS.jitter),
     palette: readScatterPalette(meta),
+    avoid: readAvoidZones(meta),
+    autoAvoid: metaBool(meta, "autoAvoid", SCATTER_DEFAULTS.autoAvoid),
   };
+}
+
+/**
+ * Parses a region's manual clearance discs from `meta.avoid` (array of {x,z,radius,feather?}).
+ * @internal — used by `readScatterRules`; games author `avoid` through the region inspector.
+ */
+export function readAvoidZones(meta: Record<string, unknown> | undefined): AvoidZone[] {
+  const raw = meta?.["avoid"];
+  if (!Array.isArray(raw)) return [];
+  const zones: AvoidZone[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const e = entry as { x?: unknown; z?: unknown; radius?: unknown; feather?: unknown };
+    if (typeof e.x !== "number" || typeof e.z !== "number" || typeof e.radius !== "number") continue;
+    zones.push({
+      x: e.x,
+      z: e.z,
+      radius: Math.max(0, e.radius),
+      ...(typeof e.feather === "number" ? { feather: Math.max(0, e.feather) } : {}),
+    });
+  }
+  return zones;
 }
 
 /** Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null. */
@@ -307,12 +365,110 @@ export function scatterRegionEstimate(path: EditorPath): { area: number; count: 
   return { area, count: Math.floor(area * rules.density) };
 }
 
-/** Every scatter region's placements across a document, grounded on `terrain` when provided. */
-export function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain): ScatterInstance[] {
+/** Reads a gameplay object's clearance radius: explicit `meta.clearance`, else a kind default, else 0. */
+function clearanceOf(
+  kind: string,
+  meta: Record<string, unknown> | undefined,
+  kinds: readonly string[],
+  defaultClearance: number,
+): number {
+  const explicit = meta?.["clearance"];
+  if (typeof explicit === "number" && Number.isFinite(explicit)) return Math.max(0, explicit);
+  return kinds.includes(kind) ? defaultClearance : 0;
+}
+
+/** Controls which gameplay objects auto-repel scatter (and flatten terrain) in {@link clearanceZonesFrom}. */
+export interface ClearanceOptions {
+  /** Marker/volume kinds that auto-clear even without a `meta.clearance` tag. Default {@link DEFAULT_CLEARANCE_KINDS}. */
+  kinds?: readonly string[];
+  /** Restrict auto-clearing to these object ids only (any kind); overrides `kinds` when set. */
+  ids?: readonly string[];
+  /** Clearance radius (m) for a kind-matched object with no explicit tag. Default {@link DEFAULT_MARKER_CLEARANCE}. */
+  defaultClearance?: number;
+  /** Soft outer band (m) added to every derived zone. Default 2. */
+  feather?: number;
+  /** Also clear a corridor along non-scatter paths (roads/routes). Default true. */
+  includePaths?: boolean;
+}
+
+/**
+ * Collects clearance discs from a document's gameplay objects — the auto-avoid set. A marker/volume
+ * contributes a zone when it carries `meta.clearance` or its kind is in `kinds` (default gameplay
+ * kinds); non-scatter paths contribute a corridor. This is the "tag a POI and scatter clears it"
+ * seam — pass `ids`/`kinds` to scope it, or an empty result to opt out entirely.
+ */
+export function clearanceZonesFrom(doc: EditorDocument, options: ClearanceOptions = {}): AvoidZone[] {
+  const kinds = options.ids !== undefined ? [] : options.kinds ?? DEFAULT_CLEARANCE_KINDS;
+  const idSet = options.ids === undefined ? null : new Set(options.ids);
+  const defaultClearance = options.defaultClearance ?? DEFAULT_MARKER_CLEARANCE;
+  const feather = options.feather ?? 2;
+  const includePaths = options.includePaths ?? true;
+  const zones: AvoidZone[] = [];
+
+  const consider = (id: string, kind: string, x: number, z: number, meta: Record<string, unknown> | undefined, extra: number) => {
+    if (idSet !== null && !idSet.has(id)) return;
+    const clearance = idSet !== null ? defaultClearance : clearanceOf(kind, meta, kinds, defaultClearance);
+    if (clearance <= 0) return;
+    zones.push({ x, z, radius: clearance + extra, feather });
+  };
+
+  for (const marker of doc.markers) consider(marker.id, marker.kind, marker.position.x, marker.position.z, marker.meta, 0);
+  for (const volume of doc.volumes) consider(volume.id, volume.kind, volume.center.x, volume.center.z, volume.meta, volume.radius ?? 0);
+
+  if (includePaths) {
+    for (const path of doc.paths) {
+      if (isScatterPath(path)) continue;
+      const clearance = clearanceOf(path.kind, path.meta, kinds, defaultClearance);
+      const explicit = typeof path.meta?.["clearance"] === "number";
+      if (clearance <= 0 && !explicit) continue;
+      const halfWidth = (path.width ?? 4) / 2 + (clearance > 0 ? clearance : defaultClearance);
+      // Sample discs along each segment so the corridor is continuous.
+      for (let i = 1; i < path.points.length; i += 1) {
+        const a = path.points[i - 1]!;
+        const b = path.points[i]!;
+        const length = Math.hypot(b.x - a.x, b.z - a.z);
+        const steps = Math.max(1, Math.ceil(length / Math.max(1, halfWidth)));
+        for (let s = 0; s <= steps; s += 1) {
+          const t = s / steps;
+          zones.push({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, radius: halfWidth, feather });
+        }
+      }
+    }
+  }
+  return zones;
+}
+
+/** Extra inputs for {@link resolveScatter}: manual zones plus the auto-clearance toggle/scoping. */
+export interface ResolveScatterOptions extends ClearanceOptions {
+  /** Additional clearance discs applied to every region regardless of per-region `autoAvoid`. */
+  avoid?: readonly AvoidZone[];
+  /** Master switch for document-derived auto-clearance; false = per-region `avoid` (and `options.avoid`) only. */
+  autoAvoid?: boolean;
+}
+
+/**
+ * Every scatter region's placements across a document, grounded on `terrain` when provided. Regions
+ * honor clearance zones: their own manual `avoid`, plus (when the region's `autoAvoid` is on and
+ * `options.autoAvoid !== false`) the document-wide zones from {@link clearanceZonesFrom} — so foliage
+ * auto-clears spawns, plots, and paths without hand-carving the polygon.
+ */
+export function resolveScatter(
+  doc: EditorDocument,
+  terrain?: ScatterTerrain,
+  options: ResolveScatterOptions = {},
+): ScatterInstance[] {
+  const baseZones = options.avoid ?? [];
+  const autoZones =
+    options.autoAvoid === false ? [] : clearanceZonesFrom(doc, options);
   const out: ScatterInstance[] = [];
   for (const path of doc.paths) {
     const region = scatterRegionFromPath(path);
-    if (region !== null) out.push(...resolveScatterRegion(region, terrain));
+    if (region === null) continue;
+    const zones =
+      region.rules.autoAvoid && options.autoAvoid !== false
+        ? [...baseZones, ...autoZones]
+        : baseZones;
+    out.push(...resolveScatterRegion(region, terrain, zones));
   }
   return out;
 }

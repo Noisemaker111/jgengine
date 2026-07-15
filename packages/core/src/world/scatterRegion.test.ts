@@ -4,6 +4,8 @@ import type { EditorPath } from "../editor/types";
 import { flatField, noiseField } from "./terrain";
 import {
   chunkScatterInstances,
+  clearanceZonesFrom,
+  DEFAULT_MARKER_CLEARANCE,
   distanceToPolygonEdge,
   pointInPolygon,
   polygonArea,
@@ -205,5 +207,84 @@ describe("chunkScatterInstances", () => {
     const a = chunkScatterInstances(instances, 8).map((chunk) => chunk.key);
     const b = chunkScatterInstances(instances, 8).map((chunk) => chunk.key);
     expect(a).toEqual(b);
+  });
+});
+
+describe("clearance zones — scatter avoid", () => {
+  const fullRegion = (meta: Record<string, unknown>): EditorPath => ({
+    id: "field",
+    kind: SCATTER_PATH_KIND,
+    points: [
+      [-20, -20],
+      [20, -20],
+      [20, 20],
+      [-20, 20],
+    ].map(([x, z]) => ({ x: x!, y: 0, z: z! })),
+    meta,
+  });
+
+  test("a clearance-tagged marker auto-clears foliage around it", () => {
+    const doc = {
+      version: 1 as const,
+      markers: [{ id: "spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } }],
+      volumes: [],
+      paths: [fullRegion({ density: 1, minSpacing: 1 })],
+      annotations: [],
+    };
+    const instances = resolveScatter(doc, flatField());
+    expect(instances.length).toBeGreaterThan(0);
+    // The solid core (radius - feather = 3.5 - 2) is fully clear; the feather band thins softly.
+    for (const i of instances) expect(Math.hypot(i.x, i.z)).toBeGreaterThan(1.4);
+    // And placements within the full clearance are far sparser than an equal disc far from the spawn.
+    const near = instances.filter((i) => Math.hypot(i.x, i.z) <= DEFAULT_MARKER_CLEARANCE).length;
+    const far = instances.filter((i) => Math.hypot(i.x - 14, i.z - 14) <= DEFAULT_MARKER_CLEARANCE).length;
+    expect(near).toBeLessThan(far);
+  });
+
+  test("autoAvoid:false lets foliage return over the spawn (manual only)", () => {
+    const doc = {
+      version: 1 as const,
+      markers: [{ id: "spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } }],
+      volumes: [],
+      paths: [fullRegion({ density: 1, minSpacing: 1, autoAvoid: false })],
+      annotations: [],
+    };
+    const near = resolveScatter(doc, flatField()).filter((i) => Math.hypot(i.x, i.z) < 2);
+    expect(near.length).toBeGreaterThan(0);
+  });
+
+  test("options.autoAvoid=false disables auto globally; a manual avoid zone still clears", () => {
+    const doc = {
+      version: 1 as const,
+      markers: [{ id: "spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } }],
+      volumes: [],
+      paths: [fullRegion({ density: 1, minSpacing: 1, avoid: [{ x: 10, z: 10, radius: 5 }] })],
+      annotations: [],
+    };
+    const instances = resolveScatter(doc, flatField(), { autoAvoid: false });
+    // spawn no longer clears (auto off), but the manual zone at (10,10) does.
+    expect(instances.some((i) => Math.hypot(i.x, i.z) < 2)).toBe(true);
+    expect(instances.every((i) => Math.hypot(i.x - 10, i.z - 10) > 4)).toBe(true);
+  });
+
+  test("clearanceZonesFrom scopes by ids and by kinds", () => {
+    const doc = {
+      version: 1 as const,
+      markers: [
+        { id: "spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } },
+        { id: "prop", kind: "prop", position: { x: 5, y: 0, z: 5 }, meta: { clearance: 4 } },
+      ],
+      volumes: [],
+      paths: [],
+      annotations: [],
+    };
+    // Default kinds: spawn auto-clears, prop clears via its explicit tag.
+    expect(clearanceZonesFrom(doc).length).toBe(2);
+    // Scoped to ids: only the prop.
+    const scoped = clearanceZonesFrom(doc, { ids: ["prop"] });
+    expect(scoped.length).toBe(1);
+    expect(scoped[0]!.x).toBe(5);
+    // Kind filter excluding spawns: only the tagged prop remains.
+    expect(clearanceZonesFrom(doc, { kinds: [] }).length).toBe(1);
   });
 });

@@ -198,7 +198,15 @@ a scatter path of `kind: "scatter"`. Its inspector drives deterministic, **GPU-i
 previews live in the viewport as you drag: **density /m²**, spacing, a weighted **species palette**
 (add/remove rows of item id + weight), scale range, **max slope** and **height** masks, **edge fade**
 (feather the border), align-to-slope, and a seed with a reroll button. Same seed → same field. Rules ride
-`path.meta`; consume in a game with `resolveScatter(doc, terrain)` from `@jgengine/core/world/scatterRegion`,
+`path.meta`. **Clearance zones** keep foliage off gameplay — don't hand-carve the polygon around
+spawns/plots/paths. Tag any marker/volume with a **clearance** (m) in its inspector (spawns/objectives
+auto-clear by kind); `resolveScatter` repels foliage from every clearance zone in the document, and the
+region's **auto-avoid gameplay spots** toggle turns it off per region (manual `avoid` discs only). The
+matching terrain half: `environment({ clearings: clearanceZonesFrom(doc) })` flattens the ground under
+those same spots (a level pad even under a mound), so one clearance zone clears foliage *and* levels terrain
+(`Games/tower-guard` scatters one arena-wide region and lets the path + plots carve themselves out).
+Consume in a game with `resolveScatter(doc, terrain, options?)` from `@jgengine/core/world/scatterRegion`
+(`clearanceZonesFrom`, `ClearanceOptions` scope which kinds/ids clear),
 then render the instances with `<InstancedScatter instances={…} />` from `@jgengine/shell/scatter` — real
 per-species proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts) grouped
 into per-chunk GPU-instanced draws that frustum-cull independently (`chunkScatterInstances`). The same
