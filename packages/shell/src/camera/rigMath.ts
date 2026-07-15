@@ -466,6 +466,34 @@ export function shakeOffset(
   };
 }
 
+/** Calibrated trauma decay for `traumaShake`/`impactPresets` (trauma/second). */
+export const CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND = 1.4;
+/** Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`. */
+export const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET = 0.55;
+/** Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`. */
+export const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL = 0.1;
+/** Calibrated shake noise frequency (Hz) for `traumaShake`. */
+export const CALIBRATED_TRAUMA_SHAKE_FREQUENCY = 32;
+
+/**
+ * Calibrated trauma² camera shake: offset scales with `trauma` squared using
+ * game-feel defaults (decay 1.4/s, max offset 0.55, max roll 0.1 rad, noise
+ * freq 32×t) — the curve `impactPresets` trauma values are calibrated
+ * against, so an impact "just looks right" without hand-tuning `shakeOffset`.
+ *
+ * @capability camera-shake calibrated trauma² camera kick with zero tuning
+ */
+export function traumaShake(trauma: number, time = 0): ShakeOffset {
+  return shakeOffset(
+    { trauma: clamp(trauma, 0, 1), time },
+    {
+      maxOffset: CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET,
+      maxRoll: CALIBRATED_TRAUMA_SHAKE_MAX_ROLL,
+      frequency: CALIBRATED_TRAUMA_SHAKE_FREQUENCY,
+    },
+  );
+}
+
 /** Linear cross-fade between two full camera poses (position, lookAt, fov). */
 export function crossfadePose(from: CameraPose, to: CameraPose, t: number): CameraPose {
   const blend = clamp(t, 0, 1);

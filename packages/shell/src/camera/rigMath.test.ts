@@ -5,6 +5,9 @@ import {
   angleDelta,
   bankRollStep,
   blendShoulder,
+  CALIBRATED_TRAUMA_SHAKE_FREQUENCY,
+  CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET,
+  CALIBRATED_TRAUMA_SHAKE_MAX_ROLL,
   chaseDesiredPosition,
   cinematicSample,
   clamp,
@@ -30,6 +33,7 @@ import {
   springArmStep,
   stepTrauma,
   topDownPose,
+  traumaShake,
   yawTo,
 } from "./rigMath";
 
@@ -125,6 +129,47 @@ describe("trauma shake channel", () => {
     addTrauma(b, 0.8);
     b.time = 1.25;
     expect(shakeOffset(a, undefined)).toEqual(shakeOffset(b, undefined));
+  });
+});
+
+describe("traumaShake", () => {
+  test("small trauma stays tiny relative to full trauma", () => {
+    const small = traumaShake(0.05, 0.37);
+    const full = traumaShake(1, 0.37);
+    const smallMag = Math.hypot(small.x, small.y);
+    const fullMag = Math.hypot(full.x, full.y);
+    expect(smallMag).toBeGreaterThanOrEqual(0);
+    expect(smallMag).toBeLessThan(fullMag);
+  });
+
+  test("zero trauma produces zero offset", () => {
+    expect(traumaShake(0, 1.1)).toEqual({ x: 0, y: 0, roll: 0 });
+  });
+
+  test("offset and roll stay within the calibrated caps at full trauma", () => {
+    for (let i = 0; i <= 20; i += 1) {
+      const offset = traumaShake(1, i * 0.031);
+      expect(Math.abs(offset.x)).toBeLessThanOrEqual(CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET + 1e-9);
+      expect(Math.abs(offset.y)).toBeLessThanOrEqual(CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET + 1e-9);
+      expect(Math.abs(offset.roll)).toBeLessThanOrEqual(CALIBRATED_TRAUMA_SHAKE_MAX_ROLL + 1e-9);
+    }
+  });
+
+  test("out-of-range trauma clamps into [0,1]", () => {
+    expect(traumaShake(-1, 0.5)).toEqual(traumaShake(0, 0.5));
+    expect(traumaShake(5, 0.5)).toEqual(traumaShake(1, 0.5));
+  });
+
+  test("matches shakeOffset driven by the calibrated constants directly", () => {
+    const direct = shakeOffset(
+      { trauma: 1, time: 0.6 },
+      {
+        maxOffset: CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET,
+        maxRoll: CALIBRATED_TRAUMA_SHAKE_MAX_ROLL,
+        frequency: CALIBRATED_TRAUMA_SHAKE_FREQUENCY,
+      },
+    );
+    expect(traumaShake(1, 0.6)).toEqual(direct);
   });
 });
 

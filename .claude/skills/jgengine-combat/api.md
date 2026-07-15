@@ -154,8 +154,11 @@
 - `HitReaction` (interface): interface HitReaction — ⚠ undocumented
 - `HitReactionConfig` (interface): interface HitReactionConfig — ⚠ undocumented
 - `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented
+- `ImpactPreset` (interface): interface ImpactPreset — A calibrated `resolveHitReaction` config for a named impact event — hitstop + trauma so feel works with zero tuning.
+- `ImpactPresetName` (type): type ImpactPresetName = keyof typeof impactPresets — A named key into {@link impactPresets} (`"pickup" | "jumpLand" | "enemyKilled" | "playerHit" | "explosion"`).
 - `applyImpulse` (function): function applyImpulse(position: EntityPosition, impulse: [number, number, number]): EntityPosition — ⚠ undocumented
-- `resolveHitReaction` (function): function resolveHitReaction(config: HitReactionConfig, input: HitReactionInput): HitReaction — ⚠ undocumented
+- `impactPresets` (const): const impactPresets: { readonly pickup: { readonly hitstopMs: 0; readonly trauma: 0.15; }; readonly jumpLand: { readonly hitstopMs: 0; readonly trauma: 0.2; }; readonly enemyKilled: { readonly hitstopMs: 40; readonly trauma: 0.3; }; readonly playerHit: { readonly hitstopMs: 70; readonly trauma: 0.4;… — Calibrated per-event impact feel — hitstop and trauma numbers harvested from a shipped game-feel reference, not hand-invented per game. `explosion` and `playerHit` are "heavy hit" events (60–90ms hitstop @ 0.05 timescale); `pickup`/`jumpLand` are light events with no hitstop. Trauma is later clamped to 1.0 by `resolveHitReaction`.
+- `resolveHitReaction` (function): function resolveHitReaction(config: HitReactionConfig | ImpactPresetName, input: HitReactionInput): HitReaction — Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", input)`) or a raw `HitReactionConfig` override.
 
 ## @jgengine/core/combat/magazine
 

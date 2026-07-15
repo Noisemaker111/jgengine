@@ -442,7 +442,6 @@
   "@jgengine/core/combat/hitReaction#HitReactionConfig",
   "@jgengine/core/combat/hitReaction#HitReactionInput",
   "@jgengine/core/combat/hitReaction#applyImpulse",
-  "@jgengine/core/combat/hitReaction#resolveHitReaction",
   "@jgengine/core/combat/projectiles#EntityRaycastHit",
   "@jgengine/core/combat/projectiles#ObjectRaycastHit",
   "@jgengine/core/combat/projectiles#ProjectileHit",

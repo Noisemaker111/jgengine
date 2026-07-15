@@ -731,6 +731,10 @@
 
 ## @jgengine/shell/camera
 
+- `CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND: 1.4 — Calibrated trauma decay for `traumaShake`/`impactPresets` (trauma/second).
+- `CALIBRATED_TRAUMA_SHAKE_FREQUENCY` (const): const CALIBRATED_TRAUMA_SHAKE_FREQUENCY: 32 — Calibrated shake noise frequency (Hz) for `traumaShake`.
+- `CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET: 0.55 — Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`.
+- `CALIBRATED_TRAUMA_SHAKE_MAX_ROLL` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL: 0.1 — Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`.
 - `CAMERA_POST_FRAME_PRIORITY` (const): const CAMERA_POST_FRAME_PRIORITY: number — ⚠ undocumented
 - `CAMERA_RIG_FRAME_PRIORITY` (const): const CAMERA_RIG_FRAME_PRIORITY: -1 — ⚠ undocumented
 - `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
@@ -844,6 +848,7 @@
 - `springArmStep` (function): function springArmStep(current: Vec3, desired: Vec3, damping: number, dt: number): Vec3 — Exponential spring-arm approach toward a desired point (frame-rate independent).
 - `stepTrauma` (function): function stepTrauma(state: TraumaState, decayPerSecond: number, dt: number): void — Decay trauma linearly toward 0 and advance the shake clock.
 - `topDownPose` (function): function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number): CameraPose — Camera pose for a fixed top-down / isometric rig. `pitch` is the elevation of the camera→target ray above the ground (PI/2 = straight down); `yaw` is the fixed azimuth (PI/4 reads isometric). Height sets zoom; horizontal boom is derived so the look angle stays constant as height changes.
+- `traumaShake` (function): function traumaShake(trauma: number, time = 0): ShakeOffset — Calibrated trauma² camera shake: offset scales with `trauma` squared using game-feel defaults (decay 1.4/s, max offset 0.55, max roll 0.1 rad, noise freq 32×t) — the curve `impactPresets` trauma values are calibrated against, so an impact "just looks right" without hand-tuning `shakeOffset`.
 - `useCameraShake` (function): function useCameraShake(): CameraShakeChannel — The active rig's shake channel — call `.shake(...)` to add trauma from React UI.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 - `yawTo` (function): function yawTo(from: Vec3, to: Vec3): number — Yaw that points from `from` toward `to` on the XZ plane (matches shell forward = (sin, cos)).
@@ -954,6 +959,10 @@
 
 ## @jgengine/shell/camera/rigMath
 
+- `CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND: 1.4 — Calibrated trauma decay for `traumaShake`/`impactPresets` (trauma/second).
+- `CALIBRATED_TRAUMA_SHAKE_FREQUENCY` (const): const CALIBRATED_TRAUMA_SHAKE_FREQUENCY: 32 — Calibrated shake noise frequency (Hz) for `traumaShake`.
+- `CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET: 0.55 — Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`.
+- `CALIBRATED_TRAUMA_SHAKE_MAX_ROLL` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL: 0.1 — Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`.
 - `CameraPose` (interface): interface CameraPose — ⚠ undocumented
 - `CinematicSample` (interface): interface CinematicSample — ⚠ undocumented
 - `DirectorCameraValues` (interface): interface DirectorCameraValues — ⚠ undocumented
@@ -1000,6 +1009,7 @@
 - `springArmStep` (function): function springArmStep(current: Vec3, desired: Vec3, damping: number, dt: number): Vec3 — Exponential spring-arm approach toward a desired point (frame-rate independent).
 - `stepTrauma` (function): function stepTrauma(state: TraumaState, decayPerSecond: number, dt: number): void — Decay trauma linearly toward 0 and advance the shake clock.
 - `topDownPose` (function): function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number): CameraPose — Camera pose for a fixed top-down / isometric rig. `pitch` is the elevation of the camera→target ray above the ground (PI/2 = straight down); `yaw` is the fixed azimuth (PI/4 reads isometric). Height sets zoom; horizontal boom is derived so the look angle stays constant as height changes.
+- `traumaShake` (function): function traumaShake(trauma: number, time = 0): ShakeOffset — Calibrated trauma² camera shake: offset scales with `trauma` squared using game-feel defaults (decay 1.4/s, max offset 0.55, max roll 0.1 rad, noise freq 32×t) — the curve `impactPresets` trauma values are calibrated against, so an impact "just looks right" without hand-tuning `shakeOffset`.
 - `yawTo` (function): function yawTo(from: Vec3, to: Vec3): number — Yaw that points from `from` toward `to` on the XZ plane (matches shell forward = (sin, cos)).
 
 ## @jgengine/shell/camera/rigResolve

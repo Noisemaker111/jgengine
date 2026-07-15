@@ -8,6 +8,7 @@ import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
 import { useCameraShake } from "../camera/shakeChannel";
+import { CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND } from "../camera/rigMath";
 import { readFirstPersonMuzzle } from "../camera/GameFirstPersonCamera";
 import { resolveFloatTextStyle } from "./floatTextStyle";
 import {
@@ -444,6 +445,10 @@ export function CombatCameraShake() {
   const shake = useCameraShake();
   useEffect(() => {
     return ctx.game.events.on("combat.hitReaction", (event) => {
+      if (event.trauma !== undefined) {
+        shake.shake(event.trauma, CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND);
+        return;
+      }
       if (event.shake === undefined) return;
       shake.shake(event.shake.amplitude, event.shake.decay);
     });
