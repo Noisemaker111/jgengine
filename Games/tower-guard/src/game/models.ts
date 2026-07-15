@@ -1,9 +1,9 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
+import { assets } from "./assets";
 import { BASE_CATALOG_ID } from "./entities/base/catalog";
 import { CREEP_CATALOG, type CreepDef } from "./entities/enemies/catalog";
 
-const CASTLE = "/models/kenney-castle";
 const TOWER_DEFENSE = "/models/kenney-tower-defense";
 const ARENA = "/models/kenney-mini-arena";
 
@@ -29,8 +29,30 @@ const TOWER_MODEL: Record<string, ModelConfig> = {
   },
 };
 
+const KEEP_MODULE_HEIGHT = 1.01;
+const KEEP_SCALE = 1.6;
+const keepBase = assets.resolve("kenney-castle/tower-square-base")!;
+
+const KEEP_MODEL: ModelConfig = {
+  url: keepBase.url,
+  dims: keepBase.dims,
+  scale: KEEP_SCALE,
+  parts: [
+    {
+      model: "kenney-castle/tower-square-mid-windows",
+      position: [0, KEEP_MODULE_HEIGHT * KEEP_SCALE, 0],
+      scale: KEEP_SCALE,
+    },
+    {
+      model: "kenney-castle/tower-square-roof",
+      position: [0, KEEP_MODULE_HEIGHT * 2 * KEEP_SCALE, 0],
+      scale: KEEP_SCALE,
+    },
+  ],
+};
+
 export const entityModels: Record<string, ModelConfig> = {
-  [BASE_CATALOG_ID]: { url: `${CASTLE}/tower-square-top-roof-high-windows.glb`, targetHeight: 6.5 },
+  [BASE_CATALOG_ID]: KEEP_MODEL,
   ...TOWER_MODEL,
   ...Object.fromEntries(Object.values(CREEP_CATALOG).map((def) => [def.id, raiderModel(def)])),
 };
