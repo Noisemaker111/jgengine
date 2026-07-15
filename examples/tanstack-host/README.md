@@ -54,4 +54,4 @@ Reads match `createHttpReads({ baseUrl, gameId })` from `@jgengine/ws/httpReads`
 `/api/servers`, `/api/leaderboard/:stat`, `/api/leaderboard-profile/:userId`,
 `/api/profile/:userId` — all take `?gameId=...`.
 
-Set `VITE_GAME_ID` to switch the mounted game away from the `nonogram` default.
+Set `VITE_GAME_ID` to switch the mounted game away from the `spire-cards` default.

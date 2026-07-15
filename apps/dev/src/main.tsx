@@ -151,7 +151,7 @@ const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 const P2P_ROLE = urlParams.get("p2p");
 
-const FEATURED_GAMES = ["the-robots", "monument", "claudecraft", "loot-shooter"] as const;
+const FEATURED_GAMES = ["the-robots", "loopline", "vice-isle", "claudecraft"] as const;
 
 function GamePicker() {
   const ids = Object.keys(gameRegistry).sort();

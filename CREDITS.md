@@ -57,19 +57,6 @@ credit the originators here, in the game's on-screen HUD, and on its page at
 jgengine.com/games/&lt;id&gt; (via the `credit` field in
 [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts)).
 
-### Ethan Mollick — *Monument*
-
-**[Monument](Games/monument)** is a full port of
-**[Ethan Mollick](https://x.com/emollick)**'s (@emollick)
-**[monument-brutalist-city-builder](https://github.com/emollick/monument-brutalist-city-builder)**
-(MIT License, © 2026 Ethan Mollick) — a brutalist-architecture city toy where
-you sculpt parametric megastructures with direct handles and watch the district
-live through day and night, with no economy and no fail state. Our version
-rebuilds it on the engine and promotes its parametric massing grammar (nine
-compositions × six profiles) into `@jgengine/core/world/massing`, where every
-future city game can reach it. The design, catalogs, formulas, and the
-data-not-meshes architecture are his.
-
 ### Levy Street — *World of ClaudeCraft*
 
 **[World of ClaudeCraft](Games/claudecraft)** is a port of
@@ -94,7 +81,4 @@ in [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
 
 | Game | id | Lineage |
 | --- | --- | --- |
-| **[Nonogram](Games/nonogram)** | `nonogram` | **Non Ishida** and **Tetsuya Nishio**'s independently invented picture-logic puzzle (1987). |
-| **[Star Invaders](Games/star-invaders)** | `star-invaders` | **Tomohiro Nishikado**'s **Space Invaders**, Taito (1978). |
-| **[Pinball](Games/pinball)** | `pinball` | Traditional solid-state pinball — genre homage. |
 | **[Vice Isle](Games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |

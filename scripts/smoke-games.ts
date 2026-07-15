@@ -13,7 +13,7 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
-const GAMES = ["craterball", "loot-shooter", "drone-derby", "nonogram"];
+const GAMES = ["vice-isle", "the-robots", "wreckway", "spire-cards"];
 const root = resolve(import.meta.dir, "..");
 
 function boot(game: string): Promise<number> {

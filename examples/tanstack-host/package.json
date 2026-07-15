@@ -10,7 +10,7 @@
     "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@games/nonogram": "workspace:*",
+    "@games/spire-cards": "workspace:*",
     "@jgengine/core": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/shell": "workspace:*",
