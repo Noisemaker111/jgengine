@@ -17,6 +17,8 @@
     "paths": {
       "@/components/ui/*": ["../../registry/jgengine/*"],
       "@jgengine/shell/*": ["../../packages/shell/src/*"],
+      "@jgengine/editor": ["../../packages/editor/src/index.ts"],
+      "@jgengine/editor/*": ["../../packages/editor/src/*"],
       "@jgengine/assets": ["../../packages/assets/src/index.ts"],
       "@jgengine/assets/*": ["../../packages/assets/src/*"],
       "@jgengine/github": ["../../packages/github/src/index.ts"],
@@ -27,5 +29,6 @@
       "@jgengine/convex/*": ["../../packages/convex/src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }
