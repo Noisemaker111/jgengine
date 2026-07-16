@@ -77,6 +77,9 @@ export interface QuestJournal {
   bind(action: "entity.died" | "inventory.added"): () => void;
   snapshot(userId: string): QuestSnapshotEntry[];
   hydrate(userId: string, data: QuestSnapshotEntry[]): void;
+  /** Whole-store capture across every user — the world-save/replication seam (per-user `snapshot` can't enumerate users). */
+  snapshotAll(): Record<string, QuestSnapshotEntry[]>;
+  hydrateAll(data: Record<string, QuestSnapshotEntry[]>): void;
 }
 
 interface QuestState {
@@ -305,6 +308,30 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
         });
       }
       users.set(userId, quests);
+    },
+    snapshotAll() {
+      const out: Record<string, QuestSnapshotEntry[]> = {};
+      for (const [userId, quests] of users) {
+        out[userId] = Array.from(quests, ([questId, state]) => ({
+          questId,
+          status: state.status,
+          progress: Object.fromEntries(state.progress),
+        }));
+      }
+      return out;
+    },
+    hydrateAll(data) {
+      users.clear();
+      for (const [userId, entries] of Object.entries(data)) {
+        const quests = new Map<string, QuestState>();
+        for (const entry of entries) {
+          quests.set(entry.questId, {
+            status: entry.status,
+            progress: new Map(Object.entries(entry.progress)),
+          });
+        }
+        users.set(userId, quests);
+      }
     },
   };
 }

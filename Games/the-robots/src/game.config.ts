@@ -145,6 +145,7 @@ export const game = defineGame({
   input: keybinds,
   server: { mode: "campaign" },
   save: "none",
+  persist: true,
   multiplayer: offline(),
   content,
   loop,

@@ -1,8 +1,9 @@
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { activeCharacter, talentTree } from "./game/characters";
-import { registerCommands, restoreSavedBuild } from "./game/commands";
+import { registerCommands, resumeBuild } from "./game/commands";
 import { noteEquipped, noteGameNow, noteLevelUp } from "./game/feel";
 import { tickEnemies } from "./game/entities/enemies/ai";
 import { enemyById, levelXpFor } from "./game/entities/enemies/catalog";
@@ -220,6 +221,7 @@ function onInit(ctx: GameContext): void {
     const reward = quests.find((quest) => quest.id === event.questId)?.rewards;
     if (reward?.xp !== undefined) grantXp(ctx, event.userId, reward.xp.amount);
     ctx.scene.entity.floatText({ instanceId: event.userId, text: "MISSION COMPLETE", kind: "pickup" });
+    void ctx.game.save?.checkpoint();
   });
 
   setupWorld(ctx);
@@ -239,7 +241,23 @@ function onNewPlayer(ctx: GameContext): void {
   ctx.game.quest!.accept(ctx.player.userId, QUEST_IDS.skagDogDays);
   session.reset(ctx);
   noteEquipped(ctx.player.inventory.state("hotbar").slots[0]?.itemId ?? null);
-  restoreSavedBuild(ctx);
+  void resumeOrStart(ctx);
+}
+
+/**
+ * The fresh spawn above is a baseline; the whole-world save decides the real boot. `load()` restores
+ * every persisted subsystem (entities, stats, inventory, economy, quests, the character-id/talent-rank
+ * stores) over that baseline, then `resumeBuild` re-derives the module-level character/talent singletons
+ * and drops straight into play. Otherwise (or when the save predates a character pick) we open character
+ * select — but never override a phase the capture harness's `character.pick` may have set concurrently.
+ */
+async function resumeOrStart(ctx: GameContext): Promise<void> {
+  const save = ctx.game.save;
+  if (save !== undefined && (await save.load()) && resumeBuild(ctx)) {
+    setGamePhase(ctx, "playing");
+    return;
+  }
+  if (activeCharacter() === null) setGamePhase(ctx, "menu");
 }
 
 function onTick(ctx: GameContext, dt: number): void {
