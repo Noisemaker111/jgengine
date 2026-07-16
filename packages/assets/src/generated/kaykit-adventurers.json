@@ -1,0 +1,107 @@
+[
+  {
+    "id": "kaykit-adventurers/Barbarian",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Barbarian.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.974894997129568,
+        "d": 1.8502591910222737
+      },
+      "center": {
+        "x": -0.015458569234047537,
+        "z": 0.3998250197287797
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Knight",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Knight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.6892934902919494,
+        "d": 2.577180897666162
+      },
+      "center": {
+        "x": 0.04200405905131843,
+        "z": 0.7091565314913972
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Mage",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Mage.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.425716446903504,
+        "d": 2.5448104818275112
+      },
+      "center": {
+        "x": 0.08435849880093571,
+        "z": -0.018152036592924414
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Rogue_Hooded",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Rogue_Hooded.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.9449818820744484,
+        "d": 1.5483866200865448
+      },
+      "center": {
+        "x": -0.4691928529064687,
+        "z": 0.20674141575997773
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Rogue",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Rogue.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.9449818820744484,
+        "d": 1.4772370622576416
+      },
+      "center": {
+        "x": -0.4691928529064687,
+        "z": 0.24231619467442933
+      },
+      "minY": -0.000026527046429691836
+    }
+  }
+]

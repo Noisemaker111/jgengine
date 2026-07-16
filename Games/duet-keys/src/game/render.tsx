@@ -48,6 +48,15 @@ function tinted(id: string, material: ModelMaterialOverride): ModelConfig {
   return { url: entry.url, dims: entry.dims, material };
 }
 
+function scaled(id: string, scale: number): ModelConfig {
+  const entry = resolveModel(id);
+  return { url: entry.url, dims: entry.dims, scale };
+}
+
+/** kaykit-dungeon ships on its own ~4-unit tile grid; scale brings a piece down to this game's
+ * 1-unit grid (a pillar's 1.5-unit footprint * 0.6 ≈ 0.9, comfortably inside one cell). */
+const WALL_SCALE = 0.6;
+
 /** Warm every dungeon-kit id into `useLoader`'s cache before the Canvas's render loop starts
  * competing for the main thread — `useLoader` inside an active `useFrame` loop can starve the
  * fetch/parse continuation for a very long time on a busy machine; preloading while the page is
@@ -58,7 +67,7 @@ for (const id of Object.values(DUNGEON)) {
 
 /** Wall/emitter/exit tiles never change look at runtime — resolved once as a static `objectModels` map. */
 export const objectModels: Record<string, string | ModelConfig> = {
-  wall: DUNGEON.wall,
+  wall: scaled(DUNGEON.wall, WALL_SCALE),
   emitter: tinted(DUNGEON.rocks, {
     color: objectStyles.emitter.color,
     emissive: "#bafcff",
@@ -83,6 +92,12 @@ const TINTED_OBJECT_MODELS: Partial<Record<ObjectId, string>> = {
   plate: DUNGEON.floorDetail,
   receiver: DUNGEON.column,
   spike: DUNGEON.trap,
+};
+
+/** `gate.glb`'s footprint (0.8 x 0.2 x ~1) reads as a thin dark sliver at scale 1 — enlarged so a
+ * closed door fills its cell instead of looking like a stray dark block. */
+const TINTED_OBJECT_SCALE: Partial<Record<ObjectId, number>> = {
+  gate: 1.7,
 };
 
 class ModelErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -162,11 +177,11 @@ function HeroMesh({ entity }: { entity: SceneEntity }) {
     {
       color: hero.color,
       emissive: hero.glow,
-      emissiveIntensity: isActive ? 0.85 : 0.3,
+      emissiveIntensity: isActive ? 0.35 : 0.12,
     },
-    "static",
+    "Idle",
   );
-  const heroScale = 1.5;
+  const heroScale = 0.4;
   const position = centeredPosition(entry, 0, heroScale);
   return (
     <group>
@@ -191,16 +206,18 @@ export function renderHero(entity: SceneEntity): ReactNode {
 /** Gate/plate/receiver/spike: real dungeon-kit props whose tint (and, via the object's own
  * position — sunk/raised by `applyRoomVisuals`) communicate the live puzzle state. */
 function DungeonObjectMesh({ object }: { object: SceneObject }) {
-  const modelId = TINTED_OBJECT_MODELS[object.catalogId as ObjectId]!;
+  const catalogId = object.catalogId as ObjectId;
+  const modelId = TINTED_OBJECT_MODELS[catalogId]!;
+  const scale = TINTED_OBJECT_SCALE[catalogId] ?? 1;
   const color = object.visual?.color;
   const opacity = object.visual?.opacity ?? 1;
   const { scene, entry } = useDungeonScene(
     modelId,
-    color === undefined ? undefined : { color, emissive: color, emissiveIntensity: 0.35 },
+    color === undefined ? undefined : { color, emissive: color, emissiveIntensity: 0.5 },
   );
   useEffect(() => setOpacity(scene, opacity), [scene, opacity]);
-  const position = centeredPosition(entry);
-  return <primitive object={scene} position={position} />;
+  const position = centeredPosition(entry, 0, scale);
+  return <primitive object={scene} position={position} scale={scale} />;
 }
 
 export function renderDuetObject(object: SceneObject): ReactNode {

@@ -1,10 +1,13 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-export const assets: AssetCatalog = buildCatalog({ basePath: "/models", sources: ["kenney-mini-dungeon"] });
+export const assets: AssetCatalog = buildCatalog({
+  basePath: "/models",
+  sources: ["kenney-mini-dungeon", "kaykit-dungeon", "kaykit-adventurers"],
+});
 
 export const DUNGEON = {
-  wall: "kenney-mini-dungeon/wall",
+  wall: "kaykit-dungeon/pillar.gltf",
   floor: "kenney-mini-dungeon/floor",
   floorDetail: "kenney-mini-dungeon/floor-detail",
   dirt: "kenney-mini-dungeon/dirt",
@@ -15,8 +18,8 @@ export const DUNGEON = {
   rocks: "kenney-mini-dungeon/rocks",
   stones: "kenney-mini-dungeon/stones",
   coin: "kenney-mini-dungeon/coin",
-  humanHero: "kenney-mini-dungeon/character-human",
-  orcHero: "kenney-mini-dungeon/character-orc",
+  humanHero: "kaykit-adventurers/Mage",
+  orcHero: "kaykit-adventurers/Barbarian",
 } as const;
 
 export const FLOOR_VARIANTS = [DUNGEON.floor, DUNGEON.floorDetail, DUNGEON.dirt] as const;
