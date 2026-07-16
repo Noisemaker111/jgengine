@@ -179,6 +179,100 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     },
   },
   {
+    name: "push_document_patch",
+    description:
+      "Apply a versioned document patch (snapshot or commands) over the live-sync bus. Document is authoritative; force skips baseRevision checks.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        patch: { type: "object" },
+        force: { type: "boolean" },
+      },
+      required: ["patch"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "pull_document_patches",
+    description: "Pull document patches after a known revision (live-sync stream for a running game).",
+    inputSchema: {
+      type: "object",
+      properties: { sinceRevision: { type: "number" } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "document_revision",
+    description: "Current live-sync document revision; optionally include the full document.",
+    inputSchema: {
+      type: "object",
+      properties: { includeDocument: { type: "boolean" } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "push_runtime_delta",
+    description:
+      "Publish ephemeral runtime state (entities/tunables) on the reverse channel — does not mutate the document.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        at: { type: "number" },
+        entities: { type: "array" },
+        removeIds: { type: "array", items: { type: "string" } },
+        tunables: { type: "object" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "pull_runtime_deltas",
+    description: "Pull runtime state deltas after a known seq (feeds play-mode inspector).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sinceSeq: { type: "number" },
+        includeSnapshot: { type: "boolean" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "runtime_snapshot",
+    description: "Full ephemeral runtime state snapshot from the reverse channel.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "set_runtime_override",
+    description: "Set an ephemeral runtime override (play-mode poke). Document stays authoritative until write_back_override.",
+    inputSchema: {
+      type: "object",
+      properties: { entity: { type: "object" } },
+      required: ["entity"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "clear_runtime_override",
+    description: "Drop an ephemeral runtime override without writing it into the document.",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" } },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "write_back_override",
+    description: "Promote an ephemeral runtime override into an undoable document edit (document becomes source of truth).",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string" } },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "undo",
     description: "Undo the last structural editor edit.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },

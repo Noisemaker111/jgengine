@@ -72,3 +72,18 @@ export type { EditorDispatchOptions } from "./commands";
 export type { EditorSession } from "./commands";
 /** The document plus current selection at a point in editor history. */
 export type { EditorSessionState } from "./commands";
+export {
+  applyDocumentPatch,
+  applyRuntimeStateDelta,
+  createDocumentLiveSync,
+  getDocumentLiveSync,
+  installDocumentLiveSync,
+  runtimeEntityWriteBackCommand,
+  subscribeDocumentLiveSyncInstall,
+} from "./liveSync";
+/** Versioned document mutation on the editor↔runtime live-sync stream. */
+export type { DocumentPatch, ApplyDocumentPatchResult } from "./liveSync";
+/** Two-way live-sync bus: document patches out, runtime state deltas back. */
+export type { DocumentLiveSync, DocumentLiveEvent } from "./liveSync";
+/** Ephemeral runtime entity/tunable state streamed on the reverse channel. */
+export type { RuntimeEntityState, RuntimeStateDelta, RuntimeStateSnapshot } from "./liveSync";

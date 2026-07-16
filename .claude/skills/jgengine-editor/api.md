@@ -4,6 +4,10 @@
 
 ## @jgengine/core/editor
 
+- `ApplyDocumentPatchResult` (type): type ApplyDocumentPatchResult = | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch } | { ok: false; error: string } — Result of applying a {@link DocumentPatch} to a document + revision pair.
+- `DocumentLiveEvent` (interface): interface DocumentLiveEvent — Event emitted when the authoritative document changes on a {@link DocumentLiveSync}.
+- `DocumentLiveSync` (interface): interface DocumentLiveSync — Two-way live-sync bus: document patches out, runtime state deltas back.
+- `DocumentPatch` (type): type DocumentPatch = | { type: "snapshot"; revision?: number; baseRevision: number; document: EditorDocument; } | { type: "commands"; revision?: number; baseRevision: number; commands: readonly EditorCommand[]; } — One versioned document mutation on the live-sync stream. `snapshot` replaces the whole document; `commands` replays structural editor commands onto the current document. `baseRevision` must match the receiver's current revision unless `force` is set (document authority from the editor).
 - `EditorCollection` (interface): interface EditorCollection — A named, persisted list of object ids — a selection bookmark (restore, add-to) that can also double as a production group: `locked` blocks `translate`/`setTransform`/`remove`/`removeMany` on its members, `color`/`visible` are UI-only hints for the collections panel.
 - `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "setParent"; ids: readonly string[]; parentId:… — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
@@ -21,9 +25,19 @@
 - `EditorVec3` (type): type EditorVec3 = { x: number; y: number; z: number } — A world-space point used across editor markers, volumes, and paths.
 - `EditorVolume` (interface): interface EditorVolume — A spatial region — zone, aggro range, capture area — placed in the scene.
 - `EditorVolumeShape` (type): type EditorVolumeShape = "sphere" | "cylinder" | "box" — Collision shape a volume is rendered and tested as.
+- `RuntimeEntityState` (interface): interface RuntimeEntityState — One live entity row the runtime may stream to the editor (play-mode inspector feed).
+- `RuntimeStateDelta` (interface): interface RuntimeStateDelta — Incremental runtime state for the reverse channel. Entity rows upsert by id; `removeIds` drop rows; `tunables` shallow-merge. Ephemeral unless written back as a document patch.
+- `RuntimeStateSnapshot` (interface): interface RuntimeStateSnapshot — Full ephemeral runtime view held on the reverse channel — never mutates the document.
 - `WELL_KNOWN_MARKER_KINDS` (const): const WELL_KNOWN_MARKER_KINDS: readonly ["player_spawn", "mob", "boss", "vendor", "chest", "travel", "npc", "poi", "prop", "goal", "branch"] — Standard marker kinds recognized with default colors and behavior.
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
+- `applyDocumentPatch` (function): function applyDocumentPatch(document: EditorDocument, revision: number, patch: DocumentPatch, options?: { force?: boolean }): ApplyDocumentPatchResult — Applies a versioned document patch. Rejects base-revision mismatches unless `force` (document is authoritative — the editor forces when publishing its own session state).
+- `applyRuntimeStateDelta` (function): function applyRuntimeStateDelta(snapshot: RuntimeStateSnapshot, delta: Omit<RuntimeStateDelta, "seq"> & { seq?: number }): { snapshot: RuntimeStateSnapshot; delta: RuntimeStateDelta } — Merges a runtime delta into a snapshot without touching the scene document — runtime overrides stay ephemeral until an explicit write-back produces a document patch.
+- `createDocumentLiveSync` (function): function createDocumentLiveSync(initial: EditorDocument): DocumentLiveSync — Creates an in-memory two-way live-sync bus seeded from an initial document. Document is authoritative; runtime overrides are ephemeral until {@link DocumentLiveSync.writeBackOverride}.
+- `getDocumentLiveSync` (function): function getDocumentLiveSync(): DocumentLiveSync | null — Returns the globally installed live-sync bus, or null when none is mounted.
+- `installDocumentLiveSync` (function): function installDocumentLiveSync(sync: DocumentLiveSync): () => void — Publishes a live-sync bus globally so AuthoredScene / games can subscribe without prop drilling.
+- `runtimeEntityWriteBackCommand` (function): function runtimeEntityWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Builds an undoable document command from an ephemeral runtime entity row (write-back). Returns null when there is nothing to promote. Does not mutate document or clear the override — the caller dispatches the command and then clears the override.
+- `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
 
 ## @jgengine/core/editor/commands
 
@@ -31,6 +45,23 @@
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
+
+## @jgengine/core/editor/liveSync
+
+- `ApplyDocumentPatchResult` (type): type ApplyDocumentPatchResult = | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch } | { ok: false; error: string } — Result of applying a {@link DocumentPatch} to a document + revision pair.
+- `DocumentLiveEvent` (interface): interface DocumentLiveEvent — Event emitted when the authoritative document changes on a {@link DocumentLiveSync}.
+- `DocumentLiveSync` (interface): interface DocumentLiveSync — Two-way live-sync bus: document patches out, runtime state deltas back.
+- `DocumentPatch` (type): type DocumentPatch = | { type: "snapshot"; revision?: number; baseRevision: number; document: EditorDocument; } | { type: "commands"; revision?: number; baseRevision: number; commands: readonly EditorCommand[]; } — One versioned document mutation on the live-sync stream. `snapshot` replaces the whole document; `commands` replays structural editor commands onto the current document. `baseRevision` must match the receiver's current revision unless `force` is set (document authority from the editor).
+- `RuntimeEntityState` (interface): interface RuntimeEntityState — One live entity row the runtime may stream to the editor (play-mode inspector feed).
+- `RuntimeStateDelta` (interface): interface RuntimeStateDelta — Incremental runtime state for the reverse channel. Entity rows upsert by id; `removeIds` drop rows; `tunables` shallow-merge. Ephemeral unless written back as a document patch.
+- `RuntimeStateSnapshot` (interface): interface RuntimeStateSnapshot — Full ephemeral runtime view held on the reverse channel — never mutates the document.
+- `applyDocumentPatch` (function): function applyDocumentPatch(document: EditorDocument, revision: number, patch: DocumentPatch, options?: { force?: boolean }): ApplyDocumentPatchResult — Applies a versioned document patch. Rejects base-revision mismatches unless `force` (document is authoritative — the editor forces when publishing its own session state).
+- `applyRuntimeStateDelta` (function): function applyRuntimeStateDelta(snapshot: RuntimeStateSnapshot, delta: Omit<RuntimeStateDelta, "seq"> & { seq?: number }): { snapshot: RuntimeStateSnapshot; delta: RuntimeStateDelta } — Merges a runtime delta into a snapshot without touching the scene document — runtime overrides stay ephemeral until an explicit write-back produces a document patch.
+- `createDocumentLiveSync` (function): function createDocumentLiveSync(initial: EditorDocument): DocumentLiveSync — Creates an in-memory two-way live-sync bus seeded from an initial document. Document is authoritative; runtime overrides are ephemeral until {@link DocumentLiveSync.writeBackOverride}.
+- `getDocumentLiveSync` (function): function getDocumentLiveSync(): DocumentLiveSync | null — Returns the globally installed live-sync bus, or null when none is mounted.
+- `installDocumentLiveSync` (function): function installDocumentLiveSync(sync: DocumentLiveSync): () => void — Publishes a live-sync bus globally so AuthoredScene / games can subscribe without prop drilling.
+- `runtimeEntityWriteBackCommand` (function): function runtimeEntityWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Builds an undoable document command from an ephemeral runtime entity row (write-back). Returns null when there is nothing to promote. Does not mutate document or clear the override — the caller dispatches the command and then clears the override.
+- `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
 
 ## @jgengine/core/editor/types
 

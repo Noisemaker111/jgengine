@@ -297,4 +297,74 @@ describe("editor host RPC", () => {
     unsub();
     dispose();
   });
+
+  test("live-sync: session edits publish document patches; reverse channel is ephemeral until write-back", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [{ id: "boss", kind: "boss", position: { x: 0, y: 0, z: 0 } }],
+      },
+    });
+
+    const revisions: number[] = [];
+    const unsub = api.getLiveSync().subscribeDocument((event) => revisions.push(event.revision));
+
+    const moved = api.handle({ method: "set_transform", id: "boss", x: 12, z: -4 });
+    expect(moved.ok).toBe(true);
+    expect(revisions.length).toBeGreaterThanOrEqual(1);
+
+    const rev = api.handle({ method: "document_revision", includeDocument: true });
+    expect(rev.ok).toBe(true);
+    const revResult = rev.result as { revision: number; document: { markers: { position: { x: number } }[] } };
+    expect(revResult.revision).toBeGreaterThanOrEqual(1);
+    expect(revResult.document.markers[0]?.position.x).toBe(12);
+
+    const pulled = api.handle({ method: "pull_document_patches", sinceRevision: 0 });
+    expect((pulled.result as { patches: unknown[] }).patches.length).toBeGreaterThanOrEqual(1);
+
+    const commandPatch = api.handle({
+      method: "push_document_patch",
+      patch: {
+        type: "commands",
+        baseRevision: revResult.revision,
+        commands: [{ type: "setTransform", id: "boss", position: { x: 99, y: 0, z: 0 } }],
+      },
+    });
+    expect(commandPatch.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(99);
+
+    const stale = api.handle({
+      method: "push_document_patch",
+      patch: {
+        type: "commands",
+        baseRevision: 0,
+        commands: [{ type: "setTransform", id: "boss", position: { x: 1, y: 0, z: 0 } }],
+      },
+    });
+    expect(stale.ok).toBe(false);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(99);
+
+    const runtime = api.handle({
+      method: "push_runtime_delta",
+      entities: [{ id: "boss", position: { x: 7, y: 0, z: 7 } }],
+      tunables: { paused: true },
+    });
+    expect(runtime.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(99);
+
+    const snap = api.handle({ method: "runtime_snapshot" });
+    expect((snap.result as { entities: { boss: { position: { x: number } } } }).entities.boss.position.x).toBe(7);
+
+    api.handle({ method: "set_runtime_override", entity: { id: "boss", position: { x: 3, y: 0, z: 3 } } });
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(99);
+    const written = api.handle({ method: "write_back_override", id: "boss" });
+    expect(written.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(3);
+
+    const deltas = api.handle({ method: "pull_runtime_deltas", sinceSeq: 0, includeSnapshot: true });
+    expect((deltas.result as { deltas: unknown[] }).deltas.length).toBeGreaterThanOrEqual(1);
+
+    unsub();
+    dispose();
+  });
 });

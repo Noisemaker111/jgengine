@@ -1,7 +1,11 @@
-import { Fragment, useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
+import {
+  getDocumentLiveSync,
+  subscribeDocumentLiveSyncInstall,
+} from "@jgengine/core/editor/index";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
@@ -16,6 +20,41 @@ import { InstancedScatter } from "../scatter/InstancedScatter";
 import { GeneratedAssetInstance } from "./GeneratedAssetRenderer";
 import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+
+/**
+ * Resolves the document AuthoredScene renders: when a {@link getDocumentLiveSync} bus is
+ * installed (editor host live), subscribe to document patches; otherwise use the prop.
+ * Document is authoritative — runtime overrides never land here unless written back.
+ * @internal
+ */
+export function useLiveEditorDocument(document: EditorDocument, live = true): EditorDocument {
+  const [resolved, setResolved] = useState(document);
+  useEffect(() => {
+    if (!live) {
+      setResolved(document);
+      return;
+    }
+    let unsubDoc: (() => void) | undefined;
+    const attach = () => {
+      unsubDoc?.();
+      unsubDoc = undefined;
+      const sync = getDocumentLiveSync();
+      if (sync === null) {
+        setResolved(document);
+        return;
+      }
+      setResolved(sync.getDocument());
+      unsubDoc = sync.subscribeDocument((event) => setResolved(event.document));
+    };
+    attach();
+    const unsubInstall = subscribeDocumentLiveSyncInstall(attach);
+    return () => {
+      unsubInstall();
+      unsubDoc?.();
+    };
+  }, [document, live]);
+  return live ? resolved : document;
+}
 
 registerBuiltinSceneKindRenderers();
 
@@ -176,28 +215,47 @@ export interface AuthoredSceneProps {
   scatterModels?: Record<string, string | ModelConfig>;
   /** Catalog `scatterModels` string ids resolve through; required together with `scatterModels`. */
   assets?: AssetCatalog;
+  /**
+   * When true (default), subscribe to the global document live-sync bus if the editor host is
+   * mounted so headless/RPC document patches hot-apply without a full reload. Pass false to pin
+   * the `document` prop (tests, one-shot previews).
+   */
+  live?: boolean;
 }
 
 /**
  * Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one
  * mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor:
  * drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke
- * render code. Terrain/collision come from the world's ground field (`environment({ sculpt })`);
+ * render code. When a live-sync bus is installed (editor host), document patches stream in and
+ * re-render automatically — document is authoritative; runtime overrides stay ephemeral unless
+ * written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`);
  * place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to
  * real catalog GLBs; unmapped items keep the stylized proxy.
  */
-export function AuthoredScene({ document, field, pathKinds, scatterModels, assets }: AuthoredSceneProps) {
-  const instances = useMemo(() => resolveScatter(document, field), [document, field]);
+export function AuthoredScene({
+  document,
+  field,
+  pathKinds,
+  scatterModels,
+  assets,
+  live = true,
+}: AuthoredSceneProps) {
+  const liveDocument = useLiveEditorDocument(document, live);
+  const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
   const resolveItem = useMemo(
     () => createModelMapResolver(scatterModels, assets, "scatterModels"),
     [scatterModels, assets],
   );
   return (
     <>
-      <AuthoredPaths document={document} field={field} {...(pathKinds === undefined ? {} : { kinds: pathKinds })} />
+      <AuthoredPaths document={liveDocument} field={field} {...(pathKinds === undefined ? {} : { kinds: pathKinds })} />
       <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
-      <AuthoredStudios document={document} context={{ document, field, ...(assets === undefined ? {} : { assets }) }} />
-      <AuthoredGenerators document={document} field={field} />
+      <AuthoredStudios
+        document={liveDocument}
+        context={{ document: liveDocument, field, ...(assets === undefined ? {} : { assets }) }}
+      />
+      <AuthoredGenerators document={liveDocument} field={field} />
     </>
   );
 }
