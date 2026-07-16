@@ -1064,6 +1064,25 @@
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
 
+## @jgengine/core/item/generation
+
+- `ChooseSpec` (interface): interface ChooseSpec<T> — Configuration for a {@link choose} step.
+- `GenFailure` (interface): interface GenFailure — A generation that exhausted its attempt budget without producing a valid output.
+- `GenOption` (interface): interface GenOption<T> — A weighted candidate for a {@link choose} step. `weight` defaults to 1 (uniform).
+- `GenPipeline` (interface): interface GenPipeline<TOut> — A composable generation pipeline over caller-defined slots, assembled into a typed output `TOut`.
+- `GenResult` (type): type GenResult<TOut> = GenSuccess<TOut> | GenFailure — The outcome of {@link generate}: a successful output with provenance, or a bounded-attempt failure.
+- `GenRng` (type): type GenRng = () => number — Injected randomness — the same `() => number` in `[0, 1)` contract used across core.
+- `GenSlots` (type): type GenSlots = Record<string, unknown> — Values chosen so far, keyed by slot id. Later steps read earlier slots to make dependent choices.
+- `GenState` (interface): interface GenState — Read access to the roll in progress, handed to every step, constraint, transform, and the assembler.
+- `GenStep` (interface): interface GenStep — A single stage of a generation pipeline: chooses or derives one slot, or rejects the attempt.
+- `GenStepOutcome` (type): type GenStepOutcome = | { readonly status: "set"; readonly value: unknown } | { readonly status: "reject"; readonly reason: string } — What a step did: set its slot, or reject the whole attempt with a reason.
+- `GenSuccess` (interface): interface GenSuccess<TOut> — A generated output plus its provenance.
+- `GenTraceEntry` (interface): interface GenTraceEntry — One recorded decision — the trail that lets UI, debugging, and regeneration explain an output.
+- `choose` (function): function choose<T>(slot: string, spec: ChooseSpec<T>): GenStep — A weighted (optionally dependent, optionally constrained) choice step. Draws one option with probability proportional to `weight` from a candidate list that may itself depend on earlier slots, after filtering by `eligible`. Consumes exactly one `rng()` per draw, so composing it preserves the random stream of a hand-rolled `pickWeighted`.
+- `derive` (function): function derive<T>(slot: string, fn: (state: GenState) => T): GenStep — A transform step: computes this slot's value from earlier slots (and optionally `rng`), never rejecting.
+- `generate` (function): function generate<TOut>(pipeline: GenPipeline<TOut>, rng: GenRng): GenResult<TOut> — Run a {@link GenPipeline} against an injected RNG to produce a deterministic output with full provenance. Steps run in order over an accumulating slot bag; a step (or the whole-output `validate`) that rejects rerolls the entire pipeline on the advancing stream, up to `maxAttempts`. Identical `(pipeline, seed)` inputs reproduce identical results across server/client and save/load.
+- `step` (function): function step(slot: string, run: (state: GenState) => GenStepOutcome): GenStep — An escape-hatch step for logic `choose`/`derive` cannot express — conditional RNG consumption, caller-defined samplers, or constraints that reject with a specific reason. `run` returns `set` or `reject` directly.
+
 ## @jgengine/core/item/itemInstanceRegistry
 
 - `ItemInstanceRegistry` (interface): interface ItemInstanceRegistry<TDef> — A runtime store for procedurally generated item instances — a rolled unique gun, a rolled affixed relic — keyed by a generated id distinct from any static catalog id. The counterpart a game's `content.itemById` consults for ids `lootTable`'s `generate` entries hand back, so runtime rolls never need a hand-rolled parallel registry (#536.1).

@@ -116,6 +116,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
 
+## procedural-generation — compose a deterministic generated item from weighted/dependent choices, constraints, transforms, and provenance
+
+- `generate` (function) · `import { generate } from "@jgengine/core/item/generation"`
+
 ## production-building — a factory building converting inputs to outputs over time
 
 - `createProductionState` (function) · `import { createProductionState } from "@jgengine/core/gameplay"`

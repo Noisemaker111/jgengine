@@ -1,4 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { generate, derive, step, type GenPipeline } from "@jgengine/core/item/generation";
+import { pickUniform } from "@jgengine/core/random/pick";
 import { AMMO_STAT_IDS, type AmmoPool } from "./ammo";
 import { bonus } from "./characters";
 import { ffylStore } from "./stores";
@@ -199,12 +201,6 @@ export function allGuns(): readonly GunDef[] {
   return [...gunRegistry.values()];
 }
 
-function pick<T>(rng: () => number, list: readonly T[]): T {
-  const entry = list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
-  if (entry === undefined) throw new Error("pick: empty list");
-  return entry;
-}
-
 export function rollRarity(rng: () => number, luck = 1): Rarity {
   const total = RARITY_TIERS.reduce((sum, tier) => sum + tier.weight * (tier.id === "common" ? 1 : luck), 0);
   let roll = rng() * total;
@@ -222,71 +218,111 @@ export interface RollGunOptions {
   luck?: number;
 }
 
-export function rollGun(rng: () => number, level: number, options: RollGunOptions = {}): GunDef {
-  const base = options.family !== undefined
-    ? FAMILY_BASES.find((candidate) => candidate.family === options.family) ?? pick(rng, FAMILY_BASES)
-    : pick(rng, FAMILY_BASES);
-  const rarity = options.rarity ?? rollRarity(rng, options.luck ?? 1);
-  const tier = RARITY_TIERS.find((candidate) => candidate.id === rarity) ?? RARITY_TIERS[0]!;
+interface Maker {
+  manufacturer: Manufacturer;
+  legendaryName: string | null;
+}
 
-  let manufacturer: Manufacturer;
-  let legendaryName: string | null = null;
-  if (rarity === "legendary") {
-    const [makerId, name] = pick(rng, LEGENDARY_NAMES[base.family]);
-    manufacturer = MANUFACTURERS.find((candidate) => candidate.id === makerId) ?? pick(rng, MANUFACTURERS);
-    legendaryName = name;
-  } else {
-    manufacturer = pick(rng, MANUFACTURERS);
-  }
+/**
+ * A gun is a procedurally generated item: pick a family, roll rarity (luck-weighted), pick a
+ * manufacturer under the legendary constraint, resolve an element under the manufacturer's
+ * forced/never/chance rules, then transform base stats by rarity × manufacturer × level × jitter and
+ * compose a name. That is exactly the shape of core's `generate` pipeline, so the mechanism lives
+ * upstream while the manufacturer/rarity/element catalogs stay game content here. Steps consume the
+ * rng stream in the same order the hand-rolled generator did, so drops and the fixed-seed starter
+ * arsenal are unchanged.
+ */
+function gunPipeline(level: number, options: RollGunOptions): GenPipeline<GunDef> {
+  return {
+    steps: [
+      step("base", (s) => {
+        if (options.family !== undefined) {
+          const found = FAMILY_BASES.find((candidate) => candidate.family === options.family);
+          if (found !== undefined) return { status: "set", value: found };
+        }
+        return { status: "set", value: pickUniform(s.rng, FAMILY_BASES)! };
+      }),
+      step("rarity", (s) => ({ status: "set", value: options.rarity ?? rollRarity(s.rng, options.luck ?? 1) })),
+      derive("tier", (s) => {
+        const rarity = s.get<Rarity>("rarity");
+        return RARITY_TIERS.find((candidate) => candidate.id === rarity) ?? RARITY_TIERS[0]!;
+      }),
+      step("maker", (s) => {
+        const base = s.get<FamilyBase>("base");
+        if (s.get<Rarity>("rarity") === "legendary") {
+          const [makerId, name] = pickUniform(s.rng, LEGENDARY_NAMES[base.family])!;
+          const manufacturer = MANUFACTURERS.find((candidate) => candidate.id === makerId) ?? pickUniform(s.rng, MANUFACTURERS)!;
+          return { status: "set", value: { manufacturer, legendaryName: name } satisfies Maker };
+        }
+        return { status: "set", value: { manufacturer: pickUniform(s.rng, MANUFACTURERS)!, legendaryName: null } satisfies Maker };
+      }),
+      step("element", (s) => {
+        const { manufacturer } = s.get<Maker>("maker");
+        const tier = s.get<RarityTier>("tier");
+        let element: GunElement = "none";
+        if (manufacturer.neverElemental !== true) {
+          if (manufacturer.forcedElement !== undefined) element = manufacturer.forcedElement;
+          else if (manufacturer.id === "Voltek" || s.rng() < tier.elementChance) element = pickUniform(s.rng, ELEMENTS)!;
+        }
+        return { status: "set", value: element };
+      }),
+    ],
+    assemble: (s) => {
+      const base = s.get<FamilyBase>("base");
+      const rarity = s.get<Rarity>("rarity");
+      const tier = s.get<RarityTier>("tier");
+      const { manufacturer, legendaryName } = s.get<Maker>("maker");
+      const element = s.get<GunElement>("element");
 
-  let element: GunElement = "none";
-  if (manufacturer.neverElemental !== true) {
-    if (manufacturer.forcedElement !== undefined) element = manufacturer.forcedElement;
-    else if (manufacturer.id === "Voltek" || rng() < tier.elementChance) element = pick(rng, ELEMENTS);
-  }
+      const gunLevel = options.level ?? level;
+      const levelMult = LEVEL_DAMAGE_GROWTH ** (gunLevel - 1);
+      const jitter = 0.92 + s.rng() * 0.16;
+      const damage = Math.max(1, Math.round(base.stats.damage * tier.mult * manufacturer.damage * levelMult * jitter));
+      const magSize = Math.max(2, Math.round(base.magSize * manufacturer.mag));
+      const elementPrefix = element === "none" ? "" : `${ELEMENT_PREFIX[element]} `;
+      const name = legendaryName !== null
+        ? `${elementPrefix}${legendaryName}`
+        : `${elementPrefix}${pickUniform(s.rng, manufacturer.prefixes)!} ${pickUniform(s.rng, base.nouns)!}`;
 
-  const gunLevel = options.level ?? level;
-  const levelMult = LEVEL_DAMAGE_GROWTH ** (gunLevel - 1);
-  const jitter = 0.92 + rng() * 0.16;
-  const damage = Math.max(1, Math.round(base.stats.damage * tier.mult * manufacturer.damage * levelMult * jitter));
-  const magSize = Math.max(2, Math.round(base.magSize * manufacturer.mag));
-  const elementPrefix = element === "none" ? "" : `${ELEMENT_PREFIX[element]} `;
-  const name = legendaryName !== null
-    ? `${elementPrefix}${legendaryName}`
-    : `${elementPrefix}${pick(rng, manufacturer.prefixes)} ${pick(rng, base.nouns)}`;
-
-  gunSerial += 1;
-  const def: GunDef = {
-    id: `gun_${gunSerial}_${base.family}_${rarity}`,
-    kind: "gun",
-    name,
-    family: base.family,
-    manufacturer: manufacturer.id,
-    rarity,
-    element,
-    level: gunLevel,
-    ammo: base.ammo,
-    auto: base.auto,
-    ammoPerShot: base.ammoPerShot,
-    magSize,
-    reloadMs: Math.round(base.reloadMs * manufacturer.reload),
-    elementChance: element === "none" ? 0 : element === "explosive" ? 1 : 0.25 + tier.elementChance * 0.4,
-    elementDps: Math.max(1, Math.round(damage * 0.35)),
-    use: "fireGun",
-    weapon: {
-      damage,
-      range: base.stats.range,
-      spread: Math.round(base.stats.spread * manufacturer.spread * (rarity === "legendary" ? 0.7 : 1) * 100) / 100,
-      fireIntervalMs: Math.max(60, Math.round(base.stats.fireIntervalMs * manufacturer.interval * (2 - tier.mult))),
-      critChance: Math.min(0.5, base.stats.critChance + (tier.mult - 1) * 0.08),
-      critMult: base.stats.critMult,
-      ...(base.stats.pellets !== undefined ? { pellets: base.stats.pellets } : {}),
-      ...(base.stats.projectile !== undefined ? { projectile: base.stats.projectile } : {}),
-      ...(element === "explosive" && base.family !== "launcher" ? { explosion: { radius: 2.2 } } : {}),
-      ...(base.stats.explosion !== undefined ? { explosion: base.stats.explosion } : {}),
+      gunSerial += 1;
+      return {
+        id: `gun_${gunSerial}_${base.family}_${rarity}`,
+        kind: "gun",
+        name,
+        family: base.family,
+        manufacturer: manufacturer.id,
+        rarity,
+        element,
+        level: gunLevel,
+        ammo: base.ammo,
+        auto: base.auto,
+        ammoPerShot: base.ammoPerShot,
+        magSize,
+        reloadMs: Math.round(base.reloadMs * manufacturer.reload),
+        elementChance: element === "none" ? 0 : element === "explosive" ? 1 : 0.25 + tier.elementChance * 0.4,
+        elementDps: Math.max(1, Math.round(damage * 0.35)),
+        use: "fireGun",
+        weapon: {
+          damage,
+          range: base.stats.range,
+          spread: Math.round(base.stats.spread * manufacturer.spread * (rarity === "legendary" ? 0.7 : 1) * 100) / 100,
+          fireIntervalMs: Math.max(60, Math.round(base.stats.fireIntervalMs * manufacturer.interval * (2 - tier.mult))),
+          critChance: Math.min(0.5, base.stats.critChance + (tier.mult - 1) * 0.08),
+          critMult: base.stats.critMult,
+          ...(base.stats.pellets !== undefined ? { pellets: base.stats.pellets } : {}),
+          ...(base.stats.projectile !== undefined ? { projectile: base.stats.projectile } : {}),
+          ...(element === "explosive" && base.family !== "launcher" ? { explosion: { radius: 2.2 } } : {}),
+          ...(base.stats.explosion !== undefined ? { explosion: base.stats.explosion } : {}),
+        },
+      };
     },
   };
-  return registerGun(def);
+}
+
+export function rollGun(rng: () => number, level: number, options: RollGunOptions = {}): GunDef {
+  const result = generate(gunPipeline(level, options), rng);
+  if (result.status !== "ok") throw new Error(`gun generation failed: ${result.reason}`);
+  return registerGun(result.value);
 }
 
 interface MagState {
