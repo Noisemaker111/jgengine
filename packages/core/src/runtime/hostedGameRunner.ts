@@ -69,6 +69,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   const replicator = createWorldReplicator(() => ctx.snapshot());
   const members = new Map<string, LoopPlayer>();
   const inputs = new Map<string, InputFrame>();
+  const inputSeq = new Map<string, number>();
 
   loop.onInit?.(ctx);
   syncLifecyclePhase(ctx, definition.lifecycle);
@@ -76,6 +77,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
 
   return {
     join(userId, isNew) {
+      if (members.has(userId)) return;
       const player: LoopPlayer = { userId, isNew };
       members.set(userId, player);
       ctx.game.players?.join(userId, isNew);
@@ -91,10 +93,17 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       if (player === undefined) return;
       members.delete(userId);
       inputs.delete(userId);
+      inputSeq.delete(userId);
       loop.onPlayerLeave?.(ctx, player);
       ctx.game.players?.leave(userId);
     },
     input(userId, frame) {
+      const seq = (frame as InputFrame & { seq?: number }).seq;
+      if (seq !== undefined) {
+        const lastSeq = inputSeq.get(userId);
+        if (lastSeq !== undefined && seq <= lastSeq) return;
+        inputSeq.set(userId, seq);
+      }
       inputs.set(userId, frame);
       ctx.game.players?.setInput(userId, frame);
     },
