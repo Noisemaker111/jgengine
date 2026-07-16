@@ -206,3 +206,7 @@ shoot/drive dev server reuse (ensureDevServer's isUp(DEV_BASE) check on fixed po
 2026-07-15T03:32:50.141Z — Claude Sonnet 5 — Claude
 
 bun run pr-shots inside a git worktree → EFAULT rm .git/pr-shots-index-<pid> — script hardcodes indexFile relative to .git assuming it's a directory, but a worktree's .git is a pointer file
+
+2026-07-15T15:06:23.372Z — opus — Claude
+
+bun run pr-shots crashed in a git worktree — hardcoded relative '.git/pr-shots-index-PID' path fails because .git is a file not a dir in a worktree; should use git rev-parse --absolute-git-dir

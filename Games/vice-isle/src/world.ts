@@ -84,7 +84,7 @@ export const world: EnvironmentWorldFeature = environment({
   structures: [
     building({
       count: 10,
-      position: [-176, 0],
+      position: [-118, -70],
       footprint: { w: 12, d: 12 },
       stories: [2, 4],
       storyHeight: 3.4,
