@@ -13,13 +13,14 @@ export interface InputSnapshot {
   /** Replaces the normalized pointer-position state for this frame (#293). Same no-notify contract as `publish`. */
   publishPointer(state: PointerAxisState | null): void;
   isDown(action: string): boolean;
+  /** The held-action set for this frame — an owned, frozen array; the array {@link publish} was called with is never aliased or returned. */
   held(): readonly string[];
   /** True only on the frame `action` transitions from up to down (#671) — derived from the last two published held sets, so it stays replay-safe. */
   justPressed(action: string): boolean;
   /** True only on the frame `action` transitions from down to up (#671); mirrors {@link justPressed}. */
   justReleased(action: string): boolean;
-  /** Pointer position over the play surface, `[-1, 1]` per axis with `+y` down, published by the shell each frame; `null` until the first pointer move. */
-  pointer(): PointerAxisState | null;
+  /** Pointer position over the play surface, `[-1, 1]` per axis with `+y` down, published by the shell each frame; `null` until the first pointer move. Frozen — an owned copy of what {@link publishPointer} was called with. */
+  pointer(): Readonly<PointerAxisState> | null;
   /**
    * Instantaneous analog axis sample against the held-action set and current pointer (#533.7) — bind
    * throttle/steer/handbrake (or any axes) to *action names*, not raw key codes, since the held set is
@@ -36,16 +37,16 @@ export function createInputSnapshot(): InputSnapshot {
   let heldSet = new Set<string>();
   let previousHeldSet = new Set<string>();
   let heldList: readonly string[] = [];
-  let pointerState: PointerAxisState | null = null;
+  let pointerState: Readonly<PointerAxisState> | null = null;
 
   return {
     publish(held) {
       previousHeldSet = heldSet;
-      heldList = held;
+      heldList = Object.freeze([...held]);
       heldSet = new Set(held);
     },
     publishPointer(state) {
-      pointerState = state;
+      pointerState = state === null ? null : Object.freeze({ ...state });
     },
     isDown: (action) => heldSet.has(action),
     held: () => heldList,

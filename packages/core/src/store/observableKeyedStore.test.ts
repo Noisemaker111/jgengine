@@ -137,6 +137,35 @@ describe("observable keyed store", () => {
     expect(store.keysSnapshot()).toEqual(["b"]);
   });
 
+  test("mapSnapshot returns an owned copy that mutating it never reaches the store", () => {
+    const store = createObservableKeyedStore<number>();
+    store.set("a", 1);
+    const snapshot = store.mapSnapshot();
+    expect(snapshot.get("a")).toBe(1);
+
+    (snapshot as Map<string, number>).set("a", 999);
+    (snapshot as Map<string, number>).set("intruder", 1);
+
+    expect(store.get("a")).toBe(1);
+    expect(store.has("intruder")).toBe(false);
+  });
+
+  test("mapSnapshot is stable until the next write, like arraySnapshot", () => {
+    const store = createObservableKeyedStore<number>();
+    const empty = store.mapSnapshot();
+    expect(store.mapSnapshot()).toBe(empty);
+
+    store.set("a", 1);
+    const first = store.mapSnapshot();
+    expect(store.mapSnapshot()).toBe(first);
+    expect(first.get("a")).toBe(1);
+
+    store.set("a", 2);
+    const second = store.mapSnapshot();
+    expect(second).not.toBe(first);
+    expect(second.get("a")).toBe(2);
+  });
+
   test("membership listeners unsubscribe independently of value listeners", () => {
     const store = createObservableKeyedStore<number>();
     let membership = 0;

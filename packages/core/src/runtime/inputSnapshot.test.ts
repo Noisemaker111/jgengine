@@ -23,6 +23,28 @@ describe("createInputSnapshot", () => {
   });
 });
 
+describe("InputSnapshot snapshot immutability", () => {
+  test("held() returns an owned, frozen array — mutating the source array after publish does not leak in", () => {
+    const input = createInputSnapshot();
+    const source = ["jump"];
+    input.publish(source);
+    source.push("sprint");
+
+    expect(input.held()).toEqual(["jump"]);
+    expect(Object.isFrozen(input.held())).toBe(true);
+  });
+
+  test("pointer() returns a frozen, owned copy — mutating the source object after publishPointer does not leak in", () => {
+    const input = createInputSnapshot();
+    const source = { x: 0.1, y: 0.2, active: true };
+    input.publishPointer(source);
+    source.x = 0.9;
+
+    expect(input.pointer()).toEqual({ x: 0.1, y: 0.2, active: true });
+    expect(Object.isFrozen(input.pointer())).toBe(true);
+  });
+});
+
 describe("InputSnapshot.justPressed / justReleased", () => {
   test("fires exactly one frame on press", () => {
     const input = createInputSnapshot();
