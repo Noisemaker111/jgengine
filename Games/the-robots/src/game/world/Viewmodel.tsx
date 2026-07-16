@@ -6,7 +6,7 @@ import { cloneModelScene, disposeClonedMaterials } from "@jgengine/shell/render/
 import { assets } from "../assets";
 import { equippedGun, gameNow, lastShot } from "../feel";
 import { gunById, magState, type GunDef, type GunFamily } from "../handroll";
-import { ELEMENT_COLORS, RARITY_COLORS } from "../palette";
+import { ELEMENT_COLORS } from "../palette";
 
 const FAMILY_MUZZLE_Z: Record<GunFamily, number> = {
   pistol: 0.32,
@@ -17,13 +17,14 @@ const FAMILY_MUZZLE_Z: Record<GunFamily, number> = {
   launcher: 0.56,
 };
 
-const FAMILY_BLASTER: Record<GunFamily, string> = {
-  pistol: "kenney-blaster/blaster-a",
-  smg: "kenney-blaster/blaster-e",
-  shotgun: "kenney-blaster/blaster-j",
-  rifle: "kenney-blaster/blaster-m",
-  sniper: "kenney-blaster/blaster-p",
-  launcher: "kenney-blaster/blaster-r",
+/** Preferred Quaternius scifi weapon ids — soft-resolve; missing → box primitive. */
+const FAMILY_BLASTER: Record<GunFamily, { model: string; fallbackModel?: string }> = {
+  pistol: { model: "quaternius-modular-scifi/weapon_gun", fallbackModel: "quaternius-modular-scifi/astronautA" },
+  smg: { model: "quaternius-modular-scifi/weapon_smg", fallbackModel: "quaternius-modular-scifi/weapon_gun" },
+  shotgun: { model: "quaternius-modular-scifi/weapon_shotgun", fallbackModel: "quaternius-modular-scifi/weapon_gun" },
+  rifle: { model: "quaternius-modular-scifi/weapon_rifle", fallbackModel: "quaternius-modular-scifi/weapon_gun" },
+  sniper: { model: "quaternius-modular-scifi/weapon_sniper", fallbackModel: "quaternius-modular-scifi/weapon_rifle" },
+  launcher: { model: "quaternius-modular-scifi/weapon_launcher", fallbackModel: "quaternius-modular-scifi/weapon_gun" },
 };
 
 const FAMILY_SCALE: Record<GunFamily, number> = {
@@ -46,6 +47,16 @@ const MANUFACTURER_COLORS: Record<string, string> = {
   Scrapjack: "#5a5248",
 };
 
+function resolveBlasterUrl(family: GunFamily): string | null {
+  const pick = FAMILY_BLASTER[family];
+  for (const id of [pick.model, pick.fallbackModel]) {
+    if (id === undefined) continue;
+    const url = assets.resolve(id)?.url;
+    if (url !== undefined) return url;
+  }
+  return null;
+}
+
 function tintScene(scene: Object3D, body: string, glow: string | null): void {
   const bodyColor = new Color(body);
   const glowColor = glow === null ? null : new Color(glow);
@@ -67,17 +78,47 @@ function tintScene(scene: Object3D, body: string, glow: string | null): void {
 }
 
 function GunMesh({ gun }: { gun: GunDef }) {
-  const url = assets.resolve(FAMILY_BLASTER[gun.family])?.url ?? assets.resolve(FAMILY_BLASTER.pistol)!.url;
-  const gltf = useLoader(GLTFLoader, url);
+  const url = resolveBlasterUrl(gun.family);
   const body = MANUFACTURER_COLORS[gun.manufacturer] ?? "#7a6a58";
   const glow = gun.element !== "none" ? ELEMENT_COLORS[gun.element] : null;
+  const scale = FAMILY_SCALE[gun.family];
+
+  if (url === null) {
+    return (
+      <mesh rotation={[0, Math.PI, 0]} scale={scale} position={[0, -0.02, -0.1]}>
+        <boxGeometry args={[0.08, 0.12, 0.35]} />
+        <meshStandardMaterial
+          color={body}
+          metalness={0.65}
+          roughness={0.42}
+          emissive={glow ?? "#000000"}
+          emissiveIntensity={glow === null ? 0 : 0.35}
+        />
+      </mesh>
+    );
+  }
+
+  return <GunGlb url={url} body={body} glow={glow} scale={scale} />;
+}
+
+function GunGlb({
+  url,
+  body,
+  glow,
+  scale,
+}: {
+  url: string;
+  body: string;
+  glow: string | null;
+  scale: number;
+}) {
+  const gltf = useLoader(GLTFLoader, url);
   const scene = useMemo(() => {
     const cloned = cloneModelScene(gltf.scene);
     tintScene(cloned, body, glow);
     return cloned;
   }, [gltf, body, glow]);
   useEffect(() => () => disposeClonedMaterials(scene), [scene]);
-  const scale = FAMILY_SCALE[gun.family];
   return (
     <group rotation={[0, Math.PI, 0]} scale={scale} position={[0, -0.02, -0.1]}>
       <primitive object={scene} />

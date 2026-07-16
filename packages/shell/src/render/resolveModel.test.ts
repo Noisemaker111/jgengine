@@ -2,7 +2,13 @@ import { describe, expect, test } from "bun:test";
 
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-import { createModelMapResolver, resolveModel, tryResolveCatalogModel } from "./resolveModel";
+import {
+  createModelMapResolver,
+  pickModel,
+  resolveModel,
+  resolveModelPlan,
+  tryResolveCatalogModel,
+} from "./resolveModel";
 
 describe("resolveModel", () => {
   const assets = createAssetCatalog();
@@ -79,5 +85,50 @@ describe("createModelMapResolver", () => {
   test("mapped key with a missing catalog id throws, naming the seam and key", () => {
     const resolveItem = createModelMapResolver({ pine: "typo/pine" }, assets, "scatterModels")!;
     expect(() => resolveItem("pine")).toThrow(/scatterModels\["pine"\] → "typo\/pine"/);
+  });
+});
+
+describe("pickModel / resolveModelPlan", () => {
+  const assets = createAssetCatalog();
+  assets.register("quaternius-modular-scifi/astronautA", {
+    url: "/models/quaternius-modular-scifi/astronautA.glb",
+  });
+  assets.register("kaykit-adventurers/Rogue", { url: "/models/kaykit-adventurers/Rogue.glb" });
+
+  test("prefers model when live", () => {
+    expect(
+      pickModel(assets, {
+        model: "kaykit-adventurers/Rogue",
+        fallbackModel: "quaternius-modular-scifi/astronautA",
+        style: { targetHeight: 1.8 },
+      }),
+    ).toEqual({
+      url: "/models/kaykit-adventurers/Rogue.glb",
+      targetHeight: 1.8,
+    });
+  });
+
+  test("falls through to fallbackModel when preferred is missing", () => {
+    expect(
+      pickModel(assets, {
+        model: "missing/pack",
+        fallbackModel: "quaternius-modular-scifi/astronautA",
+      }),
+    ).toEqual({ url: "/models/quaternius-modular-scifi/astronautA.glb" });
+  });
+
+  test("returns undefined when neither id is in the catalog (primitive seam)", () => {
+    expect(pickModel(assets, { model: "a/b", fallbackModel: "c/d" })).toBeUndefined();
+  });
+
+  test("resolveModelPlan omits unresolved keys", () => {
+    expect(
+      resolveModelPlan(assets, {
+        hero: { model: "kaykit-adventurers/Rogue" },
+        crate: { model: "missing/box" },
+      }),
+    ).toEqual({
+      hero: { url: "/models/kaykit-adventurers/Rogue.glb" },
+    });
   });
 });

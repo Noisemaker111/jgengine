@@ -3,8 +3,15 @@ import { describe, expect, test } from "bun:test";
 import { entityModels, scatterModels } from "./models";
 
 describe("tower-guard models", () => {
-  test("ships no external-model dependency — entities render on engine primitives until art is re-homed", () => {
-    expect(Object.keys(entityModels)).toHaveLength(0);
-    expect(Object.keys(scatterModels)).toHaveLength(0);
+  test("soft-resolves art plan — empty until Quaternius/KayKit packs are pulled (#807)", () => {
+    // Catalog indexes are empty on this branch until Batch 2 mirror/pull.
+    // Keys only appear when pickModel finds a live catalog id.
+    for (const config of Object.values(entityModels)) {
+      expect(config.url.length).toBeGreaterThan(0);
+      expect(config.url.includes("kenney")).toBe(false);
+    }
+    for (const id of Object.values(scatterModels)) {
+      expect(id.includes("kenney")).toBe(false);
+    }
   });
 });

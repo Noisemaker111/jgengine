@@ -2,7 +2,9 @@ export type BuildingStyle = "suburban" | "commercial" | "tower";
 
 export interface BuildingSpec {
   id: string;
-  glb: string;
+  /** Preferred catalog id (Quaternius downtown city). Soft-resolved in models.ts. */
+  model: string;
+  fallbackModel?: string;
   targetHeight: number;
   style: BuildingStyle;
   footprint: number;
@@ -42,10 +44,17 @@ const tower: readonly (readonly [string, number])[] = [
   ["building-skyscraper-e", 44],
 ];
 
-function specs(style: BuildingStyle, pack: string, list: readonly (readonly [string, number])[], footprint: number): BuildingSpec[] {
-  return list.map(([glb, targetHeight]) => ({
-    id: `bld_${glb.replace(/^building-?/, "").replace(/-/g, "_")}`,
-    glb: `${pack}/${glb}`,
+const CITY = "quaternius-downtown-city";
+
+function specs(
+  style: BuildingStyle,
+  list: readonly (readonly [string, number])[],
+  footprint: number,
+): BuildingSpec[] {
+  return list.map(([mesh, targetHeight]) => ({
+    id: `bld_${mesh.replace(/^building-?/, "").replace(/-/g, "_")}`,
+    model: `${CITY}/${mesh}`,
+    fallbackModel: `${CITY}/building-a`,
     targetHeight,
     style,
     footprint,
@@ -53,9 +62,9 @@ function specs(style: BuildingStyle, pack: string, list: readonly (readonly [str
 }
 
 export const BUILDING_SPECS: readonly BuildingSpec[] = [
-  ...specs("suburban", "kenney-city-suburban", suburban, 12),
-  ...specs("commercial", "kenney-city-commercial", commercial, 13),
-  ...specs("tower", "kenney-city-commercial", tower, 17),
+  ...specs("suburban", suburban, 12),
+  ...specs("commercial", commercial, 13),
+  ...specs("tower", tower, 17),
 ];
 
 export const buildingsByStyle = (style: BuildingStyle): readonly BuildingSpec[] =>

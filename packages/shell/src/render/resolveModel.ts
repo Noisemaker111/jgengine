@@ -37,6 +37,42 @@ export function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelC
 }
 
 /**
+ * Preferred + optional fallback catalog ids for a single entity/object slot.
+ * Soft-resolves through the catalog: when neither id is live (pack not pulled/
+ * reindexed yet), the mapping is omitted and the shell keeps its primitive.
+ * Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
+ */
+export type ModelPick = {
+  model?: string;
+  fallbackModel?: string;
+  style?: Omit<ModelConfig, "url" | "dims">;
+};
+
+/** Soft-resolve `model`, then `fallbackModel`; merge `style` when either hits. */
+export function pickModel(assets: AssetCatalog, pick: ModelPick): ModelConfig | undefined {
+  for (const id of [pick.model, pick.fallbackModel]) {
+    if (id === undefined) continue;
+    const resolved = tryResolveCatalogModel(id, assets);
+    if (resolved === undefined) continue;
+    return pick.style === undefined ? resolved : { ...resolved, ...pick.style };
+  }
+  return undefined;
+}
+
+/** Build an entityModels/objectModels map from a plan; missing catalog ids drop out (primitive). */
+export function resolveModelPlan(
+  assets: AssetCatalog,
+  plan: Record<string, ModelPick>,
+): Record<string, ModelConfig> {
+  const out: Record<string, ModelConfig> = {};
+  for (const [key, pick] of Object.entries(plan)) {
+    const model = pickModel(assets, pick);
+    if (model !== undefined) out[key] = model;
+  }
+  return out;
+}
+
+/**
  * Builds a `(key) => ModelConfig | null` override from a `seam`'s id/config map plus its catalog —
  * `undefined` when either half is missing so the caller can fall back to its own default renderer.
  * An unmapped key resolves to `null` (deliberate fallback); a mapped key with a missing/misspelled

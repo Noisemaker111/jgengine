@@ -1,85 +1,116 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import { resolveModelPlan, type ModelPick } from "@jgengine/shell/render/resolveModel";
 
 import { assets } from "./assets";
 import { DECOR, FURNITURE, STRUCTURE, type DecorDef, type FurnitureDef, type StructureDef } from "./objects/catalog";
 
 export const HAB_WALL_SCALE = 3;
 
-function resolvedUrl(id: string): string {
-  const entry = assets.resolve(id);
-  if (entry === null) throw new Error(`starhome/models: unknown asset "${id}"`);
-  return entry.url;
-}
+const SCIFI = "quaternius-modular-scifi";
+const NATURE = "quaternius-stylized-nature";
+const PROPS = "quaternius-fantasy-props";
+const CHAR = "kaykit-adventurers";
+const CHAR_FB = "quaternius-base-characters";
 
-const FURNITURE_ASSET: Record<string, string> = {
-  nutrient_font: "kenney-furniture/kitchenBar",
-  sleep_pod: "kenney-furniture/bedDouble",
-  chat_ring: "kenney-furniture/loungeSofaCorner",
-  holo_arcade: "kenney-furniture/televisionModern",
-  bloom_planter: "kenney-furniture/pottedPlant",
-  work_console: "kenney-space/desk_computer",
+/** Art plan: preferred catalog ids. Soft-resolve; missing → shell primitives. */
+const FURNITURE_PLAN: Record<string, ModelPick> = {
+  nutrient_font: { model: `${PROPS}/Table`, fallbackModel: `${SCIFI}/crate` },
+  sleep_pod: { model: `${PROPS}/Bed`, fallbackModel: `${SCIFI}/crate` },
+  chat_ring: { model: `${PROPS}/Sofa`, fallbackModel: `${SCIFI}/crate` },
+  holo_arcade: { model: `${SCIFI}/desk_computer`, fallbackModel: `${SCIFI}/astronautA` },
+  bloom_planter: { model: `${NATURE}/plant_bush`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
+  work_console: { model: `${SCIFI}/desk_computer`, fallbackModel: `${SCIFI}/astronautA` },
 };
 
-function furnitureModel(def: FurnitureDef): ModelConfig {
-  const assetId = FURNITURE_ASSET[def.id];
-  if (assetId === undefined) throw new Error(`starhome/models: no model mapped for furniture "${def.id}"`);
+const DECOR_PLAN: Record<string, ModelPick> = {
+  decor_spire: { model: `${SCIFI}/satelliteDish_large`, fallbackModel: `${SCIFI}/astronautA` },
+  decor_boulder: { model: `${SCIFI}/rock_crystalsLargeA`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
+  decor_frond: { model: `${NATURE}/mushroom_redTall`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
+  decor_frond_tan: { model: `${NATURE}/mushroom_tanTall`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
+  decor_crystal: { model: `${SCIFI}/rock_crystalsLargeB`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
+};
+
+const STRUCTURE_PLAN: Record<string, ModelPick> = {
+  hab_wall: { model: `${SCIFI}/corridor_windowClosed`, fallbackModel: `${SCIFI}/astronautA` },
+  hab_wall_window: { model: `${SCIFI}/corridor_window`, fallbackModel: `${SCIFI}/astronautA` },
+  hab_corner: { model: `${SCIFI}/corridor_wallCorner`, fallbackModel: `${SCIFI}/astronautA` },
+  hab_gate: { model: `${SCIFI}/gate_complex`, fallbackModel: `${SCIFI}/astronautA` },
+};
+
+function furniturePick(def: FurnitureDef): ModelPick | null {
+  const base = FURNITURE_PLAN[def.id];
+  if (base === undefined) return null;
   return {
-    url: resolvedUrl(assetId),
-    targetHeight: def.height,
-    material: { color: def.color, metalness: 0.2, roughness: 0.5, emissive: def.color, emissiveIntensity: 0.12 },
+    ...base,
+    style: {
+      targetHeight: def.height,
+      material: { color: def.color, metalness: 0.2, roughness: 0.5, emissive: def.color, emissiveIntensity: 0.12 },
+    },
   };
 }
 
-const DECOR_ASSET: Record<string, string> = {
-  decor_spire: "kenney-space/satelliteDish_large",
-  decor_boulder: "kenney-space/rock_crystalsLargeA",
-  decor_frond: "kenney-nature/mushroom_redTall",
-  decor_frond_tan: "kenney-nature/mushroom_tanTall",
-  decor_crystal: "kenney-space/rock_crystalsLargeB",
-};
-
-function decorModel(def: DecorDef): ModelConfig {
-  const assetId = DECOR_ASSET[def.id];
-  if (assetId === undefined) throw new Error(`starhome/models: no model mapped for decor "${def.id}"`);
+function decorPick(def: DecorDef): ModelPick | null {
+  const base = DECOR_PLAN[def.id];
+  if (base === undefined) return null;
   return {
-    url: resolvedUrl(assetId),
-    targetHeight: def.height,
-    material: { color: def.color, emissive: def.color, emissiveIntensity: 0.22 },
+    ...base,
+    style: {
+      targetHeight: def.height,
+      material: { color: def.color, emissive: def.color, emissiveIntensity: 0.22 },
+    },
   };
 }
 
-const STRUCTURE_ASSET: Record<string, string> = {
-  hab_wall: "kenney-space/corridor_windowClosed",
-  hab_wall_window: "kenney-space/corridor_window",
-  hab_corner: "kenney-space/corridor_wallCorner",
-  hab_gate: "kenney-space/gate_complex",
-};
-
-function structureModel(def: StructureDef): ModelConfig {
-  const assetId = STRUCTURE_ASSET[def.id];
-  if (assetId === undefined) throw new Error(`starhome/models: no model mapped for structure "${def.id}"`);
+function structurePick(def: StructureDef): ModelPick | null {
+  const base = STRUCTURE_PLAN[def.id];
+  if (base === undefined) return null;
   return {
-    url: resolvedUrl(assetId),
-    scale: HAB_WALL_SCALE,
-    material: { color: "#9d93bd", metalness: 0.35, roughness: 0.45 },
+    ...base,
+    style: {
+      scale: HAB_WALL_SCALE,
+      material: { color: "#9d93bd", metalness: 0.35, roughness: 0.45 },
+    },
   };
 }
 
-export const objectModels: Record<string, ModelConfig> = {
-  ...Object.fromEntries(FURNITURE.map((def) => [def.id, furnitureModel(def)])),
-  ...Object.fromEntries(DECOR.map((def) => [def.id, decorModel(def)])),
-  ...Object.fromEntries(STRUCTURE.map((def) => [def.id, structureModel(def)])),
-};
+function buildObjectModels(): Record<string, ModelConfig> {
+  const plan: Record<string, ModelPick> = {};
+  for (const def of FURNITURE) {
+    const pick = furniturePick(def);
+    if (pick !== null) plan[def.id] = pick;
+  }
+  for (const def of DECOR) {
+    const pick = decorPick(def);
+    if (pick !== null) plan[def.id] = pick;
+  }
+  for (const def of STRUCTURE) {
+    const pick = structurePick(def);
+    if (pick !== null) plan[def.id] = pick;
+  }
+  return resolveModelPlan(assets, plan);
+}
 
+export const objectModels: Record<string, ModelConfig> = buildObjectModels();
+
+/** Preferred character meshes for aliens — first live id wins at runtime. */
 export const ALIEN_MESH_IDS: readonly string[] = [
-  "kenney-mini-characters/character-male-a",
-  "kenney-mini-characters/character-male-b",
-  "kenney-mini-characters/character-male-c",
-  "kenney-mini-characters/character-female-a",
-  "kenney-mini-characters/character-female-b",
-  "kenney-mini-characters/character-female-c",
+  `${CHAR}/Rogue`,
+  `${CHAR}/Mage`,
+  `${CHAR}/Knight`,
+  `${CHAR_FB}/Character_Male_1`,
+  `${CHAR_FB}/Character_Female_1`,
+  `${SCIFI}/astronautA`,
 ];
 
-export function alienMeshUrl(id: string): string {
-  return resolvedUrl(id);
+export function alienMeshUrl(id: string): string | null {
+  return assets.resolve(id)?.url ?? null;
+}
+
+export function resolveAlienMeshUrl(seed: number): string | null {
+  for (let i = 0; i < ALIEN_MESH_IDS.length; i++) {
+    const id = ALIEN_MESH_IDS[(seed + i) % ALIEN_MESH_IDS.length]!;
+    const url = alienMeshUrl(id);
+    if (url !== null) return url;
+  }
+  return null;
 }
