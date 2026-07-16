@@ -102,7 +102,7 @@ export function createDecayMeterSet(configs: readonly DecayMeterConfig[]): Decay
     order.push(config.id);
   }
 
-  const require = (id: string): MeterRuntime => {
+  const getMeter = (id: string): MeterRuntime => {
     const runtime = meters.get(id);
     if (runtime === undefined) throw new Error(`unknown decay meter "${id}"`);
     return runtime;
@@ -120,20 +120,20 @@ export function createDecayMeterSet(configs: readonly DecayMeterConfig[]): Decay
       }
     },
     value(id) {
-      return require(id).value;
+      return getMeter(id).value;
     },
     state(id) {
-      return toState(require(id));
+      return toState(getMeter(id));
     },
     refill(id, amount) {
-      const runtime = require(id);
+      const runtime = getMeter(id);
       runtime.value = clamp(runtime.value + amount, runtime.min, runtime.max);
     },
     setRate(id, rate) {
-      require(id).rate = rate;
+      getMeter(id).rate = rate;
     },
     setRateModifier(id, multiplier) {
-      require(id).modifier = multiplier;
+      getMeter(id).modifier = multiplier;
     },
     moodles() {
       const out: Moodle[] = [];
