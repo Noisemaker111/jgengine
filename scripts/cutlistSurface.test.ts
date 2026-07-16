@@ -1,5 +1,5 @@
 /**
- * CUTLIST acceptance — structural checks on the shipped surface diet.
+ * Surface-diet acceptance — structural checks on the shipped public surface.
  * Drives real files and collectAdoption; fails if the cut regresses.
  */
 import { describe, expect, test } from "bun:test";
@@ -76,39 +76,11 @@ describe("CUTLIST surface diet", () => {
     expect(block).toMatch(/react\s*:/);
   });
 
-  test("CRITIQUE-ACTIONS.md is the living backlog", () => {
-    const path = join(root, "CRITIQUE-ACTIONS.md");
-    expect(existsSync(path)).toBe(true);
-    const text = readFileSync(path, "utf8");
-    expect(text).toMatch(/## P0/);
-    expect(text).toMatch(/H1/);
-    expect(text).toMatch(/resolveAuthority|isPresenceOnly|boundActionDispatch/);
-  });
-
   test("core package.json does not market ECS as a keyword", () => {
     const pkg = JSON.parse(readFileSync(join(root, "packages/core/package.json"), "utf8")) as {
       keywords?: string[];
     };
     expect(pkg.keywords ?? []).not.toContain("ecs");
-  });
-
-  test("CRITIQUE-ACTIONS non-deferred work rows are closed", () => {
-    const text = readFileSync(join(root, "CRITIQUE-ACTIONS.md"), "utf8");
-    // Status legend uses 🔨/☐ in the meaning table — only flag open *work* rows (ID|...|status).
-    const workRows = text
-      .split("\n")
-      .filter((line) => /^\| [A-Z][0-9]+ \|/.test(line));
-    for (const row of workRows) {
-      const cells = row.split("|").map((c) => c.trim());
-      const status = cells[cells.length - 2] ?? "";
-      const id = cells[1] ?? "";
-      if (id === "R4") {
-        expect(status).toMatch(/⏸/);
-        continue;
-      }
-      expect(status, `row ${id} must not stay open`).not.toMatch(/☐|🔨/);
-      expect(status).toMatch(/✅|⏸/);
-    }
   });
 
   test("flagship hosted path and shell extracts exist", () => {

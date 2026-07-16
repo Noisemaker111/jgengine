@@ -44,5 +44,3 @@ Point a game at Convex with `multiplayer: convex({ topology: "shared", authority
 2. Host process running (express or Convex).
 3. Client env URL matches host.
 4. Verify with two browsers / two userIds joining the same session.
-
-Backlog id: **R5** in [CRITIQUE-ACTIONS.md](../CRITIQUE-ACTIONS.md).

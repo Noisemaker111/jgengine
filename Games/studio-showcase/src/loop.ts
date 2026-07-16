@@ -25,7 +25,6 @@ function onTick(ctx: GameContext, dt: number): void {
   void dt;
   const entity = ctx.scene.entity.get(ctx.player.userId);
   if (entity === null) return;
-  // Typed meta narrow — no `as PlayerMeta` cast (CRITIQUE-ACTIONS T1).
   void entityMetaOf(entity, isPlayerMeta);
 }
 

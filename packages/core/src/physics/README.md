@@ -14,7 +14,7 @@ Critique tradeoff: custom physics is zero-dep and testable, but re-owns stabilit
 
 - Prefer `PhysicsWorld` for debris, carryables, simple vehicles, structure collapse.
 - Prefer catalog movement + shell controller for FPS/third-person avatars.
-- Revisit **Rapier (or similar)** only if a flagship needs rotation-rich ragdolls/vehicles that the SoA world cannot ship without multi-month investment — track as a new CRITIQUE-ACTIONS row, not drive-by.
+- Revisit **Rapier (or similar)** only if a flagship needs rotation-rich ragdolls/vehicles that the SoA world cannot ship without multi-month investment — open a dedicated issue, not a drive-by.
 
 ## Non-goals
 

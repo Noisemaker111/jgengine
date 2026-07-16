@@ -10,8 +10,6 @@
 
 Built so coding agents can ship games from a short prompt. Skills provide intake, focused API guidance, and verification. `@jgengine/core` has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo still ships a wide primitive set — skills route selectively so agents do not load every domain by default.
 
-**Backlog from the 2026-07 critique:** [CRITIQUE-ACTIONS.md](CRITIQUE-ACTIONS.md).
-
 ## Packages
 
 **Versions:** the lockstep game SDK set is `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}` (currently **0.10.x** — bump together). Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
@@ -99,4 +97,4 @@ and go star his work.
 
 [AGPL-3.0-only](LICENSE).
 
-**Who this fits.** AGPL is intentional for network-hosted engine derivatives: if you modify the engine and run it as a service, share the source. It is a good fit for OSS, research, and agent-built prototypes. **Shipping a closed commercial product on the engine needs a legal read** (and often a dual-license conversation with the maintainer) — do not assume AGPL is “permissive free.” See [CRITIQUE-ACTIONS.md](CRITIQUE-ACTIONS.md) H3.
+**Who this fits.** AGPL is intentional for network-hosted engine derivatives: if you modify the engine and run it as a service, share the source. It is a good fit for OSS, research, and agent-built prototypes. **Shipping a closed commercial product on the engine needs a legal read** (and often a dual-license conversation with the maintainer) — do not assume AGPL is “permissive free.”
